@@ -20,7 +20,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.helidon.json.JsonNull;
 import io.helidon.json.JsonObject;
+import io.helidon.json.JsonString;
 import io.helidon.openapi.OpenApiDocument;
 
 import org.junit.jupiter.api.Test;
@@ -138,6 +140,29 @@ class OpenApi30DocumentMapperTest {
 
         Map<String, Object> rendered = OpenApi30DocumentMapper.render(document, "3.0.3");
         Map<String, Object> schema = schema(rendered, "NullOnly");
+        List<?> values = (List<?>) schema.get("enum");
+
+        assertThat(schema.get("type"), is("object"));
+        assertThat(schema.get("nullable"), is(true));
+        assertThat(values.size(), is(1));
+        assertThat(values.getFirst(), is((Object) null));
+    }
+
+    @Test
+    void openApi30RenderPreservesNullableNullOnlyEnumAsNullableSchema() {
+        OpenApiDocument document = OpenApiDocument.builder()
+                .info("Generated API", "1.0.0")
+                .components(components -> components.schema("NullOnlyEnum",
+                                                            JsonObject.builder()
+                                                                    .setValues("type", List.of(
+                                                                            JsonString.create("string"),
+                                                                            JsonString.create("null")))
+                                                                    .setValues("enum", List.of(JsonNull.instance()))
+                                                                    .build()))
+                .build();
+
+        Map<String, Object> rendered = OpenApi30DocumentMapper.render(document, "3.0.3");
+        Map<String, Object> schema = schema(rendered, "NullOnlyEnum");
         List<?> values = (List<?>) schema.get("enum");
 
         assertThat(schema.get("type"), is("object"));

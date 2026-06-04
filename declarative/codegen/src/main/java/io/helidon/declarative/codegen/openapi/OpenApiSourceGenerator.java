@@ -39,7 +39,9 @@ import io.helidon.common.types.Annotations;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
+import io.helidon.common.types.TypedElementInfo;
 import io.helidon.declarative.codegen.DeclarativeTypes;
+import io.helidon.declarative.codegen.http.HttpCodegenValidation;
 import io.helidon.declarative.codegen.model.http.ComputedHeader;
 import io.helidon.declarative.codegen.model.http.HeaderValue;
 import io.helidon.declarative.codegen.model.http.RestMethod;
@@ -50,9 +52,13 @@ import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.RegistryRoundContext;
 
 import static io.helidon.declarative.codegen.DeclarativeTypes.SINGLETON_ANNOTATION;
+import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_COOKIE_PARAM_ANNOTATION;
+import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_ENTITY_ANNOTATION;
+import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_FORM_PARAM_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_HEADER_PARAM_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_PATH_PARAM_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_QUERY_PARAM_ANNOTATION;
+import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_REQUEST_PARAMS_ANNOTATION;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.JSON_OBJECT;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.JSON_SCHEMA_PROVIDER;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.JSON_STRING;
@@ -96,6 +102,13 @@ final class OpenApiSourceGenerator {
     private final OpenApiAnnotationValidator validator = new OpenApiAnnotationValidator();
     private final OpenApiSourceExpressions expressions = new OpenApiSourceExpressions(validator);
     private final OpenApiSchemaCodegen schemas = new OpenApiSchemaCodegen(expressions, this::examplesExpression);
+    private final OpenApiFormRequestBodyCodegen formRequestBodies = new OpenApiFormRequestBodyCodegen(
+            validator,
+            expressions,
+            schemas,
+            this::examplesExpression,
+            this::formParameterRequired,
+            parameter -> parameterName(parameter, "form"));
     private final RegistryCodegenContext ctx;
 
     OpenApiSourceGenerator(RegistryCodegenContext ctx) {
@@ -648,8 +661,12 @@ final class OpenApiSourceGenerator {
                               List<Annotation> endpointSecurityRequirements,
                               boolean endpointClearsSecurity) {
         Optional<Annotation> operation = operationAnnotation(restMethod);
+        List<RestMethodParameter> pathParameters = pathParameters(restMethod);
         method.addContent("document.path(")
-                .addContent(expressions.stringLiteral(OpenApiPathSupport.openApiPath(endpoint, restMethod, operation)))
+                .addContent(expressions.stringLiteral(OpenApiPathSupport.openApiPath(endpoint,
+                                                                                     restMethod,
+                                                                                     operation,
+                                                                                     pathParameters)))
                 .addContentLine(",")
                 .increaseContentPadding()
                 .increaseContentPadding()
@@ -784,8 +801,21 @@ final class OpenApiSourceGenerator {
 
     private void addParameters(Method.Builder method, RestMethod restMethod, Map<TypeName, String> componentNames) {
         List<Annotation> methodParameters = new ArrayList<>(methodParameterAnnotations(restMethod));
+        List<RestMethodParameter> pathParameters = pathParameters(restMethod);
+        List<RestMethodParameter> queryParameters = queryParameters(restMethod);
+        List<RestMethodParameter> headerParameters = headerParameters(restMethod)
+                .stream()
+                .filter(parameter -> !isSpecialHeader(parameterName(parameter, "header")))
+                .toList();
+        List<RestMethodParameter> cookieParameters = cookieParameters(restMethod);
         validator.validateMethodParameters(restMethodDescription(restMethod), methodParameters);
-        for (RestMethodParameter parameter : restMethod.pathParameters()) {
+        OpenApiParameterValidation.validateGeneratedParameters(restMethodDescription(restMethod),
+                                                              pathParameters,
+                                                              queryParameters,
+                                                              headerParameters,
+                                                              cookieParameters,
+                                                              this::parameterName);
+        for (RestMethodParameter parameter : pathParameters) {
             addParameter(method,
                          restMethod,
                          parameter,
@@ -793,7 +823,7 @@ final class OpenApiSourceGenerator {
                          matchingMethodParameters(methodParameters, parameter, "path"),
                          componentNames);
         }
-        for (RestMethodParameter parameter : restMethod.queryParameters()) {
+        for (RestMethodParameter parameter : queryParameters) {
             addParameter(method,
                          restMethod,
                          parameter,
@@ -801,16 +831,20 @@ final class OpenApiSourceGenerator {
                          matchingMethodParameters(methodParameters, parameter, "query"),
                          componentNames);
         }
-        for (RestMethodParameter parameter : restMethod.headerParameters()) {
-            String name = parameterName(parameter, "header");
-            if (isSpecialHeader(name)) {
-                continue;
-            }
+        for (RestMethodParameter parameter : headerParameters) {
             addParameter(method,
                          restMethod,
                          parameter,
                          "header",
                          matchingMethodParameters(methodParameters, parameter, "header"),
+                         componentNames);
+        }
+        for (RestMethodParameter parameter : cookieParameters) {
+            addParameter(method,
+                         restMethod,
+                         parameter,
+                         "cookie",
+                         matchingMethodParameters(methodParameters, parameter, "cookie"),
                          componentNames);
         }
         if (!methodParameters.isEmpty()) {
@@ -909,15 +943,31 @@ final class OpenApiSourceGenerator {
 
     private void addRequestBody(Method.Builder method, RestMethod restMethod, Map<TypeName, String> componentNames) {
         Optional<Annotation> requestBodyMetadata = requestBodyAnnotation(restMethod);
-        if (restMethod.entityParameter().isEmpty()) {
+        Optional<RestMethodParameter> entityParameter = entityParameter(restMethod);
+        List<RestMethodParameter> formParameters = formParameters(restMethod);
+        if (!formParameters.isEmpty()) {
+            if (entityParameter.isPresent()) {
+                throw new CodegenException("@Http.Entity and @Http.FormParam cannot be combined on declarative"
+                                                   + " OpenAPI method " + restMethodDescription(restMethod));
+            }
+            formRequestBodies.addRequestBody(method,
+                                             restMethodDescription(restMethod),
+                                             requestBodyMetadata.orElse(null),
+                                             restMethod.consumes(),
+                                             formParameters,
+                                             componentNames);
+            return;
+        }
+        if (entityParameter.isEmpty()) {
             if (requestBodyMetadata.isPresent()) {
                 throw new CodegenException("@OpenApi.RequestBody on " + restMethodDescription(restMethod)
-                                                   + " requires an @Http.Entity parameter");
+                                                   + " requires an @Http.Entity parameter or @Http.FormParam"
+                                                   + " parameters");
             }
             return;
         }
 
-        restMethod.entityParameter().ifPresent(parameter -> {
+        entityParameter.ifPresent(parameter -> {
             Annotation requestBody = requestBodyMetadata.orElse(null);
             TypeName entityType = schemas.schemaType(parameter.typeName());
             List<Annotation> contentAnnotations = requestBody == null
@@ -1203,23 +1253,30 @@ final class OpenApiSourceGenerator {
 
     private void collectOperationSchemaComponents(Set<TypeName> schemaTypes, RestMethod restMethod) {
         List<Annotation> methodParameters = methodParameterAnnotations(restMethod);
-        restMethod.pathParameters()
+        pathParameters(restMethod)
                 .forEach(parameter -> collectParameterSchemaComponents(schemaTypes,
                                                                        parameter,
                                                                        "path",
                                                                        methodParameters));
-        restMethod.queryParameters()
+        queryParameters(restMethod)
                 .forEach(parameter -> collectParameterSchemaComponents(schemaTypes,
                                                                        parameter,
                                                                        "query",
                                                                        methodParameters));
-        restMethod.headerParameters().stream()
+        headerParameters(restMethod).stream()
                 .filter(parameter -> !isSpecialHeader(parameterName(parameter, "header")))
                 .forEach(parameter -> collectParameterSchemaComponents(schemaTypes,
                                                                        parameter,
                                                                        "header",
                                                                        methodParameters));
-        restMethod.entityParameter().ifPresent(parameter -> {
+        cookieParameters(restMethod)
+                .forEach(parameter -> collectParameterSchemaComponents(schemaTypes,
+                                                                       parameter,
+                                                                       "cookie",
+                                                                       methodParameters));
+        formParameters(restMethod)
+                .forEach(parameter -> schemas.collectSchemaComponent(schemaTypes, parameter.typeName()));
+        entityParameter(restMethod).ifPresent(parameter -> {
             TypeName inferredSchemaType = schemas.schemaType(parameter.typeName());
             List<Annotation> contentAnnotations = requestBodyAnnotation(restMethod)
                     .flatMap(requestBody -> requestBody.annotationValues("content"))
@@ -1301,6 +1358,86 @@ final class OpenApiSourceGenerator {
                 .ifPresent(itemSchema -> schemas.collectSchemaComponent(schemaTypes, itemSchema));
     }
 
+    private List<RestMethodParameter> pathParameters(RestMethod restMethod) {
+        return parameters(restMethod.pathParameters(), restMethod, HTTP_PATH_PARAM_ANNOTATION);
+    }
+
+    private List<RestMethodParameter> queryParameters(RestMethod restMethod) {
+        return parameters(restMethod.queryParameters(), restMethod, HTTP_QUERY_PARAM_ANNOTATION);
+    }
+
+    private List<RestMethodParameter> headerParameters(RestMethod restMethod) {
+        return parameters(restMethod.headerParameters(), restMethod, HTTP_HEADER_PARAM_ANNOTATION);
+    }
+
+    private List<RestMethodParameter> cookieParameters(RestMethod restMethod) {
+        return parameters(annotatedParameters(restMethod, HTTP_COOKIE_PARAM_ANNOTATION),
+                          restMethod,
+                          HTTP_COOKIE_PARAM_ANNOTATION);
+    }
+
+    private List<RestMethodParameter> formParameters(RestMethod restMethod) {
+        return parameters(annotatedParameters(restMethod, HTTP_FORM_PARAM_ANNOTATION),
+                          restMethod,
+                          HTTP_FORM_PARAM_ANNOTATION);
+    }
+
+    private Optional<RestMethodParameter> entityParameter(RestMethod restMethod) {
+        return restMethod.entityParameter()
+                .or(() -> requestParamsParameters(restMethod, HTTP_ENTITY_ANNOTATION)
+                        .stream()
+                        .findFirst());
+    }
+
+    private List<RestMethodParameter> annotatedParameters(RestMethod restMethod, TypeName annotation) {
+        return restMethod.parameters()
+                .stream()
+                .filter(parameter -> Annotations.findFirst(annotation, parameter.annotations()).isPresent())
+                .toList();
+    }
+
+    private List<RestMethodParameter> parameters(List<RestMethodParameter> directParameters,
+                                                 RestMethod restMethod,
+                                                 TypeName annotation) {
+        List<RestMethodParameter> result = new ArrayList<>(directParameters);
+        result.addAll(requestParamsParameters(restMethod, annotation));
+        return result;
+    }
+
+    private List<RestMethodParameter> requestParamsParameters(RestMethod restMethod, TypeName annotation) {
+        List<RestMethodParameter> result = new ArrayList<>();
+        for (RestMethodParameter parameter : restMethod.parameters()) {
+            if (Annotations.findFirst(HTTP_REQUEST_PARAMS_ANNOTATION, parameter.annotations()).isEmpty()) {
+                continue;
+            }
+            TypeInfo requestParamsType = HttpCodegenValidation.requestParamsRecordType(
+                    ctx::typeInfo,
+                    parameter.typeName(),
+                    parameter.parameter().originatingElementValue());
+            HttpCodegenValidation.validateRequestParamsBodyComponents(requestParamsType);
+            for (TypedElementInfo component : HttpCodegenValidation.requestParamsComponents(requestParamsType)) {
+                if (Annotations.findFirst(annotation, component.annotations()).isPresent()) {
+                    result.add(componentParameter(restMethod, parameter, component));
+                }
+            }
+        }
+        return result;
+    }
+
+    private RestMethodParameter componentParameter(RestMethod restMethod,
+                                                  RestMethodParameter requestParamsParameter,
+                                                  TypedElementInfo component) {
+        return RestMethodParameter.builder()
+                .annotations(new HashSet<>(component.annotations()))
+                .name(component.elementName())
+                .typeName(component.typeName())
+                .index(requestParamsParameter.index())
+                .method(restMethod.method())
+                .type(restMethod.type())
+                .parameter(component)
+                .build();
+    }
+
     private void addSchemaInjection(ClassModel.Builder classModel, List<OpenApiSchemaBinding> schemaBindings) {
         if (schemaBindings.isEmpty()) {
             return;
@@ -1338,6 +1475,8 @@ final class OpenApiSourceGenerator {
         case "path" -> HTTP_PATH_PARAM_ANNOTATION;
         case "query" -> HTTP_QUERY_PARAM_ANNOTATION;
         case "header" -> HTTP_HEADER_PARAM_ANNOTATION;
+        case "cookie" -> HTTP_COOKIE_PARAM_ANNOTATION;
+        case "form" -> HTTP_FORM_PARAM_ANNOTATION;
         default -> throw new CodegenException("Unsupported OpenAPI parameter location: " + in);
         };
         return Annotations.findFirst(annotationType, parameter.annotations())
@@ -1362,11 +1501,16 @@ final class OpenApiSourceGenerator {
         }
         boolean required = parameterRequired(in, type, schemaType, parameter.annotations());
         if (required && explicit.filter(Predicate.not(Boolean::booleanValue)).isPresent()
-                && ("query".equals(in) || "header".equals(in))) {
+                && ("query".equals(in) || "header".equals(in) || "cookie".equals(in))) {
             throw new CodegenException("@OpenApi.Parameter on " + restMethodDescription(restMethod)
                                                + " cannot make a required " + in + " parameter optional");
         }
         return explicit.orElse(required);
+    }
+
+    private boolean formParameterRequired(RestMethodParameter parameter) {
+        TypeName schemaType = schemas.schemaType(parameter.typeName());
+        return parameterRequired("form", parameter.typeName(), schemaType, parameter.annotations());
     }
 
     private boolean parameterRequired(String in, TypeName type, TypeName schemaType, Collection<Annotation> annotations) {
@@ -1474,6 +1618,11 @@ final class OpenApiSourceGenerator {
         }
         case "header" -> {
             if (!"simple".equals(style)) {
+                throw unsupportedStyle(restMethod, in, style);
+            }
+        }
+        case "cookie" -> {
+            if (!"form".equals(style)) {
                 throw unsupportedStyle(restMethod, in, style);
             }
         }
@@ -1675,7 +1824,7 @@ final class OpenApiSourceGenerator {
             return Optional.empty();
         }
         return switch (in) {
-        case "query" -> Optional.of("form");
+        case "query", "cookie" -> Optional.of("form");
         case "header" -> Optional.of("simple");
         default -> Optional.empty();
         };
@@ -1686,7 +1835,7 @@ final class OpenApiSourceGenerator {
             return Optional.empty();
         }
         return switch (in) {
-        case "query" -> Optional.of(true);
+        case "query", "cookie" -> Optional.of(true);
         case "header" -> Optional.of(false);
         default -> Optional.empty();
         };

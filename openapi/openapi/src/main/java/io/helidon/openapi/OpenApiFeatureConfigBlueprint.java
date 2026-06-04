@@ -31,7 +31,7 @@ import io.helidon.service.registry.ServiceRegistry;
 import io.helidon.webserver.spi.ServerFeatureProvider;
 
 /**
- * Open API feature configuration.
+ * OpenAPI feature configuration.
  */
 @Prototype.Blueprint(decorator = OpenApiFeatureConfigSupport.BuilderDecorator.class)
 @Prototype.Configured("openapi")

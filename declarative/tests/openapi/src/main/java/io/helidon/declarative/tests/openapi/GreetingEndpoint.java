@@ -171,6 +171,32 @@ class GreetingEndpoint {
         return new Message(request.value());
     }
 
+    @Http.PUT
+    @Http.Path("/request-params/{id}")
+    @Http.Consumes(MediaTypes.APPLICATION_JSON_VALUE)
+    @Http.Produces(MediaTypes.APPLICATION_JSON_VALUE)
+    @OpenApi.Parameter(name = "search", in = "query", value = "Request params search")
+    @OpenApi.RequestBody("Request params body")
+    Message requestParams(@Http.RequestParams GreetingRequestParams params) {
+        return new Message(params.id() + params.search() + params.trace() + params.request().name());
+    }
+
+    @Http.POST
+    @Http.Path("/form-cookie")
+    @Http.Consumes(MediaTypes.APPLICATION_FORM_URLENCODED_VALUE)
+    @Http.Produces(MediaTypes.APPLICATION_JSON_VALUE)
+    @OpenApi.Parameter(name = "session", in = "cookie", value = "Session cookie")
+    @OpenApi.RequestBody(value = "Greeting form",
+                         content = @OpenApi.Content(value = MediaTypes.APPLICATION_FORM_URLENCODED_VALUE,
+                                                    examples = @OpenApi.Example(name = "form-example",
+                                                                                value = "{\"prefix\":\"Hello\","
+                                                                                        + "\"name\":\"Ada\"}")))
+    Message formCookie(@Http.CookieParam("session") String session,
+                       @Http.FormParam("prefix") String prefix,
+                       @Http.RequestParams GreetingFormParams params) {
+        return new Message(session + prefix + params.name() + params.tags());
+    }
+
     @Http.GET
     @Http.Path("/constrained/{id:[0-9]+}")
     @Http.Produces(MediaTypes.APPLICATION_JSON_VALUE)
@@ -203,6 +229,17 @@ class GreetingEndpoint {
     @OpenApi.Hidden
     String internal() {
         return "internal";
+    }
+
+    record GreetingRequestParams(@Http.PathParam("id") String id,
+                                 @Http.QueryParam("search") String search,
+                                 @Http.HeaderParam("X-Trace") String trace,
+                                 @Http.Entity MessageRequest request) {
+    }
+
+    record GreetingFormParams(@Http.CookieParam("tracking") Optional<String> tracking,
+                              @Http.FormParam("name") String name,
+                              @Http.FormParam("tag") Optional<List<String>> tags) {
     }
 
     private static String message(String prefix, String name, Optional<String> language) {

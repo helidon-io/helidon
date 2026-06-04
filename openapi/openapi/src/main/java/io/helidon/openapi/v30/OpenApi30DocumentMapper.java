@@ -864,7 +864,10 @@ final class OpenApi30DocumentMapper {
             result.add(null);
         }
         if (mode == SchemaMode.OPENAPI30 && nullable) {
-            result.removeIf(item -> item == null);
+            boolean hadNull = result.removeIf(item -> item == null);
+            if (hadNull && result.isEmpty()) {
+                return singleValueList(null);
+            }
         }
         return result;
     }
@@ -909,6 +912,11 @@ final class OpenApi30DocumentMapper {
         list.stream()
                 .filter(item -> item != null)
                 .forEach(result::add);
+        if (result.isEmpty()) {
+            schema.put("type", "object");
+            schema.put("enum", singleValueList(null));
+            return;
+        }
         schema.put("enum", result);
     }
 

@@ -616,9 +616,19 @@ public final class OpenApi {
     /**
      * OpenAPI Request Body Object metadata.
      * <p>
-     * Use only on a method with a declarative HTTP entity parameter. Requiredness is inferred from that parameter:
-     * {@code Optional} entity parameters are optional and other entity parameters are required. Configure
-     * {@link #required()} to override the inferred value.
+     * Use only on a method with an effective declarative HTTP request body input. The input can be a direct
+     * {@link io.helidon.http.Http.Entity @Http.Entity} parameter, an
+     * {@link io.helidon.http.Http.RequestParams @Http.RequestParams} record with an {@code @Http.Entity} component, or
+     * one or more {@link io.helidon.http.Http.FormParam @Http.FormParam} parameters or request-param record components.
+     * <p>
+     * For entity inputs, content is inferred from the entity type and the method's consumed media types unless
+     * {@link #content()} overrides it. For form inputs, generated content is always
+     * {@code application/x-www-form-urlencoded}; the schema is inferred from the form field names and types and cannot be
+     * overridden with {@link Content#schema()}.
+     * <p>
+     * Requiredness is inferred from the effective input: {@code Optional} entity parameters, entity components, and form
+     * fields are optional, defaulted form fields are optional, and other entity or form inputs are required. Configure
+     * {@link #required()} to override the request body required flag.
      */
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.CLASS)
