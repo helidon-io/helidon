@@ -354,8 +354,11 @@ abstract class StaticContentHandler implements HttpService {
         int order = 0;
         for (Map.Entry<String, String> entry : preCompressedEncodings.entrySet()) {
             String coding = entry.getKey();
-            Optional<AcceptEncoding.CodingQuality> quality = acceptEncoding.match(coding, false);
-            if (quality.isEmpty()) {
+            List<AcceptEncoding.CodingQuality> qualities = sidecarQualities(acceptEncoding,
+                                                                            request,
+                                                                            coding,
+                                                                            preCompressedEncodings.keySet());
+            if (qualities.isEmpty()) {
                 order++;
                 continue;
             }
@@ -365,13 +368,51 @@ abstract class StaticContentHandler implements HttpService {
                                                             sidecarResolver
             );
             int candidateOrder = order;
-            sidecar.ifPresent(handler -> staticCandidates.add(RepresentationCandidate.sidecar(quality.get(),
-                                                                                              handler,
-                                                                                              candidateOrder)));
+            sidecar.ifPresent(handler -> {
+                for (AcceptEncoding.CodingQuality quality : qualities) {
+                    CachedHandler candidateHandler = handler.withRepresentation(ResponseRepresentation.encoded(quality.coding()));
+                    staticCandidates.add(RepresentationCandidate.sidecar(quality, candidateHandler, candidateOrder));
+                }
+            });
             order++;
         }
 
         return selectCandidate(staticCandidates, acceptEncoding, request, identityHandler, identityRepresentation);
+    }
+
+    private static List<AcceptEncoding.CodingQuality> sidecarQualities(AcceptEncoding acceptEncoding,
+                                                                       ServerRequest request,
+                                                                       String coding,
+                                                                       Set<String> sidecarCodings) {
+        List<AcceptEncoding.CodingQuality> result = new ArrayList<>();
+        acceptEncoding.match(coding, false).ifPresent(result::add);
+
+        ContentEncodingContext contentEncodingContext = contentEncodingContext(request);
+        if (contentEncodingContext == null || !contentEncodingContext.contentEncodingEnabled()) {
+            return result;
+        }
+
+        for (AcceptEncoding.CodingQuality quality : acceptEncoding.acceptedCodings(false)) {
+            String acceptedCoding = quality.coding();
+            if (coding.equals(acceptedCoding)
+                    || sidecarCodings.contains(acceptedCoding)
+                    || !contentEncodingContext.contentEncodingSupported(acceptedCoding)) {
+                continue;
+            }
+            ContentEncoder encoder = contentEncodingContext.encoder(acceptedCoding);
+            if (coding.equals(responseCoding(acceptedCoding, encoder))) {
+                result.add(quality);
+            }
+        }
+        return result;
+    }
+
+    private static ContentEncodingContext contentEncodingContext(ServerRequest request) {
+        var listenerContext = request.listenerContext();
+        if (listenerContext == null) {
+            return null;
+        }
+        return listenerContext.contentEncodingContext();
     }
 
     private CachedHandler selectCandidate(List<RepresentationCandidate> staticCandidates,
@@ -490,18 +531,10 @@ abstract class StaticContentHandler implements HttpService {
         }
 
         ContentEncoder encoder = contentEncodingContext.encoder(normalized);
-        String responseCoding = responseCoding(normalized, encoder);
         AcceptEncoding.CodingQuality selectedQuality = quality.get();
-        if (!responseCoding.equals(normalized)) {
-            Optional<AcceptEncoding.CodingQuality> actualQuality = acceptEncoding.match(responseCoding, true);
-            if (actualQuality.isEmpty()) {
-                return;
-            }
-            selectedQuality = actualQuality.get();
-        }
 
         if (runtimeCanBeatStatic(selectedQuality, bestStaticCandidate)) {
-            result.add(new RuntimeEncoding(selectedQuality, encoder, responseCoding));
+            result.add(new RuntimeEncoding(selectedQuality, encoder, normalized));
         }
     }
 

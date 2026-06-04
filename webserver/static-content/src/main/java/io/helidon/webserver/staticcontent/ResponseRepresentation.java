@@ -91,9 +91,7 @@ record ResponseRepresentation(String contentEncoding,
         }
         if (runtimeEncoder != null) {
             runtimeEncoder.headers(headers);
-            if (!headers.contains(HeaderNames.CONTENT_ENCODING)) {
-                headers.set(HeaderValues.create(HeaderNames.CONTENT_ENCODING, true, false, contentEncoding));
-            }
+            headers.set(HeaderValues.create(HeaderNames.CONTENT_ENCODING, true, false, contentEncoding));
             return;
         }
         if (contentEncoding != null) {

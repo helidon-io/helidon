@@ -29,9 +29,8 @@ public interface ContentEncoding extends NamedService {
     /**
      * Identification(s) of this scheme.
      * <p>
-     * Helidon accepts these identifiers in request {@code Accept-Encoding} headers. Automatic response encoding
-     * negotiation uses the {@code Content-Encoding} value written by {@link ContentEncoder#headers} when the encoder
-     * emits a concrete coding that differs from the accepted identifier.
+     * Helidon accepts these identifiers in request {@code Accept-Encoding} headers. When automatic response encoding
+     * selects one of these identifiers, that selected identifier is the response {@code Content-Encoding}.
      *
      * @return identifications, such as {@code deflate}, {@code gzip}
      */
