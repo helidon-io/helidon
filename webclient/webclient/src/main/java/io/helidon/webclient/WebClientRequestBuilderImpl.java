@@ -575,6 +575,7 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
         Single<WebClientResponse> single =  Single.create(rcs.thenCompose(serviceRequest -> {
             URI requestUri = relativizeNoProxy(finalUri, proxy, configuration.relativeUris());
             requestId = serviceRequest.requestId();
+            updateRedirectSensitiveHeaderSuppression();
             HttpHeaders headers = toNettyHttpHeaders();
             applyRedirectSensitiveHeaderSuppression(headers);
             DefaultHttpRequest request = new DefaultHttpRequest(toNettyHttpVersion(httpVersion),
@@ -858,17 +859,25 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
 
     private HttpHeaders toNettyHttpHeaders() {
         HttpHeaders headers = new DefaultHttpHeaders(this.configuration.validateHeaders());
+        boolean suppressCookieHeader = isRedirectSensitiveHeaderSuppressed(Http.Header.COOKIE);
         try {
-            Map<String, List<String>> cookieHeaders = this.configuration.cookieManager().get(finalUri, new HashMap<>());
+            Map<String, List<String>> cookieHeaders = this.configuration.cookieManager()
+                    .get(finalUri, new HashMap<>(), !suppressCookieHeader);
             List<String> cookies = new ArrayList<>(cookieHeaders.get(Http.Header.COOKIE));
-            cookies.addAll(this.headers.values(Http.Header.COOKIE));
+            if (!suppressCookieHeader) {
+                cookies.addAll(this.headers.values(Http.Header.COOKIE));
+            }
             if (!cookies.isEmpty()) {
                 headers.add(Http.Header.COOKIE, String.join("; ", cookies));
             }
         } catch (IOException e) {
             throw new WebClientException("An error occurred while setting cookies.", e);
         }
-        this.headers.toMap().forEach(headers::add);
+        this.headers.toMap().forEach((headerName, values) -> {
+            if (!suppressCookieHeader || !isCookieHeader(headerName)) {
+                headers.add(headerName, values);
+            }
+        });
         addHeaderIfAbsent(headers, HttpHeaderNames.HOST, finalUri.getHost() + ":" + finalUri.getPort());
         addHeaderIfAbsent(headers, HttpHeaderNames.CONNECTION, keepAlive ? HttpHeaderValues.KEEP_ALIVE : HttpHeaderValues.CLOSE);
         addHeaderIfAbsent(headers, HttpHeaderNames.ACCEPT_ENCODING, HttpHeaderValues.GZIP);
@@ -893,16 +902,29 @@ class WebClientRequestBuilderImpl implements WebClientRequestBuilder {
      * @param nettyHeaders headers that will be written to the wire for the current hop
      */
     private void applyRedirectSensitiveHeaderSuppression(HttpHeaders nettyHeaders) {
+        if (suppressedRedirectHeaders.isEmpty()) {
+            return;
+        }
+        suppressedRedirectHeaders.forEach(headers::remove);
+        suppressedRedirectHeaders.stream()
+                .filter(headerName -> !isCookieHeader(headerName))
+                .forEach(nettyHeaders::remove);
+    }
+
+    private void updateRedirectSensitiveHeaderSuppression() {
         if (configuration.filterRedirectHeaders()
                 && redirectSourceUri != null
                 && !sameOrigin(redirectSourceUri, finalUri)) {
             suppressedRedirectHeaders.addAll(configuration.redirectSensitiveHeaders());
         }
-        if (suppressedRedirectHeaders.isEmpty()) {
-            return;
-        }
-        suppressedRedirectHeaders.forEach(headers::remove);
-        suppressedRedirectHeaders.forEach(nettyHeaders::remove);
+    }
+
+    private boolean isRedirectSensitiveHeaderSuppressed(String headerName) {
+        return suppressedRedirectHeaders.contains(headerName);
+    }
+
+    private static boolean isCookieHeader(String headerName) {
+        return Http.Header.COOKIE.equalsIgnoreCase(headerName);
     }
 
     private static boolean sameOrigin(URI sourceUri, URI targetUri) {

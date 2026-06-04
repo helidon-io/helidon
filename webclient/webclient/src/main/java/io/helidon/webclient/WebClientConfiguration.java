@@ -243,7 +243,7 @@ class WebClientConfiguration {
      *
      * @return cookie manager
      */
-    CookieManager cookieManager() {
+    WebClientCookieManager cookieManager() {
         return cookieManager;
     }
 
@@ -376,6 +376,7 @@ class WebClientConfiguration {
             clientServices = new ArrayList<>();
             redirectSensitiveHeaders = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
             redirectSensitiveHeaders.add(Http.Header.AUTHORIZATION);
+            redirectSensitiveHeaders.add(Http.Header.COOKIE);
         }
 
         @Override

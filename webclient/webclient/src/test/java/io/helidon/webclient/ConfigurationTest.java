@@ -66,7 +66,9 @@ public class ConfigurationTest {
         assertThat(wcc.readTimout(), is(Duration.of(5000, ChronoUnit.MILLIS)));
         assertThat(wcc.followRedirects(), is(true));
         assertThat(wcc.filterRedirectHeaders(), is(false));
-        assertThat(wcc.redirectSensitiveHeaders(), containsInAnyOrder(Http.Header.AUTHORIZATION, "x-API-key"));
+        assertThat(wcc.redirectSensitiveHeaders(), containsInAnyOrder(Http.Header.AUTHORIZATION,
+                                                                       Http.Header.COOKIE,
+                                                                       "x-API-key"));
         assertThat(wcc.maxRedirects(), is(10));
         assertThat(wcc.userAgent(), is("HelidonTest"));
         assertThat(wcc.headers().acceptedTypes(), containsInAnyOrder(MediaType.APPLICATION_JSON, MediaType.TEXT_PLAIN));

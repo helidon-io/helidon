@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,19 +54,28 @@ class WebClientCookieManager extends CookieManager {
 
     @Override
     public Map<String, List<String>> get(URI uri, Map<String, List<String>> requestHeaders) throws IOException {
+        return get(uri, requestHeaders, true);
+    }
+
+    Map<String, List<String>> get(URI uri,
+                                  Map<String, List<String>> requestHeaders,
+                                  boolean includeDefaultCookies) throws IOException {
         Map<String, List<String>> toReturn = new HashMap<>();
-        addAllDefaultHeaders(toReturn);
+        toReturn.put(Http.Header.COOKIE, new ArrayList<>());
+        if (includeDefaultCookies) {
+            addAllDefaultHeaders(toReturn);
+        }
         if (acceptCookies) {
             Map<String, List<String>> cookies = super.get(uri, requestHeaders);
-            cookies.get(Http.Header.COOKIE).forEach(s -> toReturn.get(Http.Header.COOKIE).add(s));
+            cookies.getOrDefault(Http.Header.COOKIE, List.of())
+                    .forEach(s -> toReturn.get(Http.Header.COOKIE).add(s));
         }
         return Collections.unmodifiableMap(toReturn);
     }
 
     private void addAllDefaultHeaders(Map<String, List<String>> toReturn) {
-        List<String> defaultCookieList = new ArrayList<>();
+        List<String> defaultCookieList = toReturn.get(Http.Header.COOKIE);
         defaultCookies.forEach((key, value) -> defaultCookieList.add(key + "=" + value));
-        toReturn.put(Http.Header.COOKIE, defaultCookieList);
     }
 
     @Override
