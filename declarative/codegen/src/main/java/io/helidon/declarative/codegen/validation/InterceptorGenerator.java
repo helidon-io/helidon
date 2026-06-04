@@ -167,6 +167,9 @@ class InterceptorGenerator {
         if (type.kind() != ElementKind.INTERFACE) {
             return false;
         }
+        if (!type.hasAnnotation(ServiceCodegenTypes.SERVICE_ANNOTATION_CONTRACT)) {
+            return false;
+        }
 
         List<TypedElementInfo> elementsWithValidation = type.elementInfo()
                 .stream()
@@ -176,26 +179,10 @@ class InterceptorGenerator {
         if (elementsWithValidation.isEmpty()) {
             return false;
         }
-        if (!elementsWithValidation.stream()
+        return elementsWithValidation.stream()
                 .allMatch(it -> ElementInfoPredicates.isMethod(it)
                         && !ElementInfoPredicates.isPrivate(it)
-                        && !ElementInfoPredicates.isStatic(it))) {
-            return false;
-        }
-        return isServiceContract(type);
-    }
-
-    private boolean isServiceContract(TypeInfo type) {
-        if (roundContext.serviceContracts(type).isEligible(type)) {
-            return true;
-        }
-
-        TypeName contractType = type.typeName();
-        return roundContext.types()
-                .stream()
-                .filter(this::isService)
-                .map(roundContext::serviceContracts)
-                .anyMatch(serviceContracts -> serviceContracts.isEligible(contractType));
+                        && !ElementInfoPredicates.isStatic(it));
     }
 
     private boolean isService(TypeInfo type) {
