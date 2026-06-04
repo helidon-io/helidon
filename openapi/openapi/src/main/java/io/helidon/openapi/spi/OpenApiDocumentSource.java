@@ -16,6 +16,8 @@
 
 package io.helidon.openapi.spi;
 
+import java.util.Objects;
+
 import io.helidon.common.Api;
 import io.helidon.openapi.OpenApiDocument;
 import io.helidon.openapi.OpenApiDocumentContext;
@@ -23,6 +25,10 @@ import io.helidon.service.registry.Service;
 
 /**
  * Source of generated OpenAPI document metadata.
+ * <p>
+ * A source can be qualified with {@link Service.Named @Service.Named} so the OpenAPI feature can select it with
+ * {@code generated.document-sources}. Unqualified sources always contribute when they {@link #supports(OpenApiDocumentContext)
+ * support} the document context and cannot be filtered by {@code generated.document-sources}.
  */
 @Api.Preview
 @Service.Contract
@@ -34,6 +40,7 @@ public interface OpenApiDocumentSource {
      * @return {@code true} if this source should contribute
      */
     default boolean supports(OpenApiDocumentContext context) {
+        Objects.requireNonNull(context);
         return true;
     }
 

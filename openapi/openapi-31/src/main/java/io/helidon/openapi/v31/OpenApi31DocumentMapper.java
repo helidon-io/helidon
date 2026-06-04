@@ -16,22 +16,17 @@
 
 package io.helidon.openapi.v31;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import io.helidon.json.JsonArray;
-import io.helidon.json.JsonBoolean;
-import io.helidon.json.JsonNull;
-import io.helidon.json.JsonNumber;
-import io.helidon.json.JsonObject;
-import io.helidon.json.JsonString;
-import io.helidon.json.JsonValue;
 import io.helidon.openapi.OpenApiDocument;
+import io.helidon.openapi.v30.OpenApi3xMapperRules;
 import io.helidon.openapi.v30.OpenApiDocumentReader;
+
+import static io.helidon.openapi.v30.OpenApiDocumentMapperSupport.document3x;
+import static io.helidon.openapi.v30.OpenApiDocumentMapperSupport.jsonObject;
+import static io.helidon.openapi.v30.OpenApiDocumentMapperSupport.objectMap;
 
 final class OpenApi31DocumentMapper {
     private static final Set<String> DOCUMENT_FIELDS = Set.of("openapi",
@@ -79,6 +74,14 @@ final class OpenApi31DocumentMapper {
                                                                "trace",
                                                                "servers",
                                                                "parameters");
+    private static final Set<String> FIXED_PATH_OPERATION_FIELDS = Set.of("get",
+                                                                          "put",
+                                                                          "post",
+                                                                          "delete",
+                                                                          "options",
+                                                                          "head",
+                                                                          "patch",
+                                                                          "trace");
     private static final Set<String> OPERATION_FIELDS = Set.of("tags",
                                                                "summary",
                                                                "description",
@@ -154,6 +157,11 @@ final class OpenApi31DocumentMapper {
                                                                      "bearerFormat",
                                                                      "flows",
                                                                      "openIdConnectUrl");
+    private static final Set<String> SECURITY_SCHEME_TYPES = Set.of("apiKey",
+                                                                    "http",
+                                                                    "mutualTLS",
+                                                                    "oauth2",
+                                                                    "openIdConnect");
     private static final Set<String> OAUTH_FLOWS_FIELDS = Set.of("implicit",
                                                                  "password",
                                                                  "clientCredentials",
@@ -180,17 +188,45 @@ final class OpenApi31DocumentMapper {
                                                                   "header",
                                                                   "path",
                                                                   "cookie");
+    private static final OpenApi3xMapperRules MAPPER_RULES = OpenApi3xMapperRules.builder()
+            .targetVersion("3.1")
+            .addDocumentFields(DOCUMENT_FIELDS)
+            .addInfoFields(INFO_FIELDS)
+            .addContactFields(CONTACT_FIELDS)
+            .addLicenseFields(LICENSE_FIELDS)
+            .addServerFields(SERVER_FIELDS)
+            .addServerVariableFields(SERVER_VARIABLE_FIELDS)
+            .addTagFields(TAG_FIELDS)
+            .addPathItemFields(PATH_ITEM_FIELDS)
+            .addFixedPathOperationFields(FIXED_PATH_OPERATION_FIELDS)
+            .addOperationFields(OPERATION_FIELDS)
+            .addParameterFields(PARAMETER_FIELDS)
+            .addParameterLocations(PARAMETER_LOCATIONS)
+            .addHeaderFields(HEADER_FIELDS)
+            .addRequestBodyFields(REQUEST_BODY_FIELDS)
+            .addResponseFields(RESPONSE_FIELDS)
+            .addMediaTypeFields(MEDIA_TYPE_FIELDS)
+            .addEncodingFields(ENCODING_FIELDS)
+            .addComponentsFields(COMPONENTS_FIELDS)
+            .addSecuritySchemeFields(SECURITY_SCHEME_FIELDS)
+            .addSecuritySchemeTypes(SECURITY_SCHEME_TYPES)
+            .addOauthFlowsFields(OAUTH_FLOWS_FIELDS)
+            .addOauthFlowFields(OAUTH_FLOW_FIELDS)
+            .addLinkFields(LINK_FIELDS)
+            .addExampleFields(EXAMPLE_FIELDS)
+            .addExternalDocsFields(EXTERNAL_DOCS_FIELDS)
+            .build();
 
     private OpenApi31DocumentMapper() {
     }
 
     static OpenApiDocument parse(Map<String, ?> document) {
         validateOpenApi31(document.get("openapi"));
-        return OpenApiDocumentReader.read(jsonObject(document(document)));
+        return OpenApiDocumentReader.read(jsonObject(document3x(document, MAPPER_RULES)));
     }
 
     static Map<String, Object> render(OpenApiDocument document, String version) {
-        Map<String, Object> rendered = document(objectMap(document.toJsonObject()));
+        Map<String, Object> rendered = document3x(objectMap(document.toJsonObject()), MAPPER_RULES);
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("openapi", version);
         rendered.forEach((key, value) -> {
@@ -201,480 +237,9 @@ final class OpenApi31DocumentMapper {
         return result;
     }
 
-    private static Map<String, Object> document(Map<String, ?> source) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> {
-            if (!allowed(key, DOCUMENT_FIELDS)) {
-                return;
-            }
-            switch (key) {
-            case "info" -> object(value, object -> result.put(key, info(object)));
-            case "servers" -> result.put(key, serverList(value));
-            case "paths", "webhooks" -> object(value, object -> result.put(key, paths(object)));
-            case "components" -> object(value, object -> result.put(key, components(object)));
-            case "tags" -> result.put(key, tagList(value));
-            case "externalDocs" -> object(value, object -> result.put(key, copyAllowed(object, EXTERNAL_DOCS_FIELDS)));
-            default -> result.put(key, copy(value));
-            }
-        });
-        return result;
-    }
-
-    private static Map<String, Object> info(Map<String, ?> source) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> {
-            if (!allowed(key, INFO_FIELDS)) {
-                return;
-            }
-            switch (key) {
-            case "contact" -> object(value, object -> result.put(key, copyAllowed(object, CONTACT_FIELDS)));
-            case "license" -> object(value, object -> result.put(key, copyAllowed(object, LICENSE_FIELDS)));
-            default -> result.put(key, copy(value));
-            }
-        });
-        return result;
-    }
-
-    private static List<Object> serverList(Object value) {
-        return objectList(value, OpenApi31DocumentMapper::server);
-    }
-
-    private static Map<String, Object> server(Map<String, ?> source) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> {
-            if (!allowed(key, SERVER_FIELDS)) {
-                return;
-            }
-            if ("variables".equals(key)) {
-                object(value, object -> result.put(key, serverVariables(object)));
-            } else {
-                result.put(key, copy(value));
-            }
-        });
-        return result;
-    }
-
-    private static Map<String, Object> serverVariables(Map<String, ?> source) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> object(value,
-                                             object -> result.put(key, copyAllowed(object, SERVER_VARIABLE_FIELDS))));
-        return result;
-    }
-
-    private static List<Object> tagList(Object value) {
-        return objectList(value, tag -> {
-            Map<String, Object> result = new LinkedHashMap<>();
-            tag.forEach((key, item) -> {
-                if (!allowed(key, TAG_FIELDS)) {
-                    return;
-                }
-                if ("externalDocs".equals(key)) {
-                    object(item, object -> result.put(key, copyAllowed(object, EXTERNAL_DOCS_FIELDS)));
-                } else {
-                    result.put(key, copy(item));
-                }
-            });
-            return result;
-        });
-    }
-
-    private static Map<String, Object> paths(Map<String, ?> source) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> object(value, object -> result.put(key, pathItem(object))));
-        return result;
-    }
-
-    private static Map<String, Object> pathItem(Map<String, ?> source) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> {
-            if (!allowed(key, PATH_ITEM_FIELDS)) {
-                return;
-            }
-            if (isFixedPathOperationField(key)) {
-                object(value, object -> result.put(key, operation(object)));
-                return;
-            }
-            switch (key) {
-            case "servers" -> result.put(key, serverList(value));
-            case "parameters" -> result.put(key, parameters(value));
-            default -> result.put(key, copy(value));
-            }
-        });
-        return result;
-    }
-
-    private static Map<String, Object> operation(Map<String, ?> source) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> {
-            if (!allowed(key, OPERATION_FIELDS)) {
-                return;
-            }
-            switch (key) {
-            case "parameters" -> result.put(key, parameters(value));
-            case "requestBody" -> object(value, object -> result.put(key, requestBody(object)));
-            case "responses" -> object(value, object -> result.put(key, responses(object)));
-            case "callbacks" -> object(value, object -> result.put(key, callbacks(object)));
-            case "servers" -> result.put(key, serverList(value));
-            case "externalDocs" -> object(value, object -> result.put(key, copyAllowed(object, EXTERNAL_DOCS_FIELDS)));
-            default -> result.put(key, copy(value));
-            }
-        });
-        return result;
-    }
-
-    private static List<Object> parameters(Object value) {
-        if (!(value instanceof List<?> list)) {
-            return List.of();
-        }
-        List<Object> result = new ArrayList<>();
-        for (Object item : list) {
-            object(item, object -> {
-                Map<String, Object> parameter = parameter(object);
-                if (!parameter.isEmpty()) {
-                    result.add(parameter);
-                }
-            });
-        }
-        return result;
-    }
-
-    private static Map<String, Object> parameter(Map<String, ?> source) {
-        if (!source.containsKey("$ref") && !PARAMETER_LOCATIONS.contains(String.valueOf(source.get("in")))) {
-            return Map.of();
-        }
-        Map<String, Object> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> {
-            if (!allowed(key, PARAMETER_FIELDS)) {
-                return;
-            }
-            switch (key) {
-            case "content" -> object(value, object -> result.put(key, content(object)));
-            case "examples" -> result.put(key, examples(value));
-            default -> result.put(key, copy(value));
-            }
-        });
-        return result;
-    }
-
-    private static Map<String, Object> requestBody(Map<String, ?> source) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> {
-            if (!allowed(key, REQUEST_BODY_FIELDS)) {
-                return;
-            }
-            if ("content".equals(key)) {
-                object(value, object -> result.put(key, content(object)));
-            } else {
-                result.put(key, copy(value));
-            }
-        });
-        return result;
-    }
-
-    private static Map<String, Object> responses(Map<String, ?> source) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> object(value, object -> result.put(key, response(object))));
-        return result;
-    }
-
-    private static Map<String, Object> response(Map<String, ?> source) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> {
-            if (!allowed(key, RESPONSE_FIELDS)) {
-                return;
-            }
-            switch (key) {
-            case "headers" -> object(value, object -> result.put(key, headers(object)));
-            case "content" -> object(value, object -> result.put(key, content(object)));
-            case "links" -> object(value, object -> result.put(key, links(object)));
-            default -> result.put(key, copy(value));
-            }
-        });
-        return result;
-    }
-
-    private static Map<String, Object> headers(Map<String, ?> source) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> object(value, object -> result.put(key, header(object))));
-        return result;
-    }
-
-    private static Map<String, Object> header(Map<String, ?> source) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> {
-            if (!allowed(key, HEADER_FIELDS)) {
-                return;
-            }
-            switch (key) {
-            case "content" -> object(value, object -> result.put(key, content(object)));
-            case "examples" -> result.put(key, examples(value));
-            default -> result.put(key, copy(value));
-            }
-        });
-        return result;
-    }
-
-    private static Map<String, Object> content(Map<String, ?> source) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> object(value, object -> result.put(key, mediaType(object))));
-        return result;
-    }
-
-    private static Map<String, Object> mediaType(Map<String, ?> source) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> {
-            if (!allowed(key, MEDIA_TYPE_FIELDS)) {
-                return;
-            }
-            switch (key) {
-            case "examples" -> result.put(key, examples(value));
-            case "encoding" -> object(value, object -> result.put(key, encoding(object)));
-            default -> result.put(key, copy(value));
-            }
-        });
-        return result;
-    }
-
-    private static Map<String, Object> encoding(Map<String, ?> source) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> {
-            if (!allowed(key, ENCODING_FIELDS)) {
-                return;
-            }
-            if ("headers".equals(key)) {
-                object(value, object -> result.put(key, headers(object)));
-            } else {
-                result.put(key, copy(value));
-            }
-        });
-        return result;
-    }
-
-    private static Map<String, Object> components(Map<String, ?> source) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> {
-            if (!allowed(key, COMPONENTS_FIELDS)) {
-                return;
-            }
-            switch (key) {
-            case "responses" -> object(value, object -> result.put(key, responses(object)));
-            case "parameters" -> object(value, object -> result.put(key, parameterMap(object)));
-            case "examples" -> result.put(key, examples(value));
-            case "requestBodies" -> object(value, object -> result.put(key, requestBodyMap(object)));
-            case "headers" -> object(value, object -> result.put(key, headers(object)));
-            case "securitySchemes" -> object(value, object -> result.put(key, securitySchemes(object)));
-            case "links" -> object(value, object -> result.put(key, links(object)));
-            case "callbacks" -> object(value, object -> result.put(key, callbacks(object)));
-            case "pathItems" -> object(value, object -> result.put(key, paths(object)));
-            default -> result.put(key, copy(value));
-            }
-        });
-        return result;
-    }
-
-    private static Map<String, Object> parameterMap(Map<String, ?> source) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> object(value, object -> {
-            Map<String, Object> parameter = parameter(object);
-            if (!parameter.isEmpty()) {
-                result.put(key, parameter);
-            }
-        }));
-        return result;
-    }
-
-    private static Map<String, Object> requestBodyMap(Map<String, ?> source) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> object(value, object -> result.put(key, requestBody(object))));
-        return result;
-    }
-
-    private static Map<String, Object> securitySchemes(Map<String, ?> source) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> object(value, object -> result.put(key, securityScheme(object))));
-        return result;
-    }
-
-    private static Map<String, Object> securityScheme(Map<String, ?> source) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> {
-            if (!allowed(key, SECURITY_SCHEME_FIELDS)) {
-                return;
-            }
-            if ("flows".equals(key)) {
-                object(value, object -> result.put(key, oauthFlows(object)));
-            } else {
-                result.put(key, copy(value));
-            }
-        });
-        return result;
-    }
-
-    private static Map<String, Object> oauthFlows(Map<String, ?> source) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> {
-            if (allowed(key, OAUTH_FLOWS_FIELDS)) {
-                object(value, object -> result.put(key, copyAllowed(object, OAUTH_FLOW_FIELDS)));
-            }
-        });
-        return result;
-    }
-
-    private static Map<String, Object> links(Map<String, ?> source) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> object(value, object -> {
-            Map<String, Object> link = new LinkedHashMap<>();
-            object.forEach((linkKey, linkValue) -> {
-                if (!allowed(linkKey, LINK_FIELDS)) {
-                    return;
-                }
-                if ("server".equals(linkKey)) {
-                    object(linkValue, server -> link.put(linkKey, server(server)));
-                } else {
-                    link.put(linkKey, copy(linkValue));
-                }
-            });
-            result.put(key, link);
-        }));
-        return result;
-    }
-
-    private static Map<String, Object> callbacks(Map<String, ?> source) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> object(value, object -> result.put(key, pathItem(object))));
-        return result;
-    }
-
-    private static Map<String, Object> examples(Object value) {
-        if (!(value instanceof Map<?, ?> map)) {
-            return Map.of();
-        }
-        Map<String, Object> result = new LinkedHashMap<>();
-        map.forEach((key, item) -> object(item,
-                                          object -> result.put(String.valueOf(key), copyAllowed(object, EXAMPLE_FIELDS))));
-        return result;
-    }
-
-    private static JsonObject jsonObject(Map<String, Object> source) {
-        JsonObject.Builder builder = JsonObject.builder();
-        source.forEach((key, value) -> builder.set(key, jsonValue(value)));
-        return builder.build();
-    }
-
-    private static JsonValue jsonValue(Object value) {
-        if (value instanceof JsonValue jsonValue) {
-            return jsonValue;
-        }
-        if (value instanceof Map<?, ?> map) {
-            return jsonObject(objectMap(map));
-        }
-        if (value instanceof List<?> list) {
-            return JsonArray.create(list.stream()
-                                            .map(OpenApi31DocumentMapper::jsonValue)
-                                            .toList());
-        }
-        if (value instanceof String string) {
-            return JsonString.create(string);
-        }
-        if (value instanceof Boolean bool) {
-            return JsonBoolean.create(bool);
-        }
-        if (value instanceof BigDecimal number) {
-            return JsonNumber.create(number);
-        }
-        if (value instanceof Number number) {
-            return JsonNumber.create(BigDecimal.valueOf(number.doubleValue()));
-        }
-        if (value == null) {
-            return JsonNull.instance();
-        }
-        return JsonString.create(String.valueOf(value));
-    }
-
-    private static Map<String, Object> objectMap(JsonObject object) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        object.keysAsStrings()
-                .forEach(key -> object.value(key)
-                        .ifPresent(value -> result.put(key, value(value))));
-        return result;
-    }
-
-    private static Object value(JsonValue value) {
-        return switch (value.type()) {
-        case OBJECT -> objectMap(value.asObject());
-        case ARRAY -> value.asArray()
-                .values()
-                .stream()
-                .map(OpenApi31DocumentMapper::value)
-                .toList();
-        case STRING -> value.asString().value();
-        case NUMBER -> value.asNumber().bigDecimalValue();
-        case BOOLEAN -> value.asBoolean().value();
-        case NULL -> null;
-        case UNKNOWN -> value.toString();
-        };
-    }
-
-    private static Map<String, Object> copyAllowed(Map<String, ?> source, Set<String> allowedFields) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> {
-            if (allowed(key, allowedFields)) {
-                result.put(key, copy(value));
-            }
-        });
-        return result;
-    }
-
-    private static boolean allowed(String key, Set<String> allowedFields) {
-        return allowedFields.contains(key) || key.startsWith("x-");
-    }
-
-    private static Object copy(Object value) {
-        if (value instanceof Map<?, ?> map) {
-            Map<String, Object> result = new LinkedHashMap<>();
-            map.forEach((key, item) -> result.put(String.valueOf(key), copy(item)));
-            return result;
-        }
-        if (value instanceof List<?> list) {
-            List<Object> result = new ArrayList<>();
-            list.forEach(item -> result.add(copy(item)));
-            return result;
-        }
-        return value;
-    }
-
-    private static Map<String, Object> objectMap(Map<?, ?> source) {
-        Map<String, Object> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> result.put(String.valueOf(key), value));
-        return result;
-    }
-
-    private static void object(Object value, java.util.function.Consumer<Map<String, Object>> consumer) {
-        if (value instanceof Map<?, ?> map) {
-            consumer.accept(objectMap(map));
-        }
-    }
-
-    private static List<Object> objectList(Object value,
-                                           java.util.function.Function<Map<String, Object>, Map<String, Object>> mapper) {
-        if (!(value instanceof List<?> list)) {
-            return List.of();
-        }
-        List<Object> result = new ArrayList<>();
-        list.forEach(item -> object(item, object -> result.add(mapper.apply(object))));
-        return result;
-    }
-
     private static void validateOpenApi31(Object version) {
         if (!(version instanceof String string) || (!string.equals("3.1") && !string.startsWith("3.1."))) {
             throw new IllegalStateException("OpenAPI 3.1 parser requires a 3.1 document, got: " + version);
         }
-    }
-
-    private static boolean isFixedPathOperationField(String value) {
-        return switch (value) {
-        case "get", "put", "post", "delete", "options", "head", "patch", "trace" -> true;
-        default -> false;
-        };
     }
 }

@@ -16,6 +16,9 @@
 
 package io.helidon.declarative.codegen.openapi;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -184,7 +187,7 @@ class OpenApiDuplicateValuesCodegenTest {
                 @Http.Path("/invalid")
                 class InvalidOpenApiEndpoint {
                     @Http.GET
-                    @OpenApi.Operation(tags = {"greeting", "greeting"})
+                    @OpenApi.Operation(tags = {"${openapi.tag:greeting}", "greeting"})
                     String get() {
                         return "ok";
                     }
@@ -194,6 +197,32 @@ class OpenApiDuplicateValuesCodegenTest {
         assertCompilationFails(result,
                                "@OpenApi.Operation on com.example.InvalidOpenApiEndpoint.get",
                                "cannot define tag greeting more than once");
+    }
+
+    @Test
+    void operationTagsUseConfigurationExpressionDefaults() throws IOException {
+        var result = compile("openapi-operation-tag-config-expression-defaults", """
+                @OpenApi.Tag("${openapi.tag:greeting}")
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/valid")
+                class InvalidOpenApiEndpoint {
+                    @Http.GET
+                    @OpenApi.Operation(tags = "${openapi.tag:greeting}")
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        String generated = generatedSource(result);
+        assertThat(generated, containsString(".tag(tag -> tag.name(\"greeting\")"));
+        assertThat(generated, containsString(".tag(\"greeting\")"));
     }
 
     @Test
@@ -220,6 +249,186 @@ class OpenApiDuplicateValuesCodegenTest {
         assertCompilationFails(result,
                                "@OpenApi.SecurityScheme on com.example.InvalidOpenApiEndpoint",
                                "cannot define security scheme bearerAuth more than once");
+    }
+
+    @Test
+    void securitySchemeAllowsConfigurationExpressionDefaults() throws IOException {
+        var result = compile("openapi-security-scheme-config-expression-defaults", """
+                @OpenApi.Server("https://${openapi.host:api.example.com}")
+                @OpenApi.SecurityScheme(name = "apiKeyAuth",
+                                        type = "apiKey",
+                                        in = "${openapi.api-key.in:header}",
+                                        apiKeyName = "${openapi.api-key.name:X-API-Key}")
+                @OpenApi.Document
+                @OpenApi.Info(title = "${openapi.title:Test}", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/valid")
+                class InvalidOpenApiEndpoint {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        String generated = generatedSource(result);
+        assertThat(generated, containsString("OpenApiDocumentContextSupport.resolveExpression(context, "
+                                                     + "\"https://${openapi.host:api.example.com}\")"));
+        assertThat(generated, containsString("OpenApiDocumentContextSupport.resolveExpression(context, "
+                                                     + "\"${openapi.title:Test}\")"));
+        assertThat(generated, containsString(".type(\"apiKey\")"));
+        assertThat(generated, containsString(".in(\"header\")"));
+        assertThat(generated, containsString("OpenApiDocumentContextSupport.resolveExpression(context, "
+                                                     + "\"${openapi.api-key.name:X-API-Key}\")"));
+    }
+
+    @Test
+    void apiKeySecuritySchemeRequiresNameAndLocation() {
+        var result = compile("openapi-security-scheme-api-key-missing-name", """
+                @OpenApi.SecurityScheme(name = "apiKeyAuth", type = "apiKey", in = "header")
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/invalid")
+                class InvalidOpenApiEndpoint {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "@OpenApi.SecurityScheme on com.example.InvalidOpenApiEndpoint "
+                                       + "for security scheme apiKeyAuth",
+                               "requires apiKeyName");
+    }
+
+    @Test
+    void apiKeySecuritySchemeRejectsInvalidLocationDefault() {
+        var result = compile("openapi-security-scheme-api-key-invalid-location", """
+                @OpenApi.SecurityScheme(name = "apiKeyAuth",
+                                        type = "apiKey",
+                                        in = "${openapi.api-key.in:body}",
+                                        apiKeyName = "X-API-Key")
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/invalid")
+                class InvalidOpenApiEndpoint {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "@OpenApi.SecurityScheme on com.example.InvalidOpenApiEndpoint "
+                                       + "for security scheme apiKeyAuth",
+                               "apiKey in must be one of query, header, or cookie: body");
+    }
+
+    @Test
+    void httpSecuritySchemeRequiresScheme() {
+        var result = compile("openapi-security-scheme-http-missing-scheme", """
+                @OpenApi.SecurityScheme(name = "httpAuth", type = "http")
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/invalid")
+                class InvalidOpenApiEndpoint {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "@OpenApi.SecurityScheme on com.example.InvalidOpenApiEndpoint "
+                                       + "for security scheme httpAuth",
+                               "requires scheme");
+    }
+
+    @Test
+    void oauth2SecuritySchemeRequiresFlow() {
+        var result = compile("openapi-security-scheme-oauth2-missing-flow", """
+                @OpenApi.SecurityScheme(name = "oauth2", type = "oauth2")
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/invalid")
+                class InvalidOpenApiEndpoint {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "@OpenApi.SecurityScheme on com.example.InvalidOpenApiEndpoint "
+                                       + "for security scheme oauth2",
+                               "requires at least one OAuth flow");
+    }
+
+    @Test
+    void oauth2AuthorizationCodeFlowRequiresTokenUrl() {
+        var result = compile("openapi-security-scheme-oauth2-missing-token-url", """
+                @OpenApi.SecurityScheme(name = "oauth2",
+                                        type = "oauth2",
+                                        flows = @OpenApi.OAuthFlows(
+                                                authorizationCode = @OpenApi.OAuthFlow(
+                                                        authorizationUrl = "https://id.example.com/authorize")))
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/invalid")
+                class InvalidOpenApiEndpoint {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "@OpenApi.OAuthFlow on com.example.InvalidOpenApiEndpoint "
+                                       + "for security scheme oauth2 authorizationCode flow",
+                               "requires tokenUrl");
+    }
+
+    @Test
+    void openIdConnectSecuritySchemeRequiresUrl() {
+        var result = compile("openapi-security-scheme-openid-missing-url", """
+                @OpenApi.SecurityScheme(name = "oidc", type = "openIdConnect")
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/invalid")
+                class InvalidOpenApiEndpoint {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "@OpenApi.SecurityScheme on com.example.InvalidOpenApiEndpoint "
+                                       + "for security scheme oidc",
+                               "requires openIdConnectUrl");
     }
 
     @Test
@@ -308,7 +517,7 @@ class OpenApiDuplicateValuesCodegenTest {
                 @Http.Path("/invalid")
                 class InvalidOpenApiEndpoint {
                     @Http.GET
-                    @OpenApi.Parameter(name = "value", in = "query", value = "First")
+                    @OpenApi.Parameter(name = "${openapi.param:value}", in = "${openapi.in:query}", value = "First")
                     @OpenApi.Parameter(name = "value", in = "query", value = "Second")
                     String get(@Http.QueryParam("value") String value) {
                         return value;
@@ -355,7 +564,7 @@ class OpenApiDuplicateValuesCodegenTest {
                 class InvalidOpenApiEndpoint {
                     @Http.GET
                     String get(@OpenApi.Parameter(examples = {
-                                       @OpenApi.Example(name = "sample", value = "one"),
+                                       @OpenApi.Example(name = "${openapi.example:sample}", value = "one"),
                                        @OpenApi.Example(name = "sample", value = "two")
                                })
                                @Http.QueryParam("value") String value) {
@@ -380,7 +589,7 @@ class OpenApiDuplicateValuesCodegenTest {
                 class InvalidOpenApiEndpoint {
                     @Http.POST
                     @OpenApi.RequestBody(content = {
-                            @OpenApi.Content("application/json"),
+                            @OpenApi.Content("${openapi.content:application/json}"),
                             @OpenApi.Content("application/json")
                     })
                     String post(@Http.Entity String value) {
@@ -407,7 +616,7 @@ class OpenApiDuplicateValuesCodegenTest {
                     @OpenApi.Response(status = 200,
                                       description = "OK",
                                       content = {
-                                              @OpenApi.Content("application/json"),
+                                              @OpenApi.Content("${openapi.content:application/json}"),
                                               @OpenApi.Content("application/json")
                                       })
                     String get() {
@@ -435,7 +644,7 @@ class OpenApiDuplicateValuesCodegenTest {
                                       description = "OK",
                                       content = @OpenApi.Content(
                                               examples = {
-                                                      @OpenApi.Example(name = "sample", value = "one"),
+                                                      @OpenApi.Example(name = "${openapi.example:sample}", value = "one"),
                                                       @OpenApi.Example(name = "sample", value = "two")
                                               }))
                     String get() {
@@ -504,6 +713,18 @@ class OpenApiDuplicateValuesCodegenTest {
                         """)
                 .build()
                 .compile();
+    }
+
+    private static String generatedSource(TestCompiler.Result result) throws IOException {
+        StringBuilder generatedContent = new StringBuilder();
+        var generatedSources = Files.walk(result.sourceOutput())
+                .filter(it -> it.getFileName().toString().endsWith(".java"))
+                .toList();
+        for (Path generatedSource : generatedSources) {
+            generatedContent.append(Files.readString(generatedSource, StandardCharsets.UTF_8));
+            generatedContent.append('\n');
+        }
+        return generatedContent.toString();
     }
 
     private static void assertCompilationFails(TestCompiler.Result result, String... diagnosticParts) {

@@ -30,6 +30,7 @@ import io.helidon.webserver.http.RestServer;
  */
 @RestServer.Endpoint
 @Http.Path("/greetings")
+@OpenApi.SecurityRequirement("bearerAuth")
 class GreetingEndpoint {
     private static final String ACCEPTED_MEDIA_TYPE = "application/vnd.greeting+json";
 
@@ -75,7 +76,9 @@ class GreetingEndpoint {
     @Http.Path("/responses")
     @Http.Produces(MediaTypes.APPLICATION_JSON_VALUE)
     @RestServer.Status(Status.ACCEPTED_202_CODE)
+    @RestServer.Header(name = "Content-Type", value = ACCEPTED_MEDIA_TYPE)
     @RestServer.Header(name = "X-Static", value = "static")
+    @RestServer.ComputedHeader(name = "Content-Type", function = ResponseHeaderFunction.SERVICE_NAME)
     @RestServer.ComputedHeader(name = ResponseHeaderFunction.HEADER_NAME, function = ResponseHeaderFunction.SERVICE_NAME)
     @OpenApi.Response(status = Status.ACCEPTED_202_CODE,
                       description = "Accepted greeting",
@@ -104,7 +107,6 @@ class GreetingEndpoint {
                        explode = OpenApi.Explode.FALSE,
                        allowReserved = true,
                        deprecated = true,
-                       example = "hello/world",
                        examples = @OpenApi.Example(name = "search-example",
                                                    summary = "Search example",
                                                    value = "hi"))
@@ -156,6 +158,32 @@ class GreetingEndpoint {
     @OpenApi.RequestBody(value = "Inferred greeting payload", required = OpenApi.Required.FALSE)
     Message inferredBody(@Http.Entity MessageRequest request) {
         return new Message(request.prefix() + " " + request.name());
+    }
+
+    @Http.POST
+    @Http.Path("/explicit-request-schema")
+    @Http.Consumes(MediaTypes.APPLICATION_JSON_VALUE)
+    @Http.Produces(MediaTypes.APPLICATION_JSON_VALUE)
+    @OpenApi.RequestBody(value = "Explicit request schema",
+                         content = @OpenApi.Content(value = MediaTypes.APPLICATION_JSON_VALUE,
+                                                    schema = MessageRequest.class))
+    Message explicitRequestSchema(@Http.Entity InternalPayload request) {
+        return new Message(request.value());
+    }
+
+    @Http.GET
+    @Http.Path("/constrained/{id:[0-9]+}")
+    @Http.Produces(MediaTypes.APPLICATION_JSON_VALUE)
+    Message constrained(@Http.PathParam("id") String id) {
+        return new Message("Hello " + id);
+    }
+
+    @Http.GET
+    @Http.Path("/override[/{id}]")
+    @Http.Produces(MediaTypes.APPLICATION_JSON_VALUE)
+    @OpenApi.Operation(path = "/greetings/override/{id}")
+    Message overridePath(@Http.PathParam("id") String id) {
+        return new Message("Hello " + id);
     }
 
     @Http.GET

@@ -32,7 +32,7 @@ import io.helidon.webserver.WebServer;
 @OpenApi.License(value = "Apache License 2.0",
                  identifier = "Apache-2.0",
                  url = "https://www.apache.org/licenses/LICENSE-2.0")
-@OpenApi.Server(value = "http://localhost:${server.port}", description = "Test server")
+@OpenApi.Server(value = "${test.openapi.server-url}", description = "Test server")
 @OpenApi.Tag(value = "greeting", description = "Greeting operations")
 @OpenApi.Tag(value = "farewell", description = "Farewell operations")
 @OpenApi.ExternalDocs(value = "https://helidon.io/docs", description = "Helidon documentation")

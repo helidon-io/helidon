@@ -17,11 +17,14 @@
 package io.helidon.openapi;
 
 import java.net.URI;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.json.JsonObject;
+import io.helidon.json.JsonNull;
+import io.helidon.json.JsonString;
 import io.helidon.json.schema.Schema;
 import io.helidon.openapi.spi.OpenApiDocumentSource;
 import io.helidon.openapi.spi.OpenApiVersion;
@@ -30,6 +33,7 @@ import io.helidon.openapi.v30.OpenApi30Version;
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -47,6 +51,31 @@ class OpenApiDocumentComposerTest {
                   responses:
                     "200":
                       description: Static response.
+            """;
+
+    private static final String STATIC_PUBLIC_OPERATION_DOCUMENT = """
+            openapi: 3.0.3
+            info:
+              title: Static API
+              version: 1.0.0
+            security:
+              - staticAuth: []
+            paths:
+              /public:
+                get:
+                  operationId: publicGet
+                  security: []
+                  responses:
+                    "200":
+                      description: Public response.
+            """;
+
+    private static final String STATIC_NULL_EXTENSION_DOCUMENT = """
+            openapi: 3.0.3
+            info:
+              title: Static API
+              version: 1.0.0
+            x-null: null
             """;
 
     @Test
@@ -116,6 +145,88 @@ class OpenApiDocumentComposerTest {
     }
 
     @Test
+    void generatedOnlyFailsOnDuplicateOperationId() {
+        OpenApiDocumentContext context = context(OpenApiGeneratedMode.GENERATED_ONLY);
+        IllegalStateException thrown = assertThrows(IllegalStateException.class,
+                                                    () -> OpenApiDocumentComposer.compose(
+                                                            context,
+                                                            context.openApiVersion(),
+                                                            "",
+                                                            MediaTypes.APPLICATION_OPENAPI_YAML,
+                                                            List.of(operationSource("/first", "duplicate"),
+                                                                    operationSource("/second", "duplicate"))));
+
+        assertThat(thrown.getMessage(),
+                   is("Duplicate OpenAPI operationId duplicate at paths./first.get and paths./second.get"));
+    }
+
+    @Test
+    void generatedOnlyFailsOnDuplicateWebhookOperationId() {
+        OpenApiDocumentSource source = (context, document) -> document.info("Generated API", "1.0.0")
+                .path("/generated", path -> path.operation("GET", responseOperation("duplicate")))
+                .webhook("event", path -> path.operation("POST", responseOperation("duplicate")));
+
+        assertDuplicateOperationId(
+                source,
+                "Duplicate OpenAPI operationId duplicate at paths./generated.get and webhooks.event.post");
+    }
+
+    @Test
+    void generatedOnlyFailsOnDuplicateAdditionalOperationId() {
+        OpenApiDocumentSource source = (context, document) -> document.info("Generated API", "1.0.0")
+                .path("/generated", path -> path.operation("GET", responseOperation("duplicate"))
+                        .additionalOperation("SUBSCRIBE", responseOperation("duplicate")));
+
+        assertDuplicateOperationId(
+                source,
+                "Duplicate OpenAPI operationId duplicate at paths./generated.get "
+                        + "and paths./generated.additionalOperations.SUBSCRIBE");
+    }
+
+    @Test
+    void generatedOnlyFailsOnDuplicateCallbackOperationId() {
+        OpenApiDocumentSource source = (context, document) -> document.info("Generated API", "1.0.0")
+                .path("/generated",
+                      path -> path.operation("GET",
+                                             operation -> operation.operationId("duplicate")
+                                                     .response("200", "OK")
+                                                     .callback("onEvent",
+                                                               callback -> callback.operation(
+                                                                       "POST",
+                                                                       responseOperation("duplicate")))));
+
+        assertDuplicateOperationId(
+                source,
+                "Duplicate OpenAPI operationId duplicate at paths./generated.get "
+                        + "and paths./generated.get.callbacks.onEvent.post");
+    }
+
+    @Test
+    void generatedOperationIdOverrideResolvesDuplicate() {
+        OpenApiDocumentContext context = context(OpenApiGeneratedMode.GENERATED_ONLY,
+                                                 Map.of("com.example.First#get()", "firstGet"));
+        OpenApiDocumentSource first = (documentContext, document) -> document.path(
+                "/first",
+                path -> path.operation("GET",
+                                       operation -> operation
+                                               .operationId(OpenApiDocumentContextSupport.operationId(
+                                                       documentContext,
+                                                       "com.example.First#get()",
+                                                       "duplicate"))
+                                               .response("200", "OK")));
+
+        String content = OpenApiDocumentComposer.compose(context,
+                                                        context.openApiVersion(),
+                                                        "",
+                                                        MediaTypes.APPLICATION_OPENAPI_YAML,
+                                                        List.of(first, operationSource("/second", "duplicate")));
+
+        Map<String, Object> paths = map(parse(content), "paths");
+        assertThat(map(map(paths, "/first"), "get").get("operationId"), is("firstGet"));
+        assertThat(map(map(paths, "/second"), "get").get("operationId"), is("duplicate"));
+    }
+
+    @Test
     void mergeStaticKeepsStaticAndGeneratedDocumentSections() {
         OpenApiDocumentContext context = context(OpenApiGeneratedMode.MERGE);
 
@@ -136,10 +247,151 @@ class OpenApiDocumentComposerTest {
         assertThat(map(components, "securitySchemes").containsKey("staticAuth"), is(true));
         assertThat(map(components, "securitySchemes").containsKey("generatedAuth"), is(true));
 
+        Map<String, Object> operation = map(map(paths, "/static"), "get");
+        assertThat(operation.get("x-static-operation"), is("preserved"));
+
+        Map<String, Object> response = map(map(operation, "responses"), "200");
+        Map<String, Object> staticHeader = map(map(response, "headers"), "X-Static");
+        assertThat(staticHeader.get("description"), is("Static response header."));
+        assertThat(staticHeader.get("required"), is(true));
+        assertThat(staticHeader.get("deprecated"), is(true));
+        assertThat(staticHeader.get("allowEmptyValue"), is(true));
+        assertThat(staticHeader.get("style"), is("simple"));
+        assertThat(staticHeader.get("explode"), is(false));
+        assertThat(staticHeader.get("allowReserved"), is(true));
+        assertThat(map(staticHeader, "schema").get("type"), is("string"));
+        assertThat(staticHeader.get("example"), is("static-value"));
+        assertThat(map(map(staticHeader, "examples"), "named").get("value"), is("named-static-value"));
+
         assertThat(((Map<?, ?>) list(parsed, "tags").get(0)).get("name"), is("static"));
         assertThat(((Map<?, ?>) list(parsed, "tags").get(1)).get("name"), is("generated"));
         assertThat(((Map<?, ?>) list(parsed, "security").get(0)).get("staticAuth"), is(List.of()));
         assertThat(((Map<?, ?>) list(parsed, "security").get(1)).get("generatedAuth"), is(List.of("generated:read")));
+    }
+
+    @Test
+    void mergeStaticPreservesEmptyOperationSecurityOverride() {
+        OpenApiDocumentContext context = context(OpenApiGeneratedMode.MERGE);
+
+        String content = OpenApiDocumentComposer.compose(context,
+                                                        context.openApiVersion(),
+                                                        STATIC_PUBLIC_OPERATION_DOCUMENT,
+                                                        MediaTypes.APPLICATION_OPENAPI_YAML,
+                                                        List.of(operationSource()));
+
+        Map<String, Object> operation = map(map(map(parse(content), "paths"), "/public"), "get");
+        assertThat(list(operation, "security"), is(List.of()));
+    }
+
+    @Test
+    void mergeFailsOnDuplicateStaticAndGeneratedOperationId() {
+        OpenApiDocumentContext context = context(OpenApiGeneratedMode.MERGE);
+        IllegalStateException thrown = assertThrows(IllegalStateException.class,
+                                                    () -> OpenApiDocumentComposer.compose(
+                                                            context,
+                                                            context.openApiVersion(),
+                                                            STATIC_DOCUMENT,
+                                                            MediaTypes.APPLICATION_OPENAPI_YAML,
+                                                            List.of(operationSource("/generated", "staticGet"))));
+
+        assertThat(thrown.getMessage(), containsString("Duplicate OpenAPI operationId staticGet"));
+        assertThat(thrown.getMessage(), containsString("paths./static.get"));
+        assertThat(thrown.getMessage(), containsString("paths./generated.get"));
+    }
+
+    @Test
+    void mergeStaticFailsWhenExplicitNullConflictsWithGeneratedValue() {
+        OpenApiDocumentContext context = context(OpenApiGeneratedMode.MERGE);
+        OpenApiDocumentSource conflicting = (documentContext, document) -> document.extension("x-null",
+                                                                                              JsonString.create("value"));
+
+        IllegalStateException thrown = assertThrows(IllegalStateException.class,
+                                                    () -> OpenApiDocumentComposer.compose(
+                                                            context,
+                                                            context.openApiVersion(),
+                                                            STATIC_NULL_EXTENSION_DOCUMENT,
+                                                            MediaTypes.APPLICATION_OPENAPI_YAML,
+                                                            List.of(conflicting)));
+
+        assertThat(thrown.getMessage(), is("Conflicting OpenAPI document value at x-null"));
+    }
+
+    @Test
+    void mergeStaticKeepsMatchingExplicitNullGeneratedValue() {
+        OpenApiDocumentContext context = context(OpenApiGeneratedMode.MERGE);
+        OpenApiDocumentSource matching = (documentContext, document) -> document.extension("x-null", JsonNull.instance());
+
+        String content = OpenApiDocumentComposer.compose(context,
+                                                        context.openApiVersion(),
+                                                        STATIC_NULL_EXTENSION_DOCUMENT,
+                                                        MediaTypes.APPLICATION_OPENAPI_YAML,
+                                                        List.of(matching));
+
+        Map<String, Object> parsed = parse(content);
+        assertThat(parsed.containsKey("x-null"), is(true));
+        assertThat(parsed.get("x-null"), is((Object) null));
+    }
+
+    @Test
+    void buildersRejectJavaNullExtensionValues() {
+        assertThrows(NullPointerException.class, () -> OpenApiDocument.builder().extension("x-null", null));
+        assertThrows(NullPointerException.class, () -> OpenApiDocument.Info.builder().extension("x-null", null));
+        assertThrows(NullPointerException.class, () -> OpenApiDocument.Operation.builder().extension("x-null", null));
+    }
+
+    @Test
+    void mergeFailsWhenExplicitNullPathItemConflictsWithSourceValue() {
+        Map<String, Object> target = documentWithPathValue("/static", null);
+        Map<String, Object> source = documentWithPathValue("/static", pathItem("generatedGet"));
+
+        IllegalStateException thrown = assertThrows(IllegalStateException.class,
+                                                    () -> OpenApiDocument.merge(target, source, ""));
+
+        assertThat(thrown.getMessage(), is("Conflicting OpenAPI document value at paths./static"));
+    }
+
+    @Test
+    void mergeKeepsMatchingExplicitNullPathItem() {
+        Map<String, Object> target = documentWithPathValue("/static", null);
+        Map<String, Object> source = documentWithPathValue("/static", null);
+
+        OpenApiDocument.merge(target, source, "");
+
+        Map<String, Object> paths = map(target, "paths");
+        assertThat(paths.containsKey("/static"), is(true));
+        assertThat(paths.get("/static"), is((Object) null));
+    }
+
+    @Test
+    void mergeFailsWhenExplicitNullAdditionalOperationsConflictsWithSourceValue() {
+        Map<String, Object> targetPath = new LinkedHashMap<>();
+        targetPath.put("additionalOperations", null);
+        Map<String, Object> sourcePath = new LinkedHashMap<>();
+        sourcePath.put("additionalOperations", Map.of("COPY", operation("copyStatic")));
+        Map<String, Object> target = documentWithPathValue("/static", targetPath);
+        Map<String, Object> source = documentWithPathValue("/static", sourcePath);
+
+        IllegalStateException thrown = assertThrows(IllegalStateException.class,
+                                                    () -> OpenApiDocument.merge(target, source, ""));
+
+        assertThat(thrown.getMessage(),
+                   is("Conflicting OpenAPI document value at paths./static.additionalOperations"));
+    }
+
+    @Test
+    void mergeKeepsMatchingExplicitNullAdditionalOperations() {
+        Map<String, Object> targetPath = new LinkedHashMap<>();
+        targetPath.put("additionalOperations", null);
+        Map<String, Object> sourcePath = new LinkedHashMap<>();
+        sourcePath.put("additionalOperations", null);
+        Map<String, Object> target = documentWithPathValue("/static", targetPath);
+        Map<String, Object> source = documentWithPathValue("/static", sourcePath);
+
+        OpenApiDocument.merge(target, source, "");
+
+        Map<String, Object> path = map(map(target, "paths"), "/static");
+        assertThat(path.containsKey("additionalOperations"), is(true));
+        assertThat(path.get("additionalOperations"), is((Object) null));
     }
 
     @Test
@@ -213,11 +465,11 @@ class OpenApiDocumentComposerTest {
     void mergeStaticUsesStaticDocumentVersionParser() {
         OpenApiVersion renderVersion = new TestOpenApiVersion("3.0", "3.0.3", true);
         OpenApiVersion staticVersion = new TestOpenApiVersion("3.1", "3.1.0", false);
-        OpenApiDocumentContext context = new OpenApiDocumentContext("openapi",
-                                                                    "/openapi",
-                                                                    "default",
-                                                                    OpenApiGeneratedMode.MERGE,
-                                                                    renderVersion);
+        OpenApiDocumentContext context = new OpenApiDocumentContextImpl("openapi",
+                                                                        "/openapi",
+                                                                        "default",
+                                                                        OpenApiGeneratedMode.MERGE,
+                                                                        renderVersion);
 
         String content = OpenApiDocumentComposer.compose(context,
                                                         staticVersion,
@@ -232,11 +484,11 @@ class OpenApiDocumentComposerTest {
 
     @Test
     void mergeStaticKeepsAdditionalAndFixedOperations() {
-        OpenApiDocumentContext context = new OpenApiDocumentContext("openapi",
-                                                                    "/openapi",
-                                                                    "default",
-                                                                    OpenApiGeneratedMode.MERGE,
-                                                                    RawOpenApiVersion.INSTANCE);
+        OpenApiDocumentContext context = new OpenApiDocumentContextImpl("openapi",
+                                                                        "/openapi",
+                                                                        "default",
+                                                                        OpenApiGeneratedMode.MERGE,
+                                                                        RawOpenApiVersion.INSTANCE);
         OpenApiDocumentSource generated = (ignored, document) -> document
                 .path("/static",
                       path -> path.operation("COPY", responseOperation("copyStatic"))
@@ -255,11 +507,11 @@ class OpenApiDocumentComposerTest {
 
     @Test
     void mergeStaticFailsOnConflictingAdditionalOperation() {
-        OpenApiDocumentContext context = new OpenApiDocumentContext("openapi",
-                                                                    "/openapi",
-                                                                    "default",
-                                                                    OpenApiGeneratedMode.MERGE,
-                                                                    RawOpenApiVersion.INSTANCE);
+        OpenApiDocumentContext context = new OpenApiDocumentContextImpl("openapi",
+                                                                        "/openapi",
+                                                                        "default",
+                                                                        OpenApiGeneratedMode.MERGE,
+                                                                        RawOpenApiVersion.INSTANCE);
         OpenApiDocumentSource generated = (ignored, document) -> document.path("/static",
                                                                                path -> path.operation(
                                                                                        "COPY",
@@ -271,6 +523,45 @@ class OpenApiDocumentComposerTest {
                                                            STATIC_DOCUMENT_WITH_ADDITIONAL_OPERATION,
                                                            MediaTypes.APPLICATION_OPENAPI_YAML,
                                                            List.of(generated)));
+    }
+
+    @Test
+    void webhooksUseLiteralNamesInsteadOfPathTemplateNormalization() {
+        OpenApiDocumentContext context = new OpenApiDocumentContextImpl("openapi",
+                                                                        "/openapi",
+                                                                        "default",
+                                                                        OpenApiGeneratedMode.GENERATED_ONLY,
+                                                                        RawOpenApiVersion.INSTANCE);
+        OpenApiDocumentSource generated = (ignored, document) -> document
+                .info("Generated API", "1.0.0")
+                .webhook("order.{created}", path -> path.operation("POST", responseOperation("orderCreated")))
+                .webhook("order.{deleted}", path -> path.operation("POST", responseOperation("orderDeleted")));
+
+        String content = OpenApiDocumentComposer.compose(context,
+                                                        RawOpenApiVersion.INSTANCE,
+                                                        "",
+                                                        MediaTypes.APPLICATION_OPENAPI_YAML,
+                                                        List.of(generated));
+
+        Map<String, Object> webhooks = map(parse(content), "webhooks");
+        assertThat(webhooks.containsKey("order.{created}"), is(true));
+        assertThat(webhooks.containsKey("order.{deleted}"), is(true));
+    }
+
+    @Test
+    void mergeKeepsWebhookLiteralNamesInsteadOfPathTemplateNormalization() {
+        OpenApiDocument existing = OpenApiDocument.builder()
+                .info("Static API", "1.0.0")
+                .webhook("order.{created}", path -> path.operation("POST", responseOperation("orderCreated")))
+                .build();
+        OpenApiDocument merged = OpenApiDocument.builder()
+                .merge(existing)
+                .webhook("order.{deleted}", path -> path.operation("POST", responseOperation("orderDeleted")))
+                .build();
+
+        Map<String, Object> webhooks = map(parse(merged.toJsonObject().toString()), "webhooks");
+        assertThat(webhooks.containsKey("order.{created}"), is(true));
+        assertThat(webhooks.containsKey("order.{deleted}"), is(true));
     }
 
     @Test
@@ -313,6 +604,14 @@ class OpenApiDocumentComposerTest {
                                                                                            "Generated response.")));
     }
 
+    private static OpenApiDocumentSource operationSource(String path, String operationId) {
+        return (context, document) -> document.path(path,
+                                                    pathBuilder -> pathBuilder.operation(
+                                                            "GET",
+                                                            operation -> operation.operationId(operationId)
+                                                                    .response("200", "OK")));
+    }
+
     private static OpenApiDocumentSource mergeSource() {
         return (context, document) -> document
                 .tag(tag -> tag.name("generated")
@@ -348,12 +647,53 @@ class OpenApiDocumentComposerTest {
                 .build();
     }
 
+    private static void assertDuplicateOperationId(OpenApiDocumentSource source, String expectedMessage) {
+        OpenApiDocumentContext context = context(OpenApiGeneratedMode.GENERATED_ONLY);
+        IllegalStateException thrown = assertThrows(IllegalStateException.class,
+                                                    () -> OpenApiDocumentComposer.compose(
+                                                            context,
+                                                            context.openApiVersion(),
+                                                            "",
+                                                            MediaTypes.APPLICATION_OPENAPI_YAML,
+                                                            List.of(source)));
+
+        assertThat(thrown.getMessage(), is(expectedMessage));
+    }
+
+    private static Map<String, Object> documentWithPathValue(String path, Object value) {
+        Map<String, Object> paths = new LinkedHashMap<>();
+        paths.put(path, value);
+        Map<String, Object> document = new LinkedHashMap<>();
+        document.put("paths", paths);
+        return document;
+    }
+
+    private static Map<String, Object> pathItem(String operationId) {
+        Map<String, Object> pathItem = new LinkedHashMap<>();
+        pathItem.put("get", operation(operationId));
+        return pathItem;
+    }
+
+    private static Map<String, Object> operation(String operationId) {
+        Map<String, Object> responses = new LinkedHashMap<>();
+        responses.put("200", Map.of("description", "OK"));
+        Map<String, Object> operation = new LinkedHashMap<>();
+        operation.put("operationId", operationId);
+        operation.put("responses", responses);
+        return operation;
+    }
+
     private static OpenApiDocumentContext context(OpenApiGeneratedMode mode) {
-        return new OpenApiDocumentContext("openapi",
-                                          "/openapi",
-                                          "default",
-                                          mode,
-                                          OpenApi30Version.create());
+        return context(mode, Map.of());
+    }
+
+    private static OpenApiDocumentContext context(OpenApiGeneratedMode mode, Map<String, String> operationIds) {
+        return new OpenApiDocumentContextImpl("openapi",
+                                              "/openapi",
+                                              "default",
+                                              mode,
+                                              OpenApi30Version.create(),
+                                              operationIds);
     }
 
     @SuppressWarnings("unchecked")
@@ -463,9 +803,25 @@ class OpenApiDocumentComposerTest {
               /static:
                 get:
                   operationId: staticGet
+                  x-static-operation: preserved
                   responses:
                     "200":
                       description: Static response.
+                      headers:
+                        X-Static:
+                          description: Static response header.
+                          required: true
+                          deprecated: true
+                          allowEmptyValue: true
+                          style: simple
+                          explode: false
+                          allowReserved: true
+                          schema:
+                            type: string
+                          example: static-value
+                          examples:
+                            named:
+                              value: named-static-value
             components:
               schemas:
                 StaticItem:

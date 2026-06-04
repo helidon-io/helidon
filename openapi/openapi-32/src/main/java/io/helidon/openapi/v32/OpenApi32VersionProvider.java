@@ -16,6 +16,8 @@
 
 package io.helidon.openapi.v32;
 
+import java.util.Objects;
+
 import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.config.Config;
@@ -44,8 +46,8 @@ public class OpenApi32VersionProvider implements OpenApiVersionProvider {
     @Override
     public OpenApiVersion create(Config config, String name) {
         return OpenApi32VersionConfig.builder()
-                .config(config)
-                .name(name)
+                .config(Objects.requireNonNull(config))
+                .name(Objects.requireNonNull(name))
                 .build();
     }
 }

@@ -17,6 +17,7 @@
 package io.helidon.openapi;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -219,6 +220,10 @@ public final class OpenApiDocument {
         return node;
     }
 
+    Map<String, Object> mutableNode() {
+        return mutableMap(node);
+    }
+
     private static List<Server> servers(Object value) {
         if (!(value instanceof List<?> list)) {
             return List.of();
@@ -305,22 +310,38 @@ public final class OpenApiDocument {
     }
 
     @SuppressWarnings("unchecked")
-    private static void merge(Map<String, Object> target, Map<String, Object> source, String path) {
+    static void merge(Map<String, Object> target, Map<String, Object> source, String path) {
+        merge(target, source, path, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void merge(Map<String, Object> target,
+                              Map<String, Object> source,
+                              String path,
+                              Map<String, String> pathTemplates) {
         source.forEach((key, value) -> {
             String childPath = path.isEmpty() ? key : path + "." + key;
+            boolean existingKey = target.containsKey(key);
             Object existing = target.get(key);
-            if (existing == null) {
+            if (!existingKey) {
                 target.put(key, value);
+                indexPathItems(templateIndex(childPath, pathTemplates), value);
             } else if (("paths".equals(childPath) || "webhooks".equals(childPath))
                     && existing instanceof Map<?, ?> existingMap
                     && value instanceof Map<?, ?> valueMap) {
-                mergePathItems((Map<String, Object>) existingMap, (Map<String, Object>) valueMap, childPath);
+                mergePathItems((Map<String, Object>) existingMap,
+                               (Map<String, Object>) valueMap,
+                               childPath,
+                               templateIndex(childPath, pathTemplates));
             } else if (mergeableTopLevelArray(childPath)
                     && existing instanceof List<?> existingList
                     && value instanceof List<?> valueList) {
                 mergeArray((List<Object>) existingList, valueList, childPath);
             } else if (existing instanceof Map<?, ?> existingMap && value instanceof Map<?, ?> valueMap) {
-                merge((Map<String, Object>) existingMap, (Map<String, Object>) valueMap, childPath);
+                merge((Map<String, Object>) existingMap,
+                      (Map<String, Object>) valueMap,
+                      childPath,
+                      pathTemplates);
             } else if (!Objects.equals(existing, value)) {
                 throw new IllegalStateException("Conflicting OpenAPI document value at " + childPath);
             }
@@ -369,17 +390,27 @@ public final class OpenApiDocument {
     }
 
     @SuppressWarnings("unchecked")
-    private static void mergePathItems(Map<String, Object> target, Map<String, Object> source, String fieldName) {
+    private static void mergePathItems(Map<String, Object> target,
+                                       Map<String, Object> source,
+                                       String fieldName,
+                                       Map<String, String> pathTemplates) {
         source.forEach((path, value) -> {
-            String existingPathTemplate = equivalentPathTemplate(target, path);
-            Object existing = existingPathTemplate == null ? null : target.get(existingPathTemplate);
-            if (existing == null) {
+            String existingPathTemplate = equivalentPathTemplate(target, path, pathTemplates);
+            if (existingPathTemplate == null) {
                 target.put(path, value);
+                indexPathTemplate(pathTemplates, path);
                 return;
             }
+            Object existing = target.get(existingPathTemplate);
             if (!existingPathTemplate.equals(path)) {
                 throw new IllegalStateException("Conflicting OpenAPI path template at " + fieldName + "."
                                                         + existingPathTemplate + " and " + fieldName + "." + path);
+            }
+            if (existing == null || value == null) {
+                if (!Objects.equals(existing, value)) {
+                    throw new IllegalStateException("Conflicting OpenAPI document value at " + fieldName + "." + path);
+                }
+                return;
             }
             if (!(existing instanceof Map<?, ?> existingPath) || !(value instanceof Map<?, ?> sourcePath)) {
                 throw new IllegalStateException("Conflicting OpenAPI document value at " + fieldName + "." + path);
@@ -402,17 +433,42 @@ public final class OpenApiDocument {
         });
     }
 
-    private static String equivalentPathTemplate(Map<String, Object> target, String path) {
+    private static String equivalentPathTemplate(Map<String, Object> target,
+                                                 String path,
+                                                 Map<String, String> pathTemplates) {
         if (target.containsKey(path)) {
             return path;
         }
-        String normalizedPath = normalizedPathTemplate(path);
-        for (String existingPath : target.keySet()) {
-            if (normalizedPathTemplate(existingPath).equals(normalizedPath)) {
-                return existingPath;
-            }
+        if (pathTemplates == null) {
+            return null;
         }
-        return null;
+        String normalizedPath = normalizedPathTemplate(path);
+        return pathTemplates.get(normalizedPath);
+    }
+
+    private static Map<String, String> templateIndex(String fieldName,
+                                                     Map<String, String> pathTemplates) {
+        return switch (fieldName) {
+            case "paths" -> pathTemplates;
+            default -> null;
+        };
+    }
+
+    private static void indexPathItems(Map<String, String> pathTemplates, Object value) {
+        if (pathTemplates == null || !(value instanceof Map<?, ?> pathItems)) {
+            return;
+        }
+        pathItems.keySet()
+                .stream()
+                .filter(String.class::isInstance)
+                .map(String.class::cast)
+                .forEach(path -> indexPathTemplate(pathTemplates, path));
+    }
+
+    private static void indexPathTemplate(Map<String, String> pathTemplates, String path) {
+        if (pathTemplates != null) {
+            pathTemplates.putIfAbsent(normalizedPathTemplate(path), path);
+        }
     }
 
     private static String normalizedPathTemplate(String path) {
@@ -444,10 +500,15 @@ public final class OpenApiDocument {
             return;
         }
 
+        boolean existingKey = targetPath.containsKey("additionalOperations");
         Object existing = targetPath.get("additionalOperations");
-        if (existing == null) {
+        if (!existingKey) {
             targetPath.put("additionalOperations", sourceValue);
             return;
+        }
+        if (existing == null) {
+            throw new IllegalStateException("Conflicting OpenAPI document value at " + fieldName + "." + path
+                                                    + ".additionalOperations");
         }
         if (!(existing instanceof Map<?, ?> existingOperations)) {
             throw new IllegalStateException("Conflicting OpenAPI document value at " + fieldName + "." + path
@@ -494,6 +555,8 @@ public final class OpenApiDocument {
     }
 
     private static void extension(Map<String, Object> node, String name, JsonValue value) {
+        Objects.requireNonNull(name);
+        Objects.requireNonNull(value);
         if (!name.startsWith("x-")) {
             throw new IllegalArgumentException("OpenAPI extension names must start with x-: " + name);
         }
@@ -725,6 +788,8 @@ public final class OpenApiDocument {
 
         /**
          * Add an extension.
+         * <p>
+         * Extension names must start with {@code x-}.
          *
          * @param name extension name
          * @param value extension value
@@ -1577,6 +1642,7 @@ public final class OpenApiDocument {
         private final List<Parameter> parameters;
         private final RequestBody requestBody;
         private final Map<String, Response> responses;
+        private final Map<String, PathItem> callbacks;
 
         private Operation(Map<String, Object> node) {
             this.node = immutableMap(node);
@@ -1584,6 +1650,7 @@ public final class OpenApiDocument {
             this.parameters = parameterList(this.node.get("parameters"));
             this.requestBody = objectValue(this.node.get("requestBody")).map(RequestBody::new).orElse(null);
             this.responses = responses(this.node.get("responses"));
+            this.callbacks = pathItems(this.node.get("callbacks"));
         }
 
         /**
@@ -1629,6 +1696,15 @@ public final class OpenApiDocument {
          */
         public Map<String, Response> responses() {
             return responses;
+        }
+
+        /**
+         * Operation callbacks.
+         *
+         * @return callbacks keyed by callback expression
+         */
+        public Map<String, PathItem> callbacks() {
+            return callbacks;
         }
 
         private Map<String, Object> toNode() {
@@ -1907,6 +1983,8 @@ public final class OpenApiDocument {
 
         /**
          * Add an extension.
+         * <p>
+         * Extension names must start with {@code x-}.
          *
          * @param name extension name
          * @param value extension value
@@ -1977,6 +2055,17 @@ public final class OpenApiDocument {
          */
         public ParameterBuilder ref(String ref) {
             node.put("$ref", Objects.requireNonNull(ref));
+            return this;
+        }
+
+        /**
+         * Set reference summary.
+         *
+         * @param summary summary
+         * @return updated builder
+         */
+        public ParameterBuilder summary(String summary) {
+            node.put("summary", Objects.requireNonNull(summary));
             return this;
         }
 
@@ -2211,6 +2300,17 @@ public final class OpenApiDocument {
         }
 
         /**
+         * Set reference summary.
+         *
+         * @param summary summary
+         * @return updated builder
+         */
+        public HeaderBuilder summary(String summary) {
+            delegate.summary(summary);
+            return this;
+        }
+
+        /**
          * Set description.
          *
          * @param description description
@@ -2244,6 +2344,50 @@ public final class OpenApiDocument {
         }
 
         /**
+         * Set allow empty value flag.
+         *
+         * @param allowEmptyValue allow empty value flag
+         * @return updated builder
+         */
+        public HeaderBuilder allowEmptyValue(boolean allowEmptyValue) {
+            delegate.allowEmptyValue(allowEmptyValue);
+            return this;
+        }
+
+        /**
+         * Set style.
+         *
+         * @param style style
+         * @return updated builder
+         */
+        public HeaderBuilder style(String style) {
+            delegate.style(style);
+            return this;
+        }
+
+        /**
+         * Set explode flag.
+         *
+         * @param explode explode flag
+         * @return updated builder
+         */
+        public HeaderBuilder explode(boolean explode) {
+            delegate.explode(explode);
+            return this;
+        }
+
+        /**
+         * Set allow reserved flag.
+         *
+         * @param allowReserved allow reserved flag
+         * @return updated builder
+         */
+        public HeaderBuilder allowReserved(boolean allowReserved) {
+            delegate.allowReserved(allowReserved);
+            return this;
+        }
+
+        /**
          * Set schema.
          *
          * @param schema schema
@@ -2251,6 +2395,29 @@ public final class OpenApiDocument {
          */
         public HeaderBuilder schema(JsonValue schema) {
             delegate.schema(schema);
+            return this;
+        }
+
+        /**
+         * Set example.
+         *
+         * @param example example value
+         * @return updated builder
+         */
+        public HeaderBuilder example(JsonValue example) {
+            delegate.example(example);
+            return this;
+        }
+
+        /**
+         * Add example.
+         *
+         * @param name example name
+         * @param example example
+         * @return updated builder
+         */
+        public HeaderBuilder example(String name, Example example) {
+            delegate.example(name, example);
             return this;
         }
 
@@ -2340,6 +2507,17 @@ public final class OpenApiDocument {
          */
         public RequestBodyBuilder ref(String ref) {
             node.put("$ref", Objects.requireNonNull(ref));
+            return this;
+        }
+
+        /**
+         * Set reference summary.
+         *
+         * @param summary summary
+         * @return updated builder
+         */
+        public RequestBodyBuilder summary(String summary) {
+            node.put("summary", Objects.requireNonNull(summary));
             return this;
         }
 
@@ -2601,6 +2779,16 @@ public final class OpenApiDocument {
             return new MediaTypeObjectBuilder();
         }
 
+        /**
+         * Create a reference media type.
+         *
+         * @param ref reference
+         * @return media type object
+         */
+        public static MediaTypeObject reference(String ref) {
+            return builder().ref(ref).build();
+        }
+
         private Map<String, Object> toNode() {
             return node;
         }
@@ -2614,6 +2802,39 @@ public final class OpenApiDocument {
         private final Map<String, Object> node = new LinkedHashMap<>();
 
         private MediaTypeObjectBuilder() {
+        }
+
+        /**
+         * Set reference.
+         *
+         * @param ref reference
+         * @return updated builder
+         */
+        public MediaTypeObjectBuilder ref(String ref) {
+            node.put("$ref", Objects.requireNonNull(ref));
+            return this;
+        }
+
+        /**
+         * Set reference summary.
+         *
+         * @param summary summary
+         * @return updated builder
+         */
+        public MediaTypeObjectBuilder summary(String summary) {
+            node.put("summary", Objects.requireNonNull(summary));
+            return this;
+        }
+
+        /**
+         * Set reference description.
+         *
+         * @param description description
+         * @return updated builder
+         */
+        public MediaTypeObjectBuilder description(String description) {
+            node.put("description", Objects.requireNonNull(description));
+            return this;
         }
 
         /**
@@ -3013,6 +3234,17 @@ public final class OpenApiDocument {
          */
         public LinkBuilder ref(String ref) {
             node.put("$ref", Objects.requireNonNull(ref));
+            return this;
+        }
+
+        /**
+         * Set reference summary.
+         *
+         * @param summary summary
+         * @return updated builder
+         */
+        public LinkBuilder summary(String summary) {
+            node.put("summary", Objects.requireNonNull(summary));
             return this;
         }
 
@@ -3448,6 +3680,17 @@ public final class OpenApiDocument {
         }
 
         /**
+         * Set reference summary.
+         *
+         * @param summary summary
+         * @return updated builder
+         */
+        public SecuritySchemeBuilder summary(String summary) {
+            node.put("summary", Objects.requireNonNull(summary));
+            return this;
+        }
+
+        /**
          * Set security scheme type.
          *
          * @param type security scheme type
@@ -3675,6 +3918,7 @@ public final class OpenApiDocument {
     @Api.Preview
     public static final class Builder implements io.helidon.common.Builder<Builder, OpenApiDocument> {
         private final Map<String, Object> node = new LinkedHashMap<>();
+        private final Map<String, String> pathTemplates = new LinkedHashMap<>();
 
         private Builder() {
         }
@@ -3782,7 +4026,7 @@ public final class OpenApiDocument {
         public Builder path(String path, PathItem pathItem) {
             Map<String, Object> source = new LinkedHashMap<>();
             source.put(Objects.requireNonNull(path), mutableMap(Objects.requireNonNull(pathItem).toNode()));
-            mergePathItems(object(node, "paths"), source, "paths");
+            mergePathItems(object(node, "paths"), source, "paths", pathTemplates);
             return this;
         }
 
@@ -3809,7 +4053,7 @@ public final class OpenApiDocument {
         public Builder webhook(String name, PathItem pathItem) {
             Map<String, Object> source = new LinkedHashMap<>();
             source.put(Objects.requireNonNull(name), mutableMap(Objects.requireNonNull(pathItem).toNode()));
-            mergePathItems(object(node, "webhooks"), source, "webhooks");
+            mergePathItems(object(node, "webhooks"), source, "webhooks", null);
             return this;
         }
 
@@ -3949,6 +4193,8 @@ public final class OpenApiDocument {
 
         /**
          * Add an extension.
+         * <p>
+         * Extension names must start with {@code x-}.
          *
          * @param name extension name
          * @param value extension value
@@ -3967,8 +4213,18 @@ public final class OpenApiDocument {
          * @throws IllegalStateException if both documents define conflicting values or the same path operation
          */
         public Builder merge(OpenApiDocument document) {
-            OpenApiDocument.merge(node, mutableMap(Objects.requireNonNull(document).toNode()), "");
+            OpenApiDocument.merge(node, mutableMap(Objects.requireNonNull(document).toNode()), "",
+                                  pathTemplates);
             return this;
+        }
+
+        Builder mergeNode(Map<String, Object> source) {
+            OpenApiDocument.merge(node, Objects.requireNonNull(source), "", pathTemplates);
+            return this;
+        }
+
+        Map<String, Object> node() {
+            return node;
         }
 
         @Override
@@ -4039,10 +4295,16 @@ public final class OpenApiDocument {
     }
 
     private static JsonNumber jsonNumber(Number number) {
-        if (number instanceof Double || number instanceof Float) {
-            return JsonNumber.create(number.doubleValue());
+        if (number instanceof Byte
+                || number instanceof Short
+                || number instanceof Integer
+                || number instanceof Long) {
+            return JsonNumber.create(number.longValue());
         }
-        return JsonNumber.create(number.longValue());
+        if (number instanceof BigInteger bigInteger) {
+            return JsonNumber.create(new BigDecimal(bigInteger));
+        }
+        return JsonNumber.create(new BigDecimal(number.toString()));
     }
 
     private static Map<String, Object> jsonObject(JsonObject object) {

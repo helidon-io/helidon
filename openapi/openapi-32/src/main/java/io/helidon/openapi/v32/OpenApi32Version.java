@@ -18,6 +18,7 @@ package io.helidon.openapi.v32;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
@@ -43,7 +44,7 @@ public final class OpenApi32Version implements OpenApiVersion,
     private final OpenApi32VersionConfig config;
 
     OpenApi32Version(OpenApi32VersionConfig config) {
-        this.config = config;
+        this.config = Objects.requireNonNull(config);
     }
 
     /**
@@ -93,6 +94,9 @@ public final class OpenApi32Version implements OpenApiVersion,
 
     @Override
     public OpenApiDocument parse(OpenApiDocumentContext context, String content, MediaType mediaType) {
+        Objects.requireNonNull(context);
+        Objects.requireNonNull(content);
+        Objects.requireNonNull(mediaType);
         if (OpenApiFormat.valueOf(mediaType) == OpenApiFormat.UNSUPPORTED) {
             throw new IllegalStateException("Unsupported static OpenAPI content type: " + mediaType.text());
         }
@@ -110,6 +114,8 @@ public final class OpenApi32Version implements OpenApiVersion,
 
     @Override
     public String render(OpenApiDocumentContext context, OpenApiDocument document) {
+        Objects.requireNonNull(context);
+        Objects.requireNonNull(document);
         Map<String, Object> values = OpenApi32DocumentMapper.render(document, config.version());
         return new Yaml(YAML_DUMPER_OPTIONS).dump(values);
     }
