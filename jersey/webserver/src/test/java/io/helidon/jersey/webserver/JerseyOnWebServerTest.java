@@ -16,6 +16,9 @@
 
 package io.helidon.jersey.webserver;
 
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
+
 import io.helidon.config.Config;
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
@@ -23,9 +26,11 @@ import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 
+import jakarta.ws.rs.ApplicationPath;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.MediaType;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.junit.jupiter.api.Test;
@@ -35,6 +40,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
 public class JerseyOnWebServerTest {
+    private static final String HELIDON_REQUEST_ROUTE = "helidon.request.route";
+    private static final AtomicReference<String> LAST_ROUTE = new AtomicReference<>();
+
     private final Http1Client client;
 
     public JerseyOnWebServerTest(Http1Client client) {
@@ -43,25 +51,48 @@ public class JerseyOnWebServerTest {
 
     @SetUpRoute
     public static void routing(HttpRouting.Builder routing) {
-        ResourceConfig resourceConfig = new ResourceConfig(JaxRsEndpoint.class);
+        ResourceConfig resourceConfig = ResourceConfig.forApplication(new JaxRsApplication());
+        routing.addFilter((chain, req, res) -> {
+            LAST_ROUTE.set(null);
+            chain.proceed();
+            LAST_ROUTE.set(req.context().get(HELIDON_REQUEST_ROUTE, String.class).orElse(null));
+        });
         routing.register("/jersey", JaxRsService.create(Config.empty(), resourceConfig));
     }
 
     @Test
     public void testEndpoint() {
-        var response = client.get("/jersey/greet")
+        var response = client.get("/jersey/greet/Joe")
                 .request(String.class);
 
         assertThat(response.status(), is(Status.OK_200));
-        assertThat(response.entity(), is("Hello World!"));
+        assertThat(response.entity(), is("Hello Joe!"));
+        assertThat(LAST_ROUTE.get(), is("/app/greet/{name}"));
     }
 
-    @Path("/greet")
+    @Test
+    public void testUnmatchedEndpointDoesNotSetRoute() {
+        var response = client.get("/jersey/missing")
+                .request();
+
+        assertThat(response.status(), is(Status.NOT_FOUND_404));
+        assertThat(LAST_ROUTE.get(), is((String) null));
+    }
+
+    @ApplicationPath("/app")
+    public static class JaxRsApplication extends Application {
+        @Override
+        public Set<Class<?>> getClasses() {
+            return Set.of(JaxRsEndpoint.class);
+        }
+    }
+
+    @Path("/greet/{name}")
     public static class JaxRsEndpoint {
         @GET
         @Produces(MediaType.TEXT_PLAIN)
-        public String greet() {
-            return "Hello World!";
+        public String greet(@jakarta.ws.rs.PathParam("name") String name) {
+            return "Hello " + name + "!";
         }
     }
 }
