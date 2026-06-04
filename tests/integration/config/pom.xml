@@ -35,6 +35,7 @@
     </description>
 
     <modules>
+        <module>ft-config-bootstrap</module>
         <module>gh-2171</module>
         <module>gh-2171-yml</module>
     </modules>

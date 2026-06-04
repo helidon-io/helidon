@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,8 @@
 
 package io.helidon.service.registry;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -64,6 +66,37 @@ class ServiceManager<T> {
         return new ServiceInstanceImpl<>(provider.descriptor(),
                                          provider.contracts(lookup),
                                          instance);
+    }
+
+    Optional<List<ServiceInstance<T>>> activeInstances(Lookup lookup) {
+        Optional<Activator<T>> existingActivator = existingActivator();
+        if (existingActivator.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Activator<T> serviceActivator = existingActivator.get();
+        if (serviceActivator.phase() != ActivationPhase.ACTIVE) {
+            return Optional.empty();
+        }
+
+        return serviceActivator
+                .instances(lookup)
+                .map(it -> it.stream()
+                        .map(instance -> registryInstance(lookup, instance))
+                        .toList());
+    }
+
+    private Optional<Activator<T>> existingActivator() {
+        try {
+            ScopedRegistry scopedRegistry = scopeSupplier.get().registry();
+            if (scopedRegistry instanceof ScopedRegistryImpl scopedRegistryImpl) {
+                return scopedRegistryImpl.existingActivator(provider.descriptor());
+            }
+
+            return Optional.empty();
+        } catch (ScopeNotActiveException e) {
+            return Optional.empty();
+        }
     }
 
     ServiceInfo descriptor() {

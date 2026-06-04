@@ -16,6 +16,7 @@
 package io.helidon.faulttolerance;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import io.helidon.common.LazyValue;
@@ -27,7 +28,8 @@ import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
-import io.helidon.service.registry.Services;
+import io.helidon.service.registry.GlobalServiceRegistry;
+import io.helidon.service.registry.ServiceRegistry;
 
 import static io.helidon.faulttolerance.FaultTolerance.FT_METRICS_DEFAULT_ENABLED;
 import static io.helidon.metrics.api.Meter.Scope.VENDOR;
@@ -48,9 +50,10 @@ class MetricsUtils {
      * @return value of metrics flag
      */
     static boolean defaultEnabled() {
-        return Services.get(Config.class)
-                .get(FT_METRICS_DEFAULT_ENABLED)
-                .asBoolean()
+        return maybeExistingConfig()
+                .map(config -> config.get(FT_METRICS_DEFAULT_ENABLED)
+                        .asBoolean()
+                        .orElse(false))
                 .orElse(false);
     }
 
@@ -88,5 +91,14 @@ class MetricsUtils {
 
     static Timer timer(String name, Tag... tags) {
         return METRICS_REGISTRY.get().timer(name, List.of(tags)).orElseThrow();
+    }
+
+    private static Optional<Config> maybeExistingConfig() {
+        if (!GlobalServiceRegistry.configured()) {
+            return Optional.empty();
+        }
+
+        ServiceRegistry registry = GlobalServiceRegistry.registry();
+        return registry.firstActive(Config.class);
     }
 }
