@@ -79,11 +79,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>io.helidon.jersey</groupId>
-            <artifactId>helidon-jersey-webserver</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
             <scope>test</scope>
