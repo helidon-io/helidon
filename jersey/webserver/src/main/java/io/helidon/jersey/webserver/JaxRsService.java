@@ -54,8 +54,8 @@ import io.helidon.webserver.http.RoutingResponse;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
-import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.ApplicationPath;
+import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Application;
 import jakarta.ws.rs.core.GenericType;
 import jakarta.ws.rs.core.Response;
@@ -70,8 +70,8 @@ import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.ContainerResponse;
 import org.glassfish.jersey.server.ExtendedUriInfo;
 import org.glassfish.jersey.server.ResourceConfig;
-import org.glassfish.jersey.server.model.Resource;
 import org.glassfish.jersey.server.ServerProperties;
+import org.glassfish.jersey.server.model.Resource;
 import org.glassfish.jersey.server.spi.Container;
 import org.glassfish.jersey.server.spi.ContainerResponseWriter;
 
