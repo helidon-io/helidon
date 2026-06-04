@@ -33,6 +33,7 @@ import javax.net.ssl.SSLSessionContext;
 import io.helidon.common.socket.TlsNioSocket;
 
 import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
@@ -67,7 +68,42 @@ public class TlsNioSocketJmhTest {
         return socket.isConnected();
     }
 
-    private static final class IdleSslEngine extends SSLEngine {
+    @Benchmark
+    public byte[] tlsReplayFirstUnwrap(ReplayState state) {
+        return state.socket.get();
+    }
+
+    @State(Scope.Thread)
+    public static class ReplayState {
+        private static final byte[] REPLAY = new byte[32];
+
+        private ServerSocketChannel server;
+        private SocketChannel clientChannel;
+        private SocketChannel serverChannel;
+        private TlsNioSocket socket;
+
+        @Setup(Level.Invocation)
+        public void setup() throws IOException {
+            server = ServerSocketChannel.open();
+            server.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+            clientChannel = SocketChannel.open(server.getLocalAddress());
+            serverChannel = server.accept();
+            socket = TlsNioSocket.server(serverChannel,
+                                         new ReplaySslEngine(REPLAY.length),
+                                         "listener",
+                                         "server",
+                                         ByteBuffer.wrap(REPLAY));
+        }
+
+        @TearDown(Level.Invocation)
+        public void tearDown() throws IOException {
+            clientChannel.close();
+            serverChannel.close();
+            server.close();
+        }
+    }
+
+    private static class IdleSslEngine extends SSLEngine {
         private static final SSLSession SESSION = new IdleSslSession();
 
         @Override
@@ -185,6 +221,34 @@ public class TlsNioSocketJmhTest {
         @Override
         public boolean getEnableSessionCreation() {
             return false;
+        }
+    }
+
+    private static final class ReplaySslEngine extends IdleSslEngine {
+        private final int replayLength;
+        private int consumed;
+
+        private ReplaySslEngine(int replayLength) {
+            this.replayLength = replayLength;
+        }
+
+        @Override
+        public SSLEngineResult unwrap(ByteBuffer src, ByteBuffer[] dsts, int offset, int length) {
+            int available = src.remaining();
+            src.position(src.limit());
+            consumed += available;
+            if (consumed < replayLength) {
+                return new SSLEngineResult(SSLEngineResult.Status.BUFFER_UNDERFLOW,
+                                           SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING,
+                                           available,
+                                           0);
+            }
+
+            dsts[offset].put((byte) 'R');
+            return new SSLEngineResult(SSLEngineResult.Status.OK,
+                                       SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING,
+                                       available,
+                                       1);
         }
     }
 

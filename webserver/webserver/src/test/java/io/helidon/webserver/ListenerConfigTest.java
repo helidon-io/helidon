@@ -18,6 +18,7 @@ package io.helidon.webserver;
 
 import java.net.UnixDomainSocketAddress;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 
 import io.helidon.config.Config;
@@ -92,5 +93,23 @@ public class ListenerConfigTest {
         assertThat(webServerConfig3.enableProxyProtocol(), is(false));
         ListenerConfig graceConfig = webServerConfig3.sockets().get("grace");
         assertThat(graceConfig.enableProxyProtocol(), is(true));
+    }
+
+    @Test
+    void testSniVirtualHostConfig() {
+        Config config = Config.create();
+        var webServerConfig = WebServer.builder().config(config.get("server4")).buildPrototype();
+
+        assertThat(webServerConfig.sni().missing(), is(SniSelectionPolicy.REJECT));
+        assertThat(webServerConfig.sni().unmatched(), is(SniSelectionPolicy.REJECT));
+        assertThat(webServerConfig.sni().authorityMismatch(), is(SniAuthorityPolicy.ALLOW));
+        assertThat(webServerConfig.sni().fallbackAuthority(), is(SniAuthorityPolicy.ALLOW));
+        assertThat(webServerConfig.virtualHosts().size(), is(1));
+
+        VirtualHostConfig virtualHost = webServerConfig.virtualHosts().getFirst();
+        assertThat(virtualHost.host(), is("Api.Example.COM."));
+        assertThat(virtualHost.tls().enabled(), is(true));
+        assertThat(virtualHost.tls().prototype().enabledCipherSuites(),
+                   is(List.of("TLS_AES_128_GCM_SHA256")));
     }
 }

@@ -56,6 +56,10 @@ class ConnectionHandlerTest {
         when(listenerConfig.enableProxyProtocol()).thenThrow(failure);
         ListenerContext listenerContext = mock(ListenerContext.class);
         when(listenerContext.config()).thenReturn(listenerConfig);
+        ListenerConfig virtualHostConfig = mock(ListenerConfig.class);
+        when(virtualHostConfig.sni()).thenReturn(SniConfig.create());
+        when(virtualHostConfig.virtualHosts()).thenReturn(List.of());
+        VirtualHostRegistry virtualHosts = VirtualHostRegistry.create("server", virtualHostConfig, mock(Tls.class));
         LimitAlgorithm.Token token = mock(LimitAlgorithm.Token.class);
         ConnectionHandler handler = new ConnectionHandler(listenerContext,
                                                           token,
@@ -65,6 +69,7 @@ class ConnectionHandlerTest {
                                                           "server",
                                                           Router.empty(),
                                                           mock(Tls.class),
+                                                          virtualHosts,
                                                           it -> { });
 
         try (TestLogHandler logHandler = TestLogHandler.install()) {

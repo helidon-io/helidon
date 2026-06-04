@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
+import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.time.Duration;
 import java.util.HexFormat;
@@ -67,6 +68,9 @@ import static java.lang.System.Logger.Level.WARNING;
 class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     private static final System.Logger LOGGER = System.getLogger(ConnectionHandler.class.getName());
     private static final String HTTP_1_0 = "HTTP/1.0\r";
+    private static final byte TLS_ALERT_CONTENT_TYPE = 21;
+    private static final byte TLS_ALERT_LEVEL_FATAL = 2;
+    private static final byte TLS_ALERT_UNRECOGNIZED_NAME = 112;
 
     private final ListenerContext listenerContext;
     // we must safely release the token whenever this connection is finished, so other connections can be created!
@@ -78,6 +82,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     private final String serverChannelId;
     private final Router router;
     private final Tls tls;
+    private final VirtualHostRegistry virtualHosts;
     private final ListenerConfig listenerConfig;
     private final String channelId;
     private final Consumer<ConnectionHandler> connectionHandlerRemoveListener;
@@ -90,6 +95,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     private DataReader reader;
     private SocketWriter writer;
     private ProxyProtocolData proxyProtocolData;
+    private SniContext sniContext;
 
     // Published before handling starts so lifecycle close/interrupt paths do not miss the delegate.
     private volatile ServerConnection connection;
@@ -104,6 +110,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
                       String serverChannelId,
                       Router router,
                       Tls tls,
+                      VirtualHostRegistry virtualHosts,
                       Consumer<ConnectionHandler> connectionHandlerRemoveListener) {
         this.listenerContext = listenerContext;
         this.limitToken = limitToken;
@@ -114,6 +121,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
         this.serverChannelId = serverChannelId;
         this.router = router;
         this.tls = tls;
+        this.virtualHosts = virtualHosts;
         this.listenerConfig = listenerContext.config();
         this.connectionHandlerRemoveListener = connectionHandlerRemoveListener;
         this.channelId = "0x" + HexFormat.of().toHexDigits(System.identityHashCode(socket));
@@ -198,6 +206,11 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     @Override
     public Optional<ProxyProtocolData> proxyProtocolData() {
         return Optional.ofNullable(proxyProtocolData);
+    }
+
+    @Override
+    public Optional<SniContext> sniContext() {
+        return Optional.ofNullable(sniContext);
     }
 
     @Override
@@ -382,16 +395,36 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
 
     private HelidonSocket createNioSocket(Tls tls, SocketChannel channel, String channelId) throws IOException {
         if (tls.enabled()) {
+            ByteBuffer replayBuffer = null;
+            Tls selectedTls = tls;
+            if (virtualHosts.enabled()) {
+                ClientHelloPrefaceReader.ClientHelloPreface preface =
+                        ClientHelloPrefaceReader.read(channel, listenerConfig.connectionOptions().readTimeout());
+                VirtualHostRegistry.Selection selection;
+                try {
+                    selection = preface.sniHost()
+                            .map(virtualHosts::select)
+                            .orElseGet(virtualHosts::selectWithoutSni);
+                } catch (VirtualHostRegistry.RejectedSniException e) {
+                    if (e.sendUnrecognizedNameAlert()) {
+                        sendUnrecognizedNameAlert(channel, preface.replayBuffer());
+                    }
+                    throw e;
+                }
+                selectedTls = selection.tls();
+                sniContext = selection.sniContext();
+                replayBuffer = preface.replayBuffer();
+            }
             var address = channel.getRemoteAddress();
 
             SSLEngine engine;
             if (address instanceof InetSocketAddress isa) {
-                engine = tls.sslContext().createSSLEngine(isa.getHostString(), isa.getPort());
+                engine = selectedTls.sslContext().createSSLEngine(isa.getHostString(), isa.getPort());
             } else {
-                engine = tls.sslContext().createSSLEngine();
+                engine = selectedTls.sslContext().createSSLEngine();
             }
 
-            SSLParameters parameters = tls.sslParameters();
+            SSLParameters parameters = selectedTls.sslParameters();
             parameters.setEndpointIdentificationAlgorithm("");
             engine.setSSLParameters(parameters);
 
@@ -405,14 +438,42 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
                 return null;
             });
 
-            return TlsNioSocket
-                    .server(channel, engine, channelId, serverChannelId);
+            if (replayBuffer == null) {
+                return TlsNioSocket.server(channel, engine, channelId, serverChannelId);
+            }
+            return TlsNioSocket.server(channel, engine, channelId, serverChannelId, replayBuffer);
         }
         return NioSocket.server(channel, channelId, serverChannelId);
     }
 
+    private void sendUnrecognizedNameAlert(SocketChannel channel, ByteBuffer replayBuffer) throws IOException {
+        ByteBuffer replay = replayBuffer.duplicate();
+        byte recordMajor = 3;
+        byte recordMinor = 3;
+        if (replay.remaining() >= 3) {
+            int position = replay.position();
+            recordMajor = replay.get(position + 1);
+            recordMinor = replay.get(position + 2);
+        }
+        ByteBuffer alert = ByteBuffer.wrap(new byte[] {
+                TLS_ALERT_CONTENT_TYPE,
+                recordMajor,
+                recordMinor,
+                0,
+                2,
+                TLS_ALERT_LEVEL_FATAL,
+                TLS_ALERT_UNRECOGNIZED_NAME
+        });
+        while (alert.hasRemaining()) {
+            channel.write(alert);
+        }
+    }
+
     private HelidonSocket createByteSocket(Tls tls, SocketChannel channel, String channelId) throws IOException {
         if (tls.enabled()) {
+            if (virtualHosts.enabled()) {
+                throw new IllegalStateException("Listener virtual hosts require NIO TLS");
+            }
             SSLSocket sslSocket = (SSLSocket) tls.sslContext()
                     .getSocketFactory()
                     .createSocket(channel.socket(), null, false);

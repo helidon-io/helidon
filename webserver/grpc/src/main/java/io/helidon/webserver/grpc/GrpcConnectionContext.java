@@ -25,7 +25,7 @@ import io.helidon.webserver.ProxyProtocolData;
 
 /**
  * Exposes connection-level information to gRPC request handlers. An instance of this interface is
- * available from the {@link io.helidon.common.context.Context#get(Class)} by passing {@code GrpcConnectionContext.class}.
+ * available from {@link ServerContextKeys#CONNECTION_CONTEXT} in the current gRPC context.
  */
 public interface GrpcConnectionContext {
     /**
@@ -68,4 +68,27 @@ public interface GrpcConnectionContext {
      * @see ListenerConfig#enableProxyProtocol()
      */
     Optional<ProxyProtocolData> proxyProtocolData();
+
+    /**
+     * Normalized DNS host name requested by the client using TLS Server Name Indication (SNI).
+     * <p>
+     * This value comes from the client TLS handshake, so it is suitable for diagnostics and application choices that
+     * are expected to use client-requested host names, but it should not be treated as a trusted identity by itself.
+     *
+     * @return normalized SNI requested host, if available
+     */
+    default Optional<String> sniRequestedHost() {
+        return Optional.empty();
+    }
+
+    /**
+     * Configured virtual-host host that matched the TLS Server Name Indication (SNI) requested host.
+     * <p>
+     * For wildcard virtual hosts, this method returns the configured wildcard host such as {@code *.example.com}.
+     *
+     * @return configured SNI matched host, if a virtual host matched
+     */
+    default Optional<String> sniMatchedHost() {
+        return Optional.empty();
+    }
 }

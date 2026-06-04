@@ -210,6 +210,28 @@ interface ListenerConfigBlueprint {
     Optional<Tls> tls();
 
     /**
+     * Listener TLS virtual hosts selected by SNI; requires listener TLS and NIO socket-channel transport
+     * ({@code use-nio=true}).
+     * <p>
+     * Virtual hosts select TLS material only. The listener routing is used for all requests.
+     * Server startup fails if virtual hosts are configured without listener TLS or with {@code use-nio} disabled.
+     *
+     * @return configured listener virtual hosts
+     */
+    @Option.Configured
+    @Option.Singular
+    List<VirtualHostConfig> virtualHosts();
+
+    /**
+     * Listener-scoped server TLS SNI policy.
+     *
+     * @return SNI policy
+     */
+    @Option.Configured
+    @Option.DefaultMethod("create")
+    SniConfig sni();
+
+    /**
      * Configure the listener specific {@link io.helidon.http.encoding.ContentEncodingContext}.
      * This method discards all previously registered ContentEncodingContext.
      * If no content encoding context is registered, content encoding context of the webserver would be used.

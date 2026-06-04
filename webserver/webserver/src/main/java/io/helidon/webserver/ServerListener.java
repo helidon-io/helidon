@@ -85,6 +85,7 @@ class ServerListener implements ListenerContext {
     private final ExecutorService sharedExecutor;
     private final DirectHandlers directHandlers;
     private final Tls tls;
+    private final VirtualHostRegistry virtualHosts;
     private final SocketOptions connectionOptions;
     private final SocketAddress configuredAddress;
     private final Duration gracePeriod;
@@ -159,6 +160,7 @@ class ServerListener implements ListenerContext {
         this.socketName = socketName;
         this.listenerConfig = listenerConfig;
         this.tls = listenerConfig.tls().orElseGet(() -> Tls.builder().enabled(false).build());
+        this.virtualHosts = VirtualHostRegistry.create(socketName, listenerConfig, tls);
         this.connectionOptions = listenerConfig.connectionOptions();
         this.directHandlers = listenerConfig.directHandlers().orElse(defaultDirectHandlers);
         this.mediaContext = listenerConfig.mediaContext().orElse(defaultMediaContext);
@@ -453,6 +455,7 @@ class ServerListener implements ListenerContext {
             if (tls.enabled()) {
                 // basic validation of the configuration
                 tls.newEngine();
+                virtualHosts.validateTls();
             }
             listenerConfig.configureSocket(serverSocket);
 
@@ -731,6 +734,7 @@ class ServerListener implements ListenerContext {
                                                                       serverChannelId,
                                                                       router,
                                                                       tls,
+                                                                      virtualHosts,
                                                                       connectionHandlers::remove);
                     connectionHandlers.add(handler);
 

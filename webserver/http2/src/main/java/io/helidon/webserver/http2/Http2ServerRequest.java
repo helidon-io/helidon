@@ -43,6 +43,7 @@ import io.helidon.http.media.ReadableEntityBase;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.ProxyProtocolData;
+import io.helidon.webserver.SniContext;
 import io.helidon.webserver.http.HttpSecurity;
 import io.helidon.webserver.http.RoutingRequest;
 
@@ -271,6 +272,16 @@ class Http2ServerRequest implements RoutingRequest {
     @Override
     public Optional<ProxyProtocolData> proxyProtocolData() {
         return ctx.proxyProtocolData();
+    }
+
+    @Override
+    public Optional<String> sniRequestedHost() {
+        return ctx.sniContext().flatMap(SniContext::presentedHost);
+    }
+
+    @Override
+    public Optional<String> sniMatchedHost() {
+        return ctx.sniContext().flatMap(SniContext::matchedHost);
     }
 
     private UriInfo createUriInfo() {
