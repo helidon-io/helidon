@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.function.Consumer;
 
 import io.helidon.common.LazyValue;
 import io.helidon.metrics.api.SystemTagsManager;
+import io.helidon.service.registry.Services;
 
 import io.micrometer.core.instrument.Tag;
 
@@ -39,7 +40,7 @@ import io.micrometer.core.instrument.Tag;
 class SystemTagsMeterFilterManager implements Consumer<SystemTagsManager> {
 
     private static final LazyValue<SystemTagsMeterFilterManager> MANAGER = LazyValue.create(() -> {
-        SystemTagsMeterFilterManager result = new SystemTagsMeterFilterManager(SystemTagsManager.instance());
+        SystemTagsMeterFilterManager result = new SystemTagsMeterFilterManager(Services.get(SystemTagsManager.class));
         SystemTagsManager.onChange(result);
         return result;
     });

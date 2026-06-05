@@ -138,6 +138,18 @@ To work with Helidon Metrics in your code, follow these steps:
 
 You can also use the `MeterRegistry` to remove an existing {metric}.
 
+Helidon 27 removes the former static convenience methods from `Metrics`.
+Use these replacements instead:
+
+* Replace `Metrics.globalRegistry()` with injection of `MeterRegistry` or `Services.get(MeterRegistry.class)`.
+* Replace `Metrics.createMeterRegistry()` and `Metrics.createMeterRegistry(metricsConfig)` with
+  `MeterRegistry.create()` and `MeterRegistry.create(metricsConfig)`.
+* Replace `Metrics.getOrCreate(builder)` with `meterRegistry.getOrCreate(builder)`.
+* Replace the `Metrics.getCounter`, `Metrics.getSummary`, `Metrics.getGauge`, `Metrics.getTimer`, and `Metrics.get`
+  lookup helpers with the corresponding `MeterRegistry` lookup methods.
+* Replace `Metrics.tag(key, value)` with `Tag.create(key, value)`, and create multiple tags by collecting individual
+  `Tag.create` results.
+
 === Helidon Metrics API
 
 The Helidon Metrics API defines the classes and interfaces for {metric} types and other related items.

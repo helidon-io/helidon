@@ -20,6 +20,7 @@ import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.Services;
 
 import org.junit.jupiter.api.Test;
 
@@ -31,7 +32,7 @@ class TestIntegration {
     @Test
     void testHelidonRegistrationViaMicrometer() {
 
-        MeterRegistry hMeterRegistry = MetricsFactory.getInstance().globalRegistry();
+        MeterRegistry hMeterRegistry = Services.get(MetricsFactory.class).globalRegistry();
 
         Counter hCounter = hMeterRegistry.getOrCreate(Counter.builder("hCounter1"));
         hCounter.increment(2);
@@ -50,7 +51,7 @@ class TestIntegration {
 
     @Test
     void testMicrometerRegistrationViaHelidon() {
-        MeterRegistry hMeterRegistry = MetricsFactory.getInstance().globalRegistry();
+        MeterRegistry hMeterRegistry = Services.get(MetricsFactory.class).globalRegistry();
         io.micrometer.core.instrument.MeterRegistry mMeterRegistry = io.micrometer.core.instrument.Metrics.globalRegistry;
         io.micrometer.core.instrument.Counter mCounter = mMeterRegistry.counter("mCounter1", "scope", "application");
         mCounter.increment(2);

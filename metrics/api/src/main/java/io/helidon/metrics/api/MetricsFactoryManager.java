@@ -17,9 +17,7 @@ package io.helidon.metrics.api;
 
 import java.lang.System.Logger.Level;
 import java.util.Collection;
-import java.util.Objects;
 import java.util.ServiceLoader;
-import java.util.concurrent.Callable;
 import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.HelidonServiceLoader;
@@ -34,14 +32,6 @@ import io.helidon.service.registry.Services;
 /**
  * Provides {@link io.helidon.metrics.api.MetricsFactory} instances using a highest-weight implementation of
  * {@link io.helidon.metrics.spi.MetricsFactoryProvider}, defaulting to a no-op implementation if no other is available.
- * <p>
- * The {@link #getMetricsFactory()} returns the metrics factory most recently created by invoking
- * {@link #getMetricsFactory(Config)}, which creates a new metrics factory using the provided config and also saves the
- * resulting metrics factory as the most recent.
- * <p>
- * Invoking {@code getMetricsFactory()} (no argument) <em>before</em> invoking the variant with the
- * {@link io.helidon.config.Config} parameter creates and saves a metrics factory using the current
- * {@link io.helidon.config.Config}.
  * <p>
  * The {@link #create(Config)} method neither reads nor updates the most-recently used config and factory.
  */
@@ -87,28 +77,27 @@ class MetricsFactoryManager {
     private static final LazyValue<Collection<MetersProvider>> METER_PROVIDERS =
             LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(MetersProvider.class))
                     .asList());
-    /**
-     * The metrics {@link io.helidon.config.Config} node used to initialize the current metrics factory.
-     */
-    private static Config metricsConfigNode;
-    /**
-     * The {@link io.helidon.metrics.api.MetricsFactory} most recently created via either {@link #getMetricsFactory} method.
-     */
-    private static MetricsFactory metricsFactory;
 
     private MetricsFactoryManager() {
     }
 
     /**
-     * Creates a new {@link io.helidon.metrics.api.MetricsFactory} according to the {@value MetricsConfig#METRICS_CONFIG_KEY}
-     * section in the specified config node, deriving and saving the metrics config as the current metrics config, saving the new
-     * factory as the current factory, and registering meters via meter providers to the global meter registry of the new factory.
+     * This method now simply calls {@link io.helidon.service.registry.Services#get(Class)}
      *
-     * @param metricsConfigNode metrics config node
-     * @return new metrics factory
+     * @param metricsConfigNode ignored
+     * @return current metrics factory
+     * @deprecated either use {@link io.helidon.service.registry.Services} directly; if the intention is to use a different
+     *      shared instance that the default one, create a service factory with a higher than default
+     *      {@link io.helidon.common.Weight}, or call {@link io.helidon.service.registry.Services#set(Class, Object[])}
+     *      before the application starts
      */
+    @Deprecated(since = "27.0.0", forRemoval = true)
     static MetricsFactory getMetricsFactory(Config metricsConfigNode) {
-        return access(() -> createCurrentMetricsFactory(metricsConfigNode));
+        LOGGER.log(Level.WARNING, "Method MetricsFactoryManager.getMetricsFactory(Config) does not work as in "
+                + "previous major versions of Helidon, and simply returns the instance from ServiceRegistry. "
+                + "This method is now deprecated and will be removed.");
+
+        return Services.get(MetricsFactory.class);
     }
 
     /**
@@ -117,15 +106,16 @@ class MetricsFactoryManager {
      * factory as the current factory.
      *
      * @return current metrics factory
+     * @deprecated since 27.0.0, for removal. Use
+     * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MetricsFactory.class)}.
      */
+    @Deprecated(since = "27.0.0", forRemoval = true)
     static MetricsFactory getMetricsFactory() {
-        return access(() -> {
-            return Objects.requireNonNullElseGet(metricsFactory,
-                                                () -> createCurrentMetricsFactory(
-                                                        Objects.requireNonNullElseGet(
-                                                                metricsConfigNode,
-                                                                MetricsFactoryManager::externalMetricsConfig)));
-        });
+        LOGGER.log(Level.WARNING, "Method MetricsFactoryManager.getMetricsFactory() does not work as in "
+                + "previous major versions of Helidon, and simply returns the instance from ServiceRegistry. "
+                + "This method is now deprecated and will be removed.");
+
+        return Services.get(MetricsFactory.class);
     }
 
     /**
@@ -135,16 +125,18 @@ class MetricsFactoryManager {
      * @param rootConfig root configuration for resolving the metrics config node when needed
      * @return current or newly created metrics factory
      */
+    @Deprecated(since = "27.0.0", forRemoval = true)
     static MetricsFactory getOrCreateMetricsFactory(Config rootConfig) {
-        return access(() -> Objects.requireNonNullElseGet(metricsFactory,
-                                                          () -> createCurrentMetricsFactory(
-                                                                  selectMetricsConfigNode(rootConfig))));
+        LOGGER.log(Level.WARNING, "Method MetricsFactoryManager.getOrCreateMetricsFactory(Config) does not work as in "
+                + "previous major versions of Helidon, and simply returns the instance from ServiceRegistry. "
+                + "This method is now deprecated and will be removed.");
+
+        return Services.get(MetricsFactory.class);
     }
 
     /**
      * Creates a new {@link io.helidon.metrics.api.MetricsFactory} using the specified
-     * {@link io.helidon.metrics.api.MetricsConfig} with no side effects: neither the config nor the new factory replace
-     * the current values stored in this manager.
+     * {@link io.helidon.metrics.api.MetricsConfig}.
      *
      * @param metricsConfigNode the metrics config node to use in creating the metrics factory
      * @return new metrics factory
@@ -158,52 +150,5 @@ class MetricsFactoryManager {
 
     static void closeAll() {
         METRICS_FACTORY_PROVIDER.get().close();
-        metricsFactory = null;
-    }
-
-    private static Config externalMetricsConfig() {
-        return selectMetricsConfigNode(Services.get(Config.class));
-    }
-
-    private static MetricsFactory createCurrentMetricsFactory(Config metricsConfigNode) {
-        MetricsFactoryManager.metricsConfigNode = metricsConfigNode;
-        MetricsConfig metricsConfig = MetricsConfig.create(metricsConfigNode);
-        metricsFactory = completeGetInstance(metricsConfig, metricsConfigNode);
-        return metricsFactory;
-    }
-
-    private static Config selectMetricsConfigNode(Config rootConfig) {
-        Config serverFeaturesMetricsConfig = rootConfig.get("server.features.observe.observers.metrics");
-        if (!serverFeaturesMetricsConfig.exists()) {
-            serverFeaturesMetricsConfig = rootConfig.get(MetricsConfig.METRICS_CONFIG_KEY);
-        }
-        return serverFeaturesMetricsConfig;
-    }
-
-    private static MetricsFactory completeGetInstance(MetricsConfig metricsConfig, Config metricsConfigNode) {
-
-        metricsConfig = applyOverrides(metricsConfig);
-
-        SystemTagsManager.instance(metricsConfig);
-        metricsFactory = METRICS_FACTORY_PROVIDER.get().create(metricsConfigNode, metricsConfig, METER_PROVIDERS.get());
-
-        return metricsFactory;
-    }
-
-    private static MetricsConfig applyOverrides(MetricsConfig metricsConfig) {
-        MetricsConfig.Builder metricsConfigBuilder = MetricsConfig.builder(metricsConfig);
-        METRICS_CONFIG_OVERRIDES.get().forEach(override -> override.apply(metricsConfigBuilder));
-        return metricsConfigBuilder.build();
-    }
-
-    private static <T> T access(Callable<T> c) {
-        LOCK.lock();
-        try {
-            return c.call();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        } finally {
-            LOCK.unlock();
-        }
     }
 }

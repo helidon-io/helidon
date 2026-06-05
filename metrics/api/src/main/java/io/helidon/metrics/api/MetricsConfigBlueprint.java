@@ -177,7 +177,7 @@ interface MetricsConfigBlueprint {
      * @return the output format for built-in meter names
      */
     @Option.Configured
-    @Option.Default(BuiltInMeterNameFormat.DEFAULT)
+    @Option.Default("CAMEL")
     BuiltInMeterNameFormat builtInMeterNameFormat();
 
     /**

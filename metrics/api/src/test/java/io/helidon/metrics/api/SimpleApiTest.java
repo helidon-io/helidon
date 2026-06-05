@@ -15,6 +15,8 @@
  */
 package io.helidon.metrics.api;
 
+import io.helidon.service.registry.Services;
+
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
@@ -42,7 +44,7 @@ public class SimpleApiTest {
 
     @BeforeAll
     static void prep() {
-        registry = MetricsFactory.getInstance().globalRegistry();
+        registry = Services.get(MetricsFactory.class).globalRegistry();
         assertThat("Global registry", registry, notNullValue());
         counter1 = registry.getOrCreate(Counter.builder("counter1")
                                                 .description(COUNTER_1_DESC));

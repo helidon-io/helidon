@@ -20,6 +20,7 @@ import java.util.List;
 import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.Services;
 import io.helidon.webserver.testing.junit5.ServerTest;
 
 import org.junit.jupiter.api.Test;
@@ -36,7 +37,7 @@ class TestVirtualThreadsMetersBase {
     private final MeterRegistry meterRegistry;
 
     TestVirtualThreadsMetersBase() {
-        meterRegistry = MetricsFactory.getInstance().globalRegistry();
+        meterRegistry = Services.get(MetricsFactory.class).globalRegistry();
     }
 
     MeterRegistry meterRegistry() {

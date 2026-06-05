@@ -26,6 +26,7 @@ import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Timer;
+import io.helidon.service.registry.Services;
 
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -62,7 +63,7 @@ class TestPrometheusPerf {
         double[] result = new double[loops];
 
         for (int loop = 0; loop < loops; loop++) {
-            MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry();
+            MeterRegistry meterRegistry = Services.get(MetricsFactory.class).globalRegistry();
             meterRegistry.close();
 
             Random random = new Random();

@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.Services;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -67,13 +68,13 @@ class TestMultipleRegistryLogging {
 
     @Test
     void testSingleRegistry() {
-        MetricsFactory.getInstance().globalRegistry();
+        Services.get(MetricsFactory.class).globalRegistry();
         assertThat("Single meter registry", testHandler.messages(), hasSize(0));
     }
 
     @Test
     void testTwoRegistries() {
-        MetricsFactory.getInstance().globalRegistry();
+        Services.get(MetricsFactory.class).globalRegistry();
         MeterRegistry.create();
 
         assertThat("Two meter registries", testHandler.messages(),
@@ -85,7 +86,7 @@ class TestMultipleRegistryLogging {
 
     @Test
     void testThreeRegistries() {
-        MetricsFactory.getInstance().globalRegistry();
+        Services.get(MetricsFactory.class).globalRegistry();
         MeterRegistry.create();
         MeterRegistry.create();
 

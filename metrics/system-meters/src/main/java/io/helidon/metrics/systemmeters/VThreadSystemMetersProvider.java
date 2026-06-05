@@ -36,6 +36,7 @@ import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.api.Timer;
 import io.helidon.metrics.spi.MetersProvider;
+import io.helidon.service.registry.Services;
 import io.helidon.spi.HelidonShutdownHandler;
 
 import jdk.jfr.consumer.RecordedEvent;
@@ -175,10 +176,10 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
 
     // visible for testing
     Timer findPinned() {
-        var result = MetricsFactory.getInstance()
+        var result = Services.get(MetricsFactory.class)
                 .globalRegistry()
                 .timer(METER_NAME_PREFIX + RECENT_PINNED,
-                       SystemTagsManager.instance().withScopeTag(Collections.emptyList(), Optional.of(METER_SCOPE)));
+                       Services.get(SystemTagsManager.class).withScopeTag(Collections.emptyList(), Optional.of(METER_SCOPE)));
         if (result.isEmpty()) {
             throw new IllegalStateException(METER_NAME_PREFIX + RECENT_PINNED + " meter expected but not registered");
         }

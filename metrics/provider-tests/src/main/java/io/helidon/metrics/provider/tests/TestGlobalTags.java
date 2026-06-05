@@ -25,6 +25,7 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
+import io.helidon.service.registry.Services;
 
 import org.junit.jupiter.api.Test;
 
@@ -45,7 +46,7 @@ class TestGlobalTags {
                 .tags(globalTags)
                 .build();
 
-        MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry();
+        MeterRegistry meterRegistry = Services.get(MetricsFactory.class).globalRegistry();
 
         assertThat("Global tags from the config used to init the meter registry",
                    metricsConfig.tags(),
@@ -69,7 +70,7 @@ class TestGlobalTags {
 
         Config config = Config.just(ConfigSources.create(settings));
 
-        MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry(
+        MeterRegistry meterRegistry = Services.get(MetricsFactory.class).globalRegistry(
                 MetricsConfig.create(config.get("metrics")));
 
         Counter counter1 = meterRegistry.getOrCreate(Counter.builder("a")
@@ -94,6 +95,6 @@ class TestGlobalTags {
         String appNameTag = "se-app";
         String appNameValue = "test-app";
         Config metricsConfig = Config.just(ConfigSources.create(Map.of("app-tag-name", appNameTag, "app-name", appNameValue)));
-        MetricsFactory.getInstance(metricsConfig);
+        Services.get(MetricsFactory.class).globalRegistry(MetricsConfig.create(metricsConfig));
     }
 }

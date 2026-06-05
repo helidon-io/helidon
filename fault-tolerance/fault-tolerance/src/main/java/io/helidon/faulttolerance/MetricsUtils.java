@@ -34,7 +34,8 @@ import static io.helidon.metrics.api.Meter.Scope.VENDOR;
 @SuppressWarnings("unchecked")
 class MetricsUtils {
 
-    private static final LazyValue<MetricsFactory> METRICS_FACTORY = LazyValue.create(MetricsFactory::getInstance);
+    private static final LazyValue<MetricsFactory> METRICS_FACTORY = LazyValue.create(() -> Services.get(
+            MetricsFactory.class));
     private static final LazyValue<MeterRegistry> METRICS_REGISTRY = LazyValue.create(() -> METRICS_FACTORY.get()
             .globalRegistry());
 

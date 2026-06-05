@@ -35,9 +35,7 @@ module io.helidon.metrics.api {
     uses io.helidon.metrics.spi.MetricsFactoryProvider;
     uses io.helidon.metrics.spi.MeterRegistryFormatterProvider;
     uses io.helidon.metrics.api.MetricsFactory;
-
     uses io.helidon.metrics.spi.MetersProvider;
-
     uses io.helidon.metrics.spi.MeterRegistryLifeCycleListener;
 
     provides io.helidon.metrics.spi.MetricsProgrammaticConfig with io.helidon.metrics.api.SeMetricsProgrammaticConfig;

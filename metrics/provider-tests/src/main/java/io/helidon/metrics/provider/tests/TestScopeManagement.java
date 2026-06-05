@@ -28,6 +28,7 @@ import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.ScopingConfig;
 import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.api.Timer;
+import io.helidon.service.registry.Services;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -48,8 +49,8 @@ class TestScopeManagement {
                 .scoping(ScopingConfig.builder()
                                  .clearDefaultValue())
                 .build();
-        MeterRegistry reg = MetricsFactory.getInstance().globalRegistry();
-        SystemTagsManager.instance(metricsConfig);
+        MeterRegistry reg = Services.get(MetricsFactory.class).globalRegistry();
+        configureSystemTags(metricsConfig);
 
         // We explicitly set the scope for the counter and not for the timer.
         // With no default scope set in the config used to initialBuilders the MeterRegistry, only the counter will have a scope.
@@ -88,8 +89,8 @@ class TestScopeManagement {
                 .scoping(ScopingConfig.builder()
                                  .defaultValue("def-scope"))
                 .build();
-        MeterRegistry reg = MetricsFactory.getInstance().createMeterRegistry(metricsConfig);
-        SystemTagsManager.instance(metricsConfig);
+        MeterRegistry reg = Services.get(MetricsFactory.class).createMeterRegistry(metricsConfig);
+        configureSystemTags(metricsConfig);
 
         // The config sets a default scope value of def-scope. So the counter gets its explicit setting
         // and the timer gets the default scope value because it has no explicit setting.
@@ -135,10 +136,17 @@ class TestScopeManagement {
     @Test
     void checkDefaultScope() {
         MetricsConfig metricsConfig = MetricsConfig.create(); // Make sure to use the defaults, not leftovers from earlier tests
-        MetricsFactory.getInstance().globalRegistry(metricsConfig);
-        SystemTagsManager.instance(metricsConfig);
+        Services.get(MetricsFactory.class).globalRegistry(metricsConfig);
+        configureSystemTags(metricsConfig);
 
-        Counter counter = MetricsFactory.getInstance().globalRegistry().getOrCreate(Counter.builder("defaultScopedCounter"));
+        Counter counter = Services.get(MetricsFactory.class)
+                .globalRegistry()
+                .getOrCreate(Counter.builder("defaultScopedCounter"));
         assertThat("Unspecified scope", counter.scope(), OptionalMatcher.optionalValue(is(Meter.Scope.DEFAULT)));
+    }
+
+    @SuppressWarnings("removal")
+    private static void configureSystemTags(MetricsConfig metricsConfig) {
+        SystemTagsManager.instance(metricsConfig);
     }
 }

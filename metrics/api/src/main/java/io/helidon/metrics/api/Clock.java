@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 package io.helidon.metrics.api;
 
+import io.helidon.service.registry.Services;
+
 /**
  * Reports absolute time (and, therefore, is also useful in computing elapsed times).
  */
@@ -28,9 +30,12 @@ public interface Clock extends Wrapper {
      * </p>
      *
      * @return the system clock
+     * @deprecated use {@link MetricsFactory#clockSystem()}, you can get {@link io.helidon.metrics.api.MetricsFactory} from
+     * {@link io.helidon.service.registry.Services#get(Class)} for the global metrics factory
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     static Clock system() {
-        return MetricsFactoryManager.getMetricsFactory().clockSystem();
+        return Services.get(MetricsFactory.class).clockSystem();
     }
 
     /**

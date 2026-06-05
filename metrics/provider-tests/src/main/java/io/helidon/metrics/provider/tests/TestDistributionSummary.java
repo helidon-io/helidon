@@ -26,6 +26,7 @@ import io.helidon.metrics.api.HistogramSnapshot;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.ValueAtPercentile;
+import io.helidon.service.registry.Services;
 
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -45,7 +46,7 @@ class TestDistributionSummary {
 
     @BeforeAll
     static void prep() {
-        meterRegistry = MetricsFactory.getInstance().globalRegistry();
+        meterRegistry = Services.get(MetricsFactory.class).globalRegistry();
     }
 
     @Test

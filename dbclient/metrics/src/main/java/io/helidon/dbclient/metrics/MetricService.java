@@ -26,6 +26,7 @@ import io.helidon.dbclient.DbStatementType;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.Services;
 
 /**
  * Common ancestor for DbClient metrics.
@@ -34,7 +35,7 @@ abstract class MetricService<T extends Meter> extends DbClientServiceBase {
     private final MeterMetadata meta;
     private final String description;
     private final BiFunction<String, DbStatementType, String> nameFunction;
-    private final LazyValue<MeterRegistry> registry = LazyValue.create(() -> MetricsFactory.getInstance().globalRegistry());
+    private final LazyValue<MeterRegistry> registry = LazyValue.create(() -> Services.get(MetricsFactory.class).globalRegistry());
     private final ConcurrentHashMap<String, T> cache = new ConcurrentHashMap<>();
     private final boolean measureErrors;
     private final boolean measureSuccess;

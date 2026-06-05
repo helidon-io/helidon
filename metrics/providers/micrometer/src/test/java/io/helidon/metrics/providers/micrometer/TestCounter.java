@@ -22,6 +22,7 @@ import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.Services;
 
 import io.micrometer.core.instrument.Meter;
 import org.junit.jupiter.api.BeforeAll;
@@ -36,7 +37,7 @@ class TestCounter {
 
     @BeforeAll
     static void prep() {
-        meterRegistry = MetricsFactory.getInstance().globalRegistry();
+        meterRegistry = Services.get(MetricsFactory.class).globalRegistry();
     }
 
     @Test

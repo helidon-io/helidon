@@ -64,7 +64,7 @@ interface MetricsObserverConfigBlueprint extends ObserverConfigBase, Prototype.F
      * If you want to have multiple meter registries with different
      * endpoints, you may create them using
      * {@snippet :
-     *      MeterRegistry meterRegistry = MetricsFactory.getInstance()
+     *      MeterRegistry meterRegistry = Services.get(MetricsFactory.class)
      *              .createMeterRegistry(metricsConfig);
      *      MetricsFeature.builder()
      *              .meterRegistry(meterRegistry) // further settings on the feature builder, etc.

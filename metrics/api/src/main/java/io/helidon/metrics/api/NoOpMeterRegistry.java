@@ -64,7 +64,7 @@ class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
 
     @Override
     public Clock clock() {
-        return Clock.system();
+        return NoOpMetricsFactory.SYSTEM_CLOCK;
     }
 
     @Override
@@ -133,10 +133,6 @@ class NoOpMeterRegistry implements MeterRegistry, NoOpWrapper {
     public MeterRegistry onMeterRemoved(Consumer<Meter> listener) {
         onRemoveListeners.add(listener);
         return this;
-    }
-
-    private <M extends Meter> Optional<M> find(Meter.Id id, Class<M> mClass) {
-        return Optional.empty();
     }
 
     private <M extends Meter, B extends Meter.Builder<B, M>> M findOrRegister(Meter.Id id, B builder) {

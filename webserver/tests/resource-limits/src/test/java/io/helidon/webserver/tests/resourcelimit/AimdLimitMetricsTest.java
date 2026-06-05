@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import io.helidon.common.concurrency.limits.AimdLimit;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Timer;
+import io.helidon.service.registry.Services;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webserver.WebServerConfig;
@@ -96,7 +97,7 @@ class AimdLimitMetricsTest {
             assertThat(res.status().code(), is(200));
         }
 
-        MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry();
+        MeterRegistry meterRegistry = Services.get(MetricsFactory.class).globalRegistry();
         Optional<Timer> rtt = meterRegistry.timer("aimd_rtt", Collections.emptyList());
         assertThat(rtt.isPresent(), is(true));
         assertThat(rtt.get().count(), is(greaterThan(0L)));

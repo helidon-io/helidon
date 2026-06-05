@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.util.Set;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.metrics.spi.MetricsProgrammaticConfig;
+import io.helidon.service.registry.Services;
 
 import org.junit.jupiter.api.Test;
 
@@ -29,6 +30,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.hamcrest.collection.IsMapContaining.hasKey;
 
@@ -93,11 +95,11 @@ class TestSystemTagsManager {
 
     @Test
     void checkForAppTag() {
-        Config mConfig = Config.just(ConfigSources.create(APP_ONLY_TAGS_SETTINGS)).get("metrics");
+        Config rootConfig = Config.just(ConfigSources.create(APP_ONLY_TAGS_SETTINGS));
         // Set up the metrics factory which applies the SE-specific programmatic defaults for the system tags manager.
-        MetricsFactory metricsFactory = MetricsFactory.getInstance(mConfig);
+        MetricsFactory metricsFactory = MetricsFactoryManager.getOrCreateMetricsFactory(rootConfig);
         MetricsConfig metricsConfig = metricsFactory.metricsConfig();
-        SystemTagsManager mgr = SystemTagsManager.instance(metricsConfig);
+        SystemTagsManager mgr = SystemTagsManagerImpl.current(metricsConfig);
 
         Meter.Id meterId = MeterId.create("my-metric", io.helidon.metrics.api.Tag.create(METRIC_TAG_NAME,
                                                                                          METRIC_TAG_VALUE));
@@ -115,11 +117,11 @@ class TestSystemTagsManager {
 
     @Test
     void checkForGlobalAndAppTags() {
-        Config mConfig = Config.just(ConfigSources.create(GLOBAL_AND_APP_TAG_SETTINGS)).get("metrics");
+        Config rootConfig = Config.just(ConfigSources.create(GLOBAL_AND_APP_TAG_SETTINGS));
         // Set up the metrics factory which applies the SE-specific programmatic defaults for the system tags manager.
-        MetricsFactory metricsFactory = MetricsFactory.getInstance(mConfig);
+        MetricsFactory metricsFactory = MetricsFactoryManager.getOrCreateMetricsFactory(rootConfig);
         MetricsConfig metricsConfig = metricsFactory.metricsConfig();
-        SystemTagsManager mgr = SystemTagsManager.instance();
+        SystemTagsManager mgr = Services.get(SystemTagsManager.class);
 
         Meter.Id meterId = MeterId.create("my-metric", io.helidon.metrics.api.Tag.create(METRIC_TAG_NAME,
                                                                                          METRIC_TAG_VALUE));
@@ -148,12 +150,22 @@ class TestSystemTagsManager {
     }
 
     @Test
+    void serviceLookupReflectsCurrentSystemTagsManager() {
+        SystemTagsManager initial = SystemTagsManagerImpl.current(MetricsConfig.create());
+        assertThat(Services.get(SystemTagsManager.class), sameInstance(initial));
+
+        Config mConfig = Config.just(ConfigSources.create(GLOBAL_ONLY_TAGS_SETTINGS)).get("metrics");
+        SystemTagsManager updated = SystemTagsManagerImpl.current(MetricsConfig.create(mConfig));
+        assertThat(Services.get(SystemTagsManager.class), sameInstance(updated));
+    }
+
+    @Test
     void checkForGlobalButNoMetricTags() {
-        Config mConfig = Config.just(ConfigSources.create(GLOBAL_AND_APP_TAG_SETTINGS)).get("metrics");
+        Config rootConfig = Config.just(ConfigSources.create(GLOBAL_AND_APP_TAG_SETTINGS));
         // Set up the metrics factory which applies the SE-specific programmatic defaults for the system tags manager.
-        MetricsFactory metricsFactory = MetricsFactory.getInstance(mConfig);
+        MetricsFactory metricsFactory = MetricsFactoryManager.getOrCreateMetricsFactory(rootConfig);
         MetricsConfig metricsConfig = metricsFactory.metricsConfig();
-        SystemTagsManager mgr = SystemTagsManager.instance();
+        SystemTagsManager mgr = Services.get(SystemTagsManager.class);
 
         Meter.Id meterId = MeterId.create("no-tags-metric", Set.of());
         Map<String, String> fullTags = new HashMap<>();

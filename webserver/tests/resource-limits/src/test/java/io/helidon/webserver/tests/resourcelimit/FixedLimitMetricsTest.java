@@ -25,6 +25,7 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
+import io.helidon.service.registry.Services;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webserver.ListenerConfig;
@@ -111,7 +112,7 @@ class FixedLimitMetricsTest {
             assertThat(res.status().code(), is(200));
         }
 
-        MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry();
+        MeterRegistry meterRegistry = Services.get(MetricsFactory.class).globalRegistry();
         Optional<Timer> rtt = meterRegistry.timer("fixed_rtt", Collections.emptyList());
         assertThat(rtt.isPresent(), is(true));
         assertThat(rtt.get().count(), is(greaterThan(0L)));
@@ -123,7 +124,7 @@ class FixedLimitMetricsTest {
             assertThat(res.status().code(), is(200));
         }
 
-        MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry();
+        MeterRegistry meterRegistry = Services.get(MetricsFactory.class).globalRegistry();
         Optional<Timer> rtt = meterRegistry.timer("fixed_rtt", List.of(ADMIN_SOCKET_TAG));
         assertThat(rtt.isPresent(), is(true));
 
