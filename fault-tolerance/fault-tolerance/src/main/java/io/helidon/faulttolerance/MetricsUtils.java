@@ -23,7 +23,6 @@ import io.helidon.config.Config;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
@@ -36,7 +35,8 @@ import static io.helidon.metrics.api.Meter.Scope.VENDOR;
 class MetricsUtils {
 
     private static final LazyValue<MetricsFactory> METRICS_FACTORY = LazyValue.create(MetricsFactory::getInstance);
-    private static final LazyValue<MeterRegistry> METRICS_REGISTRY = LazyValue.create(Metrics::globalRegistry);
+    private static final LazyValue<MeterRegistry> METRICS_REGISTRY = LazyValue.create(() -> METRICS_FACTORY.get()
+            .globalRegistry());
 
     private MetricsUtils() {
     }

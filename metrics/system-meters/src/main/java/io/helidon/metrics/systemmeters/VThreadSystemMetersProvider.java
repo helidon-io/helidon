@@ -31,7 +31,6 @@ import io.helidon.common.resumable.Resumable;
 import io.helidon.common.resumable.ResumableSupport;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.Meter;
-import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.SystemTagsManager;
@@ -176,9 +175,10 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
 
     // visible for testing
     Timer findPinned() {
-        var result = Metrics.globalRegistry().timer(METER_NAME_PREFIX + RECENT_PINNED,
-                                                    SystemTagsManager.instance().withScopeTag(Collections.emptyList(),
-                                                                                              Optional.of(METER_SCOPE)));
+        var result = MetricsFactory.getInstance()
+                .globalRegistry()
+                .timer(METER_NAME_PREFIX + RECENT_PINNED,
+                       SystemTagsManager.instance().withScopeTag(Collections.emptyList(), Optional.of(METER_SCOPE)));
         if (result.isEmpty()) {
             throw new IllegalStateException(METER_NAME_PREFIX + RECENT_PINNED + " meter expected but not registered");
         }

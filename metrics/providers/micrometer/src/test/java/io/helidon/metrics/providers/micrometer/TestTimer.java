@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Timer;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -37,7 +37,7 @@ class TestTimer {
 
     @BeforeAll
     static void prep() {
-        meterRegistry = Metrics.globalRegistry();
+        meterRegistry = MetricsFactory.getInstance().globalRegistry();
     }
 
     @Test

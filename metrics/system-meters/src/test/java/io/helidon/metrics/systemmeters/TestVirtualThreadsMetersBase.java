@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import java.util.List;
 
 import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.webserver.testing.junit5.ServerTest;
 
 import org.junit.jupiter.api.Test;
@@ -36,7 +36,7 @@ class TestVirtualThreadsMetersBase {
     private final MeterRegistry meterRegistry;
 
     TestVirtualThreadsMetersBase() {
-        meterRegistry = Metrics.globalRegistry();
+        meterRegistry = MetricsFactory.getInstance().globalRegistry();
     }
 
     MeterRegistry meterRegistry() {

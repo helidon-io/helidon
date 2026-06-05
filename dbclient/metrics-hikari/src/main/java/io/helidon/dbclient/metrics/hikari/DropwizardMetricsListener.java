@@ -21,7 +21,7 @@ import java.util.Set;
 import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.MetricsFactory;
 
 import com.codahale.metrics.Counter;
 import com.codahale.metrics.Gauge;
@@ -42,7 +42,7 @@ public class DropwizardMetricsListener implements MetricRegistryListener {
     private static final System.Logger LOGGER = System.getLogger(DropwizardMetricsListener.class.getName());
 
     private final String prefix;
-    private final LazyValue<MeterRegistry> registry = LazyValue.create(Metrics::globalRegistry);
+    private final LazyValue<MeterRegistry> registry = LazyValue.create(() -> MetricsFactory.getInstance().globalRegistry());
 
     private DropwizardMetricsListener(String prefix) {
         this.prefix = prefix;

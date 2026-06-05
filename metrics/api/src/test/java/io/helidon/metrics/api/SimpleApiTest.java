@@ -16,6 +16,7 @@
 package io.helidon.metrics.api;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -30,39 +31,39 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
-@SuppressWarnings("removal")
 public class SimpleApiTest {
 
     private static final String COUNTER_1_DESC = "counter 1 description";
 
+    private static MeterRegistry registry;
     private static Counter counter1;
     private static Counter counter2;
     private static Timer timer1;
 
     @BeforeAll
     static void prep() {
-        MeterRegistry registry = Metrics.globalRegistry();
+        registry = MetricsFactory.getInstance().globalRegistry();
         assertThat("Global registry", registry, notNullValue());
-        counter1 = Metrics.getOrCreate(Counter.builder("counter1")
-                                               .description(COUNTER_1_DESC));
-        counter2 = Metrics.getOrCreate(Counter.builder("counter2"));
+        counter1 = registry.getOrCreate(Counter.builder("counter1")
+                                                .description(COUNTER_1_DESC));
+        counter2 = registry.getOrCreate(Counter.builder("counter2"));
 
-        timer1 = Metrics.getOrCreate(Timer.builder("timer1")
-                                             .tags(Metrics.tags("t1", "v1",
-                                                                "t2", "v2"))
-                                             .maximumExpectedValue(Duration.ofSeconds(4)));
+        timer1 = registry.getOrCreate(Timer.builder("timer1")
+                                           .tags(List.of(Tag.create("t1", "v1"),
+                                                         Tag.create("t2", "v2")))
+                                           .maximumExpectedValue(Duration.ofSeconds(4)));
     }
 
     @Test
     void testNoOpRegistrations() {
 
-        Optional<Counter> fetchedCounter = Metrics.getCounter("counter1");
+        Optional<Counter> fetchedCounter = registry.counter("counter1", Set.of());
         assertThat("Fetched counter 1", fetchedCounter, OptionalMatcher.optionalEmpty());
-        fetchedCounter = Metrics.getCounter("counter2", Set.of());
+        fetchedCounter = registry.counter("counter2", Set.of());
         assertThat("Fetched counter 2", fetchedCounter, OptionalMatcher.optionalEmpty());
 
-        Optional<Timer> fetchedTimer = Metrics.getTimer("timer1", Metrics.tags("t1", "v1",
-                                                                               "t2", "v2"));
+        Optional<Timer> fetchedTimer = registry.timer("timer1", List.of(Tag.create("t1", "v1"),
+                                                                        Tag.create("t2", "v2")));
         assertThat("Fetched timer", fetchedTimer, OptionalMatcher.optionalEmpty());
     }
 
