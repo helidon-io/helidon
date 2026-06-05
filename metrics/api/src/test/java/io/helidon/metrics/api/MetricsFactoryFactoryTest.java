@@ -15,6 +15,8 @@
  */
 package io.helidon.metrics.api;
 
+import io.helidon.service.registry.Services;
+
 import java.util.Map;
 
 import io.helidon.config.Config;
@@ -25,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
 
 class MetricsFactoryFactoryTest {
@@ -45,13 +48,13 @@ class MetricsFactoryFactoryTest {
     @Test
     void reusesCurrentMetricsFactory() {
         MetricsFactory currentFactory =
-                MetricsFactory.getInstance(ROOT_CONFIG.get("server.features.observe.observers.metrics"));
+                MetricsFactoryManager.getOrCreateMetricsFactory(ROOT_CONFIG);
         MetricsFactoryFactory serviceFactory = new MetricsFactoryFactory(ROOT_CONFIG);
 
         MetricsFactory serviceResolvedFactory = serviceFactory.get();
 
         assertThat(serviceResolvedFactory, sameInstance(currentFactory));
-        assertThat(MetricsFactory.getInstance(), sameInstance(currentFactory));
+        assertThat(Services.get(MetricsFactory.class), sameInstance(currentFactory));
     }
 
     @Test
@@ -62,5 +65,15 @@ class MetricsFactoryFactoryTest {
         MetricsFactory secondFactory = serviceFactory.get();
 
         assertThat(secondFactory, sameInstance(firstFactory));
+    }
+
+    @Test
+    void servicesLookupReflectsCloseAll() {
+        MetricsFactory firstFactory = Services.get(MetricsFactory.class);
+
+        MetricsFactory.closeAll();
+        MetricsFactory secondFactory = Services.get(MetricsFactory.class);
+
+        assertThat(secondFactory, not(sameInstance(firstFactory)));
     }
 }

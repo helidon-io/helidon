@@ -211,6 +211,17 @@
                     </execution>
                 </executions>
             </plugin>
+            <!-- Some linked Metrics provider Javadocs are published for unnamed modules. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <additionalOptions>
+                        <option>--link-modularity-mismatch</option>
+                        <option>info</option>
+                    </additionalOptions>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 </project>

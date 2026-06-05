@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,13 +24,19 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.StreamSupport;
 
 import io.helidon.common.LazyValue;
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
+import io.helidon.config.Config;
 import io.helidon.metrics.spi.MetricsProgrammaticConfig;
+import io.helidon.service.registry.Service;
+import io.helidon.service.registry.Services;
 
 /**
  * Captures and makes available for output any system tag settings to be applied when metric IDs are output.
@@ -43,29 +49,37 @@ import io.helidon.metrics.spi.MetricsProgrammaticConfig;
  * an application name which will add a tag conveying the app name to each metric ID written to output.
  * </p>
  */
+@Service.Singleton
+@Weight(Weighted.DEFAULT_WEIGHT - 10)
 class SystemTagsManagerImpl implements SystemTagsManager {
 
-    private static SystemTagsManagerImpl instance = new SystemTagsManagerImpl();
-
     private static final Collection<Consumer<SystemTagsManager>> ON_CHANGE_SUBSCRIBERS = new ArrayList<>();
+    private static final ReentrantReadWriteLock ON_CHANGE_LOCK = new ReentrantReadWriteLock();
 
     private final Map<String, String> systemTagPairs = new TreeMap<>();
-    private final Set<String> systemAndScopeTagNames = new HashSet<>(); // tag names for globa tags, app, and scope
+    private final Set<String> systemAndScopeTagNames = new HashSet<>(); // tag names for global tags, app, and scope
 
     /*
     Defer invoking Tag.create because that could create a infinite recursive loop; Tag.create invokes
-    MetricsFactory.getInstance().tagCreate and MetricsFactory.getInstance could trigger another attempt to instantiate this
-    SystemTagsManagerImpl.
+    Services.get(MetricsFactory.class).tagCreate, which could trigger another attempt to instantiate this
+    SystemTagsManagerImpl through the service registry.
      */
     private final LazyValue<List<Tag>> systemTags = LazyValue.create(() ->
              systemTagPairs.entrySet().stream()
                      .map(entry -> Tag.create(entry.getKey(), entry.getValue()))
                      .toList()); // global tags plus the app
+    private final Set<String> reservedTagNames;
+
     // tag, if any specified
     private String scopeTagName;
     private String defaultScopeValue;
 
-    private SystemTagsManagerImpl(MetricsConfig metricsConfig) {
+    @Service.Inject
+    SystemTagsManagerImpl(Config config, MetricsProgrammaticConfig programmaticConfig) {
+        this(MetricsConfig.create(config.get("metrics")), programmaticConfig.reservedTagNames());
+    }
+
+    private SystemTagsManagerImpl(MetricsConfig metricsConfig, Set<String> reservedTagNames) {
 
         metricsConfig.tags().forEach(tag ->
                                              systemTagPairs.put(tag.key(), tag.value()));
@@ -87,39 +101,29 @@ class SystemTagsManagerImpl implements SystemTagsManager {
             scopeTagName = scopeTagNameToUse;
         });
         defaultScopeValue = metricsConfig.scoping().defaultValue().orElse(null);
+
+        this.reservedTagNames = reservedTagNames;
+
+        ON_CHANGE_LOCK.readLock().lock();
+        try {
+            ON_CHANGE_SUBSCRIBERS.forEach(c -> c.accept(this));
+        } finally {
+            ON_CHANGE_LOCK.readLock().unlock();
+        }
     }
 
     static void onChange(Consumer<SystemTagsManager> subscriber) {
-        ON_CHANGE_SUBSCRIBERS.add(subscriber);
-    }
-
-    // for testing
-    private SystemTagsManagerImpl() {
-        scopeTagName = "scope";
-    }
-
-    /**
-     * Returns the singleton instance of the system tags manager.
-     *
-     * @return the singleton instance
-     */
-    public static SystemTagsManager instance() {
-        return instance;
+        ON_CHANGE_LOCK.writeLock().lock();
+        try {
+            ON_CHANGE_SUBSCRIBERS.add(subscriber);
+        } finally {
+            ON_CHANGE_LOCK.writeLock().unlock();
+        }
     }
 
     static SystemTagsManagerImpl create(MetricsConfig metricsConfig) {
-        instance = createWithoutSaving(metricsConfig);
-        return instance;
-    }
-
-    static SystemTagsManagerImpl instance(MetricsConfig metricsConfig) {
-        instance = createWithoutSaving(metricsConfig);
-        ON_CHANGE_SUBSCRIBERS.forEach(sub -> sub.accept(instance));
-        return instance;
-    }
-
-    static SystemTagsManagerImpl createWithoutSaving(MetricsConfig metricsConfig) {
-        return new SystemTagsManagerImpl(metricsConfig);
+        Set<String> reservedTagNames = Services.get(MetricsProgrammaticConfig.class).reservedTagNames();
+        return new SystemTagsManagerImpl(metricsConfig, reservedTagNames);
     }
 
     @Override
@@ -226,7 +230,7 @@ class SystemTagsManagerImpl implements SystemTagsManager {
     @Override
     public Collection<String> reservedTagNamesUsed(Collection<String> tagNames) {
         Set<String> reservedTagNamesUsed = new HashSet<>(tagNames);
-        reservedTagNamesUsed.retainAll(MetricsProgrammaticConfig.instance().reservedTagNames());
+        reservedTagNamesUsed.retainAll(reservedTagNames);
         return reservedTagNamesUsed;
     }
 

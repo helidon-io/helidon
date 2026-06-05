@@ -37,6 +37,7 @@ import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.spi.MeterRegistryFormatterProvider;
+import io.helidon.service.registry.Services;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.http.Handler;
 import io.helidon.webserver.http.HttpRouting;
@@ -71,7 +72,8 @@ class MetricsFeature {
     MetricsFeature(MetricsObserverConfig config) {
         this.metricsObserverConfig = config;
         this.metricsConfig = config.metricsConfig();
-        this.meterRegistry = config.meterRegistry().orElseGet(() -> MetricsFactory.getInstance().globalRegistry(metricsConfig));
+        this.meterRegistry = config.meterRegistry()
+                .orElseGet(() -> Services.get(MetricsFactory.class).globalRegistry(metricsConfig));
     }
 
     /**
@@ -115,7 +117,7 @@ class MetricsFeature {
                        Iterable<String> nameSelection) {
         MeterRegistryFormatter formatter = chooseFormatter(meterRegistry,
                                                            mediaType,
-                                                           SystemTagsManager.instance().scopeTagName(),
+                                                           Services.get(SystemTagsManager.class).scopeTagName(),
                                                            scopeSelection,
                                                            nameSelection);
 
@@ -132,7 +134,7 @@ class MetricsFeature {
                        Iterable<String> nameSelection) {
         MeterRegistryFormatter formatter = chooseFormatter(meterRegistry,
                                                            mediaType,
-                                                           SystemTagsManager.instance().scopeTagName(),
+                                                           Services.get(SystemTagsManager.class).scopeTagName(),
                                                            scopeSelection,
                                                            nameSelection);
 

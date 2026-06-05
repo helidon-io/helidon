@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
+import io.helidon.service.registry.Services;
 import io.helidon.webclient.grpc.GrpcClient;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.testing.junit5.ServerTest;
@@ -55,7 +56,7 @@ class GrpcDisabledMetricsTest extends GrpcBaseMetricsTest {
 
     @AfterAll
     static void checkMetrics() {
-        MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry();
+        MeterRegistry meterRegistry = Services.get(MetricsFactory.class).globalRegistry();
         Tag grpcTarget = Tag.create("grpc.target", grpcClient.prototype().baseUri().orElseThrow().toString());
 
         for (Tag grpcMethod : METHOD_TAGS) {

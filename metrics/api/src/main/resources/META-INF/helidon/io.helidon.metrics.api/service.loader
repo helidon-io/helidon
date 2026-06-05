@@ -1,0 +1,8 @@
+# List of service contracts we want to support either from service registry, or from service loader
+io.helidon.metrics.spi.ExemplarService
+io.helidon.metrics.spi.MetricsProgrammaticConfig
+io.helidon.metrics.spi.MetricsFactoryProvider
+io.helidon.metrics.spi.MeterRegistryFormatterProvider
+io.helidon.metrics.api.MetricsFactory
+io.helidon.metrics.spi.MetersProvider
+io.helidon.metrics.spi.MeterRegistryLifeCycleListener

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.ScopingConfig;
 import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.api.Timer;
+import io.helidon.service.registry.Services;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeAll;
@@ -64,20 +65,25 @@ class TestPrometheusFormatting {
                                  .defaultValue("app"));
 
         metricsConfig = metricsConfigBuilder.build();
-        meterRegistry = MetricsFactory.getInstance().globalRegistry(metricsConfig);
+        meterRegistry = Services.get(MetricsFactory.class).globalRegistry(metricsConfig);
     }
 
     /**
      * Sets the system tags according to what this test expects.
      * <p>
-     *     When a metrics factory is obtained via MetricsFactory.getInstance(metricsConfig), that config object initializes
-     *     the system tags manager. This happens after the @BeforeAll method runs. So re-assert the values we want for the
-     *     test here. We would only need to do it once, not before each test, but it's low cost esp. in a test environment.
+     *     When the global registry is initialized from the metrics config, that config object initializes the system tags
+     *     manager. This happens after the @BeforeAll method runs. So re-assert the values we want for the test here. We
+     *     would only need to do it once, not before each test, but it's low cost esp. in a test environment.
      *
      * </p>
      */
     @BeforeEach
     void setUpSystemTags() {
+        configureSystemTags(metricsConfig);
+    }
+
+    @SuppressWarnings("removal")
+    private static void configureSystemTags(MetricsConfig metricsConfig) {
         SystemTagsManager.instance(metricsConfig);
     }
 

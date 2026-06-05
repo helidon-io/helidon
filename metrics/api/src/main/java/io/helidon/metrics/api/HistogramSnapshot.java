@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ package io.helidon.metrics.api;
 import java.io.PrintStream;
 import java.util.concurrent.TimeUnit;
 
+import io.helidon.service.registry.Services;
+
 /**
  * Snapshot in time of a histogram.
  */
@@ -30,9 +32,12 @@ public interface HistogramSnapshot extends Wrapper {
      * @param total total value of observations the snapshot should report
      * @param max   maximum value the snapshot should report
      * @return empty snapshot reporting the values as specified
+     * @deprecated this method uses service registry to get a {@code MetricsFactory} instance, which may be inefficient,
+     * use {@link io.helidon.metrics.api.MetricsFactory#histogramSnapshotEmpty(long, double, double)} instead
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     static HistogramSnapshot empty(long count, double total, double max) {
-        return MetricsFactory.getInstance().histogramSnapshotEmpty(count, total, max);
+        return Services.get(MetricsFactory.class).histogramSnapshotEmpty(count, total, max);
     }
 
     /**

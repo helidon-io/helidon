@@ -29,6 +29,7 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Timer;
+import io.helidon.service.registry.Services;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -46,7 +47,7 @@ class TestTimer {
 
     @BeforeAll
     static void prep() {
-        meterRegistry = MetricsFactory.getInstance().globalRegistry();
+        meterRegistry = Services.get(MetricsFactory.class).globalRegistry();
     }
 
     @Test
@@ -202,7 +203,7 @@ class TestTimer {
     @Test
     void testSampleWithImplicitClock() {
 
-        MeterRegistry registry = MetricsFactory.getInstance()
+        MeterRegistry registry = Services.get(MetricsFactory.class)
                 .createMeterRegistry(MetricsConfig.builder().build());
 
         Timer t = registry.getOrCreate(Timer.builder("g"));

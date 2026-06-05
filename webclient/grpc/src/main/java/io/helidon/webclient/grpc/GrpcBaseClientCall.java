@@ -50,6 +50,7 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
+import io.helidon.service.registry.Services;
 import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.ConnectionKey;
@@ -482,7 +483,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         String methodName = methodDescriptor.getFullMethodName();
 
         methodMetrics = METHOD_METRICS.get().computeIfAbsent(baseUri + methodName, uri -> {
-            MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry();
+            MeterRegistry meterRegistry = Services.get(MetricsFactory.class).globalRegistry();
             Tag grpcMethod = Tag.create("grpc.method", methodName);
             Tag grpcTarget = Tag.create("grpc.target", baseUri);
 

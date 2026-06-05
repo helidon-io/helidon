@@ -24,6 +24,7 @@ import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
+import io.helidon.service.registry.Services;
 import io.helidon.service.registry.Service;
 
 import org.junit.jupiter.api.AfterEach;
@@ -51,7 +52,7 @@ class LimitMetricsTest {
     @BeforeEach
     @AfterEach
     void cleanMeters() {
-        MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry();
+        MeterRegistry meterRegistry = Services.get(MetricsFactory.class).globalRegistry();
         for (String meterName : REAL_METER_NAMES) {
             meterRegistry.remove(meterName, REAL_METER_TAGS, Meter.Scope.VENDOR);
         }
@@ -103,7 +104,7 @@ class LimitMetricsTest {
     @Test
     void publicContextInitRegistersRealMetersForBuiltInLimits() {
         Limit.InitializationContext context = Limit.InitializationContext.create("unit-test", REAL_METER_TAGS);
-        MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry();
+        MeterRegistry meterRegistry = Services.get(MetricsFactory.class).globalRegistry();
 
         Limit fixed = FixedLimit.builder()
                 .name("test_fixed")
@@ -147,7 +148,7 @@ class LimitMetricsTest {
 
         disabled.init(Limit.InitializationContext.create("unit-test", REAL_METER_TAGS));
 
-        MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry();
+        MeterRegistry meterRegistry = Services.get(MetricsFactory.class).globalRegistry();
         assertThat(meterRegistry.gauge("test_disabled_concurrent_requests", REAL_METER_TAGS).isPresent(), is(false));
     }
 
