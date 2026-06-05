@@ -31,6 +31,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class MetricsFactoryFactoryTest {
     private static final Config ROOT_CONFIG = Config.just(ConfigSources.create(Map.of(
@@ -67,6 +68,26 @@ class MetricsFactoryFactoryTest {
     }
 
     @Test
+    void factoryReceivesRootConfig() {
+        MetricsFactoryFactory serviceFactory = new MetricsFactoryFactory(ROOT_CONFIG) {
+            @Override
+            MetricsFactory createMetricsFactory(Config rootConfig) {
+                assertThat(rootConfig.get("metrics.app-name").asString().get(), is("metrics-app"));
+                assertThat(rootConfig.get("server.features.observe.observers.metrics.app-name").asString().get(),
+                           is("observe-app"));
+                return new CloseTrackingMetricsFactory();
+            }
+        };
+
+        serviceFactory.get();
+    }
+
+    @Test
+    void deprecatedConfigInstanceRejectsNullConfig() {
+        assertThrows(NullPointerException.class, () -> MetricsFactory.getInstance((Config) null));
+    }
+
+    @Test
     void preDestroyClosesCreatedFactories() {
         AtomicInteger nextFactory = new AtomicInteger();
         CloseTrackingMetricsFactory firstFactory = new CloseTrackingMetricsFactory();
@@ -74,7 +95,7 @@ class MetricsFactoryFactoryTest {
         CloseTrackingMetricsFactory[] factories = {firstFactory, secondFactory};
         MetricsFactoryFactory serviceFactory = new MetricsFactoryFactory(ROOT_CONFIG) {
             @Override
-            MetricsFactory createMetricsFactory(Config metricsConfig) {
+            MetricsFactory createMetricsFactory(Config rootConfig) {
                 return factories[nextFactory.getAndIncrement()];
             }
         };

@@ -21,7 +21,6 @@ import java.util.List;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
-import io.helidon.service.registry.Services;
 import io.helidon.webserver.Router;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.grpc.GrpcRouting;
@@ -31,16 +30,6 @@ import org.junit.jupiter.api.BeforeAll;
 
 abstract class GrpcBaseMetricsTest extends BaseStringServiceTest {
 
-    private static final MetricsFactory METRICS_FACTORY = Services.get(MetricsFactory.class);
-
-    static final Tag OK_TAG = METRICS_FACTORY.tagCreate("grpc.status", "OK");
-    static final Tag[] METHOD_TAGS = {
-            METRICS_FACTORY.tagCreate("grpc.method", "StringService/Upper"),
-            METRICS_FACTORY.tagCreate("grpc.method", "StringService/Lower"),
-            METRICS_FACTORY.tagCreate("grpc.method", "StringService/Echo"),
-            METRICS_FACTORY.tagCreate("grpc.method", "StringService/Split"),
-            METRICS_FACTORY.tagCreate("grpc.method", "StringService/Join")
-    };
     static final String CALL_STARTED = "grpc.server.call.started";
     static final String CALL_DURATION = "grpc.server.call.duration";
     static final String SENT_MESSAGE_SIZE = "grpc.server.call.sent_total_compressed_message_size";
@@ -56,13 +45,28 @@ abstract class GrpcBaseMetricsTest extends BaseStringServiceTest {
     }
 
     @BeforeAll
-    static void initialize() {
-        MeterRegistry meterRegistry = Services.get(MetricsFactory.class).globalRegistry();
-        for (Tag tag : METHOD_TAGS) {
+    static void initialize(MetricsFactory metricsFactory) {
+        MeterRegistry meterRegistry = metricsFactory.globalRegistry();
+        Tag okTag = okStatusTag(metricsFactory);
+        for (Tag tag : grpcMethodTags(metricsFactory)) {
             meterRegistry.remove(CALL_STARTED, List.of(tag));
-            meterRegistry.remove(CALL_DURATION, List.of(tag, OK_TAG));
-            meterRegistry.remove(SENT_MESSAGE_SIZE, List.of(tag, OK_TAG));
-            meterRegistry.remove(RCVD_MESSAGE_SIZE, List.of(tag, OK_TAG));
+            meterRegistry.remove(CALL_DURATION, List.of(tag, okTag));
+            meterRegistry.remove(SENT_MESSAGE_SIZE, List.of(tag, okTag));
+            meterRegistry.remove(RCVD_MESSAGE_SIZE, List.of(tag, okTag));
         }
+    }
+
+    static Tag okStatusTag(MetricsFactory metricsFactory) {
+        return metricsFactory.tagCreate("grpc.status", "OK");
+    }
+
+    static Tag[] grpcMethodTags(MetricsFactory metricsFactory) {
+        return new Tag[] {
+                metricsFactory.tagCreate("grpc.method", "StringService/Upper"),
+                metricsFactory.tagCreate("grpc.method", "StringService/Lower"),
+                metricsFactory.tagCreate("grpc.method", "StringService/Echo"),
+                metricsFactory.tagCreate("grpc.method", "StringService/Split"),
+                metricsFactory.tagCreate("grpc.method", "StringService/Join")
+        };
     }
 }

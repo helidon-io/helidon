@@ -29,8 +29,9 @@ import io.helidon.service.registry.Services;
  */
 public interface MeterRegistry extends Wrapper {
     /**
-     * Creates a new meter registry, for general case where you just need a {@link io.helidon.metrics.api.MeterRegistry}, use
-     * {@link MetricsFactory#globalRegistry()}
+     * Creates a new meter registry.
+     * For general case where you just need a {@link io.helidon.metrics.api.MeterRegistry}, use
+     * {@link MetricsFactory#globalRegistry()}.
      *
      * @return new meter registry
      * @deprecated either use {@link io.helidon.service.registry.ServiceRegistry#get(Class)} to get the global meter registry,

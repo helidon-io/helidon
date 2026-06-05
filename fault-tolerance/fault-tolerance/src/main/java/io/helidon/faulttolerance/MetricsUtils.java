@@ -87,7 +87,11 @@ class MetricsUtils {
         return meter(metricsFactory, Timer.class, Meter.Type.TIMER, name, List.of(tags));
     }
 
-    private static <M extends Meter> M meter(MetricsFactory metricsFactory, Class<M> meterClass, Meter.Type meterType, String name, List<Tag> tags) {
+    private static <M extends Meter> M meter(MetricsFactory metricsFactory,
+                                             Class<M> meterClass,
+                                             Meter.Type meterType,
+                                             String name,
+                                             List<Tag> tags) {
         var registry = metricsFactory.globalRegistry();
         for (Meter meter : registry.meters(List.of(VENDOR))) {
             if (meterClass.isInstance(meter)
