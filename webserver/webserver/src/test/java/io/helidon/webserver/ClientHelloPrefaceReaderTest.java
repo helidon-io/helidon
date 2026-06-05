@@ -28,6 +28,8 @@ import java.nio.channels.SocketChannel;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Optional;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
@@ -124,6 +126,30 @@ class ClientHelloPrefaceReaderTest {
 
                 assertThat(exception.getMessage(), containsString("timed out"));
                 assertThat(accepted.isBlocking(), is(true));
+            }
+        }
+    }
+
+    @Test
+    @Timeout(10)
+    void zeroSocketChannelTimeoutWaitsForClientHello() throws Exception {
+        byte[] record = record(clientHello("api.example.com"));
+        try (ServerSocketChannel server = ServerSocketChannel.open()) {
+            server.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+            InetSocketAddress address = (InetSocketAddress) server.getLocalAddress();
+            try (SocketChannel client = SocketChannel.open(address);
+                    SocketChannel accepted = server.accept()) {
+                FutureTask<ClientHelloPrefaceReader.ClientHelloPreface> read =
+                        new FutureTask<>(() -> ClientHelloPrefaceReader.read(accepted, Duration.ZERO));
+                Thread reader = Thread.ofPlatform().start(read);
+
+                Thread.sleep(100);
+                client.write(ByteBuffer.wrap(record));
+
+                ClientHelloPrefaceReader.ClientHelloPreface preface = read.get(5, TimeUnit.SECONDS);
+                assertThat(preface.sniHost(), is(Optional.of("api.example.com")));
+                assertThat(preface.replayBuffer().remaining(), is(record.length));
+                reader.join(5_000);
             }
         }
     }

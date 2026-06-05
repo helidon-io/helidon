@@ -317,16 +317,26 @@ final class ClientHelloPrefaceReader {
         private static final long NANOS_PER_MILLI = 1_000_000;
 
         private final Selector selector;
+        private final boolean indefinite;
         private final long deadlineNanos;
 
         private DeadlineWaiter(Selector selector, Duration timeout) {
             this.selector = selector;
-            this.deadlineNanos = System.nanoTime() + timeout.toNanos();
+            this.indefinite = timeout.isZero();
+            this.deadlineNanos = indefinite ? 0 : System.nanoTime() + timeout.toNanos();
         }
 
         @Override
         public void awaitReadable() throws IOException {
             while (true) {
+                if (indefinite) {
+                    int selected = selector.select();
+                    selector.selectedKeys().clear();
+                    if (selected != 0) {
+                        return;
+                    }
+                    continue;
+                }
                 long remainingNanos = deadlineNanos - System.nanoTime();
                 if (remainingNanos <= 0) {
                     throw new IllegalArgumentException("TLS ClientHello input timed out before the preface was complete");
