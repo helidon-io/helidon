@@ -43,7 +43,8 @@ public class DropwizardMetricsListener implements MetricRegistryListener {
     private static final System.Logger LOGGER = System.getLogger(DropwizardMetricsListener.class.getName());
 
     private final String prefix;
-    private final LazyValue<MeterRegistry> registry = LazyValue.create(() -> Services.get(MetricsFactory.class).globalRegistry());
+    private final LazyValue<MetricsFactory> metricsFactory = LazyValue.create(() -> Services.get(MetricsFactory.class));
+    private final LazyValue<MeterRegistry> registry = LazyValue.create(() -> metricsFactory.get().globalRegistry());
 
     private DropwizardMetricsListener(String prefix) {
         this.prefix = prefix;
@@ -119,17 +120,17 @@ public class DropwizardMetricsListener implements MetricRegistryListener {
 
     private io.helidon.metrics.api.Gauge registerGauge(String name, Gauge<? extends Number> gauge) {
         return registry.get()
-                .getOrCreate(io.helidon.metrics.api.Gauge.builder(prefix + name,
-                                                                  gauge,
-                                                                  g -> g.getValue().doubleValue())
+                .getOrCreate(metricsFactory.get().gaugeBuilder(prefix + name,
+                                                               gauge,
+                                                               g -> g.getValue().doubleValue())
                                      .scope(SCOPE));
     }
 
     private io.helidon.metrics.api.Gauge registerGauge(String name, Counter counter) {
         return registry.get()
-                .getOrCreate(io.helidon.metrics.api.Gauge.builder(prefix + name,
-                                                                  counter,
-                                                                  Counter::getCount)
+                .getOrCreate(metricsFactory.get().gaugeBuilder(prefix + name,
+                                                               counter,
+                                                               Counter::getCount)
                                      .scope(SCOPE));
     }
 }

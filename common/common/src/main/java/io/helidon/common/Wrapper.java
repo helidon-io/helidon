@@ -18,6 +18,7 @@ package io.helidon.common;
 /**
  * Behavior of a type that wraps a related type, typically through delegation.
  */
+@Api.Stable
 public interface Wrapper {
 
     /**

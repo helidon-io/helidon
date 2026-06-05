@@ -37,7 +37,8 @@ import static org.hamcrest.Matchers.is;
  */
 public class MetricsTest extends TestParent {
 
-    private static final MeterRegistry REGISTRY = Services.get(MetricsFactory.class).globalRegistry();
+    private static final MetricsFactory METRICS_FACTORY = Services.get(MetricsFactory.class);
+    private static final MeterRegistry REGISTRY = METRICS_FACTORY.globalRegistry();
 
     MetricsTest(WebServer server) {
         super(server);
@@ -59,10 +60,10 @@ public class MetricsTest extends TestParent {
                 .errors(false)
                 .build();
         Http1Client webClient = createNewClient(serviceCounterAll, serviceCounterGet, serviceCounterError, serviceCounterSuccess);
-        Counter counterAll = REGISTRY.getOrCreate(Counter.builder("counter.GET.localhost"));
-        Counter counterGet = REGISTRY.getOrCreate(Counter.builder("counter.get.GET.localhost"));
-        Counter counterError = REGISTRY.getOrCreate(Counter.builder("counter.error.GET.localhost"));
-        Counter counterSuccess = REGISTRY.getOrCreate(Counter.builder("counter.success.GET.localhost"));
+        Counter counterAll = REGISTRY.getOrCreate(METRICS_FACTORY.counterBuilder("counter.GET.localhost"));
+        Counter counterGet = REGISTRY.getOrCreate(METRICS_FACTORY.counterBuilder("counter.get.GET.localhost"));
+        Counter counterError = REGISTRY.getOrCreate(METRICS_FACTORY.counterBuilder("counter.error.GET.localhost"));
+        Counter counterSuccess = REGISTRY.getOrCreate(METRICS_FACTORY.counterBuilder("counter.success.GET.localhost"));
 
         assertThat(counterAll.count(), is(0L));
         assertThat(counterGet.count(), is(0L));
@@ -101,10 +102,10 @@ public class MetricsTest extends TestParent {
                 .errors(false)
                 .build();
         Http1Client webClient = createNewClient(serviceMeterAll, serviceMeterGet, serviceMeterError, serviceMeterSuccess);
-        Counter meterAll = REGISTRY.getOrCreate(Counter.builder("meter.GET.localhost"));
-        Counter meterGet = REGISTRY.getOrCreate(Counter.builder("meter.get.GET.localhost"));
-        Counter meterError = REGISTRY.getOrCreate(Counter.builder("meter.error.GET.localhost"));
-        Counter meterSuccess = REGISTRY.getOrCreate(Counter.builder("meter.success.GET.localhost"));
+        Counter meterAll = REGISTRY.getOrCreate(METRICS_FACTORY.counterBuilder("meter.GET.localhost"));
+        Counter meterGet = REGISTRY.getOrCreate(METRICS_FACTORY.counterBuilder("meter.get.GET.localhost"));
+        Counter meterError = REGISTRY.getOrCreate(METRICS_FACTORY.counterBuilder("meter.error.GET.localhost"));
+        Counter meterSuccess = REGISTRY.getOrCreate(METRICS_FACTORY.counterBuilder("meter.success.GET.localhost"));
 
         assertThat(meterAll.count(), is(0L));
         assertThat(meterGet.count(), is(0L));
@@ -139,9 +140,9 @@ public class MetricsTest extends TestParent {
 
         WebClientService clientService = (chain, request) -> {
             WebClientServiceResponse response = chain.proceed(request);
-            assertThat(REGISTRY.getOrCreate(Gauge.builder("gauge.GET.localhost", () -> 0L)).value(), is(1L));
-            assertThat(REGISTRY.getOrCreate(Gauge.builder("gauge.get.GET.localhost", () -> 0L)).value(), is(1L));
-            assertThat(REGISTRY.getOrCreate(Gauge.builder("gauge.put.PUT.localhost", () -> 0L)).value(), is(0L));
+            assertThat(REGISTRY.getOrCreate(METRICS_FACTORY.gaugeBuilder("gauge.GET.localhost", () -> 0L)).value(), is(1L));
+            assertThat(REGISTRY.getOrCreate(METRICS_FACTORY.gaugeBuilder("gauge.get.GET.localhost", () -> 0L)).value(), is(1L));
+            assertThat(REGISTRY.getOrCreate(METRICS_FACTORY.gaugeBuilder("gauge.put.PUT.localhost", () -> 0L)).value(), is(0L));
             return response;
         };
 
@@ -150,9 +151,9 @@ public class MetricsTest extends TestParent {
         // ensure the metrics are created
         webClient.get().request().close();
 
-        Gauge<Long> progressAll = REGISTRY.getOrCreate(Gauge.builder("gauge.GET.localhost", () -> 0L));
-        Gauge<Long> progressGet = REGISTRY.getOrCreate(Gauge.builder("gauge.get.GET.localhost", () -> 0L));
-        Gauge<Long> progressPut = REGISTRY.getOrCreate(Gauge.builder("gauge.put.PUT.localhost", () -> 0L));
+        Gauge<Long> progressAll = REGISTRY.getOrCreate(METRICS_FACTORY.gaugeBuilder("gauge.GET.localhost", () -> 0L));
+        Gauge<Long> progressGet = REGISTRY.getOrCreate(METRICS_FACTORY.gaugeBuilder("gauge.get.GET.localhost", () -> 0L));
+        Gauge<Long> progressPut = REGISTRY.getOrCreate(METRICS_FACTORY.gaugeBuilder("gauge.put.PUT.localhost", () -> 0L));
 
         assertThat(progressAll.value(), is(0L));
         assertThat(progressGet.value(), is(0L));
@@ -184,9 +185,9 @@ public class MetricsTest extends TestParent {
 
         Http1Client webClient = createNewClient(errorAll, errorGet, errorPut);
 
-        Counter counterAll = REGISTRY.getOrCreate(Counter.builder("counter.all.errors.localhost"));
-        Counter counterGet = REGISTRY.getOrCreate(Counter.builder("counter.errors.GET.localhost"));
-        Counter counterPut = REGISTRY.getOrCreate(Counter.builder("counter.errors.PUT.localhost"));
+        Counter counterAll = REGISTRY.getOrCreate(METRICS_FACTORY.counterBuilder("counter.all.errors.localhost"));
+        Counter counterGet = REGISTRY.getOrCreate(METRICS_FACTORY.counterBuilder("counter.errors.GET.localhost"));
+        Counter counterPut = REGISTRY.getOrCreate(METRICS_FACTORY.counterBuilder("counter.errors.PUT.localhost"));
 
         assertThat(counterAll.count(), is(0L));
         assertThat(counterGet.count(), is(0L));

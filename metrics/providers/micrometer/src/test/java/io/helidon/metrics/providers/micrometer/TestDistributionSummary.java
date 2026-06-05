@@ -31,16 +31,20 @@ import static org.hamcrest.Matchers.is;
 
 class TestDistributionSummary {
 
+    private static MetricsFactory metricsFactory;
     private static MeterRegistry meterRegistry;
 
     @BeforeAll
     static void prep() {
-        meterRegistry = Services.get(MetricsFactory.class).globalRegistry();
+        metricsFactory = Services.get(MetricsFactory.class);
+        meterRegistry = metricsFactory.globalRegistry();
     }
 
     @Test
     void testUnwrap() {
-        DistributionSummary.Builder builder = DistributionSummary.builder("a");
+        DistributionSummary.Builder builder = metricsFactory.distributionSummaryBuilder(
+                "a",
+                metricsFactory.distributionStatisticsConfigBuilder());
         builder.unwrap(io.micrometer.core.instrument.DistributionSummary.Builder.class)
                 .distributionStatisticExpiry(Duration.ofMinutes(10));
         DistributionSummary summary = meterRegistry.getOrCreate(builder);

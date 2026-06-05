@@ -61,20 +61,23 @@ class TestPrometheusPerf {
     private static double[] registerAndFormat(int loops) {
 
         double[] result = new double[loops];
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
 
         for (int loop = 0; loop < loops; loop++) {
-            MeterRegistry meterRegistry = Services.get(MetricsFactory.class).globalRegistry();
+            MeterRegistry meterRegistry = metricsFactory.globalRegistry();
             meterRegistry.close();
 
             Random random = new Random();
             for (int i = 0; i < 400; i++) {
-                Counter c = meterRegistry.getOrCreate(Counter.builder("ctr" + i));
+                Counter c = meterRegistry.getOrCreate(metricsFactory.counterBuilder("ctr" + i));
                 c.increment();
 
-                Timer t = meterRegistry.getOrCreate(Timer.builder("tmr" + i));
+                Timer t = meterRegistry.getOrCreate(metricsFactory.timerBuilder("tmr" + i));
                 t.record(123, TimeUnit.MILLISECONDS);
 
-                DistributionSummary ds = meterRegistry.getOrCreate(DistributionSummary.builder("dist" + i));
+                DistributionSummary ds = meterRegistry.getOrCreate(metricsFactory.distributionSummaryBuilder(
+                        "dist" + i,
+                        metricsFactory.distributionStatisticsConfigBuilder()));
                 ds.record(random.nextDouble());
             }
 

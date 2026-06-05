@@ -66,7 +66,7 @@ class SystemTagsManagerImpl implements SystemTagsManager {
      */
     private final LazyValue<List<Tag>> systemTags = LazyValue.create(() ->
              systemTagPairs.entrySet().stream()
-                     .map(entry -> Tag.create(entry.getKey(), entry.getValue()))
+                     .map(entry -> Services.get(MetricsFactory.class).tagCreate(entry.getKey(), entry.getValue()))
                      .toList()); // global tags plus the app
     private final Set<String> reservedTagNames;
 
@@ -131,8 +131,8 @@ class SystemTagsManagerImpl implements SystemTagsManager {
         return scopeTagName == null
                 ? Optional.empty()
                 : effectiveScope(candidateScope)
-                        .map(sc -> Tag.create(scopeTagName,
-                                              sc));
+                        .map(sc -> Services.get(MetricsFactory.class).tagCreate(scopeTagName,
+                                                                                 sc));
     }
 
     @Override
@@ -166,16 +166,16 @@ class SystemTagsManagerImpl implements SystemTagsManager {
 
         if (defaultScopeValue != null) {
             tagsMap.put(scopeTagName,
-                        Tag.create(scopeTagName,
-                                   defaultScopeValue));
+                        Services.get(MetricsFactory.class).tagCreate(scopeTagName,
+                                                                     defaultScopeValue));
         }
 
         tags.forEach(tag -> tagsMap.put(tag.key(), // If scope is set in a tag, the tag's value overrides the default in the map.
                                         tag));
 
         explicitScope.ifPresent(s -> tagsMap.put(scopeTagName,
-                                                 Tag.create(scopeTagName,
-                                                            explicitScope.get())));
+                                                 Services.get(MetricsFactory.class).tagCreate(scopeTagName,
+                                                                                              explicitScope.get())));
 
         return tagsMap.values();
     }
@@ -204,7 +204,7 @@ class SystemTagsManagerImpl implements SystemTagsManager {
     @Override
     public void assignScope(String validScope, Function<Tag, ?> tagSetter) {
         if (scopeTagName != null) {
-            tagSetter.apply(Tag.create(scopeTagName, validScope));
+            tagSetter.apply(Services.get(MetricsFactory.class).tagCreate(scopeTagName, validScope));
         }
     }
 

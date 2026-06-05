@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,9 @@ package io.helidon.webclient.grpc.tests;
 
 import java.util.Iterator;
 
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
+import io.helidon.service.registry.Services;
 import io.helidon.webclient.grpc.GrpcClient;
 
 import org.junit.jupiter.api.RepeatedTest;
@@ -28,10 +30,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 abstract class GrpcBaseMetricsTest extends GrpcBaseTest {
 
-    static final Tag OK_TAG = Tag.create("grpc.status", "OK");
+    private static final MetricsFactory METRICS_FACTORY = Services.get(MetricsFactory.class);
+
+    static final Tag OK_TAG = METRICS_FACTORY.tagCreate("grpc.status", "OK");
     static final Tag[] METHOD_TAGS = {
-            Tag.create("grpc.method", "StringService/Upper"),
-            Tag.create("grpc.method", "StringService/Split")
+            METRICS_FACTORY.tagCreate("grpc.method", "StringService/Upper"),
+            METRICS_FACTORY.tagCreate("grpc.method", "StringService/Split")
     };
     static final String ATTEMPT_STARTED = "grpc.client.attempt.started";
     static final String ATTEMPT_DURATION = "grpc.client.attempt.duration";

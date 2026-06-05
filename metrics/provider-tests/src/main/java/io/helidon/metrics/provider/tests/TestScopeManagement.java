@@ -49,15 +49,16 @@ class TestScopeManagement {
                 .scoping(ScopingConfig.builder()
                                  .clearDefaultValue())
                 .build();
-        MeterRegistry reg = Services.get(MetricsFactory.class).globalRegistry();
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        MeterRegistry reg = metricsFactory.globalRegistry();
         configureSystemTags(metricsConfig);
 
         // We explicitly set the scope for the counter and not for the timer.
         // With no default scope set in the config used to initialBuilders the MeterRegistry, only the counter will have a scope.
 
-        Counter c1 = reg.getOrCreate(Counter.builder("c1")
+        Counter c1 = reg.getOrCreate(metricsFactory.counterBuilder("c1")
                                              .scope("app"));
-        Timer t1 = reg.getOrCreate(Timer.builder("t1"));
+        Timer t1 = reg.getOrCreate(metricsFactory.timerBuilder("t1"));
 
         List<Meter> scopedMeters = new ArrayList<>();
         reg.meters(Set.of("app")).forEach(scopedMeters::add);
@@ -89,15 +90,16 @@ class TestScopeManagement {
                 .scoping(ScopingConfig.builder()
                                  .defaultValue("def-scope"))
                 .build();
-        MeterRegistry reg = Services.get(MetricsFactory.class).createMeterRegistry(metricsConfig);
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        MeterRegistry reg = metricsFactory.createMeterRegistry(metricsConfig);
         configureSystemTags(metricsConfig);
 
         // The config sets a default scope value of def-scope. So the counter gets its explicit setting
         // and the timer gets the default scope value because it has no explicit setting.
 
-        Counter c1 = reg.getOrCreate(Counter.builder("c1")
+        Counter c1 = reg.getOrCreate(metricsFactory.counterBuilder("c1")
                                              .scope("app"));
-        Timer t1 = reg.getOrCreate(Timer.builder("t1"));
+        Timer t1 = reg.getOrCreate(metricsFactory.timerBuilder("t1"));
 
         List<Meter> scopedMeters = new ArrayList<>();
         reg.meters(Set.of("app")).forEach(scopedMeters::add);
@@ -139,14 +141,14 @@ class TestScopeManagement {
         Services.get(MetricsFactory.class).globalRegistry(metricsConfig);
         configureSystemTags(metricsConfig);
 
-        Counter counter = Services.get(MetricsFactory.class)
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        Counter counter = metricsFactory
                 .globalRegistry()
-                .getOrCreate(Counter.builder("defaultScopedCounter"));
+                .getOrCreate(metricsFactory.counterBuilder("defaultScopedCounter"));
         assertThat("Unspecified scope", counter.scope(), OptionalMatcher.optionalValue(is(Meter.Scope.DEFAULT)));
     }
 
-    @SuppressWarnings("removal")
     private static void configureSystemTags(MetricsConfig metricsConfig) {
-        SystemTagsManager.instance(metricsConfig);
+        SystemTagsManager.create(metricsConfig);
     }
 }

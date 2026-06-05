@@ -73,14 +73,22 @@ class SemaphoreMetrics {
     }
 
     void init(String originName) {
+        if (!enableMetrics) {
+            // do not access a metrics factory when metrics are not enabled
+            return;
+        }
         init(Limit.InitializationContext.create(originName, legacySocketTags(originName)));
+    }
+
+    boolean enabled() {
+        return enableMetrics;
     }
 
     static List<Tag> legacySocketTags(String originName) {
         if (originName.equals(Service.Named.DEFAULT_NAME)) {
             return List.of();
         }
-        return List.of(Tag.create("socketName", originName));
+        return List.of(Services.get(MetricsFactory.class).tagCreate("socketName", originName));
     }
 
     void register(MetricsFactory metricsFactory, MeterRegistry meterRegistry, List<Tag> tags) {

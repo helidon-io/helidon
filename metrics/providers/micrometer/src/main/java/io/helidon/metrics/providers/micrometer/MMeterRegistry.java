@@ -41,7 +41,6 @@ import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.spi.MetersProvider;
-import io.helidon.service.registry.Services;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.DistributionSummary;
@@ -104,6 +103,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     private final Clock clock;
     private final MicrometerMetricsFactory metricsFactory;
     private final MetricsConfig metricsConfig;
+    private final SystemTagsManager systemTagsManager;
 
     /**
      * Once a Micrometer meter is registered, this map records the corresponding Helidon meter wrapper for it. This allows us,
@@ -127,6 +127,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         this.clock = clock;
         this.metricsFactory = metricsFactory;
         this.metricsConfig = metricsConfig;
+        this.systemTagsManager = SystemTagsManager.create(metricsConfig);
         checkMultipleInstantiations(metricsConfig);
     }
 
@@ -290,7 +291,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         /*
         This method uses only config, not any mutable data structures, so no need to lock.
          */
-        String effectiveScope = scope.orElse(Services.get(SystemTagsManager.class).effectiveScope(scope)
+        String effectiveScope = scope.orElse(systemTagsManager.effectiveScope(scope)
                                                      .orElse(io.helidon.metrics.api.Meter.Scope.DEFAULT));
         return metricsConfig.enabled()
                 && metricsConfig.isMeterEnabled(name, effectiveScope);
@@ -322,8 +323,9 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
         lock.readLock().lock();
         try {
+            Iterable<io.helidon.metrics.api.Tag> tagsToUse = systemTagsManager.withScopeTag(tags, Optional.empty());
             Search search = delegate().find(name)
-                    .tags(MTag.tags(tags));
+                    .tags(MTag.tags(tagsToUse));
             Meter match = search.meter();
 
             if (match == null) {
@@ -418,6 +420,11 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         return this;
     }
 
+    @Override
+    public MetricsFactory metricsFactory() {
+        return metricsFactory;
+    }
+
     void erase() {
         lock.writeLock().lock();
 
@@ -494,7 +501,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             /*
              We do not have an explicit scope so get the scope from the tags of the new meter if we can.
              */
-            Optional<String> scope = Services.get(SystemTagsManager.class)
+            Optional<String> scope = systemTagsManager
                     .effectiveScope(Optional.empty(), neutralIdForAddedMeter.tags());
 
             /*
@@ -672,11 +679,11 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                                                                                    M> registration) {
 
         // Select the actual scope value from the builder (if any) or a default scope value known to the system tags manager.
-        Optional<String> effectiveScope = Services.get(SystemTagsManager.class)
+        Optional<String> effectiveScope = systemTagsManager
                 .effectiveScope(mBuilder.scope());
 
         // If there is a usable scope value, add a tag to the builder if configuration has a scope tag name.
-        effectiveScope.ifPresent(realScope -> Services.get(SystemTagsManager.class)
+        effectiveScope.ifPresent(realScope -> systemTagsManager
                 .assignScope(realScope, builderTagSetter));
 
         io.helidon.metrics.api.Meter.Id id = mBuilder.id();
@@ -827,7 +834,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         // Create an ID to use for searching. It will need to have the scope tag if one was specified in the original ID's tags
         // or if the system tags manager says that a scope tag is enabled.
 
-        Iterable<io.helidon.metrics.api.Tag> tags = Services.get(SystemTagsManager.class).withScopeTag(id.tags(), scope);
+        Iterable<io.helidon.metrics.api.Tag> tags = systemTagsManager.withScopeTag(id.tags(), scope);
 
         lock.writeLock().lock();
 
@@ -858,8 +865,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     private io.helidon.metrics.api.Meter.Id neutralIdWithoutSystemTags(Meter.Id micrometerId) {
         return MMeter.PlainId.create(micrometerId.getName(),
-                                     Services.get(SystemTagsManager.class)
-                                             .withoutSystemTags(MTag.neutralTags(micrometerId.getTags())));
+                                     systemTagsManager.withoutSystemTags(MTag.neutralTags(micrometerId.getTags())));
     }
 
     private void recordNewMeter(io.helidon.metrics.api.Meter.Id id,
