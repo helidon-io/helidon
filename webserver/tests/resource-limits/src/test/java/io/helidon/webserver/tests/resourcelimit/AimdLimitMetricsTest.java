@@ -16,14 +16,14 @@
 
 package io.helidon.webserver.tests.resourcelimit;
 
-import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import io.helidon.common.concurrency.limits.AimdLimit;
+import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Timer;
-import io.helidon.service.registry.Services;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webserver.WebServerConfig;
@@ -56,9 +56,11 @@ class AimdLimitMetricsTest {
     };
 
     private final WebClient webClient;
+    private final MetricsFactory metricsFactory;
 
-    AimdLimitMetricsTest(WebClient webClient) {
+    AimdLimitMetricsTest(WebClient webClient, MetricsFactory metricsFactory) {
         this.webClient = webClient;
+        this.metricsFactory = metricsFactory;
     }
 
     @SetUpServer
@@ -97,9 +99,19 @@ class AimdLimitMetricsTest {
             assertThat(res.status().code(), is(200));
         }
 
-        MeterRegistry meterRegistry = Services.get(MetricsFactory.class).globalRegistry();
-        Optional<Timer> rtt = meterRegistry.timer("aimd_rtt", Collections.emptyList());
+        MeterRegistry meterRegistry = metricsFactory.globalRegistry();
+        Optional<Timer> rtt = timer(meterRegistry);
         assertThat(rtt.isPresent(), is(true));
         assertThat(rtt.get().count(), is(greaterThan(0L)));
+    }
+
+    private static Optional<Timer> timer(MeterRegistry meterRegistry) {
+        for (Meter meter : meterRegistry.meters(List.of(Meter.Scope.VENDOR))) {
+            if (meter instanceof Timer timer
+                    && meter.id().name().equals("aimd_rtt")) {
+                return Optional.of(timer);
+            }
+        }
+        return Optional.empty();
     }
 }

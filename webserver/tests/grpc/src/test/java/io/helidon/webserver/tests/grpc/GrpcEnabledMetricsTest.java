@@ -26,7 +26,6 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
-import io.helidon.service.registry.Services;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.grpc.GrpcConfig;
@@ -52,10 +51,11 @@ class GrpcEnabledMetricsTest extends GrpcBaseMetricsTest {
     }
 
     @AfterAll
-    static void checkMetrics() {
-        MeterRegistry meterRegistry = Services.get(MetricsFactory.class).globalRegistry();
+    static void checkMetrics(MetricsFactory metricsFactory) {
+        MeterRegistry meterRegistry = metricsFactory.globalRegistry();
+        Tag okTag = okStatusTag(metricsFactory);
 
-        for (Tag tag : METHOD_TAGS) {
+        for (Tag tag : grpcMethodTags(metricsFactory)) {
             Optional<Counter> counter = meter(meterRegistry,
                                               Counter.class,
                                               Meter.Type.COUNTER,
@@ -68,7 +68,7 @@ class GrpcEnabledMetricsTest extends GrpcBaseMetricsTest {
                                           Timer.class,
                                           Meter.Type.TIMER,
                                           CALL_DURATION,
-                                          List.of(tag, OK_TAG));
+                                          List.of(tag, okTag));
             assertThat(timer.isPresent(), is(true));
             assertThat(timer.get().count(), is(20L));
 
@@ -77,7 +77,7 @@ class GrpcEnabledMetricsTest extends GrpcBaseMetricsTest {
                             DistributionSummary.class,
                             Meter.Type.DISTRIBUTION_SUMMARY,
                             SENT_MESSAGE_SIZE,
-                            List.of(tag, OK_TAG));
+                            List.of(tag, okTag));
             assertThat(summary.isPresent(), is(true));
             assertThat(summary.get().count(), is(20L));
             assertThat(summary.get().max(), greaterThan(0.0));
@@ -86,7 +86,7 @@ class GrpcEnabledMetricsTest extends GrpcBaseMetricsTest {
                             DistributionSummary.class,
                             Meter.Type.DISTRIBUTION_SUMMARY,
                             RCVD_MESSAGE_SIZE,
-                            List.of(tag, OK_TAG));
+                            List.of(tag, okTag));
             assertThat(summary.isPresent(), is(true));
             assertThat(summary.get().count(), is(20L));
             assertThat(summary.get().max(), greaterThan(0.0));

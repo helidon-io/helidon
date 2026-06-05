@@ -26,7 +26,6 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
-import io.helidon.service.registry.Services;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webserver.ListenerConfig;
@@ -59,14 +58,16 @@ class FixedLimitMetricsTest {
             "fixed_concurrent_requests"
     };
 
-    private static final Tag ADMIN_SOCKET_TAG = Services.get(MetricsFactory.class).tagCreate("socketName", "admin");
-
     private final WebClient webClient;
     private final WebClient adminClient;
+    private final MetricsFactory metricsFactory;
+    private final Tag adminSocketTag;
 
-    FixedLimitMetricsTest(WebClient webClient, @Socket("admin") WebClient adminClient) {
+    FixedLimitMetricsTest(WebClient webClient, @Socket("admin") WebClient adminClient, MetricsFactory metricsFactory) {
         this.webClient = webClient;
         this.adminClient = adminClient;
+        this.metricsFactory = metricsFactory;
+        this.adminSocketTag = metricsFactory.tagCreate("socketName", "admin");
     }
 
     @SetUpServer
@@ -113,7 +114,7 @@ class FixedLimitMetricsTest {
             assertThat(res.status().code(), is(200));
         }
 
-        MeterRegistry meterRegistry = Services.get(MetricsFactory.class).globalRegistry();
+        MeterRegistry meterRegistry = metricsFactory.globalRegistry();
         Optional<Timer> rtt = timer(meterRegistry, Collections.emptyList());
         assertThat(rtt.isPresent(), is(true));
         assertThat(rtt.get().count(), is(greaterThan(0L)));
@@ -125,8 +126,8 @@ class FixedLimitMetricsTest {
             assertThat(res.status().code(), is(200));
         }
 
-        MeterRegistry meterRegistry = Services.get(MetricsFactory.class).globalRegistry();
-        Optional<Timer> rtt = timer(meterRegistry, List.of(ADMIN_SOCKET_TAG));
+        MeterRegistry meterRegistry = metricsFactory.globalRegistry();
+        Optional<Timer> rtt = timer(meterRegistry, List.of(adminSocketTag));
         assertThat(rtt.isPresent(), is(true));
 
         try (HttpClientResponse res = webClient.get("/observe/metrics").request()) {

@@ -797,7 +797,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
             MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
             MeterRegistry meterRegistry = metricsFactory.globalRegistry();
 
-            Tag okTag = Services.get(MetricsFactory.class).tagCreate("grpc.status", "OK");
+            Tag okTag = metricsFactory.tagCreate("grpc.status", "OK");
             Tag grpcMethod = metricsFactory.tagCreate("grpc.method", name);
 
             Counter.Builder callStartedBuilder = metricsFactory.counterBuilder("grpc.server.call.started")

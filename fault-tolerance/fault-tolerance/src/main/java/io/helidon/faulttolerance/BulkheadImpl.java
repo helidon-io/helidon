@@ -70,7 +70,7 @@ class BulkheadImpl implements Bulkhead {
         this.metricsEnabled = config.enableMetrics() || MetricsUtils.defaultEnabled();
         if (metricsEnabled) {
             var mf = metricsFactory.get();
-            Tag nameTag = MetricsUtils.tag(mf,"name", name);
+            Tag nameTag = MetricsUtils.tag(mf, "name", name);
             callsCounterMetric = MetricsUtils.counterBuilder(mf, FT_BULKHEAD_CALLS_TOTAL, nameTag);
             waitingDurationMetric = MetricsUtils.timerBuilder(mf, FT_BULKHEAD_WAITINGDURATION, nameTag);
             MetricsUtils.gaugeBuilder(mf, FT_BULKHEAD_EXECUTIONSRUNNING, concurrentExecutions::get, nameTag);
