@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.metrics.providers.micrometer;
 import java.util.concurrent.TimeUnit;
 
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.Services;
 
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.Extension;
@@ -28,6 +29,7 @@ public class MicrometerMetricsTestsJunitExtension implements Extension,
 
     static void clear() {
 
+        Services.get(MetricsFactory.class).close();
         MetricsFactory.closeAll();
 
         // And clear out Micrometer's global registry explicitly to be extra sure.

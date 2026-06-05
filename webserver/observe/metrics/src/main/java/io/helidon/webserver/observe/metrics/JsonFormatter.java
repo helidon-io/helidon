@@ -53,7 +53,6 @@ import io.helidon.metrics.api.MeterRegistryFormatter;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.api.Timer;
-import io.helidon.service.registry.Services;
 
 /**
  * JSON formatter for a meter registry (independent of the underlying registry implementation).
@@ -72,6 +71,7 @@ class JsonFormatter implements MeterRegistryFormatter {
     private final String scopeTagName;
     private final MetricsConfig metricsConfig;
     private final MeterRegistry meterRegistry;
+    private final SystemTagsManager systemTagsManager;
 
     private JsonFormatter(Builder builder) {
         meterNameSelection = builder.meterNameSelection;
@@ -79,6 +79,7 @@ class JsonFormatter implements MeterRegistryFormatter {
         scopeTagName = builder.scopeTagName;
         metricsConfig = builder.metricsConfig;
         meterRegistry = builder.meterRegistry;
+        systemTagsManager = SystemTagsManager.create(metricsConfig);
     }
 
     /**
@@ -163,7 +164,7 @@ class JsonFormatter implements MeterRegistryFormatter {
                 // add this meter's contribution to the output.
                 MetricOutputBuilder metricOutputBuilder = meterOutputBuilderMapToUpdate
                         .computeIfAbsent(metricOutputKey(meter),
-                                         k -> MetricOutputBuilder.create(meter, metricsConfig));
+                                         k -> MetricOutputBuilder.create(meter, metricsConfig, systemTagsManager));
                 metricOutputBuilder.add(meter);
                 isAnyOutput.set(true);
             }
@@ -213,7 +214,7 @@ class JsonFormatter implements MeterRegistryFormatter {
 
                 List<List<String>> tagGroups = new ArrayList<>();
 
-                List<String> tags = StreamSupport.stream(Services.get(SystemTagsManager.class)
+                List<String> tags = StreamSupport.stream(systemTagsManager
                                                                  .withoutSystemOrScopeTags(meter.id().tags())
                                                                  .spliterator(), false)
                         .map(tag -> jsonEscape(tag.key()) + "=" + jsonEscape(tag.value()))
@@ -298,17 +299,16 @@ class JsonFormatter implements MeterRegistryFormatter {
         }
     }
 
-    private static String metricOutputKey(Meter meter) {
+    private String metricOutputKey(Meter meter) {
         return meter instanceof Counter || meter instanceof io.helidon.metrics.api.Gauge
-                ? flatNameAndTags(meter.id())
+                ? flatNameAndTags(meter.id(), systemTagsManager)
                 : structureName(meter.id());
     }
 
-    private static String flatNameAndTags(Meter.Id meterId) {
+    private static String flatNameAndTags(Meter.Id meterId, SystemTagsManager systemTagsManager) {
         StringJoiner sj = new StringJoiner(";");
         sj.add(meterId.name());
-        Services.get(SystemTagsManager.class)
-                .withoutSystemOrScopeTags(meterId.tags())
+        systemTagsManager.withoutSystemOrScopeTags(meterId.tags())
                 .forEach(tag -> sj.add(tag.key() + "=" + tag.value()));
         return sj.toString();
     }
@@ -360,25 +360,33 @@ class JsonFormatter implements MeterRegistryFormatter {
     private abstract static class MetricOutputBuilder {
 
         private final Meter meter;
+        private final SystemTagsManager systemTagsManager;
 
-        protected MetricOutputBuilder(Meter meter) {
+        protected MetricOutputBuilder(Meter meter, SystemTagsManager systemTagsManager) {
             this.meter = meter;
+            this.systemTagsManager = systemTagsManager;
         }
 
         protected Meter meter() {
             return meter;
         }
 
+        protected SystemTagsManager systemTagsManager() {
+            return systemTagsManager;
+        }
+
         protected abstract void add(Meter meter);
 
         protected abstract void apply(JsonObject.Builder builder);
 
-        private static MetricOutputBuilder create(Meter meter, MetricsConfig metricsConfig) {
+        private static MetricOutputBuilder create(Meter meter,
+                                                  MetricsConfig metricsConfig,
+                                                  SystemTagsManager systemTagsManager) {
             return meter instanceof Counter
                     || meter instanceof io.helidon.metrics.api.Gauge
                     || meter instanceof FunctionalCounter
-                    ? new Flat(meter)
-                    : new Structured(meter, metricsConfig);
+                    ? new Flat(meter, systemTagsManager)
+                    : new Structured(meter, metricsConfig, systemTagsManager);
         }
 
         private static void addNarrowed(JsonObject.Builder builder, String nameWithTags, Number number) {
@@ -415,24 +423,24 @@ class JsonFormatter implements MeterRegistryFormatter {
 
         private static class Flat extends MetricOutputBuilder {
 
-            private Flat(Meter meter) {
-                super(meter);
+            private Flat(Meter meter, SystemTagsManager systemTagsManager) {
+                super(meter, systemTagsManager);
             }
 
             @Override
             protected void apply(JsonObject.Builder builder) {
                 if (meter() instanceof Counter counter) {
-                    builder.set(flatNameAndTags(meter().id()), counter.count());
+                    builder.set(flatNameAndTags(meter().id(), systemTagsManager()), counter.count());
                     return;
                 }
                 if (meter() instanceof io.helidon.metrics.api.Gauge gauge) {
 
-                    String nameWithTags = flatNameAndTags(meter().id());
+                    String nameWithTags = flatNameAndTags(meter().id(), systemTagsManager());
                     addNarrowed(builder, nameWithTags, gauge.value());
                     return;
                 }
                 if (meter() instanceof FunctionalCounter fCounter) {
-                    builder.set(flatNameAndTags(meter().id()), fCounter.count());
+                    builder.set(flatNameAndTags(meter().id(), systemTagsManager()), fCounter.count());
                     return;
                 }
                 throw new IllegalArgumentException("Attempt to format meter with structured data as flat JSON "
@@ -450,8 +458,8 @@ class JsonFormatter implements MeterRegistryFormatter {
             private final JsonObject.Builder sameNameBuilder = JsonObject.builder();
             private final MetricsConfig metricsConfig;
 
-            Structured(Meter meter, MetricsConfig metricsConfig) {
-                super(meter);
+            Structured(Meter meter, MetricsConfig metricsConfig, SystemTagsManager systemTagsManager) {
+                super(meter, systemTagsManager);
                 this.metricsConfig = metricsConfig;
             }
 
@@ -535,15 +543,14 @@ class JsonFormatter implements MeterRegistryFormatter {
                 return TimeUnit.SECONDS;
             }
 
-            private static String valueId(String valueName, Meter.Id meterId) {
+            private String valueId(String valueName, Meter.Id meterId) {
                 return valueName + tagsPortion(meterId);
             }
 
-            private static String tagsPortion(Meter.Id metricID) {
+            private String tagsPortion(Meter.Id metricID) {
                 StringJoiner sj = new StringJoiner(";", ";", "");
                 sj.setEmptyValue("");
-                Services.get(SystemTagsManager.class)
-                        .withoutSystemOrScopeTags(metricID.tags())
+                systemTagsManager().withoutSystemOrScopeTags(metricID.tags())
                         .forEach(tag -> sj.add(tag.key() + "=" + tag.value()));
                 return sj.toString();
             }

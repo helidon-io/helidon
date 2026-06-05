@@ -25,6 +25,7 @@ import java.util.function.Supplier;
 
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Gauge;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 import io.helidon.testing.junit5.Testing;
@@ -45,6 +46,11 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 @Testing.Test
 class BulkheadMetricsTest extends BulkheadBaseTest {
+    private final MetricsFactory metricsFactory;
+
+    BulkheadMetricsTest(MetricsFactory metricsFactory) {
+        this.metricsFactory = metricsFactory;
+    }
 
     @Test
     void testBulkhead() throws InterruptedException, ExecutionException, java.util.concurrent.TimeoutException {
@@ -74,10 +80,10 @@ class BulkheadMetricsTest extends BulkheadBaseTest {
         }
 
         // Check metrics
-        Tag nameTag = Tag.create("name", bulkhead.name());
-        Counter callsTotal = MetricsUtils.counter(FT_BULKHEAD_CALLS_TOTAL, nameTag);
+        Tag nameTag = MetricsUtils.tag(metricsFactory, "name", bulkhead.name());
+        Counter callsTotal = MetricsUtils.counter(metricsFactory, FT_BULKHEAD_CALLS_TOTAL, nameTag);
         assertThat(callsTotal.count(), is(1L));
-        Gauge<Long> running = MetricsUtils.gauge(FT_BULKHEAD_EXECUTIONSRUNNING, nameTag);
+        Gauge<Long> running = MetricsUtils.gauge(metricsFactory, FT_BULKHEAD_EXECUTIONSRUNNING, nameTag);
         assertThat(running.value(), is(1L));
 
         // Submit new task that should be queued
@@ -93,7 +99,7 @@ class BulkheadMetricsTest extends BulkheadBaseTest {
 
         // Check metrics
         assertThat(callsTotal.count(), is(2L));
-        Gauge<Long> waiting = MetricsUtils.gauge(FT_BULKHEAD_EXECUTIONSWAITING, nameTag);
+        Gauge<Long> waiting = MetricsUtils.gauge(metricsFactory, FT_BULKHEAD_EXECUTIONSWAITING, nameTag);
         assertThat(waiting.value(), is(1L));
 
         // Submit new task that should be rejected
@@ -102,9 +108,9 @@ class BulkheadMetricsTest extends BulkheadBaseTest {
 
         // Check metrics
         assertThat(callsTotal.count(), is(3L));
-        Gauge<Long> rejected = MetricsUtils.gauge(FT_BULKHEAD_EXECUTIONSREJECTED, nameTag);
+        Gauge<Long> rejected = MetricsUtils.gauge(metricsFactory, FT_BULKHEAD_EXECUTIONSREJECTED, nameTag);
         assertThat(rejected.value(), is(1L));
-        Timer waitingDuration = MetricsUtils.timer(FT_BULKHEAD_WAITINGDURATION, nameTag);
+        Timer waitingDuration = MetricsUtils.timer(metricsFactory, FT_BULKHEAD_WAITINGDURATION, nameTag);
         assertThat(waitingDuration.count(), is(0L));
 
         // Unblock inProgress task and get result to free bulkhead
@@ -157,9 +163,9 @@ class BulkheadMetricsTest extends BulkheadBaseTest {
             fail("Task inProgress not started");
         }
 
-        Tag nameTag = Tag.create("name", bulkhead.name());
-        Gauge<Long> waiting = MetricsUtils.gauge(FT_BULKHEAD_EXECUTIONSWAITING, nameTag);
-        Timer waitingDuration = MetricsUtils.timer(FT_BULKHEAD_WAITINGDURATION, nameTag);
+        Tag nameTag = MetricsUtils.tag(metricsFactory, "name", bulkhead.name());
+        Gauge<Long> waiting = MetricsUtils.gauge(metricsFactory, FT_BULKHEAD_EXECUTIONSWAITING, nameTag);
+        Timer waitingDuration = MetricsUtils.timer(metricsFactory, FT_BULKHEAD_WAITINGDURATION, nameTag);
         assertThat(waiting.value(), is(0L));
         assertThat(waitingDuration.count(), is(0L));
 
@@ -220,9 +226,9 @@ class BulkheadMetricsTest extends BulkheadBaseTest {
             fail("Task inProgress not started");
         }
 
-        Tag nameTag = Tag.create("name", bulkhead.name());
-        Gauge<Long> waiting = MetricsUtils.gauge(FT_BULKHEAD_EXECUTIONSWAITING, nameTag);
-        Timer waitingDuration = MetricsUtils.timer(FT_BULKHEAD_WAITINGDURATION, nameTag);
+        Tag nameTag = MetricsUtils.tag(metricsFactory, "name", bulkhead.name());
+        Gauge<Long> waiting = MetricsUtils.gauge(metricsFactory, FT_BULKHEAD_EXECUTIONSWAITING, nameTag);
+        Timer waitingDuration = MetricsUtils.timer(metricsFactory, FT_BULKHEAD_WAITINGDURATION, nameTag);
 
         Task queued = new Task(1);
         Supplier<Integer> queuedSupplier = queued::run;

@@ -19,6 +19,8 @@ import io.helidon.metrics.api.BuiltInMeterNameFormat;
 import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsConfig;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.Services;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -40,7 +42,7 @@ class TestKpiMeterNameCase {
                         .extended(true)
                         .build())
                 .build();
-        MeterRegistry meterRegistry = MeterRegistry.create(metricsConfig);
+        MeterRegistry meterRegistry = Services.get(MetricsFactory.class).createMeterRegistry(metricsConfig);
 
         // As a side-effect, the following line registers the KPI metrics in the meter registry.
         KeyPerformanceIndicatorMetricsImpls.get(meterRegistry,
@@ -63,7 +65,7 @@ class TestKpiMeterNameCase {
                         .build())
                 .builtInMeterNameFormat(BuiltInMeterNameFormat.SNAKE)
                 .build();
-        MeterRegistry meterRegistry = MeterRegistry.create(metricsConfig);
+        MeterRegistry meterRegistry = Services.get(MetricsFactory.class).createMeterRegistry(metricsConfig);
 
         // As a side-effect, the following line registers the KPI metrics in the meter registry.
         KeyPerformanceIndicatorMetricsImpls.get(meterRegistry,

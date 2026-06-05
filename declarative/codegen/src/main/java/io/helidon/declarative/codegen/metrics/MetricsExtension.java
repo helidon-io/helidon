@@ -43,7 +43,6 @@ import static io.helidon.declarative.codegen.metrics.MetricsTypes.ANNOTATION_GAU
 import static io.helidon.declarative.codegen.metrics.MetricsTypes.ANNOTATION_TAG;
 import static io.helidon.declarative.codegen.metrics.MetricsTypes.ANNOTATION_TAGS;
 import static io.helidon.declarative.codegen.metrics.MetricsTypes.ANNOTATION_TIMED;
-import static io.helidon.declarative.codegen.metrics.MetricsTypes.TAG;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_SINGLETON;
 
 class MetricsExtension implements RegistryCodegenExtension {
@@ -103,8 +102,7 @@ class MetricsExtension implements RegistryCodegenExtension {
         while (it.hasNext()) {
             var tag = it.next();
             contentBuilder
-                    .addContent(TAG)
-                    .addContent(".create(")
+                    .addContent("metricsFactory.tagCreate(")
                     .addContentLiteral(tag.key())
                     .addContent(", ")
                     .addContentLiteral(tag.value())

@@ -31,13 +31,15 @@ import org.junit.jupiter.api.BeforeAll;
 
 abstract class GrpcBaseMetricsTest extends BaseStringServiceTest {
 
-    static final Tag OK_TAG = Tag.create("grpc.status", "OK");
+    private static final MetricsFactory METRICS_FACTORY = Services.get(MetricsFactory.class);
+
+    static final Tag OK_TAG = METRICS_FACTORY.tagCreate("grpc.status", "OK");
     static final Tag[] METHOD_TAGS = {
-            Tag.create("grpc.method", "StringService/Upper"),
-            Tag.create("grpc.method", "StringService/Lower"),
-            Tag.create("grpc.method", "StringService/Echo"),
-            Tag.create("grpc.method", "StringService/Split"),
-            Tag.create("grpc.method", "StringService/Join")
+            METRICS_FACTORY.tagCreate("grpc.method", "StringService/Upper"),
+            METRICS_FACTORY.tagCreate("grpc.method", "StringService/Lower"),
+            METRICS_FACTORY.tagCreate("grpc.method", "StringService/Echo"),
+            METRICS_FACTORY.tagCreate("grpc.method", "StringService/Split"),
+            METRICS_FACTORY.tagCreate("grpc.method", "StringService/Join")
     };
     static final String CALL_STARTED = "grpc.server.call.started";
     static final String CALL_DURATION = "grpc.server.call.duration";

@@ -76,10 +76,9 @@ public interface MetricsFactory {
      * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MetricsFactory.class)} for the
      * shared metrics factory, or create non-global metrics objects using the programmatic API.
      */
-    @SuppressWarnings("removal")
     @Deprecated(since = "27.0.0", forRemoval = true)
     static MetricsFactory getInstance(Config metricsConfigNode) {
-        return MetricsFactoryManager.getMetricsFactory(metricsConfigNode);
+        return Services.get(MetricsFactory.class);
     }
 
     /**

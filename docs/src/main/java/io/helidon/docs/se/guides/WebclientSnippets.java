@@ -19,6 +19,7 @@ import io.helidon.config.Config;
 import io.helidon.http.Method;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.service.registry.Services;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.WebClient;
@@ -87,10 +88,11 @@ class WebclientSnippets {
     void snippet_6_7_8() {
         // tag::snippet_6[]
         MeterRegistry meterRegistry = Services.get(MeterRegistry.class);
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
 
         String metricName = "counter.GET.localhost"; // <1>
 
-        Counter counter = meterRegistry.getOrCreate(Counter.builder(metricName)); // <2>
+        Counter counter = meterRegistry.getOrCreate(metricsFactory.counterBuilder(metricName)); // <2>
         System.out.println(metricName + ": " + counter.count());
 
         WebClientService clientServiceMetric = WebClientMetrics.counter()
@@ -119,10 +121,11 @@ class WebclientSnippets {
     void snippet_9(String[] args) {
         // tag::snippet_9[]
         MeterRegistry meterRegistry = Services.get(MeterRegistry.class);
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
 
         String counterName = "counter.GET.localhost"; // <1>
 
-        Counter counter = meterRegistry.getOrCreate(Counter.builder(counterName)); // <2>
+        Counter counter = meterRegistry.getOrCreate(metricsFactory.counterBuilder(counterName)); // <2>
         System.out.println(counterName + ": " + counter.count());
 
         Config config = Config.create(); // <3>

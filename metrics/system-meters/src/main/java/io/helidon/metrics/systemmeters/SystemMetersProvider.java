@@ -263,13 +263,13 @@ public class SystemMetersProvider implements MetersProvider {
                           metadata(GC_COUNT),
                           gcBean,
                           GarbageCollectorMXBean::getCollectionCount,
-                          Tag.create("name", poolName));
+                          metricsFactory.tagCreate("name", poolName));
             // Express the GC time in seconds.
             registerGauge(result,
                           metadata(GC_TIME),
                           gcBean,
                           bean -> (long) (bean.getCollectionTime() / 1000.0D),
-                          Tag.create("name", poolName));
+                          metricsFactory.tagCreate("name", poolName));
         }
         return result;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ class WebClientTimer extends WebClientMetric {
 
     private void updateTimer(Metadata metadata, long start) {
         long time = System.nanoTime() - start;
-        Timer timer = meterRegistry().getOrCreate(Timer.builder(metadata.name())
+        Timer timer = meterRegistry().getOrCreate(metricsFactory().timerBuilder(metadata.name())
                                                     .description(metadata.description()));
         timer.record(Duration.ofNanos(time));
     }
