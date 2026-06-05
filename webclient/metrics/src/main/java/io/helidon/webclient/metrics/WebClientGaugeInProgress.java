@@ -17,7 +17,6 @@ package io.helidon.webclient.metrics;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-import io.helidon.metrics.api.Gauge;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 
