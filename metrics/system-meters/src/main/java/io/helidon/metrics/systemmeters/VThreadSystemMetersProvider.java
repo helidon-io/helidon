@@ -29,7 +29,6 @@ import io.helidon.common.Api;
 import io.helidon.common.LazyValue;
 import io.helidon.common.resumable.Resumable;
 import io.helidon.common.resumable.ResumableSupport;
-import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;

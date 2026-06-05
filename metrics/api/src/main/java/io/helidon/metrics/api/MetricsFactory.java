@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -51,11 +52,10 @@ public interface MetricsFactory {
     String PULL_PUBLISHERS_PRESENT = "io.helidon.metrics.pull-publishers";
 
     /**
-     * Returns the most-recently created implementation or, if none, a new one from a highest-weight provider available at
-     * runtime and using the {@value MetricsConfigBlueprint#METRICS_CONFIG_KEY} section from the
-     * current config.
+     * Returns the shared metrics factory from
+     * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MetricsFactory.class)}.
      *
-     * @return current or new metrics factory
+     * @return shared metrics factory
      * @deprecated since 27.0.0, for removal. Use
      * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MetricsFactory.class)} for the
      * shared metrics factory, or create non-global metrics objects using the programmatic API.
@@ -66,18 +66,18 @@ public interface MetricsFactory {
     }
 
     /**
-     * Returns a new metrics factory instance from a highest-weight provider using the provided
-     * config node to set up the metrics factory and saving the resulting metrics factory
-     * as the current one, returned by {@link #getInstance()}.
+     * Returns the shared metrics factory from
+     * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MetricsFactory.class)}.
      *
-     * @param metricsConfigNode metrics config node
-     * @return new instance configured as directed
-     * @deprecated since 27.0.0, for removal. Static config-based access creates a new shared instance. Use
+     * @param ignoredConfig ignored config; must not be {@code null}
+     * @return shared metrics factory
+     * @deprecated since 27.0.0, for removal. Static config-based access is no longer supported. Use
      * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MetricsFactory.class)} for the
      * shared metrics factory, or create non-global metrics objects using the programmatic API.
      */
     @Deprecated(since = "27.0.0", forRemoval = true)
-    static MetricsFactory getInstance(Config metricsConfigNode) {
+    static MetricsFactory getInstance(Config ignoredConfig) {
+        Objects.requireNonNull(ignoredConfig);
         return Services.get(MetricsFactory.class);
     }
 

@@ -76,7 +76,8 @@ class SystemTagsManagerImpl implements SystemTagsManager {
 
     @Service.Inject
     SystemTagsManagerImpl(Config config, MetricsProgrammaticConfig programmaticConfig) {
-        this(MetricsConfig.create(config.get("metrics")), programmaticConfig.reservedTagNames());
+        this(programmaticConfig.apply(MetricsConfig.create(config.get("metrics"))),
+             programmaticConfig.reservedTagNames());
     }
 
     private SystemTagsManagerImpl(MetricsConfig metricsConfig, Set<String> reservedTagNames) {

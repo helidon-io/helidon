@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 
@@ -70,6 +71,7 @@ class DeclarativeCodegenMetricsTypesTest {
         checkField(toCheck, checked, fields, "ANNOTATION_GAUGE", Metrics.Gauge.class);
 
         checkField(toCheck, checked, fields, "METER_REGISTRY", MeterRegistry.class);
+        checkField(toCheck, checked, fields, "METRICS_FACTORY", MetricsFactory.class);
         checkField(toCheck, checked, fields, "GAUGE", Gauge.class);
         checkField(toCheck, checked, fields, "COUNTER", Counter.class);
         checkField(toCheck, checked, fields, "TIMER", Timer.class);

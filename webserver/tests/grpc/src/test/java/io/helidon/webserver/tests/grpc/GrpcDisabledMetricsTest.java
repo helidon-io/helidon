@@ -25,7 +25,6 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
-import io.helidon.service.registry.Services;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.grpc.GrpcConfig;
@@ -50,20 +49,21 @@ class GrpcDisabledMetricsTest extends GrpcBaseMetricsTest {
     }
 
     @AfterAll
-    static void checkMetrics() {
-        MeterRegistry meterRegistry = Services.get(MetricsFactory.class).globalRegistry();
+    static void checkMetrics(MetricsFactory metricsFactory) {
+        MeterRegistry meterRegistry = metricsFactory.globalRegistry();
+        Tag okTag = okStatusTag(metricsFactory);
 
-        for (Tag tag : METHOD_TAGS) {
+        for (Tag tag : grpcMethodTags(metricsFactory)) {
             Optional<Counter> counter = meterRegistry.counter(CALL_STARTED, List.of(tag));
             assertThat(counter.isEmpty(), is(true));
 
-            Optional<Timer> timer = meterRegistry.timer(CALL_DURATION, List.of(tag, OK_TAG));
+            Optional<Timer> timer = meterRegistry.timer(CALL_DURATION, List.of(tag, okTag));
             assertThat(timer.isEmpty(), is(true));
 
-            Optional<DistributionSummary> summary = meterRegistry.summary(SENT_MESSAGE_SIZE, List.of(tag, OK_TAG));
+            Optional<DistributionSummary> summary = meterRegistry.summary(SENT_MESSAGE_SIZE, List.of(tag, okTag));
             assertThat(summary.isEmpty(), is(true));
 
-            summary = meterRegistry.summary(RCVD_MESSAGE_SIZE, List.of(tag, OK_TAG));
+            summary = meterRegistry.summary(RCVD_MESSAGE_SIZE, List.of(tag, okTag));
             assertThat(summary.isEmpty(), is(true));
         }
     }

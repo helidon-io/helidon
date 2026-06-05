@@ -82,17 +82,17 @@ class MetricsFactoryManager {
     }
 
     /**
-     * This method now simply calls {@link io.helidon.service.registry.Services#get(Class)}
+     * This method now simply calls {@link io.helidon.service.registry.Services#get(Class)}.
      *
-     * @param metricsConfigNode ignored
-     * @return current metrics factory
+     * @param ignoredConfig ignored config
+     * @return shared metrics factory
      * @deprecated either use {@link io.helidon.service.registry.Services} directly; if the intention is to use a different
-     *      shared instance that the default one, create a service factory with a higher than default
+     *      shared instance than the default one, create a service factory with a higher than default
      *      {@link io.helidon.common.Weight}, or call {@link io.helidon.service.registry.Services#set(Class, Object[])}
      *      before the application starts
      */
     @Deprecated(since = "27.0.0", forRemoval = true)
-    static MetricsFactory getMetricsFactory(Config metricsConfigNode) {
+    static MetricsFactory getMetricsFactory(Config ignoredConfig) {
         LOGGER.log(Level.WARNING, "Method MetricsFactoryManager.getMetricsFactory(Config) does not work as in "
                 + "previous major versions of Helidon, and simply returns the instance from ServiceRegistry. "
                 + "This method is now deprecated and will be removed.");
@@ -101,11 +101,10 @@ class MetricsFactoryManager {
     }
 
     /**
-     * Returns the current {@link io.helidon.metrics.api.MetricsFactory}, creating one if needed using the global configuration
-     * and saving the {@link io.helidon.metrics.api.MetricsConfig} from the global config as the current config and the new
-     * factory as the current factory.
+     * Returns the shared metrics factory from
+     * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MetricsFactory.class)}.
      *
-     * @return current metrics factory
+     * @return shared metrics factory
      * @deprecated since 27.0.0, for removal. Use
      * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MetricsFactory.class)}.
      */
@@ -119,14 +118,14 @@ class MetricsFactoryManager {
     }
 
     /**
-     * Returns the current {@link MetricsFactory}, creating and saving one from the provided root config only if the current
-     * factory is absent.
+     * Returns the shared metrics factory from
+     * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MetricsFactory.class)}.
      *
-     * @param rootConfig root configuration for resolving the metrics config node when needed
-     * @return current or newly created metrics factory
+     * @param ignoredConfig ignored config
+     * @return shared metrics factory
      */
     @Deprecated(since = "27.0.0", forRemoval = true)
-    static MetricsFactory getOrCreateMetricsFactory(Config rootConfig) {
+    static MetricsFactory getOrCreateMetricsFactory(Config ignoredConfig) {
         LOGGER.log(Level.WARNING, "Method MetricsFactoryManager.getOrCreateMetricsFactory(Config) does not work as in "
                 + "previous major versions of Helidon, and simply returns the instance from ServiceRegistry. "
                 + "This method is now deprecated and will be removed.");
@@ -135,16 +134,18 @@ class MetricsFactoryManager {
     }
 
     /**
-     * Creates a new {@link io.helidon.metrics.api.MetricsFactory} using the specified
-     * {@link io.helidon.metrics.api.MetricsConfig}.
+     * Creates a new {@link io.helidon.metrics.api.MetricsFactory} using the specified root config.
      *
-     * @param metricsConfigNode the metrics config node to use in creating the metrics factory
+     * @param rootConfig the root config node to use in creating the metrics factory
      * @return new metrics factory
      */
-    static MetricsFactory create(Config metricsConfigNode) {
-        return METRICS_FACTORY_PROVIDER.get().create(metricsConfigNode,
-                                                     MetricsConfig.create(
-                                                             metricsConfigNode.get(MetricsConfig.METRICS_CONFIG_KEY)),
+    static MetricsFactory create(Config rootConfig) {
+        MetricsConfig metricsConfig = MetricsConfig.create(rootConfig.get(MetricsConfig.METRICS_CONFIG_KEY));
+        for (MetricsProgrammaticConfig programmaticConfig : METRICS_CONFIG_OVERRIDES.get()) {
+            metricsConfig = programmaticConfig.apply(metricsConfig);
+        }
+        return METRICS_FACTORY_PROVIDER.get().create(rootConfig,
+                                                     metricsConfig,
                                                      METER_PROVIDERS.get());
     }
 

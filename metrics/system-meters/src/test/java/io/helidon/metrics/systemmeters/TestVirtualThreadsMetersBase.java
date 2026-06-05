@@ -16,11 +16,14 @@
 package io.helidon.metrics.systemmeters;
 
 import java.util.List;
+import java.util.Optional;
 
 import io.helidon.common.testing.junit5.OptionalMatcher;
+import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
-import io.helidon.service.registry.Services;
+import io.helidon.metrics.api.SystemTagsManager;
+import io.helidon.metrics.api.Tag;
 import io.helidon.webserver.testing.junit5.ServerTest;
 
 import org.junit.jupiter.api.Test;
@@ -34,26 +37,32 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ServerTest
 class TestVirtualThreadsMetersBase {
 
-    private final MeterRegistry meterRegistry;
+    private final MetricsFactory metricsFactory;
+    private final Iterable<Tag> baseTags;
 
-    TestVirtualThreadsMetersBase() {
-        meterRegistry = Services.get(MetricsFactory.class).globalRegistry();
+    TestVirtualThreadsMetersBase(MetricsFactory metricsFactory, SystemTagsManager systemTagsManager) {
+        this.metricsFactory = metricsFactory;
+        this.baseTags = systemTagsManager.withScopeTag(List.of(), Optional.of(Meter.Scope.BASE));
     }
 
     MeterRegistry meterRegistry() {
-        return meterRegistry;
+        return metricsFactory.globalRegistry();
+    }
+
+    Iterable<Tag> baseTags() {
+        return baseTags;
     }
 
     @Test
     void checkNonCountVthreadMetersArePresentAfterStartup() {
         assertThat("Submit failures gauge",
-                   meterRegistry.gauge(METER_NAME_PREFIX + SUBMIT_FAILURES, List.of()),
+                   meterRegistry().gauge(METER_NAME_PREFIX + SUBMIT_FAILURES, baseTags()),
                    OptionalMatcher.optionalPresent());
         assertThat("Pinned gauge",
-                   meterRegistry.gauge(METER_NAME_PREFIX + PINNED, List.of()),
+                   meterRegistry().gauge(METER_NAME_PREFIX + PINNED, baseTags()),
                    OptionalMatcher.optionalPresent());
         assertThat("Pinned distribution summary",
-                   meterRegistry.timer(METER_NAME_PREFIX + RECENT_PINNED, List.of()),
+                   meterRegistry().timer(METER_NAME_PREFIX + RECENT_PINNED, baseTags()),
                    OptionalMatcher.optionalPresent());
     }
 }

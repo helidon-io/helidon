@@ -27,7 +27,6 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
-import io.helidon.service.registry.Services;
 import io.helidon.webclient.grpc.GrpcClient;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.testing.junit5.ServerTest;
@@ -55,23 +54,23 @@ class GrpcDisabledMetricsTest extends GrpcBaseMetricsTest {
     }
 
     @AfterAll
-    static void checkMetrics() {
-        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+    static void checkMetrics(MetricsFactory metricsFactory) {
         MeterRegistry meterRegistry = metricsFactory.globalRegistry();
+        Tag okTag = okStatusTag(metricsFactory);
         Tag grpcTarget = metricsFactory.tagCreate("grpc.target", grpcClient.prototype().baseUri().orElseThrow().toString());
 
-        for (Tag grpcMethod : METHOD_TAGS) {
+        for (Tag grpcMethod : grpcMethodTags(metricsFactory)) {
             Optional<Counter> counter = meterRegistry.counter(ATTEMPT_STARTED, List.of(grpcMethod, grpcTarget));
             assertThat(counter.isEmpty(), is(true));
 
-            Optional<Timer> timer = meterRegistry.timer(ATTEMPT_DURATION, List.of(grpcMethod, grpcTarget, OK_TAG));
+            Optional<Timer> timer = meterRegistry.timer(ATTEMPT_DURATION, List.of(grpcMethod, grpcTarget, okTag));
             assertThat(timer.isEmpty(), is(true));
 
             Optional<DistributionSummary> summary;
-            summary = meterRegistry.summary(SENT_MESSAGE_SIZE, List.of(grpcMethod, grpcTarget, OK_TAG));
+            summary = meterRegistry.summary(SENT_MESSAGE_SIZE, List.of(grpcMethod, grpcTarget, okTag));
             assertThat(summary.isEmpty(), is(true));
 
-            summary = meterRegistry.summary(RCVD_MESSAGE_SIZE, List.of(grpcMethod, grpcTarget, OK_TAG));
+            summary = meterRegistry.summary(RCVD_MESSAGE_SIZE, List.of(grpcMethod, grpcTarget, okTag));
             assertThat(summary.isEmpty(), is(true));
         }
     }
