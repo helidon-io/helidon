@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ import io.helidon.http.Method;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.metrics.WebClientMetrics;
@@ -36,7 +36,7 @@ import static org.hamcrest.Matchers.is;
  */
 public class MetricsTest extends TestParent {
 
-    private static final MeterRegistry REGISTRY = Metrics.globalRegistry();
+    private static final MeterRegistry REGISTRY = MetricsFactory.getInstance().globalRegistry();
 
     MetricsTest(WebServer server) {
         super(server);

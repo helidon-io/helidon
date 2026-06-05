@@ -28,11 +28,10 @@ import io.helidon.config.Config;
  * <p>
  * This is not intended to be the interface which developers use to work with Helidon metrics. Instead use
  *     <ul>
- *         <li>the {@link io.helidon.metrics.api.Metrics} interface and its static convenience methods,</li>
  *         <li>the static methods on the various meter interfaces in the API (such as {@link io.helidon.metrics.api.Timer},
  *         or</li>
- *         <li>{@link io.helidon.metrics.api.Metrics#globalRegistry()} and use the returned
- *      {@link io.helidon.metrics.api.MeterRegistry} directly</li>
+ *         <li>{@link io.helidon.service.registry.Services#get(java.lang.Class)} to look up the global
+ *      {@link io.helidon.metrics.api.MeterRegistry}</li>
  *     </ul>
  * <p>
  * An implementation of this interface provides instance methods for each

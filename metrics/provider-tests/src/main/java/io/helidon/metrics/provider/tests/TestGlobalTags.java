@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,7 +22,6 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
@@ -46,7 +45,7 @@ class TestGlobalTags {
                 .tags(globalTags)
                 .build();
 
-        MeterRegistry meterRegistry = Metrics.globalRegistry();
+        MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry();
 
         assertThat("Global tags from the config used to init the meter registry",
                    metricsConfig.tags(),

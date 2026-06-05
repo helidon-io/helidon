@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import java.util.List;
 import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.api.MetricsFactory;
 
 import io.micrometer.core.instrument.Meter;
 import org.junit.jupiter.api.BeforeAll;
@@ -36,7 +36,7 @@ class TestCounter {
 
     @BeforeAll
     static void prep() {
-        meterRegistry = Metrics.globalRegistry();
+        meterRegistry = MetricsFactory.getInstance().globalRegistry();
     }
 
     @Test

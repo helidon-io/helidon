@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import io.helidon.metrics.api.DistributionStatisticsConfig;
 import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.HistogramSnapshot;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.ValueAtPercentile;
 
 import org.hamcrest.Description;
@@ -45,7 +45,7 @@ class TestDistributionSummary {
 
     @BeforeAll
     static void prep() {
-        meterRegistry = Metrics.globalRegistry();
+        meterRegistry = MetricsFactory.getInstance().globalRegistry();
     }
 
     @Test
