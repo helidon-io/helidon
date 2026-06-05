@@ -59,7 +59,9 @@ import io.helidon.http.http2.Http2Ping;
 import io.helidon.http.http2.Http2Setting;
 import io.helidon.http.http2.Http2Settings;
 import io.helidon.http.http2.Http2StreamState;
+import io.helidon.http.http2.Http2Util;
 import io.helidon.http.http2.Http2WindowUpdate;
+import io.helidon.http.http2.WindowSize;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerContext;
@@ -447,6 +449,67 @@ class Http2ConnectionTest {
                      () -> connection.handle(mock(io.helidon.common.concurrency.limits.Limit.class)));
 
         assertThat(connection.idleTime(), lessThan(Duration.ofSeconds(5)));
+    }
+
+    @Test
+    void activeStreamInitialWindowSizeOverflowHandledWithFlowControlGoAway() throws InterruptedException {
+        Queue<byte[]> input = new ConcurrentLinkedQueue<>();
+        input.add(Http2Util.prefaceData().readBytes());
+        Http2Headers h2Headers = Http2Headers.create(WritableHeaders.create());
+        h2Headers.method(Method.POST);
+        h2Headers.path("/data");
+        h2Headers.scheme("http");
+        h2Headers.authority("localhost");
+
+        BufferData headersData = BufferData.growing(512);
+        h2Headers.write(Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue()),
+                        Http2HuffmanEncoder.create(),
+                        headersData);
+        input.add(frameBytes(new Http2FrameData(Http2FrameHeader.create(headersData.available(),
+                                                                        Http2FrameTypes.HEADERS,
+                                                                        Http2Flag.HeaderFlags.create(
+                                                                                Http2Flag.END_OF_HEADERS),
+                                                                        1),
+                                                headersData)));
+        input.add(frameBytes(new Http2WindowUpdate(WindowSize.MAX_WIN_SIZE - WindowSize.DEFAULT_WIN_SIZE)
+                                     .toFrameData(null, 1, Http2Flag.NoFlags.create())));
+        input.add(frameBytes(Http2Settings.builder()
+                                     .add(Http2Setting.INITIAL_WINDOW_SIZE, WindowSize.DEFAULT_WIN_SIZE + 1L)
+                                     .build()
+                                     .toFrameData(null, 0, Http2Flag.SettingsFlags.create(0))));
+
+        List<BufferData> writtenFrames = new ArrayList<>();
+        DataWriter writer = mock(DataWriter.class);
+        doAnswer(invocation -> {
+            BufferData data = invocation.getArgument(0);
+            writtenFrames.add(data.copy());
+            return null;
+        }).when(writer).writeNow(any(BufferData.class));
+        DataReader reader = DataReader.create(input::poll);
+        ExecutorService executor = mock(ExecutorService.class);
+        ConnectionContext ctx = http2Context(writer, reader);
+        when(ctx.executor()).thenReturn(executor);
+        PeerInfo peerInfo = mock(PeerInfo.class);
+        when(peerInfo.tlsCertificates()).thenReturn(Optional.empty());
+        when(ctx.remotePeer()).thenReturn(peerInfo);
+        when(ctx.proxyProtocolData()).thenReturn(Optional.empty());
+        Http2Connection connection = new Http2Connection(ctx,
+                                                         Http2Config.builder().sendErrorDetails(true).build(),
+                                                         List.of());
+
+        connection.expectPreface();
+        connection.handle(mock(io.helidon.common.concurrency.limits.Limit.class));
+
+        BufferData goAwayData = writtenFrames.get(writtenFrames.size() - 1);
+        byte[] headerBytes = new byte[Http2FrameHeader.LENGTH];
+        goAwayData.read(headerBytes);
+        Http2FrameHeader frameHeader = Http2FrameHeader.create(BufferData.create(headerBytes));
+        assertThat(frameHeader.type(), is(Http2FrameType.GO_AWAY));
+
+        byte[] payloadBytes = new byte[frameHeader.length()];
+        goAwayData.read(payloadBytes);
+        Http2GoAway goAway = Http2GoAway.create(BufferData.create(payloadBytes));
+        assertThat(goAway.errorCode(), is(Http2ErrorCode.FLOW_CONTROL));
     }
 
     @Test

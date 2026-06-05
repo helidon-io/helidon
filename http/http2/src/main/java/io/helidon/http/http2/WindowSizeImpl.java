@@ -48,7 +48,14 @@ abstract class WindowSizeImpl implements WindowSize {
         // When the value of SETTINGS_INITIAL_WINDOW_SIZE changes,
         // a receiver MUST adjust the size of all stream flow-control windows that
         // it maintains by the difference between the new value and the old value
-        remainingWindowSize.updateAndGet(o -> o + size - windowSize);
+        int previousWindowSize = windowSize;
+        remainingWindowSize.updateAndGet(o -> {
+            long newSize = (long) o + size - previousWindowSize;
+            if (newSize > MAX_WIN_SIZE) {
+                throw new Http2Exception(Http2ErrorCode.FLOW_CONTROL, "Window size too big.");
+            }
+            return (int) newSize;
+        });
         windowSize = size;
         if (LOGGER_OUTBOUND.isLoggable(DEBUG)) {
             LOGGER_OUTBOUND.log(DEBUG, String.format("%s OFC STR %d: Recv INITIAL_WINDOW_SIZE %d(%d)",

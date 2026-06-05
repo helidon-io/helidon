@@ -230,6 +230,14 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
      */
     public void clientSettings(Http2Settings http2Settings) {
         validateMaxFrameSize(http2Settings);
+        if (http2Settings.hasValue(Http2Setting.INITIAL_WINDOW_SIZE)) {
+            Long initialWindowSize = http2Settings.value(Http2Setting.INITIAL_WINDOW_SIZE);
+            //6.9.2/3 - legal range for the increment to the flow-control window is 1 to 2^31-1 octets.
+            if (initialWindowSize > WindowSize.MAX_WIN_SIZE) {
+                throw new Http2Exception(Http2ErrorCode.FLOW_CONTROL,
+                                         "Window " + initialWindowSize + " size too large");
+            }
+        }
         this.clientSettings = http2Settings;
         this.receiveFrameListener.frame(ctx, 0, clientSettings);
         if (this.clientSettings.hasValue(Http2Setting.HEADER_TABLE_SIZE)) {
@@ -238,12 +246,6 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
         if (this.clientSettings.hasValue(Http2Setting.INITIAL_WINDOW_SIZE)) {
             Long initialWindowSize = clientSettings.value(Http2Setting.INITIAL_WINDOW_SIZE);
-
-            //6.9.2/3 - legal range for the increment to the flow-control window is 1 to 2^31-1 (2,147,483,647) octets.
-            if (initialWindowSize > WindowSize.MAX_WIN_SIZE) {
-                writeGoAway(Http2ErrorCode.FLOW_CONTROL,
-                            "Window " + initialWindowSize + " size too large");
-            }
 
             //6.9.1/1 - changing the flow-control window for streams that are not yet active
             flowControl.resetInitialWindowSize(initialWindowSize.intValue());
