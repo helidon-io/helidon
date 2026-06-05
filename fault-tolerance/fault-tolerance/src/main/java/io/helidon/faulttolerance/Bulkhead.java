@@ -20,6 +20,9 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.LazyValue;
+import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.Services;
 
 /**
  * Bulkhead protects a resource that cannot serve unlimited parallel
@@ -64,7 +67,7 @@ public interface Bulkhead extends FtHandler, RuntimeType.Api<BulkheadConfig> {
      * @return a new bulkhead
      */
     static Bulkhead create(BulkheadConfig config) {
-        return new BulkheadImpl(config);
+        return new BulkheadImpl(config, LazyValue.create(() -> Services.get(MetricsFactory.class)));
     }
 
     /**

@@ -34,6 +34,7 @@ abstract class WebClientMetric implements WebClientService {
 
     private static final int ERROR_STATUS_CODE = 400;
 
+    private final MetricsFactory metricsFactory;
     private final MeterRegistry registry;
     private final Set<String> methods;
     private final String nameFormat;
@@ -42,7 +43,8 @@ abstract class WebClientMetric implements WebClientService {
     private final boolean errors;
 
     WebClientMetric(Builder builder) {
-        this.registry = Services.get(MetricsFactory.class).globalRegistry();
+        this.metricsFactory = Services.get(MetricsFactory.class);
+        this.registry = metricsFactory.globalRegistry();
         this.methods = builder.methods;
         this.nameFormat = builder.nameFormat;
         this.description = builder.description;
@@ -61,6 +63,10 @@ abstract class WebClientMetric implements WebClientService {
 
     MeterRegistry meterRegistry() {
         return registry;
+    }
+
+    MetricsFactory metricsFactory() {
+        return metricsFactory;
     }
 
     Set<String> methods() {

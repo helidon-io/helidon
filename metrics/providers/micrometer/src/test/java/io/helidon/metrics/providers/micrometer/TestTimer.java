@@ -34,11 +34,13 @@ import static org.hamcrest.Matchers.is;
 
 class TestTimer {
 
+    private static MetricsFactory metricsFactory;
     private static MeterRegistry meterRegistry;
 
     @BeforeAll
     static void prep() {
-        meterRegistry = Services.get(MetricsFactory.class).globalRegistry();
+        metricsFactory = Services.get(MetricsFactory.class);
+        meterRegistry = metricsFactory.globalRegistry();
     }
 
     @Test
@@ -47,7 +49,7 @@ class TestTimer {
         long incrA = 2L;
         long incrB = 7L;
 
-        Timer.Builder builder = Timer.builder("a");
+        Timer.Builder builder = metricsFactory.timerBuilder("a");
         io.micrometer.core.instrument.Timer.Builder mBuilder = builder.unwrap(io.micrometer.core.instrument.Timer.Builder.class);
         mBuilder.distributionStatisticExpiry(Duration.ofMinutes(10));
         Timer t = meterRegistry.getOrCreate(builder);
@@ -72,7 +74,7 @@ class TestTimer {
 
     @Test
     void testUnitsInToStringMicrometer() {
-        Timer defaultedUnitTimer = meterRegistry.getOrCreate(Timer.builder("defaultedUnitTimer"));
+        Timer defaultedUnitTimer = meterRegistry.getOrCreate(metricsFactory.timerBuilder("defaultedUnitTimer"));
 
         defaultedUnitTimer.record(Duration.ofMillis(4256));
 

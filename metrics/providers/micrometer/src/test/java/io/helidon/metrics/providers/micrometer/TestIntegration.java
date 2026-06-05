@@ -32,9 +32,10 @@ class TestIntegration {
     @Test
     void testHelidonRegistrationViaMicrometer() {
 
-        MeterRegistry hMeterRegistry = Services.get(MetricsFactory.class).globalRegistry();
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        MeterRegistry hMeterRegistry = metricsFactory.globalRegistry();
 
-        Counter hCounter = hMeterRegistry.getOrCreate(Counter.builder("hCounter1"));
+        Counter hCounter = hMeterRegistry.getOrCreate(metricsFactory.counterBuilder("hCounter1"));
         hCounter.increment(2);
 
         io.micrometer.core.instrument.Counter unwrappedCounter = hCounter.unwrap(io.micrometer.core.instrument.Counter.class);
@@ -51,13 +52,14 @@ class TestIntegration {
 
     @Test
     void testMicrometerRegistrationViaHelidon() {
-        MeterRegistry hMeterRegistry = Services.get(MetricsFactory.class).globalRegistry();
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        MeterRegistry hMeterRegistry = metricsFactory.globalRegistry();
         io.micrometer.core.instrument.MeterRegistry mMeterRegistry = io.micrometer.core.instrument.Metrics.globalRegistry;
         io.micrometer.core.instrument.Counter mCounter = mMeterRegistry.counter("mCounter1", "scope", "application");
         mCounter.increment(2);
 
         // Should find the previously-registered counter.
-        Counter hCounter = hMeterRegistry.getOrCreate(Counter.builder("mCounter1"));
+        Counter hCounter = hMeterRegistry.getOrCreate(metricsFactory.counterBuilder("mCounter1"));
         assertThat("mCounter via Helidon with no explicit tag",
                    hCounter.count(),
                    equalTo(2L));

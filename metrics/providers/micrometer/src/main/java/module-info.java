@@ -44,6 +44,7 @@ module io.helidon.metrics.providers.micrometer {
     requires io.prometheus.metrics.model;
     requires io.helidon.common.context;
 
+    exports io.helidon.metrics.providers.micrometer;
     exports io.helidon.metrics.providers.micrometer.spi;
 
     provides io.helidon.metrics.spi.MetricsFactoryProvider with

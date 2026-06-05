@@ -37,6 +37,7 @@ public class SimpleApiTest {
 
     private static final String COUNTER_1_DESC = "counter 1 description";
 
+    private static MetricsFactory metricsFactory;
     private static MeterRegistry registry;
     private static Counter counter1;
     private static Counter counter2;
@@ -44,15 +45,16 @@ public class SimpleApiTest {
 
     @BeforeAll
     static void prep() {
-        registry = Services.get(MetricsFactory.class).globalRegistry();
+        metricsFactory = Services.get(MetricsFactory.class);
+        registry = metricsFactory.globalRegistry();
         assertThat("Global registry", registry, notNullValue());
-        counter1 = registry.getOrCreate(Counter.builder("counter1")
+        counter1 = registry.getOrCreate(metricsFactory.counterBuilder("counter1")
                                                 .description(COUNTER_1_DESC));
-        counter2 = registry.getOrCreate(Counter.builder("counter2"));
+        counter2 = registry.getOrCreate(metricsFactory.counterBuilder("counter2"));
 
-        timer1 = registry.getOrCreate(Timer.builder("timer1")
-                                           .tags(List.of(Tag.create("t1", "v1"),
-                                                         Tag.create("t2", "v2")))
+        timer1 = registry.getOrCreate(metricsFactory.timerBuilder("timer1")
+                                           .tags(List.of(metricsFactory.tagCreate("t1", "v1"),
+                                                         metricsFactory.tagCreate("t2", "v2")))
                                            .maximumExpectedValue(Duration.ofSeconds(4)));
     }
 
@@ -64,8 +66,8 @@ public class SimpleApiTest {
         fetchedCounter = registry.counter("counter2", Set.of());
         assertThat("Fetched counter 2", fetchedCounter, OptionalMatcher.optionalEmpty());
 
-        Optional<Timer> fetchedTimer = registry.timer("timer1", List.of(Tag.create("t1", "v1"),
-                                                                        Tag.create("t2", "v2")));
+        Optional<Timer> fetchedTimer = registry.timer("timer1", List.of(metricsFactory.tagCreate("t1", "v1"),
+                                                                        metricsFactory.tagCreate("t2", "v2")));
         assertThat("Fetched timer", fetchedTimer, OptionalMatcher.optionalEmpty());
     }
 

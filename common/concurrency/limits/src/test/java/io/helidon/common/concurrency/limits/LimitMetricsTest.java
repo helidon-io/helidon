@@ -37,7 +37,8 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.not;
 
 class LimitMetricsTest {
-    private static final List<Tag> REAL_METER_TAGS = List.of(Tag.create("origin", "limit-metrics-test"));
+    private static final MetricsFactory METRICS_FACTORY = Services.get(MetricsFactory.class);
+    private static final List<Tag> REAL_METER_TAGS = List.of(METRICS_FACTORY.tagCreate("origin", "limit-metrics-test"));
     private static final String[] REAL_METER_NAMES = {
             "test_fixed_concurrent_requests",
             "test_fixed_rtt",
@@ -52,7 +53,7 @@ class LimitMetricsTest {
     @BeforeEach
     @AfterEach
     void cleanMeters() {
-        MeterRegistry meterRegistry = Services.get(MetricsFactory.class).globalRegistry();
+        MeterRegistry meterRegistry = METRICS_FACTORY.globalRegistry();
         for (String meterName : REAL_METER_NAMES) {
             meterRegistry.remove(meterName, REAL_METER_TAGS, Meter.Scope.VENDOR);
         }
@@ -60,8 +61,8 @@ class LimitMetricsTest {
 
     @Test
     void customContextTagsAreUsedForMetrics() {
-        List<Tag> tags = List.of(Tag.create("origin", "batch-import"),
-                                 Tag.create("component", "inventory"));
+        List<Tag> tags = List.of(METRICS_FACTORY.tagCreate("origin", "batch-import"),
+                                 METRICS_FACTORY.tagCreate("component", "inventory"));
         CapturingSemaphoreMetrics metrics = new CapturingSemaphoreMetrics();
 
         metrics.init(Limit.InitializationContext.create("batch-import", tags));
@@ -76,8 +77,8 @@ class LimitMetricsTest {
         CapturingSemaphoreMetrics metrics = new CapturingSemaphoreMetrics();
 
         metrics.init(Limit.InitializationContext.create("listener-quic",
-                                                        List.of(Tag.create("origin", "listener"),
-                                                                Tag.create("transport", "quic"))));
+                                                        List.of(METRICS_FACTORY.tagCreate("origin", "listener"),
+                                                                METRICS_FACTORY.tagCreate("transport", "quic"))));
 
         assertThat(metrics.capturedTags(), hasEntry("origin", "listener"));
         assertThat(metrics.capturedTags(), hasEntry("transport", "quic"));
@@ -129,12 +130,12 @@ class LimitMetricsTest {
         throughput.init(context);
         aimd.init(context);
 
-        assertThat(meterRegistry.gauge("test_fixed_concurrent_requests", REAL_METER_TAGS).isPresent(), is(true));
-        assertThat(meterRegistry.timer("test_fixed_rtt", REAL_METER_TAGS).isPresent(), is(true));
-        assertThat(meterRegistry.gauge("test_throughput_concurrent_requests", REAL_METER_TAGS).isPresent(), is(true));
-        assertThat(meterRegistry.timer("test_throughput_rtt", REAL_METER_TAGS).isPresent(), is(true));
-        assertThat(meterRegistry.timer("test_aimd_rtt", REAL_METER_TAGS).isPresent(), is(true));
-        assertThat(meterRegistry.gauge("test_aimd_limit", REAL_METER_TAGS).isPresent(), is(true));
+        assertThat(hasMeter(meterRegistry, Meter.Type.GAUGE, "test_fixed_concurrent_requests", REAL_METER_TAGS), is(true));
+        assertThat(hasMeter(meterRegistry, Meter.Type.TIMER, "test_fixed_rtt", REAL_METER_TAGS), is(true));
+        assertThat(hasMeter(meterRegistry, Meter.Type.GAUGE, "test_throughput_concurrent_requests", REAL_METER_TAGS), is(true));
+        assertThat(hasMeter(meterRegistry, Meter.Type.TIMER, "test_throughput_rtt", REAL_METER_TAGS), is(true));
+        assertThat(hasMeter(meterRegistry, Meter.Type.TIMER, "test_aimd_rtt", REAL_METER_TAGS), is(true));
+        assertThat(hasMeter(meterRegistry, Meter.Type.GAUGE, "test_aimd_limit", REAL_METER_TAGS), is(true));
         assertThat(meterCount(meterRegistry, Meter.Type.GAUGE, "test_fixed_concurrent_requests", REAL_METER_TAGS), is(1L));
     }
 
@@ -149,7 +150,14 @@ class LimitMetricsTest {
         disabled.init(Limit.InitializationContext.create("unit-test", REAL_METER_TAGS));
 
         MeterRegistry meterRegistry = Services.get(MetricsFactory.class).globalRegistry();
-        assertThat(meterRegistry.gauge("test_disabled_concurrent_requests", REAL_METER_TAGS).isPresent(), is(false));
+        assertThat(hasMeter(meterRegistry, Meter.Type.GAUGE, "test_disabled_concurrent_requests", REAL_METER_TAGS), is(false));
+    }
+
+    private static boolean hasMeter(MeterRegistry meterRegistry,
+                                    Meter.Type meterType,
+                                    String meterName,
+                                    List<Tag> tags) {
+        return meterCount(meterRegistry, meterType, meterName, tags) > 0;
     }
 
     private static long meterCount(MeterRegistry meterRegistry,
@@ -159,12 +167,15 @@ class LimitMetricsTest {
         Map<String, String> expectedTags = tags.stream()
                 .collect(java.util.stream.Collectors.toMap(Tag::key, Tag::value));
 
-        return meterRegistry.meters()
-                .stream()
-                .filter(meter -> meter.id().name().equals(meterName))
-                .filter(meter -> meter.type() == meterType)
-                .filter(meter -> meter.id().tagsMap().entrySet().containsAll(expectedTags.entrySet()))
-                .count();
+        long count = 0;
+        for (Meter meter : meterRegistry.meters(List.of(Meter.Scope.VENDOR))) {
+            if (meter.id().name().equals(meterName)
+                    && meter.type() == meterType
+                    && meter.id().tagsMap().entrySet().containsAll(expectedTags.entrySet())) {
+                count++;
+            }
+        }
+        return count;
     }
 
     private static class CapturingSemaphoreMetrics extends SemaphoreMetrics {

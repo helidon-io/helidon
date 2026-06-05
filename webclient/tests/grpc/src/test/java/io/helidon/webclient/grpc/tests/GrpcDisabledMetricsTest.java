@@ -56,8 +56,9 @@ class GrpcDisabledMetricsTest extends GrpcBaseMetricsTest {
 
     @AfterAll
     static void checkMetrics() {
-        MeterRegistry meterRegistry = Services.get(MetricsFactory.class).globalRegistry();
-        Tag grpcTarget = Tag.create("grpc.target", grpcClient.prototype().baseUri().orElseThrow().toString());
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        MeterRegistry meterRegistry = metricsFactory.globalRegistry();
+        Tag grpcTarget = metricsFactory.tagCreate("grpc.target", grpcClient.prototype().baseUri().orElseThrow().toString());
 
         for (Tag grpcMethod : METHOD_TAGS) {
             Optional<Counter> counter = meterRegistry.counter(ATTEMPT_STARTED, List.of(grpcMethod, grpcTarget));

@@ -22,7 +22,6 @@ import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.service.registry.Services;
@@ -58,7 +57,7 @@ class TestMultipleRegistryLogging {
 
     @BeforeEach
     void setUp() {
-        MetricsFactory.closeAll();
+        MicrometerMetricsTestsJunitExtension.clear();
     }
 
     @AfterEach
@@ -74,8 +73,9 @@ class TestMultipleRegistryLogging {
 
     @Test
     void testTwoRegistries() {
-        Services.get(MetricsFactory.class).globalRegistry();
-        MeterRegistry.create();
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        metricsFactory.globalRegistry();
+        metricsFactory.createMeterRegistry(MetricsConfig.create());
 
         assertThat("Two meter registries", testHandler.messages(),
                    hasItem(allOf(
@@ -86,9 +86,10 @@ class TestMultipleRegistryLogging {
 
     @Test
     void testThreeRegistries() {
-        Services.get(MetricsFactory.class).globalRegistry();
-        MeterRegistry.create();
-        MeterRegistry.create();
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        metricsFactory.globalRegistry();
+        metricsFactory.createMeterRegistry(MetricsConfig.create());
+        metricsFactory.createMeterRegistry(MetricsConfig.create());
 
         assertThat("Three meter registries",
                    testHandler.messages(),
@@ -104,8 +105,9 @@ class TestMultipleRegistryLogging {
     @Test
     void testTwoRegistriesWithWarningDisabled() {
         MetricsConfig configWithWarningsSuppressed = MetricsConfig.builder().warnOnMultipleRegistries(false).build();
-        MeterRegistry.create(configWithWarningsSuppressed);
-        MeterRegistry.create(configWithWarningsSuppressed);
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        metricsFactory.createMeterRegistry(configWithWarningsSuppressed);
+        metricsFactory.createMeterRegistry(configWithWarningsSuppressed);
 
         assertThat("Two meter registrations with warnings suppressed", testHandler.messages, hasSize(0));
 

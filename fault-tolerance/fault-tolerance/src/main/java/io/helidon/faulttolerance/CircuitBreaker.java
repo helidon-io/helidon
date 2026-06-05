@@ -19,6 +19,9 @@ package io.helidon.faulttolerance;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.common.LazyValue;
+import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.Services;
 
 /**
  * CircuitBreaker protects a potentially failing endpoint from overloading and the application
@@ -49,7 +52,7 @@ public interface CircuitBreaker extends FtHandler, RuntimeType.Api<CircuitBreake
      * @return a new circuit breaker
      */
     static CircuitBreaker create(CircuitBreakerConfig config) {
-        return new CircuitBreakerImpl(config);
+        return new CircuitBreakerImpl(config, LazyValue.create(() -> Services.get(MetricsFactory.class)));
     }
 
     /**

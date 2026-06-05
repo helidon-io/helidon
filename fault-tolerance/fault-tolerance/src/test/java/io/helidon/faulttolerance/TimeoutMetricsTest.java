@@ -19,7 +19,7 @@ package io.helidon.faulttolerance;
 import java.time.Duration;
 
 import io.helidon.metrics.api.Counter;
-import io.helidon.metrics.api.Tag;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Timer;
 import io.helidon.testing.junit5.Testing;
 
@@ -31,6 +31,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @Testing.Test
 class TimeoutMetricsTest {
+    private final MetricsFactory metricsFactory;
+
+    TimeoutMetricsTest(MetricsFactory metricsFactory) {
+        this.metricsFactory = metricsFactory;
+    }
+
     @BeforeAll
     static void activateConfig() {
         MetricsTestSupport.activateConfig();
@@ -46,7 +52,9 @@ class TimeoutMetricsTest {
                 .name("quick")      // same name
                 .build();
         timeout.invoke(() -> null);
-        callsCounter = MetricsUtils.counter(Timeout.FT_TIMEOUT_CALLS_TOTAL, Tag.create("name", "quick"));
+        callsCounter = MetricsUtils.counter(metricsFactory,
+                                            Timeout.FT_TIMEOUT_CALLS_TOTAL,
+                                            MetricsUtils.tag(metricsFactory, "name", "quick"));
         assertThat(callsCounter.count(), is(1L));
 
         timeout = Timeout.builder()
@@ -67,7 +75,9 @@ class TimeoutMetricsTest {
                 .name("very_quick")      // same name
                 .build();
         timeout.invoke(() -> null);
-        timer = MetricsUtils.timer(Timeout.FT_TIMEOUT_EXECUTIONDURATION, Tag.create("name", "very_quick"));
+        timer = MetricsUtils.timer(metricsFactory,
+                                   Timeout.FT_TIMEOUT_EXECUTIONDURATION,
+                                   MetricsUtils.tag(metricsFactory, "name", "very_quick"));
         assertThat(timer.count(), is(1L));
 
         timeout = Timeout.builder()

@@ -27,6 +27,7 @@ import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsConfig;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Timer;
 import io.helidon.service.registry.Services;
 import io.helidon.webserver.WebServer;
@@ -106,8 +107,9 @@ class MetricsSnippets {
             private final Counter cardCounter; // <1>
 
             GreetingCards() {
+                MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
                 cardCounter = Services.get(MeterRegistry.class)
-                        .getOrCreate(Counter.builder("cardCount")
+                        .getOrCreate(metricsFactory.counterBuilder("cardCount")
                                              .description("Counts card retrievals")); // <2>
             }
 
@@ -163,8 +165,9 @@ class MetricsSnippets {
             private final Timer cardTimer; // <1>
 
             GreetingCards() {
+                MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
                 cardTimer = Services.get(MeterRegistry.class)
-                        .getOrCreate(Timer.builder("cardTimer") // <2>
+                        .getOrCreate(metricsFactory.timerBuilder("cardTimer") // <2>
                                              .description("Times card retrievals"));
             }
 
@@ -174,7 +177,7 @@ class MetricsSnippets {
             }
 
             private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) {
-                Timer.Sample timerSample = Timer.start(); // <3>
+                Timer.Sample timerSample = Services.get(MetricsFactory.class).timerStart(); // <3>
                 response.whenSent(() -> timerSample.stop(cardTimer)); // <4>
                 sendResponse(response, "Here are some cards ...");
             }
@@ -196,8 +199,10 @@ class MetricsSnippets {
             private final DistributionSummary cardSummary; // <1>
 
             GreetingCards() {
+                MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
                 cardSummary = Services.get(MeterRegistry.class)
-                        .getOrCreate(DistributionSummary.builder("cardDist")
+                        .getOrCreate(metricsFactory.distributionSummaryBuilder("cardDist",
+                                                                               metricsFactory.distributionStatisticsConfigBuilder())
                                              .description("random card distribution")); // <2>
             }
 
@@ -231,9 +236,10 @@ class MetricsSnippets {
 
             GreetingCards() {
                 Random r = new Random();
+                MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
                 Services.get(MeterRegistry.class)
-                        .getOrCreate(Gauge.builder("temperature",
-                                                   () -> r.nextDouble(100.0))
+                        .getOrCreate(metricsFactory.gaugeBuilder("temperature",
+                                                                 () -> r.nextDouble(100.0))
                                              .description("Ambient temperature")); // <1>
             }
 

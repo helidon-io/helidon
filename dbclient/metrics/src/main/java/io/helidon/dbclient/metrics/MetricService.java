@@ -35,7 +35,8 @@ abstract class MetricService<T extends Meter> extends DbClientServiceBase {
     private final MeterMetadata meta;
     private final String description;
     private final BiFunction<String, DbStatementType, String> nameFunction;
-    private final LazyValue<MeterRegistry> registry = LazyValue.create(() -> Services.get(MetricsFactory.class).globalRegistry());
+    private final LazyValue<MetricsFactory> metricsFactory = LazyValue.create(() -> Services.get(MetricsFactory.class));
+    private final LazyValue<MeterRegistry> registry = LazyValue.create(() -> metricsFactory.get().globalRegistry());
     private final ConcurrentHashMap<String, T> cache = new ConcurrentHashMap<>();
     private final boolean measureErrors;
     private final boolean measureSuccess;
@@ -72,6 +73,10 @@ abstract class MetricService<T extends Meter> extends DbClientServiceBase {
      * @return default name prefix
      */
     protected abstract String defaultNamePrefix();
+
+    protected MetricsFactory metricsFactory() {
+        return metricsFactory.get();
+    }
 
     @Override
     protected DbClientServiceContext apply(DbClientServiceContext context) {

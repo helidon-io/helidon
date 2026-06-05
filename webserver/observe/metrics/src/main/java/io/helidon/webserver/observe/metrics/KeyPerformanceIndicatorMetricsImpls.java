@@ -28,6 +28,7 @@ import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsConfig;
 import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 
 class KeyPerformanceIndicatorMetricsImpls {
@@ -98,10 +99,11 @@ class KeyPerformanceIndicatorMetricsImpls {
         private final BuiltInMeterNameFormat builtInMeterNameFormat;
 
         protected Basic(MeterRegistry kpiMeterRegistry, String meterNamePrefix, BuiltInMeterNameFormat builtInMeterNameFormat) {
+            MetricsFactory metricsFactory = kpiMeterRegistry.metricsFactory();
             meterRegistry = kpiMeterRegistry;
             this.builtInMeterNameFormat = builtInMeterNameFormat;
             totalCount = add(kpiMeterRegistry.getOrCreate(
-                    Counter.builder(meterNamePrefix + meterName(REQUESTS_COUNT_NAME))
+                    metricsFactory.counterBuilder(meterNamePrefix + meterName(REQUESTS_COUNT_NAME))
                             .description(
                                     "Each request (regardless of HTTP method) will increase this counter")
                             .scope(KPI_METERS_SCOPE)));
@@ -163,26 +165,27 @@ class KeyPerformanceIndicatorMetricsImpls {
                          BuiltInMeterNameFormat builtInMeterNameFormat) {
             super(kpiMeterRegistry, meterNamePrefix, builtInMeterNameFormat);
             this.longRunningRequestThresdholdMs = longRunningRequestThreshold.toMillis();
+            MetricsFactory metricsFactory = kpiMeterRegistry.metricsFactory();
 
             inflightRequests = kpiMeterRegistry.getOrCreate(
-                    Gauge.builder(meterNamePrefix + meterName(INFLIGHT_REQUESTS_NAME),
+                    metricsFactory.gaugeBuilder(meterNamePrefix + meterName(INFLIGHT_REQUESTS_NAME),
                                   inflightRequestsCount,
                                   AtomicInteger::get)
                             .scope(KPI_METERS_SCOPE)
                             .description("Measures the number of requests currently being processed"));
 
             longRunningRequests = kpiMeterRegistry.getOrCreate(
-                    Counter.builder(meterNamePrefix + LONG_RUNNING_REQUESTS_NAME)
+                    metricsFactory.counterBuilder(meterNamePrefix + LONG_RUNNING_REQUESTS_NAME)
                             .description("Measures the total number of long-running requests and rates at which they occur")
                             .scope(KPI_METERS_SCOPE)
             );
 
-            load = kpiMeterRegistry.getOrCreate(Counter.builder(meterNamePrefix + meterName(LOAD_NAME))
+            load = kpiMeterRegistry.getOrCreate(metricsFactory.counterBuilder(meterNamePrefix + meterName(LOAD_NAME))
                                                         .description(LOAD_DESCRIPTION)
                                                         .scope(KPI_METERS_SCOPE));
 
             deferredRequests = new DeferredRequests();
-            kpiMeterRegistry.getOrCreate(Gauge.builder(meterNamePrefix + meterName(DEFERRED_NAME),
+            kpiMeterRegistry.getOrCreate(metricsFactory.gaugeBuilder(meterNamePrefix + meterName(DEFERRED_NAME),
                                                        deferredRequests,
                                                        DeferredRequests::value)
                                                  .description("Measures deferred requests")

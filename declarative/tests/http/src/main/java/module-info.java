@@ -40,6 +40,8 @@ module io.helidon.declarative.tests.http {
     // required for generated binding
     requires io.helidon.webserver.context;
     requires io.helidon.webserver.observe;
+    requires io.helidon.webserver.observe.metrics;
+    requires io.helidon.metrics.providers.micrometer;
 
     exports io.helidon.declarative.tests.http;
 }

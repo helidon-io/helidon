@@ -97,19 +97,19 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
         pinnedVirtualThreadsThresholdMillis = metricsConfig.virtualThreadsPinnedThreshold().toMillis();
 
         var meterBuilders = new ArrayList<>(List.of(
-                Gauge.builder(METER_NAME_PREFIX + SUBMIT_FAILURES, () -> virtualThreadSubmitFails)
+                metricsFactory.gaugeBuilder(METER_NAME_PREFIX + SUBMIT_FAILURES, () -> virtualThreadSubmitFails)
                         .description("Virtual thread submit failures")
                         .scope(METER_SCOPE),
-                Gauge.builder(METER_NAME_PREFIX + PINNED, () -> pinnedVirtualThreads)
+                metricsFactory.gaugeBuilder(METER_NAME_PREFIX + PINNED, () -> pinnedVirtualThreads)
                         .description("Number of pinned virtual threads")
                         .scope(METER_SCOPE),
-                Timer.builder(METER_NAME_PREFIX + RECENT_PINNED)
+                metricsFactory.timerBuilder(METER_NAME_PREFIX + RECENT_PINNED)
                         .description("Pinned virtual thread durations")
                         .scope(METER_SCOPE),
-                Gauge.builder(METER_NAME_PREFIX + COUNT, () -> virtualThreads)
+                metricsFactory.gaugeBuilder(METER_NAME_PREFIX + COUNT, () -> virtualThreads)
                         .description("Active virtual threads")
                         .scope(METER_SCOPE),
-                Gauge.builder(METER_NAME_PREFIX + STARTS, () -> virtualThreadStarts)
+                metricsFactory.gaugeBuilder(METER_NAME_PREFIX + STARTS, () -> virtualThreadStarts)
                         .description("Number of virtual thread starts")
                         .scope(METER_SCOPE)
                 ));

@@ -15,6 +15,8 @@
  */
 package io.helidon.metrics.api;
 
+import io.helidon.service.registry.Services;
+
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -30,26 +32,26 @@ class TestMetricsConfigTagsHandling {
     void checkSingle() {
         var pairs = MetricsConfigSupport.createTags("a=4");
         assertThat("Result", pairs, hasSize(1));
-        assertThat("Tag", pairs, hasItem(Tag.create("a", "4")));
+        assertThat("Tag", pairs, hasItem(tag("a", "4")));
     }
 
     @Test
     void checkMultiple() {
         var pairs = MetricsConfigSupport.createTags("a=11,b=12,c=13");
         assertThat("Result", pairs, hasSize(3));
-        assertThat("Tags", pairs, allOf(hasItem(Tag.create("a", "11")),
-                                        hasItem(Tag.create("b", "12")),
-                                        hasItem(Tag.create("c", "13"))));
+        assertThat("Tags", pairs, allOf(hasItem(tag("a", "11")),
+                                        hasItem(tag("b", "12")),
+                                        hasItem(tag("c", "13"))));
     }
 
     @Test
     void checkQuoted() {
         var pairs = MetricsConfigSupport.createTags("d=r\\=3,e=4,f=0\\,1,g=hi");
         assertThat("Result", pairs, hasSize(4));
-        assertThat("Tags", pairs, allOf(hasItem(Tag.create("d", "r=3")),
-                                        hasItem(Tag.create("e", "4")),
-                                        hasItem(Tag.create("f", "0,1")),
-                                        hasItem(Tag.create("g", "hi"))));
+        assertThat("Tags", pairs, allOf(hasItem(tag("d", "r=3")),
+                                        hasItem(tag("e", "4")),
+                                        hasItem(tag("f", "0,1")),
+                                        hasItem(tag("g", "hi"))));
     }
 
     @Test
@@ -79,5 +81,9 @@ class TestMetricsConfigTagsHandling {
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
                 MetricsConfigSupport.createTags("a*=1,"));
         assertThat("Invalid tag name", ex.getMessage(), containsString("tag name must"));
+    }
+
+    private static Tag tag(String key, String value) {
+        return Services.get(MetricsFactory.class).tagCreate(key, value);
     }
 }

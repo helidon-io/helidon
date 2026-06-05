@@ -246,6 +246,15 @@ public interface MeterRegistry extends Wrapper {
     MeterRegistry onMeterRemoved(Consumer<Meter> onRemoveListener);
 
     /**
+     * Metrics factory that created this registry.
+     *
+     * @return metrics factory
+     */
+    default MetricsFactory metricsFactory() {
+        return Services.get(MetricsFactory.class);
+    }
+
+    /**
      * Builder for creating a new meter registry.
      *
      * @param <B> builder type

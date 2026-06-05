@@ -97,12 +97,11 @@ class TestSystemTagsManager {
     void checkForAppTag() {
         Config rootConfig = Config.just(ConfigSources.create(APP_ONLY_TAGS_SETTINGS));
         // Set up the metrics factory which applies the SE-specific programmatic defaults for the system tags manager.
-        MetricsFactory metricsFactory = MetricsFactoryManager.getOrCreateMetricsFactory(rootConfig);
-        MetricsConfig metricsConfig = metricsFactory.metricsConfig();
-        SystemTagsManager mgr = SystemTagsManagerImpl.current(metricsConfig);
+        MetricsConfig metricsConfig = metricsConfig(rootConfig);
+        SystemTagsManager mgr = SystemTagsManager.create(metricsConfig);
 
-        Meter.Id meterId = MeterId.create("my-metric", io.helidon.metrics.api.Tag.create(METRIC_TAG_NAME,
-                                                                                         METRIC_TAG_VALUE));
+        Meter.Id meterId = MeterId.create("my-metric",
+                                          Services.get(MetricsFactory.class).tagCreate(METRIC_TAG_NAME, METRIC_TAG_VALUE));
         Map<String, String> fullTags = new HashMap<>();
         mgr.displayTags().forEach(entry -> fullTags.put(entry.key(), entry.value()));
 
@@ -111,7 +110,7 @@ class TestSystemTagsManager {
                                    not(hasEntry(GLOBAL_TAG_2, GLOBAL_VALUE_2))));
         // By default, specifying just the app name in config should trigger the default or explicit app tag name and value.
         if (metricsConfig.appName().isPresent()) {
-            assertThat("App tag", fullTags, hasKey(MetricsProgrammaticConfig.instance().appTagName().get()));
+            assertThat("App tag", fullTags, hasKey(Services.get(MetricsProgrammaticConfig.class).appTagName().get()));
         }
     }
 
@@ -119,12 +118,11 @@ class TestSystemTagsManager {
     void checkForGlobalAndAppTags() {
         Config rootConfig = Config.just(ConfigSources.create(GLOBAL_AND_APP_TAG_SETTINGS));
         // Set up the metrics factory which applies the SE-specific programmatic defaults for the system tags manager.
-        MetricsFactory metricsFactory = MetricsFactoryManager.getOrCreateMetricsFactory(rootConfig);
-        MetricsConfig metricsConfig = metricsFactory.metricsConfig();
-        SystemTagsManager mgr = Services.get(SystemTagsManager.class);
+        MetricsConfig metricsConfig = metricsConfig(rootConfig);
+        SystemTagsManager mgr = SystemTagsManager.create(metricsConfig);
 
-        Meter.Id meterId = MeterId.create("my-metric", io.helidon.metrics.api.Tag.create(METRIC_TAG_NAME,
-                                                                                         METRIC_TAG_VALUE));
+        Meter.Id meterId = MeterId.create("my-metric",
+                                          Services.get(MetricsFactory.class).tagCreate(METRIC_TAG_NAME, METRIC_TAG_VALUE));
         Map<String, String> fullTags = new HashMap<>();
         mgr.displayTags().forEach(entry -> fullTags.put(entry.key(), entry.value()));
 
@@ -133,13 +131,13 @@ class TestSystemTagsManager {
                                    hasEntry(GLOBAL_TAG_2, GLOBAL_VALUE_2)));
         // By default, specifying just the app name in config should trigger the default or explicit app tag name and value.
         if (metricsConfig.appName().isPresent()) {
-            assertThat("App tag", fullTags, hasKey(MetricsProgrammaticConfig.instance().appTagName()));
+            assertThat("App tag", fullTags, hasKey(Services.get(MetricsProgrammaticConfig.class).appTagName().get()));
         }
     }
 
     @Test
     void checkForNoTags() {
-        MetricsConfig mConfig = MetricsConfig.create(); // no global tags
+        MetricsConfig mConfig = MetricsConfig.create(Config.empty()); // no global tags
         SystemTagsManager mgr = SystemTagsManager.create(mConfig);
 
         Meter.Id meterId = MeterId.create("no-tags-metric", Set.of());
@@ -150,22 +148,27 @@ class TestSystemTagsManager {
     }
 
     @Test
-    void serviceLookupReflectsCurrentSystemTagsManager() {
-        SystemTagsManager initial = SystemTagsManagerImpl.current(MetricsConfig.create());
-        assertThat(Services.get(SystemTagsManager.class), sameInstance(initial));
+    void createReturnsNonGlobalSystemTagsManager() {
+        SystemTagsManager shared = Services.get(SystemTagsManager.class);
 
         Config mConfig = Config.just(ConfigSources.create(GLOBAL_ONLY_TAGS_SETTINGS)).get("metrics");
-        SystemTagsManager updated = SystemTagsManagerImpl.current(MetricsConfig.create(mConfig));
-        assertThat(Services.get(SystemTagsManager.class), sameInstance(updated));
+        SystemTagsManager configured = SystemTagsManager.create(MetricsConfig.create(mConfig));
+        assertThat(configured, not(sameInstance(shared)));
+
+        Map<String, String> fullTags = new HashMap<>();
+        configured.displayTags().forEach(entry -> fullTags.put(entry.key(), entry.value()));
+
+        assertThat("Global tags from non-global manager",
+                   fullTags, allOf(hasEntry(GLOBAL_TAG_1, GLOBAL_VALUE_1),
+                                   hasEntry(GLOBAL_TAG_2, GLOBAL_VALUE_2)));
     }
 
     @Test
     void checkForGlobalButNoMetricTags() {
         Config rootConfig = Config.just(ConfigSources.create(GLOBAL_AND_APP_TAG_SETTINGS));
         // Set up the metrics factory which applies the SE-specific programmatic defaults for the system tags manager.
-        MetricsFactory metricsFactory = MetricsFactoryManager.getOrCreateMetricsFactory(rootConfig);
-        MetricsConfig metricsConfig = metricsFactory.metricsConfig();
-        SystemTagsManager mgr = Services.get(SystemTagsManager.class);
+        MetricsConfig metricsConfig = metricsConfig(rootConfig);
+        SystemTagsManager mgr = SystemTagsManager.create(metricsConfig);
 
         Meter.Id meterId = MeterId.create("no-tags-metric", Set.of());
         Map<String, String> fullTags = new HashMap<>();
@@ -176,7 +179,12 @@ class TestSystemTagsManager {
                                    hasEntry(GLOBAL_TAG_2, GLOBAL_VALUE_2)));
         // By default, specifying just the app name in config should trigger the default or explicit app tag name and value.
         if (metricsConfig.appName().isPresent()) {
-            assertThat("App tag", fullTags, hasKey(MetricsProgrammaticConfig.instance().appTagName()));
+            assertThat("App tag", fullTags, hasKey(Services.get(MetricsProgrammaticConfig.class).appTagName().get()));
         }
+    }
+
+    private static MetricsConfig metricsConfig(Config rootConfig) {
+        return Services.get(MetricsProgrammaticConfig.class)
+                .apply(MetricsConfig.create(rootConfig.get(MetricsConfig.METRICS_CONFIG_KEY)));
     }
 }

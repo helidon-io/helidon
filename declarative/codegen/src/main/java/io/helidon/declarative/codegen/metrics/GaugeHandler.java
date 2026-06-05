@@ -37,6 +37,7 @@ import static io.helidon.declarative.codegen.metrics.MetricsExtension.GENERATOR;
 import static io.helidon.declarative.codegen.metrics.MetricsExtension.addTagsToBuilder;
 import static io.helidon.declarative.codegen.metrics.MetricsTypes.GAUGE;
 import static io.helidon.declarative.codegen.metrics.MetricsTypes.METER_REGISTRY;
+import static io.helidon.declarative.codegen.metrics.MetricsTypes.METRICS_FACTORY;
 
 class GaugeHandler {
     private final RegistryRoundContext ctx;
@@ -122,6 +123,7 @@ class GaugeHandler {
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE);
 
         postConstruct.addContentLine("var meters = meterRegistrySupplier.get();")
+                .addContentLine("var metricsFactory = metricsFactorySupplier.get();")
                 .addContentLine();
 
         for (int i = 0; i < gauges.size(); i++) {
@@ -134,7 +136,7 @@ class GaugeHandler {
 
     private void addRegisterGauge(Method.Builder postConstruct, MetricsExtension.Gauge gauge, int index) {
         /*
-        this.gauge_1 = meters.getOrCreate(Gauge.builder("TestEndpoint.gaugeValue",
+        this.gauge_1 = meters.getOrCreate(metricsFactory.gaugeBuilder("TestEndpoint.gaugeValue",
                                                                    () -> endpoint.get().gaugeValue())
                                                              .description("Gauge annotation on method gaugeValue()")
                                                              .tags(tags)
@@ -146,8 +148,7 @@ class GaugeHandler {
         postConstruct.addContent("this.")
                 .addContent("gauge_" + index)
                 .addContent(" = meters.getOrCreate(")
-                .addContent(GAUGE)
-                .addContent(".builder(")
+                .addContent("metricsFactory.gaugeBuilder(")
                 .addContentLiteral(gauge.name())
                 .addContent(", () -> serviceSupplier.get().")
                 .addContent(gauge.methodName())
@@ -179,6 +180,9 @@ class GaugeHandler {
         TypeName meterRegistrySupplierType = TypeName.builder(TypeNames.SUPPLIER)
                 .addTypeArgument(METER_REGISTRY)
                 .build();
+        TypeName metricsFactorySupplierType = TypeName.builder(TypeNames.SUPPLIER)
+                .addTypeArgument(METRICS_FACTORY)
+                .build();
 
         classModel.addField(service -> service
                         .accessModifier(AccessModifier.PRIVATE)
@@ -189,7 +193,12 @@ class GaugeHandler {
                         .accessModifier(AccessModifier.PRIVATE)
                         .isFinal(true)
                         .name("meterRegistrySupplier")
-                        .type(meterRegistrySupplierType));
+                        .type(meterRegistrySupplierType))
+                .addField(metricsFactory -> metricsFactory
+                        .accessModifier(AccessModifier.PRIVATE)
+                        .isFinal(true)
+                        .name("metricsFactorySupplier")
+                        .type(metricsFactorySupplierType));
 
         for (int i = 0; i < gaugesCount; i++) {
             final int index = i;
@@ -207,10 +216,15 @@ class GaugeHandler {
                         .name("meterRegistrySupplier")
                         .type(meterRegistrySupplierType)
                 )
+                .addParameter(metricsFactory -> metricsFactory
+                        .name("metricsFactorySupplier")
+                        .type(metricsFactorySupplierType)
+                )
                 .addParameter(service -> service
                         .type(serviceSupplierType)
                         .name("serviceSupplier"))
                 .addContentLine("this.meterRegistrySupplier = meterRegistrySupplier;")
+                .addContentLine("this.metricsFactorySupplier = metricsFactorySupplier;")
                 .addContentLine("this.serviceSupplier = serviceSupplier;"));
     }
 }

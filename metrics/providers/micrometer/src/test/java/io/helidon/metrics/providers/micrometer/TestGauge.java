@@ -19,7 +19,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.service.registry.Services;
 
@@ -31,11 +30,13 @@ import static org.hamcrest.Matchers.is;
 
 class TestGauge {
 
+    private static MetricsFactory metricsFactory;
     private static MeterRegistry meterRegistry;
 
     @BeforeAll
     static void prep() {
-        meterRegistry = Services.get(MetricsFactory.class).globalRegistry();
+        metricsFactory = Services.get(MetricsFactory.class);
+        meterRegistry = metricsFactory.globalRegistry();
     }
 
     @Test
@@ -43,7 +44,7 @@ class TestGauge {
         long initialValue = 4L;
         long incr = 2L;
         AtomicLong value = new AtomicLong(initialValue);
-        Gauge.Builder<Double> builder = Gauge.builder("a", value, v -> (double) v.get());
+        Gauge.Builder<Double> builder = metricsFactory.gaugeBuilder("a", value, v -> (double) v.get());
         builder.unwrap(io.micrometer.core.instrument.Gauge.Builder.class).strongReference(true);
         Gauge<Double> g = meterRegistry.getOrCreate(builder);
 

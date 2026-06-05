@@ -15,16 +15,12 @@
  */
 package io.helidon.metrics.providers.micrometer;
 
-import java.util.List;
-
 import io.helidon.common.testing.junit5.OptionalMatcher;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.service.registry.Services;
 
-import io.micrometer.core.instrument.Meter;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -33,16 +29,18 @@ import static org.hamcrest.Matchers.is;
 
 class TestCounter {
 
+    private static MetricsFactory metricsFactory;
     private static MeterRegistry meterRegistry;
 
     @BeforeAll
     static void prep() {
-        meterRegistry = Services.get(MetricsFactory.class).globalRegistry();
+        metricsFactory = Services.get(MetricsFactory.class);
+        meterRegistry = metricsFactory.globalRegistry();
     }
 
     @Test
     void testUnwrap() {
-        Counter.Builder builder = Counter.builder("c4");
+        Counter.Builder builder = metricsFactory.counterBuilder("c4");
         String descr = "Example counter";
         builder.unwrap(io.micrometer.core.instrument.Counter.Builder.class).description(descr);
         Counter c = meterRegistry.getOrCreate(builder);

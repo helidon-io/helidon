@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import io.helidon.service.codegen.ServiceCodegenTypes;
 import static io.helidon.declarative.codegen.metrics.MetricsExtension.GENERATOR;
 import static io.helidon.declarative.codegen.metrics.MetricsTypes.ANNOTATION_TIMED;
 import static io.helidon.declarative.codegen.metrics.MetricsTypes.METER_REGISTRY;
+import static io.helidon.declarative.codegen.metrics.MetricsTypes.METRICS_FACTORY;
 import static io.helidon.declarative.codegen.metrics.MetricsTypes.TIMER;
 
 class TimedHandler {
@@ -90,9 +91,12 @@ class TimedHandler {
                         .type(METER_REGISTRY)
                         .name("meterRegistry")
                 )
+                .addParameter(metricsFactory -> metricsFactory
+                        .type(METRICS_FACTORY)
+                        .name("metricsFactory")
+                )
                 .addContent("this.timer = meterRegistry.getOrCreate(")
-                .addContent(TIMER)
-                .addContent(".builder(")
+                .addContent("metricsFactory.timerBuilder(")
                 .addContentLiteral(name)
                 .addContentLine(")")
                 .increaseContentPadding()

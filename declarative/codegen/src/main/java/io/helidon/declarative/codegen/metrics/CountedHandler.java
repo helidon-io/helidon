@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ import static io.helidon.declarative.codegen.metrics.MetricsExtension.GENERATOR;
 import static io.helidon.declarative.codegen.metrics.MetricsTypes.ANNOTATION_COUNTED;
 import static io.helidon.declarative.codegen.metrics.MetricsTypes.COUNTER;
 import static io.helidon.declarative.codegen.metrics.MetricsTypes.METER_REGISTRY;
+import static io.helidon.declarative.codegen.metrics.MetricsTypes.METRICS_FACTORY;
 
 class CountedHandler {
     private final RegistryRoundContext ctx;
@@ -89,9 +90,12 @@ class CountedHandler {
                         .type(METER_REGISTRY)
                         .name("meterRegistry")
                 )
+                .addParameter(metricsFactory -> metricsFactory
+                        .type(METRICS_FACTORY)
+                        .name("metricsFactory")
+                )
                 .addContent("this.counter = meterRegistry.getOrCreate(")
-                .addContent(COUNTER)
-                .addContent(".builder(")
+                .addContent("metricsFactory.counterBuilder(")
                 .addContentLiteral(name)
                 .addContentLine(")")
                 .increaseContentPadding()

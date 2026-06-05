@@ -21,11 +21,13 @@ import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.metrics.spi.MetricsProgrammaticConfig;
+import io.helidon.service.registry.Service;
 
 /**
  * Provides SE defaults for config values defaulted in a flavor-dependent way.
  */
 @Weight(Weighted.DEFAULT_WEIGHT - 50)
+@Service.Singleton
 public class SeMetricsProgrammaticConfig implements MetricsProgrammaticConfig {
 
     /**
