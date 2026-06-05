@@ -33,7 +33,7 @@ import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.json.JsonObject;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.service.registry.Services;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.WebClient;
@@ -65,7 +65,7 @@ class ObserveTest {
         // quite often we need to pass something to the health check, so this represents a real usage
         healthCheck = new TestHealthCheck("message");
         // possible customization of metrics
-        MeterRegistry meterRegistry = Metrics.globalRegistry();
+        MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry();
 
         InfoObserver info = InfoObserver.builder()
                 .putValue("name", "ObserveTest")

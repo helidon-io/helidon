@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,14 +28,14 @@ class TestMetricsConfigTagsHandling {
 
     @Test
     void checkSingle() {
-        var pairs = MetricsConfigBlueprint.createTags("a=4");
+        var pairs = MetricsConfigSupport.createTags("a=4");
         assertThat("Result", pairs, hasSize(1));
         assertThat("Tag", pairs, hasItem(Tag.create("a", "4")));
     }
 
     @Test
     void checkMultiple() {
-        var pairs = MetricsConfigBlueprint.createTags("a=11,b=12,c=13");
+        var pairs = MetricsConfigSupport.createTags("a=11,b=12,c=13");
         assertThat("Result", pairs, hasSize(3));
         assertThat("Tags", pairs, allOf(hasItem(Tag.create("a", "11")),
                                         hasItem(Tag.create("b", "12")),
@@ -44,7 +44,7 @@ class TestMetricsConfigTagsHandling {
 
     @Test
     void checkQuoted() {
-        var pairs = MetricsConfigBlueprint.createTags("d=r\\=3,e=4,f=0\\,1,g=hi");
+        var pairs = MetricsConfigSupport.createTags("d=r\\=3,e=4,f=0\\,1,g=hi");
         assertThat("Result", pairs, hasSize(4));
         assertThat("Tags", pairs, allOf(hasItem(Tag.create("d", "r=3")),
                                         hasItem(Tag.create("e", "4")),
@@ -55,14 +55,14 @@ class TestMetricsConfigTagsHandling {
     @Test
     void checkEmptyAssignment() {
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-                MetricsConfigBlueprint.createTags(",a=1"));
+                MetricsConfigSupport.createTags(",a=1"));
         assertThat("Empty assignment", ex.getMessage(), containsString("empty"));
     }
 
     @Test
     void checkNoRightSide() {
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-                MetricsConfigBlueprint.createTags("a="));
+                MetricsConfigSupport.createTags("a="));
         assertThat("No right side", ex.getMessage(), containsString("missing tag value"));
     }
 
@@ -70,14 +70,14 @@ class TestMetricsConfigTagsHandling {
     void checkNoLeftSide() {
 
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-                MetricsConfigBlueprint.createTags("=1"));
+                MetricsConfigSupport.createTags("=1"));
         assertThat("No left side", ex.getMessage(), containsString("missing tag name"));
     }
 
     @Test
     void checkInvalidTagName() {
         IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
-                MetricsConfigBlueprint.createTags("a*=1,"));
+                MetricsConfigSupport.createTags("a*=1,"));
         assertThat("Invalid tag name", ex.getMessage(), containsString("tag name must"));
     }
 }

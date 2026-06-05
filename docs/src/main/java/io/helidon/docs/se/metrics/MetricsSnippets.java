@@ -17,7 +17,8 @@ package io.helidon.docs.se.metrics;
 
 import io.helidon.config.Config;
 import io.helidon.metrics.api.Counter;
-import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.service.registry.Services;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.HttpRules;
@@ -56,7 +57,7 @@ class MetricsSnippets {
     // tag::snippet_2[]
     public class GreetService implements HttpService {
 
-        private final Counter accessCtr = Metrics.globalRegistry() // <1>
+        private final Counter accessCtr = Services.get(MeterRegistry.class) // <1>
                 .getOrCreate(Counter.builder("accessctr")); // <2>
 
         @Override

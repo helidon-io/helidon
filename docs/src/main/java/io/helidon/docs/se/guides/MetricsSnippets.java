@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,10 @@ import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsConfig;
-import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.Timer;
+import io.helidon.service.registry.Services;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.HttpRules;
@@ -105,7 +106,7 @@ class MetricsSnippets {
             private final Counter cardCounter; // <1>
 
             GreetingCards() {
-                cardCounter = Metrics.globalRegistry()
+                cardCounter = Services.get(MeterRegistry.class)
                         .getOrCreate(Counter.builder("cardCount")
                                              .description("Counts card retrievals")); // <2>
             }
@@ -162,7 +163,7 @@ class MetricsSnippets {
             private final Timer cardTimer; // <1>
 
             GreetingCards() {
-                cardTimer = Metrics.globalRegistry()
+                cardTimer = Services.get(MeterRegistry.class)
                         .getOrCreate(Timer.builder("cardTimer") // <2>
                                              .description("Times card retrievals"));
             }
@@ -195,7 +196,7 @@ class MetricsSnippets {
             private final DistributionSummary cardSummary; // <1>
 
             GreetingCards() {
-                cardSummary = Metrics.globalRegistry()
+                cardSummary = Services.get(MeterRegistry.class)
                         .getOrCreate(DistributionSummary.builder("cardDist")
                                              .description("random card distribution")); // <2>
             }
@@ -230,7 +231,7 @@ class MetricsSnippets {
 
             GreetingCards() {
                 Random r = new Random();
-                Metrics.globalRegistry()
+                Services.get(MeterRegistry.class)
                         .getOrCreate(Gauge.builder("temperature",
                                                    () -> r.nextDouble(100.0))
                                              .description("Ambient temperature")); // <1>
