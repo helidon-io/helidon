@@ -37,8 +37,8 @@ class TestDeletions {
 
     private static final String COMMON_COUNTER_NAME = "theCounter";
 
-    private static MetricsFactory metricsFactory;
-    private static MeterRegistry reg;
+    private MetricsFactory metricsFactory;
+    private MeterRegistry reg;
 
     @BeforeEach
     void setup() {
@@ -116,7 +116,7 @@ class TestDeletions {
                    OptionalMatcher.optionalValue(sameInstance(counter2)));
     }
 
-    private static Tag tag(String value) {
+    private Tag tag(String value) {
         return metricsFactory.tagCreate("myTag", value);
     }
 }

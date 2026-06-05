@@ -237,7 +237,8 @@ class TestTimer {
                     base-units-default: nanoseconds""";
 
         Config config = Config.just(ConfigSources.create(metricsConfig, MediaTypes.APPLICATION_YAML));
-        MeterRegistry localMeterRegistry = metricsFactory.createMeterRegistry(MetricsConfig.builder().config(config.get("metrics"))
+        MeterRegistry localMeterRegistry = metricsFactory.createMeterRegistry(MetricsConfig.builder()
+                                                                             .config(config.get("metrics"))
                                                                              .build());
         Timer defaultUnitsTimer = localMeterRegistry.getOrCreate(metricsFactory.timerBuilder("defaultUnitsTimer"));
 
@@ -260,7 +261,8 @@ class TestTimer {
                     base-units-default: milliseconds""";
 
         Config config = Config.just(ConfigSources.create(metricsConfig, MediaTypes.APPLICATION_YAML));
-        MeterRegistry localMeterRegistry = metricsFactory.createMeterRegistry(MetricsConfig.builder().config(config.get("metrics"))
+        MeterRegistry localMeterRegistry = metricsFactory.createMeterRegistry(MetricsConfig.builder()
+                                                                             .config(config.get("metrics"))
                                                                              .build());
         Timer timer = localMeterRegistry.getOrCreate(metricsFactory.timerBuilder("forToStringTest")
                                                         .baseUnit("milliseconds"));
