@@ -242,12 +242,26 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             Http2GoAway frame = new Http2GoAway(0,
                                                 e.code(),
                                                 sendErrorDetails ? e.getMessage() : "");
-            writeConnectionFrame(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
-            state = State.FINISHED;
+            try {
+                writeConnectionFrame(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
+            } finally {
+                finish();
+            }
         } catch (CloseConnectionException
                  | InterruptedException
                  | SocketWriterException
                  | UncheckedIOException e) {
+            for (StreamContext sctx : streams.contexts()) {
+                Http2StreamState streamState = sctx.stream.streamState();
+                if (streamState == Http2StreamState.OPEN
+                        || streamState == Http2StreamState.HALF_CLOSED_LOCAL
+                        || streamState == Http2StreamState.HALF_CLOSED_REMOTE
+                        || sctx.stream.isRunning()) {
+                    // Peer shutdown can leave stream workers waiting for DATA, END_STREAM, or outbound flow-control updates.
+                    finish();
+                    break;
+                }
+            }
             throw e;
         } catch (Throwable e) {
             if (state == State.FINISHED) {
@@ -257,8 +271,11 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             Http2GoAway frame = new Http2GoAway(0,
                                                 Http2ErrorCode.INTERNAL,
                                                 sendErrorDetails ? e.getClass().getName() + ": " + e.getMessage() : "");
-            writeConnectionFrame(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
-            state = State.FINISHED;
+            try {
+                writeConnectionFrame(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
+            } finally {
+                finish();
+            }
             throw e;
         }
     }
@@ -276,6 +293,14 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
      */
     public void clientSettings(Http2Settings http2Settings) {
         validateMaxFrameSize(http2Settings);
+        if (http2Settings.hasValue(Http2Setting.INITIAL_WINDOW_SIZE)) {
+            Long initialWindowSize = http2Settings.value(Http2Setting.INITIAL_WINDOW_SIZE);
+            //6.9.2/3 - legal range for the increment to the flow-control window is 1 to 2^31-1 octets.
+            if (initialWindowSize > WindowSize.MAX_WIN_SIZE) {
+                throw new Http2Exception(Http2ErrorCode.FLOW_CONTROL,
+                                         "Window " + initialWindowSize + " size too large");
+            }
+        }
         this.clientSettings = http2Settings;
         this.receiveFrameListener.frame(ctx, 0, clientSettings);
         if (this.clientSettings.hasValue(Http2Setting.HEADER_TABLE_SIZE)) {
@@ -284,14 +309,6 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
         if (this.clientSettings.hasValue(Http2Setting.INITIAL_WINDOW_SIZE)) {
             Long initialWindowSize = clientSettings.value(Http2Setting.INITIAL_WINDOW_SIZE);
-
-            //6.9.2/3 - legal range for the increment to the flow-control window is 1 to 2^31-1 (2,147,483,647) octets.
-            if (initialWindowSize > WindowSize.MAX_WIN_SIZE) {
-                Http2GoAway frame = new Http2GoAway(0,
-                                                    Http2ErrorCode.FLOW_CONTROL,
-                                                    "Window " + initialWindowSize + " size too large");
-                writeConnectionFrame(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
-            }
 
             //6.9.1/1 - changing the flow-control window for streams that are not yet active
             flowControl.resetInitialWindowSize(initialWindowSize.intValue());
@@ -373,6 +390,10 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     }
 
     void finish() {
+        for (StreamContext sctx : streams.contexts()) {
+            sctx.stream.closeFromConnection();
+        }
+        streams.doMaintenance();
         this.state = State.FINISHED;
     }
 

@@ -153,6 +153,57 @@ class UpgradeSettingsTest {
     }
 
     @Test
+    void oversizedInitialWindowSizeDoesNotReplaceLastValidSettings() {
+        Http2Connection connection = new Http2Connection(ctx, Http2Config.create(), List.of());
+
+        Http2Settings validSettings = Http2Settings.builder()
+                .add(INITIAL_WINDOW_SIZE, 65_535L)
+                .build();
+        connection.clientSettings(validSettings);
+
+        Http2Settings invalidSettings = Http2Settings.builder()
+                .add(INITIAL_WINDOW_SIZE, MAX_UNSIGNED_INT)
+                .build();
+
+        Http2Exception exception = assertThrows(Http2Exception.class,
+                                                () -> connection.clientSettings(invalidSettings));
+
+        assertThat(exception.code(), is(Http2ErrorCode.FLOW_CONTROL));
+        assertThat(connection.clientSettings().value(INITIAL_WINDOW_SIZE), is(65_535L));
+    }
+
+    @Test
+    void oversizedInitialWindowSizeRejectsUpgrade() {
+        List<BufferData> writtenFrames = new ArrayList<>();
+        DataWriter dataWriter = mock(DataWriter.class);
+        doAnswer(invocation -> {
+            BufferData data = invocation.getArgument(0);
+            writtenFrames.add(data.copy());
+            return null;
+        }).when(dataWriter).writeNow(any(BufferData.class));
+
+        ConnectionContext connectionContext = mock(ConnectionContext.class);
+        when(connectionContext.router()).thenReturn(Router.empty());
+        when(connectionContext.listenerContext()).thenReturn(mock(ListenerContext.class));
+        when(connectionContext.dataWriter()).thenReturn(dataWriter);
+        when(connectionContext.dataReader()).thenReturn(mock(DataReader.class));
+
+        Http2Settings settings = Http2Settings.builder()
+                .add(INITIAL_WINDOW_SIZE, MAX_UNSIGNED_INT)
+                .build();
+        String encodedSettings = Base64.getUrlEncoder().encodeToString(settingsToBytes(settings));
+        WritableHeaders<?> headers = WritableHeaders.create()
+                .add(HeaderValues.create("HTTP2-Settings", encodedSettings));
+        Http2Upgrader upgrader = Http2Upgrader.create(Http2Config.create());
+
+        Http2Exception exception = assertThrows(Http2Exception.class,
+                                                () -> upgrader.upgrade(connectionContext, prologue, headers));
+
+        assertThat(exception.code(), is(Http2ErrorCode.FLOW_CONTROL));
+        assertThat(writtenFrames.size(), is(0));
+    }
+
+    @Test
     void invalidMaxFrameSizeHandledWithProtocolGoAway() throws InterruptedException {
         List<BufferData> writtenFrames = new ArrayList<>();
         DataWriter dataWriter = mock(DataWriter.class);
@@ -166,7 +217,9 @@ class UpgradeSettingsTest {
         when(connectionContext.router()).thenReturn(Router.empty());
         when(connectionContext.listenerContext()).thenReturn(mock(ListenerContext.class));
         when(connectionContext.dataWriter()).thenReturn(dataWriter);
-        when(connectionContext.dataReader()).thenReturn(invalidMaxFrameSizeReader());
+        when(connectionContext.dataReader()).thenReturn(settingsReader(Http2Settings.builder()
+                                                                  .add(MAX_FRAME_SIZE, 0L)
+                                                                  .build()));
 
         Http2Connection connection = new Http2Connection(connectionContext,
                                                          Http2Config.builder().sendErrorDetails(true).build(),
@@ -189,6 +242,46 @@ class UpgradeSettingsTest {
         assertThat(goAway.errorCode(), is(Http2ErrorCode.PROTOCOL));
         assertThat(new String(payloadBytes, 8, payloadBytes.length - 8, StandardCharsets.UTF_8),
                    is("Frame size must be between 2^14 and 2^24-1, but is: 0"));
+    }
+
+    @Test
+    void oversizedInitialWindowSizeHandledWithFlowControlGoAway() throws InterruptedException {
+        List<BufferData> writtenFrames = new ArrayList<>();
+        DataWriter dataWriter = mock(DataWriter.class);
+        doAnswer(invocation -> {
+            BufferData data = invocation.getArgument(0);
+            writtenFrames.add(data.copy());
+            return null;
+        }).when(dataWriter).writeNow(any(BufferData.class));
+
+        ConnectionContext connectionContext = mock(ConnectionContext.class);
+        when(connectionContext.router()).thenReturn(Router.empty());
+        when(connectionContext.listenerContext()).thenReturn(mock(ListenerContext.class));
+        when(connectionContext.dataWriter()).thenReturn(dataWriter);
+        when(connectionContext.dataReader()).thenReturn(settingsReader(Http2Settings.builder()
+                                                                  .add(INITIAL_WINDOW_SIZE, MAX_UNSIGNED_INT)
+                                                                  .build()));
+
+        Http2Connection connection = new Http2Connection(connectionContext,
+                                                         Http2Config.builder().sendErrorDetails(true).build(),
+                                                         List.of());
+        connection.expectPreface();
+        connection.handle(mock(io.helidon.common.concurrency.limits.Limit.class));
+
+        assertThat(writtenFrames.size(), greaterThanOrEqualTo(1));
+
+        BufferData goAwayData = writtenFrames.get(writtenFrames.size() - 1);
+        byte[] headerBytes = new byte[Http2FrameHeader.LENGTH];
+        goAwayData.read(headerBytes);
+        Http2FrameHeader frameHeader = Http2FrameHeader.create(BufferData.create(headerBytes));
+        assertThat(frameHeader.type(), is(Http2FrameType.GO_AWAY));
+
+        byte[] payloadBytes = new byte[frameHeader.length()];
+        goAwayData.read(payloadBytes);
+        Http2GoAway goAway = Http2GoAway.create(BufferData.create(payloadBytes));
+        assertThat(goAway.errorCode(), is(Http2ErrorCode.FLOW_CONTROL));
+        assertThat(new String(payloadBytes, 8, payloadBytes.length - 8, StandardCharsets.UTF_8),
+                   is("Window 4294967295 size too large"));
     }
 
     @Test
@@ -231,11 +324,8 @@ class UpgradeSettingsTest {
         return b;
     }
 
-    private static DataReader invalidMaxFrameSizeReader() {
-        Http2FrameData frameData = Http2Settings.builder()
-                .add(MAX_FRAME_SIZE, 0L)
-                .build()
-                .toFrameData(null, 0, Http2Flag.SettingsFlags.create(0));
+    private static DataReader settingsReader(Http2Settings settings) {
+        Http2FrameData frameData = settings.toFrameData(null, 0, Http2Flag.SettingsFlags.create(0));
         BufferData input = BufferData.create(Http2Util.prefaceData(),
                                              BufferData.create(frameData.header().write(), frameData.data()));
         byte[] bytes = input.readBytes();

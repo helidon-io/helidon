@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,14 @@ abstract class WindowSizeImpl implements WindowSize {
         // When the value of SETTINGS_INITIAL_WINDOW_SIZE changes,
         // a receiver MUST adjust the size of all stream flow-control windows that
         // it maintains by the difference between the new value and the old value
-        remainingWindowSize.updateAndGet(o -> o + size - windowSize);
+        int previousWindowSize = windowSize;
+        remainingWindowSize.updateAndGet(o -> {
+            long newSize = (long) o + size - previousWindowSize;
+            if (newSize > MAX_WIN_SIZE) {
+                throw new Http2Exception(Http2ErrorCode.FLOW_CONTROL, "Window size too big.");
+            }
+            return (int) newSize;
+        });
         windowSize = size;
         if (LOGGER_OUTBOUND.isLoggable(DEBUG)) {
             LOGGER_OUTBOUND.log(DEBUG, String.format("%s OFC STR %d: Recv INITIAL_WINDOW_SIZE %d(%d)",
@@ -175,6 +182,7 @@ abstract class WindowSizeImpl implements WindowSize {
                     backoff = Math.min(backoff * 2, BACKOFF_MAX);
                 } catch (InterruptedException e) {
                     debugLog("%s OFC STR %d: Window depleted, waiting for update interrupted.", e);
+                    Thread.currentThread().interrupt();
                     throw new Http2Exception(Http2ErrorCode.FLOW_CONTROL, "Flow control update wait interrupted.");
                 }
                 if (System.currentTimeMillis() - startTime > timeoutMillis) {

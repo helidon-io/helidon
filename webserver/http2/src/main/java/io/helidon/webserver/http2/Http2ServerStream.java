@@ -107,6 +107,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
     private boolean hasEntity = true;
     private volatile Http2Headers headers;
     private volatile Http2Priority priority;
+    private volatile Thread streamThread;
     // used from this instance and from connection
     private volatile Http2StreamState state = Http2StreamState.IDLE;
     private Http2SubProtocolSelector.SubProtocolHandler subProtocolHandler;
@@ -343,6 +344,10 @@ class Http2ServerStream implements Runnable, Http2Stream {
         return state;
     }
 
+    boolean isRunning() {
+        return streamThread != null;
+    }
+
     @Override
     public StreamFlowControl flowControl() {
         return this.flowControl;
@@ -350,20 +355,29 @@ class Http2ServerStream implements Runnable, Http2Stream {
 
     @Override
     public void run() {
-        Thread.currentThread()
-                .setName("[" + ctx.socketId() + " "
-                                 + ctx.childSocketId() + " ] - " + streamId);
+        Thread currentThread = Thread.currentThread();
+        streamThread = currentThread;
+        currentThread.setName("[" + ctx.socketId() + " "
+                                      + ctx.childSocketId() + " ] - " + streamId);
         try {
             handle();
         } catch (SocketWriterException | UncheckedIOException e) {
             throw e;
         } catch (CloseConnectionException e) {
+            if (state == Http2StreamState.CLOSED && Thread.interrupted()) {
+                return;
+            }
             Http2ErrorCode errorCode = e.getCause() instanceof Http2Exception h2Exception
                     ? h2Exception.code()
                     : Http2ErrorCode.STREAM_CLOSED;
             Http2RstStream rst = new Http2RstStream(errorCode);
             writer.write(rst.toFrameData(serverSettings, streamId, Http2Flag.NoFlags.create()));
             // no sense in throwing an exception, as this is invoked from an executor service directly
+        } catch (Http2Exception e) {
+            if (state == Http2StreamState.CLOSED && Thread.interrupted()) {
+                return;
+            }
+            throw e;
         } catch (RequestException e) {
             if (state == Http2StreamState.CLOSED || writeState.get() == WriteState.END) {
                 return;
@@ -416,6 +430,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
                                     flowControl.outbound());
             }
         } finally {
+            streamThread = null;
             headers = null;
             subProtocolHandler = null;
         }
@@ -442,6 +457,19 @@ class Http2ServerStream implements Runnable, Http2Stream {
             inboundData.put(TERMINATING_FRAME);
         } catch (InterruptedException e) {
             throw new Http2Exception(Http2ErrorCode.INTERNAL, "Interrupted", e);
+        }
+    }
+
+    void closeFromConnection() {
+        this.state = Http2StreamState.CLOSED;
+        streams.remove(streamId);
+        inboundData.clear();
+        if (!inboundData.offer(TERMINATING_FRAME)) {
+            throw new Http2Exception(Http2ErrorCode.INTERNAL, "Failed to notify closed connection.");
+        }
+        Thread currentThread = streamThread;
+        if (currentThread != null) {
+            currentThread.interrupt();
         }
     }
 
@@ -609,8 +637,8 @@ class Http2ServerStream implements Runnable, Http2Stream {
             frame = inboundData.take();
             flowControl.inbound().incrementWindowSize(frame.header().length());
         } catch (InterruptedException e) {
-            // this stream was interrupted, does not make sense to do anything else
-            return BufferData.empty();
+            Thread.currentThread().interrupt();
+            throw new CloseConnectionException("Stream closed before request entity was fully read.", e);
         }
 
         if (frame.header().flags(Http2FrameTypes.DATA).endOfStream()) {
@@ -623,6 +651,9 @@ class Http2ServerStream implements Runnable, Http2Stream {
     }
 
     private void handle() {
+        if (state == Http2StreamState.CLOSED) {
+            return;
+        }
         Headers httpHeaders = headers.httpHeaders();
         if (httpHeaders.containsToken(HeaderValues.EXPECT_100)) {
             writeState.updateAndGet(s -> s.checkAndMove(WriteState.EXPECTED_100));
