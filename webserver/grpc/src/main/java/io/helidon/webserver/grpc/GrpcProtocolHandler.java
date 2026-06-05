@@ -57,6 +57,7 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
+import io.helidon.service.registry.Services;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ServerConnectionException;
@@ -795,7 +796,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private void initMetrics() {
         String methodName = route.method().getFullMethodName();
         methodMetrics = METHOD_METRICS.get().computeIfAbsent(methodName, name -> {
-            MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry();
+            MeterRegistry meterRegistry = Services.get(MetricsFactory.class).globalRegistry();
             Tag grpcMethod = Tag.create("grpc.method", name);
 
             Counter.Builder callStartedBuilder = Counter.builder("grpc.server.call.started")

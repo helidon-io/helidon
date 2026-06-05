@@ -20,6 +20,7 @@ import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.Services;
 import io.helidon.webclient.api.WebClientServiceResponse;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.metrics.WebClientMetrics;
@@ -36,7 +37,7 @@ import static org.hamcrest.Matchers.is;
  */
 public class MetricsTest extends TestParent {
 
-    private static final MeterRegistry REGISTRY = MetricsFactory.getInstance().globalRegistry();
+    private static final MeterRegistry REGISTRY = Services.get(MetricsFactory.class).globalRegistry();
 
     MetricsTest(WebServer server) {
         super(server);

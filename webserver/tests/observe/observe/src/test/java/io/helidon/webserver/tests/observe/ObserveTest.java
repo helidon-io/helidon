@@ -65,7 +65,7 @@ class ObserveTest {
         // quite often we need to pass something to the health check, so this represents a real usage
         healthCheck = new TestHealthCheck("message");
         // possible customization of metrics
-        MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry();
+        MeterRegistry meterRegistry = Services.get(MetricsFactory.class).globalRegistry();
 
         InfoObserver info = InfoObserver.builder()
                 .putValue("name", "ObserveTest")

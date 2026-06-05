@@ -21,6 +21,7 @@ import java.util.List;
 import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.Services;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -34,7 +35,7 @@ class TestDistributionSummary {
 
     @BeforeAll
     static void prep() {
-        meterRegistry = MetricsFactory.getInstance().globalRegistry();
+        meterRegistry = Services.get(MetricsFactory.class).globalRegistry();
     }
 
     @Test

@@ -18,11 +18,14 @@ package io.helidon.metrics.api;
 import java.util.Optional;
 
 import io.helidon.common.Api;
+import io.helidon.common.Weight;
+import io.helidon.common.Weighted;
 import io.helidon.metrics.spi.MetricsProgrammaticConfig;
 
 /**
  * Provides SE defaults for config values defaulted in a flavor-dependent way.
  */
+@Weight(Weighted.DEFAULT_WEIGHT - 50)
 public class SeMetricsProgrammaticConfig implements MetricsProgrammaticConfig {
 
     /**

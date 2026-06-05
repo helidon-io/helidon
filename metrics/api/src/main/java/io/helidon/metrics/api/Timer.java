@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,8 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
+import io.helidon.service.registry.Services;
+
 /**
  * Accumulates timing information about large numbers of short-running events (e.g., HTTP requests), each with a
  * {@link java.time.Duration} value, and reports statistics over all samples (count, total time, mean, max) as well as grouping
@@ -33,18 +35,26 @@ public interface Timer extends Meter, HistogramSupport {
      *
      * @param name timer name
      * @return new builder
+     * @deprecated this method gets {@link io.helidon.metrics.api.MetricsFactory}
+     * from {@link io.helidon.service.registry.ServiceRegistry}, which may be inefficient.
+     * Call {@link io.helidon.metrics.api.MetricsFactory#timerBuilder(String)} instead
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     static Builder builder(String name) {
-        return MetricsFactory.getInstance().timerBuilder(name);
+        return Services.get(MetricsFactory.class).timerBuilder(name);
     }
 
     /**
      * Starts a timing sample using the default system clock.
      *
      * @return new sample
+     * @deprecated this method gets {@link io.helidon.metrics.api.MetricsFactory}
+     * from {@link io.helidon.service.registry.ServiceRegistry}, which may be inefficient.
+     * call {@link MetricsFactory#timerStart()} instead
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     static Sample start() {
-        return MetricsFactory.getInstance().timerStart();
+        return Services.get(MetricsFactory.class).timerStart();
     }
 
     /**
@@ -52,9 +62,13 @@ public interface Timer extends Meter, HistogramSupport {
      *
      * @param registry the meter registry whose clock is to be used for measuring the interval
      * @return new sample with start time recorded
+     * @deprecated this method gets {@link io.helidon.metrics.api.MetricsFactory}
+     * from {@link io.helidon.service.registry.ServiceRegistry}, which may be inefficient.
+     * call {@link MetricsFactory#timerStart(MeterRegistry)} instead
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     static Sample start(MeterRegistry registry) {
-        return MetricsFactory.getInstance().timerStart(registry);
+        return Services.get(MetricsFactory.class).timerStart(registry);
     }
 
     /**
@@ -62,9 +76,13 @@ public interface Timer extends Meter, HistogramSupport {
      *
      * @param clock a clock to be used
      * @return new sample with start time recorded
+     * @deprecated this method gets {@link io.helidon.metrics.api.MetricsFactory}
+     * from {@link io.helidon.service.registry.ServiceRegistry}, which may be inefficient.
+     * call {@link MetricsFactory#timerStart(Clock)} instead
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     static Sample start(Clock clock) {
-        return MetricsFactory.getInstance().timerStart(clock);
+        return Services.get(MetricsFactory.class).timerStart(clock);
     }
 
     /**

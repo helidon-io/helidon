@@ -21,6 +21,7 @@ import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.Services;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -34,7 +35,7 @@ class TestGauge {
 
     @BeforeAll
     static void prep() {
-        meterRegistry = MetricsFactory.getInstance().globalRegistry();
+        meterRegistry = Services.get(MetricsFactory.class).globalRegistry();
     }
 
     @Test

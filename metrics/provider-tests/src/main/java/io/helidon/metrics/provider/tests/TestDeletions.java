@@ -24,6 +24,7 @@ import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
+import io.helidon.service.registry.Services;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,7 +42,7 @@ class TestDeletions {
 
     @BeforeAll
     static void setup() {
-        reg = MetricsFactory.getInstance().globalRegistry();
+        reg = Services.get(MetricsFactory.class).globalRegistry();
     }
 
     @BeforeEach

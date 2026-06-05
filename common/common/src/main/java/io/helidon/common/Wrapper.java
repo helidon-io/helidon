@@ -1,6 +1,5 @@
-
 /*
- * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.tracing;
+package io.helidon.common;
 
 /**
  * Behavior of a type that wraps a related type, typically through delegation.
- *
- * @deprecated use {@link io.helidon.common.Wrapper} instead
  */
-@Deprecated(forRemoval = true, since = "27.0.0")
-public interface Wrapper extends io.helidon.common.Wrapper {
+public interface Wrapper {
+
+    /**
+     * Unwraps the delegate as the specified type.
+     *
+     * @param type {@link Class} to which to cast the delegate
+     * @param <T>  type to cast to
+     * @return the delegate cast as the requested type
+     * @throws ClassCastException if the delegate is not compatible with the requested type
+     */
+    <T> T unwrap(Class<? extends T> type);
 }

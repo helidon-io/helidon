@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,12 @@ import java.util.Map;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.metrics.api.Gauge;
+import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Timer;
+import io.helidon.service.registry.Services;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.metrics.systemmeters.MeterBuilderMatcher.withName;
@@ -41,10 +44,16 @@ import static org.hamcrest.Matchers.instanceOf;
 
 class TestVirtualThreadsMetersConfigs {
 
+    @AfterEach
+    void resetMetricsFactory() {
+        MetricsFactory.closeAll();
+    }
+
     @Test
     void checkDefault() {
         Config config = Config.just(ConfigSources.create(Map.of()));
-        MetricsFactory metricsFactory = MetricsFactory.getInstance(config);
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        metricsFactory.globalRegistry(MetricsConfig.create(config));
         VThreadSystemMetersProvider provider = new VThreadSystemMetersProvider();
         var meterBuilders = provider.meterBuilders(metricsFactory);
         assertThat("Meter builders with default config", meterBuilders, empty());
@@ -53,7 +62,8 @@ class TestVirtualThreadsMetersConfigs {
     @Test
     void checkVirtualThreadCountMetersEnabled() {
         Config config = Config.just(ConfigSources.create(Map.of("virtual-threads.enabled", "true")));
-        MetricsFactory metricsFactory = MetricsFactory.getInstance(config);
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        metricsFactory.globalRegistry(MetricsConfig.create(config));
         VThreadSystemMetersProvider provider = new VThreadSystemMetersProvider();
         var meterBuilders = provider.meterBuilders(metricsFactory);
 
@@ -76,7 +86,8 @@ class TestVirtualThreadsMetersConfigs {
     void checkPinnedThreadThreshold() {
         Config config = Config.just(ConfigSources.create(Map.of("virtual-threads.enabled", "true",
                                                                 "virtual-threads.pinned.threshold", "PT0.040S")));
-        MetricsFactory metricsFactory = MetricsFactory.getInstance(config);
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        metricsFactory.globalRegistry(MetricsConfig.create(config));
         VThreadSystemMetersProvider provider = new VThreadSystemMetersProvider();
         provider.meterBuilders(metricsFactory);
 
@@ -88,7 +99,8 @@ class TestVirtualThreadsMetersConfigs {
     void checkRecentPinnedTimerLookup() {
         Config config = Config.just(ConfigSources.create(Map.of("virtual-threads.enabled", "true",
                                                                 "virtual-threads.pinned.threshold", "PT0.040S")));
-        MetricsFactory metricsFactory = MetricsFactory.getInstance(config);
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        metricsFactory.globalRegistry(MetricsConfig.create(config));
         VThreadSystemMetersProvider provider = new VThreadSystemMetersProvider();
         provider.meterBuilders(metricsFactory);
 

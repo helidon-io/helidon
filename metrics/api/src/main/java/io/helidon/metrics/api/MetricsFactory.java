@@ -21,6 +21,7 @@ import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
 import io.helidon.config.Config;
+import io.helidon.service.registry.Services;
 
 /**
  * The basic contract for implementations of the Helidon metrics API, mostly acting as a factory for
@@ -55,9 +56,13 @@ public interface MetricsFactory {
      * current config.
      *
      * @return current or new metrics factory
+     * @deprecated since 27.0.0, for removal. Use
+     * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MetricsFactory.class)} for the
+     * shared metrics factory, or create non-global metrics objects using the programmatic API.
      */
+    @Deprecated(since = "27.0.0", forRemoval = true)
     static MetricsFactory getInstance() {
-        return MetricsFactoryManager.getMetricsFactory();
+        return Services.get(MetricsFactory.class);
     }
 
     /**
@@ -67,7 +72,12 @@ public interface MetricsFactory {
      *
      * @param metricsConfigNode metrics config node
      * @return new instance configured as directed
+     * @deprecated since 27.0.0, for removal. Static config-based access creates a new shared instance. Use
+     * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MetricsFactory.class)} for the
+     * shared metrics factory, or create non-global metrics objects using the programmatic API.
      */
+    @SuppressWarnings("removal")
+    @Deprecated(since = "27.0.0", forRemoval = true)
     static MetricsFactory getInstance(Config metricsConfigNode) {
         return MetricsFactoryManager.getMetricsFactory(metricsConfigNode);
     }
@@ -97,10 +107,9 @@ public interface MetricsFactory {
      *
      * <p>
      * The metric factory creates its global registry on-demand using
-     * {@link #getInstance()}.{@link #createMeterRegistry(MetricsConfig)} with a
+     * {@link #createMeterRegistry(MetricsConfig)} with a
      * {@link MetricsConfig} instance derived from the root {@link io.helidon.config.Config} most recently passed to
-     * {@link #getInstance(io.helidon.config.Config)}, or if none then the config from
-     * current {@link io.helidon.config.Config}.
+     * the service registry, or if none then the config from current {@link io.helidon.config.Config}.
      *
      * @return the global meter registry
      */
@@ -328,7 +337,7 @@ public interface MetricsFactory {
         } else {
             throw new IllegalArgumentException("Unrecognized meter builder type " + builder.getClass().getName());
         }
-        SystemTagsManager.instance()
+        Services.get(SystemTagsManager.class)
                 .effectiveScope(builder.scope())
                 .ifPresent(noOpBuilder::scope);
         return noOpBuilder.build();

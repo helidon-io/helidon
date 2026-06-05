@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,8 @@ import java.util.TreeMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import io.helidon.service.registry.Services;
+
 /**
  * Deals with global, app-level, and scope to be included in the external representation (output and IDs in delegate
  * meter registries) for all metrics.
@@ -42,20 +44,27 @@ public interface SystemTagsManager {
      * Returns the initialized instance of the tags manager.
      *
      * @return current instance of the tags manager
+     * @deprecated since 27.0.0, for removal. Use
+     * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(SystemTagsManager.class)} for the
+     * shared system tags manager, or {@link #create(MetricsConfig)} for a non-global instance.
      */
+    @Deprecated(since = "27.0.0", forRemoval = true)
     static SystemTagsManager instance() {
-        return SystemTagsManagerImpl.instance();
+        return Services.get(SystemTagsManager.class);
     }
 
     /**
-     * Creates a new system tags manager using the provide metrics settings, saving the new instance as the initialized
-     * singleton which will be returned to subsequent invocations of {@link #instance()}.
+     * This method is now a no-op, it simply returns the current {@link io.helidon.service.registry.ServiceRegistry}
+     * backed instance.
      *
-     * @param metricsConfig settings containing the global and app-level tags (if any)
-     * @return new (and saved) tags manager
+     * @param metricsConfig ignored
+     * @return tags manager from the service registry
+     * @deprecated use
+     * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(SystemTagsManager.class)} instead
      */
+    @Deprecated(since = "27.0.0", forRemoval = true)
     static SystemTagsManager instance(MetricsConfig metricsConfig) {
-        return SystemTagsManagerImpl.instance(metricsConfig);
+        return Services.get(SystemTagsManager.class);
     }
 
     /**

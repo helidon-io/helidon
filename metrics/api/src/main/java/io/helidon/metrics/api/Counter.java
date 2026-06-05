@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
  */
 package io.helidon.metrics.api;
 
+import io.helidon.service.registry.Services;
+
 /**
  * Records a monotonically increasing value that is updated by invoking methods on the {@code Counter} instance.
  */
@@ -25,9 +27,12 @@ public interface Counter extends Meter {
      *
      * @param name counter name
      * @return new builder
+     * @deprecated this method uses service registry to get a {@code MetricsFactory} instance, which may be inefficient,
+     * use {@link io.helidon.metrics.api.MetricsFactory#counterBuilder(String)} instead
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     static Builder builder(String name) {
-        return MetricsFactory.getInstance().counterBuilder(name);
+        return Services.get(MetricsFactory.class).counterBuilder(name);
     }
 
     /**

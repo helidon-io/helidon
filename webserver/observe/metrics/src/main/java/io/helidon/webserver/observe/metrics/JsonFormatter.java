@@ -53,6 +53,7 @@ import io.helidon.metrics.api.MeterRegistryFormatter;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.api.Timer;
+import io.helidon.service.registry.Services;
 
 /**
  * JSON formatter for a meter registry (independent of the underlying registry implementation).
@@ -212,7 +213,7 @@ class JsonFormatter implements MeterRegistryFormatter {
 
                 List<List<String>> tagGroups = new ArrayList<>();
 
-                List<String> tags = StreamSupport.stream(SystemTagsManager.instance()
+                List<String> tags = StreamSupport.stream(Services.get(SystemTagsManager.class)
                                                                  .withoutSystemOrScopeTags(meter.id().tags())
                                                                  .spliterator(), false)
                         .map(tag -> jsonEscape(tag.key()) + "=" + jsonEscape(tag.value()))
@@ -306,7 +307,7 @@ class JsonFormatter implements MeterRegistryFormatter {
     private static String flatNameAndTags(Meter.Id meterId) {
         StringJoiner sj = new StringJoiner(";");
         sj.add(meterId.name());
-        SystemTagsManager.instance()
+        Services.get(SystemTagsManager.class)
                 .withoutSystemOrScopeTags(meterId.tags())
                 .forEach(tag -> sj.add(tag.key() + "=" + tag.value()));
         return sj.toString();
@@ -541,7 +542,7 @@ class JsonFormatter implements MeterRegistryFormatter {
             private static String tagsPortion(Meter.Id metricID) {
                 StringJoiner sj = new StringJoiner(";", ";", "");
                 sj.setEmptyValue("");
-                SystemTagsManager.instance()
+                Services.get(SystemTagsManager.class)
                         .withoutSystemOrScopeTags(metricID.tags())
                         .forEach(tag -> sj.add(tag.key() + "=" + tag.value()));
                 return sj.toString();

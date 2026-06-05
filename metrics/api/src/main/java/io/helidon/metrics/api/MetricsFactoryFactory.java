@@ -34,6 +34,6 @@ class MetricsFactoryFactory implements Supplier<MetricsFactory> {
 
     @Override
     public MetricsFactory get() {
-        return MetricsFactoryManager.getOrCreateMetricsFactory(config);
+        return MetricsFactoryManager.create(config.get("metrics"));
     }
 }

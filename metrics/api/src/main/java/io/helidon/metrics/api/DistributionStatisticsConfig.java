@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ package io.helidon.metrics.api;
 
 import java.util.Optional;
 
+import io.helidon.service.registry.Services;
+
 /**
  * Configuration which controls the behavior of distribution statistics from meters that support them
  * (for example, timers and distribution summaries).
@@ -27,9 +29,12 @@ public interface DistributionStatisticsConfig extends Wrapper {
      * Creates a builder for a new {@link io.helidon.metrics.api.DistributionStatisticsConfig} instance.
      *
      * @return new builder
+     * @deprecated this method uses service registry to get a {@code MetricsFactory} instance, which may be inefficient,
+     * use {@link MetricsFactory#distributionStatisticsConfigBuilder()} instead
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     static Builder builder() {
-        return MetricsFactory.getInstance().distributionStatisticsConfigBuilder();
+        return Services.get(MetricsFactory.class).distributionStatisticsConfigBuilder();
     }
 
     /**

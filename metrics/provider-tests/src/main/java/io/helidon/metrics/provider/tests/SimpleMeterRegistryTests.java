@@ -27,6 +27,7 @@ import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
+import io.helidon.service.registry.Services;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -48,7 +49,7 @@ class SimpleMeterRegistryTests {
 
     @BeforeAll
     static void prep() {
-        meterRegistry = MetricsFactory.getInstance().globalRegistry();
+        meterRegistry = Services.get(MetricsFactory.class).globalRegistry();
     }
 
     @Test
@@ -90,7 +91,7 @@ class SimpleMeterRegistryTests {
     void testDisabledYieldsNoOp() {
         // Disable metrics using config.
         Config metricsDisabledConfig = Config.just(ConfigSources.create(Map.of("enabled", "false")));
-        MeterRegistry shouldBeNoOp = MetricsFactory.getInstance()
+        MeterRegistry shouldBeNoOp = Services.get(MetricsFactory.class)
                 .createMeterRegistry(MetricsConfig.create(metricsDisabledConfig));
 
         Counter shouldBeNoOpCounter = shouldBeNoOp.getOrCreate(Counter.builder("shouldBeNoOpCounter"));
@@ -104,7 +105,7 @@ class SimpleMeterRegistryTests {
     void testDisabledMeters() {
         Config config = Config.just(ConfigSources.create(Map.of("scoping.scopes.0.name", "application",
                                                                  "scoping.scopes.0.filter.exclude", ".*Ignore.*")));
-        MeterRegistry selectiveRegistry = MetricsFactory.getInstance().createMeterRegistry(MetricsConfig.create(config));
+        MeterRegistry selectiveRegistry = Services.get(MetricsFactory.class).createMeterRegistry(MetricsConfig.create(config));
 
         Counter shouldBeNoOpCounter = selectiveRegistry.getOrCreate(Counter.builder("pleaseIgnoreThis"));
         Counter shouldBeLive = selectiveRegistry.getOrCreate(Counter.builder("pleaseIncludeThis"));
