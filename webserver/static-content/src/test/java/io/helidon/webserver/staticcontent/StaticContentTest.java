@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ import org.junit.jupiter.api.io.TempDir;
 
 import static io.helidon.webserver.staticcontent.StaticContentFeature.createService;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @RoutingTest
@@ -131,6 +132,22 @@ class StaticContentTest {
             assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.CONTENT_TYPE, "text/plain"));
             assertThat(response.as(String.class), is("Content"));
+        }
+    }
+
+    @Test
+    @SuppressWarnings("removal")
+    void testClasspathBuilderWithNullContextClassLoader() {
+        ClassLoader original = Thread.currentThread().getContextClassLoader();
+
+        try {
+            Thread.currentThread().setContextClassLoader(null);
+
+            StaticContentService service = StaticContentService.builder("web").build();
+
+            assertThat(service, notNullValue());
+        } finally {
+            Thread.currentThread().setContextClassLoader(original);
         }
     }
 

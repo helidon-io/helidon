@@ -293,7 +293,7 @@ public final class PersistenceExtension implements Extension {
         try {
             Class.forName("jakarta.transaction.TransactionSynchronizationRegistry",
                           false,
-                          Thread.currentThread().getContextClassLoader());
+                          contextClassLoader());
             event.addAnnotatedType(JtaTransactionRegistry.class, JtaTransactionRegistry.class.getName());
             event.addAnnotatedType(JtaAdaptingDataSourceProvider.class, JtaAdaptingDataSourceProvider.class.getName());
             this.transactionsSupported = true;
@@ -590,7 +590,7 @@ public final class PersistenceExtension implements Extension {
         String persistenceXmlResourceName = getConfig()
             .getOptionalValue("jakarta.persistence.descriptor.resource.name", String.class)
             .orElse("META-INF/persistence.xml");
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        ClassLoader classLoader = contextClassLoader();
         Enumeration<URL> urls;
         try {
             urls = classLoader.getResources(persistenceXmlResourceName);
@@ -1049,7 +1049,7 @@ public final class PersistenceExtension implements Extension {
                     try {
                         ClassLoader classLoader = pui.getClassLoader();
                         if (classLoader == null) {
-                            classLoader = Thread.currentThread().getContextClassLoader();
+                            classLoader = contextClassLoader();
                         }
                         return Class.forName(providerClassName, true, classLoader).getDeclaredConstructor().newInstance();
                     } catch (final ReflectiveOperationException e) {
@@ -1447,7 +1447,7 @@ public final class PersistenceExtension implements Extension {
             Instance<?> vf =
                 instance.select(Class.forName("jakarta.validation.ValidatorFactory",
                                               false,
-                                              Thread.currentThread().getContextClassLoader()));
+                                              contextClassLoader()));
             if (!vf.isUnsatisfied()) {
                 properties.put("jakarta.persistence.validation.factory", vf.get());
             }
@@ -1624,6 +1624,11 @@ public final class PersistenceExtension implements Extension {
 
     private static void sink(Object o1, Object o2) {
 
+    }
+
+    private static ClassLoader contextClassLoader() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return classLoader == null ? PersistenceExtension.class.getClassLoader() : classLoader;
     }
 
     private static final class SyntheticJpaQualifiers {

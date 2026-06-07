@@ -55,14 +55,14 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
 
     @Override
     public Config getConfig() {
-        return getConfig(Thread.currentThread().getContextClassLoader());
+        return getConfig(contextClassLoader());
     }
 
     @Override
     public Config getConfig(ClassLoader classLoader) {
         ClassLoader loader;
         if (classLoader == null) {
-            loader = Thread.currentThread().getContextClassLoader();
+            loader = contextClassLoader();
         } else {
             loader = classLoader;
         }
@@ -123,7 +123,7 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
     public void registerConfig(Config config, ClassLoader classLoader) {
         ClassLoader usedClassloader;
         if (null == classLoader) {
-            usedClassloader = Thread.currentThread().getContextClassLoader();
+            usedClassloader = contextClassLoader();
         } else {
             usedClassloader = classLoader;
         }
@@ -182,7 +182,7 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
 
         CONFIGS.put(classLoader, newConfig);
 
-        if (classLoader == Thread.currentThread().getContextClassLoader()) {
+        if (classLoader == contextClassLoader()) {
             // this should be the default class loader (we do not support classloader magic in Helidon)
             GlobalConfig.config(() -> newConfig, true);
         }
@@ -229,6 +229,11 @@ public class MpConfigProviderResolver extends ConfigProviderResolver {
                 lock.unlock();
             }
         }
+    }
+
+    private static ClassLoader contextClassLoader() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return classLoader == null ? MpConfigProviderResolver.class.getClassLoader() : classLoader;
     }
 
     /**

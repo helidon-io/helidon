@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -156,8 +156,7 @@ class MethodInvoker implements FtSupplier<Object> {
         this.helidonContext = Contexts.context().orElseGet(Context::create);
 
         // Create method state using CCL to support multiples apps (like in TCKs)
-        ClassLoader ccl = Thread.currentThread().getContextClassLoader();
-        Objects.requireNonNull(ccl);
+        ClassLoader ccl = contextClassLoader();
         MethodStateKey methodStateKey = new MethodStateKey(ccl, context.getTarget().getClass(), method);
         this.methodState = METHOD_STATES.computeIfAbsent(methodStateKey, key -> {
             MethodState methodState = new MethodState();
@@ -675,6 +674,11 @@ class MethodInvoker implements FtSupplier<Object> {
         } finally {
             methodState.lock.unlock();
         }
+    }
+
+    private static ClassLoader contextClassLoader() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return classLoader == null ? MethodInvoker.class.getClassLoader() : classLoader;
     }
 
     /**

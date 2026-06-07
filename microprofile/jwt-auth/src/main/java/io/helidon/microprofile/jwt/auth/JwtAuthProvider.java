@@ -933,11 +933,12 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
         private InputStream locateStream(String uri) throws IOException {
             InputStream is;
 
-            URL url = Thread.currentThread().getContextClassLoader().getResource(uri);
+            ClassLoader classLoader = contextClassLoader();
+            URL url = classLoader.getResource(uri);
             if (url == null) {
                 // if uri starts with "/", remove it
                 if (uri.startsWith("/")) {
-                    url = Thread.currentThread().getContextClassLoader().getResource(uri.substring(1));
+                    url = classLoader.getResource(uri.substring(1));
                 }
             }
 
@@ -1434,6 +1435,11 @@ public class JwtAuthProvider implements AuthenticationProvider, OutboundSecurity
 
             // jwk is optional, we may be propagating existing token
             config.get("jwk.resource").as(Resource::create).ifPresent(this::signJwk);
+        }
+
+        private static ClassLoader contextClassLoader() {
+            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+            return classLoader == null ? JwtAuthProvider.class.getClassLoader() : classLoader;
         }
     }
 

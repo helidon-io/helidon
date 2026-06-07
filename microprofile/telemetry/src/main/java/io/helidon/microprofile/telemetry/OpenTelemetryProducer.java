@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -100,7 +100,7 @@ class OpenTelemetryProducer {
                 openTelemetry = AutoConfiguredOpenTelemetrySdk.builder()
                         .addPropertiesCustomizer(x -> telemetryProperties)
                         .addResourceCustomizer(this::customizeResource)
-                        .setServiceClassLoader(Thread.currentThread().getContextClassLoader())
+                        .setServiceClassLoader(contextClassLoader())
                         .disableShutdownHook()
                         .build()
                         .getOpenTelemetrySdk();
@@ -316,6 +316,11 @@ class OpenTelemetryProducer {
 
     private String getServiceName(ConfigProperties c) {
         return c.getString(SERVICE_NAME_PROPERTY, HELIDON_SERVICE_NAME);
+    }
+
+    private static ClassLoader contextClassLoader() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return classLoader == null ? OpenTelemetryProducer.class.getClassLoader() : classLoader;
     }
 
 }

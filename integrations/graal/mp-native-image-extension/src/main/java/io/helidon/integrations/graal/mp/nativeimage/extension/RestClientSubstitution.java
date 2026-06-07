@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,10 +33,15 @@ public class RestClientSubstitution {
         @SuppressWarnings("unchecked")
         @Substitute
         static <T> T createProxyInstance(Class<T> restClientClass) {
-            ClassLoader cl = Thread.currentThread().getContextClassLoader();
+            ClassLoader cl = contextClassLoader();
             return (T) Proxy.newProxyInstance(cl,
                     new Class[] {restClientClass},
                     new DefaultMethodProxyHandler());
+        }
+
+        private static ClassLoader contextClassLoader() {
+            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+            return classLoader == null ? RestClientSubstitution.class.getClassLoader() : classLoader;
         }
     }
 
@@ -65,4 +70,3 @@ public class RestClientSubstitution {
         }
     }
 }
-

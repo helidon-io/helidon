@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -171,7 +171,7 @@ public class StaticContentFeature implements Weighted, ServerFeature, RuntimeTyp
             defaultSockets = new HashSet<>(this.sockets);
         }
 
-        ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        ClassLoader contextClassLoader = contextClassLoader();
 
         for (ClasspathHandlerConfig handlerConfig : config.classpath()) {
             if (!handlerConfig.enabled()) {
@@ -245,5 +245,10 @@ public class StaticContentFeature implements Weighted, ServerFeature, RuntimeTyp
                         .register(handlerConfig.context(), service);
             }
         }
+    }
+
+    private static ClassLoader contextClassLoader() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return classLoader == null ? StaticContentFeature.class.getClassLoader() : classLoader;
     }
 }

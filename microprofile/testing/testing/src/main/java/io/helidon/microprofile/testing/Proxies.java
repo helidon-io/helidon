@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,7 +41,7 @@ public class Proxies {
      * @return mirror
      */
     public static <T extends Annotation> T mirror(Class<T> type, Annotation annotation) {
-        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        ClassLoader cl = contextClassLoader();
         Object o = Proxy.newProxyInstance(cl, new Class[] {type}, (proxy, method, args) -> {
             Method sourceMethod = annotation.getClass().getMethod(method.getName());
             return invoke(Object.class, sourceMethod, annotation);
@@ -58,7 +58,7 @@ public class Proxies {
      * @return annotation
      */
     public static <T extends Annotation> T annotation(Class<T> type, Function<String, Object> function) {
-        ClassLoader cl = Thread.currentThread().getContextClassLoader();
+        ClassLoader cl = contextClassLoader();
         Object o = Proxy.newProxyInstance(cl, List.of(type).toArray(Class[]::new),
                 (proxy, method, args) -> {
                     String methodName = method.getName();
@@ -69,5 +69,10 @@ public class Proxies {
                     return value != null ? value : method.getDefaultValue();
                 });
         return type.cast(o);
+    }
+
+    private static ClassLoader contextClassLoader() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return classLoader == null ? Proxies.class.getClassLoader() : classLoader;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,6 +84,11 @@ public class ClasspathOverrideSource extends AbstractSource implements OverrideS
         return new Builder();
     }
 
+    private static ClassLoader contextClassLoader() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return classLoader == null ? ClasspathOverrideSource.class.getClassLoader() : classLoader;
+    }
+
     /**
      * Classpath OverrideSource Builder.
      * <p>
@@ -141,9 +146,7 @@ public class ClasspathOverrideSource extends AbstractSource implements OverrideS
             this.resource = resource;
 
             // the URL may not exist, and that is fine - maybe we are an optional config source
-            this.url = Thread.currentThread()
-                    .getContextClassLoader()
-                    .getResource(cleaned);
+            this.url = contextClassLoader().getResource(cleaned);
 
             return this;
         }

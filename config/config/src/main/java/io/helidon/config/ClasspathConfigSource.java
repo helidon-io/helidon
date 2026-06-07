@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -223,12 +223,15 @@ public class ClasspathConfigSource extends AbstractConfigSource implements Confi
     private static Enumeration<URL> findAllResources(String resource) {
         String cleaned = resource.startsWith("/") ? resource.substring(1) : resource;
         try {
-            return Thread.currentThread()
-                    .getContextClassLoader()
-                    .getResources(cleaned);
+            return contextClassLoader().getResources(cleaned);
         } catch (IOException e) {
             throw new ConfigException("Could not access config resource " + resource, e);
         }
+    }
+
+    private static ClassLoader contextClassLoader() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return classLoader == null ? ClasspathConfigSource.class.getClassLoader() : classLoader;
     }
 
     /**
@@ -308,9 +311,7 @@ public class ClasspathConfigSource extends AbstractConfigSource implements Confi
             this.resource = resource;
 
             // the URL may not exist, and that is fine - maybe we are an optional config source
-            this.url = Thread.currentThread()
-                    .getContextClassLoader()
-                    .getResource(cleaned);
+            this.url = contextClassLoader().getResource(cleaned);
 
             return this;
         }

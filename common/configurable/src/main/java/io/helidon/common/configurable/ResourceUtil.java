@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,7 +72,7 @@ final class ResourceUtil {
      */
     static InputStream toIs(String resPath) {
         Objects.requireNonNull(resPath, "Resource path must not be null");
-        InputStream is = Thread.currentThread().getContextClassLoader().getResourceAsStream(resPath);
+        InputStream is = contextClassLoader().getResourceAsStream(resPath);
         Objects.requireNonNull(is, "Resource path does not exist: " + resPath);
         return is;
     }
@@ -104,5 +104,10 @@ final class ResourceUtil {
         } catch (IOException e) {
             throw new ResourceException("Failed to open stream to uri: " + uri, e);
         }
+    }
+
+    private static ClassLoader contextClassLoader() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return classLoader == null ? ResourceUtil.class.getClassLoader() : classLoader;
     }
 }
