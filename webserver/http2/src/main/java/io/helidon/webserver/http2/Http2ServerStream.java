@@ -63,6 +63,8 @@ import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ErrorHandling;
 import io.helidon.webserver.Router;
 import io.helidon.webserver.ServerConnectionException;
+import io.helidon.webserver.SniContext;
+import io.helidon.webserver.SniRequestSupport;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http2.spi.Http2SubProtocolSelector;
 import io.helidon.webserver.http2.spi.SubProtocolResult;
@@ -101,6 +103,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
     private boolean hasEntity = true;
     private volatile Http2Headers headers;
     private volatile Http2Priority priority;
+    private volatile boolean ignoreInboundDataAfterReset;
     // used from this instance and from connection
     private volatile Http2StreamState state = Http2StreamState.IDLE;
     private Http2SubProtocolSelector.SubProtocolHandler subProtocolHandler;
@@ -160,6 +163,9 @@ class Http2ServerStream implements Runnable, Http2Stream {
      * @throws Http2Exception in case data cannot be received
      */
     public void checkDataReceivable() throws Http2Exception {
+        if (ignoreInboundDataAfterReset) {
+            return;
+        }
         if (!DATA_RECEIVABLE_STATES.contains(state)) {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Received data for stream "
                     + streamId + " in state " + state);
@@ -257,6 +263,10 @@ class Http2ServerStream implements Runnable, Http2Stream {
 
     @Override
     public void data(Http2FrameHeader header, BufferData data, boolean endOfStream) {
+        if (!DATA_RECEIVABLE_STATES.contains(state)) {
+            flowControl.inbound().incrementWindowSize(header.length());
+            return;
+        }
         if (expectedLength != -1 && expectedLength < header.length()) {
             state = Http2StreamState.CLOSED;
             writeState.updateAndGet(s -> s.checkAndMove(WriteState.END));
@@ -282,10 +292,14 @@ class Http2ServerStream implements Runnable, Http2Stream {
         if (expectedLength != -1) {
             expectedLength -= header.length();
         }
+        DataFrame frame = new DataFrame(header, data);
         try {
-            inboundData.put(new DataFrame(header, data));
+            inboundData.put(frame);
         } catch (InterruptedException e) {
             throw new Http2Exception(Http2ErrorCode.INTERNAL, "Interrupted", e);
+        }
+        if (!DATA_RECEIVABLE_STATES.contains(state) && inboundData.remove(frame)) {
+            flowControl.inbound().incrementWindowSize(header.length());
         }
     }
 
@@ -357,7 +371,8 @@ class Http2ServerStream implements Runnable, Http2Stream {
             if (entity.length != 0) {
                 headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, String.valueOf(entity.length)));
             }
-            Http2Headers http2Headers = Http2Headers.create(headers);
+            Http2Headers http2Headers = Http2Headers.create(headers)
+                    .status(e.status());
             if (entity.length == 0) {
                 writer.writeHeaders(http2Headers,
                                     streamId,
@@ -374,6 +389,12 @@ class Http2ServerStream implements Runnable, Http2Stream {
                                     new Http2FrameData(dataHeader, BufferData.create(message)),
                                     flowControl.outbound());
             }
+            closeRejectedStream();
+        } catch (Http2Exception e) {
+            ctx.log(LOGGER, DEBUG, "Intentional HTTP/2 stream exception, code: %s, message: %s",
+                    e.code(),
+                    e.getMessage());
+            closeRejectedStream(e.code(), true);
         } finally {
             headers = null;
             subProtocolHandler = null;
@@ -539,11 +560,56 @@ class Http2ServerStream implements Runnable, Http2Stream {
         return frame.data();
     }
 
+    private void closeRejectedStream() {
+        closeRejectedStream(Http2ErrorCode.CANCEL, false);
+    }
+
+    private void closeRejectedStream(Http2ErrorCode resetCode, boolean forceReset) {
+        boolean resetRequestBody = forceReset || hasEntity && state != Http2StreamState.HALF_CLOSED_REMOTE;
+        ignoreInboundDataAfterReset = resetRequestBody;
+        this.state = Http2StreamState.CLOSED;
+        writeState.updateAndGet(s -> s.checkAndMove(WriteState.END));
+        streams.remove(this.streamId);
+        restoreInboundFlowControl();
+        if (!inboundData.offer(TERMINATING_FRAME)) {
+            throw new Http2Exception(Http2ErrorCode.INTERNAL, "Failed to close stream data queue.");
+        }
+        if (resetRequestBody) {
+            Http2RstStream rst = new Http2RstStream(resetCode);
+            try {
+                writer.write(rst.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
+            } catch (SocketWriterException | UncheckedIOException e) {
+                throw new ServerConnectionException("Failed to write reset stream", e);
+            }
+            connectionAttackVectorMetrics.madeYouResetCheck(streamId);
+        }
+    }
+
+    private void restoreInboundFlowControl() {
+        DataFrame frame;
+        while ((frame = inboundData.poll()) != null) {
+            flowControl.inbound().incrementWindowSize(frame.header().length());
+        }
+    }
+
     private void handle() {
         Headers httpHeaders = headers.httpHeaders();
         if (httpHeaders.containsToken(HeaderValues.EXPECT_100)) {
             writeState.updateAndGet(s -> s.checkAndMove(WriteState.EXPECTED_100));
         }
+        ctx.sniContext().ifPresent(sniContext -> {
+            String authority = headers.authority();
+            if (authority == null) {
+                throw SniRequestSupport.missingAuthority(prologue, httpHeaders);
+            }
+            SniContext.AuthorityCheck check;
+            try {
+                check = SniRequestSupport.checkAuthority(sniContext, authority);
+            } catch (IllegalArgumentException e) {
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL, e.getMessage(), e);
+            }
+            SniRequestSupport.validateAuthorityCheck(check, prologue, httpHeaders);
+        });
 
         subProtocolHandler = null;
 
@@ -601,7 +667,6 @@ class Http2ServerStream implements Runnable, Http2Stream {
             Http2ServerResponse response = new Http2ServerResponse(this, request);
 
             try {
-
                 if (outcome.disposition() == LimitAlgorithm.Outcome.Disposition.ACCEPTED) {
                     LimitAlgorithm.Outcome.Accepted accepted = (LimitAlgorithm.Outcome.Accepted) outcome;
                     LimitAlgorithm.Token permit = accepted.token();

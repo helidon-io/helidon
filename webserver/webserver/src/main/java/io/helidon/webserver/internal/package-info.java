@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +15,6 @@
  */
 
 /**
- * Helidon Common HTTP/2 classes.
+ * WebServer implementation helpers that are not exported from the module.
  */
-module io.helidon.http.http2 {
-
-    requires io.helidon.common;
-    requires io.helidon.common.uri;
-    
-    requires transitive io.helidon.common.socket;
-    requires transitive io.helidon.http;
-
-    exports io.helidon.http.http2;
-
-}
+package io.helidon.webserver.internal;

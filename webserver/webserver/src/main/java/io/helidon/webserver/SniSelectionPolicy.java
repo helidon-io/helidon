@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,20 @@
  * limitations under the License.
  */
 
+package io.helidon.webserver;
+
 /**
- * Helidon Common HTTP/2 classes.
+ * TLS handshake policy for ClientHello messages that cannot select a configured SNI virtual host.
+ * <p>
+ * The policy decides whether the listener falls back to its default TLS configuration or rejects the handshake.
  */
-module io.helidon.http.http2 {
-
-    requires io.helidon.common;
-    requires io.helidon.common.uri;
-    
-    requires transitive io.helidon.common.socket;
-    requires transitive io.helidon.http;
-
-    exports io.helidon.http.http2;
-
+public enum SniSelectionPolicy {
+    /**
+     * Use listener default TLS.
+     */
+    FALLBACK,
+    /**
+     * Reject the TLS connection.
+     */
+    REJECT
 }

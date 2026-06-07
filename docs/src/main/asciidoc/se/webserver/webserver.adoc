@@ -114,6 +114,68 @@ To configure TLS in WebServer programmatically create your keystore configuratio
 include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_30, indent=0]
 ----
 
+==== Configuring TLS Virtual Hosts with SNI
+
+You can configure listener TLS virtual hosts selected by the TLS Server Name Indication (SNI) host.
+Virtual hosts select TLS material only. All requests still use the listener routing.
+
+[source,java]
+----
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_39, indent=0]
+----
+
+The listener default `tls` configuration is the fallback when the client omits SNI or presents an
+unmatched SNI host. Exact DNS names and narrow wildcard patterns such as `*.example.com` are supported.
+Wildcard patterns match one left-most label only. If `sni.missing` is set to `REJECT`, the server
+rejects connections without SNI. If `sni.unmatched` is set to `REJECT`, the server aborts an unmatched
+SNI handshake with a TLS `unrecognized_name` alert.
+
+By default, the server rejects HTTP requests with status `421 Misdirected Request` when the request
+authority differs from the client-presented SNI host, or when fallback TLS is used for an authority configured
+as a virtual host.
+
+Handlers can inspect both the normalized SNI host requested by the client and the configured virtual-host
+host that matched it. The requested host is client supplied, so treat it as request data; the matched host
+comes from configuration and is suitable for configuration-driven choices.
+
+[source,java]
+----
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_40, indent=0]
+----
+
+[source,yaml]
+.WebServer SNI virtual-host configuration in `application.yaml`
+----
+server:
+  tls:
+    private-key:
+      keystore:
+        passphrase: "password"
+        resource:
+          resource-path: "default-server.p12"
+  virtual-hosts:
+    - host: "api.example.com"
+      tls:
+        private-key:
+          keystore:
+            passphrase: "password"
+            resource:
+              resource-path: "api-server.p12"
+    - host: "*.example.org"
+      tls:
+        private-key:
+          keystore:
+            passphrase: "password"
+            resource:
+              resource-path: "wildcard-server.p12"
+  sni:
+    missing: "FALLBACK"
+    unmatched: "FALLBACK"
+    authority-mismatch: "REJECT"
+    fallback-authority: "REJECT"
+----
+
+SNI virtual hosts require listener TLS and the NIO socket-channel transport, which is the default.
 
 ==== Configuring TLS in the Config File
 

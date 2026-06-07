@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,17 +14,21 @@
  * limitations under the License.
  */
 
+package io.helidon.webserver;
+
 /**
- * Helidon Common HTTP/2 classes.
+ * HTTP request authority policy used after SNI TLS selection.
+ * <p>
+ * The policy decides whether HTTP authority values that disagree with the TLS SNI selection are allowed or rejected as
+ * misdirected requests.
  */
-module io.helidon.http.http2 {
-
-    requires io.helidon.common;
-    requires io.helidon.common.uri;
-    
-    requires transitive io.helidon.common.socket;
-    requires transitive io.helidon.http;
-
-    exports io.helidon.http.http2;
-
+public enum SniAuthorityPolicy {
+    /**
+     * Allow the request authority.
+     */
+    ALLOW,
+    /**
+     * Reject the request with HTTP 421.
+     */
+    REJECT
 }

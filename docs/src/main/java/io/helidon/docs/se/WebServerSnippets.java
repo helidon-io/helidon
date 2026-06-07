@@ -30,10 +30,12 @@ import io.helidon.common.tls.Tls;
 import io.helidon.common.uri.UriInfo;
 // end::snippet_16[]
 import io.helidon.config.Config;
+import io.helidon.http.DirectHandler;
+import io.helidon.http.DirectHandler.EventType;
 import io.helidon.http.HttpException;
 import io.helidon.http.Method;
-import io.helidon.http.Status;
 import io.helidon.http.ServerResponseHeaders;
+import io.helidon.http.Status;
 import io.helidon.http.encoding.gzip.GzipEncoding;
 import io.helidon.http.media.jsonp.JsonpSupport;
 import io.helidon.webserver.ProxyProtocolData;
@@ -42,6 +44,7 @@ import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.accesslog.AccessLogFeature;
 import io.helidon.webserver.hsts.HstsFeature;
+import io.helidon.webserver.http.DirectHandlers;
 import io.helidon.webserver.http.HttpRoute;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.HttpRules;
@@ -49,10 +52,6 @@ import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http1.Http1Route;
 import io.helidon.webserver.http2.Http2Route;
 import io.helidon.webserver.staticcontent.StaticContentFeature;
-import io.helidon.webserver.http.DirectHandlers;
-import io.helidon.webserver.http.HttpRouting;
-import io.helidon.http.DirectHandler;
-import io.helidon.http.DirectHandler.EventType;
 
 // tag::snippet_14[]
 import jakarta.json.Json;
@@ -357,12 +356,44 @@ class WebServerSnippets {
         // end::snippet_31[]
     }
 
+    void snippet_39() {
+        // tag::snippet_39[]
+        Tls defaultTls = Tls.builder()
+                .privateKey(pk -> pk
+                        .keystore(keys -> keys.keystore(it -> it.resourcePath("default-server.p12"))
+                                .passphrase("password".toCharArray())))
+                .build();
+        Tls apiTls = Tls.builder()
+                .privateKey(pk -> pk
+                        .keystore(keys -> keys.keystore(it -> it.resourcePath("api-server.p12"))
+                                .passphrase("password".toCharArray())))
+                .build();
+
+        WebServer.builder()
+                .tls(defaultTls)
+                .addVirtualHost(virtualHost -> virtualHost
+                        .host("api.example.com")
+                        .tls(apiTls));
+        // end::snippet_39[]
+    }
+
+    void snippet_40(HttpRules rules) {
+        // tag::snippet_40[]
+        rules.get("/template", (req, res) -> {
+            String requestedHost = req.sniRequestedHost().orElse("default.example.com");
+            String matchedHost = req.sniMatchedHost().orElse("default");
+
+            res.send(templateFor(matchedHost, requestedHost));
+        });
+        // end::snippet_40[]
+    }
+
     void snippet_32() {
         // tag::snippet_32[]
         WebServer.builder()
                 .contentEncoding(it -> it
-                .contentEncodingsDiscoverServices(false)
-                .addContentEncoding(GzipEncoding.create()));
+                        .contentEncodingsDiscoverServices(false)
+                        .addContentEncoding(GzipEncoding.create()));
         // end::snippet_32[]
     }
 
@@ -456,9 +487,13 @@ class WebServerSnippets {
         // tag::snippet_38[]
         WebServer.builder()
                 .addFeature(HstsFeature.builder()
-                                    .maxAge(Duration.ofDays(365))
-                                    .includeSubDomains(true)
-                                    .build());
+                        .maxAge(Duration.ofDays(365))
+                        .includeSubDomains(true)
+                        .build());
         // end::snippet_38[]
+    }
+
+    private String templateFor(String matchedHost, String requestedHost) {
+        return matchedHost + ":" + requestedHost;
     }
 }

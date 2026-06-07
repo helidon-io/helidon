@@ -26,6 +26,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.uri.UriAuthority;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
@@ -348,6 +349,26 @@ public class Http2Headers {
         }
         if (!pseudoHeaders.hasMethod()) {
             throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Missing :method pseudo header");
+        }
+        if (pseudoHeaders.hasAuthority()) {
+            validateHostAuthority();
+        }
+    }
+
+    private void validateHostAuthority() {
+        List<String> hostHeaders = headers.all(HeaderNames.HOST, List::of);
+        if (hostHeaders.isEmpty()) {
+            return;
+        }
+        if (hostHeaders.size() > 1) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Only a single Host header is allowed");
+        }
+        try {
+            if (!UriAuthority.create(pseudoHeaders.authority()).equals(UriAuthority.create(hostHeaders.getFirst()))) {
+                throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Host header must match :authority");
+            }
+        } catch (IllegalArgumentException e) {
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Invalid Host or :authority header", e);
         }
     }
 
