@@ -517,7 +517,9 @@ Dependency needed for using Helidon LRA with Narayana compatible coordinator:
 </dependency>
 ```
 
-```bash [Run MicroTx in Docker]
+Run MicroTx in Docker:
+
+```shell [Terminal]
 docker container run --name otmm -v "$(pwd)":/app/config \
 -w /app/config -p 8080:8080/tcp --env CONFIG_FILE=tcs.yaml \
 --add-host host.docker.internal:host-gateway -d tmm:<version>
@@ -556,7 +558,9 @@ tmmConfiguration:
 > [!CAUTION]
 > Test tool, usage in production is not advised.
 
-```bash [Build and run Helidon LRA coordinator]
+Build and run Helidon LRA coordinator:
+
+```shell [Terminal]
 docker build -t helidon/lra-coordinator https://github.com/helidon-io/helidon.git#:lra/coordinator/server
 docker run --name lra-coordinator --network="host" helidon/lra-coordinator
 ```
@@ -587,7 +591,9 @@ Dependency needed for using Helidon LRA with Narayana coordinator:
 
 The simplest way to run Narayana LRA coordinator locally:
 
-```bash [Downloading and running Narayana LRA coordinator]
+Downloading and running Narayana LRA coordinator:
+
+```shell [Terminal]
 curl https://repo1.maven.org/maven2/org/jboss/narayana/rts/lra-coordinator-quarkus/5.11.1.Final/lra-coordinator-quarkus-5.11.1.Final-runner.jar \
 -o narayana-coordinator.jar
 java -Dquarkus.http.port=8070 -jar narayana-coordinator.jar

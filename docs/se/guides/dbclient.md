@@ -15,14 +15,18 @@ For this 15 minute tutorial, you will need the following:
 
 Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
-```bash [Verify Prerequisites]
+Verify Prerequisites:
+
+```shell [Terminal]
 java -version
 mvn --version
 docker --version
 kubectl version
 ```
 
-```bash [Setting JAVA_HOME]
+Setting JAVA_HOME:
+
+```shell [Terminal]
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -82,11 +86,15 @@ webPort=8082
 0=Generic H2 (Server)|org.h2.Driver|jdbc\:h2\:tcp\://localhost\:9092/~/test|sa
 ```
 
-```bash [Build the H2 docker image]
+Build the H2 docker image:
+
+```shell [Terminal]
 docker build -f Dockerfile.h2 . -t h2db
 ```
 
-```bash [Run the H2 docker image]
+Run the H2 docker image:
+
+```shell [Terminal]
 docker run --rm -p 8082:8082 -p 9092:9092 --name=h2 -it h2db
 ```
 
@@ -100,7 +108,9 @@ A database stores the books from the library. H2 is a java SQL database that is 
     - Only the h2-{latest-version}.jar, located in the h2/bin folder, will be needed.
 3.  Open a terminal window and run the following command to start H2:.
 
-```bash [Replace {latest-version} with your current H2 version]
+Replace {latest-version} with your current H2 version:
+
+```shell [Terminal]
 java -cp h2-{latest-version}.jar org.h2.tools.Shell -url dbc:h2:~/test -user sa -password "" -sql "" 
 java -jar h2-{latest-version}.jar -webAllowOthers -tcpAllowOthers -web -tcp 
 ```
@@ -123,7 +133,9 @@ Password must stay empty. Click **Connect**, the browser displays a web page. Th
 
 Generate the project sources using the Helidon SE Maven archetype. The result is a simple project that can be used for the examples in this guide.
 
-```bash [Run the Maven archetype]
+Run the Maven archetype:
+
+```shell [Terminal]
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-se \
@@ -135,7 +147,9 @@ mvn -U archetype:generate -DinteractiveMode=false \
 
 A new directory named `helidon-quickstart-se` is created.
 
-```bash [Enter into this directory]
+Enter into this directory:
+
+```shell [Terminal]
 cd helidon-quickstart-se
 ```
 
@@ -435,13 +449,17 @@ The library service does not yet exist, but you’ll create it in the next step 
 
 The application is ready to be built and run.
 
-```bash [Run the following to build the application]
+Run the following to build the application:
+
+```shell [Terminal]
 mvn package
 ```
 
 Note that the tests are passing as the `GreetFeature` process was not modified. For the purposes of this demonstration, we only added independent new content to the existing application. Make sure H2 is running and start the Helidon quickstart with this command:
 
-```bash [Run the application]
+Run the application:
+
+```shell [Terminal]
 java -jar target/helidon-quickstart-se.jar
 ```
 
@@ -449,7 +467,9 @@ Once the application starts, check the table LIBRARY is created in the H2 databa
 
 Use `curl` to send request to the application:
 
-```bash [Get a book from the library]
+Get a book from the library:
+
+```shell [Terminal]
 curl -i http://localhost:8080/library/SomeBook
 ```
 
@@ -462,7 +482,9 @@ connection: keep-alive
 
 There is currently no book inside the library, so the application returns a 404. Yet the application created an empty library table. Try to add a new book.
 
-```bash [Add a book from the library]
+Add a book from the library:
+
+```shell [Terminal]
 curl -i -X PUT -d "Fantasy" http://localhost:8080/library/HarryPotter
 ```
 
@@ -475,7 +497,9 @@ connection: keep-alive
 
 This command creates an HTTP PUT request with the genre `Fantasy` content at the address [http://localhost:8080/library/{book-name}](http://localhost:8080/library/{book-name}). The 201 code means that Harry Potter book was successfully added to the library. You can now try to get it !
 
-```bash [Get Harry Potter from the library]
+Get Harry Potter from the library:
+
+```shell [Terminal]
 curl -i http://localhost:8080/library/HarryPotter
 ```
 
@@ -491,7 +515,9 @@ Fantasy
 
 The application accepted the request and returned an HTTP 200 OK with the book genre that was added earlier.
 
-```bash [Get Harry Potter from the library in Json]
+Get Harry Potter from the library in Json:
+
+```shell [Terminal]
 curl -i http://localhost:8080/library/json/HarryPotter
 ```
 
@@ -507,7 +533,9 @@ content-length: 6
 
 It returns the database row in a Json format for the Harry Potter book. Harry Potter can be removed from the library with the following:
 
-```bash [Remove Harry Potter from the library]
+Remove Harry Potter from the library:
+
+```shell [Terminal]
 curl -i -X DELETE http://localhost:8080/library/HarryPotter
 ```
 
@@ -519,7 +547,9 @@ connection: keep-alive
 
 The book had been removed from the library and confirmed by the 204 HTTP status. To check that the book was correctly deleted, try to get it again.
 
-```bash [Get Harry Potter from the library]
+Get Harry Potter from the library:
+
+```shell [Terminal]
 curl -i http://localhost:8080/library/HarryPotter
 ```
 
@@ -532,7 +562,9 @@ connection: keep-alive
 
 The book is not found. We quickly checked, thanks to this suite of command, the application behavior.
 
-```bash [Check the health of your application]
+Check the health of your application:
+
+```shell [Terminal]
 curl http://localhost:8080/observe/health
 ```
 
@@ -550,7 +582,9 @@ curl http://localhost:8080/observe/health
 
 It confirms that the database is UP.
 
-```bash [Check the metrics of your application]
+Check the metrics of your application:
+
+```shell [Terminal]
 curl -H "Accept: application/json" http://localhost:8080/observe/metrics/application
 ```
 

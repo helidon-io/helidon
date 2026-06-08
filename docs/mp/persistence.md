@@ -192,7 +192,7 @@ javax.sql.DataSource.yourDataSourceName.someOtherPropertyOfYourConnectionPoolAnd
 
 Here is an example of some named data source configuration using system properties on the command line instead:
 
-```bash
+```shell [Terminal]
 java \
   -Djavax.sql.DataSource.yourDataSourceName.somePropertyOfYourConnectionPoolAndDataSource=itsValue \
   -Djavax.sql.DataSource.yourDataSourceName.someOtherPropertyOfYourConnectionPoolAndDataSource=anotherValue \
@@ -203,7 +203,7 @@ java \
 
 Here is an example of some named data source configuration using environment variables as typed directly into a command line shell, relying on [MicroProfile Config’s mapping rules](https://download.eclipse.org/microprofile/microprofile-config-3.1/apidocs/org/eclipse/microprofile/config/spi/ConfigSource.html#default_config_sources), since many shells will not understand environment variable names with periods (.) in them:
 
-```bash
+```shell [Terminal]
 JAVAX_SQL_DATASOURCE_YOURDATASOURCENAME_SOMEPROPERTYOFYOURCONNECTIONPOOLANDDATASOURCE=itsValue \
 JAVAX_SQL_DATASOURCE_YOURDATASOURCENAME_SOMEOTHERPROPERTYOFYOURCONNECTIONPOOLANDDATASOURCE=anotherValue \
 java # ...
@@ -213,7 +213,7 @@ java # ...
 
 Here is an example of some named data source configuration using environment variables as supplied via the [`env` shell command](https://www.gnu.org/software/coreutils/manual/html_node/env-invocation.html), thus removing the need for [MicroProfile Config’s mapping rules](https://download.eclipse.org/microprofile/microprofile-config-3.1/apidocs/org/eclipse/microprofile/config/spi/ConfigSource.html#default_config_sources):
 
-```bash
+```shell [Terminal]
 env 'javax.sql.DataSource.yourDataSourceName.somePropertyOfYourConnectionPoolAndDataSource=itsValue' \
   'javax.sql.DataSource.yourDataSourceName.someOtherPropertyOfYourConnectionPoolAndDataSource=anotherValue' \
   java # ...
@@ -361,7 +361,7 @@ Some common examples of Narayana configuration follow.
 
 Narayana features an object store directory which it uses to store information about transaction outcomes. To set its location, you may set the [`ObjectStoreEnvironmentBean.objectStoreDir`](https://www.narayana.io/docs/api/com/arjuna/ats/arjuna/common/ObjectStoreEnvironmentBean.html#setObjectStoreType-java.lang.String-) system property to the full path of a writeable directory:
 
-```bash
+```shell [Terminal]
 java -DObjectStoreEnvironmentBean.objectStoreDir=/var/tmp # ...
 ```
 
@@ -371,7 +371,7 @@ See [Specifying the object store location](https://www.narayana.io/docs/project/
 
 To configure Narayana’s [default transaction manager timeout](https://www.narayana.io/docs/api/com/arjuna/ats/arjuna/common/CoordinatorEnvironmentBean.html#setDefaultTimeout-int-), set the `com.arjuna.ats.arjuna.coordinator.defaultTimeout` system property to an integral value in seconds:
 
-```bash
+```shell [Terminal]
 java -Dcom.arjuna.ats.arjuna.coordinator.defaultTimeout=60 # ...
 ```
 

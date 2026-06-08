@@ -343,7 +343,9 @@ This guide demonstrates how to incorporate MicroProfile Telemetry into Helidon a
 
 For example, the Jaeger backend gathers the tracing information.
 
-```bash [Run the Jaeger backend in a docker container]
+Run the Jaeger backend in a docker container:
+
+```shell [Terminal]
 docker run -d --name jaeger \
   -e COLLECTOR_ZIPKIN_HOST_PORT=:9411 \
   -e COLLECTOR_OTLP_ENABLED=true \
@@ -424,7 +426,7 @@ public class GreetResource {
 
 Now let’s call the Greeting endpoint:
 
-```bash
+```shell [Terminal]
 curl localhost:8080/greet
 Hello World
 ```
@@ -463,7 +465,7 @@ public JsonObject useCustomSpan() {
 
 Let us call the custom endpoint:
 
-```bash
+```shell [Terminal]
 curl localhost:8080/greeting/custom
 ```
 
@@ -506,7 +508,7 @@ public String getSecondaryMessage() {
 
 Let us call the *Outbound* endpoint:
 
-```bash
+```shell [Terminal]
 curl localhost:8080/greet/outbound
 Secondary
 ```

@@ -388,7 +388,9 @@ The startup probe prevents Kubernetes from prematurely checking the other probes
 
 Failed probes are recorded as events associated with their corresponding pods. The event message contains only the status code.
 
-```bash [Get the events of a single pod]
+Get the events of a single pod:
+
+```shell [Terminal]
 POD_NAME=$(kubectl get pod -l app=acme -o jsonpath='{.items[0].metadata.name}') 
 kubectl get event --field-selector involvedObject.name=${POD_NAME} 
 ```

@@ -506,7 +506,7 @@ class K8sExample {
 
 Vault is available as a docker image, so to test locally, you can simply:
 
-```bash
+```shell [Terminal]
 docker run -e VAULT_DEV_ROOT_TOKEN_ID=my-token -d --name=vault -p8200:8200 vault
 ```
 

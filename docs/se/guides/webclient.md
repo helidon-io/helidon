@@ -15,14 +15,18 @@ For this 15 minute tutorial, you will need the following:
 
 Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
-```bash [Verify Prerequisites]
+Verify Prerequisites:
+
+```shell [Terminal]
 java -version
 mvn --version
 docker --version
 kubectl version
 ```
 
-```bash [Setting JAVA_HOME]
+Setting JAVA_HOME:
+
+```shell [Terminal]
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -53,7 +57,9 @@ For more information about the `WebClient`, please refer to the [WebClient Intro
 
 Generate the project sources using the Helidon SE Maven archetype. The result is a simple project that can be used for the examples in this guide.
 
-```bash [Run the Maven archetype]
+Run the Maven archetype:
+
+```shell [Terminal]
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-se \
@@ -65,7 +71,9 @@ mvn -U archetype:generate -DinteractiveMode=false \
 
 You should now have a directory called `helidon-quickstart-se`.
 
-```bash [Open this directory]
+Open this directory:
+
+```shell [Terminal]
 cd helidon-quickstart-se
 ```
 
@@ -124,19 +132,25 @@ The path method appends `/greet` to the WebClient base URI which results to the 
 
 #### Run the application
 
-```bash [Build the quickstart]
+Build the quickstart:
+
+```shell [Terminal]
 mvn package
 ```
 
 This command will create helidon-quickstart-se.jar in the target folder.
 
-```bash [Run the greeting application]
+Run the greeting application:
+
+```shell [Terminal]
 java -cp target/helidon-quickstart-se.jar io.helidon.examples.quickstart.se.Main
 ```
 
 Open a new command prompt or terminal and run the ClientExample class you just created.
 
-```bash [Run the client application]
+Run the client application:
+
+```shell [Terminal]
 java -cp target/helidon-quickstart-se.jar io.helidon.examples.quickstart.se.ClientExample
 ```
 
@@ -172,7 +186,9 @@ System.out.println(value);
 
 In the URI, the String value following `greet` is a path parameter which allows the application to greet someone.
 
-```bash [Output]
+Output:
+
+```shell [Terminal]
 Hello David!
 ```
 
@@ -200,7 +216,9 @@ System.out.println(entityString);
 
 Executing the above code will yield this output showing that the greeting word has been changed.
 
-```bash [Output]
+Output:
+
+```shell [Terminal]
 Bonjour David!
 ```
 
@@ -277,7 +295,9 @@ System.out.println(metricName + ": " + counter.count());
 
 This will result to an output showing that a metric with the name of `counter.GET.localhost` was created with a count value of 1 indicating that it correctly measured the request that was just made.
 
-```bash [Output]
+Output:
+
+```shell [Terminal]
 counter.GET.localhost: 1
 ```
 

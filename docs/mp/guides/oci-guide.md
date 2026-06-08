@@ -26,14 +26,18 @@ For this tutorial, you will need the following:
 | [Kubectl 1.16.5+](https://kubernetes.io/docs/tasks/tools/install-kubectl/) | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
 | [Helidon CLI](../../cli.md) | If you want to use the Helidon CLI to create and build your application |
 
-```bash [Verify Prerequisites]
+Verify Prerequisites:
+
+```shell [Terminal]
 java -version
 mvn --version
 docker --version
 kubectl version
 ```
 
-```bash [Setting JAVA_HOME]
+Setting JAVA_HOME:
+
+```shell [Terminal]
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -129,13 +133,17 @@ Use the project to build an application jar for the example. It saves all runtim
 
 1.  Change to the directory containing the project files and run:
 
-```bash [Build the Application]
+Build the Application:
+
+```shell [Terminal]
 mvn package
 ```
 
 1.  Then, to run the application, run:
 
-```bash [Run the application]
+Run the application:
+
+```shell [Terminal]
 java -jar server/target/myproject-server.jar
 ```
 
@@ -143,7 +151,9 @@ The example is a very simple "Hello World" greeting service. It supports GET req
 
 For example:
 
-```bash [Try the Application]
+Try the Application:
+
+```shell [Terminal]
 curl -X GET http://localhost:8080/greet
 {"message":"Hello World!"}
 

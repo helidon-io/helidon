@@ -14,14 +14,18 @@ For this 30 minute tutorial, you will need the following:
 | [Kubectl 1.16.5+](https://kubernetes.io/docs/tasks/tools/install-kubectl/) | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
 | [curl](https://curl.se/download.html) | (Optional) for testing |
 
-```bash [Verify Prerequisites]
+Verify Prerequisites:
+
+```shell [Terminal]
 java -version
 mvn --version
 docker --version
 kubectl version
 ```
 
-```bash [Setting JAVA_HOME]
+Setting JAVA_HOME:
+
+```shell [Terminal]
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -106,7 +110,7 @@ The POM file contains the basic project information and configurations needed to
 
 With this `pom.xml`, the application can be built successfully with Maven:
 
-```bash
+```shell [Terminal]
 mvn clean package
 ```
 
@@ -119,7 +123,9 @@ This will create a JAR file in the `target` directory.
 
 The actual application logic can be created now. Create a directory for your source code, and then create directories for the package hierarchy:
 
-```bash [Create directories for source code]
+Create directories for source code:
+
+```shell [Terminal]
 mkdir -p src/main/java/io/helidon/examples
 ```
 
@@ -202,21 +208,25 @@ Create a `beans.xml` in the `src/main/resources/META-INF` directory with the fol
 
 Helidon MP applications are packaged into a JAR file and the dependencies are copied into a `libs` directory.
 
-    You can now build the application.
+Build the Application:
 
-```bash [Build the Application]
+```shell [Terminal]
 mvn package
 ```
 
 This will build the application jar and save all runtime dependencies in the `target/libs` directory. This means you can easily start the application by running the application jar file:
 
-```bash [Run the application]
+Run the application:
+
+```shell [Terminal]
 java -jar target/helidon-mp-tutorial.jar
 ```
 
 At this stage, the application is a very simple "Hello World" greeting service. It supports a single GET request for generating a greeting message. The response is encoded using JSON. For example:
 
-```bash [Try the Application]
+Try the Application:
+
+```shell [Terminal]
 curl -X GET http://localhost:7001/greet
 ```
 
@@ -230,7 +240,9 @@ In the output you can see the JSON output from the `getDefaultMessage()` method 
 
 Helidon MP applications can use the `META-INF/microprofile-config.properties` file to specify configuration data. This file (resource) is read by default if it is present on the classpath. Create this file in `src/main/resources/META-INF` with the following content:
 
-```bash [Initial microprofile-config.properties]
+Initial microprofile-config.properties:
+
+```shell [Terminal]
 # MicroProfile server properties
 server.port=8080
 server.host=0.0.0.0
@@ -243,7 +255,9 @@ Rebuild the application and run it again. Notice that it now uses port 8080 as s
 
 In addition to predefined server properties, application-specific configuration information can be added to this file. Add the `app.greeting` property to the file as shown below. This property will be used to set the content of greeting message.
 
-```bash [Updated META-INF/microprofile-config.properties]
+Updated META-INF/microprofile-config.properties:
+
+```shell [Terminal]
 # MicroProfile server properties
 server.port=8080
 server.host=0.0.0.0
@@ -356,7 +370,9 @@ public Response updateGreeting(JsonObject jsonObject) {
 
 Rebuild and run the application. Test the new services using curl commands similar to those shown below:
 
-```bash [Testing the new services]
+Testing the new services:
+
+```shell [Terminal]
 curl -X GET http://localhost:8080/greet
 {"message":"Hello World!"}
 
@@ -396,7 +412,9 @@ The Helidon MicroProfile server will detect the new `logging.properties` file an
 
 Rebuild and run the application and notice the new logging format takes effect.
 
-```bash [Log output]
+Log output:
+
+```shell [Terminal]
 // before
 Aug 22, 2019 11:10:11 AM io.helidon.webserver.LoomWebServer lambda$start$8
 INFO: Channel '@default' started: [id: 0xd0afba31, L:/0:0:0:0:0:0:0:0:8080]
@@ -415,11 +433,15 @@ http://localhost:8080/greet
 
 Helidon provides built-in support for metrics endpoints.
 
-```bash [Metrics in Prometheus Format]
+Metrics in Prometheus Format:
+
+```shell [Terminal]
 curl -s -X GET http://localhost:8080/metrics
 ```
 
-```bash [Metrics in JSON Format]
+Metrics in JSON Format:
+
+```shell [Terminal]
 curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
 ```
 
@@ -431,7 +453,9 @@ metrics.base.classloader.currentLoadedClass.count.enabled=false
 
 Call the metrics endpoint before adding this change to confirm that the metric is included, then add the property to disable the metric, rebuild and restart the application and check again:
 
-```bash [Checking metrics before and after disabling the metric]
+Checking metrics before and after disabling the metric:
+
+```shell [Terminal]
 # before
 curl -s http://localhost:8080/metrics | grep classloader_current
 # TYPE base:classloader_current_loaded_class_count counter
@@ -461,7 +485,9 @@ public JsonObject getDefaultMessage() {
 
 Rebuild and run the application. Make some calls to the endpoint (<http://localhost:8080/greet>) so there will be some data to report. Then obtain the application metrics as follows:
 
-```bash [Checking the application metrics]
+Checking the application metrics:
+
+```shell [Terminal]
 curl -H "Accept: application/json" http://localhost:8080/metrics/application
 {
   "io.helidon.examples.GreetResource.getDefaultMessage": {
@@ -490,7 +516,9 @@ Learn more about using Helidon and MicroProfile metrics in the [Metrics Guide](m
 
 Helidon provides built-in support for health check endpoints. Obtain the built-in health check using the following URL:
 
-```bash [Health check]
+Health check:
+
+```shell [Terminal]
 curl -s -X GET http://localhost:8080/health
 {
   "outcome": "UP",
@@ -533,7 +561,9 @@ curl -s -X GET http://localhost:8080/health
 
 Endpoints for readiness and liveness checks are also provided by default. Obtain the default results using these URLs, which return the same result as the previous example.:
 
-```bash [Default readiness and liveness endpoints]
+Default readiness and liveness endpoints:
+
+```shell [Terminal]
 # readiness
 curl -i  -X GET http://localhost:8080/health/ready
 
@@ -574,7 +604,9 @@ public class GreetHealthcheck implements HealthCheck {
 
 Rebuild the application, make sure that the `mp.conf` has the `greeting` set to something other than `"Hello"` and then run the application and check the health:
 
-```bash [Custom health check reporting unhealthy state]
+Custom health check reporting unhealthy state:
+
+```shell [Terminal]
 curl -i -X GET http://localhost:8080/health/live
 HTTP/1.1 503 Service Unavailable 
 Content-Type: application/json
@@ -590,7 +622,9 @@ connection: keep-alive
 
 Now update the greeting to `"Hello"` using the following request, and then check health again:
 
-```bash [Update the greeting and check health again]
+Update the greeting and check health again:
+
+```shell [Terminal]
 # update greeting
 curl -i -X PUT -H "Content-Type: application/json" -d '{"greeting": "Hello"}' http://localhost:8080/greet/greeting
 HTTP/1.1 204 No Content 
@@ -620,7 +654,9 @@ To run the application in Docker (or Kubernetes), a `Dockerfile` is needed to bu
 
 Add a new `Dockerfile` in the project root directory with the following content:
 
-```bash [Dockerfile content]
+Dockerfile content:
+
+```shell [Terminal]
 FROM container-registry.oracle.com/java/openjdk:21 as build 
 
 # Install maven
@@ -659,19 +695,25 @@ EXPOSE 8080
 
 To create the Docker image, use the following command:
 
-```bash [Docker build]
+Docker build:
+
+```shell [Terminal]
 docker build -t helidon-mp-tutorial .
 ```
 
 Make sure the application is shutdown if it was still running locally so that port 8080 will not be in use, then start the application in Docker using the following command:
 
-```bash [Run Docker Image]
+Run Docker Image:
+
+```shell [Terminal]
 docker run --rm -p 8080:8080 helidon-mp-tutorial:latest
 ```
 
 Try the application as before.
 
-```bash [Try the application]
+Try the application:
+
+```shell [Terminal]
 curl http://localhost:8080/greet/bob
 {"message":"Howdee bob!"}
 
@@ -683,7 +725,9 @@ curl http://localhost:8080/health/ready
 
 If you don’t have access to a Kubernetes cluster, create or obtain access to one. Then deploy the example:
 
-```bash [Verify connectivity to cluster]
+Verify connectivity to cluster:
+
+```shell [Terminal]
 kubectl cluster-info
 kubectl get nodes
 ```
@@ -740,7 +784,9 @@ spec:
 
 This Kubernetes YAML file can be used to deploy the application to Kubernetes:
 
-```bash [Deploy the application to Kubernetes]
+Deploy the application to Kubernetes:
+
+```shell [Terminal]
 kubectl create -f app.yaml
 kubectl get pods # Wait for quickstart pod to be RUNNING
 ```
@@ -750,19 +796,25 @@ kubectl get pods # Wait for quickstart pod to be RUNNING
 
 The step above created a service that is exposed using any available node port. Kubernetes allocates a free port. Lookup the service to find the port.
 
-```bash [Lookup the service]
+Lookup the service:
+
+```shell [Terminal]
 kubectl get service helidon-mp-tutorial
 ```
 
 Note the PORTs. The application can be exercised as before but use the second port number (the NodePort) instead of 8080. For example:
 
-```bash [Access the application]
+Access the application:
+
+```shell [Terminal]
 curl -X GET http://localhost:31431/greet
 ```
 
 If desired, the Kubernetes YAML file can also be used to remove the application from Kubernetes as follows:
 
-```bash [Remove the application from Kubernetes]
+Remove the application from Kubernetes:
+
+```shell [Terminal]
 kubectl delete -f app.yaml
 ```
 

@@ -14,14 +14,18 @@ For this 30 minute tutorial, you will need the following:
 | [Kubectl 1.16.5+](https://kubernetes.io/docs/tasks/tools/install-kubectl/) | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
 | [Helm](https://github.com/helm/helm) | To manage Kubernetes applications. |
 
-```bash [Verify Prerequisites]
+Verify Prerequisites:
+
+```shell [Terminal]
 java -version
 mvn --version
 docker --version
 kubectl version
 ```
 
-```bash [Setting JAVA_HOME]
+Setting JAVA_HOME:
+
+```shell [Terminal]
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -34,7 +38,9 @@ export JAVA_HOME=/usr/lib/jvm/jdk-21
 
 Use the Helidon MP Maven archetype to create a simple project that can be used for the examples in this guide.
 
-```bash [Run the Maven archetype]
+Run the Maven archetype:
+
+```shell [Terminal]
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-mp \
@@ -66,7 +72,9 @@ A later section describes the [key performance indicator metrics](#collecting-ba
 
 The following example demonstrates how to use the other built-in metrics. All examples are executed from the root directory of your project (helidon-quickstart-mp).
 
-```bash [Build the application and then run it]
+Build the application and then run it:
+
+```shell [Terminal]
 mvn package
 java -jar target/helidon-quickstart-mp.jar
 ```
@@ -74,7 +82,9 @@ java -jar target/helidon-quickstart-mp.jar
 > [!NOTE]
 > Metrics output can be returned in either text format (the default), or JSON. The text format uses OpenMetrics (Prometheus) Text Format, see <https://prometheus.io/docs/instrumenting/exposition_formats/#text-format-details>.
 
-```bash [Verify the metrics endpoint in a new terminal window]
+Verify the metrics endpoint in a new terminal window:
+
+```shell [Terminal]
 curl http://localhost:8080/metrics
 ```
 
@@ -98,7 +108,9 @@ vthreads_pinned{mp_scope="base",} 0.0
 
 You can get the same data in JSON format.
 
-```bash [Verify the metrics endpoint with an HTTP accept header]
+Verify the metrics endpoint with an HTTP accept header:
+
+```shell [Terminal]
 curl -H "Accept: application/json"  http://localhost:8080/metrics
 ```
 
@@ -131,7 +143,9 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics
 
 You can get a single metric by specifying the scope and name as query parameters in the URL.
 
-```bash [Get the Helidon requests.count metric]
+Get the Helidon requests.count metric:
+
+```shell [Terminal]
 curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=vendor&name=requests.count'
 ```
 
@@ -240,7 +254,9 @@ Each metric has associated metadata that includes:
 
 You can get the metadata for any scope, such as `/metrics?scope=base`, as shown below:
 
-```bash [Get the metrics metadata using HTTP OPTIONS method]
+Get the metrics metadata using HTTP OPTIONS method:
+
+```shell [Terminal]
 curl -X OPTIONS -H "Accept: application/json"  'http://localhost:8080/metrics?scope=base'
 ```
 
@@ -302,7 +318,9 @@ public class GreetingCards {
 - The `@RequestScoped` annotation defines that this bean is request scoped. The request scope is active only for the duration of one web service invocation, and it is destroyed at the end of that invocation.
 - The annotation `@Counted` will register a `Counter` metric for this method, creating it if needed. The counter is incremented each time the anyCards method is called. The `name` attribute is optional.
 
-```bash [Build and run the application, then invoke the application endpoints below]
+Build and run the application, then invoke the application endpoints below:
+
+```shell [Terminal]
 curl http://localhost:8080/cards
 curl http://localhost:8080/cards
 curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=application'
@@ -349,7 +367,9 @@ public class GreetingCards {
 - Specify a custom name for the `Counter` metric and set `absolute=true` to remove the path prefix from the name.
 - Add the `@Timed` annotation to get a `Timer` metric.
 
-```bash [Build and run the application, then invoke the application endpoints below]
+Build and run the application, then invoke the application endpoints below:
+
+```shell [Terminal]
 curl http://localhost:8080/cards
 curl http://localhost:8080/cards
 curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=application'
@@ -416,7 +436,9 @@ public class GreetingCards {
 - The `/birthday` endpoint uses a `Counter` metric, named `specialEventCard`.
 - The `/wedding` endpoint uses the same `Counter` metric, named `specialEventCard`.
 
-```bash [Build and run the application, then invoke the following endpoints]
+Build and run the application, then invoke the following endpoints:
+
+```shell [Terminal]
 curl  http://localhost:8080/cards/wedding
 curl  http://localhost:8080/cards/birthday
 curl  http://localhost:8080/cards
@@ -469,7 +491,9 @@ public class GreetingCards {
 - Use `absolute=true` to remove path prefix for method-level annotations.
 - Add a method with a `Counter` metric to get birthday cards.
 
-```bash [Build and run the application, then invoke the following endpoints]
+Build and run the application, then invoke the following endpoints:
+
+```shell [Terminal]
 curl http://localhost:8080/cards
 curl http://localhost:8080/cards/birthday
 curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=application'
@@ -537,7 +561,9 @@ public class GreetingCards {
 - Call `updateStats()` to update the cache hits.
 - Randomly increment the `cacheHits` counter.
 
-```bash [Build and run the application, then invoke the following endpoints]
+Build and run the application, then invoke the following endpoints:
+
+```shell [Terminal]
 curl http://localhost:8080/cards
 curl http://localhost:8080/cards
 curl http://localhost:8080/cards/birthday
@@ -605,7 +631,9 @@ public class GreetingCards {
 }
 ```
 
-```bash [Build and run the application, then invoke the application metrics endpoint]
+Build and run the application, then invoke the application metrics endpoint:
+
+```shell [Terminal]
 curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 ```
 
@@ -624,7 +652,9 @@ curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 
 The following example shows how to integrate the Helidon MP application with Kubernetes.
 
-```bash [Stop the application and build the docker image]
+Stop the application and build the docker image:
+
+```shell [Terminal]
 docker build -t helidon-metrics-mp .
 ```
 
@@ -673,22 +703,28 @@ spec:
 - An annotation that will allow Prometheus to discover and scrape the application pod.
 - A deployment with one replica of a pod.
 
-```bash [Create and deploy the application into Kubernetes]
+Create and deploy the application into Kubernetes:
+
+```shell [Terminal]
 kubectl apply -f ./metrics.yaml
 ```
 
-```bash [Get the service information]
+Get the service information:
+
+```shell [Terminal]
 kubectl get service/helidon-metrics
 ```
 
-```bash
+```shell [Terminal]
 NAME             TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
 helidon-metrics   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s 
 ```
 
 - A service of type `NodePort` that serves the default routes on port `31143`.
 
-```bash [Verify the metrics endpoint using port 30116, your port will likely be different]
+Verify the metrics endpoint using port 30116, your port will likely be different:
+
+```shell [Terminal]
 curl http://localhost:31143/metrics
 ```
 
@@ -699,7 +735,9 @@ curl http://localhost:31143/metrics
 
 The metrics service that you just deployed into Kubernetes is already annotated with `prometheus.io/scrape:`. This will allow Prometheus to discover the service and scrape the metrics. This example shows how to install Prometheus into Kubernetes, then verify that it discovered the Helidon metrics in your application.
 
-```bash [Install Prometheus and wait until the pod is ready]
+Install Prometheus and wait until the pod is ready:
+
+```shell [Terminal]
 helm install stable/prometheus --name metrics
 export POD_NAME=$(kubectl get pods --namespace default -l "app=prometheus,component=server" -o jsonpath="{.items[0].metadata.name}")
 kubectl get pod $POD_NAME
@@ -707,11 +745,13 @@ kubectl get pod $POD_NAME
 
 You will see output similar to the following. Repeat the `kubectl get pod` command until you see `2/2` and `Running`. This may take up to one minute.
 
-```bash
+```shell [Terminal]
 metrics-prometheus-server-5fc5dc86cb-79lk4   2/2     Running   0          46s
 ```
 
-```bash [Create a port-forward, so you can access the server URL]
+Create a port-forward, so you can access the server URL:
+
+```shell [Terminal]
 kubectl --namespace default port-forward $POD_NAME 7090:9090
 ```
 
@@ -721,11 +761,15 @@ Now open your browser and navigate to `http://localhost:7090/targets`. Search fo
 
 You can now delete the Kubernetes resources that were just created during this example.
 
-```bash [Delete the Prometheus Kubernetes resources]
+Delete the Prometheus Kubernetes resources:
+
+```shell [Terminal]
 helm delete --purge metrics
 ```
 
-```bash [Delete the application Kubernetes resources]
+Delete the application Kubernetes resources:
+
+```shell [Terminal]
 kubectl delete -f ./metrics.yaml
 ```
 

@@ -15,14 +15,18 @@ For this 20 minute tutorial, you will need the following:
 
 Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
-```bash [Verify Prerequisites]
+Verify Prerequisites:
+
+```shell [Terminal]
 java -version
 mvn --version
 docker --version
 kubectl version
 ```
 
-```bash [Setting JAVA_HOME]
+Setting JAVA_HOME:
+
+```shell [Terminal]
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -277,20 +281,20 @@ public class HelidonExecutorServiceProvider implements ExecutorServiceProvider {
 
 ## Run the Code
 
-```bash
+```shell [Terminal]
 mvn package
 java -jar target/helidon-jbatch-example.jar
 ```
 
 ## Call the Endpoint
 
-```bash
+```shell [Terminal]
 curl -X GET http://localhost:8080/batch
 ```
 
 You should receive the following log:
 
-```bash
+```shell [Terminal]
 processItem: MyInputRecord: 1
 processItem: MyInputRecord: 2
 processItem: MyInputRecord: 3
@@ -309,7 +313,7 @@ Running inside a batchlet
 
 and the following result:
 
-```bash
+```shell [Terminal]
 {"Started a job with Execution ID: ":1}
 ```
 
@@ -317,7 +321,7 @@ This indicates that the batch job was called and executed successfully.
 
 ### Check the Status
 
-```bash
+```shell [Terminal]
 curl -X GET http://localhost:8080/batch/status/1
 ```
 
@@ -326,7 +330,7 @@ curl -X GET http://localhost:8080/batch/status/1
 
 The results should look something like this:
 
-```bash
+```shell [Terminal]
 {"Steps executed":"[step1, step2]","Status":"COMPLETED"}
 ```
 

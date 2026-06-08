@@ -172,7 +172,7 @@ If you have edited the Helidon SE QuickStart application as described in the pre
 
 Build and run the QuickStart application as usual.
 
-```bash
+```shell [Terminal]
 mvn package
 java -jar target/helidon-quickstart-se.jar
 ```
@@ -185,13 +185,13 @@ WEB server is up! http://localhost:8080/greet
 
 The metrics service rejects attempts to access metrics on behalf of a disallowed origin.
 
-```bash
+```shell [Terminal]
 curl -i -H "Origin: https://other.com" http://localhost:8080/observe/metrics
 ```
 
 Curl output
 
-```bash
+```shell [Terminal]
 HTTP/1.1 403 Forbidden
 Date: Mon, 11 May 2020 11:08:09 -0500
 transfer-encoding: chunked
@@ -200,13 +200,13 @@ connection: keep-alive
 
 But accesses from `foo.com` succeed.
 
-```bash
+```shell [Terminal]
 curl -i -H "Origin: https://foo.com" http://localhost:8080/observe/metrics
 ```
 
 Curl output
 
-```bash
+```shell [Terminal]
 HTTP/1.1 200 OK
 Access-Control-Allow-Origin: https://foo.com
 Content-Type: text/plain
@@ -224,11 +224,11 @@ base_classloader_loadedClasses_count 3568
 
 The health service rejects requests from origins not specifically approved.
 
-```bash
+```shell [Terminal]
 curl -i -H "Origin: https://foo.com" http://localhost:8080/observe/health
 ```
 
-```bash
+```shell [Terminal]
 HTTP/1.1 403 Forbidden
 Date: Mon, 11 May 2020 12:06:55 -0500
 transfer-encoding: chunked
@@ -237,11 +237,11 @@ connection: keep-alive
 
 And responds successfully only to cross-origin requests from `https://there.com`.
 
-```bash
+```shell [Terminal]
 curl -i -H "Origin: https://there.com" http://localhost:8080/observe/health
 ```
 
-```bash
+```shell [Terminal]
 HTTP/1.1 200 OK
 Access-Control-Allow-Origin: https://there.com
 Content-Type: application/json

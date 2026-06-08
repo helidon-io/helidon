@@ -95,7 +95,7 @@ Using the schema defined in Section [API](#api), you can probe the following end
 
 1.  Hello world endpoint
 
-    ``` bash
+    ```shell [Terminal]
     curl -X POST http://127.0.0.1:PORT/graphql -d '{"query":"query { hello }"}'
 
     "data":{"hello":"world"}}
@@ -103,7 +103,7 @@ Using the schema defined in Section [API](#api), you can probe the following end
 
 2.  Hello in different languages
 
-    ``` bash
+    ```shell [Terminal]
     curl -X POST http://127.0.0.1:PORT/graphql -d '{"query":"query { helloInDifferentLanguages }"}'
 
     {"data":{"helloInDifferentLanguages":["Bonjour","Hola","Zdravstvuyte","Nǐn hǎo","Salve","Gudday","Konnichiwa","Guten Tag"]}}

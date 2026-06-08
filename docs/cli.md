@@ -17,7 +17,7 @@ The Helidon CLI is a standalone executable for Linux, macOS, and Windows systems
 
 Make sure `java` and `mvn` are in your PATH:
 
-```bash
+```shell [Terminal]
 java -version
 mvn --version
 ```
@@ -30,7 +30,7 @@ mvn --version
 
 1.  Run the following commands to download the Helidon CLI binary, make it executable, and then move it to a location on your PATH:
 
-    ``` bash
+    ```shell [Terminal]
     curl -L -O https://helidon.io/cli/latest/linux/helidon
     chmod +x ./helidon
     sudo mv ./helidon /usr/local/bin/
@@ -42,7 +42,7 @@ mvn --version
 
 1.  Run the following commands to download the Helidon CLI binary, make it executable, and then move it to a location on your PATH:
 
-    ``` bash
+    ```shell [Terminal]
     curl -L -O https://helidon.io/cli/latest/darwin/helidon
     chmod +x ./helidon
     sudo mv ./helidon /usr/local/bin/

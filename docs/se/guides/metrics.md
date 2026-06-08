@@ -16,7 +16,7 @@ For this 30 minute tutorial, you will need the following:
 
 Verify Prerequisites
 
-```bash
+```shell [Terminal]
 java -version
 mvn --version
 docker --version
@@ -25,7 +25,7 @@ kubectl version
 
 Setting JAVA_HOME
 
-```bash
+```shell [Terminal]
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -40,7 +40,7 @@ Use the Helidon SE Maven archetype to create a simple project that can be used f
 
 Run the Maven archetype
 
-```bash
+```shell [Terminal]
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-se \
@@ -97,7 +97,7 @@ With these dependencies in your project, Helidon’s auto-discovery of webserver
 
 Build the application and then run it:
 
-```bash
+```shell [Terminal]
 mvn package
 java -jar target/helidon-quickstart-se.jar
 ```
@@ -108,7 +108,7 @@ java -jar target/helidon-quickstart-se.jar
 
 Verify the metrics endpoint in a new terminal window:
 
-```bash
+```shell [Terminal]
 curl http://localhost:8080/observe/metrics
 ```
 
@@ -136,7 +136,7 @@ You can get the same data in JSON format.
 
 Verify the metrics endpoint with an HTTP accept header:
 
-```bash
+```shell [Terminal]
 curl -H "Accept: application/json"  http://localhost:8080/observe/metrics
 ```
 
@@ -186,7 +186,7 @@ You can get a single metric by specifying the scope and name as query parameters
 
 Get the Helidon `requests.count` meter:
 
-```bash
+```shell [Terminal]
 curl -H "Accept: application/json"  'http://localhost:8080/observe/metrics?scope=vendor&name=requests.count'
 ```
 
@@ -380,7 +380,7 @@ You can get the metadata for any scope, such as `/observe/metrics?scope=base`, a
 
 Get the metrics metadata using HTTP OPTIONS method:
 
-```bash
+```shell [Terminal]
 curl -X OPTIONS -H "Accept: application/json"  'http://localhost:8080/observe/metrics?scope=base'
 ```
 
@@ -468,7 +468,7 @@ static void routing(HttpRouting.Builder routing) {
 
 Build and run the application, then invoke the endpoints below:
 
-```bash
+```shell [Terminal]
 curl http://localhost:8080/cards
 curl -H "Accept: application/json" 'http://localhost:8080/observe/metrics?scope=application'
 ```
@@ -528,7 +528,7 @@ public class GreetingCards implements HttpService {
 
 Build and run the application, then invoke the endpoints below:
 
-```bash
+```shell [Terminal]
 curl http://localhost:8080/cards
 curl http://localhost:8080/cards
 curl -H "Accept: application/json"  'http://localhost:8080/observe/metrics?scope=application'
@@ -599,7 +599,7 @@ public class GreetingCards implements HttpService {
 
 Build and run the application, then invoke the endpoints below:
 
-```bash
+```shell [Terminal]
 curl http://localhost:8080/cards
 curl -H "Accept: application/json"  'http://localhost:8080/observe/metrics?scope=application'
 ```
@@ -664,7 +664,7 @@ public class GreetingCards implements HttpService {
 
 Build and run the application, then invoke the endpoint below:
 
-```bash
+```shell [Terminal]
 curl -H "Accept: application/json"  'http://localhost:8080/observe/metrics?scope=application
 ```
 
@@ -686,7 +686,7 @@ The following example shows how to integrate the Helidon SE application with Kub
 
 Stop the application and build the docker image:
 
-```bash
+```shell [Terminal]
 docker build -t helidon-metrics-se .
 ```
 
@@ -739,13 +739,13 @@ spec:
 
 Create and deploy the application into Kubernetes:
 
-```bash
+```shell [Terminal]
 kubectl apply -f ./metrics.yaml
 ```
 
 Get the service information:
 
-```bash
+```shell [Terminal]
 kubectl get service/helidon-metrics
 ```
 
@@ -758,7 +758,7 @@ helidon-metrics   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s # (
 
 Verify the metrics endpoint using port `30116`, your port will likely be different:
 
-```bash
+```shell [Terminal]
 curl http://localhost:31143/metrics
 ```
 
@@ -771,7 +771,7 @@ The metrics service that you just deployed into Kubernetes is already annotated 
 
 Install Prometheus and wait until the pod is ready:
 
-```bash
+```shell [Terminal]
 helm install stable/prometheus --name metrics
 export POD_NAME=$(kubectl get pods --namespace default -l "app=prometheus,component=server" -o jsonpath="{.items[0].metadata.name}")
 kubectl get pod $POD_NAME
@@ -785,7 +785,7 @@ metrics-prometheus-server-5fc5dc86cb-79lk4   2/2     Running   0          46s
 
 Create a port-forward, so you can access the server URL:
 
-```bash
+```shell [Terminal]
 kubectl --namespace default port-forward $POD_NAME 7090:9090
 ```
 
@@ -797,13 +797,13 @@ You can now delete the Kubernetes resources that were just created during this e
 
 Delete the Prometheus Kubernetes resources:
 
-```bash
+```shell [Terminal]
 helm delete --purge metrics
 ```
 
 Delete the application Kubernetes resources:
 
-```bash
+```shell [Terminal]
 kubectl delete -f ./metrics.yaml
 ```
 

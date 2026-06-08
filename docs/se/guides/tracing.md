@@ -15,14 +15,18 @@ For this 30 minute tutorial, you will need the following:
 
 Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
-```bash [Verify Prerequisites]
+Verify Prerequisites:
+
+```shell [Terminal]
 java -version
 mvn --version
 docker --version
 kubectl version
 ```
 
-```bash [Setting JAVA_HOME]
+Setting JAVA_HOME:
+
+```shell [Terminal]
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -47,7 +51,9 @@ The examples in this guide demonstrate how to integrate tracing with Helidon, ho
 
 Use the Helidon SE Maven archetype to create a simple project that can be used for the examples in this guide.
 
-```bash [Run the Maven archetype]
+Run the Maven archetype:
+
+```shell [Terminal]
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-se \
@@ -57,7 +63,9 @@ mvn -U archetype:generate -DinteractiveMode=false \
     -Dpackage=io.helidon.examples.quickstart.se
 ```
 
-```bash [The project will be built and run from the helidon-quickstart-se directory]
+The project will be built and run from the helidon-quickstart-se directory:
+
+```shell [Terminal]
 cd helidon-quickstart-se
 ```
 
@@ -65,7 +73,9 @@ cd helidon-quickstart-se
 
 First, run the Jaeger backend. Helidon communicates with this backend at runtime.
 
-```bash [Run Jaeger within a docker container]
+Run Jaeger within a docker container:
+
+```shell [Terminal]
 docker run -d --name jaeger \ 
   -e COLLECTOR_OTLP_ENABLED=true \
   -p 6831:6831/udp \
@@ -114,7 +124,9 @@ Add the following dependencies to pom.xml:
 
 Helidon offers several tracing providers: OpenTelemetry, Zipkin, and Jaeger (deprecated). All spans sent by Helidon to the backend need to be associated with a service, assigned by the `tracing.service` setting in the example below.
 
-```bash [Add the following lines to src/main/resources/application.yaml]
+Add the following lines to src/main/resources/application.yaml:
+
+```shell [Terminal]
 tracing:
   service: helidon-se-1
   tags:
@@ -132,12 +144,16 @@ Tracing is part of Helidon’s observability support. By default, Helidon discov
 
 #### Build and Access QuickStart
 
-```bash [Build and run the application]
+Build and run the application:
+
+```shell [Terminal]
 mvn clean package
 java -jar target/helidon-quickstart-se.jar
 ```
 
-```bash [Access the application]
+Access the application:
+
+```shell [Terminal]
 curl http://localhost:8080/greet
 ```
 
@@ -194,12 +210,16 @@ private void getDefaultMessageHandler(ServerRequest request,
 - End the span normally after the response is sent.
 - End the span with an exception if one was thrown.
 
-```bash [Build the application and run it]
+Build the application and run it:
+
+```shell [Terminal]
 mvn package
 java -jar target/helidon-quickstart-se.jar
 ```
 
-```bash [Run the curl command in a new terminal window and check the response]
+Run the curl command in a new terminal window and check the response:
+
+```shell [Terminal]
 curl http://localhost:8080/greet
 ```
 
@@ -233,7 +253,9 @@ To demonstrate distributed tracing, create a second project where the server lis
 
 ### Create the Second Service
 
-```bash [Run the Maven archetype]
+Run the Maven archetype:
+
+```shell [Terminal]
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-se \
@@ -243,7 +265,9 @@ mvn -U archetype:generate -DinteractiveMode=false \
     -Dpackage=io.helidon.examples.quickstart.se
 ```
 
-```bash [The project is in the helidon-quickstart-se-2 directory]
+The project is in the helidon-quickstart-se-2 directory:
+
+```shell [Terminal]
 cd helidon-quickstart-se-2
 ```
 
@@ -272,7 +296,9 @@ Add the following dependencies to pom.xml:
 - Observability features for tracing.
 - OpenTelemetry tracing provider.
 
-```bash [Replace src/main/resources/application.yaml with the following]
+Replace src/main/resources/application.yaml with the following:
+
+```shell [Terminal]
 app:
   greeting: "Hello From SE-2"
 
@@ -313,12 +339,16 @@ private void getDefaultMessageHandler(ServerRequest request,
 
 Build the application, skipping unit tests; the unit tests check for the default greeting response which is now different in the updated config. Then run the application.
 
-```bash [Build and run]
+Build and run:
+
+```shell [Terminal]
 mvn package -DskipTests=true
 java -jar target/helidon-quickstart-se-2.jar
 ```
 
-```bash [Run the curl command in a new terminal window (**notice the port is 8081**)]
+Run the curl command in a new terminal window (**notice the port is 8081**):
+
+```shell [Terminal]
 curl http://localhost:8081/greet
 ```
 
@@ -405,7 +435,9 @@ Make the following changes to the `GreetFeature` class.
 
 Stop the application if it is still running, rebuild and run it, then invoke the endpoint and check the response.
 
-```bash [Build, run, and access the application]
+Build, run, and access the application:
+
+```shell [Terminal]
 mvn clean package
 java -jar target/helidon-quickstart-se.jar
 curl -i http://localhost:8080/greet/outbound 
@@ -450,7 +482,9 @@ tracing:
 
 - Helidon service `helidon-se-1` will connect to the Jaeger server at host name `jaeger`.
 
-```bash [Stop the application and build the docker image for your application]
+Stop the application and build the docker image for your application:
+
+```shell [Terminal]
 docker build -t helidon-tracing-se .
 ```
 
@@ -483,11 +517,15 @@ spec:
         - containerPort: 16686
 ```
 
-```bash [Create the Jaeger pod and ClusterIP service]
+Create the Jaeger pod and ClusterIP service:
+
+```shell [Terminal]
 kubectl apply -f ./jaeger.yaml
 ```
 
-```bash [Create a Jaeger external server to view the UI and expose it on port 9142]
+Create a Jaeger external server to view the UI and expose it on port 9142:
+
+```shell [Terminal]
 kubectl expose pod  jaeger --name=jaeger-external --port=16687 --target-port=16686 --type=LoadBalancer
 ```
 
@@ -537,24 +575,30 @@ spec:
 - A service of type `NodePort` that serves the default routes on port `8080`.
 - A deployment with one replica of a pod.
 
-```bash [Create and deploy the application into Kubernetes]
+Create and deploy the application into Kubernetes:
+
+```shell [Terminal]
 kubectl apply -f ./tracing.yaml
 ```
 
 ### Access Your Application and the Jaeger Trace
 
-```bash [Get the application service information]
+Get the application service information:
+
+```shell [Terminal]
 kubectl get service/helidon-tracing
 ```
 
-```bash
+```shell [Terminal]
 NAME             TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
 helidon-tracing   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s 
 ```
 
 - A service of type `NodePort` that serves the default routes on port `31143`.
 
-```bash [Verify the tracing endpoint using port 31143, your port will likely be different]
+Verify the tracing endpoint using port 31143, your port will likely be different:
+
+```shell [Terminal]
 curl http://localhost:31143/greet
 ```
 
@@ -570,7 +614,9 @@ Access the Jaeger UI at <http://localhost:9412/jaeger> and click on the refresh 
 
 You can now delete the Kubernetes resources just created during this example.
 
-```bash [Delete the Kubernetes resources]
+Delete the Kubernetes resources:
+
+```shell [Terminal]
 kubectl delete -f ./jaeger.yaml
 kubectl delete -f ./tracing.yaml
 kubectl delete service jaeger-external

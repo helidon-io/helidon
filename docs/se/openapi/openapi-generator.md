@@ -99,7 +99,7 @@ The OpenAPI generator loosely divides its settings into three types:
 
   or
 
-  ``` bash
+  ```shell [Terminal]
   -p groupId=com.mycompany.test
   -p artifactId=my-example
   ```
@@ -127,7 +127,7 @@ The OpenAPI generator loosely divides its settings into three types:
 
   or
 
-  ``` bash
+  ```shell [Terminal]
   -p useAbstractClasses=false
   -p returnResponse=true
   ```
@@ -426,7 +426,9 @@ The next sections describe each of these techniques in detail.
 
 The following example uses the Helidon server generator to create a project or regenerate files into an existing project.
 
-```bash [Creating or updating a server project using the OpenAPI generator CLI]
+Creating or updating a server project using the OpenAPI generator CLI:
+
+```shell [Terminal]
 java -jar ${path-to-generator}/openapi-generator-cli.jar \
   generate \
   -i src/main/resources/petstore.yaml \
@@ -442,7 +444,9 @@ java -jar ${path-to-generator}/openapi-generator-cli.jar \
 
 The next example runs the Helidon client generator using the same input file.
 
-```bash [Creating or updating a client project using the OpenAPI generator CLI]
+Creating or updating a client project using the OpenAPI generator CLI:
+
+```shell [Terminal]
 java -jar ${path-to-generator}/openapi-generator-cli.jar \
   generate \
   -i src/main/resources/petstore.yaml \

@@ -281,14 +281,14 @@ mp.openapi.model.reader=io.helidon.microprofile.examples.openapi.internal.Simple
 
 Now just build and run:
 
-```bash
+```shell [Terminal]
 mvn package
 java -jar target/helidon-examples-microprofile-openapi.jar
 ```
 
 Try the endpoints:
 
-```bash
+```shell [Terminal]
 curl -X GET http://localhost:8080/greet
 {"message":"Hello World!"}
 

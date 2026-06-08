@@ -195,14 +195,14 @@ To create this REST client metrics example follow these steps.
 
 4.  Build and run the application.
 
-    ``` bash
+    ```shell [Terminal]
     mvn clean package
     java -jar target/helidon-quickstart-mp.jar
     ```
 
 5.  Access the delegating endpoints.
 
-    ``` bash
+    ```shell [Terminal]
     curl http://localhost:8080/delegate
     curl http://localhost:8080/delegate
     curl http://localhost:8080/delegate/Joe
@@ -210,7 +210,7 @@ To create this REST client metrics example follow these steps.
 
 6.  Retrieve the application metrics for the `getDefaultMessage` operation.
 
-    ``` bash
+    ```shell [Terminal]
     curl 'http://localhost:8080/metrics?scope=application' | grep getDefault
     ```
 

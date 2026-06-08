@@ -226,7 +226,7 @@ If you have edited the Helidon MP QuickStart application as described in the pre
 
 Build and run the QuickStart application as usual.
 
-```bash
+```shell [Terminal]
 mvn package
 java -jar target/helidon-quickstart-mp.jar
 ```
@@ -241,7 +241,7 @@ java -jar target/helidon-quickstart-mp.jar
 
 The metrics service rejects attempts to access metrics on behalf of a disallowed origin.
 
-```bash
+```shell [Terminal]
 curl -i -H "Origin: https://other.com" http://localhost:8080/metrics
 ```
 
@@ -254,7 +254,7 @@ connection: keep-alive
 
 But accesses from `foo.com` succeed.
 
-```bash
+```shell [Terminal]
 curl -i -H "Origin: https://foo.com" http://localhost:8080/metrics
 ```
 
@@ -276,7 +276,7 @@ base_classloader_loadedClasses_count 3568
 
 The health service rejects requests from origins not specifically approved.
 
-```bash
+```shell [Terminal]
 curl -i -H "Origin: https://foo.com" http://localhost:8080/health
 ```
 
@@ -289,7 +289,7 @@ connection: keep-alive
 
 And responds successfully only to cross-origin requests from `https://there.com`.
 
-```bash
+```shell [Terminal]
 curl -i -H "Origin: https://there.com" http://localhost:8080/health
 ```
 

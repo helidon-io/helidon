@@ -168,7 +168,9 @@ mp:
 
 Helidon application needs to be aware about our WLS SSL public certificate.
 
-```bash [Running example with WLS truststore]
+Running example with WLS truststore:
+
+```shell [Terminal]
 java --add-opens=java.base/java.io=ALL-UNNAMED \
     -Djavax.net.ssl.trustStore=DemoTrust.jks \
     -Djavax.net.ssl.trustStorePassword=DemoTrustKeyStorePassPhrase \

@@ -15,14 +15,18 @@ For this 15 minute tutorial, you will need the following:
 
 Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
-```bash [Verify Prerequisites]
+Verify Prerequisites:
+
+```shell [Terminal]
 java -version
 mvn --version
 docker --version
 kubectl version
 ```
 
-```bash [Setting JAVA_HOME]
+Setting JAVA_HOME:
+
+```shell [Terminal]
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -35,7 +39,9 @@ export JAVA_HOME=/usr/lib/jvm/jdk-21
 
 Generate the project sources using the Helidon SE Maven archetype. The result is a simple project that can be used for the examples in this guide.
 
-```bash [Run the Maven archetype]
+Run the Maven archetype:
+
+```shell [Terminal]
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-se \
@@ -74,14 +80,18 @@ Generated dependencies related to health:
 
 Handling health checks is part of Helidon’s observability support. By default, when you add the dependency for the built-in health checks, Helidon automatically registers the built-in checks.
 
-```bash [Build and run the project]
+Build and run the project:
+
+```shell [Terminal]
 mvn clean package
 java -jar target/helidon-quickstart-se.jar
 ```
 
 In another window, access the application’s health endpoint.
 
-```bash [Access the health endpoint]
+Access the health endpoint:
+
+```shell [Terminal]
 curl -v http://localhost:8080/observe/health
 ```
 
@@ -110,7 +120,9 @@ server:
 
 Press ^C to stop the running server, rebuild it, and rerun it.
 
-```bash [Stop, rebuild, and rerun the server]
+Stop, rebuild, and rerun the server:
+
+```shell [Terminal]
 ^C
 mvn clean package
 java -jar target/helidon-quickstart-se.jar
@@ -118,7 +130,9 @@ java -jar target/helidon-quickstart-se.jar
 
 In the other window access the health endpoint again.
 
-```bash [Access the health endpoint]
+Access the health endpoint:
+
+```shell [Terminal]
 curl -v http://localhost:8080/observe/health
 ```
 
@@ -219,7 +233,9 @@ Note that the health check type and name are fixed, whereas the health check rec
 > [!NOTE]
 > For the next step, be ready to access the health endpoint very quickly after you restart the server!
 
-```bash [Stop, rebuild, and rerun the application]
+Stop, rebuild, and rerun the application:
+
+```shell [Terminal]
 ^C
 mvn package
 java -jar target/helidon-quickstart-se.jar
@@ -227,7 +243,7 @@ java -jar target/helidon-quickstart-se.jar
 
 *Access the health endpoint **quickly***
 
-```bash
+```shell [Terminal]
 curl -v http://localhost:8080/observe/health
 ```
 
@@ -254,7 +270,7 @@ Access the health endpoint again, after the server has been up at least eight se
 
 *Access the health endpoint again **after 8 seconds***
 
-```bash
+```shell [Terminal]
 curl -v http://localhost:8080/observe/health
 ```
 
@@ -294,7 +310,9 @@ You can choose which category of health check to retrieve when you access the he
 - startup only - <http://localhost:8080/observe/health/started>
 - all - <http://localhost:8080/observe/health>
 
-```bash [Get only start-up health checks]
+Get only start-up health checks:
+
+```shell [Terminal]
 curl http://localhost:8080/observe/started
 ```
 
@@ -333,7 +351,9 @@ HealthObserver healthObserver = HealthObserver.builder()
 
 - Changes the health endpoint path to `/myhealth`.
 
-```bash [Build and run the application, then verify that the health check endpoint responds at /myhealth]
+Build and run the application, then verify that the health check endpoint responds at /myhealth:
+
+```shell [Terminal]
 curl http://localhost:8080/myhealth
 ```
 
@@ -396,13 +416,17 @@ ObserveFeature observe = ObserveFeature.builder()
 - Add a custom start-up check.
 - Add a custom liveness check.
 
-```bash [Build and run the application, then verify the liveness, readiness, and started endpoints]
+Build and run the application, then verify the liveness, readiness, and started endpoints:
+
+```shell [Terminal]
 curl http://localhost:8080/health/live
 curl http://localhost:8080/health/ready
 curl http://localhost:8080/health/started
 ```
 
-```bash [Stop the application and build the docker image]
+Stop the application and build the docker image:
+
+```shell [Terminal]
 docker build -t helidon-quickstart-se .
 ```
 
@@ -478,26 +502,34 @@ spec:
 - The HTTP endpoint for the startup probe.
 - The startup probe configuration.
 
-```bash [Create and deploy the application into Kubernetes]
+Create and deploy the application into Kubernetes:
+
+```shell [Terminal]
 kubectl apply -f ./health.yaml
 ```
 
-```bash [Get the service information]
+Get the service information:
+
+```shell [Terminal]
 kubectl get service/helidon-health
 ```
 
-```bash
+```shell [Terminal]
 NAME             TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
 helidon-health   NodePort   10.107.226.62   <none>        8080:30116/TCP   4s 
 ```
 
 - A service of type `NodePort` that serves the default routes on port `30116`.
 
-```bash [Verify the health endpoints using port '30116', your port may be different]
+Verify the health endpoints using port '30116', your port may be different:
+
+```shell [Terminal]
 curl http://localhost:30116/health
 ```
 
-```bash [Delete the application, cleaning up Kubernetes resources]
+Delete the application, cleaning up Kubernetes resources:
+
+```shell [Terminal]
 kubectl delete -f ./health.yaml
 ```
 

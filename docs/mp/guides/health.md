@@ -15,14 +15,18 @@ For this 15 minute tutorial, you will need the following:
 
 Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
-```bash [Verify Prerequisites]
+Verify Prerequisites:
+
+```shell [Terminal]
 java -version
 mvn --version
 docker --version
 kubectl version
 ```
 
-```bash [Setting JAVA_HOME]
+Setting JAVA_HOME:
+
+```shell [Terminal]
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -35,7 +39,9 @@ export JAVA_HOME=/usr/lib/jvm/jdk-21
 
 Generate the project sources using the Helidon MP Maven archetype. The result is a simple project that can be used for the examples in this guide.
 
-```bash [Run the Maven archetype]
+Run the Maven archetype:
+
+```shell [Terminal]
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-mp \
@@ -64,12 +70,16 @@ Include dependency for the built-in health checks:
 </dependency>
 ```
 
-```bash [Build the application then run it]
+Build the application then run it:
+
+```shell [Terminal]
 mvn package
 java -jar target/helidon-quickstart-mp.jar
 ```
 
-```bash [Verify the health endpoint in a new terminal window]
+Verify the health endpoint in a new terminal window:
+
+```shell [Terminal]
 curl http://localhost:8080/health
 ```
 
@@ -132,7 +142,9 @@ public class GreetLivenessCheck implements HealthCheck {
 - Annotation indicating there is a single liveness `HealthCheck` object during the lifetime of the application.
 - Build the HealthCheckResponse with status `UP` and the current time.
 
-```bash [Build and run the application, then verify the custom liveness health endpoint]
+Build and run the application, then verify the custom liveness health endpoint:
+
+```shell [Terminal]
 curl http://localhost:8080/health/live
 ```
 
@@ -189,7 +201,9 @@ public class GreetReadinessCheck implements HealthCheck {
 - Build the `HealthCheckResponse` with status `UP` after five seconds, else `DOWN`.
 - Record the time at startup.
 
-```bash [Build and run the application. Issue the curl command with -v within five seconds, and you will see that the application is not ready]
+Build and run the application. Issue the curl command with -v within five seconds, and you will see that the application is not ready:
+
+```shell [Terminal]
 curl -v  http://localhost:8080/health/ready
 ```
 
@@ -214,7 +228,9 @@ curl -v  http://localhost:8080/health/ready
 }
 ```
 
-```bash [After five seconds you will see the application is ready]
+After five seconds you will see the application is ready:
+
+```shell [Terminal]
 curl -v http://localhost:8080/health/ready
 ```
 
@@ -277,7 +293,9 @@ public class GreetStartedCheck implements HealthCheck {
 - Build the `HealthCheckResponse` with status `UP` after eight seconds, else `DOWN`.
 - Record the time at startup of Helidon; the application will declare itself as started eight seconds later.
 
-```bash [Build and run the application. Issue the curl command with -v within five seconds, and you will see that the application has not yet started]
+Build and run the application. Issue the curl command with -v within five seconds, and you will see that the application has not yet started:
+
+```shell [Terminal]
 curl -v  http://localhost:8080/health/started
 ```
 
@@ -302,7 +320,9 @@ curl -v  http://localhost:8080/health/started
 }
 ```
 
-```bash [After eight seconds you will see the application has started]
+After eight seconds you will see the application has started:
+
+```shell [Terminal]
 curl -v http://localhost:8080/health/started
 ```
 
@@ -334,7 +354,9 @@ When using the health check URLs, you can get the following health check data:
 - startup checks only - <http://localhost:8080/health/started>
 - all health check data - <http://localhost:8080/health>
 
-```bash [Get all the health check data, including custom data]
+Get all the health check data, including custom data:
+
+```shell [Terminal]
 curl http://localhost:8080/health
 ```
 
@@ -411,7 +433,9 @@ health:
 
 - The `endpoint` settings specifies the root path for the health endpoint.
 
-```bash [Build and run the application, then verify that the health endpoint is using the new /myhealth root]
+Build and run the application, then verify that the health endpoint is using the new /myhealth root:
+
+```shell [Terminal]
 curl http://localhost:8080/myhealth
 curl http://localhost:8080/myhealth/live
 curl http://localhost:8080/myhealth/ready
@@ -438,7 +462,9 @@ health:
 - The port for the `admin` socket.
 - The health endpoint, as part of Helidon’s observability support, uses the socket `admin`.
 
-```bash [Build and run the application, then verify the health endpoint using port 8081 and /myhealth]
+Build and run the application, then verify the health endpoint using port 8081 and /myhealth:
+
+```shell [Terminal]
 curl http://localhost:8081/myhealth
 curl http://localhost:8081/myhealth/live
 curl http://localhost:8081/myhealth/ready
@@ -451,11 +477,15 @@ The following example shows how to integrate the Helidon health check API with a
 
 **Delete the contents of `application.yaml` so that the default health endpoint path and port are used.**
 
-```bash [Rebuild and start the application, then verify the health endpoint]
+Rebuild and start the application, then verify the health endpoint:
+
+```shell [Terminal]
 curl http://localhost:8080/health
 ```
 
-```bash [Stop the application and build the docker image]
+Stop the application and build the docker image:
+
+```shell [Terminal]
 docker build -t helidon-quickstart-mp .
 ```
 
@@ -531,26 +561,34 @@ spec:
 - The HTTP endpoint for the startup probe.
 - The startup probe configuration.
 
-```bash [Create and deploy the application into Kubernetes]
+Create and deploy the application into Kubernetes:
+
+```shell [Terminal]
 kubectl apply -f ./health.yaml
 ```
 
-```bash [Get the service information]
+Get the service information:
+
+```shell [Terminal]
 kubectl get service/helidon-health
 ```
 
-```bash
+```shell [Terminal]
 NAME             TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
 helidon-health   NodePort   10.107.226.62   <none>        8080:30116/TCP   4s 
 ```
 
 - A service of type `NodePort` that serves the default routes on port `30116`.
 
-```bash [Verify the health endpoints using port '30116', your port may be different. The JSON response will be the same as your previous test]
+Verify the health endpoints using port '30116', your port may be different. The JSON response will be the same as your previous test:
+
+```shell [Terminal]
 curl http://localhost:30116/health
 ```
 
-```bash [Delete the application, cleaning up Kubernetes resources]
+Delete the application, cleaning up Kubernetes resources:
+
+```shell [Terminal]
 kubectl delete -f ./health.yaml
 ```
 

@@ -209,7 +209,7 @@ When a gRPC client interacts with a server, it must have access to the correspon
 
 However, during development—especially when testing a new service—it can be useful to use tools such as `grpcurl` to invoke service methods directly. In such cases, one option is to provide the `.proto` file as a command-line argument, as shown below:
 
-```bash
+```shell [Terminal]
 >> grpcurl -proto strings.proto -d '{ "text": "hello world" }' localhost:8080 StringService.Split
 ```
 

@@ -248,7 +248,9 @@ Clients can also limit the report by specifying the scope as a query parameter i
 
 Further, clients can narrow down to a specific metric name by adding the name as another query parameter, such as `/observe/metrics?scope=application&name=myCount`.
 
-```bash [Example Reporting: Prometheus format]
+Example Reporting: Prometheus format:
+
+```shell [Terminal]
 curl -s -H 'Accept: text/plain' -X GET http://localhost:8080/observe/metrics
 ```
 
@@ -260,7 +262,9 @@ classloader_loadedClasses_count{scope="base",} 5297.0
 
 See the summary of the [OpenMetrics and Prometheus Format](#openmetrics-and-prometheus-format) for more information.
 
-```bash [Example Reporting: JSON format]
+Example Reporting: JSON format:
+
+```shell [Terminal]
 curl -s -H 'Accept: application/json' -X GET http://localhost:8080/observe/metrics
 ```
 
@@ -801,12 +805,16 @@ public class GreetService implements HttpService {
 
 Perform the following steps to see the new counter in action.
 
-```bash [Build and run the application]
+Build and run the application:
+
+```shell [Terminal]
 mvn package
 java -jar target/helidon-quickstart-se.jar
 ```
 
-```bash [Retrieve application metrics]
+Retrieve application metrics:
+
+```shell [Terminal]
 curl 'http://localhost:8080/observe/metrics?scope=application' 
 ```
 
@@ -819,7 +827,9 @@ accessctr_total{scope="application",} 0.0
 - Access the metrics endpoint, selecting only application meters.
 - Note the counter is zero; we have not accessed a service endpoint yet.
 
-```bash [Access a service endpoint to retrieve a greeting]
+Access a service endpoint to retrieve a greeting:
+
+```shell [Terminal]
 curl http://localhost:8080/greet
 ```
 
@@ -827,7 +837,9 @@ curl http://localhost:8080/greet
 {"message":"Hello World"}
 ```
 
-```bash [Retrieve application metrics again]
+Retrieve application metrics again:
+
+```shell [Terminal]
 curl 'http://localhost:8080/observe/metrics?scope=application'
 ```
 

@@ -24,14 +24,18 @@ For this 15 minute tutorial, you will need the following:
 
 Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
-```bash [Verify Prerequisites]
+Verify Prerequisites:
+
+```shell [Terminal]
 java -version
 mvn --version
 docker --version
 kubectl version
 ```
 
-```bash [Setting JAVA_HOME]
+Setting JAVA_HOME:
+
+```shell [Terminal]
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -44,7 +48,9 @@ export JAVA_HOME=/usr/lib/jvm/jdk-21
 
 Generate the project using the Helidon MP Quickstart Maven archetype.
 
-```bash [Run the Maven archetype]
+Run the Maven archetype:
+
+```shell [Terminal]
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-mp \
@@ -56,7 +62,7 @@ mvn -U archetype:generate -DinteractiveMode=false \
 
 The archetype generates a Maven project in your current directory, (for example, `helidon-quickstart-lc4j-mp`). Change into this directory and build.
 
-```bash
+```shell [Terminal]
 cd helidon-quickstart-lc4j-mp
 ```
 

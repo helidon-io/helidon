@@ -15,14 +15,18 @@ For this 20 minute tutorial, you will need the following:
 
 Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
-```bash [Verify Prerequisites]
+Verify Prerequisites:
+
+```shell [Terminal]
 java -version
 mvn --version
 docker --version
 kubectl version
 ```
 
-```bash [Setting JAVA_HOME]
+Setting JAVA_HOME:
+
+```shell [Terminal]
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -39,7 +43,9 @@ Helidon provides a very flexible and comprehensive configuration system, offerin
 
 Use the Helidon MP Maven archetype to create a simple project that can be used for the examples in this guide.
 
-```bash [Run the Maven archetype]
+Run the Maven archetype:
+
+```shell [Terminal]
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-mp \
@@ -49,7 +55,9 @@ mvn -U archetype:generate -DinteractiveMode=false \
     -Dpackage=io.helidon.examples.quickstart.mp
 ```
 
-```bash [The project will be built and run from the helidon-quickstart-mp directory]
+The project will be built and run from the helidon-quickstart-mp directory:
+
+```shell [Terminal]
 cd helidon-quickstart-mp
 ```
 
@@ -125,12 +133,16 @@ Change a configuration parameter in the default configuration resource file, `ME
 app.greeting=HelloFromMPConfig
 ```
 
-```bash [Build the application, skipping unit tests, then run it]
+Build the application, skipping unit tests, then run it:
+
+```shell [Terminal]
 mvn package -DskipTests=true
 java -jar target/helidon-quickstart-mp.jar
 ```
 
-```bash [Run the curl command in a new terminal window and check the response]
+Run the curl command in a new terminal window and check the response:
+
+```shell [Terminal]
 curl http://localhost:8080/greet
 ```
 
@@ -146,12 +158,16 @@ curl http://localhost:8080/greet
 
 An environment variable has a higher precedence than the configuration properties file.
 
-```bash [Set the environment variable and restart the application]
+Set the environment variable and restart the application:
+
+```shell [Terminal]
 export APP_GREETING=HelloFromEnvironment
 java -jar target/helidon-quickstart-mp.jar
 ```
 
-```bash [Invoke the endpoint]
+Invoke the endpoint:
+
+```shell [Terminal]
 curl http://localhost:8080/greet
 ```
 
@@ -167,11 +183,15 @@ curl http://localhost:8080/greet
 
 A system property has a higher precedence than environment variables.
 
-```bash [Restart the application with a system property. The app.greeting environment variable is still set]
+Restart the application with a system property. The app.greeting environment variable is still set:
+
+```shell [Terminal]
 java -Dapp.greeting="HelloFromSystemProperty"  -jar target/helidon-quickstart-mp.jar
 ```
 
-```bash [Invoke the endpoint]
+Invoke the endpoint:
+
+```shell [Terminal]
 curl http://localhost:8080/greet
 ```
 
@@ -247,7 +267,9 @@ public class GreetingProvider {
 - Inject the value of `app.greeting` into the `GreetingProvider` object.
 - Define a class member variable to hold the greeting.
 
-```bash [Build and run the application, then invoke the endpoint]
+Build and run the application, then invoke the endpoint:
+
+```shell [Terminal]
 curl http://localhost:8080/greet
 ```
 
@@ -285,7 +307,9 @@ public class GreetingProvider {
 - Inject the `Config` object into the `GreetingProvider` object.
 - Get the `app.greeting` value from the `Config` object and set the member variable.
 
-```bash [Build and run the application, then invoke the endpoint]
+Build and run the application, then invoke the endpoint:
+
+```shell [Terminal]
 curl http://localhost:8080/greet
 ```
 
@@ -347,7 +371,9 @@ public class GreetingProvider {
 - Get the value from the `message` `Config` node.
 - Get the value from the `sender` `Config` node.
 
-```bash [Build and run the application, then invoke the endpoint]
+Build and run the application, then invoke the endpoint:
+
+```shell [Terminal]
 curl http://localhost:8080/greet
 ```
 
@@ -392,7 +418,9 @@ public class GreetingProvider {
 }
 ```
 
-```bash [Build and run the application, then invoke the endpoint]
+Build and run the application, then invoke the endpoint:
+
+```shell [Terminal]
 curl http://localhost:8080/greet
 ```
 
@@ -402,15 +430,21 @@ curl http://localhost:8080/greet
 }
 ```
 
-```bash [Stop the application and build the docker image]
+Stop the application and build the docker image:
+
+```shell [Terminal]
 docker build -t helidon-config-mp .
 ```
 
-```bash [Generate a ConfigMap from config-file.properties]
+Generate a ConfigMap from config-file.properties:
+
+```shell [Terminal]
 kubectl create configmap helidon-configmap --from-file config-file.properties
 ```
 
-```bash [View the contents of the ConfigMap]
+View the contents of the ConfigMap:
+
+```shell [Terminal]
 kubectl get configmap helidon-configmap -o yaml
 ```
 
@@ -478,22 +512,28 @@ spec:
 - Mount the ConfigMap as a volume at `/etc/config`. This is where Kubernetes will create `config-file.properties`.
 - Specify the ConfigMap which contains the configuration data.
 
-```bash [Create and deploy the application into Kubernetes]
+Create and deploy the application into Kubernetes:
+
+```shell [Terminal]
 kubectl apply -f ./k8s-config.yaml
 ```
 
-```bash [Get the service information]
+Get the service information:
+
+```shell [Terminal]
 kubectl get service/helidon-config
 ```
 
-```bash
+```shell [Terminal]
 NAME             TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
 helidon-config   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s 
 ```
 
 - A service of type `NodePort` that serves the default routes on port `31143`.
 
-```bash [Verify the configuration endpoint using port 31143, your port will likely be different]
+Verify the configuration endpoint using port 31143, your port will likely be different:
+
+```shell [Terminal]
 curl http://localhost:31143/greet
 ```
 
@@ -507,7 +547,9 @@ curl http://localhost:31143/greet
 
 You can now delete the Kubernetes resources that were just created during this example.
 
-```bash [Delete the Kubernetes resources]
+Delete the Kubernetes resources:
+
+```shell [Terminal]
 kubectl delete -f ./k8s-config.yaml
 kubectl delete configmap  helidon-configmap
 ```

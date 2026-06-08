@@ -30,7 +30,7 @@ In this example we will use Azul implementation with Warp CRaC engine. Warp CRaC
 
 Use [SDKMAN!](https://sdkman.io) to install Azul JDK with Warp CRaC engine:
 
-```bash
+```shell [Terminal]
 sdk install java 23.0.1.crac-zulu
 ```
 
@@ -38,7 +38,7 @@ sdk install java 23.0.1.crac-zulu
 
 Generate the project using the Helidon SE Quickstart Maven archetype.
 
-```bash
+```shell [Terminal]
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-se \
@@ -50,7 +50,7 @@ mvn -U archetype:generate -DinteractiveMode=false \
 
 The archetype generates a Maven project in your current directory (for example, `helidon-quickstart-se`). Change into this directory and build.
 
-```bash
+```shell [Terminal]
 cd helidon-quickstart-se
 ```
 
@@ -65,13 +65,13 @@ Add dependency for Helidon CRaC support to `pom.xml`. This allows Helidon to pro
 
 Build the project.
 
-```bash
+```shell [Terminal]
 mvn package
 ```
 
 Check if you are using Java build with CRaC support.
 
-```bash
+```shell [Terminal]
 ➜  helidon-quickstart-se java -version
 openjdk version "23.0.1" 2024-10-15
 OpenJDK Runtime Environment Zulu23.30+13-CRaC-CA (build 23.0.1)
@@ -80,7 +80,7 @@ OpenJDK 64-Bit Server VM Zulu23.30+13-CRaC-CA (build 23.0.1, mixed mode, sharing
 
 At this point you can run the application using the CRaC aware JVM:
 
-```bash
+```shell [Terminal]
 java -XX:CRaCEngine=warp -XX:CRaCCheckpointTo=./target/cr -jar target/helidon-quickstart-se.jar
 ```
 
@@ -89,7 +89,7 @@ java -XX:CRaCEngine=warp -XX:CRaCCheckpointTo=./target/cr -jar target/helidon-qu
 
 You should see in the output that Helidon SE has started with CRaC feature enabled.
 
-```bash
+```shell [Terminal]
 Helidon SE 4.4.0-SNAPSHOT features: [CRaC, Config, Encoding, Health, Media, Metrics, Observe, Registry, WebServer]
 [0x3f87bd99] http://0.0.0.0:8080 bound for socket '@default'
 Started all channels in 9 milliseconds. 521 milliseconds since JVM startup. Java 23.0.1
@@ -98,7 +98,7 @@ WEB server is up! http://localhost:8080/simple-greet
 
 In another shell test an endpoint:
 
-```bash
+```shell [Terminal]
 curl -X GET http://localhost:8080/greet
 ```
 
@@ -110,17 +110,17 @@ For more information about the Quickstart application and other endpoints it sup
 
 In another shell trigger the snapshot creation with [jcmd](https://docs.oracle.com/en/java/javase/21/docs/specs/man/jcmd.html) command `JDK.checkpoint`:
 
-```bash
+```shell [Terminal]
 jcmd $(jcmd | grep helidon-quickstart-se.jar | awk '{print $2}') JDK.checkpoint
 ```
 
-```bash
+```shell [Terminal]
 warp: Checkpoint 138991 to ./target/cr
 warp: Checkpoint successful!
 [1]    138991 killed     java -XX:CRaCEngine=warp -XX:CRaCCheckpointTo=./target/cr -jar
 ```
 
-```bash
+```shell [Terminal]
 ➜  helidon-quickstart-se ls -la ./target/cr
 total 124M
 -rw------- 1 frank frank 74M Feb  1 19:12 core.img
@@ -130,7 +130,7 @@ total 124M
 
 Run following command to restore your application from saved snapshot.
 
-```bash
+```shell [Terminal]
 java -XX:CRaCEngine=warp -XX:CRaCRestoreFrom=./target/cr
 ```
 
@@ -139,7 +139,7 @@ java -XX:CRaCEngine=warp -XX:CRaCRestoreFrom=./target/cr
 
 Expected output shows that application restore from snapshot is drastically faster than previous start.
 
-```bash
+```shell [Terminal]
 ➜  helidon-quickstart-se java -XX:CRaCEngine=warp -XX:CRaCRestoreFrom=./target/cr
 warp: Restore successful!
 [0x21a39da4] http://0.0.0.0:8080 bound for socket '@default'
@@ -221,13 +221,13 @@ CMD [ "java", "-XX:CRaCEngine=warp", "-XX:CRaCRestoreFrom=/helidon/cr" ]
 
 Build the application, notice that warmup and snapshot of the application is created during build time in the 2nd stage. For warming up the [siege](https://github.com/JoeDog/siege) load testing utility is used. Dockerfile is based on Radim Vansa’s [article](https://foojay.io/today/warp-the-new-crac-engine) introducing Warp CRaC engine.
 
-```bash
+```shell [Terminal]
 docker build -t helidon-quickstart-se-crac -f Dockerfile.crac .
 ```
 
 Start the application directly from snapshot created at build time.
 
-```bash
+```shell [Terminal]
 docker run --rm -p 8080:8080 helidon-quickstart-se-crac:latest
 ```
 

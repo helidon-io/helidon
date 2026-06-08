@@ -15,14 +15,18 @@ For this 20 minute tutorial, you will need the following:
 
 Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
-```bash [Verify Prerequisites]
+Verify Prerequisites:
+
+```shell [Terminal]
 java -version
 mvn --version
 docker --version
 kubectl version
 ```
 
-```bash [Setting JAVA_HOME]
+Setting JAVA_HOME:
+
+```shell [Terminal]
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -43,7 +47,9 @@ OIDC is a secure mechanism for an application to contact an identity service. It
 
 To install Keycloak with Docker, open a terminal and make sure the port 8080 is free.
 
-```bash [Enter the following command]
+Enter the following command:
+
+```shell [Terminal]
 docker run -p 8080:8080 -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=admin quay.io/keycloak/keycloak:24.0.5 start-dev
 ```
 
@@ -61,7 +67,9 @@ After extracting the archive file, you should have a directory named keycloak fo
 
 Open keycloak folder to make it your current directory.
 
-```bash [Run this command from command prompt to open the directory]
+Run this command from command prompt to open the directory:
+
+```shell [Terminal]
 cd keycloak-24.0.5
 ```
 
@@ -69,11 +77,15 @@ cd keycloak-24.0.5
 
 To start keycloak and have it ready for further steps, run the following command.
 
-```bash [On Linux run]
+On Linux run:
+
+```shell [Terminal]
 bin/kc.sh start-dev
 ```
 
-```bash [On Windows run]
+On Windows run:
+
+```shell [Terminal]
 bin\kc.bat start-dev
 ```
 
@@ -178,7 +190,9 @@ Keycloak is now configured and ready. Keep keycloak running on your terminal and
 
 Use the Helidon MP Maven archetype to create a simple project. It will be used as an example to show how to set up Helidon. Replace `4.4.0-SNAPSHOT` by the latest helidon version. It will download the quickstart project into the current directory.
 
-```bash [Run the Maven archetype]
+Run the Maven archetype:
+
+```shell [Terminal]
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-mp \
@@ -188,7 +202,9 @@ mvn -U archetype:generate -DinteractiveMode=false \
     -Dpackage=io.helidon.examples.quickstart.mp
 ```
 
-```bash [The project will be built and run from the helidon-quickstart-mp directory]
+The project will be built and run from the helidon-quickstart-mp directory:
+
+```shell [Terminal]
 cd helidon-quickstart-mp
 ```
 
@@ -271,7 +287,9 @@ When a client will send an HTTP GET request at the endpoint `http://localhost:79
 
 Helidon and Keycloak are now correctly configured and your application is safe.
 
-```bash [Build the application, skipping unit tests, then run it]
+Build the application, skipping unit tests, then run it:
+
+```shell [Terminal]
 mvn package -DskipTests
 java -jar target/helidon-quickstart-mp.jar
 ```
@@ -300,7 +318,9 @@ The following explains how to set a basic authentication instead of oidc securit
 
 In the test folder `helidon-quickstart-mp/src/test`:
 
-```bash [Create a new directory with configuration file]
+Create a new directory with configuration file:
+
+```shell [Terminal]
 mkdir resources
 cd resources
 touch application.yaml
@@ -365,7 +385,9 @@ The username and password are encoded and placed inside the header in order to a
 
 Now, the project can be built without skipping test.
 
-```bash [Build the project]
+Build the project:
+
+```shell [Terminal]
 mvn clean install
 ```
 
@@ -463,7 +485,9 @@ try (Response r = target
 }
 ```
 
-```bash [Build the project]
+Build the project:
+
+```shell [Terminal]
 mvn clean install
 ```
 

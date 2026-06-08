@@ -904,7 +904,9 @@ rules.post("/hello", (req, res) -> {
 
 - Send `JsonObject` in response
 
-```bash [Example of posting JSON to sayHello endpoint]
+Example of posting JSON to sayHello endpoint:
+
+```shell [Terminal]
 curl --noproxy '*' -X POST -H "Content-Type: application/json" \
     http://localhost:8080/sayhello -d '{"name":"Joe"}'
 ```
@@ -985,7 +987,9 @@ rules.post("/echo", (req, res) -> {
 
 - This handler consumes a `Person` instance and simply echoes it back. Note that there is not working with raw JSON here.
 
-```bash [Example of posting JSON to the /echo endpoint]
+Example of posting JSON to the /echo endpoint:
+
+```shell [Terminal]
 curl --noproxy '*' -X POST -H "Content-Type: application/json" \
     http://localhost:8080/echo -d '{"name":"Joe"}'
 {"name":"Joe"}
@@ -1059,7 +1063,9 @@ rules.post("/echo", (req, res) -> {
 
 - This handler consumes a `Person` instance and simply echoes it back. Note that there is no working with raw JSON here.
 
-```bash [Example of posting JSON to the /echo endpoint]
+Example of posting JSON to the /echo endpoint:
+
+```shell [Terminal]
 curl --noproxy '*' -X POST -H "Content-Type: application/json" \
     http://localhost:8080/echo -d '{"name":"Joe"}'
 ```
@@ -1136,7 +1142,9 @@ rules.post("/echo", (req, res) -> {
 
 - This handler consumes a `Person` instance and simply echoes it back. Note that there is no working with raw JSON here.
 
-```bash [Example of posting JSON to the /echo endpoint]
+Example of posting JSON to the /echo endpoint:
+
+```shell [Terminal]
 curl --noproxy '*' -X POST -H "Content-Type: application/json" \
     http://localhost:8080/echo -d '{"name":"Joe"}'
 ```

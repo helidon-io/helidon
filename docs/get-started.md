@@ -7,15 +7,15 @@ If you want to jump in and give Helidon a try make sure you satisfy the
 
 1. [Download the Helidon CLI](cli.md)
 2. Create a Helidon SE project
-   ```shell
+   ```shell [Terminal]
    helidon init --batch -Dflavor=se -Dapp-type=quickstart
    ```
 3. Build it 
-   ```shell
+   ```shell [Terminal]
    cd quickstart-se; mvn clean install
    ```
 4. Run it
-   ```shell
+   ```shell [Terminal]
    java -jar target/quickstart-se.jar
    ```
 5. Try it
@@ -43,7 +43,9 @@ You must have Java and Maven installed on your system to use Helidon.
 > [!NOTE]
 > Most of Helidon's examples use Maven, but Helidon can also be used with [Gradle](se/guides/gradle-build.md).
 
-```bash [Verify System Requirements]
+Verify System Requirements:
+
+```shell [Terminal]
 java -version
 mvn --version
 ```
@@ -51,17 +53,23 @@ mvn --version
 
 Make sure you set the `JAVA_HOME` environment variable.
 
-```bash [Set JAVA_HOME on Linux]
+Set JAVA_HOME on Linux:
+
+```shell [Terminal]
 # Enter the appropriate path to your JDK
 export JAVA_HOME=/usr/lib/jvm/jdk-25
 ```
 
-```bash [Set JAVA_HOME on macOS]
+Set JAVA_HOME on macOS:
+
+```shell [Terminal]
 # Enter the appropriate path to your JDK
 export JAVA_HOME=`/usr/libexec/java_home -v 25`
 ```
 
-```cmd [Set JAVA_HOME on Windows]
+Set JAVA_HOME on Windows:
+
+```cmd [Terminal]
 # Enter the appropriate path to your JDK
 setx JAVA_HOME=C:\\PROGRA~1\\Java\\jdk-25
 ```

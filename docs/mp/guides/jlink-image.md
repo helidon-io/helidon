@@ -21,14 +21,18 @@ For this 10 minute tutorial, you will need the following:
 
 Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
-```bash [Verify Prerequisites]
+Verify Prerequisites:
+
+```shell [Terminal]
 java -version
 mvn --version
 docker --version
 kubectl version
 ```
 
-```bash [Setting JAVA_HOME]
+Setting JAVA_HOME:
+
+```shell [Terminal]
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -41,13 +45,13 @@ export JAVA_HOME=/usr/lib/jvm/jdk-21
 
 As noted in the prerequisites above, Java 21 or newer is required (Java 25 or newer is recommended).
 
-```bash
+```shell [Terminal]
 $JAVA_HOME/bin/java --version
 ```
 
 Creating a custom runtime image requires that the JDK modules are present as `*.jmod` files, and some distributions do not provide them by default. Check the `jmods` directory to ensure they are present:
 
-```bash
+```shell [Terminal]
 ls $JAVA_HOME/jmods
 ```
 
@@ -58,7 +62,7 @@ ls $JAVA_HOME/jmods
 
 Generate the project using the Helidon MP Quickstart Maven archetype.
 
-```bash
+```shell [Terminal]
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-mp \
@@ -70,20 +74,20 @@ mvn -U archetype:generate -DinteractiveMode=false \
 
 The archetype generates a Maven project in your current directory (for example, `helidon-quickstart-mp`). Change into this directory and build.
 
-```bash
+```shell [Terminal]
 cd helidon-quickstart-mp
 mvn package
 ```
 
 At this point you can run the application using the JVM:
 
-```bash
+```shell [Terminal]
 java -jar target/helidon-quickstart-mp.jar
 ```
 
 In another shell test an endpoint:
 
-```bash
+```shell [Terminal]
 curl -X GET http://localhost:8080/greet
 ```
 
@@ -104,7 +108,7 @@ You can build a custom runtime image in 2 different ways:
 
 Build the custom runtime image using the jlink image profile:
 
-```bash
+```shell [Terminal]
 mvn package -Pjlink-image
 ```
 
@@ -115,7 +119,7 @@ After the build completes it will report some statistics about the build includi
 
 The `target/helidon-quickstart-mp-jri` directory is a self contained custom image of your application. It contains your application, its runtime dependencies and the JDK modules it depends on. You can start your application using the provide `start` script:
 
-```bash
+```shell [Terminal]
 ./target/helidon-quickstart-mp-jri/bin/start
 ```
 
@@ -131,13 +135,13 @@ If you want to skip the creation of the on-disk cache you can do so by executing
 
 #### For Java 24 or earlier
 
-```bash
+```shell [Terminal]
 mvn package -Pjlink-image -Djlink.image.addClassDataSharingArchive=false
 ```
 
 #### For Java 25 or later
 
-```bash
+```shell [Terminal]
 mvn package -Pjlink-image -Djlink.image.aotCache=false
 ```
 
@@ -147,7 +151,7 @@ For more information on available configuration options see the [`helidon-maven-
 
 To build a Docker image with a custom Java runtime image use the jlink Dockerfile included with the quickstart.
 
-```bash
+```shell [Terminal]
 docker build -t helidon-quickstart-mp-jri -f Dockerfile.jlink .
 ```
 
@@ -156,7 +160,7 @@ docker build -t helidon-quickstart-mp-jri -f Dockerfile.jlink .
 
 Start the application:
 
-```bash
+```shell [Terminal]
 docker run --rm -p 8080:8080 helidon-quickstart-mp-jri:latest
 ```
 

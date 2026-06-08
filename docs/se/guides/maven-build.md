@@ -78,7 +78,7 @@ If you use the Helidon application parent POM you will have this plugin configur
 
 You can override many of the plugin attributes by passing a system property to the `mvn` command:
 
-```bash
+```shell [Terminal]
 mvn -Djlink.image.addClassDataSharingArchive=false package
 ```
 

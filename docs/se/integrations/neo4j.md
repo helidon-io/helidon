@@ -70,7 +70,7 @@ This example implements a simple Neo4j REST service using MicroProfile. For this
 
 Bring up a Neo4j instance via Docker
 
-```bash
+```shell [Terminal]
 docker run --publish=7474:7474 --publish=7687:7687 -e 'NEO4J_AUTH=neo4j/secret'  neo4j:latest
 ```
 
@@ -199,14 +199,14 @@ System.out.println("WEB server is up! http://localhost:" + server.port() + "/api
 
 Now build and run.
 
-```bash
+```shell [Terminal]
 mvn package
 java -jar target/helidon-examples-integration-neo4j.jar
 ```
 
 Exercise the application:
 
-```bash
+```shell [Terminal]
 curl -X GET http://localhost:8080/movies
 
 # Try health

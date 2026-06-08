@@ -175,12 +175,16 @@ Include the built-in health checks dependency in your pom.xml:
 </dependency>
 ```
 
-```bash [Build the application, then run it]
+Build the application, then run it:
+
+```shell [Terminal]
 mvn package
 java -jar target/helidon-quickstart-mp.jar
 ```
 
-```bash [Verify the health endpoint in a new terminal window]
+Verify the health endpoint in a new terminal window:
+
+```shell [Terminal]
 curl http://localhost:8080/health
 ```
 
@@ -243,7 +247,9 @@ public class GreetLivenessCheck implements HealthCheck {
 - Annotation indicating this is a bean instantiated once per application (in Helidon this means just once per runtime).
 - Build the HealthCheckResponse with status `UP` and the current time.
 
-```bash [Build and run the application, then verify the custom liveness health endpoint]
+Build and run the application, then verify the custom liveness health endpoint:
+
+```shell [Terminal]
 curl http://localhost:8080/health/live
 ```
 
@@ -296,7 +302,9 @@ public class GreetReadinessCheck implements HealthCheck {
 - Record the time at startup.
 - Become ready after 5 seconds.
 
-```bash [Build and run the application. Issue the curl command with -v within five seconds and you will see that the application is not ready]
+Build and run the application. Issue the curl command with -v within five seconds and you will see that the application is not ready:
+
+```shell [Terminal]
 curl -v  http://localhost:8080/health/ready
 ```
 
@@ -321,7 +329,9 @@ curl -v  http://localhost:8080/health/ready
 }
 ```
 
-```bash [After five seconds you will see the application is ready]
+After five seconds you will see the application is ready:
+
+```shell [Terminal]
 curl -v http://localhost:8080/health/ready
 ```
 
@@ -382,7 +392,9 @@ public class GreetStartedCheck implements HealthCheck {
 - Record the time at startup of Helidon; the application will declare itself as started eight seconds later.
 - Become ready after 5 seconds.
 
-```bash [Build and run the application. Issue the curl command with -v within five seconds and you will see that the application has not yet started]
+Build and run the application. Issue the curl command with -v within five seconds and you will see that the application has not yet started:
+
+```shell [Terminal]
 curl -v  http://localhost:8080/health/started
 ```
 
@@ -407,7 +419,9 @@ curl -v  http://localhost:8080/health/started
 }
 ```
 
-```bash [After eight seconds you will see the application has started]
+After eight seconds you will see the application has started:
+
+```shell [Terminal]
 curl -v http://localhost:8080/health/started
 ```
 
@@ -439,7 +453,9 @@ When using the health check URLs, you can get the following health check data:
 - startup checks only - <http://localhost:8080/health/started>
 - all health check data - <http://localhost:8080/health>
 
-```bash [Get all the health check data, including custom data]
+Get all the health check data, including custom data:
+
+```shell [Terminal]
 curl http://localhost:8080/health
 ```
 

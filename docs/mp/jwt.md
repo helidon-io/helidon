@@ -114,17 +114,19 @@ mp.jwt.verify.publickey.location=${mp.jwt.verify.issuer}/v1/keys
 
 Obtain the Security Token from external issuer:
 
-```bash
+```shell [Terminal]
 TOKEN=sdf4dDSWFcswdsffDSasEgv...
 ```
 
 Run the application and execute an http request against it:
 
-```bash
+```shell [Terminal]
 curl -X GET -I -H "Authorization: Bearer $TOKEN" http://localhost:8080/hello
 ```
 
-```bash [Curl output]
+Curl output:
+
+```shell [Terminal]
 HTTP/1.1 200 OK
 Date: 08.06.2022 10:33:47 EEST
 connection: keep-alive

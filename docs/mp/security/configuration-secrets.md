@@ -46,7 +46,9 @@ Symmetric encryption is based on a shared secret that is known by the person enc
 
 The config encryption filter provides a Main class `io.helidon.config.encryption.Main` that can be used to encrypt values.
 
-```bash [Encrypt secret secretToEncrypt using shared secret masterPassword]
+Encrypt secret secretToEncrypt using shared secret masterPassword:
+
+```shell [Terminal]
 java -jar <path-to-app-libs-dir>/helidon-config-encryption-{helidon-version}.jar aes masterPassword secretToEncrypt
 ```
 
@@ -71,7 +73,9 @@ When using the config encryption filter, you should encrypt the configuration va
 
 The config encryption filter provides a Main class `io.helidon.config.encryption.Main` that can be used to encrypt values.
 
-```bash [Encrypt secret secretToEncrypt using public certificate in a keystore]
+Encrypt secret secretToEncrypt using public certificate in a keystore:
+
+```shell [Terminal]
 java -jar <path-to-app-libs-dir>/helidon-config-encryption-{helidon-version}.jar rsa /path/to/keystore.p12 keystorePassword publicCertAlias secretToEncrypt
 ```
 
