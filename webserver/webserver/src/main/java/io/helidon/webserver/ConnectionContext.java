@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.webserver;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.HelidonSocket;
@@ -70,6 +71,16 @@ public interface ConnectionContext extends SocketContext {
      * @see ListenerConfig#enableProxyProtocol()
      */
     default Optional<ProxyProtocolData> proxyProtocolData() {
+        return Optional.empty();
+    }
+
+    /**
+     * Listener SNI context for this connection.
+     *
+     * @return SNI context, if listener virtual hosts are configured
+     */
+    @Api.Internal
+    default Optional<SniContext> sniContext() {
         return Optional.empty();
     }
 

@@ -70,6 +70,17 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
     Optional<SocketAddress> baseAddress();
 
     /**
+     * Client-side TLS SNI configuration.
+     * <p>
+     * If this is not configured, WebClient preserves the configured {@link #tls()} SSL parameters and uses the JDK TLS
+     * defaults for SNI. If this is configured without an explicit {@code mode}, the resolved request URI host is used.
+     *
+     * @return SNI configuration
+     */
+    @Option.Configured
+    Optional<SniConfig> sni();
+
+    /**
      * Base query used by the client in all requests.
      *
      * @return base query of the client requests
@@ -248,6 +259,7 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
      * Maximal size of the connection cache for a single connection key.
      * A connection key is formed by the scheme, host, port, TLS configuration, DNS resolver, DNS address lookup, and proxy.
      * For UNIX domain socket transports, the key also includes the socket path and does not include proxy configuration.
+     * For TLS connections, configured SNI can further split the cache by TLS peer host, TLS peer port, and SNI mode.
      * <p>
      * For most HTTP protocols, we may cache connections to various endpoints for keep alive (or stream reuse in case of HTTP/2).
      * This option limits the size. Setting this number lower than the "usual" number of target services will cause connections

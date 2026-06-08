@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import io.helidon.common.testing.junit5.OptionalMatcher;
+import io.helidon.service.registry.Services;
 import io.helidon.tracing.Baggage;
 import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.Span;
@@ -39,9 +40,9 @@ class TestBaggageApi {
 
     @Test
     void testWritableBaggageFromSpan() {
-        Span span = Tracer.global().spanBuilder("otel-span").start();
+        Span span = Services.get(Tracer.class).spanBuilder("otel-span").start();
         WritableBaggage baggage = span.baggage();
-        span.baggage("keyA", "valA");
+        span.baggage().set("keyA", "valA");
         assertThat("Assigned baggage via span is present", baggage.containsKey("keyA"), is(true));
         assertThat("Assigned baggage via span value from baggage",
                    baggage.get("keyA"),
@@ -59,7 +60,7 @@ class TestBaggageApi {
 
     @Test
     void testImmutableBaggageFromSpanContext() {
-        Optional<SpanContext> spanContextOpt = Tracer.global()
+        Optional<SpanContext> spanContextOpt = Services.get(Tracer.class)
                 .extract(HeaderProvider.create(Map.of("baggage", List.of("keyC=valC,keyD=valD"))));
 
         assertThat("Span context", spanContextOpt, OptionalMatcher.optionalPresent());

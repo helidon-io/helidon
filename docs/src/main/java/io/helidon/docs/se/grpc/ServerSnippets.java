@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,20 @@
 package io.helidon.docs.se.grpc;
 
 import io.helidon.config.Config;
+import io.helidon.grpc.core.InterceptorWeights;
 import io.helidon.webserver.WebServer;
+import io.helidon.webserver.grpc.GrpcConnectionContext;
 import io.helidon.webserver.grpc.GrpcRouting;
 import io.helidon.webserver.grpc.GrpcService;
-import io.helidon.grpc.core.InterceptorWeights;
+import io.helidon.webserver.grpc.ServerContextKeys;
 
 import com.google.protobuf.Descriptors;
-import io.grpc.stub.StreamObserver;
+import io.grpc.Context;
+import io.grpc.Metadata;
+import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
-import io.grpc.ServerCall;
-import io.grpc.Metadata;
+import io.grpc.stub.StreamObserver;
 
 import static io.helidon.grpc.core.ResponseHelper.complete;
 
@@ -207,5 +210,17 @@ class ServerSnippets {
                 .service(new MathService())
                 .build();
         // end::snippet_4[]
+    }
+
+    void snippet_5() {
+        // tag::snippet_5[]
+        GrpcConnectionContext connectionContext =
+                ServerContextKeys.CONNECTION_CONTEXT.get(Context.current());
+
+        String requestedHost = connectionContext.sniRequestedHost()
+                .orElse("default.example.com");
+        String matchedHost = connectionContext.sniMatchedHost()
+                .orElse("default");
+        // end::snippet_5[]
     }
 }

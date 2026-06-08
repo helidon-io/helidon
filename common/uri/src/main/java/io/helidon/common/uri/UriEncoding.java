@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ public final class UriEncoding {
      * <p>
      * Percent characters {@code "%s"} found between brackets {@code "[]"} are not decoded to support IPv6 literal.
      * E.g. {@code http://[fe80::1%lo0]:8080}.
+     * Malformed percent-encoded sequences are preserved literally.
      * <p>
      * See <a href="https://tools.ietf.org/html/rfc6874#section-2">RFC 6874, section 2.</a>
      *
@@ -58,6 +59,7 @@ public final class UriEncoding {
 
     /**
      * Decode a URI query.
+     * Malformed percent-encoded sequences are preserved literally.
      *
      * @param uriQuery URI query with percent encoding
      * @return decoded string
@@ -169,17 +171,34 @@ public final class UriEncoding {
                 c = string.charAt(i);
                 continue;
             }
-            bb.clear();
-            while (true) {
-                bb.put(decode(string.charAt(++i), string.charAt(++i)));
-                if (++i >= len) {
+            if (!isPercentEncoded(string, i, len)) {
+                int malformedEnd = malformedPercentEnd(string, i, len);
+                while (i < malformedEnd) {
+                    c = string.charAt(i);
+                    if (c == '[') {
+                        betweenBrackets = true;
+                    } else if (betweenBrackets && c == ']') {
+                        betweenBrackets = false;
+                    }
+                    sb.append(c);
+                    i++;
+                }
+                if (i >= len) {
                     break;
                 }
                 c = string.charAt(i);
-                if (c != '%') {
+                continue;
+            }
+
+            bb.clear();
+            do {
+                bb.put(decode(string.charAt(i + 1), string.charAt(i + 2)));
+                i += 3;
+                if (i >= len) {
                     break;
                 }
-            }
+                c = string.charAt(i);
+            } while (c == '%' && isPercentEncoded(string, i, len));
             bb.flip();
 
             CharBuffer cb = StandardCharsets.UTF_8.decode(bb);
@@ -205,6 +224,22 @@ public final class UriEncoding {
         }
 
         return -1;
+    }
+
+    private static boolean isPercentEncoded(String string, int index, int len) {
+        return index + 2 < len
+                && isHexCharacter(string.charAt(index + 1))
+                && isHexCharacter(string.charAt(index + 2));
+    }
+
+    private static int malformedPercentEnd(String string, int index, int len) {
+        int end = Math.min(index + 3, len);
+        for (int i = index + 1; i < end; i++) {
+            if (string.charAt(i) == '%') {
+                return i;
+            }
+        }
+        return end;
     }
 
     private static void appendUTF8EncodedCharacter(StringBuilder sb, int codePoint) {

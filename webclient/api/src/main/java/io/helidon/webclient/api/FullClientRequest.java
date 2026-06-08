@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,6 +101,15 @@ public interface FullClientRequest<T extends ClientRequest<T>> extends ClientReq
      * @return TLS configuration
      */
     Tls tls();
+
+    /**
+     * Request-level SNI configuration.
+     *
+     * @return SNI configuration if configured
+     */
+    default Optional<SniConfig> sni() {
+        return Optional.empty();
+    }
 
     /**
      * Proxy configuration (may be no-proxy).

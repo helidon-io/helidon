@@ -28,6 +28,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import javax.net.ssl.SSLEngine;
@@ -39,6 +40,7 @@ import io.helidon.common.buffers.BufferData;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -169,6 +171,46 @@ class TlsNioSocketTest {
         socket.handshake();
 
         assertArrayEquals(new byte[] {'S'}, socket.get());
+    }
+
+    @Test
+    void replayedNetworkDataUsesPacketSizedChunks() throws Exception {
+        BlockingSocketChannel channel = new BlockingSocketChannel();
+        SSLEngine engine = mock(SSLEngine.class);
+        SSLSession session = mock(SSLSession.class);
+        ByteBuffer replay = ByteBuffer.wrap(new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10});
+        AtomicInteger consumed = new AtomicInteger();
+
+        when(engine.getSession()).thenReturn(session);
+        when(engine.getHandshakeStatus()).thenReturn(SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING);
+        when(session.getPacketBufferSize()).thenReturn(4);
+        when(session.getApplicationBufferSize()).thenReturn(8);
+        when(engine.unwrap(any(ByteBuffer.class), any(ByteBuffer.class))).thenAnswer(invocation -> {
+            ByteBuffer src = invocation.getArgument(0);
+            ByteBuffer dst = invocation.getArgument(1);
+            int available = src.remaining();
+            assertTrue(available <= 4, "Replay should not expand the retained peer network buffer");
+
+            src.position(src.limit());
+            int totalConsumed = consumed.addAndGet(available);
+            if (totalConsumed < 10) {
+                return new SSLEngineResult(SSLEngineResult.Status.BUFFER_UNDERFLOW,
+                                           SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING,
+                                           available,
+                                           0);
+            }
+
+            dst.put((byte) 'R');
+            return new SSLEngineResult(SSLEngineResult.Status.OK,
+                                       SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING,
+                                       available,
+                                       1);
+        });
+
+        TlsNioSocket socket = TlsNioSocket.server(channel, engine, "listener", "server", replay);
+
+        assertArrayEquals(new byte[] {'R'}, socket.get());
+        assertEquals(10, consumed.get());
     }
 
     @Test

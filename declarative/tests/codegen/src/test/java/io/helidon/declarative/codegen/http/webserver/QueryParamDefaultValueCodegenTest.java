@@ -202,7 +202,8 @@ class QueryParamDefaultValueCodegenTest {
 
         String generated = generatedContent.toString();
         assertThat(generated, containsString("LazyValue<List<Integer>> defaultValue"));
-        assertThat(generated, containsString("Optional.<List<Integer>>empty()).orElseGet(defaultValue::get)"));
+        assertThat(generated, containsString("HttpSupport.paramOptionalList(req.query(), \"ids\")"));
+        assertThat(generated, containsString(").orElseGet(defaultValue::get)"));
         assertThat(generated, not(containsString("Optional.<List<Integer>>empty().orElseGet(defaultValue::get)")));
     }
 }

@@ -15,16 +15,22 @@
  */
 package io.helidon.webclient.jsonrpc;
 
+import java.lang.reflect.Proxy;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
 import io.helidon.json.JsonException;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonString;
+import io.helidon.webclient.api.SniConfig;
+import io.helidon.webclient.api.SniMode;
 import io.helidon.webclient.api.WebClient;
+import io.helidon.webclient.http1.Http1Client;
+import io.helidon.webclient.http1.Http1ClientRequest;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
@@ -34,6 +40,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ServerTest
@@ -105,6 +112,21 @@ class JsonRpcClientTest {
     }
 
     @Test
+    void testRequestLevelSniDelegatesToHttp1Request() {
+        AtomicReference<SniConfig> configuredSni = new AtomicReference<>();
+        Http1ClientRequest http1Request = http1Request(configuredSni);
+        Http1Client http1Client = http1Client(http1Request);
+        JsonRpcClientRequest request = new JsonRpcClientRequestImpl(http1Client, "start");
+        SniConfig sni = SniConfig.builder()
+                .mode(SniMode.EXPLICIT)
+                .host("service.example")
+                .build();
+
+        assertThat(request.sni(sni), sameInstance(request));
+        assertThat(configuredSni.get(), sameInstance(sni));
+    }
+
+    @Test
     void testSubmitWithHelidonJsonMedia() {
         JsonRpcClient jsonRpcClient = JsonRpcClient.builder()
                 .baseUri(serverUri)
@@ -134,5 +156,41 @@ class JsonRpcClientTest {
             assertThat(res.status(), is(Status.OK_200));
             assertThrows(JsonException.class, res::error);
         }
+    }
+
+    private static Http1Client http1Client(Http1ClientRequest request) {
+        return (Http1Client) Proxy.newProxyInstance(JsonRpcClientTest.class.getClassLoader(),
+                                                    new Class<?>[] {Http1Client.class},
+                                                    (proxy, method, args) -> {
+                                                        if (method.getName().equals("post")) {
+                                                            return request;
+                                                        }
+                                                        return defaultValue(method.getReturnType());
+                                                    });
+    }
+
+    private static Http1ClientRequest http1Request(AtomicReference<SniConfig> configuredSni) {
+        return (Http1ClientRequest) Proxy.newProxyInstance(JsonRpcClientTest.class.getClassLoader(),
+                                                           new Class<?>[] {Http1ClientRequest.class},
+                                                           (proxy, method, args) -> {
+                                                               if (method.getName().equals("sni")) {
+                                                                   configuredSni.set((SniConfig) args[0]);
+                                                                   return proxy;
+                                                               }
+                                                               return defaultValue(method.getReturnType());
+                                                           });
+    }
+
+    private static Object defaultValue(Class<?> type) {
+        if (!type.isPrimitive()) {
+            return null;
+        }
+        if (type == boolean.class) {
+            return false;
+        }
+        if (type == void.class) {
+            return null;
+        }
+        return 0;
     }
 }

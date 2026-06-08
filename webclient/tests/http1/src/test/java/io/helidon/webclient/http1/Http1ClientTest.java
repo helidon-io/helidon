@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,6 @@ import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.HttpClientRequest;
 import io.helidon.webclient.api.HttpClientResponse;
-import io.helidon.webclient.api.Proxy;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRules;
@@ -255,8 +254,7 @@ class Http1ClientTest {
             connectionNow = http1Client
                     .connectionCache()
                     .connection(http1Client,
-                                injectedHttp1client.prototype().tls(),
-                                Proxy.noProxy(),
+                                request,
                                 request.resolvedUri(),
                                 request.headers(),
                                 true);
@@ -284,8 +282,7 @@ class Http1ClientTest {
             connectionNow = http1Client
                     .connectionCache()
                     .connection(http1Client,
-                                injectedHttp1client.prototype().tls(),
-                                Proxy.noProxy(),
+                                request,
                                 request.resolvedUri(),
                                 request.headers(),
                                 true);
@@ -318,8 +315,7 @@ class Http1ClientTest {
             connectionList.add(http1Client
                                        .connectionCache()
                                        .connection(http1Client,
-                                                   clientConfig.tls(),
-                                                   Proxy.noProxy(),
+                                                   request,
                                                    request.resolvedUri(),
                                                    request.headers(),
                                                    true));
@@ -345,8 +341,7 @@ class Http1ClientTest {
             connection = http1Client
                     .connectionCache()
                     .connection(http1Client,
-                                clientConfig.tls(),
-                                Proxy.noProxy(),
+                                request,
                                 request.resolvedUri(),
                                 request.headers(),
                                 true);
@@ -373,8 +368,7 @@ class Http1ClientTest {
         ClientConnection connectionNow = http1Client
                 .connectionCache()
                 .connection(http1Client,
-                            clientConfig.tls(),
-                            Proxy.noProxy(),
+                            request,
                             request.resolvedUri(),
                             request.headers(),
                             true);

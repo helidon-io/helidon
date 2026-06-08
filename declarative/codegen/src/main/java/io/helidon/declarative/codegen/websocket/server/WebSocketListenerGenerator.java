@@ -44,6 +44,7 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.declarative.codegen.DeclarativeTypes;
 import io.helidon.declarative.codegen.http.webserver.AbstractParametersProvider;
 import io.helidon.service.codegen.FieldHandler;
 import io.helidon.service.codegen.RegistryRoundContext;
@@ -99,6 +100,7 @@ class WebSocketListenerGenerator extends AbstractParametersProvider {
                                                                generatedListener,
                                                                "1",
                                                                ""))
+                .addAnnotation(DeclarativeTypes.SUPPRESS_API)
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .type(generatedListener)
                 .superType(WS_LISTENER_BASE);

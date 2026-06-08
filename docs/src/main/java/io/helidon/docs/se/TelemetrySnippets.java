@@ -17,7 +17,9 @@
 package io.helidon.docs.se;
 // tag::snippet_1_imports[]
 import java.util.Map;
-import io.helidon.telemetry.otelconfig.HelidonOpenTelemetry;
+
+import io.helidon.service.registry.Services;
+import io.helidon.tracing.Tracer;
 
 import io.opentelemetry.api.GlobalOpenTelemetry;
 import io.opentelemetry.api.OpenTelemetry;
@@ -29,7 +31,7 @@ import io.opentelemetry.sdk.autoconfigure.AutoConfiguredOpenTelemetrySdk;
 
 class TelemetrySnippets {
 
-    // Example if user code creates an OpenTelemetry explicitly and then wants to make it known throughout OTel and Helidon.
+    // Example if user code creates an OpenTelemetry explicitly and then wants to make it known throughout Helidon.
     void snippet_1() {
 
         // tag::snippet_1[]
@@ -40,9 +42,13 @@ class TelemetrySnippets {
         // App code to build any tags to be applied to every span.
         Map<String, String> tags = prepareTags();
 
-        HelidonOpenTelemetry.global(customOpenTelemetry,
-                                    "your-service-name",
-                                    tags);
+        GlobalOpenTelemetry.set(customOpenTelemetry);
+        Services.set(OpenTelemetry.class, customOpenTelemetry);
+        Services.set(Tracer.class,
+                     io.helidon.tracing.providers.opentelemetry.HelidonOpenTelemetry.create(
+                             customOpenTelemetry,
+                             customOpenTelemetry.getTracer("your-service-name"),
+                             tags));
 
         // end::snippet_1[]
     }
@@ -62,7 +68,7 @@ class TelemetrySnippets {
 
     void snippet_3() {
 
-        // Example of user code using OpenTelemetry autoconfig and setting the global OpenTelemetry instance.
+        // Example of user code using OpenTelemetry autoconfig.
 
         // tag::snippet_3[]
         OpenTelemetry otel = AutoConfiguredOpenTelemetrySdk.builder()
@@ -112,7 +118,9 @@ class TelemetrySnippets {
 
 
     private OpenTelemetry prepareOpenTelemetry() {
-        return HelidonOpenTelemetry.builder().build().openTelemetry();
+        return io.helidon.telemetry.otelconfig.HelidonOpenTelemetry.builder()
+                .build()
+                .openTelemetry();
     }
 
     private Map<String, String> prepareTags() {

@@ -24,6 +24,7 @@ import java.security.Principal;
 import java.security.cert.Certificate;
 import java.util.Arrays;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -34,6 +35,7 @@ import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 
+import io.helidon.common.Api;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 
@@ -51,6 +53,7 @@ public final class TlsNioSocket extends NioSocket {
     private ByteBuffer peerAppData;
     private ByteBuffer myNetData;
     private ByteBuffer peerNetData;
+    private ByteBuffer replayNetData;
     private boolean closed;
 
     private volatile PeerInfo localPeer;
@@ -60,10 +63,15 @@ public final class TlsNioSocket extends NioSocket {
     private volatile boolean idle;
     private boolean peerAppDataReady;
 
-    private TlsNioSocket(SocketChannel delegate, SSLEngine sslEngine, String channelId, String serverChannelId) {
+    private TlsNioSocket(SocketChannel delegate,
+                         SSLEngine sslEngine,
+                         String channelId,
+                         String serverChannelId,
+                         ByteBuffer replayNetData) {
         super(delegate, channelId, serverChannelId);
 
         this.engine = sslEngine;
+        this.replayNetData = replayNetData;
 
         SSLSession dummySession = engine.getSession();
         this.peerNetData = ByteBuffer.allocate(dummySession.getPacketBufferSize());
@@ -78,8 +86,8 @@ public final class TlsNioSocket extends NioSocket {
      *
      * @param delegate        underlying socket
      * @param sslEngine       SSL engine
-     * @param channelId       listener channel id
-     * @param serverChannelId connection channel id
+     * @param channelId       connection channel id
+     * @param serverChannelId listener channel id
      * @return a new TLS socket
      */
     public static TlsNioSocket server(SocketChannel delegate,
@@ -87,7 +95,32 @@ public final class TlsNioSocket extends NioSocket {
                                       String channelId,
                                       String serverChannelId) {
         sslEngine.setUseClientMode(false);
-        return new TlsNioSocket(delegate, sslEngine, channelId, serverChannelId);
+        return new TlsNioSocket(delegate, sslEngine, channelId, serverChannelId, null);
+    }
+
+    /**
+     * Create a server TLS NIO socket with already-read TLS network data to replay into the first unwrap.
+     * This is intended for server implementations that need to inspect TLS records before creating the engine.
+     *
+     * @param delegate        underlying socket
+     * @param sslEngine       SSL engine
+     * @param channelId       connection channel id
+     * @param serverChannelId listener channel id
+     * @param replayNetData   already-read TLS network data
+     * @return a new TLS socket
+     */
+    @Api.Internal
+    public static TlsNioSocket server(SocketChannel delegate,
+                                      SSLEngine sslEngine,
+                                      String channelId,
+                                      String serverChannelId,
+                                      ByteBuffer replayNetData) {
+        sslEngine.setUseClientMode(false);
+        return new TlsNioSocket(delegate,
+                                sslEngine,
+                                channelId,
+                                serverChannelId,
+                                Objects.requireNonNull(replayNetData));
     }
 
     /**
@@ -102,7 +135,7 @@ public final class TlsNioSocket extends NioSocket {
                                       SSLEngine sslEngine,
                                       String channelId) {
         sslEngine.setUseClientMode(true);
-        return new TlsNioSocket(delegate, sslEngine, channelId, "client");
+        return new TlsNioSocket(delegate, sslEngine, channelId, "client", null);
     }
 
     @Override
@@ -366,6 +399,9 @@ public final class TlsNioSocket extends NioSocket {
             peerNetData.compact();
             peerNetData.flip();
             needData = false;
+        } else if (replayNetData != null) {
+            prepareReplayNetData(false);
+            needData = false;
         } else {
             peerNetData.clear();
             needData = true;
@@ -385,13 +421,17 @@ public final class TlsNioSocket extends NioSocket {
             result = engine.unwrap(peerNetData, peerAppData);
             status = result.getStatus();
             if (status == SSLEngineResult.Status.BUFFER_UNDERFLOW) {
-                if (peerNetData.limit() == peerNetData.capacity()) {
+                if (replayNetData != null) {
+                    prepareReplayNetData(true);
+                    needData = false;
+                } else if (peerNetData.limit() == peerNetData.capacity()) {
                     peerNetData = reallocate(peerNetData, engine.getSession().getPacketBufferSize(), false);
+                    needData = true;
                 } else {
                     peerNetData.position(peerNetData.limit());
                     peerNetData.limit(peerNetData.capacity());
+                    needData = true;
                 }
-                needData = true;
             } else if (status == SSLEngineResult.Status.BUFFER_OVERFLOW) {
                 peerAppData = reallocate(peerAppData, engine.getSession().getApplicationBufferSize(), true);
                 needData = false;
@@ -404,6 +444,28 @@ public final class TlsNioSocket extends NioSocket {
 
         unwrapRemaining = peerNetData.remaining();
         return result;
+    }
+
+    private void prepareReplayNetData(boolean append) {
+        ByteBuffer replay = replayNetData;
+        if (append) {
+            if (peerNetData.remaining() == peerNetData.capacity()) {
+                peerNetData = reallocate(peerNetData, engine.getSession().getPacketBufferSize(), false);
+            } else {
+                peerNetData.compact();
+            }
+        } else {
+            peerNetData.clear();
+        }
+        int chunk = Math.min(peerNetData.remaining(), replay.remaining());
+        int replayLimit = replay.limit();
+        replay.limit(replay.position() + chunk);
+        peerNetData.put(replay);
+        replay.limit(replayLimit);
+        peerNetData.flip();
+        if (!replay.hasRemaining()) {
+            replayNetData = null;
+        }
     }
 
     private byte[] appBytes() {

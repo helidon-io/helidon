@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,11 @@ import io.helidon.common.task.HelidonTaskExecutor;
  * <a href="https://github.com/enso-org/enso/pull/10783#discussion_r1768000821">available in PR-10783</a>.
  */
 final class ExecutorsFactory {
+    private static final System.Logger LOGGER = System.getLogger(ExecutorsFactory.class.getName());
+    private static final Thread.UncaughtExceptionHandler UNCAUGHT_EXCEPTION_HANDLER =
+            (thread, throwable) -> LOGGER.log(System.Logger.Level.ERROR,
+                                              "Uncaught exception in WebServer executor thread " + thread.getName(),
+                                              throwable);
 
     private ExecutorsFactory() {
     }
@@ -42,10 +47,10 @@ final class ExecutorsFactory {
     /**
      * Used by {@link LoomServer} to allocate its executor service.
      *
-     * @return {@link Executors#newVirtualThreadPerTaskExecutor()}
+     * @return {@link Executors#newThreadPerTaskExecutor(java.util.concurrent.ThreadFactory)}
      */
     static ExecutorService newLoomServerVirtualThreadPerTaskExecutor() {
-        return Executors.newVirtualThreadPerTaskExecutor();
+        return Executors.newThreadPerTaskExecutor(virtualThreadFactory());
     }
 
     /**
@@ -54,7 +59,7 @@ final class ExecutorsFactory {
      * @return {@link ThreadPerTaskExecutor#create(java.util.concurrent.ThreadFactory)}
      */
     static HelidonTaskExecutor newServerListenerReaderExecutor() {
-        return ThreadPerTaskExecutor.create(virtualThreadFactory());
+        return ThreadPerTaskExecutor.create(Thread.ofVirtual().factory());
     }
 
     /**
@@ -67,6 +72,8 @@ final class ExecutorsFactory {
     }
 
     private static ThreadFactory virtualThreadFactory() {
-        return Thread.ofVirtual().factory();
+        return Thread.ofVirtual()
+                .uncaughtExceptionHandler(UNCAUGHT_EXCEPTION_HANDLER)
+                .factory();
     }
 }

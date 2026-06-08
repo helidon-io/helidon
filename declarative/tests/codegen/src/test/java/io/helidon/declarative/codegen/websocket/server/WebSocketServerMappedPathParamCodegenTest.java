@@ -123,10 +123,12 @@ class WebSocketServerMappedPathParamCodegenTest {
         assertThat(diagnostics, Files.exists(generatedListener), is(true));
 
         String listenerContent = Files.readString(generatedListener, StandardCharsets.UTF_8);
+        assertThat(listenerContent, containsString("@SuppressWarnings(\"helidon:api\")"));
         assertThat(listenerContent, containsString("var params = matched.path().pathParameters();"));
         assertThat(listenerContent,
-                   containsString("mappers.map(it, GenericType.STRING, GTYPE, me -> new BadRequestException(\"Path"
-                                          + " Param id has invalid value.\", me), \"http\", \"path\")"));
+                   containsString("mappers.map(HttpSupport.paramValue(params, \"id\", \"Path Param\"), GenericType.STRING,"
+                                          + " GTYPE, me -> new BadRequestException(\"Path Param id has invalid value.\", me),"
+                                          + " \"http\", \"path\")"));
         assertThat(listenerContent, not(containsString("\"http/path\"")));
         assertThat(diagnostics, result.success(), is(true));
     }

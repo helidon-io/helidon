@@ -131,6 +131,8 @@ class FlowControlTest {
         var client = Http2Client.builder()
                 // make sure we are not impacted by a connection that is closed by another test
                 .shareConnectionCache(false)
+                // Avoid waiting for response headers before sending DATA while the server is waiting for request DATA.
+                .sendExpectContinue(false)
                 .protocolConfig(http2 -> http2.priorKnowledge(true)
                         .initialWindowSize(WindowSize.DEFAULT_WIN_SIZE)
                 )

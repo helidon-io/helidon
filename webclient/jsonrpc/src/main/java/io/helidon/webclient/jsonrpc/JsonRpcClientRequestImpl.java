@@ -44,6 +44,7 @@ import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.Proxy;
+import io.helidon.webclient.api.SniConfig;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientRequest;
 
@@ -164,6 +165,12 @@ class JsonRpcClientRequestImpl implements JsonRpcClientRequest {
     @Override
     public JsonRpcClientRequest tls(Tls tls) {
         delegate.tls(tls);
+        return this;
+    }
+
+    @Override
+    public JsonRpcClientRequest sni(SniConfig sni) {
+        delegate.sni(sni);
         return this;
     }
 

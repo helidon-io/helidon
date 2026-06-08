@@ -1,5 +1,6 @@
 package {{package}};
 
+import io.helidon.service.registry.Services;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracer;
 import io.helidon.webserver.http.Handler;
@@ -27,7 +28,7 @@ public class TracedService implements HttpService {
         @Override
         public void handle(ServerRequest req, ServerResponse res) {
             Tracer tracer = req.context().get(Tracer.class)
-                    .orElseGet(Tracer::global);
+                    .orElseGet(() -> Services.get(Tracer.class));
             Span span = tracer.spanBuilder("custom-span")
                     .start();
             try {

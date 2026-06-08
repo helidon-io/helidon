@@ -38,9 +38,8 @@ include::{rootdir}/includes/prerequisites.adoc[tag=prerequisites]
 
 Distributed tracing is a critical feature of microservice-based applications, since it traces workflow both
 within a service and across multiple services.  This provides insight to sequence and timing data for specific blocks of work,
-which helps you identify performance and operational issues. Helidon includes support for distributed tracing through its own API, backed by either
-through the https://opentelemetry.io/docs/instrumentation/js/api/tracing/[OpenTelemetry API], or by
-https://opentracing.io[OpenTracing API].
+which helps you identify performance and operational issues. Helidon includes support for distributed tracing through its own API, backed by
+the https://opentelemetry.io/docs/languages/java/api/[OpenTelemetry API].
 
 === Tracing Concepts
 
@@ -137,7 +136,7 @@ default host and port, `localhost:4317`.
 <2> Observability features for tracing.
 <3> OpenTelemetry tracing provider.
 
-Helidon offers several tracing providers: OpenTelemetry, Zipkin, and Jaeger (deprecated).
+Helidon offers tracing through OpenTelemetry.
 All spans sent by Helidon to the backend need to be associated with a service, assigned by the `tracing.service` setting in the example below.
 
 [source,bash]
@@ -206,7 +205,7 @@ The following code replaces the generated `getDefaultMessageHandler` method to a
 ----
 include::{sourcedir}/se/guides/TracingSnippets.java[tag=snippet_1, indent=0]
 ----
-<1> Create a new `Span` using the global tracer.
+<1> Create a new `Span` using the application tracer from the service registry.
 <2> Set the parent of the new span to the span from the `Request` if available.
 <3> Start the span.
 <4> Make the new span the current span, returning a `Scope` which is auto-closed.
@@ -253,7 +252,7 @@ Note the row for `mychildSpan`--the custom span created by the added code.
 Helidon automatically traces across services if the services propagate span information.
 This means a single trace can include spans from multiple services and hosts. Helidon uses a `SpanContext` to
 propagate tracing information across process boundaries.  When you make client API calls, Helidon will
-internally call OpenTelemetry APIs or OpenTracing APIs to propagate the `SpanContext`. There is nothing you need to do in your application to make this work.
+internally call OpenTelemetry APIs to propagate the `SpanContext`. There is nothing you need to do in your application to make this work.
 
 To demonstrate distributed tracing, create a second project where the server listens to on port 8081.
 Create a new directory to hold this new project, then do the following steps, similar to
@@ -461,7 +460,8 @@ tracing: # <1>
   service: helidon-se-1
   host: jaeger
 ----
-<1> Helidon service `helidon-se-1` will connect to the Jaeger server at host name `jaeger`.
+<1> Helidon service `helidon-se-1` will connect to the Jaeger server at host name `jaeger` using the default
+OTLP gRPC port, `4317`.
 
 [source,bash]
 .Stop the application and build the docker image for your application:
@@ -480,7 +480,13 @@ metadata:
   name: jaeger
 spec:
   ports:
-    - port: 16686
+    - name: otlp-grpc
+      port: 4317
+      targetPort: 4317
+      protocol: TCP
+    - name: ui
+      port: 16686
+      targetPort: 16686
       protocol: TCP
   selector:
     app: jaeger
@@ -496,7 +502,11 @@ spec:
     - name: jaeger
       image: jaegertracing/all-in-one
       imagePullPolicy: IfNotPresent
+      env:
+        - name: COLLECTOR_OTLP_ENABLED
+          value: "true"
       ports:
+        - containerPort: 4317
         - containerPort: 16686
 ----
 
@@ -506,8 +516,11 @@ spec:
 kubectl apply -f ./jaeger.yaml
 ----
 
+The ClusterIP service `jaeger` exposes the OTLP gRPC port `4317` for Helidon to export spans to Jaeger.
+To access the Jaeger UI from outside Kubernetes, expose the UI separately.
+
 [source,bash]
-.Create a Jaeger external server to view the UI and expose it on port 9142:
+.Create an external Jaeger UI service on port 16687:
 ----
 kubectl expose pod  jaeger --name=jaeger-external --port=16687 --target-port=16686 --type=LoadBalancer
 ----
@@ -596,7 +609,7 @@ curl http://localhost:31143/greet
 }
 ----
 
-Access the Jaeger UI at http://localhost:9412/jaeger and click on the refresh icon to see the trace that was just created.
+Access the Jaeger UI at http://localhost:16687/jaeger and click on the refresh icon to see the trace that was just created.
 
 
 === Cleanup

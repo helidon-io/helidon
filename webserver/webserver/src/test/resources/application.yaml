@@ -61,5 +61,22 @@ server3:
       shutdown-grace-period: PT2S
       enable-proxy-protocol: true
 
+server4:
+  port: 8079
+  host: 127.0.0.1
+  tls:
+    enabled: true
+  sni:
+    missing: REJECT
+    unmatched: REJECT
+    authority-mismatch: ALLOW
+    fallback-authority: ALLOW
+  virtual-hosts:
+    - host: "Api.Example.COM."
+      tls:
+        enabled: true
+        cipher-suite:
+          - "TLS_AES_128_GCM_SHA256"
+
 inject:
   permits-dynamic: true

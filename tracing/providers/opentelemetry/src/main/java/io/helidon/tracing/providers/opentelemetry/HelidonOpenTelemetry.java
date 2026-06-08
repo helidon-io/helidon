@@ -42,6 +42,7 @@ import static io.opentelemetry.context.Context.current;
  * Open Telemetry factory methods to create wrappers for Open Telemetry types.
  */
 public final class HelidonOpenTelemetry {
+    static final String DEFAULT_SERVICE_NAME = "helidon-service";
 
     /**
      * OpenTelemetry property for indicating if the Java agent is present.
@@ -63,6 +64,7 @@ public final class HelidonOpenTelemetry {
 
     private HelidonOpenTelemetry() {
     }
+
     /**
      * Wrap an open telemetry tracer.
      *
@@ -73,9 +75,10 @@ public final class HelidonOpenTelemetry {
      */
     public static io.helidon.tracing.Tracer create(OpenTelemetry telemetry, Tracer tracer, Map<String, String> tags) {
         return OpenTelemetryTracerBuilder.create()
-                .serviceName("helidon-service")
+                .serviceName(DEFAULT_SERVICE_NAME)
                 .openTelemetry(telemetry)
                 .delegate(tracer)
+                .registerGlobal(false)
                 .tracerTags(tags)
                 .build();
     }
@@ -152,8 +155,9 @@ public final class HelidonOpenTelemetry {
     public static <T extends Tracer & Wrapper> T callbackEnabledFrom(Tracer otelTracer) {
         return callbackEnabledFrom(OpenTelemetryTracerBuilder.create()
                                            .serviceName("callback-enabled-otel-tracer")
-                                           .openTelemetry(GlobalOpenTelemetry.get())
+                                           .openTelemetry(GlobalOpenTelemetry.getOrNoop())
                                            .delegate(otelTracer)
+                                           .registerGlobal(false)
                                            .build());
     }
 
@@ -231,7 +235,7 @@ public final class HelidonOpenTelemetry {
                 }
             }
 
-            if (checkContext() || checkSystemProperties()){
+            if (checkContext() || checkSystemProperties()) {
                 if (LOGGER.isLoggable(System.Logger.Level.INFO)) {
                     LOGGER.log(System.Logger.Level.INFO, "OpenTelemetry Agent detected");
                 }
@@ -303,5 +307,12 @@ public final class HelidonOpenTelemetry {
         if (throwableToLog != null) {
             logger.log(System.Logger.Level.WARNING, "Error(s) from listener(s)", throwableToLog);
         }
+    }
+
+    static boolean autoConfigureGlobalOpenTelemetry(String propertyValue, String envValue) {
+        if (propertyValue != null) {
+            return Boolean.parseBoolean(propertyValue);
+        }
+        return Boolean.parseBoolean(envValue);
     }
 }

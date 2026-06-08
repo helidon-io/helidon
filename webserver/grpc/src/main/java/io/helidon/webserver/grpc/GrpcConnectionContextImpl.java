@@ -21,6 +21,7 @@ import java.util.Optional;
 import io.helidon.common.socket.PeerInfo;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ProxyProtocolData;
+import io.helidon.webserver.SniContext;
 
 
 /**
@@ -79,5 +80,21 @@ final class GrpcConnectionContextImpl implements GrpcConnectionContext {
     @Override
     public Optional<ProxyProtocolData> proxyProtocolData() {
         return connectionContext.proxyProtocolData();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Optional<String> sniRequestedHost() {
+        return connectionContext.sniContext().flatMap(SniContext::presentedHost);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Optional<String> sniMatchedHost() {
+        return connectionContext.sniContext().flatMap(SniContext::matchedHost);
     }
 }

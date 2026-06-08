@@ -55,6 +55,10 @@ public final class HttpTypes {
      */
     public static final TypeName HTTP_HEADER_VALUES = TypeName.create("io.helidon.http.HeaderValues");
     /**
+     * HTTP support methods used from generated code.
+     */
+    public static final TypeName HTTP_SUPPORT = TypeName.create("io.helidon.http.HttpSupport");
+    /**
      * Http.Path annotation.
      */
     public static final TypeName HTTP_PATH_ANNOTATION = TypeName.create("io.helidon.http.Http.Path");
@@ -75,9 +79,17 @@ public final class HttpTypes {
      */
     public static final TypeName HTTP_PATH_PARAM_ANNOTATION = TypeName.create("io.helidon.http.Http.PathParam");
     /**
+     * Http.CookieParam annotation.
+     */
+    public static final TypeName HTTP_COOKIE_PARAM_ANNOTATION = TypeName.create("io.helidon.http.Http.CookieParam");
+    /**
      * Http.QueryParam annotation.
      */
     public static final TypeName HTTP_QUERY_PARAM_ANNOTATION = TypeName.create("io.helidon.http.Http.QueryParam");
+    /**
+     * Http.FormParam annotation.
+     */
+    public static final TypeName HTTP_FORM_PARAM_ANNOTATION = TypeName.create("io.helidon.http.Http.FormParam");
     /**
      * Http.HeaderParam annotation.
      */
@@ -86,6 +98,10 @@ public final class HttpTypes {
      * Http.Entity annotation.
      */
     public static final TypeName HTTP_ENTITY_ANNOTATION = TypeName.create("io.helidon.http.Http.Entity");
+    /**
+     * Http.RequestParams annotation.
+     */
+    public static final TypeName HTTP_REQUEST_PARAMS_ANNOTATION = TypeName.create("io.helidon.http.Http.RequestParams");
     /**
      * HTTP Header function.
      */

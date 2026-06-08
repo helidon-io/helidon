@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -122,6 +122,29 @@ public interface ServerRequest extends HttpRequest {
      * @see io.helidon.webserver.ListenerConfig#enableProxyProtocol()
      */
     Optional<ProxyProtocolData> proxyProtocolData();
+
+    /**
+     * Normalized DNS host name requested by the client using TLS Server Name Indication (SNI).
+     * <p>
+     * This value comes from the client TLS handshake, so it is suitable for diagnostics and application choices that
+     * are expected to use client-requested host names, but it should not be treated as a trusted identity by itself.
+     *
+     * @return normalized SNI requested host, if available
+     */
+    default Optional<String> sniRequestedHost() {
+        return Optional.empty();
+    }
+
+    /**
+     * Configured virtual-host host that matched the TLS Server Name Indication (SNI) requested host.
+     * <p>
+     * For wildcard virtual hosts, this method returns the configured wildcard host such as {@code *.example.com}.
+     *
+     * @return configured SNI matched host, if a virtual host matched
+     */
+    default Optional<String> sniMatchedHost() {
+        return Optional.empty();
+    }
 
     /**
      * The pattern used to match this request. Such as "/foo/{bar}".

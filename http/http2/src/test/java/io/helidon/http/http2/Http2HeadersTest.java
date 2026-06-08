@@ -16,6 +16,8 @@
 
 package io.helidon.http.http2;
 
+import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.HexFormat;
 
 import io.helidon.common.buffers.BufferData;
@@ -33,6 +35,8 @@ import org.mockito.Mockito;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class Http2HeadersTest {
     private static final HeaderName CUSTOM_HEADER_NAME = HeaderNames.create("custom-key");
@@ -260,6 +264,22 @@ class Http2HeadersTest {
         assertThat(requestHeaders.contains(HeaderNames.CONTENT_LOCATION), is(false));
     }
 
+    @Test
+    void validatesRegularHostMatchesAuthority() {
+        Http2Headers http2Headers = parsedHeadersWithAuthorityAndHost("api.example.com", "Api.Example.COM");
+
+        assertDoesNotThrow(http2Headers::validateRequest);
+    }
+
+    @Test
+    void rejectsRegularHostDifferentFromAuthority() {
+        Http2Headers http2Headers = parsedHeadersWithAuthorityAndHost("api.example.com", "admin.example.com");
+
+        Http2Exception exception = assertThrows(Http2Exception.class, http2Headers::validateRequest);
+
+        assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
+    }
+
     private Http2Headers headers(String hexEncoded, DynamicTable dynamicTable) {
         BufferData data = data(hexEncoded);
         Http2FrameHeader header = Http2FrameHeader.create(data.available(),
@@ -273,5 +293,48 @@ class Http2HeadersTest {
                                    dynamicTable,
                                    Http2HuffmanDecoder.create(),
                                    new Http2FrameData(header, data));
+    }
+
+    private Http2Headers parsedHeadersWithAuthorityAndHost(String authority, String host) {
+        ByteArrayOutputStream headerBlock = new ByteArrayOutputStream();
+        headerBlock.write(0x82); // :method: GET
+        headerBlock.write(0x87); // :scheme: https
+        headerBlock.write(0x84); // :path: /
+        writeLiteralWithoutIndex(headerBlock, 1, authority); // :authority
+        writeLiteralWithoutIndex(headerBlock, 38, host); // host
+
+        BufferData data = BufferData.create(headerBlock.toByteArray());
+        Http2FrameHeader header = Http2FrameHeader.create(data.available(),
+                                                          Http2FrameTypes.HEADERS,
+                                                          Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                                          1);
+        Http2Stream stream = Mockito.mock(Http2Stream.class);
+        return Http2Headers.create(stream,
+                                   DynamicTable.create(Http2Settings.create()),
+                                   Http2HuffmanDecoder.create(),
+                                   new Http2FrameData(header, data));
+    }
+
+    private static void writeLiteralWithoutIndex(ByteArrayOutputStream headerBlock, int nameIndex, String value) {
+        writeHpackInt(headerBlock, 0, 4, nameIndex);
+        byte[] bytes = value.getBytes(StandardCharsets.US_ASCII);
+        writeHpackInt(headerBlock, 0, 7, bytes.length);
+        headerBlock.writeBytes(bytes);
+    }
+
+    private static void writeHpackInt(ByteArrayOutputStream headerBlock, int firstByteBits, int prefixBits, int value) {
+        int maxPrefixValue = (1 << prefixBits) - 1;
+        if (value < maxPrefixValue) {
+            headerBlock.write(firstByteBits | value);
+            return;
+        }
+
+        headerBlock.write(firstByteBits | maxPrefixValue);
+        value -= maxPrefixValue;
+        while (value >= 128) {
+            headerBlock.write((value & 0x7F) | 0x80);
+            value >>>= 7;
+        }
+        headerBlock.write(value);
     }
 }

@@ -62,12 +62,8 @@
             <artifactId>helidon-logging-common</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.helidon.tracing</groupId>
-            <artifactId>helidon-tracing</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.helidon.tracing.providers</groupId>
-            <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
+            <groupId>io.helidon.telemetry</groupId>
+            <artifactId>helidon-telemetry-opentelemetry</artifactId>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry</groupId>
@@ -150,6 +146,16 @@
         <dependency>
             <groupId>io.helidon.logging</groupId>
             <artifactId>helidon-logging-jul</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.tracing</groupId>
+            <artifactId>helidon-tracing</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.tracing.providers</groupId>
+            <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -249,7 +255,7 @@
                         <id>default-test</id>
                         <configuration>
                             <excludes>
-                                <exclude>**/TestGlobalTracerAssignment.java</exclude>
+                                <exclude>**/TestOpenTelemetryOwnership.java</exclude>
                             </excludes>
                             <systemPropertyVariables>
                                 <otel.java.global-autoconfigure.enabled>true</otel.java.global-autoconfigure.enabled>
@@ -257,13 +263,13 @@
                         </configuration>
                     </execution>
                     <execution>
-                        <id>test-global-tracer-assignment</id>
+                        <id>test-opentelemetry-ownership</id>
                         <goals>
                             <goal>test</goal>
                         </goals>
                         <configuration>
                             <includes>
-                                <include>**/TestGlobalTracerAssignment.java</include>
+                                <include>**/TestOpenTelemetryOwnership.java</include>
                             </includes>
                             <systemPropertyVariables>
                                 <otel.java.global-autoconfigure.enabled>true</otel.java.global-autoconfigure.enabled>
@@ -277,7 +283,7 @@
                         </goals>
                         <configuration>
                             <excludes>
-                                <exclude>**/TestGlobalTracerAssignment.java</exclude>
+                                <exclude>**/TestOpenTelemetryOwnership.java</exclude>
                             </excludes>
                         </configuration>
                     </execution>

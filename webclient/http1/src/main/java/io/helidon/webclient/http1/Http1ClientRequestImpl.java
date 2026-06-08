@@ -39,7 +39,8 @@ import io.helidon.webclient.api.Proxy.ProxyType;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 
-class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1ClientResponse> implements Http1ClientRequest {
+class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1ClientResponse>
+        implements Http1ClientRequest {
     private static final System.Logger LOGGER = System.getLogger(Http1ClientRequestImpl.class.getName());
     private final Http1ClientImpl http1Client;
     private final FullClientRequest<?> delegate;
@@ -96,6 +97,7 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
         followRedirects(request.followRedirects());
         maxRedirects(request.maxRedirects());
         tls(request.tls());
+        request.sni().ifPresent(this::sni);
         if (sameOrigin(request.resolvedUri(), clientUri)) {
             request.address().ifPresent(this::address);
         }

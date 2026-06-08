@@ -52,10 +52,23 @@ interface OpenTelemetryConfigBlueprint extends Prototype.Factory<HelidonOpenTele
     boolean enabled();
 
     /**
-     * Whether the {@link io.opentelemetry.api.OpenTelemetry} instance created from this configuration should be made the
-     * global one.
+     * Whether this configuration should contribute the application-wide {@link io.opentelemetry.api.OpenTelemetry} instance
+     * through Helidon's service registry ownership path.
      *
-     * @return true if the configured instance should be made global; false otherwise
+     * @return true if the configured instance should be application-wide when resolved by the service registry; false otherwise
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(true)
+    boolean registered();
+
+    /**
+     * Whether the {@link io.opentelemetry.api.OpenTelemetry} instance created from this configuration should be published
+     * as the OpenTelemetry global instance before any other code initializes
+     * {@link io.opentelemetry.api.GlobalOpenTelemetry}, because OpenTelemetry globals are JVM-wide and can be assigned only
+     * once; if an OpenTelemetry global already exists, Helidon leaves it unchanged and uses the existing global as the
+     * application OpenTelemetry instance.
+     *
+     * @return true if the configured instance should be published to OpenTelemetry global; false otherwise
      */
     @Option.Configured
     @Option.DefaultBoolean(true)
@@ -100,8 +113,8 @@ interface OpenTelemetryConfigBlueprint extends Prototype.Factory<HelidonOpenTele
     /**
      * The {@link io.opentelemetry.api.OpenTelemetry} instance to use for telemetry.
      * <p>
-     * Typically, this value will be the OpenTelemetry SDK instance created using this configuration, but if some other
-     * code (such as the OpenTelemetry agent) has already set the OTel global instance, this value will be that global instance.
+     * Typically, this value will be the OpenTelemetry SDK instance created using this configuration, unless application
+     * code has set the instance explicitly on the builder.
      *
      * @return the OpenTelemetry instance
      */

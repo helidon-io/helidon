@@ -16,7 +16,6 @@
 
 package io.helidon.declarative.codegen.http.webserver;
 
-import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -29,6 +28,7 @@ import io.helidon.service.codegen.FieldHandler;
 
 import static io.helidon.declarative.codegen.DeclarativeTypes.COMMON_MAPPERS;
 import static io.helidon.declarative.codegen.http.HttpTypes.BAD_REQUEST_EXCEPTION;
+import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_SUPPORT;
 
 /**
  * A provider of parameters when code generating call of methods with annotated parameter, such
@@ -59,40 +59,15 @@ public abstract class AbstractParametersProvider {
         if (optional) {
             TypeName realType = parameterType.isOptional() ? parameterType.typeArguments().getFirst() : parameterType;
             if (realType.isList()) {
-                contentBuilder
-                        .addContent("(")
-                        .addContent(source.accessor())
-                        .addContent(".contains(\"")
-                        .addContent(paramName)
-                        .addContentLine("\")")
-                        .increaseContentPadding()
-                        .increaseContentPadding()
-                        .addContent("? ")
-                        .addContent(Optional.class)
-                        .addContent(".of(");
-                addListValueExpression(ctx,
-                                       contentBuilder,
-                                       realType.typeArguments().getFirst(),
-                                       paramName,
-                                       source.accessor(),
-                                       source.filterEmptyStringValues(),
-                                       source.mapperQualifier());
-                contentBuilder.addContent(") : ")
-                        .addContent(Optional.class)
-                        .addContent(".<")
-                        .addContent(realType)
-                        .addContent(">empty())");
-                contentBuilder
-                        .decreaseContentPadding()
-                        .decreaseContentPadding();
+                addOptionalListValueExpression(ctx,
+                                               contentBuilder,
+                                               realType.typeArguments().getFirst(),
+                                               paramName,
+                                               source);
                 return;
             }
             // optional
-            contentBuilder
-                    .addContent(source.accessor())
-                    .addContent(".first(\"")
-                    .addContent(paramName)
-                    .addContentLine("\")");
+            addOptionalValueExpression(contentBuilder, paramName, source);
             if (requiresMapper(realType)) {
                 contentBuilder.addContent(".map(it -> ");
                 mapStringValue(ctx,
@@ -102,50 +77,61 @@ public abstract class AbstractParametersProvider {
                                paramName,
                                source.mapperQualifier());
                 contentBuilder.addContent(")");
-            } else {
-                contentBuilder.addContent(".asOptional()");
             }
         } else if (parameterType.isList()) {
             TypeName realType = parameterType.typeArguments().getFirst();
             // list
-            addListValueExpression(ctx,
-                                   contentBuilder,
-                                   realType,
-                                   paramName,
-                                   source.accessor(),
-                                   source.filterEmptyStringValues(),
-                                   source.mapperQualifier());
+            addMandatoryListValueExpression(ctx,
+                                            contentBuilder,
+                                            realType,
+                                            paramName,
+                                            source);
         } else {
             // direct type
-            contentBuilder
-                    .addContent(source.accessor())
-                    .addContent(".first(\"")
-                    .addContent(paramName)
-                    .addContentLine("\")")
-                    .increaseContentPadding()
-                    .increaseContentPadding();
             if (requiresMapper(parameterType)) {
-                contentBuilder.addContent(".map(it -> ");
-                mapStringValue(ctx,
-                               contentBuilder,
-                               parameterType,
-                               "it",
-                               paramName,
-                               source.mapperQualifier());
+                ensureMapperField(ctx.fieldHandler());
+                contentBuilder.addContent("mappers.map(");
+                addValueExpression(contentBuilder, paramName, source);
+                contentBuilder.addContent(", ")
+                        .addContent(TypeNames.GENERIC_TYPE)
+                        .addContent(".STRING, ")
+                        .addContent(genericTypeConstant(ctx, parameterType.boxed()))
+                        .addContent(", me -> new ")
+                        .addContent(BAD_REQUEST_EXCEPTION)
+                        .addContent("(")
+                        .addContentLiteral(providerType() + " " + paramName + " has invalid value.")
+                        .addContent(", me)");
+                addMapperQualifiers(contentBuilder, source.mapperQualifier());
                 contentBuilder.addContent(")");
+            } else {
+                addValueExpression(contentBuilder, paramName, source);
             }
-            // add .orElseThrow() in case the parameter is missing
-            contentBuilder.addContentLine()
-                    .addContent(".orElseThrow(() -> new ")
-                    .addContent(BAD_REQUEST_EXCEPTION)
-                    .addContent("(\"")
-                    .addContent(providerType())
-                    .addContent(" ")
-                    .addContent(paramName)
-                    .addContentLine(" is not present in the request.\"));")
-                    .decreaseContentPadding()
-                    .decreaseContentPadding();
+            contentBuilder.addContentLine(";");
         }
+    }
+
+    private void addValueExpression(ContentBuilder<?> contentBuilder,
+                                    String paramName,
+                                    ParametersSource source) {
+        contentBuilder.addContent(HTTP_SUPPORT)
+                .addContent(".paramValue(")
+                .addContent(source.accessor())
+                .addContent(", ")
+                .addContentLiteral(paramName)
+                .addContent(", ")
+                .addContentLiteral(providerType())
+                .addContent(")");
+    }
+
+    private void addOptionalValueExpression(ContentBuilder<?> contentBuilder,
+                                            String paramName,
+                                            ParametersSource source) {
+        contentBuilder.addContent(HTTP_SUPPORT)
+                .addContent(".paramOptionalValue(")
+                .addContent(source.accessor())
+                .addContent(", ")
+                .addContentLiteral(paramName)
+                .addContent(")");
     }
 
     /**
@@ -248,46 +234,97 @@ public abstract class AbstractParametersProvider {
                 .addContent(", ")
                 .addContent("me -> new ")
                 .addContent(BAD_REQUEST_EXCEPTION)
-                .addContent("(\"")
-                .addContent(providerType())
-                .addContent(" ")
-                .addContent(paramName)
-                .addContent(" has invalid value.\", me)");
+                .addContent("(")
+                .addContentLiteral(providerType() + " " + paramName + " has invalid value.")
+                .addContent(", me)");
         addMapperQualifiers(content, qualifier);
         content.addContent(")");
     }
 
-    void addListValueExpression(ParameterCodegenContext ctx,
-                                ContentBuilder<?> contentBuilder,
-                                TypeName itemType,
-                                String paramName,
-                                String parametersAccessor,
-                                boolean filterEmptyStringValues,
-                                String mapperQualifier) {
-        contentBuilder.addContent(parametersAccessor)
-                .addContent(".all(\"")
-                .addContent(paramName)
-                .addContent("\")");
+    void addMandatoryListValueExpression(ParameterCodegenContext ctx,
+                                         ContentBuilder<?> contentBuilder,
+                                         TypeName itemType,
+                                         String paramName,
+                                         ParametersSource source) {
+        contentBuilder.addContent(HTTP_SUPPORT)
+                .addContent(".paramList(")
+                .addContent(source.accessor())
+                .addContent(", ")
+                .addContentLiteral(paramName)
+                .addContent(", ")
+                .addContentLiteral(providerType())
+                .addContent(")");
+        addListPostProcessing(ctx,
+                              contentBuilder,
+                              itemType,
+                              paramName,
+                              source.filterEmptyStringValues(),
+                              source.mapperQualifier());
+    }
 
+    void addOptionalListValueExpression(ParameterCodegenContext ctx,
+                                        ContentBuilder<?> contentBuilder,
+                                        TypeName itemType,
+                                        String paramName,
+                                        ParametersSource source) {
+        contentBuilder.addContent(HTTP_SUPPORT)
+                .addContent(".paramOptionalList(")
+                .addContent(source.accessor())
+                .addContent(", ")
+                .addContentLiteral(paramName)
+                .addContent(")");
+
+        if (source.filterEmptyStringValues() || requiresMapper(itemType)) {
+            contentBuilder.addContent(".map(values -> values.stream()");
+            addListStreamPostProcessing(ctx,
+                                        contentBuilder,
+                                        itemType,
+                                        paramName,
+                                        source.filterEmptyStringValues(),
+                                        source.mapperQualifier());
+            contentBuilder.addContent(")");
+        }
+    }
+
+    private void addListPostProcessing(ParameterCodegenContext ctx,
+                                       ContentBuilder<?> contentBuilder,
+                                       TypeName itemType,
+                                       String paramName,
+                                       boolean filterEmptyStringValues,
+                                       String mapperQualifier) {
         if (filterEmptyStringValues || requiresMapper(itemType)) {
             contentBuilder.addContent(".stream()");
-            if (filterEmptyStringValues) {
-                contentBuilder.addContent(".filter(it -> !it.isEmpty())");
-            }
-            if (requiresMapper(itemType)) {
-                contentBuilder.addContent(".map(it -> ");
-                mapStringValue(ctx,
-                               contentBuilder,
-                               itemType,
-                               "it",
-                               paramName,
-                               mapperQualifier);
-                contentBuilder.addContent(")");
-            }
-            contentBuilder.addContent(".collect(")
-                    .addContent(Collectors.class)
-                    .addContent(".toList())");
+            addListStreamPostProcessing(ctx,
+                                        contentBuilder,
+                                        itemType,
+                                        paramName,
+                                        filterEmptyStringValues,
+                                        mapperQualifier);
         }
+    }
+
+    private void addListStreamPostProcessing(ParameterCodegenContext ctx,
+                                             ContentBuilder<?> contentBuilder,
+                                             TypeName itemType,
+                                             String paramName,
+                                             boolean filterEmptyStringValues,
+                                             String mapperQualifier) {
+        if (filterEmptyStringValues) {
+            contentBuilder.addContent(".filter(it -> !it.isEmpty())");
+        }
+        if (requiresMapper(itemType)) {
+            contentBuilder.addContent(".map(it -> ");
+            mapStringValue(ctx,
+                           contentBuilder,
+                           itemType,
+                           "it",
+                           paramName,
+                           mapperQualifier);
+            contentBuilder.addContent(")");
+        }
+        contentBuilder.addContent(".collect(")
+                .addContent(Collectors.class)
+                .addContent(".toList())");
     }
 
     void addTypeArgument(ParameterCodegenContext ctx, ContentBuilder<?> content, TypeName type) {

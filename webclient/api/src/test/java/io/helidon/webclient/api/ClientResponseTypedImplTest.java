@@ -24,6 +24,7 @@ import io.helidon.common.GenericType;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.ClientResponseTrailers;
+import io.helidon.http.HttpException;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.media.ReadableEntity;
@@ -33,6 +34,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
 class ClientResponseTypedImplTest {
@@ -59,17 +61,34 @@ class ClientResponseTypedImplTest {
         assertDoesNotThrow(() -> handling.handle("/missing", requestHeaders, response, OPTIONAL_STRING));
     }
 
+    @Test
+    void eagerDecodeFailureClosesResponseBeforeErrorHandlingThrows() {
+        DefaultErrorHandling handling = new DefaultErrorHandling(List.of());
+        var response = new TestHttpClientResponse(Status.INTERNAL_SERVER_ERROR_500, new FailingReadableEntity());
+        ClientRequestHeaders requestHeaders = ClientRequestHeaders.create(WritableHeaders.create());
+
+        var typedResponse = new ClientResponseTypedImpl<>(response, String.class);
+
+        assertThrows(HttpException.class, () -> handling.handle("/failure", requestHeaders, typedResponse, String.class));
+        assertThat(response.closed(), is(true));
+    }
+
     private static class TestHttpClientResponse implements HttpClientResponse {
         private static final ClientResponseHeaders EMPTY_HEADERS =
                 ClientResponseHeaders.create(WritableHeaders.create());
 
         private final Status status;
-        private final TestReadableEntity entity = new TestReadableEntity();
+        private final ReadableEntity entity;
         private boolean entityRequested;
         private boolean closed;
 
         TestHttpClientResponse(Status status) {
+            this(status, new TestReadableEntity());
+        }
+
+        TestHttpClientResponse(Status status, ReadableEntity entity) {
             this.status = status;
+            this.entity = entity;
         }
 
         @Override
@@ -189,6 +208,13 @@ class ClientResponseTypedImplTest {
         @Override
         public void consume() {
             consumed = true;
+        }
+    }
+
+    private static class FailingReadableEntity extends TestReadableEntity {
+        @Override
+        public <T> T as(GenericType<T> type) {
+            throw new IllegalStateException("Cannot decode entity");
         }
     }
 }

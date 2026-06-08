@@ -586,6 +586,11 @@
             <!-- telemetry -->
             <dependency>
                 <groupId>io.helidon.telemetry</groupId>
+                <artifactId>helidon-telemetry-opentelemetry</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.telemetry</groupId>
                 <artifactId>helidon-telemetry-opentelemetry-config</artifactId>
                 <version>${helidon.version}</version>
             </dependency>

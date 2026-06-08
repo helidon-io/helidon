@@ -59,6 +59,7 @@ import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ErrorHandling;
 import io.helidon.webserver.ProxyProtocolData;
 import io.helidon.webserver.ServerConnectionException;
+import io.helidon.webserver.SniRequestSupport;
 import io.helidon.webserver.http.DirectTransportRequest;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http1.spi.Http1Upgrader;
@@ -168,6 +169,10 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                 if (http1Config.validateRequestHeaders()) {
                     validateHostHeader(prologue, headers, true);
                 }
+                ctx.sniContext().ifPresent(sniContext -> {
+                    String authority = SniRequestSupport.singleHostAuthority(prologue, headers);
+                    SniRequestSupport.validateAuthority(sniContext, prologue, headers, authority);
+                });
                 ctx.remotePeer().tlsCertificates()
                         .flatMap(TlsUtils::parseCn)
                         .ifPresent(name -> headers.set(X_HELIDON_CN, name));

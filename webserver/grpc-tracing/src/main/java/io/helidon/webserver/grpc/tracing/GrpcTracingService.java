@@ -17,6 +17,7 @@ package io.helidon.webserver.grpc.tracing;
 
 import io.helidon.common.Weighted;
 import io.helidon.grpc.core.WeightedBag;
+import io.helidon.service.registry.Services;
 import io.helidon.tracing.Tracer;
 import io.helidon.webserver.grpc.spi.GrpcServerService;
 
@@ -42,7 +43,7 @@ class GrpcTracingService implements GrpcServerService {
     @Override
     public WeightedBag<ServerInterceptor> interceptors() {
         WeightedBag<ServerInterceptor> interceptors = WeightedBag.create();
-        interceptors.add(GrpcTracingInterceptor.create(Tracer.global(), config),
+        interceptors.add(GrpcTracingInterceptor.create(Services.get(Tracer.class), config),
                          Weighted.DEFAULT_WEIGHT + 100);
         return interceptors;
     }

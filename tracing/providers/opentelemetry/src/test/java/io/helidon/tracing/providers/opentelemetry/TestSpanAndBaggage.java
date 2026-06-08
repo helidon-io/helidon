@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import io.helidon.common.testing.junit5.OptionalMatcher;
+import io.helidon.service.registry.Services;
 import io.helidon.tracing.HeaderConsumer;
 import io.helidon.tracing.HeaderProvider;
 import io.helidon.tracing.Scope;
@@ -46,7 +47,7 @@ class TestSpanAndBaggage {
 
     @Test
     void testActiveSpanScopeWithoutBaggage() {
-        Tracer tracer = Tracer.global();
+        Tracer tracer = Services.get(Tracer.class);
         Span span = tracer.spanBuilder("myParent")
                 .start();
 
@@ -71,7 +72,7 @@ class TestSpanAndBaggage {
 
         // otel.java.global-autoconfigure.enabled
 
-        Tracer tracer = Tracer.global();
+        Tracer tracer = Services.get(Tracer.class);
         Span outerSpan = tracer.spanBuilder("outer").start();
 
         try (Scope outerScope = outerSpan.activate()) {
@@ -84,7 +85,7 @@ class TestSpanAndBaggage {
                        currentJustAfterActivation.get().context().spanId(),
                        is(outerSpan.context().spanId()));
 
-            outerSpan.baggage("myItem", "myValue");
+            outerSpan.baggage().set("myItem", "myValue");
             outerSpan.end();
         } catch (Exception e) {
             outerSpan.end(e);
@@ -99,7 +100,7 @@ class TestSpanAndBaggage {
 
     @Test
     void testIncomingBaggage() {
-        Tracer tracer = Tracer.global();
+        Tracer tracer = Services.get(Tracer.class);
         HeaderProvider inboundHeaders = new MapHeaderProvider(Map.of("baggage", List.of("bag1=val1,bag2=val2")));
         Optional<SpanContext> spanContextOpt = tracer.extract(inboundHeaders);
         assertThat("Span context from inbound headers", spanContextOpt, OptionalMatcher.optionalPresent());
@@ -111,7 +112,7 @@ class TestSpanAndBaggage {
 
     @Test
     void testMultiIncomingBaggage() {
-        Tracer tracer = Tracer.global();
+        Tracer tracer = Services.get(Tracer.class);
         HeaderProvider inboundHeaders = new RepeatableKeyHeaderProvider(List.of(Map.entry("baggage", List.of("bag1=val1")),
                                                                                 Map.entry("baggage", List.of("bag2=val2"))));
         Optional<SpanContext> spanContextOpt = tracer.extract(inboundHeaders);
@@ -123,7 +124,7 @@ class TestSpanAndBaggage {
 
     @Test
     void testBaggageWithoutActivation() {
-        final var tracer = io.helidon.tracing.Tracer.global();
+        final var tracer = Services.get(io.helidon.tracing.Tracer.class);
         final var span = tracer.spanBuilder("baggageCanaryMinimal").start();
         try {
             // Set baggage and confirm that it's known in the span
@@ -138,7 +139,7 @@ class TestSpanAndBaggage {
 
     @Test
     void testBaggageAddedBeforeActivation() {
-        final var tracer = io.helidon.tracing.Tracer.global();
+        final var tracer = Services.get(io.helidon.tracing.Tracer.class);
         final var span = tracer.spanBuilder("baggageCanaryMinimal").start();
 
         try {
@@ -158,7 +159,7 @@ class TestSpanAndBaggage {
     void testBaggageAddedAfterActivation() {
         final String BAGGAGE_KEY = "mykey";
         final String BAGGAGE_VALUE = "myvalue";
-        final var tracer = io.helidon.tracing.Tracer.global();
+        final var tracer = Services.get(io.helidon.tracing.Tracer.class);
         final var span = tracer.spanBuilder("baggageCanaryMinimal").start();
         try {
             // Set baggage and confirm that it's known in the span

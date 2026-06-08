@@ -42,6 +42,8 @@ import io.opentelemetry.semconv.HttpAttributes;
 import io.opentelemetry.semconv.ServerAttributes;
 import io.opentelemetry.semconv.UrlAttributes;
 
+import static java.lang.System.Logger.Level.WARNING;
+
 /**
  * Provider of automatic metrics for HTTP requests which implements the OpenTelemetry server HTTP semantic conventions.
  * <p>
@@ -108,6 +110,7 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
     }
 
     static class MetricsRecordingFilter implements Filter {
+        private static final System.Logger LOGGER = System.getLogger(MetricsRecordingFilter.class.getName());
 
         private final DoubleHistogram httpRequestDuration;
         private final AutoHttpMetricsConfig config;
@@ -123,12 +126,24 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
             /*
             Duplicating the synch/async handling in the normal and exception case avoids the overhead of using an Optional to hold
             the exception (if any) for use in a lambda.
-             */
+            */
             try {
                 chain.proceed();
-                Thread.ofVirtual().start(() -> updateMetricsIfMeasured(req, res, startTime, System.nanoTime(), null));
+                Thread.ofVirtual().start(() -> {
+                    try {
+                        updateMetricsIfMeasured(req, res, startTime, System.nanoTime(), null);
+                    } catch (Throwable e) {
+                        LOGGER.log(WARNING, "Failed to record HTTP request metrics", e);
+                    }
+                });
             } catch (Exception e) {
-                Thread.ofVirtual().start(() -> updateMetricsIfMeasured(req, res, startTime, System.nanoTime(), e));
+                Thread.ofVirtual().start(() -> {
+                    try {
+                        updateMetricsIfMeasured(req, res, startTime, System.nanoTime(), e);
+                    } catch (Throwable metricsUpdateFailure) {
+                        LOGGER.log(WARNING, "Failed to record HTTP request metrics", metricsUpdateFailure);
+                    }
+                });
                 throw e;
             }
         }

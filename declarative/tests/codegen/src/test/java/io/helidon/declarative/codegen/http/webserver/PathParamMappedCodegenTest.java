@@ -34,6 +34,7 @@ import io.helidon.common.types.Annotation;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.config.Config;
 import io.helidon.http.Http;
+import io.helidon.http.HttpSupport;
 import io.helidon.service.registry.Dependency;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceDescriptor;
@@ -66,6 +67,7 @@ class PathParamMappedCodegenTest {
             Http.class,
             HttpEntryPoint.class,
             HttpFeature.class,
+            HttpSupport.class,
             HttpRoute.class,
             HttpRouting.class,
             HttpRules.class,
@@ -121,7 +123,9 @@ class PathParamMappedCodegenTest {
         assertThat(diagnostics, result.success(), is(true));
 
         String generated = generatedContent(result);
-        assertThat(generated, containsString(".path().pathParameters().first(\"name\")"));
+        assertThat(generated,
+                   containsString("var u_name = HttpSupport.paramValue(req.path().pathParameters(), "
+                                          + "\"name\", \"Path parameter\")"));
         assertThat(generated, not(containsString("helidonDeclarative__")));
         assertThat(generated, not(containsString("Value.create(mappers, \"name\"")));
     }
@@ -168,8 +172,11 @@ class PathParamMappedCodegenTest {
 
         String generated = generatedContent(result);
         assertThat(generated,
-                   containsString("mappers.map(it, GenericType.STRING, GTYPE, me -> new BadRequestException(\"Path"
-                                          + " parameter id has invalid value.\", me), \"http\", \"path\")"));
+                   containsString("mappers.map(HttpSupport.paramValue(req.path().pathParameters(), \"id\", "
+                                          + "\"Path parameter\"), GenericType.STRING, GTYPE, "
+                                          + "me -> new BadRequestException(\"Path parameter id has invalid value.\", "
+                                          + "me), "
+                                          + "\"http\", \"path\")"));
         assertThat(generated, not(containsString("\"http/path\"")));
         assertThat(generated, not(containsString("Value.create(")));
         assertThat(generated, not(containsString("helidonDeclarative__")));

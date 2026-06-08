@@ -2,16 +2,14 @@ Distributed Tracing
 ---
 
 Module `helidon-tracing` defines tracing API and SPI that is used throughout Helidon.
-As we need to support both OpenTracing and OpenTelemetry tracing, this abstraction is required to keep tracing an integral part 
-of Helidon.
+The API is backed by OpenTelemetry through the `helidon-tracing-providers-opentelemetry` provider.
 
-Module `helidon-tracing-providers-opentracing` adds support for opentracing based tracers (such as Zipkin).
-Module `helidon-tracing-providers-opentelemetry` adds support for opentelemetry based tracers (such as Jaeger).
+Module `helidon-tracing-providers-opentelemetry` adds OpenTelemetry tracing support.
 
 # Usage
 
 To use tracing in SE, add a dependency on `helidon-tracing` and a tracer
-implementation and register tracer with server configuration.
+implementation, then register the tracer with server configuration.
 
 pom.xml:
 ```xml
@@ -21,68 +19,67 @@ pom.xml:
     <artifactId>helidon-tracing</artifactId>
 </dependency>
 <dependency>
-    <!-- to add zipkin support -->
-    <groupId>io.helidon.tracing</groupId>
-    <artifactId>helidon-tracing-providers-zipkin</artifactId>
+    <!-- to add tracing observability support to WebServer -->
+    <groupId>io.helidon.webserver.observe</groupId>
+    <artifactId>helidon-webserver-observe-tracing</artifactId>
+</dependency>
+<dependency>
+    <!-- to add OpenTelemetry support -->
+    <groupId>io.helidon.tracing.providers</groupId>
+    <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
 </dependency>
 ```
 
 code using config:
 ```java
+Tracer tracer = TracerBuilder.create(config.get("tracing"))
+        .build();
+
 return WebServer.builder()
-                .config(config.get("webserver"))
-                .tracer(TracerBuilder.create(config.get("tracing"))
-                                        .buildAndRegister())
-                .build();
+        .config(config.get("webserver"))
+        .addFeature(ObserveFeature.just(TracingObserver.create(tracer)))
+        .build();
 ```
 
-To customize configuration of zipkin, see `ZipkinTracerBuilder` javadoc. Basics:
+Basic tracing configuration:
 ```yaml
 tracing:
   # required
   service: "service-name"
   # default is "localhost"
-  host: "zipkin"
+  host: "otel-collector"
 ```
 
 # Modules
 
 ## Module `helidon-tracing`
-Contains an abstracted Builder for tracers and an SPI
-to connect various tracer implementations.
+Contains the API, an abstracted builder for tracers, and an SPI to connect tracer implementations.
 
 Example:
 ```java
 // create a tracer for service "myService"
 Tracer tracer = TracerBuilder.create("myService")
-    // running on host "zipkin" - probably in docker or k8s
-    .collectorHost("zipkin")
-    // build the tracer and register as global tracer
-    .buildAndRegister();
+    // running on host "otel-collector" - probably in docker or k8s
+    .collectorHost("otel-collector")
+    // build the tracer
+    .build();
 ```
 
 Example using Config:
 ```java
 // create a tracer from configuration
-Tracer tracer = TracerBuilder.create(config.get("tracing"))    
-    // build the tracer and register as global tracer
-    .buildAndRegister();
+Tracer tracer = TracerBuilder.create(config.get("tracing"))
+    // build the tracer
+    .build();
 ```
 
 and associated configuration:
 ```yaml
 tracing:
   service: "myService"
-  host: "zipkin"
+  host: "otel-collector"
 ```
 
-## Module `helidon-tracing-providers-zipkin`
-Integration with Zipkin (https://zipkin.io/). Easiest approach is to use a docker image
-`zipkin` that, by default, runs on the expected hostname and port.
-
-When you add this module to classpath, the SPI is automatically picked up and Zipkin tracer 
-would be used.
-
-See class `ZipkinTracerBuilder` for documentation of supported configuration options. The classes
-in this module should not be used directly, use `helidon-tracing` module API instead (unless
-you want to create a hard source code dependency on Zipkin tracer).
+## Module `helidon-tracing-providers-opentelemetry`
+Integration with OpenTelemetry. When you add this module to the classpath, the tracing SPI picks up the
+OpenTelemetry tracer provider automatically.

@@ -106,11 +106,6 @@ class JsonLogConverterTest {
                                "stringValue" : "helidon-unit"
                              }
                            }, {
-                             "key" : "net.host.name",
-                             "value" : {
-                               "stringValue" : "helidon-unit"
-                             }
-                           }, {
                              "key" : "user_agent.original",
                              "value" : {
                                "stringValue" : "Helidon 27.0.0-SNAPSHOT"
@@ -142,11 +137,6 @@ class JsonLogConverterTest {
                              "key" : "url.scheme",
                              "value" : {
                                "stringValue" : "http"
-                             }
-                           }, {
-                             "key" : "net.host.port",
-                             "value" : {
-                               "intValue" : "8080"
                              }
                            } ],
                            "events" : [ ],

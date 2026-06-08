@@ -41,8 +41,6 @@ import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.ReleasableResource;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
-import io.helidon.webclient.http1.Http1ClientRequest;
-import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webclient.spi.WebClientService;
 
 import static io.helidon.http.HeaderNames.CONTENT_ENCODING;
@@ -52,7 +50,7 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
     private final Http2ClientImpl http2Client;
     private final HttpClientConfig clientConfig;
     private final Http2ClientRequestImpl clientRequest;
-    private final Function<Http1ClientRequest, Http1ClientResponse> http1EntityHandler;
+    private final Http1FallbackHandler http1FallbackHandler;
     private final CompletableFuture<WebClientServiceResponse> whenComplete;
     private Http2ClientStream stream;
     private HttpClientResponse response;
@@ -62,13 +60,13 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
     Http2CallChainBase(Http2ClientImpl http2Client,
                        Http2ClientRequestImpl clientRequest,
                        CompletableFuture<WebClientServiceResponse> whenComplete,
-                       Function<Http1ClientRequest, Http1ClientResponse> http1EntityHandler) {
+                       Http1FallbackHandler http1FallbackHandler) {
 
         this.http2Client = http2Client;
         this.clientConfig = http2Client.clientConfig();
         this.clientRequest = clientRequest;
         this.whenComplete = whenComplete;
-        this.http1EntityHandler = http1EntityHandler;
+        this.http1FallbackHandler = http1FallbackHandler;
     }
 
     static WebClientServiceResponse createServiceResponse(WebClientServiceRequest serviceRequest,
@@ -104,14 +102,14 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         requestHeaders = serviceRequest.headers();
 
         clientRequest.sanitizeRedirectHeaders(uri, requestHeaders);
-        requestHeaders.setIfAbsent(HeaderValues.create(HeaderNames.HOST, uri.authority()));
+        alignHostHeader(uri, requestHeaders);
         requestHeaders.remove(HeaderNames.CONNECTION, LogHeaderConsumer.INSTANCE);
         requestHeaders.setIfAbsent(USER_AGENT_HEADER);
 
         ConnectionKey connectionKey = connectionKey(serviceRequest);
 
         Http2ConnectionAttemptResult result = http2Client.connectionCache()
-                .newStream(http2Client, connectionKey, clientRequest, uri, http1EntityHandler);
+                .newStream(http2Client, connectionKey, clientRequest, uri, serviceRequest, http1FallbackHandler);
 
         try {
             if (result.result() == Http2ConnectionAttemptResult.Result.HTTP_2) {
@@ -274,7 +272,13 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
     }
 
     private ConnectionKey connectionKey(WebClientServiceRequest serviceRequest) {
-        return Http2ConnectionKeys.create(serviceRequest.uri(), clientRequest, clientConfig);
+        return Http2ConnectionKeys.create(serviceRequest.uri(), clientRequest, clientConfig, serviceRequest.headers());
+    }
+
+    static void alignHostHeader(ClientUri uri, ClientRequestHeaders requestHeaders) {
+        requestHeaders.first(Http2Headers.AUTHORITY_NAME)
+                .ifPresentOrElse(authority -> requestHeaders.set(HeaderValues.create(HeaderNames.HOST, authority)),
+                                 () -> requestHeaders.setIfAbsent(HeaderValues.create(HeaderNames.HOST, uri.authority())));
     }
 
     private static final class LogHeaderConsumer implements Consumer<Header> {

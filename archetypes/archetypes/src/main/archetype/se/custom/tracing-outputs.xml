@@ -33,9 +33,6 @@ tracing:
   service: helidon-tracing-service
 ]]></value>
             </list>
-            <list key="config-properties">
-                <value>tracing.global=false</value>
-            </list>
             <list key="dependencies">
                 <map>
                     <value key="groupId">io.helidon.webserver.observe</value>
@@ -64,6 +61,7 @@ curl -X GET http://localhost:8080/traced
             <list key="module-requires">
                 <value>io.helidon.webserver.http2</value>
                 <value>io.helidon.webserver.observe.tracing</value>
+                <value>io.helidon.service.registry</value>
                 <value>io.helidon.tracing</value>
             </list>
         </model>

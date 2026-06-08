@@ -33,6 +33,7 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.CompositeBufferData;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.grpc.core.GrpcHeadersUtil;
+import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.Header;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
@@ -55,6 +56,7 @@ import io.helidon.webclient.api.ConnectionKey;
 import io.helidon.webclient.api.DefaultDnsResolver;
 import io.helidon.webclient.api.DnsAddressLookup;
 import io.helidon.webclient.api.Proxy;
+import io.helidon.webclient.api.SniConfig;
 import io.helidon.webclient.api.TcpClientConnection;
 import io.helidon.webclient.api.UnixDomainSocketClientConnection;
 import io.helidon.webclient.api.WebClient;
@@ -160,7 +162,8 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
 
         // obtain HTTP2 connection
         ClientUri clientUri = nextClientUri();
-        ClientConnection clientConnection = clientConnection(clientUri);
+        String authority = authority(clientUri);
+        ClientConnection clientConnection = clientConnection(clientUri, authority);
         socket = clientConnection.helidonSocket();
         connection = Http2ClientConnection.create((Http2ClientImpl) grpcClient.http2Client(),
                                                   clientConnection, true);
@@ -200,7 +203,7 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         startStreamingThreads();
 
         // send HEADERS frame
-        WritableHeaders<?> headers = setupHeaders(metadata, clientUri.authority(), methodDescriptor.getFullMethodName());
+        WritableHeaders<?> headers = setupHeaders(metadata, authority, methodDescriptor.getFullMethodName());
         clientStream.writeHeaders(Http2Headers.create(headers), false);
     }
 
@@ -293,37 +296,76 @@ abstract class GrpcBaseClientCall<ReqT, ResT> extends ClientCall<ReqT, ResT> {
         return grpcClient;
     }
 
-    ClientConnection clientConnection(ClientUri clientUri) {
+    ClientConnection clientConnection(ClientUri clientUri, String authority) {
         WebClient webClient = grpcClient.webClient();
         GrpcClientConfig clientConfig = grpcClient.prototype();
+        SniConfig sni = clientConfig.sni().orElse(null);
 
         if (clientConfig.baseAddress().isPresent()
             && clientConfig.baseAddress().get() instanceof UnixDomainSocketAddress udsAddress) {
+            ConnectionKey connectionKey;
+            if (sni == null) {
+                connectionKey = ConnectionKey.createUnixDomainSocket(clientUri,
+                                                                     clientConfig.tls(),
+                                                                     clientConfig.dnsResolver(),
+                                                                     clientConfig.dnsAddressLookup(),
+                                                                     udsAddress);
+            } else {
+                connectionKey = ConnectionKey.createUnixDomainSocket(clientUri,
+                                                                     sni,
+                                                                     clientConfig.tls(),
+                                                                     clientConfig.dnsResolver(),
+                                                                     clientConfig.dnsAddressLookup(),
+                                                                     udsAddress,
+                                                                     authorityHeaders(authority));
+            }
             return UnixDomainSocketClientConnection.create(
                 webClient,
-                clientConfig.tls(),
+                connectionKey,
                 List.of(Http2Client.PROTOCOL_ID),
                 udsAddress,
-                clientUri.host(),
-                clientUri.port(),
                 connection -> false,
                 connection -> {}).connect();
         }
 
-        ConnectionKey connectionKey = ConnectionKey.create(
-                clientUri.scheme(),
-                clientUri.host(),
-                clientUri.port(),
-                clientConfig.tls(),
-                DefaultDnsResolver.create(),
-                DnsAddressLookup.defaultLookup(),
-                Proxy.noProxy());
+        ConnectionKey connectionKey;
+        if (sni == null) {
+            connectionKey = ConnectionKey.create(
+                    clientUri,
+                    clientConfig.tls(),
+                    DefaultDnsResolver.create(),
+                    DnsAddressLookup.defaultLookup(),
+                    Proxy.noProxy());
+        } else {
+            connectionKey = ConnectionKey.create(
+                    clientUri,
+                    sni,
+                    clientConfig.tls(),
+                    DefaultDnsResolver.create(),
+                    DnsAddressLookup.defaultLookup(),
+                    Proxy.noProxy(),
+                    authorityHeaders(authority));
+        }
         return TcpClientConnection.create(webClient,
                                           connectionKey,
                                           List.of(Http2Client.PROTOCOL_ID),
                                           connection -> false,
                                           connection -> {
                                           }).connect();
+    }
+
+    private String authority(ClientUri clientUri) {
+        String authority = callOptions.getAuthority();
+        if (authority != null) {
+            return authority;
+        }
+        return clientUri.authority();
+    }
+
+    private static ClientRequestHeaders authorityHeaders(String authority) {
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.set(HeaderValues.create(HeaderNames.HOST, authority));
+        return ClientRequestHeaders.create(headers);
     }
 
     boolean isRemoteOpen() {

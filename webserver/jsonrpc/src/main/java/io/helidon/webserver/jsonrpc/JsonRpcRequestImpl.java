@@ -108,6 +108,16 @@ class JsonRpcRequestImpl implements JsonRpcRequest {
     }
 
     @Override
+    public Optional<String> sniRequestedHost() {
+        return delegate.sniRequestedHost();
+    }
+
+    @Override
+    public Optional<String> sniMatchedHost() {
+        return delegate.sniMatchedHost();
+    }
+
+    @Override
     public HttpPrologue prologue() {
         return delegate.prologue();
     }

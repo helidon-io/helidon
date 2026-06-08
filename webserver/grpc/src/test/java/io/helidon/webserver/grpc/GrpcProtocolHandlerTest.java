@@ -23,8 +23,10 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
@@ -47,6 +49,8 @@ import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ListenerContext;
 import io.helidon.webserver.Router;
 import io.helidon.webserver.ServerConnectionException;
+import io.helidon.webserver.SniContext;
+import io.helidon.webserver.SniMatchType;
 
 import io.grpc.Drainable;
 import io.grpc.Metadata;
@@ -231,6 +235,33 @@ class GrpcProtocolHandlerTest {
         assertThat(serverCall.isCancelled(), is(true));
     }
 
+    @Test
+    void exposesSniHostsInGrpcContext() {
+        AtomicReference<GrpcConnectionContext> grpcConnectionContext = new AtomicReference<>();
+        ServerCallHandler<String, String> callHandler = new ServerCallHandler<>() {
+            @Override
+            public ServerCall.Listener<String> startCall(ServerCall<String, String> call, Metadata headers) {
+                grpcConnectionContext.set(ServerContextKeys.CONNECTION_CONTEXT.get(io.grpc.Context.current()));
+                return new ServerCall.Listener<>() {
+                };
+            }
+        };
+        GrpcProtocolHandler<String, String> handler = new GrpcProtocolHandler<>(
+                new UnimplementedGrpcConnectionContext(sniContext("api.example.com", "*.example.com")),
+                Http2Headers.create(WritableHeaders.create()),
+                noOpWriter(),
+                1,
+                null,
+                Http2StreamState.OPEN,
+                route(callHandler),
+                GrpcConfig.create());
+
+        handler.init();
+
+        assertThat(grpcConnectionContext.get().sniRequestedHost(), is(Optional.of("api.example.com")));
+        assertThat(grpcConnectionContext.get().sniMatchedHost(), is(Optional.of("*.example.com")));
+    }
+
     private static ServerCall<String, String> createServerCall(Http2StreamWriter streamWriter) {
         GrpcProtocolHandler<String, String> handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
                                                                                 Http2Headers.create(WritableHeaders.create()),
@@ -248,14 +279,42 @@ class GrpcProtocolHandlerTest {
     }
 
     private static GrpcRouteHandler<String, String> route(ServerCall.Listener<String> listener) {
+        return route(new ServerCallHandler<>() {
+            @Override
+            public ServerCall.Listener<String> startCall(ServerCall<String, String> call, Metadata headers) {
+                return listener;
+            }
+        });
+    }
+
+    private static GrpcRouteHandler<String, String> route(ServerCallHandler<String, String> callHandler) {
         ServerMethodDefinition<String, String> definition =
-                ServerMethodDefinition.create(stringMethodDescriptor(), new ServerCallHandler<>() {
-                    @Override
-                    public ServerCall.Listener<String> startCall(ServerCall<String, String> call, Metadata headers) {
-                        return listener;
-                    }
-                });
+                ServerMethodDefinition.create(stringMethodDescriptor(), callHandler);
         return GrpcRouteHandler.methodDefinition(definition, null, WeightedBag.create());
+    }
+
+    private static SniContext sniContext(String presentedHost, String matchedHost) {
+        return new SniContext() {
+            @Override
+            public Optional<String> presentedHost() {
+                return Optional.of(presentedHost);
+            }
+
+            @Override
+            public Optional<String> matchedHost() {
+                return Optional.of(matchedHost);
+            }
+
+            @Override
+            public SniMatchType matchType() {
+                return SniMatchType.WILDCARD;
+            }
+
+            @Override
+            public AuthorityCheck checkAuthority(String authority) {
+                return AuthorityCheck.ALLOWED;
+            }
+        };
     }
 
     private static MethodDescriptor<String, String> stringMethodDescriptor() {
@@ -497,6 +556,21 @@ class GrpcProtocolHandlerTest {
     }
 
     private static class UnimplementedGrpcConnectionContext implements ConnectionContext {
+        private final SniContext sniContext;
+
+        private UnimplementedGrpcConnectionContext() {
+            this(null);
+        }
+
+        private UnimplementedGrpcConnectionContext(SniContext sniContext) {
+            this.sniContext = sniContext;
+        }
+
+        @Override
+        public Optional<SniContext> sniContext() {
+            return Optional.ofNullable(sniContext);
+        }
+
         @Override
         public ListenerContext listenerContext() {
             throw new UnsupportedOperationException("Should not be called");
