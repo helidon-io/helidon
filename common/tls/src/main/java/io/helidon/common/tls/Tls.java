@@ -75,7 +75,11 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
         this.enabled = config.enabled();
 
         if (config.enabled()) {
-            this.tlsManager = config.manager();
+            if (config.sslContext().isEmpty()) {
+                this.tlsManager = config.manager();
+            } else {
+                this.tlsManager = new ExplicitContextTlsManager(config.sslContext().get());
+            }
             this.tlsManager.init(config);
             this.sslContext = tlsManager.sslContext();
             this.sslSocketFactory = sslContext.getSocketFactory();
@@ -268,10 +272,24 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
      * Reload reloadable {@link TlsReloadableComponent}s with the new configuration.
      *
      * @param tls new TLS configuration
+     * @deprecated use {@link #reload(TlsMaterial)}
      */
+    @Deprecated
     public void reload(Tls tls) {
         if (enabled) {
             tlsManager.reload(tls);
+        }
+    }
+
+    /**
+     * Reload reloadable {@link TlsReloadableComponent}s with new key and trust material.
+     *
+     * @param material new TLS material
+     */
+    public void reload(TlsMaterial material) {
+        Objects.requireNonNull(material, "material");
+        if (enabled) {
+            tlsManager.reload(material);
         }
     }
 

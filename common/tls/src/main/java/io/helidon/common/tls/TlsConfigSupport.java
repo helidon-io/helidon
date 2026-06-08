@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,22 @@ final class TlsConfigSupport {
     }
 
     static final class CustomMethods {
+        /**
+         * The default protocol is set to {@value}.
+         */
+        @Prototype.Constant
+        static final String DEFAULT_PROTOCOL = "TLS";
+        /**
+         * The default session cache size as defined for unset value in {@link javax.net.ssl.SSLSessionContext#getSessionCacheSize()}.
+         */
+        @Prototype.Constant
+        static final int DEFAULT_SESSION_CACHE_SIZE = 20480;
+        /**
+         * The default session timeout as defined for unset value in {@link javax.net.ssl.SSLSessionContext#getSessionTimeout()}.
+         */
+        @Prototype.Constant
+        static final String DEFAULT_SESSION_TIMEOUT = "PT24H";
+
         private CustomMethods() {
         }
 

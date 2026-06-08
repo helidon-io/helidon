@@ -19,6 +19,7 @@ package io.helidon.webserver;
 import java.util.Optional;
 
 import io.helidon.common.tls.Tls;
+import io.helidon.common.tls.TlsMaterial;
 
 import org.junit.jupiter.api.Test;
 
@@ -26,6 +27,10 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class VirtualHostRegistryTest {
     private static final String SOCKET_NAME = "test";
@@ -155,6 +160,65 @@ class VirtualHostRegistryTest {
         assertThat(unmatched.sendUnrecognizedNameAlert(), is(true));
     }
 
+    @Test
+    void reloadsExactConfiguredHost() {
+        Tls defaultTls = tls();
+        Tls exactTls = tls();
+        TlsMaterial material = material();
+        VirtualHostRegistry registry = registry(defaultTls, virtualHost("api.example.com", exactTls));
+
+        registry.reloadTls("API.EXAMPLE.COM", material);
+
+        verify(exactTls).reload(material);
+        verify(defaultTls, never()).reload(material);
+    }
+
+    @Test
+    void reloadsWildcardConfiguredHost() {
+        Tls defaultTls = tls();
+        Tls wildcardTls = tls();
+        TlsMaterial material = material();
+        VirtualHostRegistry registry = registry(defaultTls, virtualHost("*.example.com", wildcardTls));
+
+        registry.reloadTls("*.EXAMPLE.COM", material);
+
+        verify(wildcardTls).reload(material);
+        verify(defaultTls, never()).reload(material);
+    }
+
+    @Test
+    void reloadDoesNotMatchConcreteHostToWildcardEntry() {
+        Tls wildcardTls = tls();
+        TlsMaterial material = material();
+        VirtualHostRegistry registry = registry(tls(), virtualHost("*.example.com", wildcardTls));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                                                          () -> registry.reloadTls("api.example.com", material));
+
+        assertThat(exception.getMessage(), is("Virtual host api.example.com is not configured on listener " + SOCKET_NAME));
+        verify(wildcardTls, never()).reload(material);
+    }
+
+    @Test
+    void reloadFailsWhenNoVirtualHostsAreConfigured() {
+        TlsMaterial material = material();
+        VirtualHostRegistry registry = registry(tls());
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                                                          () -> registry.reloadTls("api.example.com", material));
+
+        assertThat(exception.getMessage(), is("Virtual host api.example.com is not configured on listener " + SOCKET_NAME));
+    }
+
+    private static VirtualHostRegistry registry(Tls defaultTls, VirtualHostConfig... virtualHosts) {
+        ListenerConfig.Builder builder = ListenerConfig.builder()
+                .tls(defaultTls);
+        for (VirtualHostConfig virtualHost : virtualHosts) {
+            builder.addVirtualHost(virtualHost);
+        }
+        return VirtualHostRegistry.create(SOCKET_NAME, builder.buildPrototype(), defaultTls);
+    }
+
     private static VirtualHostRegistry registry(String... hosts) {
         ListenerConfig.Builder builder = ListenerConfig.builder()
                 .tls(TLS);
@@ -165,9 +229,25 @@ class VirtualHostRegistryTest {
     }
 
     private static VirtualHostConfig virtualHost(String host) {
+        return virtualHost(host, TLS);
+    }
+
+    private static VirtualHostConfig virtualHost(String host, Tls tls) {
         return VirtualHostConfig.builder()
                 .host(host)
-                .tls(TLS)
+                .tls(tls)
+                .build();
+    }
+
+    private static Tls tls() {
+        Tls tls = mock(Tls.class);
+        when(tls.enabled()).thenReturn(true);
+        return tls;
+    }
+
+    private static TlsMaterial material() {
+        return TlsMaterial.builder()
+                .trustAll(true)
                 .build();
     }
 }

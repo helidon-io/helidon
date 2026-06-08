@@ -27,6 +27,9 @@ import io.helidon.common.configurable.AllowList;
 // end::snippet_13[]
 // tag::snippet_16[]
 import io.helidon.common.tls.Tls;
+// end::snippet_16[]
+import io.helidon.common.tls.TlsMaterial;
+// tag::snippet_16[]
 import io.helidon.common.uri.UriInfo;
 // end::snippet_16[]
 import io.helidon.config.Config;
@@ -386,6 +389,32 @@ class WebServerSnippets {
             res.send(templateFor(matchedHost, requestedHost));
         });
         // end::snippet_40[]
+    }
+
+    void snippet_41(WebServer server) {
+        // tag::snippet_41[]
+        TlsMaterial material = TlsMaterial.builder()
+                .privateKey(pk -> pk
+                        .keystore(keys -> keys.keystore(it -> it.path(Paths.get("/etc/certs/server.p12")))
+                                .passphrase("password".toCharArray())))
+                .trust(trust -> trust
+                        .keystore(keys -> keys.keystore(it -> it.path(Paths.get("/etc/certs/trust.p12")))))
+                .build();
+
+        server.reloadTls(material);
+        // end::snippet_41[]
+    }
+
+    void snippet_42(WebServer server) {
+        // tag::snippet_42[]
+        TlsMaterial apiMaterial = TlsMaterial.builder()
+                .privateKey(pk -> pk
+                        .keystore(keys -> keys.keystore(it -> it.path(Paths.get("/etc/certs/api-server.p12")))
+                                .passphrase("password".toCharArray())))
+                .build();
+
+        server.reloadVirtualHostTls("api.example.com", apiMaterial);
+        // end::snippet_42[]
     }
 
     void snippet_32() {
