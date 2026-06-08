@@ -16,6 +16,7 @@
 
 package io.helidon.common.tls;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 
@@ -48,11 +49,23 @@ class TlsMaterialConfigTest {
         assertThat(tlsConfig.internalKeystoreType(), is(Optional.of("test-store")));
     }
 
+    @Test
+    void materialDoesNotExposeTlsSetupConstants() {
+        assertThat(hasPublicField("DEFAULT_PROTOCOL"), is(false));
+        assertThat(hasPublicField("DEFAULT_SESSION_CACHE_SIZE"), is(false));
+        assertThat(hasPublicField("DEFAULT_SESSION_TIMEOUT"), is(false));
+    }
+
     private static Config materialConfig() {
         return Config.just(ConfigSources.create(Map.of(
                 "trust-all", "true",
                 "key-manager-factory-algorithm", "test-kmf",
                 "trust-manager-factory-algorithm", "test-tmf",
                 "internal-keystore-type", "test-store")));
+    }
+
+    private static boolean hasPublicField(String name) {
+        return Arrays.stream(TlsMaterial.class.getFields())
+                .anyMatch(field -> field.getName().equals(name));
     }
 }

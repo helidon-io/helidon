@@ -29,8 +29,7 @@ The method `reload(TlsMaterial)` on listener(s) will delegate the call to the cu
 
 `TlsManager` is responsible for reading configuration, and obtaining the initial information to setup an SSLContext - this may be from config, or from external sources (i.e. a cloud service, environment).
 
-Example of `TlsManager`s we provide/expect:
+`TlsManager` implementations:
 
 - `ExplicitContextTlsManager` - used when we have an explicit instance of `SSLContext` configured, reload throws an exception
 - `ConfiguredTlsManager` - uses configuration as the main source of truth
-- `OciCertificatesTlsManager` - uses information that may be rotated by OCI

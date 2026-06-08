@@ -32,6 +32,7 @@ import io.helidon.common.tls.spi.TlsManagerProvider;
  */
 @Prototype.Blueprint(decorator = TlsConfigDecorator.class)
 @Prototype.Configured
+@Prototype.CustomMethods(TlsConfigSupport.CustomMethods.class)
 interface TlsConfigBlueprint extends TlsMaterialBlueprint, Prototype.Factory<Tls> {
     /**
      * Provide a fully configured {@link javax.net.ssl.SSLContext}. If defined, context related configuration

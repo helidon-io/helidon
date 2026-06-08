@@ -16,10 +16,37 @@
 
 package io.helidon.common.tls;
 
+import java.security.PrivateKey;
+import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
+
+import io.helidon.builder.api.Prototype;
+import io.helidon.common.pki.Keys;
 
 final class TlsMaterialSupport {
     private TlsMaterialSupport() {
+    }
+
+    static final class CustomMethods {
+        private CustomMethods() {
+        }
+
+        @Prototype.RuntimeTypeFactoryMethod("privateKey")
+        static Optional<PrivateKey> createPrivateKey(Keys config) {
+            return config.privateKey();
+        }
+
+        @Prototype.RuntimeTypeFactoryMethod("privateKeyCertChain")
+        static List<X509Certificate> createPrivateKeyCertChain(Keys config) {
+            return config.certChain();
+        }
+
+        @Prototype.RuntimeTypeFactoryMethod("trust")
+        static List<X509Certificate> createTrust(Keys config) {
+            return config.certs();
+        }
     }
 
     static Tls toTls(TlsMaterial material) {

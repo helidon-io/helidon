@@ -26,16 +26,16 @@ import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 
 /**
- * TLS material used to set up or reload key and trust manager state.
+ * TLS key and trust material used to set up or reload manager state.
  */
 @Prototype.Blueprint
 @Prototype.Configured
-@Prototype.CustomMethods(TlsConfigSupport.CustomMethods.class)
+@Prototype.CustomMethods(TlsMaterialSupport.CustomMethods.class)
 interface TlsMaterialBlueprint {
 
     /**
-     * Private key to use. For server side TLS, this is required.
-     * For client side TLS, this is optional (used when mutual TLS is enabled).
+     * Private key to use.
+     * This is required when reloading key material and can be omitted when reloading only trust material.
      *
      * @return private key to use
      */

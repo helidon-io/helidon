@@ -617,9 +617,7 @@ public class ConfiguredTlsManager implements TlsManager {
     // used by ConfiguredTlsManager to setup a TrustManagerFactory, that may be "trustAll", or based on configuration
     private TrustManagerFactory tmf(TlsConfig tlsConfig) throws KeyStoreException {
         if (tlsConfig.trustAll()) {
-            LOGGER.log(System.Logger.Level.WARNING,
-                       "Using a trust manager that trusts ANY certificate. Never use this in production. "
-                               + "This is a significant warning, do not ignore.");
+            logTrustAllWarning();
             return trustAllTmf();
         }
 
@@ -633,6 +631,7 @@ public class ConfiguredTlsManager implements TlsManager {
     // used by ConfiguredTlsManager to setup a TrustManagerFactory, that may be "trustAll", or based on TLS material
     private TrustManagerFactory tmf(TlsMaterial material) throws KeyStoreException {
         if (material.trustAll()) {
+            logTrustAllWarning();
             return trustAllTmf();
         }
 
@@ -641,6 +640,12 @@ public class ConfiguredTlsManager implements TlsManager {
         }
 
         return null;
+    }
+
+    private static void logTrustAllWarning() {
+        LOGGER.log(System.Logger.Level.WARNING,
+                   "Using a trust manager that trusts ANY certificate. Never use this in production. "
+                           + "This is a significant warning, do not ignore.");
     }
 
     private void sslContext(TlsConfig tlsConfig) {

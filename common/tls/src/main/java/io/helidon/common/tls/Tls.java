@@ -70,7 +70,8 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
     private Tls(TlsConfig config) {
         // at this time, the TlsConfigDecorator should have created SSL parameters; the SSL context is the responsibility
         // of the manager to provide
-        this.tlsConfig = Objects.requireNonNull(config);
+        config = Objects.requireNonNull(config);
+        TlsConfig configuredTls = config;
         this.sslParameters = copySslParameters(config.sslParameters().orElseThrow());
         this.enabled = config.enabled();
 
@@ -79,8 +80,11 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
                 this.tlsManager = config.manager();
             } else {
                 this.tlsManager = new ExplicitContextTlsManager(config.sslContext().get());
+                configuredTls = TlsConfig.builder(config)
+                        .manager(this.tlsManager)
+                        .buildPrototype();
             }
-            this.tlsManager.init(config);
+            this.tlsManager.init(configuredTls);
             this.sslContext = tlsManager.sslContext();
             this.sslSocketFactory = sslContext.getSocketFactory();
             this.sslServerSocketFactory = sslContext.getServerSocketFactory();
@@ -90,6 +94,7 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
             this.sslServerSocketFactory = null;
             this.tlsManager = null;
         }
+        this.tlsConfig = configuredTls;
     }
 
     /**

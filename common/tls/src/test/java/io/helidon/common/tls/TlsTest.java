@@ -35,6 +35,7 @@ import javax.net.ssl.X509TrustManager;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
@@ -131,6 +132,7 @@ public class TlsTest {
                 .manager(new FailingTlsManager()));
 
         assertThat(tls.sslContext(), sameInstance(sslContext));
+        assertThat(tls.prototype().manager(), instanceOf(ExplicitContextTlsManager.class));
     }
 
     @Test
