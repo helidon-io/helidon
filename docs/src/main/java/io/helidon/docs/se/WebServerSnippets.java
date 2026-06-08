@@ -413,7 +413,7 @@ class WebServerSnippets {
                                 .passphrase("password".toCharArray())))
                 .build();
 
-        server.reloadVirtualHostTls("api.example.com", apiMaterial);
+        server.reloadVirtualHostTls(apiMaterial, "api.example.com");
         // end::snippet_42[]
     }
 

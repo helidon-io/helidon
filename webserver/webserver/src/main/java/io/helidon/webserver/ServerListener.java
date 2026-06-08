@@ -305,10 +305,10 @@ class ServerListener implements ListenerContext {
         this.tls.reload(material);
     }
 
-    void reloadVirtualHostTls(String host, TlsMaterial material) {
-        Objects.requireNonNull(host, "host");
+    void reloadVirtualHostTls(TlsMaterial material, String host) {
         Objects.requireNonNull(material, "material");
-        virtualHosts.reloadTls(host, material);
+        Objects.requireNonNull(host, "host");
+        virtualHosts.reloadTls(material, host);
     }
 
     void suspend() {

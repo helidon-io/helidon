@@ -103,6 +103,14 @@ public class ConfiguredTlsManager implements TlsManager {
     }
 
     @Override // TlsManager
+    @Deprecated(forRemoval = true, since = "27.0.0")
+    @SuppressWarnings("removal")
+    public void reload(Tls tls) {
+        Objects.requireNonNull(tls, "tls");
+        reload(tls.keyManager(), tls.trustManager());
+    }
+
+    @Override // TlsManager
     public void reload(TlsMaterial material) {
         Objects.requireNonNull(material, "material");
         validateMaterial(material);

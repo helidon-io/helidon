@@ -167,7 +167,7 @@ class VirtualHostRegistryTest {
         TlsMaterial material = material();
         VirtualHostRegistry registry = registry(defaultTls, virtualHost("api.example.com", exactTls));
 
-        registry.reloadTls("API.EXAMPLE.COM", material);
+        registry.reloadTls(material, "API.EXAMPLE.COM");
 
         verify(exactTls).reload(material);
         verify(defaultTls, never()).reload(material);
@@ -180,7 +180,7 @@ class VirtualHostRegistryTest {
         TlsMaterial material = material();
         VirtualHostRegistry registry = registry(defaultTls, virtualHost("*.example.com", wildcardTls));
 
-        registry.reloadTls("*.EXAMPLE.COM", material);
+        registry.reloadTls(material, "*.EXAMPLE.COM");
 
         verify(wildcardTls).reload(material);
         verify(defaultTls, never()).reload(material);
@@ -193,7 +193,7 @@ class VirtualHostRegistryTest {
         VirtualHostRegistry registry = registry(tls(), virtualHost("*.example.com", wildcardTls));
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                                                          () -> registry.reloadTls("api.example.com", material));
+                                                          () -> registry.reloadTls(material, "api.example.com"));
 
         assertThat(exception.getMessage(), is("Virtual host api.example.com is not configured on listener " + SOCKET_NAME));
         verify(wildcardTls, never()).reload(material);
@@ -205,7 +205,7 @@ class VirtualHostRegistryTest {
         VirtualHostRegistry registry = registry(tls());
 
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                                                          () -> registry.reloadTls("api.example.com", material));
+                                                          () -> registry.reloadTls(material, "api.example.com"));
 
         assertThat(exception.getMessage(), is("Virtual host api.example.com is not configured on listener " + SOCKET_NAME));
     }

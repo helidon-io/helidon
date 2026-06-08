@@ -108,7 +108,7 @@ final class VirtualHostRegistry {
         }
     }
 
-    void reloadTls(String configuredHost, TlsMaterial material) {
+    void reloadTls(TlsMaterial material, String configuredHost) {
         Objects.requireNonNull(material, "material");
         HostEntry.HostKey key = HostEntry.key(configuredHost);
         Map<String, HostEntry> target = key.wildcard() ? wildcardHosts : exactHosts;

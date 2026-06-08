@@ -2,7 +2,7 @@
 
 This module is used to get an instance of `SSLContext` and `SSLParameters` from configuration, or built using a builder.
 
-In addition, TLS supports reloading of TLS material, either explicitly "form outside", or internally using a
+In addition, TLS supports reloading of TLS material, either explicitly "from outside", or internally using a
 `TlsManager`.
 
 ## 4.x Design
@@ -17,7 +17,7 @@ To separate the concerns of each component:
 - `TlsConfig` is the _initial_ information needed to construct a `Tls` instance
 - `TlsMaterial` is the _changeable_ information needed to update a `Tls` instance
 - `Tls` still owns a `TlsManager`
-- `TlsManager` knows how to create `SSLContext`, `K509KeyManager`, and `X509TrustManager`, it may also support an explicit method `reload(TlsMaterial)` that may be delegated from a listener method
+- `TlsManager` knows how to create `SSLContext`, `X509KeyManager`, and `X509TrustManager`, it may also support an explicit method `reload(TlsMaterial)` that may be delegated from a listener method
 
 Intention (target solution):
 
@@ -31,6 +31,6 @@ The method `reload(TlsMaterial)` on listener(s) will delegate the call to the cu
 
 Example of `TlsManager`s we provide/expect:
 
-- `ExplicitTlsManager` - used when we have an explicit instance of `SSLContext` configure, reload throws an exception
+- `ExplicitContextTlsManager` - used when we have an explicit instance of `SSLContext` configured, reload throws an exception
 - `ConfiguredTlsManager` - uses configuration as the main source of truth
 - `OciCertificatesTlsManager` - uses information that may be rotated by OCI

@@ -188,7 +188,7 @@ to the running `WebServer`.
 include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_41, indent=0]
 ----
 
-The same API can reload TLS material for a named socket by calling `reloadTls(String, TlsMaterial)`.
+The same API can reload TLS material for a named socket by calling `reloadTls(TlsMaterial, String)`.
 
 TLS material reload does not replace the listener, routing, SNI rules, application protocols, enabled protocols,
 cipher suites, endpoint identification, client-auth mode, session settings, or other TLS setup options.
@@ -204,7 +204,7 @@ For SNI virtual hosts, reload the material for one configured virtual-host name.
 include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_42, indent=0]
 ----
 
-The named-socket overload `reloadVirtualHostTls(String, String, TlsMaterial)` reloads a virtual host on a specific
+The named-socket overload `reloadVirtualHostTls(TlsMaterial, String, String)` reloads a virtual host on a specific
 socket. The virtual host must already be configured, otherwise reload fails. TLS reload does not add, remove, or remap
 virtual hosts.
 

@@ -275,6 +275,7 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
      * @deprecated use {@link #reload(TlsMaterial)}
      */
     @Deprecated
+    @SuppressWarnings("removal")
     public void reload(Tls tls) {
         if (enabled) {
             tlsManager.reload(tls);

@@ -16,6 +16,7 @@
 
 package io.helidon.common.tls;
 
+import java.util.Objects;
 import java.util.Optional;
 
 import javax.net.ssl.SSLContext;
@@ -53,7 +54,8 @@ public interface TlsManager extends NamedService {
      */
     @Deprecated(forRemoval = true, since = "27.0.0")
     default void reload(Tls tls) {
-        reload((TlsMaterial) tls);
+        Objects.requireNonNull(tls, "tls");
+        reload(tls.prototype());
     }
 
     /**

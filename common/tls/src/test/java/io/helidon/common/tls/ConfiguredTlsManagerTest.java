@@ -136,7 +136,8 @@ class ConfiguredTlsManagerTest {
         UnsupportedOperationException exception = assertThrows(UnsupportedOperationException.class,
                                                                () -> tls.reload(reload));
 
-        assertThat(exception.getMessage(), is("Cannot set trust manager if one was not set during server start"));
+        assertThat(exception.getMessage(),
+                   is("TLS cannot be reloaded when an explicit instance of SSL context was used to create it"));
     }
 
     @Test
@@ -150,7 +151,8 @@ class ConfiguredTlsManagerTest {
         UnsupportedOperationException exception = assertThrows(UnsupportedOperationException.class,
                                                                () -> tls.reload(reload));
 
-        assertThat(exception.getMessage(), is("Cannot reload key manager if one was not set during server start"));
+        assertThat(exception.getMessage(),
+                   is("TLS cannot be reloaded when an explicit instance of SSL context was used to create it"));
     }
 
     @Test
@@ -257,6 +259,7 @@ class ConfiguredTlsManagerTest {
         }
 
         @Override
+        @SuppressWarnings("removal")
         public void reload(Tls tls) {
         }
 
