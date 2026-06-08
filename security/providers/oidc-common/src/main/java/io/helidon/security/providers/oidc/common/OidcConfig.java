@@ -277,8 +277,8 @@ import jakarta.ws.rs.client.WebTarget;
  * </tr>
  * <tr>
  *     <td>{@code cookie-encryption-enabled}</td>
- *     <td>Depends on other configuration</td>
- *     <td>Whether cookies should be encrypted. Will be enabled if logout is enabled.</td>
+ *     <td>{@code true}</td>
+ *     <td>Whether the access token and tenant cookies should be encrypted.</td>
  * </tr>
  * <tr>
  *     <td>{@code cookie-encryption-password}</td>
@@ -405,9 +405,9 @@ public final class OidcConfig extends TenantConfigImpl {
         this.useHeader = builder.useHeader;
         this.headerHandler = builder.headerHandler;
         this.useCookie = builder.useCookie;
-        this.tokenCookieHandler = builder.tokenCookieBuilder.build();
-        this.idTokenCookieHandler = builder.idTokenCookieBuilder.build();
-        this.tenantCookieHandler = builder.tenantCookieBuilder.build();
+        this.tokenCookieHandler = builder.tokenCookieBuilder.build(builder.useCookie);
+        this.idTokenCookieHandler = builder.idTokenCookieBuilder.build(builder.useCookie && builder.logoutEnabled);
+        this.tenantCookieHandler = builder.tenantCookieBuilder.build(builder.useCookie);
 
         if (builder.validateJwtWithJwk()) {
             this.introspectEndpoint = LazyValue.create(Optional.empty());
@@ -1016,8 +1016,10 @@ public final class OidcConfig extends TenantConfigImpl {
         private boolean useParam = DEFAULT_PARAM_USE;
 
         private final OidcCookieHandler.Builder tenantCookieBuilder = OidcCookieHandler.builder()
+                .encryptionEnabled(true)
                 .cookieName(DEFAULT_TENANT_COOKIE_NAME);
         private final OidcCookieHandler.Builder tokenCookieBuilder = OidcCookieHandler.builder()
+                .encryptionEnabled(true)
                 .cookieName(DEFAULT_COOKIE_NAME);
         private final OidcCookieHandler.Builder idTokenCookieBuilder = OidcCookieHandler.builder()
                 .cookieName(DEFAULT_COOKIE_NAME + "_2");
@@ -1472,15 +1474,17 @@ public final class OidcConfig extends TenantConfigImpl {
         }
 
         /**
-         * Whether to encrypt token cookie created by this microservice.
-         * Defaults to {@code false}.
+         * Whether to encrypt token and tenant cookies created by this microservice.
+         * Defaults to {@code true}.
          *
-         * @param cookieEncryptionEnabled whether cookie should be encrypted {@code true}, or as obtained from
-         *                               OIDC server {@code false}
+         * @param cookieEncryptionEnabled whether cookies should be encrypted {@code true}, or left unencrypted
+         *                               {@code false}
          * @return updated builder instance
          */
+        @ConfiguredOption("true")
         public Builder cookieEncryptionEnabled(boolean cookieEncryptionEnabled) {
             this.tokenCookieBuilder.encryptionEnabled(cookieEncryptionEnabled);
+            this.tenantCookieBuilder.encryptionEnabled(cookieEncryptionEnabled);
             return this;
         }
 

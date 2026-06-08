@@ -76,8 +76,8 @@ final class OidcEncryption {
     private static EncryptionSupport symmetricCipher(char[] masterPassword) {
         SymmetricCipher cipher = SymmetricCipher.create(masterPassword);
         return EncryptionSupport.create(
-                bytes -> Single.just(cipher.encrypt(Base64Value.create(bytes)).toBase64()),
-                cipherText -> Single.just(cipher.decrypt(Base64Value.createFromEncoded(cipherText)).toBytes())
+                bytes -> Single.create(() -> cipher.encrypt(Base64Value.create(bytes)).toBase64()),
+                cipherText -> Single.create(() -> cipher.decrypt(Base64Value.createFromEncoded(cipherText)).toBytes())
         );
     }
 

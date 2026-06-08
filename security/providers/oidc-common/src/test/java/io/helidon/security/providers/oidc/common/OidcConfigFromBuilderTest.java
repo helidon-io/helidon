@@ -21,6 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -38,6 +39,7 @@ import jakarta.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -47,6 +49,9 @@ import static org.junit.jupiter.api.Assertions.assertAll;
  * Unit test for {@link OidcConfig}.
  */
 class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
+    private static final String COOKIE_VALUE = "cookieValue";
+    private static final String COOKIE_ENCRYPTION_PASSWORD = "test-password";
+
     private OidcConfig oidcConfig;
     private boolean isCommunicationWithProxy = true;
     private String httpHostPort;
@@ -186,6 +191,124 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
             // reset the value
             cookieEncryptionPasswordValue = null;
         }
+    }
+
+    @Test
+    void testTokenCookieEncryptedByDefault() {
+        OidcConfig config = OidcConfig.builder()
+                .identityUri(URI.create("https://identity.oracle.com"))
+                .clientId("client-id-value")
+                .clientSecret("client-secret-value")
+                .oidcMetadataWellKnown(false)
+                .cookieEncryptionPassword(COOKIE_ENCRYPTION_PASSWORD.toCharArray())
+                .build();
+        OidcCookieHandler cookieHandler = config.tokenCookieHandler();
+        String cookieValue = cookieValue(cookieHandler.createCookie(COOKIE_VALUE).await().build().toString());
+        String cookieHeader = cookieHandler.cookieName() + "=" + cookieValue;
+
+        assertAll("token cookie encrypted by default",
+                  () -> assertThat("Encrypted cookie should not expose the token value",
+                                   cookieValue,
+                                   not(COOKIE_VALUE)),
+                  () -> assertThat(cookieHandler.findCookie(Map.of("Cookie", List.of(cookieHeader)))
+                                           .orElseThrow()
+                                           .await(),
+                                   is(COOKIE_VALUE)));
+    }
+
+    @Test
+    void testTokenCookieEncryptionCanBeDisabled() {
+        OidcConfig config = OidcConfig.builder()
+                .identityUri(URI.create("https://identity.oracle.com"))
+                .clientId("client-id-value")
+                .clientSecret("client-secret-value")
+                .oidcMetadataWellKnown(false)
+                .cookieEncryptionPassword(COOKIE_ENCRYPTION_PASSWORD.toCharArray())
+                .cookieEncryptionEnabled(false)
+                .build();
+        OidcCookieHandler cookieHandler = config.tokenCookieHandler();
+        String cookieValue = cookieValue(cookieHandler.createCookie(COOKIE_VALUE).await().build().toString());
+        String cookieHeader = cookieHandler.cookieName() + "=" + cookieValue;
+
+        assertAll("token cookie encryption opt-out",
+                  () -> assertThat("Unencrypted cookie should preserve existing opt-out behavior",
+                                   cookieValue,
+                                   is(COOKIE_VALUE)),
+                  () -> assertThat(cookieHandler.findCookie(Map.of("Cookie", List.of(cookieHeader)))
+                                           .orElseThrow()
+                                           .await(),
+                                   is(COOKIE_VALUE)));
+    }
+
+    @Test
+    void testTenantCookieEncryptedByDefault() {
+        OidcConfig config = OidcConfig.builder()
+                .identityUri(URI.create("https://identity.oracle.com"))
+                .clientId("client-id-value")
+                .clientSecret("client-secret-value")
+                .oidcMetadataWellKnown(false)
+                .cookieEncryptionPassword(COOKIE_ENCRYPTION_PASSWORD.toCharArray())
+                .build();
+        OidcCookieHandler cookieHandler = config.tenantCookieHandler();
+        String cookieValue = cookieValue(cookieHandler.createCookie(COOKIE_VALUE).await().build().toString());
+        String cookieHeader = cookieHandler.cookieName() + "=" + cookieValue;
+
+        assertAll("tenant cookie encrypted by default",
+                  () -> assertThat("Encrypted cookie should not expose the tenant value",
+                                   cookieValue,
+                                   not(COOKIE_VALUE)),
+                  () -> assertThat(cookieHandler.findCookie(Map.of("Cookie", List.of(cookieHeader)))
+                                           .orElseThrow()
+                                           .await(),
+                                   is(COOKIE_VALUE)));
+    }
+
+    @Test
+    void testTenantCookieEncryptionCanBeDisabled() {
+        OidcConfig config = OidcConfig.builder()
+                .identityUri(URI.create("https://identity.oracle.com"))
+                .clientId("client-id-value")
+                .clientSecret("client-secret-value")
+                .oidcMetadataWellKnown(false)
+                .cookieEncryptionPassword(COOKIE_ENCRYPTION_PASSWORD.toCharArray())
+                .cookieEncryptionEnabledTenantName(false)
+                .build();
+        OidcCookieHandler cookieHandler = config.tenantCookieHandler();
+        String cookieValue = cookieValue(cookieHandler.createCookie(COOKIE_VALUE).await().build().toString());
+        String cookieHeader = cookieHandler.cookieName() + "=" + cookieValue;
+
+        assertAll("tenant cookie encryption opt-out",
+                  () -> assertThat("Unencrypted cookie should preserve existing opt-out behavior",
+                                   cookieValue,
+                                   is(COOKIE_VALUE)),
+                  () -> assertThat(cookieHandler.findCookie(Map.of("Cookie", List.of(cookieHeader)))
+                                           .orElseThrow()
+                                           .await(),
+                                           is(COOKIE_VALUE)));
+    }
+
+    @Test
+    void testConfigCookieEncryptionOptOutDisablesTokenAndTenantCookies() {
+        OidcConfig config = OidcConfig.builder()
+                .config(Config.create(ConfigSources.create(Map.of(
+                        "identity-uri", "https://identity.oracle.com",
+                        "client-id", "client-id-value",
+                        "client-secret", "client-secret-value",
+                        "oidc-metadata-well-known", "false",
+                        "cookie-encryption-enabled", "false"))))
+                .build();
+        OidcCookieHandler tokenCookieHandler = config.tokenCookieHandler();
+        String tokenCookieValue = cookieValue(tokenCookieHandler.createCookie(COOKIE_VALUE).await().build().toString());
+        OidcCookieHandler tenantCookieHandler = config.tenantCookieHandler();
+        String tenantCookieValue = cookieValue(tenantCookieHandler.createCookie(COOKIE_VALUE).await().build().toString());
+
+        assertAll("cookie encryption config opt-out",
+                  () -> assertThat("Token cookie should be unencrypted",
+                                   tokenCookieValue,
+                                   is(COOKIE_VALUE)),
+                  () -> assertThat("Tenant cookie should be unencrypted",
+                                   tenantCookieValue,
+                                   is(COOKIE_VALUE)));
     }
 
     @Test
@@ -345,6 +468,12 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                 .build();
         server.start().await(Duration.ofSeconds(10));
         return server;
+    }
+
+    private static String cookieValue(String setCookie) {
+        int begin = setCookie.indexOf('=') + 1;
+        int end = setCookie.indexOf(';');
+        return setCookie.substring(begin, end == -1 ? setCookie.length() : end);
     }
 
     private static void post(OidcConfig config, URI uri) {

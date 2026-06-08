@@ -59,6 +59,8 @@ Type: link:{javadoc-base-url}/io.helidon.security.providers.oidc.common/io/helid
 |`client-timeout-millis` |Duration |`30000` |Timeout of calls using web client.
 |`cookie-domain` |string |{nbsp} |Domain the cookie is valid for.
  Not used by default.
+|`cookie-encryption-enabled` |boolean |`true` |Whether to encrypt token and tenant cookies created by this microservice.
+ Defaults to `true`.
 |`cookie-http-only` |boolean |`true` |When using cookie, if set to true, the HttpOnly attribute will be configured.
  Defaults to `OidcCookieHandler.Builder#DEFAULT_HTTP_ONLY`.
 |`cookie-max-age-seconds` |long |{nbsp} |When using cookie, used to set MaxAge attribute of the cookie, defining how long

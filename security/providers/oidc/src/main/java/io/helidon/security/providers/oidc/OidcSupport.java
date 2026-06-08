@@ -297,7 +297,13 @@ public final class OidcSupport implements Service {
                     .findCookie(request.headers().toMap());
 
             if (cookie.isPresent()) {
-                return cookie.get();
+                return cookie.get()
+                        .onErrorResumeWithSingle(t -> {
+                            if (LOGGER.isLoggable(Level.FINEST)) {
+                                LOGGER.log(Level.FINEST, "Invalid tenant name in cookie, falling back to default tenant", t);
+                            }
+                            return Single.just(DEFAULT_TENANT_ID);
+                        });
             }
             missingLocations.add("cookie");
         }

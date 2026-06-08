@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,7 +46,7 @@ public class OidcCookieHandler {
     private final Function<String, Single<String>> encryptFunction;
     private final Function<String, Single<String>> decryptFunction;
 
-    private OidcCookieHandler(Builder builder) {
+    private OidcCookieHandler(Builder builder, boolean allowEncryption) {
         this.cookieName = builder.cookieName;
         this.valuePrefix = cookieName + "=";
 
@@ -88,7 +88,7 @@ public class OidcCookieHandler {
             this.createCookieOptions = value.substring(index);
         }
 
-        if (builder.encryptionEnabled) {
+        if (allowEncryption && builder.encryptionEnabled) {
             var cookieEncryption = OidcEncryption.create("Cookie(" + cookieName + ")",
                                                          builder.encryptionName,
                                                          builder.encryptionPassword);
@@ -217,7 +217,11 @@ public class OidcCookieHandler {
 
         @Override
         public OidcCookieHandler build() {
-            return new OidcCookieHandler(this);
+            return new OidcCookieHandler(this, true);
+        }
+
+        OidcCookieHandler build(boolean allowEncryption) {
+            return new OidcCookieHandler(this, allowEncryption);
         }
 
         Builder path(String cookiePath) {

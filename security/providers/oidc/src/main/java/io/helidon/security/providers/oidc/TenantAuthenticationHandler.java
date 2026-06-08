@@ -205,13 +205,14 @@ class TenantAuthenticationHandler {
                         return cookie.get()
                                 .flatMapSingle(it -> validateToken(tenantId, providerRequest, it))
                                 .onErrorResumeWithSingle(throwable -> {
+                                    // Cookie token failures are invalid credentials, not a missing credential fallback.
                                     if (LOGGER.isLoggable(Level.FINEST)) {
-                                        LOGGER.log(Level.FINEST, "Invalid token in cookie", throwable);
+                                        LOGGER.log(Level.FINEST, "Invalid access token in cookie", throwable);
                                     }
                                     return Single.just(errorResponse(providerRequest,
                                                                      Http.Status.UNAUTHORIZED_401,
                                                                      null,
-                                                                     "Invalid token",
+                                                                     "Invalid access token",
                                                                      tenantId));
                                 });
                     }

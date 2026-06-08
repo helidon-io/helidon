@@ -16,6 +16,7 @@
 
 package io.helidon.security.providers.oidc.common;
 
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystemException;
 import java.nio.file.Files;
@@ -185,6 +186,14 @@ class OidcEncryptionTest {
         assertThat(result.output(), result.exitCode(), is(0));
     }
 
+    @Test
+    void useCookieFalseDoesNotCreateFallbackSecret() throws Exception {
+        ProcessResult result = runFallbackSecret(tempDir, "no-cookie-config");
+
+        assertThat(result.output(), result.exitCode(), is(0));
+        assertThat(Files.exists(tempDir.resolve(SECRET_FILE)), is(false));
+    }
+
     private static boolean posixSupported(Path path) {
         return Files.getFileAttributeView(path, PosixFileAttributeView.class) != null;
     }
@@ -234,6 +243,7 @@ class OidcEncryptionTest {
             try {
                 switch (args[0]) {
                 case "name" -> useNamedEncryption();
+                case "no-cookie-config" -> noCookieConfig();
                 case "password" -> use(OidcEncryption.create("test", null, "changeit".toCharArray()));
                 case "encrypt" -> encrypt();
                 case "decrypt" -> decrypt(args[1]);
@@ -243,6 +253,16 @@ class OidcEncryptionTest {
                 t.printStackTrace(System.out);
                 System.exit(2);
             }
+        }
+
+        private static void noCookieConfig() {
+            OidcConfig.builder()
+                    .identityUri(URI.create("https://identity.oracle.com"))
+                    .clientId("client-id-value")
+                    .clientSecret("client-secret-value")
+                    .oidcMetadataWellKnown(false)
+                    .useCookie(false)
+                    .build();
         }
 
         private static void useNamedEncryption() {
