@@ -10,8 +10,8 @@ To enable WebServer, add the following dependency to your project’s `pom.xml` 
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver</artifactId>
+  <groupId>io.helidon.webserver</groupId>
+  <artifactId>helidon-webserver</artifactId>
 </dependency>
 ```
 
@@ -669,8 +669,8 @@ To enable execution of routes within Context, add the following dependency to pr
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver-context</artifactId>
+  <groupId>io.helidon.webserver</groupId>
+  <artifactId>helidon-webserver-context</artifactId>
 </dependency>
 ```
 
@@ -707,8 +707,8 @@ To enable Access logging add the following dependency to project’s `pom.xml`:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver-access-log</artifactId>
+  <groupId>io.helidon.webserver</groupId>
+  <artifactId>helidon-webserver-access-log</artifactId>
 </dependency>
 ```
 
@@ -776,8 +776,8 @@ To enable HTTP/2 support add the following dependency to your project’s `pom.x
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver-http2</artifactId>
+  <groupId>io.helidon.webserver</groupId>
+  <artifactId>helidon-webserver-http2</artifactId>
 </dependency>
 ```
 
@@ -794,8 +794,8 @@ To enable Static Content Support add the following dependency to your project’
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver-static-content</artifactId>
+  <groupId>io.helidon.webserver</groupId>
+  <artifactId>helidon-webserver-static-content</artifactId>
 </dependency>
 ```
 
@@ -877,8 +877,8 @@ To enable JSON Support add the following dependency to your project’s `pom.xml
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.http.media</groupId>
-    <artifactId>helidon-http-media-jsonp</artifactId>
+  <groupId>io.helidon.http.media</groupId>
+  <artifactId>helidon-http-media-jsonp</artifactId>
 </dependency>
 ```
 
@@ -923,8 +923,8 @@ To enable JSON-B Support add the following dependency to your project’s `pom.x
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.http.media</groupId>
-    <artifactId>helidon-http-media-jsonb</artifactId>
+  <groupId>io.helidon.http.media</groupId>
+  <artifactId>helidon-http-media-jsonb</artifactId>
 </dependency>
 ```
 
@@ -1001,8 +1001,8 @@ To enable Jackson Support add the following dependency to your project’s `pom.
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.http.media</groupId>
-    <artifactId>helidon-http-media-jackson</artifactId>
+  <groupId>io.helidon.http.media</groupId>
+  <artifactId>helidon-http-media-jackson</artifactId>
 </dependency>
 ```
 
@@ -1078,8 +1078,8 @@ To enable Gson Support add the following dependency to your project’s `pom.xml
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.http.media</groupId>
-    <artifactId>helidon-http-media-gson</artifactId>
+  <groupId>io.helidon.http.media</groupId>
+  <artifactId>helidon-http-media-gson</artifactId>
 </dependency>
 ```
 

@@ -10,8 +10,8 @@ To enable gRPC MicroProfile Clients, add the following dependency to your projec
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.microprofile.grpc</groupId>
-    <artifactId>helidon-microprofile-grpc-client</artifactId>
+  <groupId>io.helidon.microprofile.grpc</groupId>
+  <artifactId>helidon-microprofile-grpc-client</artifactId>
 </dependency>
 ```
 

@@ -12,9 +12,9 @@ Extra dependency for LangChain4j provider you want to generate binding for, here
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>dev.langchain4j</groupId>
-    <artifactId>langchain4j-google-ai-gemini</artifactId>
-    <version>1.1.0-rc1</version>
+  <groupId>dev.langchain4j</groupId>
+  <artifactId>langchain4j-google-ai-gemini</artifactId>
+  <version>1.1.0-rc1</version>
 </dependency>
 ```
 

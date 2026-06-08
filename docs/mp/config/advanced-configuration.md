@@ -174,8 +174,8 @@ sources:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.config</groupId>
-    <artifactId>helidon-config-hocon-mp</artifactId>
+  <groupId>io.helidon.config</groupId>
+  <artifactId>helidon-config-hocon-mp</artifactId>
 </dependency>
 ```
 

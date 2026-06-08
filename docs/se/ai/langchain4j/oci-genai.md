@@ -10,8 +10,8 @@ In addition to the [Helidon integration with LangChain4j core dependencies](lang
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.integrations.langchain4j.providers</groupId>
-    <artifactId>helidon-integrations-langchain4j-providers-oci-genai</artifactId>
+  <groupId>io.helidon.integrations.langchain4j.providers</groupId>
+  <artifactId>helidon-integrations-langchain4j-providers-oci-genai</artifactId>
 </dependency>
 ```
 
@@ -21,14 +21,14 @@ Integration uses OCI SDK authentication provider bean from the service registry.
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.integrations.oci</groupId>
-    <artifactId>helidon-integrations-oci</artifactId>
+  <groupId>io.helidon.integrations.oci</groupId>
+  <artifactId>helidon-integrations-oci</artifactId>
 </dependency>
 <!-- Jakartified OCI SDK HTTP client -->
 <dependency>
-    <groupId>com.oracle.oci.sdk</groupId>
-    <artifactId>oci-java-sdk-common-httpclient-jersey3</artifactId>
-    <scope>runtime</scope>
+  <groupId>com.oracle.oci.sdk</groupId>
+  <artifactId>oci-java-sdk-common-httpclient-jersey3</artifactId>
+  <scope>runtime</scope>
 </dependency>
 ```
 

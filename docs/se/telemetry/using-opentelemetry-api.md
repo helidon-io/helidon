@@ -54,15 +54,15 @@ Including the OpenTelemetry BOM:
 
 ```xml [pom.xml]
 <dependencyManagement>
-    <dependencies>
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-bom</artifactId>
-            <version>1.58.0</version>
-            <type>pom</type>
-            <scope>import</scope>
-        </dependency>
-    </dependencies>
+  <dependencies>
+    <dependency>
+      <groupId>io.opentelemetry</groupId>
+      <artifactId>opentelemetry-bom</artifactId>
+      <version>1.58.0</version>
+      <type>pom</type>
+      <scope>import</scope>
+    </dependency>
+  </dependencies>
 </dependencyManagement>
 ```
 
@@ -75,40 +75,40 @@ Dependencies for the OpenTelemetry API and Autoconfiguration:
 ```xml [pom.xml]
 <!-- OpenTelemetrySdkBuilder -->
 <dependency>
-    <groupId>io.opentelemetry</groupId>
-    <artifactId>opentelemetry-sdk</artifactId>
+  <groupId>io.opentelemetry</groupId>
+  <artifactId>opentelemetry-sdk</artifactId>
 </dependency>
 
 <!-- Resource -->
 <dependency>
-    <groupId>io.opentelemetry</groupId>
-    <artifactId>opentelemetry-sdk-common</artifactId>
+  <groupId>io.opentelemetry</groupId>
+  <artifactId>opentelemetry-sdk-common</artifactId>
 </dependency>
 
 <!-- Context -->
 <dependency>
-    <groupId>io.opentelemetry</groupId>
-    <artifactId>opentelemetry-context</artifactId>
+  <groupId>io.opentelemetry</groupId>
+  <artifactId>opentelemetry-context</artifactId>
 </dependency>
 
 <!-- autoconfigure -->
 <dependency>
-    <groupId>io.opentelemetry</groupId>
-    <artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
+  <groupId>io.opentelemetry</groupId>
+  <artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
 </dependency>
 
 <!-- Uses the JDK client for exporters rather than okhttp -->
 <dependency>
-    <groupId>io.opentelemetry</groupId>
-    <artifactId>opentelemetry-exporter-sender-jdk</artifactId>
-    <scope>runtime</scope>
+  <groupId>io.opentelemetry</groupId>
+  <artifactId>opentelemetry-exporter-sender-jdk</artifactId>
+  <scope>runtime</scope>
 </dependency>
 
 <!-- Adds the OTLP exporter to the classpath for when the user configures the app to use the  'otlp' exporter. -->
 <dependency>
-    <groupId>io.opentelemetry</groupId>
-    <artifactId>opentelemetry-exporter-otlp</artifactId>
-    <scope>runtime</scope>
+  <groupId>io.opentelemetry</groupId>
+  <artifactId>opentelemetry-exporter-otlp</artifactId>
+  <scope>runtime</scope>
 </dependency>
 ```
 

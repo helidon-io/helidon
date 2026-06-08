@@ -197,12 +197,12 @@ Add the following dependencies to pom.xml:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver-security</artifactId>
+  <groupId>io.helidon.webserver</groupId>
+  <artifactId>helidon-webserver-security</artifactId>
 </dependency>
 <dependency>
-    <groupId>io.helidon.security.providers</groupId>
-    <artifactId>helidon-security-providers-oidc</artifactId>
+  <groupId>io.helidon.security.providers</groupId>
+  <artifactId>helidon-security-providers-oidc</artifactId>
 </dependency>
 ```
 
@@ -210,9 +210,9 @@ Remove the test scope from helidon-webclient dependency:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webclient</groupId>
-    <artifactId>helidon-webclient</artifactId>
-    <scope>test</scope> <!-- remove this line -->
+  <groupId>io.helidon.webclient</groupId>
+  <artifactId>helidon-webclient</artifactId>
+  <scope>test</scope> <!-- remove this line -->
 </dependency>
 ```
 
@@ -367,9 +367,9 @@ Add the following dependency to pom.xml:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.security.providers</groupId>
-    <artifactId>helidon-security-providers-http-auth</artifactId>
-    <scope>test</scope>
+  <groupId>io.helidon.security.providers</groupId>
+  <artifactId>helidon-security-providers-http-auth</artifactId>
+  <scope>test</scope>
 </dependency>
 ```
 

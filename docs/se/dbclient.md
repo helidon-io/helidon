@@ -10,8 +10,8 @@ To enable DB Client, add the following dependency to your project’s `pom.xml` 
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.dbclient</groupId>
-    <artifactId>helidon-dbclient</artifactId>
+  <groupId>io.helidon.dbclient</groupId>
+  <artifactId>helidon-dbclient</artifactId>
 </dependency>
 ```
 
@@ -19,8 +19,8 @@ To use with a JDBC client also add the following dependency:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.dbclient</groupId>
-    <artifactId>helidon-dbclient-jdbc</artifactId>
+  <groupId>io.helidon.dbclient</groupId>
+  <artifactId>helidon-dbclient-jdbc</artifactId>
 </dependency>
 ```
 
@@ -28,8 +28,8 @@ Or to use with MongoDB client add the following dependency:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.dbclient</groupId>
-    <artifactId>helidon-dbclient-mongodb</artifactId>
+  <groupId>io.helidon.dbclient</groupId>
+  <artifactId>helidon-dbclient-mongodb</artifactId>
 </dependency>
 ```
 
@@ -65,18 +65,18 @@ For the DB Client using JDBC implementation and H2 database, you must include th
 
 ```xml [pom.xml]
 <dependencies>
-     <dependency>
-         <groupId>io.helidon.dbclient</groupId> 
-         <artifactId>helidon-dbclient</artifactId>
-     </dependency>
-     <dependency>
-         <groupId>io.helidon.dbclient</groupId> 
-         <artifactId>helidon-dbclient-jdbc</artifactId>
-     </dependency>
-     <dependency>
-         <groupId>com.h2database</groupId> 
-         <artifactId>h2</artifactId>
-    </dependency>
+  <dependency>
+    <groupId>io.helidon.dbclient</groupId>
+    <artifactId>helidon-dbclient</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.dbclient</groupId>
+    <artifactId>helidon-dbclient-jdbc</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>com.h2database</groupId>
+    <artifactId>h2</artifactId>
+  </dependency>
 </dependencies>
 ```
 

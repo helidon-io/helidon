@@ -10,8 +10,8 @@ To enable MicroProfile GraphQL, add the following dependency to your project’s
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.microprofile.graphql</groupId>
-    <artifactId>helidon-microprofile-graphql-server</artifactId>
+  <groupId>io.helidon.microprofile.graphql</groupId>
+  <artifactId>helidon-microprofile-graphql-server</artifactId>
 </dependency>
 ```
 
@@ -101,13 +101,13 @@ Generate Jandex index:
 
 ```xml [pom.xml]
 <plugin>
-    <groupId>io.smallrye</groupId>
-    <artifactId>jandex-maven-plugin</artifactId>
-    <executions>
-        <execution>
-            <id>make-index</id>
-        </execution>
-    </executions>
+  <groupId>io.smallrye</groupId>
+  <artifactId>jandex-maven-plugin</artifactId>
+  <executions>
+    <execution>
+      <id>make-index</id>
+    </execution>
+  </executions>
 </plugin>
 ```
 

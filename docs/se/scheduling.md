@@ -1,4 +1,4 @@
-# Overview
+# Scheduling
 
 ## Overview
 
@@ -10,8 +10,8 @@ To enable Scheduling, add the following dependency to your project’s `pom.xml`
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.scheduling</groupId>
-    <artifactId>helidon-scheduling</artifactId>
+  <groupId>io.helidon.scheduling</groupId>
+  <artifactId>helidon-scheduling</artifactId>
 </dependency>
 ```
 

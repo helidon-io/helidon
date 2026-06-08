@@ -12,8 +12,8 @@ The JSON Binding module (`helidon-json-binding`) provides high-level object seri
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.json</groupId>
-    <artifactId>helidon-json-binding</artifactId>
+  <groupId>io.helidon.json</groupId>
+  <artifactId>helidon-json-binding</artifactId>
 </dependency>
 ```
 
@@ -44,21 +44,21 @@ Annotation processor configuration with bundles:
 
 ```xml [pom.xml]
 <build>
-    <plugins>
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <configuration>
-                <annotationProcessorPaths>
-                    <path>
-                        <groupId>io.helidon.bundles</groupId>
-                        <artifactId>helidon-bundles-apt</artifactId>
-                        <version>${helidon.version}</version>
-                    </path>
-                </annotationProcessorPaths>
-            </configuration>
-        </plugin>
-    </plugins>
+  <plugins>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-compiler-plugin</artifactId>
+      <configuration>
+        <annotationProcessorPaths>
+          <path>
+            <groupId>io.helidon.bundles</groupId>
+            <artifactId>helidon-bundles-apt</artifactId>
+            <version>${helidon.version}</version>
+          </path>
+        </annotationProcessorPaths>
+      </configuration>
+    </plugin>
+  </plugins>
 </build>
 ```
 
@@ -70,32 +70,32 @@ Annotation processor configuration:
 
 ```xml [pom.xml]
 <build>
-    <plugins>
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <configuration>
-                <annotationProcessorPaths>
-                    <path>
-                        <groupId>io.helidon.codegen</groupId>
-                        <artifactId>helidon-codegen-apt</artifactId>
-                        <version>${helidon.version}</version>
-                    </path>
-                    <!-- To enable automatic converter discovery -->
-                    <path>
-                        <groupId>io.helidon.service</groupId>
-                        <artifactId>helidon-service-codegen</artifactId>
-                        <version>${helidon.version}</version>
-                    </path>
-                    <path>
-                        <groupId>io.helidon.json</groupId>
-                        <artifactId>helidon-json-codegen</artifactId>
-                        <version>${helidon.version}</version>
-                    </path>
-                </annotationProcessorPaths>
-            </configuration>
-        </plugin>
-    </plugins>
+  <plugins>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-compiler-plugin</artifactId>
+      <configuration>
+        <annotationProcessorPaths>
+          <path>
+            <groupId>io.helidon.codegen</groupId>
+            <artifactId>helidon-codegen-apt</artifactId>
+            <version>${helidon.version}</version>
+          </path>
+          <!-- To enable automatic converter discovery -->
+          <path>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-codegen</artifactId>
+            <version>${helidon.version}</version>
+          </path>
+          <path>
+            <groupId>io.helidon.json</groupId>
+            <artifactId>helidon-json-codegen</artifactId>
+            <version>${helidon.version}</version>
+          </path>
+        </annotationProcessorPaths>
+      </configuration>
+    </plugin>
+  </plugins>
 </build>
 ```
 
@@ -605,8 +605,8 @@ The JSON module (`helidon-json`) provides fundamental JSON parsing and generatio
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.json</groupId>
-    <artifactId>helidon-json</artifactId>
+  <groupId>io.helidon.json</groupId>
+  <artifactId>helidon-json</artifactId>
 </dependency>
 ```
 

@@ -59,8 +59,8 @@ Include dependency for the built-in health checks:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.health</groupId>
-    <artifactId>helidon-health-checks</artifactId>
+  <groupId>io.helidon.health</groupId>
+  <artifactId>helidon-health-checks</artifactId>
 </dependency>
 ```
 

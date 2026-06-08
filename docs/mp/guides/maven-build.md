@@ -36,15 +36,15 @@ Import Helidon Dependency Management:
 
 ```xml [pom.xml]
 <dependencyManagement>
-    <dependencies>
-        <dependency>
-            <groupId>io.helidon</groupId>
-            <artifactId>helidon-dependencies</artifactId>
-            <version>4.4.0-SNAPSHOT</version>
-            <type>pom</type>
-            <scope>import</scope>
-        </dependency>
-    </dependencies>
+  <dependencies>
+    <dependency>
+      <groupId>io.helidon</groupId>
+      <artifactId>helidon-dependencies</artifactId>
+      <version>4.4.0-SNAPSHOT</version>
+      <type>pom</type>
+      <scope>import</scope>
+    </dependency>
+  </dependencies>
 </dependencyManagement>
 ```
 
@@ -54,8 +54,8 @@ Component dependency:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.config</groupId>
-    <artifactId>helidon-config-yaml</artifactId>
+  <groupId>io.helidon.config</groupId>
+  <artifactId>helidon-config-yaml</artifactId>
 </dependency>
 ```
 
@@ -102,20 +102,20 @@ Turn off generation of the CDS Archive when generating a custom Java runtime ima
 ```xml [pom.xml]
 <build>
   <pluginManagement>
-      <plugins>
-          <plugin>
-              <groupId>io.helidon.build-tools</groupId>
-              <artifactId>helidon-maven-plugin</artifactId>
-              <executions>
-                  <execution>
-                      <id>jlink-image</id>
-                      <configuration>
-                          <addClassDataSharingArchive>false</addClassDataSharingArchive>
-                      </configuration>
-                  </execution>
-              </executions>
-          </plugin>
-      </plugins>
+    <plugins>
+      <plugin>
+        <groupId>io.helidon.build-tools</groupId>
+        <artifactId>helidon-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>jlink-image</id>
+            <configuration>
+              <addClassDataSharingArchive>false</addClassDataSharingArchive>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
   </pluginManagement>
 </build>
 ```

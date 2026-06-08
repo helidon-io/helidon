@@ -10,8 +10,8 @@ To enable Reactive Streams, add the following dependency to your project’s `po
 
 ```xml [pom.xml]
 <dependency>
-   <groupId>io.helidon.microprofile.reactive-streams</groupId>
-   <artifactId>helidon-microprofile-reactive-streams</artifactId>
+  <groupId>io.helidon.microprofile.reactive-streams</groupId>
+  <artifactId>helidon-microprofile-reactive-streams</artifactId>
 </dependency>
 ```
 

@@ -40,21 +40,21 @@ Declaring the OpenAPI Generator Plug-in:
 
 ```xml [pom.xml]
 <properties>
-    <openapi-generator-version>7.6.0</openapi-generator-version>
+  <openapi-generator-version>7.6.0</openapi-generator-version>
 </properties>
 ...
 <build>
+  ...
+  <plugin-management>
     ...
-    <plugin-management>
-        ...
-        <plugin>
-             <groupId>org.openapitools</groupId>
-             <artifactId>openapi-generator-maven-plugin</artifactId>
-             <version>${openapi-generator-version}</version>
-        </plugin>
-        ...
-    </plugin-management>
+    <plugin>
+      <groupId>org.openapitools</groupId>
+      <artifactId>openapi-generator-maven-plugin</artifactId>
+      <version>${openapi-generator-version}</version>
+    </plugin>
     ...
+  </plugin-management>
+  ...
 </build>
 ```
 
@@ -83,7 +83,7 @@ The OpenAPI generator loosely divides its settings into three types:
 
   For the Maven plug-in, use elements within the `<configuration>` section of the plug-in:
 
-  ``` xml
+  ```xml
   <configuration>
     <inputSpec>petstore.yaml</inputSpec>
   </configuration>
@@ -110,8 +110,8 @@ The OpenAPI generator loosely divides its settings into three types:
   <configuration>
     ...
     <configOptions>
-        <groupId>com.mycompany.test</groupId>
-        <artifactId>my-example</artifactId>
+      <groupId>com.mycompany.test</groupId>
+      <artifactId>my-example</artifactId>
     </configOptions>
     ...
   </configuration>
@@ -134,7 +134,7 @@ The OpenAPI generator loosely divides its settings into three types:
 
   For the Maven plug-in, use an `<additionalProperties>` section within the `<configuration>` section for the plug-in:
 
-  ``` xml
+  ```xml
   <configuration>
     ....
     <additionalProperties>
@@ -472,33 +472,33 @@ Creating or updating a client project using the OpenAPI Maven plug-in:
 
 ```xml [pom.xml]
 <plugin>
-    <groupId>org.openapitools</groupId>
-    <artifactId>openapi-generator-maven-plugin</artifactId>
-    <executions>
-        <execution>
-            <goals>
-                <goal>generate</goal>
-            </goals>
-            <configuration>
-                <inputSpec>${project.basedir}/src/main/resources/petstore.yaml</inputSpec>
-                <generatorName>java-helidon-client</generatorName>
-                <library>mp</library>
-                <output>${project.build.directory}/generated-sources/client</output> 
-                <addCompileSourceRoot>true</addCompileSourceRoot>
-                <configOptions>
-                    <groupId>io.helidon.examples</groupId>
-                    <artifactId>helidon-openapigen-mp-client</artifactId>
-                    <artifactVersion>1.0.0-SNAPSHOT</artifactVersion>
-                    <apiPackage>io.helidon.examples.openapigen.mp.client.api</apiPackage>
-                    <modelPackage>io.helidon.examples.openapigen.mp.client.model</modelPackage>
-                    <invokerPackage>io.helidon.examples.openapigen.mp.client</invokerPackage>
-                </configOptions>
-                <additionalProperties>
-                    <additionalProperty>returnResponse=true</additionalProperty>
-                </additionalProperties>
-            </configuration>
-        </execution>
-    </executions>
+  <groupId>org.openapitools</groupId>
+  <artifactId>openapi-generator-maven-plugin</artifactId>
+  <executions>
+    <execution>
+      <goals>
+        <goal>generate</goal>
+      </goals>
+      <configuration>
+        <inputSpec>${project.basedir}/src/main/resources/petstore.yaml</inputSpec>
+        <generatorName>java-helidon-client</generatorName>
+        <library>mp</library>
+        <output>${project.build.directory}/generated-sources/client</output>
+        <addCompileSourceRoot>true</addCompileSourceRoot>
+        <configOptions>
+          <groupId>io.helidon.examples</groupId>
+          <artifactId>helidon-openapigen-mp-client</artifactId>
+          <artifactVersion>1.0.0-SNAPSHOT</artifactVersion>
+          <apiPackage>io.helidon.examples.openapigen.mp.client.api</apiPackage>
+          <modelPackage>io.helidon.examples.openapigen.mp.client.model</modelPackage>
+          <invokerPackage>io.helidon.examples.openapigen.mp.client</invokerPackage>
+        </configOptions>
+        <additionalProperties>
+          <additionalProperty>returnResponse=true</additionalProperty>
+        </additionalProperties>
+      </configuration>
+    </execution>
+  </executions>
 </plugin>
 ```
 

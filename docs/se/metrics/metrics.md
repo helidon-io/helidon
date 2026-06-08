@@ -30,8 +30,8 @@ Packaging the metrics API:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.metrics</groupId>
-    <artifactId>helidon-metrics-api</artifactId>
+  <groupId>io.helidon.metrics</groupId>
+  <artifactId>helidon-metrics-api</artifactId>
 </dependency>
 ```
 
@@ -47,8 +47,8 @@ Packaging the metrics endpoint support and a full-featured metrics implementatio
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webserver.observe</groupId>
-    <artifactId>helidon-webserver-observe-metrics</artifactId>
+  <groupId>io.helidon.webserver.observe</groupId>
+  <artifactId>helidon-webserver-observe-metrics</artifactId>
 </dependency>
 ```
 
@@ -62,9 +62,9 @@ Packaging the built-in meters:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.metrics</groupId>
-    <artifactId>helidon-metrics-system-meters</artifactId>
-    <scope>runtime</scope>
+  <groupId>io.helidon.metrics</groupId>
+  <artifactId>helidon-metrics-system-meters</artifactId>
+  <scope>runtime</scope>
 </dependency>
 ```
 
@@ -941,8 +941,8 @@ Dependency for Helidon Prometheus API support:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.metrics</groupId>
-    <artifactId>helidon-metrics-prometheus</artifactId>
+  <groupId>io.helidon.metrics</groupId>
+  <artifactId>helidon-metrics-prometheus</artifactId>
 </dependency>
 ```
 

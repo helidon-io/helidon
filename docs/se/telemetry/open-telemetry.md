@@ -103,9 +103,9 @@ Dependency to use the Helidon OpenTelemetry implementation of Helidon tracing:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.tracing.providers</groupId>
-    <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
-    <scope>runtime</scope>
+  <groupId>io.helidon.tracing.providers</groupId>
+  <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
+  <scope>runtime</scope>
 </dependency>
 ```
 
@@ -117,9 +117,9 @@ Dependency to add Helidon OpenTelemetry config and programmatic builder support:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.telemetry</groupId>
-    <artifactId>helidon-telemetry-opentelemetry-config</artifactId>
-    <scope>runtime</scope> 
+  <groupId>io.helidon.telemetry</groupId>
+  <artifactId>helidon-telemetry-opentelemetry-config</artifactId>
+  <scope>runtime</scope>
 </dependency>
 ```
 
@@ -133,9 +133,9 @@ Dependency for automatic HTTP request tracing:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webserver.observe</groupId>
-    <artifactId>helidon-webserver-observe-tracing</artifactId>
-    <scope>runtime</scope>
+  <groupId>io.helidon.webserver.observe</groupId>
+  <artifactId>helidon-webserver-observe-tracing</artifactId>
+  <scope>runtime</scope>
 </dependency>
 ```
 
@@ -147,9 +147,9 @@ Dependency for Helidon support of the OpenTelemetry tracing semantic conventions
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webserver.observe</groupId>
-    <artifactId>helidon-webserver-observe-telemetry-tracing</artifactId>
-    <scope>runtime</scope>
+  <groupId>io.helidon.webserver.observe</groupId>
+  <artifactId>helidon-webserver-observe-telemetry-tracing</artifactId>
+  <scope>runtime</scope>
 </dependency>
 ```
 
@@ -161,9 +161,9 @@ Dependency for automatic HTTP request measurements:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webserver.observe</groupId>
-    <artifactId>helidon-webserver-observe-metrics</artifactId>
-    <scope>runtime</scope>
+  <groupId>io.helidon.webserver.observe</groupId>
+  <artifactId>helidon-webserver-observe-metrics</artifactId>
+  <scope>runtime</scope>
 </dependency>
 ```
 

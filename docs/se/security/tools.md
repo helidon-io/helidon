@@ -10,8 +10,8 @@ Maven Dependency:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.config</groupId>
-    <artifactId>helidon-config-encryption</artifactId>
+  <groupId>io.helidon.config</groupId>
+  <artifactId>helidon-config-encryption</artifactId>
 </dependency>
 ```
 
@@ -23,7 +23,7 @@ Maven Dependency:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.common</groupId>
-    <artifactId>helidon-common-key-util</artifactId>
+  <groupId>io.helidon.common</groupId>
+  <artifactId>helidon-common-key-util</artifactId>
 </dependency>
 ```

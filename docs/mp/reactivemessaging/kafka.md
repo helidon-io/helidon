@@ -10,8 +10,8 @@ To enable Reactive Kafka Connector, add the following dependency to your project
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.messaging.kafka</groupId>
-    <artifactId>helidon-messaging-kafka</artifactId>
+  <groupId>io.helidon.messaging.kafka</groupId>
+  <artifactId>helidon-messaging-kafka</artifactId>
 </dependency>
 ```
 

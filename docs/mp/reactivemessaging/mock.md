@@ -10,8 +10,8 @@ To enable Mock Connector, add the following dependency to your project’s `pom.
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.messaging.mock</groupId>
-    <artifactId>helidon-messaging-mock</artifactId>
+  <groupId>io.helidon.messaging.mock</groupId>
+  <artifactId>helidon-messaging-mock</artifactId>
 </dependency>
 ```
 

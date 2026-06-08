@@ -78,15 +78,15 @@ Metrics dependencies in the generated `pom.xml`:
 
 ```xml [pom.xml]
 <dependencies>
-    <dependency>
-        <groupId>io.helidon.webserver.observe</groupId>
-        <artifactId>helidon-webserver-observe-metrics</artifactId> <!--(1)-->
-    </dependency>
-    <dependency>
-        <groupId>io.helidon.metrics</groupId>
-        <artifactId>helidon-metrics-system-meters</artifactId>     <!--(2)-->
-        <scope>runtime</scope>
-    </dependency>
+  <dependency>
+    <groupId>io.helidon.webserver.observe</groupId>
+    <artifactId>helidon-webserver-observe-metrics</artifactId> <!--(1)-->
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.metrics</groupId>
+    <artifactId>helidon-metrics-system-meters</artifactId>     <!--(2)-->
+    <scope>runtime</scope>
+  </dependency>
 </dependencies>
 ```
 

@@ -25,8 +25,8 @@ Config YAML Dependency in pom.xml:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.config</groupId>
-    <artifactId>helidon-config-yaml</artifactId>
+  <groupId>io.helidon.config</groupId>
+  <artifactId>helidon-config-yaml</artifactId>
 </dependency>
 ```
 
@@ -81,8 +81,8 @@ Config HOCON Dependency in pom.xml:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.config</groupId>
-    <artifactId>helidon-config-hocon</artifactId>
+  <groupId>io.helidon.config</groupId>
+  <artifactId>helidon-config-hocon</artifactId>
 </dependency>
 ```
 
@@ -156,8 +156,8 @@ Config Etcd Dependency in pom.xml:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.config</groupId>
-    <artifactId>helidon-config-etcd</artifactId>
+  <groupId>io.helidon.config</groupId>
+  <artifactId>helidon-config-etcd</artifactId>
 </dependency>
 ```
 
@@ -240,8 +240,8 @@ Config git Dependency in pom.xml:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.config</groupId>
-    <artifactId>helidon-config-git</artifactId>
+  <groupId>io.helidon.config</groupId>
+  <artifactId>helidon-config-git</artifactId>
 </dependency>
 ```
 

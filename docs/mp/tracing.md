@@ -13,8 +13,8 @@ To enable MicroProfile Tracing, either add a dependency on the [helidon-micropro
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.microprofile.tracing</groupId>
-    <artifactId>helidon-microprofile-tracing</artifactId>
+  <groupId>io.helidon.microprofile.tracing</groupId>
+  <artifactId>helidon-microprofile-tracing</artifactId>
 </dependency>
 ```
 
@@ -204,8 +204,8 @@ Add the following dependency to pom.xml:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.tracing.providers</groupId>
-    <artifactId>helidon-tracing-providers-jaeger</artifactId>
+  <groupId>io.helidon.tracing.providers</groupId>
+  <artifactId>helidon-tracing-providers-jaeger</artifactId>
 </dependency>
 ```
 
@@ -471,8 +471,8 @@ Response response = client.target(serviceEndpoint)
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.tracing</groupId>
-    <artifactId>helidon-tracing-providers-jaeger</artifactId>
+  <groupId>io.helidon.tracing</groupId>
+  <artifactId>helidon-tracing-providers-jaeger</artifactId>
 </dependency>
 ```
 
@@ -512,8 +512,8 @@ As the [Jaeger Tracing](#jaeger-tracing) section describes, you can use Jaeger t
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.tracing.providers</groupId>
-    <artifactId>helidon-tracing-providers-zipkin</artifactId>
+  <groupId>io.helidon.tracing.providers</groupId>
+  <artifactId>helidon-tracing-providers-zipkin</artifactId>
 </dependency>
 ```
 
@@ -567,8 +567,8 @@ Dependency for OpenTelemetry support using tracing:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.tracing.providers</groupId>
-    <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
+  <groupId>io.helidon.tracing.providers</groupId>
+  <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
 </dependency>
 ```
 

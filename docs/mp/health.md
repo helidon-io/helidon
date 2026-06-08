@@ -10,8 +10,8 @@ To enable MicroProfile Health add the [helidon-microprofile bundle](introduction
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.microprofile.bundles</groupId>
-    <artifactId>helidon-microprofile</artifactId>
+  <groupId>io.helidon.microprofile.bundles</groupId>
+  <artifactId>helidon-microprofile</artifactId>
 </dependency>
 ```
 
@@ -21,15 +21,15 @@ If full control over the dependencies is required, and you want to minimize the 
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.microprofile.bundles</groupId>
-    <artifactId>helidon-microprofile-core</artifactId>
+  <groupId>io.helidon.microprofile.bundles</groupId>
+  <artifactId>helidon-microprofile-core</artifactId>
 </dependency>
 ```
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.microprofile.health</groupId>
-    <artifactId>helidon-microprofile-health</artifactId>
+  <groupId>io.helidon.microprofile.health</groupId>
+  <artifactId>helidon-microprofile-health</artifactId>
 </dependency>
 ```
 
@@ -37,8 +37,8 @@ To enable built-in health checks add the following dependency (or use the [helid
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.health</groupId>
-    <artifactId>helidon-health-checks</artifactId>
+  <groupId>io.helidon.health</groupId>
+  <artifactId>helidon-health-checks</artifactId>
 </dependency>
 ```
 
@@ -170,8 +170,8 @@ Include the built-in health checks dependency in your pom.xml:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.health</groupId>
-    <artifactId>helidon-health-checks</artifactId>
+  <groupId>io.helidon.health</groupId>
+  <artifactId>helidon-health-checks</artifactId>
 </dependency>
 ```
 

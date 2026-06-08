@@ -12,8 +12,8 @@ To enable JWT Authentication, either add a dependency on the [helidon-microprofi
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.microprofile.jwt</groupId>
-    <artifactId>helidon-microprofile-jwt-auth</artifactId>
+  <groupId>io.helidon.microprofile.jwt</groupId>
+  <artifactId>helidon-microprofile-jwt-auth</artifactId>
 </dependency>
 ```
 

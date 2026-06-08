@@ -147,44 +147,44 @@ Copy these dependencies to pom.xml:
 
 ```xml [pom.xml]
 <dependencies>
-    <!-- ... -->
-    <dependency>
-        <groupId>io.helidon.dbclient</groupId>
-        <artifactId>helidon-dbclient</artifactId> 
-    </dependency>
-    <dependency>
-        <groupId>io.helidon.dbclient</groupId>
-        <artifactId>helidon-dbclient-jdbc</artifactId> 
-    </dependency>
-    <dependency>
-        <groupId>io.helidon.dbclient</groupId>
-        <artifactId>helidon-dbclient-hikari</artifactId> 
-    </dependency>
-    <dependency>
-        <groupId>io.helidon.integrations.db</groupId>
-        <artifactId>h2</artifactId> 
-    </dependency>
-    <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>slf4j-jdk14</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>io.helidon.dbclient</groupId>
-        <artifactId>helidon-dbclient-health</artifactId> 
-    </dependency>
-    <dependency>
-        <groupId>io.helidon.dbclient</groupId>
-        <artifactId>helidon-dbclient-metrics</artifactId> 
-    </dependency>
-    <dependency>
-        <groupId>io.helidon.dbclient</groupId>
-        <artifactId>helidon-dbclient-metrics-hikari</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>io.helidon.dbclient</groupId>
-        <artifactId>helidon-dbclient-jsonp</artifactId> 
-    </dependency>
-    <!-- ... -->
+  <!-- ... -->
+  <dependency>
+    <groupId>io.helidon.dbclient</groupId>
+    <artifactId>helidon-dbclient</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.dbclient</groupId>
+    <artifactId>helidon-dbclient-jdbc</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.dbclient</groupId>
+    <artifactId>helidon-dbclient-hikari</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.integrations.db</groupId>
+    <artifactId>h2</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>org.slf4j</groupId>
+    <artifactId>slf4j-jdk14</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.dbclient</groupId>
+    <artifactId>helidon-dbclient-health</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.dbclient</groupId>
+    <artifactId>helidon-dbclient-metrics</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.dbclient</groupId>
+    <artifactId>helidon-dbclient-metrics-hikari</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.dbclient</groupId>
+    <artifactId>helidon-dbclient-jsonp</artifactId>
+  </dependency>
+  <!-- ... -->
 </dependencies>
 ```
 

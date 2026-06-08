@@ -10,8 +10,8 @@ To enable Helidon Connector, add the following dependency to your project’s `p
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.jersey</groupId>
-    <artifactId>helidon-jersey-connector</artifactId>
+  <groupId>io.helidon.jersey</groupId>
+  <artifactId>helidon-jersey-connector</artifactId>
 </dependency>
 ```
 

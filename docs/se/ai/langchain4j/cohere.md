@@ -10,8 +10,8 @@ In addition to the [Helidon integration with LangChain4j core dependencies](lang
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.integrations.langchain4j.providers</groupId>
-    <artifactId>helidon-integrations-langchain4j-providers-cohere</artifactId>
+  <groupId>io.helidon.integrations.langchain4j.providers</groupId>
+  <artifactId>helidon-integrations-langchain4j-providers-cohere</artifactId>
 </dependency>
 ```
 

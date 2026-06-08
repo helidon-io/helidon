@@ -77,8 +77,8 @@ Remove the test scope from WebClient dependency:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webclient</groupId>
-    <artifactId>helidon-webclient</artifactId>
+  <groupId>io.helidon.webclient</groupId>
+  <artifactId>helidon-webclient</artifactId>
 </dependency>
 ```
 
@@ -152,8 +152,8 @@ In practice, String is not the most useful return type, since it usually needs s
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.http.media</groupId>
-    <artifactId>helidon-http-media-jsonp</artifactId>
+  <groupId>io.helidon.http.media</groupId>
+  <artifactId>helidon-http-media-jsonp</artifactId>
 </dependency>
 ```
 
@@ -216,8 +216,8 @@ Add the following dependency to pom.xml:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webclient</groupId>
-    <artifactId>helidon-webclient-metrics</artifactId>
+  <groupId>io.helidon.webclient</groupId>
+  <artifactId>helidon-webclient-metrics</artifactId>
 </dependency>
 ```
 

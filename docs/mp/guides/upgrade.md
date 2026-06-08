@@ -89,8 +89,8 @@ Example:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>javax.activation</groupId>
-    <artifactId>javax.activation-api</artifactId>
+  <groupId>javax.activation</groupId>
+  <artifactId>javax.activation-api</artifactId>
 </dependency>
 ```
 
@@ -98,8 +98,8 @@ should be changed to
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>jakarta.activation</groupId>
-    <artifactId>jakarta.activation-api</artifactId>
+  <groupId>jakarta.activation</groupId>
+  <artifactId>jakarta.activation-api</artifactId>
 </dependency>
 ```
 

@@ -10,8 +10,8 @@ To enable MicroProfile Fault Tolerance, either add a dependency on the [helidon-
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.microprofile</groupId>
-    <artifactId>helidon-microprofile-fault-tolerance</artifactId>
+  <groupId>io.helidon.microprofile</groupId>
+  <artifactId>helidon-microprofile-fault-tolerance</artifactId>
 </dependency>
 ```
 

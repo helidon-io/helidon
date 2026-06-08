@@ -10,8 +10,8 @@ To enable HashiCorp Vault, add the following dependency to your project’s `pom
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.integrations.vault</groupId>
-    <artifactId>helidon-integrations-vault-cdi</artifactId>
+  <groupId>io.helidon.integrations.vault</groupId>
+  <artifactId>helidon-integrations-vault-cdi</artifactId>
 </dependency>
 ```
 
@@ -19,42 +19,42 @@ The following is a list of maven coordinates of all Vault modules available:
 
 ```xml [pom.xml]
 <dependencies>
-    <dependency>
-        <groupId>io.helidon.integrations.vault.auths</groupId>
-        <artifactId>helidon-integrations-vault-auths-token</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>io.helidon.integrations.vault.auths</groupId>
-        <artifactId>helidon-integrations-vault-auths-approle</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>io.helidon.integrations.vault.auths</groupId>
-        <artifactId>helidon-integrations-vault-auths-k8s</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>io.helidon.integrations.vault.secrets</groupId>
-        <artifactId>helidon-integrations-vault-secrets-kv1</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>io.helidon.integrations.vault.secrets</groupId>
-        <artifactId>helidon-integrations-vault-secrets-kv2</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>io.helidon.integrations.vault.secrets</groupId>
-        <artifactId>helidon-integrations-vault-secrets-cubbyhole</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>io.helidon.integrations.vault.secrets</groupId>
-        <artifactId>helidon-integrations-vault-secrets-transit</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>io.helidon.integrations.vault.secrets</groupId>
-        <artifactId>helidon-integrations-vault-secrets-database</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>io.helidon.integrations.vault.sys</groupId>
-        <artifactId>helidon-integrations-vault-sys</artifactId>
-    </dependency>
+  <dependency>
+    <groupId>io.helidon.integrations.vault.auths</groupId>
+    <artifactId>helidon-integrations-vault-auths-token</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.integrations.vault.auths</groupId>
+    <artifactId>helidon-integrations-vault-auths-approle</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.integrations.vault.auths</groupId>
+    <artifactId>helidon-integrations-vault-auths-k8s</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.integrations.vault.secrets</groupId>
+    <artifactId>helidon-integrations-vault-secrets-kv1</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.integrations.vault.secrets</groupId>
+    <artifactId>helidon-integrations-vault-secrets-kv2</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.integrations.vault.secrets</groupId>
+    <artifactId>helidon-integrations-vault-secrets-cubbyhole</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.integrations.vault.secrets</groupId>
+    <artifactId>helidon-integrations-vault-secrets-transit</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.integrations.vault.secrets</groupId>
+    <artifactId>helidon-integrations-vault-secrets-database</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.integrations.vault.sys</groupId>
+    <artifactId>helidon-integrations-vault-sys</artifactId>
+  </dependency>
 </dependencies>
 ```
 

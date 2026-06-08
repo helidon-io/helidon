@@ -304,13 +304,13 @@ Media support moved from the `io.helidon.media` Java package to `io.helidon.http
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.http.media</groupId>
-    <artifactId>helidon-http-media-jsonp</artifactId>
+  <groupId>io.helidon.http.media</groupId>
+  <artifactId>helidon-http-media-jsonp</artifactId>
 </dependency>
 
 <dependency>
-    <groupId>io.helidon.http.media</groupId>
-    <artifactId>helidon-http-media-jsonb</artifactId>
+  <groupId>io.helidon.http.media</groupId>
+  <artifactId>helidon-http-media-jsonb</artifactId>
 </dependency>
 ```
 
@@ -320,8 +320,8 @@ However, media support no longer transitively brings the Jakarta EE API dependen
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>jakarta.json</groupId>
-    <artifactId>jakarta.json-api</artifactId>
+  <groupId>jakarta.json</groupId>
+  <artifactId>jakarta.json-api</artifactId>
 </dependency>
 ```
 
@@ -331,9 +331,9 @@ Helidon 4.x adds a new testing framework for Helidon SE.
 
 ```xml [pom.xml]
 <dependency>
-     <groupId>io.helidon.webserver.testing.junit5</groupId>
-     <artifactId>helidon-webserver-testing-junit5</artifactId>
-     <scope>test</scope>
+  <groupId>io.helidon.webserver.testing.junit5</groupId>
+  <artifactId>helidon-webserver-testing-junit5</artifactId>
+  <scope>test</scope>
 </dependency>
 ```
 
@@ -345,14 +345,14 @@ Observability features moved to different packages. For `Health` and `Metrics`, 
 
 ```xml [pom.xml]
 <dependencies>
-    <dependency>
-        <groupId>io.helidon.webserver.observe</groupId>
-        <artifactId>helidon-webserver-observe-health</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>io.helidon.webserver.observe</groupId>
-        <artifactId>helidon-webserver-observe-metrics</artifactId>
-    </dependency>
+  <dependency>
+    <groupId>io.helidon.webserver.observe</groupId>
+    <artifactId>helidon-webserver-observe-health</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.webserver.observe</groupId>
+    <artifactId>helidon-webserver-observe-metrics</artifactId>
+  </dependency>
 </dependencies>
 ```
 
@@ -362,8 +362,8 @@ For System Metrics, you should now use:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.metrics</groupId>
-    <artifactId>helidon-metrics-system-meters</artifactId>
+  <groupId>io.helidon.metrics</groupId>
+  <artifactId>helidon-metrics-system-meters</artifactId>
 </dependency>
 ```
 
@@ -371,8 +371,8 @@ By default, Observability features are discovered automatically if you add the a
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webserver.observe</groupId>
-    <artifactId>helidon-webserver-observe</artifactId>
+  <groupId>io.helidon.webserver.observe</groupId>
+  <artifactId>helidon-webserver-observe</artifactId>
 </dependency>
 ```
 
@@ -411,8 +411,8 @@ If you use this handler in your `logging.properties` file, you will need to upda
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.logging</groupId>
-    <artifactId>helidon-logging-jul</artifactId>
-    <scope>runtime</scope>
+  <groupId>io.helidon.logging</groupId>
+  <artifactId>helidon-logging-jul</artifactId>
+  <scope>runtime</scope>
 </dependency>
 ```

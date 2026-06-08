@@ -8,8 +8,8 @@ Maven Dependency:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver-security</artifactId>
+  <groupId>io.helidon.webserver</groupId>
+  <artifactId>helidon-webserver-security</artifactId>
 </dependency>
 ```
 

@@ -14,8 +14,8 @@ Maven Dependency:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.config</groupId>
-    <artifactId>helidon-config-encryption</artifactId>
+  <groupId>io.helidon.config</groupId>
+  <artifactId>helidon-config-encryption</artifactId>
 </dependency>
 ```
 

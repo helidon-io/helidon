@@ -91,20 +91,20 @@ Add the following dependencies to pom.xml:
 
 ```xml [pom.xml]
 <dependencies>
-     <dependency>
-         <groupId>io.helidon.tracing</groupId>
-         <artifactId>helidon-tracing</artifactId>   
-     </dependency>
-     <dependency>
-         <groupId>io.helidon.webserver.observe</groupId>
-         <artifactId>helidon-webserver-observe-tracing</artifactId> 
-         <scope>runtime</scope>
-     </dependency>
-     <dependency>
-         <groupId>io.helidon.tracing.providers</groupId>
-         <artifactId>helidon-tracing-providers-opentelemetry</artifactId>  
-         <scope>runtime</scope>
-     </dependency>
+  <dependency>
+    <groupId>io.helidon.tracing</groupId>
+    <artifactId>helidon-tracing</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.webserver.observe</groupId>
+    <artifactId>helidon-webserver-observe-tracing</artifactId>
+    <scope>runtime</scope>
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.tracing.providers</groupId>
+    <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
+    <scope>runtime</scope>
+  </dependency>
 </dependencies>
 ```
 
@@ -251,20 +251,20 @@ Add the following dependencies to pom.xml:
 
 ```xml [pom.xml]
 <dependencies>
-     <dependency>
-         <groupId>io.helidon.tracing</groupId>
-         <artifactId>helidon-tracing</artifactId>   
-     </dependency>
-     <dependency>
-         <groupId>io.helidon.webserver.observe</groupId>
-         <artifactId>helidon-webserver-observe-tracing</artifactId> 
-         <scope>runtime</scope>
-     </dependency>
-     <dependency>
-         <groupId>io.helidon.tracing.providers</groupId>
-         <artifactId>helidon-tracing-providers-opentelemetry</artifactId>  
-         <scope>runtime</scope>
-     </dependency>
+  <dependency>
+    <groupId>io.helidon.tracing</groupId>
+    <artifactId>helidon-tracing</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.webserver.observe</groupId>
+    <artifactId>helidon-webserver-observe-tracing</artifactId>
+    <scope>runtime</scope>
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.tracing.providers</groupId>
+    <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
+    <scope>runtime</scope>
+  </dependency>
 </dependencies>
 ```
 
@@ -336,23 +336,23 @@ Add the following dependencies to pom.xml:
 
 ```xml [pom.xml]
 <dependencies>
-    <dependency>
-        <groupId>io.helidon.webclient</groupId>
-        <artifactId>helidon-webclient</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>io.helidon.webclient</groupId>
-        <artifactId>helidon-webclient-api</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>io.helidon.webclient</groupId>
-        <artifactId>helidon-webclient-tracing</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>io.helidon.webclient</groupId>
-        <artifactId>helidon-webclient-http1</artifactId>
-        <scope>runtime</scope>
-    </dependency>
+  <dependency>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient-api</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient-tracing</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient-http1</artifactId>
+    <scope>runtime</scope>
+  </dependency>
 </dependencies>
 ```
 

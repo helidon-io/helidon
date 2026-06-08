@@ -8,8 +8,8 @@ To enable Security, add the following dependency to your project’s `pom.xml` (
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.microprofile</groupId>
-    <artifactId>helidon-microprofile-security</artifactId>
+  <groupId>io.helidon.microprofile</groupId>
+  <artifactId>helidon-microprofile-security</artifactId>
 </dependency>
 ```
 

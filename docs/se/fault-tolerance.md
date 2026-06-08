@@ -16,8 +16,8 @@ To enable Fault Tolerance, add the following dependency to your project’s `pom
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.fault-tolerance</groupId>
-    <artifactId>helidon-fault-tolerance</artifactId>
+  <groupId>io.helidon.fault-tolerance</groupId>
+  <artifactId>helidon-fault-tolerance</artifactId>
 </dependency>
 ```
 

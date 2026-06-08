@@ -69,9 +69,9 @@ To include the [Oracle Universal Connection Pool](https://docs.oracle.com/en/dat
 
   ```xml [pom.xml]
   <dependency>
-  <groupId>io.helidon.integrations.cdi</groupId>
-  <artifactId>helidon-integrations-cdi-datasource-ucp</artifactId>
-  <scope>runtime</scope>
+    <groupId>io.helidon.integrations.cdi</groupId>
+    <artifactId>helidon-integrations-cdi-datasource-ucp</artifactId>
+    <scope>runtime</scope>
   </dependency>
   ```
 
@@ -332,14 +332,14 @@ To include Helidon’s JTA integration in your application:
   ```xml [pom.xml]
   <dependencies>
     <dependency>
-        <groupId>jakarta.transaction</groupId>
-        <artifactId>jakarta.transaction-api</artifactId>
-        <scope>provided</scope>
+      <groupId>jakarta.transaction</groupId>
+      <artifactId>jakarta.transaction-api</artifactId>
+      <scope>provided</scope>
     </dependency>
     <dependency>
-        <groupId>io.helidon.integrations.cdi</groupId>
-        <artifactId>helidon-integrations-cdi-jta-weld</artifactId>
-        <scope>runtime</scope>
+      <groupId>io.helidon.integrations.cdi</groupId>
+      <artifactId>helidon-integrations-cdi-jta-weld</artifactId>
+      <scope>runtime</scope>
     </dependency>
   </dependencies>
   ```
@@ -455,14 +455,14 @@ To include the Jakarta Persistence APIs that you will need and to include the co
   ```xml [pom.xml]
   <dependencies>
     <dependency>
-        <groupId>jakarta.persistence</groupId>
-        <artifactId>jakarta.persistence-api</artifactId>
-        <scope>provided</scope>
+      <groupId>jakarta.persistence</groupId>
+      <artifactId>jakarta.persistence-api</artifactId>
+      <scope>provided</scope>
     </dependency>
     <dependency>
-        <groupId>io.helidon.integrations.cdi</groupId>
-        <artifactId>helidon-integrations-cdi-jpa</artifactId>
-        <scope>runtime</scope>
+      <groupId>io.helidon.integrations.cdi</groupId>
+      <artifactId>helidon-integrations-cdi-jpa</artifactId>
+      <scope>runtime</scope>
     </dependency>
   </dependencies>
   ```
@@ -478,31 +478,31 @@ To generate and compile the Jakarta Persistence static metamodel for your applic
 
 ```xml [pom.xml]
 <pluginManagement>
-    <plugins>
+  <plugins>
 
-        <!-- ... -->
+    <!-- ... -->
 
-        <plugin>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <executions>
-                <execution>
-                    <id>default-compile</id>
-                    <configuration>
-                        <annotationProcessorPaths>
-                            <annotationProcessorPath>
-                                <groupId>org.hibernate.orm</groupId>
-                                <artifactId>hibernate-jpamodelgen</artifactId>
-                                <version>${version.lib.hibernate}</version>
-                            </annotationProcessorPath>
-                        </annotationProcessorPaths>
-                    </configuration>
-                </execution>
-            </executions>
-        </plugin>
+    <plugin>
+      <artifactId>maven-compiler-plugin</artifactId>
+      <executions>
+        <execution>
+          <id>default-compile</id>
+          <configuration>
+            <annotationProcessorPaths>
+              <annotationProcessorPath>
+                <groupId>org.hibernate.orm</groupId>
+                <artifactId>hibernate-jpamodelgen</artifactId>
+                <version>${version.lib.hibernate}</version>
+              </annotationProcessorPath>
+            </annotationProcessorPaths>
+          </configuration>
+        </execution>
+      </executions>
+    </plugin>
 
-        <!-- ... -->
+    <!-- ... -->
 
-    </plugins>
+  </plugins>
 </pluginManagement>
 ```
 
@@ -540,32 +540,32 @@ To set up this required static weaving for Hibernate ORM, ensure that the follow
 
 ```xml [pom.xml]
 <plugin>
-    <groupId>org.hibernate.orm.tooling</groupId>
-    <artifactId>hibernate-enhance-maven-plugin</artifactId>
-    <!--
-        Ideally, your plugin versions are managed via a
-        <pluginManagement> element, which is why the <version> element
-        is commented out below.  If, nevertheless, you opt for the
-        explicit version, check
-        https://search.maven.org/artifact/org.hibernate.orm/hibernate-enhance-maven-plugin
-        for up-to-date versions, and make sure the version is the same
-        as that of Hibernate ORM itself.
-    -->
-    <!-- <version>6.3.1.Final</version> -->
-    <executions>
-        <execution>
-            <id>Statically enhance JPA entities for Hibernate</id>
-            <phase>compile</phase>
-            <goals>
-                <goal>enhance</goal>
-            </goals>
-            <configuration>
-                <failOnError>true</failOnError>
-                <enableDirtyTracking>true</enableDirtyTracking>
-                <enableLazyInitialization>true</enableLazyInitialization>
-            </configuration>
-        </execution>
-    </executions>
+  <groupId>org.hibernate.orm.tooling</groupId>
+  <artifactId>hibernate-enhance-maven-plugin</artifactId>
+  <!--
+    Ideally, your plugin versions are managed via a
+    <pluginManagement> element, which is why the <version> element
+    is commented out below.  If, nevertheless, you opt for the
+    explicit version, check
+    https://search.maven.org/artifact/org.hibernate.orm/hibernate-enhance-maven-plugin
+    for up-to-date versions, and make sure the version is the same
+    as that of Hibernate ORM itself.
+  -->
+  <!-- <version>6.3.1.Final</version> -->
+  <executions>
+    <execution>
+      <id>Statically enhance JPA entities for Hibernate</id>
+      <phase>compile</phase>
+      <goals>
+        <goal>enhance</goal>
+      </goals>
+      <configuration>
+        <failOnError>true</failOnError>
+        <enableDirtyTracking>true</enableDirtyTracking>
+        <enableLazyInitialization>true</enableLazyInitialization>
+      </configuration>
+    </execution>
+  </executions>
 </plugin>
 ```
 
@@ -601,30 +601,30 @@ To set up this required static weaving for EclipseLink, ensure that the followin
 
 ```xml [pom.xml]
 <plugin>
-    <groupId>org.codehaus.mojo</groupId>
-    <artifactId>exec-maven-plugin</artifactId>
-    <version>3.1.0</version>
-    <executions>
-        <execution>
-            <id>weave</id>
-            <phase>process-classes</phase>
-            <goals>
-                <goal>java</goal>
-            </goals>
-            <configuration combine.self="override">
-                <classpathScope>compile</classpathScope>
-                <mainClass>org.eclipse.persistence.tools.weaving.jpa.StaticWeave</mainClass>
-                <arguments>
-                    <argument>-loglevel</argument>
-                    <argument>INFO</argument>
-                    <argument>-persistenceinfo</argument>
-                    <argument>${project.build.outputDirectory}</argument>
-                    <argument>${project.build.outputDirectory}</argument>
-                    <argument>${project.build.outputDirectory}</argument>
-                </arguments>
-            </configuration>
-        </execution>
-    </executions>
+  <groupId>org.codehaus.mojo</groupId>
+  <artifactId>exec-maven-plugin</artifactId>
+  <version>3.1.0</version>
+  <executions>
+    <execution>
+      <id>weave</id>
+      <phase>process-classes</phase>
+      <goals>
+        <goal>java</goal>
+      </goals>
+      <configuration combine.self="override">
+        <classpathScope>compile</classpathScope>
+        <mainClass>org.eclipse.persistence.tools.weaving.jpa.StaticWeave</mainClass>
+        <arguments>
+          <argument>-loglevel</argument>
+          <argument>INFO</argument>
+          <argument>-persistenceinfo</argument>
+          <argument>${project.build.outputDirectory}</argument>
+          <argument>${project.build.outputDirectory}</argument>
+          <argument>${project.build.outputDirectory}</argument>
+        </arguments>
+      </configuration>
+    </execution>
+  </executions>
 </plugin>
 ```
 

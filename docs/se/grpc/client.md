@@ -10,8 +10,8 @@ To enable gRPC Client, add the following dependency to your project’s `pom.xml
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webclient</groupId>
-    <artifactId>helidon-webclient-grpc</artifactId>
+  <groupId>io.helidon.webclient</groupId>
+  <artifactId>helidon-webclient-grpc</artifactId>
 </dependency>
 ```
 
@@ -199,8 +199,8 @@ Tracing in the gRPC client is implemented as a so-called gRPC client service. To
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webclient</groupId>
-    <artifactId>helidon-webclient-grpc-tracing</artifactId>
+  <groupId>io.helidon.webclient</groupId>
+  <artifactId>helidon-webclient-grpc-tracing</artifactId>
 </dependency>
 ```
 

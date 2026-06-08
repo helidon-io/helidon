@@ -20,8 +20,8 @@ Adding the Helidon OCI SDK Integration dependency for Config, Config File and Se
 
 ```xml [pom.xml]
 <dependency>
-     <groupId>io.helidon.integrations.oci</groupId>
-     <artifactId>helidon-integrations-oci</artifactId>
+  <groupId>io.helidon.integrations.oci</groupId>
+  <artifactId>helidon-integrations-oci</artifactId>
 </dependency>
 ```
 
@@ -29,8 +29,8 @@ Adding the Helidon OCI SDK Integration dependency for Resource Principal:
 
 ```xml [pom.xml]
 <dependency>
-     <groupId>io.helidon.integrations.oci.authentication</groupId>
-     <artifactId>helidon-integrations-oci-authentication-resource</artifactId>
+  <groupId>io.helidon.integrations.oci.authentication</groupId>
+  <artifactId>helidon-integrations-oci-authentication-resource</artifactId>
 </dependency>
 ```
 
@@ -38,8 +38,8 @@ Adding the Helidon OCI SDK Integration dependency for Instance Principal:
 
 ```xml [pom.xml]
 <dependency>
-     <groupId>io.helidon.integrations.oci.authentication</groupId>
-     <artifactId>helidon-integrations-oci-authentication-instance</artifactId>
+  <groupId>io.helidon.integrations.oci.authentication</groupId>
+  <artifactId>helidon-integrations-oci-authentication-instance</artifactId>
 </dependency>
 ```
 
@@ -47,8 +47,8 @@ Adding the Helidon OCI SDK Integration dependency for OKE Workload:
 
 ```xml [pom.xml]
 <dependency>
-     <groupId>io.helidon.integrations.oci.authentication</groupId>
-     <artifactId>helidon-integrations-oci-authentication-oke-workload</artifactId>
+  <groupId>io.helidon.integrations.oci.authentication</groupId>
+  <artifactId>helidon-integrations-oci-authentication-oke-workload</artifactId>
 </dependency>
 ```
 
@@ -108,8 +108,8 @@ Adding the dependency for OCI Object Storage:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>com.oracle.oci.sdk</groupId>
-    <artifactId>oci-java-sdk-objectstorage</artifactId>
+  <groupId>com.oracle.oci.sdk</groupId>
+  <artifactId>oci-java-sdk-objectstorage</artifactId>
 </dependency>
 ```
 

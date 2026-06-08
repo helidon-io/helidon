@@ -56,8 +56,8 @@ To enable Builder, add the following dependency to your project’s `pom.xml` (s
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.builder</groupId>
-    <artifactId>helidon-builder-api</artifactId>
+  <groupId>io.helidon.builder</groupId>
+  <artifactId>helidon-builder-api</artifactId>
 </dependency>
 ```
 
@@ -65,26 +65,26 @@ You also need to add the annotation processor configuration:
 
 ```xml [pom.xml]
 <build>
-    <plugins>
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <configuration>
-                <annotationProcessorPaths>
-                    <path>
-                        <groupId>io.helidon.codegen</groupId>
-                        <artifactId>helidon-codegen-apt</artifactId>
-                        <version>${helidon.version}</version>
-                    </path>
-                    <path>
-                        <groupId>io.helidon.builder</groupId>
-                        <artifactId>helidon-builder-codegen</artifactId>
-                        <version>${helidon.version}</version>
-                    </path>
-                </annotationProcessorPaths>
-            </configuration>
-        </plugin>
-    </plugins>
+  <plugins>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-compiler-plugin</artifactId>
+      <configuration>
+        <annotationProcessorPaths>
+          <path>
+            <groupId>io.helidon.codegen</groupId>
+            <artifactId>helidon-codegen-apt</artifactId>
+            <version>${helidon.version}</version>
+          </path>
+          <path>
+            <groupId>io.helidon.builder</groupId>
+            <artifactId>helidon-builder-codegen</artifactId>
+            <version>${helidon.version}</version>
+          </path>
+        </annotationProcessorPaths>
+      </configuration>
+    </plugin>
+  </plugins>
 </build>
 ```
 

@@ -16,8 +16,8 @@ To enable MicroProfile Rest Client, either add a dependency on the [helidon-micr
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.microprofile.rest-client</groupId>
-    <artifactId>helidon-microprofile-rest-client</artifactId>
+  <groupId>io.helidon.microprofile.rest-client</groupId>
+  <artifactId>helidon-microprofile-rest-client</artifactId>
 </dependency>
 ```
 

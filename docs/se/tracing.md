@@ -13,14 +13,14 @@ To enable Helidon Tracing, add the following dependency to your project’s `pom
 
 ```xml [pom.xml]
 <dependencies>
-    <dependency>
-        <groupId>io.helidon.tracing</groupId>
-        <artifactId>helidon-tracing</artifactId>    
-    </dependency>
-    <dependency>
-        <groupId>io.helidon.webserver.observe</groupId>
-        <artifactId>helidon-webserver-observe-tracing</artifactId> 
-    </dependency>
+  <dependency>
+    <groupId>io.helidon.tracing</groupId>
+    <artifactId>helidon-tracing</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.webserver.observe</groupId>
+    <artifactId>helidon-webserver-observe-tracing</artifactId>
+  </dependency>
 </dependencies>
 ```
 
@@ -33,9 +33,9 @@ For Jaeger:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.tracing.providers</groupId>
-    <artifactId>helidon-tracing-providers-jaeger</artifactId>
-    <scope>runtime</scope>
+  <groupId>io.helidon.tracing.providers</groupId>
+  <artifactId>helidon-tracing-providers-jaeger</artifactId>
+  <scope>runtime</scope>
 </dependency>
 ```
 
@@ -43,9 +43,9 @@ For Zipkin:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.tracing.providers</groupId>
-    <artifactId>helidon-tracing-providers-zipkin</artifactId>
-    <scope>runtime</scope>
+  <groupId>io.helidon.tracing.providers</groupId>
+  <artifactId>helidon-tracing-providers-zipkin</artifactId>
+  <scope>runtime</scope>
 </dependency>
 ```
 
@@ -53,9 +53,9 @@ For OpenTelemetry:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.tracing.providers</groupId>
-    <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
-    <scope>runtime</scope>
+  <groupId>io.helidon.tracing.providers</groupId>
+  <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
+  <scope>runtime</scope>
 </dependency>
 ```
 
@@ -63,8 +63,8 @@ For OpenTracing (deprecated):
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.tracing.providers</groupId>
-    <artifactId>helidon-tracing-providers-opentracing</artifactId>
+  <groupId>io.helidon.tracing.providers</groupId>
+  <artifactId>helidon-tracing-providers-opentracing</artifactId>
 </dependency>
 ```
 
@@ -445,14 +445,14 @@ Span propagation is supported with Helidon WebClient. Tracing propagation is aut
 
 ```xml [pom.xml]
 <dependencies>
-    <dependency>
-        <groupId>io.helidon.webclient</groupId>
-        <artifactId>helidon-webclient</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>io.helidon.webclient</groupId>
-        <artifactId>helidon-webclient-tracing</artifactId>
-    </dependency>
+  <dependency>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient-tracing</artifactId>
+  </dependency>
 </dependencies>
 ```
 
@@ -470,8 +470,8 @@ String response = client.get()
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.tracing</groupId>
-    <artifactId>helidon-tracing-providers-jaeger</artifactId>
+  <groupId>io.helidon.tracing</groupId>
+  <artifactId>helidon-tracing-providers-jaeger</artifactId>
 </dependency>
 ```
 
@@ -511,8 +511,8 @@ As the [Jaeger Tracing](#jaeger-tracing) section describes, you can use Jaeger t
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.tracing.providers</groupId>
-    <artifactId>helidon-tracing-providers-zipkin</artifactId>
+  <groupId>io.helidon.tracing.providers</groupId>
+  <artifactId>helidon-tracing-providers-zipkin</artifactId>
 </dependency>
 ```
 
@@ -568,8 +568,8 @@ Dependency for OpenTelemetry support using tracing:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.tracing.providers</groupId>
-    <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
+  <groupId>io.helidon.tracing.providers</groupId>
+  <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
 </dependency>
 ```
 

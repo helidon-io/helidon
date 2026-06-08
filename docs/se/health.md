@@ -17,8 +17,8 @@ To enable Health Checks, add the following dependency to your project’s `pom.x
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webserver.observe</groupId>
-    <artifactId>helidon-webserver-observe-health</artifactId>
+  <groupId>io.helidon.webserver.observe</groupId>
+  <artifactId>helidon-webserver-observe-health</artifactId>
 </dependency>
 ```
 
@@ -26,8 +26,8 @@ Optional dependency to use built-in health checks:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.health</groupId>
-    <artifactId>helidon-health-checks</artifactId>
+  <groupId>io.helidon.health</groupId>
+  <artifactId>helidon-health-checks</artifactId>
 </dependency>
 ```
 

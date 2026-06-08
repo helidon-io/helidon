@@ -15,8 +15,8 @@ To enable Helidon OpenAPI UI support, add the following dependency to your proje
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.integrations.openapi-ui</groupId>
-    <artifactId>helidon-integrations-openapi-ui</artifactId>
+  <groupId>io.helidon.integrations.openapi-ui</groupId>
+  <artifactId>helidon-integrations-openapi-ui</artifactId>
 </dependency>
 ```
 
@@ -24,9 +24,9 @@ And add a runtime dependency on the SmallRye UI.
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.smallrye</groupId>
-    <artifactId>smallrye-open-api-ui</artifactId>
-    <scope>runtime</scope>
+  <groupId>io.smallrye</groupId>
+  <artifactId>smallrye-open-api-ui</artifactId>
+  <scope>runtime</scope>
 </dependency>
 ```
 
@@ -34,8 +34,8 @@ Also, make sure your project has the following dependency.
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.openapi</groupId>
-    <artifactId>helidon-openapi</artifactId>
+  <groupId>io.helidon.openapi</groupId>
+  <artifactId>helidon-openapi</artifactId>
 </dependency>
 ```
 

@@ -12,8 +12,8 @@ To enable Bean Validation, add the following dependency to your project’s `pom
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>org.glassfish.jersey.ext</groupId>
-    <artifactId>jersey-bean-validation</artifactId>
+  <groupId>org.glassfish.jersey.ext</groupId>
+  <artifactId>jersey-bean-validation</artifactId>
 </dependency>
 ```
 
@@ -21,8 +21,8 @@ For general validation, please add to your `pom.xml`:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.microprofile.bean-validation</groupId>
-    <artifactId>helidon-microprofile-bean-validation</artifactId>
+  <groupId>io.helidon.microprofile.bean-validation</groupId>
+  <artifactId>helidon-microprofile-bean-validation</artifactId>
 </dependency>
 ```
 

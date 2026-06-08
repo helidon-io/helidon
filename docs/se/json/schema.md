@@ -17,8 +17,8 @@ To enable JSON Schema, add the following dependency to your project’s `pom.xml
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.json.schema</groupId>
-    <artifactId>helidon-json-schema</artifactId>
+  <groupId>io.helidon.json.schema</groupId>
+  <artifactId>helidon-json-schema</artifactId>
 </dependency>
 ```
 
@@ -68,19 +68,19 @@ In addition, the following section must be added to the `build` of the Maven `po
 
 ```xml [pom.xml]
 <plugins>
-    <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-            <annotationProcessorPaths>
-                <path>
-                    <groupId>io.helidon.bundles</groupId>
-                    <artifactId>helidon-bundles-apt</artifactId>
-                    <version>${helidon.version}</version>
-                </path>
-            </annotationProcessorPaths>
-        </configuration>
-    </plugin>
+  <plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-compiler-plugin</artifactId>
+    <configuration>
+      <annotationProcessorPaths>
+        <path>
+          <groupId>io.helidon.bundles</groupId>
+          <artifactId>helidon-bundles-apt</artifactId>
+          <version>${helidon.version}</version>
+        </path>
+      </annotationProcessorPaths>
+    </configuration>
+  </plugin>
 </plugins>
 ```
 

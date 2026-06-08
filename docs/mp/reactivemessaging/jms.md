@@ -10,8 +10,8 @@ To enable JMS Connector, add the following dependency to your project’s `pom.x
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.messaging.jms</groupId>
-    <artifactId>helidon-messaging-jms</artifactId>
+  <groupId>io.helidon.messaging.jms</groupId>
+  <artifactId>helidon-messaging-jms</artifactId>
 </dependency>
 ```
 

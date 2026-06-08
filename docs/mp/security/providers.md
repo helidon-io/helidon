@@ -31,8 +31,8 @@ Maven dependency
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.microprofile</groupId>
-    <artifactId>helidon-microprofile-oidc</artifactId>
+  <groupId>io.helidon.microprofile</groupId>
+  <artifactId>helidon-microprofile-oidc</artifactId>
 </dependency>
 ```
 
@@ -555,8 +555,8 @@ Maven dependency
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.security.providers</groupId>
-    <artifactId>helidon-security-providers-http-auth</artifactId>
+  <groupId>io.helidon.security.providers</groupId>
+  <artifactId>helidon-security-providers-http-auth</artifactId>
 </dependency>
 ```
 
@@ -648,8 +648,8 @@ Maven dependency
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.security.providers</groupId>
-    <artifactId>helidon-security-providers-http-auth</artifactId>
+  <groupId>io.helidon.security.providers</groupId>
+  <artifactId>helidon-security-providers-http-auth</artifactId>
 </dependency>
 ```
 
@@ -717,8 +717,8 @@ Maven dependency
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.security.providers</groupId>
-    <artifactId>helidon-security-providers-header</artifactId>
+  <groupId>io.helidon.security.providers</groupId>
+  <artifactId>helidon-security-providers-header</artifactId>
 </dependency>
 ```
 
@@ -784,8 +784,8 @@ Maven dependency
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.security.providers</groupId>
-    <artifactId>helidon-security-providers-http-sign</artifactId>
+  <groupId>io.helidon.security.providers</groupId>
+  <artifactId>helidon-security-providers-http-sign</artifactId>
 </dependency>
 ```
 
@@ -865,8 +865,8 @@ Maven dependency
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.security.providers</groupId>
-    <artifactId>helidon-security-providers-idcs-mapper</artifactId>
+  <groupId>io.helidon.security.providers</groupId>
+  <artifactId>helidon-security-providers-idcs-mapper</artifactId>
 </dependency>
 ```
 
@@ -925,8 +925,8 @@ Maven dependency
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.security.providers</groupId>
-    <artifactId>helidon-security-providers-abac</artifactId>
+  <groupId>io.helidon.security.providers</groupId>
+  <artifactId>helidon-security-providers-abac</artifactId>
 </dependency>
 ```
 
@@ -1134,8 +1134,8 @@ Maven dependency
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.security.providers</groupId>
-    <artifactId>helidon-security-providers-google-login</artifactId>
+  <groupId>io.helidon.security.providers</groupId>
+  <artifactId>helidon-security-providers-google-login</artifactId>
 </dependency>
 ```
 
@@ -1199,8 +1199,8 @@ Maven dependency
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.security.providers</groupId>
-    <artifactId>helidon-security-providers-jwt</artifactId>
+  <groupId>io.helidon.security.providers</groupId>
+  <artifactId>helidon-security-providers-jwt</artifactId>
 </dependency>
 ```
 

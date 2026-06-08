@@ -29,8 +29,8 @@ To enable LangChain4j Integration, add the following dependency to your projectâ
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.integrations.langchain4j</groupId>
-    <artifactId>helidon-integrations-langchain4j</artifactId>
+  <groupId>io.helidon.integrations.langchain4j</groupId>
+  <artifactId>helidon-integrations-langchain4j</artifactId>
 </dependency>
 ```
 
@@ -38,17 +38,17 @@ Include the following annotation processor in the `<build><plugins>` section of 
 
 ```xml [pom.xml]
 <plugin>
-    <groupId>org.apache.maven.plugins</groupId>
-    <artifactId>maven-compiler-plugin</artifactId>
-    <configuration>
-        <annotationProcessorPaths>
-            <path>
-                <groupId>io.helidon.bundles</groupId>
-                <artifactId>helidon-bundles-apt</artifactId>
-                <version>${helidon.version}</version>
-            </path>
-        </annotationProcessorPaths>
-    </configuration>
+  <groupId>org.apache.maven.plugins</groupId>
+  <artifactId>maven-compiler-plugin</artifactId>
+  <configuration>
+    <annotationProcessorPaths>
+      <path>
+        <groupId>io.helidon.bundles</groupId>
+        <artifactId>helidon-bundles-apt</artifactId>
+        <version>${helidon.version}</version>
+      </path>
+    </annotationProcessorPaths>
+  </configuration>
 </plugin>
 ```
 

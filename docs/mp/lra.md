@@ -10,15 +10,15 @@ To enable Long Running Actions, add the following dependency to your project’s
 
 ```xml [pom.xml]
 <dependencies>
-    <dependency>
-      <groupId>io.helidon.microprofile.lra</groupId>
-      <artifactId>helidon-microprofile-lra</artifactId>
-    </dependency>
-    <!-- Support for Narayana coordinator -->
-    <dependency>
-      <groupId>io.helidon.lra</groupId>
-      <artifactId>helidon-lra-coordinator-narayana-client</artifactId>
-    </dependency>
+  <dependency>
+    <groupId>io.helidon.microprofile.lra</groupId>
+    <artifactId>helidon-microprofile-lra</artifactId>
+  </dependency>
+  <!-- Support for Narayana coordinator -->
+  <dependency>
+    <groupId>io.helidon.lra</groupId>
+    <artifactId>helidon-lra-coordinator-narayana-client</artifactId>
+  </dependency>
 </dependencies>
 ```
 
@@ -360,9 +360,9 @@ Dependency:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.microprofile.lra</groupId>
-    <artifactId>helidon-microprofile-lra-testing</artifactId>
-    <scope>test</scope>
+  <groupId>io.helidon.microprofile.lra</groupId>
+  <artifactId>helidon-microprofile-lra-testing</artifactId>
+  <scope>test</scope>
 </dependency>
 ```
 
@@ -512,8 +512,8 @@ Dependency needed for using Helidon LRA with Narayana compatible coordinator:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.lra</groupId>
-    <artifactId>helidon-lra-coordinator-narayana-client</artifactId>
+  <groupId>io.helidon.lra</groupId>
+  <artifactId>helidon-lra-coordinator-narayana-client</artifactId>
 </dependency>
 ```
 
@@ -567,8 +567,8 @@ Dependency needed for using Helidon LRA with Narayana compatible coordinator:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.lra</groupId>
-    <artifactId>helidon-lra-coordinator-narayana-client</artifactId>
+  <groupId>io.helidon.lra</groupId>
+  <artifactId>helidon-lra-coordinator-narayana-client</artifactId>
 </dependency>
 ```
 
@@ -580,8 +580,8 @@ Dependency needed for using Helidon LRA with Narayana coordinator:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.lra</groupId>
-    <artifactId>helidon-lra-coordinator-narayana-client</artifactId>
+  <groupId>io.helidon.lra</groupId>
+  <artifactId>helidon-lra-coordinator-narayana-client</artifactId>
 </dependency>
 ```
 

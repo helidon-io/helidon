@@ -21,8 +21,8 @@ To enable Security, add the following dependency to your project’s `pom.xml` (
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.security</groupId>
-    <artifactId>helidon-security</artifactId>
+  <groupId>io.helidon.security</groupId>
+  <artifactId>helidon-security</artifactId>
 </dependency>
 ```
 

@@ -19,8 +19,8 @@ To enable Micrometer support, add the following dependency to your project’s `
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.integrations.micrometer</groupId>
-    <artifactId>helidon-integrations-micrometer-cdi</artifactId>
+  <groupId>io.helidon.integrations.micrometer</groupId>
+  <artifactId>helidon-integrations-micrometer-cdi</artifactId>
 </dependency>
 ```
 

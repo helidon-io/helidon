@@ -12,9 +12,9 @@ To enable Helidon MicroProfile Testing JUnit5, add the following dependency to y
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.microprofile.testing</groupId>
-    <artifactId>helidon-microprofile-testing-junit5</artifactId>
-    <scope>test</scope>
+  <groupId>io.helidon.microprofile.testing</groupId>
+  <artifactId>helidon-microprofile-testing-junit5</artifactId>
+  <scope>test</scope>
 </dependency>
 ```
 
@@ -505,9 +505,9 @@ To enable mock mupport add the following dependency to your project’s pom.xml.
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.microprofile.testing</groupId>
-    <artifactId>helidon-microprofile-testing-mocking</artifactId>
-    <scope>test</scope>
+  <groupId>io.helidon.microprofile.testing</groupId>
+  <artifactId>helidon-microprofile-testing-mocking</artifactId>
+  <scope>test</scope>
 </dependency>
 ```
 

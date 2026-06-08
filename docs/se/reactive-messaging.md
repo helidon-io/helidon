@@ -10,8 +10,8 @@ To enable Reactive Messaging, add the following dependency to your project’s `
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.messaging</groupId>
-    <artifactId>helidon-messaging</artifactId>
+  <groupId>io.helidon.messaging</groupId>
+  <artifactId>helidon-messaging</artifactId>
 </dependency>
 ```
 
@@ -239,8 +239,8 @@ Maven dependency:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.messaging.kafka</groupId>
-    <artifactId>helidon-messaging-kafka</artifactId>
+  <groupId>io.helidon.messaging.kafka</groupId>
+  <artifactId>helidon-messaging-kafka</artifactId>
 </dependency>
 ```
 
@@ -377,8 +377,8 @@ Maven dependency:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.messaging.jms</groupId>
-    <artifactId>helidon-messaging-jms</artifactId>
+  <groupId>io.helidon.messaging.jms</groupId>
+  <artifactId>helidon-messaging-jms</artifactId>
 </dependency>
 ```
 
@@ -504,8 +504,8 @@ Maven dependency:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.messaging.aq</groupId>
-    <artifactId>helidon-messaging-aq</artifactId>
+  <groupId>io.helidon.messaging.aq</groupId>
+  <artifactId>helidon-messaging-aq</artifactId>
 </dependency>
 ```
 

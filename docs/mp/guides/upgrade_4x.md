@@ -51,9 +51,9 @@ In Helidon 3.x, it was:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.microprofile.tests</groupId>
-    <artifactId>helidon-microprofile-tests-junit5</artifactId>
-    <scope>test</scope>
+  <groupId>io.helidon.microprofile.tests</groupId>
+  <artifactId>helidon-microprofile-tests-junit5</artifactId>
+  <scope>test</scope>
 </dependency>
 ```
 
@@ -61,9 +61,9 @@ In Helidon 4.x, it is now:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.microprofile.testing</groupId>
-    <artifactId>helidon-microprofile-testing-junit5</artifactId>
-    <scope>test</scope>
+  <groupId>io.helidon.microprofile.testing</groupId>
+  <artifactId>helidon-microprofile-testing-junit5</artifactId>
+  <scope>test</scope>
 </dependency>
 ```
 
@@ -79,8 +79,8 @@ If you use this handler in your `logging.properties` file, you must update it an
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.logging</groupId>
-    <artifactId>helidon-logging-jul</artifactId>
-    <scope>runtime</scope>
+  <groupId>io.helidon.logging</groupId>
+  <artifactId>helidon-logging-jul</artifactId>
+  <scope>runtime</scope>
 </dependency>
 ```

@@ -6,8 +6,8 @@ In addition to the [LangChain4j integration core dependencies](langchain4j.md#ma
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.integrations.langchain4j.providers</groupId>
-    <artifactId>helidon-integrations-langchain4j-providers-lc4j-in-process</artifactId>
+  <groupId>io.helidon.integrations.langchain4j.providers</groupId>
+  <artifactId>helidon-integrations-langchain4j-providers-lc4j-in-process</artifactId>
 </dependency>
 ```
 

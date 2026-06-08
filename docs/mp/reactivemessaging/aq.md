@@ -10,8 +10,8 @@ To enable AQ Connector, add the following dependency to your project’s `pom.xm
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.messaging.aq</groupId>
-    <artifactId>helidon-messaging-aq</artifactId>
+  <groupId>io.helidon.messaging.aq</groupId>
+  <artifactId>helidon-messaging-aq</artifactId>
 </dependency>
 ```
 

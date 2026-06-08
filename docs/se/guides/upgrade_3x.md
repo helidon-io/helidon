@@ -33,8 +33,8 @@ Enabling Http/2 support in Helidon 3 by adding dependency:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver-http2</artifactId>
+  <groupId>io.helidon.webserver</groupId>
+  <artifactId>helidon-webserver-http2</artifactId>
 </dependency>
 ```
 
@@ -59,8 +59,8 @@ Helidon 2 WebSocket support dependency:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver-tyrus</artifactId>
+  <groupId>io.helidon.webserver</groupId>
+  <artifactId>helidon-webserver-tyrus</artifactId>
 </dependency>
 ```
 
@@ -68,8 +68,8 @@ Helidon 3 WebSocket support dependency:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver-websocket</artifactId>
+  <groupId>io.helidon.webserver</groupId>
+  <artifactId>helidon-webserver-websocket</artifactId>
 </dependency>
 ```
 

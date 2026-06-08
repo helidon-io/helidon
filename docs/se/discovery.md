@@ -13,12 +13,10 @@ To enable Helidon Discovery, add the following dependency to your project’s `p
 `pom.xml`
 
 ```xml [pom.xml]
-<dependencies>
-    <dependency>
-        <groupId>io.helidon.discovery</groupId>
-        <artifactId>helidon-discovery</artifactId> <!--(1)-->
-    </dependency>
-</dependencies>
+<dependency>
+  <groupId>io.helidon.discovery</groupId>
+  <artifactId>helidon-discovery</artifactId> <!--(1)-->
+</dependency>
 ```
 
 1.  Helidon Discovery API dependency.
@@ -125,13 +123,11 @@ To use the Helidon Eureka Discovery provider, add the following dependency to yo
 `pom.xml`
 
 ```xml [pom.xml]
-<dependencies>
-    <dependency>
-        <groupId>io.helidon.discovery.providers</groupId>
-        <artifactId>helidon-discovery-providers-eureka</artifactId> <!--(1)-->
-        <scope>runtime</scope> <!--(2)-->
-    </dependency>
-</dependencies>
+<dependency>
+  <groupId>io.helidon.discovery.providers</groupId>
+  <artifactId>helidon-discovery-providers-eureka</artifactId> <!--(1)-->
+  <scope>runtime</scope> <!--(2)-->
+</dependency>
 ```
 
 1.  Helidon Eureka Discovery provider dependency.
@@ -247,16 +243,16 @@ To include the Helidon Web Client Discovery integration in your project, you add
 
 ```xml [pom.xml]
 <dependencies>
-    <dependency>
-        <groupId>io.helidon.webclient</groupId>
-        <artifactId>helidon-webclient-discovery</artifactId> <!--(1)-->
-        <scope>runtime</scope> <!--(2)-->
-    </dependency>
-    <dependency>
-        <groupId>io.helidon.discovery.providers</groupId>
-        <artifactId>helidon-discovery-providers-eureka</artifactId> <!--(3)-->
-        <scope>runtime</scope> <!--(4)-->
-    </dependency>
+  <dependency>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient-discovery</artifactId> <!--(1)-->
+    <scope>runtime</scope> <!--(2)-->
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.discovery.providers</groupId>
+    <artifactId>helidon-discovery-providers-eureka</artifactId> <!--(3)-->
+    <scope>runtime</scope> <!--(4)-->
+  </dependency>
 </dependencies>
 ```
 

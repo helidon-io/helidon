@@ -10,8 +10,8 @@ To enable Neo4j, add the following dependency to your project’s `pom.xml` (see
 
 ```xml [pom.xml]
 <dependency>
-   <groupId>io.helidon.integrations.neo4j</groupId>
-   <artifactId>helidon-integrations-neo4j</artifactId>
+  <groupId>io.helidon.integrations.neo4j</groupId>
+  <artifactId>helidon-integrations-neo4j</artifactId>
 </dependency>
 ```
 
@@ -80,18 +80,18 @@ Now go to the `pom.xml` and add the following dependencies:
 
 ```xml [pom.xml]
 <dependencies>
-    <dependency>
-        <groupId>io.helidon.integrations.neo4j</groupId>
-        <artifactId>helidon-integrations-neo4j</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>io.helidon.integrations.neo4j</groupId>
-        <artifactId>helidon-integrations-neo4j-metrics</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>io.helidon.integrations.neo4j</groupId>
-        <artifactId>helidon-integrations-neo4j-health</artifactId>
-    </dependency>
+  <dependency>
+    <groupId>io.helidon.integrations.neo4j</groupId>
+    <artifactId>helidon-integrations-neo4j</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.integrations.neo4j</groupId>
+    <artifactId>helidon-integrations-neo4j-metrics</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.integrations.neo4j</groupId>
+    <artifactId>helidon-integrations-neo4j-health</artifactId>
+  </dependency>
 </dependencies>
 ```
 
@@ -229,8 +229,8 @@ Neo4j’s metrics can be propagated to the user as `MicroProfile` metrics. This 
 
 ```xml [pom.xml]
 <dependency>
-   <groupId>io.helidon.integrations.neo4j</groupId>
-   <artifactId>helidon-integrations-neo4j-metrics</artifactId>
+  <groupId>io.helidon.integrations.neo4j</groupId>
+  <artifactId>helidon-integrations-neo4j-metrics</artifactId>
 </dependency>
 ```
 
@@ -263,8 +263,8 @@ If your application is highly dependent on Neo4j database, health and liveness c
 
 ```xml [pom.xml]
 <dependency>
-   <groupId>io.helidon.integrations.neo4j</groupId>
-   <artifactId>helidon-integrations-neo4j-health</artifactId>
+  <groupId>io.helidon.integrations.neo4j</groupId>
+  <artifactId>helidon-integrations-neo4j-health</artifactId>
 </dependency>
 ```
 

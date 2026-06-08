@@ -12,8 +12,8 @@ To enable MicroProfile Reactive Messaging, add the following dependency to your 
 
 ```xml [pom.xml]
 <dependency>
-   <groupId>io.helidon.microprofile.messaging</groupId>
-   <artifactId>helidon-microprofile-messaging</artifactId>
+  <groupId>io.helidon.microprofile.messaging</groupId>
+  <artifactId>helidon-microprofile-messaging</artifactId>
 </dependency>
 ```
 
@@ -21,8 +21,8 @@ To include health checks for Messaging add the following dependency:
 
 ```xml [pom.xml]
 <dependency>
-   <groupId>io.helidon.microprofile.messaging</groupId>
-   <artifactId>helidon-microprofile-messaging-health</artifactId>
+  <groupId>io.helidon.microprofile.messaging</groupId>
+  <artifactId>helidon-microprofile-messaging-health</artifactId>
 </dependency>
 ```
 

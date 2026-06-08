@@ -10,8 +10,8 @@ To enable Jakarta REST Client, add the following dependency to your project’s 
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.jersey</groupId>
-    <artifactId>helidon-jersey-client</artifactId>
+  <groupId>io.helidon.jersey</groupId>
+  <artifactId>helidon-jersey-client</artifactId>
 </dependency>
 ```
 

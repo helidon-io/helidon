@@ -10,9 +10,9 @@ To enable Helidon Testing Framework, add the following dependency to your projec
 
 ```xml [pom.xml]
 <dependency>
-     <groupId>io.helidon.webserver.testing.junit5</groupId>
-     <artifactId>helidon-webserver-testing-junit5</artifactId>
-     <scope>test</scope>
+  <groupId>io.helidon.webserver.testing.junit5</groupId>
+  <artifactId>helidon-webserver-testing-junit5</artifactId>
+  <scope>test</scope>
 </dependency>
 ```
 
@@ -192,9 +192,9 @@ Required dependency:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.testing</groupId>
-    <artifactId>helidon-testing-junit5</artifactId>
-    <scope>test</scope>
+  <groupId>io.helidon.testing</groupId>
+  <artifactId>helidon-testing-junit5</artifactId>
+  <scope>test</scope>
 </dependency>
 ```
 
@@ -210,9 +210,9 @@ If WebSocket testing is required, there is an additional module for it. It is ne
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.testing.junit5</groupId>
-    <artifactId>helidon-testing-junit5-websocket</artifactId>
-    <scope>test</scope>
+  <groupId>io.helidon.testing.junit5</groupId>
+  <artifactId>helidon-testing-junit5-websocket</artifactId>
+  <scope>test</scope>
 </dependency>
 ```
 

@@ -61,14 +61,14 @@ Generated dependencies related to health:
 
 ```xml [pom.xml]
 <dependencies>
-    <dependency>
-        <groupId>io.helidon.webserver.observe</groupId>
-        <artifactId>helidon-webserver-observe-health</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>io.helidon.health</groupId>
-        <artifactId>helidon-health-checks</artifactId>
-    </dependency>
+  <dependency>
+    <groupId>io.helidon.webserver.observe</groupId>
+    <artifactId>helidon-webserver-observe-health</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.health</groupId>
+    <artifactId>helidon-health-checks</artifactId>
+  </dependency>
 </dependencies>
 ```
 

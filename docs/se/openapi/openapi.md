@@ -21,8 +21,8 @@ To enable OpenAPI, add the following dependency to your project’s `pom.xml` (s
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.openapi</groupId>
-    <artifactId>helidon-openapi</artifactId>
+  <groupId>io.helidon.openapi</groupId>
+  <artifactId>helidon-openapi</artifactId>
 </dependency>
 ```
 

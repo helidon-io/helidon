@@ -6,8 +6,8 @@ To enable MicroProfile Telemetry, either add a dependency on the [helidon-microp
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.microprofile.telemetry</groupId>
-    <artifactId>helidon-microprofile-telemetry</artifactId>
+  <groupId>io.helidon.microprofile.telemetry</groupId>
+  <artifactId>helidon-microprofile-telemetry</artifactId>
 </dependency>
 ```
 
@@ -19,8 +19,8 @@ Example dependency for the OpenTelemetry OTLP exporter:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.opentelemetry</groupId>
-    <artifactId>opentelemetry-exporter-otlp</artifactId>
+  <groupId>io.opentelemetry</groupId>
+  <artifactId>opentelemetry-exporter-otlp</artifactId>
 </dependency>
 ```
 
@@ -368,14 +368,14 @@ Together with Helidon Telemetry dependency, an OpenTelemetry Exporter dependency
 
 ```xml [pom.xml]
 <dependencies>
-    <dependency>
-        <groupId>io.helidon.microprofile.telemetry</groupId>
-        <artifactId>helidon-microprofile-telemetry</artifactId> 
-    </dependency>
-    <dependency>
-        <groupId>io.opentelemetry</groupId>
-        <artifactId>opentelemetry-exporter-jaeger</artifactId>  
-    </dependency>
+  <dependency>
+    <groupId>io.helidon.microprofile.telemetry</groupId>
+    <artifactId>helidon-microprofile-telemetry</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.opentelemetry</groupId>
+    <artifactId>opentelemetry-exporter-jaeger</artifactId>
+  </dependency>
 </dependencies>
 ```
 

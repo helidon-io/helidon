@@ -23,9 +23,9 @@ To enable OpenMetrics exemplar support, add the following dependency to your pro
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.metrics</groupId>
-    <artifactId>helidon-metrics-trace-exemplar</artifactId>
-    <scope>runtime</scope>
+  <groupId>io.helidon.metrics</groupId>
+  <artifactId>helidon-metrics-trace-exemplar</artifactId>
+  <scope>runtime</scope>
 </dependency>
 ```
 
@@ -33,8 +33,8 @@ Also, include the Helidon integration module for a tracing implementation (such 
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.tracing.providers</groupId>
-    <artifactId>helidon-tracing-providers-zipkin</artifactId>
+  <groupId>io.helidon.tracing.providers</groupId>
+  <artifactId>helidon-tracing-providers-zipkin</artifactId>
 </dependency>
 ```
 
@@ -42,8 +42,8 @@ Add the Helidon tracing component itself:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.microprofile.tracing</groupId>
-    <artifactId>helidon-microprofile-tracing</artifactId>
+  <groupId>io.helidon.microprofile.tracing</groupId>
+  <artifactId>helidon-microprofile-tracing</artifactId>
 </dependency>
 ```
 

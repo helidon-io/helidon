@@ -42,14 +42,14 @@ Maven dependencies:
 
 ```xml [pom.xml]
 <dependencies>
-    <dependency>
-        <groupId>com.ibm.jbatch</groupId>
-        <artifactId>com.ibm.jbatch.container</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>org.apache.derby</groupId>
-        <artifactId>derby</artifactId>
-    </dependency>
+  <dependency>
+    <groupId>com.ibm.jbatch</groupId>
+    <artifactId>com.ibm.jbatch.container</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>org.apache.derby</groupId>
+    <artifactId>derby</artifactId>
+  </dependency>
 </dependencies>
 ```
 

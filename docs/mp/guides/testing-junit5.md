@@ -39,15 +39,15 @@ Maven dependencies:
 
 ```xml [pom.xml]
 <dependencies>
-   <dependency>
-      <groupId>io.helidon.microprofile.testing</groupId>
-      <artifactId>helidon-microprofile-testing-junit5</artifactId>
-      <scope>test</scope>
-   </dependency>
-   <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter-engine</artifactId>
-   </dependency>
+  <dependency>
+    <groupId>io.helidon.microprofile.testing</groupId>
+    <artifactId>helidon-microprofile-testing-junit5</artifactId>
+    <scope>test</scope>
+  </dependency>
+  <dependency>
+    <groupId>org.junit.jupiter</groupId>
+    <artifactId>junit-jupiter-engine</artifactId>
+  </dependency>
 </dependencies>
 ```
 

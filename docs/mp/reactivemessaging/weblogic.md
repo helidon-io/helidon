@@ -20,8 +20,8 @@ To enable WebLogic JMS connector, add the following dependency to your projectâ€
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.messaging.wls-jms</groupId>
-    <artifactId>helidon-messaging-wls-jms</artifactId>
+  <groupId>io.helidon.messaging.wls-jms</groupId>
+  <artifactId>helidon-messaging-wls-jms</artifactId>
 </dependency>
 ```
 

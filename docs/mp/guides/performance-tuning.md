@@ -10,16 +10,16 @@ Use `helidon-microprofile-core` dependency (and not the `helidon-microprofile` d
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.microprofile.bundles</groupId>
-    <artifactId>helidon-microprofile-core</artifactId>
+  <groupId>io.helidon.microprofile.bundles</groupId>
+  <artifactId>helidon-microprofile-core</artifactId>
 </dependency>
 <dependency>
-    <groupId>io.helidon.microprofile.metrics</groupId>
-    <artifactId>helidon-microprofile-metrics</artifactId>
+  <groupId>io.helidon.microprofile.metrics</groupId>
+  <artifactId>helidon-microprofile-metrics</artifactId>
 </dependency>
 <dependency>
-    <groupId>io.helidon.microprofile.health</groupId>
-    <artifactId>helidon-microprofile-health</artifactId>
+  <groupId>io.helidon.microprofile.health</groupId>
+  <artifactId>helidon-microprofile-health</artifactId>
 </dependency>
 ```
 

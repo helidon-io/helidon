@@ -10,8 +10,8 @@ To enable {feature-name}, either add a dependency on the [helidon-microprofile b
 
 ```xml [pom.xml]
 <dependency>
-   <groupId>io.helidon.microprofile.reactive-streams</groupId>
-   <artifactId>helidon-microprofile-reactive-streams</artifactId>
+  <groupId>io.helidon.microprofile.reactive-streams</groupId>
+  <artifactId>helidon-microprofile-reactive-streams</artifactId>
 </dependency>
 ```
 

@@ -22,19 +22,19 @@ In addition, the following section must be added to the `build` of the Maven `po
 
 ```xml [pom.xml]
 <plugins>
-    <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-            <annotationProcessorPaths>
-                <path>
-                    <groupId>io.helidon.bundles</groupId>
-                    <artifactId>helidon-bundles-apt</artifactId>
-                    <version>${helidon.version}</version>
-                </path>
-            </annotationProcessorPaths>
-        </configuration>
-    </plugin>
+  <plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-compiler-plugin</artifactId>
+    <configuration>
+      <annotationProcessorPaths>
+        <path>
+          <groupId>io.helidon.bundles</groupId>
+          <artifactId>helidon-bundles-apt</artifactId>
+          <version>${helidon.version}</version>
+        </path>
+      </annotationProcessorPaths>
+    </configuration>
+  </plugin>
 </plugins>
 ```
 
@@ -102,7 +102,7 @@ Supported method parameters (no annotation required):
 - [`io.helidon.webserver.http.ServerResponse`](/apidocs/io.helidon.webserver/io/helidon/webserver/http/ServerResponse.html)
 - [`io.helidon.common.context.Context`](/apidocs/io.helidon.common.context/io/helidon/common/context/Context.html)
 - `io.helidon.common.security.SecurityContext`
-- `` io.helidon.security.SecurityContext - in case `helidon-security `` module is on the classpath
+- `io.helidon.security.SecurityContext` - in case `helidon-security` module is on the classpath
 
 Annotations on endpoint type:
 
@@ -268,8 +268,8 @@ Helidon validation module:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.validation</groupId>
-    <artifactId>helidon-validation</artifactId>
+  <groupId>io.helidon.validation</groupId>
+  <artifactId>helidon-validation</artifactId>
 </dependency>
 ```
 

@@ -10,8 +10,8 @@ To enable MicroProfile Config, either add a dependency on the [helidon-microprof
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.microprofile.config</groupId>
-    <artifactId>helidon-microprofile-config</artifactId>
+  <groupId>io.helidon.microprofile.config</groupId>
+  <artifactId>helidon-microprofile-config</artifactId>
 </dependency>
 ```
 

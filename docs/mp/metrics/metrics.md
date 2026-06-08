@@ -27,8 +27,8 @@ To enable metrics, add the following dependency to your project’s `pom.xml` (s
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.microprofile.metrics</groupId>
-    <artifactId>helidon-microprofile-metrics</artifactId>
+  <groupId>io.helidon.microprofile.metrics</groupId>
+  <artifactId>helidon-microprofile-metrics</artifactId>
 </dependency>
 ```
 

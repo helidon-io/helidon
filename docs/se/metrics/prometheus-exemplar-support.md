@@ -23,9 +23,9 @@ To enable OpenMetrics exemplar support, add the following dependency to your pro
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.metrics</groupId>
-    <artifactId>helidon-metrics-trace-exemplar</artifactId>
-    <scope>runtime</scope>
+  <groupId>io.helidon.metrics</groupId>
+  <artifactId>helidon-metrics-trace-exemplar</artifactId>
+  <scope>runtime</scope>
 </dependency>
 ```
 
@@ -33,8 +33,8 @@ Also, include the Helidon integration module for a tracing implementation (such 
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.tracing.providers</groupId>
-    <artifactId>helidon-tracing-providers-zipkin</artifactId>
+  <groupId>io.helidon.tracing.providers</groupId>
+  <artifactId>helidon-tracing-providers-zipkin</artifactId>
 </dependency>
 ```
 
@@ -42,14 +42,14 @@ Add the Helidon tracing component itself:
 
 ```xml [pom.xml]
 <dependencies>
-    <dependency>
-        <groupId>io.helidon.tracing</groupId>
-        <artifactId>helidon-tracing</artifactId>    
-    </dependency>
-    <dependency>
-        <groupId>io.helidon.webserver.observe</groupId>
-        <artifactId>helidon-webserver-observe-tracing</artifactId> 
-    </dependency>
+  <dependency>
+    <groupId>io.helidon.tracing</groupId>
+    <artifactId>helidon-tracing</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.webserver.observe</groupId>
+    <artifactId>helidon-webserver-observe-tracing</artifactId>
+  </dependency>
 </dependencies>
 ```
 
@@ -62,9 +62,9 @@ For Jaeger:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.tracing.providers</groupId>
-    <artifactId>helidon-tracing-providers-jaeger</artifactId>
-    <scope>runtime</scope>
+  <groupId>io.helidon.tracing.providers</groupId>
+  <artifactId>helidon-tracing-providers-jaeger</artifactId>
+  <scope>runtime</scope>
 </dependency>
 ```
 
@@ -72,9 +72,9 @@ For Zipkin:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.tracing.providers</groupId>
-    <artifactId>helidon-tracing-providers-zipkin</artifactId>
-    <scope>runtime</scope>
+  <groupId>io.helidon.tracing.providers</groupId>
+  <artifactId>helidon-tracing-providers-zipkin</artifactId>
+  <scope>runtime</scope>
 </dependency>
 ```
 
@@ -82,9 +82,9 @@ For OpenTelemetry:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.tracing.providers</groupId>
-    <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
-    <scope>runtime</scope>
+  <groupId>io.helidon.tracing.providers</groupId>
+  <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
+  <scope>runtime</scope>
 </dependency>
 ```
 
@@ -92,8 +92,8 @@ For OpenTracing (deprecated):
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.tracing.providers</groupId>
-    <artifactId>helidon-tracing-providers-opentracing</artifactId>
+  <groupId>io.helidon.tracing.providers</groupId>
+  <artifactId>helidon-tracing-providers-opentracing</artifactId>
 </dependency>
 ```
 

@@ -17,8 +17,8 @@ Adding the Helidon OCI authentication/configuration support dependency:
 
 ```xml [pom.xml]
 <dependency>
-     <groupId>io.helidon.integrations.oci</groupId>
-     <artifactId>helidon-integrations-oci</artifactId>
+  <groupId>io.helidon.integrations.oci</groupId>
+  <artifactId>helidon-integrations-oci</artifactId>
 </dependency>
 ```
 
@@ -73,8 +73,8 @@ Adding the dependency for OCI Object Storage:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>com.oracle.oci.sdk</groupId>
-    <artifactId>oci-java-sdk-objectstorage</artifactId>
+  <groupId>com.oracle.oci.sdk</groupId>
+  <artifactId>oci-java-sdk-objectstorage</artifactId>
 </dependency>
 ```
 
@@ -113,16 +113,16 @@ Adding the dependency for OCI Vault:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>com.oracle.oci.sdk</groupId>
-    <artifactId>oci-java-sdk-keymanagement</artifactId>
+  <groupId>com.oracle.oci.sdk</groupId>
+  <artifactId>oci-java-sdk-keymanagement</artifactId>
 </dependency>
 <dependency>
-    <groupId>com.oracle.oci.sdk</groupId>
-    <artifactId>oci-java-sdk-secrets</artifactId>
+  <groupId>com.oracle.oci.sdk</groupId>
+  <artifactId>oci-java-sdk-secrets</artifactId>
 </dependency>
 <dependency>
-    <groupId>com.oracle.oci.sdk</groupId>
-    <artifactId>oci-java-sdk-vault</artifactId>
+  <groupId>com.oracle.oci.sdk</groupId>
+  <artifactId>oci-java-sdk-vault</artifactId>
 </dependency>
 ```
 

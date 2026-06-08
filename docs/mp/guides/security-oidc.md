@@ -200,12 +200,12 @@ Add the following dependencies to pom.xml:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.microprofile</groupId>
-    <artifactId>helidon-microprofile-security</artifactId>
+  <groupId>io.helidon.microprofile</groupId>
+  <artifactId>helidon-microprofile-security</artifactId>
 </dependency>
 <dependency>
-    <groupId>io.helidon.microprofile</groupId>
-    <artifactId>helidon-microprofile-oidc</artifactId>
+  <groupId>io.helidon.microprofile</groupId>
+  <artifactId>helidon-microprofile-oidc</artifactId>
 </dependency>
 ```
 

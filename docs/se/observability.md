@@ -10,8 +10,8 @@ To enable Helidon Observability, add the following dependency to your project’
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webserver.observe</groupId>
-    <artifactId>helidon-webserver-observe</artifactId>
+  <groupId>io.helidon.webserver.observe</groupId>
+  <artifactId>helidon-webserver-observe</artifactId>
 </dependency>
 ```
 
@@ -19,8 +19,8 @@ For Health Observability features:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webserver.observe</groupId>
-    <artifactId>helidon-webserver-observe-health</artifactId>
+  <groupId>io.helidon.webserver.observe</groupId>
+  <artifactId>helidon-webserver-observe-health</artifactId>
 </dependency>
 ```
 
@@ -28,8 +28,8 @@ For Metrics Observability features:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webserver.observe</groupId>
-    <artifactId>helidon-webserver-observe-metrics</artifactId>
+  <groupId>io.helidon.webserver.observe</groupId>
+  <artifactId>helidon-webserver-observe-metrics</artifactId>
 </dependency>
 ```
 
@@ -37,8 +37,8 @@ For Info Observability features:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webserver.observe</groupId>
-    <artifactId>helidon-webserver-observe-info</artifactId>
+  <groupId>io.helidon.webserver.observe</groupId>
+  <artifactId>helidon-webserver-observe-info</artifactId>
 </dependency>
 ```
 
@@ -46,8 +46,8 @@ For Logging Observability features:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webserver.observe</groupId>
-    <artifactId>helidon-webserver-observe-log</artifactId>
+  <groupId>io.helidon.webserver.observe</groupId>
+  <artifactId>helidon-webserver-observe-log</artifactId>
 </dependency>
 ```
 
@@ -55,8 +55,8 @@ For Configuration Observability features:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webserver.observe</groupId>
-    <artifactId>helidon-webserver-observe-config</artifactId>
+  <groupId>io.helidon.webserver.observe</groupId>
+  <artifactId>helidon-webserver-observe-config</artifactId>
 </dependency>
 ```
 

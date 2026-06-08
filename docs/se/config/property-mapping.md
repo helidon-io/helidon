@@ -285,8 +285,8 @@ Config object mapping Dependency in pom.xml:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.config</groupId>
-    <artifactId>helidon-config-object-mapping</artifactId>
+  <groupId>io.helidon.config</groupId>
+  <artifactId>helidon-config-object-mapping</artifactId>
 </dependency>
 ```
 
@@ -364,8 +364,8 @@ Config object mapping Dependency in pom.xml:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.config</groupId>
-    <artifactId>helidon-config-object-mapping</artifactId>
+  <groupId>io.helidon.config</groupId>
+  <artifactId>helidon-config-object-mapping</artifactId>
 </dependency>
 ```
 

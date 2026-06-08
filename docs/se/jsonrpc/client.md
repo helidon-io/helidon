@@ -10,8 +10,8 @@ To enable WebClient/JSON-RPC, add the following dependency to your project’s `
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webclient</groupId>
-    <artifactId>helidon-webclient-jsonrpc</artifactId>
+  <groupId>io.helidon.webclient</groupId>
+  <artifactId>helidon-webclient-jsonrpc</artifactId>
 </dependency>
 ```
 

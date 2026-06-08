@@ -58,8 +58,8 @@ Add dependency for Helidon CRaC support to `pom.xml`. This allows Helidon to pro
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.integrations.crac</groupId>
-    <artifactId>helidon-integrations-crac</artifactId>
+  <groupId>io.helidon.integrations.crac</groupId>
+  <artifactId>helidon-integrations-crac</artifactId>
 </dependency>
 ```
 

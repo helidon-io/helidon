@@ -16,8 +16,8 @@ To enable gRPC Server, add the following dependency to your project’s `pom.xml
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver-grpc</artifactId>
+  <groupId>io.helidon.webserver</groupId>
+  <artifactId>helidon-webserver-grpc</artifactId>
 </dependency>
 ```
 

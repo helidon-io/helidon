@@ -10,8 +10,8 @@ To enable Jakarta Websocket, add the following dependency to your project’s `p
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.microprofile.websocket</groupId>
-    <artifactId>helidon-microprofile-websocket</artifactId>
+  <groupId>io.helidon.microprofile.websocket</groupId>
+  <artifactId>helidon-microprofile-websocket</artifactId>
 </dependency>
 ```
 

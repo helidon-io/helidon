@@ -13,8 +13,8 @@ To enable Injection, add the following dependency to your project’s `pom.xml` 
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.service</groupId>
-    <artifactId>helidon-service-registry</artifactId>
+  <groupId>io.helidon.service</groupId>
+  <artifactId>helidon-service-registry</artifactId>
 </dependency>
 ```
 
@@ -140,26 +140,26 @@ Example annotation processor configuration in Maven:
 
 ```xml [pom.xml]
 <build>
-    <plugins>
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <configuration>
-                <annotationProcessorPaths>
-                    <path>
-                        <groupId>io.helidon.codegen</groupId>
-                        <artifactId>helidon-codegen-apt</artifactId>
-                        <version>${helidon.version}</version>
-                    </path>
-                    <path>
-                        <groupId>io.helidon.service</groupId>
-                        <artifactId>helidon-service-codegen</artifactId>
-                        <version>${helidon.version}</version>
-                    </path>
-                </annotationProcessorPaths>
-            </configuration>
-        </plugin>
-    </plugins>
+  <plugins>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-compiler-plugin</artifactId>
+      <configuration>
+        <annotationProcessorPaths>
+          <path>
+            <groupId>io.helidon.codegen</groupId>
+            <artifactId>helidon-codegen-apt</artifactId>
+            <version>${helidon.version}</version>
+          </path>
+          <path>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-codegen</artifactId>
+            <version>${helidon.version}</version>
+          </path>
+        </annotationProcessorPaths>
+      </configuration>
+    </plugin>
+  </plugins>
 </build>
 ```
 

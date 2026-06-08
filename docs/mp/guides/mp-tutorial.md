@@ -43,52 +43,52 @@ Initial Maven POM file:
 ```xml [pom.xml]
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <parent> 
-        <groupId>io.helidon.applications</groupId>
-        <artifactId>helidon-mp</artifactId>
-        <version>4.4.0-SNAPSHOT</version>
-        <relativePath/>
+    <parent>
+      <groupId>io.helidon.applications</groupId>
+      <artifactId>helidon-mp</artifactId>
+      <version>4.4.0-SNAPSHOT</version>
+      <relativePath/>
     </parent>
-
+    
     <groupId>io.helidon.examples</groupId>
-    <artifactId>helidon-mp-tutorial</artifactId> 
+    <artifactId>helidon-mp-tutorial</artifactId>
     <name>${project.artifactId}</name>
-
+    
     <properties>
-        <mainClass>io.helidon.examples.Main</mainClass> 
+      <mainClass>io.helidon.examples.Main</mainClass>
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>io.helidon.microprofile.bundles</groupId>
-            <artifactId>helidon-microprofile</artifactId> 
-        </dependency>
+      <dependency>
+        <groupId>io.helidon.microprofile.bundles</groupId>
+        <artifactId>helidon-microprofile</artifactId>
+      </dependency>
     </dependencies>
 
-    <build> 
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>copy-libs</id>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>io.smallrye</groupId>
-                <artifactId>jandex-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>make-index</id>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
+    <build>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-dependency-plugin</artifactId>
+          <executions>
+            <execution>
+              <id>copy-libs</id>
+            </execution>
+          </executions>
+        </plugin>
+        <plugin>
+          <groupId>io.smallrye</groupId>
+          <artifactId>jandex-maven-plugin</artifactId>
+          <executions>
+            <execution>
+              <id>make-index</id>
+            </execution>
+          </executions>
+        </plugin>
+      </plugins>
     </build>
 </project>
 ```

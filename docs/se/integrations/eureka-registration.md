@@ -14,9 +14,9 @@ To enable Eureka Server Service Instance Registration Integration, add the follo
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.integrations.eureka</groupId>
-    <artifactId>helidon-integrations-eureka</artifactId>
-    <scope>runtime</scope>
+  <groupId>io.helidon.integrations.eureka</groupId>
+  <artifactId>helidon-integrations-eureka</artifactId>
+  <scope>runtime</scope>
 </dependency>
 ```
 

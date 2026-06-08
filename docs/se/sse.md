@@ -16,8 +16,8 @@ The Server API is available as a loadable service in the Helidon WebServer. The 
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver-sse</artifactId>
+  <groupId>io.helidon.webserver</groupId>
+  <artifactId>helidon-webserver-sse</artifactId>
 </dependency>
 ```
 
@@ -84,8 +84,8 @@ The Client API is available as a loadable service in the Helidon WebClient. The 
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webclient</groupId>
-    <artifactId>helidon-webclient-sse</artifactId>
+  <groupId>io.helidon.webclient</groupId>
+  <artifactId>helidon-webclient-sse</artifactId>
 </dependency>
 ```
 

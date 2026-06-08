@@ -16,8 +16,8 @@ To enable CORS, add the following dependency to your project’s `pom.xml` (see 
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.microprofile</groupId>
-    <artifactId>helidon-microprofile-cors</artifactId>
+  <groupId>io.helidon.microprofile</groupId>
+  <artifactId>helidon-microprofile-cors</artifactId>
 </dependency>
 ```
 

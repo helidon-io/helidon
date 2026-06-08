@@ -14,8 +14,8 @@ For Info Observability features:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webserver.observe</groupId>
-    <artifactId>helidon-webserver-observe-info</artifactId>
+  <groupId>io.helidon.webserver.observe</groupId>
+  <artifactId>helidon-webserver-observe-info</artifactId>
 </dependency>
 ```
 
@@ -23,8 +23,8 @@ For Logging Observability features:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webserver.observe</groupId>
-    <artifactId>helidon-webserver-observe-log</artifactId>
+  <groupId>io.helidon.webserver.observe</groupId>
+  <artifactId>helidon-webserver-observe-log</artifactId>
 </dependency>
 ```
 
@@ -32,8 +32,8 @@ For Configuration Observability features:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webserver.observe</groupId>
-    <artifactId>helidon-webserver-observe-config</artifactId>
+  <groupId>io.helidon.webserver.observe</groupId>
+  <artifactId>helidon-webserver-observe-config</artifactId>
 </dependency>
 ```
 

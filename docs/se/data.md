@@ -17,12 +17,12 @@ To enable Data Repository, add the following dependency to your projectâ€™s `pom
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.data</groupId>
-    <artifactId>helidon-data</artifactId>
+  <groupId>io.helidon.data</groupId>
+  <artifactId>helidon-data</artifactId>
 </dependency>
 <dependency>
-    <groupId>io.helidon.data.jakarta.persistence</groupId>
-    <artifactId>helidon-data-jakarta-persistence</artifactId>
+  <groupId>io.helidon.data.jakarta.persistence</groupId>
+  <artifactId>helidon-data-jakarta-persistence</artifactId>
 </dependency>
 ```
 
@@ -30,19 +30,19 @@ The Jakarta Persistence provider, such as EclipseLink, and the JDBC driver, such
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>org.eclipse.persistence</groupId>
-    <artifactId>org.eclipse.persistence.jpa</artifactId>
-    <scope>runtime</scope>
+  <groupId>org.eclipse.persistence</groupId>
+  <artifactId>org.eclipse.persistence.jpa</artifactId>
+  <scope>runtime</scope>
 </dependency>
 <dependency>
-    <groupId>org.eclipse.persistence</groupId>
-    <artifactId>org.eclipse.persistence.core</artifactId>
-    <scope>runtime</scope>
+  <groupId>org.eclipse.persistence</groupId>
+  <artifactId>org.eclipse.persistence.core</artifactId>
+  <scope>runtime</scope>
 </dependency>
 <dependency>
-    <groupId>com.mysql</groupId>
-    <artifactId>mysql-connector-j</artifactId>
-    <scope>runtime</scope>
+  <groupId>com.mysql</groupId>
+  <artifactId>mysql-connector-j</artifactId>
+  <scope>runtime</scope>
 </dependency>
 ```
 
@@ -52,16 +52,16 @@ Both the entity model and data repository interfaces require a specific annotati
 
 ```xml [pom.xml]
 <annotationProcessorPaths>
-    <path>
-        <groupId>io.helidon.bundles</groupId>
-        <artifactId>helidon-bundles-apt</artifactId>
-        <version>${helidon.version}</version>
-    </path>
-    <path>
-        <groupId>io.helidon.data.jakarta.persistence</groupId>
-        <artifactId>helidon-data-jakarta-persistence-codegen</artifactId>
-        <version>${helidon.version}</version>
-    </path>
+  <path>
+    <groupId>io.helidon.bundles</groupId>
+    <artifactId>helidon-bundles-apt</artifactId>
+    <version>${helidon.version}</version>
+  </path>
+  <path>
+    <groupId>io.helidon.data.jakarta.persistence</groupId>
+    <artifactId>helidon-data-jakarta-persistence-codegen</artifactId>
+    <version>${helidon.version}</version>
+  </path>
 </annotationProcessorPaths>
 ```
 
@@ -477,8 +477,8 @@ To enable Helidon Transaction API, add the following dependency to your projectâ
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>jakarta.transaction</groupId>
-    <artifactId>jakarta.transaction-api</artifactId>
+  <groupId>jakarta.transaction</groupId>
+  <artifactId>jakarta.transaction-api</artifactId>
 </dependency>
 ```
 
@@ -486,9 +486,9 @@ Helidon JTA Transaction support, such as Narayana, may be provided at runtime to
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.transaction</groupId>
-    <artifactId>helidon-transaction-narayana</artifactId>
-    <scope>runtime</scope>
+  <groupId>io.helidon.transaction</groupId>
+  <artifactId>helidon-transaction-narayana</artifactId>
+  <scope>runtime</scope>
 </dependency>
 ```
 

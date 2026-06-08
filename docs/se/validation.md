@@ -17,14 +17,14 @@ To enable Validation, add the following dependency to your project’s `pom.xml`
 
 ```xml [pom.xml]
 <dependencies>
-    <dependency>
-        <groupId>io.helidon.validation</groupId>
-        <artifactId>helidon-validation</artifactId>    
-    </dependency>
-    <dependency>
-        <groupId>io.helidon.webserver</groupId>
-        <artifactId>helidon-webserver-validation</artifactId> 
-    </dependency>
+  <dependency>
+    <groupId>io.helidon.validation</groupId>
+    <artifactId>helidon-validation</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.webserver</groupId>
+    <artifactId>helidon-webserver-validation</artifactId>
+  </dependency>
 </dependencies>
 ```
 
@@ -63,19 +63,19 @@ The following annotation processing setup must be done to generate the code:
 
 ```xml [pom.xml]
 <plugins>
-    <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-            <annotationProcessorPaths>
-                <path>
-                    <groupId>io.helidon.bundles</groupId>
-                    <artifactId>helidon-bundles-apt</artifactId>
-                    <version>${helidon.version}</version>
-                </path>
-            </annotationProcessorPaths>
-        </configuration>
-    </plugin>
+  <plugin>
+    <groupId>org.apache.maven.plugins</groupId>
+    <artifactId>maven-compiler-plugin</artifactId>
+    <configuration>
+      <annotationProcessorPaths>
+        <path>
+          <groupId>io.helidon.bundles</groupId>
+          <artifactId>helidon-bundles-apt</artifactId>
+          <version>${helidon.version}</version>
+        </path>
+      </annotationProcessorPaths>
+    </configuration>
+  </plugin>
 </plugins>
 ```
 

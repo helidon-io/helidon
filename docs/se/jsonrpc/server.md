@@ -10,8 +10,8 @@ To enable WebServer/JSON-RPC, add the following dependency to your project’s `
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver-jsonrpc</artifactId>
+  <groupId>io.helidon.webserver</groupId>
+  <artifactId>helidon-webserver-jsonrpc</artifactId>
 </dependency>
 ```
 

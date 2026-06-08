@@ -24,15 +24,15 @@ Import the Helidon BOM:
 
 ```xml [pom.xml]
 <dependencyManagement>
-    <dependencies>
-        <dependency>
-            <groupId>io.helidon</groupId>
-            <artifactId>helidon-bom</artifactId>
-            <version>${helidon.version}</version>
-            <type>pom</type>
-            <scope>import</scope>
-        </dependency>
-    </dependencies>
+  <dependencies>
+    <dependency>
+      <groupId>io.helidon</groupId>
+      <artifactId>helidon-bom</artifactId>
+      <version>${helidon.version}</version>
+      <type>pom</type>
+      <scope>import</scope>
+    </dependency>
+  </dependencies>
 </dependencyManagement>
 ```
 
@@ -45,8 +45,8 @@ Component dependency:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.config</groupId>
-    <artifactId>helidon-config-yaml</artifactId>
+  <groupId>io.helidon.config</groupId>
+  <artifactId>helidon-config-yaml</artifactId>
 </dependency>
 ```
 

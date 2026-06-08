@@ -99,14 +99,14 @@ Add the following dependency to pom.xml:
 
 ```xml [pom.xml]
 <dependencies>
-    <dependency>
-        <groupId>io.helidon.microprofile.tracing</groupId>
-        <artifactId>helidon-microprofile-tracing</artifactId>
-    </dependency>
-    <dependency>
-        <groupId>io.helidon.tracing.providers</groupId>
-        <artifactId>helidon-tracing-providers-jaeger</artifactId>
-    </dependency>
+  <dependency>
+    <groupId>io.helidon.microprofile.tracing</groupId>
+    <artifactId>helidon-microprofile-tracing</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.tracing.providers</groupId>
+    <artifactId>helidon-tracing-providers-jaeger</artifactId>
+  </dependency>
 </dependencies>
 ```
 

@@ -24,8 +24,8 @@ To enable WebClient, add the following dependency to your project’s `pom.xml` 
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webclient</groupId>
-    <artifactId>helidon-webclient</artifactId>
+  <groupId>io.helidon.webclient</groupId>
+  <artifactId>helidon-webclient</artifactId>
 </dependency>
 ```
 
@@ -35,8 +35,8 @@ If support for `HTTP/2` is a requirement, below dependency needs to be added:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webclient</groupId>
-    <artifactId>helidon-webclient-http2</artifactId>
+  <groupId>io.helidon.webclient</groupId>
+  <artifactId>helidon-webclient-http2</artifactId>
 </dependency>
 ```
 
@@ -145,8 +145,8 @@ Add JSON-P support:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.http.media</groupId>
-    <artifactId>helidon-http-media-jsonp</artifactId>
+  <groupId>io.helidon.http.media</groupId>
+  <artifactId>helidon-http-media-jsonp</artifactId>
 </dependency>
 ```
 
@@ -154,8 +154,8 @@ Add JSON-B support:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.http.media</groupId>
-    <artifactId>helidon-http-media-jsonb</artifactId>
+  <groupId>io.helidon.http.media</groupId>
+  <artifactId>helidon-http-media-jsonb</artifactId>
 </dependency>
 ```
 
@@ -163,8 +163,8 @@ Add Jackson support:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.http.media</groupId>
-    <artifactId>helidon-http-media-jackson</artifactId>
+  <groupId>io.helidon.http.media</groupId>
+  <artifactId>helidon-http-media-jackson</artifactId>
 </dependency>
 ```
 
@@ -191,8 +191,8 @@ WebClient provides three DNS resolver implementations out of the box:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webclient.dns.resolver</groupId>
-    <artifactId>helidon-webclient-dns-resolver-first</artifactId>
+  <groupId>io.helidon.webclient.dns.resolver</groupId>
+  <artifactId>helidon-webclient-dns-resolver-first</artifactId>
 </dependency>
 ```
 
@@ -200,8 +200,8 @@ WebClient provides three DNS resolver implementations out of the box:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webclient.dns.resolver</groupId>
-    <artifactId>helidon-webclient-dns-resolver-round-robin</artifactId>
+  <groupId>io.helidon.webclient.dns.resolver</groupId>
+  <artifactId>helidon-webclient-dns-resolver-round-robin</artifactId>
 </dependency>
 ```
 
@@ -616,9 +616,9 @@ Dependency for webclient telemetry metrics and tracing:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webclient</groupId>
-    <artifactId>helidon-webclient-telemetry</artifactId>
-    <scope>runtime</scope>
+  <groupId>io.helidon.webclient</groupId>
+  <artifactId>helidon-webclient-telemetry</artifactId>
+  <scope>runtime</scope>
 </dependency>
 ```
 
@@ -628,9 +628,9 @@ Dependency for exporting metrics semantic conventions data using OTLP:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.opentelemetry</groupId>
-    <artifactId>opentelemetry-exporter-otlp</artifactId>
-    <scope>runtime</scope>
+  <groupId>io.opentelemetry</groupId>
+  <artifactId>opentelemetry-exporter-otlp</artifactId>
+  <scope>runtime</scope>
 </dependency>
 ```
 
@@ -671,8 +671,8 @@ To enable this feature (implemented as a WebClient service), add the following d
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.webclient</groupId>
-    <artifactId>helidon-webclient-context</artifactId>
+  <groupId>io.helidon.webclient</groupId>
+  <artifactId>helidon-webclient-context</artifactId>
 </dependency>
 ```
 

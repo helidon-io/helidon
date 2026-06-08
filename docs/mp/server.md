@@ -20,8 +20,8 @@ To enable MicroProfile Server add the helidon-microprofile-core bundle dependenc
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.microprofile.bundles</groupId>
-    <artifactId>helidon-microprofile-core</artifactId>
+  <groupId>io.helidon.microprofile.bundles</groupId>
+  <artifactId>helidon-microprofile-core</artifactId>
 </dependency>
 ```
 
@@ -31,8 +31,8 @@ If full control over the dependencies is required, and you want to minimize the 
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.microprofile.server</groupId>
-    <artifactId>helidon-microprofile-server</artifactId>
+  <groupId>io.helidon.microprofile.server</groupId>
+  <artifactId>helidon-microprofile-server</artifactId>
 </dependency>
 ```
 
@@ -137,8 +137,8 @@ To enable Access logging add the following dependency to project’s `pom.xml`:
 
 ```xml [pom.xml]
 <dependency>
-    <groupId>io.helidon.microprofile</groupId>
-    <artifactId>helidon-microprofile-access-log</artifactId>
+  <groupId>io.helidon.microprofile</groupId>
+  <artifactId>helidon-microprofile-access-log</artifactId>
 </dependency>
 ```
 
