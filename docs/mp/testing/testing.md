@@ -10,7 +10,7 @@ The test class is added as a CDI bean to support injection and the CDI container
 
 To enable Helidon MicroProfile Testing JUnit5, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.microprofile.testing</groupId>
     <artifactId>helidon-microprofile-testing-junit5</artifactId>
@@ -503,7 +503,7 @@ This can be done using CDI alternatives, however Helidon provides an annotation 
 
 To enable mock mupport add the following dependency to your project’s pom.xml.
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.microprofile.testing</groupId>
     <artifactId>helidon-microprofile-testing-mocking</artifactId>

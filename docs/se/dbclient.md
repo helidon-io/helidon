@@ -8,7 +8,7 @@ The Helidon SE DB Client provides a unified API for working with databases.
 
 To enable DB Client, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.dbclient</groupId>
     <artifactId>helidon-dbclient</artifactId>
@@ -17,7 +17,7 @@ To enable DB Client, add the following dependency to your project’s `pom.xml` 
 
 To use with a JDBC client also add the following dependency:
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.dbclient</groupId>
     <artifactId>helidon-dbclient-jdbc</artifactId>
@@ -26,7 +26,7 @@ To use with a JDBC client also add the following dependency:
 
 Or to use with MongoDB client add the following dependency:
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.dbclient</groupId>
     <artifactId>helidon-dbclient-mongodb</artifactId>
@@ -63,7 +63,7 @@ Before you begin you must add the DB Client dependencies and configure the clien
 
 For the DB Client using JDBC implementation and H2 database, you must include the following dependencies in your project:
 
-```xml
+```xml [pom.xml]
 <dependencies>
      <dependency>
          <groupId>io.helidon.dbclient</groupId> 

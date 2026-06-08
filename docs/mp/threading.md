@@ -12,7 +12,7 @@ Helidon MP supports a new `@ExecuteOn` annotation to give developers full contro
 
 To enable ExecuteOn, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.microprofile</groupId>
     <artifactId>helidon-microprofile-cdi</artifactId>

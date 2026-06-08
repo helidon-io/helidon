@@ -87,7 +87,9 @@ docker run -d --name jaeger \
 
 Update the `pom.xml` file and add the following OpenTelemetry dependency to the `<dependencies>` section (**not** `<dependencyManagement>`). This will enable Helidon to use OpenTelemetry at the default host and port, `localhost:4317`.
 
-```xml [Add the following dependencies to pom.xml]
+Add the following dependencies to pom.xml:
+
+```xml [pom.xml]
 <dependencies>
      <dependency>
          <groupId>io.helidon.tracing</groupId>
@@ -245,7 +247,9 @@ mvn -U archetype:generate -DinteractiveMode=false \
 cd helidon-quickstart-se-2
 ```
 
-```xml [Add the following dependencies to pom.xml]
+Add the following dependencies to pom.xml:
+
+```xml [pom.xml]
 <dependencies>
      <dependency>
          <groupId>io.helidon.tracing</groupId>
@@ -328,7 +332,9 @@ curl http://localhost:8081/greet
 
 Once you have validated that the second service is running correctly, you need to modify the original application to call it.
 
-```xml [Add the following dependencies to pom.xml]
+Add the following dependencies to pom.xml:
+
+```xml [pom.xml]
 <dependencies>
     <dependency>
         <groupId>io.helidon.webclient</groupId>

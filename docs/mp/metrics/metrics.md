@@ -25,7 +25,7 @@ Metrics is one of the Helidon observability features.
 
 To enable metrics, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.microprofile.metrics</groupId>
     <artifactId>helidon-microprofile-metrics</artifactId>

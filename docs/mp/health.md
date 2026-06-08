@@ -8,7 +8,7 @@ Microservices expose their health status primarily so external tools (for exampl
 
 To enable MicroProfile Health add the [helidon-microprofile bundle](introduction.md) dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.microprofile.bundles</groupId>
     <artifactId>helidon-microprofile</artifactId>
@@ -19,14 +19,14 @@ MicroProfile Health is already included in the bundle.
 
 If full control over the dependencies is required, and you want to minimize the quantity of the dependencies - `Helidon MicroProfile Core bundle` should be used. In this case the following dependencies should be included in your project’s `pom.xml`:
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.microprofile.bundles</groupId>
     <artifactId>helidon-microprofile-core</artifactId>
 </dependency>
 ```
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.microprofile.health</groupId>
     <artifactId>helidon-microprofile-health</artifactId>
@@ -35,7 +35,7 @@ If full control over the dependencies is required, and you want to minimize the 
 
 To enable built-in health checks add the following dependency (or use the [helidon-microprofile bundle](introduction.md) )
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.health</groupId>
     <artifactId>helidon-health-checks</artifactId>
@@ -166,7 +166,9 @@ Helidon has a set of built-in health checks that can report various conditions:
 
 The following example will demonstrate how to use the built-in health checks. These examples are all executed from the root directory of your project (helidon-quickstart-mp).
 
-```xml [Include the built-in health checks dependency in your pom.xml]
+Include the built-in health checks dependency in your pom.xml:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.health</groupId>
     <artifactId>helidon-health-checks</artifactId>

@@ -4,7 +4,9 @@
 
 To integrate [web server](../webserver/webserver.md), add the following dependency to your project’s pom.xml file:
 
-```xml [Maven Dependency]
+Maven Dependency:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-webserver-security</artifactId>

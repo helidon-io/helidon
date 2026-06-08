@@ -14,7 +14,7 @@ For more information, see [Fault Tolerance API Javadocs](/apidocs/io.helidon.fau
 
 To enable Fault Tolerance, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.fault-tolerance</groupId>
     <artifactId>helidon-fault-tolerance</artifactId>

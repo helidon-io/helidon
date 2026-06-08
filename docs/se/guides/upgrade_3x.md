@@ -29,7 +29,9 @@ server:
 
 In Helidon 3 Http/2 is automatically enabled when artifact with Http/2 support is available on the classpath.
 
-```xml [Enabling Http/2 support in Helidon 3 by adding dependency]
+Enabling Http/2 support in Helidon 3 by adding dependency:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-webserver-http2</artifactId>
@@ -53,14 +55,18 @@ For further information check [WebServer Documentation](../webserver/webserver.m
 
 Helidon SE support is now based on the `WebSocketRouting` class which enables Helidon application to configure routing for both annotated and programmatic WebSocket endpoints. `TyrusSupport` is now deprecated. Websocket support in now placed in different artifact.
 
-```xml [Helidon 2 WebSocket support dependency]
+Helidon 2 WebSocket support dependency:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-webserver-tyrus</artifactId>
 </dependency>
 ```
 
-```xml [Helidon 3 WebSocket support dependency]
+Helidon 3 WebSocket support dependency:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-webserver-websocket</artifactId>

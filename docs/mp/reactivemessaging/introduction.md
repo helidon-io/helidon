@@ -10,7 +10,7 @@ Reactive messaging uses reactive streams as message channels so you can construc
 
 To enable MicroProfile Reactive Messaging, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
    <groupId>io.helidon.microprofile.messaging</groupId>
    <artifactId>helidon-microprofile-messaging</artifactId>
@@ -19,7 +19,7 @@ To enable MicroProfile Reactive Messaging, add the following dependency to your 
 
 To include health checks for Messaging add the following dependency:
 
-```xml
+```xml [pom.xml]
 <dependency>
    <groupId>io.helidon.microprofile.messaging</groupId>
    <artifactId>helidon-microprofile-messaging-health</artifactId>

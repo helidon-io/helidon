@@ -196,7 +196,9 @@ cd helidon-quickstart-mp
 
 Update the pom.xml file and add the following Helidon dependency to the `<dependencies>` section.
 
-```xml [Add the following dependencies to pom.xml]
+Add the following dependencies to pom.xml:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.microprofile</groupId>
     <artifactId>helidon-microprofile-security</artifactId>

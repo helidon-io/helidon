@@ -26,7 +26,9 @@ Helidon SE uses the term "metrics" to refer to the subsystem in Helidon which ma
 
 To enable metrics, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
-```xml [Packaging the metrics API]
+Packaging the metrics API:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.metrics</groupId>
     <artifactId>helidon-metrics-api</artifactId>
@@ -41,7 +43,9 @@ This dependency adds the metrics API and a no-op implementation of that API to y
 
 To include the full-featured metrics implementation and support for the metrics endpoint, add the following dependency to your project:
 
-```xml [Packaging the metrics endpoint support and a full-featured metrics implementation]
+Packaging the metrics endpoint support and a full-featured metrics implementation:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.webserver.observe</groupId>
     <artifactId>helidon-webserver-observe-metrics</artifactId>
@@ -54,7 +58,9 @@ You might notice the transitive dependency `io.helidon.metrics.providers:helidon
 
 Helidon provides several built-in meters in a separate artifact. To include the build-in meters, add the following dependency to your project:
 
-```xml [Packaging the built-in meters]
+Packaging the built-in meters:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.metrics</groupId>
     <artifactId>helidon-metrics-system-meters</artifactId>
@@ -931,7 +937,9 @@ If you are maintaining an existing application that already uses the Prometheus 
 
 #### Maven Coordinates
 
-```xml [Dependency for Helidon Prometheus API support]
+Dependency for Helidon Prometheus API support:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.metrics</groupId>
     <artifactId>helidon-metrics-prometheus</artifactId>

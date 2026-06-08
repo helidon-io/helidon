@@ -11,7 +11,7 @@ Distributed tracing is a critical feature of microservice based applications, si
 
 To enable Helidon Tracing, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependencies>
     <dependency>
         <groupId>io.helidon.tracing</groupId>
@@ -31,7 +31,7 @@ To transmit tracing data from your service to a backend, you need to add a traci
 
 For Jaeger:
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.tracing.providers</groupId>
     <artifactId>helidon-tracing-providers-jaeger</artifactId>
@@ -41,7 +41,7 @@ For Jaeger:
 
 For Zipkin:
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.tracing.providers</groupId>
     <artifactId>helidon-tracing-providers-zipkin</artifactId>
@@ -51,7 +51,7 @@ For Zipkin:
 
 For OpenTelemetry:
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.tracing.providers</groupId>
     <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
@@ -61,7 +61,7 @@ For OpenTelemetry:
 
 For OpenTracing (deprecated):
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.tracing.providers</groupId>
     <artifactId>helidon-tracing-providers-opentracing</artifactId>
@@ -443,7 +443,7 @@ Parameters provided:
 
 Span propagation is supported with Helidon WebClient. Tracing propagation is automatic as long as the current span context is available in Helidon Context (which is automatic when running within a WebServer request).
 
-```xml
+```xml [pom.xml]
 <dependencies>
     <dependency>
         <groupId>io.helidon.webclient</groupId>
@@ -468,7 +468,7 @@ String response = client.get()
 
 ### Jaeger Tracing
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.tracing</groupId>
     <artifactId>helidon-tracing-providers-jaeger</artifactId>
@@ -509,7 +509,7 @@ As the [Jaeger Tracing](#jaeger-tracing) section describes, you can use Jaeger t
 
 ### Zipkin Tracing
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.tracing.providers</groupId>
     <artifactId>helidon-tracing-providers-zipkin</artifactId>
@@ -564,7 +564,9 @@ The [telemetry doc page](../se/telemetry/open-telemetry.md) describes how to use
 > [!NOTE]
 > If you provide settings under both `telemetry` and `tracing`, Helidon uses the `telemetry` settings. Specifying both does not confuse Helidon but it might confuse users.
 
-```xml [Dependency for OpenTelemetry support using tracing]
+Dependency for OpenTelemetry support using tracing:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.tracing.providers</groupId>
     <artifactId>helidon-tracing-providers-opentelemetry</artifactId>

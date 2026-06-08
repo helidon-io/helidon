@@ -12,7 +12,7 @@ Helidon SE support is based on the `WebSocketRouting` class which enables Helido
 
 To enable WebSocket, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-webserver-websocket</artifactId>

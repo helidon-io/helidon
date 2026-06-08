@@ -8,7 +8,7 @@ Helidon has its own set of reactive operators that have no dependencies outside 
 
 To enable Reactive Engine, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.common</groupId>
     <artifactId>helidon-common-reactive</artifactId>

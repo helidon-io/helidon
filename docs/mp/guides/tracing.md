@@ -95,7 +95,9 @@ http://localhost:16686/search
 
 Update the pom.xml file and add the following Jaeger dependency to the `<dependencies>` section (**not** `<dependencyManagement>`). This will enable Helidon to use Jaeger at the default host and port, `localhost:14250`.
 
-```xml [Add the following dependency to pom.xml]
+Add the following dependency to pom.xml:
+
+```xml [pom.xml]
 <dependencies>
     <dependency>
         <groupId>io.helidon.microprofile.tracing</groupId>
@@ -268,7 +270,9 @@ mvn -U archetype:generate -DinteractiveMode=false \
 cd helidon-quickstart-mp-2
 ```
 
-```xml [Add the following dependency to pom.xml]
+Add the following dependency to pom.xml:
+
+```xml [pom.xml]
 <dependency>
   <groupId>io.helidon.tracing.providers</groupId>
   <artifactId>helidon-tracing-providers-jaeger</artifactId>

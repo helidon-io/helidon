@@ -14,7 +14,7 @@ The Server API is available as a loadable service in the Helidon WebServer. The 
 
 ### Maven Coordinates
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-webserver-sse</artifactId>
@@ -82,7 +82,7 @@ The Client API is available as a loadable service in the Helidon WebClient. The 
 
 ### Maven Coordinates
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.webclient</groupId>
     <artifactId>helidon-webclient-sse</artifactId>

@@ -8,7 +8,7 @@ Neo4j is a graph database management system developed by Neo4j, Inc. It is an AC
 
 To enable Neo4j, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
    <groupId>io.helidon.integrations.neo4j</groupId>
    <artifactId>helidon-integrations-neo4j</artifactId>
@@ -78,7 +78,7 @@ Go to the Neo4j browser and play the first step of the movies graph: [`:play mov
 
 Now go to the `pom.xml` and add the following dependencies:
 
-```xml
+```xml [pom.xml]
 <dependencies>
     <dependency>
         <groupId>io.helidon.integrations.neo4j</groupId>
@@ -227,7 +227,7 @@ Full example code is available in [Helidon Examples Repository](https://github.c
 
 Neo4j’s metrics can be propagated to the user as `MicroProfile` metrics. This is implemented in a separate Maven module. Just add:
 
-```xml
+```xml [pom.xml]
 <dependency>
    <groupId>io.helidon.integrations.neo4j</groupId>
    <artifactId>helidon-integrations-neo4j-metrics</artifactId>
@@ -261,7 +261,7 @@ If your application is highly dependent on Neo4j database, health and liveness c
 
 `MicroProfile` Health checks for Neo4j are implemented in a separate Maven module:
 
-```xml
+```xml [pom.xml]
 <dependency>
    <groupId>io.helidon.integrations.neo4j</groupId>
    <artifactId>helidon-integrations-neo4j-health</artifactId>

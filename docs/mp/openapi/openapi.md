@@ -29,7 +29,7 @@ To construct the model, Helidon gathers information about the service API from w
 
 To enable MicroProfile OpenAPI, either add a dependency on the [helidon-microprofile bundle](../introduction.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.microprofile.openapi</groupId>
     <artifactId>helidon-microprofile-openapi</artifactId>
@@ -39,7 +39,7 @@ To enable MicroProfile OpenAPI, either add a dependency on the [helidon-micropro
 
 If you do not use the `helidon-microprofile-bundle` also add the following dependency which defines the MicroProfile OpenAPI annotations so you can use them in your code:
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>org.eclipse.microprofile.openapi</groupId>
     <artifactId>microprofile-openapi-api</artifactId>
@@ -310,7 +310,7 @@ A Jandex index stores information about the classes and methods in your app and 
 
 Add an invocation of the [Jandex maven plug-in](https://github.com/smallrye/jandex/tree/main/maven-plugin) to the `<build><plugins>` section of your `pom.xml` if it is not already there:
 
-```xml
+```xml [pom.xml]
 <plugin>
     <groupId>io.smallrye</groupId>
     <artifactId>jandex-maven-plugin</artifactId>
@@ -332,7 +332,7 @@ But if the signatures of your resource methods refer to types from dependencies 
 
 The example below tailors the Jandex plug-in configuration to scan not only the current project but another dependency and to index a specific type from it.
 
-```xml
+```xml [pom.xml]
 <execution>
     <id>make-index</id>
     <configuration> 

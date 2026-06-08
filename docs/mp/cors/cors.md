@@ -14,7 +14,7 @@ Once you know the type of sharing you want to allow for each of your resourcesâ€
 
 To enable CORS, add the following dependency to your projectâ€™s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.microprofile</groupId>
     <artifactId>helidon-microprofile-cors</artifactId>

@@ -172,7 +172,7 @@ sources:
 
 **Important Note:** To enable support for `HOCON` and `JSON` types, add the following dependency to your project’s pom.xml.
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.config</groupId>
     <artifactId>helidon-config-hocon-mp</artifactId>

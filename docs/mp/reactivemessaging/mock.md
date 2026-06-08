@@ -8,7 +8,7 @@ Mock connector is a simple application scoped bean that can be used for emitting
 
 To enable Mock Connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.messaging.mock</groupId>
     <artifactId>helidon-messaging-mock</artifactId>

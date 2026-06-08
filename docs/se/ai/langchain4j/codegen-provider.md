@@ -10,7 +10,7 @@ In addition to the [Helidon integration with LangChain4J core dependencies](lang
 
 Extra dependency for LangChain4j provider you want to generate binding for, here we are using Google AI Gemini LangChain4j provider as an example:
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>dev.langchain4j</groupId>
     <artifactId>langchain4j-google-ai-gemini</artifactId>

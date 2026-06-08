@@ -15,7 +15,7 @@ Helidon currently supports only schema generation.
 
 To enable JSON Schema, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.json.schema</groupId>
     <artifactId>helidon-json-schema</artifactId>
@@ -66,7 +66,7 @@ public record ExampleSchema(@JsonSchema.Integer.Minimum(0) int exampleProperty) 
 
 In addition, the following section must be added to the `build` of the Maven `pom.xml` to enable annotation processors that generate the necessary code:
 
-```xml
+```xml [pom.xml]
 <plugins>
     <plugin>
         <groupId>org.apache.maven.plugins</groupId>

@@ -8,7 +8,7 @@ Helidon provides built-in test support for Helidon testing with JUnit 5.
 
 To enable Helidon Testing Framework, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
      <groupId>io.helidon.webserver.testing.junit5</groupId>
      <artifactId>helidon-webserver-testing-junit5</artifactId>
@@ -190,7 +190,7 @@ The JUnit5 testing module ensures that a global service registry is created that
 
 Required dependency:
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.testing</groupId>
     <artifactId>helidon-testing-junit5</artifactId>
@@ -208,7 +208,7 @@ You can also use `@Service.Named` qualifier on such parameters to only inject th
 
 If WebSocket testing is required, there is an additional module for it. It is necessary to include the following Maven dependency to the Project’s pom file:
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.testing.junit5</groupId>
     <artifactId>helidon-testing-junit5-websocket</artifactId>

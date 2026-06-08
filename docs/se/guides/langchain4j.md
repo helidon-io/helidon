@@ -64,7 +64,7 @@ cd helidon-quickstart-lc4j-se
 
 Add necessary dependencies for LangChain4j integration and OpenAI provider in the project POM.
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.integrations.langchain4j</groupId>
     <artifactId>helidon-integrations-langchain4j</artifactId>
@@ -79,7 +79,7 @@ You will also need extra annotation processors as LangChain4j AI services are ha
 
 Include the following annotation processor in the `<build><plugins>` section of `pom.xml`:
 
-```xml
+```xml [pom.xml]
 <plugin>
     <groupId>org.apache.maven.plugins</groupId>
     <artifactId>maven-compiler-plugin</artifactId>

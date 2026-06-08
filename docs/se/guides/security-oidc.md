@@ -193,7 +193,9 @@ cd helidon-quickstart-se
 
 Update the pom.xml file and add the following Helidon dependency to the `<dependencies>` section.
 
-```xml [Add the following dependencies to pom.xml]
+Add the following dependencies to pom.xml:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-webserver-security</artifactId>
@@ -204,7 +206,9 @@ Update the pom.xml file and add the following Helidon dependency to the `<depend
 </dependency>
 ```
 
-```xml [Remove the test scope from helidon-webclient dependency]
+Remove the test scope from helidon-webclient dependency:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.webclient</groupId>
     <artifactId>helidon-webclient</artifactId>
@@ -359,7 +363,9 @@ In order to keep security and test the application locally, a new security provi
 
 The following explains how to set a basic authentication instead of oidc security provider only for the tests. Which means, at the end of this guide, the application will be secured by oidc security provider, and the tests will use basic authentication.
 
-```xml [Add the following dependency to pom.xml]
+Add the following dependency to pom.xml:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.security.providers</groupId>
     <artifactId>helidon-security-providers-http-auth</artifactId>

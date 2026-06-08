@@ -8,7 +8,7 @@ The Jakarta REST Client defines a programmatic API to access REST resources. Thi
 
 To enable Jakarta REST Client, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.jersey</groupId>
     <artifactId>helidon-jersey-client</artifactId>

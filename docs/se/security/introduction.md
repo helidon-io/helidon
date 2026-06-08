@@ -19,7 +19,7 @@ Security module is quite HTTP centric (as most common use cases are related to H
 
 To enable Security, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.security</groupId>
     <artifactId>helidon-security</artifactId>

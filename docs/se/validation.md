@@ -15,7 +15,7 @@ The feature fit with our [Helidon Declarative](../se/injection/declarative.md#va
 
 To enable Validation, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependencies>
     <dependency>
         <groupId>io.helidon.validation</groupId>
@@ -61,7 +61,7 @@ validator.check(MyType.class, new MyType("valid", 43));
 
 The following annotation processing setup must be done to generate the code:
 
-```xml
+```xml [pom.xml]
 <plugins>
     <plugin>
         <groupId>org.apache.maven.plugins</groupId>

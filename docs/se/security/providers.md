@@ -29,7 +29,7 @@ Open ID Connect security provider.
 
 Maven dependency
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.security.providers</groupId>
     <artifactId>helidon-security-providers-oidc</artifactId>
@@ -568,7 +568,7 @@ HTTP Basic authentication support
 
 Maven dependency
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.security.providers</groupId>
     <artifactId>helidon-security-providers-http-auth</artifactId>
@@ -661,7 +661,7 @@ This provider is deprecated and will be removed in a future version of Helidon w
 
 Maven dependency
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.security.providers</groupId>
     <artifactId>helidon-security-providers-http-auth</artifactId>
@@ -730,7 +730,7 @@ Asserts user or service identity based on a value of a header.
 
 Maven dependency
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.security.providers</groupId>
     <artifactId>helidon-security-providers-header</artifactId>
@@ -797,7 +797,7 @@ Support for HTTP Signatures.
 
 Maven dependency
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.security.providers</groupId>
     <artifactId>helidon-security-providers-http-sign</artifactId>
@@ -878,7 +878,7 @@ A role mapper to retrieve roles from Oracle IDCS.
 
 Maven dependency
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.security.providers</groupId>
     <artifactId>helidon-security-providers-idcs-mapper</artifactId>
@@ -938,7 +938,7 @@ Attribute based access control authorization provider.
 
 Maven dependency
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.security.providers</groupId>
     <artifactId>helidon-security-providers-abac</artifactId>
@@ -1147,7 +1147,7 @@ This provider is deprecated and will be removed in a future version of Helidon. 
 
 Maven dependency
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.security.providers</groupId>
     <artifactId>helidon-security-providers-google-login</artifactId>
@@ -1212,7 +1212,7 @@ JWT token authentication and outbound security provider.
 
 Maven dependency
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.security.providers</groupId>
     <artifactId>helidon-security-providers-jwt</artifactId>

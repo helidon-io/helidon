@@ -8,7 +8,7 @@ Connecting streams to Kafka with Reactive Messaging is easy to do. There is a st
 
 To enable Reactive Kafka Connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.messaging.kafka</groupId>
     <artifactId>helidon-messaging-kafka</artifactId>

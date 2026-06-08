@@ -19,7 +19,7 @@ To construct the model, Helidon gathers information about the service API from a
 
 To enable OpenAPI, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.openapi</groupId>
     <artifactId>helidon-openapi</artifactId>

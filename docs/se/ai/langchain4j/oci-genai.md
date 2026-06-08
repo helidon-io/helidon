@@ -8,7 +8,7 @@ This module adds support for selected Oracle Cloud Infrastructure GenAI models.
 
 In addition to the [Helidon integration with LangChain4j core dependencies](langchain4j.md#maven-coordinates), you must add the following:
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.integrations.langchain4j.providers</groupId>
     <artifactId>helidon-integrations-langchain4j-providers-oci-genai</artifactId>
@@ -19,7 +19,7 @@ In addition to the [Helidon integration with LangChain4j core dependencies](lang
 
 Integration uses OCI SDK authentication provider bean from the service registry. The simplest way to configure it is by adding [Helidon OCI integration](https://github.com/helidon-io/helidon/tree/main/integrations/oci/oci):
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.integrations.oci</groupId>
     <artifactId>helidon-integrations-oci</artifactId>

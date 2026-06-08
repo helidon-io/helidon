@@ -8,7 +8,7 @@ Helidon uses Jersey as the Jakarta REST (JAX-RS) implementation. Jersey supports
 
 To enable Helidon Connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.jersey</groupId>
     <artifactId>helidon-jersey-connector</artifactId>

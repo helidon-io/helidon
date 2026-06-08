@@ -8,7 +8,7 @@ Building Java-based gRPC clients using the Helidon MP gRPC API is very simple an
 
 To enable gRPC MicroProfile Clients, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.microprofile.grpc</groupId>
     <artifactId>helidon-microprofile-grpc-client</artifactId>

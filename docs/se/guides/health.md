@@ -57,7 +57,9 @@ The following example shows how to use the built-in health checks. These example
 
 Notice that the `pom.xml` file in the generated project already contains dependencies for Helidon’s health component and for the built-in health checks.
 
-```xml [Generated dependencies related to health]
+Generated dependencies related to health:
+
+```xml [pom.xml]
 <dependencies>
     <dependency>
         <groupId>io.helidon.webserver.observe</groupId>

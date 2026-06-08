@@ -20,7 +20,7 @@ To create a declarative application, use the annotations provided in our Helidon
 
 In addition, the following section must be added to the `build` of the Maven `pom.xml` to enable annotation processors that generate the necessary code:
 
-```xml
+```xml [pom.xml]
 <plugins>
     <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -266,7 +266,7 @@ To use validation, the proper dependency must be added to your `pom.xml`, and an
 
 Helidon validation module:
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.validation</groupId>
     <artifactId>helidon-validation</artifactId>

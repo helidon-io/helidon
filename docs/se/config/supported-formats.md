@@ -21,7 +21,9 @@ If your application creates a `Config.Builder` with parser services *disabled* (
 
 Add the following dependency in your project:
 
-```xml [Config YAML Dependency in pom.xml]
+Config YAML Dependency in pom.xml:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.config</groupId>
     <artifactId>helidon-config-yaml</artifactId>
@@ -75,7 +77,9 @@ The Helidon HOCON config module handles sources in the HOCON and JSON formats.
 
 Add the following dependency in your project:
 
-```xml [Config HOCON Dependency in pom.xml]
+Config HOCON Dependency in pom.xml:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.config</groupId>
     <artifactId>helidon-config-hocon</artifactId>
@@ -148,7 +152,9 @@ The Helidon Etcd config module supports reading configuration from a specified E
 
 Add the following dependency to your project:
 
-```xml [Config Etcd Dependency in pom.xml]
+Config Etcd Dependency in pom.xml:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.config</groupId>
     <artifactId>helidon-config-etcd</artifactId>
@@ -230,7 +236,9 @@ The Helidon git config module supports reading configuration from a git reposito
 
 Add the following dependency to your project:
 
-```xml [Config git Dependency in pom.xml]
+Config git Dependency in pom.xml:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.config</groupId>
     <artifactId>helidon-config-git</artifactId>

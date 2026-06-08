@@ -18,7 +18,7 @@ Updated versions of thin T3 clients that are compatible with modern Jakarta runt
 
 To enable WebLogic JMS connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.messaging.wls-jms</groupId>
     <artifactId>helidon-messaging-wls-jms</artifactId>

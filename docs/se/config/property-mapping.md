@@ -281,7 +281,9 @@ Your application facilitates this implicit mapping either by adding to the POJO 
 
 This feature is available in Object mapping module, and is added through Java `ServiceLoader` mechanism. This is no longer part of core Config module, as it depends on reflection and introduces a lot of magic (see the list of supported mapping methods below, also uses reflection to invoke the methods and to map configuration values to fields/methods etc.).
 
-```xml [Config object mapping Dependency in pom.xml]
+Config object mapping Dependency in pom.xml:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.config</groupId>
     <artifactId>helidon-config-object-mapping</artifactId>
@@ -358,7 +360,9 @@ The following sections describe these patterns in more detail.
 
 This feature is available in Object mapping module, and is added through Java `ServiceLoader` mechanism. This is no longer part of core Config module, as it depends on reflection.
 
-```xml [Config object mapping Dependency in pom.xml]
+Config object mapping Dependency in pom.xml:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.config</groupId>
     <artifactId>helidon-config-object-mapping</artifactId>

@@ -8,7 +8,7 @@ Helidon MicroProfile Config is an implementation of [Eclipse MicroProfile Config
 
 To enable MicroProfile Config, either add a dependency on the [helidon-microprofile bundle](../introduction.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.microprofile.config</groupId>
     <artifactId>helidon-microprofile-config</artifactId>

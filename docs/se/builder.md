@@ -54,7 +54,7 @@ ServiceConfig serviceConfig = ServiceConfig.builder()
 
 To enable Builder, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.builder</groupId>
     <artifactId>helidon-builder-api</artifactId>
@@ -63,7 +63,7 @@ To enable Builder, add the following dependency to your project’s `pom.xml` (s
 
 You also need to add the annotation processor configuration:
 
-```xml
+```xml [pom.xml]
 <build>
     <plugins>
         <plugin>

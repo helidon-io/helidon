@@ -55,7 +55,9 @@ Helidon has a set of built-in health checks:
 
 The following example will demonstrate how to use the built-in health checks. These examples are all executed from the root directory of your project (helidon-quickstart-mp).
 
-```xml [Include dependency for the built-in health checks]
+Include dependency for the built-in health checks:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.health</groupId>
     <artifactId>helidon-health-checks</artifactId>

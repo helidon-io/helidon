@@ -99,7 +99,9 @@ To enable various aspects of OpenTelemetry Support add one or more of the follow
 
 Helidon offers an implementation of its [ neutral tracing API](../../se/tracing.md) that uses OpenTelemetry. Add the following dependency to use OpenTelemetry for tracing.
 
-```xml [Dependency to use the Helidon OpenTelemetry implementation of Helidon tracing]
+Dependency to use the Helidon OpenTelemetry implementation of Helidon tracing:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.tracing.providers</groupId>
     <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
@@ -111,7 +113,9 @@ Helidon offers an implementation of its [ neutral tracing API](../../se/tracing.
 
 To allow deployers and end users to set up Helidon configuration to control OpenTelemetry behavior, add the following dependency.
 
-```xml [Dependency to add Helidon OpenTelemetry config and programmatic builder support]
+Dependency to add Helidon OpenTelemetry config and programmatic builder support:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.telemetry</groupId>
     <artifactId>helidon-telemetry-opentelemetry-config</artifactId>
@@ -125,7 +129,9 @@ To allow deployers and end users to set up Helidon configuration to control Open
 
 Helidon’s tracing observability support automatically creates a new tracing span for each HTTP request if your project includes the following dependency.
 
-```xml [Dependency for automatic HTTP request tracing]
+Dependency for automatic HTTP request tracing:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.webserver.observe</groupId>
     <artifactId>helidon-webserver-observe-tracing</artifactId>
@@ -137,7 +143,9 @@ By default, when Helidon SE creates spans automatically for HTTP requests, it us
 
 OpenTelemetry prescribes its own [semantic conventions](https://github.com/open-telemetry/semantic-conventions/blob/v1.58.0/docs/http/http-spans.md#http-server). If you add the following dependency, Helidon follows the OpenTelemetry semantic conventions for spans instead of its own.
 
-```xml [Dependency for Helidon support of the OpenTelemetry tracing semantic conventions]
+Dependency for Helidon support of the OpenTelemetry tracing semantic conventions:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.webserver.observe</groupId>
     <artifactId>helidon-webserver-observe-telemetry-tracing</artifactId>
@@ -149,7 +157,9 @@ OpenTelemetry prescribes its own [semantic conventions](https://github.com/open-
 
 Helidon’s metrics observability support automatically registers and updates one or more meters (depending on configuration) and updates them accordingly as HTTP requests arrive.
 
-```xml [Dependency for automatic HTTP request measurements]
+Dependency for automatic HTTP request measurements:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.webserver.observe</groupId>
     <artifactId>helidon-webserver-observe-metrics</artifactId>
@@ -159,7 +169,9 @@ Helidon’s metrics observability support automatically registers and updates on
 
 OpenTelemetry prescribes its own [semantic conventions](https://github.com/open-telemetry/semantic-conventions/blob/v1.58.0/docs/http/http-metrics.md#http-server) for metrics—​their names and tha attributes (tags) they have. If you add the following dependency, Helidon registers and updates meters according to the OpenTelemetry metrics semantic conventions.
 
-```xml [Dependency for Helidon support of the OpenTelemetry metrics semantic conventions for incoming HTTP requests]
+Dependency for Helidon support of the OpenTelemetry metrics semantic conventions for incoming HTTP requests:
+
+```xml [pom.xml]
 <dependency>
   <groupId>io.helidon.webserver.observe</groupId>
   <artifactId>helidon-webserver-observe-telemetry-metrics</artifactId>

@@ -4,7 +4,7 @@
 
 In addition to the [LangChain4j integration core dependencies](langchain4j.md#maven-coordinates), add:
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.integrations.langchain4j.providers</groupId>
     <artifactId>helidon-integrations-langchain4j-providers-lc4j-in-process</artifactId>
@@ -15,7 +15,7 @@ Depending on configured model `type`, add model artifact dependencies as follows
 
 - For `type: all_minilm_l6_v2`, add:
 
-  ``` xml
+  ```xml [pom.xml]
   <dependency>
     <groupId>dev.langchain4j</groupId>
     <artifactId>langchain4j-embeddings-all-minilm-l6-v2</artifactId>
@@ -24,7 +24,7 @@ Depending on configured model `type`, add model artifact dependencies as follows
 
 - For `type: all_minilm_l6_v2_q`, add:
 
-  ``` xml
+  ```xml [pom.xml]
   <dependency>
     <groupId>dev.langchain4j</groupId>
     <artifactId>langchain4j-embeddings-all-minilm-l6-v2-q</artifactId>

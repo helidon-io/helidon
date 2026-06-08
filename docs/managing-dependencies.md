@@ -20,7 +20,9 @@ must import the Helidon BOM POM.
 
 To import the Helidon BOM POM, add the following snippet to your `pom.xml` file.
 
-```xml [Import the Helidon BOM]
+Import the Helidon BOM:
+
+```xml [pom.xml]
 <dependencyManagement>
     <dependencies>
         <dependency>
@@ -39,7 +41,9 @@ To import the Helidon BOM POM, add the following snippet to your `pom.xml` file.
 After you import the BOM, you can declare dependencies on Helidon components
 without specifying a version.
 
-```xml [Component dependency]
+Component dependency:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.config</groupId>
     <artifactId>helidon-config-yaml</artifactId>

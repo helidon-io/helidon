@@ -10,7 +10,7 @@ The JSON Binding module (`helidon-json-binding`) provides high-level object seri
 
 ### Maven Coordinates
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.json</groupId>
     <artifactId>helidon-json-binding</artifactId>
@@ -40,7 +40,9 @@ For automatic code generation, you can either add individual annotation processo
 
 Alternatively, you can use the `helidon-bundles-apt` dependency which includes the JSON code generation processor along with other Helidon annotation processors:
 
-```xml [Annotation processor configuration with bundles]
+Annotation processor configuration with bundles:
+
+```xml [pom.xml]
 <build>
     <plugins>
         <plugin>
@@ -64,7 +66,9 @@ Alternatively, you can use the `helidon-bundles-apt` dependency which includes t
 
 Configure the annotation processors in your Maven build:
 
-```xml [Annotation processor configuration]
+Annotation processor configuration:
+
+```xml [pom.xml]
 <build>
     <plugins>
         <plugin>
@@ -599,7 +603,7 @@ The JSON module (`helidon-json`) provides fundamental JSON parsing and generatio
 
 ### Maven Coordinates
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.json</groupId>
     <artifactId>helidon-json</artifactId>

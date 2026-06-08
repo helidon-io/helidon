@@ -15,7 +15,7 @@ The Helidon Data Repository supports Jakarta Persistence and major providers suc
 
 To enable Data Repository, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.data</groupId>
     <artifactId>helidon-data</artifactId>
@@ -28,7 +28,7 @@ To enable Data Repository, add the following dependency to your project’s `pom
 
 The Jakarta Persistence provider, such as EclipseLink, and the JDBC driver, such as MySQL, are required at runtime:
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>org.eclipse.persistence</groupId>
     <artifactId>org.eclipse.persistence.jpa</artifactId>
@@ -50,7 +50,7 @@ The Jakarta Persistence provider, such as EclipseLink, and the JDBC driver, such
 
 Both the entity model and data repository interfaces require a specific annotation-processor configuration:
 
-```xml
+```xml [pom.xml]
 <annotationProcessorPaths>
     <path>
         <groupId>io.helidon.bundles</groupId>
@@ -475,7 +475,7 @@ Transaction handling is available through Helidon Transaction API.
 
 To enable Helidon Transaction API, add the following dependency to your project’s `pom.xml`:
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>jakarta.transaction</groupId>
     <artifactId>jakarta.transaction-api</artifactId>
@@ -484,7 +484,7 @@ To enable Helidon Transaction API, add the following dependency to your project�
 
 Helidon JTA Transaction support, such as Narayana, may be provided at runtime to enable `JTA` transaction type:
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.transaction</groupId>
     <artifactId>helidon-transaction-narayana</artifactId>

@@ -8,7 +8,7 @@ Scheduling is an essential feature for the Enterprise. Helidon has its own imple
 
 To enable Scheduling, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.scheduling</groupId>
     <artifactId>helidon-scheduling</artifactId>

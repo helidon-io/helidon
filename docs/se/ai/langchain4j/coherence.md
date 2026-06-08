@@ -8,7 +8,7 @@ This module adds support for the Coherence embedding store.
 
 In addition to the [Helidon integration with LangChain4J core dependencies](langchain4j.md#maven-coordinates), you must add the following:
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.integrations.langchain4j.providers</groupId>
     <artifactId>helidon-integrations-langchain4j-providers-coherence</artifactId>

@@ -143,7 +143,9 @@ cd helidon-quickstart-se
 
 Navigate to the `helidon-quickstart-se` directory and open the `pom.xml` file to add the following Helidon dependencies required to use the DB Client:
 
-```xml [Copy these dependencies to pom.xml]
+Copy these dependencies to pom.xml:
+
+```xml [pom.xml]
 <dependencies>
     <!-- ... -->
     <dependency>

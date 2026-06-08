@@ -8,7 +8,7 @@ HashiCorp Vault is a commonly used Vault in many microservices. The APIs are RES
 
 To enable HashiCorp Vault, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.integrations.vault</groupId>
     <artifactId>helidon-integrations-vault-cdi</artifactId>
@@ -17,7 +17,7 @@ To enable HashiCorp Vault, add the following dependency to your project’s `pom
 
 The following is a list of maven coordinates of all Vault modules available:
 
-```xml
+```xml [pom.xml]
 <dependencies>
     <dependency>
         <groupId>io.helidon.integrations.vault.auths</groupId>

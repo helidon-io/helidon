@@ -8,7 +8,7 @@ Distributed transactions for microservices are known as SAGA design patterns and
 
 To enable Long Running Actions, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependencies>
     <dependency>
       <groupId>io.helidon.microprofile.lra</groupId>
@@ -356,7 +356,9 @@ Testing of JAX-RS resources with LRA can be challenging as LRA participant runni
 
 Helidon provides test coordinator which can be started automatically with additional socket on a random port within your own Helidon application. You only need one extra test dependency to enable test coordinator in your [@HelidonTest](testing/testing.md).
 
-```xml [Dependency]
+Dependency:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.microprofile.lra</groupId>
     <artifactId>helidon-microprofile-lra-testing</artifactId>
@@ -506,7 +508,9 @@ Oracle Transaction Manager for Microservices - [MicroTx](https://docs.oracle.com
 
 MicroTx LRA coordinator is compatible with Narayana clients when `narayanaLraCompatibilityMode` is on, you need to add another dependency to enable Narayana client:
 
-```xml [Dependency needed for using Helidon LRA with Narayana compatible coordinator]
+Dependency needed for using Helidon LRA with Narayana compatible coordinator:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.lra</groupId>
     <artifactId>helidon-lra-coordinator-narayana-client</artifactId>
@@ -559,7 +563,9 @@ docker run --name lra-coordinator --network="host" helidon/lra-coordinator
 
 Helidon LRA coordinator is compatible with Narayana clients, you need to add a dependency for Narayana client:
 
-```xml [Dependency needed for using Helidon LRA with Narayana compatible coordinator]
+Dependency needed for using Helidon LRA with Narayana compatible coordinator:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.lra</groupId>
     <artifactId>helidon-lra-coordinator-narayana-client</artifactId>
@@ -570,7 +576,9 @@ Helidon LRA coordinator is compatible with Narayana clients, you need to add a d
 
 [Narayana](https://narayana.io) is a transaction manager supporting LRA. To use Narayana LRA coordinator with Helidon LRA client you need to add a dependency for Narayana client:
 
-```xml [Dependency needed for using Helidon LRA with Narayana coordinator]
+Dependency needed for using Helidon LRA with Narayana coordinator:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.lra</groupId>
     <artifactId>helidon-lra-coordinator-narayana-client</artifactId>

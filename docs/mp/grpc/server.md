@@ -10,7 +10,7 @@ Building gRPC services with Helidon gRPC MP is straightforward, allowing develop
 
 To enable gRPC MicroProfile Server, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.microprofile.grpc</groupId>
     <artifactId>helidon-microprofile-grpc-server</artifactId>

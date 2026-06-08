@@ -8,7 +8,7 @@ Connecting streams to Oracle AQ with Reactive Messaging couldn’t be easier. Th
 
 To enable AQ Connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.messaging.aq</groupId>
     <artifactId>helidon-messaging-aq</artifactId>

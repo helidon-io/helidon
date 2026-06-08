@@ -76,7 +76,7 @@ The generated source code is already configured for both metrics and health chec
 
 Metrics dependencies in the generated `pom.xml`:
 
-```xml
+```xml [pom.xml]
 <dependencies>
     <dependency>
         <groupId>io.helidon.webserver.observe</groupId>

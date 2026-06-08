@@ -234,7 +234,9 @@ You can also click Kafka Connection Settings (on the Stream Pool Details page) t
 
 Next, add the following dependency to your project’s `pom.xml`:
 
-```xml [Adding the dependency for OCI Streaming]
+Adding the dependency for OCI Streaming:
+
+```xml [pom.xml]
 <dependency>
   <groupId>io.helidon.microprofile.messaging</groupId>
   <artifactId>helidon-microprofile-messaging</artifactId>

@@ -8,7 +8,7 @@ WebServer provides an API for creating HTTP servers. It uses virtual threads and
 
 To enable WebServer, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-webserver</artifactId>
@@ -667,7 +667,7 @@ This feature will provide the same behavior as previous versions of Helidon. Sin
 
 To enable execution of routes within Context, add the following dependency to project’s `pom.xml`:
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-webserver-context</artifactId>
@@ -705,7 +705,7 @@ Access logging is a Helidon WebServer `ServerFeature`. Access Log feature has a 
 
 To enable Access logging add the following dependency to project’s `pom.xml`:
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-webserver-access-log</artifactId>
@@ -774,7 +774,7 @@ Helidon supports HTTP/2 upgrade from HTTP/1, HTTP/2 without prior knowledge, HTT
 
 To enable HTTP/2 support add the following dependency to your project’s `pom.xml`.
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-webserver-http2</artifactId>
@@ -792,7 +792,7 @@ Static content supports serving of files from classpath, or from any readable di
 
 To enable Static Content Support add the following dependency to your project’s `pom.xml`.
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-webserver-static-content</artifactId>
@@ -875,7 +875,7 @@ The WebServer supports JSON-P. When enabled, you can send and receive JSON-P obj
 
 To enable JSON Support add the following dependency to your project’s `pom.xml`.
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.http.media</groupId>
     <artifactId>helidon-http-media-jsonp</artifactId>
@@ -921,7 +921,7 @@ The WebServer supports the [JSON-B specification](http://json-b.net/). When this
 
 To enable JSON-B Support add the following dependency to your project’s `pom.xml`.
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.http.media</groupId>
     <artifactId>helidon-http-media-jsonb</artifactId>
@@ -999,7 +999,7 @@ The WebServer supports [Jackson](https://github.com/FasterXML/jackson#jackson-pr
 
 To enable Jackson Support add the following dependency to your project’s `pom.xml`.
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.http.media</groupId>
     <artifactId>helidon-http-media-jackson</artifactId>
@@ -1076,7 +1076,7 @@ The WebServer supports [Gson](https://github.com/google/gson#gson). When this su
 
 To enable Gson Support add the following dependency to your project’s `pom.xml`.
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.http.media</groupId>
     <artifactId>helidon-http-media-gson</artifactId>

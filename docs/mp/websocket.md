@@ -8,7 +8,7 @@ Helidon integrates with [Tyrus](https://projects.eclipse.org/projects/ee4j.tyrus
 
 To enable Jakarta Websocket, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.microprofile.websocket</groupId>
     <artifactId>helidon-microprofile-websocket</artifactId>

@@ -56,7 +56,7 @@ cd helidon-quickstart-mp
 
 Add dependency for Helidon CRaC support to `pom.xml`. This allows Helidon to properly close and reopen resources which would normally break snapshot creation.
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.integrations.crac</groupId>
     <artifactId>helidon-integrations-crac</artifactId>

@@ -12,7 +12,7 @@ To enable Helidon Discovery, add the following dependency to your project’s `p
 
 `pom.xml`
 
-```xml
+```xml [pom.xml]
 <dependencies>
     <dependency>
         <groupId>io.helidon.discovery</groupId>
@@ -124,7 +124,7 @@ To use the Helidon Eureka Discovery provider, add the following dependency to yo
 
 `pom.xml`
 
-```xml
+```xml [pom.xml]
 <dependencies>
     <dependency>
         <groupId>io.helidon.discovery.providers</groupId>
@@ -245,7 +245,7 @@ To include the Helidon Web Client Discovery integration in your project, you add
 
 `pom.xml`
 
-```xml
+```xml [pom.xml]
 <dependencies>
     <dependency>
         <groupId>io.helidon.webclient</groupId>

@@ -10,7 +10,9 @@ In Helidon MP, the config encryption filter is **enabled by default**. However, 
 
 In Helidon SE, you may add support for this filter with dependency (loaded through a java service mechanism):
 
-```xml [Maven Dependency]
+Maven Dependency:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.config</groupId>
     <artifactId>helidon-config-encryption</artifactId>

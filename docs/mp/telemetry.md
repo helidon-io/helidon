@@ -4,7 +4,7 @@
 
 To enable MicroProfile Telemetry, either add a dependency on the [helidon-microprofile bundle](introduction.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.microprofile.telemetry</groupId>
     <artifactId>helidon-microprofile-telemetry</artifactId>
@@ -15,7 +15,9 @@ To enable MicroProfile Telemetry, either add a dependency on the [helidon-microp
 
 MicroProfile Telemetry mandates that implementations such as Helidon use OpenTelemetry, so also add a dependency on an OpenTelemetry exporter.
 
-```xml [Example dependency for the OpenTelemetry OTLP exporter]
+Example dependency for the OpenTelemetry OTLP exporter:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.opentelemetry</groupId>
     <artifactId>opentelemetry-exporter-otlp</artifactId>
@@ -364,7 +366,7 @@ All the tracing information gathered from the examples runs is accessible from t
 
 Together with Helidon Telemetry dependency, an OpenTelemetry Exporter dependency should be added to project’s pom.xml file.
 
-```xml
+```xml [pom.xml]
 <dependencies>
     <dependency>
         <groupId>io.helidon.microprofile.telemetry</groupId>

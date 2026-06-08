@@ -8,7 +8,7 @@ In this guide you will find basic advice for performance tuning of your Helidon 
 
 Use `helidon-microprofile-core` dependency (and not the `helidon-microprofile` dependency) and add only what you use. For example:
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.microprofile.bundles</groupId>
     <artifactId>helidon-microprofile-core</artifactId>

@@ -11,7 +11,7 @@ Distributed tracing is a critical feature of micro-service based applications, s
 
 To enable MicroProfile Tracing, either add a dependency on the [helidon-microprofile bundle](introduction.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.microprofile.tracing</groupId>
     <artifactId>helidon-microprofile-tracing</artifactId>
@@ -200,7 +200,9 @@ mvn -U archetype:generate -DinteractiveMode=false \
 cd helidon-quickstart-mp-2
 ```
 
-```xml [Add the following dependency to pom.xml]
+Add the following dependency to pom.xml:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.tracing.providers</groupId>
     <artifactId>helidon-tracing-providers-jaeger</artifactId>
@@ -467,7 +469,7 @@ Response response = client.target(serviceEndpoint)
 
 ### Jaeger Tracing
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.tracing</groupId>
     <artifactId>helidon-tracing-providers-jaeger</artifactId>
@@ -508,7 +510,7 @@ As the [Jaeger Tracing](#jaeger-tracing) section describes, you can use Jaeger t
 
 ### Zipkin Tracing
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.tracing.providers</groupId>
     <artifactId>helidon-tracing-providers-zipkin</artifactId>
@@ -561,7 +563,9 @@ Avoid using both the OpenTelemetry tracing support described here and support fo
 > [!NOTE]
 > If you provide settings under both `telemetry` and `tracing`, Helidon uses the `telemetry` settings. Specifying both does not confuse Helidon but it might confuse users.
 
-```xml [Dependency for OpenTelemetry support using tracing]
+Dependency for OpenTelemetry support using tracing:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.tracing.providers</groupId>
     <artifactId>helidon-tracing-providers-opentelemetry</artifactId>

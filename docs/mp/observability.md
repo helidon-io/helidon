@@ -12,7 +12,7 @@ To include other observability features in your Helidon MP application, add one 
 
 For Info Observability features:
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.webserver.observe</groupId>
     <artifactId>helidon-webserver-observe-info</artifactId>
@@ -21,7 +21,7 @@ For Info Observability features:
 
 For Logging Observability features:
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.webserver.observe</groupId>
     <artifactId>helidon-webserver-observe-log</artifactId>
@@ -30,7 +30,7 @@ For Logging Observability features:
 
 For Configuration Observability features:
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.webserver.observe</groupId>
     <artifactId>helidon-webserver-observe-config</artifactId>

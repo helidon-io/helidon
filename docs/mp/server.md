@@ -18,7 +18,7 @@ Helidon provides a MicroProfile server implementation (`io.helidon.microprofile.
 
 To enable MicroProfile Server add the helidon-microprofile-core bundle dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.microprofile.bundles</groupId>
     <artifactId>helidon-microprofile-core</artifactId>
@@ -29,7 +29,7 @@ MicroProfile Server is already included in the bundle.
 
 If full control over the dependencies is required, and you want to minimize the quantity of the dependencies - `Helidon MicroProfile Server` should be used. In this case the following dependencies should be included in your project’s `pom.xml`:
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.microprofile.server</groupId>
     <artifactId>helidon-microprofile-server</artifactId>
@@ -135,7 +135,7 @@ Access logging in Helidon is done by a dedicated module that can be added to Mav
 
 To enable Access logging add the following dependency to project’s `pom.xml`:
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.microprofile</groupId>
     <artifactId>helidon-microprofile-access-log</artifactId>

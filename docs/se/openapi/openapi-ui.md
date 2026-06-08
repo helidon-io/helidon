@@ -13,7 +13,7 @@ The Helidon OpenAPI component allows you to integrate the SmallRye UI into your 
 
 To enable Helidon OpenAPI UI support, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.integrations.openapi-ui</groupId>
     <artifactId>helidon-integrations-openapi-ui</artifactId>
@@ -22,7 +22,7 @@ To enable Helidon OpenAPI UI support, add the following dependency to your proje
 
 And add a runtime dependency on the SmallRye UI.
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.smallrye</groupId>
     <artifactId>smallrye-open-api-ui</artifactId>
@@ -32,7 +32,7 @@ And add a runtime dependency on the SmallRye UI.
 
 Also, make sure your project has the following dependency.
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.openapi</groupId>
     <artifactId>helidon-openapi</artifactId>

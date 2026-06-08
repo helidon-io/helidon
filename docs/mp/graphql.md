@@ -8,7 +8,7 @@ Helidon MP implements the [MicroProfile GraphQL specification](https://download.
 
 To enable MicroProfile GraphQL, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.microprofile.graphql</groupId>
     <artifactId>helidon-microprofile-graphql-server</artifactId>
@@ -97,7 +97,9 @@ After application startup, a GraphQL schema will be generated from your annotate
 
 As part of building your application, you must create a Jandex index using the `jandex-maven-plugin` for all API and POJO classes.
 
-```xml [Generate Jandex index]
+Generate Jandex index:
+
+```xml [pom.xml]
 <plugin>
     <groupId>io.smallrye</groupId>
     <artifactId>jandex-maven-plugin</artifactId>

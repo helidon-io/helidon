@@ -8,7 +8,7 @@ The Helidon GraphQL Server provides a framework for creating [GraphQL](https://g
 
 To enable GraphQL, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
   <groupId>io.helidon.webserver</groupId>
   <artifactId>helidon-webserver-graphql</artifactId>

@@ -11,7 +11,7 @@ Injection is the basic building stone for inversion of control. Dependency injec
 
 To enable Injection, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.service</groupId>
     <artifactId>helidon-service-registry</artifactId>
@@ -136,7 +136,9 @@ Because of that it needs to generate all the needed classes at compile time, so 
 
 These processors generate the necessary metadata and wiring for dependency injection and service registration.
 
-```xml [Example annotation processor configuration in Maven]
+Example annotation processor configuration in Maven:
+
+```xml [pom.xml]
 <build>
     <plugins>
         <plugin>

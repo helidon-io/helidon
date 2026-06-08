@@ -36,7 +36,9 @@ Your project does not need any dependencies on the OpenAPI generator.
 
 To use the OpenAPI generator plug-in to generate or regenerate files during your project build, add the following to your project’s `pom.xml` file to declare the plug-in. Choose whichever version of the generator plug-in meets your needs as long as it is at least 7.6.0.
 
-```xml [Declaring the OpenAPI Generator Plug-in]
+Declaring the OpenAPI Generator Plug-in:
+
+```xml [pom.xml]
 <properties>
     <openapi-generator-version>7.6.0</openapi-generator-version>
 </properties>
@@ -104,7 +106,7 @@ The OpenAPI generator loosely divides its settings into three types:
 
   For the Maven plug-in, use the `<configOptions>` section within `<configuration>`:
 
-  ``` xml
+  ```xml [pom.xml]
   <configuration>
     ...
     <configOptions>
@@ -473,7 +475,9 @@ Then, in the `<build>` section of your `pom.xml` file, add an execution of the p
 
 The plug-in execution in the following example is equivalent to the CLI example above for generating server files:
 
-```xml [Creating or updating a client project using the OpenAPI Maven plug-in]
+Creating or updating a client project using the OpenAPI Maven plug-in:
+
+```xml [pom.xml]
 <plugin>
     <groupId>org.openapitools</groupId>
     <artifactId>openapi-generator-maven-plugin</artifactId>

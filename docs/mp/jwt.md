@@ -10,7 +10,7 @@ JSON Web Token defines a compact and self-contained way for securely transmittin
 
 To enable JWT Authentication, either add a dependency on the [helidon-microprofile bundle](introduction.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.microprofile.jwt</groupId>
     <artifactId>helidon-microprofile-jwt-auth</artifactId>

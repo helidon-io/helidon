@@ -50,7 +50,9 @@ Assuming you already have a project started and have the relevant Helidon depend
 
 If you use a parent POM other than the Helidon SE application parent, include the OpenTelemetry BOM:
 
-```xml [Including the OpenTelemetry BOM]
+Including the OpenTelemetry BOM:
+
+```xml [pom.xml]
 <dependencyManagement>
     <dependencies>
         <dependency>
@@ -68,7 +70,9 @@ See the [example app](https://github.com/helidon-io/helidon-examples/tree/helido
 
 Add the dependencies below. (You might be able to get away with fewer if you are willing to rely on transitive dependencies for components you use in your source code. The example shows them explicitly for completeness.)
 
-```xml [Dependencies for the OpenTelemetry API and Autoconfiguration]
+Dependencies for the OpenTelemetry API and Autoconfiguration:
+
+```xml [pom.xml]
 <!-- OpenTelemetrySdkBuilder -->
 <dependency>
     <groupId>io.opentelemetry</groupId>

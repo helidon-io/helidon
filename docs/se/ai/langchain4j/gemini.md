@@ -8,7 +8,7 @@ This module adds support for selected [Google Gemini](https://ai.google.dev/gemi
 
 In addition to the [Helidon integration with LangChain4j core dependencies](langchain4j.md#maven-coordinates), you must add the following:
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.integrations.langchain4j.providers</groupId>
     <artifactId>helidon-integrations-langchain4j-providers-google-gemini</artifactId>

@@ -16,28 +16,36 @@ You can quickly and easily deploy Helidon applications on Oracle Cloud Infrastru
 
 To enable OCI Integration, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
-```xml [Adding the Helidon OCI SDK Integration dependency for Config, Config File and Session Token]
+Adding the Helidon OCI SDK Integration dependency for Config, Config File and Session Token:
+
+```xml [pom.xml]
 <dependency>
      <groupId>io.helidon.integrations.oci</groupId>
      <artifactId>helidon-integrations-oci</artifactId>
 </dependency>
 ```
 
-```xml [Adding the Helidon OCI SDK Integration dependency for Resource Principal]
+Adding the Helidon OCI SDK Integration dependency for Resource Principal:
+
+```xml [pom.xml]
 <dependency>
      <groupId>io.helidon.integrations.oci.authentication</groupId>
      <artifactId>helidon-integrations-oci-authentication-resource</artifactId>
 </dependency>
 ```
 
-```xml [Adding the Helidon OCI SDK Integration dependency for Instance Principal]
+Adding the Helidon OCI SDK Integration dependency for Instance Principal:
+
+```xml [pom.xml]
 <dependency>
      <groupId>io.helidon.integrations.oci.authentication</groupId>
      <artifactId>helidon-integrations-oci-authentication-instance</artifactId>
 </dependency>
 ```
 
-```xml [Adding the Helidon OCI SDK Integration dependency for OKE Workload]
+Adding the Helidon OCI SDK Integration dependency for OKE Workload:
+
+```xml [pom.xml]
 <dependency>
      <groupId>io.helidon.integrations.oci.authentication</groupId>
      <artifactId>helidon-integrations-oci-authentication-oke-workload</artifactId>
@@ -96,7 +104,9 @@ The OCI Object Storage service is an internet-scale, high-performance storage pl
 
 To enable the OCI Object Storage integration, add the following dependency to your project’s `pom.xml`:
 
-```xml [Adding the dependency for OCI Object Storage]
+Adding the dependency for OCI Object Storage:
+
+```xml [pom.xml]
 <dependency>
     <groupId>com.oracle.oci.sdk</groupId>
     <artifactId>oci-java-sdk-objectstorage</artifactId>

@@ -32,7 +32,7 @@ The following sections briefly illustrate each approach.
 
 To enable CORS, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-webserver-cors</artifactId>

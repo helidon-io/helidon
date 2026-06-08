@@ -48,7 +48,7 @@ To include the [HikariCP connection pool](https://github.com/brettwooldridge/Hik
 - [Ensure your dependencies are managed](../managing-dependencies.md)
 - Ensure the following `<dependency>` element is present as a child element of your project’s `pom.xml` file’s `<dependencies>` element:
 
-  ``` xml
+  ```xml [pom.xml]
   <dependency>
     <groupId>io.helidon.integrations.cdi</groupId>
     <artifactId>helidon-integrations-cdi-datasource-hikaricp</artifactId>
@@ -67,7 +67,7 @@ To include the [Oracle Universal Connection Pool](https://docs.oracle.com/en/dat
 - [Ensure your dependencies are managed](../managing-dependencies.md)
 - Ensure the following `<dependency>` element is present as a child element of your project’s `pom.xml` file’s `<dependencies>` element:
 
-  ``` xml
+  ```xml [pom.xml]
   <dependency>
   <groupId>io.helidon.integrations.cdi</groupId>
   <artifactId>helidon-integrations-cdi-datasource-ucp</artifactId>
@@ -98,7 +98,7 @@ To include the [H2 JDBC driver](https://www.h2database.com/html/main.html) class
 - [Ensure your dependencies are managed](../managing-dependencies.md)
 - Ensure the following `<dependency>` element is present as a child element of your project’s `pom.xml` file’s `<dependencies>` element:
 
-  ``` xml
+  ```xml [pom.xml]
   <dependency>
     <groupId>io.helidon.integrations.db</groupId>
     <artifactId>h2</artifactId>
@@ -118,7 +118,7 @@ To include the [Oracle JDBC driver classes](https://docs.oracle.com/en/database/
 - Read and understand [Developer’s Guide For Oracle JDBC 21c on Maven Central](https://www.oracle.com/database/technologies/maven-central-guide.html)
 - For a basic setup, ensure the following `<dependency>` element is present as a child element of your project’s `pom.xml` file’s `<dependencies>` element:
 
-  ``` xml
+  ```xml [pom.xml]
   <dependency>
     <groupId>io.helidon.integrations.db</groupId>
     <artifactId>ojdbc</artifactId>
@@ -329,7 +329,7 @@ To include Helidon’s JTA integration in your application:
 - [Ensure your dependencies are managed](../managing-dependencies.md)
 - Ensure the following `<dependency>` elements are present as child elements of your project’s `pom.xml` file’s `<dependencies>` element:
 
-  ``` xml
+  ```xml [pom.xml]
   <dependencies>
     <dependency>
         <groupId>jakarta.transaction</groupId>
@@ -452,7 +452,7 @@ To include the Jakarta Persistence APIs that you will need and to include the co
 - [Ensure you have set up and configured Helidon MP’s Jakarta Transactions support](#jakarta-transactions-jta-integration)
 - Ensure the following `<dependency>` elements are present as child elements of your project’s `pom.xml` file’s `<dependencies>` element:
 
-  ``` xml
+  ```xml [pom.xml]
   <dependencies>
     <dependency>
         <groupId>jakarta.persistence</groupId>
@@ -476,7 +476,7 @@ These `<dependency>` elements do not set up a JPA provider. See details below fo
 
 To generate and compile the Jakarta Persistence static metamodel for your application, regardless of whether you are using Hibernate ORM or EclipseLink, [ensure your dependencies are managed](../managing-dependencies.md), and then make sure the `<plugin>` element in the following code snippet is present as a child element of the `<pluginManagement><plugins>` element sequence as shown below:
 
-```xml
+```xml [pom.xml]
 <pluginManagement>
     <plugins>
 
@@ -522,7 +522,7 @@ To include Helidon’s Jakarta Persistence-related integration for Hibernate ORM
 - [Ensure the basics of your JPA project are set up properly](#maven-coordinates-common)
 - Ensure the following `<dependency>` elements are present as child elements of your project’s `pom.xml` file’s `<dependencies>` element:
 
-  ``` xml
+  ```xml [pom.xml]
   <dependency>
     <groupId>io.helidon.integrations.cdi</groupId>
     <artifactId>helidon-integrations-cdi-hibernate</artifactId>
@@ -538,7 +538,7 @@ Hibernate ORM can alter your classes' bytecode at build time to keep track of ch
 
 To set up this required static weaving for Hibernate ORM, ensure that the following `<plugin>` element is present as a child element of your project’s `pom.xml` file’s `<plugins>` element:
 
-```xml
+```xml [pom.xml]
 <plugin>
     <groupId>org.hibernate.orm.tooling</groupId>
     <artifactId>hibernate-enhance-maven-plugin</artifactId>
@@ -583,7 +583,7 @@ To include Helidon’s Jakarta Persistence-related integration for EclipseLink:
 - [Ensure the basics of your JPA project are set up properly](#maven-coordinates-common)
 - Ensure the following `<dependency>` elements are present as child elements of your project’s `pom.xml` file’s `<dependencies>` element:
 
-  ``` xml
+  ```xml [pom.xml]
   <dependency>
     <groupId>io.helidon.integrations.cdi</groupId>
     <artifactId>helidon-integrations-cdi-eclipselink</artifactId>
@@ -599,7 +599,7 @@ EclipseLink can alter your classes' bytecode at build time to keep track of chan
 
 To set up this required static weaving for EclipseLink, ensure that the following `<plugin>` element is present as a child element of your project’s `pom.xml` file’s `<plugins>` element:
 
-```xml
+```xml [pom.xml]
 <plugin>
     <groupId>org.codehaus.mojo</groupId>
     <artifactId>exec-maven-plugin</artifactId>

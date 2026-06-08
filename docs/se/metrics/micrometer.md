@@ -17,7 +17,7 @@ In Helidon 4.4.0-SNAPSHOT, Micrometer support is separate from the Helidon SE me
 
 To enable {feature-name}, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.integrations.micrometer</groupId>
     <artifactId>helidon-integrations-micrometer</artifactId>

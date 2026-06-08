@@ -22,7 +22,7 @@ Helidon WebClient provides the following features:
 
 To enable WebClient, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.webclient</groupId>
     <artifactId>helidon-webclient</artifactId>
@@ -33,7 +33,7 @@ The `helidon-webclient` dependency has built-in support for `HTTP/1.1`.
 
 If support for `HTTP/2` is a requirement, below dependency needs to be added:
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.webclient</groupId>
     <artifactId>helidon-webclient-http2</artifactId>
@@ -141,21 +141,27 @@ WebClient supports the following built-in Helidon Media Support libraries:
 
 They can be activated by adding their corresponding libraries into the classpath. This can simply be done by adding their corresponding dependencies.
 
-```xml [Add JSON-P support]
+Add JSON-P support:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.http.media</groupId>
     <artifactId>helidon-http-media-jsonp</artifactId>
 </dependency>
 ```
 
-```xml [Add JSON-B support]
+Add JSON-B support:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.http.media</groupId>
     <artifactId>helidon-http-media-jsonb</artifactId>
 </dependency>
 ```
 
-```xml [Add Jackson support]
+Add Jackson support:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.http.media</groupId>
     <artifactId>helidon-http-media-jackson</artifactId>
@@ -183,7 +189,7 @@ WebClient provides three DNS resolver implementations out of the box:
 - `Java DNS resolution` is the default.
 - `First DNS resolution` uses the first IP address from a DNS lookup. To enable this option, add below dependency:
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.webclient.dns.resolver</groupId>
     <artifactId>helidon-webclient-dns-resolver-first</artifactId>
@@ -192,7 +198,7 @@ WebClient provides three DNS resolver implementations out of the box:
 
 - `Round-Robin DNS resolution` cycles through IP addresses from a DNS lookup. To enable this option, add this dependency:
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.webclient.dns.resolver</groupId>
     <artifactId>helidon-webclient-dns-resolver-round-robin</artifactId>
@@ -606,7 +612,9 @@ To enable the telemetry webclient services, take the following two steps:
 
 To set up metrics and tracing, add the following single dependency to your project:
 
-```xml [Dependency for webclient telemetry metrics and tracing]
+Dependency for webclient telemetry metrics and tracing:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.webclient</groupId>
     <artifactId>helidon-webclient-telemetry</artifactId>
@@ -616,7 +624,9 @@ To set up metrics and tracing, add the following single dependency to your proje
 
 To transmit the metrics semantic conventions to a backend, add a dependency on an OpenTelemetry exporter and in the `telemetry` configuration set up an exporter under `signals.metrics`.
 
-```xml [Dependency for exporting metrics semantic conventions data using OTLP]
+Dependency for exporting metrics semantic conventions data using OTLP:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.opentelemetry</groupId>
     <artifactId>opentelemetry-exporter-otlp</artifactId>
@@ -659,7 +669,7 @@ WebClient supports the capability to propagate values from `io.helidon.common.co
 
 To enable this feature (implemented as a WebClient service), add the following dependency to your pom file:
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.webclient</groupId>
     <artifactId>helidon-webclient-context</artifactId>

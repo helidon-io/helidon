@@ -8,7 +8,7 @@ Helidon provides a very flexible and comprehensive configuration system, offerin
 
 To enable Config, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependencies>
     <dependency>
         <groupId>io.helidon.config</groupId>

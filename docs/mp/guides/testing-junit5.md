@@ -35,7 +35,9 @@ export JAVA_HOME=/usr/lib/jvm/jdk-21
 
 To start using this feature, add the following dependencies to the testing module:
 
-```xml [Maven dependencies]
+Maven dependencies:
+
+```xml [pom.xml]
 <dependencies>
    <dependency>
       <groupId>io.helidon.microprofile.testing</groupId>

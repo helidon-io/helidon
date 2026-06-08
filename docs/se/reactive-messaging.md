@@ -8,7 +8,7 @@ Asynchronous messaging is a commonly used form of communication in the world of 
 
 To enable Reactive Messaging, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.messaging</groupId>
     <artifactId>helidon-messaging</artifactId>
@@ -235,7 +235,9 @@ For specific information about creating messaging connectors for Helidon MP visi
 
 #### Kafka Connector
 
-```xml [Maven dependency]
+Maven dependency:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.messaging.kafka</groupId>
     <artifactId>helidon-messaging-kafka</artifactId>
@@ -371,7 +373,9 @@ Don’t forget to check out the examples with pre-configured Kafka docker image,
 
 #### JMS Connector
 
-```xml [Maven dependency]
+Maven dependency:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.messaging.jms</groupId>
     <artifactId>helidon-messaging-jms</artifactId>
@@ -496,7 +500,9 @@ Don’t forget to check out the examples with pre-configured ActiveMQ docker ima
 
 #### AQ Connector
 
-```xml [Maven dependency]
+Maven dependency:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.messaging.aq</groupId>
     <artifactId>helidon-messaging-aq</artifactId>

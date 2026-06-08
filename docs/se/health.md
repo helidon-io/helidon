@@ -15,7 +15,7 @@ A typical health check combines the statuses of all the dependencies that affect
 
 To enable Health Checks, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.webserver.observe</groupId>
     <artifactId>helidon-webserver-observe-health</artifactId>
@@ -24,7 +24,7 @@ To enable Health Checks, add the following dependency to your project’s `pom.x
 
 Optional dependency to use built-in health checks:
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.health</groupId>
     <artifactId>helidon-health-checks</artifactId>

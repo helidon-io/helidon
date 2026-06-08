@@ -38,7 +38,9 @@ export JAVA_HOME=/usr/lib/jvm/jdk-21
 
 For this example, add the IBM JBatch implementation and the `derby` embedded DB (since JPA and JPA are not available by default) dependencies to the testing module:
 
-```xml [Maven dependencies]
+Maven dependencies:
+
+```xml [pom.xml]
 <dependencies>
     <dependency>
         <groupId>com.ibm.jbatch</groupId>

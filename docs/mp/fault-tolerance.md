@@ -8,7 +8,7 @@ Fault Tolerance is part of the MicroProfile set of specifications. This API defi
 
 To enable MicroProfile Fault Tolerance, either add a dependency on the [helidon-microprofile bundle](introduction.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.microprofile</groupId>
     <artifactId>helidon-microprofile-fault-tolerance</artifactId>

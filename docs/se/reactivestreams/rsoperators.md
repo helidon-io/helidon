@@ -8,7 +8,7 @@ Helidon implements [MicroProfile Reactive Streams Operators](https://download.ec
 
 To enable Reactive Streams, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
    <groupId>io.helidon.microprofile.reactive-streams</groupId>
    <artifactId>helidon-microprofile-reactive-streams</artifactId>

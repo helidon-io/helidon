@@ -12,7 +12,7 @@ Helidon’s Eureka Server Service Instance Registration Integration provides a [
 
 To enable Eureka Server Service Instance Registration Integration, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.integrations.eureka</groupId>
     <artifactId>helidon-integrations-eureka</artifactId>

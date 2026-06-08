@@ -8,7 +8,7 @@ Connecting streams to JMS with Reactive Messaging couldn’t be easier.
 
 To enable JMS Connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.messaging.jms</groupId>
     <artifactId>helidon-messaging-jms</artifactId>

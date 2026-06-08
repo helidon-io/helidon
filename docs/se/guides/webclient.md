@@ -73,7 +73,9 @@ The Helidon quickstart is a greeting application supporting several HTTP request
 
 The quickstart example utilizes `WebClient` solely for testing purposes, with the dependency configured under the test scope. To use `WebClient` within your application, remove the test scope from the dependency in the `pom.xml`.
 
-```xml [Remove the test scope from WebClient dependency]
+Remove the test scope from WebClient dependency:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.webclient</groupId>
     <artifactId>helidon-webclient</artifactId>
@@ -148,7 +150,7 @@ When the ClientExample finishes its execution, you can stop the Main class by pr
 
 In practice, String is not the most useful return type, since it usually needs some more handling. In this case, it could be more interesting to return an object of another type like a JSON object. One way to process a JSON object is by enabling Helidon’s built-in JSON-P support and this can be simply achieved by adding its dependency in the project’s pom.xml:
 
-```xml
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.http.media</groupId>
     <artifactId>helidon-http-media-jsonp</artifactId>
@@ -210,7 +212,9 @@ WebClient, like other Helidon components, supports Metrics. The following exampl
 
 To enable support for this feature, the `helidon-webclient-metrics` dependency needs to be added .
 
-```xml [Add the following dependency to pom.xml]
+Add the following dependency to pom.xml:
+
+```xml [pom.xml]
 <dependency>
     <groupId>io.helidon.webclient</groupId>
     <artifactId>helidon-webclient-metrics</artifactId>
