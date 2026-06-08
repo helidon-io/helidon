@@ -56,6 +56,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     private static final List<SourceHandlerProvider> SOURCE_HANDLERS
             = HelidonServiceLoader.builder(ServiceLoader.load(SourceHandlerProvider.class)).build().asList();
     private static final long ENTITY_LENGTH_CHUNKED = -1;
+    private static final long ENTITY_LENGTH_CLOSE_DELIMITED = -2;
     private final AtomicBoolean closed = new AtomicBoolean();
 
     private final HttpClientConfig clientConfig;
@@ -106,10 +107,14 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         ));
 
         OptionalLong contentLength = responseHeaders.contentLength();
-        if (contentLength.isPresent()) {
+        if (inputStream == null) {
+            this.entityLength = 0;
+        } else if (contentLength.isPresent()) {
             this.entityLength = contentLength.getAsLong();
         } else if (responseHeaders.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
             this.entityLength = ENTITY_LENGTH_CHUNKED;
+        } else {
+            this.entityLength = ENTITY_LENGTH_CLOSE_DELIMITED;
         }
 
         if (responseHeaders.contains(HeaderNames.TRAILER)) {
@@ -153,10 +158,14 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     public void close() {
         if (closed.compareAndSet(false, true)) {
             try {
-                if (headers().containsToken(HeaderValues.CONNECTION_CLOSE)) {
+                if (headers().containsToken(HeaderValues.CONNECTION_CLOSE)
+                        || entityLength == ENTITY_LENGTH_CLOSE_DELIMITED) {
                     connection.closeResource();
                 } else {
-                    if (entityFullyRead || entityLength == 0 || consumeUnreadEntity()) {
+                    // No-body response bytes cannot be consumed as entity; buffered data makes reuse unsafe.
+                    if (inputStream == null && connection.reader().available() > 0) {
+                        connection.closeResource();
+                    } else if (entityFullyRead || entityLength == 0 || consumeUnreadEntity()) {
                         connection.releaseResource();
                     } else {
                         connection.closeResource();
