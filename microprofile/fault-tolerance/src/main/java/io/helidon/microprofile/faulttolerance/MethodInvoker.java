@@ -15,15 +15,20 @@
  */
 package io.helidon.microprofile.faulttolerance;
 
+import java.lang.System.Logger.Level;
 import java.lang.reflect.Method;
 import java.time.Duration;
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -48,6 +53,7 @@ import jakarta.interceptor.InvocationContext;
 import org.eclipse.microprofile.faulttolerance.exceptions.BulkheadException;
 import org.eclipse.microprofile.faulttolerance.exceptions.CircuitBreakerOpenException;
 import org.eclipse.microprofile.metrics.Counter;
+import org.eclipse.microprofile.metrics.Tag;
 
 import static io.helidon.faulttolerance.SupplierHelper.toRuntimeException;
 import static io.helidon.faulttolerance.SupplierHelper.unwrapThrowable;
@@ -89,6 +95,11 @@ class MethodInvoker implements FtSupplier<Object> {
      * be shared by all instances of this class.
      */
     private static final MethodStateCache METHOD_STATES = new MethodStateCache();
+
+    /**
+     * System logger.
+     */
+    private static final System.Logger LOGGER = System.getLogger(MethodInvoker.class.getName());
 
     /**
      * The method being intercepted.
@@ -373,7 +384,11 @@ class MethodInvoker implements FtSupplier<Object> {
                 cancellableSupplier.cancel();
                 // Cancel supplier in bulkhead in case it is queued
                 if (introspector.hasBulkhead()) {
-                    methodState.bulkhead.cancelSupplier(handlerSupplier);
+                    boolean removedFromQueue = methodState.bulkhead.cancelSupplier(handlerSupplier);
+                    BulkheadWaitingTracker waitingTracker = methodState.bulkheadWaitingTracker;
+                    if (removedFromQueue && waitingTracker != null) {
+                        waitingTracker.cancelled(handlerSupplier);
+                    }
                 }
                 asyncFuture.cancel(mayInterrupt.get());
             }
@@ -392,8 +407,25 @@ class MethodInvoker implements FtSupplier<Object> {
      */
     private void initMethodHandler(MethodState methodState) {
         if (introspector.hasBulkhead()) {
-            methodState.bulkhead = Bulkhead.create(builder -> builder.limit(introspector.getBulkhead().value())
-                    .queueLength(introspector.isAsynchronous() ? introspector.getBulkhead().waitingTaskQueue() : 0));
+            methodState.bulkhead = Bulkhead.create(builder -> {
+                builder.limit(introspector.getBulkhead().value())
+                        .queueLength(introspector.isAsynchronous() ? introspector.getBulkhead().waitingTaskQueue() : 0);
+                if (introspector.isAsynchronous() && isFaultToleranceMetricsEnabled()) {
+                    BulkheadWaitingTracker waitingTracker = new BulkheadWaitingTracker(introspector.getMethodNameTag());
+                    methodState.bulkheadWaitingTracker = waitingTracker;
+                    builder.addQueueListener(new Bulkhead.QueueListener() {
+                        @Override
+                        public <T> void enqueueing(Supplier<? extends T> supplier) {
+                            waitingTracker.enqueueing(supplier);
+                        }
+
+                        @Override
+                        public <T> void dequeued(Supplier<? extends T> supplier) {
+                            waitingTracker.dequeued(supplier);
+                        }
+                    });
+                }
+            });
         }
 
         if (introspector.hasTimeout()) {
@@ -527,64 +559,29 @@ class MethodInvoker implements FtSupplier<Object> {
      * @param cause Mapped cause or {@code null} if successful.
      */
     private void updateMetricsAfter(Throwable cause) {
-        if (!isFaultToleranceMetricsEnabled()) {
+        boolean metricsEnabled = isFaultToleranceMetricsEnabled();
+        if (!metricsEnabled) {
             return;
         }
 
+        boolean asyncBulkhead = introspector.hasBulkhead() && introspector.isAsynchronous();
+        boolean waitingRecordedBeforeCompletion = false;
+        if (asyncBulkhead) {
+            BulkheadWaitingTracker waitingTracker = methodState.bulkheadWaitingTracker;
+            waitingRecordedBeforeCompletion = waitingTracker != null
+                    && waitingTracker.recordedOrPending(handlerSupplier);
+        }
+
+        // Calculate execution time
+        long executionTime = System.nanoTime() - handlerStartNanos;
+        boolean updateBulkheadDuration = false;
+        long bulkheadRunningDuration = 0L;
+        boolean updateBulkheadWaitingDuration = false;
+        long bulkheadWaitingDuration = 0L;
+
         methodState.lock.lock();
         try {
-            // Calculate execution time
-            long executionTime = System.nanoTime() - handlerStartNanos;
-
-            // Retries
-            if (introspector.hasRetry()) {
-                long retryCounter = methodState.retry.retryCounter();
-                boolean wasRetried = retryCounter > 0;
-                Counter retryRetriesTotal = RetryRetriesTotal.get(introspector.getMethodNameTag());
-
-                // Update retry counter
-                if (wasRetried) {
-                    retryRetriesTotal.inc(retryCounter);
-                }
-
-                // Update retry metrics based on outcome
-                if (cause == null) {
-                    RetryCallsTotal.get(introspector.getMethodNameTag(),
-                                        wasRetried ? RetryRetried.TRUE.get() : RetryRetried.FALSE.get(),
-                                        RetryResult.VALUE_RETURNED.get()).inc();
-                } else if (cause instanceof RetryTimeoutException) {
-                    RetryCallsTotal.get(introspector.getMethodNameTag(),
-                                        wasRetried ? RetryRetried.TRUE.get() : RetryRetried.FALSE.get(),
-                                        RetryResult.MAX_DURATION_REACHED.get()).inc();
-                } else {
-                    // Exception thrown but not RetryTimeoutException
-                    int maxRetries = introspector.getRetry().maxRetries();
-                    if (maxRetries == -1) {
-                        maxRetries = Integer.MAX_VALUE;
-                    }
-                    if (retryCounter == maxRetries) {
-                        RetryCallsTotal.get(introspector.getMethodNameTag(),
-                                            wasRetried ? RetryRetried.TRUE.get() : RetryRetried.FALSE.get(),
-                                            RetryResult.MAX_RETRIES_REACHED.get()).inc();
-                    } else if (retryCounter < maxRetries) {
-                        RetryCallsTotal.get(introspector.getMethodNameTag(),
-                                            wasRetried ? RetryRetried.TRUE.get() : RetryRetried.FALSE.get(),
-                                            RetryResult.EXCEPTION_NOT_RETRYABLE.get()).inc();
-                    }
-                }
-            }
-
-            // Timeout
-            if (introspector.hasTimeout()) {
-                if (cause instanceof org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException) {
-                    TimeoutCallsTotal.get(introspector.getMethodNameTag(),
-                                          TimeoutTimedOut.TRUE.get()).inc();
-                } else {
-                    TimeoutCallsTotal.get(introspector.getMethodNameTag(),
-                                          TimeoutTimedOut.FALSE.get()).inc();
-                }
-                TimeoutExecutionDuration.get(introspector.getMethodNameTag()).update(executionTime);
-            }
+            updateRetryMetrics(cause);
 
             // CircuitBreaker
             if (introspector.hasCircuitBreaker()) {
@@ -651,28 +648,194 @@ class MethodInvoker implements FtSupplier<Object> {
                 }
 
                 // Update histograms if task accepted
-                if (!(cause instanceof BulkheadException)) {
+                if (invocationStartNanos != 0 && !(cause instanceof BulkheadException)) {
                     long waitingTime = invocationStartNanos - handlerStartNanos;
-                    BulkheadRunningDuration.get(introspector.getMethodNameTag())
-                            .update(executionTime - waitingTime);
+                    bulkheadRunningDuration = executionTime - waitingTime;
+                    updateBulkheadDuration = true;
                     if (introspector.isAsynchronous()) {
-                        BulkheadWaitingDuration.get(introspector.getMethodNameTag()).update(waitingTime);
+                        if (!waitingRecordedBeforeCompletion) {
+                            bulkheadWaitingDuration = waitingTime;
+                            updateBulkheadWaitingDuration = true;
+                        }
                     }
                 }
             }
-
-            // Global method counters
-            if (cause == null) {
-                InvocationsTotal.get(introspector.getMethodNameTag(),
-                                     VALUE_RETURNED.get(),
-                                     introspector.getFallbackTag(fallbackCalled.get())).inc();
-            } else {
-                InvocationsTotal.get(introspector.getMethodNameTag(),
-                                     EXCEPTION_THROWN.get(),
-                                     introspector.getFallbackTag(fallbackCalled.get())).inc();
-            }
         } finally {
             methodState.lock.unlock();
+        }
+
+        // Timeout
+        if (introspector.hasTimeout()) {
+            if (cause instanceof org.eclipse.microprofile.faulttolerance.exceptions.TimeoutException) {
+                TimeoutCallsTotal.get(introspector.getMethodNameTag(),
+                                      TimeoutTimedOut.TRUE.get()).inc();
+            } else {
+                TimeoutCallsTotal.get(introspector.getMethodNameTag(),
+                                      TimeoutTimedOut.FALSE.get()).inc();
+            }
+            TimeoutExecutionDuration.get(introspector.getMethodNameTag()).update(executionTime);
+        }
+
+        if (updateBulkheadDuration) {
+            BulkheadRunningDuration.get(introspector.getMethodNameTag()).update(bulkheadRunningDuration);
+            if (updateBulkheadWaitingDuration) {
+                BulkheadWaitingDuration.get(introspector.getMethodNameTag()).update(bulkheadWaitingDuration);
+            }
+        }
+
+        // Global method counters
+        if (cause == null) {
+            InvocationsTotal.get(introspector.getMethodNameTag(),
+                                 VALUE_RETURNED.get(),
+                                 introspector.getFallbackTag(fallbackCalled.get())).inc();
+        } else {
+            InvocationsTotal.get(introspector.getMethodNameTag(),
+                                 EXCEPTION_THROWN.get(),
+                                 introspector.getFallbackTag(fallbackCalled.get())).inc();
+        }
+    }
+
+    private void updateRetryMetrics(Throwable cause) {
+        if (!introspector.hasRetry()) {
+            return;
+        }
+
+        long retryCounter = methodState.retry.retryCounter();
+        boolean wasRetried = retryCounter > 0;
+        Counter retryRetriesTotal = RetryRetriesTotal.get(introspector.getMethodNameTag());
+
+        // Update retry counter
+        if (wasRetried) {
+            retryRetriesTotal.inc(retryCounter);
+        }
+
+        // Update retry metrics based on outcome
+        if (cause == null) {
+            RetryCallsTotal.get(introspector.getMethodNameTag(),
+                                wasRetried ? RetryRetried.TRUE.get() : RetryRetried.FALSE.get(),
+                                RetryResult.VALUE_RETURNED.get()).inc();
+        } else if (cause instanceof RetryTimeoutException) {
+            RetryCallsTotal.get(introspector.getMethodNameTag(),
+                                wasRetried ? RetryRetried.TRUE.get() : RetryRetried.FALSE.get(),
+                                RetryResult.MAX_DURATION_REACHED.get()).inc();
+        } else {
+            // Exception thrown but not RetryTimeoutException
+            int maxRetries = introspector.getRetry().maxRetries();
+            if (maxRetries == -1) {
+                maxRetries = Integer.MAX_VALUE;
+            }
+            if (retryCounter == maxRetries) {
+                RetryCallsTotal.get(introspector.getMethodNameTag(),
+                                    wasRetried ? RetryRetried.TRUE.get() : RetryRetried.FALSE.get(),
+                                    RetryResult.MAX_RETRIES_REACHED.get()).inc();
+            } else if (retryCounter < maxRetries) {
+                RetryCallsTotal.get(introspector.getMethodNameTag(),
+                                    wasRetried ? RetryRetried.TRUE.get() : RetryRetried.FALSE.get(),
+                                    RetryResult.EXCEPTION_NOT_RETRYABLE.get()).inc();
+            }
+        }
+    }
+
+    private static class BulkheadWaitingTracker {
+        private final Tag methodNameTag;
+        private final ConcurrentMap<Supplier<?>, WaitingState> states = new ConcurrentHashMap<>();
+
+        BulkheadWaitingTracker(Tag methodNameTag) {
+            this.methodNameTag = methodNameTag;
+        }
+
+        void enqueueing(Supplier<?> supplier) {
+            if (!isFaultToleranceMetricsEnabled()) {
+                return;
+            }
+            long startNanos = System.nanoTime();
+            states.compute(supplier, (ignored, state) -> {
+                WaitingState newState = state == null ? new WaitingState() : state;
+                newState.starts.addLast(startNanos);
+                return newState;
+            });
+        }
+
+        void dequeued(Supplier<?> supplier) {
+            long[] startNanos = new long[1];
+            boolean[] found = new boolean[1];
+            states.compute(supplier, (ignored, state) -> {
+                if (state == null || state.starts.isEmpty()) {
+                    return state;
+                }
+                startNanos[0] = state.starts.removeFirst();
+                found[0] = true;
+                if (!state.completionObserved) {
+                    state.recordedBeforeCompletion = true;
+                }
+                return state.starts.isEmpty() && state.completionObserved ? null : state;
+            });
+
+            if (found[0]) {
+                recordWaitingDuration(startNanos[0]);
+            }
+        }
+
+        void cancelled(Supplier<?> supplier) {
+            long[] startNanos = new long[1];
+            boolean[] record = new boolean[1];
+            states.compute(supplier, (ignored, state) -> {
+                if (state == null || state.starts.isEmpty()) {
+                    return state;
+                }
+                startNanos[0] = state.starts.removeFirst();
+                record[0] = true;
+                if (!state.completionObserved) {
+                    state.recordedBeforeCompletion = true;
+                }
+                return state.starts.isEmpty() && state.completionObserved ? null : state;
+            });
+            if (record[0]) {
+                recordWaitingDuration(startNanos[0]);
+            }
+        }
+
+        boolean recordedOrPending(Supplier<?> supplier) {
+            if (states.get(supplier) == null) {
+                return false;
+            }
+            boolean[] result = new boolean[1];
+            states.compute(supplier, (ignored, state) -> {
+                if (state == null) {
+                    return null;
+                }
+                if (!state.starts.isEmpty()) {
+                    state.completionObserved = true;
+                    state.recordedBeforeCompletion = false;
+                    result[0] = true;
+                    return state;
+                }
+                if (state.recordedBeforeCompletion) {
+                    result[0] = true;
+                    return null;
+                }
+                return null;
+            });
+            return result[0];
+        }
+
+        private void recordWaitingDuration(long startNanos) {
+            if (!isFaultToleranceMetricsEnabled()) {
+                return;
+            }
+
+            try {
+                // Keep metric failures from escaping permit handoff or queued-cancel cleanup.
+                BulkheadWaitingDuration.get(methodNameTag).update(System.nanoTime() - startNanos);
+            } catch (RuntimeException e) {
+                LOGGER.log(Level.DEBUG, "Failed to update bulkhead waiting duration metric", e);
+            }
+        }
+
+        private static class WaitingState {
+            private final Deque<Long> starts = new ArrayDeque<>();
+            private boolean recordedBeforeCompletion;
+            private boolean completionObserved;
         }
     }
 
@@ -688,6 +851,7 @@ class MethodInvoker implements FtSupplier<Object> {
         private final ReentrantLock lock = new ReentrantLock();
         private Retry retry;
         private Bulkhead bulkhead;
+        private BulkheadWaitingTracker bulkheadWaitingTracker;
         private CircuitBreaker breaker;
         private Timeout timeout;
         private State lastBreakerState;
