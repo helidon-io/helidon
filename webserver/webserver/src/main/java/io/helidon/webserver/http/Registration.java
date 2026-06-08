@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,17 @@ public interface Registration {
     }
 
     /**
+     * Create a registration for a service locator with a path.
+     *
+     * @param path    path of the locator
+     * @param locator service locator to register
+     * @return a new registration
+     */
+    static Registration create(String path, HttpServiceLocator locator) {
+        return new Registrations.ServiceLocatorPathRegistration(path, locator);
+    }
+
+    /**
      * Create a registration for service(s).
      *
      * @param services service(s) to register
@@ -42,6 +53,16 @@ public interface Registration {
      */
     static Registration create(HttpService... services) {
         return new Registrations.ServiceRegistration(services);
+    }
+
+    /**
+     * Create a registration for a service locator.
+     *
+     * @param locator service locator to register
+     * @return a new registration
+     */
+    static Registration create(HttpServiceLocator locator) {
+        return new Registrations.ServiceLocatorRegistration(locator);
     }
 
     /**

@@ -41,6 +41,7 @@ import io.helidon.webserver.http.HttpRoute;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.HttpSecurity;
 import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.HttpServiceLocator;
 import io.helidon.webserver.spi.ServerFeature;
 
 import static io.helidon.webserver.WebServer.DEFAULT_SOCKET_NAME;
@@ -379,8 +380,20 @@ class ServerFeatureContextImpl implements ServerFeature.ServerFeatureContext {
         }
 
         @Override
+        public HttpRouting.Builder register(HttpServiceLocator locator) {
+            delegate.register(locator);
+            return this;
+        }
+
+        @Override
         public HttpRouting.Builder register(String path, HttpService... services) {
             delegate.register(path, services);
+            return this;
+        }
+
+        @Override
+        public HttpRouting.Builder register(String pathPattern, HttpServiceLocator locator) {
+            delegate.register(pathPattern, locator);
             return this;
         }
 
