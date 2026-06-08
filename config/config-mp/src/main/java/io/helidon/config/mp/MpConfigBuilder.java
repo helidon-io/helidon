@@ -84,7 +84,7 @@ class MpConfigBuilder implements Builder<MpConfigBuilder, Config>, ConfigBuilder
     private final List<OrdinalSource> sources = new LinkedList<>();
     private final List<OrdinalConverter> converters = new LinkedList<>();
 
-    private ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+    private ClassLoader classLoader = contextClassLoader();
 
     private boolean useDefaultSources = false;
     private boolean useDiscoveredSources = false;
@@ -171,7 +171,7 @@ class MpConfigBuilder implements Builder<MpConfigBuilder, Config>, ConfigBuilder
 
     @Override
     public ConfigBuilder forClassLoader(ClassLoader loader) {
-        this.classLoader = loader;
+        this.classLoader = fallbackClassLoader(loader);
         return this;
     }
 
@@ -464,6 +464,14 @@ class MpConfigBuilder implements Builder<MpConfigBuilder, Config>, ConfigBuilder
                 .build();
         this.sources.add(new OrdinalSource(MpConfigSources.create(helidonConfig)));
         return this;
+    }
+
+    private static ClassLoader contextClassLoader() {
+        return fallbackClassLoader(Thread.currentThread().getContextClassLoader());
+    }
+
+    private static ClassLoader fallbackClassLoader(ClassLoader classLoader) {
+        return classLoader == null ? MpConfigBuilder.class.getClassLoader() : classLoader;
     }
 
     private static class OrdinalSource {

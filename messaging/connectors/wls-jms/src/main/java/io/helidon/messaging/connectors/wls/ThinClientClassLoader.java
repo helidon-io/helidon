@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ class ThinClientClassLoader extends URLClassLoader {
 
     ThinClientClassLoader() {
         super("thinClientClassLoader", new URL[0], null);
-        contextClassLoader = Thread.currentThread().getContextClassLoader();
+        contextClassLoader = contextClassLoader();
         try {
 
             File currDirFile = Path.of("", thinJarLocation).toFile();
@@ -106,6 +106,11 @@ class ThinClientClassLoader extends URLClassLoader {
         return !name.startsWith("javax.jms")
                 && !name.startsWith("jakarta.jms")
                 && !name.equals(IsolatedContextFactory.class.getName());
+    }
+
+    private static ClassLoader contextClassLoader() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return classLoader == null ? ThinClientClassLoader.class.getClassLoader() : classLoader;
     }
 
     @FunctionalInterface

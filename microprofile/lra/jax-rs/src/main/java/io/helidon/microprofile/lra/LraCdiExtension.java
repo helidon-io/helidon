@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -112,7 +112,7 @@ public class LraCdiExtension implements Extension {
     public LraCdiExtension() {
         config = MpConfig.toHelidonConfig(ConfigProvider.getConfig()).get(CONFIG_PREFIX);
         indexer = new Indexer();
-        classLoader = Thread.currentThread().getContextClassLoader();
+        classLoader = contextClassLoader();
         // Needs to be always indexed
         Set.of(LRA.class,
                 AfterLRA.class,
@@ -336,5 +336,10 @@ public class LraCdiExtension implements Extension {
             throw new DeploymentException("Instance of bean " + bean.getName() + " not found");
         }
         return (T) instance;
+    }
+
+    private static ClassLoader contextClassLoader() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return classLoader == null ? LraCdiExtension.class.getClassLoader() : classLoader;
     }
 }

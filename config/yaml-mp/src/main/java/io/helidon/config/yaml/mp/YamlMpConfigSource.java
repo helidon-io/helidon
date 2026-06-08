@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -179,7 +179,7 @@ public class YamlMpConfigSource implements ConfigSource {
     public static List<ConfigSource> classPath(String resource) {
         List<ConfigSource> sources = new LinkedList<>();
         try {
-            Thread.currentThread().getContextClassLoader().getResources(resource)
+            contextClassLoader().getResources(resource)
                     .asIterator()
                     .forEachRemaining(it -> sources.add(create(it)));
         } catch (IOException e) {
@@ -197,7 +197,7 @@ public class YamlMpConfigSource implements ConfigSource {
      * @return list of config sources discovered (may be zero length)
      */
     public static List<ConfigSource> classPath(String resource, String profile) {
-        return classPathConfigSources(resource, profile, Thread.currentThread().getContextClassLoader());
+        return classPathConfigSources(resource, profile, contextClassLoader());
     }
 
     /**
@@ -383,5 +383,10 @@ public class YamlMpConfigSource implements ConfigSource {
         // harmful
         Yaml yaml = new Yaml(new SafeConstructor(new LoaderOptions()));
         return (Map) yaml.loadAs(reader, Object.class);
+    }
+
+    private static ClassLoader contextClassLoader() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return classLoader == null ? YamlMpConfigSource.class.getClassLoader() : classLoader;
     }
 }

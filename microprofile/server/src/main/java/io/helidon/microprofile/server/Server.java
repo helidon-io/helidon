@@ -164,7 +164,7 @@ public interface Server {
             STARTUP_LOGGER.log(Level.TRACE, Builder.class.getName() + " build ENTRY");
 
             // configuration must be initialized before we start the container
-            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+            ClassLoader classLoader = contextClassLoader();
 
             if (null == config) {
                 this.config = ConfigProviderResolver.instance().getConfig(classLoader);
@@ -486,6 +486,11 @@ public interface Server {
 
         int port() {
             return port;
+        }
+
+        private static ClassLoader contextClassLoader() {
+            ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+            return classLoader == null ? Server.class.getClassLoader() : classLoader;
         }
     }
 }

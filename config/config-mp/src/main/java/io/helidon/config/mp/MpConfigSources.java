@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -268,7 +268,7 @@ public final class MpConfigSources {
      * @return a config source for each resource on classpath, empty if none found
      */
     public static List<ConfigSource> classPath(String resource) {
-        return classPath(Thread.currentThread().getContextClassLoader(), resource);
+        return classPath(contextClassLoader(), resource);
     }
 
     /**
@@ -283,7 +283,7 @@ public final class MpConfigSources {
      * @return a config source for each resource on classpath, empty if none found
      */
     public static List<ConfigSource> classPath(String resource, String profile) {
-        return classPath(Thread.currentThread().getContextClassLoader(), resource, profile);
+        return classPath(contextClassLoader(), resource, profile);
     }
 
     /**
@@ -295,6 +295,7 @@ public final class MpConfigSources {
      * @return a config source for each resource on classpath, empty if none found
      */
     public static List<ConfigSource> classPath(ClassLoader classLoader, String resource) {
+        classLoader = fallbackClassLoader(classLoader);
         List<ConfigSource> sources = new LinkedList<>();
         try {
             classLoader.getResources(resource)
@@ -321,6 +322,7 @@ public final class MpConfigSources {
      */
     public static List<ConfigSource> classPath(ClassLoader classLoader, String resource, String profile) {
         Objects.requireNonNull(profile, "Profile must be defined");
+        classLoader = fallbackClassLoader(classLoader);
 
         List<ConfigSource> sources = new LinkedList<>();
 
@@ -511,5 +513,13 @@ public final class MpConfigSources {
 
         originalProperties.keySet().removeIf(it -> !props.containsKey(it));
         originalProperties.putAll(props);
+    }
+
+    private static ClassLoader contextClassLoader() {
+        return fallbackClassLoader(Thread.currentThread().getContextClassLoader());
+    }
+
+    private static ClassLoader fallbackClassLoader(ClassLoader classLoader) {
+        return classLoader == null ? MpConfigSources.class.getClassLoader() : classLoader;
     }
 }

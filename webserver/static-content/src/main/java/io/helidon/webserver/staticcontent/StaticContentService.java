@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,7 +64,7 @@ public interface StaticContentService extends HttpService {
     @Deprecated(forRemoval = true, since = "4.1.5")
     static ClassPathBuilder builder(String resourceRoot) {
         Objects.requireNonNull(resourceRoot, "Attribute resourceRoot is null!");
-        return builder(resourceRoot, Thread.currentThread().getContextClassLoader());
+        return builder(resourceRoot, contextClassLoader());
     }
 
     /**
@@ -114,7 +114,7 @@ public interface StaticContentService extends HttpService {
      */
     @Deprecated(forRemoval = true, since = "4.1.5")
     static StaticContentService create(String resourceRoot) {
-        return create(resourceRoot, Thread.currentThread().getContextClassLoader());
+        return create(resourceRoot, contextClassLoader());
     }
 
     /**
@@ -144,6 +144,11 @@ public interface StaticContentService extends HttpService {
     @Deprecated(forRemoval = true, since = "4.1.5")
     static StaticContentService create(Path root) {
         return builder(root).build();
+    }
+
+    private static ClassLoader contextClassLoader() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return classLoader == null ? StaticContentService.class.getClassLoader() : classLoader;
     }
 
     /**

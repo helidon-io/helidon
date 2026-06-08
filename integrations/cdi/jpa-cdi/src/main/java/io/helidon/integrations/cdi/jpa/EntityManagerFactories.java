@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -229,7 +229,7 @@ final class EntityManagerFactories {
             returnValue =
                 (PersistenceProvider) instance.select(Class.forName(providerClassName,
                                                                     true,
-                                                                    Thread.currentThread().getContextClassLoader()),
+                                                                    contextClassLoader()),
                                                       selectionQualifiersArray).get();
         }
 
@@ -292,6 +292,11 @@ final class EntityManagerFactories {
             LOGGER.exiting(cn, mn, returnValue);
         }
         return returnValue;
+    }
+
+    private static ClassLoader contextClassLoader() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return classLoader == null ? EntityManagerFactories.class.getClassLoader() : classLoader;
     }
 
 }

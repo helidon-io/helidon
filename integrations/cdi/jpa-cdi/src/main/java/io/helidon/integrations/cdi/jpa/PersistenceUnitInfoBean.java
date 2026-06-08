@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2019, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -155,7 +155,7 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
              persistenceUnitRootUrl,
              null,
              null,
-             Thread.currentThread().getContextClassLoader(),
+             contextClassLoader(),
              null,
              null,
              managedClassNames != null && !managedClassNames.isEmpty(),
@@ -217,7 +217,7 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
              persistenceUnitRootUrl,
              null,
              null,
-             Thread.currentThread().getContextClassLoader(),
+             contextClassLoader(),
              null,
              null,
              managedClassNames != null && !managedClassNames.isEmpty(),
@@ -757,7 +757,8 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
      * #fromPersistenceUnit(Persistence.PersistenceUnit, ClassLoader,
      * Supplier, URL, Map, DataSourceProvider)} method using the
      * return value of the {@link Thread#getContextClassLoader()}
-     * method as the {@link ClassLoader}.</p>
+     * method as the {@link ClassLoader}, falling back to this class'
+     * {@link ClassLoader} when the thread context class loader is {@code null}.</p>
      *
      * @param persistenceUnit a {@link PersistenceUnit}; must not be
      * {@code null}
@@ -794,7 +795,7 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
                             final Map<? extends String, ? extends Set<? extends Class<?>>> unlistedClasses,
                             final DataSourceProvider dataSourceProvider)
         throws MalformedURLException {
-        final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        final ClassLoader classLoader = contextClassLoader();
         return fromPersistenceUnit(persistenceUnit,
                                    classLoader,
                                    () -> classLoader,
@@ -846,7 +847,7 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
                             final Map<? extends String, ? extends Set<? extends Class<?>>> unlistedClasses,
                             final Supplier<? extends DataSourceProvider> dataSourceProviderSupplier)
         throws MalformedURLException {
-        final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        final ClassLoader classLoader = contextClassLoader();
         return fromPersistenceUnit(persistenceUnit,
                                    classLoader,
                                    () -> classLoader,
@@ -1100,6 +1101,11 @@ public class PersistenceUnitInfoBean implements PersistenceUnitInfo {
         throws MalformedURLException, URISyntaxException {
         // Revisit: probably won't work if persistenceUnitRootUrl is, say, a jar URL
         return persistenceUnitRootUrl.toURI().resolve(jarFileUrlString).toURL();
+    }
+
+    private static ClassLoader contextClassLoader() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return classLoader == null ? PersistenceUnitInfoBean.class.getClassLoader() : classLoader;
     }
 
 
