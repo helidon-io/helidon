@@ -4,9 +4,7 @@
 
 To integrate [web server](../webserver/webserver.md), add the following dependency to your project’s pom.xml file:
 
-*Maven Dependency*
-
-```xml
+```xml [Maven Dependency]
 <dependency>
     <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-webserver-security</artifactId>
@@ -20,9 +18,7 @@ There are two steps to configure security with WebServer:
 1.  Create a security instance and register it with the server.
 2.  Protect server routes with optional security features.
 
-*Example using builders*
-
-```java
+```java [Example using builders]
 WebServer.builder()
         .addFeature(SecurityFeature.builder() 
                             .security(security)
@@ -36,9 +32,7 @@ WebServer.builder()
 - Register the security feature in the web server, enforce authentication by default
 - Protect this route with authentication (from defaults) and role "user"
 
-*Example using configuration*
-
-```java
+```java [Example using configuration]
 WebServer.builder()
         // This is step 1 - register security instance with web server processing
         // security - instance of security either from config or from a builder
@@ -52,9 +46,7 @@ WebServer.builder()
 - Helper method to load both security and web server security from configuration
 - Security for this route is defined in the configuration
 
-*Example using configuration (YAML)*
-
-```yaml
+```yaml [Example using configuration (YAML)]
 security:
   web-server: 
       defaults:
@@ -90,9 +82,7 @@ The configuration is usually placed under `security.web-server` (this can be cus
 
 The following shows an example we will explain in detail:
 
-*application.yaml*
-
-```yaml
+```yaml [application.yaml]
 security:
   providers:
     - abac: 
@@ -122,9 +112,7 @@ security:
 
 If you need to use a properties file, such as `microprofile-config.properties`, you can convert the file by using index based numbers for arrays, such as:
 
-*microprofile-config.properties*
-
-```properties
+```properties [microprofile-config.properties]
 security.providers.0.abac=
 security.providers.1.provider-key.optional=false
 security.web-server.defaults.authenticate=true

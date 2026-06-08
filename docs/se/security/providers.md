@@ -82,14 +82,14 @@ WebServer.builder()
 <td class="tableblock halign-left valign-top"><p><span id="a7e9b5-client-credentials-config"></span> <a href="../../se/security/../../config/io_helidon_security_providers_oidc_common_ClientCredentialsConfig.html"><code>client-credentials-config</code></a></p></td>
 <td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
 <td class="tableblock halign-left valign-top"><p><code>i.h.s.p.o.c.ClientCredentialsConfig</code></p></td>
-<td class="tableblock halign-left valign-top"><p> </p></td>
+<td class="tableblock halign-left valign-top"><p> </p></td>
 <td class="tableblock halign-left valign-top"><p>Set the configuration related to the client credentials flow</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p><span id="a9b107-cookie-domain"></span> <code>cookie-domain</code></p></td>
 <td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
 <td class="tableblock halign-left valign-top"><p><code>String</code></p></td>
-<td class="tableblock halign-left valign-top"><p> </p></td>
+<td class="tableblock halign-left valign-top"><p> </p></td>
 <td class="tableblock halign-left valign-top"><p>Domain the cookie is valid for</p></td>
 </tr>
 <tr>
@@ -110,7 +110,7 @@ WebServer.builder()
 <td class="tableblock halign-left valign-top"><p><span id="ab14ce-cookie-encryption-name"></span> <code>cookie-encryption-name</code></p></td>
 <td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
 <td class="tableblock halign-left valign-top"><p><code>String</code></p></td>
-<td class="tableblock halign-left valign-top"><p> </p></td>
+<td class="tableblock halign-left valign-top"><p> </p></td>
 <td class="tableblock halign-left valign-top">Name of the encryption configuration available through
 Security#encrypt(String, byte[)&lt;/code&gt; and &lt;code&gt;Security#decrypt(String, String)&lt;/code&gt;]</td>
 </tr>
@@ -118,7 +118,7 @@ Security#encrypt(String, byte[)&lt;/code&gt; and &lt;code&gt;Security#decrypt(St
 <td class="tableblock halign-left valign-top"><p><span id="ac0d77-cookie-encryption-password"></span> <code>cookie-encryption-password</code></p></td>
 <td class="tableblock halign-left valign-top"><p><code>LIST</code></p></td>
 <td class="tableblock halign-left valign-top"><p><code>String</code></p></td>
-<td class="tableblock halign-left valign-top"><p> </p></td>
+<td class="tableblock halign-left valign-top"><p> </p></td>
 <td class="tableblock halign-left valign-top"><p>Master password for encryption/decryption of cookies</p></td>
 </tr>
 <tr>
@@ -153,7 +153,7 @@ Security#encrypt(String, byte[)&lt;/code&gt; and &lt;code&gt;Security#decrypt(St
 <td class="tableblock halign-left valign-top"><p><span id="ae7d0f-cookie-max-age-seconds"></span> <code>cookie-max-age-seconds</code></p></td>
 <td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
 <td class="tableblock halign-left valign-top"><p><code>Long</code></p></td>
-<td class="tableblock halign-left valign-top"><p> </p></td>
+<td class="tableblock halign-left valign-top"><p> </p></td>
 <td class="tableblock halign-left valign-top"><p>When using cookie, used to set MaxAge attribute of the cookie, defining how long the cookie is valid</p></td>
 </tr>
 <tr>
@@ -223,7 +223,7 @@ Security#encrypt(String, byte[)&lt;/code&gt; and &lt;code&gt;Security#decrypt(St
 <td class="tableblock halign-left valign-top"><p><span id="ad1309-cors"></span> <a href="../../se/security/../../config/io_helidon_cors_CrossOriginConfig.html"><code>cors</code></a></p></td>
 <td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
 <td class="tableblock halign-left valign-top"><p><code>i.h.c.CrossOriginConfig</code></p></td>
-<td class="tableblock halign-left valign-top"><p> </p></td>
+<td class="tableblock halign-left valign-top"><p> </p></td>
 <td class="tableblock halign-left valign-top"><p>Assign cross-origin resource sharing settings</p></td>
 </tr>
 <tr>
@@ -237,14 +237,14 @@ Security#encrypt(String, byte[)&lt;/code&gt; and &lt;code&gt;Security#decrypt(St
 <td class="tableblock halign-left valign-top"><p><span id="a069b5-frontend-uri"></span> <code>frontend-uri</code></p></td>
 <td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
 <td class="tableblock halign-left valign-top"><p><code>String</code></p></td>
-<td class="tableblock halign-left valign-top"><p> </p></td>
+<td class="tableblock halign-left valign-top"><p> </p></td>
 <td class="tableblock halign-left valign-top"><p>Full URI of this application that is visible from user browser</p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p><span id="abf3fb-header-token"></span> <a href="../../se/security/../../config/io_helidon_security_util_TokenHandler.html"><code>header-token</code></a></p></td>
 <td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
 <td class="tableblock halign-left valign-top"><p><code>i.h.s.u.TokenHandler</code></p></td>
-<td class="tableblock halign-left valign-top"><p> </p></td>
+<td class="tableblock halign-left valign-top"><p> </p></td>
 <td class="tableblock halign-left valign-top"><p>A <code>TokenHandler</code> to process header containing a JWT</p></td>
 </tr>
 <tr>
@@ -279,7 +279,7 @@ Security#encrypt(String, byte[)&lt;/code&gt; and &lt;code&gt;Security#decrypt(St
 <td class="tableblock halign-left valign-top"><p><span id="acf040-outbound"></span> <a href="../../se/security/../../config/io_helidon_security_providers_common_OutboundTarget.html"><code>outbound</code></a></p></td>
 <td class="tableblock halign-left valign-top"><p><code>LIST</code></p></td>
 <td class="tableblock halign-left valign-top"><p><code>i.h.s.p.c.OutboundTarget</code></p></td>
-<td class="tableblock halign-left valign-top"><p> </p></td>
+<td class="tableblock halign-left valign-top"><p> </p></td>
 <td class="tableblock halign-left valign-top"><p>Add a new target configuration</p></td>
 </tr>
 <tr>
@@ -370,7 +370,7 @@ Security#encrypt(String, byte[)&lt;/code&gt; and &lt;code&gt;Security#decrypt(St
 <td class="tableblock halign-left valign-top"><p><span id="aef163-tenants"></span> <a href="../../se/security/../../config/io_helidon_security_providers_oidc_common_TenantConfig.html"><code>tenants</code></a></p></td>
 <td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
 <td class="tableblock halign-left valign-top"><p><code>i.h.s.p.o.c.TenantConfig</code></p></td>
-<td class="tableblock halign-left valign-top"><p> </p></td>
+<td class="tableblock halign-left valign-top"><p> </p></td>
 <td class="tableblock halign-left valign-top"><p>Configurations of the tenants</p></td>
 </tr>
 <tr>
@@ -391,7 +391,7 @@ Security#encrypt(String, byte[)&lt;/code&gt; and &lt;code&gt;Security#decrypt(St
 <td class="tableblock halign-left valign-top"><p><span id="a85467-webclient"></span> <a href="../../se/security/../../config/io_helidon_webclient_api_WebClient.html"><code>webclient</code></a></p></td>
 <td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
 <td class="tableblock halign-left valign-top"><p><code>i.h.w.a.WebClient</code></p></td>
-<td class="tableblock halign-left valign-top"><p> </p></td>
+<td class="tableblock halign-left valign-top"><p> </p></td>
 <td class="tableblock halign-left valign-top"><p>WebClient configuration used for outbound requests to the identity server. This configuration sets the values to the OIDC WebClient default configuration</p></td>
 </tr>
 </tbody>
@@ -401,7 +401,7 @@ Security#encrypt(String, byte[)&lt;/code&gt; and &lt;code&gt;Security#decrypt(St
 
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
-| <span id="af9976-proxy-host"></span> `proxy-host` | `VALUE` | `String` |   | Proxy host to use |
+| <span id="af9976-proxy-host"></span> `proxy-host` | `VALUE` | `String` |   | Proxy host to use |
 | <span id="aa965f-proxy-protocol"></span> `proxy-protocol` | `VALUE` | `String` | `http` | Proxy protocol to use when proxy is used |
 | <span id="abf0b4-relative-uris"></span> `relative-uris` | `VALUE` | `Boolean` | `false` | Can be set to `true` to force the use of relative URIs in all requests, regardless of the presence or absence of proxies or no-proxy lists |
 
@@ -490,7 +490,7 @@ There are four ways to provide the required tenant information to Helidon by def
 <tr>
 <td class="tableblock halign-left valign-top"><p><code>host-header</code></p></td>
 <td class="tableblock halign-left valign-top"><p>Tenant configuration will be selected based on your host present in the <code>Host</code> header value.</p></td>
-<td class="tableblock halign-left valign-top"><p> </p></td>
+<td class="tableblock halign-left valign-top"><p> </p></td>
 </tr>
 <tr>
 <td class="tableblock halign-left valign-top"><p><code>domain</code></p></td>
@@ -526,26 +526,26 @@ and the custom tenant configuration discovery can be provided by implementing SP
 
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
-| <span id="a2e4f7-audience"></span> `audience` | `VALUE` | `String` |   | Audience of issued tokens |
-| <span id="a37c39-authorization-endpoint-uri"></span> `authorization-endpoint-uri` | `VALUE` | `URI` |   | URI of an authorization endpoint used to redirect users to for logging-in |
+| <span id="a2e4f7-audience"></span> `audience` | `VALUE` | `String` |   | Audience of issued tokens |
+| <span id="a37c39-authorization-endpoint-uri"></span> `authorization-endpoint-uri` | `VALUE` | `URI` |   | URI of an authorization endpoint used to redirect users to for logging-in |
 | <span id="ad0521-base-scopes"></span> `base-scopes` | `VALUE` | `String` | `openid` | Configure base scopes |
 | <span id="a7bcb9-check-audience"></span> `check-audience` | `VALUE` | `Boolean` | `true` | Configure audience claim check |
-| <span id="a67ded-client-id"></span> `client-id` | `VALUE` | `String` |   | Client ID as generated by OIDC server |
-| <span id="abd29e-client-secret"></span> `client-secret` | `VALUE` | `String` |   | Client secret as generated by OIDC server |
+| <span id="a67ded-client-id"></span> `client-id` | `VALUE` | `String` |   | Client ID as generated by OIDC server |
+| <span id="abd29e-client-secret"></span> `client-secret` | `VALUE` | `String` |   | Client secret as generated by OIDC server |
 | <span id="a3942e-client-timeout-millis"></span> `client-timeout-millis` | `VALUE` | `Duration` | `30000` | Timeout of calls using web client |
-| <span id="a989a6-decryption-keys-resource"></span> [`decryption-keys.resource`](../../config/io_helidon_common_configurable_Resource.md) | `VALUE` | `i.h.c.c.Resource` |   | A resource pointing to JWK with private keys used for JWE content key decryption |
-| <span id="aea75b-identity-uri"></span> `identity-uri` | `VALUE` | `URI` |   | URI of the identity server, base used to retrieve OIDC metadata |
-| <span id="a0f21f-introspect-endpoint-uri"></span> `introspect-endpoint-uri` | `VALUE` | `URI` |   | Endpoint to use to validate JWT |
-| <span id="aa6493-issuer"></span> `issuer` | `VALUE` | `String` |   | Issuer of issued tokens |
-| <span id="aaf0a0-name"></span> `name` | `VALUE` | `String` |   | Name of the tenant |
+| <span id="a989a6-decryption-keys-resource"></span> [`decryption-keys.resource`](../../config/io_helidon_common_configurable_Resource.md) | `VALUE` | `i.h.c.c.Resource` |   | A resource pointing to JWK with private keys used for JWE content key decryption |
+| <span id="aea75b-identity-uri"></span> `identity-uri` | `VALUE` | `URI` |   | URI of the identity server, base used to retrieve OIDC metadata |
+| <span id="a0f21f-introspect-endpoint-uri"></span> `introspect-endpoint-uri` | `VALUE` | `URI` |   | Endpoint to use to validate JWT |
+| <span id="aa6493-issuer"></span> `issuer` | `VALUE` | `String` |   | Issuer of issued tokens |
+| <span id="aaf0a0-name"></span> `name` | `VALUE` | `String` |   | Name of the tenant |
 | <span id="a14def-oidc-metadata-well-known"></span> `oidc-metadata-well-known` | `VALUE` | `Boolean` | `true` | If set to true, metadata will be loaded from default (well known) location, unless it is explicitly defined using oidc-metadata-resource |
-| <span id="a23e2c-oidc-metadata-resource"></span> [`oidc-metadata.resource`](../../config/io_helidon_common_configurable_Resource.md) | `VALUE` | `i.h.c.c.Resource` |   | Resource configuration for OIDC Metadata containing endpoints to various identity services, as well as information about the identity server |
+| <span id="a23e2c-oidc-metadata-resource"></span> [`oidc-metadata.resource`](../../config/io_helidon_common_configurable_Resource.md) | `VALUE` | `i.h.c.c.Resource` |   | Resource configuration for OIDC Metadata containing endpoints to various identity services, as well as information about the identity server |
 | <span id="ac2900-optional-audience"></span> `optional-audience` | `VALUE` | `Boolean` | `false` | Allow audience claim to be optional |
-| <span id="aa8075-scope-audience"></span> `scope-audience` | `VALUE` | `String` |   | Audience of the scope required by this application |
+| <span id="aa8075-scope-audience"></span> `scope-audience` | `VALUE` | `String` |   | Audience of the scope required by this application |
 | <span id="af12f3-server-type"></span> `server-type` | `VALUE` | `String` | `@default` | Configure one of the supported types of identity servers |
-| <span id="a8cb9d-sign-jwk-resource"></span> [`sign-jwk.resource`](../../config/io_helidon_common_configurable_Resource.md) | `VALUE` | `i.h.c.c.Resource` |   | A resource pointing to JWK with public keys of signing certificates used to validate JWT |
+| <span id="a8cb9d-sign-jwk-resource"></span> [`sign-jwk.resource`](../../config/io_helidon_common_configurable_Resource.md) | `VALUE` | `i.h.c.c.Resource` |   | A resource pointing to JWK with public keys of signing certificates used to validate JWT |
 | <span id="aa5a6b-token-endpoint-auth"></span> [`token-endpoint-auth`](../../config/io_helidon_security_providers_oidc_common_OidcConfig_ClientAuthentication.md) | `VALUE` | `i.h.s.p.o.c.O.ClientAuthentication` | `CLIENT_SECRET_BASIC` | Type of authentication to use when invoking the token endpoint |
-| <span id="a3ab59-token-endpoint-uri"></span> `token-endpoint-uri` | `VALUE` | `URI` |   | URI of a token endpoint used to obtain a JWT based on the authentication code |
+| <span id="a3ab59-token-endpoint-uri"></span> `token-endpoint-uri` | `VALUE` | `URI` |   | URI of a token endpoint used to obtain a JWT based on the authentication code |
 | <span id="aa43d0-validate-jwt-with-jwk"></span> `validate-jwt-with-jwk` | `VALUE` | `Boolean` | `true` | Use JWK (a set of keys to validate signatures of JWT) to validate tokens |
 
 #### How does that work?
@@ -582,10 +582,10 @@ Maven dependency
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
 | <span id="a57c45-optional"></span> `optional` | `VALUE` | `Boolean` | `false` | Whether authentication is required |
-| <span id="aade93-outbound"></span> [`outbound`](../../config/io_helidon_security_providers_common_OutboundTarget.md) | `LIST` | `i.h.s.p.c.OutboundTarget` |   | Add a new outbound target to configure identity propagation or explicit username/password |
+| <span id="aade93-outbound"></span> [`outbound`](../../config/io_helidon_security_providers_common_OutboundTarget.md) | `LIST` | `i.h.s.p.c.OutboundTarget` |   | Add a new outbound target to configure identity propagation or explicit username/password |
 | <span id="aa4dbd-principal-type"></span> [`principal-type`](../../config/io_helidon_security_SubjectType.md) | `VALUE` | `i.h.s.SubjectType` | `USER` | Principal type this provider extracts (and also propagates) |
 | <span id="a9be1e-realm"></span> `realm` | `VALUE` | `String` | `helidon` | Set the realm to use when challenging users |
-| <span id="a18d67-users"></span> [`users`](../../config/io_helidon_security_providers_httpauth_ConfigUserStore_ConfigUser.md) | `LIST` | `i.h.s.p.h.C.ConfigUser` |   | Set user store to validate users |
+| <span id="a18d67-users"></span> [`users`](../../config/io_helidon_security_providers_httpauth_ConfigUserStore_ConfigUser.md) | `LIST` | `i.h.s.p.h.C.ConfigUser` |   | Set user store to validate users |
 
 #### Example code
 
@@ -680,8 +680,8 @@ Maven dependency
 | <span id="a5336f-principal-type"></span> [`principal-type`](../../config/io_helidon_security_SubjectType.md) | `VALUE` | `i.h.s.SubjectType` | `USER` | Principal type this provider extracts (and also propagates) |
 | <span id="af980a-qop"></span> [`qop`](../../config/io_helidon_security_providers_httpauth_HttpDigest_Qop.md) | `VALUE` | `i.h.s.p.h.H.Qop` | `NONE` | Only \`AUTH\` supported. If left empty, uses the legacy approach (older RFC version). \`AUTH-INT\` is not supported |
 | <span id="a5d808-realm"></span> `realm` | `VALUE` | `String` | `Helidon` | Set the realm to use when challenging users |
-| <span id="abd869-server-secret"></span> `server-secret` | `LIST` | `String` |   | The nonce is encrypted using this secret - to make sure the nonce we get back was generated by us and to make sure we can safely time-out nonce values |
-| <span id="a97822-users"></span> [`users`](../../config/io_helidon_security_providers_httpauth_ConfigUserStore_ConfigUser.md) | `LIST` | `i.h.s.p.h.C.ConfigUser` |   | Set user store to obtain passwords and roles based on logins |
+| <span id="abd869-server-secret"></span> `server-secret` | `LIST` | `String` |   | The nonce is encrypted using this secret - to make sure the nonce we get back was generated by us and to make sure we can safely time-out nonce values |
+| <span id="a97822-users"></span> [`users`](../../config/io_helidon_security_providers_httpauth_ConfigUserStore_ConfigUser.md) | `LIST` | `i.h.s.p.h.C.ConfigUser` |   | Set user store to obtain passwords and roles based on logins |
 
 #### Example code
 
@@ -743,11 +743,11 @@ Maven dependency
 
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
-| <span id="a9672f-atn-token"></span> [`atn-token`](../../config/io_helidon_security_util_TokenHandler.md) | `VALUE` | `i.h.s.u.TokenHandler` |   | Token handler to extract username from request |
+| <span id="a9672f-atn-token"></span> [`atn-token`](../../config/io_helidon_security_util_TokenHandler.md) | `VALUE` | `i.h.s.u.TokenHandler` |   | Token handler to extract username from request |
 | <span id="a25377-authenticate"></span> `authenticate` | `VALUE` | `Boolean` | `true` | Whether to authenticate requests |
 | <span id="adbdf3-optional"></span> `optional` | `VALUE` | `Boolean` | `false` | Whether authentication is required |
-| <span id="aa4f36-outbound"></span> [`outbound`](../../config/io_helidon_security_providers_common_OutboundTarget.md) | `LIST` | `i.h.s.p.c.OutboundTarget` |   | Configure outbound target for identity propagation |
-| <span id="ad5021-outbound-token"></span> [`outbound-token`](../../config/io_helidon_security_util_TokenHandler.md) | `VALUE` | `i.h.s.u.TokenHandler` |   | Token handler to create outbound headers to propagate identity |
+| <span id="aa4f36-outbound"></span> [`outbound`](../../config/io_helidon_security_providers_common_OutboundTarget.md) | `LIST` | `i.h.s.p.c.OutboundTarget` |   | Configure outbound target for identity propagation |
+| <span id="ad5021-outbound-token"></span> [`outbound-token`](../../config/io_helidon_security_util_TokenHandler.md) | `VALUE` | `i.h.s.u.TokenHandler` |   | Token handler to create outbound headers to propagate identity |
 | <span id="aa8e94-principal-type"></span> [`principal-type`](../../config/io_helidon_security_SubjectType.md) | `VALUE` | `i.h.s.SubjectType` | `USER` | Principal type this provider extracts (and also propagates) |
 | <span id="a0309f-propagate"></span> `propagate` | `VALUE` | `Boolean` | `false` | Whether to propagate identity |
 
@@ -811,12 +811,12 @@ Maven dependency
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
 | <span id="ac1d34-backward-compatible-eol"></span> `backward-compatible-eol` | `VALUE` | `Boolean` | `false` | Enable support for Helidon versions before 3.0.0 (exclusive) |
-| <span id="acc108-headers"></span> [`headers`](../../config/io_helidon_security_providers_httpsign_HttpSignHeader.md) | `LIST` | `i.h.s.p.h.HttpSignHeader` |   | Add a header that is validated on inbound requests |
-| <span id="abbc62-inbound-keys"></span> [`inbound.keys`](../../config/io_helidon_security_providers_httpsign_InboundClientDefinition.md) | `LIST` | `i.h.s.p.h.InboundClientDefinition` |   | Add inbound configuration |
+| <span id="acc108-headers"></span> [`headers`](../../config/io_helidon_security_providers_httpsign_HttpSignHeader.md) | `LIST` | `i.h.s.p.h.HttpSignHeader` |   | Add a header that is validated on inbound requests |
+| <span id="abbc62-inbound-keys"></span> [`inbound.keys`](../../config/io_helidon_security_providers_httpsign_InboundClientDefinition.md) | `LIST` | `i.h.s.p.h.InboundClientDefinition` |   | Add inbound configuration |
 | <span id="a9cb96-optional"></span> `optional` | `VALUE` | `Boolean` | `true` | Set whether the signature is optional |
-| <span id="af2400-outbound"></span> [`outbound`](../../config/io_helidon_security_providers_common_OutboundConfig.md) | `VALUE` | `i.h.s.p.c.OutboundConfig` |   | Add outbound targets to this builder |
+| <span id="af2400-outbound"></span> [`outbound`](../../config/io_helidon_security_providers_common_OutboundConfig.md) | `VALUE` | `i.h.s.p.c.OutboundConfig` |   | Add outbound targets to this builder |
 | <span id="a4938a-realm"></span> `realm` | `VALUE` | `String` | `helidon` | Realm to use for challenging inbound requests that do not have "Authorization" header in case header is `HttpSignHeader#AUTHORIZATION` and singatures are not optional |
-| <span id="a4ba7d-sign-headers"></span> [`sign-headers`](../../config/io_helidon_security_providers_httpsign_SignedHeadersConfig_HeadersConfig.md) | `LIST` | `i.h.s.p.h.S.HeadersConfig` |   | Override the default inbound required headers (e.g |
+| <span id="a4ba7d-sign-headers"></span> [`sign-headers`](../../config/io_helidon_security_providers_httpsign_SignedHeadersConfig_HeadersConfig.md) | `LIST` | `i.h.s.p.h.S.HeadersConfig` |   | Override the default inbound required headers (e.g |
 
 #### Example code
 
@@ -891,9 +891,9 @@ Maven dependency
 
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
-| <span id="aed3ab-cache-config"></span> [`cache-config`](../../config/io_helidon_security_providers_common_EvictableCache.md) | `VALUE` | `i.h.s.p.c.EvictableCache` |   | Use explicit `io.helidon.security.providers.common.EvictableCache` for role caching |
+| <span id="aed3ab-cache-config"></span> [`cache-config`](../../config/io_helidon_security_providers_common_EvictableCache.md) | `VALUE` | `i.h.s.p.c.EvictableCache` |   | Use explicit `io.helidon.security.providers.common.EvictableCache` for role caching |
 | <span id="aa2e00-default-idcs-subject-type"></span> `default-idcs-subject-type` | `VALUE` | `String` | `user` | Configure subject type to use when requesting roles from IDCS |
-| <span id="a630af-oidc-config"></span> [`oidc-config`](../../config/io_helidon_security_providers_oidc_common_OidcConfig.md) | `VALUE` | `i.h.s.p.o.c.OidcConfig` |   | Use explicit `io.helidon.security.providers.oidc.common.OidcConfig` instance, e.g |
+| <span id="a630af-oidc-config"></span> [`oidc-config`](../../config/io_helidon_security_providers_oidc_common_OidcConfig.md) | `VALUE` | `i.h.s.p.o.c.OidcConfig` |   | Use explicit `io.helidon.security.providers.oidc.common.OidcConfig` instance, e.g |
 | <span id="a477d4-subject-types"></span> [`subject-types`](../../config/io_helidon_security_SubjectType.md) | `LIST` | `i.h.s.SubjectType` | `USER` | Add a supported subject type |
 
 #### Multi-tenant IDCS Role Mapper
@@ -902,11 +902,11 @@ Maven dependency
 
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
-| <span id="a6bc4c-cache-config"></span> [`cache-config`](../../config/io_helidon_security_providers_common_EvictableCache.md) | `VALUE` | `i.h.s.p.c.EvictableCache` |   | Use explicit `io.helidon.security.providers.common.EvictableCache` for role caching |
+| <span id="a6bc4c-cache-config"></span> [`cache-config`](../../config/io_helidon_security_providers_common_EvictableCache.md) | `VALUE` | `i.h.s.p.c.EvictableCache` |   | Use explicit `io.helidon.security.providers.common.EvictableCache` for role caching |
 | <span id="a75027-default-idcs-subject-type"></span> `default-idcs-subject-type` | `VALUE` | `String` | `user` | Configure subject type to use when requesting roles from IDCS |
-| <span id="a89a70-idcs-app-name-handler"></span> [`idcs-app-name-handler`](../../config/io_helidon_security_util_TokenHandler.md) | `VALUE` | `i.h.s.u.TokenHandler` |   | Configure token handler for IDCS Application name |
-| <span id="af8920-idcs-tenant-handler"></span> [`idcs-tenant-handler`](../../config/io_helidon_security_util_TokenHandler.md) | `VALUE` | `i.h.s.u.TokenHandler` |   | Configure token handler for IDCS Tenant ID |
-| <span id="a2275a-oidc-config"></span> [`oidc-config`](../../config/io_helidon_security_providers_oidc_common_OidcConfig.md) | `VALUE` | `i.h.s.p.o.c.OidcConfig` |   | Use explicit `io.helidon.security.providers.oidc.common.OidcConfig` instance, e.g |
+| <span id="a89a70-idcs-app-name-handler"></span> [`idcs-app-name-handler`](../../config/io_helidon_security_util_TokenHandler.md) | `VALUE` | `i.h.s.u.TokenHandler` |   | Configure token handler for IDCS Application name |
+| <span id="af8920-idcs-tenant-handler"></span> [`idcs-tenant-handler`](../../config/io_helidon_security_util_TokenHandler.md) | `VALUE` | `i.h.s.u.TokenHandler` |   | Configure token handler for IDCS Tenant ID |
+| <span id="a2275a-oidc-config"></span> [`oidc-config`](../../config/io_helidon_security_providers_oidc_common_OidcConfig.md) | `VALUE` | `i.h.s.p.o.c.OidcConfig` |   | Use explicit `io.helidon.security.providers.oidc.common.OidcConfig` instance, e.g |
 | <span id="ab2c38-subject-types"></span> [`subject-types`](../../config/io_helidon_security_SubjectType.md) | `LIST` | `i.h.s.SubjectType` | `USER` | Add a supported subject type |
 
 #### Example code
@@ -1160,10 +1160,10 @@ Maven dependency
 
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
-| <span id="a8327f-client-id"></span> `client-id` | `VALUE` | `String` |   | Google application client id, to validate that the token was generated by Google for us |
+| <span id="a8327f-client-id"></span> `client-id` | `VALUE` | `String` |   | Google application client id, to validate that the token was generated by Google for us |
 | <span id="a5eb30-optional"></span> `optional` | `VALUE` | `Boolean` | `false` | If set to true, this provider will return `io.helidon.security.SecurityResponse.SecurityStatus#ABSTAIN` instead of failing in case of invalid request |
-| <span id="a6fd85-outbound"></span> [`outbound`](../../config/io_helidon_security_providers_common_OutboundConfig.md) | `VALUE` | `i.h.s.p.c.OutboundConfig` |   | Outbound configuration - a set of outbound targets that will have the token propagated |
-| <span id="a836e0-proxy-host"></span> `proxy-host` | `VALUE` | `String` |   | Set proxy host when talking to Google |
+| <span id="a6fd85-outbound"></span> [`outbound`](../../config/io_helidon_security_providers_common_OutboundConfig.md) | `VALUE` | `i.h.s.p.c.OutboundConfig` |   | Outbound configuration - a set of outbound targets that will have the token propagated |
+| <span id="a836e0-proxy-host"></span> `proxy-host` | `VALUE` | `String` |   | Set proxy host when talking to Google |
 | <span id="a72cab-proxy-port"></span> `proxy-port` | `VALUE` | `Integer` | `80` | Set proxy port when talking to Google |
 | <span id="a7871a-realm"></span> `realm` | `VALUE` | `String` | `helidon` | Set the authentication realm to build challenge, defaults to "helidon" |
 | <span id="af185f-token"></span> [`token`](../../config/io_helidon_security_util_TokenHandler.md) | `VALUE` | `i.h.s.u.TokenHandler` | `` `Authorization` header with `bearer` prefix `` | Token provider to extract Google access token from request, defaults to "Authorization" header with a "bearer " prefix |
@@ -1227,17 +1227,17 @@ Maven dependency
 |----|----|----|----|----|
 | <span id="a8e9cb-allow-impersonation"></span> `allow-impersonation` | `VALUE` | `Boolean` | `false` | Whether to allow impersonation by explicitly overriding username from outbound requests using `io.helidon.security.EndpointConfig#PROPERTY_OUTBOUND_ID` property |
 | <span id="ac7a36-allow-unsigned"></span> `allow-unsigned` | `VALUE` | `Boolean` | `false` | Configure support for unsigned JWT |
-| <span id="a31c89-atn-token-handler"></span> [`atn-token.handler`](../../config/io_helidon_security_util_TokenHandler.md) | `VALUE` | `i.h.s.u.TokenHandler` |   | Token handler to extract username from request |
-| <span id="ab9ed4-atn-token-jwk-resource"></span> [`atn-token.jwk.resource`](../../config/io_helidon_common_configurable_Resource.md) | `VALUE` | `i.h.c.c.Resource` |   | JWK resource used to verify JWTs created by other parties |
-| <span id="a7fd00-atn-token-jwt-audience"></span> `atn-token.jwt-audience` | `VALUE` | `String` |   | Audience expected in inbound JWTs |
+| <span id="a31c89-atn-token-handler"></span> [`atn-token.handler`](../../config/io_helidon_security_util_TokenHandler.md) | `VALUE` | `i.h.s.u.TokenHandler` |   | Token handler to extract username from request |
+| <span id="ab9ed4-atn-token-jwk-resource"></span> [`atn-token.jwk.resource`](../../config/io_helidon_common_configurable_Resource.md) | `VALUE` | `i.h.c.c.Resource` |   | JWK resource used to verify JWTs created by other parties |
+| <span id="a7fd00-atn-token-jwt-audience"></span> `atn-token.jwt-audience` | `VALUE` | `String` |   | Audience expected in inbound JWTs |
 | <span id="a1483b-atn-token-verify-signature"></span> `atn-token.verify-signature` | `VALUE` | `Boolean` | `true` | Configure whether to verify signatures |
 | <span id="a2bd0c-authenticate"></span> `authenticate` | `VALUE` | `Boolean` | `true` | Whether to authenticate requests |
 | <span id="ac625d-optional"></span> `optional` | `VALUE` | `Boolean` | `false` | Whether authentication is required |
 | <span id="af07ea-principal-type"></span> [`principal-type`](../../config/io_helidon_security_SubjectType.md) | `VALUE` | `i.h.s.SubjectType` | `USER` | Principal type this provider extracts (and also propagates) |
 | <span id="a5a95f-propagate"></span> `propagate` | `VALUE` | `Boolean` | `true` | Whether to propagate identity |
-| <span id="a9294b-sign-token"></span> [`sign-token`](../../config/io_helidon_security_providers_common_OutboundConfig.md) | `VALUE` | `i.h.s.p.c.OutboundConfig` |   | Configuration of outbound rules |
-| <span id="adc22c-sign-token-jwk-resource"></span> [`sign-token.jwk.resource`](../../config/io_helidon_common_configurable_Resource.md) | `VALUE` | `i.h.c.c.Resource` |   | JWK resource used to sign JWTs created by us |
-| <span id="ab60c1-sign-token-jwt-issuer"></span> `sign-token.jwt-issuer` | `VALUE` | `String` |   | Issuer used to create new JWTs |
+| <span id="a9294b-sign-token"></span> [`sign-token`](../../config/io_helidon_security_providers_common_OutboundConfig.md) | `VALUE` | `i.h.s.p.c.OutboundConfig` |   | Configuration of outbound rules |
+| <span id="adc22c-sign-token-jwk-resource"></span> [`sign-token.jwk.resource`](../../config/io_helidon_common_configurable_Resource.md) | `VALUE` | `i.h.c.c.Resource` |   | JWK resource used to sign JWTs created by us |
+| <span id="ab60c1-sign-token-jwt-issuer"></span> `sign-token.jwt-issuer` | `VALUE` | `String` |   | Issuer used to create new JWTs |
 | <span id="a8cde7-use-jwt-groups"></span> `use-jwt-groups` | `VALUE` | `Boolean` | `true` | Claim `groups` from JWT will be used to automatically add groups to current subject (may be used with `jakarta.annotation.security.RolesAllowed` annotation) |
 
 #### Example code

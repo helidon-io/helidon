@@ -25,7 +25,7 @@ Helidon provides a LangChain4j integration module that simplifies the use of Lan
 
 ## Maven Coordinates
 
-To enable LangChain4j Integration, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../../about/managing-dependencies.md)).
+To enable LangChain4j Integration, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../../managing-dependencies.md)).
 
 ```xml
 <dependency>

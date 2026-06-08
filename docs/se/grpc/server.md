@@ -12,7 +12,7 @@ Using the Helidon gRPC framework to implement your services offers several advan
 
 ## Maven Coordinates
 
-To enable gRPC Server, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
+To enable gRPC Server, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml
 <dependency>
@@ -218,9 +218,9 @@ The parameter `-proto` is used by `grpcurl` to learn about the methods and messa
 Helidon includes a gRPC reflection service that can be queried by tools such as `grpcurl` to learn about the available services—​similar to OpenAPI for REST services. The reflection service is implemented as a *feature* and can be enabled programmatically when adding the feature, or via config as follows:
 
 ```yaml
-  features:
-    grpc-reflection:
-      enabled: true
+features:
+  grpc-reflection:
+    enabled: true
 ```
 
 The feature accepts a list of sockets, or if omitted as seen above, it would enable the feature on all sockets. For security reasons, the gRPC reflection service is *disabled by default*; if enabled, it is recommended to disable the feature for production to avoid any unwanted requests. For more information about gRPC reflection, see [gRPC Reflection](https://grpc.io/docs/guides/reflection/).

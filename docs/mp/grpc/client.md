@@ -6,7 +6,7 @@ Building Java-based gRPC clients using the Helidon MP gRPC API is very simple an
 
 ## Maven Coordinates
 
-To enable gRPC MicroProfile Clients, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
+To enable gRPC MicroProfile Clients, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml
 <dependency>
@@ -30,10 +30,10 @@ For a gRPC client to connect to a server, it requires a channel. Channels are co
 ```yaml
 grpc:
   client:
-    channels:  
-      - name: "string-channel"  
-        host: localhost  
-        port: 8080  
+    channels:
+      - name: "string-channel"
+        host: localhost
+        port: 8080
 ```
 
 - Channels are configured in the `channels` section under `grpc.client`.
@@ -92,8 +92,8 @@ The next step is to produce an interface with the service methods that the clien
 
 ```java
 @ApplicationScoped
-@Grpc.GrpcService("StringService")  
-@Grpc.GrpcChannel("string-channel")  
+@Grpc.GrpcService("StringService")
+@Grpc.GrpcChannel("string-channel")
 interface StringServiceClient {
 
     @Grpc.Unary
@@ -127,8 +127,8 @@ Now that there is a client interface and a channel configuration, we can then us
 @ApplicationScoped
 public class MyAppBean {
 
-    @Inject  
-    @Grpc.GrpcProxy  
+    @Inject
+    @Grpc.GrpcProxy
     private StringServiceClient stringServiceClient;
 }
 ```
@@ -147,9 +147,9 @@ Channels can also be directly injected into application bean instances. The Heli
 For example, a class might have an injectable `io.grpc.Channel` field as follows:
 
 ```java
-    @Inject  
-    @Grpc.GrpcChannel("string-channel")  
-    private Channel channel;
+@Inject
+@Grpc.GrpcChannel("string-channel")
+private Channel channel;
 ```
 
 - The `@Inject` annotation tells CDI to inject the channel.

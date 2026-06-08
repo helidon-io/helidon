@@ -6,7 +6,7 @@ Scheduling is an essential feature for the Enterprise. Helidon has its own imple
 
 ## Maven Coordinates
 
-To enable Scheduling, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
+To enable Scheduling, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml
 <dependency>
@@ -40,9 +40,7 @@ public void methodName() { /* ... */ }
 
 ### Cron expression
 
-*Cron expression format*
-
-```text
+```text [Cron expression format]
 <seconds> <minutes> <hours> <day-of-month> <month> <day-of-week> <year>
 ```
 
@@ -108,17 +106,13 @@ Configuration expressions is a reference to a configuration key, with optional d
 
 The Fixed rate annotation can have the delay by and value overridden using config.
 
-*Annotation that allows config overrides*
-
-```java
+```java [Annotation that allows config overrides]
 @Scheduling.FixedRate(delayBy = "${app.schedule.cache.delay-by:PT5M}", value = "${app.schedule.cache.interval:PT10M}")
 ```
 
 The default values are 5 minutes for delay-by, and 10 minutes for interval, and could be overridden:
 
-*Overriding annotated values from config*
-
-```yaml
+```yaml [Overriding annotated values from config]
 app:
   schedule:
     cache:
@@ -132,17 +126,13 @@ The configured values would be a 10-minute delay, with 1-hour interval.
 
 The Cron annotation can have the value overridden using config.
 
-*Annotation that allows config overrides*
-
-```java
+```java [Annotation that allows config overrides]
 @Scheduling.Cron("${app.schedule.cache.cron:0 15 8 ? * *}")
 ```
 
 The default value is an expression of `0 15 8 ? * *`.
 
-*Overriding annotated values from config*
-
-```yaml
+```yaml [Overriding annotated values from config]
 app:
   schedule:
     cache:
@@ -155,9 +145,7 @@ The configured values would be executing every 1 second.
 
 ### Fixed rate
 
-*Example of scheduling with fixed rate*
-
-```java
+```java [Example of scheduling with fixed rate]
 @Scheduling.FixedRate(delayBy = "PT5M", value = "PT10M")
 public void methodName() {
     System.out.println("Every 10 minutes, first invocation 5 minutes after start");
@@ -166,9 +154,7 @@ public void methodName() {
 
 ### FixedRate Metadata Injection
 
-*Example with invocation metadata*
-
-```java
+```java [Example with invocation metadata]
 @Scheduling.FixedRate(delayBy = "PT5M", value = "PT10M")
 public void methodName(FixedRateInvocation inv) {
     System.out.println("Method invoked " + inv.description());
@@ -177,9 +163,7 @@ public void methodName(FixedRateInvocation inv) {
 
 ### Cron expression
 
-*Example of scheduling with cron expression*
-
-```java
+```java [Example of scheduling with cron expression]
 @Scheduling.Cron(value = "0 15 8 ? * *", concurrent = false)
 public void methodName() {
     System.out.println("Executer every day at 8:15");
@@ -188,9 +172,7 @@ public void methodName() {
 
 ### Scheduled Metadata Injection.
 
-*Example with invocation metadata*
-
-```java
+```java [Example with invocation metadata]
 @Scheduling.Cron("0 15 8 ? * *")
 public void methodName(CronInvocation inv) {
     System.out.println("Method invoked " + inv.description());

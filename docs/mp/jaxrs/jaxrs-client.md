@@ -6,13 +6,13 @@ The Jakarta REST Client defines a programmatic API to access REST resources. Thi
 
 ## Maven Coordinates
 
-To enable Jakarta REST Client, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
+To enable Jakarta REST Client, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml
- <dependency>
-     <groupId>io.helidon.jersey</groupId>
-     <artifactId>helidon-jersey-client</artifactId>
- </dependency>
+<dependency>
+    <groupId>io.helidon.jersey</groupId>
+    <artifactId>helidon-jersey-client</artifactId>
+</dependency>
 ```
 
 ## API

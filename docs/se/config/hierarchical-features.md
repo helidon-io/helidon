@@ -33,9 +33,7 @@ Each config tree in memory will have an object node as its root with child nodes
 
 Each config node (except the root) has a non-null key. Here is the formal definition of what keys can be:
 
-*The ABNF syntax of config key*
-
-```text
+```text [The ABNF syntax of config key]
 config-key = *1( key-token *( "." key-token ) )
  key-token = *( unescaped / escaped )
  unescaped = %x00-2D / %x2F-7D / %x7F-10FFFF
@@ -51,9 +49,7 @@ config-key = *1( key-token *( "." key-token ) )
 
 The following example is in [HOCON](https://github.com/lightbend/config/blob/master/HOCON.md) (human-optimized config object notation) format. The config system supports HOCON as an [extension module](supported-formats.md#hoconjson).
 
-*HOCON `application.conf` file*
-
-```text
+```text [HOCON application.conf file]
 app {
     greeting = "Hello"
     page-size = 20
@@ -125,9 +121,7 @@ Your application can specify the entire navigation path as the key to a single `
 
 All the following lines retrieve the same `Config` node.
 
-*Equivalent Config Retrievals*
-
-```java
+```java [Equivalent Config Retrievals]
 assert config.get("") == config;
 Config provName1 = config.get("data.providers.0.name"); 
 Config provName2 = config.get("data.providers.0").get("name"); 
@@ -204,9 +198,7 @@ Some applications might need to work with configuration without knowing its stru
 </tbody>
 </table>
 
-*List names of child nodes of an *object* node*
-
-```java
+```java [List names of child nodes of an *object* node]
 List<String> appNodeNames = config.get("app")
         .asNodeList() 
         .map(nodes -> { 
@@ -228,9 +220,7 @@ assert appNodeNames.get(2).equals("page-size");
 - Use an empty list if the "app" node does not exist
 - Check that the list contains the expected child names: `basic-range`, `greeting` and `page-size`.
 
-*List child nodes of a *list* node*
-
-```java
+```java [List child nodes of a *list* node]
 List<Config> providers = config.get("data.providers")
         .asNodeList().orElse(List.of()); 
 
@@ -243,9 +233,7 @@ assert providers.get(1).key().toString().equals("data.providers.1");
 
 The `traverse()` method returns a stream of the nodes in the subtree that is rooted at the current configuration node. Depending on the structure of the loaded configuration the stream contains a mix of object, list or leaf value nodes.
 
-*Traverse subtree below a *list* node*
-
-```java
+```java [Traverse subtree below a *list* node]
 config.get("data.providers")
         .traverse() 
         .forEach(node -> System.out.println(node.type() + " \t" + node.key())); 
@@ -265,9 +253,7 @@ VALUE   data.providers.1.class
 
 The optional `Predicate<Config>` argument to the `traverse` methods allows the application to prune the traversal of a subtree at any point.
 
-*Traverse *root* (*object*) node, skipping the entire `data` subtree*
-
-```java
+```java [Traverse *root* (*object*) node, skipping the entire data subtree]
 config.traverse(node -> !node.name().equals("data")) 
         .forEach(node -> System.out.println(node.type() + " \t" + node.key())); 
 ```
@@ -290,9 +276,7 @@ Sometimes it can be convenient to write part of your application to deal with co
 
 For example, the [`application.properties`](introduction.md#accessing-config-values) from the introduction section contains several settings prefixed with `web` such as `web.page-size`. Perhaps in another config source the same information might be stored as `server.web.page-size`:
 
-*Alternate Structure for Web Config*
-
-```java
+```java [Alternate Structure for Web Config]
 server.web.page-size: 40
 server.web.debug = true
 server.web.ratio = 1.4
@@ -302,9 +286,7 @@ You might want to write the web portion of your app to work with a config subtre
 
 One easy way to do this is to *detach* a subtree from a larger config tree. When your application invokes the [`Config.detach`](/apidocs/io.helidon.config/io/helidon/config/Config.html#detach--) method it gets back a *copy* of the config node but with no parent. The copy and the original node both point to the same objects for their child nodes (if any). The original node is unchanged.
 
-*Detaching a Subtree*
-
-```java
+```java [Detaching a Subtree]
 // originalRoot is from the original example `.conf` file
 // alternateRoot is from the alternate structure above
 

@@ -6,27 +6,23 @@ This guide describes how to write and execute tests for your MicroProfile applic
 
 For this 20 minute tutorial, you will need the following:
 
-|  |  |
-|----|----|
-| [Java SE 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
+| Requirement | Description |
+|-------------|-------------|
+| [Java 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
 | [Maven 3.8+](https://maven.apache.org/download.cgi) | Helidon requires Maven 3.8+. |
 | [Docker 18.09+](https://docs.docker.com/install/) | If you want to build and run Docker containers. |
 | [Kubectl 1.16.5+](https://kubernetes.io/docs/tasks/tools/install-kubectl/) | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
 
 Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
-*Verify Prerequisites*
-
-```bash
+```bash [Verify Prerequisites]
 java -version
 mvn --version
 docker --version
 kubectl version
 ```
 
-*Setting JAVA_HOME*
-
-```bash
+```bash [Setting JAVA_HOME]
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -39,9 +35,7 @@ export JAVA_HOME=/usr/lib/jvm/jdk-21
 
 To start using this feature, add the following dependencies to the testing module:
 
-*Maven dependencies*
-
-```xml
+```xml [Maven dependencies]
 <dependencies>
    <dependency>
       <groupId>io.helidon.microprofile.testing</groupId>
@@ -65,9 +59,7 @@ This application provides an endpoint `/greet`, and we want to make sure this en
 
 First you’ll need to create a test class with an empty test method, and annotate it with `@HelidonTest`:
 
-*Test Class*
-
-```java
+```java [Test Class]
 @HelidonTest
 class GreetTest {
     @Test
@@ -91,9 +83,7 @@ INFO io.helidon.microprofile.server.ServerCdiExtension: Server started on http:/
 
 The test is only useful if it invokes the server and verifies the result. To support testing, you can inject a `WebTarget` that is configured for the currently running server (it can also be a parameter to a test method). We can use the target to invoke our endpoint and validate the result.
 
-*Updated Class with webTarget*
-
-```java
+```java [Updated Class with webTarget]
 @HelidonTest
 class GreetTest {
     @Inject

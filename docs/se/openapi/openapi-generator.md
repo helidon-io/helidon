@@ -36,9 +36,7 @@ Your project does not need any dependencies on the OpenAPI generator.
 
 To use the OpenAPI generator plug-in to generate or regenerate files during your project build, add the following to your project’s `pom.xml` file to declare the plug-in. Choose whichever version of the generator plug-in meets your needs as long as it is at least 7.6.0.
 
-*Declaring the OpenAPI Generator Plug-in*
-
-```xml
+```xml [Declaring the OpenAPI Generator Plug-in]
 <properties>
     <openapi-generator-version>7.6.0</openapi-generator-version>
 </properties>
@@ -85,7 +83,7 @@ The OpenAPI generator loosely divides its settings into three types:
 
   ``` xml
   <configuration>
-      <inputSpec>petstore.yaml</inputSpec>
+    <inputSpec>petstore.yaml</inputSpec>
   </configuration>
   ```
 
@@ -108,12 +106,12 @@ The OpenAPI generator loosely divides its settings into three types:
 
   ``` xml
   <configuration>
-      ...
-      <configOptions>
-          <groupId>com.mycompany.test</groupId>
-          <artifactId>my-example</artifactId>
-      </configOptions>
-      ...
+    ...
+    <configOptions>
+        <groupId>com.mycompany.test</groupId>
+        <artifactId>my-example</artifactId>
+    </configOptions>
+    ...
   </configuration>
   ```
 
@@ -136,11 +134,11 @@ The OpenAPI generator loosely divides its settings into three types:
 
   ``` xml
   <configuration>
-      ....
-      <additionalProperties>
-          <additionalProperty>useAbstractClasses=false</additionalProperty>
-          <additionalProperty>returnResponse=true</additionalProperty>
-      </additionalProperties>
+    ....
+    <additionalProperties>
+        <additionalProperty>useAbstractClasses=false</additionalProperty>
+        <additionalProperty>returnResponse=true</additionalProperty>
+    </additionalProperties>
   </configuration>
   ```
 
@@ -188,7 +186,7 @@ You must specify the following options:
 </tr>
 <tr>
 <td style="text-align: left;"><p><code>--library</code></p></td>
-<td style="text-align: left;"><p> </p></td>
+<td style="text-align: left;"><p> </p></td>
 <td style="text-align: left;"><p><code>&lt;library&gt;</code></p></td>
 <td style="text-align: left;"><p>Library you want to use</p></td>
 <td style="text-align: left;"><p><code>mp</code><br />
@@ -318,7 +316,7 @@ Among the many configuration settings available to you, some you should particul
 <tr>
 <td style="text-align: left;"><p><code>helidonVersion</code></p></td>
 <td style="text-align: left;"><p>Version of Helidon for which to generate the files</p></td>
-<td style="text-align: left;"><p> </p></td>
+<td style="text-align: left;"><p> </p></td>
 <td style="text-align: left;"><p>Latest published Helidon release *</p></td>
 <td style="text-align: left;"><p>Affects:</p>
 <ul>
@@ -360,7 +358,7 @@ Beyond the settings listed above, there are several important choices you need t
 
 #### Generating a New Project and Generating *Into* an Existing Project
 
-You can use the OpenAPI generator to create a new project or to generate files into an existing project. Some developers do both, using the generator to create the project at first and then to update the project as they evolve the OpenAPI document or change the generation options they select. Others create the project in some other way—​for example, using the [Helidon CLI](../../about/cli.md). The OpenAPI generator CLI and plug-in both support each type of usage.
+You can use the OpenAPI generator to create a new project or to generate files into an existing project. Some developers do both, using the generator to create the project at first and then to update the project as they evolve the OpenAPI document or change the generation options they select. Others create the project in some other way—​for example, using the [Helidon CLI](../../cli.md). The OpenAPI generator CLI and plug-in both support each type of usage.
 
 If the OpenAPI generator finds a pre-existing API or model file, it overwrites it with the latest content. It does *not* overwrite a `pom.xml` file or test files. This is important because certain generation settings can influence the generated dependencies in the `pom.xml` file. For example, the `serializationLibrary` setting creates dependencies on either JSON-B or Jackson artifacts. As a result, changing the generation options can change the dependencies your project should have. If you rerun the generator, the old `pom.xml` remains and does not reflect the revised depencencies.
 
@@ -426,9 +424,7 @@ The next sections describe each of these techniques in detail.
 
 The following example uses the Helidon server generator to create a project or regenerate files into an existing project.
 
-*Creating or updating a server project using the OpenAPI generator CLI*
-
-```bash
+```bash [Creating or updating a server project using the OpenAPI generator CLI]
 java -jar ${path-to-generator}/openapi-generator-cli.jar \
   generate \
   -i src/main/resources/petstore.yaml \
@@ -444,9 +440,7 @@ java -jar ${path-to-generator}/openapi-generator-cli.jar \
 
 The next example runs the Helidon client generator using the same input file.
 
-*Creating or updating a client project using the OpenAPI generator CLI*
-
-```bash
+```bash [Creating or updating a client project using the OpenAPI generator CLI]
 java -jar ${path-to-generator}/openapi-generator-cli.jar \
   generate \
   -i src/main/resources/petstore.yaml \
@@ -479,9 +473,7 @@ Then, in the `<build>` section of your `pom.xml` file, add an execution of the p
 
 The plug-in execution in the following example is equivalent to the CLI example above for generating server files:
 
-*Creating or updating a client project using the OpenAPI Maven plug-in*
-
-```xml
+```xml [Creating or updating a client project using the OpenAPI Maven plug-in]
 <plugin>
     <groupId>org.openapitools</groupId>
     <artifactId>openapi-generator-maven-plugin</artifactId>
@@ -494,7 +486,7 @@ The plug-in execution in the following example is equivalent to the CLI example 
                 <inputSpec>${project.basedir}/src/main/resources/petstore.yaml</inputSpec>
                 <generatorName>java-helidon-client</generatorName>
                 <library>se</library>
-                <output>${project.build.directory}/generated-sources/client</output> 
+                <output>${project.build.directory}/generated-sources/client</output>
                 <addCompileSourceRoot>true</addCompileSourceRoot>
                 <configOptions>
                     <groupId>io.helidon.examples</groupId>
@@ -544,9 +536,7 @@ The rest of this sections focuses on your next steps if, on the other hand, you 
 
 The generator creates an implementation class as well as the abstract class for each API. The implementation class contains a `handle` method for each API operation with a very simple method body that returns a not-yet-implemented HTTP status in the response. The following example shows the generated method for the `addPet` OpenAPI operation.
 
-*The generated `handleAddPet` method in the `PetApiImpl` class*
-
-```java
+```java [The generated handleAddPet method in the PetApiImpl class]
 public class PetServiceImpl extends PetService {
     @Override
     protected void handleAddPet(ServerRequest request, ServerResponse response,
@@ -558,21 +548,19 @@ public class PetServiceImpl extends PetService {
 
 Customize the class to manage the pets and revise the method to save the new pet and send the correct response, as shown next.
 
-*The customized `handleAddPet` method in the `PetApiImpl` class*
-
-```java
+```java [The customized handleAddPet method in the PetApiImpl class]
 public class PetServiceImpl extends PetService {
 
-    private final Map<Long, Pet> pets = new HashMap<>(); 
+    private final Map<Long, Pet> pets = new HashMap<>();
 
     @Override
     protected void handleAddPet(ServerRequest request, ServerResponse response,
                                 Pet pet) {
-        if (pets.containsKey(pet.getId())) { 
+        if (pets.containsKey(pet.getId())) {
             AddPetOp.Response405.builder().send(response);
         }
-        pets.put(pet.getId(), pet); 
-        AddPetOp.Response200.builder().send(response); 
+        pets.put(pet.getId(), pet);
+        AddPetOp.Response200.builder().send(response);
     }
 }
 ```
@@ -584,26 +572,24 @@ public class PetServiceImpl extends PetService {
 
 If a response has any *required* response parameters you would pass them as parameters to the `builder` method. Add *optional* response parameters using other generated builder methods. The following example illustrates this for the `findPetsByTags` operation and its `response` output parameter.
 
-*The customized `findPetsByTags` method in the `PetApiImpl` class*
-
-```java
+```java [The customized findPetsByTags method in the PetApiImpl class]
 public class PetServiceImpl extends PetService {
 
-    private final Map<Long, Pet> pets = new HashMap<>(); 
+    private final Map<Long, Pet> pets = new HashMap<>();
 
     @Override
     protected void handleFindPetsByTags(ServerRequest request, ServerResponse response,
-                                        List<String> tags) { 
+                                        List<String> tags) {
 
         List<Pet> result = pets.values().stream()
                 .filter(pet -> pet.getTags()
                         .stream()
                         .anyMatch(petTag -> tags.contains(petTag.getName())))
-                .toList(); 
+                .toList();
 
-        FindPetsByTagsOp.Response200.builder() 
-                .response(result) 
-                .send(response); 
+        FindPetsByTagsOp.Response200.builder()
+                .response(result)
+                .send(response);
 
     }
 }
@@ -642,22 +628,20 @@ For each operation in an API the generator creates an inner class and, for each 
 1.  Write a class which extends the inner class for the operation.
 2.  In that subclass override the relevant method.
 
-    *Customized `AddPetOp` class*
-
-```java
+    ```java [Customized AddPetOp class]
     public class AddPetOpCustom extends PetService.AddPetOp {
-        @Override
-        protected Pet pet(ServerRequest request, ValidatorUtils.Validator validator) {
-            Pet result = request.content().hasEntity() 
-                    ? request.content().as(Pet.class)
-                    : null;
+    @Override
+    protected Pet pet(ServerRequest request, ValidatorUtils.Validator validator) {
+        Pet result = request.content().hasEntity()
+                ? request.content().as(Pet.class)
+                : null;
 
-            // Insist that pet names never start with a lower-case letter.
-            if (result != null) {
-                validator.validatePattern("pet", result.getName(), "[^a-z].*"); 
-            }
-            return result; 
+        // Insist that pet names never start with a lower-case letter.
+        if (result != null) {
+            validator.validatePattern("pet", result.getName(), "[^a-z].*");
         }
+        return result;
+    }
     }
     ```
 
@@ -667,14 +651,12 @@ For each operation in an API the generator creates an inner class and, for each 
 
 3.  In the implementation class for the API (`PetServiceImpl`) override the `createAddPetOp` method so it returns an instance of your new subclass `AddPetOpCustom` of the operation inner class `AddPetOp`.
 
-    *Providing your custom implementation of `AddPet`*
-
-```java
+    ```java [Providing your custom implementation of AddPet]
     public class PetServiceImpl extends PetService {
-        @Override
-        protected AddPetOp createAddPetOp() {
-            return new AddPetOpCustom();
-        }
+    @Override
+    protected AddPetOp createAddPetOp() {
+        return new AddPetOpCustom();
+    }
     }
     ```
 
@@ -710,15 +692,13 @@ The next sections describe, from simplest to most complicated, the ways your cod
 
 In the simplest case, your code can get an `ApiClient` instance directly.
 
-*Creating an `ApiClient` instance - simple case*
-
-```java
+```java [Creating an ApiClient instance - simple case]
 public class ExampleClient {
 
-    private ApiClient apiClient; 
+    private ApiClient apiClient;
 
     void init() {
-        ApiClient apiClient = ApiClient.builder().build(); 
+        ApiClient apiClient = ApiClient.builder().build();
     }
 }
 ```
@@ -734,17 +714,15 @@ Your code can use the `ApiClient.Builder` to fine-tune the settings for the inte
 
 Your code does not need to know how the object mapper setting is conveyed to the internal `WebClientConfig.Builder`. The `ApiClient.Builder` knows how to do that.
 
-*Creating an `ApiClient` instance - influencing the `ApiClient.Builder`*
-
-```java
+```java [Creating an ApiClient instance - influencing the ApiClient.Builder]
 public class ExampleClient {
 
-    private ApiClient apiClient; 
+    private ApiClient apiClient;
 
     void init() {
-        ObjectMapper myObjectMapper = new ObjectMapper(); 
+        ObjectMapper myObjectMapper = new ObjectMapper();
         apiClient = ApiClient.builder()
-                .objectMapper(myObjectMapper) 
+                .objectMapper(myObjectMapper)
                 .build();
     }
 }
@@ -758,21 +736,19 @@ public class ExampleClient {
 
 In more complicated situations, your code can adjust the settings of the `WebClientConfig.Builder` which the `ApiClient.Builder` creates.
 
-*Creating an `ApiClient` instance - adjusting the `WebClientConfig.Builder`*
-
-```java
+```java [Creating an ApiClient instance - adjusting the WebClientConfig.Builder]
 public class ExampleClient {
 
-    private ApiClient apiClient; 
+    private ApiClient apiClient;
 
     void init() {
-        ApiClient.Builder apiClientAdjustedBuilder = ApiClient.builder(); 
+        ApiClient.Builder apiClientAdjustedBuilder = ApiClient.builder();
 
         apiClientAdjustedBuilder
-                .webClientBuilder() 
-                .connectTimeout(Duration.ofSeconds(4)); 
+                .webClientBuilder()
+                .connectTimeout(Duration.ofSeconds(4));
 
-        apiClient = apiClientAdjustedBuilder.build(); 
+        apiClient = apiClientAdjustedBuilder.build();
     }
 }
 ```
@@ -789,21 +765,19 @@ The automatic `WebClientConfig.Builder` retains information derived from the Ope
 
 Lastly, you can construct the `WebClientConfig.Builder` entirely yourself and have the `ApiClient.Builder` use it instead of its own internal builder.
 
-*Creating an `ApiClient` instance - using a custom `WebClientConfig.Builder`*
-
-```java
+```java [Creating an ApiClient instance - using a custom WebClientConfig.Builder]
 public class ExampleClient {
 
-    private ApiClient apiClient; 
+    private ApiClient apiClient;
 
     void init() {
-        WebClientConfig.Builder customWebClientBuilder = WebClient.builder() 
-                .connectTimeout(Duration.ofSeconds(3)) 
-                .baseUri("https://myservice.mycompany.com"); 
+        WebClientConfig.Builder customWebClientBuilder = WebClient.builder()
+                .connectTimeout(Duration.ofSeconds(3))
+                .baseUri("https://myservice.mycompany.com");
 
-        apiClient = ApiClient.builder() 
-                .webClientBuilder(customWebClientBuilder) 
-                .build(); 
+        apiClient = ApiClient.builder()
+                .webClientBuilder(customWebClientBuilder)
+                .build();
     }
 }
 ```
@@ -824,17 +798,15 @@ The `ApiClient` represents the connection to the remote server but not the indiv
 
 To invoke an operation defined on the `PetApi` interface, your code instantiates a `PetApi` using an `ApiClient` object:
 
-*Preparing the PetStore Client API*
-
-```java
+```java [Preparing the PetStore Client API]
 public class ExampleClient {
 
-    private ApiClient apiClient; 
+    private ApiClient apiClient;
 
-    private PetApi petApi; 
+    private PetApi petApi;
 
     void preparePetApi() {
-        petApi = PetApiImpl.create(apiClient); 
+        petApi = PetApiImpl.create(apiClient);
     }
 }
 ```
@@ -868,14 +840,12 @@ You can adopt different styles of retrieving the results, depending on the speci
 
 ##### Access only the result
 
-*Access with only result access*
-
-```java
+```java [Access with only result access]
 void findAvailablePets() {
     ApiResponse<List<Pet>> apiResponse =
-            petApi.findPetsByStatus(List.of(Pet.StatusEnum.AVAILABLE.value())); 
+            petApi.findPetsByStatus(List.of(Pet.StatusEnum.AVAILABLE.value()));
 
-    List<Pet> availablePets = apiResponse.result(); 
+    List<Pet> availablePets = apiResponse.result();
 }
 ```
 
@@ -888,20 +858,18 @@ The Helidon WebClient programming model includes a `HTTPClientResponse` interfac
 
 The next example shows how your code can use the `HTTPClientResponse`.
 
-*Access with status checking*
-
-```java
+```java [Access with status checking]
 void findAvailablePets() {
     ApiResponse<List<Pet>> apiResponse =
-            petApi.findPetsByStatus(List.of(Pet.StatusEnum.AVAILABLE.value())); 
+            petApi.findPetsByStatus(List.of(Pet.StatusEnum.AVAILABLE.value()));
 
-    try (HttpClientResponse webClientResponse = apiResponse.webClientResponse()) { 
-        if (webClientResponse.status().code() != 200) { 
+    try (HttpClientResponse webClientResponse = apiResponse.webClientResponse()) {
+        if (webClientResponse.status().code() != 200) {
             // Handle a non-successful status.
         }
     }
 
-    List<Pet> avlPets = apiResponse.result(); 
+    List<Pet> avlPets = apiResponse.result();
 }
 ```
 

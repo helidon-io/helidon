@@ -13,7 +13,7 @@ A typical health check combines the statuses of all the dependencies that affect
 
 ## Maven Coordinates
 
-To enable Health Checks, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
+To enable Health Checks, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml
 <dependency>
@@ -61,9 +61,7 @@ Within an application different techniques might make sense for different custom
 
 If you gather the logic for computing the health check response into a method, then you can use a method reference to register the health check.
 
-*Declaring a health check response supplier method*
-
-```java
+```java [Declaring a health check response supplier method]
 static HealthCheckResponse slowStartLivenessResponse() {
     long now = System.currentTimeMillis();
     return HealthCheckResponse.builder()
@@ -73,9 +71,7 @@ static HealthCheckResponse slowStartLivenessResponse() {
 }
 ```
 
-*Registering a health check using a method reference*
-
-```java
+```java [Registering a health check using a method reference]
 ObserveFeature observe = ObserveFeature.builder()
         .config(config.get("server.features.observe")) 
         .addObserver(HealthObserver.builder() 
@@ -98,9 +94,7 @@ ObserveFeature observe = ObserveFeature.builder()
 
 If the logic for computing the health check response is fairly simple, express it as an in-line lambda when you register the health check.
 
-*Registering a health check using an in-line lambda expression*
-
-```java
+```java [Registering a health check using an in-line lambda expression]
 ObserveFeature observe = ObserveFeature.builder()
         .config(config.get("server.features.observe"))
         .addObserver(HealthObserver.builder() 
@@ -131,9 +125,7 @@ If a custom health check requires a lot of information to compute its health che
 
 This example *is not* complicated in that way, but it’s useful to illustrate this technique of writing a custom health check.
 
-*Declaring a concrete `HealthCheck` implementation*
-
-```java
+```java [Declaring a concrete HealthCheck implementation]
 /**
  * A custom readiness health check that reports UP 8 seconds after server start-up.
  */
@@ -160,9 +152,7 @@ class SlowStartHealthCheck implements HealthCheck {
 - Sets a detail value `time` associated with the response to the current time.
 - Reports `DOWN` until at least eight seconds have passed since the server start-up, then reports `UP` thereafter.
 
-*Registering a `HealthCheck` instance*
-
-```java
+```java [Registering a HealthCheck instance]
 ObserveFeature observe = ObserveFeature.builder()
         .config(config.get("server.features.observe"))
         .addObserver(HealthObserver.builder() 
@@ -178,9 +168,7 @@ ObserveFeature observe = ObserveFeature.builder()
 
 The code examples above prepare the `observe` feature instance using the built-in and custom health checks. To activate the health subsystem and other auto-discovered observability subsystems, add that `observe` instance as a feature to the webserver and start the server.
 
-*Register the observe feature with the server and start it*
-
-```java
+```java [Register the observe feature with the server and start it]
 WebServer server = WebServer.builder()
         .featuresDiscoverServices(false)
         .addFeature(observe) 
@@ -210,9 +198,7 @@ If you add the Helidon health dependency to your `pom.xml` file, Helidon automat
 
 Below are parts of health responses which include the custom health check added in the earlier example code. This first response shows the health output within the first eight seconds after start-up. Recall that the custom health check will report `DOWN` during that time, so the overall health is `DOWN` and the HTTP response status is `503 Service Unavailable`.
 
-*Response within 8 seconds: HTTP status 503 (not healthy)*
-
-```json
+```json [Response within 8 seconds: HTTP status 503 (not healthy)]
 {
   "status": "DOWN",
   "checks": [
@@ -229,9 +215,7 @@ Below are parts of health responses which include the custom health check added 
 
 The next response shows the health output once the server has been running for at least eight seconds. The custom health check now reports `UP` so the overall health status is also `UP` now and the HTTP status is `200`.
 
-*Response after 8 seconds: HTTP status 200*
-
-```json
+```json [Response after 8 seconds: HTTP status 200]
 {
   "status": "UP",
   "checks": [
@@ -282,14 +266,14 @@ You can use Helidon-provided health checks to report various common health check
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><p>deadlock detection †</p></td>
+<td style="text-align: left;"><p>deadlock detection</p></td>
 <td style="text-align: left;"><p><code>deadlock</code></p></td>
 <td style="text-align: left;"><p><a href="/apidocs/io.helidon.health.checks/io/helidon/health/checks/DeadlockHealthCheck.html"><code>DeadlockHealthCheck</code></a></p></td>
 <td style="text-align: left;"><p>n/a</p></td>
 <td style="text-align: left;"><p>n/a</p></td>
 </tr>
 <tr>
-<td rowspan="2" style="text-align: left;"><p>available disk space †</p></td>
+<td rowspan="2" style="text-align: left;"><p>available disk space</p></td>
 <td rowspan="2" style="text-align: left;"><p><code>diskSpace</code></p></td>
 <td rowspan="2" style="text-align: left;"><p><a href="/apidocs/io.helidon.health.checks/io/helidon/health/checks/DiskSpaceHealthCheck.html"><code>DiskSpaceHealthCheck</code></a></p></td>
 <td style="text-align: left;"><p><code>helidon.health.diskSpace.thresholdPercent</code></p></td>
@@ -309,15 +293,14 @@ You can use Helidon-provided health checks to report various common health check
 </tbody>
 </table>
 
-† Helidon cannot support the indicated health checks in the GraalVM native image environment, so with native image those health checks do not appear in the health output.
+> [!NOTE]
+> Helidon cannot support the indicated health checks in the GraalVM native image environment, so with native image those health checks do not appear in the health output.
 
 Simply adding the built-in health check dependency is sufficient to register all the built-in health checks automatically. If you want to use only some of the built-in checks in your application, you can disable automatic discovery of the built-in health checks and register only the ones you want.
 
 The following code adds only selected built-in health checks to your application:
 
-*Adding selected built-in health checks*
-
-```java
+```java [Adding selected built-in health checks]
 WebServer server = WebServer.builder()
         .config(config.get("server"))
         .addFeature(ObserveFeature.create(HealthObserver.builder()
@@ -405,9 +388,7 @@ The startup probe prevents Kubernetes from prematurely checking the other probes
 
 Failed probes are recorded as events associated with their corresponding pods. The event message contains only the status code.
 
-*Get the events of a single pod:*
-
-```bash
+```bash [Get the events of a single pod]
 POD_NAME=$(kubectl get pod -l app=acme -o jsonpath='{.items[0].metadata.name}') 
 kubectl get event --field-selector involvedObject.name=${POD_NAME} 
 ```
@@ -430,9 +411,7 @@ Further, you can suppress one or more health checks by setting the configuration
 
 Accessing the Helidon-provided `/observe/health` endpoint reports the health of your application as shown below:
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {
     "status": "UP",
     "checks": [
@@ -472,9 +451,7 @@ Accessing the Helidon-provided `/observe/health` endpoint reports the health of 
 
 This example shows the usage of the Helidon health API in an application that implements health endpoints for the liveness and readiness probes. Note that the application code dissociates the health endpoints from the default routes, so that the health endpoints are not exposed by the service. An example YAML specification is also provided for the Kubernetes service and deployment.
 
-*Application code:*
-
-```java
+```java [Application code]
 ObserveFeature observeFeature = ObserveFeature.builder()
         .addObserver(HealthObserver.builder()
                              .useSystemServices(false)
@@ -512,9 +489,7 @@ WebServer server = WebServer.builder()
 - The default route: returns It works! for any request.
 - The `observe` socket uses port 8081 for the "/observe" routes.
 
-*Kubernetes descriptor:*
-
-```yaml
+```yaml [Kubernetes descriptor]
 kind: Service
 apiVersion: v1
 metadata:

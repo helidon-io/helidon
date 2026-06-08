@@ -6,27 +6,23 @@ This guide describes how to create a sample Helidon SE project that can be used 
 
 For this 15 minute tutorial, you will need the following:
 
-|  |  |
-|----|----|
-| [Java SE 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
+| Requirement | Description |
+|-------------|-------------|
+| [Java 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
 | [Maven 3.8+](https://maven.apache.org/download.cgi) | Helidon requires Maven 3.8+. |
 | [Docker 18.09+](https://docs.docker.com/install/) | If you want to build and run Docker containers. |
 | [Kubectl 1.16.5+](https://kubernetes.io/docs/tasks/tools/install-kubectl/) | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
 
 Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
-*Verify Prerequisites*
-
-```bash
+```bash [Verify Prerequisites]
 java -version
 mvn --version
 docker --version
 kubectl version
 ```
 
-*Setting JAVA_HOME*
-
-```bash
+```bash [Setting JAVA_HOME]
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -39,9 +35,7 @@ export JAVA_HOME=/usr/lib/jvm/jdk-21
 
 Generate the project sources using the Helidon SE Maven archetype. The result is a simple project that can be used for the examples in this guide.
 
-*Run the Maven archetype:*
-
-```bash
+```bash [Run the Maven archetype]
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-se \
@@ -63,9 +57,7 @@ The following example shows how to use the built-in health checks. These example
 
 Notice that the `pom.xml` file in the generated project already contains dependencies for Helidon’s health component and for the built-in health checks.
 
-*Generated dependencies related to health*
-
-```xml
+```xml [Generated dependencies related to health]
 <dependencies>
     <dependency>
         <groupId>io.helidon.webserver.observe</groupId>
@@ -80,18 +72,14 @@ Notice that the `pom.xml` file in the generated project already contains depende
 
 Handling health checks is part of Helidon’s observability support. By default, when you add the dependency for the built-in health checks, Helidon automatically registers the built-in checks.
 
-*Build and run the project*
-
-```bash
+```bash [Build and run the project]
 mvn clean package
 java -jar target/helidon-quickstart-se.jar
 ```
 
 In another window, access the application’s health endpoint.
 
-*Access the health endpoint*
-
-```bash
+```bash [Access the health endpoint]
 curl -v http://localhost:8080/observe/health
 ```
 
@@ -105,9 +93,7 @@ The successful status means all health checks reported `UP`.
 
 To see the details about each health check, add the following `features` configuration fragment in the `server` section of the `application.yaml`. Make sure the `features` key is at the same level as `port` and `host` that are already in the file.
 
-*Configuration fragment to include details in the health output (nested under `server`)*
-
-```yaml
+```yaml [Configuration fragment to include details in the health output (nested under server)]
 server:
   port: 8080
   host: 0.0.0.0
@@ -122,9 +108,7 @@ server:
 
 Press ^C to stop the running server, rebuild it, and rerun it.
 
-*Stop, rebuild, and rerun the server*
-
-```bash
+```bash [Stop, rebuild, and rerun the server]
 ^C
 mvn clean package
 java -jar target/helidon-quickstart-se.jar
@@ -132,17 +116,13 @@ java -jar target/helidon-quickstart-se.jar
 
 In the other window access the health endpoint again.
 
-*Access the health endpoint*
-
-```bash
+```bash [Access the health endpoint]
 curl -v http://localhost:8080/observe/health
 ```
 
 This time the `curl` output shows not only the HTTP status—​as 200 instead of 204 because the response now contains data—​but also the detailed output for all health checks.
 
-*Health check details*
-
-```json
+```json [Health check details]
 {
   "status": "UP", 
   "checks": [ 
@@ -190,9 +170,7 @@ The following trivial but illustrative example adds a custom start-up check that
 1.  Create an explicit instance of `ObserveFeature` which contains a custom `HealthObserver` with the custom check.
 2.  Add that `ObserveFeature` instance to the `WebServerConfig.Builder` as a feature.
 
-*Updated `Main#main`, augmenting the creation of `WebServer` instance with a custom health check*
-
-```java
+```java [Updated Main#main, augmenting the creation of WebServer instance with a custom health check]
 void snippet1(Config config) {
     AtomicLong serverStartTime = new AtomicLong();  
 
@@ -239,9 +217,7 @@ Note that the health check type and name are fixed, whereas the health check rec
 > [!NOTE]
 > For the next step, be ready to access the health endpoint very quickly after you restart the server!
 
-*Stop, rebuild, and rerun the application*
-
-```bash
+```bash [Stop, rebuild, and rerun the application]
 ^C
 mvn package
 java -jar target/helidon-quickstart-se.jar
@@ -255,9 +231,7 @@ curl -v http://localhost:8080/observe/health
 
 If you access the health endpoint before the server has been up for eight seconds, `curl` reports the response status as `503 Service Unavailable` and displays output similar to the following:
 
-*Health response shortly after server restart (partial)*
-
-```json
+```json [Health response shortly after server restart (partial)]
 {
   "status": "DOWN",
   "checks": [
@@ -284,9 +258,7 @@ curl -v http://localhost:8080/observe/health
 
 This time, `curl` reports `200 OK` for the response status and displays different output for the custom health check.
 
-*Health response after the server has been running a while (partial)*
-
-```json
+```json [Health response after the server has been running a while (partial)]
 {
   "status": "UP",
   "checks": [
@@ -303,9 +275,7 @@ This time, `curl` reports `200 OK` for the response status and displays differen
 
 The example code includes the built-in health checks in Helidon’s overall health assessment of the application. To exclude them invoke the `HealthObserver.Builder` `useSystemServices` method (for example, just after invoking `details` on the builder).
 
-*Disable all built-in health checks*
-
-```java
+```java [Disable all built-in health checks]
 HealthObserver.builder()
         .useSystemServices(false)
         .build();
@@ -322,15 +292,11 @@ You can choose which category of health check to retrieve when you access the he
 - startup only - <http://localhost:8080/observe/health/started>
 - all - <http://localhost:8080/observe/health>
 
-*Get only start-up health checks*
-
-```bash
+```bash [Get only start-up health checks]
 curl http://localhost:8080/observe/started
 ```
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {
   "status": "UP",
   "checks": [
@@ -357,9 +323,7 @@ The next example customizes the URL path for the health endpoint, first explicit
 
 Customize the URL path for health checks by invoking the `endpoint` method on the `HealthObserver.Builder`.
 
-*Set a custom endpoint path*
-
-```java
+```java [Set a custom endpoint path]
 HealthObserver healthObserver = HealthObserver.builder()
         .endpoint("/myhealth") 
         .build();
@@ -367,9 +331,7 @@ HealthObserver healthObserver = HealthObserver.builder()
 
 - Changes the health endpoint path to `/myhealth`.
 
-*Build and run the application, then verify that the health check endpoint responds at `/myhealth`:*
-
-```bash
+```bash [Build and run the application, then verify that the health check endpoint responds at /myhealth]
 curl http://localhost:8080/myhealth
 ```
 
@@ -381,9 +343,7 @@ In addition to preparing the health observer builder with hard-coded settings, y
 
 The generated `Main` class in the application already creates a `Config` object for the top-level config node. Using the following code to create the observe feature also applies any health-related configuration settings to the custom health observer. Notice the added line just before the `HealthObserver.Build` `build()` invocation near the end of the example code.
 
-*Apply health configuration to your custom health observer*
-
-```java
+```java [Apply health configuration to your custom health observer]
 HealthObserver healthObserver = HealthObserver.builder()
         .config(config.get("server.features.observe.observers.health")) 
         .build();
@@ -401,15 +361,11 @@ In general, most applications should apply settings from config *after* assignin
 
 The following example shows how to integrate the Helidon health API in an application that implements health endpoints for the Kubernetes liveness, readiness, and startup probes.
 
-*Add a `readyTime` variable to the `Main` class:*
-
-```java
+```java [Add a readyTime variable to the Main class]
 private static AtomicLong readyTime = new AtomicLong(0);
 ```
 
-*Change the `HealthObserver` builder in the `Main#main` method to use new built-in liveness checks and custom liveness, readiness, and startup checks:*
-
-```java
+```java [Change the HealthObserver builder in the Main#main method to use new built-in liveness checks and custom liveness, readiness, and startup checks]
 ObserveFeature observe = ObserveFeature.builder()
         .config(config.get("server.features.observe"))
         .addObserver(HealthObserver.builder()
@@ -438,23 +394,17 @@ ObserveFeature observe = ObserveFeature.builder()
 - Add a custom start-up check.
 - Add a custom liveness check.
 
-*Build and run the application, then verify the liveness, readiness, and started endpoints:*
-
-```bash
+```bash [Build and run the application, then verify the liveness, readiness, and started endpoints]
 curl http://localhost:8080/health/live
 curl http://localhost:8080/health/ready
 curl http://localhost:8080/health/started
 ```
 
-*Stop the application and build the docker image:*
-
-```bash
+```bash [Stop the application and build the docker image]
 docker build -t helidon-quickstart-se .
 ```
 
-*Create the Kubernetes YAML specification, named `health.yaml`, with the following content:*
-
-```yaml
+```yaml [Create the Kubernetes YAML specification, named health.yaml, with the following content]
 kind: Service
 apiVersion: v1
 metadata:
@@ -526,15 +476,11 @@ spec:
 - The HTTP endpoint for the startup probe.
 - The startup probe configuration.
 
-*Create and deploy the application into Kubernetes:*
-
-```bash
+```bash [Create and deploy the application into Kubernetes]
 kubectl apply -f ./health.yaml
 ```
 
-*Get the service information:*
-
-```bash
+```bash [Get the service information]
 kubectl get service/helidon-health
 ```
 
@@ -545,15 +491,11 @@ helidon-health   NodePort   10.107.226.62   <none>        8080:30116/TCP   4s
 
 - A service of type `NodePort` that serves the default routes on port `30116`.
 
-*Verify the health endpoints using port '30116', your port may be different:*
-
-```bash
+```bash [Verify the health endpoints using port '30116', your port may be different]
 curl http://localhost:30116/health
 ```
 
-*Delete the application, cleaning up Kubernetes resources:*
-
-```bash
+```bash [Delete the application, cleaning up Kubernetes resources]
 kubectl delete -f ./health.yaml
 ```
 

@@ -13,7 +13,7 @@ You can also review the [Helidon repository CHANGELOG](https://github.com/helido
 
 ### Java SE Support
 
-Helidon 4.x removes support for Java SE 17. You must use Java SE 21 or later. If you are using Helidon 4.3.0 or later, using Java SE 25 or later is recommended.
+Helidon 4.x removes support for Java SE 17. You must use Java 21 or later. If you are using Helidon 4.3.0 or later, using Java SE 25 or later is recommended.
 
 ### New Web Server Implementation
 

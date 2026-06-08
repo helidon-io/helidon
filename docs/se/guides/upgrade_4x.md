@@ -16,7 +16,7 @@ You can also review the [Helidon repository CHANGELOG](https://github.com/helido
 
 ### Java SE Support
 
-Helidon 4.x removes support for Java SE 17. You must use Java SE 21 or later. If you are using Helidon 4.3.0 or later, using Java SE 25 or later is recommended.
+Helidon 4.x removes support for Java SE 17. You must use Java 21 or later. If you are using Helidon 4.3.0 or later, using Java SE 25 or later is recommended.
 
 ### Programming Paradigm Shift
 
@@ -30,16 +30,12 @@ You will need to update your existing Helidon SE 3.x code to use the new APIs bu
 
 Here is an example of the differences between Helidon SE 3.x and Helidon SE 4.x:
 
-*Use Helidon 3.x to extract a JSON body from an HTTP request and do something*
-
-```java
+```java [Use Helidon 3.x to extract a JSON body from an HTTP request and do something]
 request.content().as(JsonObject.class)
         .thenAccept(jo -> doSomething(jo, response));
 ```
 
-*Use Helidon 4.x to extract a JSON body from an HTTP request and do something*
-
-```java
+```java [Use Helidon 4.x to extract a JSON body from an HTTP request and do something]
 doSomething(request.content().as(JsonObject.class), response);
 ```
 
@@ -51,9 +47,7 @@ Starting a server in Helidon 4.x is much simpler than in previous versions becau
 
 In previous versions of Helidon, the server was started asynchronously and further server operations had to wait. For example:
 
-*Start Helidon SE 3.x server*
-
-```java
+```java [Start Helidon SE 3.x server]
 static Single<WebServer> startServer() {
     Config config = Config.create();
 
@@ -83,9 +77,7 @@ static Single<WebServer> startServer() {
 
 In Helidon 4.x, you can create and configure a server and then wait for it to start. If any exceptions happen, they are handled the traditional way using available language constructions. For example:
 
-*Start Helidon SE 4.x server*
-
-```java
+```java [Start Helidon SE 4.x server]
 public static void main(String[] args) {
 
     Config config = Config.global();
@@ -108,9 +100,7 @@ public static void main(String[] args) {
 
 In Helidon 3.x, if you provided code to run after WebServer startup and after WebServer shutdown, you needed to use asynchronous constructs, like so:
 
-*Helidon 3.x server lifecycle*
-
-```java
+```java [Helidon 3.x server lifecycle]
 Single<WebServer> webserver = server.start();
 
 webserver.thenAccept(ws -> {
@@ -125,9 +115,7 @@ webserver.thenAccept(ws -> {
 
 In Helidon 4.x, no special API is needed for post-server startup tasks since the server starts synchronously. Your `HttpService` can interpose on the server lifecycle by overriding the `beforeStart` and `afterStop` methods, like so:
 
-*Helidon 4.x server lifecycle*
-
-```java
+```java [Helidon 4.x server lifecycle]
 static class MyService implements HttpService {
     @Override
     public void beforeStart() {
@@ -157,9 +145,7 @@ For more information, see:
 
 In previous Helidon versions, the routing was configured as follows: services were created and assigned to the desired path. Observability and other features were created as usual Helidon `services`, available as part of the framework. User-defined services were also registered the same way. For example:
 
-*Routing in Helidon SE 3.x server*
-
-```java
+```java [Routing in Helidon SE 3.x server]
 private static Routing createRouting(Config config) {
 
     MetricsSupport metrics = MetricsSupport.create(); 
@@ -184,9 +170,7 @@ private static Routing createRouting(Config config) {
 
 In Helidon 4.x, the Metrics and Health features are automatically discovered and, assuming you added the dependencies to your project, the routing is configured in the following way:
 
-*Routing in Helidon SE 4.x server*
-
-```java
+```java [Routing in Helidon SE 4.x server]
 static void routing(HttpRouting.Builder routing) {
     routing.register("/greet", new GreetService()); 
 }
@@ -204,9 +188,7 @@ Helidon 4.x removes the `RequestPredicate` class, which in previous versions, wa
 
 So, for example, if you used the following in Helidon 3.x:
 
-*Helidon 3.x using `RequestPredicate`*
-
-```java
+```java [Helidon 3.x using RequestPredicate]
 public abstract class RoutingHandlerResource<I, R> implements HttpService {
 
         protected Handler requestHandler(HttpRules rules, Method method, Handler applyHandler) {
@@ -224,9 +206,7 @@ public abstract class RoutingHandlerResource<I, R> implements HttpService {
 
 Then, you would now use the following in Helidon 4.x:
 
-*Routing without RequestPredicate in Helidon 4.x*
-
-```java
+```java [Routing without RequestPredicate in Helidon 4.x]
 public abstract class RoutingHandlerResource<I, R> implements HttpService {
 
     protected Handler requestHandler(HttpRules rules, Method method, Handler applyHandler) {
@@ -260,9 +240,7 @@ Additionally, `ServerRequest` and `ServerResponse` are now in the `io.helidon.we
 
 In previous versions, a service looked like this:
 
-*Helidon SE 3.x Service*
-
-```java
+```java [Helidon SE 3.x Service]
 public class GreetService implements Service {
 
     @Override
@@ -286,9 +264,7 @@ public class GreetService implements Service {
 
 In Helidon 4.x, the same service looks like this:
 
-*Helidon SE 4.x Service*
-
-```java
+```java [Helidon SE 4.x Service]
 public class GreetService implements HttpService { 
 
     @Override

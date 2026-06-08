@@ -2,7 +2,7 @@
 
 ## Maven Coordinates
 
-To enable MicroProfile Telemetry, either add a dependency on the [helidon-microprofile bundle](../mp/introduction/microprofile.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
+To enable MicroProfile Telemetry, either add a dependency on the [helidon-microprofile bundle](introduction.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml
 <dependency>
@@ -15,9 +15,7 @@ To enable MicroProfile Telemetry, either add a dependency on the [helidon-microp
 
 MicroProfile Telemetry mandates that implementations such as Helidon use OpenTelemetry, so also add a dependency on an OpenTelemetry exporter.
 
-*Example dependency for the OpenTelemetry OTLP exporter*
-
-```xml
+```xml [Example dependency for the OpenTelemetry OTLP exporter]
 <dependency>
     <groupId>io.opentelemetry</groupId>
     <artifactId>opentelemetry-exporter-otlp</artifactId>
@@ -81,9 +79,7 @@ Helidon provides full access to OpenTelemetry Tracing API:
 
 Accessing and using these objects can be done as follows. For span:
 
-*Span sample*
-
-```java
+```java [Span sample]
 @ApplicationScoped
 class HelidonBean {
 
@@ -106,9 +102,7 @@ class HelidonBean {
 
 You can inject OpenTelemetry `Tracer` using the regular `@Inject` annotation and use `SpanBuilder` to manually create, star and stop spans.
 
-*SpanBuilder usage*
-
-```java
+```java [SpanBuilder usage]
 @Path("/")
 public class HelidonEndpoint {
 
@@ -135,9 +129,7 @@ public class HelidonEndpoint {
 
 Helidon MicroProfile Telemetry is integrated with [Helidon Tracing API](tracing.md). This means that both APIs can be mixed, and all parent hierarchies will be kept. In the case below, `@WithSpan` annotated method is mixed with manually created `io.helidon.tracing.Span`:
 
-*Inject Helidon Tracer*
-
-```java
+```java [Inject Helidon Tracer]
 private io.helidon.tracing.Tracer helidonTracerInjected;
 
 @Inject
@@ -167,9 +159,7 @@ The span is then started and ended manually. Span parent relations will be prese
 
 Another option is to use the Global Tracer:
 
-*Obtain the Global tracer*
-
-```java
+```java [Obtain the Global tracer]
 @GET
 @Path("mixed")
 @Produces(MediaType.APPLICATION_JSON)
@@ -195,9 +185,7 @@ The span is then started and ended manually. Span parent relations will be prese
 
 To obtain the current span, it can be injected by CDI. The current span can also be obtained using the static method `Span.current()`.
 
-*Inject the current span*
-
-```java
+```java [Inject the current span]
 @Path("/")
 public class HelidonEndpoint {
     @Inject
@@ -225,9 +213,7 @@ public class HelidonEndpoint {
 
 The same functionality is available for the `Baggage` API:
 
-*Inject the current baggage*
-
-```java
+```java [Inject the current baggage]
 @Path("/")
 public class HelidonEndpoint {
     @Inject
@@ -265,9 +251,7 @@ See the [Helidon SE documentation on span lifecycle support](../se/tracing.md#re
 
 Helidon MP applications which inject an OpenTelemetry `Tracer` or `Span` can easily request such notification by adding the Helidon [`@CallbackEnabled`](/apidocs/io.helidon.microprofile.telemetry/io/helidon/microprofile/telemetry/CallbackEnabled.html) annotation to injection points as shown in the following example.
 
-*Using `@CallbackEnabled`*
-
-```java
+```java [Using @CallbackEnabled]
 @Inject
 @CallbackEnabled
 private Tracer otelTracer;
@@ -289,9 +273,7 @@ The following example shows how to allow automatic spans in the Helidon greet ex
 
 Your implementation of `HelidonTelemetryContainerFilterHelper` must have a CDI bean-defining annotation. The example shows `@ApplicationScoped`.
 
-*Example container helper for the Helidon MP Greeting app*
-
-```java
+```java [Example container helper for the Helidon MP Greeting app]
 @ApplicationScoped
 public class CustomRestRequestFilterHelper implements HelidonTelemetryContainerFilterHelper {
 
@@ -315,9 +297,7 @@ The following example shows how to allow automatic spans in an app that invokes 
 
 Your implementation of `HelidonTelemetryClientFilterHelper` must have a CDI bean-defining annotation. The example shows `@ApplicationScoped`.
 
-*Example Client Helper for the Helidon MP Greeting App*
-
-```java
+```java [Example Client Helper for the Helidon MP Greeting App]
 @ApplicationScoped
 public class CustomRestClientRequestFilterHelper implements HelidonTelemetryClientFilterHelper {
 
@@ -361,9 +341,7 @@ This guide demonstrates how to incorporate MicroProfile Telemetry into Helidon a
 
 For example, the Jaeger backend gathers the tracing information.
 
-*Run the Jaeger backend in a docker container*
-
-```bash
+```bash [Run the Jaeger backend in a docker container]
 docker run -d --name jaeger \
   -e COLLECTOR_ZIPKIN_HOST_PORT=:9411 \
   -e COLLECTOR_OTLP_ENABLED=true \
@@ -404,9 +382,7 @@ Together with Helidon Telemetry dependency, an OpenTelemetry Exporter dependency
 
 Add these lines to `META-INF/microprofile-config.properties`:
 
-*MicroProfile Telemetry properties*
-
-```properties
+```properties [MicroProfile Telemetry properties]
 otel.sdk.disabled=false     
 otel.traces.exporter=jaeger 
 otel.service.name=greeting-service 
@@ -457,9 +433,7 @@ Next, launch the Jaeger UI at <http://localhost:16686/>. The expected output is:
 <img src="../images/telemetry/telemetry-greeting-jaeger.png" alt="Greeting service tracing output" />
 </figure>
 
-*Custom method*
-
-```java
+```java [Custom method]
 @Inject
 private Tracer tracer; 
 
@@ -499,9 +473,7 @@ Again you can launch the Jaeger UI at <http://localhost:16686/>. The expected ou
 
 Now let us use multiple services calls. In the example below our main service will call the `secondary` services. Each method in each service will be annotated with `@WithSpan` annotation.
 
-*Outbound method*
-
-```java
+```java [Outbound method]
 @Uri("http://localhost:8081/secondary")
 private WebTarget target; 
 
@@ -519,9 +491,7 @@ public String outbound() {
 
 The secondary service is basic; it has only one method, which is also annotated with `@WithSpan`.
 
-*Secondary service*
-
-```java
+```java [Secondary service]
 @GET
 @WithSpan 
 public String getSecondaryMessage() {

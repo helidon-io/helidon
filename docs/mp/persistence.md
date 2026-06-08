@@ -45,14 +45,14 @@ Details concerning each connection pool’s setup are described below.
 
 To include the [HikariCP connection pool](https://github.com/brettwooldridge/HikariCP) in your Helidon MP application:
 
-- [Ensure your dependencies are managed](../about/managing-dependencies.md)
+- [Ensure your dependencies are managed](../managing-dependencies.md)
 - Ensure the following `<dependency>` element is present as a child element of your project’s `pom.xml` file’s `<dependencies>` element:
 
   ``` xml
   <dependency>
-      <groupId>io.helidon.integrations.cdi</groupId>
-      <artifactId>helidon-integrations-cdi-datasource-hikaricp</artifactId>
-      <scope>runtime</scope> 
+    <groupId>io.helidon.integrations.cdi</groupId>
+    <artifactId>helidon-integrations-cdi-datasource-hikaricp</artifactId>
+    <scope>runtime</scope>
   </dependency>
   ```
 
@@ -64,14 +64,14 @@ To include the [HikariCP connection pool](https://github.com/brettwooldridge/Hik
 
 To include the [Oracle Universal Connection Pool](https://docs.oracle.com/en/database/oracle/oracle-database/21/jjucp/index.html) in your Helidon MP application:
 
-- [Ensure your dependencies are managed](../about/managing-dependencies.md)
+- [Ensure your dependencies are managed](../managing-dependencies.md)
 - Ensure the following `<dependency>` element is present as a child element of your project’s `pom.xml` file’s `<dependencies>` element:
 
   ``` xml
   <dependency>
-    <groupId>io.helidon.integrations.cdi</groupId>
-    <artifactId>helidon-integrations-cdi-datasource-ucp</artifactId>
-    <scope>runtime</scope> 
+  <groupId>io.helidon.integrations.cdi</groupId>
+  <artifactId>helidon-integrations-cdi-datasource-ucp</artifactId>
+  <scope>runtime</scope>
   </dependency>
   ```
 
@@ -83,7 +83,7 @@ To include the [Oracle Universal Connection Pool](https://docs.oracle.com/en/dat
 
 Regardless of which connection pool you use, at the lowest level, JDBC database driver classes are what is ultimately responsible for making any connections to a relational database. JDBC database driver classes are database-product-specific.
 
-Once you have decided upon a relational database product to use, and JDBC driver classes to use to connect to it, [ensure your dependencies are managed](../about/managing-dependencies.md), and then ensure that a `runtime`-scoped `<dependency>` element describing your JDBC driver classes is present as a child element of your project’s `pom.xml` file’s `<dependencies>` element.
+Once you have decided upon a relational database product to use, and JDBC driver classes to use to connect to it, [ensure your dependencies are managed](../managing-dependencies.md), and then ensure that a `runtime`-scoped `<dependency>` element describing your JDBC driver classes is present as a child element of your project’s `pom.xml` file’s `<dependencies>` element.
 
 See the [JDBC 4.3 Specification](https://docs.oracle.com/en/java/javase/21/docs/api/java.sql/java/sql/package-summary.html) for more information about JDBC.
 
@@ -95,14 +95,14 @@ Representative setups are described below. This list of setups is not exhaustive
 
 To include the [H2 JDBC driver](https://www.h2database.com/html/main.html) classes in your Helidon MP application so your application can [connect to an H2 database](https://www.h2database.com/html/features.html#database_url) (whether in-memory or persistent):
 
-- [Ensure your dependencies are managed](../about/managing-dependencies.md)
+- [Ensure your dependencies are managed](../managing-dependencies.md)
 - Ensure the following `<dependency>` element is present as a child element of your project’s `pom.xml` file’s `<dependencies>` element:
 
   ``` xml
   <dependency>
-      <groupId>io.helidon.integrations.db</groupId>
-      <artifactId>h2</artifactId>
-      <scope>runtime</scope> 
+    <groupId>io.helidon.integrations.db</groupId>
+    <artifactId>h2</artifactId>
+    <scope>runtime</scope>
   </dependency>
   ```
 
@@ -114,15 +114,15 @@ To include the [H2 JDBC driver](https://www.h2database.com/html/main.html) class
 
 To include the [Oracle JDBC driver classes](https://docs.oracle.com/en/database/oracle/oracle-database/21/jajdb/index.html) in your Helidon MP application so your application can [connect to an Oracle database](https://docs.oracle.com/en/database/oracle/oracle-database/21/jjdbc/data-sources-and-URLs.html#GUID-EF07727C-50AB-4DCE-8EDC-57F0927FF61A):
 
-- [Ensure your dependencies are managed](../about/managing-dependencies.md)
+- [Ensure your dependencies are managed](../managing-dependencies.md)
 - Read and understand [Developer’s Guide For Oracle JDBC 21c on Maven Central](https://www.oracle.com/database/technologies/maven-central-guide.html)
 - For a basic setup, ensure the following `<dependency>` element is present as a child element of your project’s `pom.xml` file’s `<dependencies>` element:
 
   ``` xml
   <dependency>
-      <groupId>io.helidon.integrations.db</groupId>
-      <artifactId>ojdbc</artifactId>
-      <scope>runtime</scope> 
+    <groupId>io.helidon.integrations.db</groupId>
+    <artifactId>ojdbc</artifactId>
+    <scope>runtime</scope>
   </dependency>
   ```
 
@@ -291,9 +291,9 @@ To use Helidon MP’s named data source integration in your application, once it
 Here is how to define such a field-backed injection point:
 
 ```java
-@Inject 
-@Named("test") 
-private DataSource ds; 
+@Inject
+@Named("test")
+private DataSource ds;
 ```
 
 - [`@Inject`](https://jakarta.ee/specifications/dependency-injection/2.0/apidocs/jakarta/inject/inject) marks the field as an injection point. Its behavior is defined by the [Jakarta Dependency Injection specification](https://jakarta.ee/specifications/dependency-injection/2.0/jakarta-injection-spec-2.0.html).
@@ -303,11 +303,11 @@ private DataSource ds;
 Here is how to define such a constructor parameter injection point:
 
 ```java
-private final DataSource ds; 
+private final DataSource ds;
 
-@Inject 
-public SomeObject(@Named("test") DataSource ds) { 
-    this.ds = ds; 
+@Inject
+public SomeObject(@Named("test") DataSource ds) {
+    this.ds = ds;
 }
 ```
 
@@ -326,21 +326,21 @@ Helidon MP’s Jakarta Transactions integration integrates the [Naryana transact
 
 To include Helidon’s JTA integration in your application:
 
-- [Ensure your dependencies are managed](../about/managing-dependencies.md)
+- [Ensure your dependencies are managed](../managing-dependencies.md)
 - Ensure the following `<dependency>` elements are present as child elements of your project’s `pom.xml` file’s `<dependencies>` element:
 
   ``` xml
   <dependencies>
-      <dependency>
-          <groupId>jakarta.transaction</groupId>
-          <artifactId>jakarta.transaction-api</artifactId>
-          <scope>provided</scope> 
-      </dependency>
-      <dependency>
-          <groupId>io.helidon.integrations.cdi</groupId>
-          <artifactId>helidon-integrations-cdi-jta-weld</artifactId>
-          <scope>runtime</scope> 
-      </dependency>
+    <dependency>
+        <groupId>jakarta.transaction</groupId>
+        <artifactId>jakarta.transaction-api</artifactId>
+        <scope>provided</scope>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.integrations.cdi</groupId>
+        <artifactId>helidon-integrations-cdi-jta-weld</artifactId>
+        <scope>runtime</scope>
+    </dependency>
   </dependencies>
   ```
 
@@ -382,10 +382,10 @@ For more on configuring Narayana, see [Setting Properties](https://www.narayana.
 To use Helidon MP’s Jakarta Transactions integration, annotate a method with the [`jakarta.transaction.Transactional`](https://jakarta.ee/specifications/transactions/2.0/apidocs/jakarta/transaction/transactional) annotation:
 
 ```java
-@Transactional 
+@Transactional
 public void setGreeting(Integer id) {
     // Do something transactional.
-    greetingProvider.setMessage("Hello[" + id + "]"); 
+    greetingProvider.setMessage("Hello[" + id + "]");
 }
 ```
 
@@ -447,23 +447,23 @@ Details and examples for each supported JPA provider are below.
 
 To include the Jakarta Persistence APIs that you will need and to include the core of Helidon’s Jakarta Persistence integration:
 
-- [Ensure your dependencies are managed](../about/managing-dependencies.md)
+- [Ensure your dependencies are managed](../managing-dependencies.md)
 - [Ensure you have set up and configured named data sources as appropriate](#named-data-source-integration)
 - [Ensure you have set up and configured Helidon MP’s Jakarta Transactions support](#jakarta-transactions-jta-integration)
 - Ensure the following `<dependency>` elements are present as child elements of your project’s `pom.xml` file’s `<dependencies>` element:
 
   ``` xml
   <dependencies>
-      <dependency>
-          <groupId>jakarta.persistence</groupId>
-          <artifactId>jakarta.persistence-api</artifactId>
-          <scope>provided</scope> 
-      </dependency>
-      <dependency>
-          <groupId>io.helidon.integrations.cdi</groupId>
-          <artifactId>helidon-integrations-cdi-jpa</artifactId>
-          <scope>runtime</scope> 
-      </dependency>
+    <dependency>
+        <groupId>jakarta.persistence</groupId>
+        <artifactId>jakarta.persistence-api</artifactId>
+        <scope>provided</scope>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.integrations.cdi</groupId>
+        <artifactId>helidon-integrations-cdi-jpa</artifactId>
+        <scope>runtime</scope>
+    </dependency>
   </dependencies>
   ```
 
@@ -474,7 +474,7 @@ These `<dependency>` elements do not set up a JPA provider. See details below fo
 
 ##### Setting Up Static Metamodel Generation
 
-To generate and compile the Jakarta Persistence static metamodel for your application, regardless of whether you are using Hibernate ORM or EclipseLink, [ensure your dependencies are managed](../about/managing-dependencies.md), and then make sure the `<plugin>` element in the following code snippet is present as a child element of the `<pluginManagement><plugins>` element sequence as shown below:
+To generate and compile the Jakarta Persistence static metamodel for your application, regardless of whether you are using Hibernate ORM or EclipseLink, [ensure your dependencies are managed](../managing-dependencies.md), and then make sure the `<plugin>` element in the following code snippet is present as a child element of the `<pluginManagement><plugins>` element sequence as shown below:
 
 ```xml
 <pluginManagement>
@@ -491,8 +491,8 @@ To generate and compile the Jakarta Persistence static metamodel for your applic
                         <annotationProcessorPaths>
                             <annotationProcessorPath>
                                 <groupId>org.hibernate.orm</groupId>
-                                <artifactId>hibernate-jpamodelgen</artifactId> 
-                                <version>${version.lib.hibernate}</version> 
+                                <artifactId>hibernate-jpamodelgen</artifactId>
+                                <version>${version.lib.hibernate}</version>
                             </annotationProcessorPath>
                         </annotationProcessorPaths>
                     </configuration>
@@ -507,7 +507,7 @@ To generate and compile the Jakarta Persistence static metamodel for your applic
 ```
 
 - This adds the `hibernate-jpamodelgen` jar, which contains a [Java annotation processor that generates the static metamodel source code](https://docs.jboss.org/hibernate/orm/6.1/javadocs/org/hibernate/jpamodelgen/JPAMetaModelEntityProcessor.html), to the Java compiler’s annotation processor path so that it is active at compile time.
-- Because your [dependencies are managed](../about/managing-dependencies.md), this will resolve to the currently supported version of Hibernate ORM.
+- Because your [dependencies are managed](../managing-dependencies.md), this will resolve to the currently supported version of Hibernate ORM.
 
 For more on the Hibernate ORM `hibernate-jpamodelgen` annotation processor, see [Hibernate Metamodel Generator](https://hibernate.org/orm/tooling/#hibernate-metamodel-generator) in Hibernate ORM’s documentation.
 
@@ -518,15 +518,15 @@ For more on the Hibernate ORM `hibernate-jpamodelgen` annotation processor, see 
 
 To include Helidon’s Jakarta Persistence-related integration for Hibernate ORM:
 
-- [Ensure your dependencies are managed](../about/managing-dependencies.md)
+- [Ensure your dependencies are managed](../managing-dependencies.md)
 - [Ensure the basics of your JPA project are set up properly](#maven-coordinates-common)
 - Ensure the following `<dependency>` elements are present as child elements of your project’s `pom.xml` file’s `<dependencies>` element:
 
   ``` xml
   <dependency>
-      <groupId>io.helidon.integrations.cdi</groupId>
-      <artifactId>helidon-integrations-cdi-hibernate</artifactId>
-      <scope>runtime</scope> 
+    <groupId>io.helidon.integrations.cdi</groupId>
+    <artifactId>helidon-integrations-cdi-hibernate</artifactId>
+    <scope>runtime</scope>
   </dependency>
   ```
 
@@ -579,15 +579,15 @@ For more on bytecode enhancement properties, see [Bytecode Enhancement Propertie
 
 To include Helidon’s Jakarta Persistence-related integration for EclipseLink:
 
-- [Ensure your dependencies are managed](../about/managing-dependencies.md)
+- [Ensure your dependencies are managed](../managing-dependencies.md)
 - [Ensure the basics of your JPA project are set up properly](#maven-coordinates-common)
 - Ensure the following `<dependency>` elements are present as child elements of your project’s `pom.xml` file’s `<dependencies>` element:
 
   ``` xml
   <dependency>
-      <groupId>io.helidon.integrations.cdi</groupId>
-      <artifactId>helidon-integrations-cdi-eclipselink</artifactId>
-      <scope>runtime</scope> 
+    <groupId>io.helidon.integrations.cdi</groupId>
+    <artifactId>helidon-integrations-cdi-eclipselink</artifactId>
+    <scope>runtime</scope>
   </dependency>
   ```
 
@@ -603,7 +603,7 @@ To set up this required static weaving for EclipseLink, ensure that the followin
 <plugin>
     <groupId>org.codehaus.mojo</groupId>
     <artifactId>exec-maven-plugin</artifactId>
-    <version>3.1.0</version> 
+    <version>3.1.0</version>
     <executions>
         <execution>
             <id>weave</id>
@@ -654,16 +654,14 @@ Fundamentally, a `META-INF/persistence.xml` file contains a collection of *persi
 
 Your `META-INF/persistence.xml` file must begin (and end) with the following XML:
 
-*`META-INF/persistence.xml`*
-
-```xml
+```xml [META-INF/persistence.xml]
 <persistence xmlns="https://jakarta.ee/xml/ns/persistence"
              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
              xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence
                                  https://jakarta.ee/xml/ns/persistence/persistence_3_1.xsd"
-             version="3.1"> 
+             version="3.1">
 
-    
+
 
 </persistence>
 ```
@@ -679,15 +677,13 @@ You list your application’s persistence units as `<persistence-unit>` child el
 
 Here is a partial example of a persistence unit named `test` with a helpful description:
 
-*`META-INF/persistence.xml`*
-
-```xml
+```xml [META-INF/persistence.xml]
 <!-- ... -->
 
-<persistence-unit name="test" transaction-type="JTA"> 
+<persistence-unit name="test" transaction-type="JTA">
     <description>A testing database</description>
 
-    
+
 
 </persistence-unit>
 
@@ -713,16 +709,14 @@ Because Helidon MP’s Jakarta Persistence integration provides support for cont
 
 Here is a partial example of a persistence unit named `test`, with a helpful description, linked with a JTA data source named `main`:
 
-*`META-INF/persistence.xml`*
-
-```xml
+```xml [META-INF/persistence.xml]
 <!-- ... -->
 
 <persistence-unit name="test" transaction-type="JTA">
     <description>A testing database</description>
-    <jta-data-source>main</jta-data-source> 
+    <jta-data-source>main</jta-data-source>
 
-    
+
 
 </persistence-unit>
 
@@ -750,18 +744,16 @@ You use a [sequence of `<class>` elements](https://jakarta.ee/specifications/per
 
 Here is a partial example of a persistence unit named `test`, with a helpful description, linked with a JTA data source named `main`, containing two entity classes:
 
-*`META-INF/persistence.xml`*
-
-```xml
+```xml [META-INF/persistence.xml]
 <!-- ... -->
 
 <persistence-unit name="test" transaction-type="JTA">
     <description>A testing database</description>
     <jta-data-source>main</jta-data-source>
-    <class>com.example.ExampleEntity0</class> 
+    <class>com.example.ExampleEntity0</class>
     <class>com.example.ExampleEntity1</class>
 
-    
+
 
 </persistence-unit>
 
@@ -782,19 +774,17 @@ Persistence units can have simple properties attached to them to further configu
 
 Here is a partial exmaple of a persistence unit named `test`, with a helpful description, linked with a JTA data source named `sample`, containing two entity classes, configuring a Hibernate ORM-specific property:
 
-*`META-INF/persistence.xml`*
-
-```xml
+```xml [META-INF/persistence.xml]
 <!-- ... -->
 
 <persistence-unit name="test" transaction-type="JTA">
     <description>A testing database</description>
-    <jta-data-source>sample</jta-data-source> 
+    <jta-data-source>sample</jta-data-source>
     <class>com.example.ExampleEntity0</class>
     <class>com.example.ExampleEntity1</class>
     <properties>
-        <property name="hibernate.show_sql" value="true"/> 
-        <property name="eclipselink.weaving" value="false"/> 
+        <property name="hibernate.show_sql" value="true"/>
+        <property name="eclipselink.weaving" value="false"/>
     </properties>
 </persistence-unit>
 
@@ -831,7 +821,7 @@ A full tutorial of Jakarta Persistence is *well* beyond the scope of this docume
 
 ## References
 
-- [Managing Dependencies in Helidon MP](../about/managing-dependencies.md)
+- [Managing Dependencies in Helidon MP](../managing-dependencies.md)
 - [MicroProfile Config in Helidon MP](config/introduction.md)
 - [JDBC 4.3 Specification](https://docs.oracle.com/en/java/javase/21/docs/api/java.sql/java/sql/package-summary.html)
 - [HikariCP 5.0.1 documentation](https://github.com/brettwooldridge/HikariCP/blob/HikariCP-5.0.1#readme)

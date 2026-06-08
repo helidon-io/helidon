@@ -11,7 +11,7 @@ The Helidon OpenAPI component allows you to integrate the SmallRye UI into your 
 
 ## Maven Coordinates
 
-To enable Helidon OpenAPI UI support, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
+To enable Helidon OpenAPI UI support, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml
 <dependency>
@@ -89,8 +89,8 @@ To use configuration to control how the Helidon OpenAPI UI service behaves, add 
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
 | <span id="ad2183-enabled"></span> `enabled` | `VALUE` | `Boolean` | `true` | Sets whether the service should be enabled |
-| <span id="aa88b9-options"></span> `options` | `MAP` | `String` |   | Merges implementation-specific UI options |
-| <span id="a05812-web-context"></span> `web-context` | `VALUE` | `String` |   | Full web context (not just the suffix) |
+| <span id="aa88b9-options"></span> `options` | `MAP` | `String` |   | Merges implementation-specific UI options |
+| <span id="a05812-web-context"></span> `web-context` | `VALUE` | `String` |   | Full web context (not just the suffix) |
 
 The default UI `web-context` value is the web context for your `OpenApiFeature` service with the added suffix `/ui`. If you use the default web context for both `OpenApiFeature` and the UI, the UI responds at `/openapi/ui`.
 
@@ -108,9 +108,7 @@ You can use configuration to affect the UI path in these ways:
 
 - Separately, configure the entire web context path for the UI independently from the web context for OpenAPI.
 
-  *Configuring the OpenAPI UI web context*
-
-```properties
+  ```properties [Configuring the OpenAPI UI web context]
   mp.openapi.services.ui.web-context=/my-ui
   ```
 

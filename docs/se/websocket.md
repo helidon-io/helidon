@@ -10,7 +10,7 @@ Helidon SE support is based on the `WebSocketRouting` class which enables Helido
 
 ## Maven Coordinates
 
-To enable WebSocket, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
+To enable WebSocket, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml
 <dependency>

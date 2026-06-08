@@ -6,7 +6,7 @@ Scheduling is an essential feature for the Enterprise. Helidon has its own imple
 
 ## Maven Coordinates
 
-To enable Scheduling, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
+To enable Scheduling, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml
 <dependency>
@@ -21,9 +21,7 @@ For scheduling periodic tasks, it is possible to choose a fixed rate or a Cron e
 
 ### Fixed rate
 
-*Scheduling with fixed rate using `Scheduling.fixedRate()` builder.*
-
-```java
+```java [Scheduling with fixed rate using Scheduling.fixedRate() builder.]
 FixedRate.builder()
         .delay(10)
         .initialDelay(5)
@@ -34,9 +32,7 @@ FixedRate.builder()
 
 Metadata like human-readable interval description or configured values are available through FixedRateInvocation provided as task parameter.
 
-*Invocation metadata*
-
-```java
+```java [Invocation metadata]
 FixedRate.builder()
         .delay(10)
         .task(inv -> System.out.println("Method invoked " + inv.description()))
@@ -50,24 +46,22 @@ FixedRate.builder()
 | <span id="a12d22-delay-by"></span> `delay-by` | `VALUE` | `Duration` | `PT0S` | Initial delay of the first invocation |
 | <span id="a394d5-delay-type"></span> [`delay-type`](../config/io_helidon_scheduling_FixedRate_DelayType.md) | `VALUE` | `i.h.s.F.DelayType` | `SINCE_PREVIOUS_START` | Configure whether the interval between the invocations should be calculated from the time when previous task started or ended |
 | <span id="a39c2a-enabled"></span> `enabled` | `VALUE` | `Boolean` | `true` | Whether the task is enabled |
-| <span id="a27a1a-id"></span> `id` | `VALUE` | `String` |   | Identification of the started task |
-| <span id="a4b0e9-interval"></span> `interval` | `VALUE` | `Duration` |   | Fixed interval between each invocation |
+| <span id="a27a1a-id"></span> `id` | `VALUE` | `String` |   | Identification of the started task |
+| <span id="a4b0e9-interval"></span> `interval` | `VALUE` | `Duration` |   | Fixed interval between each invocation |
 
 ##### Deprecated Options
 
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
-| <span id="a44d13-delay"></span> `delay` | `VALUE` | `Long` |   | Fixed rate delay between each invocation |
-| <span id="a91a8f-initial-delay"></span> `initial-delay` | `VALUE` | `Long` |   | Initial delay of the first invocation |
+| <span id="a44d13-delay"></span> `delay` | `VALUE` | `Long` |   | Fixed rate delay between each invocation |
+| <span id="a91a8f-initial-delay"></span> `initial-delay` | `VALUE` | `Long` |   | Initial delay of the first invocation |
 | <span id="a776bc-time-unit"></span> [`time-unit`](../config/java_util_concurrent_TimeUnit.md) | `VALUE` | `TimeUnit` | `TimeUnit.SECONDS` | `java.util.concurrent.TimeUnit TimeUnit` used for interpretation of values provided with `io.helidon.scheduling.FixedRateConfig.Builder#delay(long)` and `io.helidon.scheduling.FixedRateConfig.Builder#initialDelay(long)` |
 
 ### Cron
 
 For more complicated interval definition, Cron expression can be leveraged with `Scheduling.cron()` builder.
 
-*Scheduling with Cron expression*
-
-```java
+```java [Scheduling with Cron expression]
 Cron.builder()
         .expression("0 15 8 ? * *")
         .task(inv -> System.out.println("Executer every day at 8:15"))
@@ -78,9 +72,7 @@ Cron.builder()
 
 By default, Cron expressions are evaluated using the system’s default timezone. You can specify a custom timezone to control when the cron expression triggers, regardless of the system’s timezone.
 
-*Scheduling with custom timezone*
-
-```java
+```java [Scheduling with custom timezone]
 Cron.builder()
         .expression("0 0 9 * * ?")
         .zone(ZoneId.of("America/New_York"))
@@ -96,9 +88,9 @@ The timezone determines when the cron expression triggers. For example, a cron e
 |----|----|----|----|----|
 | <span id="aa0a55-concurrent"></span> `concurrent` | `VALUE` | `Boolean` | `true` | Allow concurrent execution if previous task didn't finish before next execution |
 | <span id="ac430f-enabled"></span> `enabled` | `VALUE` | `Boolean` | `true` | Whether the task is enabled |
-| <span id="a78a5d-expression"></span> `expression` | `VALUE` | `String` |   | Cron expression for specifying period of execution |
-| <span id="acc650-id"></span> `id` | `VALUE` | `String` |   | Identification of the started task |
-| <span id="a0e1a4-zone"></span> `zone` | `VALUE` | `ZoneId` |   | Time zone to use for cron expression evaluation |
+| <span id="a78a5d-expression"></span> `expression` | `VALUE` | `String` |   | Cron expression for specifying period of execution |
+| <span id="acc650-id"></span> `id` | `VALUE` | `String` |   | Identification of the started task |
+| <span id="a0e1a4-zone"></span> `zone` | `VALUE` | `ZoneId` |   | Time zone to use for cron expression evaluation |
 
 ### Cron expression syntax
 
@@ -106,9 +98,7 @@ Cron expressions should be configured as follows.
 
 ### Cron expression
 
-*Cron expression format*
-
-```
+```text [Cron expression format]
 <seconds> <minutes> <hours> <day-of-month> <month> <day-of-week> <year>
 ```
 
@@ -153,9 +143,7 @@ Metadata like human-readable interval description or configured values are avail
 
 Scheduling is configurable with [Helidon Config](../se/config/introduction.md).
 
-*Example of configuring*
-
-```java
+```java [Example of configuring]
 FixedRate.builder()
         .config(Config.create(() -> ConfigSources.create(
                 """
@@ -181,9 +169,7 @@ When using declarative programming model, the `TaskManager` can be injected. It 
 
 For simple fixed rate invocation use .
 
-*Example of scheduling with fixed rate using `FixedRate.builder()` builder.*
-
-```java
+```java [Example of scheduling with fixed rate using FixedRate.builder() builder.]
 FixedRate.builder()
         .delay(10)
         .initialDelay(5)
@@ -194,9 +180,7 @@ FixedRate.builder()
 
 Metadata like human-readable interval description or configured values are available through `FixedRateInvocation` provided as task parameter.
 
-*Example with invocation metadata*
-
-```java
+```java [Example with invocation metadata]
 FixedRate.builder()
         .delay(10)
         .task(inv -> System.out.println("Method invoked " + inv.description()))

@@ -6,7 +6,7 @@ HashiCorp Vault is a commonly used Vault in many microservices. The APIs are RES
 
 ## Maven Coordinates
 
-To enable HashiCorp Vault, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
+To enable HashiCorp Vault, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml
 <dependency>

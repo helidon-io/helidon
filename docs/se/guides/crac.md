@@ -13,8 +13,8 @@ CRaC - Coordinated Restore at Checkpoint
 
 For this 10 minute tutorial, you will need the following:
 
-|  |  |
-|----|----|
+| Requirement | Description |
+|-------------|-------------|
 | Linux/x64 or Linux/ARM64 | While CRaC snapshotting can be simulated on MacOS or Windows, full CRaC functionality is only available on Linux/x64 and Linux/ARM64. |
 | [Maven 3.8+](https://maven.apache.org/download.cgi) | Helidon requires Maven 3.8+. |
 | [Azul Zulu JDK CRaC 21+](https://www.azul.com/downloads/?version=java-21-lts&package=jdk-crac#zulu) | Zulu Warp CRaC engine allows snapshotting without elevated privileges |

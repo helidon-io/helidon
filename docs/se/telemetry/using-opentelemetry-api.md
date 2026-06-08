@@ -50,29 +50,25 @@ Assuming you already have a project started and have the relevant Helidon depend
 
 If you use a parent POM other than the Helidon SE application parent, include the OpenTelemetry BOM:
 
-*Including the OpenTelemetry BOM*
-
-```xml
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>io.opentelemetry</groupId>
-                <artifactId>opentelemetry-bom</artifactId>
-                <version>1.58.0</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
+```xml [Including the OpenTelemetry BOM]
+<dependencyManagement>
+    <dependencies>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-bom</artifactId>
+            <version>1.58.0</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
 ```
 
 See the [example app](https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/telemetry/otel-auto-configure) which inspires the illustrations below.
 
 Add the dependencies below. (You might be able to get away with fewer if you are willing to rely on transitive dependencies for components you use in your source code. The example shows them explicitly for completeness.)
 
-*Dependencies for the OpenTelemetry API and Autoconfiguration*
-
-```xml
+```xml [Dependencies for the OpenTelemetry API and Autoconfiguration]
 <!-- OpenTelemetrySdkBuilder -->
 <dependency>
     <groupId>io.opentelemetry</groupId>
@@ -139,9 +135,7 @@ Now for a bit of confusing terminology. In OpenTelemetry, a *meter* acts as a fa
 
 #### Creating the `OpenTelemetry` object
 
-*Creating a the global `OpenTelemetry` object using autoconfigure*
-
-```java
+```java [Creating a the global OpenTelemetry object using autoconfigure]
 OpenTelemetry otel = AutoConfiguredOpenTelemetrySdk.builder()
         .setResultAsGlobal()
         .build()

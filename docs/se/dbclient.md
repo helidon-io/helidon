@@ -6,7 +6,7 @@ The Helidon SE DB Client provides a unified API for working with databases.
 
 ## Maven Coordinates
 
-To enable DB Client, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
+To enable DB Client, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml
 <dependency>

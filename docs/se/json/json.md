@@ -40,9 +40,7 @@ For automatic code generation, you can either add individual annotation processo
 
 Alternatively, you can use the `helidon-bundles-apt` dependency which includes the JSON code generation processor along with other Helidon annotation processors:
 
-*Annotation processor configuration with bundles*
-
-```xml
+```xml [Annotation processor configuration with bundles]
 <build>
     <plugins>
         <plugin>
@@ -66,9 +64,7 @@ Alternatively, you can use the `helidon-bundles-apt` dependency which includes t
 
 Configure the annotation processors in your Maven build:
 
-*Annotation processor configuration*
-
-```xml
+```xml [Annotation processor configuration]
 <build>
     <plugins>
         <plugin>
@@ -105,9 +101,7 @@ The main entry point for JSON binding is the [`JsonBinding`](/apidocs/io.helidon
 
 The [`JsonBinding`](/apidocs/io.helidon.json.binding/io/helidon/json/binding/JsonBinding.html) API provides common serialization and deserialization methods:
 
-*JsonBinding usage*
-
-```java
+```java [JsonBinding usage]
 JsonBinding binding = JsonBinding.create();
 
 // Deserialize JSON string to object
@@ -127,9 +121,7 @@ Marks a class/record as a JSON entity that can be serialized/deserialized.
 
 This annotation also lets you control how the binder discovers properties using the `accessorStyle` attribute. This is useful if your code uses fluent methods, record-style accessors, or non-standard naming.
 
-*Using @Json.Entity*
-
-```java
+```java [Using @Json.Entity]
 @Json.Entity
 class Person {
     private String name;
@@ -145,9 +137,7 @@ Why use it: Required for classes to participate in JSON binding. Without this an
 
 Customizes the JSON property name for a field or method. This affects how fields are named in JSON output and input, providing control over JSON structure and API compatibility.
 
-*Basic property name customization*
-
-```java
+```java [Basic property name customization]
 @Json.Entity
 class Person {
     private String firstName;
@@ -165,9 +155,7 @@ This produces the following JSON output:
 {"firstName":"John","last_name":"Doe"}
 ```
 
-*Method-level property naming*
-
-```java
+```java [Method-level property naming]
 @Json.Entity
 class Person {
     private String firstName;
@@ -194,9 +182,7 @@ Why use it: Allows mapping between Java field names and JSON property names, ena
 
 Excludes fields or methods from serialization/deserialization. Fields marked as `transient` are ignored automatically, or you can explicitly use this annotation. This affects field visibility in JSON output and input processing.
 
-*Basic field exclusion*
-
-```java
+```java [Basic field exclusion]
 @Json.Entity
 class Person {
     private String name;
@@ -215,9 +201,7 @@ This produces the following JSON output:
 {"name":"John","age":30}
 ```
 
-*Automatic transient field exclusion*
-
-```java
+```java [Automatic transient field exclusion]
 @Json.Entity
 class Person {
     private String name;
@@ -234,9 +218,7 @@ This produces the following JSON output:
 {"name":"John","data":"value"}
 ```
 
-*Method-level exclusion*
-
-```java
+```java [Method-level exclusion]
 @Json.Entity
 class Person {
     private String firstName;
@@ -263,9 +245,7 @@ Why use it: Prevents sensitive data, computed fields, or internal state from bei
 
 Marks properties as required during deserialization.
 
-*Using @Json.Required*
-
-```java
+```java [Using @Json.Required]
 @Json.Entity
 class Person {
     @Json.Required
@@ -283,9 +263,7 @@ Why use it: Ensures critical properties are present in JSON input, failing deser
 
 Controls whether null values are included in JSON output. Null values are omitted from JSON output, unless this annotation is used. This affects the visibility and size of generated JSON.
 
-*Default behavior - nulls omitted*
-
-```java
+```java [Default behavior - nulls omitted]
 @Json.Entity
 class PersonDefault {
     private String name;
@@ -301,9 +279,7 @@ This produces the following JSON output:
 {"name":"John"}
 ```
 
-*Class-level null serialization*
-
-```java
+```java [Class-level null serialization]
 @Json.Entity
 @Json.SerializeNulls
 class PersonWithNulls {
@@ -320,9 +296,7 @@ This produces the following JSON output:
 {"name":"John","age":null}
 ```
 
-*Field-level null serialization*
-
-```java
+```java [Field-level null serialization]
 @Json.Entity
 class PersonSelective {
     private String name;
@@ -340,9 +314,7 @@ This produces the following JSON output:
 {"name":"John","city":null}
 ```
 
-*Mixed scenarios - different null handling*
-
-```java
+```java [Mixed scenarios - different null handling]
 @Json.Entity
 @Json.SerializeNulls
 class PersonMixed {
@@ -367,9 +339,7 @@ Why use it: Provides control over JSON size and API contract.
 
 Marks constructors or factory methods for object creation during deserialization.
 
-*Using @Json.Creator constructor*
-
-```java
+```java [Using @Json.Creator constructor]
 @Json.Entity
 class Person {
     private final String name;
@@ -385,9 +355,7 @@ class Person {
 }
 ```
 
-*Using @Json.Creator factory method*
-
-```java
+```java [Using @Json.Creator factory method]
 @Json.Entity
 static class PersonWithCreator {
     private final String name;
@@ -409,9 +377,7 @@ Why use it: Enables deserialization of immutable objects or objects requiring sp
 
 Controls the order of properties in JSON output. By default, the order is undefined, so the properties can appear in any order.
 
-*Undefined/Any declaration order (default)*
-
-```java
+```java [Undefined/Any declaration order (default)]
 @Json.Entity
 class PersonDefault {
     private String zebra;
@@ -426,9 +392,7 @@ This produces the following JSON output:
 {"zebra":"value","alpha":"value","beta":"value"}
 ```
 
-*Alphabetical ordering*
-
-```java
+```java [Alphabetical ordering]
 @Json.Entity
 @Json.PropertyOrder(Order.ALPHABETICAL)
 class PersonAlphabetical {
@@ -444,9 +408,7 @@ This produces the following JSON output:
 {"alpha":"value","beta":"value","zebra":"value"}
 ```
 
-*Reverse alphabetical ordering*
-
-```java
+```java [Reverse alphabetical ordering]
 @Json.Entity
 @Json.PropertyOrder(Order.REVERSE_ALPHABETICAL)
 class PersonReverse {
@@ -468,9 +430,7 @@ Why use it: Ensures consistent JSON structure for APIs, when order matters for p
 
 Specify custom serialization/deserialization logic using `JsonSerializer` and `JsonDeserializer` implementations.
 
-*Using @Json.Deserializer*
-
-```java
+```java [Using @Json.Deserializer]
 record MyType() { }
 
 class CustomDeserializer implements JsonDeserializer<MyType> {
@@ -502,9 +462,7 @@ Why use it: Enables handling of complex types, legacy formats, or types requirin
 
 Provides information about a builder class for object construction.
 
-*Using @Json.BuilderInfo*
-
-```java
+```java [Using @Json.BuilderInfo]
 class PersonBuilder {
     private String name;
     private int age;
@@ -545,9 +503,7 @@ Why use it: Specifies custom builder classes for object construction during dese
 
 Controls behavior when unknown properties are encountered during deserialization.
 
-*Using @Json.FailOnUnknown*
-
-```java
+```java [Using @Json.FailOnUnknown]
 @Json.Entity
 @Json.FailOnUnknown
 class StrictPerson {
@@ -567,9 +523,7 @@ Helidon provides special handling for Java Optional types (`Optional<T>`, `Optio
 
 By default, empty Optional fields are omitted from JSON output. When `@Json.SerializeNulls` is applied (either at class or field level), empty Optional fields are included in JSON output as `null` values.
 
-*Default behavior - empty optionals omitted*
-
-```java
+```java [Default behavior - empty optionals omitted]
 @Json.Entity
 class PersonDefault {
     private String name;
@@ -585,9 +539,7 @@ This produces the following JSON output:
 {"name":"John"}
 ```
 
-*With @Json.SerializeNulls - empty optionals included as null*
-
-```java
+```java [With @Json.SerializeNulls - empty optionals included as null]
 @Json.Entity
 @Json.SerializeNulls
 class PersonWithNulls {
@@ -674,9 +626,7 @@ The JSON module (`helidon-json`) provides fundamental JSON parsing and generatio
 
 #### How to use it
 
-*Creating and using JsonParser*
-
-```java
+```java [Creating and using JsonParser]
 JsonParser parser = JsonParser.create("{\"name\":\"John\",\"age\":30}");
 
 JsonObject object = parser.readJsonObject();
@@ -687,9 +637,7 @@ int age = object.intValue("age", 0); // 30
 
 For more control, JsonParser also supports manual token-by-token parsing:
 
-*Manual token-by-token parsing with JsonParser*
-
-```java
+```java [Manual token-by-token parsing with JsonParser]
 JsonParser parser = JsonParser.create("{\"name\":\"John\",\"age\":30,\"active\":true}");
 
 // Manual parsing - check for object start
@@ -758,9 +706,7 @@ This approach provides fine-grained control over parsing, allowing you to handle
 
 #### How to use it
 
-*Basic JSON generation*
-
-```java
+```java [Basic JSON generation]
 JsonGenerator generator = JsonGenerator.create(outputStream);
 
 generator.writeObjectStart();
@@ -775,9 +721,7 @@ This generates the following JSON output:
 {"name":"John","age":30}
 ```
 
-*Complex JSON structure generation*
-
-```java
+```java [Complex JSON structure generation]
 JsonGenerator generator = JsonGenerator.create(outputStream);
 
 generator.writeObjectStart();
@@ -815,9 +759,7 @@ This generates the following JSON output:
 
 [`JsonObject`](/apidocs/io.helidon.json/io/helidon/json/JsonObject.html) represents a JSON object (key-value pairs enclosed in `{}`). It’s used for structured data with named properties.
 
-*Using JsonObject*
-
-```java
+```java [Using JsonObject]
 JsonObject person = JsonObject.builder()
     .set("name", "John")
     .set("age", 30)
@@ -844,9 +786,7 @@ JsonObject personWithAddress = JsonObject.builder()
 
 [`JsonArray`](/apidocs/io.helidon.json/io/helidon/json/JsonArray.html) represents a JSON array (ordered list of values enclosed in `[]`). It’s used for collections of values.
 
-*Using JsonArray*
-
-```java
+```java [Using JsonArray]
 JsonArray hobbies = JsonArray.createStrings(List.of("reading", "coding", "gaming"));
 JsonArray numbers = JsonArray.createNumbers(List.of(
         new BigDecimal("1"), new BigDecimal("2"), new BigDecimal("3")));
@@ -861,9 +801,7 @@ List<JsonValue> numberValues = numbers.values();
 
 [`JsonString`](/apidocs/io.helidon.json/io/helidon/json/JsonString.html) represents a JSON string value (text enclosed in `"`). It’s used for textual data.
 
-*Using JsonString*
-
-```java
+```java [Using JsonString]
 JsonString name = JsonString.create("John Doe");
 String value = name.value(); // "John Doe"
 
@@ -876,9 +814,7 @@ JsonString greeting = parser.readJsonString();
 
 [`JsonNumber`](/apidocs/io.helidon.json/io/helidon/json/JsonNumber.html) represents a JSON number value. It’s used for numeric data and provides access to different numeric types.
 
-*Using JsonNumber*
-
-```java
+```java [Using JsonNumber]
 JsonNumber age = JsonNumber.create(new BigDecimal("30"));
 int intValue = age.intValue();
 double doubleValue = age.doubleValue();
@@ -893,9 +829,7 @@ JsonNumber number = parser.readJsonNumber();
 
 [`JsonBoolean`](/apidocs/io.helidon.json/io/helidon/json/JsonBoolean.html) represents a JSON boolean value (`true` or `false`). It’s used for logical values.
 
-*Using JsonBoolean*
-
-```java
+```java [Using JsonBoolean]
 JsonBoolean active = JsonBoolean.create(true);
 boolean value = active.value(); // true
 
@@ -906,9 +840,7 @@ JsonBoolean inactive = JsonBoolean.FALSE; // Predefined constants
 
 [`JsonNull`](/apidocs/io.helidon.json/io/helidon/json/JsonNull.html) represents a JSON null value. It’s used when a value is absent or undefined.
 
-*Using JsonNull*
-
-```java
+```java [Using JsonNull]
 JsonNull nullValue = JsonNull.instance();
 
 // In collections

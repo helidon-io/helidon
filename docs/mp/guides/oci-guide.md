@@ -18,26 +18,22 @@ This guide assumes that you have basic knowledge and familiarity with OCI. If yo
 
 For this tutorial, you will need the following:
 
-|  |  |
-|----|----|
-| [Java SE 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
+| Requirement | Description |
+|-------------|-------------|
+| [Java 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
 | [Maven 3.8+](https://maven.apache.org/download.cgi) | Helidon requires Maven 3.8+. |
 | [Docker 18.09+](https://docs.docker.com/install/) | If you want to build and run Docker containers. |
 | [Kubectl 1.16.5+](https://kubernetes.io/docs/tasks/tools/install-kubectl/) | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
-| [Helidon CLI](../../about/cli.md) | If you want to use the Helidon CLI to create and build your application |
+| [Helidon CLI](../../cli.md) | If you want to use the Helidon CLI to create and build your application |
 
-*Verify Prerequisites*
-
-```bash
+```bash [Verify Prerequisites]
 java -version
 mvn --version
 docker --version
 kubectl version
 ```
 
-*Setting JAVA_HOME*
-
-```bash
+```bash [Setting JAVA_HOME]
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -133,17 +129,13 @@ Use the project to build an application jar for the example. It saves all runtim
 
 1.  Change to the directory containing the project files and run:
 
-*Build the Application*
-
-```bash
+```bash [Build the Application]
 mvn package
 ```
 
 1.  Then, to run the application, run:
 
-*Run the application*
-
-```bash
+```bash [Run the application]
 java -jar server/target/myproject-server.jar
 ```
 
@@ -151,9 +143,7 @@ The example is a very simple "Hello World" greeting service. It supports GET req
 
 For example:
 
-*Try the Application*
-
-```bash
+```bash [Try the Application]
 curl -X GET http://localhost:8080/greet
 {"message":"Hello World!"}
 
@@ -244,9 +234,7 @@ You can also click Kafka Connection Settings (on the Stream Pool Details page) t
 
 Next, add the following dependency to your project’s `pom.xml`:
 
-*Adding the dependency for OCI Streaming*
-
-```xml
+```xml [Adding the dependency for OCI Streaming]
 <dependency>
   <groupId>io.helidon.microprofile.messaging</groupId>
   <artifactId>helidon-microprofile-messaging</artifactId>
@@ -259,9 +247,7 @@ Next, add the following dependency to your project’s `pom.xml`:
 
 Next, update `/server/src/main/resources/application.yaml` with streaming connection properties:
 
-*Example of an application.yaml configured for OCI Streaming*
-
-```yaml
+```yaml [Example of an application.yaml configured for OCI Streaming]
 oci:
  tenant: helidon-app-example 
  user: email@domain.com 
@@ -280,9 +266,7 @@ oci:
 
 Then, still in `/server/src/main/resources/application.yaml`, configure messaging channels to use Helidon’s Kafka connector.
 
-*Example of a configuration for the helidon-kafka connector*
-
-```yaml
+```yaml [Example of a configuration for the helidon-kafka connector]
 mp.messaging:
 
   incoming.from-stream:

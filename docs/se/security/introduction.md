@@ -17,7 +17,7 @@ Security module is quite HTTP centric (as most common use cases are related to H
 
 ## Maven Coordinates
 
-To enable Security, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
+To enable Security, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml
 <dependency>
@@ -36,9 +36,7 @@ To integrate with a container, or to use Security standalone, we must create an 
 
 Once a security instance is built, it can be used to initialize an [integration with a container](containers-integration.md), or to use security from a program directly:
 
-*Security direct usage*
-
-```java
+```java [Security direct usage]
 SecurityContext context = security.contextBuilder(UUID.randomUUID().toString()) 
         .env(SecurityEnvironment.builder()
                      .method("get")
@@ -62,9 +60,7 @@ if (response.status().isSuccess()) {
 
 ### Builder Pattern
 
-*Security through a builder*
-
-```java
+```java [Security through a builder]
 Security security = Security.builder()
         .addProvider(HttpBasicAuthProvider.builder()) 
         .build();
@@ -76,9 +72,7 @@ Security security = Security.builder()
 
 See [Secure config](tools.md) for details about encrypting passwords in configuration files.
 
-*Security from configuration*
-
-```java
+```java [Security from configuration]
 Security security = Security.create(config); 
 ```
 
@@ -88,9 +82,7 @@ As mentioned above, security features are implemented through providers, which a
 
 A key `enabled` can be used for each provider to provide fine control of which providers are enabled/disabled, for example to support different setup in testing and in production environments.
 
-*Security from configuration - application.yaml*
-
-```yaml
+```yaml [Security from configuration - application.yaml]
 # Uses config encryption filter to encrypt passwords
 security:
   providers:
@@ -121,9 +113,7 @@ Would explicitly override the second provider (`http-basic-auth` in example abov
 
 ### Hybrid Pattern (Builder with Configuration)
 
-*Security from configuration and builder*
-
-```java
+```java [Security from configuration and builder]
 Security security1 = Security.builder(config) 
         .addProvider(HttpBasicAuthProvider.builder())
         .build();

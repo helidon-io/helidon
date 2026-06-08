@@ -28,9 +28,7 @@ When the OIDC provider is configured to use cookie (default configuration) to ca
 
 Some methods that act as getters of type `T` have been modified to return `Optional<T>`. You will need to change your code to handle the `Optional` return type. For example `ServerRequest.spanContext()` in 1.x had a return type of `SpanContext`. In 2.x it has a return type of `Optional<SpanContext>`. So if you had code like:
 
-*Helidon 1.x Code*
-
-```java
+```java [Helidon 1.x Code]
 Span myNewSpan = GlobalTracer.get()
         .buildSpan("my-operation")
         .asChildOf(serverRequest.spanContext())
@@ -39,9 +37,7 @@ Span myNewSpan = GlobalTracer.get()
 
 you will need to change it to something like:
 
-*Helidon 2.x Code*
-
-```java
+```java [Helidon 2.x Code]
 Tracer.SpanBuilder spanBuilder = serverRequest.tracer()
         .buildSpan("my-operation");
 serverRequest.spanContext().ifPresent(spanBuilder::asChildOf);

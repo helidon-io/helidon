@@ -6,7 +6,7 @@ Helidon implements [MicroProfile Reactive Streams Operators](https://download.ec
 
 ## Maven Coordinates
 
-To enable {feature-name}, either add a dependency on the [helidon-microprofile bundle](../../mp/introduction/microprofile.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
+To enable {feature-name}, either add a dependency on the [helidon-microprofile bundle](../introduction.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml
 <dependency>
@@ -19,9 +19,7 @@ To enable {feature-name}, either add a dependency on the [helidon-microprofile b
 
 The MicroProfile Reactive Streams Operators specification provides a set of operators within stages, as well as the builders used to prepare graphs of stages from which streams can be built.
 
-*Example of simple closed graph usage:*
-
-```java
+```java [Example of simple closed graph usage]
 AtomicInteger sum = new AtomicInteger();
 
 ReactiveStreams.of("1", "2", "3", "4", "5")
@@ -80,9 +78,7 @@ Operators(Stages) {#terms}
 
 [Graphs](https://download.eclipse.org/microprofile/microprofile-reactive-streams-operators-3.0/microprofile-reactive-streams-operators-spec-3.0.html#_graphs) are pre-prepared stream builders with [stages](https://download.eclipse.org/microprofile/microprofile-reactive-streams-operators-3.0/microprofile-reactive-streams-operators-spec-3.0.html#_stages), which can be combined to closed graph with methods `via` and `to`.
 
-*Combining the graphs and running the stream:*
-
-```java
+```java [Combining the graphs and running the stream]
 // Assembly of stream, nothing is streamed yet
 PublisherBuilder<String> publisherStage =
         ReactiveStreams.of("foo", "bar")

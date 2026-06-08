@@ -37,15 +37,13 @@ You must have Java and Maven installed on your system to use Helidon.
 
 | Requirement                                                                                                 | Description                                  |
 |-------------------------------------------------------------------------------------------------------------|----------------------------------------------|
-| [Java SE 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
+| [Java 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
 | [Maven 3.8+](https://maven.apache.org/download.cgi)                                                         | Helidon requires Maven 3.8+.                 |
 
 > [!NOTE]
-> Most of Helidon's examples use Maven, but Helidon can also be used with [Gradle](../se/guides/gradle-build.md).
+> Most of Helidon's examples use Maven, but Helidon can also be used with [Gradle](se/guides/gradle-build.md).
 
-*Verify System Requirements*
-
-```bash
+```bash [Verify System Requirements]
 java -version
 mvn --version
 ```
@@ -53,23 +51,17 @@ mvn --version
 
 Make sure you set the `JAVA_HOME` environment variable.
 
-*Set `JAVA_HOME` on Linux*
-
-```bash
+```bash [Set JAVA_HOME on Linux]
 # Enter the appropriate path to your JDK
 export JAVA_HOME=/usr/lib/jvm/jdk-25
 ```
 
-*Set `JAVA_HOME` on macOS*
-
-```bash
+```bash [Set JAVA_HOME on macOS]
 # Enter the appropriate path to your JDK
 export JAVA_HOME=`/usr/libexec/java_home -v 25`
 ```
 
-*Set `JAVA_HOME` on Windows*
-
-```cmd
+```cmd [Set JAVA_HOME on Windows]
 # Enter the appropriate path to your JDK
 setx JAVA_HOME=C:\\PROGRA~1\\Java\\jdk-25
 ```
@@ -78,8 +70,10 @@ setx JAVA_HOME=C:\\PROGRA~1\\Java\\jdk-25
 
 Now that your environment is set up, you can get started with Helidon. Try out the Helidon MP and Helidon SE Quick Start tutorials to build your first Helidon project and application.
 
-- [Helidon MP Quick Start](../mp/guides/quickstart.md)
-- [Helidon SE Quick Start](../se/guides/quickstart.md)
+- [Helidon MP Quick Start](mp/guides/quickstart.md)
+- [Helidon SE Quick Start](se/guides/quickstart.md)
 
 > [!TIP]
-> Read [About Helidon](introduction.md) to help you understand the differences between Helidon MP and Helidon SE.
+> Compare [Helidon MP](mp/introduction.md) and
+> [Helidon SE](se/introduction.md) to understand the differences between
+> Helidon MP and Helidon SE.

@@ -13,7 +13,7 @@ The Helidon Data Repository supports Jakarta Persistence and major providers suc
 
 ## Maven Coordinates
 
-To enable Data Repository, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
+To enable Data Repository, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml
 <dependency>
@@ -337,38 +337,38 @@ List<Keeper> listAllOrderByAgeAscName();
 The formal grammar for method names is as follows:
 
 ```text
-        method-name  :: <query> | <delete>
+method-name  :: <query> | <delete>
 
-        query        :: <action> [ <projection> ] [ "By" <criteria>  [ "OrderBy" <order> ] ]
-                            | <all-action> "All" [ "OrderBy" <order> ]
-        delete       :: <del-action> "By" <criteria> ] | <del-action> [ "All" ]
+query        :: <action> [ <projection> ] [ "By" <criteria>  [ "OrderBy" <order> ] ]
+                    | <all-action> "All" [ "OrderBy" <order> ]
+delete       :: <del-action> "By" <criteria> ] | <del-action> [ "All" ]
 
-        action       :: <action-l> | <prefix> <action-u>
-        all-action   :: <all-action-l> | [ <prefix> ] <all-action-u>
-        del-action   :: "delete" | [ <prefix> ] "Delete"
+action       :: <action-l> | <prefix> <action-u>
+all-action   :: <all-action-l> | [ <prefix> ] <all-action-u>
+del-action   :: "delete" | [ <prefix> ] "Delete"
 
-        prefix       :: [a-zA-Z0-9]*
-        action-l     :: "count" |  "exists" | "get" | <all-action-l>
-        action-u     :: "Count" |  "Exists" | "Get" | <all-action-u>
-        all-action-l :: "find" | "list" | "stream"
-        all-action-u :: "Find" | "List" | "Stream"
+prefix       :: [a-zA-Z0-9]*
+action-l     :: "count" |  "exists" | "get" | <all-action-l>
+action-u     :: "Count" |  "Exists" | "Get" | <all-action-u>
+all-action-l :: "find" | "list" | "stream"
+all-action-u :: "Find" | "List" | "Stream"
 
-        projection   :: [ <expression> ] [ <property> ]
-        expression   :: "First" <number> [ "Distinct" ] | "Distinct"
-                            | "Max" | "Min" | "Sum" | "Avg"
-        property     :: <identifier> [ "_" <identifier> ]
-        identifier   :: [a-zA-Z][a-zA-Z0-9]*
-        number       :: [0-9]+
+projection   :: [ <expression> ] [ <property> ]
+expression   :: "First" <number> [ "Distinct" ] | "Distinct"
+                    | "Max" | "Min" | "Sum" | "Avg"
+property     :: <identifier> [ "_" <identifier> ]
+identifier   :: [a-zA-Z][a-zA-Z0-9]*
+number       :: [0-9]+
 
-        criteria     :: <condition> { <logical-operator> <condition> }
-        condition    :: <property> [ [ "Not" ] [ "IgnoreCase" ] <operator>  ]
-        operator     :: "After" | "Before" | Contains" | "EndsWith" | "StartsWith" | "Equal"
-                            | "LessThan" | "LessThanEqual" | "GreaterThan" | "GreaterThanEqual"
-                            | "Between" | "Like" | "In" | "Empty" | "Null" | "True" | "False"
-        logical-operator :: "And" | "Or"
+criteria     :: <condition> { <logical-operator> <condition> }
+condition    :: <property> [ [ "Not" ] [ "IgnoreCase" ] <operator>  ]
+operator     :: "After" | "Before" | Contains" | "EndsWith" | "StartsWith" | "Equal"
+                    | "LessThan" | "LessThanEqual" | "GreaterThan" | "GreaterThanEqual"
+                    | "Between" | "Like" | "In" | "Empty" | "Null" | "True" | "False"
+logical-operator :: "And" | "Or"
 
-        order        :: <property> [ <direction> [ <order> ] ]
-        direction    :: "Asc" | "Desc"
+order        :: <property> [ <direction> [ <order> ] ]
+direction    :: "Asc" | "Desc"
 ```
 
 #### Method with Query Defined by `@Data.Query` Annotation

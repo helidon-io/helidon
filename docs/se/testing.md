@@ -6,7 +6,7 @@ Helidon provides built-in test support for Helidon testing with JUnit 5.
 
 ## Maven Coordinates
 
-To enable Helidon Testing Framework, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
+To enable Helidon Testing Framework, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml
 <dependency>
@@ -77,9 +77,7 @@ Extensions can enhance the features for the module `helidon-testing-junit5-webse
 
 You can create the following test to validate that the server returns the correct response:
 
-*Basic Helidon test framework usage.*
-
-```java
+```java [Basic Helidon test framework usage.]
 @ServerTest 
 class MyServerTest {
 
@@ -124,9 +122,7 @@ As everything above is performed by the testing framework, regular unit tests ca
 
 If there is no need to set up and run a server, a `DirectClient` client can be used. It is a testing client that bypasses HTTP transport and directly invokes the router.
 
-*Routing test using `@RoutingTest` and `DirectClient`.*
-
-```java
+```java [Routing test using @RoutingTest and DirectClient.]
 @RoutingTest 
 class MyRoutingTest {
 
@@ -170,9 +166,7 @@ Routing is configured the same way as in full server testing using the `@SetUpRo
 
 Helidon tests are able to detect Virtual Threads pinning. A situation when carrier thread is blocked in a way, that virtual thread scheduler can’t use it for scheduling of other virtual threads. This can happen for example when blocking native code is invoked, or prior to the JDK 24 when blocking IO operation happens in a synchronized block. Pinning can in some cases negatively affect application performance.
 
-*Enable pinning detection*
-
-```java
+```java [Enable pinning detection]
 @ServerTest(pinningDetection = true)
 ```
 
@@ -180,9 +174,7 @@ Pinning is considered as harmful when it takes longer than 20 milliseconds, that
 
 Pinning threshold can be changed with:
 
-*Configure pinning threshold*
-
-```java
+```java [Configure pinning threshold]
 @ServerTest(pinningDetection = true, pinningThreshold = 50)
 ```
 
@@ -228,9 +220,7 @@ If WebSocket testing is required, there is an additional module for it. It is ne
 
 The WebSocket Testing extension adds support for routing configuration and injection of WebSocket related artifacts, such as WebSockets and DirectWsClient in Helidon unit tests.
 
-*WebSocket sample test.*
-
-```java
+```java [WebSocket sample test.]
 @ServerTest
 class WsSocketTest {
 
@@ -261,9 +251,7 @@ class WsSocketTest {
 - Create and assign the clientside listener.
 - Check if the received message is correct.
 
-*`ClientSideListener` helper class.*
-
-```java
+```java [ClientSideListener helper class.]
 static class ClientSideListener implements WsListener {
     volatile String message;
     volatile Throwable error;
@@ -292,9 +280,7 @@ static class ClientSideListener implements WsListener {
 
 The WebSocket `ClientSideListener` is also a helper class that implements `WsListener` and is very straightforward:
 
-*`ServerSideListener` helper class.*
-
-```java
+```java [ServerSideListener helper class.]
 static class ServerSideListener implements WsListener {
     volatile String message;
 

@@ -17,7 +17,7 @@ To construct the model, Helidon gathers information about the service API from a
 
 ## Maven Coordinates
 
-To enable OpenAPI, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
+To enable OpenAPI, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml
 <dependency>
@@ -69,14 +69,14 @@ Helidon SE OpenAPI configuration supports the settings described below in the `s
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
 | <span id="a9052a-enabled"></span> `enabled` | `VALUE` | `Boolean` | `true` | Sets whether the feature should be enabled |
-| <span id="a2bdbe-manager"></span> [`manager`](../../config/io_helidon_openapi_OpenApiManager.md) | `VALUE` | `i.h.o.OpenApiManager` |   | OpenAPI manager |
+| <span id="a2bdbe-manager"></span> [`manager`](../../config/io_helidon_openapi_OpenApiManager.md) | `VALUE` | `i.h.o.OpenApiManager` |   | OpenAPI manager |
 | <span id="a8b0d5-manager-discover-services"></span> `manager-discover-services` | `VALUE` | `Boolean` | `false` | Whether to enable automatic service discovery for `manager` |
 | <span id="a99850-permit-all"></span> `permit-all` | `VALUE` | `Boolean` | `true` | Whether to allow anybody to access the endpoint |
 | <span id="ad5281-roles"></span> `roles` | `LIST` | `String` | `openapi` | Hints for role names the user is expected to be in |
-| <span id="a8653c-services"></span> [`services`](../../config/io_helidon_openapi_OpenApiService.md) | `LIST` | `i.h.o.OpenApiService` |   | OpenAPI services |
+| <span id="a8653c-services"></span> [`services`](../../config/io_helidon_openapi_OpenApiService.md) | `LIST` | `i.h.o.OpenApiService` |   | OpenAPI services |
 | <span id="ae938a-services-discover-services"></span> `services-discover-services` | `VALUE` | `Boolean` | `true` | Whether to enable automatic service discovery for `services` |
-| <span id="a47a74-sockets"></span> `sockets` | `LIST` | `String` |   | List of sockets to register this feature on |
-| <span id="a0169c-static-file"></span> `static-file` | `VALUE` | `String` |   | Path of the static OpenAPI document file |
+| <span id="a47a74-sockets"></span> `sockets` | `LIST` | `String` |   | List of sockets to register this feature on |
+| <span id="a0169c-static-file"></span> `static-file` | `VALUE` | `String` |   | Path of the static OpenAPI document file |
 | <span id="ac378f-web-context"></span> `web-context` | `VALUE` | `String` | `/openapi` | Web context path for the OpenAPI endpoint |
 | <span id="adb903-weight"></span> `weight` | `VALUE` | `Double` | `90.0` | Weight of the OpenAPI feature |
 
@@ -94,9 +94,7 @@ Helidon SE provides a [complete OpenAPI example](https://github.com/helidon-io/h
 
 The following example shows how to use configuration to customize how OpenAPI works, in this case changing the endpoint where Helidon provides the OpenAPI document.
 
-*Configure OpenAPI behavior*
-
-```yaml
+```yaml [Configure OpenAPI behavior]
 server:
   port: 8080                  
   host: 0.0.0.0
@@ -113,9 +111,7 @@ Most Helidon SE applications need only add the dependency as explained above; He
 
 ### Register `OpenApiFeature` explicitly
 
-*Java Code to Create and Register `OpenApiFeature`*
-
-```java
+```java [Java Code to Create and Register OpenApiFeature]
 WebServer server = WebServer.builder()
         .config(config.get("server"))
         .addFeature(OpenApiFeature.create(config.get("openapi"))) 

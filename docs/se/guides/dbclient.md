@@ -6,27 +6,23 @@ This guide describes the features of Helidon’s DB Client and how to create a s
 
 For this 15 minute tutorial, you will need the following:
 
-|  |  |
-|----|----|
-| [Java SE 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
+| Requirement | Description |
+|-------------|-------------|
+| [Java 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
 | [Maven 3.8+](https://maven.apache.org/download.cgi) | Helidon requires Maven 3.8+. |
 | [Docker 18.09+](https://docs.docker.com/install/) | If you want to build and run Docker containers. |
 | [Kubectl 1.16.5+](https://kubernetes.io/docs/tasks/tools/install-kubectl/) | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
 
 Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
-*Verify Prerequisites*
-
-```bash
+```bash [Verify Prerequisites]
 java -version
 mvn --version
 docker --version
 kubectl version
 ```
 
-*Setting JAVA_HOME*
-
-```bash
+```bash [Setting JAVA_HOME]
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -57,9 +53,7 @@ This section describes how to configure and use the key features of the Helidon 
 
 Create a new file in `helidon-quickstart-se` named `Dockerfile.h2`. It will be used to create the H2 docker image to run H2 in a container.
 
-*Write the following content into the new file created*
-
-```dockerfile
+```dockerfile [Write the following content into the new file created]
 FROM openjdk:11-jre-slim
 
 ENV H2_VERSION "1.4.199"
@@ -81,24 +75,18 @@ CMD java \
 
 Create a new file `h2.server.properties` in the current directory.
 
-*Copy the properties into the properties file.*
-
-```properties
+```properties [Copy the properties into the properties file.]
 webSSL=false
 webAllowOthers=true
 webPort=8082
 0=Generic H2 (Server)|org.h2.Driver|jdbc\:h2\:tcp\://localhost\:9092/~/test|sa
 ```
 
-*Build the H2 docker image*
-
-```bash
+```bash [Build the H2 docker image]
 docker build -f Dockerfile.h2 . -t h2db
 ```
 
-*Run the H2 docker image*
-
-```bash
+```bash [Run the H2 docker image]
 docker run --rm -p 8082:8082 -p 9092:9092 --name=h2 -it h2db
 ```
 
@@ -112,9 +100,7 @@ A database stores the books from the library. H2 is a java SQL database that is 
     - Only the h2-{latest-version}.jar, located in the h2/bin folder, will be needed.
 3.  Open a terminal window and run the following command to start H2:.
 
-*Replace `{latest-version}` with your current H2 version:*
-
-```bash
+```bash [Replace {latest-version} with your current H2 version]
 java -cp h2-{latest-version}.jar org.h2.tools.Shell -url dbc:h2:~/test -user sa -password "" -sql "" 
 java -jar h2-{latest-version}.jar -webAllowOthers -tcpAllowOthers -web -tcp 
 ```
@@ -137,9 +123,7 @@ Password must stay empty. Click **Connect**, the browser displays a web page. Th
 
 Generate the project sources using the Helidon SE Maven archetype. The result is a simple project that can be used for the examples in this guide.
 
-*Run the Maven archetype:*
-
-```bash
+```bash [Run the Maven archetype]
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-se \
@@ -151,9 +135,7 @@ mvn -U archetype:generate -DinteractiveMode=false \
 
 A new directory named `helidon-quickstart-se` is created.
 
-*Enter into this directory:*
-
-```bash
+```bash [Enter into this directory]
 cd helidon-quickstart-se
 ```
 
@@ -161,9 +143,7 @@ cd helidon-quickstart-se
 
 Navigate to the `helidon-quickstart-se` directory and open the `pom.xml` file to add the following Helidon dependencies required to use the DB Client:
 
-*Copy these dependencies to pom.xml:*
-
-```xml
+```xml [Copy these dependencies to pom.xml]
 <dependencies>
     <!-- ... -->
     <dependency>
@@ -218,9 +198,7 @@ Navigate to the `helidon-quickstart-se` directory and open the `pom.xml` file to
 
 To configure the application, Helidon uses the `application.yaml`. The DB Client configuration can be joined in the same file and is located here: `src/main/resources`.
 
-*Copy these properties into application.yaml*
-
-```yaml
+```yaml [Copy these properties into application.yaml]
 db:
   source: jdbc 
   connection: 
@@ -247,9 +225,7 @@ db:
 - SQL statements to manage the database.
 - Add a counter for metrics only for the `select-book` statement.
 
-*Copy these properties into application-test.yaml*
-
-```yaml
+```yaml [Copy these properties into application-test.yaml]
 db:
   connection:
     url: "jdbc:h2:mem:test" 
@@ -259,9 +235,7 @@ db:
 
 ### Set Up Helidon DB Client
 
-*Update `Main#main`:*
-
-```java
+```java [Update Main#main]
 public static void main(String[] args) {
 
     // load logging configuration
@@ -304,9 +278,7 @@ public static void main(String[] args) {
 
 Create LibraryService class into `io.helidon.examples.quickstart.se` package.
 
-*LibraryService class looks like this:*
-
-```java
+```java [LibraryService class looks like this]
 public class LibraryService implements HttpService {
 
     private final DbClient dbClient;    
@@ -336,9 +308,7 @@ public class LibraryService implements HttpService {
 
 As the LibraryService implements `io.helidon.webserver.HttpService`, the `routing(HttpRules)` method has to be implemented. It defines application endpoints and Http request which can be reached by clients.
 
-*Add update method to LibraryService*
-
-```java
+```java [Add update method to LibraryService]
 @Override
 public void routing(HttpRules rules) {
     rules
@@ -356,9 +326,7 @@ public void routing(HttpRules rules) {
 
 To summarize, there is one endpoint that can manipulate books. The number of endpoints and application features can be changed from these rules by creating or modifying methods. `{name}` is a path parameter for the book name. The architecture of the application is defined, so the next step is to create these features.
 
-*Add getBook to the LibraryService:*
-
-```java
+```java [Add getBook to the LibraryService]
 private void getBook(ServerRequest request,
                      ServerResponse response) {
 
@@ -386,9 +354,7 @@ DbExecute class provides many builders to create statements such as, DML, insert
 
 And builders without `Named` keyword, they use a statement passed as an argument. More information on the Helidon DB Client [here](../dbclient.md).
 
-*Add getJsonBook to the LibraryService:*
-
-```java
+```java [Add getJsonBook to the LibraryService]
 private void getJsonBook(ServerRequest request,
                          ServerResponse response) {
 
@@ -407,9 +373,7 @@ private void getJsonBook(ServerRequest request,
 
 Instead of sending the `INFO` content of the targeted book, the `getJsonBook` method send the whole row of the database as a `JsonObject`.
 
-*Add addBook to the LibraryService:*
-
-```java
+```java [Add addBook to the LibraryService]
 private void addBook(ServerRequest request,
                      ServerResponse response) {
 
@@ -432,9 +396,7 @@ private void addBook(ServerRequest request,
 
 When a user adds a new book, it uses HTTP PUT method where the book name is in the URL and the information in the request content. To catch this content, the information is retrieved as a string and then the DB Client execute the `insert-book` script to add the book to the library. It requires two parameters, the book name and information which are passed to the dbClient thanks to `addParam` method. An HTTP 201 is sent back as a confirmation.
 
-*Add deleteBook to LibraryService:*
-
-```java
+```java [Add deleteBook to LibraryService]
 private void deleteBook(ServerRequest request,
                         ServerResponse response) {
 
@@ -454,9 +416,7 @@ To remove a book from the library, use the "delete-book" script in the way than 
 
 ### Set Up Routing
 
-*Modify the `routing` method in `Main.java`:*
-
-```java
+```java [Modify the routing method in Main.java]
 static void routing(HttpRouting.Builder routing) {
     routing
             .register("/greet", new GreetService())
@@ -473,17 +433,13 @@ The library service does not yet exist, but you’ll create it in the next step 
 
 The application is ready to be built and run.
 
-*Run the following to build the application:*
-
-```bash
+```bash [Run the following to build the application]
 mvn package
 ```
 
 Note that the tests are passing as the `GreetFeature` process was not modified. For the purposes of this demonstration, we only added independent new content to the existing application. Make sure H2 is running and start the Helidon quickstart with this command:
 
-*Run the application*
-
-```bash
+```bash [Run the application]
 java -jar target/helidon-quickstart-se.jar
 ```
 
@@ -491,15 +447,11 @@ Once the application starts, check the table LIBRARY is created in the H2 databa
 
 Use `curl` to send request to the application:
 
-*Get a book from the library*
-
-```bash
+```bash [Get a book from the library]
 curl -i http://localhost:8080/library/SomeBook
 ```
 
-*HTTP response*
-
-```text
+```text [HTTP response]
 HTTP/1.1 404 Not Found
 Date: Tue, 12 Jan 2021 14:00:48 +0100
 transfer-encoding: chunked
@@ -508,15 +460,11 @@ connection: keep-alive
 
 There is currently no book inside the library, so the application returns a 404. Yet the application created an empty library table. Try to add a new book.
 
-*Add a book from the library*
-
-```bash
+```bash [Add a book from the library]
 curl -i -X PUT -d "Fantasy" http://localhost:8080/library/HarryPotter
 ```
 
-*HTTP response*
-
-```text
+```text [HTTP response]
 HTTP/1.1 201 Created
 Date: Tue, 12 Jan 2021 14:01:08 +0100
 transfer-encoding: chunked
@@ -525,15 +473,11 @@ connection: keep-alive
 
 This command creates an HTTP PUT request with the genre `Fantasy` content at the address [http://localhost:8080/library/{book-name}](http://localhost:8080/library/{book-name}). The 201 code means that Harry Potter book was successfully added to the library. You can now try to get it !
 
-*Get Harry Potter from the library*
-
-```bash
+```bash [Get Harry Potter from the library]
 curl -i http://localhost:8080/library/HarryPotter
 ```
 
-*HTTP response*
-
-```text
+```text [HTTP response]
 HTTP/1.1 200 OK
 Content-Type: text/plain
 Date: Tue, 12 Jan 2021 14:01:14 +0100
@@ -545,15 +489,11 @@ Fantasy
 
 The application accepted the request and returned an HTTP 200 OK with the book genre that was added earlier.
 
-*Get Harry Potter from the library in Json*
-
-```bash
+```bash [Get Harry Potter from the library in Json]
 curl -i http://localhost:8080/library/json/HarryPotter
 ```
 
-*HTTP response*
-
-```text
+```text [HTTP response]
 HTTP/1.1 200 OK
 Content-Type: text/plain
 Date: Tue, 12 Jan 2021 14:01:14 +0100
@@ -565,15 +505,11 @@ content-length: 6
 
 It returns the database row in a Json format for the Harry Potter book. Harry Potter can be removed from the library with the following:
 
-*Remove Harry Potter from the library*
-
-```bash
+```bash [Remove Harry Potter from the library]
 curl -i -X DELETE http://localhost:8080/library/HarryPotter
 ```
 
-*HTTP response*
-
-```text
+```text [HTTP response]
 HTTP/1.1 204 No Content
 Date: Tue, 12 Jan 2021 14:01:22 +0100
 connection: keep-alive
@@ -581,15 +517,11 @@ connection: keep-alive
 
 The book had been removed from the library and confirmed by the 204 HTTP status. To check that the book was correctly deleted, try to get it again.
 
-*Get Harry Potter from the library*
-
-```bash
+```bash [Get Harry Potter from the library]
 curl -i http://localhost:8080/library/HarryPotter
 ```
 
-*HTTP response*
-
-```text
+```text [HTTP response]
 HTTP/1.1 404 Not Found
 Date: Tue, 12 Jan 2021 14:00:48 +0100
 transfer-encoding: chunked
@@ -598,15 +530,11 @@ connection: keep-alive
 
 The book is not found. We quickly checked, thanks to this suite of command, the application behavior.
 
-*Check the health of your application:*
-
-```bash
+```bash [Check the health of your application]
 curl http://localhost:8080/observe/health
 ```
 
-*Response body*
-
-```json
+```json [Response body]
 {
   "status": "UP",
   "checks": [
@@ -620,15 +548,11 @@ curl http://localhost:8080/observe/health
 
 It confirms that the database is UP.
 
-*Check the metrics of your application:*
-
-```bash
+```bash [Check the metrics of your application]
 curl -H "Accept: application/json" http://localhost:8080/observe/metrics/application
 ```
 
-*Response body*
-
-```json
+```json [Response body]
 {
   "db.counter.select-book" : 4
 }

@@ -213,9 +213,7 @@ If your application converts to the same target type in several places in the co
 
 The following examples build on the example configuration from the [`application.properties`](introduction.md#built-in-support-for-config-formats) example file in the introduction.
 
-*Java POJO to Hold `web` Properties Config*
-
-```java
+```java [Java POJO to Hold web Properties Config]
 public class WebConfig {
     private boolean debug;
     private int pageSize;
@@ -241,9 +239,7 @@ public class WebConfig {
 }
 ```
 
-*Custom Mapper Class*
-
-```java
+```java [Custom Mapper Class]
 public class WebConfigMapper implements Function<Config, WebConfig> {
 
     @Override
@@ -257,9 +253,7 @@ public class WebConfigMapper implements Function<Config, WebConfig> {
 }
 ```
 
-*Explicitly Using the Mapper*
-
-```java
+```java [Explicitly Using the Mapper]
 Config config = Config.create(classpath("application.properties"));
 
 WebConfig web = config.get("web")
@@ -267,9 +261,7 @@ WebConfig web = config.get("web")
         .get();
 ```
 
-*Registering and Implicitly Using the Mapper*
-
-```java
+```java [Registering and Implicitly Using the Mapper]
 Config config = Config.builder(classpath("application.properties"))
         .addMapper(WebConfig.class, new WebConfigMapper())
         .build();
@@ -289,9 +281,7 @@ Your application facilitates this implicit mapping either by adding to the POJO 
 
 This feature is available in Object mapping module, and is added through Java `ServiceLoader` mechanism. This is no longer part of core Config module, as it depends on reflection and introduces a lot of magic (see the list of supported mapping methods below, also uses reflection to invoke the methods and to map configuration values to fields/methods etc.).
 
-*Config object mapping Dependency in `pom.xml`*
-
-```xml
+```xml [Config object mapping Dependency in pom.xml]
 <dependency>
     <groupId>io.helidon.config</groupId>
     <artifactId>helidon-config-object-mapping</artifactId>
@@ -368,9 +358,7 @@ The following sections describe these patterns in more detail.
 
 This feature is available in Object mapping module, and is added through Java `ServiceLoader` mechanism. This is no longer part of core Config module, as it depends on reflection.
 
-*Config object mapping Dependency in `pom.xml`*
-
-```xml
+```xml [Config object mapping Dependency in pom.xml]
 <dependency>
     <groupId>io.helidon.config</groupId>
     <artifactId>helidon-config-object-mapping</artifactId>
@@ -399,9 +387,7 @@ To exclude a bean property from the config system bean processing annotate it wi
 
 Here is an example using the `app` portion of the example configuration from the introduction.
 
-*Java bean to load `app` properties into via setters*
-
-```java
+```java [Java bean to load app properties into via setters]
 public class AppConfig {
     private Instant timestamp;
     private String greeting;
@@ -469,9 +455,7 @@ public class AppConfig {
 
 Here is an example of code loading config and mapping part of it to the `AppConfig` bean above.
 
-*Map `app` config node into `AppConfig` class*
-
-```java
+```java [Map app config node into AppConfig class]
 Config config = Config.create(classpath("application.conf"));
 
 AppConfig app = config.get("app")
@@ -502,9 +486,7 @@ If the target class includes the public static method `builder()` that returns a
 
 You can augment the target class with the public static `builder()` method:
 
-*JavaBean for `app` properties, via a `Builder`*
-
-```java
+```java [JavaBean for app properties, via a Builder]
 public static class Builder { 
 
     private String greeting;
@@ -549,9 +531,7 @@ Another option is to annotate the parameters to a *factory method* or to a const
 > [!WARNING]
 > Be sure to annotate each parameter of the `from` method or constructor with `@Value` and specify the key to use for the mapping. The parameter names in the Java code are not always available at runtime to map to config keys. (They might be `arg0`, `arg1`, etc.)
 
-*Target Class with Factory Method `from`*
-
-```java
+```java [Target Class with Factory Method from]
 public static AppConfig from(
         @Value(key = "greeting") String greeting, 
         @Value(key = "page-size", withDefault = "10") int pageSize, 
@@ -565,9 +545,7 @@ public static AppConfig from(
 
 Alternatively, you can use an annotated constructor instead of a static factory method. Revising the example above, make the constructor public, annotate its parameters, and remove the now-unneeded `from` factory method.
 
-*Target Class with Annotated Public Constructor*
-
-```java
+```java [Target Class with Annotated Public Constructor]
 public AppConfig( 
                   @Value(key = "greeting") 
                   String greeting,

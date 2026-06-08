@@ -10,9 +10,7 @@ In Helidon MP, the config encryption filter is **enabled by default**. However, 
 
 In Helidon SE, you may add support for this filter with dependency (loaded through a java service mechanism):
 
-*Maven Dependency*
-
-```xml
+```xml [Maven Dependency]
 <dependency>
     <groupId>io.helidon.config</groupId>
     <artifactId>helidon-config-encryption</artifactId>
@@ -46,9 +44,7 @@ Symmetric encryption is based on a shared secret that is known by the person enc
 
 The config encryption filter provides a Main class `io.helidon.config.encryption.Main` that can be used to encrypt values.
 
-*Encrypt secret `secretToEncrypt` using shared secret `masterPassword`*
-
-```bash
+```bash [Encrypt secret secretToEncrypt using shared secret masterPassword]
 java -jar <path-to-app-libs-dir>/helidon-config-encryption-{helidon-version}.jar aes masterPassword secretToEncrypt
 ```
 
@@ -73,9 +69,7 @@ When using the config encryption filter, you should encrypt the configuration va
 
 The config encryption filter provides a Main class `io.helidon.config.encryption.Main` that can be used to encrypt values.
 
-*Encrypt secret `secretToEncrypt` using public certificate in a keystore*
-
-```bash
+```bash [Encrypt secret secretToEncrypt using public certificate in a keystore]
 java -jar <path-to-app-libs-dir>/helidon-config-encryption-{helidon-version}.jar rsa /path/to/keystore.p12 keystorePassword publicCertAlias secretToEncrypt
 ```
 
@@ -102,9 +96,7 @@ RSA Configuration Options: Keystore
 
 RSA Configuration Options: PEM (PKCS#8) private key
 
-*Example yaml configuration*
-
-```yaml
+```yaml [Example yaml configuration]
 security.config:
   # Set to true for production - if set to true, clear text passwords will cause failure
   require-encryption: false

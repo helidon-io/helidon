@@ -6,27 +6,23 @@ This guide describes how to create a sample Helidon SE project that can be used 
 
 For this 15 minute tutorial, you will need the following:
 
-|  |  |
-|----|----|
-| [Java SE 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
+| Requirement | Description |
+|-------------|-------------|
+| [Java 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
 | [Maven 3.8+](https://maven.apache.org/download.cgi) | Helidon requires Maven 3.8+. |
 | [Docker 18.09+](https://docs.docker.com/install/) | If you want to build and run Docker containers. |
 | [Kubectl 1.16.5+](https://kubernetes.io/docs/tasks/tools/install-kubectl/) | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
 
 Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
-*Verify Prerequisites*
-
-```bash
+```bash [Verify Prerequisites]
 java -version
 mvn --version
 docker --version
 kubectl version
 ```
 
-*Setting JAVA_HOME*
-
-```bash
+```bash [Setting JAVA_HOME]
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -57,9 +53,7 @@ For more information about the `WebClient`, please refer to the [WebClient Intro
 
 Generate the project sources using the Helidon SE Maven archetype. The result is a simple project that can be used for the examples in this guide.
 
-*Run the Maven archetype:*
-
-```bash
+```bash [Run the Maven archetype]
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-se \
@@ -71,9 +65,7 @@ mvn -U archetype:generate -DinteractiveMode=false \
 
 You should now have a directory called `helidon-quickstart-se`.
 
-*Open this directory*
-
-```bash
+```bash [Open this directory]
 cd helidon-quickstart-se
 ```
 
@@ -81,9 +73,7 @@ The Helidon quickstart is a greeting application supporting several HTTP request
 
 The quickstart example utilizes `WebClient` solely for testing purposes, with the dependency configured under the test scope. To use `WebClient` within your application, remove the test scope from the dependency in the `pom.xml`.
 
-*Remove the `test` scope from WebClient dependency*
-
-```xml
+```xml [Remove the test scope from WebClient dependency]
 <dependency>
     <groupId>io.helidon.webclient</groupId>
     <artifactId>helidon-webclient</artifactId>
@@ -94,9 +84,7 @@ The quickstart example utilizes `WebClient` solely for testing purposes, with th
 
 In `io.helidon.examples.quickstart.se` package, create a new class named ClientExample. This class will use the WebClient to send request to the greeting application.
 
-*Create ClientExample class:*
-
-```java
+```java [Create ClientExample class]
 public class ClientExample {
 
     public static void main(String[] args) {
@@ -107,9 +95,7 @@ public class ClientExample {
 
 Add the following code to the main method to create a WebClient instance. The builder approach allows you to create the WebClient with specific settings and improves the readability and simplicity of the code.
 
-*Add WebClient instance to the main method:*
-
-```java
+```java [Add WebClient instance to the main method]
 WebClient webClient = WebClient.builder()
         .baseUri("http://localhost:8080") 
         .build();
@@ -119,9 +105,7 @@ WebClient webClient = WebClient.builder()
 
 By default, the Helidon quickstart application runs on localhost:8080. If for some reason the host name or port number of the quickstart application is changed, make sure that the baseURI is also modified to reflect that change. Once built, the WebClient can be used to send a GET request to the greeting application.
 
-*Send a GET request to the target endpoint:*
-
-```java
+```java [Send a GET request to the target endpoint]
 ClientResponseTyped<String> response = webClient.get() 
         .path("/greet") 
         .request(String.class); 
@@ -138,31 +122,23 @@ The path method appends `/greet` to the WebClient base URI which results to the 
 
 #### Run the application
 
-*Build the quickstart:*
-
-```bash
+```bash [Build the quickstart]
 mvn package
 ```
 
 This command will create helidon-quickstart-se.jar in the target folder.
 
-*Run the greeting application:*
-
-```bash
+```bash [Run the greeting application]
 java -cp target/helidon-quickstart-se.jar io.helidon.examples.quickstart.se.Main
 ```
 
 Open a new command prompt or terminal and run the ClientExample class you just created.
 
-*Run the client application:*
-
-```bash
+```bash [Run the client application]
 java -cp target/helidon-quickstart-se.jar io.helidon.examples.quickstart.se.ClientExample
 ```
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {"message":"Hello World!"}
 ```
 
@@ -181,9 +157,7 @@ In practice, String is not the most useful return type, since it usually needs s
 
 Once the dependency is added, the feature will be automatically loaded as a service allowing the response methods to easily parse the JSON object.
 
-*Replace String with JsonObject:*
-
-```java
+```java [Replace String with JsonObject]
 ClientResponseTyped<JsonObject> response = webClient.get()
         .path("/greet/David")
         .request(JsonObject.class); 
@@ -196,17 +170,13 @@ System.out.println(value);
 
 In the URI, the String value following `greet` is a path parameter which allows the application to greet someone.
 
-*Output:*
-
-```bash
+```bash [Output]
 Hello David!
 ```
 
 It is also possible to change the greeting word by using a PUT request to `/greet/greeting` path. The request also needs to include a body with JSON type and using a structure like `{"greeting" : "value"}`.
 
-*Modify the application greeting:*
-
-```java
+```java [Modify the application greeting]
 JsonObject entity = Json.createObjectBuilder() 
         .add("greeting", "Bonjour")
         .build();
@@ -228,9 +198,7 @@ System.out.println(entityString);
 
 Executing the above code will yield this output showing that the greeting word has been changed.
 
-*Output:*
-
-```bash
+```bash [Output]
 Bonjour David!
 ```
 
@@ -242,9 +210,7 @@ WebClient, like other Helidon components, supports Metrics. The following exampl
 
 To enable support for this feature, the `helidon-webclient-metrics` dependency needs to be added .
 
-*Add the following dependency to pom.xml:*
-
-```xml
+```xml [Add the following dependency to pom.xml]
 <dependency>
     <groupId>io.helidon.webclient</groupId>
     <artifactId>helidon-webclient-metrics</artifactId>
@@ -255,9 +221,7 @@ To enable support for this feature, the `helidon-webclient-metrics` dependency n
 
 Metrics can be registered on the WebClient directly. The following example shows how a `Counter` metric can be defined, created and monitored.
 
-*Example of metric creation:*
-
-```java
+```java [Example of metric creation]
 MeterRegistry METER_REGISTRY = Metrics.globalRegistry();
 
 String metricName = "counter.GET.localhost"; 
@@ -289,9 +253,7 @@ So for example, if the `nameFormat` value is `metric.%1$s.%2$s.%3$s` and a reque
 
 To register the metric service, simply use the `addService` method and pass in the created WebClient Metric Service as a parameter.
 
-*Add the metric service to the WebClient:*
-
-```java
+```java [Add the metric service to the WebClient]
 WebClient webClient = WebClient.builder()
         .baseUri("http://localhost:8080")
         .addService(clientServiceMetric) 
@@ -305,17 +267,13 @@ webClient.get().path("/greet").request();
 
 To verify that the metric is set up correctly, print the value of the Counter at the end of the main method.
 
-*Print the metric count*
-
-```java
+```java [Print the metric count]
 System.out.println(metricName + ": " + counter.count());
 ```
 
 This will result to an output showing that a metric with the name of `counter.GET.localhost` was created with a count value of 1 indicating that it correctly measured the request that was just made.
 
-*Output:*
-
-```bash
+```bash [Output]
 counter.GET.localhost: 1
 ```
 
@@ -323,9 +281,7 @@ counter.GET.localhost: 1
 
 Using the configuration file can reduce the code complexity and make the metrics simpler to use. With this approach, it eliminates the need to modify the source code for scenarios where the metric settings have to be changed. The `application.yaml` file is the default configuration file for Helidon and can be used to set up metrics settings.
 
-*Example of metric configuration:*
-
-```yaml
+```yaml [Example of metric configuration]
 client:
   services:
     metrics:
@@ -337,9 +293,7 @@ client:
 
 In the example configuration definition above, the metrics configuration are located under `client.services.metrics`. The metric setting can start either by its `type` or `methods`. The configuration file uses the same keywords as the programmatic way. For example, `type` defines the kind of metric and `methods` identifies the http methods that will be measured.
 
-*Add the metric service to the WebClient via the Configuration:*
-
-```java
+```java [Add the metric service to the WebClient via the Configuration]
 MeterRegistry METER_REGISTRY = Metrics.globalRegistry();
 
 String counterName = "counter.GET.localhost"; 

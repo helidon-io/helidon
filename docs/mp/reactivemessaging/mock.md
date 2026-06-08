@@ -6,7 +6,7 @@ Mock connector is a simple application scoped bean that can be used for emitting
 
 ## Maven Coordinates
 
-To enable Mock Connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
+To enable Mock Connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml
 <dependency>
@@ -30,9 +30,7 @@ MockConnector mockConnector;
 
 ### Emitting Data
 
-*Emitting String values `a`, `b`, `c`*
-
-```java
+```java [Emitting String values a, b, c]
 mockConnector.incoming("my-incoming-channel", String.class) 
         .emit("a", "b", "c");
 ```
@@ -41,9 +39,7 @@ mockConnector.incoming("my-incoming-channel", String.class)
 
 ### Asserting Data
 
-*Awaiting and asserting payloads with custom mapper*
-
-```java
+```java [Awaiting and asserting payloads with custom mapper]
 mockConnector
         .outgoing("my-outgoing-channel", String.class) 
         .awaitData(TIMEOUT, Message::getPayload, "a", "b", "c"); 

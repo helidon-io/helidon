@@ -6,27 +6,23 @@ This guide describes how to create a sample MicroProfile (MP) project that can b
 
 For this 20 minute tutorial, you will need the following:
 
-|  |  |
-|----|----|
-| [Java SE 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
+| Requirement | Description |
+|-------------|-------------|
+| [Java 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
 | [Maven 3.8+](https://maven.apache.org/download.cgi) | Helidon requires Maven 3.8+. |
 | [Docker 18.09+](https://docs.docker.com/install/) | If you want to build and run Docker containers. |
 | [Kubectl 1.16.5+](https://kubernetes.io/docs/tasks/tools/install-kubectl/) | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
 
 Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
-*Verify Prerequisites*
-
-```bash
+```bash [Verify Prerequisites]
 java -version
 mvn --version
 docker --version
 kubectl version
 ```
 
-*Setting JAVA_HOME*
-
-```bash
+```bash [Setting JAVA_HOME]
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -43,9 +39,7 @@ Helidon provides a very flexible and comprehensive configuration system, offerin
 
 Use the Helidon MP Maven archetype to create a simple project that can be used for the examples in this guide.
 
-*Run the Maven archetype:*
-
-```bash
+```bash [Run the Maven archetype]
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-mp \
@@ -55,9 +49,7 @@ mvn -U archetype:generate -DinteractiveMode=false \
     -Dpackage=io.helidon.examples.quickstart.mp
 ```
 
-*The project will be built and run from the `helidon-quickstart-mp` directory:*
-
-```bash
+```bash [The project will be built and run from the helidon-quickstart-mp directory]
 cd helidon-quickstart-mp
 ```
 
@@ -67,9 +59,7 @@ Helidon has an internal configuration, so you are not required to provide any co
 
 A main class is also required to start up the server and run the application. By default, the Quickstart sample project uses the built-in Helidon main class. In this guide you want to use your own main class, so you have more control over the server initialization. First define your own `Main`:
 
-*src/main/java/io/helidon/examples/quickstart/mp/Main.java*
-
-```java
+```java [src/main/java/io/helidon/examples/quickstart/mp/Main.java]
 public final class Main {
 
     private Main() {
@@ -94,9 +84,7 @@ In this class, a `main` method is defined which starts the Helidon MP server and
 
 Next change the project’s `pom.xml` to use your main class:
 
-*pom.xml*
-
-```xml
+```xml [pom.xml]
 <properties>
     <mainClass>io.helidon.examples.quickstart.mp.Main</mainClass>
 </properties>
@@ -106,9 +94,7 @@ This property will be used to set the `Main-Class` attribute in the application 
 
 In your application code, Helidon uses the default configuration when you create a `Server` object without a custom `Config` object. See the following code from the project you created.
 
-*View `Main#startServer`:*
-
-```java
+```java [View Main#startServer]
 static Server startServer() {
     return Server.create().start(); 
 }
@@ -135,22 +121,16 @@ The following examples will demonstrate the default precedence order.
 
 Change a configuration parameter in the default configuration resource file, `META-INF/microprofile-config.properties`. There are no environment variable or system property overrides defined.
 
-*Change `app.greeting` in the `META-INF/microprofile-config.properties` from `Hello` to `HelloFromMPConfig`:*
-
-```properties
+```properties [Change app.greeting in the META-INF/microprofile-config.properties from Hello to HelloFromMPConfig]
 app.greeting=HelloFromMPConfig
 ```
 
-*Build the application, skipping unit tests, then run it:*
-
-```bash
+```bash [Build the application, skipping unit tests, then run it]
 mvn package -DskipTests=true
 java -jar target/helidon-quickstart-mp.jar
 ```
 
-*Run the curl command in a new terminal window and check the response:*
-
-```bash
+```bash [Run the curl command in a new terminal window and check the response]
 curl http://localhost:8080/greet
 ```
 
@@ -166,22 +146,16 @@ curl http://localhost:8080/greet
 
 An environment variable has a higher precedence than the configuration properties file.
 
-*Set the environment variable and restart the application:*
-
-```bash
+```bash [Set the environment variable and restart the application]
 export APP_GREETING=HelloFromEnvironment
 java -jar target/helidon-quickstart-mp.jar
 ```
 
-*Invoke the endpoint*
-
-```bash
+```bash [Invoke the endpoint]
 curl http://localhost:8080/greet
 ```
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {
   "message": "HelloFromEnvironment World!" 
 }
@@ -193,21 +167,15 @@ curl http://localhost:8080/greet
 
 A system property has a higher precedence than environment variables.
 
-*Restart the application with a system property. The `app.greeting` environment variable is still set:*
-
-```bash
+```bash [Restart the application with a system property. The app.greeting environment variable is still set]
 java -Dapp.greeting="HelloFromSystemProperty"  -jar target/helidon-quickstart-mp.jar
 ```
 
-*Invoke the endpoint*
-
-```bash
+```bash [Invoke the endpoint]
 curl http://localhost:8080/greet
 ```
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {
   "message": "HelloFromSystemProperty World!" 
 }
@@ -221,9 +189,7 @@ The examples in this section will demonstrate how to access that config data at 
 
 The generated project already accesses configuration data in the `GreetingProvider` class as follows:
 
-*View the following code from `GreetingProvider.java`:*
-
-```java
+```java [View the following code from GreetingProvider.java]
 @ApplicationScoped 
 public class GreetingProvider {
     private final AtomicReference<String> message = new AtomicReference<>(); 
@@ -251,9 +217,7 @@ public class GreetingProvider {
 
 You can inject configuration at the field level as shown below. Use the `volatile` keyword since you cannot use `AtomicReference` with field level injection.
 
-*Update the `meta-config.yaml` with the following contents:*
-
-```yaml
+```yaml [Update the meta-config.yaml with the following contents]
 sources:
   - type: "classpath"
     properties:
@@ -262,9 +226,7 @@ sources:
 
 - This example only uses the default classpath source.
 
-*Update the following code from `GreetingProvider.java`:*
-
-```java
+```java [Update the following code from GreetingProvider.java]
 @ApplicationScoped
 public class GreetingProvider {
 
@@ -285,15 +247,11 @@ public class GreetingProvider {
 - Inject the value of `app.greeting` into the `GreetingProvider` object.
 - Define a class member variable to hold the greeting.
 
-*Build and run the application, then invoke the endpoint*
-
-```bash
+```bash [Build and run the application, then invoke the endpoint]
 curl http://localhost:8080/greet
 ```
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {
   "message": "HelloFromMPConfig World!"
 }
@@ -303,9 +261,7 @@ curl http://localhost:8080/greet
 
 You can inject the `Config` object into the class and access it directly as shown below.
 
-*Replace the `GreetingProvider` class:*
-
-```java
+```java [Replace the GreetingProvider class]
 @ApplicationScoped
 public class GreetingProvider {
     private final AtomicReference<String> message = new AtomicReference<>();
@@ -329,15 +285,11 @@ public class GreetingProvider {
 - Inject the `Config` object into the `GreetingProvider` object.
 - Get the `app.greeting` value from the `Config` object and set the member variable.
 
-*Build and run the application, then invoke the endpoint*
-
-```bash
+```bash [Build and run the application, then invoke the endpoint]
 curl http://localhost:8080/greet
 ```
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {
   "message": "HelloFromMPConfig World!"
 }
@@ -349,18 +301,14 @@ Helidon offers a variety of methods to access in-memory configuration. These can
 
 This simple example below demonstrates how to access a child node as a detached configuration subtree.
 
-*Create a file `config-file.yaml` in the `helidon-quickstart-mp` directory and add the following contents:*
-
-```yaml
+```yaml [Create a file config-file.yaml in the helidon-quickstart-mp directory and add the following contents]
 app:
   greeting:
     sender: Joe
     message: Hello-from-config-file.yaml
 ```
 
-*Update the `meta-config.yaml` with the following contents:*
-
-```yaml
+```yaml [Update the meta-config.yaml with the following contents]
 sources:
   - type: "classpath"
     properties:
@@ -370,9 +318,7 @@ sources:
       path: "./config-file.yaml"
 ```
 
-*Replace `GreetingProvider` class with the following code:*
-
-```java
+```java [Replace GreetingProvider class with the following code]
 @ApplicationScoped
 public class GreetingProvider {
     private final AtomicReference<String> message = new AtomicReference<>();
@@ -401,15 +347,11 @@ public class GreetingProvider {
 - Get the value from the `message` `Config` node.
 - Get the value from the `sender` `Config` node.
 
-*Build and run the application, then invoke the endpoint*
-
-```bash
+```bash [Build and run the application, then invoke the endpoint]
 curl http://localhost:8080/greet
 ```
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {
   "message": "Joe says Hello-from-config-file.yaml World!"
 }
@@ -419,9 +361,7 @@ curl http://localhost:8080/greet
 
 The following example uses a Kubernetes ConfigMap to pass the configuration data to your Helidon application deployed to Kubernetes. When the pod is created, Kubernetes will automatically create a local file within the container that has the contents of the configuration file used for the ConfigMap. This example will create the file at `/etc/config/config-file.properties`.
 
-*Update the `Main` class and replace the `buildConfig` method:*
-
-```java
+```java [Update the Main class and replace the buildConfig method]
 private static Config buildConfig() {
     return Config.builder()
             .sources(
@@ -434,9 +374,7 @@ private static Config buildConfig() {
 - The `app.greeting` value will be fetched from `/etc/config/config-file.properties` within the container.
 - The server port is specified in `META-INF/microprofile-config.properties` within the `helidon-quickstart-mp.jar`.
 
-*Update the following code from `GreetingProvider.java`:*
-
-```java
+```java [Update the following code from GreetingProvider.java]
 @ApplicationScoped
 public class GreetingProvider {
 
@@ -454,35 +392,25 @@ public class GreetingProvider {
 }
 ```
 
-*Build and run the application, then invoke the endpoint*
-
-```bash
+```bash [Build and run the application, then invoke the endpoint]
 curl http://localhost:8080/greet
 ```
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {
   "message": "HelloFromConfigFile World!"
 }
 ```
 
-*Stop the application and build the docker image:*
-
-```bash
+```bash [Stop the application and build the docker image]
 docker build -t helidon-config-mp .
 ```
 
-*Generate a ConfigMap from `config-file.properties`:*
-
-```bash
+```bash [Generate a ConfigMap from config-file.properties]
 kubectl create configmap helidon-configmap --from-file config-file.properties
 ```
 
-*View the contents of the ConfigMap:*
-
-```bash
+```bash [View the contents of the ConfigMap]
 kubectl get configmap helidon-configmap -o yaml
 ```
 
@@ -497,9 +425,7 @@ kind: ConfigMap
 - The file `config-file.properties` will be created within the Kubernetes container.
 - The `config-file.properties` file will have this single property defined.
 
-*Create the Kubernetes YAML specification, named `k8s-config.yaml`, with the following contents:*
-
-```yaml
+```yaml [Create the Kubernetes YAML specification, named k8s-config.yaml, with the following contents]
 kind: Service
 apiVersion: v1
 metadata:
@@ -552,15 +478,11 @@ spec:
 - Mount the ConfigMap as a volume at `/etc/config`. This is where Kubernetes will create `config-file.properties`.
 - Specify the ConfigMap which contains the configuration data.
 
-*Create and deploy the application into Kubernetes:*
-
-```bash
+```bash [Create and deploy the application into Kubernetes]
 kubectl apply -f ./k8s-config.yaml
 ```
 
-*Get the service information:*
-
-```bash
+```bash [Get the service information]
 kubectl get service/helidon-config
 ```
 
@@ -571,15 +493,11 @@ helidon-config   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s
 
 - A service of type `NodePort` that serves the default routes on port `31143`.
 
-*Verify the configuration endpoint using port `31143`, your port will likely be different:*
-
-```bash
+```bash [Verify the configuration endpoint using port 31143, your port will likely be different]
 curl http://localhost:31143/greet
 ```
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {
   "message": "HelloFromConfigFile World!" 
 }
@@ -589,9 +507,7 @@ curl http://localhost:31143/greet
 
 You can now delete the Kubernetes resources that were just created during this example.
 
-*Delete the Kubernetes resources:*
-
-```bash
+```bash [Delete the Kubernetes resources]
 kubectl delete -f ./k8s-config.yaml
 kubectl delete configmap  helidon-configmap
 ```

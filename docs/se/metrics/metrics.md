@@ -24,11 +24,9 @@ Helidon SE uses the term "metrics" to refer to the subsystem in Helidon which ma
 
 ## Maven Coordinates
 
-To enable metrics, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
+To enable metrics, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
-*Packaging the metrics API*
-
-```xml
+```xml [Packaging the metrics API]
 <dependency>
     <groupId>io.helidon.metrics</groupId>
     <artifactId>helidon-metrics-api</artifactId>
@@ -43,9 +41,7 @@ This dependency adds the metrics API and a no-op implementation of that API to y
 
 To include the full-featured metrics implementation and support for the metrics endpoint, add the following dependency to your project:
 
-*Packaging the metrics endpoint support and a full-featured metrics implementation*
-
-```xml
+```xml [Packaging the metrics endpoint support and a full-featured metrics implementation]
 <dependency>
     <groupId>io.helidon.webserver.observe</groupId>
     <artifactId>helidon-webserver-observe-metrics</artifactId>
@@ -58,9 +54,7 @@ You might notice the transitive dependency `io.helidon.metrics.providers:helidon
 
 Helidon provides several built-in meters in a separate artifact. To include the build-in meters, add the following dependency to your project:
 
-*Packaging the built-in meters*
-
-```xml
+```xml [Packaging the built-in meters]
 <dependency>
     <groupId>io.helidon.metrics</groupId>
     <artifactId>helidon-metrics-system-meters</artifactId>
@@ -147,24 +141,22 @@ If you configure an OTLP publisher, Helidon exports metrics data periodically to
 | <span id="a726ba-base-time-unit"></span> [`base-time-unit`](../../config/java_util_concurrent_TimeUnit.md) | `VALUE` | `TimeUnit` | `java.util.concurrent.TimeUnit.MILLISECONDS` | Base time unit for timers |
 | <span id="ace1fb-batch-size"></span> `batch-size` | `VALUE` | `Integer` | `10000` | Number of measurements to send in a single request to the backend |
 | <span id="a6b5d5-enabled"></span> `enabled` | `VALUE` | `Boolean` | `true` | Whether the configured publisher is enabled |
-| <span id="a821e5-headers"></span> `headers` | `MAP` | `String` |   | Headers to add to each transmission message |
+| <span id="a821e5-headers"></span> `headers` | `MAP` | `String` |   | Headers to add to each transmission message |
 | <span id="afbfb5-interval"></span> `interval` | `VALUE` | `Duration` | `PT60s` | Interval between successive transmissions of metrics data |
 | <span id="a65cf0-max-bucket-count"></span> `max-bucket-count` | `VALUE` | `Integer` | `160` | Maximum bucket count to apply to statistical histogram |
-| <span id="a11feb-max-buckets-per-meter"></span> `max-buckets-per-meter` | `MAP` | `Integer` |   | Maximum number of buckets to use for specific meters |
+| <span id="a11feb-max-buckets-per-meter"></span> `max-buckets-per-meter` | `MAP` | `Integer` |   | Maximum number of buckets to use for specific meters |
 | <span id="a52180-max-scale"></span> `max-scale` | `VALUE` | `Integer` | `20` | Maximum scale value to apply to statistical histogram |
-| <span id="a00636-name"></span> `name` | `VALUE` | `String` |   | `N/A` |
+| <span id="a00636-name"></span> `name` | `VALUE` | `String` |   | `N/A` |
 | <span id="a64095-prefix"></span> `prefix` | `VALUE` | `String` | `otlp` | The prefix for settings |
-| <span id="afb329-properties"></span> `properties` | `MAP` | `String` |   | Property values to be returned by the OTLP meter registry configuration |
-| <span id="a5f081-resource-attributes"></span> `resource-attributes` | `MAP` | `String` |   | Attribute name/value pairs to be associated with all metrics transmissions |
+| <span id="afb329-properties"></span> `properties` | `MAP` | `String` |   | Property values to be returned by the OTLP meter registry configuration |
+| <span id="a5f081-resource-attributes"></span> `resource-attributes` | `MAP` | `String` |   | Attribute name/value pairs to be associated with all metrics transmissions |
 | <span id="a1f8b3-url"></span> `url` | `VALUE` | `String` | `http://localhost:4318/v1/metrics` | URL to which to send metrics telemetry |
 
 The configuration directly mirrors the Micrometer `OtlpMeterRegistry` settings so you can control all behavior which Micrometer exposes for the meter registry.
 
 The following example sets up an OTLP publisher to transmit metrics data every 30 seconds.
 
-*Example OTLP publisher settings*
-
-```yaml
+```yaml [Example OTLP publisher settings]
 metrics:
   publishers:         
     otlp:  
@@ -183,11 +175,11 @@ If you configure a Prometheus publisher or rely on the inferred one, Helidon can
 
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
-| <span id="a6614e-descriptions"></span> `descriptions` | `VALUE` | `Boolean` |   | Whether to include meter descriptions in Prometheus output |
+| <span id="a6614e-descriptions"></span> `descriptions` | `VALUE` | `Boolean` |   | Whether to include meter descriptions in Prometheus output |
 | <span id="a248f8-enabled"></span> `enabled` | `VALUE` | `Boolean` | `true` | Whether the configured publisher is enabled |
-| <span id="ae8bbc-interval"></span> `interval` | `VALUE` | `Duration` |   | Step size used in computing "windowed" statistics |
-| <span id="abd446-name"></span> `name` | `VALUE` | `String` |   | `N/A` |
-| <span id="a3221e-prefix"></span> `prefix` | `VALUE` | `String` |   | Property name prefix |
+| <span id="ae8bbc-interval"></span> `interval` | `VALUE` | `Duration` |   | Step size used in computing "windowed" statistics |
+| <span id="abd446-name"></span> `name` | `VALUE` | `String` |   | `N/A` |
+| <span id="a3221e-prefix"></span> `prefix` | `VALUE` | `String` |   | Property name prefix |
 
 ##### Understanding the Inferred Prometheus Publisher
 
@@ -199,9 +191,7 @@ In particular, Helidon *does not* use the inferred Prometheus publisher if you c
 
 You can configure other publishers and still have Helidon use the default one by simply adding the `prometheus` publisher entry. You do not need to specify further settings for it.
 
-*Using an OLTP publisher **and** the default Prometheus publisher*
-
-```yaml
+```yaml [Using an OLTP publisher **and** the default Prometheus publisher]
 metrics:
   publishers:
     prometheus:
@@ -223,9 +213,7 @@ Look at Helidon’s [OTLP publisher blueprint]({https://github.com/helidon-io/he
 
 Refer to your publisher in configuration using the config key you set up in the publisher provider.
 
-*Example config using a hypothetical Datadog publisher*
-
-```yaml
+```yaml [Example config using a hypothetical Datadog publisher]
 metrics:
   publishers:
     micrometer-datadog:
@@ -254,9 +242,7 @@ Clients can also limit the report by specifying the scope as a query parameter i
 
 Further, clients can narrow down to a specific metric name by adding the name as another query parameter, such as `/observe/metrics?scope=application&name=myCount`.
 
-*Example Reporting: Prometheus format*
-
-```bash
+```bash [Example Reporting: Prometheus format]
 curl -s -H 'Accept: text/plain' -X GET http://localhost:8080/observe/metrics
 ```
 
@@ -268,15 +254,11 @@ classloader_loadedClasses_count{scope="base",} 5297.0
 
 See the summary of the [OpenMetrics and Prometheus Format](#openmetrics-and-prometheus-format) for more information.
 
-*Example Reporting: JSON format*
-
-```bash
+```bash [Example Reporting: JSON format]
 curl -s -H 'Accept: application/json' -X GET http://localhost:8080/observe/metrics
 ```
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {
    "base" : {
       "memory.maxHeap" : 3817865216,
@@ -399,9 +381,7 @@ Unlike OpenMetrics/Prometheus output, which combines the data and the metadata i
 
 Helidon groups meters in the same scope together in JSON output as shown in the following example.
 
-*JSON metrics output structured by scope (partial)*
-
-```json
+```json [JSON metrics output structured by scope (partial)]
 {
   "application": {  
     "getTimer": {
@@ -433,9 +413,7 @@ Helidon groups meters in the same scope together in JSON output as shown in the 
 
 If an HTTP request [selects by scope](#scope-specific-retrieval), the output omits the extra level of structure that identifies the scope as shown in the following example.
 
-*JSON metrics output for the `base` scope (partial)*
-
-```json
+```json [JSON metrics output for the base scope (partial)]
 {
   "cpu.systemLoadAverage": {
     "type": "gauge",
@@ -452,15 +430,11 @@ If an HTTP request [selects by scope](#scope-specific-retrieval), the output omi
 
 The Helidon JSON format expresses each meter as either a single value (for example, a counter) or a structure with multiple values (for example, a timer).
 
-*JSON output for a single-valued meter (for example, `Counter`)*
-
-```json
+```json [JSON output for a single-valued meter (for example, Counter)]
 "requests.count": 5
 ```
 
-*JSON output for a multi-valued meter (for example, `Timer`)*
-
-```json
+```json [JSON output for a multi-valued meter (for example, Timer)]
 "getTimer": {
   "count": 3,
   "max": 0.0030455,
@@ -481,18 +455,14 @@ By default, Helidon formats time values contained in JSON output as seconds. You
 
 Access the metrics endpoint with an HTTP `OPTIONS` request and the `Accept: application/json` header to retrieve metadata in JSON format.
 
-*Example `Counter` metadata*
-
-```json
+```json [Example Counter metadata]
 "requests.count": {
   "type": "counter",
   "description": "Each request (regardless of HTTP method) will increase this counter"
     }
 ```
 
-*Example `Timer` metadata*
-
-```json
+```json [Example Timer metadata]
 "getTimer": {
   "type": "timer",
   "unit": "seconds",
@@ -510,9 +480,7 @@ By default, Helidon expresses timer data as seconds.
 
 You can change this using configuration:
 
-*Setting default timer units for JSON in `application.yaml`*
-
-```yaml
+```yaml [Setting default timer units for JSON in application.yaml]
 metrics:
   timers:
     json-units-default: units 
@@ -620,19 +588,19 @@ Certain default configuration values depend on the fact that you are using Helid
 
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
-| <span id="ab3e25-app-name"></span> `app-name` | `VALUE` | `String` |   | Value for the application tag to be added to each meter ID |
-| <span id="a0590e-app-tag-name"></span> `app-tag-name` | `VALUE` | `String` |   | Name for the application tag to be added to each meter ID |
+| <span id="ab3e25-app-name"></span> `app-name` | `VALUE` | `String` |   | Value for the application tag to be added to each meter ID |
+| <span id="a0590e-app-tag-name"></span> `app-tag-name` | `VALUE` | `String` |   | Name for the application tag to be added to each meter ID |
 | <span id="a24eaf-built-in-meter-name-format"></span> [`built-in-meter-name-format`](../../config/io_helidon_metrics_api_BuiltInMeterNameFormat.md) | `VALUE` | `i.h.m.a.BuiltInMeterNameFormat` | `CAMEL` | Output format for built-in meter names |
 | <span id="aac68d-enabled"></span> `enabled` | `VALUE` | `Boolean` | `true` | Whether metrics functionality is enabled |
-| <span id="a90f80-key-performance-indicators"></span> [`key-performance-indicators`](../../config/io_helidon_metrics_api_KeyPerformanceIndicatorMetricsConfig.md) | `VALUE` | `i.h.m.a.KeyPerformanceIndicatorMetricsConfig` |   | Key performance indicator metrics settings |
+| <span id="a90f80-key-performance-indicators"></span> [`key-performance-indicators`](../../config/io_helidon_metrics_api_KeyPerformanceIndicatorMetricsConfig.md) | `VALUE` | `i.h.m.a.KeyPerformanceIndicatorMetricsConfig` |   | Key performance indicator metrics settings |
 | <span id="acbf94-permit-all"></span> `permit-all` | `VALUE` | `Boolean` | `true` | Whether to allow anybody to access the endpoint |
-| <span id="ae7437-publishers"></span> [`publishers`](../../config/io_helidon_metrics_api_MetricsPublisher.md) | `LIST` | `i.h.m.a.MetricsPublisher` |   | Metrics publishers which make the metrics data available to external systems |
+| <span id="ae7437-publishers"></span> [`publishers`](../../config/io_helidon_metrics_api_MetricsPublisher.md) | `LIST` | `i.h.m.a.MetricsPublisher` |   | Metrics publishers which make the metrics data available to external systems |
 | <span id="af1711-publishers-discover-services"></span> `publishers-discover-services` | `VALUE` | `Boolean` | `false` | Whether to enable automatic service discovery for `publishers` |
 | <span id="a1e75d-rest-request-enabled"></span> `rest-request.enabled` | `VALUE` | `Boolean` | `false` | Whether automatic REST request metrics should be measured |
 | <span id="a3d689-roles"></span> `roles` | `LIST` | `String` | `observe` | Hints for role names the user is expected to be in |
-| <span id="ae0eb0-scoping"></span> [`scoping`](../../config/io_helidon_metrics_api_ScopingConfig.md) | `VALUE` | `i.h.m.a.ScopingConfig` |   | Settings related to scoping management |
-| <span id="a995f3-tags"></span> `tags` | `LIST` | `i.h.m.a.MetricsConfigSupport` |   | Global tags |
-| <span id="a977e0-timers-json-units-default"></span> [`timers.json-units-default`](../../config/java_util_concurrent_TimeUnit.md) | `VALUE` | `TimeUnit` |   | Default units for timer output in JSON if not specified on a given timer |
+| <span id="ae0eb0-scoping"></span> [`scoping`](../../config/io_helidon_metrics_api_ScopingConfig.md) | `VALUE` | `i.h.m.a.ScopingConfig` |   | Settings related to scoping management |
+| <span id="a995f3-tags"></span> `tags` | `LIST` | `i.h.m.a.MetricsConfigSupport` |   | Global tags |
+| <span id="a977e0-timers-json-units-default"></span> [`timers.json-units-default`](../../config/java_util_concurrent_TimeUnit.md) | `VALUE` | `TimeUnit` |   | Default units for timer output in JSON if not specified on a given timer |
 | <span id="a9178f-virtual-threads-enabled"></span> `virtual-threads.enabled` | `VALUE` | `Boolean` | `false` | Whether Helidon should expose meters related to virtual threads |
 | <span id="a628d9-virtual-threads-pinned-threshold"></span> `virtual-threads.pinned.threshold` | `VALUE` | `Duration` | `PT0.020S` | Threshold for sampling pinned virtual threads to include in the pinned threads meter |
 | <span id="adb8b4-warn-on-multiple-registries"></span> `warn-on-multiple-registries` | `VALUE` | `Boolean` | `true` | Whether to log warnings when multiple registries are created |
@@ -642,7 +610,7 @@ Certain default configuration values depend on the fact that you are using Helid
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
 | <span id="a12103-gc-time-type"></span> [`gc-time-type`](../../config/io_helidon_metrics_api_GcTimeType.md) | `VALUE` | `i.h.m.a.GcTimeType` | `COUNTER` | Whether the `gc.time` meter should be registered as a gauge (vs |
-| <span id="aa1220-rest-request-enabled"></span> `rest-request-enabled` | `VALUE` | `Boolean` |   | Whether automatic REST request metrics should be measured (as indicated by the deprecated config key `rest-request-enabled`, the config key using a hyphen instead of a dot separator) |
+| <span id="aa1220-rest-request-enabled"></span> `rest-request-enabled` | `VALUE` | `Boolean` |   | Whether automatic REST request metrics should be measured (as indicated by the deprecated config key `rest-request-enabled`, the config key using a hyphen instead of a dot separator) |
 
 <a id="flavor-specific-defaults"></a>
 | Key                | Default Value |
@@ -669,7 +637,7 @@ Helidon can make the registered meters and their current values available extern
 
 | key | type | default value | description |
 |----|----|----|----|
-| `auto` | [AutoHttpMetricsConfig](../../config/io_helidon_webserver_observe_metrics_AutoHttpMetricsConfig.md) |   | Automatic metrics collection settings. |
+| `auto` | [AutoHttpMetricsConfig](../../config/io_helidon_webserver_observe_metrics_AutoHttpMetricsConfig.md) |   | Automatic metrics collection settings. |
 | `enabled` | boolean | `true` | Whether this observer is enabled. |
 | `endpoint` | string | `/observe/metrics` | Path at which clients can retrieve metrics information. |
 
@@ -686,9 +654,9 @@ You can choose which endpoints to include in Helidon’s automatic measurements 
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
 | <span id="a9ac57-enabled"></span> `enabled` | `VALUE` | `Boolean` | `true` | Whether automatic metrics collection as a whole is enabled |
-| <span id="a61ecb-opt-in"></span> `opt-in` | `LIST` | `String` |   | Elective attribute for which to opt in |
-| <span id="a6fb0d-paths"></span> [`paths`](../../config/io_helidon_webserver_observe_metrics_AutoHttpMetricsPathConfig.md) | `LIST` | `i.h.w.o.m.AutoHttpMetricsPathConfig` |   | Automatic metrics collection settings |
-| <span id="af4ffb-sockets"></span> `sockets` | `LIST` | `String` |   | Socket names for sockets to be instrumented with automatic metrics |
+| <span id="a61ecb-opt-in"></span> `opt-in` | `LIST` | `String` |   | Elective attribute for which to opt in |
+| <span id="a6fb0d-paths"></span> [`paths`](../../config/io_helidon_webserver_observe_metrics_AutoHttpMetricsPathConfig.md) | `LIST` | `i.h.w.o.m.AutoHttpMetricsPathConfig` |   | Automatic metrics collection settings |
+| <span id="af4ffb-sockets"></span> `sockets` | `LIST` | `String` |   | Socket names for sockets to be instrumented with automatic metrics |
 
 The `paths` section contains zero or more entries, each entry having the following settings:
 
@@ -712,7 +680,7 @@ The `paths` section contains zero or more entries, each entry having the followi
 <tr>
 <td style="text-align: left;"><p><code>path</code></p></td>
 <td style="text-align: left;"><p>yes</p></td>
-<td style="text-align: left;"><p> </p></td>
+<td style="text-align: left;"><p> </p></td>
 <td style="text-align: left;"><p>Path-matching expression:</p>
 <ul>
 <li><p>an exact match (<code>/greet</code>)</p></li>
@@ -722,13 +690,13 @@ The `paths` section contains zero or more entries, each entry having the followi
 </tr>
 <tr>
 <td style="text-align: left;"><p><code>methods</code></p></td>
-<td style="text-align: left;"><p> </p></td>
+<td style="text-align: left;"><p> </p></td>
 <td style="text-align: left;"><p>all HTTP method types</p></td>
 <td style="text-align: left;"><p>Which HTTP methods match this entry</p></td>
 </tr>
 <tr>
 <td style="text-align: left;"><p><code>enabled</code></p></td>
-<td style="text-align: left;"><p> </p></td>
+<td style="text-align: left;"><p> </p></td>
 <td style="text-align: left;"><p><code>true</code></p></td>
 <td style="text-align: left;"><p>Whether requests that match this entry should be measured</p></td>
 </tr>
@@ -746,9 +714,7 @@ Helidon decides whether to measure incoming requests as follows:
 
 The `auto-http-metrics.sockets` setting controls which sockets are included in the measurements; if not set, Helidon measures requests on all sockets.
 
-*Including and Excluding Endpoints from Automatic Measurement*
-
-```yaml
+```yaml [Including and Excluding Endpoints from Automatic Measurement]
 server:
   features:
     observe:
@@ -782,9 +748,7 @@ The rest of this section shows how to add a custom meter to your code and how to
 
 The following example, based on the Helidon SE QuickStart application, shows how to register and update a new `Counter` in application code. The counter tracks the number of times any of the service endpoints is accessed.
 
-*Define and use a `Counter`*
-
-```java
+```java [Define and use a Counter]
 public class GreetService implements HttpService {
 
     private final Counter accessCtr = Metrics.globalRegistry() 
@@ -831,22 +795,16 @@ public class GreetService implements HttpService {
 
 Perform the following steps to see the new counter in action.
 
-*Build and run the application*
-
-```bash
+```bash [Build and run the application]
 mvn package
 java -jar target/helidon-quickstart-se.jar
 ```
 
-*Retrieve `application` metrics*
-
-```bash
+```bash [Retrieve application metrics]
 curl 'http://localhost:8080/observe/metrics?scope=application' 
 ```
 
-*Response*
-
-```text
+```text [Response]
 # HELP accessctr_total
 # TYPE accessctr_total counter
 accessctr_total{scope="application",} 0.0 
@@ -855,27 +813,19 @@ accessctr_total{scope="application",} 0.0
 - Access the metrics endpoint, selecting only application meters.
 - Note the counter is zero; we have not accessed a service endpoint yet.
 
-*Access a service endpoint to retrieve a greeting*
-
-```bash
+```bash [Access a service endpoint to retrieve a greeting]
 curl http://localhost:8080/greet
 ```
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {"message":"Hello World"}
 ```
 
-*Retrieve `application` metrics again*
-
-```bash
+```bash [Retrieve application metrics again]
 curl 'http://localhost:8080/observe/metrics?scope=application'
 ```
 
-*Response*
-
-```text
+```text [Response]
 # HELP accessctr_total
 # TYPE accessctr_total counter
 accessctr_total{scope="application",} 1.0 
@@ -893,9 +843,7 @@ Metrics configuration is quite extensive and powerful and, therefore, a bit comp
 
 #### Disable Metrics Subsystem
 
-*Disabling metrics entirely*
-
-```yaml
+```yaml [Disabling metrics entirely]
 server:
   features:
     observe:
@@ -914,9 +862,7 @@ Gathering data to compute the meters for virtual threads is designed to be as ef
 
 To enable the meters describing virtual threads include a config setting as shown in the following example.
 
-*Enabling virtual thread meters*
-
-```yaml
+```yaml [Enabling virtual thread meters]
 metrics:
   virtual-threads:
     enabled: true
@@ -926,9 +872,7 @@ metrics:
 
 Helidon measures pinned virtual threads only when the thread is pinned for a length of time at or above a threshold. Control the threshold as shown in the example below.
 
-*Setting virtual thread pinning threshold to 100 ms*
-
-```yaml
+```yaml [Setting virtual thread pinning threshold to 100 ms]
 metrics:
   virtual-threads:
     pinned:
@@ -950,9 +894,7 @@ Helidon SE also includes additional, extended KPI meters which are disabled by d
 
 You can enable and control these meters using configuration:
 
-*Controlling extended KPI meters*
-
-```yaml
+```yaml [Controlling extended KPI meters]
 server:
   features:
     observe:
@@ -989,9 +931,7 @@ If you are maintaining an existing application that already uses the Prometheus 
 
 #### Maven Coordinates
 
-*Dependency for Helidon Prometheus API support*
-
-```xml
+```xml [Dependency for Helidon Prometheus API support]
 <dependency>
     <groupId>io.helidon.metrics</groupId>
     <artifactId>helidon-metrics-prometheus</artifactId>

@@ -55,9 +55,7 @@ The config system provides some built-in polling strategies, exposed as these me
 
 This example builds a `Config` object from three sources, each set up with a different polling strategy:
 
-*Build a `Config` with a different `PollingStrategy` for each config source*
-
-```java
+```java [Build a Config with a different PollingStrategy for each config source]
 Config config = Config.create(
         ConfigSources.file("conf/dev.properties")
                 .pollingStrategy(PollingStrategies.regular(Duration.ofSeconds(2))) 
@@ -83,9 +81,7 @@ To know when config sources have changed, your application must register its int
 
 You register a function that runs when a change occurs by using the [`Config.onChange()`](/apidocs/io.helidon.config/io/helidon/config/Config.html#onChange(java.util.function.Consumer)) method on the node of interest.
 
-*Subscribe on `greeting` property changes via `onChange` method*
-
-```java
+```java [Subscribe on greeting property changes via onChange method]
 config.get("greeting") 
         .onChange(changedNode -> { 
             System.out.println("Node " + changedNode.key() + " has changed!");
@@ -101,9 +97,7 @@ Some applications do not need to respond to change as they happen. Instead, itâ€
 
 Each `asXXX` method on the `Config` class has a companion `asXXXSupplier` method. These supplier methods return `Supplier<XXX>`, and when your application invokes the supplierâ€™s `get` method the config system returns the *then-current value* as stored in the config source.
 
-*Access `greeting` property as `Supplier<String>`*
-
-```java
+```java [Access greeting property as Supplier<String>]
 // Construct a Config with the appropriate PollingStrategy on each config source.
 
 Supplier<String> greetingSupplier = config.get("greeting") 

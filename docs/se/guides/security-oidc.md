@@ -6,27 +6,23 @@ This guide describes how to set up Keycloak and Helidon to secure your applicati
 
 For this 20 minute tutorial, you will need the following:
 
-|  |  |
-|----|----|
-| [Java SE 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
+| Requirement | Description |
+|-------------|-------------|
+| [Java 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
 | [Maven 3.8+](https://maven.apache.org/download.cgi) | Helidon requires Maven 3.8+. |
 | [Docker 18.09+](https://docs.docker.com/install/) | If you want to build and run Docker containers. |
 | [Kubectl 1.16.5+](https://kubernetes.io/docs/tasks/tools/install-kubectl/) | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
 
 Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
-*Verify Prerequisites*
-
-```bash
+```bash [Verify Prerequisites]
 java -version
 mvn --version
 docker --version
 kubectl version
 ```
 
-*Setting JAVA_HOME*
-
-```bash
+```bash [Setting JAVA_HOME]
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -45,9 +41,7 @@ This guide describes the steps required to protect your whole application or a s
 
 To install Keycloak with Docker, open a terminal and make sure the port 8080 is free.
 
-*Enter the following command*
-
-```bash
+```bash [Enter the following command]
 docker run -p 8080:8080 -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=admin quay.io/keycloak/keycloak:24.0.5 start-dev
 ```
 
@@ -65,9 +59,7 @@ After extracting the archive file, you should have a directory named keycloak fo
 
 Open keycloak folder to make it your current directory.
 
-*Run this command from command prompt to open the directory:*
-
-```bash
+```bash [Run this command from command prompt to open the directory]
 cd keycloak-24.0.5
 ```
 
@@ -75,15 +67,11 @@ cd keycloak-24.0.5
 
 To start keycloak and have it ready for further steps, run the following command.
 
-*On Linux run:*
-
-```bash
+```bash [On Linux run]
 bin/kc.sh start-dev
 ```
 
-*On Windows run:*
-
-```bash
+```bash [On Windows run]
 bin\kc.bat start-dev
 ```
 
@@ -187,9 +175,7 @@ Keycloak is now configured and ready. Keep keycloak running on your terminal and
 
 Use the Helidon SE Maven archetype to create a simple project. It will be used as an example to show how to set up Helidon. Replace `4.4.0-SNAPSHOT` by the latest helidon version. It will download the quickstart project into the current directory.
 
-*Run the Maven archetype*
-
-```bash
+```bash [Run the Maven archetype]
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-se \
@@ -199,9 +185,7 @@ mvn -U archetype:generate -DinteractiveMode=false \
     -Dpackage=io.helidon.examples.quickstart.se
 ```
 
-*The project will be built and run from the helidon-quickstart-se directory:*
-
-```bash
+```bash [The project will be built and run from the helidon-quickstart-se directory]
 cd helidon-quickstart-se
 ```
 
@@ -209,9 +193,7 @@ cd helidon-quickstart-se
 
 Update the pom.xml file and add the following Helidon dependency to the `<dependencies>` section.
 
-*Add the following dependencies to `pom.xml`:*
-
-```xml
+```xml [Add the following dependencies to pom.xml]
 <dependency>
     <groupId>io.helidon.webserver</groupId>
     <artifactId>helidon-webserver-security</artifactId>
@@ -222,9 +204,7 @@ Update the pom.xml file and add the following Helidon dependency to the `<depend
 </dependency>
 ```
 
-*Remove the `test` scope from `helidon-webclient` dependency*
-
-```xml
+```xml [Remove the test scope from helidon-webclient dependency]
 <dependency>
     <groupId>io.helidon.webclient</groupId>
     <artifactId>helidon-webclient</artifactId>
@@ -236,9 +216,7 @@ Update the pom.xml file and add the following Helidon dependency to the `<depend
 
 The OIDC security provider configuration can be joined to helidon configuration file. This file is located here: `src/main/resources/application.yaml`. It can be easily used to configure the web server without modifying application code.
 
-*Add the following line to application.yaml*
-
-```yaml
+```yaml [Add the following line to application.yaml]
 server:
   port: 7987
   host: localhost
@@ -275,9 +253,7 @@ Make sure keycloak and the application are not running on the same port. The app
 
 If the port 7987 is already used, check what port is free on your machine.
 
-*Replace the old port into application.yaml*
-
-```yaml
+```yaml [Replace the old port into application.yaml]
 server:
   port: "{Your-new-port}"
 
@@ -288,9 +264,7 @@ frontend-uri: "http://localhost:{Your-new-port}"
 
 Once the properties are added, the web server must be setup. The `Main#routing` method gather all configuration properties.
 
-*Add the following to the `Main#routing` method*
-
-```java
+```java [Add the following to the Main#routing method]
 Config config = Config.global();
 routing.addFeature(OidcFeature.create(config));   
 ```
@@ -303,9 +277,7 @@ Helidon sample is now setup and ready.
 
 ## Build the Application
 
-*Build the application, skipping unit tests, then run it:*
-
-```bash
+```bash [Build the application, skipping unit tests, then run it]
 mvn package -DskipTests
 java -jar target/helidon-quickstart-se.jar
 ```
@@ -346,9 +318,7 @@ For the first step, paste the following URL into your browser: `http://localhost
 
 In order to achieve the third step, we can use Postman to exchange the authorization code for tokens. In Postman, select the Http POST method. Keycloak endpoint to get token is the following: `http://localhost:8080/realms/myRealm/protocol/openid-connect/token`. In the body of the request, select `x-www-form-urlencoded` type. Add the following data:
 
-*Enter the key:value*
-
-```json
+```json [Enter the key:value]
 [
   {"key":"grant_type","value":"authorization_code"},
   {"key":"client_id","value":"myClientID"},
@@ -365,9 +335,7 @@ The Direct Access Grants flow is used by REST clients that want to request token
 
 Note: Make sure your Helidon application is running. If it is not, please start it.
 
-*Enter the following information:*
-
-```json
+```json [Enter the following information]
 [
   {"key":"Header Prefix","value":"bearer"},
   {"key":"Grant type","value":"Password  Credentials"},
@@ -391,9 +359,7 @@ In order to keep security and test the application locally, a new security provi
 
 The following explains how to set a basic authentication instead of oidc security provider only for the tests. Which means, at the end of this guide, the application will be secured by oidc security provider, and the tests will use basic authentication.
 
-*Add the following dependency to `pom.xml`:*
-
-```xml
+```xml [Add the following dependency to pom.xml]
 <dependency>
     <groupId>io.helidon.security.providers</groupId>
     <artifactId>helidon-security-providers-http-auth</artifactId>
@@ -403,9 +369,7 @@ The following explains how to set a basic authentication instead of oidc securit
 
 In the test folder open the application.yaml file: `helidon-quickstart-se/src/test/resources/application.yaml`
 
-*Copy these properties into application.yaml*
-
-```yaml
+```yaml [Copy these properties into application.yaml]
 app:
   greeting: "Hello"
 
@@ -443,9 +407,7 @@ Add the `http-basic-auth` properties in the security → providers property sect
 
 In the `AbstractMainTest.java` file, tests need to be modified to check the application security when accessing `/greet` path with a `GET` method.
 
-*Replace the first webclient call by this one into testRootRoute method:*
-
-```java
+```java [Replace the first webclient call by this one into testRootRoute method]
 try (HttpClientResponse response = client.get()
         .path("/greet")
         .request()) {
@@ -457,9 +419,7 @@ This piece of code uses the webclient to access the application on `/greet` path
 
 Only `jack` user has access to this part of the application.
 
-*Add new check to the testRootRoute method:*
-
-```java
+```java [Add new check to the testRootRoute method]
 String auth = "Basic " + Base64.getEncoder().encodeToString("jack:changeit".getBytes());
 JsonObject jsonObject = client.get()
         .path("/greet")
@@ -473,9 +433,7 @@ The username and password are encoded and placed inside the header in order to a
 
 Now, the project can be built without skipping test.
 
-*Build the project*
-
-```bash
+```bash [Build the project]
 mvn clean install
 ```
 
@@ -485,9 +443,7 @@ To give less access to an endpoint, it is possible to configure user role. So th
 
 Add a user and roles to the `helidon-quickstart-se/src/test/resources/application.yaml`.
 
-*Add jack role and create a new user named john:*
-
-```yaml
+```yaml [Add jack role and create a new user named john]
 - http-basic-auth:
     users:
       - login: "jack"
@@ -500,9 +456,7 @@ Add a user and roles to the `helidon-quickstart-se/src/test/resources/applicatio
 
 Into the `web-server` section, the `roles-allowed` parameter defines which roles have access to the protected path and method.
 
-*Add `admin` role*
-
-```yaml
+```yaml [Add admin role]
 web-server:
     # protected paths on the web server
     # do not include paths served by Jersey
@@ -518,9 +472,7 @@ Now, only Jack has access to secure endpoint as he has an admin role. John, as a
 
 The user `john` has only the `user` role so when accessing protected endpoint, a 403 (Forbidden) http code is returned.
 
-*Check that john does not have access*
-
-```java
+```java [Check that john does not have access]
 String auth = "Basic " + Base64.getEncoder().encodeToString("john:changeit".getBytes());
 try (HttpClientResponse response = client.get()
         .path("/greet")
@@ -530,9 +482,7 @@ try (HttpClientResponse response = client.get()
 }
 ```
 
-*Build the project*
-
-```bash
+```bash [Build the project]
 mvn clean install
 ```
 

@@ -6,7 +6,7 @@ Microservices expose their health status primarily so external tools (for exampl
 
 ## Maven Coordinates
 
-To enable MicroProfile Health add the [helidon-microprofile bundle](introduction/microprofile.md) dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
+To enable MicroProfile Health add the [helidon-microprofile bundle](introduction.md) dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml
 <dependency>
@@ -33,7 +33,7 @@ If full control over the dependencies is required, and you want to minimize the 
 </dependency>
 ```
 
-To enable built-in health checks add the following dependency (or use the [helidon-microprofile bundle](introduction/microprofile.md) )
+To enable built-in health checks add the following dependency (or use the [helidon-microprofile bundle](introduction.md) )
 
 ```xml
 <dependency>
@@ -80,16 +80,14 @@ The class responsible for configuration is:
 |----|----|----|----|----|
 | <span id="a66088-details"></span> `details` | `VALUE` | `Boolean` | `false` | Whether details should be printed |
 | <span id="aaa7ec-endpoint"></span> `endpoint` | `VALUE` | `String` | `health` | `N/A` |
-| <span id="af4081-exclude"></span> `exclude` | `LIST` | `String` |   | Health check names to exclude in computing the overall health of the server |
+| <span id="af4081-exclude"></span> `exclude` | `LIST` | `String` |   | Health check names to exclude in computing the overall health of the server |
 | <span id="a27567-use-system-services"></span> `use-system-services` | `VALUE` | `Boolean` | `true` | Whether to use services discovered by `java.util.ServiceLoader` |
 
 Properties may be set in `application.yaml` or in `microprofile-config.properties`, in both cases using the `health` prefix.
 
 For example, you can specify a custom port and root context for the root health endpoint path. However, you cannot use different ports, such as <http://localhost:8080/myhealth> and <http://localhost:8081/myhealth/live>. Likewise, you cannot use different paths, such as <http://localhost:8080/health> and <http://localhost:8080/probe/live>. The example below will change the root path.
 
-*Create a file named `microprofile-config.properties` in the `resources/META-INF` directory with the following contents:*
-
-```properties
+```properties [Create a file named microprofile-config.properties in the resources/META-INF directory with the following contents]
 health.endpoint=/myhealth  
 ```
 
@@ -118,14 +116,14 @@ You can use Helidon-provided health checks to report various common health check
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><p>deadlock detection †</p></td>
+<td style="text-align: left;"><p>deadlock detection</p></td>
 <td style="text-align: left;"><p><code>deadlock</code></p></td>
 <td style="text-align: left;"><p><a href="/apidocs/io.helidon.health.checks/io/helidon/health/checks/DeadlockHealthCheck.html"><code>DeadlockHealthCheck</code></a></p></td>
 <td style="text-align: left;"><p>n/a</p></td>
 <td style="text-align: left;"><p>n/a</p></td>
 </tr>
 <tr>
-<td rowspan="2" style="text-align: left;"><p>available disk space †</p></td>
+<td rowspan="2" style="text-align: left;"><p>available disk space</p></td>
 <td rowspan="2" style="text-align: left;"><p><code>diskSpace</code></p></td>
 <td rowspan="2" style="text-align: left;"><p><a href="/apidocs/io.helidon.health.checks/io/helidon/health/checks/DiskSpaceHealthCheck.html"><code>DiskSpaceHealthCheck</code></a></p></td>
 <td style="text-align: left;"><p><code>helidon.health.diskSpace.thresholdPercent</code></p></td>
@@ -145,7 +143,8 @@ You can use Helidon-provided health checks to report various common health check
 </tbody>
 </table>
 
-† Helidon cannot support the indicated health checks in the GraalVM native image environment, so with native image those health checks do not appear in the health output.
+> [!NOTE]
+> Helidon cannot support the indicated health checks in the GraalVM native image environment, so with native image those health checks do not appear in the health output.
 
 Simply adding the built-in health check dependency is sufficient to register all the built-in health checks automatically. If you want to use only some of the built-in checks in your application, you can disable automatic discovery of the built-in health checks and register only the ones you want.
 
@@ -167,31 +166,23 @@ Helidon has a set of built-in health checks that can report various conditions:
 
 The following example will demonstrate how to use the built-in health checks. These examples are all executed from the root directory of your project (helidon-quickstart-mp).
 
-*Include the built-in health checks dependency in your `pom.xml`:*
-
-```xml
+```xml [Include the built-in health checks dependency in your pom.xml]
 <dependency>
     <groupId>io.helidon.health</groupId>
     <artifactId>helidon-health-checks</artifactId>
 </dependency>
 ```
 
-*Build the application, then run it:*
-
-```bash
+```bash [Build the application, then run it]
 mvn package
 java -jar target/helidon-quickstart-mp.jar
 ```
 
-*Verify the health endpoint in a new terminal window:*
-
-```bash
+```bash [Verify the health endpoint in a new terminal window]
 curl http://localhost:8080/health
 ```
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {
   "status": "UP",
   "checks": [
@@ -231,9 +222,7 @@ curl http://localhost:8080/health
 
 You can create application-specific custom health checks and integrate them with Helidon using CDI. The following example shows how to add a custom liveness health check.
 
-*Create a new `GreetLivenessCheck` class with the following content:*
-
-```java
+```java [Create a new GreetLivenessCheck class with the following content]
 @Liveness 
 @ApplicationScoped 
 public class GreetLivenessCheck implements HealthCheck {
@@ -252,15 +241,11 @@ public class GreetLivenessCheck implements HealthCheck {
 - Annotation indicating this is a bean instantiated once per application (in Helidon this means just once per runtime).
 - Build the HealthCheckResponse with status `UP` and the current time.
 
-*Build and run the application, then verify the custom liveness health endpoint:*
-
-```bash
+```bash [Build and run the application, then verify the custom liveness health endpoint]
 curl http://localhost:8080/health/live
 ```
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {
   "status": "UP",
   "checks": [
@@ -279,9 +264,7 @@ curl http://localhost:8080/health/live
 
 You can add a readiness check to indicate that the application is ready to be used. In this example, the server will wait five seconds before it becomes ready.
 
-*Create a new `GreetReadinessCheck` class with the following content:*
-
-```java
+```java [Create a new GreetReadinessCheck class with the following content]
 @Readiness 
 @ApplicationScoped
 public class GreetReadinessCheck implements HealthCheck {
@@ -311,9 +294,7 @@ public class GreetReadinessCheck implements HealthCheck {
 - Record the time at startup.
 - Become ready after 5 seconds.
 
-*Build and run the application. Issue the curl command with -v within five seconds and you will see that the application is not ready:*
-
-```bash
+```bash [Build and run the application. Issue the curl command with -v within five seconds and you will see that the application is not ready]
 curl -v  http://localhost:8080/health/ready
 ```
 
@@ -323,9 +304,7 @@ curl -v  http://localhost:8080/health/ready
 
 - The HTTP status is `503` since the application is not ready.
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {
   "status": "DOWN",
   "checks": [
@@ -340,9 +319,7 @@ curl -v  http://localhost:8080/health/ready
 }
 ```
 
-*After five seconds you will see the application is ready:*
-
-```bash
+```bash [After five seconds you will see the application is ready]
 curl -v http://localhost:8080/health/ready
 ```
 
@@ -352,9 +329,7 @@ curl -v http://localhost:8080/health/ready
 
 - The HTTP status is `200` indicating that the application is ready.
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {
   "status": "UP",
   "checks": [
@@ -375,9 +350,7 @@ Full example code is available [here](https://github.com/helidon-io/helidon-exam
 
 You can add a startup check to indicate whether or not the application has initialized to the point that the other health checks make sense. In this example, the server will wait eight seconds before it declares itself started.
 
-*Create a new `GreetStartedCheck` class with the following content:*
-
-```java
+```java [Create a new GreetStartedCheck class with the following content]
 @Startup 
 @ApplicationScoped
 public class GreetStartedCheck implements HealthCheck {
@@ -407,9 +380,7 @@ public class GreetStartedCheck implements HealthCheck {
 - Record the time at startup of Helidon; the application will declare itself as started eight seconds later.
 - Become ready after 5 seconds.
 
-*Build and run the application. Issue the curl command with -v within five seconds and you will see that the application has not yet started:*
-
-```bash
+```bash [Build and run the application. Issue the curl command with -v within five seconds and you will see that the application has not yet started]
 curl -v  http://localhost:8080/health/started
 ```
 
@@ -419,9 +390,7 @@ curl -v  http://localhost:8080/health/started
 
 - The HTTP status is `503` since the application has not started.
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {
   "status": "DOWN",
   "checks": [
@@ -436,9 +405,7 @@ curl -v  http://localhost:8080/health/started
 }
 ```
 
-*After eight seconds you will see the application has started:*
-
-```bash
+```bash [After eight seconds you will see the application has started]
 curl -v http://localhost:8080/health/started
 ```
 
@@ -448,9 +415,7 @@ curl -v http://localhost:8080/health/started
 
 - The HTTP status is `200` indicating that the application is started.
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {
   "status": "UP",
   "checks": [
@@ -472,15 +437,11 @@ When using the health check URLs, you can get the following health check data:
 - startup checks only - <http://localhost:8080/health/started>
 - all health check data - <http://localhost:8080/health>
 
-*Get all the health check data, including custom data:*
-
-```bash
+```bash [Get all the health check data, including custom data]
 curl http://localhost:8080/health
 ```
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {
   "status": "UP",
   "checks": [

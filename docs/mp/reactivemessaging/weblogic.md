@@ -16,7 +16,7 @@ Updated versions of thin T3 clients that are compatible with modern Jakarta runt
 
 ## Maven Coordinates
 
-To enable WebLogic JMS connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
+To enable WebLogic JMS connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml
 <dependency>
@@ -56,9 +56,7 @@ Attributes
 
 Configuration is straight forward. Use JNDI for localizing and configuring of JMS ConnectionFactory from WebLogic. Notice the destination property which is used to define the queue with [WebLogic CDI Syntax](https://docs.oracle.com/cd/E24329_01/web.1211/e24387/lookup.htm#JMSPG915).
 
-*Example config:*
-
-```yaml
+```yaml [Example config]
 mp:
   messaging:
     connector:
@@ -98,18 +96,14 @@ Destination for UDD doesn’t have `./` prefix, because distributed destinations
 
 ### Consuming
 
-*Consuming one by one unwrapped value:*
-
-```java
+```java [Consuming one by one unwrapped value]
 @Incoming("from-wls")
 public void consumeWls(String msg) {
     System.out.println("WebLogic says: " + msg);
 }
 ```
 
-*Consuming one by one, manual ack:*
-
-```java
+```java [Consuming one by one, manual ack]
 @Incoming("from-wls")
 @Acknowledgment(Acknowledgment.Strategy.MANUAL)
 public CompletionStage<Void> consumewls(JmsMessage<String> msg) {
@@ -120,18 +114,14 @@ public CompletionStage<Void> consumewls(JmsMessage<String> msg) {
 
 ### Producing
 
-*Producing to WebLogic JMS:*
-
-```java
+```java [Producing to WebLogic JMS]
 @Outgoing("to-wls")
 public PublisherBuilder<String> produceToWls() {
     return ReactiveStreams.of("test1", "test2");
 }
 ```
 
-*Example of more advanced producing to WebLogic JMS:*
-
-```java
+```java [Example of more advanced producing to WebLogic JMS]
 @Outgoing("to-wls")
 public PublisherBuilder<Message<String>> produceToJms() {
     return ReactiveStreams.of("test1", "test2")
@@ -146,9 +136,7 @@ public PublisherBuilder<Message<String>> produceToJms() {
 }
 ```
 
-*Example of even more advanced producing to WebLogic JMS with custom mapper:*
-
-```java
+```java [Example of even more advanced producing to WebLogic JMS with custom mapper]
 @Outgoing("to-wls")
 public PublisherBuilder<Message<String>> produceToJms() {
     return ReactiveStreams.of("test1", "test2")
@@ -167,9 +155,7 @@ public PublisherBuilder<Message<String>> produceToJms() {
 
 For initiating SSL secured t3 connection, trust keystore with WLS public certificate is needed. Standard WLS installation has pre-configured Demo trust store: `WL_HOME/server/lib/DemoTrust.jks`, we can store it locally for connecting WLS over t3s.
 
-*Example config:*
-
-```yaml
+```yaml [Example config]
 mp:
   messaging:
     connector:
@@ -182,9 +168,7 @@ mp:
 
 Helidon application needs to be aware about our WLS SSL public certificate.
 
-*Running example with WLS truststore*
-
-```bash
+```bash [Running example with WLS truststore]
 java --add-opens=java.base/java.io=ALL-UNNAMED \
     -Djavax.net.ssl.trustStore=DemoTrust.jks \
     -Djavax.net.ssl.trustStorePassword=DemoTrustKeyStorePassPhrase \

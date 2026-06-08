@@ -17,9 +17,7 @@ For details on the following options please see:
 
 The following `application.yaml` snippet shows some configuration options that can be used to tune your application. It is intended to show configuration options in context. Please make sure you understand these options before using them. See the documentation referenced above.
 
-*application.yaml snippet*
-
-```yaml
+```yaml [application.yaml snippet]
 server:
   # These are used to prevent unbounded resource consumption of the server
   idle-connection-period: PT2M  # Check idle connections every 2 minutes

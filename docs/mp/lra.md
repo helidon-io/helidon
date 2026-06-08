@@ -6,7 +6,7 @@ Distributed transactions for microservices are known as SAGA design patterns and
 
 ## Maven Coordinates
 
-To enable Long Running Actions, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
+To enable Long Running Actions, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml
 <dependencies>
@@ -279,25 +279,21 @@ public void whenLRAFinishes(URI lraId, LRAStatus status) {
 
 ## Configuration
 
-*Type*
-
-```text
+```text [Type]
 io.helidon.microprofile.lra
 ```
 
 | Key | Type | Default value | Description |
 |----|----|----|----|
 | `mp.lra.coordinator.url` | string | `http://localhost:8070/lra-coordinator` | Url of coordinator. |
-| `mp.lra.coordinator.propagation.active` | boolean |   | Propagate LRA headers `LRA_HTTP_CONTEXT_HEADER` and `LRA_HTTP_PARENT_CONTEXT_HEADER` through non-LRA endpoints. |
-| `mp.lara.participant.url` | string |   | Url of the LRA enabled service overrides standard base uri, so coordinator can call load-balancer instead of the service. |
-| `mp.lra.coordinator.timeout` | string |   | Timeout for synchronous communication with coordinator. |
-| `mp.lra.coordinator.timeout-unit` | string |   | Timeout unit for synchronous communication with coordinator. |
+| `mp.lra.coordinator.propagation.active` | boolean |   | Propagate LRA headers `LRA_HTTP_CONTEXT_HEADER` and `LRA_HTTP_PARENT_CONTEXT_HEADER` through non-LRA endpoints. |
+| `mp.lara.participant.url` | string |   | Url of the LRA enabled service overrides standard base uri, so coordinator can call load-balancer instead of the service. |
+| `mp.lra.coordinator.timeout` | string |   | Timeout for synchronous communication with coordinator. |
+| `mp.lra.coordinator.timeout-unit` | string |   | Timeout unit for synchronous communication with coordinator. |
 
 Optional configuration options
 
-*Example of LRA configuration*
-
-```yaml
+```yaml [Example of LRA configuration]
 mp.lra:
   coordinator.url: http://localhost:8070/lra-coordinator 
   propagation.active: true 
@@ -316,9 +312,7 @@ The following example shows how a simple LRA participant starts and joins a tran
 
 If an exception occurs during startExample method execution, coordinator receives cancel call and `/compensate-example` is called by coordinator to compensate for cancelled LRA transaction.
 
-*Example of simple LRA participant*
-
-```java
+```java [Example of simple LRA participant]
 @PUT
 @LRA(LRA.Type.REQUIRES_NEW) 
 @Path("start-example")
@@ -362,9 +356,7 @@ Testing of JAX-RS resources with LRA can be challenging as LRA participant runni
 
 Helidon provides test coordinator which can be started automatically with additional socket on a random port within your own Helidon application. You only need one extra test dependency to enable test coordinator in your [@HelidonTest](testing/testing.md).
 
-*Dependency*
-
-```xml
+```xml [Dependency]
 <dependency>
     <groupId>io.helidon.microprofile.lra</groupId>
     <artifactId>helidon-microprofile-lra-testing</artifactId>
@@ -374,9 +366,7 @@ Helidon provides test coordinator which can be started automatically with additi
 
 Considering that you have LRA enabled JAX-RS resource you want to test.
 
-*Example JAX-RS resource with LRA.*
-
-```java
+```java [Example JAX-RS resource with LRA.]
 @ApplicationScoped
 @Path("/test")
 public class WithdrawResource {
@@ -412,9 +402,7 @@ public class WithdrawResource {
 
 Helidon test with enabled CDI discovery can look like this.
 
-*HelidonTest with LRA test support.*
-
-```java
+```java [HelidonTest with LRA test support.]
 @HelidonTest
 //@AddBean(WithdrawResource.class) 
 @AddBean(TestLraCoordinator.class) 
@@ -462,9 +450,7 @@ Testing LRA coordinator is started on additional named socket `test-lra-coordina
 
 Example: `-Dhelidon.lra.coordinator.test-socket.index=20`.
 
-*HelidonTest override LRA test feature default settings.*
-
-```java
+```java [HelidonTest override LRA test feature default settings.]
 @HelidonTest
 @AddBean(TestLraCoordinator.class)
 @AddConfig(key = "server.sockets.500.port", value = "8070") 
@@ -482,9 +468,7 @@ public class LraCustomConfigTest {
 
 When CDI bean auto-discovery is not desired, LRA and Config CDI extensions needs to be added manually.
 
-*HelidonTest setup with disabled discovery.*
-
-```java
+```java [HelidonTest setup with disabled discovery.]
 @HelidonTest
 @DisableDiscovery
 @AddJaxRs
@@ -522,18 +506,14 @@ Oracle Transaction Manager for Microservices - [MicroTx](https://docs.oracle.com
 
 MicroTx LRA coordinator is compatible with Narayana clients when `narayanaLraCompatibilityMode` is on, you need to add another dependency to enable Narayana client:
 
-*Dependency needed for using Helidon LRA with Narayana compatible coordinator*
-
-```xml
+```xml [Dependency needed for using Helidon LRA with Narayana compatible coordinator]
 <dependency>
     <groupId>io.helidon.lra</groupId>
     <artifactId>helidon-lra-coordinator-narayana-client</artifactId>
 </dependency>
 ```
 
-*Run MicroTx in Docker*
-
-```bash
+```bash [Run MicroTx in Docker]
 docker container run --name otmm -v "$(pwd)":/app/config \
 -w /app/config -p 8080:8080/tcp --env CONFIG_FILE=tcs.yaml \
 --add-host host.docker.internal:host-gateway -d tmm:<version>
@@ -541,9 +521,7 @@ docker container run --name otmm -v "$(pwd)":/app/config \
 
 To use MicroTx with Helidon LRA participant, `narayanaLraCompatibilityMode` needs to be enabled.
 
-*Configure MicroTx for development*
-
-```yaml
+```yaml [Configure MicroTx for development]
 tmmAppName: tcs
 tmmConfiguration:
   listenAddr: 0.0.0.0:8080
@@ -574,18 +552,14 @@ tmmConfiguration:
 > [!CAUTION]
 > Test tool, usage in production is not advised.
 
-*Build and run Helidon LRA coordinator*
-
-```bash
+```bash [Build and run Helidon LRA coordinator]
 docker build -t helidon/lra-coordinator https://github.com/helidon-io/helidon.git#:lra/coordinator/server
 docker run --name lra-coordinator --network="host" helidon/lra-coordinator
 ```
 
 Helidon LRA coordinator is compatible with Narayana clients, you need to add a dependency for Narayana client:
 
-*Dependency needed for using Helidon LRA with Narayana compatible coordinator*
-
-```xml
+```xml [Dependency needed for using Helidon LRA with Narayana compatible coordinator]
 <dependency>
     <groupId>io.helidon.lra</groupId>
     <artifactId>helidon-lra-coordinator-narayana-client</artifactId>
@@ -596,9 +570,7 @@ Helidon LRA coordinator is compatible with Narayana clients, you need to add a d
 
 [Narayana](https://narayana.io) is a transaction manager supporting LRA. To use Narayana LRA coordinator with Helidon LRA client you need to add a dependency for Narayana client:
 
-*Dependency needed for using Helidon LRA with Narayana coordinator*
-
-```xml
+```xml [Dependency needed for using Helidon LRA with Narayana coordinator]
 <dependency>
     <groupId>io.helidon.lra</groupId>
     <artifactId>helidon-lra-coordinator-narayana-client</artifactId>
@@ -607,9 +579,7 @@ Helidon LRA coordinator is compatible with Narayana clients, you need to add a d
 
 The simplest way to run Narayana LRA coordinator locally:
 
-*Downloading and running Narayana LRA coordinator*
-
-```bash
+```bash [Downloading and running Narayana LRA coordinator]
 curl https://repo1.maven.org/maven2/org/jboss/narayana/rts/lra-coordinator-quarkus/5.11.1.Final/lra-coordinator-quarkus-5.11.1.Final-runner.jar \
 -o narayana-coordinator.jar
 java -Dquarkus.http.port=8070 -jar narayana-coordinator.jar

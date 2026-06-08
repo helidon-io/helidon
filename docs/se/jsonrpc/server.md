@@ -6,7 +6,7 @@ The Helidon WebServer provides a framework for creating [JSON-RPC 2.0](https://w
 
 ## Maven Coordinates
 
-To enable WebServer/JSON-RPC, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
+To enable WebServer/JSON-RPC, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml
 <dependency>

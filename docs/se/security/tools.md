@@ -6,9 +6,7 @@
 
 Support for encrypting secrets in configuration files.
 
-*Maven Dependency*
-
-```xml
+```xml [Maven Dependency]
 <dependency>
     <groupId>io.helidon.config</groupId>
     <artifactId>helidon-config-encryption</artifactId>
@@ -19,9 +17,7 @@ Support for encrypting secrets in configuration files.
 
 Configuration support for accessing private keys, public keys, certificates and certificate chains including runtime access to instances of such.
 
-*Maven Dependency*
-
-```xml
+```xml [Maven Dependency]
 <dependency>
     <groupId>io.helidon.common</groupId>
     <artifactId>helidon-common-key-util</artifactId>

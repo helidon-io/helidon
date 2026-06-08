@@ -8,7 +8,7 @@ Helidon Discovery is a feature with a vendor- and implementation-independent API
 
 ## Maven Coordinates
 
-To enable Helidon Discovery, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
+To enable Helidon Discovery, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 `pom.xml`
 
@@ -120,7 +120,7 @@ The Helidon Eureka Discovery provider implements the Discovery API at runtime by
 
 #### Maven Coordinates
 
-To use the Helidon Eureka Discovery provider, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
+To use the Helidon Eureka Discovery provider, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 `pom.xml`
 
@@ -229,7 +229,7 @@ discovery: # (1)
 
 #### Related Documentation
 
-Users of the Helidon Eureka Discovery provider may also be interested in the (related) [Eureka Server Service Instance Registration](../se/integrations/eureka/eureka-registration.md) feature.
+Users of the Helidon Eureka Discovery provider may also be interested in the (related) [Eureka Server Service Instance Registration](integrations/eureka-registration.md) feature.
 
 ## Integrations
 
@@ -241,7 +241,7 @@ Helidon integrates a [Discovery provider](#providers) with [Web Client](webclien
 
 #### Maven Coordinates
 
-To include the Helidon Web Client Discovery integration in your project, you add the Web Client Discovery integration dependency as well as a [Discovery provider](#providers) dependency (see [Managing Dependencies](../about/managing-dependencies.md)):
+To include the Helidon Web Client Discovery integration in your project, you add the Web Client Discovery integration dependency as well as a [Discovery provider](#providers) dependency (see [Managing Dependencies](../managing-dependencies.md)):
 
 `pom.xml`
 

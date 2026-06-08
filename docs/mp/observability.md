@@ -53,9 +53,7 @@ This can have unexpected results if your application declares a resource path `/
 
 One way to avoid this is to assign a weight from 101 to 200 to the observe feature in your configuration. Then Helidon prioritizes the routing of the observe feature ahead of routing your application endpoints.
 
-*Configuration in `META-INF/microprofile-config.properties` Assigning Feature Weight to Control Routing*
-
-```properties
+```properties [Configuration in META-INF/microprofile-config.properties Assigning Feature Weight to Control Routing]
 server.features.observe.weight = 120
 ```
 
@@ -172,9 +170,9 @@ To control the observability features as a whole, add config settings under `ser
 |----|----|----|----|----|
 | <span id="a42c15-enabled"></span> `enabled` | `VALUE` | `Boolean` | `true` | Whether the observe support is enabled |
 | <span id="a0d210-endpoint"></span> `endpoint` | `VALUE` | `String` | `/observe` | Root endpoint to use for observe providers |
-| <span id="a837f0-observers"></span> [`observers`](../config/io_helidon_webserver_observe_spi_Observer.md) | `LIST` | `i.h.w.o.s.Observer` |   | Observers to use with this observe features |
+| <span id="a837f0-observers"></span> [`observers`](../config/io_helidon_webserver_observe_spi_Observer.md) | `LIST` | `i.h.w.o.s.Observer` |   | Observers to use with this observe features |
 | <span id="a1e406-observers-discover-services"></span> `observers-discover-services` | `VALUE` | `Boolean` | `true` | Whether to enable automatic service discovery for `observers` |
-| <span id="ace9c3-sockets"></span> `sockets` | `LIST` | `String` |   | Sockets the observability endpoint should be exposed on |
+| <span id="ace9c3-sockets"></span> `sockets` | `LIST` | `String` |   | Sockets the observability endpoint should be exposed on |
 | <span id="a1bc81-weight"></span> `weight` | `VALUE` | `Double` | `80.0` | Change the weight of this feature |
 
 #### Deprecated Options

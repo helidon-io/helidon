@@ -6,7 +6,7 @@ Helidon has its own set of reactive operators that have no dependencies outside 
 
 ## Maven Coordinates
 
-To enable Reactive Engine, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
+To enable Reactive Engine, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml
 <dependency>
@@ -19,9 +19,7 @@ To enable Reactive Engine, add the following dependency to your project’s `pom
 
 The stream processing operator chain can be easily constructed by `io.helidon.common.reactive.Multi`, or `io.helidon.common.reactive.Single` for streams with single value.
 
-*Example of Multi usage:*
-
-```java
+```java [Example of Multi usage]
 AtomicInteger sum = new AtomicInteger();
 
 Multi.just("1", "2", "3", "4", "5")
@@ -34,9 +32,7 @@ System.out.println("Sum: " + sum.get());
 // >Sum: 6
 ```
 
-*Example of Single usage:*
-
-```java
+```java [Example of Single usage]
 Single.just("1")
         .map(Integer::parseInt)
         .map(i -> i + 5)
@@ -112,9 +108,7 @@ Operators {#terms}
 
 In the situations when part of the operator chain needs to be prepared in advance, `compose` and `to` operators are at hand.
 
-*Combining operator chains:*
-
-```java
+```java [Combining operator chains]
 // Assembly of stream, nothing is streamed yet
 Multi<String> publisherStage =
         Multi.just("foo", "bar")

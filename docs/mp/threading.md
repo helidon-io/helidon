@@ -10,7 +10,7 @@ Helidon MP supports a new `@ExecuteOn` annotation to give developers full contro
 
 ## Maven Coordinates
 
-To enable ExecuteOn, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
+To enable ExecuteOn, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml
 <dependency>
@@ -62,10 +62,10 @@ execute-on:
     ``` java
     public class MyPlaformBean {
 
-        @ExecuteOn(ThreadType.PLATFORM)
-        int cpuIntensive(int n) {
-            return PiDigitCalculator.nthDigitOfPi(n);
-        }
+    @ExecuteOn(ThreadType.PLATFORM)
+    int cpuIntensive(int n) {
+        return PiDigitCalculator.nthDigitOfPi(n);
+    }
     }
     ```
 
@@ -74,16 +74,16 @@ execute-on:
     ``` java
     public class MyExecutorBean {
 
-        @ExecuteOn(value = ThreadType.EXECUTOR, executorName = "my-executor")
-        int cpuIntensive(int n) {
-            return PiDigitCalculator.nthDigitOfPi(n);
-        }
+    @ExecuteOn(value = ThreadType.EXECUTOR, executorName = "my-executor")
+    int cpuIntensive(int n) {
+        return PiDigitCalculator.nthDigitOfPi(n);
+    }
 
-        @Produces
-        @Named("my-executor")
-        ExecutorService myExecutor() {
-            return Executors.newFixedThreadPool(2);
-        }
+    @Produces
+    @Named("my-executor")
+    ExecutorService myExecutor() {
+        return Executors.newFixedThreadPool(2);
+    }
     }
     ```
 
@@ -92,10 +92,10 @@ execute-on:
     ``` java
     public class MyVirtualBean {
 
-        @ExecuteOn(ThreadType.VIRTUAL)
-        void someTask() {
-            // run task on virtual thread
-        }
+    @ExecuteOn(ThreadType.VIRTUAL)
+    void someTask() {
+        // run task on virtual thread
+    }
     }
     ```
 
@@ -104,10 +104,10 @@ execute-on:
     ``` java
     public class MyVirtualBeanAsync {
 
-        @ExecuteOn(ThreadType.VIRTUAL)
-        CompletionStage<String> someTask() {
-            // run task on virtual thread without blocking caller
-            return CompletableFuture.completedFuture("DONE");
-        }
+    @ExecuteOn(ThreadType.VIRTUAL)
+    CompletionStage<String> someTask() {
+        // run task on virtual thread without blocking caller
+        return CompletableFuture.completedFuture("DONE");
+    }
     }
     ```

@@ -6,7 +6,7 @@ Helidon provides a very flexible and comprehensive configuration system, offerin
 
 ## Maven Coordinates
 
-To enable Config, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
+To enable Config, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml
 <dependencies>

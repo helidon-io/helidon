@@ -14,38 +14,30 @@ You can quickly and easily deploy Helidon applications on Oracle Cloud Infrastru
 
 ## Maven Coordinates
 
-To enable OCI Integration, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
+To enable OCI Integration, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
-*Adding the Helidon OCI SDK Integration dependency for Config, Config File and Session Token*
-
-```xml
+```xml [Adding the Helidon OCI SDK Integration dependency for Config, Config File and Session Token]
 <dependency>
      <groupId>io.helidon.integrations.oci</groupId>
      <artifactId>helidon-integrations-oci</artifactId>
 </dependency>
 ```
 
-*Adding the Helidon OCI SDK Integration dependency for Resource Principal*
-
-```xml
+```xml [Adding the Helidon OCI SDK Integration dependency for Resource Principal]
 <dependency>
      <groupId>io.helidon.integrations.oci.authentication</groupId>
      <artifactId>helidon-integrations-oci-authentication-resource</artifactId>
 </dependency>
 ```
 
-*Adding the Helidon OCI SDK Integration dependency for Instance Principal*
-
-```xml
+```xml [Adding the Helidon OCI SDK Integration dependency for Instance Principal]
 <dependency>
      <groupId>io.helidon.integrations.oci.authentication</groupId>
      <artifactId>helidon-integrations-oci-authentication-instance</artifactId>
 </dependency>
 ```
 
-*Adding the Helidon OCI SDK Integration dependency for OKE Workload*
-
-```xml
+```xml [Adding the Helidon OCI SDK Integration dependency for OKE Workload]
 <dependency>
      <groupId>io.helidon.integrations.oci.authentication</groupId>
      <artifactId>helidon-integrations-oci-authentication-oke-workload</artifactId>
@@ -73,9 +65,7 @@ These providers configure authentication with OCI by picking up OCI credentials 
 
 To configure authentication, add the `helidon.oci.authentication-method` property to `/server/src/main/resources/META-INF/oci-config.yaml`. This property specifies the OCI client authentication method that should be used.
 
-*oci-config.yaml helidon.oci.authentication-method example*
-
-```yaml
+```yaml [oci-config.yaml helidon.oci.authentication-method example]
 helidon.oci:
   authentication-method: "auto"
   allowed-authentication-methods: ["config", "config-file", "session-token", "resource-principal", "instance-principal", "oke-workload-identity"]
@@ -106,9 +96,7 @@ The OCI Object Storage service is an internet-scale, high-performance storage pl
 
 To enable the OCI Object Storage integration, add the following dependency to your project’s `pom.xml`:
 
-*Adding the dependency for OCI Object Storage*
-
-```xml
+```xml [Adding the dependency for OCI Object Storage]
 <dependency>
     <groupId>com.oracle.oci.sdk</groupId>
     <artifactId>oci-java-sdk-objectstorage</artifactId>
@@ -162,9 +150,7 @@ The following information is made available from IMDS in `io.helidon.integration
 
 ## Configuration
 
-*oci-config.yaml auth config*
-
-```yaml
+```yaml [oci-config.yaml auth config]
 helidon.oci:
   authentication-method: "auto" # can select a specific authentication method to use, defaults to auto to choose from allowed.
   allowed-authentication-methods: ["config", "config-file", "session-token", "resource-principal", "instance-principal", "oke-workload-identity"] # limit the list of authentication methods to try with auto

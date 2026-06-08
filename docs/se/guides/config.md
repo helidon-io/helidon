@@ -6,27 +6,23 @@ This guide describes how to create a sample Helidon SE project that can be used 
 
 For this 20 minute tutorial, you will need the following:
 
-|  |  |
-|----|----|
-| [Java SE 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
+| Requirement | Description |
+|-------------|-------------|
+| [Java 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
 | [Maven 3.8+](https://maven.apache.org/download.cgi) | Helidon requires Maven 3.8+. |
 | [Docker 18.09+](https://docs.docker.com/install/) | If you want to build and run Docker containers. |
 | [Kubectl 1.16.5+](https://kubernetes.io/docs/tasks/tools/install-kubectl/) | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
 
 Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
-*Verify Prerequisites*
-
-```bash
+```bash [Verify Prerequisites]
 java -version
 mvn --version
 docker --version
 kubectl version
 ```
 
-*Setting JAVA_HOME*
-
-```bash
+```bash [Setting JAVA_HOME]
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -43,9 +39,7 @@ Helidon provides a very flexible and comprehensive configuration system, offerin
 
 Use the Helidon SE Maven archetype to create a simple project that can be used for the examples in this guide.
 
-*Run the Maven archetype:*
-
-```bash
+```bash [Run the Maven archetype]
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-se \
@@ -55,9 +49,7 @@ mvn -U archetype:generate -DinteractiveMode=false \
     -Dpackage=io.helidon.examples.quickstart.se
 ```
 
-*The project will be built and run from the `helidon-quickstart-se` directory:*
-
-```bash
+```bash [The project will be built and run from the helidon-quickstart-se directory]
 cd helidon-quickstart-se
 ```
 
@@ -78,9 +70,7 @@ Helidon has an internal configuration, so you are not required to provide any co
 
 In your application code, Helidon uses the default configuration when you create a default `Config` object. See the following code from the project you created.
 
-*View `Main#main`:*
-
-```java
+```java [View Main#main]
 Config config = Config.create(); 
 ```
 
@@ -105,29 +95,21 @@ The following examples will demonstrate the default precedence order.
 
 Change a configuration parameter in the default configuration resource file, `application.yaml`. There are no environment variable or system property overrides defined.
 
-*Change `app.greeting` in `resources/application.yaml` as follows:*
-
-```bash
+```bash [Change app.greeting in resources/application.yaml as follows]
 app:
   greeting: HelloFrom-application.yaml
 ```
 
-*Build the application, skipping unit tests, then run it:*
-
-```bash
+```bash [Build the application, skipping unit tests, then run it]
 mvn package -DskipTests=true
 java -jar target/helidon-quickstart-se.jar
 ```
 
-*Run the curl command in a new terminal window and check the response:*
-
-```bash
+```bash [Run the curl command in a new terminal window and check the response]
 curl http://localhost:8080/greet
 ```
 
-*The new `app.greeting` value in `application.yaml` is used.*
-
-```json
+```json [The new app.greeting value in application.yaml is used.]
 {
   "message": "HelloFrom-application.yaml World!"
 }
@@ -137,22 +119,16 @@ curl http://localhost:8080/greet
 
 An environment property has a higher precedence than `application.yaml`.
 
-*Set the environment variable and restart the application:*
-
-```bash
+```bash [Set the environment variable and restart the application]
 export APP_GREETING=HelloFromEnvironment
 java -jar target/helidon-quickstart-se.jar
 ```
 
-*Invoke the endpoint below and check the response:*
-
-```bash
+```bash [Invoke the endpoint below and check the response]
 curl http://localhost:8080/greet
 ```
 
-*The environment property took precedence over `application.yaml`.*
-
-```json
+```json [The environment property took precedence over application.yaml.]
 {
   "message": "HelloFromEnvironment World!"
 }
@@ -162,22 +138,16 @@ curl http://localhost:8080/greet
 
 A system variable has a higher precedence than the environment property.
 
-*Restart the application with a system property. The `APP_GREETING` environment variable is still set:*
-
-```bash
+```bash [Restart the application with a system property. The APP_GREETING environment variable is still set]
 export APP_GREETING=HelloFromEnvironment
 java -Dapp.greeting="HelloFromSystemProperty" -jar target/helidon-quickstart-se.jar
 ```
 
-*Invoke the endpoint below and check the response:*
-
-```bash
+```bash [Invoke the endpoint below and check the response]
 curl http://localhost:8080/greet
 ```
 
-*The system variable `app.greeting` took precedence over the environment property and the value in `application.yaml`.*
-
-```json
+```json [The system variable app.greeting took precedence over the environment property and the value in application.yaml.]
 {
   "message": "HelloFromSystemProperty World!"
 }
@@ -206,15 +176,11 @@ You can also define custom sources, such as Git, and use them in your Helidon ap
 
 The first custom resource example demonstrates how to add a second internal configuration resource that is discovered in the `classpath`. The code needs to build a `Config` object, which in turn is used to build the `Server` object. The `Config` object can be built using a `Config.Builder`, which lets you inject any number of sources into the builder. Furthermore, you can set the order of precedence for the sources. The first source has the highest importance, then the next has second highest, and so forth.
 
-*Add a resource file, named `config.properties` to the `resources` directory with the following contents:*
-
-```text
+```text [Add a resource file, named config.properties to the resources directory with the following contents]
 app.greeting=HelloFrom-config.properties
 ```
 
-*Update the `Main` class, Replace the `Config.create()` call with `buildConfig()`, and add `buildConfig` method:*
-
-```java
+```java [Update the Main class, Replace the Config.create() call with buildConfig(), and add buildConfig method]
 private static Config buildConfig() {
     return Config.builder()
             .disableEnvironmentVariablesSource() 
@@ -229,15 +195,11 @@ private static Config buildConfig() {
 - Specify the new config.properties resource that is in the `classpath`.
 - You must specify the existing `application.yaml` or Helidon will not use it as a configuration source even though it is considered a default source.
 
-*Build and run the application (without the system property). Invoke the endpoint:*
-
-```bash
+```bash [Build and run the application (without the system property). Invoke the endpoint]
 curl http://localhost:8080/greet
 ```
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {
   "message": "HelloFrom-config.properties World!" 
 }
@@ -250,9 +212,7 @@ curl http://localhost:8080/greet
 
 Swap the source order and run the test again.
 
-*Update the `Main` class and replace the `buildConfig` method:*
-
-```java
+```java [Update the Main class and replace the buildConfig method]
 return Config.builder()
         .disableEnvironmentVariablesSource()
         .sources(
@@ -263,15 +223,11 @@ return Config.builder()
 
 - Swap the source order, putting `application.yaml` first.
 
-*Build and run the application, then invoke the endpoint:*
-
-```bash
+```bash [Build and run the application, then invoke the endpoint]
 curl http://localhost:8080/greet
 ```
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {
   "message": "HelloFrom-application.yaml World!" 
 }
@@ -283,21 +239,15 @@ curl http://localhost:8080/greet
 
 You can move all or part of your configuration to external files, making them optional or mandatory. The obvious advantage to this approach is that you do not need to rebuild your application to change configuration. In the following example, the `app.greeting` configuration property will be added to `config-file.properties`.
 
-*Unset the environment variable so that `disableEnvironmentVariablesSource` doesn’t need to be called:*
-
-```bash
+```bash [Unset the environment variable so that disableEnvironmentVariablesSource doesn’t need to be called]
 unset APP_GREETING
 ```
 
-*Create a file named `config-file.properties` in the `helidon-quickstart-se` directory with the following contents:*
-
-```bash
+```bash [Create a file named config-file.properties in the helidon-quickstart-se directory with the following contents]
 app.greeting=HelloFrom-config-file.properties
 ```
 
-*Update the `Main` class and replace the `buildConfig` method:*
-
-```java
+```java [Update the Main class and replace the buildConfig method]
 return Config.builder()
         .sources(
                 file("config-file.properties"), 
@@ -307,15 +257,11 @@ return Config.builder()
 
 - Add a mandatory configuration file.
 
-*Build and run the application, then invoke the endpoint:*
-
-```bash
+```bash [Build and run the application, then invoke the endpoint]
 curl http://localhost:8080/greet
 ```
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {
   "message": "HelloFrom-config-file.properties World!" 
 }
@@ -326,9 +272,7 @@ curl http://localhost:8080/greet
 > [!NOTE]
 > If you want the configuration file to be optional, you must use the `optional` method with `sources`, otherwise Helidon will generate an error during startup as shown below. This is true for both `file` and `classpath` sources. By default, these sources are mandatory.
 
-*Update the `Main` class and replace the `buildConfig` method:*
-
-```java
+```java [Update the Main class and replace the buildConfig method]
 return Config.builder()
         .sources(
                 file("missing-file"), 
@@ -338,9 +282,7 @@ return Config.builder()
 
 - Specify a file that doesn’t exist.
 
-*Build then start the application and you will see the following output:*
-
-```bash
+```bash [Build then start the application and you will see the following output]
 Exception in thread "main" io.helidon.config.ConfigException: Cannot load data from mandatory source FileConfig[missing-file]. File `missing-file` not found.
 ```
 
@@ -354,15 +296,11 @@ To fix this, use the `optional` method as shown below, then rerun the test.
 
 A directory source treats every file in the directory as a key, and the file contents as the value. The following example includes a directory source as highest precedence.
 
-*Create a new directory `helidon-quickstart-se/conf` then create a file named `app.greeting` in that directory with the following contents:*
-
-```bash
+```bash [Create a new directory helidon-quickstart-se/conf then create a file named app.greeting in that directory with the following contents]
 HelloFromFileInDirectoryConf
 ```
 
-*Update the `Main` class and replace the `buildConfig` method:*
-
-```java
+```java [Update the Main class and replace the buildConfig method]
 return Config.builder()
         .sources(
                 directory("conf"), 
@@ -373,15 +311,11 @@ return Config.builder()
 
 - Add a mandatory configuration directory.
 
-*Build and run the application, then invoke the endpoint and check the response:*
-
-```bash
+```bash [Build and run the application, then invoke the endpoint and check the response]
 curl http://localhost:8080/greet
 ```
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {
   "message": "HelloFromFileInDirectoryConf World!" 
 }
@@ -393,9 +327,7 @@ curl http://localhost:8080/greet
 
 If you have more than three sources, you can use the `addSource` method as shown below.
 
-*Update the `Main` class and replace the `buildConfig` method:*
-
-```java
+```java [Update the Main class and replace the buildConfig method]
 return Config.builder()
         .addSource(directory("conf"))  
         .addSource(file("config-file.properties"))
@@ -406,15 +338,11 @@ return Config.builder()
 
 - Add each config source using the `addSource` method.
 
-*Build and run the application, then invoke the endpoint:*
-
-```bash
+```bash [Build and run the application, then invoke the endpoint]
 curl http://localhost:8080/greet
 ```
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {
   "message": "HelloFromFileInDirectoryConf World!"
 }
@@ -428,9 +356,7 @@ Simplest way to use a profile is to define a `config-profile.yaml` (and possible
 
 Profile file can use any supported format, following example is using `YAML`.
 
-*Create a file named `config-profile.yaml` in the `helidon-quickstart-se` directory with the following contents:*
-
-```yaml
+```yaml [Create a file named config-profile.yaml in the helidon-quickstart-se directory with the following contents]
 sources:
   - type: "classpath" 
     properties:
@@ -440,23 +366,17 @@ sources:
 - The source type.
 - The name of the mandatory configuration resource.
 
-*Update the `Main` class and replace the `buildConfig` method:*
-
-```java
+```java [Update the Main class and replace the buildConfig method]
 return Config.create(); 
 ```
 
 - Will use `config-profile.yaml` by default
 
-*Build and run the application, then invoke the endpoint:*
-
-```bash
+```bash [Build and run the application, then invoke the endpoint]
 curl http://localhost:8080/greet
 ```
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {
   "message": "HelloFrom-application.yaml World!" 
 }
@@ -466,9 +386,7 @@ curl http://localhost:8080/greet
 
 The source precedence order in a profile file is the order of appearance in the file. This is demonstrated below where the `config-file.properties` has the highest order of precedence.
 
-*Replace the contents of the `config-profile.yaml` file:*
-
-```yaml
+```yaml [Replace the contents of the config-profile.yaml file]
 sources:
   - type: "file" 
     properties:
@@ -486,15 +404,11 @@ sources:
 - The name of the mandatory configuration file.
 - Specify that the `optional-config-file` file is optional.
 
-*Restart the application, then invoke the endpoint:*
-
-```bash
+```bash [Restart the application, then invoke the endpoint]
 curl http://localhost:8080/greet
 ```
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {
   "message": "HelloFrom-config-file.properties World!" 
 }
@@ -504,9 +418,7 @@ curl http://localhost:8080/greet
 
 When using a profile file, you need to explicitly include both environment variables and system properties as a source if you want to use them.
 
-*Replace the contents of the `config-profile.yaml` file:*
-
-```yaml
+```yaml [Replace the contents of the config-profile.yaml file]
 sources:
   - type: "environment-variables" 
   - type: "system-properties" 
@@ -531,9 +443,7 @@ You have used Helidon to customize configuration behavior from your code using t
 
 The simplest way to access configuration data is using a key, as shown below in the `GreetFeature` class. The key can be composite as shown below:
 
-*View the `GreetService` constructor:*
-
-```java
+```java [View the GreetService constructor]
 greeting.set(Config.global().get("app.greeting").asString().orElse("Ciao")); 
 ```
 
@@ -541,23 +451,17 @@ greeting.set(Config.global().get("app.greeting").asString().orElse("Ciao"));
 
 You can also access the same greeting by navigating the nodes.
 
-*Replace the `GreetService` constructor with the following code:*
-
-```java
+```java [Replace the GreetService constructor with the following code]
 greeting.set(Config.global().get("app").get("greeting").asString().orElse("Ciao")); 
 ```
 
 - Get the `app` node, then get the child node, `greeting`.
 
-*Build and run the application, then invoke the endpoint:*
-
-```bash
+```bash [Build and run the application, then invoke the endpoint]
 curl http://localhost:8080/greet
 ```
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {
   "message": "HelloFrom-application.yaml World!"
 }
@@ -567,18 +471,14 @@ curl http://localhost:8080/greet
 
 The Helidon `Config` class provides several methods that allow you to filter and customize the traversal of the configuration tree. The example below shows how to get the `greeting` node when you only know it is somewhere in the `app` subtree.
 
-*Replace the contents of the `config-profile.yaml` file:*
-
-```bash
+```bash [Replace the contents of the config-profile.yaml file]
 sources:
   - type: "classpath"
     properties:
       resource: "application.yaml"
 ```
 
-*Replace the app section of the `application.yaml` resource file:*
-
-```bash
+```bash [Replace the app section of the application.yaml resource file]
 app:
   child1: child1-node
   child2:
@@ -587,9 +487,7 @@ app:
   child3: child3-node
 ```
 
-*Update the `GreetService.java` file and replace the `GreetService` constructor with the following:*
-
-```java
+```java [Update the GreetService.java file and replace the GreetService constructor with the following]
 List<Config> appGreetings = Config.global()
         .get("app")
         .traverse()  
@@ -603,15 +501,11 @@ greeting.set(appGreetings.get(0).asString().get());
 - Include only nodes that have the name `greeting`.
 - Add the `greeting` node to the collection.
 
-*Build and run the application, then invoke the endpoint:*
-
-```bash
+```bash [Build and run the application, then invoke the endpoint]
 curl http://localhost:8080/greet
 ```
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {
   "message": "HelloFrom-application.yaml under child2a World!"
 }
@@ -621,9 +515,7 @@ curl http://localhost:8080/greet
 
 Even though in-memory config trees are immutable, the config system internally records configuration source metadata that allows it to watch sources for changes. Your application listens for updates to the underlying config sources and reacts to the changes. See [Config Mutability Support](../config/mutability-support.md) for a full discussion on this topic. The following example demonstrates how to listen and react to configuration changes.
 
-*Replace the contents of the `config-profile.yaml` file:*
-
-```yaml
+```yaml [Replace the contents of the config-profile.yaml file]
 sources:
   - type: "file"
     properties:
@@ -635,9 +527,7 @@ sources:
       resource: "application.yaml"
 ```
 
-*Update the `GreetService` class and replace the `GreetService` constructor:*
-
-```java
+```java [Update the GreetService class and replace the GreetService constructor]
 Config greetingConfig = Config.global().get("app.greeting"); 
 greeting.set(greetingConfig.asString().orElse("Ciao"));
 greetingConfig.onChange(cfg -> greeting.set(cfg.asString().orElse("Ciao"))); 
@@ -646,35 +536,25 @@ greetingConfig.onChange(cfg -> greeting.set(cfg.asString().orElse("Ciao")));
 - Get the greeting `Config` node.
 - Register a listener that will get called by Helidon when the configuration changes. The listener will update the greeting with the new value.
 
-*Build and run the application, then invoke the endpoint:*
-
-```bash
+```bash [Build and run the application, then invoke the endpoint]
 curl http://localhost:8080/greet
 ```
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {
   "message": "HelloFrom-config-file.properties World!"
 }
 ```
 
-*Update `config-file.properties` with the following contents:*
-
-```bash
+```bash [Update config-file.properties with the following contents]
 app.greeting=Updated HelloFrom-config-file.properties
 ```
 
-*After a few seconds, check the response:*
-
-```bash
+```bash [After a few seconds, check the response]
 curl http://localhost:8080/greet
 ```
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {
   "message": "Updated HelloFrom-config-file.properties World!" 
 }
@@ -686,16 +566,12 @@ curl http://localhost:8080/greet
 
 The following example uses a Kubernetes ConfigMap to pass the configuration data to your Helidon application deployed to Kubernetes. When the pod is created, Kubernetes will automatically create a local file within the container that has the contents of the configuration file used for the ConfigMap. This example will create the file at `/etc/config/config-file.properties`.
 
-*Replace the app section of the `application.yaml` resource file:*
-
-```bash
+```bash [Replace the app section of the application.yaml resource file]
 app:
   greeting: "Hello"
 ```
 
-*Update the `Main` class and replace the `buildConfig` method:*
-
-```java
+```java [Update the Main class and replace the buildConfig method]
 return Config.builder()
         .sources(
                 file("/etc/config/config-file.properties").optional(), 
@@ -706,21 +582,15 @@ return Config.builder()
 - The `app.greeting` value will be fetched from `/etc/config/config-file.properties` within the container.
 - The server port is specified in `application.yaml` within the `helidon-quickstart-se.jar`.
 
-*Replace the `GreetService` constructor with the following code:*
-
-```java
+```java [Replace the GreetService constructor with the following code]
 greeting.set(Config.global().get("app.greeting").asString().orElse("Ciao"));
 ```
 
-*Build and run the application, then invoke the endpoint:*
-
-```bash
+```bash [Build and run the application, then invoke the endpoint]
 curl http://localhost:8080/greet
 ```
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {
   "message": "Hello World!" 
 }
@@ -728,27 +598,19 @@ curl http://localhost:8080/greet
 
 - The greeting came from `application.yaml` since `/etc/config/config-file.properties` doesn’t exist.
 
-*Stop the application and build the docker image:*
-
-```bash
+```bash [Stop the application and build the docker image]
 docker build -t helidon-config-se .
 ```
 
-*Generate a ConfigMap from `config-file.properties`:*
-
-```bash
+```bash [Generate a ConfigMap from config-file.properties]
 kubectl create configmap helidon-configmap --from-file config-file.properties
 ```
 
-*View the contents of the ConfigMap:*
-
-```bash
+```bash [View the contents of the ConfigMap]
 kubectl get configmap helidon-configmap -o yaml
 ```
 
-*Output (partial)*
-
-```yaml
+```yaml [Output (partial)]
 apiVersion: v1
 data:
   config-file.properties: |    
@@ -760,9 +622,7 @@ kind: ConfigMap
 - The file `config-file.properties` will be created within the Kubernetes container.
 - The `config-file.properties` file will have this single property defined.
 
-*Create the Kubernetes YAML specification, named `k8s-config.yaml`, with the following contents:*
-
-```yaml
+```yaml [Create the Kubernetes YAML specification, named k8s-config.yaml, with the following contents]
 kind: Service
 apiVersion: v1
 metadata:
@@ -815,15 +675,11 @@ spec:
 - Mount the ConfigMap as a volume at `/etc/config`. This is where Kubernetes will create `config-file.properties`.
 - Specify the ConfigMap which contains the configuration data.
 
-*Create and deploy the application into Kubernetes:*
-
-```bash
+```bash [Create and deploy the application into Kubernetes]
 kubectl apply -f ./k8s-config.yaml
 ```
 
-*Get the service information:*
-
-```bash
+```bash [Get the service information]
 kubectl get service/helidon-config
 ```
 
@@ -834,15 +690,11 @@ helidon-config   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s
 
 - A service of type `NodePort` that serves the default routes on port `31143`.
 
-*Verify the configuration endpoint using port `31143`, your port will likely be different:*
-
-```bash
+```bash [Verify the configuration endpoint using port 31143, your port will likely be different]
 curl http://localhost:31143/greet
 ```
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {
   "message": "Updated HelloFrom-config-file.properties World!" 
 }
@@ -852,9 +704,7 @@ curl http://localhost:31143/greet
 
 You can now delete the Kubernetes resources that were just created during this example.
 
-*Delete the Kubernetes resources:*
-
-```bash
+```bash [Delete the Kubernetes resources]
 kubectl delete -f ./k8s-config.yaml
 kubectl delete configmap  helidon-configmap
 ```

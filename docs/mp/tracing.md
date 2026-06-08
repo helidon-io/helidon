@@ -9,7 +9,7 @@ Distributed tracing is a critical feature of micro-service based applications, s
 
 ## Maven Coordinates
 
-To enable MicroProfile Tracing, either add a dependency on the [helidon-microprofile bundle](../mp/introduction/microprofile.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
+To enable MicroProfile Tracing, either add a dependency on the [helidon-microprofile bundle](introduction.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml
 <dependency>
@@ -79,16 +79,16 @@ You can configure a custom service name using the `tracing.service` configuratio
 
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
-| <span id="ae09ad-boolean-tags"></span> `boolean-tags` | `MAP` | `Boolean` |   | Tracer level tags that get added to all reported spans |
+| <span id="ae09ad-boolean-tags"></span> `boolean-tags` | `MAP` | `Boolean` |   | Tracer level tags that get added to all reported spans |
 | <span id="a6d3db-enabled"></span> `enabled` | `VALUE` | `Boolean` | `true` | When enabled, tracing will be sent |
 | <span id="a701d5-global"></span> `global` | `VALUE` | `Boolean` | `true` | When enabled, the created instance is also registered as a global tracer |
-| <span id="a7d2ab-host"></span> `host` | `VALUE` | `String` |   | Host to use to connect to tracing collector |
-| <span id="ad8eb0-int-tags"></span> `int-tags` | `MAP` | `Integer` |   | Tracer level tags that get added to all reported spans |
-| <span id="a912bb-path"></span> `path` | `VALUE` | `String` |   | Path on the collector host to use when sending data to tracing collector |
-| <span id="ad6020-port"></span> `port` | `VALUE` | `Integer` |   | Port to use to connect to tracing collector |
-| <span id="a3c6c7-protocol"></span> `protocol` | `VALUE` | `String` |   | Protocol to use (such as `http` or `https`) to connect to tracing collector |
-| <span id="af9a68-service"></span> `service` | `VALUE` | `String` |   | Service name of the traced service |
-| <span id="a0f568-tags"></span> `tags` | `MAP` | `String` |   | Tracer level tags that get added to all reported spans |
+| <span id="a7d2ab-host"></span> `host` | `VALUE` | `String` |   | Host to use to connect to tracing collector |
+| <span id="ad8eb0-int-tags"></span> `int-tags` | `MAP` | `Integer` |   | Tracer level tags that get added to all reported spans |
+| <span id="a912bb-path"></span> `path` | `VALUE` | `String` |   | Path on the collector host to use when sending data to tracing collector |
+| <span id="ad6020-port"></span> `port` | `VALUE` | `Integer` |   | Port to use to connect to tracing collector |
+| <span id="a3c6c7-protocol"></span> `protocol` | `VALUE` | `String` |   | Protocol to use (such as `http` or `https`) to connect to tracing collector |
+| <span id="af9a68-service"></span> `service` | `VALUE` | `String` |   | Service name of the traced service |
+| <span id="a0f568-tags"></span> `tags` | `MAP` | `String` |   | Tracer level tags that get added to all reported spans |
 
 To disable Helidon tracing for web server and security:
 
@@ -105,9 +105,7 @@ mp.opentracing.server.skip-pattern=.*
 
 Tracing configuration can be defined in `application.yaml` file.
 
-*Tracing configuration example*
-
-```yaml
+```yaml [Tracing configuration example]
 tracing:
   paths:
     - path: "/favicon.ico"
@@ -137,9 +135,7 @@ To have a nicer overview in search pane of a tracer, you can customize the top-l
 
 Example:
 
-*Configuration properties*
-
-```properties
+```properties [Configuration properties]
 tracing.components.web-server.spans.0.name="HTTP Request"
 tracing.components.web-server.spans.0.new-name: "HTTP %1$s %2$s"
 ```
@@ -160,9 +156,7 @@ The examples in this guide demonstrate how to integrate tracing with Helidon, ho
 
 First, you need to run the Jaeger tracer. Helidon will communicate with this tracer at runtime.
 
-*Run Jaeger within a docker container, then check the Jaeger server working:*
-
-```bash
+```bash [Run Jaeger within a docker container, then check the Jaeger server working]
 docker run -d --name jaeger \                  
   -e COLLECTOR_OTLP_ENABLED=true \
   -p 6831:6831/udp \
@@ -180,9 +174,7 @@ docker run -d --name jaeger \
 
 - Run the Jaeger docker image.
 
-*Check the Jaeger server by opening in browser:*
-
-```bash
+```bash [Check the Jaeger server by opening in browser]
 http://localhost:16686/search
 ```
 
@@ -194,9 +186,7 @@ To demonstrate distributed tracing, you will need to create a second project, wh
 
 #### Create a second service
 
-*Run the Maven archetype:*
-
-```bash
+```bash [Run the Maven archetype]
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-mp \
@@ -206,24 +196,18 @@ mvn -U archetype:generate -DinteractiveMode=false \
     -Dpackage=io.helidon.examples.quickstart.mp
 ```
 
-*The project will be built and run from the `helidon-quickstart-mp` directory:*
-
-```bash
+```bash [The project will be built and run from the helidon-quickstart-mp directory]
 cd helidon-quickstart-mp-2
 ```
 
-*Add the following dependency to `pom.xml`:*
-
-```xml
+```xml [Add the following dependency to pom.xml]
 <dependency>
     <groupId>io.helidon.tracing.providers</groupId>
     <artifactId>helidon-tracing-providers-jaeger</artifactId>
 </dependency>
 ```
 
-*Replace `META-INF/microprofile-config.properties` with the following:*
-
-```properties
+```properties [Replace META-INF/microprofile-config.properties with the following]
 app.greeting=Hello From MP-2
 tracing.service=helidon-mp-2
 
@@ -231,22 +215,16 @@ tracing.service=helidon-mp-2
 server.port=8081
 ```
 
-*Build the application, skipping unit tests, then run it:*
-
-```bash
+```bash [Build the application, skipping unit tests, then run it]
 mvn package -DskipTests=true
 java -jar target/helidon-quickstart-mp-2.jar
 ```
 
-*Run the curl command in a new terminal window and check the response (**notice the port is 8081**) :*
-
-```bash
+```bash [Run the curl command in a new terminal window and check the response (**notice the port is 8081**)]
 curl http://localhost:8081/greet
 ```
 
-*Response body*
-
-```json
+```json [Response body]
 {
   "message": "Hello From MP-2 World!"
 }
@@ -256,9 +234,7 @@ curl http://localhost:8081/greet
 
 Once you have validated that the second service is running correctly, you need to modify the original application to call it.
 
-*Replace the `GreetResource` class with the following code:*
-
-```java
+```java [Replace the GreetResource class with the following code]
 @Path("/greet")
 @RequestScoped
 public class GreetResource {
@@ -297,17 +273,13 @@ public class GreetResource {
 - This is the `WebTarget` needed to send a request to the second service at port `8081`.
 - This is the new endpoint that will call the second service.
 
-*Build and run the application, then invoke the endpoint and check the response:*
-
-```bash
+```bash [Build and run the application, then invoke the endpoint and check the response]
 curl -i http://localhost:8080/greet/outbound 
 ```
 
 - The request went to the service on `8080`, which then invoked the service at `8081` to get the greeting.
 
-*Response body*
-
-```json
+```json [Response body]
 {
   "message": "Hello From MP-2 World!" 
 }
@@ -330,24 +302,18 @@ You can now stop your second service, it is no longer used in this guide.
 
 The following example demonstrates how to use Jaeger from a Helidon application running in Kubernetes.
 
-*Update `application.yaml`:*
-
-```bash
+```bash [Update application.yaml]
 tracing:
   host: "jaeger"
 ```
 
-*Stop the application and build the docker image for your application:*
-
-```bash
+```bash [Stop the application and build the docker image for your application]
 docker build -t helidon-tracing-mp .
 ```
 
 ### Deploy Jaeger into Kubernetes
 
-*Create the Kubernetes YAML specification, named `jaeger.yaml`, with the following contents:*
-
-```yaml
+```yaml [Create the Kubernetes YAML specification, named jaeger.yaml, with the following contents]
 apiVersion: v1
 kind: Service
 metadata:
@@ -374,15 +340,11 @@ spec:
         - containerPort: 16686
 ```
 
-*Create the Jaeger pod and ClusterIP service:*
-
-```bash
+```bash [Create the Jaeger pod and ClusterIP service]
 kubectl apply -f ./jaeger.yaml
 ```
 
-*Create a Jaeger external server and expose it on port 9142:*
-
-```bash
+```bash [Create a Jaeger external server and expose it on port 9142]
 kubectl expose pod jaeger --name=jaeger-external --port=16687 --target-port=16686 --type=LoadBalancer 
 ```
 
@@ -392,9 +354,7 @@ Navigate to <http://localhost:16687/search> to validate that you can access Jaeg
 
 ### Deploy Your Helidon Application into Kubernetes
 
-*Create the Kubernetes YAML specification, named `tracing.yaml`, with the following contents:*
-
-```yaml
+```yaml [Create the Kubernetes YAML specification, named tracing.yaml, with the following contents]
 kind: Service
 apiVersion: v1
 metadata:
@@ -436,17 +396,13 @@ spec:
 - A service of type `NodePort` that serves the default routes on port `8080`.
 - A deployment with one replica of a pod.
 
-*Create and deploy the application into Kubernetes:*
-
-```bash
+```bash [Create and deploy the application into Kubernetes]
 kubectl apply -f ./tracing.yaml
 ```
 
 ### Access Your Application and the Jaeger Trace
 
-*Get the application service information:*
-
-```bash
+```bash [Get the application service information]
 kubectl get service/helidon-tracing
 ```
 
@@ -457,9 +413,7 @@ helidon-tracing   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s
 
 - A service of type `NodePort` that serves the default routes on port `31143`.
 
-*Verify the tracing endpoint using port `31143`, your port will likely be different:*
-
-```bash
+```bash [Verify the tracing endpoint using port 31143, your port will likely be different]
 curl http://localhost:31143/greet
 ```
 
@@ -475,9 +429,7 @@ Access the Jaeger UI at <http://localhost:16687/search> and click on the refresh
 
 You can now delete the Kubernetes resources that were just created during this example.
 
-*Delete the Kubernetes resources:*
-
-```bash
+```bash [Delete the Kubernetes resources]
 kubectl delete -f ./jaeger.yaml
 kubectl delete -f ./tracing.yaml
 kubectl delete service jaeger-external
@@ -502,9 +454,7 @@ There is an option to provide `SpanContext` programmatically (such as when writi
 
 You can either configure the span context as the active span, or explicitly define it as client property.
 
-*Tracing propagation with Jersey client*
-
-```java
+```java [Tracing propagation with Jersey client]
 Response response = client.target(serviceEndpoint)
         .request()
         // tracer should be provided unless available as GlobalTracer
@@ -530,17 +480,17 @@ Response response = client.target(serviceEndpoint)
 
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
-| <span id="aed342-client-cert-pem"></span> [`client-cert-pem`](../config/io_helidon_common_configurable_Resource.md) | `VALUE` | `i.h.c.c.Resource` |   | Certificate of client in PEM format |
+| <span id="aed342-client-cert-pem"></span> [`client-cert-pem`](../config/io_helidon_common_configurable_Resource.md) | `VALUE` | `i.h.c.c.Resource` |   | Certificate of client in PEM format |
 | <span id="a097b8-exporter-timeout"></span> `exporter-timeout` | `VALUE` | `Duration` | `PT10S` | Timeout of exporter requests |
 | <span id="a24a43-max-export-batch-size"></span> `max-export-batch-size` | `VALUE` | `Integer` | `512` | Maximum Export Batch Size of exporter requests |
 | <span id="ade69e-max-queue-size"></span> `max-queue-size` | `VALUE` | `Integer` | `2048` | Maximum Queue Size of exporter requests |
-| <span id="a5d885-private-key-pem"></span> [`private-key-pem`](../config/io_helidon_common_configurable_Resource.md) | `VALUE` | `i.h.c.c.Resource` |   | Private key in PEM format |
+| <span id="a5d885-private-key-pem"></span> [`private-key-pem`](../config/io_helidon_common_configurable_Resource.md) | `VALUE` | `i.h.c.c.Resource` |   | Private key in PEM format |
 | <span id="a65431-propagation"></span> [`propagation`](../config/io_helidon_tracing_providers_jaeger_JaegerTracerBuilder_PropagationFormat.md) | `LIST` | `i.h.t.p.j.J.PropagationFormat` | `JAEGER` | Add propagation format to use |
 | <span id="aa4177-sampler-param"></span> `sampler-param` | `VALUE` | `Number` | `1` | The sampler parameter (number) |
 | <span id="a28b35-sampler-type"></span> [`sampler-type`](../config/io_helidon_tracing_providers_jaeger_JaegerTracerBuilder_SamplerType.md) | `VALUE` | `i.h.t.p.j.J.SamplerType` | `CONSTANT` | Sampler type |
 | <span id="a8ee29-schedule-delay"></span> `schedule-delay` | `VALUE` | `Duration` | `PT5S` | Schedule Delay of exporter requests |
 | <span id="a1bdae-span-processor-type"></span> [`span-processor-type`](../config/io_helidon_tracing_providers_jaeger_JaegerTracerBuilder_SpanProcessorType.md) | `VALUE` | `i.h.t.p.j.J.SpanProcessorType` | `batch` | Span Processor type used |
-| <span id="a667f5-trusted-cert-pem"></span> [`trusted-cert-pem`](../config/io_helidon_common_configurable_Resource.md) | `VALUE` | `i.h.c.c.Resource` |   | Trusted certificates in PEM format |
+| <span id="a667f5-trusted-cert-pem"></span> [`trusted-cert-pem`](../config/io_helidon_common_configurable_Resource.md) | `VALUE` | `i.h.c.c.Resource` |   | Trusted certificates in PEM format |
 
 The following is an example of a Jaeger configuration, specified in the YAML format.
 
@@ -611,9 +561,7 @@ Avoid using both the OpenTelemetry tracing support described here and support fo
 > [!NOTE]
 > If you provide settings under both `telemetry` and `tracing`, Helidon uses the `telemetry` settings. Specifying both does not confuse Helidon but it might confuse users.
 
-*Dependency for OpenTelemetry support using tracing*
-
-```xml
+```xml [Dependency for OpenTelemetry support using tracing]
 <dependency>
     <groupId>io.helidon.tracing.providers</groupId>
     <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
@@ -627,7 +575,7 @@ Avoid using both the OpenTelemetry tracing support described here and support fo
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
 | <span id="aec0bf-exporter-type"></span> [`exporter-type`](../config/io_helidon_tracing_providers_opentelemetry_OtlpExporterProtocolType.md) | `VALUE` | `i.h.t.p.o.OtlpExporterProtocolType` | `GRPC` | Type of OTLP exporter to use for pushing span data |
-| <span id="a0fe59-propagators"></span> `propagators` | `LIST` | `i.h.t.p.o.O.CustomMethods` |   | Context propagators |
+| <span id="a0fe59-propagators"></span> `propagators` | `LIST` | `i.h.t.p.o.O.CustomMethods` |   | Context propagators |
 
 *Example Helidon configuration for OpenTelemetry tracing*
 
@@ -681,11 +629,12 @@ The following tables list specifically what operations the proxies permit.
 | `start()` | Starts the span. | \- |
 | `start(Instant)` | Starts the span. | \- |
 | `tag` methods | Add a tag to the builder before the span is built. | ✓ |
-| `unwrap(Class)` | Cast the builder to the specified implementation type. † | ✓ |
+| `unwrap(Class)` | Cast the builder to the specified implementation type. | ✓ |
+
+> [!NOTE]
+> Helidon returns the unwrapped object, not a proxy for it.
 
 [`io.helidon.tracing.Span.Builder`](/apidocs/io.helidon.tracing/io/helidon/tracing/Span.Builder.html) Operations
-
-† Helidon returns the unwrapped object, not a proxy for it.
 
 | Method | Purpose | OK? |
 |----|----|----|
@@ -695,11 +644,12 @@ The following tables list specifically what operations the proxies permit.
 | `context()` | Returns the `SpanContext` associated with the span. | ✓ |
 | `status(Status)` | Sets the status of the span. | \- |
 | any `tag` method | Add a tag to the span. | ✓ |
-| `unwrap(Class)` | Cast the span to the specified implementation type. † | ✓ |
+| `unwrap(Class)` | Cast the span to the specified implementation type. | ✓ |
+
+> [!NOTE]
+> Helidon returns the unwrapped object, not a proxy to it.
 
 [`io.helidon.tracing.Span`](/apidocs/io.helidon.tracing/io/helidon/tracing/Span.html) Operations
-
-† Helidon returns the unwrapped object, not a proxy to it.
 
 | Method       | Purpose                              | OK? |
 |--------------|--------------------------------------|-----|

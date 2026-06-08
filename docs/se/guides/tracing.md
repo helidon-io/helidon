@@ -6,27 +6,23 @@ This guide describes how to create a sample Helidon SE project that can be used 
 
 For this 30 minute tutorial, you will need the following:
 
-|  |  |
-|----|----|
-| [Java SE 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
+| Requirement | Description |
+|-------------|-------------|
+| [Java 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
 | [Maven 3.8+](https://maven.apache.org/download.cgi) | Helidon requires Maven 3.8+. |
 | [Docker 18.09+](https://docs.docker.com/install/) | If you want to build and run Docker containers. |
 | [Kubectl 1.16.5+](https://kubernetes.io/docs/tasks/tools/install-kubectl/) | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
 
 Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
-*Verify Prerequisites*
-
-```bash
+```bash [Verify Prerequisites]
 java -version
 mvn --version
 docker --version
 kubectl version
 ```
 
-*Setting JAVA_HOME*
-
-```bash
+```bash [Setting JAVA_HOME]
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -51,9 +47,7 @@ The examples in this guide demonstrate how to integrate tracing with Helidon, ho
 
 Use the Helidon SE Maven archetype to create a simple project that can be used for the examples in this guide.
 
-*Run the Maven archetype:*
-
-```bash
+```bash [Run the Maven archetype]
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-se \
@@ -63,9 +57,7 @@ mvn -U archetype:generate -DinteractiveMode=false \
     -Dpackage=io.helidon.examples.quickstart.se
 ```
 
-*The project will be built and run from the `helidon-quickstart-se` directory:*
-
-```bash
+```bash [The project will be built and run from the helidon-quickstart-se directory]
 cd helidon-quickstart-se
 ```
 
@@ -73,9 +65,7 @@ cd helidon-quickstart-se
 
 First, run the Jaeger backend. Helidon communicates with this backend at runtime.
 
-*Run Jaeger within a docker container*
-
-```bash
+```bash [Run Jaeger within a docker container]
 docker run -d --name jaeger \ 
   -e COLLECTOR_OTLP_ENABLED=true \
   -p 6831:6831/udp \
@@ -97,9 +87,7 @@ docker run -d --name jaeger \
 
 Update the `pom.xml` file and add the following OpenTelemetry dependency to the `<dependencies>` section (**not** `<dependencyManagement>`). This will enable Helidon to use OpenTelemetry at the default host and port, `localhost:4317`.
 
-*Add the following dependencies to `pom.xml`:*
-
-```xml
+```xml [Add the following dependencies to pom.xml]
 <dependencies>
      <dependency>
          <groupId>io.helidon.tracing</groupId>
@@ -124,9 +112,7 @@ Update the `pom.xml` file and add the following OpenTelemetry dependency to the 
 
 Helidon offers several tracing providers: OpenTelemetry, Zipkin, and Jaeger (deprecated). All spans sent by Helidon to the backend need to be associated with a service, assigned by the `tracing.service` setting in the example below.
 
-*Add the following lines to `src/main/resources/application.yaml`:*
-
-```bash
+```bash [Add the following lines to src/main/resources/application.yaml]
 tracing:
   service: helidon-se-1
   tags:
@@ -144,16 +130,12 @@ Tracing is part of Helidon’s observability support. By default, Helidon discov
 
 #### Build and Access QuickStart
 
-*Build and run the application*
-
-```bash
+```bash [Build and run the application]
 mvn clean package
 java -jar target/helidon-quickstart-se.jar
 ```
 
-*Access the application*
-
-```bash
+```bash [Access the application]
 curl http://localhost:8080/greet
 ```
 
@@ -187,9 +169,7 @@ You can examine span details by clicking on the span row. Refer to the image bel
 
 Your application can use the Helidon tracing API to create custom spans. The following code replaces the generated `getDefaultMessageHandler` method to add a custom span around the code which prepares the default greeting response. The new custom span’s parent span is set to the one which Helidon automatically creates for the REST endpoint.
 
-*Update the `GreetService` class, replacing the `getDefaultMessageHandler` method:*
-
-```java
+```java [Update the GreetService class, replacing the getDefaultMessageHandler method]
 private void getDefaultMessageHandler(ServerRequest request,
                                       ServerResponse response) {
     var spanBuilder = Tracer.global().spanBuilder("secondchildSpan"); 
@@ -212,22 +192,16 @@ private void getDefaultMessageHandler(ServerRequest request,
 - End the span normally after the response is sent.
 - End the span with an exception if one was thrown.
 
-*Build the application and run it:*
-
-```bash
+```bash [Build the application and run it]
 mvn package
 java -jar target/helidon-quickstart-se.jar
 ```
 
-*Run the `curl` command in a new terminal window and check the response:*
-
-```bash
+```bash [Run the curl command in a new terminal window and check the response]
 curl http://localhost:8080/greet
 ```
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {
   "message": "Hello World!"
 }
@@ -257,9 +231,7 @@ To demonstrate distributed tracing, create a second project where the server lis
 
 ### Create the Second Service
 
-*Run the Maven archetype:*
-
-```bash
+```bash [Run the Maven archetype]
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-se \
@@ -269,15 +241,11 @@ mvn -U archetype:generate -DinteractiveMode=false \
     -Dpackage=io.helidon.examples.quickstart.se
 ```
 
-*The project is in the `helidon-quickstart-se-2` directory:*
-
-```bash
+```bash [The project is in the helidon-quickstart-se-2 directory]
 cd helidon-quickstart-se-2
 ```
 
-*Add the following dependencies to `pom.xml`:*
-
-```xml
+```xml [Add the following dependencies to pom.xml]
 <dependencies>
      <dependency>
          <groupId>io.helidon.tracing</groupId>
@@ -300,9 +268,7 @@ cd helidon-quickstart-se-2
 - Observability features for tracing.
 - OpenTelemetry tracing provider.
 
-*Replace `src/main/resources/application.yaml` with the following:*
-
-```bash
+```bash [Replace src/main/resources/application.yaml with the following]
 app:
   greeting: "Hello From SE-2"
 
@@ -324,9 +290,7 @@ server:
 > [!NOTE]
 > The settings above are for development and experimental purposes only. For production environment, please see the [Tracing documentation](../../se/tracing.md).
 
-*Update the `GreetService` class. Replace the `getDefaultMessageHandler` method:*
-
-```java
+```java [Update the GreetService class. Replace the getDefaultMessageHandler method]
 private void getDefaultMessageHandler(ServerRequest request,
                                       ServerResponse response) {
 
@@ -345,22 +309,16 @@ private void getDefaultMessageHandler(ServerRequest request,
 
 Build the application, skipping unit tests; the unit tests check for the default greeting response which is now different in the updated config. Then run the application.
 
-*Build and run:*
-
-```bash
+```bash [Build and run]
 mvn package -DskipTests=true
 java -jar target/helidon-quickstart-se-2.jar
 ```
 
-*Run the curl command in a new terminal window (**notice the port is 8081**) :*
-
-```bash
+```bash [Run the curl command in a new terminal window (**notice the port is 8081**)]
 curl http://localhost:8081/greet
 ```
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {
   "message": "Hello From SE-2 World!"
 }
@@ -370,9 +328,7 @@ curl http://localhost:8081/greet
 
 Once you have validated that the second service is running correctly, you need to modify the original application to call it.
 
-*Add the following dependencies to `pom.xml`:*
-
-```xml
+```xml [Add the following dependencies to pom.xml]
 <dependencies>
     <dependency>
         <groupId>io.helidon.webclient</groupId>
@@ -398,62 +354,52 @@ Make the following changes to the `GreetFeature` class.
 
 1.  Add a `WebClient` field.
 
-    *Add a private instance field (before the constructors)*
-
-```java
+    ```java [Add a private instance field (before the constructors)]
     private WebClient webClient;
     ```
 
 2.  Add code to initialize the `WebClient` field.
 
-    *Add the following code to the `GreetService(Config)` constructor*
-
-```java
+    ```java [Add the following code to the GreetService(Config) constructor]
     webClient = WebClient.builder()
-            .baseUri("http://localhost:8081")
-            .addService(WebClientTracing.create())
-            .build();
+        .baseUri("http://localhost:8081")
+        .addService(WebClientTracing.create())
+        .build();
     ```
 
 3.  Add a routing rule for the new endpoint `/outbound`.
 
-    *Add the following line in the `routing` method as the first `.get` invocation in the method*
-
-```java
+    ```java [Add the following line in the routing method as the first .get invocation in the method]
     .get("/outbound", this::outboundMessageHandler);
     ```
 
 4.  Add a method to handle requests to `/outbound`.
 
-    *Add the following method*
-
-```java
+    ```java [Add the following method]
     private void outboundMessageHandler(ServerRequest request,
-                                        ServerResponse response) {
-        var spanBuilder = Tracer.global().spanBuilder("outboundMessageHandler");
-        request.context().get(SpanContext.class).ifPresent(spanBuilder::parent);
-        var span = spanBuilder.start();
+                                    ServerResponse response) {
+    var spanBuilder = Tracer.global().spanBuilder("outboundMessageHandler");
+    request.context().get(SpanContext.class).ifPresent(spanBuilder::parent);
+    var span = spanBuilder.start();
 
-        try (Scope scope = span.activate()) {
-            ClientResponseTyped<JsonObject> remoteResult = webClient.get()
-                    .path("/greet")
-                    .accept(MediaTypes.APPLICATION_JSON)
-                    .request(JsonObject.class);
+    try (Scope scope = span.activate()) {
+        ClientResponseTyped<JsonObject> remoteResult = webClient.get()
+                .path("/greet")
+                .accept(MediaTypes.APPLICATION_JSON)
+                .request(JsonObject.class);
 
-            response.status(remoteResult.status()).send(remoteResult.entity());
-            span.end();
-        } catch (Exception e) {
-            response.status(Status.INTERNAL_SERVER_ERROR_500).send();
-            span.end(e);
-        }
+        response.status(remoteResult.status()).send(remoteResult.entity());
+        span.end();
+    } catch (Exception e) {
+        response.status(Status.INTERNAL_SERVER_ERROR_500).send();
+        span.end(e);
+    }
     }
     ```
 
 Stop the application if it is still running, rebuild and run it, then invoke the endpoint and check the response.
 
-*Build, run, and access the application*
-
-```bash
+```bash [Build, run, and access the application]
 mvn clean package
 java -jar target/helidon-quickstart-se.jar
 curl -i http://localhost:8080/greet/outbound 
@@ -461,9 +407,7 @@ curl -i http://localhost:8080/greet/outbound
 
 - The request goes to the service on `8080`, which then invokes the service at `8081` to get the greeting.
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {
   "message": "Hello From SE-2 World!" 
 }
@@ -492,9 +436,7 @@ You can now stop your second service, it is no longer used in this guide.
 
 The following example demonstrates how to use Jaeger from a Helidon application running in Kubernetes.
 
-*Replace the tracing configuration in `resources/application.yaml` with the following:*
-
-```yaml
+```yaml [Replace the tracing configuration in resources/application.yaml with the following]
 tracing: 
   service: helidon-se-1
   host: jaeger
@@ -502,17 +444,13 @@ tracing:
 
 - Helidon service `helidon-se-1` will connect to the Jaeger server at host name `jaeger`.
 
-*Stop the application and build the docker image for your application:*
-
-```bash
+```bash [Stop the application and build the docker image for your application]
 docker build -t helidon-tracing-se .
 ```
 
 ### Deploy Jaeger into Kubernetes
 
-*Create the Kubernetes YAML specification, named `jaeger.yaml`, with the following contents:*
-
-```yaml
+```yaml [Create the Kubernetes YAML specification, named jaeger.yaml, with the following contents]
 apiVersion: v1
 kind: Service
 metadata:
@@ -539,15 +477,11 @@ spec:
         - containerPort: 16686
 ```
 
-*Create the Jaeger pod and ClusterIP service:*
-
-```bash
+```bash [Create the Jaeger pod and ClusterIP service]
 kubectl apply -f ./jaeger.yaml
 ```
 
-*Create a Jaeger external server to view the UI and expose it on port 9142:*
-
-```bash
+```bash [Create a Jaeger external server to view the UI and expose it on port 9142]
 kubectl expose pod  jaeger --name=jaeger-external --port=16687 --target-port=16686 --type=LoadBalancer
 ```
 
@@ -555,9 +489,7 @@ Navigate to <http://localhost:16687/jaeger> to validate that you can access Jaeg
 
 ### Deploy Your Helidon Application into Kubernetes
 
-*Create the Kubernetes YAML specification, named `tracing.yaml`, with the following contents:*
-
-```yaml
+```yaml [Create the Kubernetes YAML specification, named tracing.yaml, with the following contents]
 kind: Service
 apiVersion: v1
 metadata:
@@ -599,17 +531,13 @@ spec:
 - A service of type `NodePort` that serves the default routes on port `8080`.
 - A deployment with one replica of a pod.
 
-*Create and deploy the application into Kubernetes:*
-
-```bash
+```bash [Create and deploy the application into Kubernetes]
 kubectl apply -f ./tracing.yaml
 ```
 
 ### Access Your Application and the Jaeger Trace
 
-*Get the application service information:*
-
-```bash
+```bash [Get the application service information]
 kubectl get service/helidon-tracing
 ```
 
@@ -620,15 +548,11 @@ helidon-tracing   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s
 
 - A service of type `NodePort` that serves the default routes on port `31143`.
 
-*Verify the tracing endpoint using port `31143`, your port will likely be different:*
-
-```bash
+```bash [Verify the tracing endpoint using port 31143, your port will likely be different]
 curl http://localhost:31143/greet
 ```
 
-*JSON response:*
-
-```json
+```json [JSON response]
 {
   "message": "Hello World!"
 }
@@ -640,9 +564,7 @@ Access the Jaeger UI at <http://localhost:9412/jaeger> and click on the refresh 
 
 You can now delete the Kubernetes resources just created during this example.
 
-*Delete the Kubernetes resources:*
-
-```bash
+```bash [Delete the Kubernetes resources]
 kubectl delete -f ./jaeger.yaml
 kubectl delete -f ./tracing.yaml
 kubectl delete service jaeger-external
@@ -687,11 +609,12 @@ The following tables list specifically what operations the proxies permit.
 | `start()` | Starts the span. | \- |
 | `start(Instant)` | Starts the span. | \- |
 | `tag` methods | Add a tag to the builder before the span is built. | ✓ |
-| `unwrap(Class)` | Cast the builder to the specified implementation type. † | ✓ |
+| `unwrap(Class)` | Cast the builder to the specified implementation type. | ✓ |
+
+> [!NOTE]
+> Helidon returns the unwrapped object, not a proxy for it.
 
 [`io.helidon.tracing.Span.Builder`](/apidocs/io.helidon.tracing/io/helidon/tracing/Span.Builder.html) Operations
-
-† Helidon returns the unwrapped object, not a proxy for it.
 
 | Method | Purpose | OK? |
 |----|----|----|
@@ -701,11 +624,12 @@ The following tables list specifically what operations the proxies permit.
 | `context()` | Returns the `SpanContext` associated with the span. | ✓ |
 | `status(Status)` | Sets the status of the span. | \- |
 | any `tag` method | Add a tag to the span. | ✓ |
-| `unwrap(Class)` | Cast the span to the specified implementation type. † | ✓ |
+| `unwrap(Class)` | Cast the span to the specified implementation type. | ✓ |
+
+> [!NOTE]
+> Helidon returns the unwrapped object, not a proxy to it.
 
 [`io.helidon.tracing.Span`](/apidocs/io.helidon.tracing/io/helidon/tracing/Span.html) Operations
-
-† Helidon returns the unwrapped object, not a proxy to it.
 
 | Method       | Purpose                              | OK? |
 |--------------|--------------------------------------|-----|

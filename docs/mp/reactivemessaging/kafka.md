@@ -6,7 +6,7 @@ Connecting streams to Kafka with Reactive Messaging is easy to do. There is a st
 
 ## Maven Coordinates
 
-To enable Reactive Kafka Connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
+To enable Reactive Kafka Connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml
 <dependency>
@@ -17,9 +17,7 @@ To enable Reactive Kafka Connector, add the following dependency to your project
 
 ## Config
 
-*Example of connector config:*
-
-```yaml
+```yaml [Example of connector config]
 mp.messaging:
 
   incoming.from-kafka:
@@ -73,9 +71,7 @@ mp.messaging:
 
 ## Consuming Messages
 
-*Example of consuming from Kafka:*
-
-```java
+```java [Example of consuming from Kafka]
 @Incoming("from-kafka")
 public void consumeKafka(String msg) {
     System.out.println("Kafka says: " + msg);
@@ -84,9 +80,7 @@ public void consumeKafka(String msg) {
 
 ## Producing Messages
 
-*Example of producing to Kafka:*
-
-```java
+```java [Example of producing to Kafka]
 @Outgoing("to-kafka")
 public PublisherBuilder<String> produceToKafka() {
     return ReactiveStreams.of("test1", "test2");
@@ -112,9 +106,7 @@ Sends nacked messages to error topic, [DLQ](https://en.wikipedia.org/wiki/Dead_l
 
 Helidon can derive connection settings for DLQ topic automatically if the error topic is present on the same Kafka cluster. Serializers are derived from deserializers used for consumption `org.apache.kafka.common.serialization.StringDeserializer` \> `org.apache.kafka.common.serialization.StringSerializer`. Note that the name of the error topic is needed only in this case.
 
-*Example of derived DLQ config:*
-
-```yaml
+```yaml [Example of derived DLQ config]
 mp.messaging:
   incoming:
     my-channel:
@@ -123,9 +115,7 @@ mp.messaging:
 
 If a custom connection is needed, then use the 'nack-dlq' key for all of the producer configuration.
 
-*Example of custom DLQ config:*
-
-```yaml
+```yaml [Example of custom DLQ config]
 mp.messaging:
   incoming:
     my-channel:
@@ -140,9 +130,7 @@ mp.messaging:
 
 Only logs nacked messages and throws them away, offset is committed and channel continues normally consuming subsequent messages.
 
-*Example of log only enabled nack strategy*
-
-```yaml
+```yaml [Example of log only enabled nack strategy]
 mp.messaging:
   incoming:
     my-channel:

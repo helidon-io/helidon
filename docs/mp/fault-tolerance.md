@@ -6,13 +6,13 @@ Fault Tolerance is part of the MicroProfile set of specifications. This API defi
 
 ## Maven Coordinates
 
-To enable MicroProfile Fault Tolerance, either add a dependency on the [helidon-microprofile bundle](../mp/introduction/microprofile.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
+To enable MicroProfile Fault Tolerance, either add a dependency on the [helidon-microprofile bundle](introduction.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml
- <dependency>
-     <groupId>io.helidon.microprofile</groupId>
-     <artifactId>helidon-microprofile-fault-tolerance</artifactId>
- </dependency>
+<dependency>
+    <groupId>io.helidon.microprofile</groupId>
+    <artifactId>helidon-microprofile-fault-tolerance</artifactId>
+</dependency>
 ```
 
 ## API
@@ -114,7 +114,7 @@ For a complete set of properties available to configure these executors, see [Th
     @Retry(maxRetries = 2, delay = 400L)
     @Fallback(fallbackMethod = "onFailure")
     String retryWithFallback() {
-        return getMyValue();
+    return getMyValue();
     }
     ```
 
@@ -123,10 +123,10 @@ For a complete set of properties available to configure these executors, see [Th
     ``` java
     @Timeout(1500)
     @CircuitBreaker(requestVolumeThreshold = 10,
-                    failureRatio = .4,
-                    successThreshold = 3)
+                failureRatio = .4,
+                successThreshold = 3)
     void timedCircuitBreaker() throws InterruptedException {
-        //...
+    //...
     }
     ```
 
@@ -137,7 +137,7 @@ For a complete set of properties available to configure these executors, see [Th
     @Fallback(fallbackMethod = "onFailure")
     @Bulkhead(value = 2, waitingTaskQueue = 10)
     CompletableFuture<String> executeWithQueueAndFallback() {
-        return getMyValueAsync();
+    return getMyValueAsync();
     }
     ```
 

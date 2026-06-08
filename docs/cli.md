@@ -10,10 +10,10 @@ The Helidon CLI is a standalone executable for Linux, macOS, and Windows systems
 
 ### Prerequisites
 
-|  |  |
-|----|----|
-| [Java SE 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
-| [Maven 3.8+](https://maven.apache.org/download.cgi) | Helidon requires Maven 3.8+. |
+| Requirement                                                                                             | Description                                  |
+|---------------------------------------------------------------------------------------------------------|----------------------------------------------|
+| [Java 21](https://www.oracle.com/technetwork/java/javase/downloads) ([OpenJDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
+| [Maven 3.8+](https://maven.apache.org/download.cgi)                                                     | Helidon requires Maven 3.8+.                 |
 
 Make sure `java` and `mvn` are in your PATH:
 
@@ -23,7 +23,8 @@ mvn --version
 ```
 
 > [!TIP]
-> If you are on Windows then you will need the Visual C+ Redistributable Runtime. Download at [Microsoft Visual C++ Redistributable latest supported downloads](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-c-redistributable-v14).
+> If you are on Windows then you will need the Visual C+ Redistributable Runtime.
+> Download at [Microsoft Visual C++ Redistributable latest supported downloads](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-c-redistributable-v14).
 
 ### Install the Helidon CLI on Linux
 
@@ -97,5 +98,5 @@ To stop the development loop, enter `Ctrl+C`.
 Watch the following demo to see some of the functionality of the Helidon CLI.
 
 <figure>
-<img src="../images/cli/Helidon_cli.gif" alt="CLI Demo" />
+<img src="images/cli/Helidon_cli.gif" alt="CLI Demo" />
 </figure>

@@ -6,7 +6,7 @@ The Helidon GraphQL Server provides a framework for creating [GraphQL](https://g
 
 ## Maven Coordinates
 
-To enable GraphQL, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
+To enable GraphQL, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml
 <dependency>
@@ -79,15 +79,15 @@ The following configuration keys can be used to set up integration with WebServe
 |----|----|----|
 | `graphql.web-context` | `/graphql` | Context that serves the GraphQL endpoint. |
 | `graphql.schema-uri` | `/schema.graphql` | URI that serves the schema (under web context) |
-| `graphql.executor-service` |   | Configuration of `ServerThreadPoolSupplier` used to set up executor service |
+| `graphql.executor-service` |   | Configuration of `ServerThreadPoolSupplier` used to set up executor service |
 
 The following configuration keys can be used to set up GraphQL invocation:
 
 | key | default value | description |
 |----|----|----|
 | `graphql.default-error-message` | `Server Error` | Error message to send to caller in case of error |
-| `graphql.exception-white-list` |   | Array of checked exception classes that should return default error message |
-| `graphql.exception-black-list` |   | Array of unchecked exception classes that should return message to caller (instead of default error message) |
+| `graphql.exception-white-list` |   | Array of checked exception classes that should return default error message |
+| `graphql.exception-black-list` |   | Array of unchecked exception classes that should return message to caller (instead of default error message) |
 
 ## Examples
 

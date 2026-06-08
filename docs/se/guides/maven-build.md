@@ -32,9 +32,7 @@ Helidon provides two POMs that are used together for dependency management:
 
 When you use a Helidon Application POM as your project’s parent pom, you inherit Helidon’s dependency management. If you have your own parent, then you can import Helidon dependency management like this:
 
-*Import Helidon Dependency Management*
-
-```xml
+```xml [Import Helidon Dependency Management]
 <dependencyManagement>
     <dependencies>
         <dependency>
@@ -50,9 +48,7 @@ When you use a Helidon Application POM as your project’s parent pom, you inher
 
 You then declare dependencies on Helidon (and other) components without specifying a version.
 
-*Component dependency*
-
-```xml
+```xml [Component dependency]
 <dependency>
     <groupId>io.helidon.config</groupId>
     <artifactId>helidon-config-yaml</artifactId>
@@ -97,9 +93,7 @@ Or you can set the properties in your project’s pom.xml:
 
 For full control you can override the plugin’s configuration using `pluginManagement`:
 
-*Turn off generation of the CDS Archive when generating a custom Java runtime image*
-
-```xml
+```xml [Turn off generation of the CDS Archive when generating a custom Java runtime image]
 <build>
   <pluginManagement>
       <plugins>

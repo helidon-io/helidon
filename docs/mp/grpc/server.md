@@ -8,7 +8,7 @@ Building gRPC services with Helidon gRPC MP is straightforward, allowing develop
 
 ## Maven Coordinates
 
-To enable gRPC MicroProfile Server, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
+To enable gRPC MicroProfile Server, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml
 <dependency>
@@ -151,9 +151,9 @@ When a gRPC client interacts with a server, it needs to have access to the Proto
 Helidon includes a gRPC reflection service that can be queried by client tools to learn about the available services —similar to OpenAPI for REST services. The reflection service is implemented as a *feature* and can be enabled programmatically by adding the feature, or via config as follows:
 
 ```yaml
-  features:
-    grpc-reflection:
-      enabled: true
+features:
+  grpc-reflection:
+    enabled: true
 ```
 
 For more information see [gRPC Server Configuration](../../se/grpc/server.md#configuration).

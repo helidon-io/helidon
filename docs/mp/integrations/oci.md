@@ -11,11 +11,9 @@ You can quickly and easily deploy Helidon applications on Oracle Cloud Infrastru
 
 ## Maven Coordinates
 
-To enable OCI Integration, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
+To enable OCI Integration, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
-*Adding the Helidon OCI authentication/configuration support dependency*
-
-```xml
+```xml [Adding the Helidon OCI authentication/configuration support dependency]
 <dependency>
      <groupId>io.helidon.integrations.oci</groupId>
      <artifactId>helidon-integrations-oci</artifactId>
@@ -36,9 +34,7 @@ To configure authentication, add the `oci.auth-strategies` property to `/server/
 
 The `oci.auth-strategies` property specifies the OCI client authentication mechanism that should be used. It can be a single value or a list of authentication types, separated by commas. If you specify a list, it cycles through each type until the authentication is successful.
 
-*oci.auth-strategies example*
-
-```properties
+```properties [oci.auth-strategies example]
 oci.auth-strategies=config-file,instance_principals,resource_principal
 ```
 
@@ -71,9 +67,7 @@ The OCI Object Storage service is an internet-scale, high-performance storage pl
 
 To enable OCI Object Storage integration, add the following dependency to your project’s `pom.xml`:
 
-*Adding the dependency for OCI Object Storage*
-
-```xml
+```xml [Adding the dependency for OCI Object Storage]
 <dependency>
     <groupId>com.oracle.oci.sdk</groupId>
     <artifactId>oci-java-sdk-objectstorage</artifactId>
@@ -84,16 +78,12 @@ To enable OCI Object Storage integration, add the following dependency to your p
 
 Now you can inject OCI SDK Clients for Object Storage.
 
-*Field-injection example*
-
-```java
+```java [Field-injection example]
 @Inject
 private ObjectStorage client;
 ```
 
-*Constructor-injection example*
-
-```java
+```java [Constructor-injection example]
 public class MyClass {
 
     private final ObjectStorage client;
@@ -115,9 +105,7 @@ The OCI Vault service lets you store and manage encryption keys and secrets to s
 
 To enable OCI Vault integration, add the following dependencies to your project’s `pom.xml`:
 
-*Adding the dependency for OCI Vault*
-
-```xml
+```xml [Adding the dependency for OCI Vault]
 <dependency>
     <groupId>com.oracle.oci.sdk</groupId>
     <artifactId>oci-java-sdk-keymanagement</artifactId>

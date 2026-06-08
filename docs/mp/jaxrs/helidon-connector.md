@@ -6,13 +6,13 @@ Helidon uses Jersey as the Jakarta REST (JAX-RS) implementation. Jersey supports
 
 ## Maven Coordinates
 
-To enable Helidon Connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
+To enable Helidon Connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml
- <dependency>
-     <groupId>io.helidon.jersey</groupId>
-     <artifactId>helidon-jersey-connector</artifactId>
- </dependency>
+<dependency>
+    <groupId>io.helidon.jersey</groupId>
+    <artifactId>helidon-jersey-connector</artifactId>
+</dependency>
 ```
 
 ## API

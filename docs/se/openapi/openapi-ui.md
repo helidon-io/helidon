@@ -11,7 +11,7 @@ The Helidon OpenAPI component allows you to integrate the SmallRye UI into your 
 
 ## Maven Coordinates
 
-To enable Helidon OpenAPI UI support, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
+To enable Helidon OpenAPI UI support, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml
 <dependency>
@@ -61,10 +61,10 @@ With the OpenAPI UI displayed, follow these steps to access one of your service�
 1.  Find the operation you want to run and click on its row in the list.
 2.  The UI expands the operation, showing any input parameters and the possible responses. Click the "Try it out" button in the operation’s row.
 3.  The UI now allows you to type into the input parameter field(s) to the right of each parameter name. Enter any required parameter values (first highlighted rectangle) and any non-required values you wish, then click "Execute" (highlighted arrow).
-4.  Just below the "Execute" button the UI shows several sections:  
+4.  Just below the "Execute" button the UI shows several sections:
     - the equivalent `curl` command for submitting the request with your inputs,
     - the URL used for the request, and
-    - a new "Server response" section (second highlighted rectangle) containing several items from the response:  
+    - a new "Server response" section (second highlighted rectangle) containing several items from the response:
       - HTTP status code
       - body
       - headers
@@ -86,12 +86,10 @@ With the Helidon OpenAPI UI dependency in your `pom.xml` file, the OpenAPI suppo
 
 Some applications explicitly create the `OpenApiFeature` object to tailor its behavior before registering it with the server. If your `pom.xml` includes a dependency on the OpenAPI UI component, then any `OpenApiFeature` object your application builds prepares the default OpenAPI UI behavior, possibly modified as above by any UI settings you have in your configuration.
 
-*Create `OpenApiFeature` with automatic UI*
-
-```java
+```java [Create OpenApiFeature with automatic UI]
 WebServer server = WebServer.builder()
         .config(config.get("server"))
-        .addFeature(OpenApiFeature.create(config.get("openapi"))) 
+        .addFeature(OpenApiFeature.create(config.get("openapi")))
         .routing(Main::routing)
         .build()
         .start();
@@ -110,16 +108,14 @@ You can control some of the behavior of the UI programmatically in two steps:
 
 The following example illustrates these steps, combining configuration with explicit programmatic settings.
 
-*Create `OpenApiUi` and `OpenAPISupport` instances*
-
-```java
-Config openApiConfig = config.get("openapi"); 
+```java [Create OpenApiUi and OpenAPISupport instances]
+Config openApiConfig = config.get("openapi");
 WebServer server = WebServer.builder()
         .config(config.get("server"))
-        .addFeature(OpenApiFeature.builder() 
-                            .addService(OpenApiUi.builder() 
-                                                .webContext("my-ui") 
-                                                .config(openApiConfig.get("ui")) 
+        .addFeature(OpenApiFeature.builder()
+                            .addService(OpenApiUi.builder()
+                                                .webContext("my-ui")
+                                                .config(openApiConfig.get("ui"))
                                                 .build())
                             .config(openApiConfig)
                             .build())
@@ -148,8 +144,8 @@ To use configuration to control how the Helidon OpenAPI UI service behaves, add 
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
 | <span id="ad2183-enabled"></span> `enabled` | `VALUE` | `Boolean` | `true` | Sets whether the service should be enabled |
-| <span id="aa88b9-options"></span> `options` | `MAP` | `String` |   | Merges implementation-specific UI options |
-| <span id="a05812-web-context"></span> `web-context` | `VALUE` | `String` |   | Full web context (not just the suffix) |
+| <span id="aa88b9-options"></span> `options` | `MAP` | `String` |   | Merges implementation-specific UI options |
+| <span id="a05812-web-context"></span> `web-context` | `VALUE` | `String` |   | Full web context (not just the suffix) |
 
 The default UI `web-context` value is the web context for your `OpenApiFeature` service with the added suffix `/ui`. If you use the default web context for both `OpenApiFeature` and the UI, the UI responds at `/openapi/ui`.
 
@@ -159,15 +155,13 @@ You can use configuration to affect the UI path in these ways:
 
   Recall that you can [configure the Helidon OpenAPI component](../../se/openapi/openapi.md#configuration) to change where it serves the OpenAPI document.
 
-  *Configure OpenAPI behavior*
-
-```yaml
+  ```yaml [Configure OpenAPI behavior]
   server:
-    port: 8080                  
-    host: 0.0.0.0
-    features:
-      openapi:                  
-        web-context: /myopenapi 
+  port: 8080
+  host: 0.0.0.0
+  features:
+    openapi:
+      web-context: /myopenapi
   ```
 
   - The `port` and `host` settings are for the server as a whole, not specifically for OpenAPI.
@@ -178,17 +172,15 @@ You can use configuration to affect the UI path in these ways:
 
 - Separately, configure the entire web context path for the UI independently from the web context for OpenAPI.
 
-  *Configuring the OpenAPI UI web context*
-
-```yaml
+  ```yaml [Configuring the OpenAPI UI web context]
   server:
-    port: 8080
-    host: 0.0.0.0
-    features:
-      openapi:
-        services:
-          ui:                     
-            web-context: /my-ui   
+  port: 8080
+  host: 0.0.0.0
+  features:
+    openapi:
+      services:
+        ui:
+          web-context: /my-ui
   ```
 
   - Introduces OpenAPI UI settings

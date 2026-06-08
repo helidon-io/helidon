@@ -6,7 +6,7 @@ This quick start describes how to create and run a basic Helidon SE application 
 
 The Helidon **Project Starter** allows you to quickly generate a project with basic functionality that lets you explore the features of Helidon and that’s also customizable enough to use as a starting point for your own projects and applications.
 
-1.  Make sure your environment is properly set up for Helidon development. See [Getting Started](../../about/get-started.md#system-requirements).
+1.  Make sure your environment is properly set up for Helidon development. See [Getting Started](../../get-started.md#system-requirements).
 2.  Go to the [Helidon Project Starter](https://helidon.io/starter) page on the Helidon website.
 3.  Under **Helidon Flavor**, select **Helidon SE** and click **Next**.
 4.  Under **Application Type**, select **Quickstart** and click **Next**.
@@ -15,7 +15,7 @@ The Helidon **Project Starter** allows you to quickly generate a project with ba
 7.  Click **Download** to save the project zip archive to your computer. This is the Maven project that’s the basis for your Helidon Quick Start application.
 
 > [!TIP]
-> You can also generate the Quick Start project using the [Helidon CLI](../../about/cli.md). Run the following command to create a Maven project in your current directory: `helidon init --batch -Dflavor=se -Dapp-type=quickstart`
+> You can also generate the Quick Start project using the [Helidon CLI](../../cli.md). Run the following command to create a Maven project in your current directory: `helidon init --batch -Dflavor=se -Dapp-type=quickstart`
 
 Now that you’ve generated the project, you can build a Helidon application and start experimenting.
 
@@ -54,9 +54,7 @@ Helidon provides built-in support for monitoring the Health endpoints and Metric
 
 Use the Health component to monitor the health of your microservice to make sure it is available and performing correctly. For more information on how to retrieve and monitor Health data about your application, see [Health](../health.md).
 
-*To see general Health endpoint data, run:*
-
-```bash
+```bash [To see general Health endpoint data, run]
 curl -sv -X GET http://localhost:8080/observe/health
 ```
 
@@ -64,15 +62,11 @@ The example includes the `-v` (verbose) option to demonstrate that the Health en
 
 Use the Metrics component to export telemetry to management agents and to register and update metrics to expose telemetry data from their services. For more information on how to generate and send Metrics data from your application, see [Metrics](../metrics/metrics.md).
 
-*To see Metrics data rendered in Prometheus format, run:*
-
-```bash
+```bash [To see Metrics data rendered in Prometheus format, run]
 curl -s -X GET http://localhost:8080/observe/metrics
 ```
 
-*To see Metrics data rendered in JSON format, run:*
-
-```bash
+```bash [To see Metrics data rendered in JSON format, run]
 curl -H 'Accept: application/json' -X GET http://localhost:8080/observe/metrics
 ```
 

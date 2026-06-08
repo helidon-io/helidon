@@ -6,27 +6,23 @@ This guide describes how to set up Keycloak and Helidon to secure an application
 
 For this 20 minute tutorial, you will need the following:
 
-|  |  |
-|----|----|
-| [Java SE 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
+| Requirement | Description |
+|-------------|-------------|
+| [Java 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
 | [Maven 3.8+](https://maven.apache.org/download.cgi) | Helidon requires Maven 3.8+. |
 | [Docker 18.09+](https://docs.docker.com/install/) | If you want to build and run Docker containers. |
 | [Kubectl 1.16.5+](https://kubernetes.io/docs/tasks/tools/install-kubectl/) | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
 
 Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
-*Verify Prerequisites*
-
-```bash
+```bash [Verify Prerequisites]
 java -version
 mvn --version
 docker --version
 kubectl version
 ```
 
-*Setting JAVA_HOME*
-
-```bash
+```bash [Setting JAVA_HOME]
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -47,9 +43,7 @@ OIDC is a secure mechanism for an application to contact an identity service. It
 
 To install Keycloak with Docker, open a terminal and make sure the port 8080 is free.
 
-*Enter the following command*
-
-```bash
+```bash [Enter the following command]
 docker run -p 8080:8080 -e KEYCLOAK_ADMIN=admin -e KEYCLOAK_ADMIN_PASSWORD=admin quay.io/keycloak/keycloak:24.0.5 start-dev
 ```
 
@@ -67,9 +61,7 @@ After extracting the archive file, you should have a directory named keycloak fo
 
 Open keycloak folder to make it your current directory.
 
-*Run this command from command prompt to open the directory:*
-
-```bash
+```bash [Run this command from command prompt to open the directory]
 cd keycloak-24.0.5
 ```
 
@@ -77,15 +69,11 @@ cd keycloak-24.0.5
 
 To start keycloak and have it ready for further steps, run the following command.
 
-*On Linux run:*
-
-```bash
+```bash [On Linux run]
 bin/kc.sh start-dev
 ```
 
-*On Windows run:*
-
-```bash
+```bash [On Windows run]
 bin\kc.bat start-dev
 ```
 
@@ -190,9 +178,7 @@ Keycloak is now configured and ready. Keep keycloak running on your terminal and
 
 Use the Helidon MP Maven archetype to create a simple project. It will be used as an example to show how to set up Helidon. Replace `4.4.0-SNAPSHOT` by the latest helidon version. It will download the quickstart project into the current directory.
 
-*Run the Maven archetype*
-
-```bash
+```bash [Run the Maven archetype]
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
     -DarchetypeArtifactId=helidon-quickstart-mp \
@@ -202,9 +188,7 @@ mvn -U archetype:generate -DinteractiveMode=false \
     -Dpackage=io.helidon.examples.quickstart.mp
 ```
 
-*The project will be built and run from the helidon-quickstart-mp directory:*
-
-```bash
+```bash [The project will be built and run from the helidon-quickstart-mp directory]
 cd helidon-quickstart-mp
 ```
 
@@ -212,9 +196,7 @@ cd helidon-quickstart-mp
 
 Update the pom.xml file and add the following Helidon dependency to the `<dependencies>` section.
 
-*Add the following dependencies to `pom.xml`:*
-
-```xml
+```xml [Add the following dependencies to pom.xml]
 <dependency>
     <groupId>io.helidon.microprofile</groupId>
     <artifactId>helidon-microprofile-security</artifactId>
@@ -229,9 +211,7 @@ Update the pom.xml file and add the following Helidon dependency to the `<depend
 
 The OIDC security provider configuration can be joined to helidon configuration file. This file is located here: `src/main/resources/application.yaml`. It can be easily used to configure the web server without modifying application code.
 
-*Create application.yaml file and add the following line*
-
-```yaml
+```yaml [Create application.yaml file and add the following line]
 security:
   providers:
     - abac:
@@ -255,24 +235,18 @@ The client secret is the one generate into Keycloak Client Credentials. It must 
 
 Make sure keycloak and the application are not running on the same port. The application port value can be changed into microprofile-config.properties.
 
-*Change these properties to configure the server host and port*
-
-```properties
+```properties [Change these properties to configure the server host and port]
 server.port=7987
 server.host=localhost
 ```
 
 If the port 7987 is already used, check what port is free on your machine.
 
-*Replace the old port into microprofile-config.properties*
-
-```properties
+```properties [Replace the old port into microprofile-config.properties]
 server.port="{Your-new-port}"
 ```
 
-*Replace the old port into application.yaml*
-
-```yaml
+```yaml [Replace the old port into application.yaml]
 frontend-uri: "http://localhost:{Your-new-port}"
 ```
 
@@ -280,9 +254,7 @@ frontend-uri: "http://localhost:{Your-new-port}"
 
 The `GreetResource` class is a JAX-RS resource available at the endpoint `/greet`. Use `@Authenticated` annotation to protect any method or endpoint. Modify the `getDefaultMessage` method with the `@Authenticated` to limit its access.
 
-*Add `@Authenticated` to secure `getDefaultMessage`*
-
-```java
+```java [Add @Authenticated to secure getDefaultMessage]
 @Authenticated
 @GET
 @Produces(MediaType.APPLICATION_JSON)
@@ -297,9 +269,7 @@ When a client will send an HTTP GET request at the endpoint `http://localhost:79
 
 Helidon and Keycloak are now correctly configured and your application is safe.
 
-*Build the application, skipping unit tests, then run it:*
-
-```bash
+```bash [Build the application, skipping unit tests, then run it]
 mvn package -DskipTests
 java -jar target/helidon-quickstart-mp.jar
 ```
@@ -328,9 +298,7 @@ The following explains how to set a basic authentication instead of oidc securit
 
 In the test folder `helidon-quickstart-mp/src/test`:
 
-*Create a new directory with configuration file*
-
-```bash
+```bash [Create a new directory with configuration file]
 mkdir resources
 cd resources
 touch application.yaml
@@ -338,9 +306,7 @@ touch application.yaml
 
 Open the application.yaml file you just created.
 
-*Copy these properties into the new application.yaml*
-
-```yaml
+```yaml [Copy these properties into the new application.yaml]
 security:
   providers:
     - type: oidc
@@ -361,9 +327,7 @@ Next step is to create the test to check that the application is correctly prote
 
 Firstly, create new test method `testHelloWorld`
 
-*Add this method to the test class*
-
-```java
+```java [Add this method to the test class]
 @Test
 void testHelloWorld() {
 }
@@ -371,9 +335,7 @@ void testHelloWorld() {
 
 Now we can add the first test:
 
-*Add this code into `testHelloWorld` method:*
-
-```java
+```java [Add this code into testHelloWorld method]
 try (Response r = target
         .path("greet")
         .request()
@@ -386,9 +348,7 @@ This piece of code uses the JAX-RS client to access the application on `/greet` 
 
 Only `jack` user has access to this part of the application.
 
-*Change the testHelloWorld method:*
-
-```java
+```java [Change the testHelloWorld method]
 String encoding = Base64.getEncoder().encodeToString("jack:changeit".getBytes());
 Message jsonMessage = target
         .path("greet")
@@ -403,9 +363,7 @@ The username and password are encoded and placed inside the header in order to a
 
 Now, the project can be built without skipping test.
 
-*Build the project*
-
-```bash
+```bash [Build the project]
 mvn clean install
 ```
 
@@ -429,9 +387,7 @@ For the first step, paste the following URL into your browser: `http://localhost
 
 In order to achieve the third step, we can use Postman to exchange the authorization code for tokens. In Postman, select the Http POST method. Keycloak endpoint to get token is the following: `http://localhost:8080/realms/myRealm/protocol/openid-connect/token`. In the body of the request, select `x-www-form-urlencoded` type. Add the following data:
 
-*Enter the key:value*
-
-```json
+```json [Enter the key:value]
 [
     {"key":"grant_type","value":"authorization_code"},
     {"key":"client_id","value":"myClientID"},
@@ -446,9 +402,7 @@ Do not forget to replace the `client secret` by its value (generated during Crea
 
 The Direct Access Grants flow is used by REST clients that want to request tokens on behalf of a user. To use Postman to make this request on behalf of `myUser`, select the GET method and enter this URL: `http://localhost:7987/greet/`. Under `Authorization` tab, select authorization type `OAuth 2.0`. Under it, complete the sentence `Add authorization data to` with `Request Headers`, and complete the required fields.
 
-*Enter the following information:*
-
-```json
+```json [Enter the following information]
 [
     {"key":"Header Prefix","value":"bearer"},
     {"key":"Grant type","value":"Password  Credentials"},
@@ -470,9 +424,7 @@ To give less access to a specific endpoint, it is possible to configure user rol
 
 Navigate to the GreetResource and find the `getDefaultMessage` with @Authenticate annotation.
 
-*Add the @RolesAllowed annotation:*
-
-```java
+```java [Add the @RolesAllowed annotation]
 @RolesAllowed("admin")
 class GreetResource {
 }
@@ -482,9 +434,7 @@ The annotation parameter is the role with access to the method. In this case, on
 
 Then, add a user and roles to the `helidon-quickstart-mp/src/test/resources/application.yaml` file.
 
-*Add jack roles and create a new user named john:*
-
-```yaml
+```yaml [Add jack roles and create a new user named john]
 - http-basic-auth:
     users:
       - login: "jack"
@@ -499,9 +449,7 @@ Now, only Jack has access to secure endpoint as he has an `admin` role. John, as
 
 The user `john` has only the `user` role so when accessing protected endpoint, a 403 (Forbidden) http code is returned.
 
-*Check that john does not have access*
-
-```java
+```java [Check that john does not have access]
 String encoding = Base64.getEncoder().encodeToString("john:changeit".getBytes());
 
 try (Response r = target
@@ -513,9 +461,7 @@ try (Response r = target
 }
 ```
 
-*Build the project*
-
-```bash
+```bash [Build the project]
 mvn clean install
 ```
 

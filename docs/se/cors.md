@@ -30,7 +30,7 @@ The following sections briefly illustrate each approach.
 
 ## Maven Coordinates
 
-To enable CORS, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
+To enable CORS, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml
 <dependency>
@@ -94,11 +94,7 @@ WebServer.builder()
 
 The ordering of `.addPath(…​)` methods when configuring the `CorsFeature` is significant, as they are checked in order, and the first `CorsPathConfig` that matches the requested path and method will be used.
 
-If you configure
-
-/greet/
-
-first, and then `/greet/admin` with the same methods, but different allowed origins (or other options), the `/greet/` path will be used as it also matches `/greet/admin` and is first.
+If you configure `/greet/` first, and then `/greet/admin` with the same methods, but different allowed origins (or other options), the `/greet/` path will be used as it also matches `/greet/admin` and is first.
 
 By adding the few additional lines described above you allow the greeting application to participate in CORS.
 
@@ -133,10 +129,10 @@ CORS configuration is done through [`CorsFeature`](/apidocs/io.helidon.webserver
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
 | <span id="ae53cb-add-defaults"></span> `add-defaults` | `VALUE` | `Boolean` | `true` | Whether to add a default path configuration, that matches all paths, `GET, HEAD, POST` methods, and allows all origins, methods, and headers |
-| <span id="a6b476-enabled"></span> `enabled` | `VALUE` | `Boolean` |   | This feature can be disabled |
-| <span id="a44bb0-paths"></span> [`paths`](../config/io_helidon_webserver_cors_CorsPathConfig.md) | `LIST` | `i.h.w.c.CorsPathConfig` |   | Per path configuration |
+| <span id="a6b476-enabled"></span> `enabled` | `VALUE` | `Boolean` |   | This feature can be disabled |
+| <span id="a44bb0-paths"></span> [`paths`](../config/io_helidon_webserver_cors_CorsPathConfig.md) | `LIST` | `i.h.w.c.CorsPathConfig` |   | Per path configuration |
 | <span id="a29c5b-paths-discover-services"></span> `paths-discover-services` | `VALUE` | `Boolean` | `true` | Whether to enable automatic service discovery for `paths` |
-| <span id="a93acb-sockets"></span> `sockets` | `LIST` | `String` |   | List of sockets to register this feature on |
+| <span id="a93acb-sockets"></span> `sockets` | `LIST` | `String` |   | List of sockets to register this feature on |
 | <span id="a96481-weight"></span> `weight` | `VALUE` | `Double` | `850.0` | Weight of the CORS feature |
 
 ## Examples

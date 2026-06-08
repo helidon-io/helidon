@@ -6,7 +6,7 @@ Helidon MP implements the [MicroProfile GraphQL specification](https://download.
 
 ## Maven Coordinates
 
-To enable MicroProfile GraphQL, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
+To enable MicroProfile GraphQL, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml
 <dependency>
@@ -25,9 +25,7 @@ The MicroProfile GraphQL specification defines a number of key annotations to be
 
 For example, the following defines a GraphQL endpoint with a number of queries and mutations that work against a fictional `CustomerService` service and `Customer` class.
 
-*Simple ContactGraphQLApi*
-
-```java
+```java [Simple ContactGraphQLApi]
 @ApplicationScoped
 @GraphQLApi
 public class ContactGraphQLApi {
@@ -75,9 +73,7 @@ public class customer {
 
 The example above would generate a GraphQL schema as shown below:
 
-*Sample GraphQL schema*
-
-```graphql
+```graphql [Sample GraphQL schema]
 type Query {
    findAllCustomers: [Customer]
    findCustomer(customerId: Int!): Customer
@@ -101,9 +97,7 @@ After application startup, a GraphQL schema will be generated from your annotate
 
 As part of building your application, you must create a Jandex index using the `jandex-maven-plugin` for all API and POJO classes.
 
-*Generate Jandex index*
-
-```xml
+```xml [Generate Jandex index]
 <plugin>
     <groupId>io.smallrye</groupId>
     <artifactId>jandex-maven-plugin</artifactId>
@@ -116,7 +110,7 @@ As part of building your application, you must create a Jandex index using the `
 ```
 
 > [!NOTE]
-> As per the instructions [here](introduction/microprofile.md) ensure you have added a `src/main/resources/META-INF/beans.xml` file, so the CDI implementation can pick up your classes.
+> As per the instructions [here](introduction.md) ensure you have added a `src/main/resources/META-INF/beans.xml` file, so the CDI implementation can pick up your classes.
 
 ### Accessing the GraphQL endpoints
 
@@ -132,8 +126,8 @@ The specification defines the following configuration options:
 | key | default value | description |
 |----|----|----|
 | `mp.graphql.defaultErrorMessage` | `Server Error` | Error message to send to caller in case of error |
-| `mp.graphql.exceptionsBlackList` |   | Array of checked exception classes that should return default error message |
-| `mp.graphql.exceptionsWhiteList` |   | Array of unchecked exception classes that should return message to caller (instead of default error message) |
+| `mp.graphql.exceptionsBlackList` |   | Array of checked exception classes that should return default error message |
+| `mp.graphql.exceptionsWhiteList` |   | Array of unchecked exception classes that should return message to caller (instead of default error message) |
 
 The following configuration keys can be used to set up integration with WebServer:
 
@@ -141,15 +135,15 @@ The following configuration keys can be used to set up integration with WebServe
 |----|----|----|
 | `graphql.web-context` | `/graphql` | Context that serves the GraphQL endpoint. |
 | `graphql.schema-uri` | `/schema.graphql` | URI that serves the schema (under web context) |
-| `graphql.executor-service` |   | Configuration of `ServerThreadPoolSupplier` used to set up executor service |
+| `graphql.executor-service` |   | Configuration of `ServerThreadPoolSupplier` used to set up executor service |
 
 The following configuration keys can be used to set up GraphQL invocation:
 
 | key | default value | description |
 |----|----|----|
 | `graphql.default-error-message` | `Server Error` | Error message to send to caller in case of error |
-| `graphql.exception-white-list` |   | Array of checked exception classes that should return default error message |
-| `graphql.exception-black-list` |   | Array of unchecked exception classes that should return message to caller (instead of default error message) |
+| `graphql.exception-white-list` |   | Array of checked exception classes that should return default error message |
+| `graphql.exception-black-list` |   | Array of unchecked exception classes that should return message to caller (instead of default error message) |
 
 ## Examples
 

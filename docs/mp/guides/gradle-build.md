@@ -14,9 +14,7 @@ The Helidon [Quickstart Example](https://github.com/helidon-io/helidon-examples/
 
 Gradle supports using a Maven POM to perform dependency management. You can use the Helidon Dependencies POM for this purpose. Once you import the Helidon dependency management POM you can specify dependencies without providing a version.
 
-*Using the Helidon Dependencies POM*
-
-```xml
+```xml [Using the Helidon Dependencies POM]
 dependencies {
     // import Helidon dependency management
     implementation enforcedPlatform("io.helidon:helidon-dependencies:${project.helidonversion}")

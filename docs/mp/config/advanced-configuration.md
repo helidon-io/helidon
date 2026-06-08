@@ -46,9 +46,7 @@ To create an in-memory source from properties with custom name, use <code>create
 
 You can create MicroProfile Config Source from a map.
 
-*Create MicroProfile Config Source based on Environment Variables and Custom Map*
-
-```java
+```java [Create MicroProfile Config Source based on Environment Variables and Custom Map]
 ConfigProviderResolver resolver = ConfigProviderResolver.instance();
 
 Config config = resolver.getBuilder() 
@@ -69,9 +67,7 @@ resolver.registerConfig(config, null);
 
 You can create YAML MicroProfile Config Source from a path or a URL. When you create a MicroProfile instance from the builder, the `YamlMpConfigSource` allows you to create a custom Config Source and register it with the builder.
 
-*Create YamlMPConfigSource from a path*
-
-```java
+```java [Create YamlMPConfigSource from a path]
 ConfigProviderResolver.instance().getBuilder()
         .withSources(YamlMpConfigSource.create(path))
         .build();
@@ -138,9 +134,7 @@ If a file named `mp-meta-config.yaml`, or `mp-meta-config.properties` is in the 
 
 **Important Note:** Do not use custom files named `meta-config.*`, as even when using Micro-Profile, we still use Helidon configuration in some of our components, and this file would be recognized as a Helidon SE Meta Configuration file, which may cause erroneous behavior.
 
-*Example of a YAML meta configuration file:*
-
-```yaml
+```yaml [Example of a YAML meta configuration file]
 add-discovered-sources: true 
 add-discovered-converters: false 
 add-default-sources: false 

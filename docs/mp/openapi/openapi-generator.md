@@ -36,9 +36,7 @@ Your project does not need any dependencies on the OpenAPI generator.
 
 To use the OpenAPI generator plug-in to generate or regenerate files during your project build, add the following to your project’s `pom.xml` file to declare the plug-in. Choose whichever version of the generator plug-in meets your needs as long as it is at least 7.6.0.
 
-*Declaring the OpenAPI Generator Plug-in*
-
-```xml
+```xml [Declaring the OpenAPI Generator Plug-in]
 <properties>
     <openapi-generator-version>7.6.0</openapi-generator-version>
 </properties>
@@ -85,7 +83,7 @@ The OpenAPI generator loosely divides its settings into three types:
 
   ``` xml
   <configuration>
-      <inputSpec>petstore.yaml</inputSpec>
+    <inputSpec>petstore.yaml</inputSpec>
   </configuration>
   ```
 
@@ -108,12 +106,12 @@ The OpenAPI generator loosely divides its settings into three types:
 
   ``` xml
   <configuration>
-      ...
-      <configOptions>
-          <groupId>com.mycompany.test</groupId>
-          <artifactId>my-example</artifactId>
-      </configOptions>
-      ...
+    ...
+    <configOptions>
+        <groupId>com.mycompany.test</groupId>
+        <artifactId>my-example</artifactId>
+    </configOptions>
+    ...
   </configuration>
   ```
 
@@ -136,11 +134,11 @@ The OpenAPI generator loosely divides its settings into three types:
 
   ``` xml
   <configuration>
-      ....
-      <additionalProperties>
-          <additionalProperty>useAbstractClasses=false</additionalProperty>
-          <additionalProperty>returnResponse=true</additionalProperty>
-      </additionalProperties>
+    ....
+    <additionalProperties>
+        <additionalProperty>useAbstractClasses=false</additionalProperty>
+        <additionalProperty>returnResponse=true</additionalProperty>
+    </additionalProperties>
   </configuration>
   ```
 
@@ -188,7 +186,7 @@ You must specify the following options:
 </tr>
 <tr>
 <td style="text-align: left;"><p><code>--library</code></p></td>
-<td style="text-align: left;"><p> </p></td>
+<td style="text-align: left;"><p> </p></td>
 <td style="text-align: left;"><p><code>&lt;library&gt;</code></p></td>
 <td style="text-align: left;"><p>Library you want to use</p></td>
 <td style="text-align: left;"><p><code>mp</code><br />
@@ -318,7 +316,7 @@ Among the many configuration settings available to you, some you should particul
 <tr>
 <td style="text-align: left;"><p><code>helidonVersion</code></p></td>
 <td style="text-align: left;"><p>Version of Helidon for which to generate the files</p></td>
-<td style="text-align: left;"><p> </p></td>
+<td style="text-align: left;"><p> </p></td>
 <td style="text-align: left;"><p>Latest published Helidon release *</p></td>
 <td style="text-align: left;"><p>Affects:</p>
 <ul>
@@ -360,7 +358,7 @@ Beyond the settings listed above, there are several important choices you need t
 
 #### Generating a New Project and Generating *Into* an Existing Project
 
-You can use the OpenAPI generator to create a new project or to generate files into an existing project. Some developers do both, using the generator to create the project at first and then to update the project as they evolve the OpenAPI document or change the generation options they select. Others create the project in some other way—​for example, using the [Helidon CLI](../../about/cli.md). The OpenAPI generator CLI and plug-in both support each type of usage.
+You can use the OpenAPI generator to create a new project or to generate files into an existing project. Some developers do both, using the generator to create the project at first and then to update the project as they evolve the OpenAPI document or change the generation options they select. Others create the project in some other way—​for example, using the [Helidon CLI](../../cli.md). The OpenAPI generator CLI and plug-in both support each type of usage.
 
 If the OpenAPI generator finds a pre-existing API or model file, it overwrites it with the latest content. It does *not* overwrite a `pom.xml` file or test files. This is important because certain generation settings can influence the generated dependencies in the `pom.xml` file. For example, the `serializationLibrary` setting creates dependencies on either JSON-B or Jackson artifacts. As a result, changing the generation options can change the dependencies your project should have. If you rerun the generator, the old `pom.xml` remains and does not reflect the revised depencencies.
 
@@ -419,9 +417,7 @@ The next sections describe each of these techniques in detail.
 
 The following example uses the Helidon server generator to create a project or regenerate files into an existing project.
 
-*Creating or updating a server project using the OpenAPI generator CLI*
-
-```bash
+```bash [Creating or updating a server project using the OpenAPI generator CLI]
 java -jar ${path-to-generator}/openapi-generator-cli.jar \
   generate \
   -i src/main/resources/petstore.yaml \
@@ -437,9 +433,7 @@ java -jar ${path-to-generator}/openapi-generator-cli.jar \
 
 The next example runs the Helidon client generator using the same input file.
 
-*Creating or updating a client project using the OpenAPI generator CLI*
-
-```bash
+```bash [Creating or updating a client project using the OpenAPI generator CLI]
 java -jar ${path-to-generator}/openapi-generator-cli.jar \
   generate \
   -i src/main/resources/petstore.yaml \
@@ -472,9 +466,7 @@ Then, in the `<build>` section of your `pom.xml` file, add an execution of the p
 
 The plug-in execution in the following example is equivalent to the CLI example above for generating server files:
 
-*Creating or updating a client project using the OpenAPI Maven plug-in*
-
-```xml
+```xml [Creating or updating a client project using the OpenAPI Maven plug-in]
 <plugin>
     <groupId>org.openapitools</groupId>
     <artifactId>openapi-generator-maven-plugin</artifactId>
@@ -541,9 +533,7 @@ The Helidon MP client generator creates a MicroProfile REST client interface for
 
 In the following example, `ExampleResource` (itself running in a server) invokes a remote Pet service and shows one way to use the generated `PetApi` REST client interface.
 
-*Using the generated `PetApi` returned from a separate service*
-
-```java
+```java [Using the generated PetApi returned from a separate service]
 @Path("/exampleServiceCallingService") 
 public class ExampleOpenApiGenClientResource {
     @Inject 

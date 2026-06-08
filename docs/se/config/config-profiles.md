@@ -58,9 +58,7 @@ The root `sources` property contains an array (ordered) of objects defining each
 
 An example development profile using "inlined" configuration:
 
-*Config profile `config-profile-dev.yaml`*
-
-```yaml
+```yaml [Config profile config-profile-dev.yaml]
 sources:
   - type: "inlined"
     properties:
@@ -69,9 +67,7 @@ sources:
 
 An example of a profile using environment variables, system properties, classpath, and file configuration:
 
-*Config profile `config-profile-prod.yaml`*
-
-```yaml
+```yaml [Config profile config-profile-prod.yaml]
 sources:
   - type: "environment-variables"
   - type: "system-properties"
@@ -163,9 +159,7 @@ Except for the `system-properties` and `environment-variables` types, the profil
 
 Here is an example profile in YAML format. Note how the `properties` sections are at the same level as the `type` or `class` within a `sources` array entry.
 
-*Profile `config-profile.yaml` illustrating all built-in sources available on the classpath*
-
-```yaml
+```yaml [Profile config-profile.yaml illustrating all built-in sources available on the classpath]
 caching.enabled: false
 sources:
   - type: "system-properties"
@@ -240,9 +234,7 @@ public class MyConfigSourceProvider implements ConfigSourceProvider {
 
 Register it as a java service loader service
 
-*File `META-INF/services/io.helidon.config.spi.ConfigSourceProvider`*
-
-```text
+```text [File META-INF/services/io.helidon.config.spi.ConfigSourceProvider]
 io.helidon.examples.MyConfigSourceProvider
 ```
 

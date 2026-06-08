@@ -10,7 +10,7 @@ For more information about support for REST clients in Helidon see [REST Client]
 
 ## Maven Coordinates
 
-To enable MicroProfile Rest Client Metrics, either add a dependency on the [helidon-microprofile bundle](../../mp/introduction/microprofile.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
+To enable MicroProfile Rest Client Metrics, either add a dependency on the [helidon-microprofile bundle](../introduction.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml
 <dependency>
@@ -91,15 +91,15 @@ To create this REST client metrics example follow these steps.
 
     ``` xml
     <dependency>
-        <groupId>io.helidon.microprofile.rest-client</groupId>
-        <artifactId>helidon-microprofile-rest-client</artifactId>
+    <groupId>io.helidon.microprofile.rest-client</groupId>
+    <artifactId>helidon-microprofile-rest-client</artifactId>
     </dependency>
     ```
 
     ``` xml
     <dependency>
-        <groupId>io.helidon.microprofile.rest-client-metrics</groupId>
-        <artifactId>helidon-microprofile-rest-client-metrics</artifactId>
+    <groupId>io.helidon.microprofile.rest-client-metrics</groupId>
+    <artifactId>helidon-microprofile-rest-client-metrics</artifactId>
     </dependency>
     ```
 
@@ -107,24 +107,24 @@ To create this REST client metrics example follow these steps.
 
     ``` java
     @Path("/greet")
-    @Timed(name = "timedGreet", absolute = true) 
+    @Timed(name = "timedGreet", absolute = true)
     public interface GreetRestClient {
 
-        @Counted                            
-        @GET
-        @Produces(MediaType.APPLICATION_JSON)
-        GreetingMessage getDefaultMessage();
+    @Counted
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    GreetingMessage getDefaultMessage();
 
-        @Path("/{name}")
-        @GET
-        @Produces(MediaType.APPLICATION_JSON)
-        GreetingMessage getMessage(@PathParam("name") String name);
+    @Path("/{name}")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    GreetingMessage getMessage(@PathParam("name") String name);
 
-        @Path("/greeting")
-        @PUT
-        @Consumes(MediaType.APPLICATION_JSON)
-        @Produces(MediaType.APPLICATION_JSON)
-        Response updateGreeting(GreetingMessage message);
+    @Path("/greeting")
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    Response updateGreeting(GreetingMessage message);
     }
     ```
 
@@ -136,54 +136,54 @@ To create this REST client metrics example follow these steps.
     @Path("/delegate")
     public class DelegatingResource {
 
-        private static LazyValue<GreetRestClient> greetRestClient = LazyValue.create(DelegatingResource::prepareClient); 
+    private static LazyValue<GreetRestClient> greetRestClient = LazyValue.create(DelegatingResource::prepareClient);
 
-        /**
-         * Return a worldly greeting message.
-         *
-         * @return {@link GreetingMessage}
-         */
-        @GET
-        @Produces(MediaType.APPLICATION_JSON)
-        public GreetingMessage getDefaultMessage() {
-            return greetRestClient.get().getDefaultMessage();           
-        }
+    /**
+     * Return a worldly greeting message.
+     *
+     * @return {@link GreetingMessage}
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public GreetingMessage getDefaultMessage() {
+        return greetRestClient.get().getDefaultMessage();
+    }
 
-        /**
-         * Return a greeting message using the name that was provided.
-         *
-         * @param name the name to greet
-         * @return {@link GreetingMessage}
-         */
-        @Path("/{name}")
-        @GET
-        @Produces(MediaType.APPLICATION_JSON)
-        public GreetingMessage getMessage(@PathParam("name") String name) {
-            return greetRestClient.get().getMessage(name);
-        }
+    /**
+     * Return a greeting message using the name that was provided.
+     *
+     * @param name the name to greet
+     * @return {@link GreetingMessage}
+     */
+    @Path("/{name}")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public GreetingMessage getMessage(@PathParam("name") String name) {
+        return greetRestClient.get().getMessage(name);
+    }
 
-        /**
-         * Set the greeting to use in future messages.
-         *
-         * @param message JSON containing the new greeting
-         * @return {@link jakarta.ws.rs.core.Response}
-         */
-        @Path("/greeting")
-        @PUT
-        @Consumes(MediaType.APPLICATION_JSON)
-        @Produces(MediaType.APPLICATION_JSON)
-        public Response updateGreeting(GreetingMessage message) {
-            return greetRestClient.get().updateGreeting(message);
-        }
+    /**
+     * Set the greeting to use in future messages.
+     *
+     * @param message JSON containing the new greeting
+     * @return {@link jakarta.ws.rs.core.Response}
+     */
+    @Path("/greeting")
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response updateGreeting(GreetingMessage message) {
+        return greetRestClient.get().updateGreeting(message);
+    }
 
-        private static GreetRestClient prepareClient() {            
-            Config config = ConfigProvider.getConfig();
-            String serverHost = config.getOptionalValue("server.host", String.class).orElse("localhost");
-            String serverPort = config.getOptionalValue("server.port", String.class).orElse("8080");
-            return RestClientBuilder.newBuilder()
-                    .baseUri(URI.create("http://" + serverHost + ":" + serverPort))
-                    .build(GreetRestClient.class);
-        }
+    private static GreetRestClient prepareClient() {
+        Config config = ConfigProvider.getConfig();
+        String serverHost = config.getOptionalValue("server.host", String.class).orElse("localhost");
+        String serverPort = config.getOptionalValue("server.port", String.class).orElse("8080");
+        return RestClientBuilder.newBuilder()
+                .baseUri(URI.create("http://" + serverHost + ":" + serverPort))
+                .build(GreetRestClient.class);
+    }
     }
     ```
 

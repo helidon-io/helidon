@@ -9,7 +9,7 @@ Distributed tracing is a critical feature of microservice based applications, si
 
 ## Maven Coordinates
 
-To enable Helidon Tracing, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
+To enable Helidon Tracing, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml
 <dependencies>
@@ -85,9 +85,7 @@ Support for specific tracers is abstracted. Your application can depend on the H
 
 ### Setup WebServer
 
-*Configuring `Tracer`*
-
-```java
+```java [Configuring Tracer]
 Tracer tracer = TracerBuilder.create("helidon") 
         .build();
 
@@ -169,11 +167,12 @@ The following tables list specifically what operations the proxies permit.
 | `start()` | Starts the span. | \- |
 | `start(Instant)` | Starts the span. | \- |
 | `tag` methods | Add a tag to the builder before the span is built. | ✓ |
-| `unwrap(Class)` | Cast the builder to the specified implementation type. † | ✓ |
+| `unwrap(Class)` | Cast the builder to the specified implementation type. | ✓ |
+
+> [!NOTE]
+> Helidon returns the unwrapped object, not a proxy for it.
 
 [`io.helidon.tracing.Span.Builder`](/apidocs/io.helidon.tracing/io/helidon/tracing/Span.Builder.html) Operations
-
-† Helidon returns the unwrapped object, not a proxy for it.
 
 | Method | Purpose | OK? |
 |----|----|----|
@@ -183,11 +182,12 @@ The following tables list specifically what operations the proxies permit.
 | `context()` | Returns the `SpanContext` associated with the span. | ✓ |
 | `status(Status)` | Sets the status of the span. | \- |
 | any `tag` method | Add a tag to the span. | ✓ |
-| `unwrap(Class)` | Cast the span to the specified implementation type. † | ✓ |
+| `unwrap(Class)` | Cast the span to the specified implementation type. | ✓ |
+
+> [!NOTE]
+> Helidon returns the unwrapped object, not a proxy to it.
 
 [`io.helidon.tracing.Span`](/apidocs/io.helidon.tracing/io/helidon/tracing/Span.html) Operations
-
-† Helidon returns the unwrapped object, not a proxy to it.
 
 | Method       | Purpose                              | OK? |
 |--------------|--------------------------------------|-----|
@@ -327,16 +327,16 @@ The following configuration should be supported by all tracer implementations (i
 
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
-| <span id="ae09ad-boolean-tags"></span> `boolean-tags` | `MAP` | `Boolean` |   | Tracer level tags that get added to all reported spans |
+| <span id="ae09ad-boolean-tags"></span> `boolean-tags` | `MAP` | `Boolean` |   | Tracer level tags that get added to all reported spans |
 | <span id="a6d3db-enabled"></span> `enabled` | `VALUE` | `Boolean` | `true` | When enabled, tracing will be sent |
 | <span id="a701d5-global"></span> `global` | `VALUE` | `Boolean` | `true` | When enabled, the created instance is also registered as a global tracer |
-| <span id="a7d2ab-host"></span> `host` | `VALUE` | `String` |   | Host to use to connect to tracing collector |
-| <span id="ad8eb0-int-tags"></span> `int-tags` | `MAP` | `Integer` |   | Tracer level tags that get added to all reported spans |
-| <span id="a912bb-path"></span> `path` | `VALUE` | `String` |   | Path on the collector host to use when sending data to tracing collector |
-| <span id="ad6020-port"></span> `port` | `VALUE` | `Integer` |   | Port to use to connect to tracing collector |
-| <span id="a3c6c7-protocol"></span> `protocol` | `VALUE` | `String` |   | Protocol to use (such as `http` or `https`) to connect to tracing collector |
-| <span id="af9a68-service"></span> `service` | `VALUE` | `String` |   | Service name of the traced service |
-| <span id="a0f568-tags"></span> `tags` | `MAP` | `String` |   | Tracer level tags that get added to all reported spans |
+| <span id="a7d2ab-host"></span> `host` | `VALUE` | `String` |   | Host to use to connect to tracing collector |
+| <span id="ad8eb0-int-tags"></span> `int-tags` | `MAP` | `Integer` |   | Tracer level tags that get added to all reported spans |
+| <span id="a912bb-path"></span> `path` | `VALUE` | `String` |   | Path on the collector host to use when sending data to tracing collector |
+| <span id="ad6020-port"></span> `port` | `VALUE` | `Integer` |   | Port to use to connect to tracing collector |
+| <span id="a3c6c7-protocol"></span> `protocol` | `VALUE` | `String` |   | Protocol to use (such as `http` or `https`) to connect to tracing collector |
+| <span id="af9a68-service"></span> `service` | `VALUE` | `String` |   | Service name of the traced service |
+| <span id="a0f568-tags"></span> `tags` | `MAP` | `String` |   | Tracer level tags that get added to all reported spans |
 
 ### Traced Spans Configuration
 
@@ -353,9 +353,7 @@ The components using tracing configuration use the `TracingConfigUtil`. This use
 
 Builder approach, example that disables a single span log event:
 
-*Configure tracing using a builder*
-
-```java
+```java [Configure tracing using a builder]
 TracingConfig.builder()
         .addComponent(ComponentTracingConfig.builder("web-server")
                               .addSpan(SpanTracingConfig.builder("HTTP Request")
@@ -371,9 +369,7 @@ TracingConfig.builder()
 
 Tracing configuration can be defined in a config file.
 
-*Tracing configuration*
-
-```yaml
+```yaml [Tracing configuration]
 tracing:
     components:
       web-server:
@@ -384,9 +380,7 @@ tracing:
                 enabled: false
 ```
 
-*Use the configuration in web server*
-
-```java
+```java [Use the configuration in web server]
 Tracer tracer = TracerBuilder.create(config.get("tracing")).build(); 
 server.addFeature(ObserveFeature.builder()
                           .addObserver(TracingObserver.create(tracer)) 
@@ -402,9 +396,7 @@ For Web Server we have path-based support for configuring tracing, in addition t
 
 Configuration of path can use any path string supported by the WebServer. The configuration itself has the same possibilities as traced configuration described above. The path-specific configuration will be merged with global configuration (path is the "newer" configuration, global is the "older")
 
-*Configuration in YAML*
-
-```yaml
+```yaml [Configuration in YAML]
 tracing:
   paths:
     - path: "/favicon.ico"
@@ -428,9 +420,7 @@ To have a nicer overview in search pane of a tracer, you can customize the top-l
 
 Example:
 
-*Configuration in YAML*
-
-```yaml
+```yaml [Configuration in YAML]
 tracing:
   components:
     web-server:
@@ -466,9 +456,7 @@ Span propagation is supported with Helidon WebClient. Tracing propagation is aut
 </dependencies>
 ```
 
-*Tracing propagation with Helidon WebClient*
-
-```java
+```java [Tracing propagation with Helidon WebClient]
 WebClient client = WebClient.builder()
         .addService(WebClientTracing.create())
         .build();
@@ -493,17 +481,17 @@ String response = client.get()
 
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
-| <span id="aed342-client-cert-pem"></span> [`client-cert-pem`](../config/io_helidon_common_configurable_Resource.md) | `VALUE` | `i.h.c.c.Resource` |   | Certificate of client in PEM format |
+| <span id="aed342-client-cert-pem"></span> [`client-cert-pem`](../config/io_helidon_common_configurable_Resource.md) | `VALUE` | `i.h.c.c.Resource` |   | Certificate of client in PEM format |
 | <span id="a097b8-exporter-timeout"></span> `exporter-timeout` | `VALUE` | `Duration` | `PT10S` | Timeout of exporter requests |
 | <span id="a24a43-max-export-batch-size"></span> `max-export-batch-size` | `VALUE` | `Integer` | `512` | Maximum Export Batch Size of exporter requests |
 | <span id="ade69e-max-queue-size"></span> `max-queue-size` | `VALUE` | `Integer` | `2048` | Maximum Queue Size of exporter requests |
-| <span id="a5d885-private-key-pem"></span> [`private-key-pem`](../config/io_helidon_common_configurable_Resource.md) | `VALUE` | `i.h.c.c.Resource` |   | Private key in PEM format |
+| <span id="a5d885-private-key-pem"></span> [`private-key-pem`](../config/io_helidon_common_configurable_Resource.md) | `VALUE` | `i.h.c.c.Resource` |   | Private key in PEM format |
 | <span id="a65431-propagation"></span> [`propagation`](../config/io_helidon_tracing_providers_jaeger_JaegerTracerBuilder_PropagationFormat.md) | `LIST` | `i.h.t.p.j.J.PropagationFormat` | `JAEGER` | Add propagation format to use |
 | <span id="aa4177-sampler-param"></span> `sampler-param` | `VALUE` | `Number` | `1` | The sampler parameter (number) |
 | <span id="a28b35-sampler-type"></span> [`sampler-type`](../config/io_helidon_tracing_providers_jaeger_JaegerTracerBuilder_SamplerType.md) | `VALUE` | `i.h.t.p.j.J.SamplerType` | `CONSTANT` | Sampler type |
 | <span id="a8ee29-schedule-delay"></span> `schedule-delay` | `VALUE` | `Duration` | `PT5S` | Schedule Delay of exporter requests |
 | <span id="a1bdae-span-processor-type"></span> [`span-processor-type`](../config/io_helidon_tracing_providers_jaeger_JaegerTracerBuilder_SpanProcessorType.md) | `VALUE` | `i.h.t.p.j.J.SpanProcessorType` | `batch` | Span Processor type used |
-| <span id="a667f5-trusted-cert-pem"></span> [`trusted-cert-pem`](../config/io_helidon_common_configurable_Resource.md) | `VALUE` | `i.h.c.c.Resource` |   | Trusted certificates in PEM format |
+| <span id="a667f5-trusted-cert-pem"></span> [`trusted-cert-pem`](../config/io_helidon_common_configurable_Resource.md) | `VALUE` | `i.h.c.c.Resource` |   | Trusted certificates in PEM format |
 
 The following is an example of a Jaeger configuration, specified in the YAML format.
 
@@ -576,9 +564,7 @@ The [telemetry doc page](../se/telemetry/open-telemetry.md) describes how to use
 > [!NOTE]
 > If you provide settings under both `telemetry` and `tracing`, Helidon uses the `telemetry` settings. Specifying both does not confuse Helidon but it might confuse users.
 
-*Dependency for OpenTelemetry support using tracing*
-
-```xml
+```xml [Dependency for OpenTelemetry support using tracing]
 <dependency>
     <groupId>io.helidon.tracing.providers</groupId>
     <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
@@ -592,11 +578,9 @@ The [telemetry doc page](../se/telemetry/open-telemetry.md) describes how to use
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
 | <span id="aec0bf-exporter-type"></span> [`exporter-type`](../config/io_helidon_tracing_providers_opentelemetry_OtlpExporterProtocolType.md) | `VALUE` | `i.h.t.p.o.OtlpExporterProtocolType` | `GRPC` | Type of OTLP exporter to use for pushing span data |
-| <span id="a0fe59-propagators"></span> `propagators` | `LIST` | `i.h.t.p.o.O.CustomMethods` |   | Context propagators |
+| <span id="a0fe59-propagators"></span> `propagators` | `LIST` | `i.h.t.p.o.O.CustomMethods` |   | Context propagators |
 
-*Example Helidon configuration for OpenTelemetry tracing*
-
-```yaml
+```yaml [Example Helidon configuration for OpenTelemetry tracing]
 tracing:
   service: helidon-otel-tracing-example 
   global: false      

@@ -8,7 +8,7 @@ If bean validation is required outside JAX-RS/Jersey use cases, it is also avail
 
 ## Maven Coordinates
 
-To enable Bean Validation, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
+To enable Bean Validation, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml
 <dependency>
@@ -306,11 +306,11 @@ For more information about configuring the validator factory in validation.xml, 
     @Path("helloworld")
     public class HelloWorld {
 
-        @POST
-        @Consumes(MediaType.APPLICATION_JSON)
-        public void post(@NotNull @Valid Greeting greeting) {
-            // ...
-        }
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    public void post(@NotNull @Valid Greeting greeting) {
+        // ...
+    }
     }
     ```
 
@@ -318,8 +318,8 @@ For more information about configuring the validator factory in validation.xml, 
 
     ``` java
     public class GreetingHolder {
-        @NotNull
-        private String greeting;
+    @NotNull
+    private String greeting;
     }
     ```
 
@@ -328,11 +328,11 @@ For more information about configuring the validator factory in validation.xml, 
     ``` java
     @ApplicationScoped
     public class GreetingProvider {
-        private GreetingHolder greetingHolder;
+    private GreetingHolder greetingHolder;
 
-        void setGreeting(@Valid GreetingHolder greetingHolder) {
-            this.greetingHolder = greetingHolder;
-        }
+    void setGreeting(@Valid GreetingHolder greetingHolder) {
+        this.greetingHolder = greetingHolder;
+    }
     }
     ```
 

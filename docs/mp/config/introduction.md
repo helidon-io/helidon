@@ -6,7 +6,7 @@ Helidon MicroProfile Config is an implementation of [Eclipse MicroProfile Config
 
 ## Maven Coordinates
 
-To enable MicroProfile Config, either add a dependency on the [helidon-microprofile bundle](../../mp/introduction/microprofile.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
+To enable MicroProfile Config, either add a dependency on the [helidon-microprofile bundle](../introduction.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml
 <dependency>
@@ -37,16 +37,12 @@ MicroProfile Config uses `ConfigSource` SPI to load configuration data, either f
 
 You can use MicroProfile Config API to get configuration properties by using a `Config` instance programmatically or injecting configuration values with `@ConfigProperty`.
 
-*Using `Config`*
-
-```java
+```java [Using Config]
 Config config = ConfigProvider.getConfig();
 config.getOptionalValue("app.greeting", String.class).orElse("Hello");
 ```
 
-*Injecting configured properties into a constructor*
-
-```java
+```java [Injecting configured properties into a constructor]
 @Inject
 public GreetingProvider(
         @ConfigProperty(name = "app.greeting",
@@ -115,9 +111,7 @@ See [manual setup of config](advanced-configuration.md#creating-microprofile-con
 
 You can use `${reference}` to reference another configuration key in a key value. This allows to configure a single key to be reused in multiple other keys.
 
-*Example*
-
-```yaml
+```yaml [Example]
 uri: "http://localhost:8080"
 service-1: "${uri}/service1"
 service-2: "${uri}/service2"
@@ -162,9 +156,7 @@ See link:https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/nio/f
 
 You can encrypt secrets using a master password and store them in a configuration file. The config encryption filter in MicroProfile Config is enabled by default. For more information, see [Configuration Secrets](../../mp/security/configuration-secrets.md).
 
-*Example of encrypted secrets*
-
-```properties
+```properties [Example of encrypted secrets]
 # Password encrypted using a master password
 client_secret=${GCM=mYRkg+4Q4hua1kvpCCI2hg==}
 # Password encrypted using public key (there are length limits when using RSA)

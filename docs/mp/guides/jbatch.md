@@ -6,27 +6,23 @@ This guide describes how Helidon and Jakarta Batch (JBatch) can be used together
 
 For this 20 minute tutorial, you will need the following:
 
-|  |  |
-|----|----|
-| [Java SE 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
+| Requirement | Description |
+|-------------|-------------|
+| [Java 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
 | [Maven 3.8+](https://maven.apache.org/download.cgi) | Helidon requires Maven 3.8+. |
 | [Docker 18.09+](https://docs.docker.com/install/) | If you want to build and run Docker containers. |
 | [Kubectl 1.16.5+](https://kubernetes.io/docs/tasks/tools/install-kubectl/) | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
 
 Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
-*Verify Prerequisites*
-
-```bash
+```bash [Verify Prerequisites]
 java -version
 mvn --version
 docker --version
 kubectl version
 ```
 
-*Setting JAVA_HOME*
-
-```bash
+```bash [Setting JAVA_HOME]
 # On Mac
 export JAVA_HOME=`/usr/libexec/java_home -v 21`
 
@@ -42,9 +38,7 @@ export JAVA_HOME=/usr/lib/jvm/jdk-21
 
 For this example, add the IBM JBatch implementation and the `derby` embedded DB (since JPA and JPA are not available by default) dependencies to the testing module:
 
-*Maven dependencies*
-
-```xml
+```xml [Maven dependencies]
 <dependencies>
     <dependency>
         <groupId>com.ibm.jbatch</groupId>
@@ -69,9 +63,7 @@ Finally, you will create `MyBatchlet` to demonstrate all possible usages of JBat
 
 ### 1. Create a unit of input information
 
-*MyInputRecord*
-
-```java
+```java [MyInputRecord]
 public class MyInputRecord {
     private int id;
 
@@ -96,9 +88,7 @@ public class MyInputRecord {
 
 #### 2. Create a unit of output information
 
-*MyOutputRecord*
-
-```java
+```java [MyOutputRecord]
 public class MyOutputRecord {
 
     private int id;
@@ -126,9 +116,7 @@ public class MyOutputRecord {
 
 `MyItemReader` should look like this:
 
-*MyItemReader*
-
-```java
+```java [MyItemReader]
 public class MyItemReader extends AbstractItemReader {
 
     private final StringTokenizer tokens;
@@ -156,9 +144,7 @@ public class MyItemReader extends AbstractItemReader {
 
 The `MyItemProcessor` will perform some simple operations:
 
-*MyItemProcessor*
-
-```java
+```java [MyItemProcessor]
 public class MyItemProcessor implements ItemProcessor {
 
     @Override
@@ -174,9 +160,7 @@ public class MyItemProcessor implements ItemProcessor {
 
 `MyItemWriter` prints the result:
 
-*MyItemWriter*
-
-```java
+```java [MyItemWriter]
 public class MyItemWriter extends AbstractItemWriter {
 
     @Override
@@ -190,9 +174,7 @@ public class MyItemWriter extends AbstractItemWriter {
 
 `MyBatchlet` simply completes the process:
 
-*MyBatchlet*
-
-```java
+```java [MyBatchlet]
 public class MyBatchlet extends AbstractBatchlet {
 
     @Override
@@ -209,9 +191,7 @@ public class MyBatchlet extends AbstractBatchlet {
 
 Add this code to your job descriptor.xml file:
 
-*Updated descriptor file*
-
-```xml
+```xml [Updated descriptor file]
 <job id="myJob" xmlns="https://jakarta.ee/xml/ns/jakartaee"
                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                 xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/jobXML_2_0.xsd"
@@ -239,9 +219,7 @@ Add this code to your job descriptor.xml file:
 
 Create a small endpoint to activate the job:
 
-*new endpoint*
-
-```java
+```java [new endpoint]
 @Path("/batch")
 @ApplicationScoped
 public class BatchResource {
@@ -286,9 +264,7 @@ public class BatchResource {
 
 Helidon specifies to JBatch that it should run in Standalone (SE) mode. It will also register the `HelidonExecutorServiceProvider` which is actually relatively small. For our example we need something quite small, like a `FixedTheadPool` with 2 threads. This provider is used to tell our JBatch engine exactly which ExecutorService to use.
 
-*HelidonExecutorServiceProvider*
-
-```java
+```java [HelidonExecutorServiceProvider]
 public class HelidonExecutorServiceProvider implements ExecutorServiceProvider {
     @Override
     public ExecutorService getExecutorService() {

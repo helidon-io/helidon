@@ -6,7 +6,7 @@ The Helidon JSON-RPC client API is part of the WebClient API, and can be used to
 
 ## Maven Coordinates
 
-To enable WebClient/JSON-RPC, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
+To enable WebClient/JSON-RPC, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml
 <dependency>

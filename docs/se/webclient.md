@@ -6,21 +6,21 @@ WebClient is an HTTP client for Helidon SE. It can be used to send requests and 
 
 Helidon WebClient provides the following features:
 
-- **Blocking approach**  
+- **Blocking approach**
   The WebClient uses the blocking approach to synchronously process a request and its corresponding response. Both `HTTP/1.1` and `HTTP/2` request and response will run in the thread of the user. Additionally, for `HTTP/2`, virtual thread is employed to manage the connection.
 
-- **Builder-like setup and execution**  
+- **Builder-like setup and execution**
   Creates every client and request as a builder pattern. This improves readability and code maintenance.
 
-- **Redirect chain**  
+- **Redirect chain**
   Follows the redirect chain and perform requests on the correct endpoint by itself.
 
-- **Tracing and security propagation**  
+- **Tracing and security propagation**
   Automatically propagates the configured tracing and security settings of the Helidon WebServer to the WebClient and uses them during request and response.
 
 ## Maven Coordinates
 
-To enable WebClient, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../about/managing-dependencies.md)).
+To enable WebClient, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml
 <dependency>
@@ -48,9 +48,7 @@ You can create an instance of a WebClient by executing `WebClient.create()` whic
 
 To change the default settings and register additional services, you can use simple builder that allows you to customize the client behavior.
 
-*Create a WebClient with simple builder:*
-
-```java
+```java [Create a WebClient with simple builder]
 WebClient client = WebClient.builder()
         .baseUri("http://localhost")
         .build();
@@ -71,15 +69,13 @@ Check out [HttpClient](/apidocs/io.helidon.webclient.api/io/helidon/webclient/ap
 
 Configuration can be set for every request type before it is sent.
 
-*Customizing a request*
-
-```java
+```java [Customizing a request]
 client.get()
-        .uri("http://example.com") 
-        .path("/path") 
-        .queryParam("query", "parameter") 
-        .fragment("someFragment") 
-        .headers(headers -> headers.accept(MediaTypes.APPLICATION_JSON)); 
+        .uri("http://example.com")
+        .path("/path")
+        .queryParam("query", "parameter")
+        .fragment("someFragment")
+        .headers(headers -> headers.accept(MediaTypes.APPLICATION_JSON));
 ```
 
 - Overrides `baseUri` from WebClient
@@ -111,9 +107,7 @@ Once the request setup is completed, the following methods can be used to send i
 
 Each of the methods will provide a way to allow response to be retrieved in a particular response type. Refer to [ClientRequest API](/apidocs/io.helidon.webclient.api/io/helidon/webclient/api/ClientRequest.html) for more details about these methods.
 
-*Execute a simple GET request to endpoint and receive a String response:*
-
-```java
+```java [Execute a simple GET request to endpoint and receive a String response]
 ClientResponseTyped<String> response = client.get()
         .path("/endpoint")
         .request(String.class);
@@ -147,27 +141,21 @@ WebClient supports the following built-in Helidon Media Support libraries:
 
 They can be activated by adding their corresponding libraries into the classpath. This can simply be done by adding their corresponding dependencies.
 
-*Add JSON-P support:*
-
-```xml
+```xml [Add JSON-P support]
 <dependency>
     <groupId>io.helidon.http.media</groupId>
     <artifactId>helidon-http-media-jsonp</artifactId>
 </dependency>
 ```
 
-*Add JSON-B support:*
-
-```xml
+```xml [Add JSON-B support]
 <dependency>
     <groupId>io.helidon.http.media</groupId>
     <artifactId>helidon-http-media-jsonb</artifactId>
 </dependency>
 ```
 
-*Add Jackson support:*
-
-```xml
+```xml [Add Jackson support]
 <dependency>
     <groupId>io.helidon.http.media</groupId>
     <artifactId>helidon-http-media-jackson</artifactId>
@@ -182,7 +170,7 @@ Users can also create their own Custom Media Support library and make them work 
 ```java
 WebClient.builder()
         .mediaContext(it -> it
-                .addMediaSupport(CustomMediaSupport.create())) 
+                .addMediaSupport(CustomMediaSupport.create()))
         .build();
 ```
 
@@ -219,17 +207,17 @@ The class responsible for WebClient configuration is:
 
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
-| <span id="a48ec2-connect-timeout"></span> `connect-timeout` | `VALUE` | `Duration` |   | Connect timeout |
+| <span id="a48ec2-connect-timeout"></span> `connect-timeout` | `VALUE` | `Duration` |   | Connect timeout |
 | <span id="a5bc70-follow-redirects"></span> `follow-redirects` | `VALUE` | `Boolean` | `true` | Whether to follow redirects |
 | <span id="a6536a-keep-alive"></span> `keep-alive` | `VALUE` | `Boolean` | `true` | Determines if connection keep alive is enabled (NOT socket keep alive, but HTTP connection keep alive, to re-use the same connection for multiple requests) |
 | <span id="a04b74-max-redirects"></span> `max-redirects` | `VALUE` | `Integer` | `10` | Max number of followed redirects |
-| <span id="a419a4-properties"></span> `properties` | `MAP` | `String` |   | Properties configured for this client |
-| <span id="a3662c-protocol-configs"></span> [`protocol-configs`](../config/io_helidon_webclient_spi_ProtocolConfig.md) | `LIST` | `i.h.w.s.ProtocolConfig` |   | Configuration of client protocols |
+| <span id="a419a4-properties"></span> `properties` | `MAP` | `String` |   | Properties configured for this client |
+| <span id="a3662c-protocol-configs"></span> [`protocol-configs`](../config/io_helidon_webclient_spi_ProtocolConfig.md) | `LIST` | `i.h.w.s.ProtocolConfig` |   | Configuration of client protocols |
 | <span id="adcd34-protocol-configs-discover-services"></span> `protocol-configs-discover-services` | `VALUE` | `Boolean` | `true` | Whether to enable automatic service discovery for `protocol-configs` |
-| <span id="a23735-protocol-preference"></span> `protocol-preference` | `LIST` | `String` |   | List of HTTP protocol IDs by order of preference |
-| <span id="a62d6a-proxy"></span> [`proxy`](../config/io_helidon_webclient_api_Proxy.md) | `VALUE` | `i.h.w.a.Proxy` |   | Proxy configuration to be used for requests |
-| <span id="aecd9d-read-timeout"></span> `read-timeout` | `VALUE` | `Duration` |   | Read timeout |
-| <span id="aba9ef-tls"></span> [`tls`](../config/io_helidon_common_tls_Tls.md) | `VALUE` | `i.h.c.t.Tls` |   | TLS configuration for any TLS request from this client |
+| <span id="a23735-protocol-preference"></span> `protocol-preference` | `LIST` | `String` |   | List of HTTP protocol IDs by order of preference |
+| <span id="a62d6a-proxy"></span> [`proxy`](../config/io_helidon_webclient_api_Proxy.md) | `VALUE` | `i.h.w.a.Proxy` |   | Proxy configuration to be used for requests |
+| <span id="aecd9d-read-timeout"></span> `read-timeout` | `VALUE` | `Duration` |   | Read timeout |
+| <span id="aba9ef-tls"></span> [`tls`](../config/io_helidon_common_tls_Tls.md) | `VALUE` | `i.h.c.t.Tls` |   | TLS configuration for any TLS request from this client |
 
 ### Protocol Specific Configuration
 
@@ -281,16 +269,16 @@ WebClient client = WebClient.builder()
 client:
   connect-timeout-millis: 2000
   read-timeout-millis: 2000
-  follow-redirects: true 
+  follow-redirects: true
   max-redirects: 5
-  cookie-manager: 
+  cookie-manager:
     automatic-store-enabled: true
     default-cookies:
       flavor3: strawberry
       flavor4: raspberry
-  default-headers: 
+  default-headers:
     Accept: '"application/json", "text/plain"'
-  services: 
+  services:
     metrics:
       - methods: ["PUT", "POST", "DELETE"]
         type: METER
@@ -309,17 +297,17 @@ client:
         name-format: "wc.counter.%1$s.error"
         description: "Counter of failed PUT, POST and DELETE requests"
     tracing:
-  protocol-configs: 
+  protocol-configs:
     http_1_1:
       max-header-size: 20000
       validate-request-headers: true
     h2:
       prior-knowledge: true
-  proxy: 
+  proxy:
     host: "hostName"
     port: 80
     no-proxy: ["localhost:8080", ".helidon.io", "192.168.1.1"]
-  tls: 
+  tls:
     trust:
       keystore:
         passphrase: "password"
@@ -360,9 +348,9 @@ WebClient.builder()
 Alternative is to set proxy directly from the request via `HttpClientRequest`.
 
 ```java
-Proxy proxy = Proxy.create(); 
+Proxy proxy = Proxy.create();
 HttpClientResponse response = client.get("/proxiedresource")
-        .proxy(proxy) 
+        .proxy(proxy)
         .request();
 ```
 
@@ -373,9 +361,7 @@ HttpClientResponse response = client.get("/proxiedresource")
 
 Proxy can also be configured in WebClient through the `application.yaml` configuration file.
 
-*WebClient Proxy configuration in `application.yaml`*
-
-```yaml
+```yaml [WebClient Proxy configuration in application.yaml]
 client:
   proxy:
     host: "hostName"
@@ -385,12 +371,10 @@ client:
 
 Then, in your application code, load the configuration from that file.
 
-*WebClient initialization using the `application.yaml` file located on the classpath*
-
-```java
-Config config = Config.create(); 
+```java [WebClient initialization using the application.yaml file located on the classpath]
+Config config = Config.create();
 WebClient.builder()
-        .config(config.get("client")) 
+        .config(config.get("client"))
         .build();
 ```
 
@@ -418,9 +402,7 @@ WebClient.builder()
 
 Another way to configure TLS in WebClient is through the `application.yaml` configuration file.
 
-*WebClient TLS configuration in `application.yaml`*
-
-```yaml
+```yaml [WebClient TLS configuration in application.yaml]
 client:
   tls:
     trust:
@@ -436,12 +418,10 @@ client:
 
 In the application code, load the settings from the configuration file.
 
-*WebClient initialization using the `application.yaml` file located on the classpath*
-
-```java
-Config config = Config.create(); 
+```java [WebClient initialization using the application.yaml file located on the classpath]
+Config config = Config.create();
 WebClient.builder()
-        .config(config.get("client")) 
+        .config(config.get("client"))
         .build();
 ```
 
@@ -466,18 +446,16 @@ In order for a service to function, its dependencies need to be added in the app
 
 - `discovery` (see [its documentation](discovery.md#web-client-discovery-integration))
 
-  *`pom.xml`*
-
-```xml
+  ```xml [pom.xml]
   <dependency>
-      <groupId>io.helidon.webclient</groupId>
-      <artifactId>helidon-webclient-discovery</artifactId>
-      <scope>runtime</scope>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient-discovery</artifactId>
+    <scope>runtime</scope>
   </dependency>
   <dependency>
-      <groupId>io.helidon.discovery.providers</groupId>
-      <artifactId>helidon-discovery-providers-eureka</artifactId> 
-      <scope>runtime</scope>
+    <groupId>io.helidon.discovery.providers</groupId>
+    <artifactId>helidon-discovery-providers-eureka</artifactId>
+    <scope>runtime</scope>
   </dependency>
   ```
 
@@ -485,45 +463,37 @@ In order for a service to function, its dependencies need to be added in the app
 
 - `metrics`
 
-  *`pom.xml`*
-
-```xml
+  ```xml [pom.xml]
   <dependency>
-      <groupId>io.helidon.webclient</groupId>
-      <artifactId>helidon-webclient-metrics</artifactId>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient-metrics</artifactId>
   </dependency>
   ```
 
 - `tracing`
 
-  *`pom.xml`*
-
-```xml
+  ```xml [pom.xml]
   <dependency>
-      <groupId>io.helidon.webclient</groupId>
-      <artifactId>helidon-webclient-tracing</artifactId>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient-tracing</artifactId>
   </dependency>
   ```
 
 - `telemetry metrics` and `tracing`
 
-  *`pom.xml`*
-
-```xml
+  ```xml [pom.xml]
   <dependencdy>
-      <groupId>io.helidon.webclient</groupId>
-      <artifactId>helidon-webclient-telemetry</artifactId>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient-telemetry</artifactId>
   </dependencdy>
   ```
 
 - `security`
 
-  *`pom.xml`*
-
-```xml
+  ```xml [pom.xml]
   <dependency>
-      <groupId>io.helidon.webclient</groupId>
-      <artifactId>helidon-webclient-security</artifactId>
+    <groupId>io.helidon.webclient</groupId>
+    <artifactId>helidon-webclient-security</artifactId>
   </dependency>
   ```
 
@@ -535,10 +505,10 @@ Services can be added in WebClient as shown in the code below.
 WebClientService clientService = WebClientMetrics.counter()
         .methods(Method.GET)
         .nameFormat("example.metric.%1$s.%2$s")
-        .build(); 
+        .build();
 
 WebClient.builder()
-        .addService(clientService) 
+        .addService(clientService)
         .build();
 ```
 
@@ -550,9 +520,7 @@ WebClient.builder()
 
 Adding service in WebClient can also be done through the `application.yaml` configuration file.
 
-*WebClient Service configuration in `application.yaml`*
-
-```yaml
+```yaml [WebClient Service configuration in application.yaml]
 webclient:
   services:
     metrics:
@@ -571,12 +539,10 @@ webclient:
 
 Then, in your application code, load the configuration from that file.
 
-*WebClient initialization using the `application.yaml` file located on the classpath*
-
-```java
-Config config = Config.create(); 
+```java [WebClient initialization using the application.yaml file located on the classpath]
+Config config = Config.create();
 WebClient.builder()
-        .config(config.get("client")) 
+        .config(config.get("client"))
         .build();
 ```
 
@@ -606,9 +572,7 @@ WebClient.builder()
 
 Protocol configuration can also be set in the `application.yaml` configuration file.
 
-*Setting up `HTTP/1.1` and `HTTP/2` protocol using `application.yaml` file.*
-
-```yaml
+```yaml [Setting up HTTP/1.1 and HTTP/2 protocol using application.yaml file.]
 webclient:
   protocol-configs:
     http_1_1:
@@ -620,12 +584,10 @@ webclient:
 
 Then, in your application code, load the configuration from that file.
 
-*WebClient initialization using the `application.yaml` file located on the classpath*
-
-```java
-Config config = Config.create(); 
+```java [WebClient initialization using the application.yaml file located on the classpath]
+Config config = Config.create();
 WebClient.builder()
-        .config(config.get("client")) 
+        .config(config.get("client"))
         .build();
 ```
 
@@ -644,9 +606,7 @@ To enable the telemetry webclient services, take the following two steps:
 
 To set up metrics and tracing, add the following single dependency to your project:
 
-*Dependency for webclient telemetry metrics and tracing*
-
-```xml
+```xml [Dependency for webclient telemetry metrics and tracing]
 <dependency>
     <groupId>io.helidon.webclient</groupId>
     <artifactId>helidon-webclient-telemetry</artifactId>
@@ -656,9 +616,7 @@ To set up metrics and tracing, add the following single dependency to your proje
 
 To transmit the metrics semantic conventions to a backend, add a dependency on an OpenTelemetry exporter and in the `telemetry` configuration set up an exporter under `signals.metrics`.
 
-*Dependency for exporting metrics semantic conventions data using OTLP*
-
-```xml
+```xml [Dependency for exporting metrics semantic conventions data using OTLP]
 <dependency>
     <groupId>io.opentelemetry</groupId>
     <artifactId>opentelemetry-exporter-otlp</artifactId>
@@ -666,9 +624,7 @@ To transmit the metrics semantic conventions to a backend, add a dependency on a
 </dependency>
 ```
 
-*Configuration for an OpenTelemetry exporter*
-
-```yaml
+```yaml [Configuration for an OpenTelemetry exporter]
 telemetry:
   service: my-app
   signals:
@@ -679,9 +635,7 @@ telemetry:
 
 To activate webclient telemetry collection using configuration, add the `telemetry` config section under `client.services` and, below it, add `metrics`, `tracing`, or both.
 
-*Enabling metrics and tracing telemetry using configuration*
-
-```yaml
+```yaml [Enabling metrics and tracing telemetry using configuration]
 client:
   services:
     telemetry:
@@ -693,9 +647,7 @@ The `metrics` and `tracing` subsections have no explicit settings.
 
 Alternatively, trigger webclient telemetry collection by modifying your client code to add one or more webclient telemetry services to the webclient builder. This example shows adding only telemetry metrics.
 
-*Enabling telemetry using code*
-
-```java
+```java [Enabling telemetry using code]
 WebClient.builder()
         .addService(WebClientTelemetryMetrics.create())
         .build();

@@ -6,7 +6,7 @@ WebServer provides an API for creating HTTP servers. It uses virtual threads and
 
 ## Maven Coordinates
 
-To enable WebServer, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
+To enable WebServer, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml
 <dependency>
@@ -34,9 +34,7 @@ WebServer.builder()
 
 You can also define the configuration in a file.
 
-*WebServer configuration file `application.yaml`*
-
-```yaml
+```yaml [WebServer configuration file application.yaml]
 server:
   port: 8080
   host: "0.0.0.0"
@@ -44,12 +42,10 @@ server:
 
 Then, in your application code, load the configuration from that file.
 
-*WebServer initialization using the `application.yaml` file located on the classpath*
-
-```java
-Config config = Config.create(); 
+```java [WebServer initialization using the application.yaml file located on the classpath]
+Config config = Config.create();
 WebServer.builder()
-        .config(config.get("server")); 
+        .config(config.get("server"));
 ```
 
 - `application.yaml` is a default configuration source loaded when YAML support is on classpath, so we can just use `Config.create()`
@@ -80,9 +76,7 @@ WebServer.builder()
 
 It is also possible to configure TLS via the config file.
 
-*WebServer TLS configuration file `application.yaml`*
-
-```yaml
+```yaml [WebServer TLS configuration file application.yaml]
 server:
   tls:
     #Truststore setup
@@ -92,14 +86,14 @@ server:
         trust-store: true
         resource:
           # load from classpath
-          resource-path: "keystore.p12" 
+          resource-path: "keystore.p12"
     # Keystore with private key and server certificate
     private-key:
       keystore:
         passphrase: "password"
         resource:
           # load from file system
-          path: "/path/to/keystore.p12" 
+          path: "/path/to/keystore.p12"
 ```
 
 - File loaded from classpath.
@@ -107,12 +101,10 @@ server:
 
 Then, in your application code, load the configuration from that file.
 
-*WebServer initialization using the `application.yaml` file located on the classpath*
-
-```java
-Config config = Config.create(); 
+```java [WebServer initialization using the application.yaml file located on the classpath]
+Config config = Config.create();
 WebServer.builder()
-        .config(config.get("server")); 
+        .config(config.get("server"));
 ```
 
 - `application.yaml` is a default configuration source loaded when YAML support is on classpath, so we can just use `Config.create()`
@@ -120,9 +112,7 @@ WebServer.builder()
 
 Or you can only create WebServerTls instance based on the config file.
 
-*WebServerTls instance based on `application.yaml` file located on the classpath*
-
-```java
+```java [WebServerTls instance based on application.yaml file located on the classpath]
 Config config = Config.create();
 WebServer.builder()
         .tls(it -> it.config(config.get("server.tls")));
@@ -130,9 +120,7 @@ WebServer.builder()
 
 This can alternatively be configured with paths to PKCS#8 PEM files rather than KeyStores:
 
-*WebServer TLS configuration file `application.yaml`*
-
-```yaml
+```yaml [WebServer TLS configuration file application.yaml]
 server:
   tls:
     #Truststore setup
@@ -158,35 +146,35 @@ server:
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
 | <span id="acb486-backlog"></span> `backlog` | `VALUE` | `Integer` | `1024` | Accept backlog |
-| <span id="a4fc52-bind-address"></span> `bind-address` | `VALUE` | `i.h.w.W.ListenerCustomMethods` |   | The address to bind to |
-| <span id="a32e67-concurrency-limit"></span> [`concurrency-limit`](../../config/io_helidon_common_concurrency_limits_Limit.md) | `VALUE` | `i.h.c.c.l.Limit` |   | Concurrency limit to use to limit concurrent execution of incoming requests |
+| <span id="a4fc52-bind-address"></span> `bind-address` | `VALUE` | `i.h.w.W.ListenerCustomMethods` |   | The address to bind to |
+| <span id="a32e67-concurrency-limit"></span> [`concurrency-limit`](../../config/io_helidon_common_concurrency_limits_Limit.md) | `VALUE` | `i.h.c.c.l.Limit` |   | Concurrency limit to use to limit concurrent execution of incoming requests |
 | <span id="a3f7e3-concurrency-limit-discover-services"></span> `concurrency-limit-discover-services` | `VALUE` | `Boolean` | `false` | Whether to enable automatic service discovery for `concurrency-limit` |
-| <span id="ac9c91-connection-options"></span> [`connection-options`](../../config/io_helidon_common_socket_SocketOptions.md) | `VALUE` | `i.h.c.s.SocketOptions` |   | Options for connections accepted by this listener |
-| <span id="a511a0-content-encoding"></span> [`content-encoding`](../../config/io_helidon_http_encoding_ContentEncodingContext.md) | `VALUE` | `i.h.h.e.ContentEncodingContext` |   | Configure the listener specific `io.helidon.http.encoding.ContentEncodingContext` |
+| <span id="ac9c91-connection-options"></span> [`connection-options`](../../config/io_helidon_common_socket_SocketOptions.md) | `VALUE` | `i.h.c.s.SocketOptions` |   | Options for connections accepted by this listener |
+| <span id="a511a0-content-encoding"></span> [`content-encoding`](../../config/io_helidon_http_encoding_ContentEncodingContext.md) | `VALUE` | `i.h.h.e.ContentEncodingContext` |   | Configure the listener specific `io.helidon.http.encoding.ContentEncodingContext` |
 | <span id="aa0fb8-enable-proxy-protocol"></span> `enable-proxy-protocol` | `VALUE` | `Boolean` | `false` | Enable proxy protocol support for this socket |
-| <span id="a92b62-error-handling"></span> [`error-handling`](../../config/io_helidon_webserver_ErrorHandling.md) | `VALUE` | `i.h.w.ErrorHandling` |   | Configuration for this listener's error handling |
-| <span id="ae9df6-features"></span> [`features`](../../config/io_helidon_webserver_spi_ServerFeature.md) | `LIST` | `i.h.w.s.ServerFeature` |   | Server features allow customization of the server, listeners, or routings |
+| <span id="a92b62-error-handling"></span> [`error-handling`](../../config/io_helidon_webserver_ErrorHandling.md) | `VALUE` | `i.h.w.ErrorHandling` |   | Configuration for this listener's error handling |
+| <span id="ae9df6-features"></span> [`features`](../../config/io_helidon_webserver_spi_ServerFeature.md) | `LIST` | `i.h.w.s.ServerFeature` |   | Server features allow customization of the server, listeners, or routings |
 | <span id="a4431f-features-discover-services"></span> `features-discover-services` | `VALUE` | `Boolean` | `true` | Whether to enable automatic service discovery for `features` |
 | <span id="a47500-host"></span> `host` | `VALUE` | `String` | `0.0.0.0` | Host of the default socket |
 | <span id="a570c4-idle-connection-period"></span> `idle-connection-period` | `VALUE` | `Duration` | `PT2M` | How often should we check for `#idleConnectionTimeout()` |
 | <span id="abfcba-idle-connection-timeout"></span> `idle-connection-timeout` | `VALUE` | `Duration` | `PT5M` | How long should we wait before closing a connection that has no traffic on it |
-| <span id="acfc0a-ignore-invalid-named-routing"></span> `ignore-invalid-named-routing` | `VALUE` | `Boolean` |   | If set to `true`, any named routing configured that does not have an associated named listener will NOT cause an exception to be thrown (default behavior is to throw an exception) |
+| <span id="acfc0a-ignore-invalid-named-routing"></span> `ignore-invalid-named-routing` | `VALUE` | `Boolean` |   | If set to `true`, any named routing configured that does not have an associated named listener will NOT cause an exception to be thrown (default behavior is to throw an exception) |
 | <span id="a71146-max-concurrent-requests"></span> `max-concurrent-requests` | `VALUE` | `Integer` | `-1` | Limits the number of requests that can be executed at the same time (the number of active virtual threads of requests) |
 | <span id="a23186-max-in-memory-entity"></span> `max-in-memory-entity` | `VALUE` | `Integer` | `131072` | If the entity is expected to be smaller that this number of bytes, it would be buffered in memory to optimize performance when writing it |
 | <span id="a6e9f1-max-payload-size"></span> `max-payload-size` | `VALUE` | `Long` | `-1` | Maximal number of bytes an entity may have |
 | <span id="ac255e-max-tcp-connections"></span> `max-tcp-connections` | `VALUE` | `Integer` | `-1` | Limits the number of connections that can be opened at a single point in time |
-| <span id="a847a9-media-context"></span> [`media-context`](../../config/io_helidon_http_media_MediaContext.md) | `VALUE` | `i.h.h.m.MediaContext` |   | Configure the listener specific `io.helidon.http.media.MediaContext` |
+| <span id="a847a9-media-context"></span> [`media-context`](../../config/io_helidon_http_media_MediaContext.md) | `VALUE` | `i.h.h.m.MediaContext` |   | Configure the listener specific `io.helidon.http.media.MediaContext` |
 | <span id="a390dc-name"></span> `name` | `VALUE` | `String` | `@default` | Name of this socket |
 | <span id="a9d956-port"></span> `port` | `VALUE` | `Integer` | `0` | Port of the default socket |
-| <span id="abdf05-protocols"></span> [`protocols`](../../config/io_helidon_webserver_spi_ProtocolConfig.md) | `LIST` | `i.h.w.s.ProtocolConfig` |   | Configuration of protocols |
+| <span id="abdf05-protocols"></span> [`protocols`](../../config/io_helidon_webserver_spi_ProtocolConfig.md) | `LIST` | `i.h.w.s.ProtocolConfig` |   | Configuration of protocols |
 | <span id="a4b6cc-protocols-discover-services"></span> `protocols-discover-services` | `VALUE` | `Boolean` | `true` | Whether to enable automatic service discovery for `protocols` |
-| <span id="aaf9ce-requested-uri-discovery"></span> [`requested-uri-discovery`](../../config/io_helidon_http_RequestedUriDiscoveryContext.md) | `VALUE` | `i.h.h.RequestedUriDiscoveryContext` |   | Requested URI discovery context |
+| <span id="aaf9ce-requested-uri-discovery"></span> [`requested-uri-discovery`](../../config/io_helidon_http_RequestedUriDiscoveryContext.md) | `VALUE` | `i.h.h.RequestedUriDiscoveryContext` |   | Requested URI discovery context |
 | <span id="aa99af-restore-response-headers"></span> `restore-response-headers` | `VALUE` | `Boolean` | `true` | Copy and restore response headers before and after passing a request to Jersey for processing |
 | <span id="a875ae-shutdown-grace-period"></span> `shutdown-grace-period` | `VALUE` | `Duration` | `PT0.5S` | Grace period in ISO 8601 duration format to allow running tasks to complete before listener's shutdown |
 | <span id="aa36d3-shutdown-hook"></span> `shutdown-hook` | `VALUE` | `Boolean` | `true` | When true the webserver registers a shutdown hook with the JVM Runtime |
 | <span id="a3378e-smart-async-writes"></span> `smart-async-writes` | `VALUE` | `Boolean` | `false` | If enabled and `#writeQueueLength()` is greater than 1, then start with async writes but possibly switch to sync writes if async queue size is always below a certain threshold |
-| <span id="a03604-sockets"></span> [`sockets`](../../config/io_helidon_webserver_ListenerConfig.md) | `MAP` | `i.h.w.ListenerConfig` |   | Socket configurations |
-| <span id="ac9efa-tls"></span> [`tls`](../../config/io_helidon_common_tls_Tls.md) | `VALUE` | `i.h.c.t.Tls` |   | Listener TLS configuration |
+| <span id="a03604-sockets"></span> [`sockets`](../../config/io_helidon_webserver_ListenerConfig.md) | `MAP` | `i.h.w.ListenerConfig` |   | Socket configurations |
+| <span id="ac9efa-tls"></span> [`tls`](../../config/io_helidon_common_tls_Tls.md) | `VALUE` | `i.h.c.t.Tls` |   | Listener TLS configuration |
 | <span id="a5f9ab-use-nio"></span> `use-nio` | `VALUE` | `Boolean` | `true` | If set to `true`, use NIO socket channel, instead of a socket |
 | <span id="a57ab6-write-buffer-size"></span> `write-buffer-size` | `VALUE` | `Integer` | `4096` | Initial buffer size in bytes of `java.io.BufferedOutputStream` created internally to write data to a socket connection |
 | <span id="adda19-write-queue-length"></span> `write-queue-length` | `VALUE` | `Integer` | `0` | Number of buffers queued for write operations |
@@ -208,13 +196,11 @@ Routing also supports *Error Routing* which binds Java `Throwable` to the handli
 
 Configure HTTP request routing using `HttpRouting.Builder`.
 
-*Using HttpRouting.Builder to specify how HTTP requests are handled*
-
-```java
+```java [Using HttpRouting.Builder to specify how HTTP requests are handled]
 WebServer.builder()
         .routing(it -> it
-                .get("/hello", (req, res) -> res.send("Hello World!"))) 
-        .build(); 
+                .get("/hello", (req, res) -> res.send("Hello World!")))
+        .build();
 ```
 
 - Handle all GETs to `/hello` path. Send the `Hello World!` string.
@@ -274,10 +260,10 @@ To have more control over selecting which requests should be handled by a specif
 ```java
 routing.route(HttpRoute.builder()
                       .path("/hello")
-                      .methods(Method.POST, Method.PUT) 
+                      .methods(Method.POST, Method.PUT)
                       .handler((req, res) -> {
                           String requestEntity = req.content().as(String.class);
-                          res.send(requestEntity); 
+                          res.send(requestEntity);
                       }));
 ```
 
@@ -288,15 +274,11 @@ routing.route(HttpRoute.builder()
 
 By implementing the `io.helidon.webserver.http.HttpService` interface you can organize your code into one or more services, each with its own path prefix and set of handlers.
 
-*Use `HttpRouting.Builder.register` to register your service*
-
-```java
+```java [Use HttpRouting.Builder.register to register your service]
 routing.register("/hello", new HelloService());
 ```
 
-*Service implementation*
-
-```java
+```java [Service implementation]
 class HelloService implements HttpService {
     @Override
     public void routing(HttpRules rules) {
@@ -313,9 +295,7 @@ In this example, the `GET` handler matches requests to `/hello/subpath`.
 
 In Helidon 4 your `HttpService` can interpose on the server lifecycle by overriding the `beforeStart` and `afterStop` methods:
 
-*Helidon 4.x server lifecycle*
-
-```java
+```java [Helidon 4.x server lifecycle]
 static class MyService implements HttpService {
     @Override
     public void beforeStart() {
@@ -376,9 +356,9 @@ The handler forwards the request to the downstream handlers by *nexting*. There 
 - call `res.next()`
 
   ``` java
-  rules.any("/hello", (req, res) -> { 
-      // filtering logic  
-      res.next(); 
+  rules.any("/hello", (req, res) -> {
+    // filtering logic
+    res.next();
   });
   ```
 
@@ -388,13 +368,13 @@ The handler forwards the request to the downstream handlers by *nexting*. There 
 - throw an exception to forward to [error handling](#error-handling)
 
   ``` java
-  rules.any("/hello", (req, res) -> { 
-      // filtering logic (e.g., validating parameters) 
-      if (userParametersOk()) {
-          res.next(); 
-      } else {
-          throw new IllegalArgumentException("Invalid parameters."); 
-      }
+  rules.any("/hello", (req, res) -> {
+    // filtering logic (e.g., validating parameters)
+    if (userParametersOk()) {
+        res.next();
+    } else {
+        throw new IllegalArgumentException("Invalid parameters.");
+    }
   });
   ```
 
@@ -411,10 +391,10 @@ To complete the request handling, you must send a response by calling the `res.s
 > one of the variants of `send` method MUST be invoked in the same thread the request is started in; as we run in Virtual Threads, you can simply wait for any asynchronous tasks that must complete before sending a response
 
 ```java
-rules.get("/hello", (req, res) -> { 
+rules.get("/hello", (req, res) -> {
     // terminating logic
     res.status(Status.ACCEPTED_202)
-            .send("Saved!"); 
+            .send("Saved!");
 });
 ```
 
@@ -425,12 +405,10 @@ rules.get("/hello", (req, res) -> {
 
 Handling routes based on the protocol version is possible by registering specific routes on routing builder.
 
-*Routing based on HTTP version*
-
-```java
-rules.get("/any-version", (req, res) -> res.send("HTTP Version " + req.prologue().protocolVersion())) 
-        .route(Http1Route.route(Method.GET, "/version-specific", (req, res) -> res.send("HTTP/1.1 route"))) 
-        .route(Http2Route.route(Method.GET, "/version-specific", (req, res) -> res.send("HTTP/2 route"))); 
+```java [Routing based on HTTP version]
+rules.get("/any-version", (req, res) -> res.send("HTTP Version " + req.prologue().protocolVersion()))
+        .route(Http1Route.route(Method.GET, "/version-specific", (req, res) -> res.send("HTTP/1.1 route")))
+        .route(Http2Route.route(Method.GET, "/version-specific", (req, res) -> res.send("HTTP/2 route")));
 ```
 
 - An HTTP route registered on `/any-version` path that prints the version of HTTP protocol
@@ -460,9 +438,7 @@ When your application invokes `request.requestedUri()` Helidon iterates through 
 
 To set up requested URI discovery on the default socket for your server, use the [`WebServerConfig.Builder`](/apidocs/io.helidon.webserver/io/helidon/webserver/WebServerConfig.Builder.html):
 
-*Requested URI set-up for the default server socket*
-
-```java
+```java [Requested URI set-up for the default server socket]
 import io.helidon.common.configurable.AllowList;
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
@@ -474,13 +450,13 @@ import static io.helidon.http.RequestedUriDiscoveryContext.RequestedUriDiscovery
 AllowList trustedProxies = AllowList.builder()
         .addAllowedPattern(Pattern.compile("lb.+\\.mycorp\\.com"))
         .addDenied("lbtest.mycorp.com")
-        .build(); 
+        .build();
 
 WebServer.builder()
         .requestedUriDiscoveryContext(it -> it
-                .addDiscoveryType(FORWARDED) 
+                .addDiscoveryType(FORWARDED)
                 .addDiscoveryType(X_FORWARDED)
-                .trustedProxies(trustedProxies)); 
+                .trustedProxies(trustedProxies));
 ```
 
 - Create the `AllowList` describing the intermediate networks nodes to trust and not trust. Presumably the `lbxxx.mycorp.com` nodes are trusted load balancers except for the test load balancer `lbtest`, and no other nodes are trusted. `AllowList` accepts prefixes, suffixes, predicates, regex patterns, and exact matches. See the [`AllowList`](/apidocs/io.helidon.common.configurable/io/helidon/common/configurable/AllowList.html) JavaDoc for complete information.
@@ -493,9 +469,7 @@ If you build your server with additional sockets, you can control requested URI 
 
 You can also use configuration to set up the requested URI discovery behavior. The following example replicates the settings assigned programmatically in the earlier code example:
 
-*Configuring requested URI behavior*
-
-```yaml
+```yaml [Configuring requested URI behavior]
 server:
   port: 0
   requested-uri-discovery:
@@ -511,9 +485,7 @@ server:
 
 Your code obtains the requested URI information from the Helidon server request object:
 
-*Retrieving Requested URI Information*
-
-```java
+```java [Retrieving Requested URI Information]
 import io.helidon.common.tls.Tls;
 import io.helidon.common.uri.UriInfo;
 
@@ -532,9 +504,9 @@ See the [`UriInfo`](/apidocs/io.helidon.common.uri/io/helidon/common/uri/UriInfo
 You may register an error handler for a specific `Throwable` in a `HttpRouting.Builder` method.
 
 ```java
-routing.error(MyException.class, (req, res, ex) -> { 
+routing.error(MyException.class, (req, res, ex) -> {
     // handle the error, set the HTTP status code
-    res.send(errorDescriptionObject); 
+    res.send(errorDescriptionObject);
 });
 ```
 
@@ -551,8 +523,8 @@ As with the standard handlers, the error handler must either
 
   ``` java
   routing.error(MyException.class, (req, res, ex) -> {
-      res.status(Status.BAD_REQUEST_400);
-      res.send("Unable to parse request. Message: " + ex.getMessage());
+    res.status(Status.BAD_REQUEST_400);
+    res.send("Unable to parse request. Message: " + ex.getMessage());
   });
   ```
 
@@ -560,8 +532,8 @@ As with the standard handlers, the error handler must either
 
   ``` java
   routing.error(MyException.class, (req, res, ex) -> {
-      // some logic
-      throw ex;
+    // some logic
+    throw ex;
   });
   ```
 
@@ -573,13 +545,11 @@ If no user-defined error handler is matched, or if the error handler of the exce
 
 - Subtypes of `HttpException` are translated to their associated HTTP error codes.
 
-  *Reply with the `406` HTTP error code by throwing an exception*
-
-```java
+  ```java [Reply with the 406 HTTP error code by throwing an exception]
   rules.get((req, res) -> {
-      throw new HttpException(
-              "Amount of money must be greater than 0.",
-              Status.NOT_ACCEPTABLE_406); 
+    throw new HttpException(
+            "Amount of money must be greater than 0.",
+            Status.NOT_ACCEPTABLE_406);
   });
   ```
 
@@ -593,9 +563,7 @@ Direct handlers can be configured independently for each port exposed by the Web
 
 The following example shows how to register a custom handler for a request that is deemed invalid before the routing phase stars. The custom handler in this example simply returns a status code of 400 and a message that references the server log.
 
-*Register a direct handler for bad requests in the Webserver*
-
-```java
+```java [Register a direct handler for bad requests in the Webserver]
 public static void main(String[] args) {
     WebServer server = WebServer.builder()
             .directHandlers(DirectHandlers.builder()
@@ -627,9 +595,7 @@ Helidon includes a *default* direct handler that offers basic support for all th
 
 The default direct handler’s settings in the Webserver can be controlled via config:
 
-*Configuring error handling on default port*
-
-```yaml
+```yaml [Configuring error handling on default port]
 server:
   error-handling:
     include-entity: true
@@ -648,27 +614,27 @@ Any other port defined in your application may include an `error-handling` secti
 
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
-| <span id="a6e5c3-cipher-suite"></span> `cipher-suite` | `LIST` | `String` |   | Enabled cipher suites for TLS communication |
+| <span id="a6e5c3-cipher-suite"></span> `cipher-suite` | `LIST` | `String` |   | Enabled cipher suites for TLS communication |
 | <span id="aa9957-client-auth"></span> [`client-auth`](../../config/io_helidon_common_tls_TlsClientAuth.md) | `VALUE` | `i.h.c.t.TlsClientAuth` | `NONE` | Configure requirement for mutual TLS |
 | <span id="ab3264-enabled"></span> `enabled` | `VALUE` | `Boolean` | `true` | Flag indicating whether Tls is enabled |
 | <span id="a734ef-endpoint-identification-algorithm"></span> `endpoint-identification-algorithm` | `VALUE` | `String` | `HTTPS` | Identification algorithm for SSL endpoints |
-| <span id="a4eeba-internal-keystore-provider"></span> `internal-keystore-provider` | `VALUE` | `String` |   | Provider of the key stores used internally to create a key and trust manager factories |
-| <span id="ab7ae6-internal-keystore-type"></span> `internal-keystore-type` | `VALUE` | `String` |   | Type of the key stores used internally to create a key and trust manager factories |
-| <span id="a93230-key-manager-factory-algorithm"></span> `key-manager-factory-algorithm` | `VALUE` | `String` |   | Algorithm of the key manager factory used when private key is defined |
-| <span id="a49b7a-manager"></span> [`manager`](../../config/io_helidon_common_tls_TlsManager.md) | `VALUE` | `i.h.c.t.TlsManager` |   | The Tls manager |
+| <span id="a4eeba-internal-keystore-provider"></span> `internal-keystore-provider` | `VALUE` | `String` |   | Provider of the key stores used internally to create a key and trust manager factories |
+| <span id="ab7ae6-internal-keystore-type"></span> `internal-keystore-type` | `VALUE` | `String` |   | Type of the key stores used internally to create a key and trust manager factories |
+| <span id="a93230-key-manager-factory-algorithm"></span> `key-manager-factory-algorithm` | `VALUE` | `String` |   | Algorithm of the key manager factory used when private key is defined |
+| <span id="a49b7a-manager"></span> [`manager`](../../config/io_helidon_common_tls_TlsManager.md) | `VALUE` | `i.h.c.t.TlsManager` |   | The Tls manager |
 | <span id="a7cad5-manager-discover-services"></span> `manager-discover-services` | `VALUE` | `Boolean` | `false` | Whether to enable automatic service discovery for `manager` |
-| <span id="aeed7c-private-key"></span> [`private-key`](../../config/io_helidon_common_pki_Keys.md) | `VALUE` | `i.h.c.p.Keys` |   | Private key to use |
+| <span id="aeed7c-private-key"></span> [`private-key`](../../config/io_helidon_common_pki_Keys.md) | `VALUE` | `i.h.c.p.Keys` |   | Private key to use |
 | <span id="a910b8-protocol"></span> `protocol` | `VALUE` | `String` | `TLS` | Configure the protocol used to obtain an instance of `javax.net.ssl.SSLContext` |
-| <span id="aef2f6-protocols"></span> `protocols` | `LIST` | `String` |   | Enabled protocols for TLS communication |
-| <span id="a0da60-provider"></span> `provider` | `VALUE` | `String` |   | Use explicit provider to obtain an instance of `javax.net.ssl.SSLContext` |
-| <span id="a7a660-revocation"></span> [`revocation`](../../config/io_helidon_common_tls_RevocationConfig.md) | `VALUE` | `i.h.c.t.RevocationConfig` |   | Certificate revocation check configuration |
-| <span id="ab9360-secure-random-algorithm"></span> `secure-random-algorithm` | `VALUE` | `String` |   | Algorithm to use when creating a new secure random |
-| <span id="a82d0c-secure-random-provider"></span> `secure-random-provider` | `VALUE` | `String` |   | Provider to use when creating a new secure random |
+| <span id="aef2f6-protocols"></span> `protocols` | `LIST` | `String` |   | Enabled protocols for TLS communication |
+| <span id="a0da60-provider"></span> `provider` | `VALUE` | `String` |   | Use explicit provider to obtain an instance of `javax.net.ssl.SSLContext` |
+| <span id="a7a660-revocation"></span> [`revocation`](../../config/io_helidon_common_tls_RevocationConfig.md) | `VALUE` | `i.h.c.t.RevocationConfig` |   | Certificate revocation check configuration |
+| <span id="ab9360-secure-random-algorithm"></span> `secure-random-algorithm` | `VALUE` | `String` |   | Algorithm to use when creating a new secure random |
+| <span id="a82d0c-secure-random-provider"></span> `secure-random-provider` | `VALUE` | `String` |   | Provider to use when creating a new secure random |
 | <span id="a59f4a-session-cache-size"></span> `session-cache-size` | `VALUE` | `Integer` | `20480` | SSL session cache size |
 | <span id="abf0bb-session-timeout"></span> `session-timeout` | `VALUE` | `Duration` | `PT24H` | SSL session timeout |
-| <span id="adbc4b-trust"></span> [`trust`](../../config/io_helidon_common_pki_Keys.md) | `LIST` | `i.h.c.p.Keys` |   | List of certificates that form the trust manager |
+| <span id="adbc4b-trust"></span> [`trust`](../../config/io_helidon_common_pki_Keys.md) | `LIST` | `i.h.c.p.Keys` |   | List of certificates that form the trust manager |
 | <span id="a0346e-trust-all"></span> `trust-all` | `VALUE` | `Boolean` | `false` | Trust any certificate provided by the other side of communication |
-| <span id="af626f-trust-manager-factory-algorithm"></span> `trust-manager-factory-algorithm` | `VALUE` | `String` |   | Trust manager factory algorithm |
+| <span id="af626f-trust-manager-factory-algorithm"></span> `trust-manager-factory-algorithm` | `VALUE` | `String` |   | Trust manager factory algorithm |
 
 <a id="server-features"></a>
 ## Server Features
@@ -724,8 +690,8 @@ Configuration of context feature.
 
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
-| <span id="aa10e9-records"></span> [`records`](../../config/io_helidon_common_context_http_ContextRecordConfig.md) | `LIST` | `i.h.c.c.h.ContextRecordConfig` |   | List of propagation records |
-| <span id="ac7113-sockets"></span> `sockets` | `LIST` | `String` |   | List of sockets to register this feature on |
+| <span id="aa10e9-records"></span> [`records`](../../config/io_helidon_common_context_http_ContextRecordConfig.md) | `LIST` | `i.h.c.c.h.ContextRecordConfig` |   | List of propagation records |
+| <span id="ac7113-sockets"></span> `sockets` | `LIST` | `String` |   | List of sockets to register this feature on |
 | <span id="a37f63-weight"></span> `weight` | `VALUE` | `Double` | `1100.0` | Weight of the context feature |
 
 See the [manifest](../../config/manifest.md) for all available types.
@@ -761,9 +727,7 @@ WebServer.builder()
 
 Access log can be configured as follows:
 
-*Access Log configuration file*
-
-```yaml
+```yaml [Access Log configuration file]
 server:
   port: 8080
   features:
@@ -788,9 +752,9 @@ Configuration of access log feature.
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
 | <span id="aaefb9-enabled"></span> `enabled` | `VALUE` | `Boolean` | `true` | Whether this feature will be enabled |
-| <span id="a8717c-format"></span> `format` | `VALUE` | `String` |   | The format for log entries (similar to the Apache `LogFormat`) |
+| <span id="a8717c-format"></span> `format` | `VALUE` | `String` |   | The format for log entries (similar to the Apache `LogFormat`) |
 | <span id="aeb9ad-logger-name"></span> `logger-name` | `VALUE` | `String` | `io.helidon.webserver.AccessLog` | Name of the logger used to obtain access log logger from `System#getLogger(String)` |
-| <span id="a631a5-sockets"></span> `sockets` | `LIST` | `String` |   | List of sockets to register this feature on |
+| <span id="a631a5-sockets"></span> `sockets` | `LIST` | `String` |   | List of sockets to register this feature on |
 | <span id="ac3d7a-weight"></span> `weight` | `VALUE` | `Double` | `1000.0` | Weight of the access log feature |
 
 See the [manifest](../../config/manifest.md) for all available types.
@@ -839,15 +803,13 @@ To enable Static Content Support add the following dependency to your project’
 
 To register static content based on a file system (`/pictures`), and classpath (`/`):
 
-*server feature using `WebServerConfig.Builder`*
-
-```java
-builder.addFeature(StaticContentFeature.builder() 
-                           .addPath(p -> p.location(Paths.get("/some/WEB/pics")) 
-                                   .context("/pictures")) 
-                           .addClasspath(cl -> cl.location("/static-content") 
-                                   .welcome("index.html") 
-                                   .context("/")) 
+```java [server feature using WebServerConfig.Builder]
+builder.addFeature(StaticContentFeature.builder()
+                           .addPath(p -> p.location(Paths.get("/some/WEB/pics"))
+                                   .context("/pictures"))
+                           .addClasspath(cl -> cl.location("/static-content")
+                                   .welcome("index.html")
+                                   .context("/"))
                            .build());
 ```
 
@@ -862,9 +824,7 @@ Static content can also be registered using the configuration of server feature.
 
 If you use `Config` with your webserver setup, you can register the same static content using configuration:
 
-*application.yaml*
-
-```yaml
+```yaml [application.yaml]
 server:
   features:
     static-content:
@@ -924,17 +884,15 @@ To enable JSON Support add the following dependency to your project’s `pom.xml
 
 ##### Usage
 
-*Handler that receives and returns JSON objects*
-
-```java
-static final JsonBuilderFactory JSON_FACTORY = Json.createBuilderFactory(Map.of()); 
+```java [Handler that receives and returns JSON objects]
+static final JsonBuilderFactory JSON_FACTORY = Json.createBuilderFactory(Map.of());
 
 rules.post("/hello", (req, res) -> {
-    JsonObject requestEntity = req.content().as(JsonObject.class); 
-    JsonObject responseEntity = JSON_FACTORY.createObjectBuilder() 
+    JsonObject requestEntity = req.content().as(JsonObject.class);
+    JsonObject responseEntity = JSON_FACTORY.createObjectBuilder()
             .add("message", "Hello " + requestEntity.getString("name"))
             .build();
-    res.send(responseEntity); 
+    res.send(responseEntity);
 });
 ```
 
@@ -946,16 +904,12 @@ rules.post("/hello", (req, res) -> {
 
 - Send `JsonObject` in response
 
-*Example of posting JSON to sayHello endpoint*
-
-```bash
+```bash [Example of posting JSON to sayHello endpoint]
 curl --noproxy '*' -X POST -H "Content-Type: application/json" \
     http://localhost:8080/sayhello -d '{"name":"Joe"}'
 ```
 
-*Response body*
-
-```json
+```json [Response body]
 {"message":"Hello Joe"}
 ```
 
@@ -988,9 +942,7 @@ It is possible to configure the Jsonb instance via programmatic or configuration
 
 ###### Example
 
-*Example JSON-B configuration*
-
-```yaml
+```yaml [Example JSON-B configuration]
 jsonb:
   boolean-properties:
     jsonb.null-values: true
@@ -1004,9 +956,7 @@ Now that automatic JSON serialization and deserialization facilities have been s
 
 Suppose you have a `Person` class that looks like this:
 
-*Hypothetical `Person` class*
-
-```java
+```java [Hypothetical Person class]
 public class Person {
 
     private String name;
@@ -1027,19 +977,15 @@ public class Person {
 
 Then you can set up a `Handler` like this:
 
-*A `Handler` that works with Java objects instead of raw JSON*
-
-```java
+```java [A Handler that works with Java objects instead of raw JSON]
 rules.post("/echo", (req, res) -> {
-    res.send(req.content().as(Person.class)); 
+    res.send(req.content().as(Person.class));
 });
 ```
 
 - This handler consumes a `Person` instance and simply echoes it back. Note that there is not working with raw JSON here.
 
-*Example of posting JSON to the `/echo` endpoint*
-
-```bash
+```bash [Example of posting JSON to the /echo endpoint]
 curl --noproxy '*' -X POST -H "Content-Type: application/json" \
     http://localhost:8080/echo -d '{"name":"Joe"}'
 {"name":"Joe"}
@@ -1072,9 +1018,7 @@ It is possible to configure the Jackson ObjectMapper instance via programmatic o
 
 ###### Example
 
-*Example Jackson configuration*
-
-```yaml
+```yaml [Example Jackson configuration]
 jackson:
   properties:
     FAIL_ON_UNKNOWN_PROPERTIES: false
@@ -1086,9 +1030,7 @@ Now that automatic JSON serialization and deserialization facilities have been s
 
 Suppose you have a `Person` class that looks like this:
 
-*Hypothetical `Person` class*
-
-```java
+```java [Hypothetical Person class]
 public class Person {
 
     private String name;
@@ -1109,26 +1051,20 @@ public class Person {
 
 Then you can set up a `Handler` like this:
 
-*A `Handler` that works with Java objects instead of raw JSON*
-
-```java
+```java [A Handler that works with Java objects instead of raw JSON]
 rules.post("/echo", (req, res) -> {
-    res.send(req.content().as(Person.class)); 
+    res.send(req.content().as(Person.class));
 });
 ```
 
 - This handler consumes a `Person` instance and simply echoes it back. Note that there is no working with raw JSON here.
 
-*Example of posting JSON to the `/echo` endpoint*
-
-```bash
+```bash [Example of posting JSON to the /echo endpoint]
 curl --noproxy '*' -X POST -H "Content-Type: application/json" \
     http://localhost:8080/echo -d '{"name":"Joe"}'
 ```
 
-*Response body*
-
-```json
+```json [Response body]
 {"name":"Joe"}
 ```
 
@@ -1159,9 +1095,7 @@ It is possible to configure the Gson instance via programmatic or configuration-
 
 ###### Example
 
-*Example Gson configuration*
-
-```yaml
+```yaml [Example Gson configuration]
 gson:
   properties:
     serialize-nulls: false
@@ -1173,9 +1107,7 @@ Now that automatic JSON serialization and deserialization facilities have been s
 
 Suppose you have a `Person` class that looks like this:
 
-*Hypothetical `Person` class*
-
-```java
+```java [Hypothetical Person class]
 public class Person {
 
     private String name;
@@ -1196,26 +1128,20 @@ public class Person {
 
 Then you can set up a `Handler` like this:
 
-*A `Handler` that works with Java objects instead of raw JSON*
-
-```java
+```java [A Handler that works with Java objects instead of raw JSON]
 rules.post("/echo", (req, res) -> {
-    res.send(req.content().as(Person.class)); 
+    res.send(req.content().as(Person.class));
 });
 ```
 
 - This handler consumes a `Person` instance and simply echoes it back. Note that there is no working with raw JSON here.
 
-*Example of posting JSON to the `/echo` endpoint*
-
-```bash
+```bash [Example of posting JSON to the /echo endpoint]
 curl --noproxy '*' -X POST -H "Content-Type: application/json" \
     http://localhost:8080/echo -d '{"name":"Joe"}'
 ```
 
-*Response body*
-
-```json
+```json [Response body]
 {"name":"Joe"}
 ```
 
@@ -1249,7 +1175,7 @@ Or use a config file using the following options:
 
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
-| <span id="ab960c-content-encodings"></span> [`content-encodings`](../../config/io_helidon_http_encoding_ContentEncoding.md) | `LIST` | `i.h.h.e.ContentEncoding` |   | List of content encodings that should be used |
+| <span id="ab960c-content-encodings"></span> [`content-encodings`](../../config/io_helidon_http_encoding_ContentEncoding.md) | `LIST` | `i.h.h.e.ContentEncoding` |   | List of content encodings that should be used |
 | <span id="ac89ac-content-encodings-discover-services"></span> `content-encodings-discover-services` | `VALUE` | `Boolean` | `true` | Whether to enable automatic service discovery for `content-encodings` |
 
 The following providers are currently available (simply add the library on the classpath):
@@ -1345,11 +1271,11 @@ Here is the code for a minimalist web application that runs on a random free por
 ```java
 public static void main(String[] args) {
     WebServer webServer = WebServer.builder()
-            .routing(it -> it.any((req, res) -> res.send("It works!"))) 
-            .build() 
-            .start(); 
+            .routing(it -> it.any((req, res) -> res.send("It works!")))
+            .build()
+            .start();
 
-    System.out.println("Server started at: http://localhost:" + webServer.port()); 
+    System.out.println("Server started at: http://localhost:" + webServer.port());
 }
 ```
 

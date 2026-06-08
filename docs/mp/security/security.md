@@ -4,7 +4,7 @@ To add security, such as protecting resource methods with authentication, to a M
 
 ## Maven Coordinates
 
-To enable Security, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../about/managing-dependencies.md)).
+To enable Security, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml
 <dependency>
@@ -17,9 +17,7 @@ To enable Security, add the following dependency to your project’s `pom.xml` (
 
 For JAX-RS resources, declare security by adding annotations to a resource class or method.
 
-*Protected resource method*
-
-```java
+```java [Protected resource method]
 @GET
 @io.helidon.security.annotations.Authenticated
 @io.helidon.security.annotations.Authorized
@@ -51,9 +49,7 @@ The configuration is usually placed under `security.web-server` (this can be cus
 
 The following shows an example we will explain in detail:
 
-*application.yaml*
-
-```yaml
+```yaml [application.yaml]
 security:
   providers:
     - abac: 
@@ -83,9 +79,7 @@ security:
 
 If you need to use a properties file, such as `microprofile-config.properties`, you can convert the file by using index based numbers for arrays, such as:
 
-*microprofile-config.properties*
-
-```properties
+```properties [microprofile-config.properties]
 security.providers.0.abac=
 security.providers.1.provider-key.optional=false
 security.web-server.defaults.authenticate=true
