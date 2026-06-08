@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,34 @@ class Registrations {
         @Override
         public void register(HttpRouting.Builder routing) {
             routing.register(service);
+        }
+    }
+
+    static final class ServiceLocatorPathRegistration implements Registration {
+        private final HttpServiceLocator locator;
+        private final String path;
+
+        ServiceLocatorPathRegistration(String path, HttpServiceLocator locator) {
+            this.path = path;
+            this.locator = locator;
+        }
+
+        @Override
+        public void register(HttpRouting.Builder routing) {
+            routing.register(path, locator);
+        }
+    }
+
+    static final class ServiceLocatorRegistration implements Registration {
+        private final HttpServiceLocator locator;
+
+        ServiceLocatorRegistration(HttpServiceLocator locator) {
+            this.locator = locator;
+        }
+
+        @Override
+        public void register(HttpRouting.Builder routing) {
+            routing.register(locator);
         }
     }
 

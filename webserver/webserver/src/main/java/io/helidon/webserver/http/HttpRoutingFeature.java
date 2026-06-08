@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,6 +50,14 @@ class HttpRoutingFeature implements HttpFeature, Weighted {
 
     void service(String path, HttpService... services) {
         this.registrations.add(Registration.create(path, services));
+    }
+
+    void serviceLocator(HttpServiceLocator locator) {
+        this.registrations.add(Registration.create(locator));
+    }
+
+    void serviceLocator(String path, HttpServiceLocator locator) {
+        this.registrations.add(Registration.create(path, locator));
     }
 
     void route(HttpRoute route) {

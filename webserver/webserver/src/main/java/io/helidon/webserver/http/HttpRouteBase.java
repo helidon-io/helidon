@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,8 @@ import java.util.List;
 
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.PathMatchers;
+import io.helidon.http.RoutedPath;
+import io.helidon.webserver.ConnectionContext;
 
 abstract class HttpRouteBase implements HttpRoute {
     PathMatchers.PrefixMatchResult acceptsPrefix(HttpPrologue prologue) {
@@ -28,6 +30,20 @@ abstract class HttpRouteBase implements HttpRoute {
 
     List<HttpRouteBase> routes() {
         throw new IllegalStateException("This is not a list route");
+    }
+
+    List<HttpRouteBase> routes(ConnectionContext ctx,
+                               RoutingRequest request,
+                               RoutedPath matchedPath,
+                               String matchingPattern) {
+        return routes();
+    }
+
+    void afterNoMatch(RoutingRequest request, RoutedPath previousPath) {
+    }
+
+    boolean requestAwareRoutes() {
+        return false;
     }
 
     boolean isList() {

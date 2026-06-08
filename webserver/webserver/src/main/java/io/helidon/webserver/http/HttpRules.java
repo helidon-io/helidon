@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,22 @@ public interface HttpRules {
     HttpRules register(HttpService... service);
 
     /**
+     * Register a service locator on the current path.
+     * <p>
+     * Unlike {@link #register(Supplier)}, the locator is invoked at request time after the current path matches.
+     * If the locator returns {@link java.util.Optional#empty()}, routing continues with the next available route.
+     *
+     * @param locator service locator to register
+     * @return updated rules
+     */
+    default HttpRules register(HttpServiceLocator locator) {
+        throw new UnsupportedOperationException("Service locator registration is not supported by this implementation");
+    }
+
+    /**
      * Register a service on the current path.
+     * <p>
+     * The supplier is invoked when the service is registered, not for each request.
      *
      * @param service service to register
      * @return updated rules
@@ -129,7 +144,24 @@ public interface HttpRules {
     HttpRules register(String pathPattern, HttpService... service);
 
     /**
+     * Register a service locator on sub-path of the current path.
+     * <p>
+     * Unlike {@link #register(String, Supplier)}, the locator is invoked at request time after the provided path pattern
+     * matches. Path parameters from the matched pattern are available from {@link ServerRequest#path()} before the locator
+     * is invoked. If the locator returns {@link java.util.Optional#empty()}, routing continues with the next available route.
+     *
+     * @param pathPattern URI path pattern
+     * @param locator     service locator to register
+     * @return updated rules
+     */
+    default HttpRules register(String pathPattern, HttpServiceLocator locator) {
+        throw new UnsupportedOperationException("Service locator registration is not supported by this implementation");
+    }
+
+    /**
      * Register a service on sub-path of the current path.
+     * <p>
+     * The supplier is invoked when the service is registered, not for each request.
      *
      * @param pathPattern URI path pattern
      * @param service     service to register

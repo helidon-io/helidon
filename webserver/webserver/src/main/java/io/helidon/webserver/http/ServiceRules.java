@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,12 +55,24 @@ class ServiceRules implements HttpRules {
     }
 
     @Override
+    public HttpRules register(HttpServiceLocator locator) {
+        routes.add(new ServiceLocatorRoute(locator, PathMatchers.any(), ALWAYS_PREDICATE));
+        return this;
+    }
+
+    @Override
     public HttpRules register(String pathPattern, HttpService... services) {
         for (HttpService service : services) {
             ServiceRules subRules = new ServiceRules(service, PathMatchers.create(pathPattern), ALWAYS_PREDICATE);
             service.routing(subRules);
             routes.add(subRules.build());
         }
+        return this;
+    }
+
+    @Override
+    public HttpRules register(String pathPattern, HttpServiceLocator locator) {
+        routes.add(new ServiceLocatorRoute(locator, PathMatchers.create(pathPattern), ALWAYS_PREDICATE));
         return this;
     }
 
