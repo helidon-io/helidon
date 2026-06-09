@@ -67,6 +67,8 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
      * Proxy connection header.
      */
     public static final Header PROXY_CONNECTION = HeaderValues.create("Proxy-Connection", "keep-alive");
+    // Internal marker used when redirect handling switches protocols and only request properties are copied.
+    private static final String CROSS_ORIGIN_REDIRECT_PROPERTY = "io.helidon.webclient.redirect.cross-origin";
     private static final Map<String, AtomicLong> COUNTERS = new ConcurrentHashMap<>();
     private static final Set<String> SUPPORTED_SCHEMES = Set.of("https", "http");
 
@@ -77,7 +79,6 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     private final Method method;
     private final ClientUri clientUri;
     private final ClientUri redirectSourceUri;
-    private final boolean crossOriginRedirect;
     private final Map<String, String> properties;
     private final Set<HeaderName> redirectSensitiveHeaders;
     private final ClientRequestHeaders headers;
@@ -87,6 +88,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
 
     private SocketAddress socketAddress;
     private String uriTemplate;
+    private boolean crossOriginRedirect;
     private boolean skipUriEncoding;
     private boolean followRedirects;
     private int maxRedirects;
@@ -150,10 +152,16 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
         this.protocolId = protocolId;
         this.method = method;
         this.clientUri = clientUri;
-        this.redirectSourceUri = redirectSourceUri == null ? null : ClientUri.create(redirectSourceUri);
-        this.crossOriginRedirect = crossOriginRedirect;
         this.sendExpectContinue = sendExpectContinue;
         this.properties = new HashMap<>(properties);
+        this.redirectSourceUri = redirectSourceUri == null ? null : ClientUri.create(redirectSourceUri);
+        // Once a redirect crosses origins, later same-origin hops must still be treated as crossing a trust boundary.
+        // The property check preserves that state across internal paths that recreate a request from copied properties.
+        this.crossOriginRedirect = crossOriginRedirect
+                || Boolean.parseBoolean(this.properties.get(CROSS_ORIGIN_REDIRECT_PROPERTY));
+        if (this.crossOriginRedirect) {
+            this.properties.put(CROSS_ORIGIN_REDIRECT_PROPERTY, Boolean.TRUE.toString());
+        }
         this.filterRedirectHeaders = clientConfig.filterRedirectHeaders();
         this.redirectSensitiveHeaders = clientConfig.redirectSensitiveHeaders();
 
@@ -279,6 +287,15 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
 
     @Override
     public T property(String propertyName, String propertyValue) {
+        // Some internal protocol-switch paths copy request properties through this method rather than a copy constructor.
+        // Keep the redirect marker synchronized so later hops continue to strip redirect-sensitive data.
+        if (CROSS_ORIGIN_REDIRECT_PROPERTY.equals(propertyName)) {
+            if (crossOriginRedirect || Boolean.parseBoolean(propertyValue)) {
+                this.crossOriginRedirect = true;
+                this.properties.put(CROSS_ORIGIN_REDIRECT_PROPERTY, "true");
+            }
+            return identity();
+        }
         this.properties.put(propertyName, propertyValue);
         return identity();
     }

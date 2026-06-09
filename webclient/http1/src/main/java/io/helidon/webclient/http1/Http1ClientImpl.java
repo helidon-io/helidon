@@ -108,6 +108,7 @@ class Http1ClientImpl implements Http1Client, HttpClientSpi {
         clientRequest.address().ifPresent(request::address);
 
         return request.readTimeout(clientRequest.readTimeout())
+                .readContinueTimeout(clientRequest.readContinueTimeout())
                 .followRedirects(clientRequest.followRedirects())
                 .maxRedirects(clientRequest.maxRedirects())
                 .keepAlive(clientRequest.keepAlive())

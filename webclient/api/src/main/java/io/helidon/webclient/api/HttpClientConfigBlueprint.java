@@ -151,6 +151,18 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
     boolean filterRedirectHeaders();
 
     /**
+     * Whether redirects that preserve request method and entity may be followed across origins.
+     * <p>
+     * When disabled, {@code 307} and {@code 308} redirects to a different origin fail instead of replaying the request
+     * entity to the redirect target.
+     *
+     * @return whether cross-origin redirects may replay request entities
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(false)
+    boolean followCrossOriginEntityRedirects();
+
+    /**
      * Request header names to strip on cross-origin redirects.
      * <p>
      * Header names are matched case-insensitively.

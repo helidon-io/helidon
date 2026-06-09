@@ -55,14 +55,14 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
                                    ClientUri redirectSourceUri,
                                    boolean crossOriginRedirect) {
         super(http2Client.clientConfig(),
-                http2Client.webClient().cookieManager(),
-                Http2Client.PROTOCOL_ID,
-                method,
-                clientUri,
-                null,
-                properties,
-                redirectSourceUri,
-                crossOriginRedirect);
+              http2Client.webClient().cookieManager(),
+              Http2Client.PROTOCOL_ID,
+              method,
+              clientUri,
+              delegate == null ? null : delegate.sendExpectContinue().orElse(null),
+              properties,
+              redirectSourceUri,
+              crossOriginRedirect);
 
         this.http2Client = http2Client;
         Http2ClientProtocolConfig protocolConfig = http2Client.protocolConfig();
@@ -91,6 +91,8 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         this.flowControlTimeout(request.flowControlTimeout);
         this.requestPrefetch(request.requestPrefetch);
         this.readTimeout(request.readTimeout());
+        this.readContinueTimeout(request.readContinueTimeout());
+        request.sendExpectContinue().ifPresent(this::sendExpectContinue);
         this.outputStreamRedirect(request.outputStreamRedirect);
     }
 
@@ -182,6 +184,10 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         super.sanitizeRedirectSensitiveHeaders(requestUri, requestHeaders);
     }
 
+    boolean canReplayEntityTo(ClientUri requestUri) {
+        return clientConfig().followCrossOriginEntityRedirects() || !crossesRedirectOriginBoundary(requestUri);
+    }
+
     Http2ClientResponseImpl invokeEntity(Object entity) {
         CompletableFuture<WebClientServiceRequest> whenSent = new CompletableFuture<>();
         CompletableFuture<WebClientServiceResponse> whenComplete = new CompletableFuture<>();
@@ -227,7 +233,9 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
                                            serviceResponse.connection(),
                                            complete,
                                            callChain::closeResponse,
-                                           http2Client.protocolConfig().maxBufferedEntitySize().toBytes());
+                                           http2Client.protocolConfig().maxBufferedEntitySize().toBytes(),
+                                           callChain.hasRequestEntity(),
+                                           callChain.requestEntity());
 
     }
 }

@@ -81,6 +81,8 @@ class Http2ClientConnectionPingTest {
     private static final String CLIENT_SEND_LOGGER_NAME = Http2LoggingFrameListener.class.getName() + ".cl-send";
     private static final Header VALID_REGULAR_HEADER = HeaderValues.create("Valid-Header-Name", "Valid-Header-Value");
     private static final Header INVALID_REGULAR_HEADER = HeaderValues.create("Valid-Header-Name", "Header\u001fValue");
+    private static final Header INFORMATIONAL_REGULAR_HEADER =
+            HeaderValues.create("Informational-Header-Name", "Informational-Header-Value");
     private static final Http2StreamConfig STREAM_CONFIG = new Http2StreamConfig() {
         @Override
         public boolean priorKnowledge() {
@@ -291,6 +293,41 @@ class Http2ClientConnectionPingTest {
     }
 
     @Test
+    void lateInformationalHeadersDoNotReplaceFinalResponseHeaders() {
+        assertLateInformationalHeadersDoNotReplaceFinalResponseHeaders(Status.CONTINUE_100);
+        assertLateInformationalHeadersDoNotReplaceFinalResponseHeaders(Status.create(103, "Early Hints"));
+    }
+
+    @Test
+    void continueReceivedBeforeWaitSatisfiesContinueWait() {
+        assertContinueReceivedBeforeWaitSatisfiesContinueWait(false);
+        assertContinueReceivedBeforeWaitSatisfiesContinueWait(true);
+    }
+
+    @Test
+    void resetAfterLateContinueDoesNotPublishContinueAsFinalHeaders() {
+        MockedConnectionTestContext test = new MockedConnectionTestContext(Duration.ofMillis(100));
+        Http2ClientStream stream = test.newStream();
+        stream.writeHeaders(requestHeaders(HeaderValues.EXPECT_100), false);
+
+        assertThat(stream.waitFor100Continue(Duration.ZERO), is(Status.CONTINUE_100));
+        pushResponseHeaders(test, responseHeadersFrame(responseStatusHeaders(Status.CONTINUE_100), false));
+        handleRstStream(test, stream.streamId());
+
+        assertThrows(IllegalStateException.class, stream::readHeaders);
+    }
+
+    @Test
+    void switchingProtocolsResponseIsRejected() {
+        assertInvalidInformationalHeaders(Status.SWITCHING_PROTOCOLS_101, false);
+    }
+
+    @Test
+    void informationalResponseWithEndStreamIsRejected() {
+        assertInvalidInformationalHeaders(Status.CONTINUE_100, true);
+    }
+
+    @Test
     void responseHeaderValidationCanBeDisabled() {
         MockedConnectionTestContext test = new MockedConnectionTestContext(Duration.ofMillis(100),
                                                                           true,
@@ -403,6 +440,52 @@ class Http2ClientConnectionPingTest {
         return pingFuture;
     }
 
+    private static void assertLateInformationalHeadersDoNotReplaceFinalResponseHeaders(Status informationalStatus) {
+        MockedConnectionTestContext test = new MockedConnectionTestContext(Duration.ofMillis(100));
+        Http2ClientStream stream = test.newStream();
+        stream.writeHeaders(requestHeaders(HeaderValues.EXPECT_100), false);
+
+        assertThat(stream.waitFor100Continue(Duration.ZERO), is(Status.CONTINUE_100));
+        pushResponseHeaders(test,
+                            responseHeadersFrame(responseStatusHeaders(informationalStatus,
+                                                                       INFORMATIONAL_REGULAR_HEADER),
+                                                 false));
+        pushResponseHeaders(test, responseHeadersFrame(responseHeaders(VALID_REGULAR_HEADER), true));
+
+        Http2Headers responseHeaders = stream.readHeaders();
+        assertThat(responseHeaders.status(), is(Status.OK_200));
+        assertThat(responseHeaders.httpHeaders().get(VALID_REGULAR_HEADER.headerName()).get(),
+                   is(VALID_REGULAR_HEADER.get()));
+        assertThat(responseHeaders.httpHeaders().contains(INFORMATIONAL_REGULAR_HEADER.headerName()), is(false));
+    }
+
+    private static void assertContinueReceivedBeforeWaitSatisfiesContinueWait(boolean followedByEarlyHints) {
+        MockedConnectionTestContext test = new MockedConnectionTestContext(Duration.ofMillis(100));
+        Http2ClientStream stream = test.newStream();
+        stream.writeHeaders(requestHeaders(HeaderValues.EXPECT_100), false);
+
+        pushResponseHeaders(test, responseHeadersFrame(responseStatusHeaders(Status.CONTINUE_100), false));
+        if (followedByEarlyHints) {
+            pushResponseHeaders(test,
+                                responseHeadersFrame(responseStatusHeaders(Status.create(103, "Early Hints")),
+                                                     false));
+        }
+
+        assertThat(stream.waitFor100Continue(Duration.ZERO), is(Status.CONTINUE_100));
+    }
+
+    private static void assertInvalidInformationalHeaders(Status informationalStatus, boolean endOfStream) {
+        MockedConnectionTestContext test = new MockedConnectionTestContext(Duration.ofMillis(100));
+        Http2ClientStream stream = test.newStream();
+        stream.writeHeaders(requestHeaders(HeaderValues.EXPECT_100), false);
+
+        assertThat(stream.waitFor100Continue(Duration.ZERO), is(Status.CONTINUE_100));
+        pushResponseHeaders(test, responseHeadersFrame(responseStatusHeaders(informationalStatus), endOfStream));
+
+        Http2Exception exception = assertThrows(Http2Exception.class, stream::readHeaders);
+        assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
+    }
+
     private static long readPingPayloadId(BufferData frame) {
         frame.rewind();
         // Captured writes contain the serialized frame header followed by the 8-byte PING payload.
@@ -423,6 +506,15 @@ class Http2ClientConnectionPingTest {
     private static Http2Headers responseHeaders(Header header) {
         return Http2Headers.create(writableHeaders(header))
                 .status(Status.OK_200);
+    }
+
+    private static Http2Headers responseStatusHeaders(Status status, Header... headers) {
+        WritableHeaders<?> writableHeaders = WritableHeaders.create();
+        for (Header header : headers) {
+            writableHeaders.add(header);
+        }
+        return Http2Headers.create(writableHeaders)
+                .status(status);
     }
 
     private static WritableHeaders<?> writableHeaders(Header header) {

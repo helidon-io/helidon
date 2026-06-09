@@ -37,6 +37,8 @@ import io.helidon.webclient.api.ClientResponseEntity;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.HttpClientConfig;
 import io.helidon.webclient.api.ReleasableResource;
+import io.helidon.webclient.api.WebClientServiceRequest;
+import io.helidon.webclient.api.WebClientServiceResponse;
 
 class Http2ClientResponseImpl implements Http2ClientResponse {
     private final HttpClientConfig httpClientConfig;
@@ -50,6 +52,8 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
     private final InputStream inputStream;
     private final MediaContext mediaContext;
     private final ClientUri lastEndpointUri;
+    private final boolean hasRequestEntity;
+    private final Object requestEntity;
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final long maxBufferedEntitySize;
     private boolean entityRequested;
@@ -65,7 +69,9 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
                             ReleasableResource stream,
                             CompletableFuture<Void> complete,
                             Runnable closeResponseRunnable,
-                            long maxBufferedEntitySize) {
+                            long maxBufferedEntitySize,
+                            boolean hasRequestEntity,
+                            Object requestEntity) {
         this.httpClientConfig = httpClientConfig;
         this.responseStatus = status;
         this.requestHeaders = requestHeaders;
@@ -78,6 +84,8 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
         this.complete = complete;
         this.closeResponseRunnable = closeResponseRunnable;
         this.maxBufferedEntitySize = maxBufferedEntitySize;
+        this.hasRequestEntity = hasRequestEntity;
+        this.requestEntity = requestEntity;
     }
 
     @Override
@@ -134,6 +142,30 @@ class Http2ClientResponseImpl implements Http2ClientResponse {
 
     Http2ClientStream stream() {
         return (Http2ClientStream) stream;
+    }
+
+    boolean hasRequestEntity() {
+        return hasRequestEntity;
+    }
+
+    Object requestEntity() {
+        return requestEntity;
+    }
+
+    WebClientServiceResponse toServiceResponse(WebClientServiceRequest serviceRequest,
+                                               CompletableFuture<WebClientServiceResponse> whenComplete) {
+        WebClientServiceResponse.Builder builder = WebClientServiceResponse.builder();
+        if (inputStream != null) {
+            builder.inputStream(inputStream);
+        }
+        return builder
+                .serviceRequest(serviceRequest)
+                .whenComplete(whenComplete)
+                .status(responseStatus)
+                .headers(responseHeaders)
+                .trailers(responseTrailers)
+                .connection(stream)
+                .build();
     }
 
     private BufferData readBytes(int estimate) {

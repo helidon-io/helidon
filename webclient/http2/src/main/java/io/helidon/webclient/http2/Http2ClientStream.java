@@ -84,6 +84,7 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
     // accessed from stream thread an connection thread
     private volatile StreamFlowControl flowControl;
     private boolean hasEntity;
+    private boolean continue100Received;
     private volatile boolean inboundEndQueued;
 
     // streamId and buffer can only be created when we are locked in the stream id sequence
@@ -404,19 +405,20 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         return BufferData.empty();
     }
 
-    Status waitFor100Continue() {
-        Duration readContinueTimeout = http2ClientConfig.readContinueTimeout();
+    Status waitFor100Continue(Duration readContinueTimeout) {
+        Duration effectiveReadContinueTimeout = readContinueTimeout == null
+                ? http2ClientConfig.readContinueTimeout()
+                : readContinueTimeout;
         inboundStateLock.lock();
         try {
             throwIfInboundFailed();
-            boolean expected100Continue = readState == ReadState.CONTINUE_100_HEADERS;
-            long remainingNanos = readContinueTimeout.toNanos();
+            long remainingNanos = effectiveReadContinueTimeout.toNanos();
             while (readState == ReadState.CONTINUE_100_HEADERS && !closed) {
                 if (remainingNanos <= 0) {
                     // Timeout, continue as if it was received.
                     readState = readState.check(ReadState.HEADERS);
                     LOGGER.log(DEBUG, "Server didn't respond within 100 Continue timeout in "
-                            + readContinueTimeout
+                            + effectiveReadContinueTimeout
                             + ", sending data.");
                     return Status.CONTINUE_100;
                 }
@@ -424,8 +426,11 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
                 throwIfInboundFailed();
             }
             throwIfInboundFailed();
-            if (expected100Continue && currentHeaders != null) {
+            if (currentHeaders != null) {
                 return currentHeaders.status();
+            }
+            if (!closed && continue100Received) {
+                return Status.CONTINUE_100;
             }
             return null;
         } catch (InterruptedException e) {
@@ -525,6 +530,10 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
      * @return the headers
      */
     public Http2Headers readHeaders() {
+        return readHeaders(timeout);
+    }
+
+    Http2Headers readHeaders(Duration timeout) {
         inboundStateLock.lock();
         try {
             throwIfInboundFailed();
@@ -537,8 +546,8 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
                 throwIfInboundFailed();
             }
             throwIfInboundFailed();
-            if (currentHeaders == null && closed) {
-                throw new IllegalStateException("Stream closed while waiting for response headers");
+            if (currentHeaders == null) {
+                throw new IllegalStateException("No final response headers received");
             }
             return currentHeaders;
         } catch (InterruptedException e) {
@@ -606,22 +615,14 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
 
     /**
      * Returns the base headers to use when decoding the next inbound header block.
-     * Final response headers after a {@code 100 Continue} must merge the previously
-     * received informational headers, while the first informational block and trailers
-     * always start from a fresh header set.
+     * Informational responses and final responses must not inherit regular headers
+     * from earlier response blocks. HPACK dynamic-table state is maintained by the
+     * connection, so a fresh semantic header set is sufficient for each block.
      *
      * @return base headers for the next inbound decode
      */
     Http2Headers inboundHeaderDecodeBasis() {
-        inboundStateLock.lock();
-        try {
-            if (readState == ReadState.HEADERS && currentHeaders != null) {
-                return currentHeaders;
-            }
-            return EMPTY_INBOUND_HEADER_DECODE_BASIS;
-        } finally {
-            inboundStateLock.unlock();
-        }
+        return EMPTY_INBOUND_HEADER_DECODE_BASIS;
     }
 
     /**
@@ -655,7 +656,15 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
             recvListener.headers(ctx, streamId, headers);
             switch (readState) {
             case CONTINUE_100_HEADERS -> continue100Locked(headers, endOfStream);
-            case HEADERS -> headersLocked(headers, endOfStream);
+            case HEADERS -> {
+                if (isInformational(headers)) {
+                    // The client may have timed out waiting for 100 Continue and sent the request body already.
+                    // Late informational headers still precede the final response.
+                    continue100Locked(headers, endOfStream);
+                } else {
+                    headersLocked(headers, endOfStream);
+                }
+            }
             case DATA, TRAILERS -> pushTrailers(headers, endOfStream);
             default -> throw new IllegalStateException("Client is in wrong read state " + readState.name());
             }
@@ -697,33 +706,42 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         updateState(nextState);
         readState = readState.check(endOfStream ? ReadState.END : ReadState.DATA);
         this.currentHeaders = headers;
+        this.continue100Received = false;
         this.hasEntity = !endOfStream;
     }
 
     /**
      * Applies informational headers received while the caller is still waiting
-     * on {@code Expect: 100-continue}. A final non-100 response can also arrive
+     * on {@code Expect: 100-continue}. A final non-informational response can also arrive
      * in this state, so this method must handle both cases.
      *
      * @param headers decoded informational or final headers
      * @param endOfStream whether the headers also closed the remote side
      */
     private void continue100Locked(Http2Headers headers, boolean endOfStream) {
-        // No stream state check as 100 continues are an exception.
-        this.currentHeaders = headers;
+        if (!isInformational(headers)) {
+            headersLocked(headers, endOfStream);
+            return;
+        }
+        if (headers.status() == Status.SWITCHING_PROTOCOLS_101) {
+            inboundFailure = new Http2Exception(Http2ErrorCode.PROTOCOL,
+                                                "HTTP/2 response must not use 101 Switching Protocols");
+            return;
+        }
         if (endOfStream) {
-            if (state == Http2StreamState.HALF_CLOSED_LOCAL) {
-                releaseReservation();
-            }
-            readState = readState.check(ReadState.END);
-        } else if (headers.status() == Status.CONTINUE_100) {
+            inboundFailure = new Http2Exception(Http2ErrorCode.PROTOCOL,
+                                                "Informational response must not end the stream");
+            return;
+        }
+
+        // No stream state check as informational responses are an exception.
+        if (headers.status() == Status.CONTINUE_100) {
+            this.continue100Received = true;
             // After 100 continue normal headers are expected.
             readState = readState.check(ReadState.HEADERS);
         } else {
-            // Some headers already came, but not 100 continue.
-            readState = readState.check(ReadState.DATA);
+            // Other informational headers do not satisfy an Expect: 100-continue wait.
         }
-        this.hasEntity = !endOfStream;
     }
 
     /**
@@ -760,6 +778,10 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
                 throw new Http2Exception(Http2ErrorCode.PROTOCOL, e.getMessage(), e);
             }
         }
+    }
+
+    private static boolean isInformational(Http2Headers headers) {
+        return headers.status().family() == Status.Family.INFORMATIONAL;
     }
 
     private void write(Http2FrameData frameData, boolean endOfStream) {
