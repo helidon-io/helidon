@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -131,6 +131,10 @@ class MediaTypesTest {
         Optional<MediaType> hocon = MediaTypes.detectExtensionType("json");
 
         assertThat(hocon, optionalValue(is(MediaTypes.APPLICATION_HOCON)));
+
+        Optional<MediaType> toml = MediaTypes.detectExtensionType("toml");
+
+        assertThat(toml, optionalValue(is(MediaTypes.APPLICATION_TOML)));
     }
 
     @Test

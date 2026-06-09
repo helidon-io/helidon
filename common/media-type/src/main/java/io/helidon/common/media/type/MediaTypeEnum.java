@@ -43,6 +43,7 @@ enum MediaTypeEnum implements MediaType {
     APPLICATION_YAML("application", "yaml"),
     TEXT_X_YAML("text", "x-yaml"),
     TEXT_YAML("text", "yaml"),
+    APPLICATION_TOML("application", "toml"),
     APPLICATION_JAVASCRIPT("application", "javascript"),
     TEXT_EVENT_STREAM("text", "event-stream"),
     APPLICATION_X_NDJSON("application", "x-ndjson"),

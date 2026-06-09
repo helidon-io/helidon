@@ -123,6 +123,10 @@ public final class MediaTypes {
      */
     public static final MediaType TEXT_YAML = MediaTypeEnum.TEXT_YAML;
     /**
+     * {@code application/toml} media type.
+     */
+    public static final MediaType APPLICATION_TOML = MediaTypeEnum.APPLICATION_TOML;
+    /**
      * {@code application/javascript} media type.
      */
     public static final MediaType APPLICATION_JAVASCRIPT = MediaTypeEnum.APPLICATION_JAVASCRIPT;
@@ -231,6 +235,10 @@ public final class MediaTypes {
      * String value of media type: {@value}.
      */
     public static final String TEXT_YAML_VALUE = "text/yaml";
+    /**
+     * String value of media type: {@value}.
+     */
+    public static final String APPLICATION_TOML_VALUE = "application/toml";
     /**
      * String value of media type: {@value}.
      */
