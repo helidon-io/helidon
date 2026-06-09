@@ -504,6 +504,7 @@ Provides information about a builder class for object construction.
 
 Using @Json.BuilderInfo:
 
+<!--@mdc ::code-collapse -->
 ```java
 class PersonBuilder {
     private String name;
@@ -538,6 +539,7 @@ class PersonWithBuilder {
     // getters
 }
 ```
+<!--@mdc :: -->
 
 Why use it: Specifies custom builder classes for object construction during deserialization, enabling more complex instantiation patterns.
 
@@ -689,6 +691,7 @@ For more control, JsonParser also supports manual token-by-token parsing:
 
 Manual token-by-token parsing with JsonParser:
 
+<!--@mdc ::code-collapse -->
 ```java
 JsonParser parser = JsonParser.create("{\"name\":\"John\",\"age\":30,\"active\":true}");
 
@@ -742,6 +745,7 @@ while (true) {
 }
 //Object is fully read now.
 ```
+<!--@mdc :: -->
 
 This approach provides fine-grained control over parsing, allowing you to handle different field types and skip unknown fields efficiently.
 

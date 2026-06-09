@@ -227,6 +227,7 @@ Create a small endpoint to activate the job:
 
 new endpoint:
 
+<!--@mdc ::code-collapse -->
 ```java
 @Path("/batch")
 @ApplicationScoped
@@ -269,6 +270,7 @@ public class BatchResource {
     }
 }
 ```
+<!--@mdc :: -->
 
 Helidon specifies to JBatch that it should run in Standalone (SE) mode. It will also register the `HelidonExecutorServiceProvider` which is actually relatively small. For our example we need something quite small, like a `FixedTheadPool` with 2 threads. This provider is used to tell our JBatch engine exactly which ExecutorService to use.
 

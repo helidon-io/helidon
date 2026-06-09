@@ -433,6 +433,7 @@ Accessing the Helidon-provided `/observe/health` endpoint reports the health of 
 
 JSON response:
 
+<!--@mdc ::code-collapse -->
 ```json
 {
     "status": "UP",
@@ -468,6 +469,7 @@ JSON response:
     ]
 }
 ```
+<!--@mdc :: -->
 
 ### Kubernetes Example
 
@@ -515,6 +517,7 @@ WebServer server = WebServer.builder()
 
 Kubernetes descriptor:
 
+<!--@mdc ::code-collapse -->
 ```yaml
 kind: Service
 apiVersion: v1
@@ -569,6 +572,7 @@ spec:
           timeoutSeconds: 10
 ---
 ```
+<!--@mdc :: -->
 
 - A service of type `NodePort` that serves the default routes on port `8080`.
 - A deployment with one replica of a pod.

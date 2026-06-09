@@ -17,6 +17,7 @@ To enable HashiCorp Vault, add the following dependency to your project’s `pom
 
 The following is a list of maven coordinates of all Vault modules available:
 
+<!--@mdc ::code-collapse -->
 ```xml [pom.xml]
 <dependencies>
   <dependency>
@@ -57,6 +58,7 @@ The following is a list of maven coordinates of all Vault modules available:
   </dependency>
 </dependencies>
 ```
+<!--@mdc :: -->
 
 ## Usage
 
@@ -205,6 +207,7 @@ void getSecret(ServerRequest req, ServerResponse res) {
 
 Key/Value version 1 secrets engine operations:
 
+<!--@mdc ::code-collapse -->
 ```java
 @Override
 public void routing(HttpRules rules) {
@@ -249,6 +252,7 @@ void getSecret(ServerRequest req, ServerResponse res) {
     }
 }
 ```
+<!--@mdc :: -->
 
 - Disable the secrets engine on the default path.
 - Enable the secrets engine on the default path.
@@ -260,6 +264,7 @@ void getSecret(ServerRequest req, ServerResponse res) {
 
 Key/Value version 2 secrets engine operations:
 
+<!--@mdc ::code-collapse -->
 ```java
 @Override
 public void routing(HttpRules rules) {
@@ -293,6 +298,7 @@ void getSecret(ServerRequest req, ServerResponse res) {
     }
 }
 ```
+<!--@mdc :: -->
 
 - Create a secret from request entity.
 - Delete the secret on a specified path.
@@ -302,6 +308,7 @@ void getSecret(ServerRequest req, ServerResponse res) {
 
 Transit secrets engine operations:
 
+<!--@mdc ::code-collapse -->
 ```java
 @Override
 public void routing(HttpRules rules) {
@@ -409,6 +416,7 @@ void verify(ServerRequest req, ServerResponse res) {
     res.send("Valid: " + verifyResponse.isValid());
 }
 ```
+<!--@mdc :: -->
 
 - Enable the secrets engine on the default path.
 - Disable the secrets engine on the default path.
@@ -425,6 +433,7 @@ void verify(ServerRequest req, ServerResponse res) {
 
 In order to use Kubernetes authentication:
 
+<!--@mdc ::code-collapse -->
 ```java
 class K8sExample {
     private static final String SECRET_PATH = "k8s/example/secret";
@@ -496,6 +505,7 @@ class K8sExample {
     }
 }
 ```
+<!--@mdc :: -->
 
 - Run the Kubernetes Authentication by enabling it.
 - Create Kubernetes secrets.

@@ -44,6 +44,7 @@ Create a new Maven POM file (called `pom.xml`) and add the following content:
 
 Initial Maven POM file:
 
+<!--@mdc ::code-collapse -->
 ```xml [pom.xml]
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
@@ -96,6 +97,7 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/x
     </build>
 </project>
 ```
+<!--@mdc :: -->
 
 The POM file contains the basic project information and configurations needed to get started and does the following:
 
@@ -422,20 +424,24 @@ Rebuild and run the application and notice the new logging format takes effect.
 
 Log output:
 
-```shell [Terminal]
-// before
+<!--@mdc ::code-group -->
+
+```log [Before]
 Aug 22, 2019 11:10:11 AM io.helidon.webserver.LoomWebServer lambda$start$8
 INFO: Channel '@default' started: [id: 0xd0afba31, L:/0:0:0:0:0:0:0:0:8080]
 Aug 22, 2019 11:10:11 AM io.helidon.microprofile.server.ServerImpl lambda$start$10
 INFO: Server started on http://localhost:8080 (and all other host addresses) in 182 milliseconds.
 http://localhost:8080/greet
+```
 
-// after
+```log [After]
 2019.08.22 11:24:42 INFO io.helidon.webserver.LoomServer Thread[main,5,main]: Version: 1.2.0
 2019.08.22 11:24:42 INFO io.helidon.webserver.LoomServer Thread[nioEventLoopGroup-2-1,10,main]: Channel '@default' started: [id: 0x8f652dfe, L:/0:0:0:0:0:0:0:0:8080]
 2019.08.22 11:24:42 INFO io.helidon.microprofile.server.ServerImpl Thread[nioEventLoopGroup-2-1,10,main]: Server started on http://localhost:8080 (and all other host addresses) in 237 milliseconds.
 http://localhost:8080/greet
 ```
+
+<!--@mdc :: -->
 
 ## Metrics
 
@@ -465,17 +471,19 @@ Call the metrics endpoint before adding this change to confirm that the metric i
 
 Checking metrics before and after disabling the metric:
 
-```shell [Terminal]
-# before
+<!--@mdc ::code-group -->
+```shell [Before]
 curl -s http://localhost:8080/metrics | grep classloader_current
 # TYPE base:classloader_current_loaded_class_count counter
 # HELP base:classloader_current_loaded_class_count Displays the number of classes that are currently loaded in the Java virtual machine.
 base:classloader_current_loaded_class_count 7936
+```
 
-# after
+```shell [After]
 curl -s http://localhost:8080/metrics | grep classloader_current
 # (no output)
 ```
+<!--@mdc :: -->
 
 Helidon also support custom metrics. To add a new metric, annotate the JAX-RS resource with one of the metric annotations as shown in the example below:
 
@@ -530,6 +538,7 @@ Helidon provides built-in support for health check endpoints. Obtain the built-i
 
 Health check:
 
+<!--@mdc ::code-collapse -->
 ```shell [Terminal]
 curl -s -X GET http://localhost:8080/health
 {
@@ -570,6 +579,7 @@ curl -s -X GET http://localhost:8080/health
   ]
 }
 ```
+<!--@mdc :: -->
 
 Endpoints for readiness and liveness checks are also provided by default. Obtain the default results using these URLs, which return the same result as the previous example.:
 
@@ -666,9 +676,7 @@ To run the application in Docker (or Kubernetes), a `Dockerfile` is needed to bu
 
 Add a new `Dockerfile` in the project root directory with the following content:
 
-Dockerfile content:
-
-```shell [Terminal]
+```dockerfile [Dockerfile]
 FROM container-registry.oracle.com/java/openjdk:21 as build 
 
 # Install maven
@@ -748,9 +756,8 @@ To deploy the application to Kubernetes, a Kubernetes YAML file that defines the
 
 Create a file called `app.yaml` in the project’s root directory with the following content:
 
-Kubernetes YAML file:
-
-```yaml
+<!--@mdc ::code-collapse -->
+```yaml [app.yaml]
 ---
 kind: Service 
 apiVersion: v1
@@ -789,6 +796,7 @@ spec:
           ports:
             - containerPort: 8080
 ```
+<!--@mdc :: -->
 
 - Define a Service to provide access to the application.
 - Define a NodePort to expose the application outside the Kubernetes cluster.

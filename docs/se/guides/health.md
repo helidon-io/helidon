@@ -143,6 +143,7 @@ This time the `curl` output shows not only the HTTP status—​as 200 instead o
 
 Health check details:
 
+<!--@mdc ::code-collapse -->
 ```json
 {
   "status": "UP", 
@@ -178,6 +179,7 @@ Health check details:
   ]
 }
 ```
+<!--@mdc :: -->
 
 - Overall application health status
 - List of individual health checks.
@@ -458,6 +460,7 @@ docker build -t helidon-quickstart-se .
 Create the Kubernetes YAML specification, named `health.yaml`, with the
 following content:
 
+<!--@mdc ::code-collapse -->
 ```yaml [health.yaml]
 kind: Service
 apiVersion: v1
@@ -520,6 +523,7 @@ spec:
             failureThreshold: 3
 ---
 ```
+<!--@mdc :: -->
 
 - A service of type `NodePort` that serves the default routes on port `8080`.
 - A deployment with one replica of a pod.

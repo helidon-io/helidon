@@ -336,6 +336,7 @@ List<Keeper> listAllOrderByAgeAscName();
 
 The formal grammar for method names is as follows:
 
+<!--@mdc ::code-collapse -->
 ```text
 method-name  :: <query> | <delete>
 
@@ -370,6 +371,7 @@ logical-operator :: "And" | "Or"
 order        :: <property> [ <direction> [ <order> ] ]
 direction    :: "Asc" | "Desc"
 ```
+<!--@mdc :: -->
 
 #### Method with Query Defined by `@Data.Query` Annotation
 

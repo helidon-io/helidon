@@ -153,6 +153,7 @@ Key concepts:
 - **Multiple models per provider**: You can configure multiple models for a single provider by adding multiple entries under `langchain4j.models`.
 - **Overrides**: Component configuration overrides provider defaults during merge.
 
+<!--@mdc ::code-collapse -->
 ```yaml
 langchain4j:
   providers:
@@ -187,6 +188,7 @@ langchain4j:
     foo-bar-mcp-server:
       uri: http://foo-bar-mcp-server:1234/foo
 ```
+<!--@mdc :: -->
 
 ### Configuration Migration Guide
 

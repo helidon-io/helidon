@@ -157,6 +157,7 @@ Navigate to the `helidon-quickstart-se` directory and open the `pom.xml` file to
 
 Copy these dependencies to pom.xml:
 
+<!--@mdc ::code-collapse -->
 ```xml [pom.xml]
 <dependencies>
   <!-- ... -->
@@ -199,6 +200,7 @@ Copy these dependencies to pom.xml:
   <!-- ... -->
 </dependencies>
 ```
+<!--@mdc :: -->
 
 - DB Client API dependency.
 - Using JDBC driver for this example.
@@ -255,6 +257,7 @@ db:
 
 Update Main#main:
 
+<!--@mdc ::code-collapse -->
 ```java
 public static void main(String[] args) {
 
@@ -287,6 +290,7 @@ public static void main(String[] args) {
     System.out.println("WEB server is up! http://localhost:" + server.port() + "/simple-greet");
 }
 ```
+<!--@mdc :: -->
 
 - Create the DbClient instance
 - Register it in the global context

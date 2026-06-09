@@ -72,6 +72,7 @@ Add the dependencies below. (You might be able to get away with fewer if you are
 
 Dependencies for the OpenTelemetry API and Autoconfiguration:
 
+<!--@mdc ::code-collapse -->
 ```xml [pom.xml]
 <!-- OpenTelemetrySdkBuilder -->
 <dependency>
@@ -111,6 +112,7 @@ Dependencies for the OpenTelemetry API and Autoconfiguration:
   <scope>runtime</scope>
 </dependency>
 ```
+<!--@mdc :: -->
 
 Note the runtime dependency for `io.opentelemetry:opentelemetry-exporter-otlp`. Make sure to add a dependency for any OpenTelemetry exporter you want your end users to be able to configure. OpenTelemetry detects a missing exporter dependency during start-up and throws an exception explaining which one to add.
 

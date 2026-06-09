@@ -38,6 +38,7 @@ WebServer.builder()
 
 In the example above, the `JsonRpcRouting` instance is created from a single JSON-RPC service `MachineService` and registered in the WebServer under the `/rpc` path. The `MachineService` class must extend `JsonRpcService` and override the `routing(JsonRpcRules)` method to add mappings for each of the JSON-RPC method names supported by the application. This is very similar to the way an `HttpService` is defined except for the multi-leveled mapping that includes paths and JSON-RPC method names as shown next.
 
+<!--@mdc ::code-collapse -->
 ```java
 class MachineService implements JsonRpcService {
 
@@ -71,6 +72,7 @@ class MachineService implements JsonRpcService {
     }
 }
 ```
+<!--@mdc :: -->
 
 This JSON-RPC service registers handlers for method names `start` and `stop` under the path `/machine`, thus JSON-RPC clients shall use the `/rpc/machine` URI to send requests —see `JsonRpcRouting` instance creation above.
 

@@ -218,6 +218,7 @@ You can implement a model reader to provide all or part of the in-memory `OpenAP
 
 The example model reader below creates an `OpenAPI` object describing two paths. It turns out that the filter described earlier will suppress one of the paths, but the model reader does not know or care.
 
+<!--@mdc ::code-collapse -->
 ```java
 /**
  * Defines two paths using the OpenAPI model reader mechanism, one that should
@@ -271,6 +272,7 @@ public class SimpleAPIModelReader implements OASModelReader {
     }
 }
 ```
+<!--@mdc :: -->
 
 Having written the filter and model reader classes, identify them by adding configuration to `META-INF/microprofile-config.properties` as the following example shows.
 

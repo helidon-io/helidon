@@ -277,6 +277,7 @@ WebClient client = WebClient.builder()
 
 ### Example of a WebClient YAML Configuration
 
+<!--@mdc ::code-collapse -->
 ```yaml
 client:
   connect-timeout-millis: 2000
@@ -327,6 +328,7 @@ client:
         resource:
           resource-path: "client.p12"
 ```
+<!--@mdc :: -->
 
 - Client functional settings
 - Cookie management

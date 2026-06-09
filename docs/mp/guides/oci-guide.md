@@ -75,6 +75,7 @@ The Helidon MP OCI Starter Project also includes Helidon’s built in liveness a
 
 *The structure of the Helidon MP OCI Project*
 
+<!--@mdc ::code-collapse -->
 ```
 ├── README.md
     ├── client
@@ -128,6 +129,7 @@ The Helidon MP OCI Starter Project also includes Helidon’s built in liveness a
         ├── README.md
         └── api.yaml
 ```
+<!--@mdc :: -->
 
 ## Running the Application Locally
 

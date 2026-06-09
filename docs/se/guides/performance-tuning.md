@@ -19,6 +19,7 @@ The following `application.yaml` snippet shows some configuration options that c
 
 `application.yaml` snippet:
 
+<!--@mdc ::code-collapse -->
 ```yaml [application.yaml]
 server:
   # These are used to prevent unbounded resource consumption of the server
@@ -60,3 +61,4 @@ server:
       recv-log: true|false
       send-log: true|false
 ```
+<!--@mdc :: -->

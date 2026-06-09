@@ -90,6 +90,7 @@ The interface `org.eclipse.microprofile.config.spi.ConfigSource` requires implem
 
 ### Example of a Custom Config Source
 
+<!--@mdc ::code-collapse -->
 ```java
 public class CustomConfigSource implements ConfigSource {
     private static final String NAME = "MyConfigSource";
@@ -122,6 +123,7 @@ public class CustomConfigSource implements ConfigSource {
     }
 }
 ```
+<!--@mdc :: -->
 
 - Returns the name of the Config Source to use for logging or analysis of configured values.
 - Returns the properties in this Config Source as a map.
@@ -197,6 +199,7 @@ The interface `io.helidon.config.mp.spi.MpMetaConfigProvider` requires implement
 
 ### Example of a Meta-Config Custom Type
 
+<!--@mdc ::code-collapse -->
 ```java
 public class CustomMpMetaConfigProvider implements MpMetaConfigProvider {
 
@@ -246,6 +249,7 @@ public class CustomMpMetaConfigProvider implements MpMetaConfigProvider {
     }
 }
 ```
+<!--@mdc :: -->
 
 - Returns the names of the types that will be supported in this meta-config.
 - Processes config source from file system if `path` is provided.

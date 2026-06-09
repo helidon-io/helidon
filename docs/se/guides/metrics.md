@@ -142,6 +142,7 @@ curl -H "Accept: application/json"  http://localhost:8080/observe/metrics
 
 JSON response:
 
+<!--@mdc ::code-collapse -->
 ```json
 {
   "base": {
@@ -181,6 +182,7 @@ JSON response:
 
 }
 ```
+<!--@mdc :: -->
 
 You can get a single metric by specifying the scope and name as query parameters in the URL.
 
@@ -692,6 +694,7 @@ docker build -t helidon-metrics-se .
 
 Create the Kubernetes YAML specification, named `metrics.yaml`, with the following content:
 
+<!--@mdc ::code-collapse -->
 ```yaml
 kind: Service
 apiVersion: v1
@@ -732,6 +735,7 @@ spec:
           ports:
             - containerPort: 8080
 ```
+<!--@mdc :: -->
 
 1.  A service of type `NodePort` that serves the default routes on port `8080`.
 2.  An annotation that will allow Prometheus to discover and scrape the application pod.

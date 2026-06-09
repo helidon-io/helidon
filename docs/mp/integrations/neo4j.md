@@ -112,6 +112,7 @@ This includes both connection information and enables Neo4j metrics propagation.
 
 Finally, we are able to inject and use the `Neo4j` driver.
 
+<!--@mdc ::code-collapse -->
 ```java
 @ApplicationScoped
 public class MovieRepository {
@@ -156,6 +157,7 @@ public class MovieRepository {
     }
 }
 ```
+<!--@mdc :: -->
 
 - `Neo4j` driver constructor injection
 - Use of `Neo4j` driver to extract all Movies

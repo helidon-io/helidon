@@ -29,6 +29,7 @@ WebServer server = WebServer.builder()
 
 By default, `GraphQlSupport` will reserve `/graphql` as the URI path to process queries. The `buildSchema` method creates the schema and defines 2 types of queries for this application:
 
+<!--@mdc ::code-collapse -->
 ```java
 static GraphQLSchema buildSchema() {
     String schema = 
@@ -63,6 +64,7 @@ static GraphQLSchema buildSchema() {
     return generator.makeExecutableSchema(typeDefinitionRegistry, runtimeWiring);  
 }
 ```
+<!--@mdc :: -->
 
 The following is a description of each of these steps:
 

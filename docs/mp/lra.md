@@ -374,6 +374,7 @@ Considering that you have LRA enabled JAX-RS resource you want to test.
 
 Example JAX-RS resource with LRA:
 
+<!--@mdc ::code-collapse -->
 ```java
 @ApplicationScoped
 @Path("/test")
@@ -407,6 +408,7 @@ public class WithdrawResource {
     }
 }
 ```
+<!--@mdc :: -->
 
 Helidon test with enabled CDI discovery can look like this.
 

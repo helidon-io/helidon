@@ -784,6 +784,7 @@ The following example, based on the Helidon SE QuickStart application, shows how
 
 Define and use a Counter:
 
+<!--@mdc ::code-collapse -->
 ```java
 public class GreetService implements HttpService {
 
@@ -823,6 +824,7 @@ public class GreetService implements HttpService {
     }
 }
 ```
+<!--@mdc :: -->
 
 - Get the global meter registry.
 - Create (or find) a counter named "accessctr" in the global registry.

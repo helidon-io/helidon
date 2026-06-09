@@ -824,6 +824,7 @@ See the [example](https://github.com/helidon-io/helidon-examples/tree/helidon-4.
 
 Configuration example
 
+<!--@mdc ::code-collapse -->
 ```yaml
 security:
   providers:
@@ -858,6 +859,7 @@ security:
                   passphrase: "changeit"
                   key.alias: "myPrivateKey"
 ```
+<!--@mdc :: -->
 
 #### Signature basics
 

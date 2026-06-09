@@ -472,6 +472,7 @@ It receives:
 
 This allows the factory to create instances dynamically based on the injection point information.
 
+<!--@mdc ::code-collapse -->
 ```java
 @Service.Qualifier
 @interface SystemProperty {
@@ -506,6 +507,7 @@ class SystemPropertyFactory implements Service.QualifiedFactory<String, SystemPr
 
 }
 ```
+<!--@mdc :: -->
 
 ### InjectionPointFactory
 

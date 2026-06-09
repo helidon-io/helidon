@@ -193,6 +193,7 @@ curl http://localhost:8080/health
 
 JSON response:
 
+<!--@mdc ::code-collapse -->
 ```json
 {
   "status": "UP",
@@ -228,6 +229,7 @@ JSON response:
   ]
 }
 ```
+<!--@mdc :: -->
 
 ### Custom Liveness Health Checks
 

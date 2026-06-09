@@ -422,6 +422,7 @@ For each constraint annotation, there MUST be a service that validates it.
 
 Example of constraint validation provider
 
+<!--@mdc ::code-collapse -->
 ```java
 @Service.Singleton
 @Service.NamedByType(CustomConstraint.class)
@@ -458,6 +459,7 @@ static class CustomConstraintValidatorProvider implements ConstraintValidatorPro
     }
 }
 ```
+<!--@mdc :: -->
 
 ### Security
 

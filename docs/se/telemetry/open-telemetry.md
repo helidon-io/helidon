@@ -662,6 +662,7 @@ The following example illustrates some of the ways you can configure OpenTelemet
 
 Example OpenTelemetry Metrics Configuration:
 
+<!--@mdc ::code-collapse -->
 ```yaml
 telemetry:
   service: "test-telemetry"
@@ -697,6 +698,7 @@ telemetry:
             type: counter
             meter-name: my-counter
 ```
+<!--@mdc :: -->
 
 - Introduces the metrics configuration.
 - Introduces the first metric exporter (with name `exp-1`).

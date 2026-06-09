@@ -973,6 +973,7 @@ The following example shows how to use a field-level `Counter` metric to track c
 
 Update the GreetingCards class with the following code:
 
+<!--@mdc ::code-collapse -->
 ```java
 @Path("/cards")
 @RequestScoped
@@ -1013,6 +1014,7 @@ public class GreetingCards {
     }
 }
 ```
+<!--@mdc :: -->
 
 - A `Counter` metric field, `cacheHits`, is automatically injected by Helidon.
 - Call `updateStats()` to update the cache hits.
@@ -1247,6 +1249,7 @@ docker build -t helidon-metrics-mp .
 Create the Kubernetes YAML specification, named `metrics.yaml`, with the
 following content:
 
+<!--@mdc ::code-collapse -->
 ```yaml [metrics.yaml]
 kind: Service
 apiVersion: v1
@@ -1287,6 +1290,7 @@ spec:
           ports:
             - containerPort: 8080
 ```
+<!--@mdc :: -->
 
 - A service of type `NodePort` that serves the default routes on port `8080`.
 - An annotation that will allow Prometheus to discover and scrape the application pod.

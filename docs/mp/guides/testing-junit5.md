@@ -127,6 +127,7 @@ Optional Extension Annotations
 
 Here’s an example showing how these approaches are used to execute the same endpoint with different configuration:
 
+<!--@mdc ::code-collapse -->
 ```java
 @HelidonTest(resetPerTest = true)
 class GreetTest {
@@ -176,6 +177,7 @@ class AddConfigBlockTest {
     }
 }
 ```
+<!--@mdc :: -->
 
 ### Use Beans for Testing
 

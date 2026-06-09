@@ -111,6 +111,7 @@ This includes both connection information and enables Neo4j metrics propagation.
 
 Finally, we are able to use the `Neo4j` driver.
 
+<!--@mdc ::code-collapse -->
 ```java
 record MovieRepository(Driver driver) { 
 
@@ -146,6 +147,7 @@ record MovieRepository(Driver driver) {
     }
 }
 ```
+<!--@mdc :: -->
 
 - Constructor with `Neo4j` driver parameter
 - Use `Neo4j` driver to extract all Movies

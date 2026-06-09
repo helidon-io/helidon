@@ -555,6 +555,7 @@ Maven dependency:
 
 Example of producing to and consuming from Oracle AQ:
 
+<!--@mdc ::code-collapse -->
 ```java
 PoolDataSource pds = PoolDataSourceFactory.getPoolDataSource(); 
 pds.setConnectionFactoryClassName("oracle.jdbc.pool.OracleDataSource");
@@ -589,6 +590,7 @@ Messaging.builder()
         .build()
         .start();
 ```
+<!--@mdc :: -->
 
 - Prepare Oracle UCP
 - Setup AQ connector and provide datasource with an identifier `test-ds`

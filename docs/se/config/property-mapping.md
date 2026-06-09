@@ -401,6 +401,7 @@ Here is an example using the `app` portion of the example configuration from the
 
 Java bean to load app properties into via setters:
 
+<!--@mdc ::code-collapse -->
 ```java
 public class AppConfig {
     private Instant timestamp;
@@ -457,6 +458,7 @@ public class AppConfig {
     }
 }
 ```
+<!--@mdc :: -->
 
 - Public no-parameter constructor.
 - Property `greeting` is not customized and will be set from the config node with the key `greeting`, if present in the config.
@@ -504,6 +506,7 @@ You can augment the target class with the public static `builder()` method:
 
 JavaBean for app properties, via a Builder:
 
+<!--@mdc ::code-collapse -->
 ```java
 public static class Builder { 
 
@@ -536,6 +539,7 @@ public static class Builder {
     }
 }
 ```
+<!--@mdc :: -->
 
 - The builder’s property `greeting` is not customized and is set from config node with `greeting` key, if one exists.
 - The builder’s property `pageSize` maps to the config key `page-size` and defaults to `10` if absent.

@@ -166,6 +166,7 @@ Here is an example profile in YAML format. Note how the `properties` sections ar
 Profile `config-profile.yaml` illustrating all built-in sources available on the
 classpath:
 
+<!--@mdc ::code-collapse -->
 ```yaml [config-profile.yaml]
 caching.enabled: false
 sources:
@@ -208,6 +209,7 @@ sources:
     properties:
       resource: "application.conf"
 ```
+<!--@mdc :: -->
 
 Note that the example shows how your profile can configure optional features such as polling strategies and retry policies for config sources.
 

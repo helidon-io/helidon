@@ -27,6 +27,7 @@ For example, the following defines a GraphQL endpoint with a number of queries a
 
 Simple ContactGraphQLApi:
 
+<!--@mdc ::code-collapse -->
 ```java
 @ApplicationScoped
 @GraphQLApi
@@ -67,6 +68,7 @@ public class customer {
     // getters and setters omitted for brevity
 }
 ```
+<!--@mdc :: -->
 
 - a query with no-arguments that will return all `Customer` s
 - a query that takes an argument to return a specific `Customer`

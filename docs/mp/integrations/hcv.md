@@ -17,6 +17,7 @@ To enable HashiCorp Vault, add the following dependency to your project’s `pom
 
 The following is a list of maven coordinates of all Vault modules available:
 
+<!--@mdc ::code-collapse -->
 ```xml [pom.xml]
 <dependencies>
   <dependency>
@@ -57,6 +58,7 @@ The following is a list of maven coordinates of all Vault modules available:
   </dependency>
 </dependencies>
 ```
+<!--@mdc :: -->
 
 ## Usage
 
@@ -149,6 +151,7 @@ class TransitResource {
 
 Cubbyhole example:
 
+<!--@mdc ::code-collapse -->
 ```java
 @Path("/cubbyhole")
 public class CubbyholeResource {
@@ -201,6 +204,7 @@ public class CubbyholeResource {
     }
 }
 ```
+<!--@mdc :: -->
 
 - Create a secret from request entity, the name of the value is `secret`.
 - Delete the secret on a specified path.
@@ -210,6 +214,7 @@ public class CubbyholeResource {
 
 Key/Value version 1 secrets engine operations:
 
+<!--@mdc ::code-collapse -->
 ```java
 @Path("/kv1")
 public class Kv1Resource {
@@ -285,6 +290,7 @@ public class Kv1Resource {
     }
 }
 ```
+<!--@mdc :: -->
 
 - Enable the secrets engine on the default path.
 - Disable the secrets engine on the default path.
@@ -296,6 +302,7 @@ public class Kv1Resource {
 
 Key/Value version 2 secrets engine operations:
 
+<!--@mdc ::code-collapse -->
 ```java
 @Path("/kv2")
 public class Kv2Resource {
@@ -351,6 +358,7 @@ public class Kv2Resource {
     }
 }
 ```
+<!--@mdc :: -->
 
 - Create a secret from request entity, the name of the value is `secret`.
 - Delete the secret on a specified path.
@@ -360,6 +368,7 @@ public class Kv2Resource {
 
 Transit secrets engine operations:
 
+<!--@mdc ::code-collapse -->
 ```java
 @Path("/transit")
 public class TransitResource {
@@ -496,6 +505,7 @@ public class TransitResource {
     }
 }
 ```
+<!--@mdc :: -->
 
 - Enable the secrets engine on the default path.
 - Disable the secrets engine on the default path.

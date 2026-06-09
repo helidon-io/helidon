@@ -768,6 +768,7 @@ kind: ConfigMap
 Create the Kubernetes YAML specification, named `k8s-config.yaml`, with the
 following contents:
 
+<!--@mdc ::code-collapse -->
 ```yaml [k8s-config.yaml]
 kind: Service
 apiVersion: v1
@@ -815,6 +816,7 @@ spec:
             # to add to the container
             name:  helidon-configmap 
 ```
+<!--@mdc :: -->
 
 - A service of type `NodePort` that serves the default routes on port `8080`.
 - A deployment with one replica of a pod.

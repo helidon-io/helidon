@@ -164,6 +164,7 @@ The following information is made available from IMDS in `io.helidon.integration
 
 `oci-config.yaml` auth config:
 
+<!--@mdc ::code-collapse -->
 ```yaml [oci-config.yaml]
 helidon.oci:
   authentication-method: "auto" # can select a specific authentication method to use, defaults to auto to choose from allowed.
@@ -201,6 +202,7 @@ helidon.oci:
   federation-endpoint: "https://auth.us-myregion-1.oraclecloud.com" # optional, federation endpoint for authentication providers.
   tenant-id: "ocid1.tenancy.oc1..mytenancyid" # optional, OCI tenant id for Instance Principal, Resource Principal or OKE Workload.
 ```
+<!--@mdc :: -->
 
 ## References
 

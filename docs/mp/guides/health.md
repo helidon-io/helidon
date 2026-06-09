@@ -85,6 +85,7 @@ curl http://localhost:8080/health
 
 JSON response:
 
+<!--@mdc ::code-collapse -->
 ```json
 {
   "status": "UP",
@@ -120,6 +121,7 @@ JSON response:
   ]
 }
 ```
+<!--@mdc :: -->
 
 ### Custom Liveness Health Checks
 
@@ -388,6 +390,7 @@ curl http://localhost:8080/health
 
 JSON response:
 
+<!--@mdc ::code-collapse -->
 ```json
 {
   "status": "UP",
@@ -447,6 +450,7 @@ JSON response:
   ]
 }
 ```
+<!--@mdc :: -->
 
 ### Custom Health Root Path and Port
 
@@ -526,6 +530,7 @@ docker build -t helidon-quickstart-mp .
 Create the Kubernetes YAML specification, named `health.yaml`, with the
 following content:
 
+<!--@mdc ::code-collapse -->
 ```yaml [health.yaml]
 kind: Service
 apiVersion: v1
@@ -588,6 +593,7 @@ spec:
             failureThreshold: 3
 ---
 ```
+<!--@mdc :: -->
 
 - A service of type `NodePort` that serves the default routes on port `8080`.
 - A deployment with one replica of a pod.

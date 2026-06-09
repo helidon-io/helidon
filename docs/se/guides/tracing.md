@@ -561,6 +561,7 @@ Navigate to <http://localhost:16687/jaeger> to validate that you can access Jaeg
 Create the Kubernetes YAML specification, named `tracing.yaml`, with the
 following contents:
 
+<!--@mdc ::code-collapse -->
 ```yaml [tracing.yaml]
 kind: Service
 apiVersion: v1
@@ -599,6 +600,7 @@ spec:
           ports:
             - containerPort: 8080
 ```
+<!--@mdc :: -->
 
 - A service of type `NodePort` that serves the default routes on port `8080`.
 - A deployment with one replica of a pod.

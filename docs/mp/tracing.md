@@ -258,6 +258,7 @@ Once you have validated that the second service is running correctly, you need t
 
 Replace the GreetResource class with the following code:
 
+<!--@mdc ::code-collapse -->
 ```java
 @Path("/greet")
 @RequestScoped
@@ -293,6 +294,7 @@ public class GreetResource {
     }
 }
 ```
+<!--@mdc :: -->
 
 - This is the `WebTarget` needed to send a request to the second service at port `8081`.
 - This is the new endpoint that will call the second service.
@@ -396,6 +398,7 @@ Navigate to <http://localhost:16687/search> to validate that you can access Jaeg
 Create the Kubernetes YAML specification, named `tracing.yaml`, with the
 following contents:
 
+<!--@mdc ::code-collapse -->
 ```yaml [tracing.yaml]
 kind: Service
 apiVersion: v1
@@ -434,6 +437,7 @@ spec:
           ports:
             - containerPort: 8080
 ```
+<!--@mdc :: -->
 
 - A service of type `NodePort` that serves the default routes on port `8080`.
 - A deployment with one replica of a pod.

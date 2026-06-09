@@ -132,6 +132,7 @@ To create this REST client metrics example follow these steps.
     - Counts the number of times a request is sent to get the default greeting message.
 3.  Add a new resource class, similar to the `GreetService` resource class, but which delegates all incoming requests using the REST client.
 
+    <!--@mdc ::code-collapse -->
     ``` java
     @Path("/delegate")
     public class DelegatingResource {
@@ -186,6 +187,7 @@ To create this REST client metrics example follow these steps.
     }
     }
     ```
+    <!--@mdc :: -->
 
     - Holds the prepared REST client for use by the delegating methods.
     - Prepares the REST client. The example shows only one of many ways of doing this step.

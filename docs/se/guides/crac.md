@@ -157,6 +157,7 @@ Build Docker image with pre-warmed snapshot.
 
 Create `Dockerfile.crac` in your project folder with following content.
 
+<!--@mdc ::code-collapse -->
 ```dockerfile
 # syntax=docker/dockerfile:1.7-labs
 ARG BASE_IMAGE=azul/zulu-openjdk:23-jdk-crac-latest
@@ -215,6 +216,7 @@ COPY --from=checkpoint /helidon/target/libs ./libs
 COPY --from=checkpoint /helidon/cr ./cr
 CMD [ "java", "-XX:CRaCEngine=warp", "-XX:CRaCRestoreFrom=/helidon/cr" ]
 ```
+<!--@mdc :: -->
 
 > [!TIP]
 > This does a full build inside the Docker container. The first time you run it, it will take a while because it is downloading all of the Maven dependencies and caching them in a Docker layer. Subsequent builds will be much faster as long as you don’t change the `pom.xml` file. If the pom is modified then the dependencies will be re-downloaded.

@@ -567,6 +567,7 @@ Use the [`@MockBean`](/apidocs/io.helidon.microprofile.testing.mocking/io/helido
 
 Mocking using @MockBean:
 
+<!--@mdc ::code-collapse -->
 ```java
 @HelidonTest
 @AddBean(MyResource.class)
@@ -607,6 +608,7 @@ class MyService {
     }
 }
 ```
+<!--@mdc :: -->
 
 - Instrument `MyService` using `Answers.CALLS_REAL_METHODS`
 - Customize the behavior
@@ -617,6 +619,7 @@ class MyService {
 
 Mocking using CDI Alternative:
 
+<!--@mdc ::code-collapse -->
 ```java
 @HelidonTest
 @Priority(1) 
@@ -666,6 +669,7 @@ class MyService {
     }
 }
 ```
+<!--@mdc :: -->
 
 - Create the mock instance in the test class
 - Create a CDI producer method annotated with `@Alternative`
