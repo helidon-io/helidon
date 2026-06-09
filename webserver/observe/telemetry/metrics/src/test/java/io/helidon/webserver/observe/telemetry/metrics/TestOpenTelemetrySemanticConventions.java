@@ -50,6 +50,7 @@ import static io.helidon.webserver.observe.telemetry.metrics.OpenTelemetryMetric
 import static io.helidon.webserver.observe.telemetry.metrics.OpenTelemetryMetricsHttpSemanticConventions.SOCKET_NAME;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
@@ -162,7 +163,8 @@ class TestOpenTelemetrySemanticConventions {
             and the timer's count is 1.
              */
 
-            List<String> jsonText = testLogHandler.messages(2);
+            List<String> jsonText = testLogHandler.messages(
+                    hasItem(containsString(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME)));
 
             var root = JsonParser.create(jsonText.getFirst()).readJsonObject();
 
@@ -196,6 +198,16 @@ class TestOpenTelemetrySemanticConventions {
             Set<String> routesSeen = new HashSet<>();
 
             for (JsonObject metricsEntry : metricsEntries) {
+
+                /*
+                OTel can insert some of its own messages, which we can ignore for this test. Skip any for which the
+                metric name is not the name of our timer.
+                 */
+                var metricEntryName = metricsEntry.stringValue("name");
+                if (metricEntryName.isEmpty()
+                        || !metricEntryName.get().equals(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME)) {
+                    continue;
+                }
 
                 var dataPoints = metricsEntry.objectValue("histogram").orElseThrow()
                         .arrayValue("dataPoints").orElseThrow()
