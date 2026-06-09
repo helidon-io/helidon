@@ -6,7 +6,7 @@ This module adds support for selected Oracle Cloud Infrastructure GenAI models.
 
 ## Maven Coordinates
 
-In addition to the [Helidon integration with LangChain4j core dependencies][helidon-integration-with-langchain4j-core-dependencies], you must add the following:
+In addition to the [Helidon integration with LangChain4j core dependencies](langchain4j.md#maven-coordinates), you must add the following:
 
 ```xml [pom.xml]
 <dependency>
@@ -17,7 +17,7 @@ In addition to the [Helidon integration with LangChain4j core dependencies][heli
 
 ## Authentication
 
-Integration uses OCI SDK authentication provider bean from the service registry. The simplest way to configure it is by adding [Helidon OCI integration][helidon-oci-integration]:
+Integration uses OCI SDK authentication provider bean from the service registry. The simplest way to configure it is by adding [Helidon OCI integration][helidon-oci-inte]:
 
 ```xml [pom.xml]
 <dependency>
@@ -58,9 +58,9 @@ helidon.oci:
   authentication-method: "config-file"
 ```
 
-All possible OCI configuration properties are documented at [OCI Configuration][oci-configuration].
+All possible OCI configuration properties are documented at [OCI Configuration][oci-configuratio].
 
-More general information about Helidon OCI authentication integration can be found in [Helidon OCI integration][helidon-oci-integration]
+More general information about Helidon OCI authentication integration can be found in [Helidon OCI integration][helidon-oci-inte]
 
 ## Components
 
@@ -535,11 +535,10 @@ Full list of configuration properties:
 ## Additional Information
 
 - [LangChain4j Integration](langchain4j.md)
-- [LangChain4j OciGenAi Documentation][langchain4j-ocigenai-documentation]
-- [Oracle Cloud Infrastructure GenAI Services][oracle-cloud-infrastructure-genai-services]
+- [LangChain4j OciGenAi Documentation][langchain4j-ocig]
+- [Oracle Cloud Infrastructure GenAI Services][oracle-cloud-inf]
 
-[helidon-integration-with-langchain4j-core-dependencies]: langchain4j.md#maven-coordinates
-[helidon-oci-integration]: https://github.com/helidon-io/helidon/tree/main/integrations/oci/oci
-[oci-configuration]: ../../../config/io_helidon_integrations_oci_OciConfig.md
-[langchain4j-ocigenai-documentation]: https://docs.langchain4j.dev/integrations/language-models/oci-genai
-[oracle-cloud-infrastructure-genai-services]: https://www.oracle.com/artificial-intelligence/generative-ai/generative-ai-service/
+[helidon-oci-inte]: https://github.com/helidon-io/helidon/tree/main/integrations/oci/oci
+[oci-configuratio]: ../../../config/io_helidon_integrations_oci_OciConfig.md
+[langchain4j-ocig]: https://docs.langchain4j.dev/integrations/language-models/oci-genai
+[oracle-cloud-inf]: https://www.oracle.com/artificial-intelligence/generative-ai/generative-ai-service/

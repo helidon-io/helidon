@@ -2,7 +2,7 @@
 
 ## Maven Coordinates
 
-No additional dependencies are required beyond the [LangChain4j integration core dependencies][langchain4j-integration-core-dependencies].
+No additional dependencies are required beyond the [LangChain4j integration core dependencies](langchain4j.md#maven-coordinates).
 
 ## Content Retriever
 
@@ -75,7 +75,7 @@ Configuration properties:
 
 Provider key: `lc4j-in-memory`.
 
-In LangChain4j [in-memory embedding store integration][in-memory-embedding-store-integration], `InMemoryEmbeddingStore` is an in-process vector store implementation suitable for local or lightweight use cases.
+In LangChain4j [in-memory embedding store integration][in-memory-embedd], `InMemoryEmbeddingStore` is an in-process vector store implementation suitable for local or lightweight use cases.
 
 In Helidon, this provider creates `InMemoryEmbeddingStore<TextSegment>` instances from `langchain4j.embedding-stores.<name>` configuration entries.
 
@@ -135,7 +135,6 @@ Configuration properties:
 
 - [LangChain4j Integration](langchain4j.md)
 
-[langchain4j-integration-core-dependencies]: langchain4j.md#maven-coordinates
 [rag]: https://docs.langchain4j.dev/tutorials/rag
 [type]: ../../../config/io_helidon_integrations_langchain4j_ContentRetrieverType.md
-[in-memory-embedding-store-integration]: https://docs.langchain4j.dev/integrations/embedding-stores/in-memory
+[in-memory-embedd]: https://docs.langchain4j.dev/integrations/embedding-stores/in-memory

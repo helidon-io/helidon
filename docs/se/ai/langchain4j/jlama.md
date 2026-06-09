@@ -2,11 +2,11 @@
 
 ## Overview
 
-This module adds support for selected [Jlama][jlama] models.
+This module adds support for selected [Jlama](https://github.com/tjake/Jlama) models.
 
 ## Maven Coordinates
 
-In addition to the [Helidon integration with LangChain4J core dependencies][helidon-integration-with-langchain4j-core-dependencies], you must add the following:
+In addition to the [Helidon integration with LangChain4J core dependencies](langchain4j.md#maven-coordinates), you must add the following:
 
 ```xml [pom.xml]
 <dependency>
@@ -149,10 +149,8 @@ Full list of configuration properties:
 ## Additional Information
 
 - [LangChain4J Integration](langchain4j.md)
-- [LangChain4J Jlama Documentation][langchain4j-jlama-documentation]
-- [Jlama Website][jlama]
+- [LangChain4J Jlama Documentation][langchain4j-jlam]
+- [Jlama Website](https://github.com/tjake/Jlama)
 
-[jlama]: https://github.com/tjake/Jlama
-[helidon-integration-with-langchain4j-core-dependencies]: langchain4j.md#maven-coordinates
 [hugging-face]: https://huggingface.co/
-[langchain4j-jlama-documentation]: https://docs.langchain4j.dev/integrations/language-models/jlama/
+[langchain4j-jlam]: https://docs.langchain4j.dev/integrations/language-models/jlama/

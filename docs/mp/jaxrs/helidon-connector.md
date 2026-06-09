@@ -6,7 +6,7 @@ Helidon uses Jersey as the Jakarta REST (JAX-RS) implementation. Jersey supports
 
 ## Maven Coordinates
 
-To enable Helidon Connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable Helidon Connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -156,14 +156,13 @@ The property `HelidonProperties.PROTOCOL_CONFIGS` accepts a list of protocol con
 
 ## Additional Information
 
-For additional information, see the [Jakarta REST Javadocs][jakarta-rest-javadocs].
+For additional information, see the [Jakarta REST Javadocs][jakarta-rest-jav].
 
 ## Reference
 
-- [Jakarta REST Client Specification][jakarta-rest-client-specification]
-- [Jersey User Guide][jersey-user-guide]
+- [Jakarta REST Client Specification][jakarta-rest-cli]
+- [Jersey User Guide][jersey-user-guid]
 
-[managing-dependencies]: ../../managing-dependencies.md
-[jakarta-rest-javadocs]: https://jakarta.ee/specifications/restful-ws/3.1/apidocs
-[jakarta-rest-client-specification]: https://jakarta.ee/specifications/restful-ws/3.1/jakarta-restful-ws-spec-3.1.html#client_api
-[jersey-user-guide]: https://eclipse-ee4j.github.io/jersey.github.io/documentation/latest31x/index.html
+[jakarta-rest-jav]: https://jakarta.ee/specifications/restful-ws/3.1/apidocs
+[jakarta-rest-cli]: https://jakarta.ee/specifications/restful-ws/3.1/jakarta-restful-ws-spec-3.1.html#client_api
+[jersey-user-guid]: https://eclipse-ee4j.github.io/jersey.github.io/documentation/latest31x/index.html

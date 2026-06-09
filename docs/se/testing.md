@@ -6,7 +6,7 @@ Helidon provides built-in test support for Helidon testing with JUnit 5.
 
 ## Maven Coordinates
 
-To enable Helidon Testing Framework, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable Helidon Testing Framework, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -47,7 +47,7 @@ Parameters for the `@SetUpRoute` annotated methods.
 
 In addition:
 
-- a static method annotated with `@SetUpServer` can be defined for tests, which has a single parameter of [`WebServerConfig.Builder`][webserverconfig-builder].
+- a static method annotated with `@SetUpServer` can be defined for tests, which has a single parameter of [`WebServerConfig.Builder`][webserverconfig].
 - a static method annotated with `@SetUpFeatures` can be defined for tests, which returns `List<? extends ServerFeature>` to configure additional features, or update discovered features, feature discovery can be disabled using the annotation `` value()` ``
 
 The following table lists the injectable types (through constructor or method injection).
@@ -311,7 +311,7 @@ The testing class should be annotated with `@RoutingTest` only if routing tests 
 
 ## Reference
 
-- [JUnit 5 User Guide](https://junit.org/junit5/docs/current/user-guide/)
+- [JUnit 5 User Guide][junit-5-user-gui]
 
-[managing-dependencies]: ../managing-dependencies.md
-[webserverconfig-builder]: /apidocs/io.helidon.webserver/io/helidon/webserver/WebServerConfig.Builder.html
+[webserverconfig]: /apidocs/io.helidon.webserver/io/helidon/webserver/WebServerConfig.Builder.html
+[junit-5-user-gui]: https://junit.org/junit5/docs/current/user-guide/

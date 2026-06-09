@@ -2,9 +2,9 @@
 
 ## Overview
 
-The [OpenAPI specification][openapi-specification] defines a standard way to express the interface exposed by a REST service.
+The [OpenAPI specification][openapi-specific] defines a standard way to express the interface exposed by a REST service.
 
-The [MicroProfile OpenAPI spec][microprofile-openapi-spec] explains how MicroProfile embraces OpenAPI, adding annotations, configuration, and a service provider interface (SPI).
+The [MicroProfile OpenAPI spec][microprofile-ope] explains how MicroProfile embraces OpenAPI, adding annotations, configuration, and a service provider interface (SPI).
 
 Helidon MP implements the MicroProfile OpenAPI specification.
 
@@ -27,7 +27,7 @@ To construct the model, Helidon gathers information about the service API from w
 
 ## Maven Coordinates
 
-To enable MicroProfile OpenAPI, either add a dependency on the [helidon-microprofile bundle][helidon-microprofile-bundle] or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable MicroProfile OpenAPI, either add a dependency on the [helidon-microprofile bundle](../introduction.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -89,7 +89,7 @@ public JsonObject getDefaultMessage() {
 
 You can also define any request parameters the endpoint expects, although this endpoint uses none.
 
-This excerpt shows only a few annotations for illustration. The [Helidon MP OpenAPI basic example][helidon-mp-openapi-basic-example] illustrates more, and the [MicroProfile OpenAPI spec][microprofile-openapi-spec] describes them all.
+This excerpt shows only a few annotations for illustration. The [Helidon MP OpenAPI basic example][helidon-mp-opena] illustrates more, and the [MicroProfile OpenAPI spec][microprofile-ope] describes them all.
 
 ##### A static OpenAPI file
 
@@ -97,19 +97,19 @@ Add a static file at `META-INF/openapi.yml`, `META-INF/openapi.yaml`, or `META-I
 
 ##### A model reader class your application provides
 
-Write a Java class that implements the OpenAPI [`org.eclipse.microprofile.openapi.OASModelReader`][org-eclipse-microprofile-openapi-oasmodelreader] interface. Your model reader code programmatically adds elements to the internal model that OpenAPI builds.
+Write a Java class that implements the OpenAPI [`org.eclipse.microprofile.openapi.OASModelReader`][org-eclipse-micr] interface. Your model reader code programmatically adds elements to the internal model that OpenAPI builds.
 
 Then set the `mp.openapi.model.reader` configuration property to the fully-qualified name of your model reader class.
 
 ##### A filter class your application provides
 
-Write a Java class that implements the OpenAPI [`org.eclipse.microprofile.openapi.OASFilter`][org-eclipse-microprofile-openapi-oasfilter] interface. Helidon invokes your filter methods for each element of the in-memory model, allowing your code to modify an element or completely remove it from the model.
+Write a Java class that implements the OpenAPI [`org.eclipse.microprofile.openapi.OASFilter`][org-eclipse-micr-2] interface. Helidon invokes your filter methods for each element of the in-memory model, allowing your code to modify an element or completely remove it from the model.
 
 Then set the `mp.openapi.filter` configuration property to the fully-qualified name of your filter class.
 
 ### Update your application configuration
 
-Beyond the two config properties that denote the model reader and filter, Helidon MP OpenAPI supports a number of other mandated settings. These are described in the [configuration section][configuration-section] of the MicroProfile OpenAPI spec.
+Beyond the two config properties that denote the model reader and filter, Helidon MP OpenAPI supports a number of other mandated settings. These are described in the [configuration section][configuration-se] of the MicroProfile OpenAPI spec.
 
 ### Accessing the REST Endpoint
 
@@ -121,9 +121,9 @@ In addition, a client can specify the HTTP header `Accept` as either `applicatio
 
 ## API
 
-The [MicroProfile OpenAPI specification][microprofile-openapi-spec] gives a listing and brief examples of the annotations you can add to your code to convey OpenAPI information.
+The [MicroProfile OpenAPI specification][microprofile-ope] gives a listing and brief examples of the annotations you can add to your code to convey OpenAPI information.
 
-The [MicroProfile OpenAPI Javadocs][microprofile-openapi-javadocs] give full details of the annotations and the other classes and interfaces you can use in your code.
+The [MicroProfile OpenAPI Javadocs][microprofile-ope-2] give full details of the annotations and the other classes and interfaces you can use in your code.
 
 ## Configuration
 
@@ -151,7 +151,7 @@ Helidon OpenAPI configuration supports the following settings:
 |----|----|----|----|
 | <span id="ab0d30-cors"></span> [`cors`][cors] | `VALUE` | `i.h.c.CrossOriginConfig` | CORS config |
 
-Further, Helidon OpenAPI supports the MicroProfile OpenAPI settings described in [the MicroProfile OpenAPI specification][the-microprofile-openapi-specification].
+Further, Helidon OpenAPI supports the MicroProfile OpenAPI settings described in [the MicroProfile OpenAPI specification][the-microprofile].
 
 ### MicroProfile OpenAPI configuration options
 
@@ -161,7 +161,7 @@ Further, Helidon OpenAPI supports the MicroProfile OpenAPI settings described in
 
 ## Examples
 
-Helidon MP includes a [complete OpenAPI example][complete-openapi-example] based on the MP quick-start sample app. The rest of this section shows, step-by-step, how one might change the original QuickStart service to adopt OpenAPI.
+Helidon MP includes a [complete OpenAPI example][complete-openapi] based on the MP quick-start sample app. The rest of this section shows, step-by-step, how one might change the original QuickStart service to adopt OpenAPI.
 
 ### Helidon MP OpenAPI Example
 
@@ -300,7 +300,7 @@ curl -X GET http://localhost:8080/openapi
 
 The output describes not only then endpoints from `GreetResource` but also one contributed by the `SimpleAPIModelReader`.
 
-Full example is available [in our official repository][complete-openapi-example]
+Full example is available [in our official repository][complete-openapi]
 
 ## Additional Information
 
@@ -310,7 +310,7 @@ A Jandex index stores information about the classes and methods in your app and 
 
 #### Indexing your project
 
-Add an invocation of the [Jandex maven plug-in][jandex-maven-plug-in] to the `<build><plugins>` section of your `pom.xml` if it is not already there:
+Add an invocation of the [Jandex maven plug-in][jandex-maven-plu] to the `<build><plugins>` section of your `pom.xml` if it is not already there:
 
 ```xml [pom.xml]
 <plugin>
@@ -357,7 +357,7 @@ The example below tailors the Jandex plug-in configuration to scan not only the 
 - Adds a `fileSet` in the form of a `dependency` that is already declared in your project.
 - Selects the type or types from the `fileSet` you want to include in the generated index.
 
-You can add more than one dependency and scan for more than a single type. See the [Helidon MP OpenAPI expanded Jandex example][helidon-mp-openapi-expanded-jandex-example] for more information and a complete project that indexes a dependency.
+You can add more than one dependency and scan for more than a single type. See the [Helidon MP OpenAPI expanded Jandex example][helidon-mp-opena-2] for more information and a complete project that indexes a dependency.
 
 > [!NOTE]
 > If your `pom.xml` *does not* create the Jandex index then the Helidon MP OpenAPI runtime automatically creates one in memory during app start-up. This slows down your app start-up and, depending on how CDI is configured, might inadvertently miss information.
@@ -368,23 +368,21 @@ You can add more than one dependency and scan for more than a single type. See t
 
 ## Reference
 
-- [MicroProfile OpenAPI GitHub Repository][microprofile-openapi-github-repository]
-- [MicroProfile OpenAPI Specification][microprofile-openapi-spec]
+- [MicroProfile OpenAPI GitHub Repository][microprofile-ope-3]
+- [MicroProfile OpenAPI Specification][microprofile-ope]
 
-[openapi-specification]: https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md
-[microprofile-openapi-spec]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.1/microprofile-openapi-spec-3.1.1.html
-[helidon-microprofile-bundle]: ../introduction.md
-[managing-dependencies]: ../../managing-dependencies.md
-[helidon-mp-openapi-basic-example]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/microprofile/openapi/basic
-[org-eclipse-microprofile-openapi-oasmodelreader]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.1/apidocs/org/eclipse/microprofile/openapi/OASModelReader.html
-[org-eclipse-microprofile-openapi-oasfilter]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.1/apidocs/org/eclipse/microprofile/openapi/OASFilter.html
-[configuration-section]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.1/microprofile-openapi-spec-3.1.1.html#configuration
-[microprofile-openapi-javadocs]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.1/apidocs
+[openapi-specific]: https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md
+[microprofile-ope]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.1/microprofile-openapi-spec-3.1.1.html
+[helidon-mp-opena]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/microprofile/openapi/basic
+[org-eclipse-micr]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.1/apidocs/org/eclipse/microprofile/openapi/OASModelReader.html
+[org-eclipse-micr-2]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.1/apidocs/org/eclipse/microprofile/openapi/OASFilter.html
+[configuration-se]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.1/microprofile-openapi-spec-3.1.1.html#configuration
+[microprofile-ope-2]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.1/apidocs
 [manager]: ../../config/io_helidon_openapi_OpenApiManager.md
 [services]: ../../config/io_helidon_openapi_OpenApiService.md
 [cors]: ../../config/io_helidon_cors_CrossOriginConfig.md
-[the-microprofile-openapi-specification]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.1/microprofile-openapi-spec-3.1.1.html#_configuration
-[complete-openapi-example]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/microprofile/openapi
-[jandex-maven-plug-in]: https://github.com/smallrye/jandex/tree/main/maven-plugin
-[helidon-mp-openapi-expanded-jandex-example]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/microprofile/openapi/expanded-jandex
-[microprofile-openapi-github-repository]: https://github.com/eclipse/microprofile-open-api
+[the-microprofile]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.1/microprofile-openapi-spec-3.1.1.html#_configuration
+[complete-openapi]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/microprofile/openapi
+[jandex-maven-plu]: https://github.com/smallrye/jandex/tree/main/maven-plugin
+[helidon-mp-opena-2]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/microprofile/openapi/expanded-jandex
+[microprofile-ope-3]: https://github.com/eclipse/microprofile-open-api

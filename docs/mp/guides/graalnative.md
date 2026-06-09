@@ -18,7 +18,7 @@ For this 10 minute tutorial, you will need the following:
 | [Maven 3.8+][maven-3-8] | Helidon requires Maven 3.8+. |
 | [Docker 18.09+][docker-18-09] | If you want to build and run Docker containers. |
 | [Kubectl 1.16.5+][kubectl-1-16-5] | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
-| [GraalVM for JDK 21][graalvm-for-jdk-21] | `native-image` support requires GraalVM for JDK 21. When running in the Graal JVM (not native-image) Helidon supports GraalVM for JDK 21 or newer. |
+| [GraalVM for JDK 21][graalvm-for-jdk] | `native-image` support requires GraalVM for JDK 21. When running in the Graal JVM (not native-image) Helidon supports GraalVM for JDK 21 or newer. |
 
 Verify Prerequisites:
 
@@ -42,7 +42,7 @@ export JAVA_HOME=/usr/lib/jvm/jdk-21
 
 ## Install GraalVM and the Native Image Command
 
-After [downloading and installing][downloading-and-installing] GraalVM, set the `GRAALVM_HOME` environment variable to point at your GraalVM installation, or use the GraalVM installation as your Java home.
+After [downloading and installing][downloading-and] GraalVM, set the `GRAALVM_HOME` environment variable to point at your GraalVM installation, or use the GraalVM installation as your Java home.
 
 ```shell [Terminal]
 # Your path might be different
@@ -93,7 +93,7 @@ The application should respond with `{"message":"Hello World!"}`
 
 Now stop the running application (by pressing Ctrl+C).
 
-For more information about the Quickstart application and other endpoints it supports see the [Helidon MP Quickstart Guide][helidon-mp-quickstart-guide].
+For more information about the Quickstart application and other endpoints it supports see the [Helidon MP Quickstart Guide](../../mp/guides/quickstart.md).
 
 ## Building a Native Image
 
@@ -152,7 +152,7 @@ Native images are ideal for applications with high horizontal scalability requir
 
 That said, native images do have some [limitations][limitations], and for long running applications where startup and footprint are less of a priority, the Java SE HotSpot VM might be more appropriate.
 
-For information about creating custom Java runtime images see [Custom Runtime Images with `jlink`][custom-runtime-images-with-jlink].
+For information about creating custom Java runtime images see [Custom Runtime Images with `jlink`](../../mp/guides/jlink-image.md).
 
 > [!NOTE]
 > When building Helidon using native-image, we check features on classpath, and warn if there is a problem or restriction of support
@@ -163,8 +163,6 @@ For information about creating custom Java runtime images see [Custom Runtime Im
 [maven-3-8]: https://maven.apache.org/download.cgi
 [docker-18-09]: https://docs.docker.com/install/
 [kubectl-1-16-5]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
-[graalvm-for-jdk-21]: https://www.graalvm.org/release-notes/JDK_21/
-[downloading-and-installing]: https://www.graalvm.org/jdk21//docs/getting-started/
-[helidon-mp-quickstart-guide]: ../../mp/guides/quickstart.md
+[graalvm-for-jdk]: https://www.graalvm.org/release-notes/JDK_21/
+[downloading-and]: https://www.graalvm.org/jdk21//docs/getting-started/
 [limitations]: https://www.graalvm.org/jdk21/reference-manual/native-image/metadata/Compatibility/
-[custom-runtime-images-with-jlink]: ../../mp/guides/jlink-image.md

@@ -6,7 +6,7 @@ The Helidon SE DB Client provides a unified API for working with databases.
 
 ## Maven Coordinates
 
-To enable DB Client, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable DB Client, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -246,7 +246,6 @@ Execution of a query statement will always return `Stream<DbRow>>`.
 
 ## Additional Information
 
-Now that you understand how to build and execute statements, try it for yourself. [DB Client Examples][db-client-examples].
+Now that you understand how to build and execute statements, try it for yourself. [DB Client Examples][db-client-exampl].
 
-[managing-dependencies]: ../managing-dependencies.md
-[db-client-examples]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/dbclient
+[db-client-exampl]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/dbclient

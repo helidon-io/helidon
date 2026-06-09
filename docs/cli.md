@@ -24,7 +24,7 @@ mvn --version
 
 > [!TIP]
 > If you are on Windows then you will need the Visual C+ Redistributable Runtime.
-> Download at [Microsoft Visual C++ Redistributable latest supported downloads][microsoft-visual-c-redistributable-latest-supported-downloads].
+> Download at [Microsoft Visual C++ Redistributable latest supported downloads][microsoft-visual].
 
 ### Install the Helidon CLI on Linux
 
@@ -104,4 +104,4 @@ Watch the following demo to see some of the functionality of the Helidon CLI.
 [java-21]: https://www.oracle.com/technetwork/java/javase/downloads
 [openjdk-21]: http://jdk.java.net
 [maven-3-8]: https://maven.apache.org/download.cgi
-[microsoft-visual-c-redistributable-latest-supported-downloads]: https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-c-redistributable-v14
+[microsoft-visual]: https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-c-redistributable-v14

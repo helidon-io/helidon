@@ -6,7 +6,7 @@ The number of available AI providers and their models in the LangChain4j project
 
 ## Maven Coordinates
 
-In addition to the [Helidon integration with LangChain4J core dependencies][helidon-integration-with-langchain4j-core-dependencies], you must add the following:
+In addition to the [Helidon integration with LangChain4J core dependencies](langchain4j.md#maven-coordinates), you must add the following:
 
 Extra dependency for LangChain4j provider you want to generate binding for, here we are using Google AI Gemini LangChain4j provider as an example:
 
@@ -114,5 +114,3 @@ Types of properties injectable by default:
 - `dev.langchain4j.model.chat.request.ChatRequestParameters` default parameters for all the models
 - `dev.langchain4j.http.client.HttpClientBuilder` Custom http client
 - `dev.langchain4j.model.chat.listener.ChatModelListener` Chat model listener for observability
-
-[helidon-integration-with-langchain4j-core-dependencies]: langchain4j.md#maven-coordinates

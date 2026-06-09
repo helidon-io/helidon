@@ -4,14 +4,14 @@
 
 You can quickly and easily deploy Helidon applications on Oracle Cloud Infrastructure (OCI) and integrate them with OCI services using the OCI Java SDK.
 
-[The Oracle Cloud Infrastructure SDK for Java][the-oracle-cloud-infrastructure-sdk-for-java] enables you to write code to manage Oracle Cloud Infrastructure resources. For new Helidon MP applications, use the OCI Java SDK directly. If you need Helidon-provided OCI authentication, region, or configuration support, use `io.helidon.integrations.oci:helidon-integrations-oci`.
+[The Oracle Cloud Infrastructure SDK for Java][the-oracle-cloud] enables you to write code to manage Oracle Cloud Infrastructure resources. For new Helidon MP applications, use the OCI Java SDK directly. If you need Helidon-provided OCI authentication, region, or configuration support, use `io.helidon.integrations.oci:helidon-integrations-oci`.
 
 > [!WARNING]
 > `io.helidon.integrations.oci.sdk:helidon-integrations-oci-sdk-cdi` is deprecated and will be removed in a future release. The remainder of this page documents its legacy behavior for existing applications that still depend on the CDI portable extension.
 
 ## Maven Coordinates
 
-To enable OCI Integration, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable OCI Integration, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 Adding the Helidon OCI authentication/configuration support dependency:
 
@@ -28,7 +28,7 @@ If you are maintaining an existing application that still depends on the depreca
 
 ## Authentication
 
-You must configure authentication between your local environment and the OCI environment. It is recommended that you configure authentication first and then verify your configuration by using the [OCI CLI][the-oracle-cloud-infrastructure-sdk-for-java] to access the service.
+You must configure authentication between your local environment and the OCI environment. It is recommended that you configure authentication first and then verify your configuration by using the [OCI CLI][the-oracle-cloud] to access the service.
 
 The Helidon OCI SDK extension authenticates with OCI by picking up OCI credentials from your environment.
 
@@ -47,8 +47,8 @@ OCI supports the following client authentication methods:
 - `auto` (default value): Cycles through all of the authentication types until one succeeds. By default, this value is set to `config_file,instance_principals,resource_principal`.
 - `config_file`: Uses the user authentication specified in `~/.oci/config`.
 - `config`: Uses the user authentication specified in the Helidon `microprofile-config.properties` file.
-- `instance_principals`: Uses the OCI Compute instance as the authentication and authorization principal. See [Calling Services from an Instance][calling-services-from-an-instance].
-- `resource_principal`: Uses OCI resources and services as the authentication and authorization principal, such as serverless functions. This option is similar to the `instance_principals` authentication type. See [About Using Resource Principal to Access Oracle Cloud Infrastructure Resources][about-using-resource-principal-to-access-oracle-cloud-infrastruc].
+- `instance_principals`: Uses the OCI Compute instance as the authentication and authorization principal. See [Calling Services from an Instance][calling-services].
+- `resource_principal`: Uses OCI resources and services as the authentication and authorization principal, such as serverless functions. This option is similar to the `instance_principals` authentication type. See [About Using Resource Principal to Access Oracle Cloud Infrastructure Resources][about-using-reso].
 
 If your environment is already set up to work with the OCI SDK or the OCI CLI, then it is likely you do not need to perform any additional configuration of the extension. When the extension is added as a dependency, it will self-configure.
 
@@ -58,7 +58,7 @@ If you are maintaining an existing application that still uses the deprecated `h
 
 ## Accessing OCI Services
 
-The Helidon OCI SDK extension supports injecting the client for any [OCI service supported by the OCI SDK for Java][oci-service-supported-by-the-oci-sdk-for-java].
+The Helidon OCI SDK extension supports injecting the client for any [OCI service supported by the OCI SDK for Java][oci-service-supp].
 
 After adding the Helidon OCI SDK Extension dependency (as described above), you must add dependencies for each of the specific OCI SDK clients that you plan to use.
 
@@ -67,7 +67,7 @@ After adding the Helidon OCI SDK Extension dependency (as described above), you 
 
 ### Object Storage
 
-The OCI Object Storage service is an internet-scale, high-performance storage platform that offers reliable and cost-efficient data durability. See [OCI Object Storage Overview][oci-object-storage-overview] in OCI documentation.
+The OCI Object Storage service is an internet-scale, high-performance storage platform that offers reliable and cost-efficient data durability. See [OCI Object Storage Overview][oci-object-stora] in OCI documentation.
 
 To enable OCI Object Storage integration, add the following dependency to your project’s `pom.xml`:
 
@@ -107,7 +107,7 @@ public class MyClass {
 
 The extension implements this injection point by creating an Object Storage client object in the [singleton scope][singleton-scope].
 
-After you have injected an ObjectStorage client, you can use it as described in [OCI SDK Object Storage Javadocs][oci-sdk-object-storage-javadocs].
+After you have injected an ObjectStorage client, you can use it as described in [OCI SDK Object Storage Javadocs][oci-sdk-object-s].
 
 ### Vault
 
@@ -153,16 +153,15 @@ VaultResource(Secrets secrets,
 ## References
 
 - Legacy [OciExtension][ociextension] Javadocs
-- [OCI SDK Usage Examples][oci-sdk-usage-examples] in the Helidon Examples GitHub repository
+- [OCI SDK Usage Examples][oci-sdk-usage-ex] in the Helidon Examples GitHub repository
 
-[the-oracle-cloud-infrastructure-sdk-for-java]: https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/javasdk.htm
-[managing-dependencies]: ../../managing-dependencies.md
-[calling-services-from-an-instance]: https://docs.oracle.com/en-us/iaas/Content/Identity/Tasks/callingservicesfrominstances.htm
-[about-using-resource-principal-to-access-oracle-cloud-infrastruc]: https://docs.oracle.com/en/cloud/paas/autonomous-database/serverless/adbsb/resource-principal.html
+[the-oracle-cloud]: https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/javasdk.htm
+[calling-services]: https://docs.oracle.com/en-us/iaas/Content/Identity/Tasks/callingservicesfrominstances.htm
+[about-using-reso]: https://docs.oracle.com/en/cloud/paas/autonomous-database/serverless/adbsb/resource-principal.html
 [ociextension]: /apidocs/io.helidon.integrations.oci.sdk.cdi/io/helidon/integrations/oci/sdk/cdi/OciExtension.html
-[oci-service-supported-by-the-oci-sdk-for-java]: https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/javasdk.htm#Services_Supported
-[oci-object-storage-overview]: https://docs.oracle.com/en-us/iaas/Content/Object/Concepts/objectstorageoverview.htm
+[oci-service-supp]: https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/javasdk.htm#Services_Supported
+[oci-object-stora]: https://docs.oracle.com/en-us/iaas/Content/Object/Concepts/objectstorageoverview.htm
 [singleton-scope]: https://jakarta.ee/specifications/dependency-injection/2.0/apidocs/jakarta/inject/Singleton.html
-[oci-sdk-object-storage-javadocs]: https://docs.oracle.com/en-us/iaas/tools/java/latest/com/oracle/bmc/objectstorage/package-summary.html
+[oci-sdk-object-s]: https://docs.oracle.com/en-us/iaas/tools/java/latest/com/oracle/bmc/objectstorage/package-summary.html
 [vault]: https://docs.oracle.com/en-us/iaas/Content/KeyManagement/home.htm
-[oci-sdk-usage-examples]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/integrations/oci
+[oci-sdk-usage-ex]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/integrations/oci

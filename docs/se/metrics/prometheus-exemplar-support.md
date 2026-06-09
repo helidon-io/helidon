@@ -19,7 +19,7 @@ Exemplar support in Helidon relies on the exemplar support provided by the under
 
 ## Maven Coordinates
 
-To enable OpenMetrics exemplar support, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable OpenMetrics exemplar support, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -121,7 +121,7 @@ But some consumers, such as trace collectors and their UIs, understand the exemp
 
 ## Examples
 
-Helidon includes an [example application][example-application], based on the QuickStart application, which illustrates exemplar support.
+Helidon includes an [example application][example-applicat], based on the QuickStart application, which illustrates exemplar support.
 
 Once you enable exemplar support you can see the exemplars in the metrics output.
 
@@ -135,10 +135,9 @@ The exemplar (the portion following the `#`) is a sample corresponding to an upd
 
 ## Additional Information
 
-Brief discussion of [exemplars in the OpenMetrics spec][exemplars-in-the-openmetrics-spec]
+Brief discussion of [exemplars in the OpenMetrics spec][exemplars-in-the]
 
 [exemplar]: https://www.merriam-webster.com/dictionary/exemplar
-[managing-dependencies]: ../../managing-dependencies.md
 [helidon-zipkin]: ../../se/tracing.md#zipkin-tracing
-[example-application]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/metrics/exemplar
-[exemplars-in-the-openmetrics-spec]: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#exemplars
+[example-applicat]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/metrics/exemplar
+[exemplars-in-the]: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#exemplars

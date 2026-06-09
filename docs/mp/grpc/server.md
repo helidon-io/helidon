@@ -2,13 +2,13 @@
 
 ## Overview
 
-The gRPC MicroProfile (MP) API is an extension to [Helidon MP][helidon-mp] that enables building gRPC services integrated with MicroProfile APIs. Using Helidon MP simplifies the process of developing gRPC services compared to traditional approaches. Services can be implemented as plain POJOs, which are then automatically discovered and deployed at runtime—just like other Helidon MP web services.
+The gRPC MicroProfile (MP) API is an extension to [Helidon MP](../../mp/introduction.md) that enables building gRPC services integrated with MicroProfile APIs. Using Helidon MP simplifies the process of developing gRPC services compared to traditional approaches. Services can be implemented as plain POJOs, which are then automatically discovered and deployed at runtime—just like other Helidon MP web services.
 
 Building gRPC services with Helidon gRPC MP is straightforward, allowing developers to focus on application logic rather than boilerplate code.
 
 ## Maven Coordinates
 
-To enable gRPC MicroProfile Server, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable gRPC MicroProfile Server, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -25,7 +25,7 @@ All Helidon gRPC MP annotations are defined in the `Grpc` interface. The followi
 
 - `@Grpc.GrpcService`: an annotation that marks a class as a gRPC service.
 - `@Grpc.GrpcMarshaller`: an annotation on a type or method that specifies a named marshaller supplier. This annotation is required when not using Protobuf serialization.
-- `@Grpc.Proto`: an annotation for an optional method returning the Protobuf descriptor. For more information see the [gRPC Reflection Service][grpc-reflection-service].
+- `@Grpc.Proto`: an annotation for an optional method returning the Protobuf descriptor. For more information see the [gRPC Reflection Service](#grpc-reflection-service).
 
 The following gRPC method types are supported:
 
@@ -140,7 +140,7 @@ public class MyExtension implements GrpcMpExtension {
 ```
 
 - The `configure` method of the extension will be called to allow the extension to add extra configuration to the server.
-- In this example, an instance of the `StringService` is registered with the routing, as described in the [gRPC Server Routing][grpc-server-routing] documentation.
+- In this example, an instance of the `StringService` is registered with the routing, as described in the [gRPC Server Routing][grpc-server-rout] documentation.
 
 The `GrpcMpExtension` instances are discovered and loaded using the service loader, so for this example above to work, a file `META-INF/services/io.helidon.microprofile.grpc.server.spi.GrpcMpExtension` would need to be created with the name of the extension shown above.
 
@@ -156,7 +156,7 @@ features:
     enabled: true
 ```
 
-For more information see [gRPC Server Configuration][grpc-server-configuration].
+For more information see [gRPC Server Configuration][grpc-server-conf].
 
 In Helidon MP, annotated services must provide access to the underlying Protobuf description to use the reflection service. Here is a modified version of `StringService` that adds an annotated method returning the descriptor:
 
@@ -182,16 +182,13 @@ A method annotated by `@Grpc.Proto` must return type `Descriptors.FileDescriptor
 
 ## Configuration
 
-At the time of writing, there is no configuration that is specific to Helidon MP. For more information about gRPC configuration in SE, see [gRPC Server Configuration][grpc-server-configuration].
+At the time of writing, there is no configuration that is specific to Helidon MP. For more information about gRPC configuration in SE, see [gRPC Server Configuration][grpc-server-conf].
 
 ## Examples
 
 Please refer to the [Helidon gRPC MP Example][grpc-mp-example].
 
-[helidon-mp]: ../../mp/introduction.md
-[managing-dependencies]: ../../managing-dependencies.md
 [grpc-mp-example]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/microprofile/grpc
-[grpc-reflection-service]: #grpc-reflection-service
 [pom-xml]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/microprofile/grpc/pom.xml
-[grpc-server-routing]: ../../se/grpc/server.md#grpc-server-routing
-[grpc-server-configuration]: ../../se/grpc/server.md#configuration
+[grpc-server-rout]: ../../se/grpc/server.md#grpc-server-routing
+[grpc-server-conf]: ../../se/grpc/server.md#configuration

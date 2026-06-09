@@ -6,7 +6,7 @@ This module adds support for selected Open AI models.
 
 ## Maven Coordinates
 
-In addition to the [Helidon integration with LangChain4j core dependencies][helidon-integration-with-langchain4j-core-dependencies], you must add the following:
+In addition to the [Helidon integration with LangChain4j core dependencies](langchain4j.md#maven-coordinates), you must add the following:
 
 ```xml [pom.xml]
 <dependency>
@@ -334,10 +334,11 @@ The framework attempts to resolve a tokenizer using the following strategy:
 ## Additional Information
 
 - [LangChain4j Integration](langchain4j.md)
-- [LangChain4j OpenAI Documentation][langchain4j-openai-documentation]
-- [OpenAI API Documentation](https://platform.openai.com/docs/introduction)
-- [OpenAI API Reference](https://platform.openai.com/docs/api-reference)
+- [LangChain4j OpenAI Documentation][langchain4j-open]
+- [OpenAI API Documentation][openai-api-docum]
+- [OpenAI API Reference][openai-api-refer]
 
-[helidon-integration-with-langchain4j-core-dependencies]: langchain4j.md#maven-coordinates
 [here]: https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-
-[langchain4j-openai-documentation]: https://docs.langchain4j.dev/integrations/language-models/open-ai
+[langchain4j-open]: https://docs.langchain4j.dev/integrations/language-models/open-ai
+[openai-api-docum]: https://platform.openai.com/docs/introduction
+[openai-api-refer]: https://platform.openai.com/docs/api-reference

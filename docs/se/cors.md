@@ -2,7 +2,7 @@
 
 ## Overview
 
-The [cross-origin resource sharing (CORS) protocol][cross-origin-resource-sharing-cors-protocol] helps developers control if and how REST resources served by their applications can be shared across origins. Helidon SE includes an implementation of CORS that you can use to add CORS behavior to the services you develop. You can define your application’s CORS behavior programmatically using the Helidon CORS API alone or together with configuration.
+The [cross-origin resource sharing (CORS) protocol](https://www.w3.org/TR/cors) helps developers control if and how REST resources served by their applications can be shared across origins. Helidon SE includes an implementation of CORS that you can use to add CORS behavior to the services you develop. You can define your application’s CORS behavior programmatically using the Helidon CORS API alone or together with configuration.
 
 ## Before You Begin
 
@@ -30,7 +30,7 @@ The following sections briefly illustrate each approach.
 
 ## Maven Coordinates
 
-To enable CORS, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable CORS, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -45,7 +45,7 @@ To enable CORS, add the following dependency to your project’s `pom.xml` (see 
 
 If you add the `io.helidon.webserver:helidon-webserver-cors` Maven artifact to your project you do not have to add any CORS-specific code to your application to implement CORS. Express the CORS behavior you want in configuration, associating path patterns with the CORS settings you want to apply to the matching paths.
 
-See the [configuration][configuration] section below for more information.
+See the [configuration](#configuration) section below for more information.
 
 ### Adding Code to Include CORS in WebServer
 
@@ -63,9 +63,9 @@ The CORS feature works as follows:
 
 ### Sample Routing Setup Using the `CrossOriginConfig` API
 
-The [Helidon SE Quickstart application][helidon-se-quickstart-application] lets you change the greeting by sending a `PUT` request to the `/greet/greeting` resource.
+The [Helidon SE Quickstart application][helidon-se-quick] lets you change the greeting by sending a `PUT` request to the `/greet/greeting` resource.
 
-This example, based on the QuickStart greeting app, uses the CORS API to influence the [routing][routing], thereby determining how that resource is shared. (If desired, you can use [configuration][configuration] instead of the low-level API.)
+This example, based on the QuickStart greeting app, uses the CORS API to influence the [routing][routing], thereby determining how that resource is shared. (If desired, you can use [configuration](#configuration) instead of the low-level API.)
 
 The following code shows one way to prepare your application’s routing to support CORS.
 
@@ -137,7 +137,7 @@ CORS configuration is done through [`CorsFeature`][corsfeature], a `WebServer` f
 
 ## Examples
 
-For a complete example, see [Helidon SE CORS Example][helidon-se-cors-example].
+For a complete example, see [Helidon SE CORS Example][helidon-se-cors].
 
 ## Additional Information
 
@@ -145,7 +145,7 @@ For a complete example, see [Helidon SE CORS Example][helidon-se-cors-example].
 
 The decisions the Helidon CORS feature makes depend on accurate information about each incoming request, particularly the host to which the request is sent. Conveyed as headers in the request, this information can be changed or overwritten by intermediate nodes—​such as load balancers—​between the origin of the request and your service.
 
-Well-behaved intermediate nodes preserve this important data in other headers, such as `Forwarded`. You can configure how the Helidon server handles these headers as described in the documentation for [requested URI discovery][requested-uri-discovery].
+Well-behaved intermediate nodes preserve this important data in other headers, such as `Forwarded`. You can configure how the Helidon server handles these headers as described in the documentation for [requested URI discovery][requested-uri-di].
 
 The CORS support in Helidon uses the requested URI feature to discover the correct information about each request, according to your configuration, so it can make accurate decisions about whether to permit cross-origin accesses.
 
@@ -253,13 +253,10 @@ content-length: 461
 {"outcome":"UP",...}
 ```
 
-[cross-origin-resource-sharing-cors-protocol]: https://www.w3.org/TR/cors
-[managing-dependencies]: ../managing-dependencies.md
-[configuration]: #configuration
 [corsfeature]: /apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/CorsFeature.html
 [corspathconfig]: /apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/CorsPathConfig.html
-[helidon-se-quickstart-application]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/quickstarts/helidon-quickstart-se
+[helidon-se-quick]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/quickstarts/helidon-quickstart-se
 [routing]: ../se/webserver/webserver.md#routing
 [paths]: ../config/io_helidon_webserver_cors_CorsPathConfig.md
-[helidon-se-cors-example]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/cors
-[requested-uri-discovery]: ../se/webserver/webserver.md#requested-uri-discovery
+[helidon-se-cors]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/cors
+[requested-uri-di]: ../se/webserver/webserver.md#requested-uri-discovery

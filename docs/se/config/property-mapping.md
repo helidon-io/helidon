@@ -84,7 +84,7 @@ T as(GenericType<T> genericType);
 
 which maps the current node to a type.
 
-The next example, and later ones below showing complex type mapping, use the example [`application.properties`][application-properties] configuration from the config introduction. Part of that example includes this line:
+The next example, and later ones below showing complex type mapping, use the example [`application.properties`][application-prop] configuration from the config introduction. Part of that example includes this line:
 
 ```properties [application.properties]
 bl.initial-id = 10000000000
@@ -162,11 +162,11 @@ Only in the following unusual situation are the heuristics unable to unambiguous
 - The `enum` has values which differ *only* in their case (such as `Red` and `RED`), *and*
 - The string in the config source is not an exact match with an `enum` value name (such as `red`).
 
-If your application must deal with such cases, write your own function which maps a `Config` node to the correct `enum` value, resolving the ambiguities however makes sense in your use case. Your code tells config to use that function instead of the built-in `enum` conversion when it converts values. A [later section][later-section] describes this technique which works for all types, not only `enum` types.
+If your application must deal with such cases, write your own function which maps a `Config` node to the correct `enum` value, resolving the ambiguities however makes sense in your use case. Your code tells config to use that function instead of the built-in `enum` conversion when it converts values. A [later section](#custom-conversions) describes this technique which works for all types, not only `enum` types.
 
 ## Converting Configuration to Complex Types
 
-The [hierarchical features][hierarchical-features] section describes the tree structure used to represent config data. The config system can map subtrees of a config tree to complex Java types.
+The [hierarchical features](hierarchical-features.md) section describes the tree structure used to represent config data. The config system can map subtrees of a config tree to complex Java types.
 
 ### Built-in Conversions to `List` and `Map`
 
@@ -179,7 +179,7 @@ The `Config` class exposes several methods for mapping a structured config node 
 
 Often your code will be simpler if you can treat parts of the configuration as custom, application-specific Java objects, rather than as a group of `String` keys and values. You will need customized conversions to do so.
 
-The config system provides many ways to accomplish this, described in the [`io.helidon.config` package Javadoc][io-helidon-config-package-javadoc].
+The config system provides many ways to accomplish this, described in the [`io.helidon.config` package Javadoc][io-helidon-confi].
 
 Some of those approaches require that the target class — the class to which you want to convert the configuration data — have certain characteristics or that you add a method to the class to help do the mapping. You might want to avoid changing the target class else you might not even be able to if you do not control its source.
 
@@ -204,14 +204,14 @@ In this approach, your application:
 
 1.  Tells each `Config.Builder` that needs to know about the custom mapper by either:
     1.  registering an instance of your mapper by invoking `Config.Builder.addMapper`, or
-    2.  implementing [`ConfigMapperProvider`][configmapperprovider] so it returns an instance of your mapper (see the Javadoc for complete information) and creating or editing the file `io.helidon.config.spi.ConfigMapperProvider` so it contains a line with the fully-qualified class name of your `ConfigMapperProvider`. The config system will use the Java service loader to find and invoke all `ConfigMapperProvider` classes listed and add the mappers they provide to each `Config.Builder` automatically.
+    2.  implementing [`ConfigMapperProvider`][configmapperprov] so it returns an instance of your mapper (see the Javadoc for complete information) and creating or editing the file `io.helidon.config.spi.ConfigMapperProvider` so it contains a line with the fully-qualified class name of your `ConfigMapperProvider`. The config system will use the Java service loader to find and invoke all `ConfigMapperProvider` classes listed and add the mappers they provide to each `Config.Builder` automatically.
 2.  Converts using the mapper by invoking the `Config.as` method which accepts the target type to convert to, *not* the mapper itself that does the conversion.
 
 If your application converts to the same target type in several places in the code, this approach allows you to change which mapper it uses by changing only the *registration* of the mapper, not each use of it.
 
 #### Continuing the `Web` Example
 
-The following examples build on the example configuration from the [`application.properties`][application-properties] example file in the introduction.
+The following examples build on the example configuration from the [`application.properties`][application-prop] example file in the introduction.
 
 Java POJO to Hold web Properties Config:
 
@@ -302,7 +302,7 @@ Config object mapping Dependency in pom.xml:
 
 If you can change the target class you can add any one of the following methods or constructors to the POJO class which the config system will find and use for mapping.
 
-Continuing with the [WebConfig][webconfig] example introduced earlier:
+Continuing with the [WebConfig](#continuing-the-web-example) example introduced earlier:
 
 |                                        |
 |----------------------------------------|
@@ -360,9 +360,9 @@ When your application invokes `config.as(WebConfig.class)` the config system
 
 The config system can also interpret your classes as JavaBeans and use the normal bean naming conventions to map configuration data to your POJO classes, using one of these patterns:
 
-1.  [POJO as JavaBean][pojo-as-javabean] - The config system treats the target class itself as a JavaBean, assigning values from the config to the bean properties of the POJO class.
-2.  [builder as JavaBean][builder-as-javabean] - The config system invokes the POJO’s `builder()` method to obtain a builder for that POJO type and treats the *builder* class as a JavaBean, assigning values from the config to the builder’s bean properties and then invoking the builder’s `build` method to create an instance of the target POJO class.
-3.  [POJO with factory method or decorated constructor][pojo-with-factory-method-or-decorated-constructor] - The config system finds a `from` method or a constructor on the POJO class itself which accepts annotated arguments, then invokes that method or constructor passing the specified arguments based on the config. The `from` method returns an instance of the POJO class initialized with the values passed as arguments.
+1.  [POJO as JavaBean](#pojo-as-javabean) - The config system treats the target class itself as a JavaBean, assigning values from the config to the bean properties of the POJO class.
+2.  [builder as JavaBean](#builder-as-javabean) - The config system invokes the POJO’s `builder()` method to obtain a builder for that POJO type and treats the *builder* class as a JavaBean, assigning values from the config to the builder’s bean properties and then invoking the builder’s `build` method to create an instance of the target POJO class.
+3.  [POJO with factory method or decorated constructor][pojo-with-factor] - The config system finds a `from` method or a constructor on the POJO class itself which accepts annotated arguments, then invokes that method or constructor passing the specified arguments based on the config. The `from` method returns an instance of the POJO class initialized with the values passed as arguments.
 
 The following sections describe these patterns in more detail.
 
@@ -594,14 +594,9 @@ When the application invokes `config.as(AppConfig.class)`, the config system loc
 
 [config]: /apidocs/io.helidon.config/io/helidon/config/Config.html
 [configmappers]: /apidocs/io.helidon.config/io/helidon/config/ConfigMappers.html
-[application-properties]: introduction.md#built-in-support-for-config-formats
-[later-section]: #custom-conversions
-[hierarchical-features]: hierarchical-features.md
-[io-helidon-config-package-javadoc]: /apidocs/io.helidon.config/io/helidon/config/package-summary.html#conversions
-[configmapperprovider]: /apidocs/io.helidon.config/io/helidon/config/spi/ConfigMapperProvider.html
-[webconfig]: #continuing-the-web-example
-[pojo-as-javabean]: #pojo-as-javabean
-[builder-as-javabean]: #builder-as-javabean
-[pojo-with-factory-method-or-decorated-constructor]: #target-class-with-annotated-factory-method-or-constructor
+[application-prop]: introduction.md#built-in-support-for-config-formats
+[io-helidon-confi]: /apidocs/io.helidon.config/io/helidon/config/package-summary.html#conversions
+[configmapperprov]: /apidocs/io.helidon.config/io/helidon/config/spi/ConfigMapperProvider.html
+[pojo-with-factor]: #target-class-with-annotated-factory-method-or-constructor
 [value]: /apidocs/io.helidon.config.objectmapping/io/helidon/config/objectmapping/Value.html
 [transient]: /apidocs/io.helidon.config.objectmapping/io/helidon/config/objectmapping/Transient.html

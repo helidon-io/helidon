@@ -4,11 +4,11 @@
 
 Reactive messaging offers a new way of processing messages that is different from the older method of using message-driven beans. One significant difference is that blocking is no longer the only way to apply backpressure to the message source.
 
-Reactive messaging uses reactive streams as message channels so you can construct very effective pipelines for working with the messages or, if you prefer, you can continue to use older messaging methods. Like the message-driven beans, [MicroProfile Reactive Messaging][microprofile-reactive-messaging] uses CDI beans to produce, consume or process messages over Reactive Streams. These messaging beans are expected to be either `ApplicationScoped` or `Dependent` scoped. Messages are managed by methods annotated by `@Incoming` and `@Outgoing` and the invocation is always driven by message core - either at assembly time, or for every message coming from the stream.
+Reactive messaging uses reactive streams as message channels so you can construct very effective pipelines for working with the messages or, if you prefer, you can continue to use older messaging methods. Like the message-driven beans, [MicroProfile Reactive Messaging][microprofile-rea] uses CDI beans to produce, consume or process messages over Reactive Streams. These messaging beans are expected to be either `ApplicationScoped` or `Dependent` scoped. Messages are managed by methods annotated by `@Incoming` and `@Outgoing` and the invocation is always driven by message core - either at assembly time, or for every message coming from the stream.
 
 ## Maven Coordinates
 
-To enable MicroProfile Reactive Messaging, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable MicroProfile Reactive Messaging, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -28,9 +28,9 @@ To include health checks for Messaging add the following dependency:
 
 ## Usage
 
-- [Channels][channels]
-- [Emitter][emitter]
-- [Connector][connector]
+- [Channels](#channels)
+- [Emitter](#emitter)
+- [Connector](#connector)
 - [Message](#message)
 - [Acknowledgement](#acknowledgement)
 - [Health Check](#health-check)
@@ -43,7 +43,7 @@ Reactive messaging uses named channels to connect one source (upstream) with one
 <img src="../../images/msg/channel.svg" alt="Messaging Channel" />
 </figure>
 
-Channels can be connected either to [emitter][emitter] (1), [producing method][producing-method] (2) or [connector][connector] (3) on the upstream side. And [injected publisher][injected-publisher] (4), [consuming method][consuming-method] (5) or [connector][connector] (6) on the downstream.
+Channels can be connected either to [emitter](#emitter) (1), [producing method](#producing-method) (2) or [connector](#connector) (3) on the upstream side. And [injected publisher](#injected-publisher) (4), [consuming method](#consuming-method) (5) or [connector](#connector) (6) on the downstream.
 
 #### Consuming Method
 
@@ -51,7 +51,7 @@ Consuming methods can be connected to the channel’s downstream to consume the 
 
 Consuming method can function in two ways:
 
-- consume every message coming from the stream connected to the [channels][channels] - invoked per each message
+- consume every message coming from the stream connected to the [channels](#channels) - invoked per each message
 - prepare reactive stream’s subscriber and connect it to the channel - invoked only once during the channel construction
 
 Example consuming every message from channel example-channel-2:
@@ -273,7 +273,7 @@ public void consumeImplicitlyUnwrappedMessage(String value) {
 
 ### Acknowledgement
 
-Messages carry a callback for reception acknowledgement (ack) and negative acknowledgement (nack). An acknowledgement in messaging methods is possible manually by `org.eclipse.microprofile.reactive.messaging.Message#ack` or automatically according explicit or implicit acknowledgement strategy by the messaging core. Explicit strategy configuration is possible with `@Acknowledgment` annotation which has one required attribute `value` that expects the strategy type from enum `org.eclipse.microprofile.reactive.messaging.Acknowledgment.Strategy`. More information about supported signatures and implicit automatic acknowledgement can be found in specification [Message acknowledgement][message-acknowledgement].
+Messages carry a callback for reception acknowledgement (ack) and negative acknowledgement (nack). An acknowledgement in messaging methods is possible manually by `org.eclipse.microprofile.reactive.messaging.Message#ack` or automatically according explicit or implicit acknowledgement strategy by the messaging core. Explicit strategy configuration is possible with `@Acknowledgment` annotation which has one required attribute `value` that expects the strategy type from enum `org.eclipse.microprofile.reactive.messaging.Acknowledgment.Strategy`. More information about supported signatures and implicit automatic acknowledgement can be found in specification [Message acknowledgement][message-acknowle].
 
 |  |  |
 |----|----|
@@ -375,7 +375,7 @@ public CompletionStage<Void> receiveAndAckMessage(Message<String> msg) {
 
 ### Health Check
 
-Messaging in Helidon has built in health probes for liveness and readiness. To activate it add the [health check dependency][health-check-dependency].
+Messaging in Helidon has built in health probes for liveness and readiness. To activate it add the [health check dependency](#maven-coordinates).
 
 - Liveness - channel is considered UP until `cancel` or `onError` signal is intercepted on it.
 - Readiness - channel is considered DOWN until `onSubscribe` signal is intercepted on it.
@@ -492,22 +492,14 @@ public void consume(String value) {
 
 ## Reference
 
-- [Helidon MicroProfile Reactive Messaging][helidon-microprofile-reactive-messaging]
-- [MicroProfile Reactive Messaging Specification][microprofile-reactive-messaging]
-- [MicroProfile Reactive Messaging on GitHub][microprofile-reactive-messaging-on-github]
+- [Helidon MicroProfile Reactive Messaging][helidon-micropro]
+- [MicroProfile Reactive Messaging Specification][microprofile-rea]
+- [MicroProfile Reactive Messaging on GitHub][microprofile-rea-2]
 
-[microprofile-reactive-messaging]: https://download.eclipse.org/microprofile/microprofile-reactive-messaging-3.0/microprofile-reactive-messaging-spec-3.0.html
-[managing-dependencies]: ../../managing-dependencies.md
-[channels]: #channels
-[emitter]: #emitter
-[connector]: #connector
-[producing-method]: #producing-method
-[injected-publisher]: #injected-publisher
-[consuming-method]: #consuming-method
+[microprofile-rea]: https://download.eclipse.org/microprofile/microprofile-reactive-messaging-3.0/microprofile-reactive-messaging-spec-3.0.html
 [channel]: https://download.eclipse.org/microprofile/microprofile-reactive-messaging-3.0/microprofile-reactive-messaging-spec-3.0.html#_channel
 [methods]: https://download.eclipse.org/microprofile/microprofile-reactive-messaging-3.0/microprofile-reactive-messaging-spec-3.0.html#_method_consuming_and_producing
 [message]: https://download.eclipse.org/microprofile/microprofile-reactive-messaging-3.0/microprofile-reactive-messaging-spec-3.0.html#_message
-[message-acknowledgement]: https://download.eclipse.org/microprofile/microprofile-reactive-messaging-3.0/microprofile-reactive-messaging-spec-3.0.html#_message_acknowledgement
-[health-check-dependency]: #maven-coordinates
-[helidon-microprofile-reactive-messaging]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.messaging/module-summary.html
-[microprofile-reactive-messaging-on-github]: https://github.com/eclipse/microprofile-reactive-messaging
+[message-acknowle]: https://download.eclipse.org/microprofile/microprofile-reactive-messaging-3.0/microprofile-reactive-messaging-spec-3.0.html#_message_acknowledgement
+[helidon-micropro]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.messaging/module-summary.html
+[microprofile-rea-2]: https://github.com/eclipse/microprofile-reactive-messaging

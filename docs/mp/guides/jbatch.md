@@ -36,7 +36,7 @@ export JAVA_HOME=/usr/lib/jvm/jdk-21
 ```
 
 > [!NOTE]
-> This guide assumes you are familiar with the [Jakarta Batch project specification][jakarta-batch-project-specification] from the Eclipse Foundation project site.
+> This guide assumes you are familiar with the [Jakarta Batch project specification][jakarta-batch-pr] from the Eclipse Foundation project site.
 
 ## Dependencies
 
@@ -347,4 +347,4 @@ This guide demonstrated how to use Helidon with JBatch even though Helidon is no
 [maven-3-8]: https://maven.apache.org/download.cgi
 [docker-18-09]: https://docs.docker.com/install/
 [kubectl-1-16-5]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
-[jakarta-batch-project-specification]: https://projects.eclipse.org/projects/ee4j.batch
+[jakarta-batch-pr]: https://projects.eclipse.org/projects/ee4j.batch

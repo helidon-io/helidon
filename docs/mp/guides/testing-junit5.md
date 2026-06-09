@@ -57,7 +57,7 @@ Maven dependencies:
 
 ## Create a Sample Helidon MP Project
 
-In this guide we will use the [Helidon MP Quickstart][helidon-mp-quickstart] project in our examples.
+In this guide we will use the [Helidon MP Quickstart](../guides/quickstart.md) project in our examples.
 
 This application provides an endpoint `/greet`, and we want to make sure this endpoint is available and returns expected value.
 
@@ -262,7 +262,7 @@ This guide demonstrated how to create tests for MicroProfile applications in a J
 
 Refer to the following references for additional information:
 
-- [JUnit 5 User Guide](https://junit.org/junit5/docs/current/user-guide/)
+- [JUnit 5 User Guide][junit-5-user-gui]
 - [Testing with JUnit 5](../testing/testing.md)
 
 [java-21]: https://www.oracle.com/technetwork/java/javase/downloads
@@ -270,4 +270,4 @@ Refer to the following references for additional information:
 [maven-3-8]: https://maven.apache.org/download.cgi
 [docker-18-09]: https://docs.docker.com/install/
 [kubectl-1-16-5]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
-[helidon-mp-quickstart]: ../guides/quickstart.md
+[junit-5-user-gui]: https://junit.org/junit5/docs/current/user-guide/

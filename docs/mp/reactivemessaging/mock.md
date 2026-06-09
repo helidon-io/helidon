@@ -6,7 +6,7 @@ Mock connector is a simple application scoped bean that can be used for emitting
 
 ## Maven Coordinates
 
-To enable Mock Connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable Mock Connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -108,6 +108,5 @@ public class MessagingTest {
 - Messaging processing method connecting together channels `test-channel-in` and `test-channel-out`
 - Actual JUnit 5 test method which is going to block the thread until 3 items are intercepted on `test-channel-out` channel’s downstream and assert those with expected values.
 
-[managing-dependencies]: ../../managing-dependencies.md
 [junit-5]: /../../mp/reactivemessaging/../../testing/testing.adoc
 [testng]: /../../mp/reactivemessaging/../../testing/testing-ng.adoc

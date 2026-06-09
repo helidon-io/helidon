@@ -19,7 +19,7 @@ Exemplar support in Helidon relies on the exemplar support provided by the under
 
 ## Maven Coordinates
 
-To enable OpenMetrics exemplar support, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable OpenMetrics exemplar support, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -83,9 +83,8 @@ The exemplar (the portion following the `#`) is a sample corresponding to an upd
 
 ## Additional Information
 
-Brief discussion of [exemplars in the OpenMetrics spec][exemplars-in-the-openmetrics-spec]
+Brief discussion of [exemplars in the OpenMetrics spec][exemplars-in-the]
 
 [exemplar]: https://www.merriam-webster.com/dictionary/exemplar
-[managing-dependencies]: ../../managing-dependencies.md
 [helidon-zipkin]: ../../mp/tracing.md#zipkin-tracing
-[exemplars-in-the-openmetrics-spec]: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#exemplars
+[exemplars-in-the]: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#exemplars

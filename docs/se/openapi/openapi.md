@@ -2,9 +2,9 @@
 
 ## Overview
 
-The [OpenAPI specification][openapi-specification] defines a standard way to express the interface exposed by a REST service.
+The [OpenAPI specification][openapi-specific] defines a standard way to express the interface exposed by a REST service.
 
-The [MicroProfile OpenAPI spec][microprofile-openapi-spec] explains how MicroProfile embraces OpenAPI, adding annotations, configuration, and a service provider interface (SPI).
+The [MicroProfile OpenAPI spec][microprofile-ope] explains how MicroProfile embraces OpenAPI, adding annotations, configuration, and a service provider interface (SPI).
 
 OpenAPI support in Helidon SE draws its inspiration from MicroProfile OpenAPI but does not implement the spec because Helidon SE does not support annotations.
 
@@ -17,7 +17,7 @@ To construct the model, Helidon gathers information about the service API from a
 
 ## Maven Coordinates
 
-To enable OpenAPI, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable OpenAPI, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -88,7 +88,7 @@ Helidon SE OpenAPI configuration supports the settings described below in the `s
 
 ## Examples
 
-Helidon SE provides a [complete OpenAPI example][complete-openapi-example] based on the SE QuickStart sample app.
+Helidon SE provides a [complete OpenAPI example][complete-openapi] based on the SE QuickStart sample app.
 
 ### Configure OpenAPI behavior
 
@@ -128,13 +128,12 @@ WebServer server = WebServer.builder()
 
 If you need programmatic control over the `OpenApiFeature` instance, invoke `OpenApiFeature.builder()` to get an `OpenApiFeature.Builder` object and work with it, then invoke the builder’s `build` method and pass the resulting `OpenApiFeature` instance to the `WebServer.Builder` `addFeature` method.
 
-[openapi-specification]: https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md
-[microprofile-openapi-spec]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.1/microprofile-openapi-spec-3.1.1.html
-[managing-dependencies]: ../../managing-dependencies.md
+[openapi-specific]: https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md
+[microprofile-ope]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.1/microprofile-openapi-spec-3.1.1.html
 [openapifeature]: /apidocs/io.helidon.openapi/io/helidon/openapi/OpenApiFeature.html
 [builder]: /apidocs/io.helidon.openapi/io/helidon/openapi/OpenApiFeatureConfig.Builder.html
 [example-below]: #register-openapifeature-explicitly
 [manager]: ../../config/io_helidon_openapi_OpenApiManager.md
 [services]: ../../config/io_helidon_openapi_OpenApiService.md
 [cors]: ../../config/io_helidon_cors_CrossOriginConfig.md
-[complete-openapi-example]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/openapi
+[complete-openapi]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/openapi

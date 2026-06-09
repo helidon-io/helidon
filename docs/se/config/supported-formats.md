@@ -13,7 +13,7 @@ With each of the parsers described here, your application can either
 1.  explicitly add a parser of the correct implementation to the `Config.Builder`, or
 2.  rely on Java service loading and the config system’s matching of file types and media types to parsers.
 
-If your application creates a `Config.Builder` with parser services *disabled* (see [`disableParserServices`][disableparserservices] then that builder will not find the Java services for the various parsers and so will be unable to match the file type or media type of sources with the corresponding parser automatically. So if you want to use automatic type matching with a given builder, do not invoke `Config.Builder.disableParserServices()`.
+If your application creates a `Config.Builder` with parser services *disabled* (see [`disableParserServices`][disableparserser] then that builder will not find the Java services for the various parsers and so will be unable to match the file type or media type of sources with the corresponding parser automatically. So if you want to use automatic type matching with a given builder, do not invoke `Config.Builder.disableParserServices()`.
 
 ### YAML
 
@@ -119,7 +119,7 @@ Config config = Config.create(classpath("my-config")
 ```
 
 - the media type of the source `my-config` is unknown, so the config system cannot choose a parser automatically.
-- The config system will parse the resource `my-config` using the HOCON parser created by the [HoconConfigParser][hoconconfigparser]. The `create()` method creates a config parser with default behavior.
+- The config system will parse the resource `my-config` using the HOCON parser created by the [HoconConfigParser][hoconconfigparse]. The `create()` method creates a config parser with default behavior.
 
 Media type specified:
 
@@ -155,10 +155,10 @@ Config config = Config.builder(classpath("application.conf"))
 ```
 
 - Creates new instance of the parser builder.
-- Disables resolution of substitutions. (See the [HOCON documentation][hocon-documentation].)
+- Disables resolution of substitutions. (See the [HOCON documentation][hocon-documentat].)
 - Builds a new instance of the HOCON config parser.
 
-You can also specify [`ConfigResolveOptions`][configresolveoptions] using the `HoconConfigParser.builder().resolveOptions` method.
+You can also specify [`ConfigResolveOptions`][configresolveopt] using the `HoconConfigParser.builder().resolveOptions` method.
 
 ## Additional Config Source Types
 
@@ -181,7 +181,7 @@ Config Etcd Dependency in pom.xml:
 
 #### Using the Etcd Config Source
 
-To read configuration from an Etcd source, your application uses the [`EtcdConfigSourceBuilder`][etcdconfigsourcebuilder].
+To read configuration from an Etcd source, your application uses the [`EtcdConfigSourceBuilder`][etcdconfigsource].
 
 Use Etcd config source:
 
@@ -198,9 +198,9 @@ Config config = Config.create(
 - Specify the Etcd key of the configuration document.
 - Version of the Etcd API to use; `v3` is supported. `v2` is deprecated.
 
-The config system will use the [YAML parser][yaml-parser] automatically in this example because the file type of the key is `.yaml`.
+The config system will use the [YAML parser](#using-the-yaml-parser) automatically in this example because the file type of the key is `.yaml`.
 
-The `EtcdConfigSourceBuilder` class extends [`AbstractConfigSourceBuilder`][abstractconfigsourcebuilder] and so supports the usual settings on config sources.
+The `EtcdConfigSourceBuilder` class extends [`AbstractConfigSourceBuilder`][abstractconfigso] and so supports the usual settings on config sources.
 
 #### Monitoring for Source Changes
 
@@ -273,7 +273,7 @@ Config git Dependency in pom.xml:
 
 #### Using the git Config Source
 
-To read configuration from a git source, your application uses the [`GitConfigSourceBuilder`][gitconfigsourcebuilder].
+To read configuration from a git source, your application uses the [`GitConfigSourceBuilder`][gitconfigsourceb].
 
 Use git config source:
 
@@ -291,9 +291,9 @@ Config config = Config.create(
 - Specify a directory where the git repository is already cloned, or it will be cloned.
 - Specify the git branch.
 
-Note that the config system will use the [HOCON parser][hocon-parser] in this example because the file type is `.conf`. Recall that for this to work the HOCON config module must be on module-path or classpath.
+Note that the config system will use the [HOCON parser](#using-the-hoconjson-parser) in this example because the file type is `.conf`. Recall that for this to work the HOCON config module must be on module-path or classpath.
 
-The `GitConfigSourceBuilder` supports the usual source builder properties because it extends [`AbstractConfigSourceBuilder`][abstractconfigsourcebuilder].
+The `GitConfigSourceBuilder` supports the usual source builder properties because it extends [`AbstractConfigSourceBuilder`][abstractconfigso].
 
 #### Monitoring for Source Changes
 
@@ -311,7 +311,7 @@ Config config = Config.create(
 
 - Use `PollingStrategies.regular(Duration duration)` to monitor for config changes.
 
-You can also implement your own polling strategy by implementing [`PollingStrategy`][pollingstrategy]. See the [mutability support][mutability-support] and [polling strategy][polling-strategy] discussions.
+You can also implement your own polling strategy by implementing [`PollingStrategy`][pollingstrategy]. See the [mutability support](mutability-support.md) and [polling strategy][polling-strategy] discussions.
 
 #### Loading Meta-configuration via git
 
@@ -323,7 +323,7 @@ The config system can load information about config sources from meta-configurat
 - `directory` (type `Path`) - Directory with a cloned repository, by default a temporary directory.
 - `branch` (type `String`) - git branch (default is `master`).
 
-The meta-configuration must set the `path` and one of `uri` or `directory`. Other optional `properties` are inherited from `AbstractConfigSourceBuilder` (see [javadoc][abstractconfigsourcebuilder])
+The meta-configuration must set the `path` and one of `uri` or `directory`. Other optional `properties` are inherited from `AbstractConfigSourceBuilder` (see [javadoc][abstractconfigso])
 
 Load Config from meta-configuration:
 
@@ -351,17 +351,14 @@ sources:
 - git source-specific properties: `path`, `uri`, `directory` and `branch`.
 - Polling strategy `regular` with an interval, in `Duration` format, of 5 minutes in this example.
 
-[disableparserservices]: /apidocs/io.helidon.config/io/helidon/config/Config.Builder.html#disableParserServices--
+[disableparserser]: /apidocs/io.helidon.config/io/helidon/config/Config.Builder.html#disableParserServices--
 [yamlconfigparser]: /apidocs/io.helidon.config.yaml/io/helidon/config/yaml/YamlConfigParser.html
-[hoconconfigparser]: /apidocs/io.helidon.config.hocon/io/helidon/config/hocon/HoconConfigParser.html
-[hocon-documentation]: https://github.com/lightbend/config/blob/master/HOCON.md#substitutions
-[configresolveoptions]: https://github.com/lightbend/config/blob/master/config/src/main/java/com/typesafe/config/ConfigResolveOptions.java
-[etcdconfigsourcebuilder]: /apidocs/io.helidon.config.etcd/io/helidon/config/etcd/EtcdConfigSourceBuilder.html
-[yaml-parser]: #using-the-yaml-parser
-[abstractconfigsourcebuilder]: /apidocs/io.helidon.config/io/helidon/config/AbstractConfigSourceBuilder.html
+[hoconconfigparse]: /apidocs/io.helidon.config.hocon/io/helidon/config/hocon/HoconConfigParser.html
+[hocon-documentat]: https://github.com/lightbend/config/blob/master/HOCON.md#substitutions
+[configresolveopt]: https://github.com/lightbend/config/blob/master/config/src/main/java/com/typesafe/config/ConfigResolveOptions.java
+[etcdconfigsource]: /apidocs/io.helidon.config.etcd/io/helidon/config/etcd/EtcdConfigSourceBuilder.html
+[abstractconfigso]: /apidocs/io.helidon.config/io/helidon/config/AbstractConfigSourceBuilder.html
 [javadoc]: /apidocs/io.helidon.config/io/helidon/config/AbstractConfigSourceBuilder.html#init-io.helidon.config.Config-
-[gitconfigsourcebuilder]: /apidocs/io.helidon.config.git/io/helidon/config/git/GitConfigSourceBuilder.html
-[hocon-parser]: #using-the-hoconjson-parser
+[gitconfigsourceb]: /apidocs/io.helidon.config.git/io/helidon/config/git/GitConfigSourceBuilder.html
 [pollingstrategy]: /apidocs/io.helidon.config/io/helidon/config/spi/PollingStrategy.html
-[mutability-support]: mutability-support.md
 [polling-strategy]: extensions.md#pollingstrategy-spi

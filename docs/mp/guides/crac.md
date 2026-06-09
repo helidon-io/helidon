@@ -17,14 +17,14 @@ For this 10 minute tutorial, you will need the following:
 |-------------|-------------|
 | Linux/x64 or Linux/ARM64 | While CRaC snapshotting can be simulated on MacOS or Windows, full CRaC functionality is only available on Linux/x64 and Linux/ARM64. |
 | [Maven 3.8+][maven-3-8] | Helidon requires Maven 3.8+. |
-| [Azul Zulu JDK CRaC 21+][azul-zulu-jdk-crac-21] | Zulu Warp CRaC engine allows snapshotting without elevated privileges |
+| [Azul Zulu JDK CRaC 21+][azul-zulu-jdk-cr] | Zulu Warp CRaC engine allows snapshotting without elevated privileges |
 
 ## Install JDK with CRaC support
 
 There are two JDK builds with CRaC support as of now to choose from.
 
-- [Azul Zulu][azul-zulu-jdk-crac-21]
-- [BellSoft Liberica JDK][bellsoft-liberica-jdk]
+- [Azul Zulu][azul-zulu-jdk-cr]
+- [BellSoft Liberica JDK][bellsoft-liberic]
 
 In this example we will use Azul implementation with Warp CRaC engine. Warp CRaC engine allows creating snapshots without elevated privileges. That not only simplifies the example, but it is very practical for K8s usage.
 
@@ -103,7 +103,7 @@ curl -X GET http://localhost:8080/greet
 
 The application should respond with `{"message":"Hello World!"}`
 
-For more information about the Quickstart application and other endpoints it supports see the [Helidon MP Quickstart Guide][helidon-mp-quickstart-guide].
+For more information about the Quickstart application and other endpoints it supports see the [Helidon MP Quickstart Guide](../../mp/guides/quickstart.md).
 
 ## Creating snapshot
 
@@ -220,7 +220,7 @@ CMD [ "java", "-XX:CRaCEngine=warp", "-XX:CRaCRestoreFrom=/helidon/cr" ]
 > [!TIP]
 > This does a full build inside the Docker container. The first time you run it, it will take a while because it is downloading all of the Maven dependencies and caching them in a Docker layer. Subsequent builds will be much faster as long as you don’t change the `pom.xml` file. If the pom is modified then the dependencies will be re-downloaded.
 
-Build the application, notice that warmup and snapshot of the application is created during build time in the 2nd stage. For warming up the [siege][siege] load testing utility is used. Dockerfile is based on Radim Vansa’s [article][article] introducing Warp CRaC engine.
+Build the application, notice that warmup and snapshot of the application is created during build time in the 2nd stage. For warming up the [siege](https://github.com/JoeDog/siege) load testing utility is used. Dockerfile is based on Radim Vansa’s [article][article] introducing Warp CRaC engine.
 
 ```shell [Terminal]
 docker build -t helidon-quickstart-mp-crac -f Dockerfile.crac .
@@ -235,9 +235,7 @@ docker run --rm -p 8080:8080 helidon-quickstart-mp-crac:latest
 Again, it starts fast. You can exercise the application’s endpoints as before.
 
 [maven-3-8]: https://maven.apache.org/download.cgi
-[azul-zulu-jdk-crac-21]: https://www.azul.com/downloads/?version=java-21-lts&package=jdk-crac#zulu
-[bellsoft-liberica-jdk]: https://bell-sw.com/pages/downloads/?package=jdk-crac&version=java-21
-[helidon-mp-quickstart-guide]: ../../mp/guides/quickstart.md
+[azul-zulu-jdk-cr]: https://www.azul.com/downloads/?version=java-21-lts&package=jdk-crac#zulu
+[bellsoft-liberic]: https://bell-sw.com/pages/downloads/?package=jdk-crac&version=java-21
 [jcmd]: https://docs.oracle.com/en/java/javase/21/docs/specs/man/jcmd.html
-[siege]: https://github.com/JoeDog/siege
 [article]: https://foojay.io/today/warp-the-new-crac-engine

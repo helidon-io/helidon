@@ -6,7 +6,7 @@ The Helidon GraphQL Server provides a framework for creating [GraphQL][graphql] 
 
 ## Maven Coordinates
 
-To enable GraphQL, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable GraphQL, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -93,7 +93,7 @@ The following configuration keys can be used to set up GraphQL invocation:
 
 ## Examples
 
-Using the schema defined in Section [API][api], you can probe the following endpoints:
+Using the schema defined in Section [API](#api), you can probe the following endpoints:
 
 1.  Hello world endpoint
 
@@ -113,8 +113,7 @@ Using the schema defined in Section [API][api], you can probe the following endp
 
 ## Additional Information
 
-- [GraphQL Javadocs](/apidocs/io.helidon.graphql.server/module-summary.html)
+- [GraphQL Javadocs][graphql-javadocs]
 
 [graphql]: https://github.com/graphql-java/graphql-java
-[managing-dependencies]: ../managing-dependencies.md
-[api]: #api
+[graphql-javadocs]: /apidocs/io.helidon.graphql.server/module-summary.html

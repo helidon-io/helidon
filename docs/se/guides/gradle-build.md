@@ -8,7 +8,7 @@ While most of Helidon’s examples use Maven, you can also use Helidon with a Gr
 
 ## Gradle Example
 
-The Helidon [Quickstart Example][quickstart-example] contains a `build.gradle` file that you can use as an example for building your Helidon application using Gradle.
+The Helidon [Quickstart Example][quickstart-examp] contains a `build.gradle` file that you can use as an example for building your Helidon application using Gradle.
 
 ## Dependency Management
 
@@ -29,4 +29,4 @@ dependencies {
 }
 ```
 
-[quickstart-example]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/quickstarts/helidon-quickstart-se
+[quickstart-examp]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/quickstarts/helidon-quickstart-se

@@ -6,7 +6,7 @@ This module adds support for selected [Google Gemini][google-gemini] models.
 
 ## Maven Coordinates
 
-In addition to the [Helidon integration with LangChain4j core dependencies][helidon-integration-with-langchain4j-core-dependencies], you must add the following:
+In addition to the [Helidon integration with LangChain4j core dependencies](langchain4j.md#maven-coordinates), you must add the following:
 
 ```xml [pom.xml]
 <dependency>
@@ -74,7 +74,7 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 | <span id="a14134-seed"></span> `seed`                                                                                                         | `VALUE` | `Integer`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#seed(java.lang.Integer)`                                                            |
 | <span id="a68f81-send-thinking"></span> `send-thinking`                                                                                       | `VALUE` | `Boolean`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#sendThinking(java.lang.Boolean)`                                                    |
 | <span id="ac6b35-stop-sequences"></span> `stop-sequences`                                                                                     | `LIST`  | `String`                              |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#stopSequences(java.util.List)`                                                      |
-| <span id="a30544-supported-capabilities"></span> [`supported-capabilities`][supported-capabilities]         | `LIST`  | `d.l.m.c.Capability`                  |               | Generated from `dev.langchain4j.model.googleai.GoogleAiGeminiChatModel.GoogleAiGeminiChatModelBuilder#supportedCapabilities(java.util.Set)`                                               |
+| <span id="a30544-supported-capabilities"></span> [`supported-capabilities`][supported-capabi]         | `LIST`  | `d.l.m.c.Capability`                  |               | Generated from `dev.langchain4j.model.googleai.GoogleAiGeminiChatModel.GoogleAiGeminiChatModelBuilder#supportedCapabilities(java.util.Set)`                                               |
 | <span id="a38c2c-temperature"></span> `temperature`                                                                                           | `VALUE` | `Double`                              |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#temperature(java.lang.Double)`                                                      |
 | <span id="a4af39-thinking-config"></span> `thinking-config`                                                                                   | `VALUE` | `d.l.m.g.GeminiThinkingConfig`        |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#thinkingConfig(dev.langchain4j.model.googleai.GeminiThinkingConfig)`                |
 | <span id="a7cb05-timeout"></span> `timeout`                                                                                                   | `VALUE` | `Duration`                            |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#timeout(java.time.Duration)`                                                        |
@@ -148,11 +148,11 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 ## Additional Information
 
 - [LangChain4j Integration](langchain4j.md)
-- [LangChain4j Google AI Gemini Documentation][langchain4j-google-ai-gemini-documentation]
-- [Google AI Gemini Website](https://ai.google.dev/gemini-api/docs)
+- [LangChain4j Google AI Gemini Documentation][langchain4j-goog]
+- [Google AI Gemini Website][google-ai-gemini]
 
 [google-gemini]: https://ai.google.dev/gemini-api/docs/models
-[helidon-integration-with-langchain4j-core-dependencies]: langchain4j.md#maven-coordinates
 [media-resolution]: ../../../config/dev_langchain4j_model_googleai_GeminiMediaResolutionLevel.md
-[supported-capabilities]: ../../../config/dev_langchain4j_model_chat_Capability.md
-[langchain4j-google-ai-gemini-documentation]: https://docs.langchain4j.dev/integrations/language-models/google-ai-gemini
+[supported-capabi]: ../../../config/dev_langchain4j_model_chat_Capability.md
+[langchain4j-goog]: https://docs.langchain4j.dev/integrations/language-models/google-ai-gemini
+[google-ai-gemini]: https://ai.google.dev/gemini-api/docs

@@ -8,7 +8,7 @@ Helidon MP metrics implements the MicroProfile Metrics specification, providing:
 - a unified Java API which all application programmers can use to register and update metrics to expose telemetry data from their services.
 - support for metrics-related annotations.
 
-Learn more about the [MicroProfile Metrics specification][microprofile-metrics-specification].
+Learn more about the [MicroProfile Metrics specification][microprofile-met].
 
 Metrics is one of the Helidon observability features.
 
@@ -19,11 +19,11 @@ Metrics is one of the Helidon observability features.
 > metrics.gc-time-type = gauge
 > ```
 >
-> so your service complies with the MicroProfile Metrics 5.1 specification. See the [longer discussion below][longer-discussion-below] in the Configuration section.
+> so your service complies with the MicroProfile Metrics 5.1 specification. See the [longer discussion below][longer-discussio] in the Configuration section.
 
 ## Maven Coordinates
 
-To enable metrics, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable metrics, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -48,7 +48,7 @@ Later sections of this document describe how to do each of these.
 
 ### Metric Types
 
-Helidon supports meters described by the [MicroProfile Metrics][microprofile-metrics] spec and summarized in the following table:
+Helidon supports meters described by the [MicroProfile Metrics][microprofile-met-2] spec and summarized in the following table:
 
 |  |  |  |
 |----|----|----|
@@ -56,13 +56,13 @@ Helidon supports meters described by the [MicroProfile Metrics][microprofile-met
 | [`Counter`][counter] | Monotonically-increasing `long` value. | [`@Counted`][counted] |
 | [`Histogram`][histogram] | Summary of samples each with a `long` value. Reports aggregate information over all samples (count, total, mean, max) as well as the distribution of sample values using percentiles and bucket counts. | (none) |
 | [`Timer`][timer] | Accumulation of short-duration (typically under a minute) intervals. Typically updated using a Java [`Duration`][duration] or by recording the time taken by a method invocation or lambda. Reports the count, total time, max, and mean; provides a histogram of the samples. | [`@Timed`][timed] |
-| [`Gauge<? extends Number>`][gauge-extends-number] | View of a value that is assignment-compatible with a subtype of Java [`Number`][number]. The underlying value is updated by code elsewhere in the system, not by invoking methods on the gauge itself. | [`@Gauge`][gauge] |
+| [`Gauge<? extends Number>`][gauge-extends-nu] | View of a value that is assignment-compatible with a subtype of Java [`Number`][number]. The underlying value is updated by code elsewhere in the system, not by invoking methods on the gauge itself. | [`@Gauge`][gauge] |
 
 Types of Metrics
 
 ### Categorizing Types of Metrics
 
-Helidon distinguishes among *scopes*, or categories, of metrics as described in the [MP metrics specification][microprofile-metrics].
+Helidon distinguishes among *scopes*, or categories, of metrics as described in the [MP metrics specification][microprofile-met-2].
 
 Helidon includes metrics in the built-in scopes described below. Applications often register their own metrics in the `application` scope but can create their own scopes and register metrics within them.
 
@@ -94,7 +94,7 @@ Helidon’s Micrometer-based metrics implementation includes these ways of publi
 > [!NOTE]
 > The configuration of metrics publishers as described below is a [preview feature][preview-feature] which Helidon intends to keep, but its external interface or behavior might evolve between dot releases.
 
-You can configure publishers in the `publishers` configuration section under the top level `metrics` node or under `server.features.observe.observers.metrics`. If you do not set up publishers explicitly, Helidon uses an inferred Prometheus publisher for backward compatibility. See [this later section][this-later-section] for details.
+You can configure publishers in the `publishers` configuration section under the top level `metrics` node or under `server.features.observe.observers.metrics`. If you do not set up publishers explicitly, Helidon uses an inferred Prometheus publisher for backward compatibility. See [this later section][this-later-secti] for details.
 
 Publishers in Helidon’s Micrometer-based metrics implementation use Micrometer `MeterRegistry` implementations. For each enabled publisher, Helidon adds the corresponding meter registry to Micrometer’s global registry. This has these important effects:
 
@@ -115,7 +115,7 @@ If you configure an OTLP publisher, Helidon exports metrics data periodically to
 
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
-| <span id="a5a031-aggregation-temporality"></span> [`aggregation-temporality`][aggregation-temporality] | `VALUE` | `i.m.r.o.AggregationTemporality` | `CUMULATIVE` | Algorithm to use for adjusting values before transmission |
+| <span id="a5a031-aggregation-temporality"></span> [`aggregation-temporality`][aggregation-temp] | `VALUE` | `i.m.r.o.AggregationTemporality` | `CUMULATIVE` | Algorithm to use for adjusting values before transmission |
 | <span id="a726ba-base-time-unit"></span> [`base-time-unit`][base-time-unit] | `VALUE` | `TimeUnit` | `java.util.concurrent.TimeUnit.MILLISECONDS` | Base time unit for timers |
 | <span id="ace1fb-batch-size"></span> `batch-size` | `VALUE` | `Integer` | `10000` | Number of measurements to send in a single request to the backend |
 | <span id="a6b5d5-enabled"></span> `enabled` | `VALUE` | `Boolean` | `true` | Whether the configured publisher is enabled |
@@ -185,13 +185,13 @@ metrics:
 
 You can write other publishers by following these steps:
 
-1.  Choose one of the Micrometer `MeterRegistry` implementations for the type of publishing you want to support. (for example [`DatadogMeterRegistry`][datadogmeterregistry])
-2.  Create a config blueprint which exposes the meter registry’s [settable properties from `DatadogConfig`][settable-properties-from-datadogconfig].
+1.  Choose one of the Micrometer `MeterRegistry` implementations for the type of publishing you want to support. (for example [`DatadogMeterRegistry`][datadogmeterregi])
+2.  Create a config blueprint which exposes the meter registry’s [settable properties from `DatadogConfig`][settable-propert].
 3.  Write a `DatadogPublisher` class which implements Helidon’s `MetricsPublisher` for Datadog.
 4.  Write a `DatadogPublisherProvider` class which implements Helidon’s `MetricsPublisherProvider` for your publisher.
 5.  Advertise your provider so Java service loading can find it, creating a `META-INF/services/io.helidon.metrics.spi.PublisherProvider` file listing your implementation class.
 
-Look at Helidon’s [OTLP publisher blueprint][otlp-publisher-blueprint] and the related types as an example.
+Look at Helidon’s [OTLP publisher blueprint][otlp-publisher-b] and the related types as an example.
 
 Refer to your publisher in configuration using the config key you set up in the publisher provider.
 
@@ -239,7 +239,7 @@ curl -s -H 'Accept: text/plain' -X GET http://localhost:8080/metrics
 classloader_loadedClasses_count{mp_scope="base",} 5297.0
 ```
 
-See the summary of the [OpenMetrics and Prometheus Format][openmetrics-and-prometheus-format] for more information.
+See the summary of the [OpenMetrics and Prometheus Format][openmetrics-and] for more information.
 
 Example Reporting: JSON format:
 
@@ -262,7 +262,7 @@ In addition to your application metrics, the reports contain other metrics of in
 
 #### OpenMetrics and Prometheus Format
 
-The [OpenMetrics format][openmetrics-format] and the [Prometheus exposition format][prometheus-exposition-format] are very similar in most important respects but are not identical. This brief summary treats them as the same.
+The [OpenMetrics format][openmetrics-form] and the [Prometheus exposition format][prometheus-expos] are very similar in most important respects but are not identical. This brief summary treats them as the same.
 
 The OpenMetrics/Prometheus format represents each metric using three lines of output as summarized in the following table.
 
@@ -404,7 +404,7 @@ JSON metrics output structured by scope (partial):
 
 - Note the `application`, `vendor`, and `base` sections.
 
-If an HTTP request [selects by scope][selects-by-scope], the output omits the extra level of structure that identifies the scope as shown in the following example.
+If an HTTP request [selects by scope](#scope-specific-retrieval), the output omits the extra level of structure that identifies the scope as shown in the following example.
 
 JSON metrics output for the base scope (partial):
 
@@ -448,7 +448,7 @@ JSON output for a multi-valued metric (for example, Timer):
 }
 ```
 
-By default, Helidon formats time values contained in JSON output as seconds. You can change this behavior [as described below][as-described-below].
+By default, Helidon formats time values contained in JSON output as seconds. You can change this behavior [as described below](#controlling-json-timer-output).
 
 ##### Understanding the JSON Metrics Metadata Format
 
@@ -475,7 +475,7 @@ Example Timer metadata:
 
 Generally, the output for a given metric reflects only the metadata that the application or Helidon code explicitly set on that metric.
 
-One exception is that metadata for a timer always includes the `unit` field. By default, Helidon formats timer data in JSON output as seconds, regardless of any explicit `baseUnit` setting applied to the timers. But as [described below][as-described-below] you can change this behavior which can lead to different timers being formatted using different units. Checking the metadata is the only way to know for sure what units Helidon used to express a given timer, so Helidon always includes `unit` in timer metadata.
+One exception is that metadata for a timer always includes the `unit` field. By default, Helidon formats timer data in JSON output as seconds, regardless of any explicit `baseUnit` setting applied to the timers. But as [described below](#controlling-json-timer-output) you can change this behavior which can lead to different timers being formatted using different units. Checking the metadata is the only way to know for sure what units Helidon used to express a given timer, so Helidon always includes `unit` in timer metadata.
 
 ##### Controlling JSON Timer Output
 
@@ -498,7 +498,7 @@ To enable the JSON output behavior from Helidon 3, specify `json-units-default` 
 
 ## API
 
-The [MicroProfile Metrics API][microprofile-metrics-api] prescribes all the standard interfaces related to metrics. This section summarizes a few key points about using that API and explains some Helidon-specific interfaces.
+The [MicroProfile Metrics API][microprofile-met-3] prescribes all the standard interfaces related to metrics. This section summarizes a few key points about using that API and explains some Helidon-specific interfaces.
 
 ### Metrics Annotations
 
@@ -594,13 +594,13 @@ Once it has a reference to a `MetricRegistry` your code can use the reference to
 
 ### Working with Metrics in CDI Extensions
 
-You can work with metrics inside your own CDI extensions, but be careful to do so at the correct point in the CDI lifecycle. Configuration can influence how the metrics system behaves, as the [configuration][configuration] section below explains. Your code should work with metrics only after the Helidon metrics system has initialized itself using configuration. One way to accomplish this is to deal with metrics in a method that observes the Helidon `RuntimeStart` CDI event, which the [extension example below][extension-example-below] illustrates.
+You can work with metrics inside your own CDI extensions, but be careful to do so at the correct point in the CDI lifecycle. Configuration can influence how the metrics system behaves, as the [configuration](#configuration) section below explains. Your code should work with metrics only after the Helidon metrics system has initialized itself using configuration. One way to accomplish this is to deal with metrics in a method that observes the Helidon `RuntimeStart` CDI event, which the [extension example below](#extension_example) illustrates.
 
 ## Configuration
 
 To control how the Helidon metrics subsystem behaves, add a `metrics` section to your `META-INF/microprofile-config.properties` file.
 
-Certain default configuration values depend on the fact that you are using Helidon MP as described in the [second table below][second-table-below].
+Certain default configuration values depend on the fact that you are using Helidon MP as described in the [second table below](#flavor-specific-defaults).
 
 ### Configuration options
 
@@ -608,9 +608,9 @@ Certain default configuration values depend on the fact that you are using Helid
 |----|----|----|----|----|
 | <span id="ab3e25-app-name"></span> `app-name` | `VALUE` | `String` |   | Value for the application tag to be added to each meter ID |
 | <span id="a0590e-app-tag-name"></span> `app-tag-name` | `VALUE` | `String` |   | Name for the application tag to be added to each meter ID |
-| <span id="a24eaf-built-in-meter-name-format"></span> [`built-in-meter-name-format`][built-in-meter-name-format] | `VALUE` | `i.h.m.a.BuiltInMeterNameFormat` | `CAMEL` | Output format for built-in meter names |
+| <span id="a24eaf-built-in-meter-name-format"></span> [`built-in-meter-name-format`][built-in-meter-n] | `VALUE` | `i.h.m.a.BuiltInMeterNameFormat` | `CAMEL` | Output format for built-in meter names |
 | <span id="aac68d-enabled"></span> `enabled` | `VALUE` | `Boolean` | `true` | Whether metrics functionality is enabled |
-| <span id="a90f80-key-performance-indicators"></span> [`key-performance-indicators`][key-performance-indicators] | `VALUE` | `i.h.m.a.KeyPerformanceIndicatorMetricsConfig` |   | Key performance indicator metrics settings |
+| <span id="a90f80-key-performance-indicators"></span> [`key-performance-indicators`][key-performance] | `VALUE` | `i.h.m.a.KeyPerformanceIndicatorMetricsConfig` |   | Key performance indicator metrics settings |
 | <span id="acbf94-permit-all"></span> `permit-all` | `VALUE` | `Boolean` | `true` | Whether to allow anybody to access the endpoint |
 | <span id="ae7437-publishers"></span> [`publishers`][publishers] | `LIST` | `i.h.m.a.MetricsPublisher` |   | Metrics publishers which make the metrics data available to external systems |
 | <span id="af1711-publishers-discover-services"></span> `publishers-discover-services` | `VALUE` | `Boolean` | `false` | Whether to enable automatic service discovery for `publishers` |
@@ -656,7 +656,7 @@ Helidon can make the registered metrics and their current values available exter
 
 | key | type | default value | description |
 |----|----|----|----|
-| `auto` | [AutoHttpMetricsConfig][autohttpmetricsconfig] |   | Automatic metrics collection settings. |
+| `auto` | [AutoHttpMetricsConfig][autohttpmetricsc] |   | Automatic metrics collection settings. |
 | `enabled` | boolean | `true` | Whether this observer is enabled. |
 | `endpoint` | string | `/metrics` | Path at which clients can retrieve metrics information. |
 
@@ -747,11 +747,11 @@ server.features.observe.observers.metrics.auto-http-metrics.sockets=@default,pri
 - Do not measure the personalized greeting requests.
 - Measure only endpoints on the default socket and the socket named `private`. Endpoints on other sockets (such as if you had an `admin` socket) are not measured.
 
-The [AutoHttpMetricsConfig documentation][autohttpmetricsconfig] describes the configuration more fully.
+The [AutoHttpMetricsConfig documentation][autohttpmetricsc] describes the configuration more fully.
 
 ## Examples
 
-Helidon MP includes a pre-written example application illustrating [enabling/disabling metrics][enabling-disabling-metrics] using configuration.
+Helidon MP includes a pre-written example application illustrating [enabling/disabling metrics][enabling-disabli] using configuration.
 
 The rest of this section contains other examples of working with metrics:
 
@@ -1162,8 +1162,8 @@ Helidon does not prevent you from working with metrics earlier than the `Runtime
 Metrics configuration is quite extensive and powerful and, therefore, a bit complicated. The rest of this section illustrates some of the most common scenarios:
 
 - [Disable metrics entirely.](#disable-metrics-subsystem)
-- [Choose whether to report virtual threads metrics][choose-whether-to-report-virtual-threads-metrics].
-- [Choose whether to collect extended key performance indicator metrics.][choose-whether-to-collect-extended-key-performance-indicator-met]
+- [Choose whether to report virtual threads metrics][choose-whether-t].
+- [Choose whether to collect extended key performance indicator metrics.][choose-whether-t-2]
 - [Control `REST.request` metrics collection.](#enable-restrequest-metrics)
 
 #### Disable Metrics Subsystem
@@ -1368,55 +1368,49 @@ kubectl delete -f ./metrics.yaml
 
 ### References
 
-[MicroProfile Metrics specification][microprofile-metrics]
+[MicroProfile Metrics specification][microprofile-met-2]
 
-[MicroProfile Metrics API][microprofile-metrics-api]
+[MicroProfile Metrics API][microprofile-met-3]
 
-[OpenMetrics format][openmetrics-format]
+[OpenMetrics format][openmetrics-form]
 
-[Prometheus exposition format][prometheus-exposition-format]
+[Prometheus exposition format][prometheus-expos]
 
-[microprofile-metrics-specification]: https://github.com/eclipse/microprofile-metrics/releases/tag/5.1.1
-[longer-discussion-below]: #controlling-the-metric-type-for-gctime
-[managing-dependencies]: ../../managing-dependencies.md
-[microprofile-metrics]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/microprofile-metrics-spec-5.1.1.html
+[microprofile-met]: https://github.com/eclipse/microprofile-metrics/releases/tag/5.1.1
+[longer-discussio]: #controlling-the-metric-type-for-gctime
+[microprofile-met-2]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/microprofile-metrics-spec-5.1.1.html
 [counter]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/apidocs/org/eclipse/microprofile/metrics/Counter.html
 [counted]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/apidocs/org/eclipse/microprofile/metrics/annotation/Counted.html
 [histogram]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/apidocs/org/eclipse/microprofile/metrics/Histogram.html
 [timer]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/apidocs/org/eclipse/microprofile/metrics/Timer.html
 [duration]: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/time/Duration.html
 [timed]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/apidocs/org/eclipse/microprofile/metrics/annotation/Timed.html
-[gauge-extends-number]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/apidocs/org/eclipse/microprofile/metrics/Gauge.html
+[gauge-extends-nu]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/apidocs/org/eclipse/microprofile/metrics/Gauge.html
 [number]: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java.lang.Number.html
 [gauge]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/apidocs/org/eclipse/microprofile/metrics/annotation/Gauge.html
 [preview-feature]: /apidocs/io.helidon.common.features.api/io/helidon/common/features/api/Preview.html
-[this-later-section]: #understanding-the-inferred-prometheus-publisher
-[aggregation-temporality]: ../../config/io_micrometer_registry_otlp_AggregationTemporality.md
+[this-later-secti]: #understanding-the-inferred-prometheus-publisher
+[aggregation-temp]: ../../config/io_micrometer_registry_otlp_AggregationTemporality.md
 [base-time-unit]: ../../config/java_util_concurrent_TimeUnit.md
-[datadogmeterregistry]: https://github.com/micrometer-metrics/micrometer/tree/main/implementations/micrometer-registry-datadog
-[settable-properties-from-datadogconfig]: https://github.com/micrometer-metrics/micrometer/blob/main/implementations/micrometer-registry-datadog/src/main/java/io/micrometer/datadog/DatadogConfig.java
-[otlp-publisher-blueprint]: {https://github.com/helidon-io/helidon/tree/main/metrics/providers/micrometer/src/main/java/io/helidon/metrics/providers/micrometer/OtlpPublisherConfigBlueprint.java
-[openmetrics-and-prometheus-format]: #openmetrics-and-prometheus-format
-[openmetrics-format]: https://github.com/prometheus/OpenMetrics/blob/main/specification/OpenMetrics.md
-[prometheus-exposition-format]: https://github.com/prometheus/docs/blob/main/content/docs/instrumenting/exposition_formats.md
-[selects-by-scope]: #scope-specific-retrieval
-[as-described-below]: #controlling-json-timer-output
+[datadogmeterregi]: https://github.com/micrometer-metrics/micrometer/tree/main/implementations/micrometer-registry-datadog
+[settable-propert]: https://github.com/micrometer-metrics/micrometer/blob/main/implementations/micrometer-registry-datadog/src/main/java/io/micrometer/datadog/DatadogConfig.java
+[otlp-publisher-b]: {https://github.com/helidon-io/helidon/tree/main/metrics/providers/micrometer/src/main/java/io/helidon/metrics/providers/micrometer/OtlpPublisherConfigBlueprint.java
+[openmetrics-and]: #openmetrics-and-prometheus-format
+[openmetrics-form]: https://github.com/prometheus/OpenMetrics/blob/main/specification/OpenMetrics.md
+[prometheus-expos]: https://github.com/prometheus/docs/blob/main/content/docs/instrumenting/exposition_formats.md
 [timeunit]: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/TimeUnit.html
-[microprofile-metrics-api]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/apidocs/org/eclipse/microprofile/metrics/package-summary.html
+[microprofile-met-3]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/apidocs/org/eclipse/microprofile/metrics/package-summary.html
 [metric]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/apidocs/org/eclipse/microprofile/metrics/annotation/Metric.html
 [metricregistry]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/apidocs/org/eclipse/microprofile/metrics/MetricRegistry.html
 [registryscope]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/apidocs/org/eclipse/microprofile/metrics/annotation/RegistryScope.html
 [registryfactory]: /apidocs/io.helidon.microprofile.metrics/io/helidon/microprofile/metrics/RegistryFactory.html
-[configuration]: #configuration
-[extension-example-below]: #extension_example
-[second-table-below]: #flavor-specific-defaults
-[built-in-meter-name-format]: ../../config/io_helidon_metrics_api_BuiltInMeterNameFormat.md
-[key-performance-indicators]: ../../config/io_helidon_metrics_api_KeyPerformanceIndicatorMetricsConfig.md
+[built-in-meter-n]: ../../config/io_helidon_metrics_api_BuiltInMeterNameFormat.md
+[key-performance]: ../../config/io_helidon_metrics_api_KeyPerformanceIndicatorMetricsConfig.md
 [publishers]: ../../config/io_helidon_metrics_api_MetricsPublisher.md
 [scoping]: ../../config/io_helidon_metrics_api_ScopingConfig.md
 [gc-time-type]: ../../config/io_helidon_metrics_api_GcTimeType.md
-[autohttpmetricsconfig]: ../../config/io_helidon_webserver_observe_metrics_AutoHttpMetricsConfig.md
+[autohttpmetricsc]: ../../config/io_helidon_webserver_observe_metrics_AutoHttpMetricsConfig.md
 [paths]: ../../config/io_helidon_webserver_observe_metrics_AutoHttpMetricsPathConfig.md
-[enabling-disabling-metrics]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/metrics/filtering/mp
-[choose-whether-to-report-virtual-threads-metrics]: #configuring-virtual-threads-metrics
-[choose-whether-to-collect-extended-key-performance-indicator-met]: #collecting-basic-and-extended-key-performance-indicator-kpi-metrics
+[enabling-disabli]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/metrics/filtering/mp
+[choose-whether-t]: #configuring-virtual-threads-metrics
+[choose-whether-t-2]: #collecting-basic-and-extended-key-performance-indicator-kpi-metrics

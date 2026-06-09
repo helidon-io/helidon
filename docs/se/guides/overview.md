@@ -52,16 +52,16 @@
 -->
 | Guide | Description |
 | --- | --- |
-| [Config Guide](config.md) | Learn how to configure a Helidon SE application. |
-| [LangChain4j Guide][langchain4j-guide] | Learn how to create AI powered Helidon SE applications. |
-| [Health Check Guide][health-check-guide] | Learn how to use Helidon SE built-in and custom health checks. |
+| [Config Guide][config-guide] | Learn how to configure a Helidon SE application. |
+| [LangChain4j Guide][langchain4j-guid] | Learn how to create AI powered Helidon SE applications. |
+| [Health Check Guide][health-check-gui] | Learn how to use Helidon SE built-in and custom health checks. |
 | [Metrics Guide][metrics-guide] | Learn how to use Helidon SE built-in and application metrics. |
-| [Tracing Guide](tracing.md) | Learn how to trace a Helidon SE application. |
+| [Tracing Guide][tracing-guide] | Learn how to trace a Helidon SE application. |
 | [OIDC Guide][oidc-guide] | Learn how to set up an OIDC Helidon SE application |
-| [Helidon SE Upgrade Guide][helidon-se-upgrade-guide] | Learn how to Upgrade your Helidon SE application |
-| [Helidon SE WebClient Guide][helidon-se-webclient-guide] | Learn how to use the Helidon SE WebClient |
-| [Helidon SE DB Client Guide][helidon-se-db-client-guide] | Learn how to use the Helidon SE DB Client |
-| [Helidon SE Performance Tuning Guide][helidon-se-performance-tuning-guide] | Learn how to tune your Helidon SE application |
+| [Helidon SE Upgrade Guide][helidon-se-upgra] | Learn how to Upgrade your Helidon SE application |
+| [Helidon SE WebClient Guide][helidon-se-webcl] | Learn how to use the Helidon SE WebClient |
+| [Helidon SE DB Client Guide][helidon-se-db-cl] | Learn how to use the Helidon SE DB Client |
+| [Helidon SE Performance Tuning Guide][helidon-se-perfo] | Learn how to tune your Helidon SE application |
 <!--/mdc -->
 
 ## Build and Deploy
@@ -84,20 +84,24 @@
 -->
 | Guide | Description |
 | --- | --- |
-| [Maven Guide](maven-build.md) | Using Helidon in your Maven project. |
-| [Gradle Guide](gradle-build.md) | Using Helidon in your Gradle project. |
-| [GraalVM Native Images][graalvm-native-images] | Learn how to build a GraalVM native image for your Helidon application both on your desktop and as part of a Docker image. |
-| [Custom Runtime Images using jlink][custom-runtime-images-using-jlink] | Learn how to build a custom runtime Java image for your Helidon application both on your desktop and as part of a Docker image. |
+| [Maven Guide][maven-guide] | Using Helidon in your Maven project. |
+| [Gradle Guide][gradle-guide] | Using Helidon in your Gradle project. |
+| [GraalVM Native Images][graalvm-native-i] | Learn how to build a GraalVM native image for your Helidon application both on your desktop and as part of a Docker image. |
+| [Custom Runtime Images using jlink][custom-runtime-i] | Learn how to build a custom runtime Java image for your Helidon application both on your desktop and as part of a Docker image. |
 <!--/mdc -->
 
 [quickstart-se]: quickstart.md
-[langchain4j-guide]: langchain4j.md
-[health-check-guide]: health.md
+[config-guide]: config.md
+[langchain4j-guid]: langchain4j.md
+[health-check-gui]: health.md
 [metrics-guide]: metrics.md
+[tracing-guide]: tracing.md
 [oidc-guide]: security-oidc.md
-[helidon-se-upgrade-guide]: upgrade.md
-[helidon-se-webclient-guide]: webclient.md
-[helidon-se-db-client-guide]: dbclient.md
-[helidon-se-performance-tuning-guide]: performance-tuning.md
-[graalvm-native-images]: graalnative.md
-[custom-runtime-images-using-jlink]: jlink-image.md
+[helidon-se-upgra]: upgrade.md
+[helidon-se-webcl]: webclient.md
+[helidon-se-db-cl]: dbclient.md
+[helidon-se-perfo]: performance-tuning.md
+[maven-guide]: maven-build.md
+[gradle-guide]: gradle-build.md
+[graalvm-native-i]: graalnative.md
+[custom-runtime-i]: jlink-image.md

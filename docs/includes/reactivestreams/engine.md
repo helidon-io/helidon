@@ -6,7 +6,7 @@ Helidon has its own set of reactive operators that have no dependencies outside 
 
 ## Maven Coordinates
 
-To enable Reactive Engine, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable Reactive Engine, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -134,5 +134,3 @@ publisherStage
 // > Item received: FOO
 // > Item received: BAR
 ```
-
-[managing-dependencies]: ../../managing-dependencies.md

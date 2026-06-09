@@ -53,49 +53,49 @@ Migration from `javax` to `jakarta` namespace is making this release backward in
 
 - **MicroProfile Config 3.1**:
 
-  Incompatible changes described in [MicroProfile Config 3.1 Specification][microprofile-config-3-1-specification]
+  Incompatible changes described in [MicroProfile Config 3.1 Specification][microprofile-con]
 
 - **MicroProfile Fault Tolerance 4.0.2**:
 
-  Incompatible changes described in [MicroProfile Fault Tolerance 4.0.2 Specification][microprofile-fault-tolerance-4-0-2-specification]
+  Incompatible changes described in [MicroProfile Fault Tolerance 4.0.2 Specification][microprofile-fau]
 
 - **MicroProfile Health 4.0**:
 
-  Incompatible changes described in [MicroProfile Health 4.0 Specification][microprofile-health-4-0-specification]
+  Incompatible changes described in [MicroProfile Health 4.0 Specification][microprofile-hea]
 
 - **MicroProfile JWT Authentication 2.1**:
 
-  Incompatible changes described in [MicroProfile JWT Authentication 2.1 Specification][microprofile-jwt-authentication-2-1-specification]
+  Incompatible changes described in [MicroProfile JWT Authentication 2.1 Specification][microprofile-jwt]
 
 - **MicroProfile Metrics 5.1.1**:
 
-  Incompatible changes described in [MicroProfile Metrics 5.1.1 Specification][microprofile-metrics-5-1-1-specification]
+  Incompatible changes described in [MicroProfile Metrics 5.1.1 Specification][microprofile-met]
 
 - **MicroProfile OpenAPI 3.1.1**:
 
-  Incompatible changes described in [MicroProfile OpenAPI 3.1.1 Specification][microprofile-openapi-3-1-1-specification]
+  Incompatible changes described in [MicroProfile OpenAPI 3.1.1 Specification][microprofile-ope]
 
 - **MicroProfile OpenTracing 3.0**:
 
-  Incompatible changes described in [MicroProfile OpenTracing 3.0 Specification][microprofile-opentracing-3-0-specification]
+  Incompatible changes described in [MicroProfile OpenTracing 3.0 Specification][microprofile-ope-2]
 
 - **MicroProfile Rest Client 3.0**:
 
-  Incompatible changes described in [MicroProfile Rest Client 3.0 Specification][microprofile-rest-client-3-0-specification]
+  Incompatible changes described in [MicroProfile Rest Client 3.0 Specification][microprofile-res]
 
 ### Supported Jakarta EE specifications
 
 - **CDI (Jakarta Contexts and Dependency Injection) 4.0**:
 
-  Changes described in [CDI (Jakarta Contexts and Dependency Injection) 4.0 Specification][cdi-jakarta-contexts-and-dependency-injection-4-0-specification]
+  Changes described in [CDI (Jakarta Contexts and Dependency Injection) 4.0 Specification][cdi-jakarta-cont]
 
 - **JAX-RS (Jakarta RESTful Web Services) 3.1**:
 
-  Moved to `jakarta` namespace. Changes described in [JAX-RS (Jakarta RESTful Web Services) 3.1Specification][microprofile-rest-client-3-0-specification]
+  Moved to `jakarta` namespace. Changes described in [JAX-RS (Jakarta RESTful Web Services) 3.1Specification][microprofile-res]
 
 - **JSON-B (Jakarta JSON Binding) 3.0**:
 
-  Moved to `jakarta` namespace. Changes described in [JSON-B (Jakarta JSON Binding) 3.0 Specification][json-b-jakarta-json-binding-3-0-specification]
+  Moved to `jakarta` namespace. Changes described in [JSON-B (Jakarta JSON Binding) 3.0 Specification][json-b-jakarta-j]
 
 - **JSON-P (Jakarta JSON Processing) 2.1**:
 
@@ -103,23 +103,23 @@ Migration from `javax` to `jakarta` namespace is making this release backward in
 
 - **Jakarta Annotations 2.1.1**:
 
-  Moved to `jakarta` namespace. Moved to `jakarta` namespace. Full information in [Jakarta Annotations 2.1.1 Specification][jakarta-annotations-2-1-1-specification]
+  Moved to `jakarta` namespace. Moved to `jakarta` namespace. Full information in [Jakarta Annotations 2.1.1 Specification][jakarta-annotati]
 
 - **Jakarta Persistence API 3.1**:
 
-  Moved to `jakarta` namespace. Changes described in [Jakarta Persistence API 3.1 Specification][jakarta-persistence-api-3-1-specification]
+  Moved to `jakarta` namespace. Changes described in [Jakarta Persistence API 3.1 Specification][jakarta-persiste]
 
 - **Jakarta Transactions API 2.0**:
 
-  Moved to `jakarta` namespace. Changes described in [Jakarta Transactions API 2.0 Specification][jakarta-transactions-api-2-0-specification]
+  Moved to `jakarta` namespace. Changes described in [Jakarta Transactions API 2.0 Specification][jakarta-transact]
 
 - **Jakarta WebSocket API 2.1**:
 
-  Moved to `jakarta` namespace. Changes described in [Jakarta WebSocket API 2.1 Specification][jakarta-websocket-api-2-1-specification]
+  Moved to `jakarta` namespace. Changes described in [Jakarta WebSocket API 2.1 Specification][jakarta-websocke]
 
 - **Jakarta Bean Validation 3.0**:
 
-  Moved to `jakarta` namespace. Changes described in [Jakarta Bean Validation 3.0 Specification][jakarta-bean-validation-3-0-specification]
+  Moved to `jakarta` namespace. Changes described in [Jakarta Bean Validation 3.0 Specification][jakarta-bean-val]
 
 > [!NOTE]
 > Please, read each specification carefully for incompatible changes!
@@ -231,21 +231,21 @@ More information in the following [Task][task-9].
 
 More information in the following [Task][task-11].
 
-[microprofile-config-3-1-specification]: https://download.eclipse.org/microprofile/microprofile-config-3.0.1/microprofile-config-spec-3.0.1.html#_incompatible_changes
-[microprofile-fault-tolerance-4-0-2-specification]: https://download.eclipse.org/microprofile/microprofile-fault-tolerance-4.0/microprofile-fault-tolerance-spec-4.0.html#_backward_incompatible_changes=
-[microprofile-health-4-0-specification]: https://download.eclipse.org/microprofile/microprofile-health-4.0/microprofile-health-spec-4.0.html#_incompatible_changes
-[microprofile-jwt-authentication-2-1-specification]: https://download.eclipse.org/microprofile/microprofile-jwt-auth-2.0/microprofile-jwt-auth-spec-2.0.html#_incompatible_changes
-[microprofile-metrics-5-1-1-specification]: https://download.eclipse.org/microprofile/microprofile-metrics-4.0/microprofile-metrics-spec-4.0.html#_incompatible_changes
-[microprofile-openapi-3-1-1-specification]: https://download.eclipse.org/microprofile/microprofile-open-api-2.0.1/microprofile-openapi-spec-2.0.1.html#_incompatible_changes
-[microprofile-opentracing-3-0-specification]: https://download.eclipse.org/microprofile/microprofile-opentracing-3.0/microprofile-opentracing-spec-3.0.html#_incompatible_changes
-[microprofile-rest-client-3-0-specification]: https://download.eclipse.org/microprofile/microprofile-rest-client-3.0/microprofile-rest-client-spec-3.0.html#_incompatible_changes
-[cdi-jakarta-contexts-and-dependency-injection-4-0-specification]: https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0.html#architecture
-[json-b-jakarta-json-binding-3-0-specification]: https://jakarta.ee/specifications/jsonb/2.0/jakarta-jsonb-spec-2.0.html#change-log
-[jakarta-annotations-2-1-1-specification]: https://jakarta.ee/specifications/annotations/2.0/annotations-spec-2.0.html
-[jakarta-persistence-api-3-1-specification]: https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#revision-history
-[jakarta-transactions-api-2-0-specification]: https://jakarta.ee/specifications/transactions/2.0/jakarta-transactions-spec-2.0.html#revision-history
-[jakarta-websocket-api-2-1-specification]: https://jakarta.ee/specifications/websocket/2.0/websocket-spec-2.0.html#changes
-[jakarta-bean-validation-3-0-specification]: https://jakarta.ee/specifications/bean-validation/2.0/bean-validation_2.0.html#changelog
+[microprofile-con]: https://download.eclipse.org/microprofile/microprofile-config-3.0.1/microprofile-config-spec-3.0.1.html#_incompatible_changes
+[microprofile-fau]: https://download.eclipse.org/microprofile/microprofile-fault-tolerance-4.0/microprofile-fault-tolerance-spec-4.0.html#_backward_incompatible_changes=
+[microprofile-hea]: https://download.eclipse.org/microprofile/microprofile-health-4.0/microprofile-health-spec-4.0.html#_incompatible_changes
+[microprofile-jwt]: https://download.eclipse.org/microprofile/microprofile-jwt-auth-2.0/microprofile-jwt-auth-spec-2.0.html#_incompatible_changes
+[microprofile-met]: https://download.eclipse.org/microprofile/microprofile-metrics-4.0/microprofile-metrics-spec-4.0.html#_incompatible_changes
+[microprofile-ope]: https://download.eclipse.org/microprofile/microprofile-open-api-2.0.1/microprofile-openapi-spec-2.0.1.html#_incompatible_changes
+[microprofile-ope-2]: https://download.eclipse.org/microprofile/microprofile-opentracing-3.0/microprofile-opentracing-spec-3.0.html#_incompatible_changes
+[microprofile-res]: https://download.eclipse.org/microprofile/microprofile-rest-client-3.0/microprofile-rest-client-spec-3.0.html#_incompatible_changes
+[cdi-jakarta-cont]: https://jakarta.ee/specifications/cdi/3.0/jakarta-cdi-spec-3.0.html#architecture
+[json-b-jakarta-j]: https://jakarta.ee/specifications/jsonb/2.0/jakarta-jsonb-spec-2.0.html#change-log
+[jakarta-annotati]: https://jakarta.ee/specifications/annotations/2.0/annotations-spec-2.0.html
+[jakarta-persiste]: https://jakarta.ee/specifications/persistence/3.0/jakarta-persistence-spec-3.0.html#revision-history
+[jakarta-transact]: https://jakarta.ee/specifications/transactions/2.0/jakarta-transactions-spec-2.0.html#revision-history
+[jakarta-websocke]: https://jakarta.ee/specifications/websocket/2.0/websocket-spec-2.0.html#changes
+[jakarta-bean-val]: https://jakarta.ee/specifications/bean-validation/2.0/bean-validation_2.0.html#changelog
 [task]: https://github.com/helidon-io/helidon/issues/4363
 [task-2]: https://github.com/helidon-io/helidon/issues/4364
 [task-3]: https://github.com/helidon-io/helidon/issues/4365

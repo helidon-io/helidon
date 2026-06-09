@@ -162,7 +162,7 @@ We can test our pirate service with curl:
 
 ## Prompt Template Arguments
 
-Ofcourse all the features from LangChain4j Ai services are going to work, let’s try to expand the example with [template arguments][template-arguments].
+Ofcourse all the features from LangChain4j Ai services are going to work, let’s try to expand the example with [template arguments][template-argumen].
 
 ```java
 @Ai.Service
@@ -201,7 +201,7 @@ We can test our pirate service with curl:
 
 ## Custom Memory Provider
 
-We can also extend the pirate example with [conversation memory][conversation-memory]. First, we need to create a memory provider so our memory works per conversation ID.
+We can also extend the pirate example with [conversation memory][conversation-mem]. First, we need to create a memory provider so our memory works per conversation ID.
 
 ```java
 @Service.Singleton
@@ -271,5 +271,5 @@ We can test our pirate service with curl:
 [docker-18-09]: https://docs.docker.com/install/
 [kubectl-1-16-5]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
 [ai-service]: https://docs.langchain4j.dev/tutorials/ai-services
-[template-arguments]: https://docs.langchain4j.dev/tutorials/ai-services#usermessage
-[conversation-memory]: https://docs.langchain4j.dev/tutorials/chat-memory
+[template-argumen]: https://docs.langchain4j.dev/tutorials/ai-services#usermessage
+[conversation-mem]: https://docs.langchain4j.dev/tutorials/chat-memory

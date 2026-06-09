@@ -6,11 +6,11 @@ Helidon supports MicroProfile REST Client metrics by registering metrics automat
 
 MicroProfile neither mandates nor specifies how metrics and the REST client work together. Support in Helidon for metrics on REST clients uses the MicroProfile Metrics spec for inspiration where appropriate.
 
-For more information about support for REST clients in Helidon see [REST Client][rest-client].
+For more information about support for REST clients in Helidon see [REST Client](restclient.md).
 
 ## Maven Coordinates
 
-To enable MicroProfile Rest Client Metrics, either add a dependency on the [helidon-microprofile bundle][helidon-microprofile-bundle] or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable MicroProfile Rest Client Metrics, either add a dependency on the [helidon-microprofile bundle](../introduction.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -23,7 +23,7 @@ To enable MicroProfile Rest Client Metrics, either add a dependency on the [heli
 
 Add the MicroProfile Metrics `@Counted` and `@Timed` annotations to REST client interfaces and interface methods to trigger counting or timing, respectively, of REST client method invocations.
 
-Helidon determines metric names according to the [MicroProfile Metrics naming convention][microprofile-metrics-naming-convention] and supports the following metrics naming features:
+Helidon determines metric names according to the [MicroProfile Metrics naming convention][microprofile-met] and supports the following metrics naming features:
 
 - absolute and relative names
 - explicit and inferred names
@@ -39,7 +39,7 @@ When you use the annotations at the type level on a superinterface Helidon acts 
 
 Helidon registers the metrics associated with a REST client interface when that interface becomes known to Helidon as a REST client.
 
-The [MicroProfile REST Client spec][microprofile-rest-client-spec] describes how your application can inject a REST client interface or prepare it programmatically. Either action makes the REST client known to Helidon, at which time Helidon registers the metrics associated with that interface’s methods. As a result, depending on how your application works, REST client metrics might be registered well after your code initially starts up.
+The [MicroProfile REST Client spec][microprofile-res] describes how your application can inject a REST client interface or prepare it programmatically. Either action makes the REST client known to Helidon, at which time Helidon registers the metrics associated with that interface’s methods. As a result, depending on how your application works, REST client metrics might be registered well after your code initially starts up.
 
 ### Using REST Client Metrics in Standalone Clients vs. in Servers
 
@@ -81,7 +81,7 @@ The `enabled` configuration setting allows developers to build REST client metri
 
 ## Examples
 
-This example is similar to the [Helidon REST Client doc example][helidon-rest-client-doc-example] which starts with the [Helidon MP QuickStart example][helidon-mp-quickstart-example].
+This example is similar to the [Helidon REST Client doc example](restclient.md#_examples) which starts with the [Helidon MP QuickStart example](../guides/quickstart.md).
 
 This sample app adds a new resource which mimics the functionality of the `GreetResource` but delegates each incoming request to its counterpart on the `GreetResource` using a REST client interface for that `GreetResource`. In short, the example application delegates to itself. Of course no production application would operate this way, but this contrived situation helps illustrate how to use REST client metrics simply with a single runnable project.
 
@@ -241,16 +241,11 @@ To create this REST client metrics example follow these steps.
 
 ## Reference
 
-- [Helidon REST Client documentation][rest-client]
-- [MicroProfile RestClient specification][microprofile-restclient-specification]
-- [MicroProfile Metrics specification][microprofile-metrics-specification]
+- [Helidon REST Client documentation](restclient.md)
+- [MicroProfile RestClient specification][microprofile-res-2]
+- [MicroProfile Metrics specification][microprofile-met-2]
 
-[rest-client]: restclient.md
-[helidon-microprofile-bundle]: ../introduction.md
-[managing-dependencies]: ../../managing-dependencies.md
-[microprofile-metrics-naming-convention]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/microprofile-metrics-spec-5.1.1.html#annotated-naming-convention
-[microprofile-rest-client-spec]: https://download.eclipse.org/microprofile/microprofile-rest-client-3.0/microprofile-rest-client-spec-3.0.html#_microprofile_rest_client
-[helidon-rest-client-doc-example]: restclient.md#_examples
-[helidon-mp-quickstart-example]: ../guides/quickstart.md
-[microprofile-restclient-specification]: https://download.eclipse.org/microprofile/microprofile-rest-client-3.0/microprofile-rest-client-spec-3.0.html
-[microprofile-metrics-specification]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/microprofile-metrics-spec-5.1.1.html
+[microprofile-met]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/microprofile-metrics-spec-5.1.1.html#annotated-naming-convention
+[microprofile-res]: https://download.eclipse.org/microprofile/microprofile-rest-client-3.0/microprofile-rest-client-spec-3.0.html#_microprofile_rest_client
+[microprofile-res-2]: https://download.eclipse.org/microprofile/microprofile-rest-client-3.0/microprofile-rest-client-spec-3.0.html
+[microprofile-met-2]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/microprofile-metrics-spec-5.1.1.html

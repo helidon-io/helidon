@@ -72,11 +72,11 @@ assert secrets.get("password") // (4)
 3.  The loaded config maps the key `username` to the value `jose`…​
 4.  …​and the key `password` to `^ery$ecretP&ssword`.
 
-Remember that your application can process the contents of a given file as configuration. See the [config sources][config-sources] section and the [`ConfigSources.file`][configsources-file] Javadoc.
+Remember that your application can process the contents of a given file as configuration. See the [config sources](introduction.md#config_sources) section and the [`ConfigSources.file`][configsources-fi] Javadoc.
 
 ### In-memory Config Sources
 
-The config system provides several ways to create a `Config` tree from data already in memory. See the [`ConfigSources` javadoc][configsources-javadoc] for further details. The numerous variants of the `from` method construct `ConfigSource` or `Builder<ConfigSource>` instances.
+The config system provides several ways to create a `Config` tree from data already in memory. See the [`ConfigSources` javadoc][configsources-ja] for further details. The numerous variants of the `from` method construct `ConfigSource` or `Builder<ConfigSource>` instances.
 
 #### Subtree of Another `Config`
 
@@ -133,7 +133,7 @@ Although the examples above use a single source, you can build a single `Config`
 
 Sometimes you might want to create a single config tree from multiple sources but in a way that keeps the config from different sources in different subtrees.
 
-The config system lets you assign a prefix to all keys from a given source using the [`ConfigSources.prefixed`][configsources-prefixed] method. The following example shows two YAML files as config sources and the code to load each with a different prefix into a single `Config` tree:
+The config system lets you assign a prefix to all keys from a given source using the [`ConfigSources.prefixed`][configsources-pr] method. The following example shows two YAML files as config sources and the code to load each with a different prefix into a single `Config` tree:
 
 File `app.conf`
 
@@ -220,7 +220,7 @@ Although most applications are explicit about the config sources they use in bui
 
 Most applications let the config system try to infer the media type of the config source.
 
-By default, config source implementations use the `io.helidon.common.media.type.MediaTypes` API to infer the source media type from the source, typically (but not always) based on the file type portion of the file path. Helidon media type module has a predefined set of mappings as configured in `common/media-type/src/main/resources/io/helidon/common/media/type/default-media-types.properties`, including the Config supported formats: `.properties`, `.yaml`, `.json` and `.conf`. To handle other formats you can implement and register your own `io.helidon.common.media.type.spi.MediaTypeDetector` Java Service implementations. (Typically, you would also write and register a config parser to translate that format; see [Locating a Parser][locating-a-parser] below.)
+By default, config source implementations use the `io.helidon.common.media.type.MediaTypes` API to infer the source media type from the source, typically (but not always) based on the file type portion of the file path. Helidon media type module has a predefined set of mappings as configured in `common/media-type/src/main/resources/io/helidon/common/media/type/default-media-types.properties`, including the Config supported formats: `.properties`, `.yaml`, `.json` and `.conf`. To handle other formats you can implement and register your own `io.helidon.common.media.type.spi.MediaTypeDetector` Java Service implementations. (Typically, you would also write and register a config parser to translate that format; see [Locating a Parser](#locating-a-parser) below.)
 
 ##### By Application Directive
 
@@ -349,7 +349,7 @@ As before, the config system replaces the value node in the containing config tr
 
 ## Config Keys with . in name
 
-As described in the [hierarchical features section][hierarchical-features-section] each config node (except the root) has a non-null key.
+As described in the [hierarchical features section][hierarchical-fea] each config node (except the root) has a non-null key.
 
 > [!IMPORTANT]
 > To emphasize, the dot character (“.”) has special meaning as a name separator in keys. To include a dot as a character in a key escape it as “~1”.
@@ -398,7 +398,7 @@ assert config.get(Key.escapeName("oracle.com")).name().equals("oracle.com"); // 
 
 ## Filters, Overrides, and Token Substitution
 
-When your application retrieves a config value, the config system can transform it before returning the value, according to *filters*, *overrides*, and *tokens*. The config system provides some built-in instances of these you can use, and you can add your own as described in the sections which describe [filters][filters] and [overrides][overrides].
+When your application retrieves a config value, the config system can transform it before returning the value, according to *filters*, *overrides*, and *tokens*. The config system provides some built-in instances of these you can use, and you can add your own as described in the sections which describe [filters][filters] and [overrides](extensions.md#overridesource-spi).
 
 Your application can add filters and overrides explicitly to a config builder and the config system by default uses the Java service loader mechanism to locate all available filters and overrides and add them automatically to all config builders (unless your code disables that behavior for a given builder).
 
@@ -526,7 +526,7 @@ Config config = Config.builder()
 
 ### Retry Policy Custom Executor
 
-You can control which executor a retry policy should use for its work. The `RetryPolicies.repeat(int retries)` method returns a [SimpleRetryPolicy.Builder][simpleretrypolicy-builder]. Your application can invoke the retry policy builder’s `executorService` method to specify which `ScheduledExecutorService` instance it should use to schedule and execute delayed retries. By default, the config system uses a separate thread pool executor for each retry policy instance.
+You can control which executor a retry policy should use for its work. The `RetryPolicies.repeat(int retries)` method returns a [SimpleRetryPolicy.Builder][simpleretrypolic]. Your application can invoke the retry policy builder’s `executorService` method to specify which `ScheduledExecutorService` instance it should use to schedule and execute delayed retries. By default, the config system uses a separate thread pool executor for each retry policy instance.
 
 Customize retry policy executors
 
@@ -545,14 +545,11 @@ Config config = Config.create(
 3.  Uses the built-in *repeating* implementation of `RetryPolicy` that can be used with any config source, but typically for ones that might suffer brief, intermittent outages.
 4.  Specifies the executor to use for loading and retries.
 
-[config-sources]: introduction.md#config_sources
-[configsources-file]: /apidocs/io.helidon.config/io/helidon/config/ConfigSources.html#file-java.lang.String-
-[configsources-javadoc]: /apidocs/io.helidon.config/io/helidon/config/ConfigSources.html
-[configsources-prefixed]: /apidocs/io.helidon.config/io/helidon/config/ConfigSources.html#prefixed-java.lang.String-java.util.function.Supplier-
-[locating-a-parser]: #locating-a-parser
-[hierarchical-features-section]: hierarchical-features.md#access-by-key
+[configsources-fi]: /apidocs/io.helidon.config/io/helidon/config/ConfigSources.html#file-java.lang.String-
+[configsources-ja]: /apidocs/io.helidon.config/io/helidon/config/ConfigSources.html
+[configsources-pr]: /apidocs/io.helidon.config/io/helidon/config/ConfigSources.html#prefixed-java.lang.String-java.util.function.Supplier-
+[hierarchical-fea]: hierarchical-features.md#access-by-key
 [filters]: extensions.md#Config-SPI-ConfigFilter
-[overrides]: extensions.md#overridesource-spi
 [value-resolving]: /apidocs/io.helidon.config/io/helidon/config/ConfigFilters.html#valueResolving--
 [configfilter]: /apidocs/io.helidon.config/io/helidon/config/spi/ConfigFilter.html
-[simpleretrypolicy-builder]: /apidocs/io.helidon.config/io/helidon/config/SimpleRetryPolicy.Builder.html
+[simpleretrypolic]: /apidocs/io.helidon.config/io/helidon/config/SimpleRetryPolicy.Builder.html

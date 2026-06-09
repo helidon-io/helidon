@@ -9,7 +9,7 @@ Injection is the basic building stone for inversion of control. Dependency injec
 
 ## Maven Coordinates
 
-To enable Injection, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable Injection, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -31,7 +31,7 @@ Let’s begin by explaining some basic terms.
 
 ### Dependency Injection
 
-Injection is a way to automatically provide instances of dependencies without having to create them manually. Instead of a class creating an object itself, something else (like a [service registry][service-registry]) hands it over when needed. This makes code cleaner, easier to manage, and more flexible.
+Injection is a way to automatically provide instances of dependencies without having to create them manually. Instead of a class creating an object itself, something else (like a [service registry](#service-registry)) hands it over when needed. This makes code cleaner, easier to manage, and more flexible.
 
 For example, if a Car needs an Engine, instead of the Car making an Engine itself, it just asks for one, and the system provides it. This is called Dependency Injection (DI).
 
@@ -39,7 +39,7 @@ For example, if a Car needs an Engine, instead of the Car making an Engine itsel
 
 In a declarative approach, you use annotations on classes, constructors, and constructor arguments to express your intent.
 
-For example, instead of manually managing dependencies, you declare that a class should be injectable using annotations like [`@Service.Singleton`][service-singleton] (More about that later).
+For example, instead of manually managing dependencies, you declare that a class should be injectable using annotations like [`@Service.Singleton`][service-singleto] (More about that later).
 
 See [Helidon Declarative](declarative.md#overview)
 
@@ -73,7 +73,7 @@ interface GreetingContract {
 
 ### Service
 
-This can be either a concrete class, which implements the contract (or is contract itself if it was a concrete class), or it can be a factory/producer (more about [Factories][factories]), which creates a new instances to be registered into the service registry.
+This can be either a concrete class, which implements the contract (or is contract itself if it was a concrete class), or it can be a factory/producer (more about [Factories](#factories)), which creates a new instances to be registered into the service registry.
 
 Service example:
 
@@ -97,8 +97,8 @@ Contract and service can be the same thing, but also separate entities. It all d
 
 Services are defined by:
 
-1.  Java classes annotated with one of the [`@Service.Scope`][service-scope] annotations (see [Scopes][scopes])
-2.  Any class with [`@Service.Inject`][service-inject] annotation even when it doesn’t have a scope annotation. In such a case, the scope of the service will be set as [`@Service.PerLookup`][service-perlookup].
+1.  Java classes annotated with one of the [`@Service.Scope`][service-scope] annotations (see [Scopes](#scopes))
+2.  Any class with [`@Service.Inject`][service-inject] annotation even when it doesn’t have a scope annotation. In such a case, the scope of the service will be set as [`@Service.PerLookup`][service-perlooku].
 
 Keep in mind that if you create any service instance directly, it will not get its injection points resolved! This works only when using service registry.
 
@@ -128,9 +128,9 @@ Dependencies can be injected in different formats, depending on the required beh
 
 There are three built-in scopes:
 
-- [`@Service.Singleton`][service-singleton] – A single instance exists in the service registry for the registry lifetime.
-- [`@Service.PerLookup`][service-perlookup] – A new instance is created each time a lookup occurs (including when injected into an injection point).
-- [`@Service.PerRequest`][service-perrequest] – A single instance per request exists in the service registry. The definition of a "request" is not enforced by the injection framework but aligns with concepts like an HTTP request-response cycle or message consumption in a messaging system.
+- [`@Service.Singleton`][service-singleto] – A single instance exists in the service registry for the registry lifetime.
+- [`@Service.PerLookup`][service-perlooku] – A new instance is created each time a lookup occurs (including when injected into an injection point).
+- [`@Service.PerRequest`][service-perreque] – A single instance per request exists in the service registry. The definition of a "request" is not enforced by the injection framework but aligns with concepts like an HTTP request-response cycle or message consumption in a messaging system.
 
 ## Build time
 
@@ -209,7 +209,7 @@ class GreetingInjectionService {
 }
 ```
 
-Now it just needs to be tested. The easiest way is to make a main method. The following piece of code initializes Service registry. After that we search for our `GreetingInjectionService` and execute it to print out `Hello David!`. To find out more about this manual approach, please take a look into the [Programmatic Lookup][programmatic-lookup] chapter.
+Now it just needs to be tested. The easiest way is to make a main method. The following piece of code initializes Service registry. After that we search for our `GreetingInjectionService` and execute it to print out `Hello David!`. To find out more about this manual approach, please take a look into the [Programmatic Lookup](#programmatic-lookup) chapter.
 
 Lookup our created service and execute it manually:
 
@@ -220,7 +220,7 @@ public static void main(String[] args) {
 }
 ```
 
-The last step is ensuring that everything necessary for your application to compile correctly with injection is included. See [Build time][build-time].
+The last step is ensuring that everything necessary for your application to compile correctly with injection is included. See [Build time](#build-time).
 
 If everything went as expected, no problems occurred and a Service registry gave us fully initialized and ready to use service.
 
@@ -228,23 +228,23 @@ If everything went as expected, no problems occurred and a Service registry gave
 
 The service registry manages the lifecycle of services. To ensure a method is invoked at a specific lifecycle phase, you can use the following annotations:
 
-- [`@Service.PostConstruct`][service-postconstruct] – Invokes the annotated method after the instance has been created and fully injected.
-- [`@Service.PreDestroy`][service-predestroy] – Invokes the annotated method when the service is no longer in use by the registry. (Such as if the intended scope ends)
-  - [`@Service.PerLookup`][service-perlookup] – PreDestroy annotated method is not invoked, since it is not managed by the service registry after the injection.
+- [`@Service.PostConstruct`][service-postcons] – Invokes the annotated method after the instance has been created and fully injected.
+- [`@Service.PreDestroy`][service-predestr] – Invokes the annotated method when the service is no longer in use by the registry. (Such as if the intended scope ends)
+  - [`@Service.PerLookup`][service-perlooku] – PreDestroy annotated method is not invoked, since it is not managed by the service registry after the injection.
   - **Other scopes** – The pre-destroy method is invoked when the scope is deactivated (e.g. for singletons this happens during registry or JVM shutdown).
 
 ## Qualifiers
 
 In dependency injection, a qualifier is a way to tell the framework which dependency to use when there are multiple options available.
 
-Annotations are considered qualifier if they’re "meta-annotated" with [`@Service.Qualifier`][service-qualifier].
+Annotations are considered qualifier if they’re "meta-annotated" with [`@Service.Qualifier`][service-qualifie].
 
 Helidon Inject provides two built-in qualifier:
 
 - [`@Service.Named`][service-named] – Uses a `String` name to qualify a service.
-- [`@Service.NamedByType`][service-namedbytype] – Works the same way as `@Service.Named` but uses a class type instead. The name that would be used is the fully qualified name of the type.
+- [`@Service.NamedByType`][service-namedbyt] – Works the same way as `@Service.Named` but uses a class type instead. The name that would be used is the fully qualified name of the type.
 
-Both [`@Service.Named`][service-named] and [`@Service.NamedByType`][service-namedbytype] are interchangeable, so one can combine them. To see an example of this see [Named by the type][named-by-the-type] chapter.
+Both [`@Service.Named`][service-named] and [`@Service.NamedByType`][service-namedbyt] are interchangeable, so one can combine them. To see an example of this see [Named by the type](#named-by-the-type) chapter.
 
 ### Named service injection
 
@@ -298,7 +298,7 @@ record GreenCircle(@Service.Named("green") Color color) {
 
 ### Named by the type
 
-Alternatively, instead of using string-based names for services, a specific class can be used to "name" them. For this purpose, we use the [`@Service.NamedByType`][service-namedbytype] annotation.
+Alternatively, instead of using string-based names for services, a specific class can be used to "name" them. For this purpose, we use the [`@Service.NamedByType`][service-namedbyt] annotation.
 
 Named by type usage example:
 
@@ -324,7 +324,7 @@ record GreenCircleType(@Service.NamedByType(Green.class) Color color) {
 }
 ```
 
-[`@Service.Named`][service-named] and [`@Service.NamedByType`][service-namedbytype] are even interchangeable. So it is possible to use [`@Service.Named`][service-named] annotation with fully qualified class name of a class we used before. Let’s assume for this example, that our previously used class `Green` was in the `my.test` package. Now we can specify it as any other `String` name.
+[`@Service.Named`][service-named] and [`@Service.NamedByType`][service-namedbyt] are even interchangeable. So it is possible to use [`@Service.Named`][service-named] annotation with fully qualified class name of a class we used before. Let’s assume for this example, that our previously used class `Green` was in the `my.test` package. Now we can specify it as any other `String` name.
 
 Named injection point:
 
@@ -336,7 +336,7 @@ record GreenCircleStringType(@Service.Named("my.test.Green") Color color) {
 
 ### Custom qualifiers
 
-To make custom qualifiers, it is necessary to "meta-annotated" it with [`@Service.Qualifier`][service-qualifier].
+To make custom qualifiers, it is necessary to "meta-annotated" it with [`@Service.Qualifier`][service-qualifie].
 
 Create Blue and Green custom qualifiers:
 
@@ -511,7 +511,7 @@ class SystemPropertyFactory implements Service.QualifiedFactory<String, SystemPr
 
 ### InjectionPointFactory
 
-[`InjectionPointFactory`][injectionpointfactory] is very similar to [`QualifiedFactory`][qualifiedfactory], but with one key difference—it is executed for each injection point and is not bound to a specific qualifier/s (unless specified).
+[`InjectionPointFactory`][injectionpointfa] is very similar to [`QualifiedFactory`][qualifiedfactory], but with one key difference—it is executed for each injection point and is not bound to a specific qualifier/s (unless specified).
 
 It receives a Lookup object as a parameter, which contains all necessary information about the injection point. This allows the factory to create instances dynamically based on the injection point information. If the factory type `T` is `java.lang.Object`, the factory can handle ANY contract - such as when injecting configuration properties, which may be of any type (boolean, int, String etc.)
 
@@ -550,7 +550,7 @@ class LoggerFactory implements Service.InjectionPointFactory<System.Logger> {
 
 Interception allows adding behavior to constructors, methods, and injected fields without the need to explicitly code the required functionality in place.
 
-By default, interception is enabled only for elements annotated with [`Interception.Intercepted`][interception-intercepted]. However, annotation processor configurations can enable interception for any annotation or disable it entirely.
+By default, interception is enabled only for elements annotated with [`Interception.Intercepted`][interception-int]. However, annotation processor configurations can enable interception for any annotation or disable it entirely.
 
 Interception wraps around the invocation, enabling it to:
 
@@ -562,7 +562,7 @@ Interception wraps around the invocation, enabling it to:
 
 ### Intercepted annotation
 
-The [`Interception.Intercepted`][interception-intercepted] annotation is a marker used to indicate that an annotation should trigger interception.
+The [`Interception.Intercepted`][interception-int] annotation is a marker used to indicate that an annotation should trigger interception.
 
 Custom annotation for interception:
 
@@ -578,7 +578,7 @@ Custom annotation for interception:
 
 ### Interceptor interface
 
-The [`Interception.Interceptor`][interception-interceptor] interface defines an interceptor service that intercepts methods/constructors/fields annotated with the configured marker annotation. The interceptor service must be named by the fully qualified name of the [`Interception.Intercepted`][interception-intercepted] annotation (either via [`@Service.Named`][service-named] or [`@Service.NamedByType`][service-namedbytype]).
+The [`Interception.Interceptor`][interception-int-2] interface defines an interceptor service that intercepts methods/constructors/fields annotated with the configured marker annotation. The interceptor service must be named by the fully qualified name of the [`Interception.Intercepted`][interception-int] annotation (either via [`@Service.Named`][service-named] or [`@Service.NamedByType`][service-namedbyt]).
 
 To properly handle the interception chain, the interceptor must always invoke the `proceed` method if the invocation should continue normally. However, it is also possible to return a custom value directly from the interceptor and effectively bypass the original method execution.
 
@@ -601,7 +601,7 @@ class MyServiceInterceptor implements Interception.Interceptor {
 
 ### Delegate annotation
 
-The [`@Interception.Delegate`][interception-delegate] annotation enables interception for classes that aren’t created through the service registry but are instead produced by a factory (More about factories can be found here - [Factory chapter][factories]).
+The [`@Interception.Delegate`][interception-del] annotation enables interception for classes that aren’t created through the service registry but are instead produced by a factory (More about factories can be found here - [Factory chapter](#factories)).
 
 Let’s make the same `@Traced` annotation and Interceptor as in the previous examples
 
@@ -639,7 +639,7 @@ class MyServiceProvider implements Supplier<MyService> {
 }
 ```
 
-Method calls on an instance created this way can’t be intercepted. To enable interception in such cases, we use the [`@Interception.Delegate`][interception-delegate] annotation. However, keep in mind that usage of this annotation doesn’t add the ability to intercept constructor calls. To enable interception, this annotation must be present on the class that the factory produces. While it is not required on interfaces, it will still work correctly if applied there.
+Method calls on an instance created this way can’t be intercepted. To enable interception in such cases, we use the [`@Interception.Delegate`][interception-del] annotation. However, keep in mind that usage of this annotation doesn’t add the ability to intercept constructor calls. To enable interception, this annotation must be present on the class that the factory produces. While it is not required on interfaces, it will still work correctly if applied there.
 
 If the produced type is an interface, Helidon can generate the required delegation wrapper for registry-managed factories without `@Interception.Delegate` on the produced implementation class. This is the path used by declarative validation when method constraints are declared on service interfaces.
 
@@ -667,7 +667,7 @@ class MyService {
 
 ### ExternalDelegate annotation
 
-The [`@Interception.ExternalDelegate`][interception-externaldelegate] annotation works similarly to [`@Interception.Delegate`][interception-delegate]. However, the key difference is that [`@Interception.ExternalDelegate`][interception-externaldelegate] is designed for classes that you don’t have control over. This means it allows you to apply the interception mechanism even to third-party classes.
+The [`@Interception.ExternalDelegate`][interception-ext] annotation works similarly to [`@Interception.Delegate`][interception-del]. However, the key difference is that [`@Interception.ExternalDelegate`][interception-ext] is designed for classes that you don’t have control over. This means it allows you to apply the interception mechanism even to third-party classes.
 
 It is not required to apply this annotation on the interfaces, however, it needs to be present for classes.
 
@@ -705,7 +705,7 @@ class SomeExternalClass {
 }
 ```
 
-Now we need to apply the [`@Interception.ExternalDelegate`][interception-externaldelegate] annotation on the factory class. Once this is done, interception will work as expected
+Now we need to apply the [`@Interception.ExternalDelegate`][interception-ext] annotation on the factory class. Once this is done, interception will work as expected
 
 ExternalDelegate annotation used on the factory:
 
@@ -729,10 +729,10 @@ A single event can be delivered to zero or more consumers.
 Key Terminology:
 
 - **[Event Object](#event-object)** – Any object that is sent as an event.
-- **[Event Emitter][event-emitter]** – Helidon generated service responsible for emitting events into the event system.
-- **[Event Producer][event-producer]** – A service that triggers an event by calling an emitter.
-- **[Event Observer][event-observer]** – A service that listens for events, with a method annotated using [`@Event.Observer`][event-observer-2].
-- **[Qualified Events][qualified-events]** – An event emitted with a qualifier, using an annotation marked with [`@Service.Qualifier`][service-qualifier].
+- **[Event Emitter](#event-emitter)** – Helidon generated service responsible for emitting events into the event system.
+- **[Event Producer](#event-producer)** – A service that triggers an event by calling an emitter.
+- **[Event Observer](#event-observer)** – A service that listens for events, with a method annotated using [`@Event.Observer`][event-observer].
+- **[Qualified Events](#qualified-events)** – An event emitted with a qualifier, using an annotation marked with [`@Service.Qualifier`][service-qualifie].
 
 ### Event Object
 
@@ -753,13 +753,13 @@ record MyEvent(String msg) {
 
 Event emitters are code generated by Helidon when an injection point is discovered that expects it.
 
-All the emitters are generated as implementations of the [`Event.Emitter`][event-emitter-2] interface.
+All the emitters are generated as implementations of the [`Event.Emitter`][event-emitter] interface.
 
 ### Event Producer
 
 An event producer is a service that triggers the event by using the event emitter.
 
-To emit an event, inject the desired [`Event.Emitter`][event-emitter-2] Event.Emitter instance, construct the corresponding event object, and call the emit method on the emitter instance.
+To emit an event, inject the desired [`Event.Emitter`][event-emitter] Event.Emitter instance, construct the corresponding event object, and call the emit method on the emitter instance.
 
 Event producer example:
 
@@ -773,7 +773,7 @@ record MyEventProducer(Event.Emitter<MyEvent> emitter) {
 }
 ```
 
-The method returns only after all event observers have been notified. If any observer throws an exception, an [`EventDispatchException`][eventdispatchexception] is thrown, with all caught exceptions added as suppressed. This ensures that all observers are invoked, even if an exception occurs.
+The method returns only after all event observers have been notified. If any observer throws an exception, an [`EventDispatchException`][eventdispatchexc] is thrown, with all caught exceptions added as suppressed. This ensures that all observers are invoked, even if an exception occurs.
 
 ### Event Observer
 
@@ -782,7 +782,7 @@ An event observer is a service which processes fired event.
 To create an event observer:
 
 - create an observer method, with a single parameter of the event type you want to observe
-- annotate the method with [`@Event.Observer`][event-observer-2]
+- annotate the method with [`@Event.Observer`][event-observer]
 
 Event observer example:
 
@@ -805,10 +805,10 @@ A Qualified Event is only delivered to Event Observers that use the same qualifi
 
 A qualified event can be produced with two options:
 
-1.  The injection point of [`@Event.Emitter`][event-emitter-2] (the constructor parameter, or field) is annotated with a qualifier annotation
+1.  The injection point of [`@Event.Emitter`][event-emitter] (the constructor parameter, or field) is annotated with a qualifier annotation
 2.  The `Event.Emitter.emit(..)` method is called with explicit qualifier(s), note that if combined, the qualifier specified by the injection point will always be present!
 
-We are using qualifier created in the chapter [Custom qualifier][custom-qualifier], to demonstrate how events work with qualifiers. Now we need to create a new event producer, which fires event only to observers qualified with `@Blue`.
+We are using qualifier created in the chapter [Custom qualifier](#custom-qualifiers), to demonstrate how events work with qualifiers. Now we need to create a new event producer, which fires event only to observers qualified with `@Blue`.
 
 Qualified event producer:
 
@@ -871,7 +871,7 @@ record MyAsyncProducer(Event.Emitter<MyEvent> emitter) {
 
 Asynchronous observer methods are invoked from separate threads (through the executor service mentioned above), and their results are ignored by the Event Emitter; if there is an exception thrown from the observer method, it is logged with `WARNING` log level into logger named [`EventManager`][eventmanager].
 
-To declare an asynchronous observer use annotation [`@Event.AsyncObserver`][event-asyncobserver] instead of [`@Event.Observer`][event-observer-2].
+To declare an asynchronous observer use annotation [`@Event.AsyncObserver`][event-asyncobser] instead of [`@Event.Observer`][event-observer].
 
 Asynchronous Event Observer Example:
 
@@ -892,7 +892,7 @@ If you want to use programmatic lookup, there are several ways how to get a [`Se
 
 We can either get the global one or create a custom one (more advanced use case). In most of the cases, the global service registry is enough (and expected to be used) for a single applications. A custom service registry should only be created for specific use cases.
 
-To get the global [`ServiceRegistry`][serviceregistry] we need to use [`GlobalServiceRegistry`][globalserviceregistry] and select `registry` method.
+To get the global [`ServiceRegistry`][serviceregistry] we need to use [`GlobalServiceRegistry`][globalservicereg] and select `registry` method.
 
 However, it is also possible to access global service registry via [`Services`][services] static methods. This is the shortcut for accessing the services from the global service registry. Global service registry shouldn’t be used from the factories or services. Intended use is in the `main` methods or when one needs static access.
 
@@ -930,7 +930,7 @@ var registryManager = ServiceRegistryManager.create();
 var registry = registryManager.registry();
 ```
 
-Keep in mind, that custom [`ServiceRegistryManager`][serviceregistrymanager] must be shut down, once it is not needed.
+Keep in mind, that custom [`ServiceRegistryManager`][serviceregistrym] must be shut down, once it is not needed.
 
 ```java
 // create an instance of a registry manager - can be configured and shut down
@@ -945,14 +945,14 @@ registryManager.shutdown();
 
 Helidon provides a Maven plugin (`io.helidon.service:helidon-service-maven-plugin`, goal `create-application`) to generate build time bindings, that can be used to start the service registry without any classpath discovery and reflection. Default name is `ApplicationBinding` (customizable)
 
-Methods that accept the bindings are on [`ServiceRegistryManager`][serviceregistrymanager]:
+Methods that accept the bindings are on [`ServiceRegistryManager`][serviceregistrym]:
 
 - `start(Binding)` - starts the service registry with the generated binding, initializing all singleton and per-lookup services annotated with a [`@Service.RunLevel`][service-runlevel] annotation (i.e. `start(ApplicationBinding.create())`)
 - `start(Binding, ServiceRegistryConfig)` - same as above, allows for customization of configuration, if used, remember to set discovery to `false` to prevent automated discovery from the classpath
 
 Application binding contains reference to all services that can be used by the application at runtime. As a result, when using the generated binding and JPMS (`module-info.java`), all modules that contain services (or Java ServiceLoader providers used by the registry) must be configured as `required` in the module info, otherwise the binding cannot be compiled.
 
-All options to start a Helidon application that uses service registry: - A generated `ApplicationMain` - optional feature of the Maven plugin, requires property `generateMain` to be set to `true`. It uses [`@Service.RunLevel`][service-runlevel] actively, but via code generated classes → See [RunLevel][runlevel] for more information. This is the only approach that is fully reflection free and skips lookups for injection points. - The Helidon startup class `io.helidon.Main`, which will start the registry manager and initialize all [`@Service.RunLevel`][service-runlevel] services, though it uses service discover (which in turn must use reflection to get service descriptor instances)
+All options to start a Helidon application that uses service registry: - A generated `ApplicationMain` - optional feature of the Maven plugin, requires property `generateMain` to be set to `true`. It uses [`@Service.RunLevel`][service-runlevel] actively, but via code generated classes → See [RunLevel](#runlevel) for more information. This is the only approach that is fully reflection free and skips lookups for injection points. - The Helidon startup class `io.helidon.Main`, which will start the registry manager and initialize all [`@Service.RunLevel`][service-runlevel] services, though it uses service discover (which in turn must use reflection to get service descriptor instances)
 
 ### ServiceRegistryManager
 
@@ -961,7 +961,7 @@ Manager is responsible for managing the state of a single [`ServiceRegistry`][se
 When created programmatically, two possible methods can be chosen.
 
 - `create` - Creates a new [`ServiceRegistry`][serviceregistry] instance, but does not create any service instance. Service instances are created only when needed.
-- `start` - Creates a new [`ServiceRegistry`][serviceregistry] instance and creates all services annotated with [`@Service.RunLevel`][service-runlevel]. See [RunLevel][runlevel] chapter.
+- `start` - Creates a new [`ServiceRegistry`][serviceregistry] instance and creates all services annotated with [`@Service.RunLevel`][service-runlevel]. See [RunLevel](#runlevel) chapter.
 
 It is important to note, that once you don’t need your service registry, method `shutdown` on the manager must be called to ensure proper termination of the service registry.
 
@@ -1003,7 +1003,7 @@ class Level2 {
 }
 ```
 
-The easiest way for us to use these annotations, is to use `start` method on the [`ServiceRegistryManager`][serviceregistrymanager].
+The easiest way for us to use these annotations, is to use `start` method on the [`ServiceRegistryManager`][serviceregistrym].
 
 ```java
 public static void main(String[] args) {
@@ -1021,49 +1021,36 @@ level2 destroyed
 level1 destroyed
 ```
 
-[managing-dependencies]: ../../managing-dependencies.md
-[service-registry]: #service-registry
-[service-singleton]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.Singleton.html
-[factories]: #factories
+[service-singleto]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.Singleton.html
 [service-scope]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.Scope.html
-[scopes]: #scopes
 [service-inject]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.Inject.html
-[service-perlookup]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.PerLookup.html
+[service-perlooku]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.PerLookup.html
 [weight]: /apidocs/io.helidon.common/io/helidon/common/Weight.html
 [weighted]: /apidocs/io.helidon.common/io/helidon/common/Weighted.html
-[service-perrequest]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.PerRequest.html
-[programmatic-lookup]: #programmatic-lookup
-[build-time]: #build-time
-[service-postconstruct]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.PostConstruct.html
-[service-predestroy]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.PreDestroy.html
-[service-qualifier]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.Qualifier.html
+[service-perreque]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.PerRequest.html
+[service-postcons]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.PostConstruct.html
+[service-predestr]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.PreDestroy.html
+[service-qualifie]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.Qualifier.html
 [service-named]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.Named.html
-[service-namedbytype]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.NamedByType.html
-[named-by-the-type]: #named-by-the-type
+[service-namedbyt]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.NamedByType.html
 [servicesfactory]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.ServicesFactory.html
 [qualifiedfactory]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.QualifiedFactory.html
 [qualifier]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Qualifier.html
 [lookup]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Lookup.html
 [generictype]: /apidocs/io.helidon.common/io/helidon/common/GenericType.html
-[injectionpointfactory]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.InjectionPointFactory.html
-[interception-intercepted]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Interception.Intercepted.html
-[interception-interceptor]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Interception.Interceptor.html
-[interception-delegate]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Interception.Delegate.html
-[interception-externaldelegate]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Interception.ExternalDelegate.html
-[event-emitter]: #event-emitter
-[event-producer]: #event-producer
-[event-observer]: #event-observer
-[event-observer-2]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Event.Observer.html
-[qualified-events]: #qualified-events
-[event-emitter-2]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Event.Emitter.html
-[eventdispatchexception]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/EventDispatchException.html
-[custom-qualifier]: #custom-qualifiers
+[injectionpointfa]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.InjectionPointFactory.html
+[interception-int]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Interception.Intercepted.html
+[interception-int-2]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Interception.Interceptor.html
+[interception-del]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Interception.Delegate.html
+[interception-ext]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Interception.ExternalDelegate.html
+[event-observer]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Event.Observer.html
+[event-emitter]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Event.Emitter.html
+[eventdispatchexc]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/EventDispatchException.html
 [eventmanager]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/EventManager.html
-[event-asyncobserver]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Event.AsyncObserver.html
+[event-asyncobser]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Event.AsyncObserver.html
 [serviceregistry]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/ServiceRegistry.html
-[globalserviceregistry]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/GlobalServiceRegistry.html
+[globalservicereg]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/GlobalServiceRegistry.html
 [services]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Services.html
 [typename]: /apidocs/io.helidon.common.types/io/helidon/common/types/TypeName.html
-[serviceregistrymanager]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/ServiceRegistryManager.html
+[serviceregistrym]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/ServiceRegistryManager.html
 [service-runlevel]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.RunLevel.html
-[runlevel]: #runlevel

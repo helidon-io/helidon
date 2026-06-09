@@ -6,7 +6,7 @@ Microservices expose their health status primarily so external tools (for exampl
 
 ## Maven Coordinates
 
-To enable MicroProfile Health add the [helidon-microprofile bundle][helidon-microprofile-bundle] dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable MicroProfile Health add the [helidon-microprofile bundle](introduction.md) dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -33,7 +33,7 @@ If full control over the dependencies is required, and you want to minimize the 
 </dependency>
 ```
 
-To enable built-in health checks add the following dependency (or use the [helidon-microprofile bundle][helidon-microprofile-bundle] )
+To enable built-in health checks add the following dependency (or use the [helidon-microprofile bundle](introduction.md) )
 
 ```xml [pom.xml]
 <dependency>
@@ -44,7 +44,7 @@ To enable built-in health checks add the following dependency (or use the [helid
 
 ## Usage
 
-Helidon implements [MicroProfile Health][microprofile-health] Specification. The spec prescribes how external tools probe a service’s health checks and how you implement health checks as part of your microservice that are specific to your service’s needs.
+Helidon implements [MicroProfile Health][microprofile-hea] Specification. The spec prescribes how external tools probe a service’s health checks and how you implement health checks as part of your microservice that are specific to your service’s needs.
 
 ### Concepts - Liveness, Readiness, and Startup Checks
 
@@ -157,7 +157,7 @@ Further, you can suppress one or more health checks by setting the configuration
 
 ## Examples
 
-Generate Helidon MP Quickstart project following these [instructions][instructions].
+Generate Helidon MP Quickstart project following these [instructions](guides/quickstart.md).
 
 ### Using the Built-In Health Checks
 
@@ -503,16 +503,13 @@ Full example code is available [here][here].
 
 ## Reference
 
-- [Helidon MicroProfile Health Javadoc][helidon-microprofile-health-javadoc]
-- [Helidon Built-in Checks Javadoc][helidon-built-in-checks-javadoc]
-- [MicroProfile Health Specification][microprofile-health]
-- [MicroProfile Health on GitHub][microprofile-health-on-github]
+- [Helidon MicroProfile Health Javadoc][helidon-micropro]
+- [Helidon Built-in Checks Javadoc][helidon-built-in]
+- [MicroProfile Health Specification][microprofile-hea]
+- [MicroProfile Health on GitHub][microprofile-hea-2]
 
-[helidon-microprofile-bundle]: introduction.md
-[managing-dependencies]: ../managing-dependencies.md
-[microprofile-health]: https://download.eclipse.org/microprofile/microprofile-health-4.0/microprofile-health-spec-4.0.html
-[instructions]: guides/quickstart.md
+[microprofile-hea]: https://download.eclipse.org/microprofile/microprofile-health-4.0/microprofile-health-spec-4.0.html
 [here]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/microprofile
-[helidon-microprofile-health-javadoc]: /apidocs/io.helidon.microprofile.health/module-summary.html
-[helidon-built-in-checks-javadoc]: /apidocs/io.helidon.health.checks/module-summary.html
-[microprofile-health-on-github]: https://github.com/eclipse/microprofile-health
+[helidon-micropro]: /apidocs/io.helidon.microprofile.health/module-summary.html
+[helidon-built-in]: /apidocs/io.helidon.health.checks/module-summary.html
+[microprofile-hea-2]: https://github.com/eclipse/microprofile-health

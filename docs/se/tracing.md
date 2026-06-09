@@ -2,14 +2,14 @@
 
 ## Overview
 
-Distributed tracing is a critical feature of microservice based applications, since it traces workflow both within a service and across multiple services. This provides insight to sequence and timing data for specific blocks of work, which helps you identify performance and operational issues. Helidon includes support for distributed tracing through its own API, backed by either [OpenTelemetry][opentelemetry], [Jaeger][jaeger], or [Zipkin][zipkin]. Tracing is integrated with WebServer and Security.
+Distributed tracing is a critical feature of microservice based applications, since it traces workflow both within a service and across multiple services. This provides insight to sequence and timing data for specific blocks of work, which helps you identify performance and operational issues. Helidon includes support for distributed tracing through its own API, backed by either [OpenTelemetry][opentelemetry], [Jaeger](https://www.jaegertracing.io/), or [Zipkin](https://zipkin.io/). Tracing is integrated with WebServer and Security.
 
 > [!NOTE]
-> As OpenTelemetry has subsumed [OpenTracing][opentracing], Helidon support for OpenTracing is deprecated and will likely be removed in a future release.
+> As OpenTelemetry has subsumed [OpenTracing](https://opentracing.io), Helidon support for OpenTracing is deprecated and will likely be removed in a future release.
 
 ## Maven Coordinates
 
-To enable Helidon Tracing, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable Helidon Tracing, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependencies>
@@ -132,7 +132,7 @@ Further, Helidon also provides read-only access to baggage linked to a [`SpanCon
 The Javadoc for the types describes how to get and set baggage entries, get all the baggage keys, and check whether a baggage key exists in the baggage.
 
 <!--@include ../includes/tracing/common-callbacks.md#span-lifecycle-callbacks -->
-See [Responding to Span Lifecycle Events][responding-to-span-lifecycle-events].
+See [Responding to Span Lifecycle Events][responding-to-sp].
 <!--/include-->
 
 #### Lifecycle Callbacks with OpenTelemetry Types
@@ -141,14 +141,14 @@ To use lifecycle callbacks, applications should normally work with the Helidon `
 
 In some cases application code might want to use a reference to an OpenTelemetry `Tracer` or `Span` *rather than* a reference to the Helidon counterpart but still want to respond to lifecycle events as the OpenTelemetry object goes through its lifecycle.
 
-The [`HelidonOpenTelemetry`][helidonopentelemetry] type provides several methods which enable callbacks for OpenTelemetry objects, as summarized in the following table.
+The [`HelidonOpenTelemetry`][helidonopentelem] type provides several methods which enable callbacks for OpenTelemetry objects, as summarized in the following table.
 
 | `HelidonOpenTelemetry` method                                                                                                                                                                                                | Return value                                                                             |
 |------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
-| [`Tracer callbackEnabledFrom(helidonTracer)`][tracer-callbackenabledfrom-helidontracer]       | Callback-enabled OpenTelemetry `Tracer` corresponding to the specified Helidon `Tracer`. |
-| [ `Tracer callbackEnabledFrom(otelTracer)`][tracer-callbackenabledfrom-oteltracer] | Callback-enabled OpenTelemetry `Tracer` for the specified OpenTelemetry `Tracer`.        |
-| [ `Span callbackEnabledFrom(helidonSpan)`][span-callbackenabledfrom-helidonspan]            | Callback-enabled OpenTelemetry `Span` corresponding to the specified Helidon `Span`.     |
-| [ `Span callbackEnabledFrom(otelSpan)`][span-callbackenabledfrom-otelspan]       | Callback-enabled OpenTelemetry `Span` for the specified OpenTelemetry `Span`.            |
+| [`Tracer callbackEnabledFrom(helidonTracer)`][tracer-callbacke]       | Callback-enabled OpenTelemetry `Tracer` corresponding to the specified Helidon `Tracer`. |
+| [ `Tracer callbackEnabledFrom(otelTracer)`][tracer-callbacke-2] | Callback-enabled OpenTelemetry `Tracer` for the specified OpenTelemetry `Tracer`.        |
+| [ `Span callbackEnabledFrom(helidonSpan)`][span-callbackena]            | Callback-enabled OpenTelemetry `Span` corresponding to the specified Helidon `Span`.     |
+| [ `Span callbackEnabledFrom(otelSpan)`][span-callbackena-2]       | Callback-enabled OpenTelemetry `Span` for the specified OpenTelemetry `Span`.            |
 
 Enabling OpenTelemetry Objects for `SpanListener` Support
 
@@ -398,7 +398,7 @@ String response = client.get()
 | <span id="aa4177-sampler-param"></span> `sampler-param`                                                                                                       | `VALUE` | `Number`                        | `1`           | The sampler parameter (number)                 |
 | <span id="a28b35-sampler-type"></span> [`sampler-type`][sampler-type]                     | `VALUE` | `i.h.t.p.j.J.SamplerType`       | `CONSTANT`    | Sampler type                                   |
 | <span id="a8ee29-schedule-delay"></span> `schedule-delay`                                                                                                     | `VALUE` | `Duration`                      | `PT5S`        | Schedule Delay of exporter requests            |
-| <span id="a1bdae-span-processor-type"></span> [`span-processor-type`][span-processor-type] | `VALUE` | `i.h.t.p.j.J.SpanProcessorType` | `batch`       | Span Processor type used                       |
+| <span id="a1bdae-span-processor-type"></span> [`span-processor-type`][span-processor-t] | `VALUE` | `i.h.t.p.j.J.SpanProcessorType` | `batch`       | Span Processor type used                       |
 | <span id="a667f5-trusted-cert-pem"></span> [`trusted-cert-pem`][client-cert-pem]                                         | `VALUE` | `i.h.c.c.Resource`              |               | Trusted certificates in PEM format             |
 
 The following is an example of a Jaeger configuration, specified in the YAML format.
@@ -413,7 +413,7 @@ tracing:
 
 ### Jaeger Tracing Metrics
 
-As the [Jaeger Tracing][jaeger-tracing] section describes, you can use Jaeger tracing in your Helidon application.
+As the [Jaeger Tracing](#jaeger-tracing) section describes, you can use Jaeger tracing in your Helidon application.
 
 ### Zipkin Tracing
 
@@ -463,11 +463,11 @@ Example of Zipkin trace:
 
 ### OpenTelemetry Tracing
 
-Helidon supports configuration of OpenTelemetry and OpenTelemetry tracing in two primary ways: using tracing or using telemetry. This page describes support for controlling OpenTelemetry tracing using the `tracing` config section and [`OpenTelemetryConfig` builder][opentelemetryconfig-builder]. Users typically adopt this approach to ease migration from other tracing providers (such as Jaeger) to OpenTelemetry because the tracing settings supported for OpenTelemetry are very similar to those for Jaeger.
+Helidon supports configuration of OpenTelemetry and OpenTelemetry tracing in two primary ways: using tracing or using telemetry. This page describes support for controlling OpenTelemetry tracing using the `tracing` config section and [`OpenTelemetryConfig` builder][opentelemetrycon]. Users typically adopt this approach to ease migration from other tracing providers (such as Jaeger) to OpenTelemetry because the tracing settings supported for OpenTelemetry are very similar to those for Jaeger.
 
 That said, Helidon’s support for OpenTelemetry using *tracing* does not afford as much control as do the Helidon *telemetry* settings. For example, using OpenTelemetry `tracing` config you can choose either the OTLP gRPC span exporter or the OTLP HTTP one; additional span exporters are available only using the `telemetry` settings.
 
-The [telemetry doc page][telemetry-doc-page] describes how to use the Helidon `telemetry` config section and the related builder to exert more control over OpenTelemetry and OpenTelemetry tracing behavior.
+The [telemetry doc page][telemetry-doc-pa] describes how to use the Helidon `telemetry` config section and the related builder to exert more control over OpenTelemetry and OpenTelemetry tracing behavior.
 
 > [!NOTE]
 > If you provide settings under both `telemetry` and `tracing`, Helidon uses the `telemetry` settings. Specifying both does not confuse Helidon but it might confuse users.
@@ -515,27 +515,22 @@ By default, Helidon tracing support for OpenTelemetry uses OpenTelemetry’s OTL
 - [Opentracing Project (now part of OpenTelemetry)](https://opentracing.io/)
 
 [opentelemetry]: https://opentelemetry.io/docs/instrumentation/js/api/tracing/
-[jaeger]: https://www.jaegertracing.io/
-[zipkin]: https://zipkin.io/
-[opentracing]: https://opentracing.io
-[managing-dependencies]: ../managing-dependencies.md
 [span]: /apidocs/io.helidon.tracing/io/helidon/tracing/Span.html
 [writablebaggage]: /apidocs/io.helidon.tracing/io/helidon/tracing/WritableBaggage.html
 [spancontext]: /apidocs/io.helidon.tracing/io/helidon/tracing/SpanContext.html
 [baggage]: /apidocs/io.helidon.tracing/io/helidon/tracing/Baggage.html
-[responding-to-span-lifecycle-events]: ../includes/tracing/common-callbacks.md#span-lifecycle-callbacks
-[helidonopentelemetry]: /apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html
-[tracer-callbackenabledfrom-helidontracer]: </apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.helidon.tracing.Tracer)>
-[tracer-callbackenabledfrom-oteltracer]: </apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.opentelemetry.api.trace.Tracer)>
-[span-callbackenabledfrom-helidonspan]: </apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.helidon.tracing.Span)>
-[span-callbackenabledfrom-otelspan]: </apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.opentelemetry.api.trace.Span)>
+[responding-to-sp]: ../includes/tracing/common-callbacks.md#span-lifecycle-callbacks
+[helidonopentelem]: /apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html
+[tracer-callbacke]: </apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.helidon.tracing.Tracer)>
+[tracer-callbacke-2]: </apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.opentelemetry.api.trace.Tracer)>
+[span-callbackena]: </apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.helidon.tracing.Span)>
+[span-callbackena-2]: </apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.opentelemetry.api.trace.Span)>
 [wrapper]: /apidocs/io.helidon.tracing/io/helidon/tracing/Wrapper.html
 [client-cert-pem]: ../config/io_helidon_common_configurable_Resource.md
 [propagation]: ../config/io_helidon_tracing_providers_jaeger_JaegerTracerBuilder_PropagationFormat.md
 [sampler-type]: ../config/io_helidon_tracing_providers_jaeger_JaegerTracerBuilder_SamplerType.md
-[span-processor-type]: ../config/io_helidon_tracing_providers_jaeger_JaegerTracerBuilder_SpanProcessorType.md
-[jaeger-tracing]: #jaeger-tracing
+[span-processor-t]: ../config/io_helidon_tracing_providers_jaeger_JaegerTracerBuilder_SpanProcessorType.md
 [api-version]: ../config/io_helidon_tracing_providers_zipkin_ZipkinTracerBuilder_Version.md
-[opentelemetryconfig-builder]: /apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/OpenTelemetryTracerConfig.html
-[telemetry-doc-page]: ../se/telemetry/open-telemetry.md
+[opentelemetrycon]: /apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/OpenTelemetryTracerConfig.html
+[telemetry-doc-pa]: ../se/telemetry/open-telemetry.md
 [exporter-type]: ../config/io_helidon_tracing_providers_opentelemetry_OtlpExporterProtocolType.md

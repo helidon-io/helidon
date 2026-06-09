@@ -37,7 +37,7 @@ export JAVA_HOME=/usr/lib/jvm/jdk-21
 
 ## Getting Started with Configuration
 
-Helidon provides a very flexible and comprehensive configuration system, offering you many application configuration choices. You can include configuration data from a variety of sources using different formats, like JSON and YAML. Furthermore, you can customize the precedence of sources and make them optional or mandatory. This guide introduces Helidon SE configuration and demonstrates the fundamental concepts using several examples. Refer to [Helidon Config][helidon-config] for the full configuration concepts documentation.
+Helidon provides a very flexible and comprehensive configuration system, offering you many application configuration choices. You can include configuration data from a variety of sources using different formats, like JSON and YAML. Furthermore, you can customize the precedence of sources and make them optional or mandatory. This guide introduces Helidon SE configuration and demonstrates the fundamental concepts using several examples. Refer to [Helidon Config](../config/introduction.md) for the full configuration concepts documentation.
 
 ### Create a Sample Helidon SE Project
 
@@ -529,7 +529,7 @@ You can re-run the previous tests that exercised environment variables and syste
 
 ## Accessing Config within an Application
 
-You have used Helidon to customize configuration behavior from your code using the `Config` and `Config.Builder` classes. As discussed previously, Helidon reads configuration from a config source, which uses a config parser to translate the source into an in-memory tree which represents the configuration’s structure and values. Helidon offers a variety of methods to access in-memory configuration. These can be categorized as *key access* or *tree navigation*. You have been using *key access* for all the examples to this point. For example `app.greeting` is accessing the `greeting` child node of the `app` parent node. There are many options for accessing this data using navigation methods as described in [Hierarchical Config][hierarchical-config] and [Advanced Config\>][advanced-config].
+You have used Helidon to customize configuration behavior from your code using the `Config` and `Config.Builder` classes. As discussed previously, Helidon reads configuration from a config source, which uses a config parser to translate the source into an in-memory tree which represents the configuration’s structure and values. Helidon offers a variety of methods to access in-memory configuration. These can be categorized as *key access* or *tree navigation*. You have been using *key access* for all the examples to this point. For example `app.greeting` is accessing the `greeting` child node of the `app` parent node. There are many options for accessing this data using navigation methods as described in [Hierarchical Config][hierarchical-con] and [Advanced Config\>][advanced-config].
 
 ### Accessing Config Using Keys or Navigation
 
@@ -624,7 +624,7 @@ JSON response:
 
 ### Reacting to Configuration Updates
 
-Even though in-memory config trees are immutable, the config system internally records configuration source metadata that allows it to watch sources for changes. Your application listens for updates to the underlying config sources and reacts to the changes. See [Config Mutability Support][config-mutability-support] for a full discussion on this topic. The following example demonstrates how to listen and react to configuration changes.
+Even though in-memory config trees are immutable, the config system internally records configuration source metadata that allows it to watch sources for changes. Your application listens for updates to the underlying config sources and reacts to the changes. See [Config Mutability Support](../config/mutability-support.md) for a full discussion on this topic. The following example demonstrates how to listen and react to configuration changes.
 
 Replace the contents of the `config-profile.yaml` file:
 
@@ -869,7 +869,7 @@ kubectl delete configmap  helidon-configmap
 
 ## Summary
 
-This guide has demonstrated how to use basic Helidon configuration features. The full configuration documentation, starting with the introduction section at [Helidon Config][helidon-config] has much more information including the following:
+This guide has demonstrated how to use basic Helidon configuration features. The full configuration documentation, starting with the introduction section at [Helidon Config](../config/introduction.md) has much more information including the following:
 
 - Architecture
 - Parsers
@@ -882,14 +882,13 @@ This guide has demonstrated how to use basic Helidon configuration features. The
 
 Refer to the following references for additional information:
 
-- [Helidon Javadoc](/apidocs/index.html?overview-summary.html)
+- [Helidon Javadoc][helidon-javadoc]
 
 [java-21]: https://www.oracle.com/technetwork/java/javase/downloads
 [open-jdk-21]: http://jdk.java.net
 [maven-3-8]: https://maven.apache.org/download.cgi
 [docker-18-09]: https://docs.docker.com/install/
 [kubectl-1-16-5]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
-[helidon-config]: ../config/introduction.md
 [advanced-config]: ../config/advanced-configuration.md
-[hierarchical-config]: ../config/hierarchical-features.md
-[config-mutability-support]: ../config/mutability-support.md
+[hierarchical-con]: ../config/hierarchical-features.md
+[helidon-javadoc]: /apidocs/index.html?overview-summary.html

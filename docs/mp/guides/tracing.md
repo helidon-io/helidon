@@ -37,7 +37,7 @@ export JAVA_HOME=/usr/lib/jvm/jdk-21
 
 ## Introduction
 
-Distributed tracing is a critical feature of microservice based applications, since it traces workflow both within a service and across multiple services. This provides insight to sequence and timing data for specific blocks of work, which helps you identify performance and operational issues. Helidon MP includes support for distributed tracing through the [OpenTracing API][opentracing-api]. Tracing is integrated with WebServer and Security using either the [Zipkin][zipkin] or [Jaeger][jaeger] tracers.
+Distributed tracing is a critical feature of microservice based applications, since it traces workflow both within a service and across multiple services. This provides insight to sequence and timing data for specific blocks of work, which helps you identify performance and operational issues. Helidon MP includes support for distributed tracing through the [OpenTracing API](https://opentracing.io). Tracing is integrated with WebServer and Security using either the [Zipkin](https://zipkin.io) or [Jaeger](https://www.jaegertracing.io) tracers.
 
 ### Tracing Concepts
 
@@ -45,7 +45,7 @@ This section explains a few concepts that you need to understand before you get 
 
 - In the context of this document, a *service* is synonymous with an application.
 - A *span* is the basic unit of work done within a single service, on a single host. Every span has a name, starting timestamp, and duration. For example, the work done by a REST endpoint is a span. A span is associated to a single service, but its descendants can belong to different services and hosts.
-- A *trace* contains a collection of spans from one or more services, running on one or more hosts. For example, if you trace a service endpoint that calls another service, then the trace would contain spans from both services. Within a trace, spans are organized as a directed acyclic graph (DAG) and can belong to multiple services, running on multiple hosts. The *OpenTracing Data Model* describes the details at [The OpenTracing Semantic Specification][the-opentracing-semantic-specification]. Spans are automatically created by Helidon as needed during execution of the REST request.
+- A *trace* contains a collection of spans from one or more services, running on one or more hosts. For example, if you trace a service endpoint that calls another service, then the trace would contain spans from both services. Within a trace, spans are organized as a directed acyclic graph (DAG) and can belong to multiple services, running on multiple hosts. The *OpenTracing Data Model* describes the details at [The OpenTracing Semantic Specification][the-opentracing]. Spans are automatically created by Helidon as needed during execution of the REST request.
 
 ## Getting Started with Tracing
 
@@ -177,7 +177,7 @@ Click on a trace, and you will see the trace detail page where the spans are lis
 </figure>
 
 > [!NOTE]
-> A parent span might not depend on the result of the child. This is called a `FollowsFrom` reference, see [Open Tracing Semantic Spec][open-tracing-semantic-spec]. Note that the last span that writes the response after the root span ends falls into this category.
+> A parent span might not depend on the result of the child. This is called a `FollowsFrom` reference, see [Open Tracing Semantic Spec][open-tracing-sem]. Note that the last span that writes the response after the root span ends falls into this category.
 
 You can examine span details by clicking on the span row. Refer to the image below, which shows the `security` span details, including timing information. You can see times for each space relative to the root span. These rows are annotated with `Server Start` and `Server Finish`, as shown in the third column.
 
@@ -601,7 +601,7 @@ The next sections explain how you can write and add a listener and what it can d
 
 A listener cannot affect the lifecycle of a span or scope it is notified about, but it can add tags and events and update the baggage associated with a span. Often a listener does additional work that does not change the span or scope such as logging a message.
 
-When Helidon invokes the listener’s methods it passes proxies for the `Span.Builder`, `Span`, and `Scope` arguments. These proxies limit the access the listener has to the span builder, span, or scope, as summarized in the following table. If a listener method tries to invoke a forbidden operation, the proxy throws a [`SpanListener.ForbiddenOperationException`][spanlistener-forbiddenoperationexception] and Helidon then logs a `WARNING` message describing the invalid operation invocation.
+When Helidon invokes the listener’s methods it passes proxies for the `Span.Builder`, `Span`, and `Scope` arguments. These proxies limit the access the listener has to the span builder, span, or scope, as summarized in the following table. If a listener method tries to invoke a forbidden operation, the proxy throws a [`SpanListener.ForbiddenOperationException`][spanlistener-for] and Helidon then logs a `WARNING` message describing the invalid operation invocation.
 
 | Tracing type | Changes allowed |
 |----|----|
@@ -659,7 +659,7 @@ The following tables list specifically what operations the proxies permit.
 | `spanId()` | Returns the span ID. | ✓ |
 | `traceId()` | Returns the trace ID. | ✓ |
 
-[`io.helidon.tracing.SpanContext`][io-helidon-tracing-spancontext] Operations
+[`io.helidon.tracing.SpanContext`][io-helidon-traci] Operations
 
 ### Adding a Listener
 
@@ -707,26 +707,24 @@ This guide has demonstrated how to use the Helidon MP tracing feature with Jaege
 
 Refer to the following references for additional information:
 
-- [MicroProfile OpenTracing specification][microprofile-opentracing-specification]
-- [MicroProfile OpenTracing Javadoc][microprofile-opentracing-javadoc]
-- [Helidon Javadoc](/apidocs/index.html?overview-summary.html)
+- [MicroProfile OpenTracing specification][microprofile-ope]
+- [MicroProfile OpenTracing Javadoc][microprofile-ope-2]
+- [Helidon Javadoc][helidon-javadoc]
 
 [java-21]: https://www.oracle.com/technetwork/java/javase/downloads
 [open-jdk-21]: http://jdk.java.net
 [maven-3-8]: https://maven.apache.org/download.cgi
 [docker-18-09]: https://docs.docker.com/install/
 [kubectl-1-16-5]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
-[opentracing-api]: https://opentracing.io
-[zipkin]: https://zipkin.io
-[jaeger]: https://www.jaegertracing.io
-[the-opentracing-semantic-specification]: https://opentracing.io/specification
-[open-tracing-semantic-spec]: https://github.com/opentracing/specification/blob/master/specification.md
+[the-opentracing]: https://opentracing.io/specification
+[open-tracing-sem]: https://github.com/opentracing/specification/blob/master/specification.md
 [spanlistener]: /apidocs/io.helidon.tracing/io/helidon/tracing/SpanListener.html
-[spanlistener-forbiddenoperationexception]: /apidocs/io.helidon.tracing/io/helidon/tracing/SpanListener.ForbiddenOperationException.html
+[spanlistener-for]: /apidocs/io.helidon.tracing/io/helidon/tracing/SpanListener.ForbiddenOperationException.html
 [span-builder]: /apidocs/io.helidon.tracing/io/helidon/tracing/Span.Builder.html
 [span]: /apidocs/io.helidon.tracing/io/helidon/tracing/Span.html
 [scope]: /apidocs/io.helidon.tracing/io/helidon/tracing/Scope.html
-[io-helidon-tracing-spancontext]: /apidocs/io.helidon.tracing/io/helidon/tracing/SpanContext.html
+[io-helidon-traci]: /apidocs/io.helidon.tracing/io/helidon/tracing/SpanContext.html
 [tracer]: /apidocs/io.helidon.tracing/io/helidon/tracing/Tracer.html
-[microprofile-opentracing-specification]: https://download.eclipse.org/microprofile/microprofile-opentracing-3.0/microprofile-opentracing-spec-3.0.html
-[microprofile-opentracing-javadoc]: https://download.eclipse.org/microprofile/microprofile-opentracing-3.0/apidocs
+[microprofile-ope]: https://download.eclipse.org/microprofile/microprofile-opentracing-3.0/microprofile-opentracing-spec-3.0.html
+[microprofile-ope-2]: https://download.eclipse.org/microprofile/microprofile-opentracing-3.0/apidocs
+[helidon-javadoc]: /apidocs/index.html?overview-summary.html

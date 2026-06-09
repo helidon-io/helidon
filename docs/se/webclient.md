@@ -20,7 +20,7 @@ Helidon WebClient provides the following features:
 
 ## Maven Coordinates
 
-To enable WebClient, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable WebClient, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -65,7 +65,7 @@ WebClient offers a set of request methods that are used to specify the type of a
 - `put()`
 - `method(Method method)`
 
-Check out [HttpClient][httpclient] API to learn more about request methods. These methods will create a new instance of [HttpClientRequest][httpclientrequest] which can then be configured to add optional settings that will customize the behavior of the request.
+Check out [HttpClient][httpclient] API to learn more about request methods. These methods will create a new instance of [HttpClientRequest][httpclientreques] which can then be configured to add optional settings that will customize the behavior of the request.
 
 ### Customizing the Request
 
@@ -88,14 +88,14 @@ client.get()
 - Adds fragment to the request
 - Adds header to the request
 
-For more information about these optional parameters, check out [ClientRequestBase][clientrequestbase] API, which is a parent class of [HttpClientRequest][httpclientrequest].
+For more information about these optional parameters, check out [ClientRequestBase][clientrequestbas] API, which is a parent class of [HttpClientRequest][httpclientreques].
 
-[HttpClientRequest][httpclientrequest] class also provides specific header methods that help the user to set a particular header. Some examples of these are:
+[HttpClientRequest][httpclientreques] class also provides specific header methods that help the user to set a particular header. Some examples of these are:
 
 - `contentType` (MediaType contentType)
 - `accept` (MediaType…​ mediaTypes)
 
-For more information about these methods, check out [ClientRequest][clientrequest] API, which is a parent class of [HttpClientRequest][httpclientrequest].
+For more information about these methods, check out [ClientRequest][clientrequest] API, which is a parent class of [HttpClientRequest][httpclientreques].
 
 ### Sending the Request
 
@@ -133,7 +133,7 @@ WebClient currently supports `HTTP/1.1` and `HTTP/2` protocols. Below are the ru
       .requestEntity(String.class);
   ```
 - If `HTTP/2` is used, an upgrade attempt will be performed. If it fails, the client falls-back to `HTTP/1.1`.
-- The parameter `prior-knowledge` can be defined using `HTTP/2` protocol configuration. Please refer to [Setting Protocol configuration][setting-protocol-configuration] on how to customize `HTTP/2`. In such a case, `prior-knowledge` will be used and fail if it is unable to switch to `HTTP/2`.
+- The parameter `prior-knowledge` can be defined using `HTTP/2` protocol configuration. Please refer to [Setting Protocol configuration](#setting-protocol-configuration) on how to customize `HTTP/2`. In such a case, `prior-knowledge` will be used and fail if it is unable to switch to `HTTP/2`.
 
 ### Adding Media Support
 
@@ -433,7 +433,7 @@ client:
 ```
 
 > [!NOTE]
-> The `passphrase` value on the config file can be encrypted if stronger security is required. For more information on how secrets can be encrypted using a master password and store them in a configuration file, please see [Configuration Secrets][configuration-secrets].
+> The `passphrase` value on the config file can be encrypted if stronger security is required. For more information on how secrets can be encrypted using a master password and store them in a configuration file, please see [Configuration Secrets][configuration-se].
 
 In the application code, load the settings from the configuration file.
 
@@ -481,7 +481,7 @@ In order for a service to function, its dependencies need to be added in the app
   </dependency>
   ```
 
-  - Backs the `discovery` service with a [Discovery provider based on Netflix’s Eureka][discovery-provider-based-on-netflix-s-eureka]
+  - Backs the `discovery` service with a [Discovery provider based on Netflix’s Eureka](discovery.md#eureka)
 
 - `metrics`
 
@@ -744,34 +744,32 @@ See the [manifest](../config/manifest.md) for all available types.
 
 ## Reference
 
-- [Helidon WebClient API](/apidocs/io.helidon.webclient.api/module-summary.html)
-- [Helidon WebClient HTTP/1.1 Support][helidon-webclient-http-1-1-support]
-- [Helidon WebClient HTTP/2 Support][helidon-webclient-http-2-support]
-- [Helidon WebClient DNS Resolver First Support][helidon-webclient-dns-resolver-first-support]
-- [Helidon WebClient DNS Resolver Round Robin Support][helidon-webclient-dns-resolver-round-robin-support]
-- [Helidon WebClient Discovery Support][helidon-webclient-discovery-support]
-- [Helidon WebClient Metrics Support][helidon-webclient-metrics-support]
-- [Helidon WebClient Security Support][helidon-webclient-security-support]
-- [Helidon WebClient Tracing Support][helidon-webclient-tracing-support]
+- [Helidon WebClient API][helidon-webclien]
+- [Helidon WebClient HTTP/1.1 Support][helidon-webclien-2]
+- [Helidon WebClient HTTP/2 Support][helidon-webclien-3]
+- [Helidon WebClient DNS Resolver First Support][helidon-webclien-4]
+- [Helidon WebClient DNS Resolver Round Robin Support][helidon-webclien-5]
+- [Helidon WebClient Discovery Support][helidon-webclien-6]
+- [Helidon WebClient Metrics Support][helidon-webclien-7]
+- [Helidon WebClient Security Support][helidon-webclien-8]
+- [Helidon WebClient Tracing Support][helidon-webclien-9]
 
-[managing-dependencies]: ../managing-dependencies.md
 [httpclient]: /apidocs/io.helidon.webclient.api/io/helidon/webclient/api/HttpClient.html
-[httpclientrequest]: /apidocs/io.helidon.webclient.api/io/helidon/webclient/api/HttpClientRequest.html
-[clientrequestbase]: /apidocs/io.helidon.webclient.api/io/helidon/webclient/api/ClientRequestBase.html
+[httpclientreques]: /apidocs/io.helidon.webclient.api/io/helidon/webclient/api/HttpClientRequest.html
+[clientrequestbas]: /apidocs/io.helidon.webclient.api/io/helidon/webclient/api/ClientRequestBase.html
 [clientrequest]: /apidocs/io.helidon.webclient.api/io/helidon/webclient/api/ClientRequest.html
-[setting-protocol-configuration]: #setting-protocol-configuration
 [protocol-configs]: ../config/io_helidon_webclient_spi_ProtocolConfig.md
 [proxy]: ../config/io_helidon_webclient_api_Proxy.md
 [tls]: ../config/io_helidon_common_tls_Tls.md
-[configuration-secrets]: ../mp/security/configuration-secrets.md
+[configuration-se]: ../mp/security/configuration-secrets.md
 [discovery]: discovery.md#web-client-discovery-integration
-[discovery-provider-based-on-netflix-s-eureka]: discovery.md#eureka
 [records]: ../config/io_helidon_common_context_http_ContextRecordConfig.md
-[helidon-webclient-http-1-1-support]: /apidocs/io.helidon.webclient.http1/module-summary.html
-[helidon-webclient-http-2-support]: /apidocs/io.helidon.webclient.http2/module-summary.html
-[helidon-webclient-dns-resolver-first-support]: /apidocs/io.helidon.webclient.dns.resolver.first/module-summary.html
-[helidon-webclient-dns-resolver-round-robin-support]: /apidocs/io.helidon.webclient.dns.resolver.roundrobin/module-summary.html
-[helidon-webclient-discovery-support]: /apidocs/io.helidon.webclient.discovery/module-summary.html
-[helidon-webclient-metrics-support]: /apidocs/io.helidon.webclient.metrics/module-summary.html
-[helidon-webclient-security-support]: /apidocs/io.helidon.webclient.security/module-summary.html
-[helidon-webclient-tracing-support]: /apidocs/io.helidon.webclient.tracing/module-summary.html
+[helidon-webclien]: /apidocs/io.helidon.webclient.api/module-summary.html
+[helidon-webclien-2]: /apidocs/io.helidon.webclient.http1/module-summary.html
+[helidon-webclien-3]: /apidocs/io.helidon.webclient.http2/module-summary.html
+[helidon-webclien-4]: /apidocs/io.helidon.webclient.dns.resolver.first/module-summary.html
+[helidon-webclien-5]: /apidocs/io.helidon.webclient.dns.resolver.roundrobin/module-summary.html
+[helidon-webclien-6]: /apidocs/io.helidon.webclient.discovery/module-summary.html
+[helidon-webclien-7]: /apidocs/io.helidon.webclient.metrics/module-summary.html
+[helidon-webclien-8]: /apidocs/io.helidon.webclient.security/module-summary.html
+[helidon-webclien-9]: /apidocs/io.helidon.webclient.tracing/module-summary.html

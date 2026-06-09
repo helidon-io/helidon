@@ -6,7 +6,7 @@ Helidon provides a very flexible and comprehensive configuration system, offerin
 
 ## Maven Coordinates
 
-To enable Config, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable Config, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -49,7 +49,7 @@ See the [advanced topics'][advanced-topics] page for further information on some
 
 When it reads configuration text from sources, the config system uses config parsers to translate that text into the in-memory data structures representing that configuration.
 
-The config system includes several built-in parsers, such as for the Java properties, YAML, JSON, and HOCON formats. See [this section][this-section] for how to change your `pom.xml` to make parsers for those formats available to your application. Then your application can invoke the [config builder’s `addParser`][config-builder-s-addparser] method so that builder will use the parsers you choose.
+The config system includes several built-in parsers, such as for the Java properties, YAML, JSON, and HOCON formats. See [this section][this-section] for how to change your `pom.xml` to make parsers for those formats available to your application. Then your application can invoke the [config builder’s `addParser`][config-builder-s] method so that builder will use the parsers you choose.
 
 You can extend the system with custom parsers of your own. Implement the [`ConfigParser`][configparser] interface, then construct a `Config.Builder` using the `addParser` method, passing an instance of your customer parser. Invoke one of the `sources` methods to include a source that uses the custom format and then build the `Config` object.
 
@@ -87,7 +87,7 @@ Although the default configuration is very simple to use, your application can t
 
 When your application prepares a `Config.Builder` it sets what `ConfigSource`s and `ConfigParser`s the builder should use in constructing the resulting `Config` object. The Javadoc explains how to use the [`Config.Builder`][config-builder].
 
-See the [Custom Configuration Sources][custom-configuration-sources] and [advanced config sources][advanced-topics] sections for detailed examples and further information.
+See the [Custom Configuration Sources][custom-configura] and [advanced config sources][advanced-topics] sections for detailed examples and further information.
 
 ### Accessing Config Values
 
@@ -177,7 +177,7 @@ The filter resolves the `${host}` reference to the `localhost` value.
 
 This makes it easier to override values in testing and production, as you can just override the `host` key and leave the URIs same.
 
-See [Filter, Overrides, and Token Substitution][filter-overrides-and-token-substitution] section for further information on some more involved aspects.
+See [Filter, Overrides, and Token Substitution][filter-overrides] section for further information on some more involved aspects.
 
 ### Typed config values
 
@@ -201,7 +201,7 @@ ConfigValue\<T\> can be used to obtain:
 
   The config system automatically knows how to return `List` and `Map` complex types, and you can provide *config mappers* to convert a config subtree to whatever Java types your application needs.
 
-See [Property Mapping][property-mapping] page for details on how to use the built-in mappings and your own custom ones to convert to simple and complex types.
+See [Property Mapping](property-mapping.md) page for details on how to use the built-in mappings and your own custom ones to convert to simple and complex types.
 
 ### Dealing with Loading Errors: Retry Policies
 
@@ -237,7 +237,7 @@ In `Config` system, you can do this through change support provided by these com
 
 If you want to receive `onChange` events, you must configure your Config with at least one source that is capable of providing changes (having a `PollingStrategy` or `ChangeWatcher` configured, or implementing `EventConfigSource`)
 
-The [mutability][mutability] documentation explains this in detail, and the [`PollingStrategies`][pollingstrategies] Javadoc describes the built-in implementations.
+The [mutability](mutability-support.md) documentation explains this in detail, and the [`PollingStrategies`][pollingstrategie] Javadoc describes the built-in implementations.
 
 You can, of course, write your own by implementing the [`PollingStrategy`][pollingstrategy] interface. On a config source builder invoke `pollingStrategy` with an instance of your custom strategy and then invoke `build` to create the `ConfigSource`.
 
@@ -254,7 +254,7 @@ If you add additional Helidon config maven artifacts to your dependencies, then 
 
 Default Config Files (most to the least important)
 
-You can also extend the config system to handle other types of sources by implementing the [`ConfigSource`][configsource] interface. See the [extensions'][extensions] documentation for complete information.
+You can also extend the config system to handle other types of sources by implementing the [`ConfigSource`][configsource] interface. See the [extensions'](extensions.md) documentation for complete information.
 
 ## Reference
 
@@ -269,17 +269,17 @@ The links in the following tables lead you to more information about various oth
 | Topic | Documentation |
 |----|----|
 | Where config comes from | [Config sources][config-sources],[Config Profiles][config-profiles] |
-| What format config data is expressed in | [Config parsers][config-parsers], [supported formats][supported-formats] |
-| How to filter, override, and dereference values | [Filters and overrides][filter-overrides-and-token-substitution] |
-| What happens when config data changes | [Mutability Support][mutability] |
-| How to deal with loading errors | [Config retry policies][config-retry-policies] |
+| What format config data is expressed in | [Config parsers][config-parsers], [supported formats][supported-format] |
+| How to filter, override, and dereference values | [Filters and overrides][filter-overrides] |
+| What happens when config data changes | [Mutability Support][mutability-suppo] |
+| How to deal with loading errors | [Config retry policies][config-retry-pol] |
 
 Controlling How Config is Loaded
 
 | Topic | Documentation |
 |----|----|
-| How config data is translated into Java types | [Config mappers][property-mapping] |
-| How to navigate config trees | [Navigation](hierarchical-features.md) |
+| How config data is translated into Java types | [Config mappers][config-mappers] |
+| How to navigate config trees | [Navigation][navigation] |
 
 Accessing Configuration Data
 
@@ -289,28 +289,28 @@ Accessing Configuration Data
 
 Extending and Fine-tuning the Config System
 
-[managing-dependencies]: ../../managing-dependencies.md
 [configsources]: /apidocs/io.helidon.config/io/helidon/config/ConfigSources.html
 [advanced-topics]: advanced-configuration.md#advanced-config-sources
 [this-section]: #built-in-support-for-config-formats
-[config-builder-s-addparser]: /apidocs/io.helidon.config/io/helidon/config/Config.Builder.html#addParser-io.helidon.config.spi.ConfigParser-
+[config-builder-s]: /apidocs/io.helidon.config/io/helidon/config/Config.Builder.html#addParser-io.helidon.config.spi.ConfigParser-
 [configparser]: /apidocs/io.helidon.config/io/helidon/config/spi/ConfigParser.html
 [advanced-topics-2]: advanced-configuration.md#advanced-config-parsers
 [config-builder]: /apidocs/io.helidon.config/io/helidon/config/Config.Builder.html
-[custom-configuration-sources]: ../../se/guides/config.md#_custom_configuration_sources
+[custom-configura]: ../../se/guides/config.md#_custom_configuration_sources
 [config]: /apidocs/io.helidon.config/io/helidon/config/Config.html
-[filter-overrides-and-token-substitution]: advanced-configuration.md#filters-overrides-and-token-substitution
-[property-mapping]: property-mapping.md
+[filter-overrides]: advanced-configuration.md#filters-overrides-and-token-substitution
 [retrypolicies]: /apidocs/io.helidon.config/io/helidon/config/RetryPolicies.html
 [retrypolicy]: /apidocs/io.helidon.config/io/helidon/config/spi/RetryPolicy.html
-[mutability]: mutability-support.md
-[pollingstrategies]: /apidocs/io.helidon.config/io/helidon/config/PollingStrategies.html
+[pollingstrategie]: /apidocs/io.helidon.config/io/helidon/config/PollingStrategies.html
 [pollingstrategy]: /apidocs/io.helidon.config/io/helidon/config/spi/PollingStrategy.html
 [configsource]: /apidocs/io.helidon.config/io/helidon/config/spi/ConfigSource.html
-[extensions]: extensions.md
 [se-config-guide]: ../guides/config.md
 [config-sources]: #config-sources
 [config-profiles]: config-profiles.md
 [config-parsers]: #config-parsers
-[supported-formats]: supported-formats.md
-[config-retry-policies]: #dealing-with-loading-errors-retry-policies
+[supported-format]: supported-formats.md
+[mutability-suppo]: mutability-support.md
+[config-retry-pol]: #dealing-with-loading-errors-retry-policies
+[config-mappers]: property-mapping.md
+[navigation]: hierarchical-features.md
+[extensions]: extensions.md

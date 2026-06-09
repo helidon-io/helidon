@@ -2,11 +2,11 @@
 
 ## Overview
 
-Helidon MP implements the [MicroProfile GraphQL specification][microprofile-graphql-specification]. This specification describes how applications can be built to expose an endpoint for GraphQL. GraphQL is an open-source data query and manipulation language for APIs, and a runtime for fulfilling data queries. It provides an alternative to, though not necessarily a replacement for, REST.
+Helidon MP implements the [MicroProfile GraphQL specification][microprofile-gra]. This specification describes how applications can be built to expose an endpoint for GraphQL. GraphQL is an open-source data query and manipulation language for APIs, and a runtime for fulfilling data queries. It provides an alternative to, though not necessarily a replacement for, REST.
 
 ## Maven Coordinates
 
-To enable MicroProfile GraphQL, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable MicroProfile GraphQL, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -118,14 +118,14 @@ Generate Jandex index:
 ```
 
 > [!NOTE]
-> As per the instructions [here][here] ensure you have added a `src/main/resources/META-INF/beans.xml` file, so the CDI implementation can pick up your classes.
+> As per the instructions [here](introduction.md) ensure you have added a `src/main/resources/META-INF/beans.xml` file, so the CDI implementation can pick up your classes.
 
 ### Accessing the GraphQL endpoints
 
-After starting your application you should see a log message indicating that GraphQL is in the list of features. You can access the GraphQL endpoint at `http://host:port/graphql`, and the corresponding schema at `http://host:port/graphql/schema.graphql`. See [Configuration][configuration] for additional information on how to change the location of these resources.
-After starting your application you should see a log message indicating that GraphQL is in the list of features. You can access the GraphQL endpoint at `http://host:port/graphql`, and the corresponding schema at `http://host:port/graphql/schema.graphql`. See [Configuration][configuration] for additional information on how to change the location of these resources.
+After starting your application you should see a log message indicating that GraphQL is in the list of features. You can access the GraphQL endpoint at `http://host:port/graphql`, and the corresponding schema at `http://host:port/graphql/schema.graphql`. See [Configuration](#configuration) for additional information on how to change the location of these resources.
+After starting your application you should see a log message indicating that GraphQL is in the list of features. You can access the GraphQL endpoint at `http://host:port/graphql`, and the corresponding schema at `http://host:port/graphql/schema.graphql`. See [Configuration](#configuration) for additional information on how to change the location of these resources.
 
-If you wish to use the [GraphQL UI][graphql-ui] then please see the [GraphQL MP Example][graphql-mp-example].
+If you wish to use the [GraphQL UI][graphql-ui] then please see the [GraphQL MP Example][graphql-mp-examp].
 
 ## Configuration
 
@@ -155,7 +155,7 @@ The following configuration keys can be used to set up GraphQL invocation:
 
 ## Examples
 
-For a complete example, see [GraphQL MP Example][graphql-mp-example].
+For a complete example, see [GraphQL MP Example][graphql-mp-examp].
 
 ## Additional Information
 
@@ -163,12 +163,9 @@ For a complete example, see [GraphQL MP Example][graphql-mp-example].
 
 ## Reference
 
-- [MicroProfile GraphQL Javadocs][microprofile-graphql-javadocs].
+- [MicroProfile GraphQL Javadocs][microprofile-gra-2].
 
-[microprofile-graphql-specification]: https://download.eclipse.org/microprofile/microprofile-graphql-2.0/microprofile-graphql-spec-2.0.html
-[managing-dependencies]: ../managing-dependencies.md
-[here]: introduction.md
-[configuration]: #configuration
+[microprofile-gra]: https://download.eclipse.org/microprofile/microprofile-graphql-2.0/microprofile-graphql-spec-2.0.html
 [graphql-ui]: https://github.com/graphql/graphiql
-[graphql-mp-example]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/microprofile/graphql
-[microprofile-graphql-javadocs]: https://download.eclipse.org/microprofile/microprofile-graphql-2.0/apidocs
+[graphql-mp-examp]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/microprofile/graphql
+[microprofile-gra-2]: https://download.eclipse.org/microprofile/microprofile-graphql-2.0/apidocs

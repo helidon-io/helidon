@@ -4,17 +4,17 @@
 
 You can quickly and easily deploy Helidon applications on Oracle Cloud Infrastructure (OCI) and integrate them with OCI services using the OCI Java SDK and the Helidon OCI SDK Integration.
 
-[The Oracle Cloud Infrastructure SDK for Java][the-oracle-cloud-infrastructure-sdk-for-java] enables you to write code to manage Oracle Cloud Infrastructure resources. The Helidon OCI SDK Integration provides support for integrating [Oracle Cloud Infrastructure SDK clients][the-oracle-cloud-infrastructure-sdk-for-java] into your Helidon applications.
+[The Oracle Cloud Infrastructure SDK for Java][the-oracle-cloud] enables you to write code to manage Oracle Cloud Infrastructure resources. The Helidon OCI SDK Integration provides support for integrating [Oracle Cloud Infrastructure SDK clients][the-oracle-cloud] into your Helidon applications.
 
 > [!NOTE]
 > This Helidon module requires [ServiceRegistry](../injection/injection.md#Programmatic Lookup). ServiceRegistry requires the use of annotation processors, see [Why are annotation processors needed?](../injection/injection.md#Build time)
 
 > [!NOTE]
-> If you are interested in our MP based support of OCI than this [Guide for Helidon MP application on OCI][guide-for-helidon-mp-application-on-oci], describes the basics of developing and deploying a Helidon MP application based on our [Project Starter][project-starter].
+> If you are interested in our MP based support of OCI than this [Guide for Helidon MP application on OCI](../../mp/guides/oci-guide.md), describes the basics of developing and deploying a Helidon MP application based on our [Project Starter][project-starter].
 
 ## Maven Coordinates
 
-To enable OCI Integration, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable OCI Integration, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 Adding the Helidon OCI SDK Integration dependency for Config, Config File and Session Token:
 
@@ -54,7 +54,7 @@ Adding the Helidon OCI SDK Integration dependency for OKE Workload:
 
 ## Usage
 
-All you need to do is configure and create an OCI SDK Client object. The configuration primarily consists of setting up authentication with OCI. It is recommended that you configure authentication first and then verify your configuration by using the [OCI CLI][the-oracle-cloud-infrastructure-sdk-for-java] to access the service. Once you have authentication with OCI configured, you can use it to access any OCI service supported by the OCI SDK.
+All you need to do is configure and create an OCI SDK Client object. The configuration primarily consists of setting up authentication with OCI. It is recommended that you configure authentication first and then verify your configuration by using the [OCI CLI][the-oracle-cloud] to access the service. Once you have authentication with OCI configured, you can use it to access any OCI service supported by the OCI SDK.
 
 ### Configuring Authentication
 
@@ -65,8 +65,8 @@ OCI provides a few authentication methods that can be used when connecting to se
 | Config | 90 | Uses the user authentication specified in the Helidon `oci-config.yaml` file. |
 | Session Token | 85 | Uses config or config file, if it contains session token. |
 | Config File | 80 | Uses the user authentication specified in `~/.oci/config`. |
-| Resource Principal | 70 | Uses OCI resources and services as the authentication and authorization principal, such as serverless functions. See [About Using Resource Principal to Access Oracle Cloud Infrastructure Resources][about-using-resource-principal-to-access-oracle-cloud-infrastruc]. |
-| Instance Principal | 60 | Uses the OCI Compute instance as the authentication and authorization principal. See [Calling Services from an Instance][calling-services-from-an-instance]. |
+| Resource Principal | 70 | Uses OCI resources and services as the authentication and authorization principal, such as serverless functions. See [About Using Resource Principal to Access Oracle Cloud Infrastructure Resources][about-using-reso]. |
+| Instance Principal | 60 | Uses the OCI Compute instance as the authentication and authorization principal. See [Calling Services from an Instance][calling-services]. |
 | OKE Workload Identity | 50 | Identity of the OKE Workload |
 
 These providers configure authentication with OCI by picking up OCI credentials from your environment variables, system properties, and a configuration file named `oci-config.yaml` on the file system, or on the runtime classpath.
@@ -98,11 +98,11 @@ If you require greater control over the OCI configuration, the `helidon.oci.auth
 
 ### Accessing OCI Services
 
-Once you have authentication with OCI configured, you can use it to access any [OCI service supported by the OCI SDK][oci-service-supported-by-the-oci-sdk]. You need to add dependencies for the specific OCI SDK clients you will use.
+Once you have authentication with OCI configured, you can use it to access any [OCI service supported by the OCI SDK][oci-service-supp]. You need to add dependencies for the specific OCI SDK clients you will use.
 
 #### Object Storage
 
-The OCI Object Storage service is an internet-scale, high-performance storage platform that offers reliable and cost-efficient data durability. See [OCI Object Storage Overview][oci-object-storage-overview] in OCI documentation.
+The OCI Object Storage service is an internet-scale, high-performance storage platform that offers reliable and cost-efficient data durability. See [OCI Object Storage Overview][oci-object-stora] in OCI documentation.
 
 To enable the OCI Object Storage integration, add the following dependency to your project’s `pom.xml`:
 
@@ -128,8 +128,8 @@ ObjectStorage objectStorageClient = ObjectStorageClient.builder().build(authProv
 
 Once you have created an ObjectStorage client you can use it as described in:
 
-- [OCI SDK Object Storage Javadocs][oci-sdk-object-storage-javadocs]
-- [OCI Object Storage Overview][oci-object-storage-overview]
+- [OCI SDK Object Storage Javadocs][oci-sdk-object-s]
+- [OCI Object Storage Overview][oci-object-stora]
 
 ## Region Information
 
@@ -206,16 +206,15 @@ helidon.oci:
 
 ## References
 
-- [OCI SDK Usage Examples][oci-sdk-usage-examples]
-- [OCI Documentation](https://docs.oracle.com/en-us/iaas/Content/home.htm)
+- [OCI SDK Usage Examples][oci-sdk-usage-ex]
+- [OCI Documentation][oci-documentatio]
 
-[the-oracle-cloud-infrastructure-sdk-for-java]: https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/javasdk.htm
-[guide-for-helidon-mp-application-on-oci]: ../../mp/guides/oci-guide.md
+[the-oracle-cloud]: https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/javasdk.htm
 [project-starter]: https://helidon.io/starter/4.4.0-SNAPSHOT
-[managing-dependencies]: ../../managing-dependencies.md
-[about-using-resource-principal-to-access-oracle-cloud-infrastruc]: https://docs.oracle.com/en/cloud/paas/autonomous-database/serverless/adbsb/resource-principal.html
-[calling-services-from-an-instance]: https://docs.oracle.com/en-us/iaas/Content/Identity/Tasks/callingservicesfrominstances.htm
-[oci-service-supported-by-the-oci-sdk]: https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/javasdk.htm#Services_Supported
-[oci-object-storage-overview]: https://docs.oracle.com/en-us/iaas/Content/Object/Concepts/objectstorageoverview.htm
-[oci-sdk-object-storage-javadocs]: https://docs.oracle.com/en-us/iaas/tools/java/latest/com/oracle/bmc/objectstorage/package-summary.html
-[oci-sdk-usage-examples]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/integrations/oci
+[about-using-reso]: https://docs.oracle.com/en/cloud/paas/autonomous-database/serverless/adbsb/resource-principal.html
+[calling-services]: https://docs.oracle.com/en-us/iaas/Content/Identity/Tasks/callingservicesfrominstances.htm
+[oci-service-supp]: https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/javasdk.htm#Services_Supported
+[oci-object-stora]: https://docs.oracle.com/en-us/iaas/Content/Object/Concepts/objectstorageoverview.htm
+[oci-sdk-object-s]: https://docs.oracle.com/en-us/iaas/tools/java/latest/com/oracle/bmc/objectstorage/package-summary.html
+[oci-sdk-usage-ex]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/integrations/oci
+[oci-documentatio]: https://docs.oracle.com/en-us/iaas/Content/home.htm

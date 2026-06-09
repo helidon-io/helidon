@@ -2,11 +2,11 @@
 
 ## Overview
 
-The Jakarta REST Client defines a programmatic API to access REST resources. This API sits at a higher level than traditional HTTP client APIs and provides full integration with server-side API concepts like providers. It differs from the [Rest Client API][rest-client-api] in that it does not support annotations or proxies, but instead uses builders and a fluent API to create and execute requests.
+The Jakarta REST Client defines a programmatic API to access REST resources. This API sits at a higher level than traditional HTTP client APIs and provides full integration with server-side API concepts like providers. It differs from the [Rest Client API](../restclient/restclient.md) in that it does not support annotations or proxies, but instead uses builders and a fluent API to create and execute requests.
 
 ## Maven Coordinates
 
-To enable Jakarta REST Client, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable Jakarta REST Client, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -87,20 +87,17 @@ Configuration for this API is all done programmatically as shown in the previous
 
 ## Examples
 
-See [API][api] for same simple examples. For additional information, refer to the
+See [API](#api) for same simple examples. For additional information, refer to the
 
-[Jakarta REST Client Specification][jakarta-rest-client-specification].
+[Jakarta REST Client Specification][jakarta-rest-cli].
 
 ## Additional Information
 
-For additional information, see the [Jakarta REST Javadocs][jakarta-rest-javadocs].
+For additional information, see the [Jakarta REST Javadocs][jakarta-rest-jav].
 
 ## Reference
 
-- [Jakarta REST Client Specification][jakarta-rest-client-specification]
+- [Jakarta REST Client Specification][jakarta-rest-cli]
 
-[rest-client-api]: ../restclient/restclient.md
-[managing-dependencies]: ../../managing-dependencies.md
-[api]: #api
-[jakarta-rest-client-specification]: https://jakarta.ee/specifications/restful-ws/3.1/jakarta-restful-ws-spec-3.1.html#client_api
-[jakarta-rest-javadocs]: https://jakarta.ee/specifications/restful-ws/3.1/apidocs
+[jakarta-rest-cli]: https://jakarta.ee/specifications/restful-ws/3.1/jakarta-restful-ws-spec-3.1.html#client_api
+[jakarta-rest-jav]: https://jakarta.ee/specifications/restful-ws/3.1/apidocs

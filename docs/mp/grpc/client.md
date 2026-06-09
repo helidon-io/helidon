@@ -6,7 +6,7 @@ Building Java-based gRPC clients using the Helidon MP gRPC API is very simple an
 
 ## Maven Coordinates
 
-To enable gRPC MicroProfile Clients, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable gRPC MicroProfile Clients, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -25,7 +25,7 @@ The following annotations are used to work with Helidon MP gRPC clients:
 
 ## Configuration
 
-For a gRPC client to connect to a server, it requires a channel. Channels are configured in the `grpc` section of the Helidon application configuration. The examples below use an `application.yaml` file but there are many other ways to to configure Helidon. See [Configuration in Helidon][configuration-in-helidon] for more information.
+For a gRPC client to connect to a server, it requires a channel. Channels are configured in the `grpc` section of the Helidon application configuration. The examples below use an `application.yaml` file but there are many other ways to to configure Helidon. See [Configuration in Helidon](../../mp/config/introduction.md) for more information.
 
 ```yaml
 grpc:
@@ -102,7 +102,7 @@ interface StringServiceClient {
 ```
 
 - The `@Grpc.GrpcService` annotation is necessary to provide the name of the gRPC service when it differs from the interface name, as it is the case in this example.
-- The `@Grpc.GrpcChannel` annotation is the qualifier that supplies the channel name. This is the same name as used in the channel configuration in the examples provided in the [Configuration section][configuration-section].
+- The `@Grpc.GrpcChannel` annotation is the qualifier that supplies the channel name. This is the same name as used in the channel configuration in the examples provided in the [Configuration section](#configuration).
 
 There is no need to write any code to implement the client. The Helidon MP gRPC API will create a dynamic proxy for the interface using the information from the annotations and method signatures.
 
@@ -153,16 +153,13 @@ private Channel channel;
 ```
 
 - The `@Inject` annotation tells CDI to inject the channel.
-- The `@Grpc.GrpcChannel` annotation supplies the channel name. This is the same name as used in the channel configuration in the examples provided in the [Configuration section][configuration-section].
+- The `@Grpc.GrpcChannel` annotation supplies the channel name. This is the same name as used in the channel configuration in the examples provided in the [Configuration section](#configuration).
 
 An injected channel can be used, for example, when directly instantiating `protoc` generated stubs.
 
 ## Examples
 
-Please refer to the [Helidon gRPC MP Example][helidon-grpc-mp-example].
+Please refer to the [Helidon gRPC MP Example][helidon-grpc-mp].
 
-[managing-dependencies]: ../../managing-dependencies.md
-[configuration-in-helidon]: ../../mp/config/introduction.md
 [configuring-tls]: ../../se/webserver/webserver.md#configuring-tls
-[configuration-section]: #configuration
-[helidon-grpc-mp-example]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/microprofile/grpc
+[helidon-grpc-mp]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/microprofile/grpc

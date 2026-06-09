@@ -6,7 +6,7 @@ Asynchronous messaging is a commonly used form of communication in the world of 
 
 ## Maven Coordinates
 
-To enable Reactive Messaging, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable Reactive Messaging, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -19,13 +19,13 @@ To enable Reactive Messaging, add the following dependency to your project’s `
 
 Connecting your streams to external services usually requires a lot of boilerplate code for configuration handling, backpressure propagation, acknowledgement and more.
 
-In Helidon there is a system of connectors, emitters and means to orchestrate these tasks called **Reactive Messaging**. It’s basically an API for connecting and configuring connectors and emitters with your reactive streams through [Channels][channels].
+In Helidon there is a system of connectors, emitters and means to orchestrate these tasks called **Reactive Messaging**. It’s basically an API for connecting and configuring connectors and emitters with your reactive streams through [Channels](#channel).
 
-Reactive Messaging relates to [MicroProfile Reactive Messaging][microprofile-reactive-messaging] as the making of connectors and configuring them can be a repetitive task that ultimately leads to the same results. Helidon SE Reactive Messaging supports the very same configuration format for connectors as its MicroProfile counterpart does. Also, MP Connectors are reusable in Helidon SE Messaging with some limitations such as there is no CDI in Helidon SE. All [Messaging connectors][messaging-connectors] in Helidon are made to be universally usable by Helidon MP and SE.
+Reactive Messaging relates to [MicroProfile Reactive Messaging][microprofile-rea] as the making of connectors and configuring them can be a repetitive task that ultimately leads to the same results. Helidon SE Reactive Messaging supports the very same configuration format for connectors as its MicroProfile counterpart does. Also, MP Connectors are reusable in Helidon SE Messaging with some limitations such as there is no CDI in Helidon SE. All [Messaging connectors](#messaging-connector) in Helidon are made to be universally usable by Helidon MP and SE.
 
 ### Channel
 
-A channel is a named pair of `Publisher` and `Subscriber`. Channels can be connected together by [processors][processors]. Registering a `Publisher` or `Subscriber` for a channel can be done by Messaging API, or configured implicitly using registered [connectors][connectors] to generate the `Publisher` or `Subscriber`.
+A channel is a named pair of `Publisher` and `Subscriber`. Channels can be connected together by [processors](#processor). Registering a `Publisher` or `Subscriber` for a channel can be done by Messaging API, or configured implicitly using registered [connectors](#connectors) to generate the `Publisher` or `Subscriber`.
 
 Example of simple channel:
 
@@ -41,7 +41,7 @@ Messaging.builder()
 
 ### Processor
 
-Processor is a typical reactive processor acting as a `Subscriber` to upstream and as a `Publisher` to downstream. In terms of reactive messaging, it is able to connect two [channels][channels] to one reactive stream.
+Processor is a typical reactive processor acting as a `Subscriber` to upstream and as a `Publisher` to downstream. In terms of reactive messaging, it is able to connect two [channels](#channel) to one reactive stream.
 
 Example of processor usage:
 
@@ -75,7 +75,7 @@ The only exception to this are the variants of the methods `Messaging.Builder#li
 
 ### Connectors
 
-Connectors are used to connect [channels][channels] to external sources. To make the [creation and usage of connectors][messaging-connectors] as easy and versatile as possible, Helidon SE Messaging uses the same API for connectors that [MicroProfile Reactive Messaging][microprofile-reactive-messaging] does. This allows connectors to be used in both flavors of Helidon with one limitation which is that the connector has to be able to work without CDI.
+Connectors are used to connect [channels](#channel) to external sources. To make the [creation and usage of connectors](#messaging-connector) as easy and versatile as possible, Helidon SE Messaging uses the same API for connectors that [MicroProfile Reactive Messaging][microprofile-rea] does. This allows connectors to be used in both flavors of Helidon with one limitation which is that the connector has to be able to work without CDI.
 
 Examples of versatile connectors in Helidon include the following:
 
@@ -151,7 +151,7 @@ Messaging.builder()
 
 ##### Configuration for Messaging Connector
 
-A messaging connector in Helidon SE can be configured explicitly by API or implicitly by config following the notation of [MicroProfile Reactive Messaging][microprofile-reactive-messaging-2].
+A messaging connector in Helidon SE can be configured explicitly by API or implicitly by config following the notation of [MicroProfile Reactive Messaging][microprofile-rea-2].
 
 Configuration that is supplied to connector by the Messaging implementation must include two mandatory attributes:
 
@@ -180,7 +180,7 @@ public class ExampleConnector implements IncomingConnectorFactory {
 
 ###### Explicit Config for Messaging Connector
 
-An explicit config for channel’s publisher is possible with `Channel.Builder#publisherConfig(Config config)` and for a subscriber with the `Channel.Builder#subscriberConfig(Config config)`. The supplied [Helidon Config][helidon-config] is merged with the mandatory attributes and any implicit configuration found. The resulting configuration is then served to the Connector.
+An explicit config for channel’s publisher is possible with `Channel.Builder#publisherConfig(Config config)` and for a subscriber with the `Channel.Builder#subscriberConfig(Config config)`. The supplied [Helidon Config](config/introduction.md) is merged with the mandatory attributes and any implicit configuration found. The resulting configuration is then served to the Connector.
 
 Example consuming from Kafka connector with explicit config:
 
@@ -218,7 +218,7 @@ Messaging messaging = Messaging.builder()
 
 ###### Implicit Config for Messaging Connector
 
-Implicit config without any hard-coding is possible with [Helidon Config][helidon-config] following notation of [MicroProfile Reactive Messaging][microprofile-reactive-messaging-2].
+Implicit config without any hard-coding is possible with [Helidon Config](config/introduction.md) following notation of [MicroProfile Reactive Messaging][microprofile-rea-2].
 
 Example of channel to connector mapping config with custom properties:
 
@@ -249,9 +249,9 @@ Messaging.builder()
 
 #### Re-usability in MP Messaging
 
-As the API is the same for [MicroProfile Reactive Messaging][microprofile-reactive-messaging] connectors, all that is needed to make connector work in both ways is annotating it with `@ApplicationScoped`. Such connector is treated as a bean in Helidon MP.
+As the API is the same for [MicroProfile Reactive Messaging][microprofile-rea] connectors, all that is needed to make connector work in both ways is annotating it with `@ApplicationScoped`. Such connector is treated as a bean in Helidon MP.
 
-For specific information about creating messaging connectors for Helidon MP visit [MicroProfile Reactive Messaging][microprofile-reactive-messaging].
+For specific information about creating messaging connectors for Helidon MP visit [MicroProfile Reactive Messaging][microprofile-rea].
 
 #### Kafka Connector
 
@@ -359,7 +359,7 @@ mp.messaging:
 ```
 
 - Kafka client consumer’s property auto.offset.reset configuration for `from-kafka` channel only
-- Kafka client’s property [bootstrap.servers][bootstrap-servers] configuration for all channels using the connector
+- Kafka client’s property [bootstrap.servers][bootstrap-server] configuration for all channels using the connector
 
 Example of consuming from Kafka:
 
@@ -536,7 +536,7 @@ Messaging messaging = Messaging.builder()
 
 Don’t forget to check out the examples with pre-configured ActiveMQ docker image, for easy testing:
 
-- [Helidon Messaging Examples][helidon-messaging-examples]
+- [Helidon Messaging Examples][helidon-messagin]
 
 #### AQ Connector
 
@@ -602,32 +602,26 @@ Messaging.builder()
 
 ## Configuration
 
-- [Configuration for Messaging Connector][configuration-for-messaging-connector]
-- [Explicit Configuration with Config Builder for Kafka Connector][explicit-configuration-with-config-builder-for-kafka-connector]
-- [Implicit Helidon Configuration for Kafka Connector][implicit-helidon-configuration-for-kafka-connector]
-- [Explicit Configuration with Config Builder for JMS Connector][explicit-configuration-with-config-builder-for-jms-connector]
-- [Implicit Helidon Configuration for JMS Connector][implicit-helidon-configuration-for-jms-connector]
+- [Configuration for Messaging Connector][configuration-fo]
+- [Explicit Configuration with Config Builder for Kafka Connector][explicit-configu]
+- [Implicit Helidon Configuration for Kafka Connector][implicit-helidon]
+- [Explicit Configuration with Config Builder for JMS Connector][explicit-configu-2]
+- [Implicit Helidon Configuration for JMS Connector][implicit-helidon-2]
 
 ## Reference
 
-- [MicroProfile Reactive Messaging Specification][microprofile-reactive-messaging-specification]
-- [MicroProfile Reactive Messaging on GitHub][microprofile-reactive-messaging-on-github]
-- [Helidon Messaging Examples][helidon-messaging-examples]
+- [MicroProfile Reactive Messaging Specification][microprofile-rea-3]
+- [MicroProfile Reactive Messaging on GitHub][microprofile-rea-4]
+- [Helidon Messaging Examples][helidon-messagin]
 
-[managing-dependencies]: ../managing-dependencies.md
-[channels]: #channel
-[microprofile-reactive-messaging]: ../mp/reactivemessaging/introduction.md
-[messaging-connectors]: #messaging-connector
-[processors]: #processor
-[connectors]: #connectors
-[microprofile-reactive-messaging-2]: https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html#_configuration
-[helidon-config]: config/introduction.md
-[bootstrap-servers]: https://kafka.apache.org/28/documentation.html#consumerconfigs_bootstrap.servers
-[helidon-messaging-examples]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/messaging
-[configuration-for-messaging-connector]: #configuration-for-messaging-connector
-[explicit-configuration-with-config-builder-for-kafka-connector]: #explicit-config-with-config-builder-for-kafka-connector
-[implicit-helidon-configuration-for-kafka-connector]: #implicit-helidon-config-for-kafka-connector
-[explicit-configuration-with-config-builder-for-jms-connector]: #explicit-config-with-config-builder-for-jms-connector
-[implicit-helidon-configuration-for-jms-connector]: #implicit-helidon-config-for-jms-connector
-[microprofile-reactive-messaging-specification]: https://download.eclipse.org/microprofile/microprofile-reactive-messaging-3.0/microprofile-reactive-messaging-spec-3.0.html
-[microprofile-reactive-messaging-on-github]: https://github.com/eclipse/microprofile-reactive-messaging
+[microprofile-rea]: ../mp/reactivemessaging/introduction.md
+[microprofile-rea-2]: https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html#_configuration
+[bootstrap-server]: https://kafka.apache.org/28/documentation.html#consumerconfigs_bootstrap.servers
+[helidon-messagin]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/messaging
+[configuration-fo]: #configuration-for-messaging-connector
+[explicit-configu]: #explicit-config-with-config-builder-for-kafka-connector
+[implicit-helidon]: #implicit-helidon-config-for-kafka-connector
+[explicit-configu-2]: #explicit-config-with-config-builder-for-jms-connector
+[implicit-helidon-2]: #implicit-helidon-config-for-jms-connector
+[microprofile-rea-3]: https://download.eclipse.org/microprofile/microprofile-reactive-messaging-3.0/microprofile-reactive-messaging-spec-3.0.html
+[microprofile-rea-4]: https://github.com/eclipse/microprofile-reactive-messaging

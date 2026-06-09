@@ -37,7 +37,7 @@ export JAVA_HOME=/usr/lib/jvm/jdk-21
 
 ## Getting Started with Configuration
 
-Helidon provides a very flexible and comprehensive configuration system, offering you many application configuration choices. You can include configuration data from a variety of sources using different formats, like JSON and YAML. Furthermore, you can customize the precedence of sources and make them optional or mandatory. This guide introduces Helidon MP configuration and demonstrates the fundamental concepts using several examples. Refer to [Helidon Config][helidon-config] for the full configuration concepts documentation.
+Helidon provides a very flexible and comprehensive configuration system, offering you many application configuration choices. You can include configuration data from a variety of sources using different formats, like JSON and YAML. Furthermore, you can customize the precedence of sources and make them optional or mandatory. This guide introduces Helidon MP configuration and demonstrates the fundamental concepts using several examples. Refer to [Helidon Config](../../mp/config/introduction.md) for the full configuration concepts documentation.
 
 ### Create a Sample Helidon MP Project
 
@@ -123,7 +123,7 @@ In order to properly configure your application using configuration sources, you
 Each of these sources specify configuration properties in Java Property format (key/value), like `color=red`. If any of the Helidon required properties are not specified in one of these source, like `server.port`, then Helidon will use a default value.
 
 > [!NOTE]
-> Because environment variable names are restricted to alphanumeric characters and underscores, Helidon adds aliases to the environment configuration source, allowing entries with dotted and/or hyphenated keys to be overridden. For example, this mapping allows an environment variable named "APP_GREETING" to override an entry key named "app.greeting". In the same way, an environment variable named "APP_dash_GREETING" will map to "app-greeting". See [MicroProfile Config Specifications][microprofile-config-specifications] for more information.
+> Because environment variable names are restricted to alphanumeric characters and underscores, Helidon adds aliases to the environment configuration source, allowing entries with dotted and/or hyphenated keys to be overridden. For example, this mapping allows an environment variable named "APP_GREETING" to override an entry key named "app.greeting". In the same way, an environment variable named "APP_dash_GREETING" will map to "app-greeting". See [MicroProfile Config Specifications][microprofile-con] for more information.
 
 The following examples will demonstrate the default precedence order.
 
@@ -590,21 +590,21 @@ kubectl delete configmap  helidon-configmap
 
 ## Summary
 
-This guide has demonstrated how to use basic Helidon configuration features. For more information about using the advanced Helidon configuration features, including mutability support and extensions, see [Helidon Configuration][helidon-config].
+This guide has demonstrated how to use basic Helidon configuration features. For more information about using the advanced Helidon configuration features, including mutability support and extensions, see [Helidon Configuration](../../mp/config/introduction.md).
 
 ## References
 
 Refer to the following references for additional information:
 
-- [MicroProfile Config specification][microprofile-config-specifications]
-- [MicroProfile Config Javadoc][microprofile-config-javadoc]
-- [Helidon Javadoc](/apidocs/index.html?overview-summary.html)
+- [MicroProfile Config specification][microprofile-con]
+- [MicroProfile Config Javadoc][microprofile-con-2]
+- [Helidon Javadoc][helidon-javadoc]
 
 [java-21]: https://www.oracle.com/technetwork/java/javase/downloads
 [open-jdk-21]: http://jdk.java.net
 [maven-3-8]: https://maven.apache.org/download.cgi
 [docker-18-09]: https://docs.docker.com/install/
 [kubectl-1-16-5]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
-[helidon-config]: ../../mp/config/introduction.md
-[microprofile-config-specifications]: https://download.eclipse.org/microprofile/microprofile-config-3.1/microprofile-config-spec-3.1.html
-[microprofile-config-javadoc]: https://download.eclipse.org/microprofile/microprofile-config-3.1/apidocs
+[microprofile-con]: https://download.eclipse.org/microprofile/microprofile-config-3.1/microprofile-config-spec-3.1.html
+[microprofile-con-2]: https://download.eclipse.org/microprofile/microprofile-config-3.1/apidocs
+[helidon-javadoc]: /apidocs/index.html?overview-summary.html

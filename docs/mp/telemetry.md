@@ -2,7 +2,7 @@
 
 ## Maven Coordinates
 
-To enable MicroProfile Telemetry, either add a dependency on the [helidon-microprofile bundle][helidon-microprofile-bundle] or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable MicroProfile Telemetry, either add a dependency on the [helidon-microprofile bundle](introduction.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -26,9 +26,9 @@ Example dependency for the OpenTelemetry OTLP exporter:
 
 ## Usage
 
-[OpenTelemetry][opentelemetry] comprises a collection of APIs, SDKs, integration tools, and other software components intended to facilitate the generation and control of telemetry data, including traces, metrics, and logs. In an environment where distributed tracing is enabled via OpenTelemetry (which combines OpenTracing and OpenCensus), this specification establishes the necessary behaviors for MicroProfile applications to participate seamlessly.
+[OpenTelemetry](https://opentelemetry.io/) comprises a collection of APIs, SDKs, integration tools, and other software components intended to facilitate the generation and control of telemetry data, including traces, metrics, and logs. In an environment where distributed tracing is enabled via OpenTelemetry (which combines OpenTracing and OpenCensus), this specification establishes the necessary behaviors for MicroProfile applications to participate seamlessly.
 
-MicroProfile Telemetry 1.1 allows for the export of the data it collects to other systems using a variety of exporters such as OTLP mentioned earlier. Typical applications use a single exporter but you can add dependencies on multiple exporters and then use configuration to choose which to use in any given execution. See the [configuration][configuration] section for more details.
+MicroProfile Telemetry 1.1 allows for the export of the data it collects to other systems using a variety of exporters such as OTLP mentioned earlier. Typical applications use a single exporter but you can add dependencies on multiple exporters and then use configuration to choose which to use in any given execution. See the [configuration](#configuration) section for more details.
 
 > [!NOTE]
 > If possible, assign the following config setting in your application’s `META-INF/microprofile-config.properties` file:
@@ -133,7 +133,7 @@ public class HelidonEndpoint {
 - Inject `Tracer`.
 - Use `Tracer.spanBuilder` to create and start new `Span`.
 
-Helidon MicroProfile Telemetry is integrated with [Helidon Tracing API][helidon-tracing-api]. This means that both APIs can be mixed, and all parent hierarchies will be kept. In the case below, `@WithSpan` annotated method is mixed with manually created `io.helidon.tracing.Span`:
+Helidon MicroProfile Telemetry is integrated with [Helidon Tracing API](tracing.md). This means that both APIs can be mixed, and all parent hierarchies will be kept. In the case below, `@WithSpan` annotated method is mixed with manually created `io.helidon.tracing.Span`:
 
 Inject Helidon Tracer:
 
@@ -261,7 +261,7 @@ Applications and libraries can register listeners to be notified at several mome
 - After a span is activated (creating a new scope)
 - After a scope is closed
 
-See the [Helidon SE documentation on span lifecycle support][helidon-se-documentation-on-span-lifecycle-support] for more detail on the Helidon SE API which supports this feature. You can use those features from a Helidon MP application as well, in particular receiving notification of life cycle changes of *OpenTelemetry* spans.
+See the [Helidon SE documentation on span lifecycle support][helidon-se-docum] for more detail on the Helidon SE API which supports this feature. You can use those features from a Helidon MP application as well, in particular receiving notification of life cycle changes of *OpenTelemetry* spans.
 
 Helidon MP applications which inject an OpenTelemetry `Tracer` or `Span` can easily request such notification by adding the Helidon [`@CallbackEnabled`][callbackenabled] annotation to injection points as shown in the following example.
 
@@ -281,9 +281,9 @@ By default, Helidon MP Telemetry creates a new child span for each incoming REST
 
 #### Controlling Automatic Spans for Incoming REST Requests
 
-To selectively suppress child span creation for incoming REST requests implement the [HelidonTelemetryContainerFilterHelper interface][helidontelemetrycontainerfilterhelper-interface].
+To selectively suppress child span creation for incoming REST requests implement the [HelidonTelemetryContainerFilterHelper interface][helidontelemetry].
 
-When Helidon receives an incoming REST request it invokes the `shouldStartSpan` method on each such implementation, passing the [Jakarta REST container request context][jakarta-rest-container-request-context] for the request. If at least one implementation returns `false` then Helidon suppresses the automatic child span. If all implementations return `true` then Helidon creates the automatic child span.
+When Helidon receives an incoming REST request it invokes the `shouldStartSpan` method on each such implementation, passing the [Jakarta REST container request context][jakarta-rest-con] for the request. If at least one implementation returns `false` then Helidon suppresses the automatic child span. If all implementations return `true` then Helidon creates the automatic child span.
 
 The following example shows how to allow automatic spans in the Helidon greet example app for requests for the default greeting but not for the personalized greeting or the `PUT` request to change the greeting message (because the update path ends with `greeting` not `greet`).
 
@@ -307,9 +307,9 @@ public class CustomRestRequestFilterHelper implements HelidonTelemetryContainerF
 
 #### Controlling Automatic Spans for Outgoing REST Client Requests
 
-To selectively suppress child span creation for outgoing REST client requests implement the [HelidonTelemetryClientFilterHelper interface][helidontelemetryclientfilterhelper-interface].
+To selectively suppress child span creation for outgoing REST client requests implement the [HelidonTelemetryClientFilterHelper interface][helidontelemetry-2].
 
-When your application sends an outgoing REST client request Helidon invokes the `shouldStartSpan` method on each such implementation, passing the [Jakarta REST client request context][jakarta-rest-client-request-context] for the request. If at least one implementation returns `false` then Helidon suppresses the automatic child span. If all implementations return `true` then Helidon creates the automatic child span.
+When your application sends an outgoing REST client request Helidon invokes the `shouldStartSpan` method on each such implementation, passing the [Jakarta REST client request context][jakarta-rest-cli] for the request. If at least one implementation returns `false` then Helidon suppresses the automatic child span. If all implementations return `true` then Helidon creates the automatic child span.
 
 The following example shows how to allow automatic spans in an app that invokes the Helidon greet example app. The example permits automatic child spans for outgoing requests for the default greeting but not for the personalized greeting or the `PUT` request to change the greeting message (because the update path ends with `greeting` not `greet`).
 
@@ -338,12 +338,12 @@ public class CustomRestClientRequestFilterHelper implements HelidonTelemetryClie
 
 To configure OpenTelemetry, MicroProfile Config must be used, and the configuration properties outlined in the following sections must be followed:
 
-- [OpenTelemetry SDK Autoconfigure][opentelemetry-sdk-autoconfigure] (excluding properties related to Metrics and Logging)
-- [Manual Instrumentation][manual-instrumentation]
+- [OpenTelemetry SDK Autoconfigure][opentelemetry-sd] (excluding properties related to Metrics and Logging)
+- [Manual Instrumentation][manual-instrumen]
 
 Please consult with the links above for all configurations' properties usage.
 
-For your application to report trace information be sure you add a dependency on an OpenTelemetry exporter as [described earlier][described-earlier] and, as needed, configure its use. By default OpenTelemetry attempts to use the OTLP exporter so you do not need to add configuration to specify that choice. To use a different exporter set `otel.traces.exporter` in your configuration to the appropriate value: `zipkin`, `prometheus`, etc. See the [examples][examples] section below.
+For your application to report trace information be sure you add a dependency on an OpenTelemetry exporter as [described earlier](#otel-exporter-dependencies) and, as needed, configure its use. By default OpenTelemetry attempts to use the OTLP exporter so you do not need to add configuration to specify that choice. To use a different exporter set `otel.traces.exporter` in your configuration to the appropriate value: `zipkin`, `prometheus`, etc. See the [examples](#examples) section below.
 
 ### OpenTelemetry Java Agent
 
@@ -547,27 +547,20 @@ Launch the Jaeger UI at <http://localhost:16686/> to see the expected output (sh
 <img src="../images/telemetry/telemetry-outbound-jaeger.png" alt="Secondary service outbound call" />
 </figure>
 
-This example is available at the [Helidon official GitHub repository][helidon-official-github-repository].
+This example is available at the [Helidon official GitHub repository][helidon-official].
 
 ## Reference
 
-- [MicroProfile Telemetry Specification][microprofile-telemetry-specification]
+- [MicroProfile Telemetry Specification][microprofile-tel]
 - [OpenTelemetry Documentation](https://opentelemetry.io/docs/)
 
-[helidon-microprofile-bundle]: introduction.md
-[managing-dependencies]: ../managing-dependencies.md
-[opentelemetry]: https://opentelemetry.io/
-[configuration]: #configuration
-[helidon-tracing-api]: tracing.md
-[helidon-se-documentation-on-span-lifecycle-support]: ../se/tracing.md#responding-to-span-lifecycle-events
+[helidon-se-docum]: ../se/tracing.md#responding-to-span-lifecycle-events
 [callbackenabled]: /apidocs/io.helidon.microprofile.telemetry/io/helidon/microprofile/telemetry/CallbackEnabled.html
-[helidontelemetrycontainerfilterhelper-interface]: /apidocs/io.helidon.microprofile.telemetry/io/helidon/microprofile/telemetry/spi/HelidonTelemetryContainerFilterHelper.html
-[jakarta-rest-container-request-context]: https://jakarta.ee/specifications/restful-ws/3.1/apidocs/jakarta.ws.rs/jakarta/ws/rs/container/containerrequestcontext
-[helidontelemetryclientfilterhelper-interface]: /apidocs/io.helidon.microprofile.telemetry/io/helidon/microprofile/telemetry/spi/HelidonTelemetryClientFilterHelper.html
-[jakarta-rest-client-request-context]: https://jakarta.ee/specifications/restful-ws/3.1/apidocs/jakarta.ws.rs/jakarta/ws/rs/client/clientrequestcontext
-[opentelemetry-sdk-autoconfigure]: https://github.com/open-telemetry/opentelemetry-java/tree/v1.19.0/sdk-extensions/autoconfigure
-[manual-instrumentation]: https://opentelemetry.io/docs/instrumentation/java/manual/
-[described-earlier]: #otel-exporter-dependencies
-[examples]: #examples
-[helidon-official-github-repository]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/microprofile/telemetry
-[microprofile-telemetry-specification]: https://download.eclipse.org/microprofile/microprofile-telemetry-1.1/tracing/microprofile-telemetry-tracing-spec-1.1.pdf
+[helidontelemetry]: /apidocs/io.helidon.microprofile.telemetry/io/helidon/microprofile/telemetry/spi/HelidonTelemetryContainerFilterHelper.html
+[jakarta-rest-con]: https://jakarta.ee/specifications/restful-ws/3.1/apidocs/jakarta.ws.rs/jakarta/ws/rs/container/containerrequestcontext
+[helidontelemetry-2]: /apidocs/io.helidon.microprofile.telemetry/io/helidon/microprofile/telemetry/spi/HelidonTelemetryClientFilterHelper.html
+[jakarta-rest-cli]: https://jakarta.ee/specifications/restful-ws/3.1/apidocs/jakarta.ws.rs/jakarta/ws/rs/client/clientrequestcontext
+[opentelemetry-sd]: https://github.com/open-telemetry/opentelemetry-java/tree/v1.19.0/sdk-extensions/autoconfigure
+[manual-instrumen]: https://opentelemetry.io/docs/instrumentation/java/manual/
+[helidon-official]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/microprofile/telemetry
+[microprofile-tel]: https://download.eclipse.org/microprofile/microprofile-telemetry-1.1/tracing/microprofile-telemetry-tracing-spec-1.1.pdf

@@ -6,7 +6,7 @@ Connecting streams to Kafka with Reactive Messaging is easy to do. There is a st
 
 ## Maven Coordinates
 
-To enable Reactive Kafka Connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable Reactive Kafka Connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -43,7 +43,7 @@ mp.messaging:
 ```
 
 - Kafka client consumer’s property auto.offset.reset configuration for `from-kafka` channel only
-- Kafka client’s property [bootstrap.servers][bootstrap-servers] configuration for all channels using the connector
+- Kafka client’s property [bootstrap.servers][bootstrap-server] configuration for all channels using the connector
 
 > [!TIP]
 > Besides the following configuration options, any property from [consumer][consumer-2] or [producer][producer-2] configuration can be passed to the underlying Kafka client.
@@ -53,7 +53,7 @@ mp.messaging:
 | Key | Kind | Type | Description |
 |----|----|----|----|
 | <span id="a8b4a2-acks"></span> `acks` | `VALUE` | `String` | The number of acknowledgments the producer requires the leader to have received before considering a request complete |
-| <span id="afefb2-auto-offset-reset"></span> [`auto-offset-reset`][auto-offset-reset] | `VALUE` | `i.h.m.c.k.K.AutoOffsetReset` | What to do when there is no initial offset in Kafka or if the current offset does not exist any more on the server (e.g |
+| <span id="afefb2-auto-offset-reset"></span> [`auto-offset-reset`][auto-offset-rese] | `VALUE` | `i.h.m.c.k.K.AutoOffsetReset` | What to do when there is no initial offset in Kafka or if the current offset does not exist any more on the server (e.g |
 | <span id="a79a73-batch-size"></span> `batch-size` | `VALUE` | `Integer` | The producer will attempt to batch records together into fewer requests whenever multiple records are being sent to the same partition |
 | <span id="a90745-bootstrap-servers"></span> `bootstrap-servers` | `VALUE` | `String` | A list of host/port pairs to use for establishing the initial connection to the Kafka cluster |
 | <span id="a62db1-buffer-memory"></span> `buffer-memory` | `VALUE` | `Long` | The total bytes of memory the producer can use to buffer records waiting to be sent to the server |
@@ -157,9 +157,8 @@ Don’t forget to check out the examples with pre-configured Kafka docker image,
 
 [producer]: https://kafka.apache.org/28/documentation.html#producerconfigs
 [consumer]: https://kafka.apache.org/28/documentation.html#consumerconfigs
-[managing-dependencies]: ../../managing-dependencies.md
-[bootstrap-servers]: https://kafka.apache.org/28/documentation.html#consumerconfigs_bootstrap.servers
+[bootstrap-server]: https://kafka.apache.org/28/documentation.html#consumerconfigs_bootstrap.servers
 [consumer-2]: https://kafka.apache.org/documentation/#consumerconfigs
 [producer-2]: https://kafka.apache.org/documentation/#producerconfigs
-[auto-offset-reset]: ../../config/io_helidon_messaging_connectors_kafka_KafkaConfigBuilder_AutoOffsetReset.md
+[auto-offset-rese]: ../../config/io_helidon_messaging_connectors_kafka_KafkaConfigBuilder_AutoOffsetReset.md
 [dlq]: https://en.wikipedia.org/wiki/Dead_letter_queue

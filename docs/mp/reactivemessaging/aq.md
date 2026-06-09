@@ -6,7 +6,7 @@ Connecting streams to Oracle AQ with Reactive Messaging couldn’t be easier. Th
 
 ## Maven Coordinates
 
-To enable AQ Connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable AQ Connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -71,7 +71,7 @@ mp:
       type: queue
 ```
 
-Its also possible and preferable to refer to [configured datasource][configured-datasource], in our example [Oracle UCP datasource][configured-datasource]:
+Its also possible and preferable to refer to [configured datasource](../persistence.md), in our example [Oracle UCP datasource](../persistence.md):
 
 Example of connector config with Oracle UCP datasource:
 
@@ -182,7 +182,5 @@ public PublisherBuilder<String> produceToAq() {
 }
 ```
 
-[managing-dependencies]: ../../managing-dependencies.md
 [acknowledge-mode]: ../../config/io_helidon_messaging_connectors_jms_AcknowledgeMode.md
 [type]: ../../config/io_helidon_messaging_connectors_jms_Type.md
-[configured-datasource]: ../persistence.md

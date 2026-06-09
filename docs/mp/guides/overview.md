@@ -59,17 +59,17 @@
 | Guide | Description |
 | --- | --- |
 | [MP Config Guide][mp-config-guide] | Learn how to configure a Helidon MP application. |
-| [MP LangChain4j Guide][mp-langchain4j-guide] | Learn how to create AI powered Helidon MP applications. |
-| [MP Health Check Guide][mp-health-check-guide] | Learn how to use Helidon MP built-in and custom health checks. |
+| [MP LangChain4j Guide][mp-langchain4j-g] | Learn how to create AI powered Helidon MP applications. |
+| [MP Health Check Guide][mp-health-check] | Learn how to use Helidon MP built-in and custom health checks. |
 | [MP Metrics Guide][mp-metrics-guide] | Learn how to use Helidon MP built-in and application metrics. |
 | [MP Tracing Guide][mp-tracing-guide] | Learn how to trace a Helidon MP application. |
-| [Helidon MP Tutorial][helidon-mp-tutorial] | Learn how to build a Helidon MicroProfile (MP) application from scratch. |
-| [Helidon MP Upgrade guide][helidon-mp-upgrade-guide] | Learn how to upgrade your Helidon MP application from 1.x to 2.x. |
+| [Helidon MP Tutorial][helidon-mp-tutor] | Learn how to build a Helidon MicroProfile (MP) application from scratch. |
+| [Helidon MP Upgrade guide][helidon-mp-upgra] | Learn how to upgrade your Helidon MP application from 1.x to 2.x. |
 | [OIDC Tutorial][oidc-tutorial] | Learn how to set up OIDC security in your Helidon MP application. |
 | [Helidon MP Tracing][mp-tracing-guide] | Learn how to use tracing in your Helidon MP application. |
-| [Testing with JUnit 5][testing-with-junit-5] | Learn how to use JUnit5 for testing your applications. |
-| [Helidon MP and JBatch][helidon-mp-and-jbatch] | Learn how to use JBatch with Helidon MP. |
-| [Performance tuning in Helidon MP][performance-tuning-in-helidon-mp] | Learn how to improve performance of your application. |
+| [Testing with JUnit 5][testing-with-jun] | Learn how to use JUnit5 for testing your applications. |
+| [Helidon MP and JBatch][helidon-mp-and-j] | Learn how to use JBatch with Helidon MP. |
+| [Performance tuning in Helidon MP][performance-tuni] | Learn how to improve performance of your application. |
 <!--/mdc -->
 
 ## Build and Deploy
@@ -95,25 +95,27 @@
 -->
 | Guide | Description |
 | --- | --- |
-| [Maven Guide](maven-build.md) | Using Helidon in your Maven project. |
-| [Gradle Guide](gradle-build.md) | Using Helidon in your Gradle project. |
-| [GraalVM Native Images][graalvm-native-images] | Learn how to build a GraalVM native image for your Helidon application both on your desktop and as part of a Docker image. |
-| [Custom Runtime Images using jlink][custom-runtime-images-using-jlink] | Learn how to build a custom runtime Java image for your Helidon application both on your desktop and as part of a Docker image. |
+| [Maven Guide][maven-guide] | Using Helidon in your Maven project. |
+| [Gradle Guide][gradle-guide] | Using Helidon in your Gradle project. |
+| [GraalVM Native Images][graalvm-native-i] | Learn how to build a GraalVM native image for your Helidon application both on your desktop and as part of a Docker image. |
+| [Custom Runtime Images using jlink][custom-runtime-i] | Learn how to build a custom runtime Java image for your Helidon application both on your desktop and as part of a Docker image. |
 | [Deploying to OCI][deploying-to-oci] | Learn how to deploy your application to Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE). |
 <!--/mdc -->
 
 [quickstart-mp]: quickstart.md
 [mp-config-guide]: config.md
-[mp-langchain4j-guide]: langchain4j.md
-[mp-health-check-guide]: health.md
+[mp-langchain4j-g]: langchain4j.md
+[mp-health-check]: health.md
 [mp-metrics-guide]: metrics.md
 [mp-tracing-guide]: tracing.md
-[helidon-mp-tutorial]: mp-tutorial.md
-[helidon-mp-upgrade-guide]: upgrade.md
+[helidon-mp-tutor]: mp-tutorial.md
+[helidon-mp-upgra]: upgrade.md
 [oidc-tutorial]: security-oidc.md
-[testing-with-junit-5]: testing-junit5.md
-[helidon-mp-and-jbatch]: jbatch.md
-[performance-tuning-in-helidon-mp]: performance-tuning.md
-[graalvm-native-images]: graalnative.md
-[custom-runtime-images-using-jlink]: jlink-image.md
+[testing-with-jun]: testing-junit5.md
+[helidon-mp-and-j]: jbatch.md
+[performance-tuni]: performance-tuning.md
+[maven-guide]: maven-build.md
+[gradle-guide]: gradle-build.md
+[graalvm-native-i]: graalnative.md
+[custom-runtime-i]: jlink-image.md
 [deploying-to-oci]: oci-guide.md

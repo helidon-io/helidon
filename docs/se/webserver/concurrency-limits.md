@@ -104,9 +104,9 @@ None of the strategies shown above enables queues by default.
 
 For more information about configuring these Concurrency Limit strategies see:
 
-- [FixedLimit](../../config/io_helidon_common_concurrency_limits_FixedLimit.md)
+- [FixedLimit][fixedlimit]
 - [ThroughputLimit][throughputlimit]
-- [AimdLimit](../../config/io_helidon_common_concurrency_limits_AimdLimit.md)
+- [AimdLimit][aimdlimit]
 
 ## Metrics
 
@@ -145,7 +145,7 @@ Fixed
 
 AIMD
 
-For more information regarding metrics support in Helidon and the dependencies that are required for metrics to work, see [Helidon Metrics][helidon-metrics].
+For more information regarding metrics support in Helidon and the dependencies that are required for metrics to work, see [Helidon Metrics](../../se/metrics/metrics.md).
 
 ## Tracing
 
@@ -168,8 +168,8 @@ server:
 
 - Turns on the addition of a span recording queued wait time.
 
-Be sure to add a dependency in your project for one of the Helidon tracing implementations. See the [Helidon tracing][helidon-tracing] documentation for more information.
+Be sure to add a dependency in your project for one of the Helidon tracing implementations. See the [Helidon tracing](../../se/tracing.md) documentation for more information.
 
+[fixedlimit]: ../../config/io_helidon_common_concurrency_limits_FixedLimit.md
 [throughputlimit]: ../../config/io_helidon_common_concurrency_limits_ThroughputLimit.md
-[helidon-metrics]: ../../se/metrics/metrics.md
-[helidon-tracing]: ../../se/tracing.md
+[aimdlimit]: ../../config/io_helidon_common_concurrency_limits_AimdLimit.md

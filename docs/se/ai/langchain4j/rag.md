@@ -2,7 +2,7 @@
 
 ## Maven Coordinates
 
-No additional dependencies are required beyond the [LangChain4j integration core dependencies][langchain4j-integration-core-dependencies].
+No additional dependencies are required beyond the [LangChain4j integration core dependencies](langchain4j.md#maven-coordinates).
 
 ## Retrieval-Augmented Generation
 
@@ -78,5 +78,3 @@ Full list of configuration properties:
 ## Additional Information
 
 - [LangChain4j Integration](langchain4j.md)
-
-[langchain4j-integration-core-dependencies]: langchain4j.md#maven-coordinates

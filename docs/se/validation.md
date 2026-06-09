@@ -9,11 +9,11 @@ There are two ways to use validation features in Helidon SE:
 1.  Have a `@Validation.Validated` annotated type and use a `TypeValidator` service to validate it
 2.  Invoke the constraint checks directly using `Validators` static methods
 
-The feature fit with our [Helidon Declarative][helidon-declarative], which is a preview feature.
+The feature fit with our [Helidon Declarative][helidon-declarat], which is a preview feature.
 
 ## Maven Coordinates
 
-To enable Validation, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable Validation, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependencies>
@@ -89,7 +89,7 @@ The following annotation processing setup must be done to generate the code:
 
 An object can be validated using one of the built-in constraints through methods on
 
-- [`io.helidon.validation.Validators`][io-helidon-validation-validators]
+- [`io.helidon.validation.Validators`][io-helidon-valid]
 
 Example of validating an object using a built-in constraint:
 
@@ -143,6 +143,5 @@ context.throwOnFailure();
 - Check the constraint using the validator and the provided instance (instance must match the type provided in previous step)
 - Throw and exception in case any of the checks failed
 
-[helidon-declarative]: ../se/injection/declarative.md#validation
-[managing-dependencies]: ../managing-dependencies.md
-[io-helidon-validation-validators]: /apidocs/io.helidon.validation/io/helidon/validation/Validators.html
+[helidon-declarat]: ../se/injection/declarative.md#validation
+[io-helidon-valid]: /apidocs/io.helidon.validation/io/helidon/validation/Validators.html

@@ -576,10 +576,11 @@ This guide demonstrates how to use health checks in a Helidon SE application as 
 
 Refer to the following reference for additional information:
 
-- [Helidon Javadoc](/apidocs/index.html?overview-summary.html)
+- [Helidon Javadoc][helidon-javadoc]
 
 [java-21]: https://www.oracle.com/technetwork/java/javase/downloads
 [open-jdk-21]: http://jdk.java.net
 [maven-3-8]: https://maven.apache.org/download.cgi
 [docker-18-09]: https://docs.docker.com/install/
 [kubectl-1-16-5]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
+[helidon-javadoc]: /apidocs/index.html?overview-summary.html

@@ -45,9 +45,9 @@ The following sections describe these steps in detail.
 
 ### Setting up Config Source Change Detection
 
-When the application creates a config source, it can set up change detection for that source. This is called *polling* in the Helidon API but specific change detection algorithms might not use actual polling. You choose a specific [`PollingStrategy`][pollingstrategy] for each config source you want to monitor. See the section on [polling strategies][polling-strategies] in the config extensions doc page for more information.
+When the application creates a config source, it can set up change detection for that source. This is called *polling* in the Helidon API but specific change detection algorithms might not use actual polling. You choose a specific [`PollingStrategy`][pollingstrategy] for each config source you want to monitor. See the section on [polling strategies][polling-strategi] in the config extensions doc page for more information.
 
-The config system provides some built-in polling strategies, exposed as these methods on the [`PollingStrategies`][pollingstrategies] class:
+The config system provides some built-in polling strategies, exposed as these methods on the [`PollingStrategies`][pollingstrategie] class:
 
 - `regular(Duration interval)` - a general-purpose scheduled polling strategy with a specified, constant polling interval.
 - `watch(Path watchedPath)` - a filesystem-specific strategy to watch specified path. You can use this strategy with the `file` built-in config sources.
@@ -122,6 +122,6 @@ System.out.println("Always actual greeting value: " + greetingSupplier.get());
 [timestamp-method]: /apidocs/io.helidon.config/io/helidon/config/Config.html#timestamp--
 [config-context]: /apidocs/io.helidon.config/io/helidon/config/Config.Context.html
 [pollingstrategy]: /apidocs/io.helidon.config/io/helidon/config/spi/PollingStrategy.html
-[polling-strategies]: extensions.md#pollingstrategy-spi
-[pollingstrategies]: /apidocs/io.helidon.config/io/helidon/config/PollingStrategies.html
+[polling-strategi]: extensions.md#pollingstrategy-spi
+[pollingstrategie]: /apidocs/io.helidon.config/io/helidon/config/PollingStrategies.html
 [config-onchange]: </apidocs/io.helidon.config/io/helidon/config/Config.html#onChange(java.util.function.Consumer)>

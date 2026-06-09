@@ -37,7 +37,7 @@ export JAVA_HOME=/usr/lib/jvm/jdk-21
 
 ## Introduction
 
-Distributed tracing is a critical feature of microservice-based applications, since it traces workflow both within a service and across multiple services. This provides insight to sequence and timing data for specific blocks of work, which helps you identify performance and operational issues. Helidon includes support for distributed tracing through its own API, backed by either through the [OpenTelemetry API][opentelemetry-api], or by [OpenTracing API][opentracing-api].
+Distributed tracing is a critical feature of microservice-based applications, since it traces workflow both within a service and across multiple services. This provides insight to sequence and timing data for specific blocks of work, which helps you identify performance and operational issues. Helidon includes support for distributed tracing through its own API, backed by either through the [OpenTelemetry API][opentelemetry-ap], or by [OpenTracing API](https://opentracing.io).
 
 ### Tracing Concepts
 
@@ -322,7 +322,7 @@ server:
 ```
 
 > [!NOTE]
-> The settings above are for development and experimental purposes only. For production environment, please see the [Tracing documentation][tracing-documentation].
+> The settings above are for development and experimental purposes only. For production environment, please see the [Tracing documentation](../../se/tracing.md).
 
 Update the GreetService class. Replace the getDefaultMessageHandler method:
 
@@ -671,7 +671,7 @@ The next sections explain how you can write and add a listener and what it can d
 
 A listener cannot affect the lifecycle of a span or scope it is notified about, but it can add tags and events and update the baggage associated with a span. Often a listener does additional work that does not change the span or scope such as logging a message.
 
-When Helidon invokes the listener’s methods it passes proxies for the `Span.Builder`, `Span`, and `Scope` arguments. These proxies limit the access the listener has to the span builder, span, or scope, as summarized in the following table. If a listener method tries to invoke a forbidden operation, the proxy throws a [`SpanListener.ForbiddenOperationException`][spanlistener-forbiddenoperationexception] and Helidon then logs a `WARNING` message describing the invalid operation invocation.
+When Helidon invokes the listener’s methods it passes proxies for the `Span.Builder`, `Span`, and `Scope` arguments. These proxies limit the access the listener has to the span builder, span, or scope, as summarized in the following table. If a listener method tries to invoke a forbidden operation, the proxy throws a [`SpanListener.ForbiddenOperationException`][spanlistener-for] and Helidon then logs a `WARNING` message describing the invalid operation invocation.
 
 | Tracing type | Changes allowed |
 |----|----|
@@ -729,7 +729,7 @@ The following tables list specifically what operations the proxies permit.
 | `spanId()` | Returns the span ID. | ✓ |
 | `traceId()` | Returns the trace ID. | ✓ |
 
-[`io.helidon.tracing.SpanContext`][io-helidon-tracing-spancontext] Operations
+[`io.helidon.tracing.SpanContext`][io-helidon-traci] Operations
 
 ### Adding a Listener
 
@@ -777,25 +777,24 @@ This guide has demonstrated how to use the Helidon SE tracing feature with Jaege
 
 Refer to the following references for additional information:
 
-- [MicroProfile OpenTracing specification][microprofile-opentracing-specification]
-- [MicroProfile OpenTracing Javadoc][microprofile-opentracing-javadoc]
-  - [OpenTelemetry API][opentelemetry-api]
-- [Helidon Javadoc](/apidocs/index.html?overview-summary.html)
+- [MicroProfile OpenTracing specification][microprofile-ope]
+- [MicroProfile OpenTracing Javadoc][microprofile-ope-2]
+  - [OpenTelemetry API][opentelemetry-ap]
+- [Helidon Javadoc][helidon-javadoc]
 
 [java-21]: https://www.oracle.com/technetwork/java/javase/downloads
 [open-jdk-21]: http://jdk.java.net
 [maven-3-8]: https://maven.apache.org/download.cgi
 [docker-18-09]: https://docs.docker.com/install/
 [kubectl-1-16-5]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
-[opentelemetry-api]: https://opentelemetry.io/docs/instrumentation/js/api/tracing/
-[opentracing-api]: https://opentracing.io
-[tracing-documentation]: ../../se/tracing.md
+[opentelemetry-ap]: https://opentelemetry.io/docs/instrumentation/js/api/tracing/
 [spanlistener]: /apidocs/io.helidon.tracing/io/helidon/tracing/SpanListener.html
-[spanlistener-forbiddenoperationexception]: /apidocs/io.helidon.tracing/io/helidon/tracing/SpanListener.ForbiddenOperationException.html
+[spanlistener-for]: /apidocs/io.helidon.tracing/io/helidon/tracing/SpanListener.ForbiddenOperationException.html
 [span-builder]: /apidocs/io.helidon.tracing/io/helidon/tracing/Span.Builder.html
 [span]: /apidocs/io.helidon.tracing/io/helidon/tracing/Span.html
 [scope]: /apidocs/io.helidon.tracing/io/helidon/tracing/Scope.html
-[io-helidon-tracing-spancontext]: /apidocs/io.helidon.tracing/io/helidon/tracing/SpanContext.html
+[io-helidon-traci]: /apidocs/io.helidon.tracing/io/helidon/tracing/SpanContext.html
 [tracer]: /apidocs/io.helidon.tracing/io/helidon/tracing/Tracer.html
-[microprofile-opentracing-specification]: https://download.eclipse.org/microprofile/microprofile-opentracing-3.0/microprofile-opentracing-spec-3.0.html
-[microprofile-opentracing-javadoc]: https://download.eclipse.org/microprofile/microprofile-opentracing-3.0/apidocs
+[microprofile-ope]: https://download.eclipse.org/microprofile/microprofile-opentracing-3.0/microprofile-opentracing-spec-3.0.html
+[microprofile-ope-2]: https://download.eclipse.org/microprofile/microprofile-opentracing-3.0/apidocs
+[helidon-javadoc]: /apidocs/index.html?overview-summary.html

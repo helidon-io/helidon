@@ -16,7 +16,7 @@ The next sections explain how you can write and add a listener and what it can d
 
 A listener cannot affect the lifecycle of a span or scope it is notified about, but it can add tags and events and update the baggage associated with a span. Often a listener does additional work that does not change the span or scope such as logging a message.
 
-When Helidon invokes the listener’s methods it passes proxies for the `Span.Builder`, `Span`, and `Scope` arguments. These proxies limit the access the listener has to the span builder, span, or scope, as summarized in the following table. If a listener method tries to invoke a forbidden operation, the proxy throws a [`SpanListener.ForbiddenOperationException`][spanlistener-forbiddenoperationexception] and Helidon then logs a `WARNING` message describing the invalid operation invocation.
+When Helidon invokes the listener’s methods it passes proxies for the `Span.Builder`, `Span`, and `Scope` arguments. These proxies limit the access the listener has to the span builder, span, or scope, as summarized in the following table. If a listener method tries to invoke a forbidden operation, the proxy throws a [`SpanListener.ForbiddenOperationException`][spanlistener-for] and Helidon then logs a `WARNING` message describing the invalid operation invocation.
 
 | Tracing type                                                                       | Changes allowed                                   |
 |------------------------------------------------------------------------------------|---------------------------------------------------|
@@ -74,7 +74,7 @@ The following tables list specifically what operations the proxies permit.
 | `spanId()`               | Returns the span ID.                                         | ✓   |
 | `traceId()`              | Returns the trace ID.                                        | ✓   |
 
-[`io.helidon.tracing.SpanContext`][io-helidon-tracing-spancontext] Operations
+[`io.helidon.tracing.SpanContext`][io-helidon-traci] Operations
 
 #### Adding a Listener
 
@@ -111,9 +111,9 @@ Helidon invokes each listener’s methods in the following order:
 Order in which Helidon Invokes Listener Methods
 
 [spanlistener]: /apidocs/io.helidon.tracing/io/helidon/tracing/SpanListener.html
-[spanlistener-forbiddenoperationexception]: /apidocs/io.helidon.tracing/io/helidon/tracing/SpanListener.ForbiddenOperationException.html
+[spanlistener-for]: /apidocs/io.helidon.tracing/io/helidon/tracing/SpanListener.ForbiddenOperationException.html
 [span-builder]: /apidocs/io.helidon.tracing/io/helidon/tracing/Span.Builder.html
 [span]: /apidocs/io.helidon.tracing/io/helidon/tracing/Span.html
 [scope]: /apidocs/io.helidon.tracing/io/helidon/tracing/Scope.html
-[io-helidon-tracing-spancontext]: /apidocs/io.helidon.tracing/io/helidon/tracing/SpanContext.html
+[io-helidon-traci]: /apidocs/io.helidon.tracing/io/helidon/tracing/SpanContext.html
 [tracer]: /apidocs/io.helidon.tracing/io/helidon/tracing/Tracer.html

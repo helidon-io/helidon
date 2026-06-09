@@ -6,10 +6,10 @@ Helidon 4.x introduces significant changes to APIs and runtime behavior. Use thi
 
 The following sections describe the changes between Helidon 3.x and Helidon 4.x that can significantly impact your development process. Review them carefully.
 
-You can also review the [Helidon repository CHANGELOG][helidon-repository-changelog] to see a detailed history of changes made to the project.
+You can also review the [Helidon repository CHANGELOG][helidon-reposito] to see a detailed history of changes made to the project.
 
 > [!NOTE]
-> Helidon adheres to [Semantic Versioning][semantic-versioning]. As such, Helidon 4.x includes changes that are not backward compatible with Helidon 3.x.
+> Helidon adheres to [Semantic Versioning][semantic-version]. As such, Helidon 4.x includes changes that are not backward compatible with Helidon 3.x.
 
 ### Java SE Support
 
@@ -25,9 +25,9 @@ Helidon provides a MicroProfile server implementation (`io.helidon.microprofile.
 
 Helidon 4.0.0 adds support for [MicroProfile 6.0][microprofile-6-0]. Key changes include:
 
-- Significant updates to the [MicroProfile Metrics specification][microprofile-metrics-specification].
+- Significant updates to the [MicroProfile Metrics specification][microprofile-met].
 - Addition of the MicroProfile Telemetry specification which replaces the MicroProfile OpenTracing specification.
-- Support for the [Jakarta EE 10 Core Profile][jakarta-ee-10-core-profile] (instead of individual Jakarta EE specifications).
+- Support for the [Jakarta EE 10 Core Profile][jakarta-ee-10-co] (instead of individual Jakarta EE specifications).
 - Various minor updates to other MicroProfile specifications. Review the individual MicroProfile specifications for details.
 
 Helidon 4.1.0 adds support for [MicroProfile 6.1][microprofile-6-1].
@@ -85,9 +85,9 @@ If you use this handler in your `logging.properties` file, you must update it an
 </dependency>
 ```
 
-[helidon-repository-changelog]: https://github.com/helidon-io/helidon/blob/main/CHANGELOG.md
-[semantic-versioning]: https://semver.org/spec/v2.0.0.html
+[helidon-reposito]: https://github.com/helidon-io/helidon/blob/main/CHANGELOG.md
+[semantic-version]: https://semver.org/spec/v2.0.0.html
 [microprofile-6-0]: https://download.eclipse.org/microprofile/microprofile-6.0/microprofile-spec-6.0.html#microprofile6.0
-[microprofile-metrics-specification]: https://download.eclipse.org/microprofile/microprofile-metrics-5.0.0/microprofile-metrics-spec-5.0.0.html
-[jakarta-ee-10-core-profile]: https://jakarta.ee/specifications/coreprofile/10/jakarta-coreprofile-spec-10.0#introduction
+[microprofile-met]: https://download.eclipse.org/microprofile/microprofile-metrics-5.0.0/microprofile-metrics-spec-5.0.0.html
+[jakarta-ee-10-co]: https://jakarta.ee/specifications/coreprofile/10/jakarta-coreprofile-spec-10.0#introduction
 [microprofile-6-1]: https://download.eclipse.org/microprofile/microprofile-6.1/microprofile-spec-6.1.html#microprofile6.1

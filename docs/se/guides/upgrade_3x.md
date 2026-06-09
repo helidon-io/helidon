@@ -10,7 +10,7 @@ Java 11 is no longer supported in Helidon 3. Java 17 or newer is required.
 
 Handling routes based on the protocol version is now possible by registering specific routes on routing builder.
 
-For further information check [WebServer Documentation][webserver-documentation]
+For further information check [WebServer Documentation](../webserver/webserver.md)
 
 ## Http/2 Support
 
@@ -53,7 +53,7 @@ server:
   max-upgrade-content-length: 16384
 ```
 
-For further information check [WebServer Documentation][webserver-documentation]
+For further information check [WebServer Documentation](../webserver/webserver.md)
 
 ## WebSocket
 
@@ -231,7 +231,6 @@ More information in the following [Task][task-9].
 
 More information in the following [Task][task-11].
 
-[webserver-documentation]: ../webserver/webserver.md
 [see-pr]: https://github.com/helidon-io/helidon/pull/4015
 [see-pr-2]: https://github.com/helidon-io/helidon/pull/4096
 [task]: https://github.com/helidon-io/helidon/issues/4363

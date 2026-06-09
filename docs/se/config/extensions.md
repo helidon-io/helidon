@@ -4,7 +4,7 @@
 
 Developer-provided extensions influence how the config system behaves.
 
-The [config system introduction][config-system-introduction] explains the design of the config system and how its parts work together to read and parse config data, convert it to Java types, fine-tune the look-up of config data, and reload and reprocess data when it changes. \_Config extensions provided by the application modify and expand the way the config system performs these steps.
+The [config system introduction](introduction.md#overview) explains the design of the config system and how its parts work together to read and parse config data, convert it to Java types, fine-tune the look-up of config data, and reload and reprocess data when it changes. \_Config extensions provided by the application modify and expand the way the config system performs these steps.
 
 Each config extension implements one of the interfaces defined in the Configuration SPI:
 
@@ -127,7 +127,7 @@ The `ConfigParser.Content` interface defines operations on the content that is t
 
 The application can register parsers for a builder by invoking `Config.Builder#addParser(ConfigParser)`. The config system also uses the Java service loader mechanism to load automatically, for all builders, any parsers listed in the `META-INF/services/io.helidon.config.spi.ConfigParser` resource on the runtime classpath. Prevent automatic loading of parsers for a given builder by invoking `Config.Builder#disableParserServices()`.
 
-`ConfigParser` accepts [`@Weight`][weight]. See [About Priority][about-priority].
+`ConfigParser` accepts [`@Weight`][weight]. See [About Priority](#about-priority).
 
 Example custom parser implementation listed in `META-INF/services/io.helidon.config.spi.ConfigParser`
 
@@ -144,7 +144,7 @@ When the application retrieves a configuration value the config system first use
 
 To furnish overrides to the config system, implement the [`OverrideSource`][overridesource] SPI one or more times and pass instances of those implementations to the config builder’s [`overrides`][overrides] method. The config system will apply the overrides returned from each `OverrideSource` to each config key requested from a `Config` that is based on that `Config.Builder`.
 
-To support custom override sources in config profiles, also implement the [`OverrideSourceProvider`][overridesourceprovider] service loader SPI
+To support custom override sources in config profiles, also implement the [`OverrideSourceProvider`][overridesourcepr] service loader SPI
 
 ![spi OverrideSource](../../images/config/spi-OverrideSource.png)
 
@@ -156,7 +156,7 @@ Note that override sources can also implement `PollableSource`, and `WatchableSo
 
 Before returning a `String` from `Config.value()` the config system applies any *filters* set up on the `Config.Builder` used to create the config tree that contains the config node of interest. The application provides filters as implementations of the [`ConfigFilter`][configfilter] interface. Each filter is a function which accepts a `Config.Key` and an input `String` value and returns a `String` value the config system should use for that key going forward. The filter can return the original value or return some other value.
 
-The application registers filters and filter providers by passing `ConfigFilter` implementations to one of the config builder [`addFilter` methods][addfilter-methods]. The config system also uses the Java service loader mechanism to load additional filters automatically, for all builders, using the service interface described in the following table. Prevent a given builder from using the automatically loaded filters by invoking the [`disableFilterServices`][disablefilterservices] method.
+The application registers filters and filter providers by passing `ConfigFilter` implementations to one of the config builder [`addFilter` methods][addfilter-method]. The config system also uses the Java service loader mechanism to load additional filters automatically, for all builders, using the service interface described in the following table. Prevent a given builder from using the automatically loaded filters by invoking the [`disableFilterServices`][disablefilterser] method.
 
 <table class="tableblock frame-all grid-all stretch">
 <caption>Table 1. Config SPI Interfaces for Filtering</caption>
@@ -188,7 +188,7 @@ The `ConfigFilter` Javadoc describes multiple methods for adding filters to a `C
 
 ***Neither a `ConfigFilter` nor a provider function which furnishes one should access the `Config` instance passed to the provider function.***
 
-Instead, implement the `ConfigFilter.init(Config)` method on the filter. The config system invokes the filters' `init` methods according to the filters [priority][about-priority].
+Instead, implement the `ConfigFilter.init(Config)` method on the filter. The config system invokes the filters' `init` methods according to the filters [priority](#about-priority).
 
 Recall that whenever any code invokes `Config.get`, the `Config` instance invokes the `apply` method of *all* registered filters. By the time the application retrieves config this way the config system will have run the `init` method on all the filters. *But note that when a filter’s `init` method invokes `Config.get`, the `init` methods of lower-priority filters will not yet have run.*
 
@@ -200,7 +200,7 @@ Figure 6. ConfigFilter SPI
 
 The config system provides built-in mappings from `String` values to various Java types. (See [`ConfigMappers`][configmappers].)
 
-To handle mappings to other types the application can register custom mappers with the config system by implementing the [`ConfigMapperProvider`][configmapperprovider] SPI.
+To handle mappings to other types the application can register custom mappers with the config system by implementing the [`ConfigMapperProvider`][configmapperprov] SPI.
 
 Such providers return a map, with entries in which:
 
@@ -226,7 +226,7 @@ For `Config.as(GenericType)` - the first two steps are skipped.
 
 The config system also uses the Java `ServiceLoader` mechanism to load automatically, for all builders, any mappers returned by the providers listed in the `META-INF/services/io.helidon.config.spi.ConfigMapperProvider` resource on the runtime classpath. The application can prevent automatic loading of mappers for a given builder by invoking `Config.Builder#disableMapperServices()`. Note that the built-in mappers described in `ConfigMappers` still operate.
 
-Mapper providers accept `@Weight`. See [About Priority][about-priority].
+Mapper providers accept `@Weight`. See [About Priority](#about-priority).
 
 ![spi ConfigMapperProvider](../../images/config/spi-ConfigMapperProvider.png)
 
@@ -303,20 +303,18 @@ The application can try to cancel the overall execution of a `RetryPolicy` by in
 
 To support retry policies in config profiles, also implement the Java service loader SPI `RetryPolicyProvider`.
 
-[config-system-introduction]: introduction.md#overview
 [weight]: /apidocs/io.helidon.common/io/helidon/common/Weight.html
 [configsources]: /apidocs/io.helidon.config/io/helidon/config/ConfigSources.html
 [configsource]: /apidocs/io.helidon.config/io/helidon/config/spi/ConfigSource.html
 [configparser]: /apidocs/io.helidon.config/io/helidon/config/spi/ConfigParser.html
-[about-priority]: #about-priority
 [overridesource]: /apidocs/io.helidon.config/io/helidon/config/spi/OverrideSource.html
 [overrides]: /apidocs/io.helidon.config/io/helidon/config/Config.Builder.html#overrides-java.util.function.Supplier-
-[overridesourceprovider]: /apidocs/io.helidon.config/io/helidon/config/spi/OverrideSourceProvider.html
+[overridesourcepr]: /apidocs/io.helidon.config/io/helidon/config/spi/OverrideSourceProvider.html
 [configfilter]: /apidocs/io.helidon.config/io/helidon/config/spi/ConfigFilter.html
-[addfilter-methods]: /apidocs/io.helidon.config/io/helidon/config/Config.Builder.html
-[disablefilterservices]: /apidocs/io.helidon.config/io/helidon/config/Config.Builder.html#disableFilterServices--
+[addfilter-method]: /apidocs/io.helidon.config/io/helidon/config/Config.Builder.html
+[disablefilterser]: /apidocs/io.helidon.config/io/helidon/config/Config.Builder.html#disableFilterServices--
 [configmappers]: /apidocs/io.helidon.config/io/helidon/config/ConfigMappers.html
-[configmapperprovider]: /apidocs/io.helidon.config/io/helidon/config/spi/ConfigMapperProvider.html
+[configmapperprov]: /apidocs/io.helidon.config/io/helidon/config/spi/ConfigMapperProvider.html
 [pollingstrategy]: /apidocs/io.helidon.config/io/helidon/config/spi/PollingStrategy.html
 [changewatcher]: /apidocs/io.helidon.config/io/helidon/config/spi/ChangeWatcher.html
 [retrypolicy]: /apidocs/io.helidon.config/io/helidon/config/spi/RetryPolicy.html

@@ -35,7 +35,7 @@ export JAVA_HOME=`/usr/libexec/java_home -v 21`
 export JAVA_HOME=/usr/lib/jvm/jdk-21
 ```
 
-Helidon MP supports [WebServer routing][webserver-routing] which brings possibility for reusing `io.helidon.webserver.HttpService` implementations in Helidon MP. Such feature can be quite useful for common solutions for filtering, auditing, logging or augmenting REST endpoints in hybrid Helidon SE/MP environment.
+Helidon MP supports [WebServer routing](../server.md) which brings possibility for reusing `io.helidon.webserver.HttpService` implementations in Helidon MP. Such feature can be quite useful for common solutions for filtering, auditing, logging or augmenting REST endpoints in hybrid Helidon SE/MP environment.
 
 Let’s define simple Helidon SE Service for adding special header to every REST response:
 
@@ -92,11 +92,10 @@ public class MyBean {
 You can leverage annotations:
 
 - @RoutingPath - path of the WebServer service
-- @RoutingName - select routing when [serving requests on multiple ports][webserver-routing]
+- @RoutingName - select routing when [serving requests on multiple ports](../server.md)
 
 [java-21]: https://www.oracle.com/technetwork/java/javase/downloads
 [open-jdk-21]: http://jdk.java.net
 [maven-3-8]: https://maven.apache.org/download.cgi
 [docker-18-09]: https://docs.docker.com/install/
 [kubectl-1-16-5]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
-[webserver-routing]: ../server.md

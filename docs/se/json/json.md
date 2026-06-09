@@ -30,7 +30,7 @@ The JSON Binding module (`helidon-json-binding`) provides high-level object seri
 
 Code generation is how Helidon automatically supports your POJOs annotated with JSON binding annotations. At compile time, the processor generates efficient serializers/deserializers for classes annotated with [`@Json.Entity`][json-entity].
 
-Use code generation if you want an automatic, annotation-driven mapping for your POJOs. If you do not enable code generation, you can still use JSON binding by implementing the conversion yourself (implement [`JsonSerializer`][jsonserializer], [`JsonDeserializer`][jsondeserializer], [`JsonConverter`][jsonconverter], or a [`JsonBindingFactory`][jsonbindingfactory]).
+Use code generation if you want an automatic, annotation-driven mapping for your POJOs. If you do not enable code generation, you can still use JSON binding by implementing the conversion yourself (implement [`JsonSerializer`][jsonserializer], [`JsonDeserializer`][jsondeserializer], [`JsonConverter`][jsonconverter], or a [`JsonBindingFactory`][jsonbindingfacto]).
 
 #### Enabling Code Generation
 
@@ -619,15 +619,15 @@ During the deserialization process, null values are always converted into the em
 
 In addition to using annotations directly on classes, custom serializers, deserializers, and converters can be automatically registered with the JSON binding system through Helidon’s Service Registry. So they get automatically discovered and one does not need to register them manually at runtime.
 
-See [Helidon Declarative](../injection/declarative.md#overview)
+See [Helidon Declarative][helidon-declarat]
 
 ### Binding Factories
 
-For more complex scenarios where you need to create serializers and deserializers for entire type families or generic types, you can implement custom [`JsonBindingFactory`][jsonbindingfactory] instances. Binding factories are particularly useful for handling parameterized types, collections, or types that require special instantiation logic.
+For more complex scenarios where you need to create serializers and deserializers for entire type families or generic types, you can implement custom [`JsonBindingFactory`][jsonbindingfacto] instances. Binding factories are particularly useful for handling parameterized types, collections, or types that require special instantiation logic.
 
 #### What is a Binding Factory?
 
-A [`JsonBindingFactory`][jsonbindingfactory] is responsible for creating type-specific serializers and deserializers for a family of related types. Unlike individual converters that handle specific types, binding factories can create converters dynamically for various subtypes or parameterized versions of a base type.
+A [`JsonBindingFactory`][jsonbindingfacto] is responsible for creating type-specific serializers and deserializers for a family of related types. Unlike individual converters that handle specific types, binding factories can create converters dynamically for various subtypes or parameterized versions of a base type.
 
 #### How Binding Factories Work
 
@@ -926,8 +926,9 @@ JsonArray array = JsonArray.create(List.of(
 [jsonserializer]: /apidocs/io.helidon.json.binding/io/helidon/json/binding/JsonSerializer.html
 [jsondeserializer]: /apidocs/io.helidon.json.binding/io/helidon/json/binding/JsonDeserializer.html
 [jsonconverter]: /apidocs/io.helidon.json.binding/io/helidon/json/binding/JsonConverter.html
-[jsonbindingfactory]: /apidocs/io.helidon.json.binding/io/helidon/json/binding/JsonBindingFactory.html
+[jsonbindingfacto]: /apidocs/io.helidon.json.binding/io/helidon/json/binding/JsonBindingFactory.html
 [jsonbinding]: /apidocs/io.helidon.json.binding/io/helidon/json/binding/JsonBinding.html
+[helidon-declarat]: ../injection/declarative.md#overview
 [jsonparser]: /apidocs/io.helidon.json/io/helidon/json/JsonParser.html
 [jsongenerator]: /apidocs/io.helidon.json/io/helidon/json/JsonGenerator.html
 [jsonvalue]: /apidocs/io.helidon.json/io/helidon/json/JsonValue.html

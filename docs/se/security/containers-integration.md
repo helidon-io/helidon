@@ -2,7 +2,7 @@
 
 ## WebServer
 
-To integrate [web server][web-server], add the following dependency to your project’s pom.xml file:
+To integrate [web server](../webserver/webserver.md), add the following dependency to your project’s pom.xml file:
 
 Maven Dependency:
 
@@ -132,7 +132,6 @@ security.web-server.paths.3.roles-allowed=user,monitor
 
 ## Reference
 
-- [Helidon WebServer Security Integration][helidon-webserver-security-integration]
+- [Helidon WebServer Security Integration][helidon-webserve]
 
-[web-server]: ../webserver/webserver.md
-[helidon-webserver-security-integration]: /apidocs/io.helidon.webserver.security/module-summary.html
+[helidon-webserve]: /apidocs/io.helidon.webserver.security/module-summary.html

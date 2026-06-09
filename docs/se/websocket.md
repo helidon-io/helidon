@@ -2,7 +2,7 @@
 
 ## Overview
 
-Helidon integrates with [Tyrus][tyrus] to provide support for the [Jakarta WebSocket API][jakarta-websocket-api]. The WebSocket API enables Java applications to participate in WebSocket interactions as both servers and clients. The server API supports two flavors: annotated and programmatic endpoints.
+Helidon integrates with [Tyrus][tyrus] to provide support for the [Jakarta WebSocket API][jakarta-websocke]. The WebSocket API enables Java applications to participate in WebSocket interactions as both servers and clients. The server API supports two flavors: annotated and programmatic endpoints.
 
 Annotated endpoints, as suggested by their name, use Java annotations to provide the necessary meta-data to define WebSocket handlers; programmatic endpoints implement API interfaces and are annotation free. Annotated endpoints tend to be more flexible since they allow different method signatures depending on the application needs, whereas programmatic endpoints must implement an interface and are, therefore, bounded to its definition.
 
@@ -10,7 +10,7 @@ Helidon SE support is based on the `WebSocketRouting` class which enables Helido
 
 ## Maven Coordinates
 
-To enable WebSocket, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable WebSocket, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -75,10 +75,9 @@ This code snippet registers `MessageBoardEndpoint` at `/websocket/board` and ass
 
 ## Reference
 
-- [Helidon WebSocket Javadoc][helidon-websocket-javadoc]
+- [Helidon WebSocket Javadoc][helidon-websocke]
 
 [tyrus]: https://projects.eclipse.org/projects/ee4j.tyrus
-[jakarta-websocket-api]: https://jakarta.ee/specifications/websocket/2.1/jakarta-websocket-spec-2.1.html
-[managing-dependencies]: ../managing-dependencies.md
+[jakarta-websocke]: https://jakarta.ee/specifications/websocket/2.1/jakarta-websocket-spec-2.1.html
 [here]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/webserver/websocket
-[helidon-websocket-javadoc]: /apidocs/io.helidon.webserver.websocket/module-summary.html
+[helidon-websocke]: /apidocs/io.helidon.webserver.websocket/module-summary.html

@@ -2,11 +2,11 @@
 
 ## Overview
 
-Helidon integrates with [Tyrus][tyrus] to provide support for the [Jakarta WebSocket API][jakarta-websocket-api].
+Helidon integrates with [Tyrus][tyrus] to provide support for the [Jakarta WebSocket API][jakarta-websocke].
 
 ## Maven Coordinates
 
-To enable Jakarta Websocket, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable Jakarta Websocket, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -157,12 +157,13 @@ This example assumes that port 8888 is reserved for admin users and binds the `M
 
 ## Reference
 
-- [Eclipse Tyrus](https://projects.eclipse.org/proposals/eclipse-tyrus)
-- [WebSocket RFC 6455](https://datatracker.ietf.org/doc/html/rfc6455)
-- [Helidon MicroProfile Tyrus Javadoc][helidon-microprofile-tyrus-javadoc]
+- [Eclipse Tyrus][eclipse-tyrus]
+- [WebSocket RFC 6455][websocket-rfc-64]
+- [Helidon MicroProfile Tyrus Javadoc][helidon-micropro]
 
 [tyrus]: https://projects.eclipse.org/projects/ee4j.tyrus
-[jakarta-websocket-api]: https://jakarta.ee/specifications/websocket/2.1/jakarta-websocket-spec-2.1.html
-[managing-dependencies]: ../managing-dependencies.md
+[jakarta-websocke]: https://jakarta.ee/specifications/websocket/2.1/jakarta-websocket-spec-2.1.html
 [example]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/webserver/websocket
-[helidon-microprofile-tyrus-javadoc]: /apidocs/io.helidon.microprofile.tyrus/module-summary.html
+[eclipse-tyrus]: https://projects.eclipse.org/proposals/eclipse-tyrus
+[websocket-rfc-64]: https://datatracker.ietf.org/doc/html/rfc6455
+[helidon-micropro]: /apidocs/io.helidon.microprofile.tyrus/module-summary.html

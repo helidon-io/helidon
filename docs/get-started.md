@@ -39,7 +39,7 @@ Congratulations! 🎉
 
 You now have a simple service up and running using Helidon.
 If you prefer to use MicroProfile APIs replace `se` with `mp` in the commands above.
-If you prefer not to install the Helidon CLI you can use the [Helidon Starter][helidon-starter].
+If you prefer not to install the Helidon CLI you can use the [Helidon Starter](https://helidon.io/starter).
 
 ## In More Detail
 
@@ -56,7 +56,7 @@ You must have Java and Maven installed on your system to use Helidon.
 | [Maven 3.8+][maven-3-8]                                                      | Helidon requires Maven 3.8+.                 |
 
 > [!NOTE]
-> Most of Helidon's examples use Maven, but Helidon can also be used with [Gradle][gradle].
+> Most of Helidon's examples use Maven, but Helidon can also be used with [Gradle](se/guides/gradle-build.md).
 
 Verify System Requirements:
 
@@ -100,8 +100,6 @@ Try out the Helidon MP and Helidon SE Quick Start tutorials to build your first 
 > [Helidon SE](se/introduction.md) to understand the differences between
 > Helidon MP and Helidon SE.
 
-[helidon-starter]: https://helidon.io/starter
 [java-21]: https://www.oracle.com/technetwork/java/javase/downloads
 [open-jdk-21]: http://jdk.java.net
 [maven-3-8]: https://maven.apache.org/download.cgi
-[gradle]: se/guides/gradle-build.md

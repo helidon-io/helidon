@@ -8,7 +8,7 @@ The test class is added as a CDI bean to support injection and the CDI container
 
 ## Maven Coordinates
 
-To enable Helidon MicroProfile Testing JUnit5, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable Helidon MicroProfile Testing JUnit5, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -95,9 +95,9 @@ Note the following Helidon CDI extensions:
 
 | Extension | Note |
 |----|----|
-| [`ConfigCdiExtension`][configcdiextension] | Add MicroProfile Config injection support |
-| [`ServerCdiExtension`][servercdiextension] | Optional if using [`@AddJaxRs`][addjaxrs] |
-| [`JaxRsCdiExtension`][jaxrscdiextension] | Optional if using [`@AddJaxRs`][addjaxrs] |
+| [`ConfigCdiExtension`][configcdiextensi] | Add MicroProfile Config injection support |
+| [`ServerCdiExtension`][servercdiextensi] | Optional if using [`@AddJaxRs`][addjaxrs] |
+| [`JaxRsCdiExtension`][jaxrscdiextensio] | Optional if using [`@AddJaxRs`][addjaxrs] |
 
 ### CDI Container Afinity
 
@@ -245,7 +245,7 @@ class MyTest {
 
 #### Configuration Ordering
 
-The ordering of the test configuration can be controlled using the mechanism defined by the [MicroProfile Config specification][microprofile-config-specification].
+The ordering of the test configuration can be controlled using the mechanism defined by the [MicroProfile Config specification][microprofile-con].
 
 Add a properties text block with ordinal:
 
@@ -281,7 +281,7 @@ Here are all the built-in types that can be injected:
 | `String` | A raw URI representing the current server |
 
 > [!NOTE]
-> Types that reflect the current server require [`ServerCdiExtension`][servercdiextension]
+> Types that reflect the current server require [`ServerCdiExtension`][servercdiextensi]
 
 Inject a JAX-RS client for the default socket:
 
@@ -499,7 +499,7 @@ class MyBean {
 
 - CDI discovery is disabled
 - Add `MyBean` to the CDI container
-- Add [`ConfigCdiExtension`][configcdiextension] to the CDI container
+- Add [`ConfigCdiExtension`][configcdiextensi] to the CDI container
 - Define test configuration
 - Inject the configuration
 
@@ -712,24 +712,23 @@ When pinning is detected, the test fails with a stacktrace pointing at the culpr
 
 ## Additional Information
 
-- [Official blog article about Helidon and JUnit usage][official-blog-article-about-helidon-and-junit-usage]
+- [Official blog article about Helidon and JUnit usage][official-blog-ar]
 
 ## Reference
 
-- [JUnit 5 User Guide](https://junit.org/junit5/docs/current/user-guide/)
+- [JUnit 5 User Guide][junit-5-user-gui]
 
-[managing-dependencies]: ../../managing-dependencies.md
 [addbean]: /apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddBean.html
 [disablediscovery]: /apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/DisableDiscovery.html
 [addjaxrs]: /apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddJaxRs.html
-[configcdiextension]: /apidocs/io.helidon.microprofile.config/io/helidon/microprofile/config/ConfigCdiExtension.html
-[servercdiextension]: /apidocs/io.helidon.microprofile.server/io/helidon/microprofile/server/ServerCdiExtension.html
-[jaxrscdiextension]: /apidocs/io.helidon.microprofile.server/io/helidon/microprofile/server/JaxRsCdiExtension.html
+[configcdiextensi]: /apidocs/io.helidon.microprofile.config/io/helidon/microprofile/config/ConfigCdiExtension.html
+[servercdiextensi]: /apidocs/io.helidon.microprofile.server/io/helidon/microprofile/server/ServerCdiExtension.html
+[jaxrscdiextensio]: /apidocs/io.helidon.microprofile.server/io/helidon/microprofile/server/JaxRsCdiExtension.html
 [configuration]: /apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/Configuration.html
 [addconfig]: /apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddConfig.html
 [addconfigblock]: /apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddConfigBlock.html
 [addconfigsource]: /apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddConfigSource.html
-[microprofile-config-specification]: https://download.eclipse.org/microprofile/microprofile-config-3.1/microprofile-config-spec-3.1.html#_configsource_ordering
+[microprofile-con]: https://download.eclipse.org/microprofile/microprofile-config-3.1/microprofile-config-spec-3.1.html#_configsource_ordering
 [webtarget]: https://jakarta.ee/specifications/restful-ws/3.1/apidocs/jakarta/ws/rs/client/WebTarget.html
 [socket]: /apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/Socket.html
 [container]: https://jakarta.ee/specifications/cdi/4.0/apidocs/jakarta.cdi/jakarta/enterprise/inject/se/SeContainer.html
@@ -740,4 +739,5 @@ When pinning is detected, the test fails with a stacktrace pointing at the culpr
 [requestscoped]: https://jakarta.ee/specifications/cdi/4.0/apidocs/jakarta.cdi/jakarta/enterprise/context/RequestScoped.html
 [mockbean]: /apidocs/io.helidon.microprofile.testing.mocking/io/helidon/microprofile/testing/mocking/MockBean.html
 [alternative]: https://jakarta.ee/specifications/cdi/4.0/apidocs/jakarta.cdi/jakarta/enterprise/inject/Alternative.html
-[official-blog-article-about-helidon-and-junit-usage]: https://medium.com/helidon/testing-helidon-9df2ea14e22
+[official-blog-ar]: https://medium.com/helidon/testing-helidon-9df2ea14e22
+[junit-5-user-gui]: https://junit.org/junit5/docs/current/user-guide/

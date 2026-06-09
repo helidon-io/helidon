@@ -2,7 +2,7 @@
 
 ## Maven Coordinates
 
-In addition to the [LangChain4j integration core dependencies][langchain4j-integration-core-dependencies], add:
+In addition to the [LangChain4j integration core dependencies](langchain4j.md#maven-coordinates), add:
 
 ```xml [pom.xml]
 <dependency>
@@ -37,7 +37,7 @@ Depending on configured model `type`, add model artifact dependencies as follows
 
 Provider key: `lc4j-in-process`.
 
-LangChain4j in-process embedding models run ONNX embedding inference locally in your process (see [LangChain4j documentation][langchain4j-documentation]).
+LangChain4j in-process embedding models run ONNX embedding inference locally in your process (see [LangChain4j documentation][langchain4j-docu]).
 
 In Helidon, a named entry under `langchain4j.models` with `provider: lc4j-in-process` is created as a named singleton declarative service bean in the Helidon service registry. This is how `foo-bar-embedding-model` becomes available for content retrievers and direct injection.
 
@@ -109,7 +109,6 @@ Configuration properties:
 - [Lc4j Built-in Providers](lc4j-providers.md)
 - [Retrieval-Augmented Generation (RAG)](rag.md)
 
-[langchain4j-integration-core-dependencies]: langchain4j.md#maven-coordinates
-[langchain4j-documentation]: https://docs.langchain4j.dev/integrations/embedding-models/in-process/
+[langchain4j-docu]: https://docs.langchain4j.dev/integrations/embedding-models/in-process/
 [pooling-mode]: ../../../config/dev_langchain4j_model_embedding_onnx_PoolingMode.md
 [type]: ../../../config/io_helidon_integrations_langchain4j_providers_lc4jinprocess_InProcessModelType.md

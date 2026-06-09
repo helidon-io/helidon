@@ -11,13 +11,13 @@ Helidon Security provides authentication, authorization, and auditing for your H
 3.  Outbound security - support for propagating identity or (in general) securing outbound requests. Modification of a request to include outbound security is responsibility of OutboundSecurityProvider SPI
 4.  Audit - security module audits most important events through its own API (e.g. Authentication events, Authorization events, outbound security events). A default AuditProvider is provided as well, logging to Java util logging (JUL) logger called "AUDIT" (may be overridden through configuration). AuditProvider SPI may be implemented to support other auditing options.
 
-Each feature is implemented with the help of "[Security Providers][security-providers]".
+Each feature is implemented with the help of "[Security Providers](providers.md)".
 
 Security module is quite HTTP centric (as most common use cases are related to HTTP REST), though it is not HTTP specific (the security module may be used to secure even other transports, such as JMS, Kafka messages etc. if an appropriate integration module is developed, as all APIs can be mapped to a non-HTTP protocol). Nevertheless, there may be security providers that only make sense with HTTP (such as HTTP digest authentication).
 
 ## Maven Coordinates
 
-To enable Security, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable Security, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -34,7 +34,7 @@ To integrate with a container, or to use Security standalone, we must create an 
 - a configuration based pattern - you configure everything in a configuration file
 - hybrid - you load a builder from configuration and update it in a program
 
-Once a security instance is built, it can be used to initialize an [integration with a container][integration-with-a-container], or to use security from a program directly:
+Once a security instance is built, it can be used to initialize an [integration with a container](containers-integration.md), or to use security from a program directly:
 
 Security direct usage:
 
@@ -74,7 +74,7 @@ Security security = Security.builder()
 
 ### Configuration Pattern
 
-See [Secure config][secure-config] for details about encrypting passwords in configuration files.
+See [Secure config](tools.md) for details about encrypting passwords in configuration files.
 
 Security from configuration:
 
@@ -84,7 +84,7 @@ Security security = Security.create(config);
 
 - Uses `io.helidon.Config`
 
-As mentioned above, security features are implemented through providers, which are configured under key `security.providers`. Each element of the list is one security provider. The key of the provider must match its config key (as documented in [Security Providers][security-providers] for each supported provider).
+As mentioned above, security features are implemented through providers, which are configured under key `security.providers`. Each element of the list is one security provider. The key of the provider must match its config key (as documented in [Security Providers](providers.md) for each supported provider).
 
 A key `enabled` can be used for each provider to provide fine control of which providers are enabled/disabled, for example to support different setup in testing and in production environments.
 
@@ -136,8 +136,3 @@ Security security2 = Security.builder()
 
 - Uses io.helidon.Config
 - Or reverse order
-
-[security-providers]: providers.md
-[managing-dependencies]: ../../managing-dependencies.md
-[integration-with-a-container]: containers-integration.md
-[secure-config]: tools.md

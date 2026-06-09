@@ -16,7 +16,7 @@ Helidon provides a MicroProfile server implementation (`io.helidon.microprofile.
 
 ## Maven-Coordinates
 
-To enable MicroProfile Server add the helidon-microprofile-core bundle dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable MicroProfile Server add the helidon-microprofile-core bundle dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -40,7 +40,7 @@ If full control over the dependencies is required, and you want to minimize the 
 
 Helidon MicroProfile Server is used to collect and deploy JAX-RS application(s). When starting Helidon MP, it is recommended to use the `io.helidon.Main` main class, which will take care of starting Helidon. CDI will then discover all extensions, including the Server extension and start it.
 
-See the [Helidon MP Quickstart example][helidon-mp-quickstart-example]. Note that the server lifecycle is bound to CDI.
+See the [Helidon MP Quickstart example](guides/quickstart.md). Note that the server lifecycle is bound to CDI.
 
 Usage of the `io.helidon.microprofile.server.Server` API is discouraged, as Helidon MP uses convention to discover and configure features, which makes the applications easier to understand and maintain.
 
@@ -76,7 +76,7 @@ The following table provides a brief description of routing annotations, includi
 
 ## Configuration
 
-By default, the server uses the MicroProfile Config, but you may also want to use [Helidon configuration][helidon-configuration].
+By default, the server uses the MicroProfile Config, but you may also want to use [Helidon configuration](config/introduction.md).
 
 In this example, the configuration is in a file, and it includes Helidon configuration options.
 
@@ -88,9 +88,9 @@ Configuration reference:
 |----|----|----|----|----|
 | <span id="acb486-backlog"></span> `backlog` | `VALUE` | `Integer` | `1024` | Accept backlog |
 | <span id="a4fc52-bind-address"></span> `bind-address` | `VALUE` | `i.h.w.W.ListenerCustomMethods` |   | The address to bind to |
-| <span id="a32e67-concurrency-limit"></span> [`concurrency-limit`][concurrency-limit] | `VALUE` | `i.h.c.c.l.Limit` |   | Concurrency limit to use to limit concurrent execution of incoming requests |
+| <span id="a32e67-concurrency-limit"></span> [`concurrency-limit`][concurrency-limi] | `VALUE` | `i.h.c.c.l.Limit` |   | Concurrency limit to use to limit concurrent execution of incoming requests |
 | <span id="a3f7e3-concurrency-limit-discover-services"></span> `concurrency-limit-discover-services` | `VALUE` | `Boolean` | `false` | Whether to enable automatic service discovery for `concurrency-limit` |
-| <span id="ac9c91-connection-options"></span> [`connection-options`][connection-options] | `VALUE` | `i.h.c.s.SocketOptions` |   | Options for connections accepted by this listener |
+| <span id="ac9c91-connection-options"></span> [`connection-options`][connection-optio] | `VALUE` | `i.h.c.s.SocketOptions` |   | Options for connections accepted by this listener |
 | <span id="a511a0-content-encoding"></span> [`content-encoding`][content-encoding] | `VALUE` | `i.h.h.e.ContentEncodingContext` |   | Configure the listener specific `io.helidon.http.encoding.ContentEncodingContext` |
 | <span id="aa0fb8-enable-proxy-protocol"></span> `enable-proxy-protocol` | `VALUE` | `Boolean` | `false` | Enable proxy protocol support for this socket |
 | <span id="a92b62-error-handling"></span> [`error-handling`][error-handling] | `VALUE` | `i.h.w.ErrorHandling` |   | Configuration for this listener's error handling |
@@ -109,7 +109,7 @@ Configuration reference:
 | <span id="a9d956-port"></span> `port` | `VALUE` | `Integer` | `0` | Port of the default socket |
 | <span id="abdf05-protocols"></span> [`protocols`][protocols] | `LIST` | `i.h.w.s.ProtocolConfig` |   | Configuration of protocols |
 | <span id="a4b6cc-protocols-discover-services"></span> `protocols-discover-services` | `VALUE` | `Boolean` | `true` | Whether to enable automatic service discovery for `protocols` |
-| <span id="aaf9ce-requested-uri-discovery"></span> [`requested-uri-discovery`][requested-uri-discovery] | `VALUE` | `i.h.h.RequestedUriDiscoveryContext` |   | Requested URI discovery context |
+| <span id="aaf9ce-requested-uri-discovery"></span> [`requested-uri-discovery`][requested-uri-di] | `VALUE` | `i.h.h.RequestedUriDiscoveryContext` |   | Requested URI discovery context |
 | <span id="aa99af-restore-response-headers"></span> `restore-response-headers` | `VALUE` | `Boolean` | `true` | Copy and restore response headers before and after passing a request to Jersey for processing |
 | <span id="a875ae-shutdown-grace-period"></span> `shutdown-grace-period` | `VALUE` | `Duration` | `PT0.5S` | Grace period in ISO 8601 duration format to allow running tasks to complete before listener's shutdown |
 | <span id="aa36d3-shutdown-hook"></span> `shutdown-hook` | `VALUE` | `Boolean` | `true` | When true the webserver registers a shutdown hook with the JVM Runtime |
@@ -124,7 +124,7 @@ Configuration reference:
 
 | Key | Kind | Type | Description |
 |----|----|----|----|
-| <span id="a20877-connection-config"></span> [`connection-config`][connection-config] | `VALUE` | `i.h.w.ConnectionConfig` | Configuration of a connection (established from client against our server) |
+| <span id="a20877-connection-config"></span> [`connection-config`][connection-confi] | `VALUE` | `i.h.w.ConnectionConfig` | Configuration of a connection (established from client against our server) |
 | <span id="ab275b-receive-buffer-size"></span> `receive-buffer-size` | `VALUE` | `Integer` | Listener receive buffer size |
 
 ## Examples
@@ -162,7 +162,7 @@ Configuration of access log feature.
 
 ### Usages
 
-- [`server.features.access-log`][server-features-access-log]
+- [`server.features.access-log`][server-features]
 
 ### Configuration options
 
@@ -336,7 +336,7 @@ You can configure `@RoutingPath` to define the path a service is registered on.
 
 ##### Configuration override of routing path
 
-For each HTTP service class you can define the routing path by specifying a configuration option `class-name.routing-path.path`. The `routing-path` configuration can be applied to Jax-RS application. See [Jakarta REST Application][jakarta-rest-application] for more information.
+For each HTTP service class you can define the routing path by specifying a configuration option `class-name.routing-path.path`. The `routing-path` configuration can be applied to Jax-RS application. See [Jakarta REST Application](jaxrs/jaxrs-applications.md) for more information.
 
 Example (YAML) configuration for a class `io.helidon.example.AdminService` that changes the routing path to `/management`:
 
@@ -387,7 +387,7 @@ server:
           location: "./static-content"
 ```
 
-See [Static Content Feature Configuration Reference][static-content-feature-configuration-reference] for details. The only difference is that we set welcome file to `index.html` by default.
+See [Static Content Feature Configuration Reference][static-content-f] for details. The only difference is that we set welcome file to `index.html` by default.
 
 ### Re-direct root using `server.base-path`
 
@@ -400,7 +400,7 @@ server:
 
 For any HTTP request for `/` this will return a 301 with the `Location:` header set to the value of `server.base-path`. This is often used with Static Content Support to serve a specific `index.html` when `/` is requested.
 
-Note that this feature is not for setting a context root for applications. To configure alternate context roots see [Setting Application Path][setting-application-path].
+Note that this feature is not for setting a context root for applications. To configure alternate context roots see [Setting Application Path][setting-applicat].
 
 ### Example configuration of routing
 
@@ -423,7 +423,7 @@ io.helidon.examples.AdminApplication:
 
 ### Using Requested URI Discovery
 
-Proxies and reverse proxies between an HTTP client and your Helidon application mask important information (for example `Host` header, originating IP address, protocol) about the request the client sent. Fortunately, many of these intermediary network nodes set or update either the [standard HTTP `Forwarded` header][standard-http-forwarded-header] or the [non-standard `X-Forwarded-*` family of headers][non-standard-x-forwarded-family-of-headers] to preserve information about the original client request.
+Proxies and reverse proxies between an HTTP client and your Helidon application mask important information (for example `Host` header, originating IP address, protocol) about the request the client sent. Fortunately, many of these intermediary network nodes set or update either the [standard HTTP `Forwarded` header][standard-http-fo] or the [non-standard `X-Forwarded-*` family of headers][non-standard-x-f] to preserve information about the original client request.
 
 Helidon’s requested URI discovery feature allows your application—​and Helidon itself—​to reconstruct information about the original request using the `Forwarded` header and the `X-Forwarded-*` family of headers.
 
@@ -477,29 +477,25 @@ See the [`UriInfo`][uriinfo] Javadoc for more information.
 
 ## Reference
 
-- [Helidon MicroProfile Server Javadoc][helidon-microprofile-server-javadoc]
-- [Helidon MicroProfile Server on GitHub][helidon-microprofile-server-on-github]
+- [Helidon MicroProfile Server Javadoc][helidon-micropro]
+- [Helidon MicroProfile Server on GitHub][helidon-micropro-2]
 
-[managing-dependencies]: ../managing-dependencies.md
-[helidon-mp-quickstart-example]: guides/quickstart.md
-[helidon-configuration]: config/introduction.md
-[concurrency-limit]: ../config/io_helidon_common_concurrency_limits_Limit.md
-[connection-options]: ../config/io_helidon_common_socket_SocketOptions.md
+[concurrency-limi]: ../config/io_helidon_common_concurrency_limits_Limit.md
+[connection-optio]: ../config/io_helidon_common_socket_SocketOptions.md
 [content-encoding]: ../config/io_helidon_http_encoding_ContentEncodingContext.md
 [error-handling]: ../config/io_helidon_webserver_ErrorHandling.md
 [features]: ../config/io_helidon_webserver_spi_ServerFeature.md
 [media-context]: ../config/io_helidon_http_media_MediaContext.md
 [protocols]: ../config/io_helidon_webserver_spi_ProtocolConfig.md
-[requested-uri-discovery]: ../config/io_helidon_http_RequestedUriDiscoveryContext.md
+[requested-uri-di]: ../config/io_helidon_http_RequestedUriDiscoveryContext.md
 [sockets]: ../config/io_helidon_webserver_ListenerConfig.md
 [tls]: ../config/io_helidon_common_tls_Tls.md
-[connection-config]: ../config/io_helidon_webserver_ConnectionConfig.md
-[server-features-access-log]: ../config/io_helidon_webserver_spi_ServerFeature.md#a42c97-access-log
-[jakarta-rest-application]: jaxrs/jaxrs-applications.md
-[static-content-feature-configuration-reference]: ../config/io_helidon_webserver_staticcontent_StaticContentFeature.md
-[setting-application-path]: jaxrs/jaxrs-applications.md#setting-application-path
-[standard-http-forwarded-header]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Forwarded
-[non-standard-x-forwarded-family-of-headers]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For
+[connection-confi]: ../config/io_helidon_webserver_ConnectionConfig.md
+[server-features]: ../config/io_helidon_webserver_spi_ServerFeature.md#a42c97-access-log
+[static-content-f]: ../config/io_helidon_webserver_staticcontent_StaticContentFeature.md
+[setting-applicat]: jaxrs/jaxrs-applications.md#setting-application-path
+[standard-http-fo]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Forwarded
+[non-standard-x-f]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For
 [uriinfo]: /apidocs/io.helidon.common.uri/io/helidon/common/uri/UriInfo.html
-[helidon-microprofile-server-javadoc]: /apidocs/io.helidon.microprofile.server/module-summary.html
-[helidon-microprofile-server-on-github]: https://github.com/helidon-io/helidon/tree/main/microprofile/server
+[helidon-micropro]: /apidocs/io.helidon.microprofile.server/module-summary.html
+[helidon-micropro-2]: https://github.com/helidon-io/helidon/tree/main/microprofile/server

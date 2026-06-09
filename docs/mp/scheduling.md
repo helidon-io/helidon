@@ -6,7 +6,7 @@ Scheduling is an essential feature for the Enterprise. Helidon has its own imple
 
 ## Maven Coordinates
 
-To enable Scheduling, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable Scheduling, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -200,8 +200,7 @@ public void methodName(CronInvocation inv) {
 ## Reference
 
 - [Cron-utils GitHub page][cron-utils]
-- [Helidon Scheduling Javadoc][helidon-scheduling-javadoc]
+- [Helidon Scheduling Javadoc][helidon-scheduli]
 
 [cron-utils]: https://github.com/jmrozanec/cron-utils
-[managing-dependencies]: ../managing-dependencies.md
-[helidon-scheduling-javadoc]: /apidocs/io.helidon.microprofile.scheduling/io/helidon/microprofile/scheduling/package-summary.html
+[helidon-scheduli]: /apidocs/io.helidon.microprofile.scheduling/io/helidon/microprofile/scheduling/package-summary.html

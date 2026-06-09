@@ -13,7 +13,7 @@ Helidon currently supports only schema generation.
 
 ## Maven Coordinates
 
-To enable JSON Schema, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable JSON Schema, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -100,5 +100,4 @@ Schema.find(MyClass.class);
 
 [jsonschema]: /apidocs/io.helidon.json.schema/io/helidon/json/schema/JsonSchema.html
 [schema]: /apidocs/io.helidon.json.schema/io/helidon/json/schema/Schema.html
-[managing-dependencies]: ../../managing-dependencies.md
 [service-named]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.Named.html

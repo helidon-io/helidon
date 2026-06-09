@@ -6,7 +6,7 @@ The mock chat model enables deterministic testing of LangChain4j features such a
 
 ## Maven Coordinates
 
-In addition to the [Helidon integration with LangChain4J core dependencies][helidon-integration-with-langchain4j-core-dependencies], you must add the following:
+In addition to the [Helidon integration with LangChain4J core dependencies](langchain4j.md#maven-coordinates), you must add the following:
 
 ```xml [pom.xml]
 <dependency>
@@ -108,5 +108,4 @@ class FoodExpertTest {
 
 - [LangChain4J Integration](langchain4j.md)
 
-[helidon-integration-with-langchain4j-core-dependencies]: langchain4j.md#maven-coordinates
 [rules]: ../../../config/io_helidon_integrations_langchain4j_providers_mock_MockChatRule.md

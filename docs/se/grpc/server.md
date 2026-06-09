@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Helidon gRPC server provides a framework for building [gRPC][grpc] applications. While it supports deploying any standard gRPC service that implements the `io.grpc.BindableService` interface—including those generated from Protobuf IDL files—it also allows a degree of customization.
+The Helidon gRPC server provides a framework for building [gRPC](http://grpc.io/) applications. While it supports deploying any standard gRPC service that implements the `io.grpc.BindableService` interface—including those generated from Protobuf IDL files—it also allows a degree of customization.
 
 Using the Helidon gRPC framework to implement your services offers several advantages:
 
@@ -12,7 +12,7 @@ Using the Helidon gRPC framework to implement your services offers several advan
 
 ## Maven Coordinates
 
-To enable gRPC Server, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable gRPC Server, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -151,7 +151,7 @@ This routing includes two server interceptor instances of types `Interceptor1` a
 
 ### Metrics
 
-Helidon supports a few metrics that are specific to gRPC and are based on those defined in [gRPC OpenTelemetry Metrics][grpc-opentelemetry-metrics]. Metrics are disabled by default, but can be easily enabled via configuration as we shall discuss shortly.
+Helidon supports a few metrics that are specific to gRPC and are based on those defined in [gRPC OpenTelemetry Metrics][grpc-opentelemet]. Metrics are disabled by default, but can be easily enabled via configuration as we shall discuss shortly.
 
 Here is the list of gRPC server metrics available in Helidon:
 
@@ -175,7 +175,7 @@ server:
       enable-metrics: true
 ```
 
-The configuration above shall enable metrics on the Webserver’s default port 8080. For more information see [Helidon Metrics][helidon-metrics].
+The configuration above shall enable metrics on the Webserver’s default port 8080. For more information see [Helidon Metrics](../../se/metrics/metrics.md).
 
 ## Configuration
 
@@ -245,15 +245,12 @@ Compression is always *enabled* by default in Helidon, but can be disabled as sh
 The following gRPC examples for Helidon SE are available:
 
 - [gRPC SE Example][grpc-se-example]
-- [Multiple protocols on a single WebServer][multiple-protocols-on-a-single-webserver]
+- [Multiple protocols on a single WebServer][multiple-protoco]
 
-[grpc]: http://grpc.io/
-[managing-dependencies]: ../../managing-dependencies.md
 [grpc-se-example]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/webserver/grpc
 [instructions]: https://grpc.io/docs/quickstart/java.html
 [pom-xml]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/webserver/grpc/pom.xml
 [here]: /apidocs/io.helidon.webserver.grpc/io/helidon/webserver/grpc/ResponseHelper.html
-[grpc-opentelemetry-metrics]: https://grpc.io/docs/guides/opentelemetry-metrics/
-[helidon-metrics]: ../../se/metrics/metrics.md
+[grpc-opentelemet]: https://grpc.io/docs/guides/opentelemetry-metrics/
 [grpc-reflection]: https://grpc.io/docs/guides/reflection/
-[multiple-protocols-on-a-single-webserver]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/webserver/protocols
+[multiple-protoco]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/webserver/protocols

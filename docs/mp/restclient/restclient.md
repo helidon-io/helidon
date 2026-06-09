@@ -6,13 +6,13 @@ MicroProfile Rest Client adds the capability to invoke remote services by defini
 
 Helidon will automatically create a *proxy* class for the interface and map local proxy calls to remote REST calls.
 
-For more information, see [Rest Client For MicroProfile Specification][rest-client-for-microprofile-specification].
+For more information, see [Rest Client For MicroProfile Specification][rest-client-for].
 
-You can also use metrics annotations on your Rest Client methods as described in [this related page.][this-related-page]
+You can also use metrics annotations on your Rest Client methods as described in [this related page.](restclientmetrics.md)
 
 ## Maven Coordinates
 
-To enable MicroProfile Rest Client, either add a dependency on the [helidon-microprofile bundle][helidon-microprofile-bundle] or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable MicroProfile Rest Client, either add a dependency on the [helidon-microprofile bundle](../introduction.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -82,7 +82,7 @@ public interface GreetRestClient {
 
 Once a client interface is annotated, it can be injected into any CDI bean.
 
-All properties in annotation `RegisterRestClient` can be overridden via configuration as described in [Configuration options][configuration-options]
+All properties in annotation `RegisterRestClient` can be overridden via configuration as described in [Configuration options](#configuration-options)
 
 ```java [Example]
 public class MyBean {
@@ -142,7 +142,7 @@ Configuration options affecting CDI and programmatically created clients:
 
 ## Examples
 
-To be able to run and test this example, use the [Helidon MP examples/quickstarts][helidon-mp-examples-quickstarts]. Add a dependency on the Helidon Rest Client implementation and create the following client interface:
+To be able to run and test this example, use the [Helidon MP examples/quickstarts](../guides/quickstart.md). Add a dependency on the Helidon Rest Client implementation and create the following client interface:
 
 client interface:
 
@@ -160,22 +160,17 @@ interface GreetRestClient {
 }
 ```
 
-Then create a runnable method as described in [Creating new client][creating-new-client], but with baseUri `http://localhost:8080/greet` and the above interface.
+Then create a runnable method as described in [Creating new client][creating-new-cli], but with baseUri `http://localhost:8080/greet` and the above interface.
 
 By calling `GreetRestClient.getDefaultMessage()` you reach the endpoint of Helidon quickstart.
 
 ## Reference
 
-- [Helidon MicroProfile RestClient Javadoc][helidon-microprofile-restclient-javadoc]
-- [MicroProfile RestClient Specification][rest-client-for-microprofile-specification]
-- [MicroProfile RestClient on GitHub][microprofile-restclient-on-github]
+- [Helidon MicroProfile RestClient Javadoc][helidon-micropro]
+- [MicroProfile RestClient Specification][rest-client-for]
+- [MicroProfile RestClient on GitHub][microprofile-res]
 
-[rest-client-for-microprofile-specification]: https://download.eclipse.org/microprofile/microprofile-rest-client-3.0/microprofile-rest-client-spec-3.0.html
-[this-related-page]: restclientmetrics.md
-[helidon-microprofile-bundle]: ../introduction.md
-[managing-dependencies]: ../../managing-dependencies.md
-[configuration-options]: #configuration-options
-[helidon-mp-examples-quickstarts]: ../guides/quickstart.md
-[creating-new-client]: #creating-a-new-client-using-a-builder
-[helidon-microprofile-restclient-javadoc]: /apidocs/io.helidon.microprofile.restclient/module-summary.html
-[microprofile-restclient-on-github]: https://github.com/eclipse/microprofile-rest-client
+[rest-client-for]: https://download.eclipse.org/microprofile/microprofile-rest-client-3.0/microprofile-rest-client-spec-3.0.html
+[creating-new-cli]: #creating-a-new-client-using-a-builder
+[helidon-micropro]: /apidocs/io.helidon.microprofile.restclient/module-summary.html
+[microprofile-res]: https://github.com/eclipse/microprofile-rest-client

@@ -2,9 +2,9 @@
 
 ## Overview
 
-The [OpenAPI specification][openapi-specification] provides a standard way to express RESTful APIs.
+The [OpenAPI specification][openapi-specific] provides a standard way to express RESTful APIs.
 
-Separately, the [OpenAPI generator][openapi-generator] project has created a powerful code generator tool which accepts an OpenAPI document and generates client and server code for many languages and frameworks. The Helidon team contributes to this tool to ensure that it provides strong support for Helidon SE clients and servers. As a result, you can use the generator to create code that fits smoothly into your Helidon applications.
+Separately, the [OpenAPI generator](https://openapi-generator.tech) project has created a powerful code generator tool which accepts an OpenAPI document and generates client and server code for many languages and frameworks. The Helidon team contributes to this tool to ensure that it provides strong support for Helidon SE clients and servers. As a result, you can use the generator to create code that fits smoothly into your Helidon applications.
 
 Use the OpenAPI generator release 7.6.0 or later which this document describes.
 
@@ -18,7 +18,7 @@ Each of these generators supports two *libraries*:
 - `mp` - for Helidon MP code generation
 - `se` - for Helidon SE code generation
 
-Use the Helidon *client* generator and its `se` library to create a Helidon SE client based on [Helidon WebClients][helidon-webclients]. The resulting client library works with any server that implements the API declared in the OpenAPI document you specified when you ran the generator. The client library provides an abstraction similar to remote procedure calls (RPC). To access a remote service that implements the endpoints declared in the OpenAPI document, your code uses the generated client library first to establish a connection to the remote service and then to call remote service endpoints by invoking local methods passing POJO business objects or Java types as arguments.
+Use the Helidon *client* generator and its `se` library to create a Helidon SE client based on [Helidon WebClients](../../se/webclient.md). The resulting client library works with any server that implements the API declared in the OpenAPI document you specified when you ran the generator. The client library provides an abstraction similar to remote procedure calls (RPC). To access a remote service that implements the endpoints declared in the OpenAPI document, your code uses the generated client library first to establish a connection to the remote service and then to call remote service endpoints by invoking local methods passing POJO business objects or Java types as arguments.
 
 Use the tool’s Helidon *server* generator and its `se` library to create server endpoint stubs for a Helidon SE service. You build on these stubs by extending a generated class or implementing a generated interface, adding your specific business logic to finish the implementation of the endpoints. The combination of the generated server code plus Helidon SE underneath it allows you to focus on the business details instead of resource boilerplate.
 
@@ -28,7 +28,7 @@ You can run the OpenAPI generators in three ways:
 - using the OpenAPI generator Maven plug-in
 - using the online OpenAPI generator website
 
-The rest of this document walks you through [how to use][how-to-use] each technique and how to [configure][configure] the generators to produce the code you want.
+The rest of this document walks you through [how to use](#usage) each technique and how to [configure](#configuration) the generators to produce the code you want.
 
 ## Maven Coordinates
 
@@ -66,8 +66,8 @@ The OpenAPI generators support a substantial, powerful, and sometimes bewilderin
 For complete lists see these pages:
 
 - [generic options][generic-options]
-- [Helidon client generator options][helidon-client-generator-options] and
-- [Helidon server generator options][helidon-server-generator-options]
+- [Helidon client generator options][helidon-client-g] and
+- [Helidon server generator options][helidon-server-g]
 
 The OpenAPI generator loosely divides its settings into three types:
 
@@ -144,7 +144,7 @@ The OpenAPI generator loosely divides its settings into three types:
   </configuration>
   ```
 
-Keep this distinction among global options, config options, and additional properties in mind so you know how to express the configuration you want. The [earlier links][earlier-links] to the lists of configuration options for the Helidon generators groups options and additional properties in separate tables.
+Keep this distinction among global options, config options, and additional properties in mind so you know how to express the configuration you want. The [earlier links](#links-to-settings) to the lists of configuration options for the Helidon generators groups options and additional properties in separate tables.
 
 The next few sections describe, in turn, required settings, settings we recommend, and other common settings most developers will want to use.
 
@@ -294,7 +294,7 @@ Your project might have different needs, but in general we advise developers to 
 
 ### Common Settings
 
-Among the many configuration settings available to you, some you should particularly consider are summarized in the table below. Refer to the [earlier links][earlier-links] for complete lists.
+Among the many configuration settings available to you, some you should particularly consider are summarized in the table below. Refer to the [earlier links](#links-to-settings) for complete lists.
 
 <table>
 <caption>Common OpenAPI Generator Additional Properties</caption>
@@ -351,7 +351,7 @@ Among the many configuration settings available to you, some you should particul
 
 This section covers two major topics:
 
-- [Planning your use of the OpenAPI generators][planning-your-use-of-the-openapi-generators]
+- [Planning your use of the OpenAPI generators][planning-your-us]
 - [Running the generators](#running-the-openapi-generators)
 
 ### Planning Your Use of the OpenAPI Generators
@@ -360,7 +360,7 @@ Beyond the settings listed above, there are several important choices you need t
 
 #### Generating a New Project and Generating *Into* an Existing Project
 
-You can use the OpenAPI generator to create a new project or to generate files into an existing project. Some developers do both, using the generator to create the project at first and then to update the project as they evolve the OpenAPI document or change the generation options they select. Others create the project in some other way—​for example, using the [Helidon CLI][helidon-cli]. The OpenAPI generator CLI and plug-in both support each type of usage.
+You can use the OpenAPI generator to create a new project or to generate files into an existing project. Some developers do both, using the generator to create the project at first and then to update the project as they evolve the OpenAPI document or change the generation options they select. Others create the project in some other way—​for example, using the [Helidon CLI](../../cli.md). The OpenAPI generator CLI and plug-in both support each type of usage.
 
 If the OpenAPI generator finds a pre-existing API or model file, it overwrites it with the latest content. It does *not* overwrite a `pom.xml` file or test files. This is important because certain generation settings can influence the generated dependencies in the `pom.xml` file. For example, the `serializationLibrary` setting creates dependencies on either JSON-B or Jackson artifacts. As a result, changing the generation options can change the dependencies your project should have. If you rerun the generator, the old `pom.xml` remains and does not reflect the revised depencencies.
 
@@ -473,7 +473,7 @@ In both examples, the generator creates the entire project if it does not exist 
 
 You can run the OpenAPI generator plug-in as part of your project build to generate or regenerate files.
 
-First, declare the plug-in as explained in the [earlier section on Maven coordinates][earlier-section-on-maven-coordinates].
+First, declare the plug-in as explained in the [earlier section on Maven coordinates](#maven-coordinates).
 
 Then, in the `<build>` section of your `pom.xml` file, add an execution of the plug-in with the configuration you want. By default, the plug-in runs during the `generate-sources` phase of the Maven build.
 
@@ -702,7 +702,7 @@ The following sections explain these steps.
 
 The Helidon SE client generator gives you as much flexibility as you need in connecting to the remote service.
 
-Internally, the `ApiClient` uses a Helidon `WebClient` object to contact the remote system. The `ApiClient.Builder` automatically prepares a Helidon [`WebClientConfig.Builder`][webclientconfig-builder] object using information from the OpenAPI document.
+Internally, the `ApiClient` uses a Helidon `WebClient` object to contact the remote system. The `ApiClient.Builder` automatically prepares a Helidon [`WebClientConfig.Builder`][webclientconfig] object using information from the OpenAPI document.
 
 The next sections describe, from simplest to most complicated, the ways your code can create an `ApiClient` instance, each involving increased involvement with the `WebClientConfig.Builder` object.
 
@@ -914,25 +914,18 @@ This code also blocks the current thread, first to wait for the initial response
 
 ## References
 
-- [OpenAPI Generator Official Website][openapi-generator]
-- [OpenAPI Generator GitHub Repository][openapi-generator-github-repository]
-- [OpenAPI specification][openapi-specification]
-- [Helidon WebClient documentation][helidon-webclients]
+- [OpenAPI Generator Official Website](https://openapi-generator.tech)
+- [OpenAPI Generator GitHub Repository][openapi-generato]
+- [OpenAPI specification][openapi-specific]
+- [Helidon WebClient documentation](../../se/webclient.md)
 
-[openapi-specification]: https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md
-[openapi-generator]: https://openapi-generator.tech
-[helidon-webclients]: ../../se/webclient.md
-[how-to-use]: #usage
-[configure]: #configuration
+[openapi-specific]: https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md
 [later-section]: #invoking-the-openapi-generator-maven-plug-in
 [generic-options]: https://github.com/OpenAPITools/openapi-generator/blob/v7.6.0/docs/usage.md#generate
-[helidon-client-generator-options]: https://github.com/OpenAPITools/openapi-generator/blob/v7.6.0/docs/generators/java-helidon-client.md
-[helidon-server-generator-options]: https://github.com/OpenAPITools/openapi-generator/blob/v7.6.0/docs/generators/java-helidon-server.md
-[earlier-links]: #links-to-settings
-[planning-your-use-of-the-openapi-generators]: #planning-your-use-of-the-openapi-generators
-[helidon-cli]: ../../cli.md
+[helidon-client-g]: https://github.com/OpenAPITools/openapi-generator/blob/v7.6.0/docs/generators/java-helidon-client.md
+[helidon-server-g]: https://github.com/OpenAPITools/openapi-generator/blob/v7.6.0/docs/generators/java-helidon-server.md
+[planning-your-us]: #planning-your-use-of-the-openapi-generators
 [instructions]: https://github.com/OpenAPITools/openapi-generator#13---download-jar
-[earlier-section-on-maven-coordinates]: #maven-coordinates
 [webclient]: /apidocs/io.helidon.webclient.api/io/helidon/webclient/api/WebClient.html
-[webclientconfig-builder]: /apidocs/io.helidon.webclient.api/io/helidon/webclient/api/WebClientConfig.Builder.html
-[openapi-generator-github-repository]: https://github.com/OpenAPITools/openapi-generator
+[webclientconfig]: /apidocs/io.helidon.webclient.api/io/helidon/webclient/api/WebClientConfig.Builder.html
+[openapi-generato]: https://github.com/OpenAPITools/openapi-generator

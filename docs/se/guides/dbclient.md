@@ -382,7 +382,7 @@ The `getBook` method reach the book from the database and send the information t
 
 DbExecute class provides many builders to create statements such as, DML, insert, update, delete, query and get statements. For each statement there are two builders which can be regrouped in 2 categories. Builders with methods containing `Named` keyword, they use a statement defined in the configuration file.
 
-And builders without `Named` keyword, they use a statement passed as an argument. More information on the Helidon DB Client [here][here].
+And builders without `Named` keyword, they use a statement passed as an argument. More information on the Helidon DB Client [here](../dbclient.md).
 
 Add getJsonBook to the LibraryService:
 
@@ -521,7 +521,7 @@ transfer-encoding: chunked
 connection: keep-alive
 ```
 
-This command creates an HTTP PUT request with the genre `Fantasy` content at the address [http://localhost:8080/library/{book-name}][http-localhost-8080-library-book-name]. The 201 code means that Harry Potter book was successfully added to the library. You can now try to get it !
+This command creates an HTTP PUT request with the genre `Fantasy` content at the address [http://localhost:8080/library/{book-name}][http-localhost-8]. The 201 code means that Harry Potter book was successfully added to the library. You can now try to get it !
 
 Get Harry Potter from the library:
 
@@ -643,6 +643,5 @@ This guide provided an introduction to the Helidon DB Client’s key features. I
 [maven-3-8]: https://maven.apache.org/download.cgi
 [docker-18-09]: https://docs.docker.com/install/
 [kubectl-1-16-5]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
-[here]: ../dbclient.md
-[http-localhost-8080-library-book-name]: http://localhost:8080/library/{book-name}
+[http-localhost-8]: http://localhost:8080/library/{book-name}
 [github]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/dbclient

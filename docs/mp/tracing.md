@@ -3,13 +3,13 @@
 ## Overview
 
 > [!WARNING]
-> This feature is marked as `@Deprecated` in Helidon. Please use the [Telemetry][telemetry] feature instead. The OpenTracing Specification that MP OpenTracing is based on is no longer maintained. The MP OpenTracing specification is no longer required by MicroProfile. The specification is superseded by the [MicroProfile Telemetry specification][microprofile-telemetry-specification].
+> This feature is marked as `@Deprecated` in Helidon. Please use the [Telemetry](../mp/telemetry.md) feature instead. The OpenTracing Specification that MP OpenTracing is based on is no longer maintained. The MP OpenTracing specification is no longer required by MicroProfile. The specification is superseded by the [MicroProfile Telemetry specification][microprofile-tel].
 
-Distributed tracing is a critical feature of micro-service based applications, since it traces workflow both within a service and across multiple services. This provides insight to sequence and timing data for specific blocks of work, which helps you identify performance and operational issues. Helidon MP includes support for distributed tracing through the [OpenTracing API][opentracing-api]. Tracing is integrated with WebServer and Security.
+Distributed tracing is a critical feature of micro-service based applications, since it traces workflow both within a service and across multiple services. This provides insight to sequence and timing data for specific blocks of work, which helps you identify performance and operational issues. Helidon MP includes support for distributed tracing through the [OpenTracing API](https://opentracing.io). Tracing is integrated with WebServer and Security.
 
 ## Maven Coordinates
 
-To enable MicroProfile Tracing, either add a dependency on the [helidon-microprofile bundle][helidon-microprofile-bundle] or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable MicroProfile Tracing, either add a dependency on the [helidon-microprofile bundle](introduction.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -24,7 +24,7 @@ This section explains a few concepts that you need to understand before you get 
 
 - In the context of this document, a *service* is synonymous with an application.
 - A *span* is the basic unit of work done within a single service, on a single host. Every span has a name, starting timestamp, and duration. For example, the work done by a REST endpoint is a span. A span is associated to a single service, but its descendants can belong to different services and hosts.
-- A *trace* contains a collection of spans from one or more services, running on one or more hosts. For example, if you trace a service endpoint that calls another service, then the trace would contain spans from both services. Within a trace, spans are organized as a directed acyclic graph (DAG) and can belong to multiple services, running on multiple hosts. The *OpenTracing Data Model* describes the details at [The OpenTracing Semantic Specification][the-opentracing-semantic-specification]. Spans are automatically created by Helidon as needed during execution of the REST request. Additional spans can be added through MP annotation `@Traced` or through OpenTracing APIs.
+- A *trace* contains a collection of spans from one or more services, running on one or more hosts. For example, if you trace a service endpoint that calls another service, then the trace would contain spans from both services. Within a trace, spans are organized as a directed acyclic graph (DAG) and can belong to multiple services, running on multiple hosts. The *OpenTracing Data Model* describes the details at [The OpenTracing Semantic Specification][the-opentracing]. Spans are automatically created by Helidon as needed during execution of the REST request. Additional spans can be added through MP annotation `@Traced` or through OpenTracing APIs.
 
 ## Traced spans
 
@@ -542,7 +542,7 @@ Response response = client.target(serviceEndpoint)
 | <span id="aa4177-sampler-param"></span> `sampler-param`                                                                                                       | `VALUE` | `Number`                        | `1`           | The sampler parameter (number)                 |
 | <span id="a28b35-sampler-type"></span> [`sampler-type`][sampler-type]                     | `VALUE` | `i.h.t.p.j.J.SamplerType`       | `CONSTANT`    | Sampler type                                   |
 | <span id="a8ee29-schedule-delay"></span> `schedule-delay`                                                                                                     | `VALUE` | `Duration`                      | `PT5S`        | Schedule Delay of exporter requests            |
-| <span id="a1bdae-span-processor-type"></span> [`span-processor-type`][span-processor-type] | `VALUE` | `i.h.t.p.j.J.SpanProcessorType` | `batch`       | Span Processor type used                       |
+| <span id="a1bdae-span-processor-type"></span> [`span-processor-type`][span-processor-t] | `VALUE` | `i.h.t.p.j.J.SpanProcessorType` | `batch`       | Span Processor type used                       |
 | <span id="a667f5-trusted-cert-pem"></span> [`trusted-cert-pem`][client-cert-pem]                                         | `VALUE` | `i.h.c.c.Resource`              |               | Trusted certificates in PEM format             |
 
 The following is an example of a Jaeger configuration, specified in the YAML format.
@@ -557,7 +557,7 @@ tracing:
 
 ### Jaeger Tracing Metrics
 
-As the [Jaeger Tracing][jaeger-tracing] section describes, you can use Jaeger tracing in your Helidon application.
+As the [Jaeger Tracing](#jaeger-tracing) section describes, you can use Jaeger tracing in your Helidon application.
 
 ### Zipkin Tracing
 
@@ -607,7 +607,7 @@ Example of Zipkin trace:
 
 ### OpenTelemetry Tracing
 
-Helidon supports configuration of OpenTelemetry and OpenTelemetry tracing in two primary ways: using tracing or using telemetry. The [Helidon MP Telemetry doc page][telemetry] describes how to use Helidon’s support for MicroProfile Telemetry to control OpenTelemetry.
+Helidon supports configuration of OpenTelemetry and OpenTelemetry tracing in two primary ways: using tracing or using telemetry. The [Helidon MP Telemetry doc page](../mp/telemetry.md) describes how to use Helidon’s support for MicroProfile Telemetry to control OpenTelemetry.
 
 Avoid using both the OpenTelemetry tracing support described here and support for MicroProfile Telemetry as the results are unpredictable.
 
@@ -649,26 +649,21 @@ tracing.tags.0.direction=north
 By default, Helidon tracing support for OpenTelemetry uses OpenTelemetry’s OTLP gRPC exporter. Alternatively, you can choose to use OpenTelemetry’s HTTP exporter using protobuf by setting `exporter-type` to `http/proto`. To use other exporters OpenTelemetry offers, use the Helidon `telemetry` configuration instead of `tracing`.
 
 <!--@include ../includes/tracing/common-callbacks.md#span-lifecycle-callbacks -->
-See [Responding to Span Lifecycle Events][responding-to-span-lifecycle-events].
+See [Responding to Span Lifecycle Events][responding-to-sp].
 <!--/include-->
 
 ## Reference
 
-- [MicroProfile Opentracing Specification][microprofile-opentracing-specification]
+- [MicroProfile Opentracing Specification][microprofile-ope]
 - [Opentracing Project](https://opentracing.io/)
 
-[telemetry]: ../mp/telemetry.md
-[microprofile-telemetry-specification]: https://github.com/eclipse/microprofile-telemetry
-[opentracing-api]: https://opentracing.io
-[helidon-microprofile-bundle]: introduction.md
-[managing-dependencies]: ../managing-dependencies.md
-[the-opentracing-semantic-specification]: https://opentracing.io/specification
+[microprofile-tel]: https://github.com/eclipse/microprofile-telemetry
+[the-opentracing]: https://opentracing.io/specification
 [client-cert-pem]: ../config/io_helidon_common_configurable_Resource.md
 [propagation]: ../config/io_helidon_tracing_providers_jaeger_JaegerTracerBuilder_PropagationFormat.md
 [sampler-type]: ../config/io_helidon_tracing_providers_jaeger_JaegerTracerBuilder_SamplerType.md
-[span-processor-type]: ../config/io_helidon_tracing_providers_jaeger_JaegerTracerBuilder_SpanProcessorType.md
-[jaeger-tracing]: #jaeger-tracing
+[span-processor-t]: ../config/io_helidon_tracing_providers_jaeger_JaegerTracerBuilder_SpanProcessorType.md
 [api-version]: ../config/io_helidon_tracing_providers_zipkin_ZipkinTracerBuilder_Version.md
 [exporter-type]: ../config/io_helidon_tracing_providers_opentelemetry_OtlpExporterProtocolType.md
-[responding-to-span-lifecycle-events]: ../includes/tracing/common-callbacks.md#span-lifecycle-callbacks
-[microprofile-opentracing-specification]: https://download.eclipse.org/microprofile/microprofile-opentracing-3.0/microprofile-opentracing-spec-3.0.html
+[responding-to-sp]: ../includes/tracing/common-callbacks.md#span-lifecycle-callbacks
+[microprofile-ope]: https://download.eclipse.org/microprofile/microprofile-opentracing-3.0/microprofile-opentracing-spec-3.0.html

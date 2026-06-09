@@ -7,7 +7,7 @@ This quick start describes how to create and run a basic Helidon MP application 
 The Helidon **Project Starter** allows you to quickly generate a project with basic functionality that lets you explore the features of Helidon and that’s also customizable enough to use as a starting point for your own projects and applications.
 
 1.  Make sure your environment is properly set up for Helidon development. See [Getting Started][getting-started].
-2.  Go to the [Helidon Project Starter][helidon-project-starter] page on the Helidon website.
+2.  Go to the [Helidon Project Starter](https://helidon.io/starter) page on the Helidon website.
 3.  Under **Helidon Flavor**, select **Helidon MP** and click **Next**.
 4.  Under **Application Type**, select **Quickstart** and click **Next**.
 5.  Under **Media Support**, select a JSON library and click **Next**.
@@ -15,7 +15,7 @@ The Helidon **Project Starter** allows you to quickly generate a project with ba
 7.  Click **Download** to save the project zip archive to your computer. This is the Maven project that’s the basis for your Helidon Quick Start application.
 
 > [!TIP]
-> You can also generate the Quick Start project using the [Helidon CLI][helidon-cli]. Run the following command to create a Maven project in your current directory: `helidon init --batch -Dflavor=mp -Dapp-type=quickstart`
+> You can also generate the Quick Start project using the [Helidon CLI](../../cli.md). Run the following command to create a Maven project in your current directory: `helidon init --batch -Dflavor=mp -Dapp-type=quickstart`
 
 Now that you’ve generated the project, you can build a Helidon application and start experimenting.
 
@@ -41,10 +41,10 @@ curl -X GET http://localhost:8080/greet/Jose
 Congratulations! You now have a working Helidon MP application. You can use it to:
 
 - Experiment with Helidon MP features and services
-  - Try out the [Health service and the Metrics service][health-service-and-the-metrics-service]
+  - Try out the [Health service and the Metrics service](#track-health-and-metrics)
 - [Build a Docker Image](#build-a-docker-image)
-- [Deploy it to Kubernetes](#deploy-application-to-kubernetes)
-- [Build GraalVM Native and Custom Java Runtime Images][build-graalvm-native-and-custom-java-runtime-images]
+- [Deploy it to Kubernetes][deploy-it-to-kub]
+- [Build GraalVM Native and Custom Java Runtime Images][build-graalvm-na]
 
 and much more!
 
@@ -52,7 +52,7 @@ and much more!
 
 Helidon provides built-in support for monitoring the Health and Metrics endpoints in your application.
 
-Use the Health component to monitor the health of your microservice to make sure it is available and performing correctly. For more information on how to retrieve and monitor Health data about your application, see [Health][health].
+Use the Health component to monitor the health of your microservice to make sure it is available and performing correctly. For more information on how to retrieve and monitor Health data about your application, see [Health](../health.md).
 
 To see general Health endpoint data, run:
 
@@ -60,7 +60,7 @@ To see general Health endpoint data, run:
 curl -s -X GET http://localhost:8080/health
 ```
 
-Use the Metrics component to export telemetry to management agents and to register and update metrics to expose telemetry data from their services. For more information on how to generate and send Metrics data from your application, see [Metrics][metrics].
+Use the Metrics component to export telemetry to management agents and to register and update metrics to expose telemetry data from their services. For more information on how to generate and send Metrics data from your application, see [Metrics](../metrics/metrics.md).
 
 To see Metrics data rendered in Prometheus format, run:
 
@@ -100,7 +100,7 @@ curl -X GET http://localhost:8080/greet/Jose
 
 ## Deploy Application to Kubernetes
 
-To deploy the application to Kubernetes, you must have access to a Kubernetes cluster. Some lightweight options for running Kubernetes include Docker Desktop or minikube. This quick start assumes you’re using Docker Desktop. See [Docker Desktop][docker-desktop] in the Docker documentation.
+To deploy the application to Kubernetes, you must have access to a Kubernetes cluster. Some lightweight options for running Kubernetes include Docker Desktop or minikube. This quick start assumes you’re using Docker Desktop. See [Docker Desktop](https://docs.docker.com/desktop/) in the Docker documentation.
 
 If you haven’t already, install `kubectl`, the Kubernetes command line tool. See [Install kubectl][install-kubectl] in the Kubernetes documentation.
 
@@ -133,11 +133,6 @@ Learn more about Helidon MP:
 - [Observability](../observability.md)
 
 [getting-started]: ../../get-started.md#system-requirements
-[helidon-project-starter]: https://helidon.io/starter
-[helidon-cli]: ../../cli.md
-[health-service-and-the-metrics-service]: #track-health-and-metrics
-[build-graalvm-native-and-custom-java-runtime-images]: #build-graalvm-native-and-custom-java-runtime-images
-[health]: ../health.md
-[metrics]: ../metrics/metrics.md
-[docker-desktop]: https://docs.docker.com/desktop/
+[deploy-it-to-kub]: #deploy-application-to-kubernetes
+[build-graalvm-na]: #build-graalvm-native-and-custom-java-runtime-images
 [install-kubectl]: https://kubernetes.io/docs/tasks/tools/#kubectl

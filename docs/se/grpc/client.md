@@ -6,7 +6,7 @@ The Helidon gRPC client API is part of the WebClient API, but with specific supp
 
 ## Maven Coordinates
 
-To enable gRPC Client, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable gRPC Client, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -165,7 +165,7 @@ Channel newChannel = grpcClient.channel(myInterceptors());
 
 ## Metrics
 
-Helidon supports a few metrics that are specific to gRPC clients and are based on those defined in [gRPC OpenTelemetry Metrics][grpc-opentelemetry-metrics]. Metrics are disabled by default, but can be easily enabled as we shall discuss shortly.
+Helidon supports a few metrics that are specific to gRPC clients and are based on those defined in [gRPC OpenTelemetry Metrics][grpc-opentelemet]. Metrics are disabled by default, but can be easily enabled as we shall discuss shortly.
 
 Here is the list of gRPC client metrics available in Helidon:
 
@@ -225,9 +225,9 @@ GrpcClient grpcClient = GrpcClient.builder()
 
 ## Configuration
 
-TLS can be configured externally, just like it is done when using the WebClient to access an HTTP endpoint. For more information, see [Configuring the WebClient][configuring-the-webclient].
+TLS can be configured externally, just like it is done when using the WebClient to access an HTTP endpoint. For more information, see [Configuring the WebClient][configuring-the].
 
-There are a few configuration options (see table below) that are specific to a `GrpcClient` and can be configured using a `GrpcClientProtocolConfig` instance. See [RandomServiceTest][randomservicetest] for an example.
+There are a few configuration options (see table below) that are specific to a `GrpcClient` and can be configured using a `GrpcClientProtocolConfig` instance. See [RandomServiceTest][randomservicetes] for an example.
 
 ### Configuration options
 
@@ -240,7 +240,6 @@ There are a few configuration options (see table below) that are specific to a `
 | <span id="a133d3-next-request-wait-time"></span> `next-request-wait-time` | `VALUE` | `Duration` | `PT1S` | When data has been received from the server but not yet requested by the client (i.e., listener), the implementation will wait for this duration before signaling an error |
 | <span id="ad5f5d-poll-wait-time"></span> `poll-wait-time` | `VALUE` | `Duration` | `PT10S` | How long to wait for the next HTTP/2 data frame to arrive in underlying stream |
 
-[managing-dependencies]: ../../managing-dependencies.md
-[grpc-opentelemetry-metrics]: https://grpc.io/docs/guides/opentelemetry-metrics/
-[configuring-the-webclient]: https://helidon.io/docs/v4/se/webclient#_configuring_the_webclient
-[randomservicetest]: https://github.com/helidon-io/helidon-examples/blob/dev-4.x/examples/webserver/grpc-random/src/test/java/io/helidon/examples/webserver/grpc/random/RandomServiceTest.java
+[grpc-opentelemet]: https://grpc.io/docs/guides/opentelemetry-metrics/
+[configuring-the]: https://helidon.io/docs/v4/se/webclient#_configuring_the_webclient
+[randomservicetes]: https://github.com/helidon-io/helidon-examples/blob/dev-4.x/examples/webserver/grpc-random/src/test/java/io/helidon/examples/webserver/grpc/random/RandomServiceTest.java

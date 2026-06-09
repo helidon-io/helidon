@@ -646,14 +646,15 @@ This guide demonstrated how to use health checks in a Helidon MP application as 
 
 Refer to the following references for additional information:
 
-- [MicroProfile health check specification][microprofile-health-check-specification]
-- [MicroProfile health check Javadoc][microprofile-health-check-javadoc]
-- [Helidon Javadoc](/apidocs/index.html?overview-summary.html)
+- [MicroProfile health check specification][microprofile-hea]
+- [MicroProfile health check Javadoc][microprofile-hea-2]
+- [Helidon Javadoc][helidon-javadoc]
 
 [java-21]: https://www.oracle.com/technetwork/java/javase/downloads
 [open-jdk-21]: http://jdk.java.net
 [maven-3-8]: https://maven.apache.org/download.cgi
 [docker-18-09]: https://docs.docker.com/install/
 [kubectl-1-16-5]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
-[microprofile-health-check-specification]: https://download.eclipse.org/microprofile/microprofile-health-4.0/microprofile-health-spec-4.0.html
-[microprofile-health-check-javadoc]: https://download.eclipse.org/microprofile/microprofile-health-4.0/apidocs
+[microprofile-hea]: https://download.eclipse.org/microprofile/microprofile-health-4.0/microprofile-health-spec-4.0.html
+[microprofile-hea-2]: https://download.eclipse.org/microprofile/microprofile-health-4.0/apidocs
+[helidon-javadoc]: /apidocs/index.html?overview-summary.html

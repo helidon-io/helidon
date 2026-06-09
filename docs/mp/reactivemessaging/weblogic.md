@@ -12,11 +12,11 @@ Helidon supports Jakarta EE 10. Legacy versions of `javax` based thin T3 client 
 > [!WARNING]
 > When using the legacy WebLogic T3 thin clients, make sure to start the Helidon application with `--add-opens=java.base/java.io=ALL-UNNAMED` to allow reflection with the legacy wlthint3client.
 
-Updated versions of thin T3 clients that are compatible with modern Jakarta runtimes can be downloaded from [Oracle Software Delivery Cloud][oracle-software-delivery-cloud] as `wlthint3client.jakarta`. However, Jakarta based thin clients can be placed on the Helidon classpath and used with this specialized connector or the [JMS connector][jms-connector] After the download, the thin T3 client artefact needs to be installed in the Maven repository accessible from the application build.
+Updated versions of thin T3 clients that are compatible with modern Jakarta runtimes can be downloaded from [Oracle Software Delivery Cloud][oracle-software] as `wlthint3client.jakarta`. However, Jakarta based thin clients can be placed on the Helidon classpath and used with this specialized connector or the [JMS connector][jms-connector] After the download, the thin T3 client artefact needs to be installed in the Maven repository accessible from the application build.
 
 ## Maven Coordinates
 
-To enable WebLogic JMS connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable WebLogic JMS connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -54,7 +54,7 @@ Connector name: `helidon-weblogic-jms`
 
 Attributes
 
-Configuration is straight forward. Use JNDI for localizing and configuring of JMS ConnectionFactory from WebLogic. Notice the destination property which is used to define the queue with [WebLogic CDI Syntax][weblogic-cdi-syntax].
+Configuration is straight forward. Use JNDI for localizing and configuring of JMS ConnectionFactory from WebLogic. Notice the destination property which is used to define the queue with [WebLogic CDI Syntax][weblogic-cdi-syn].
 
 Example config:
 
@@ -191,7 +191,6 @@ java --add-opens=java.base/java.io=ALL-UNNAMED \
     -jar ./target/helidon-wls-jms-demo.jar
 ```
 
-[oracle-software-delivery-cloud]: https://edelivery.oracle.com/osdc/faces/Home.jspx
+[oracle-software]: https://edelivery.oracle.com/osdc/faces/Home.jspx
 [jms-connector]: ../../mp/reactivemessaging/jms.md
-[managing-dependencies]: ../../managing-dependencies.md
-[weblogic-cdi-syntax]: https://docs.oracle.com/cd/E24329_01/web.1211/e24387/lookup.htm#JMSPG915
+[weblogic-cdi-syn]: https://docs.oracle.com/cd/E24329_01/web.1211/e24387/lookup.htm#JMSPG915

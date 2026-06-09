@@ -6,7 +6,7 @@ Neo4j is a graph database management system developed by Neo4j, Inc. It is an AC
 
 ## Maven Coordinates
 
-To enable Neo4j, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
+To enable Neo4j, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -16,7 +16,7 @@ To enable Neo4j, add the following dependency to your project’s `pom.xml` (see
 ```
 
 > [!NOTE]
-> Check [Neo4j Metrics propagation][neo4j-metrics-propagation] and [Neo4j Health Checks][neo4j-health-checks] for additional dependencies for *Neo4j* `Metrics` and `Health Checks` integration.
+> Check [Neo4j Metrics propagation](#neo4j-metrics-propagation) and [Neo4j Health Checks](#neo4j-health-checks) for additional dependencies for *Neo4j* `Metrics` and `Health Checks` integration.
 
 ## Usage
 
@@ -41,7 +41,7 @@ public MovieRepository(Driver driver) {
 }
 ```
 
-The driver can be used according to the [Neo4j documentation][neo4j-documentation].
+The driver can be used according to the [Neo4j documentation][neo4j-documentat].
 
 ## Configuration
 
@@ -194,7 +194,7 @@ curl -s -X GET http://localhost:8080/metrics
 curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
 ```
 
-Full example code is available in [Helidon GitHub Repository][helidon-github-repository].
+Full example code is available in [Helidon GitHub Repository][helidon-github-r].
 
 ## Additional Information
 
@@ -210,7 +210,7 @@ Neo4j’s metrics can be propagated to the user as `MicroProfile` metrics. This 
 ```
 
 > [!NOTE]
-> Works with *Neo4j Integration* main dependency described in [Maven Coordinates][maven-coordinates].
+> Works with *Neo4j Integration* main dependency described in [Maven Coordinates](#maven-coordinates).
 
 To enable metrics in Neo4j, add the following property to `microprofile-config.properties`:
 
@@ -234,20 +234,16 @@ If your application is highly dependent on Neo4j database, health and liveness c
 ```
 
 > [!NOTE]
-> Works with *Neo4j Integration* main dependency described in [Maven Coordinates][maven-coordinates].
+> Works with *Neo4j Integration* main dependency described in [Maven Coordinates](#maven-coordinates).
 
 Health checks for Neo4j will be included in `/health` endpoint output.
 
 ## References
 
 - [Neo4j official website](https://neo4j.com/)
-- [Neo4j Java developer guide][neo4j-documentation]
+- [Neo4j Java developer guide][neo4j-documentat]
 
-[managing-dependencies]: ../../managing-dependencies.md
-[neo4j-metrics-propagation]: #neo4j-metrics-propagation
-[neo4j-health-checks]: #neo4j-health-checks
-[neo4j-documentation]: https://neo4j.com/developer/java/
+[neo4j-documentat]: https://neo4j.com/developer/java/
 [trust-strategy]: ../../config/io_helidon_integrations_neo4j_Neo4j_Builder_TrustStrategy.md
 [play-movies]: http://localhost:7474/browser/?cmd=play&arg=movies
-[helidon-github-repository]: https://github.com/helidon-io/helidon/tree/master/examples/integrations/neo4j/neo4j-mp
-[maven-coordinates]: #maven-coordinates
+[helidon-github-r]: https://github.com/helidon-io/helidon/tree/master/examples/integrations/neo4j/neo4j-mp

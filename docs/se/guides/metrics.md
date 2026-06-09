@@ -12,7 +12,7 @@ For this 30 minute tutorial, you will need the following:
 | [Maven 3.8+][maven-3-8] | Helidon requires Maven 3.8+. |
 | [Docker 18.09+][docker-18-09] | If you want to build and run Docker containers. |
 | [Kubectl 1.16.5+][kubectl-1-16-5] | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
-| [Helm](https://github.com/helm/helm) | To manage Kubernetes applications. |
+| [Helm][helm] | To manage Kubernetes applications. |
 
 Verify Prerequisites
 
@@ -68,7 +68,7 @@ The built-in meters fall into these categories:
 1.  JVM behavior (in the base scope), and
 2.  basic key performance indicators for request handling (in the vendor scope).
 
-A later section describes the [key performance indicator meters][key-performance-indicator-meters] in detail.
+A later section describes the [key performance indicator meters][key-performance] in detail.
 
 The following example demonstrates how to use the other built-in meters. All examples are executed from the root directory of your project (helidon-quickstart-se).
 
@@ -202,15 +202,15 @@ JSON response:
 
 The `base` meters illustrated above provide some insight into the behavior of the JVM in which the server runs.
 
-The `vendor` meter shown above gives an idea of the request traffic the server is handling. See the [later section][key-performance-indicator-meters] for more information on the basic and extended key performance indicator meters.
+The `vendor` meter shown above gives an idea of the request traffic the server is handling. See the [later section][key-performance] for more information on the basic and extended key performance indicator meters.
 
 ### Controlling Metrics Behavior
 
 By adding a `metrics` section to your application configuration you can control how the Helidon metrics subsystem behaves in any of several ways.
 
-- [Disable metrics subsystem entirely](#disabling-metrics-subsystem-entirely).
-- Select whether to collect [extended key performance indicator meters][key-performance-indicator-meters].
-- Control reporting of [virtual threads meters][virtual-threads-meters].
+- [Disable metrics subsystem entirely][disable-metrics].
+- Select whether to collect [extended key performance indicator meters][key-performance].
+- Control reporting of [virtual threads meters][virtual-threads].
 
 Your Helidon SE application can also control metrics processing programmatically as described in the following sections.
 
@@ -313,7 +313,7 @@ WebServer server = WebServer.builder() // (7)
         .start();
 ```
 
-1.  Create a [`KeyPerformanceIndicatorMetricsConfig` instance (via its][keyperformanceindicatormetricsconfig-instance-via-its] [`Builder`][builder]) with non-default values.
+1.  Create a [`KeyPerformanceIndicatorMetricsConfig` instance (via its][keyperformancein] [`Builder`][builder]) with non-default values.
 2.  Enabled extended KPI meters.
 3.  Set the long-running request threshold.
 4.  Prepare the metrics observer’s builder.
@@ -822,14 +822,17 @@ This guide demonstrated how to use metrics in a Helidon SE application using var
 
 Refer to the following references for additional information:
 
-- [Helidon Javadoc](/apidocs/index.html?overview-summary.html)
+- [Helidon Javadoc][helidon-javadoc]
 
 [java-21]: https://www.oracle.com/technetwork/java/javase/downloads
 [open-jdk-21]: http://jdk.java.net
 [maven-3-8]: https://maven.apache.org/download.cgi
 [docker-18-09]: https://docs.docker.com/install/
 [kubectl-1-16-5]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
-[key-performance-indicator-meters]: #collecting-basic-and-extended-key-performance-indicator-kpi-metrics
-[virtual-threads-meters]: #configuring-virtual-threads-meters
-[keyperformanceindicatormetricsconfig-instance-via-its]: /apidocs/io.helidon.metrics.api/io/helidon/metrics/api/KeyPerformanceIndicatorMetricsConfig.html
+[helm]: https://github.com/helm/helm
+[key-performance]: #collecting-basic-and-extended-key-performance-indicator-kpi-metrics
+[disable-metrics]: #disabling-metrics-subsystem-entirely
+[virtual-threads]: #configuring-virtual-threads-meters
+[keyperformancein]: /apidocs/io.helidon.metrics.api/io/helidon/metrics/api/KeyPerformanceIndicatorMetricsConfig.html
 [builder]: /apidocs/io.helidon.metrics.api/io/helidon/metrics/api/KeyPerformanceIndicatorMetricsConfig.Builder.html
+[helidon-javadoc]: /apidocs/index.html?overview-summary.html
