@@ -30,44 +30,44 @@ This section explains a few concepts that you need to understand before you get 
 
 The following table lists all spans traced by Helidon components:
 
-| component | span name | description |
-|----|----|----|
-| `web-server` | `HTTP Request` | The overall span of the Web Server from request initiation until response Note that in `Zipkin` the name is replaced with `jax-rs` span name if `jax-rs` tracing is used. |
-| `web-server` | `content-read` | Span for reading the request entity |
-| `web-server` | `content-write` | Span for writing the response entity |
-| `security` | `security` | Processing of request security |
-| `security` | `security:atn` | Span for request authentication |
-| `security` | `security:atz` | Span for request authorization |
-| `security` | `security:response` | Processing of response security |
-| `security` | `security:outbound` | Processing of outbound security |
-| `jax-rs` | A generated name | Span for the resource method invocation, name is generated from class and method name |
-| `jax-rs` | `jersey-client-call` | Span for outbound client call |
+| component    | span name            | description                                                                                                                                                               |
+|--------------|----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `web-server` | `HTTP Request`       | The overall span of the Web Server from request initiation until response Note that in `Zipkin` the name is replaced with `jax-rs` span name if `jax-rs` tracing is used. |
+| `web-server` | `content-read`       | Span for reading the request entity                                                                                                                                       |
+| `web-server` | `content-write`      | Span for writing the response entity                                                                                                                                      |
+| `security`   | `security`           | Processing of request security                                                                                                                                            |
+| `security`   | `security:atn`       | Span for request authentication                                                                                                                                           |
+| `security`   | `security:atz`       | Span for request authorization                                                                                                                                            |
+| `security`   | `security:response`  | Processing of response security                                                                                                                                           |
+| `security`   | `security:outbound`  | Processing of outbound security                                                                                                                                           |
+| `jax-rs`     | A generated name     | Span for the resource method invocation, name is generated from class and method name                                                                                     |
+| `jax-rs`     | `jersey-client-call` | Span for outbound client call                                                                                                                                             |
 
 Some of these spans `log` to the span. These log events can be (in most cases) configured:
 
-| span name | log name | configurable | enabled by default | description |
-|----|----|----|----|----|
-| `HTTP Request` | `handler.class` | YES | YES | Each handler has its class and event logged |
-| `security` | `status` | YES | YES | Logs either "status: PROCEED" or "status: DENY" |
-| `security:atn` | `security.user` | YES | NO | The username of the user if logged in |
-| `security:atn` | `security.service` | YES | NO | The name of the service if logged in |
-| `security:atn` | `status` | YES | YES | Logs the status of security response (such as `SUCCESS`) |
-| `security:atz` | `status` | YES | YES | Logs the status of security response (such as `SUCCESS`) |
-| `security:outbound` | `status` | YES | YES | Logs the status of security response (such as `SUCCESS`) |
+| span name           | log name           | configurable | enabled by default | description                                              |
+|---------------------|--------------------|--------------|--------------------|----------------------------------------------------------|
+| `HTTP Request`      | `handler.class`    | YES          | YES                | Each handler has its class and event logged              |
+| `security`          | `status`           | YES          | YES                | Logs either "status: PROCEED" or "status: DENY"          |
+| `security:atn`      | `security.user`    | YES          | NO                 | The username of the user if logged in                    |
+| `security:atn`      | `security.service` | YES          | NO                 | The name of the service if logged in                     |
+| `security:atn`      | `status`           | YES          | YES                | Logs the status of security response (such as `SUCCESS`) |
+| `security:atz`      | `status`           | YES          | YES                | Logs the status of security response (such as `SUCCESS`) |
+| `security:outbound` | `status`           | YES          | YES                | Logs the status of security response (such as `SUCCESS`) |
 
 There are also tags that are set by Helidon components. These are not configurable.
 
-| span name | tag name | description |
-|----|----|----|
-| `HTTP Request` | `component` | name of the component - `helidon-webserver`, or `jaxrs` when using MP |
-| `HTTP Request` | `http.method` | HTTP method of the request, such as `GET`, `POST` |
-| `HTTP Request` | `http.status_code` | HTTP status code of the response |
-| `HTTP Request` | `http.url` | The path of the request (for SE without protocol, host and port) |
-| `HTTP Request` | `error` | If the request ends in error, this tag is set to `true`, usually accompanied by logs with details |
-| `security` | `security.id` | ID of the security context created for this request (if security is used) |
-| `jersey-client-call` | `http.method` | HTTP method of the client request |
-| `jersey-client-call` | `http.status_code` | HTTP status code of client response |
-| `jersey-client-call` | `http.url` | Full URL of the request (such as `http://localhost:8080/greet`) |
+| span name            | tag name           | description                                                                                       |
+|----------------------|--------------------|---------------------------------------------------------------------------------------------------|
+| `HTTP Request`       | `component`        | name of the component - `helidon-webserver`, or `jaxrs` when using MP                             |
+| `HTTP Request`       | `http.method`      | HTTP method of the request, such as `GET`, `POST`                                                 |
+| `HTTP Request`       | `http.status_code` | HTTP status code of the response                                                                  |
+| `HTTP Request`       | `http.url`         | The path of the request (for SE without protocol, host and port)                                  |
+| `HTTP Request`       | `error`            | If the request ends in error, this tag is set to `true`, usually accompanied by logs with details |
+| `security`           | `security.id`      | ID of the security context created for this request (if security is used)                         |
+| `jersey-client-call` | `http.method`      | HTTP method of the client request                                                                 |
+| `jersey-client-call` | `http.status_code` | HTTP status code of client response                                                               |
+| `jersey-client-call` | `http.url`         | Full URL of the request (such as `http://localhost:8080/greet`)                                   |
 
 ## Configuration
 
@@ -77,18 +77,18 @@ You can configure a custom service name using the `tracing.service` configuratio
 
 ## Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="ae09ad-boolean-tags"></span> `boolean-tags` | `MAP` | `Boolean` |   | Tracer level tags that get added to all reported spans |
-| <span id="a6d3db-enabled"></span> `enabled` | `VALUE` | `Boolean` | `true` | When enabled, tracing will be sent |
-| <span id="a701d5-global"></span> `global` | `VALUE` | `Boolean` | `true` | When enabled, the created instance is also registered as a global tracer |
-| <span id="a7d2ab-host"></span> `host` | `VALUE` | `String` |   | Host to use to connect to tracing collector |
-| <span id="ad8eb0-int-tags"></span> `int-tags` | `MAP` | `Integer` |   | Tracer level tags that get added to all reported spans |
-| <span id="a912bb-path"></span> `path` | `VALUE` | `String` |   | Path on the collector host to use when sending data to tracing collector |
-| <span id="ad6020-port"></span> `port` | `VALUE` | `Integer` |   | Port to use to connect to tracing collector |
-| <span id="a3c6c7-protocol"></span> `protocol` | `VALUE` | `String` |   | Protocol to use (such as `http` or `https`) to connect to tracing collector |
-| <span id="af9a68-service"></span> `service` | `VALUE` | `String` |   | Service name of the traced service |
-| <span id="a0f568-tags"></span> `tags` | `MAP` | `String` |   | Tracer level tags that get added to all reported spans |
+| Key                                                   | Kind    | Type      | Default Value | Description                                                                 |
+|-------------------------------------------------------|---------|-----------|---------------|-----------------------------------------------------------------------------|
+| <span id="ae09ad-boolean-tags"></span> `boolean-tags` | `MAP`   | `Boolean` |               | Tracer level tags that get added to all reported spans                      |
+| <span id="a6d3db-enabled"></span> `enabled`           | `VALUE` | `Boolean` | `true`        | When enabled, tracing will be sent                                          |
+| <span id="a701d5-global"></span> `global`             | `VALUE` | `Boolean` | `true`        | When enabled, the created instance is also registered as a global tracer    |
+| <span id="a7d2ab-host"></span> `host`                 | `VALUE` | `String`  |               | Host to use to connect to tracing collector                                 |
+| <span id="ad8eb0-int-tags"></span> `int-tags`         | `MAP`   | `Integer` |               | Tracer level tags that get added to all reported spans                      |
+| <span id="a912bb-path"></span> `path`                 | `VALUE` | `String`  |               | Path on the collector host to use when sending data to tracing collector    |
+| <span id="ad6020-port"></span> `port`                 | `VALUE` | `Integer` |               | Port to use to connect to tracing collector                                 |
+| <span id="a3c6c7-protocol"></span> `protocol`         | `VALUE` | `String`  |               | Protocol to use (such as `http` or `https`) to connect to tracing collector |
+| <span id="af9a68-service"></span> `service`           | `VALUE` | `String`  |               | Service name of the traced service                                          |
+| <span id="a0f568-tags"></span> `tags`                 | `MAP`   | `String`  |               | Tracer level tags that get added to all reported spans                      |
 
 To disable Helidon tracing for web server and security:
 
@@ -107,7 +107,7 @@ Tracing configuration can be defined in `application.yaml` file.
 
 Tracing configuration example:
 
-```yaml
+```yaml [application.yaml]
 tracing:
   paths:
     - path: "/favicon.ico"
@@ -139,7 +139,7 @@ Example:
 
 Configuration properties:
 
-```properties
+```properties [microprofile-config.properties]
 tracing.components.web-server.spans.0.name="HTTP Request"
 tracing.components.web-server.spans.0.new-name: "HTTP %1$s %2$s"
 ```
@@ -180,11 +180,7 @@ docker run -d --name jaeger \
 
 - Run the Jaeger docker image.
 
-Check the Jaeger server by opening in browser:
-
-```shell [Terminal]
-http://localhost:16686/search
-```
+Check the Jaeger server by opening http://localhost:16686/search in a browser.
 
 ### Trace Across Services
 
@@ -334,7 +330,7 @@ The following example demonstrates how to use Jaeger from a Helidon application 
 
 Update application.yaml:
 
-```shell [Terminal]
+```yaml [application.yaml]
 tracing:
   host: "jaeger"
 ```
@@ -391,7 +387,8 @@ kubectl expose pod jaeger --name=jaeger-external --port=16687 --target-port=1668
 
 - Create a service so that you can access the Jaeger UI.
 
-Navigate to <http://localhost:16687/search> to validate that you can access Jaeger running in Kubernetes. It may take a few seconds before it is ready.
+Navigate to http://localhost:16687/search to validate that you can access Jaeger running in Kubernetes.
+It may take a few seconds before it is ready.
 
 ### Deploy Your Helidon Application into Kubernetes
 
@@ -475,7 +472,7 @@ curl http://localhost:31143/greet
 }
 ```
 
-Access the Jaeger UI at <http://localhost:16687/search> and click on the refresh icon to see the trace that was just created.
+Access the Jaeger UI at http://localhost:16687/search and click on the refresh icon to see the trace that was just created.
 
 ### Cleanup
 
@@ -534,23 +531,23 @@ Response response = client.target(serviceEndpoint)
 
 ## Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="aed342-client-cert-pem"></span> [`client-cert-pem`](../config/io_helidon_common_configurable_Resource.md) | `VALUE` | `i.h.c.c.Resource` |   | Certificate of client in PEM format |
-| <span id="a097b8-exporter-timeout"></span> `exporter-timeout` | `VALUE` | `Duration` | `PT10S` | Timeout of exporter requests |
-| <span id="a24a43-max-export-batch-size"></span> `max-export-batch-size` | `VALUE` | `Integer` | `512` | Maximum Export Batch Size of exporter requests |
-| <span id="ade69e-max-queue-size"></span> `max-queue-size` | `VALUE` | `Integer` | `2048` | Maximum Queue Size of exporter requests |
-| <span id="a5d885-private-key-pem"></span> [`private-key-pem`](../config/io_helidon_common_configurable_Resource.md) | `VALUE` | `i.h.c.c.Resource` |   | Private key in PEM format |
-| <span id="a65431-propagation"></span> [`propagation`](../config/io_helidon_tracing_providers_jaeger_JaegerTracerBuilder_PropagationFormat.md) | `LIST` | `i.h.t.p.j.J.PropagationFormat` | `JAEGER` | Add propagation format to use |
-| <span id="aa4177-sampler-param"></span> `sampler-param` | `VALUE` | `Number` | `1` | The sampler parameter (number) |
-| <span id="a28b35-sampler-type"></span> [`sampler-type`](../config/io_helidon_tracing_providers_jaeger_JaegerTracerBuilder_SamplerType.md) | `VALUE` | `i.h.t.p.j.J.SamplerType` | `CONSTANT` | Sampler type |
-| <span id="a8ee29-schedule-delay"></span> `schedule-delay` | `VALUE` | `Duration` | `PT5S` | Schedule Delay of exporter requests |
-| <span id="a1bdae-span-processor-type"></span> [`span-processor-type`](../config/io_helidon_tracing_providers_jaeger_JaegerTracerBuilder_SpanProcessorType.md) | `VALUE` | `i.h.t.p.j.J.SpanProcessorType` | `batch` | Span Processor type used |
-| <span id="a667f5-trusted-cert-pem"></span> [`trusted-cert-pem`](../config/io_helidon_common_configurable_Resource.md) | `VALUE` | `i.h.c.c.Resource` |   | Trusted certificates in PEM format |
+| Key                                                                                                                                                           | Kind    | Type                            | Default Value | Description                                    |
+|---------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|---------------------------------|---------------|------------------------------------------------|
+| <span id="aed342-client-cert-pem"></span> [`client-cert-pem`](../config/io_helidon_common_configurable_Resource.md)                                           | `VALUE` | `i.h.c.c.Resource`              |               | Certificate of client in PEM format            |
+| <span id="a097b8-exporter-timeout"></span> `exporter-timeout`                                                                                                 | `VALUE` | `Duration`                      | `PT10S`       | Timeout of exporter requests                   |
+| <span id="a24a43-max-export-batch-size"></span> `max-export-batch-size`                                                                                       | `VALUE` | `Integer`                       | `512`         | Maximum Export Batch Size of exporter requests |
+| <span id="ade69e-max-queue-size"></span> `max-queue-size`                                                                                                     | `VALUE` | `Integer`                       | `2048`        | Maximum Queue Size of exporter requests        |
+| <span id="a5d885-private-key-pem"></span> [`private-key-pem`](../config/io_helidon_common_configurable_Resource.md)                                           | `VALUE` | `i.h.c.c.Resource`              |               | Private key in PEM format                      |
+| <span id="a65431-propagation"></span> [`propagation`](../config/io_helidon_tracing_providers_jaeger_JaegerTracerBuilder_PropagationFormat.md)                 | `LIST`  | `i.h.t.p.j.J.PropagationFormat` | `JAEGER`      | Add propagation format to use                  |
+| <span id="aa4177-sampler-param"></span> `sampler-param`                                                                                                       | `VALUE` | `Number`                        | `1`           | The sampler parameter (number)                 |
+| <span id="a28b35-sampler-type"></span> [`sampler-type`](../config/io_helidon_tracing_providers_jaeger_JaegerTracerBuilder_SamplerType.md)                     | `VALUE` | `i.h.t.p.j.J.SamplerType`       | `CONSTANT`    | Sampler type                                   |
+| <span id="a8ee29-schedule-delay"></span> `schedule-delay`                                                                                                     | `VALUE` | `Duration`                      | `PT5S`        | Schedule Delay of exporter requests            |
+| <span id="a1bdae-span-processor-type"></span> [`span-processor-type`](../config/io_helidon_tracing_providers_jaeger_JaegerTracerBuilder_SpanProcessorType.md) | `VALUE` | `i.h.t.p.j.J.SpanProcessorType` | `batch`       | Span Processor type used                       |
+| <span id="a667f5-trusted-cert-pem"></span> [`trusted-cert-pem`](../config/io_helidon_common_configurable_Resource.md)                                         | `VALUE` | `i.h.c.c.Resource`              |               | Trusted certificates in PEM format             |
 
 The following is an example of a Jaeger configuration, specified in the YAML format.
 
-```yaml
+```yaml [application.yaml]
 tracing:
     service: "helidon-full-http"
     protocol: "https"
@@ -575,13 +572,13 @@ As the [Jaeger Tracing](#jaeger-tracing) section describes, you can use Jaeger t
 
 ## Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="a3dd17-api-version"></span> [`api-version`](../config/io_helidon_tracing_providers_zipkin_ZipkinTracerBuilder_Version.md) | `VALUE` | `i.h.t.p.z.Z.Version` | `V2` | Version of Zipkin API to use |
+| Key                                                                                                                                 | Kind    | Type                  | Default Value | Description                  |
+|-------------------------------------------------------------------------------------------------------------------------------------|---------|-----------------------|---------------|------------------------------|
+| <span id="a3dd17-api-version"></span> [`api-version`](../config/io_helidon_tracing_providers_zipkin_ZipkinTracerBuilder_Version.md) | `VALUE` | `i.h.t.p.z.Z.Version` | `V2`          | Version of Zipkin API to use |
 
 The following is an example of a Zipkin configuration, specified in the YAML format.
 
-```yaml
+```yaml [application.yaml]
 tracing:
   zipkin:
     service: "helidon-service"
@@ -630,17 +627,19 @@ Dependency for OpenTelemetry support using tracing:
 
 ## Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="aec0bf-exporter-type"></span> [`exporter-type`](../config/io_helidon_tracing_providers_opentelemetry_OtlpExporterProtocolType.md) | `VALUE` | `i.h.t.p.o.OtlpExporterProtocolType` | `GRPC` | Type of OTLP exporter to use for pushing span data |
-| <span id="a0fe59-propagators"></span> `propagators` | `LIST` | `i.h.t.p.o.O.CustomMethods` |   | Context propagators |
+| Key                                                                                                                                         | Kind    | Type                                 | Default Value | Description                                        |
+|---------------------------------------------------------------------------------------------------------------------------------------------|---------|--------------------------------------|---------------|----------------------------------------------------|
+| <span id="aec0bf-exporter-type"></span> [`exporter-type`](../config/io_helidon_tracing_providers_opentelemetry_OtlpExporterProtocolType.md) | `VALUE` | `i.h.t.p.o.OtlpExporterProtocolType` | `GRPC`        | Type of OTLP exporter to use for pushing span data |
+| <span id="a0fe59-propagators"></span> `propagators`                                                                                         | `LIST`  | `i.h.t.p.o.O.CustomMethods`          |               | Context propagators                                |
 
 *Example Helidon configuration for OpenTelemetry tracing*
 
-tracing.service=helidon-otel-tracing-example 
-    tracing.global=false                         
-    tracing.int-tags.0.example=1                 
-    tracing.tags.0.direction=north
+```properties [microprofile-config.properties]
+tracing.service=helidon-otel-tracing-example
+tracing.global=false
+tracing.int-tags.0.example=1
+tracing.tags.0.direction=north
+```
 
 - Specifies the OpenTelemetry service name.
 - Indicates the configured tracer *should not* be made the global tracer (defaults to `true`).
@@ -667,42 +666,42 @@ A listener cannot affect the lifecycle of a span or scope it is notified about, 
 
 When Helidon invokes the listener’s methods it passes proxies for the `Span.Builder`, `Span`, and `Scope` arguments. These proxies limit the access the listener has to the span builder, span, or scope, as summarized in the following table. If a listener method tries to invoke a forbidden operation, the proxy throws a [`SpanListener.ForbiddenOperationException`](/apidocs/io.helidon.tracing/io/helidon/tracing/SpanListener.ForbiddenOperationException.html) and Helidon then logs a `WARNING` message describing the invalid operation invocation.
 
-| Tracing type | Changes allowed |
-|----|----|
-| [`Span.Builder`](/apidocs/io.helidon.tracing/io/helidon/tracing/Span.Builder.html) | Add tags |
-| [`Span`](/apidocs/io.helidon.tracing/io/helidon/tracing/Span.html) | Retrieve and update baggage, add events, add tags |
-| [`Scope`](/apidocs/io.helidon.tracing/io/helidon/tracing/Scope.html) | none |
+| Tracing type                                                                       | Changes allowed                                   |
+|------------------------------------------------------------------------------------|---------------------------------------------------|
+| [`Span.Builder`](/apidocs/io.helidon.tracing/io/helidon/tracing/Span.Builder.html) | Add tags                                          |
+| [`Span`](/apidocs/io.helidon.tracing/io/helidon/tracing/Span.html)                 | Retrieve and update baggage, add events, add tags |
+| [`Scope`](/apidocs/io.helidon.tracing/io/helidon/tracing/Scope.html)               | none                                              |
 
 Summary of Permitted Operations on Proxies Passed to Listeners
 
 The following tables list specifically what operations the proxies permit.
 
-| Method | Purpose | OK? |
-|----|----|----|
-| `build()` | Starts the span. | \- |
-| `end` methods | Ends the span. | \- |
-| `get()` | Starts the span. | \- |
-| `kind(Kind)` | Sets the "kind" of span (server, client, internal, etc.) | \- |
-| `parent(SpanContext)` | Sets the parent of the span to be created from the builder. | \- |
-| `start()` | Starts the span. | \- |
-| `start(Instant)` | Starts the span. | \- |
-| `tag` methods | Add a tag to the builder before the span is built. | ✓ |
-| `unwrap(Class)` | Cast the builder to the specified implementation type. | ✓ |
+| Method                | Purpose                                                     | OK? |
+|-----------------------|-------------------------------------------------------------|-----|
+| `build()`             | Starts the span.                                            | \-  |
+| `end` methods         | Ends the span.                                              | \-  |
+| `get()`               | Starts the span.                                            | \-  |
+| `kind(Kind)`          | Sets the "kind" of span (server, client, internal, etc.)    | \-  |
+| `parent(SpanContext)` | Sets the parent of the span to be created from the builder. | \-  |
+| `start()`             | Starts the span.                                            | \-  |
+| `start(Instant)`      | Starts the span.                                            | \-  |
+| `tag` methods         | Add a tag to the builder before the span is built.          | ✓   |
+| `unwrap(Class)`       | Cast the builder to the specified implementation type.      | ✓   |
 
 > [!NOTE]
 > Helidon returns the unwrapped object, not a proxy for it.
 
 [`io.helidon.tracing.Span.Builder`](/apidocs/io.helidon.tracing/io/helidon/tracing/Span.Builder.html) Operations
 
-| Method | Purpose | OK? |
-|----|----|----|
-| `activate()` | Makes the span "current", returning a `Scope`. | \- |
-| `addEvent` methods | Associate a string (and optionally other info) with a span. | ✓ |
-| `baggage()` | Returns the `Baggage` instance associated with the span. | ✓ |
-| `context()` | Returns the `SpanContext` associated with the span. | ✓ |
-| `status(Status)` | Sets the status of the span. | \- |
-| any `tag` method | Add a tag to the span. | ✓ |
-| `unwrap(Class)` | Cast the span to the specified implementation type. | ✓ |
+| Method             | Purpose                                                     | OK? |
+|--------------------|-------------------------------------------------------------|-----|
+| `activate()`       | Makes the span "current", returning a `Scope`.              | \-  |
+| `addEvent` methods | Associate a string (and optionally other info) with a span. | ✓   |
+| `baggage()`        | Returns the `Baggage` instance associated with the span.    | ✓   |
+| `context()`        | Returns the `SpanContext` associated with the span.         | ✓   |
+| `status(Status)`   | Sets the status of the span.                                | \-  |
+| any `tag` method   | Add a tag to the span.                                      | ✓   |
+| `unwrap(Class)`    | Cast the span to the specified implementation type.         | ✓   |
 
 > [!NOTE]
 > Helidon returns the unwrapped object, not a proxy to it.
@@ -716,12 +715,12 @@ The following tables list specifically what operations the proxies permit.
 
 [`io.helidon.tracing.Scope`](/apidocs/io.helidon.tracing/io/helidon/tracing/Scope.html) Operations
 
-| Method | Purpose | OK? |
-|----|----|----|
-| `asParent(Span.Builder)` | Sets this context as the parent of a new span builder. | ✓ |
-| `baggage()` | Returns `Baggage` instance associated with the span context. | ✓ |
-| `spanId()` | Returns the span ID. | ✓ |
-| `traceId()` | Returns the trace ID. | ✓ |
+| Method                   | Purpose                                                      | OK? |
+|--------------------------|--------------------------------------------------------------|-----|
+| `asParent(Span.Builder)` | Sets this context as the parent of a new span builder.       | ✓   |
+| `baggage()`              | Returns `Baggage` instance associated with the span context. | ✓   |
+| `spanId()`               | Returns the span ID.                                         | ✓   |
+| `traceId()`              | Returns the trace ID.                                        | ✓   |
 
 [`io.helidon.tracing.SpanContext`](/apidocs/io.helidon.tracing/io/helidon/tracing/SpanContext.html) Operations
 
@@ -748,14 +747,14 @@ The `SpanListener` interface declares default no-op implementations for all the 
 
 Helidon invokes each listener’s methods in the following order:
 
-| Method | When invoked |
-|----|----|
-| `starting(Span.Builder<?> spanBuilder)` | Just before a span is started from its builder. |
-| `started(Span span)` | Just after a span has started. |
-| `activated(Span span, Scope scope)` | After a span has been activated, creating a new scope. A given span might never be activated; it depends on the code. |
-| `closed(Span span, Scope scope)` | After a scope has been closed. |
-| `ended(Span span)` | After a span has ended successfully. |
-| `ended(Span span, Throwable t)` | After a span has ended unsuccessfully. |
+| Method                                  | When invoked                                                                                                          |
+|-----------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
+| `starting(Span.Builder<?> spanBuilder)` | Just before a span is started from its builder.                                                                       |
+| `started(Span span)`                    | Just after a span has started.                                                                                        |
+| `activated(Span span, Scope scope)`     | After a span has been activated, creating a new scope. A given span might never be activated; it depends on the code. |
+| `closed(Span span, Scope scope)`        | After a scope has been closed.                                                                                        |
+| `ended(Span span)`                      | After a span has ended successfully.                                                                                  |
+| `ended(Span span, Throwable t)`         | After a span has ended unsuccessfully.                                                                                |
 
 Order in which Helidon Invokes Listener Methods
 

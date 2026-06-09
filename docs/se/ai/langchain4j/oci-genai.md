@@ -36,7 +36,7 @@ Helidon OCI integration makes OCI Authentication provider available as a Helidon
 
 Example of OCI specific configuration file `oci-config.yaml`:
 
-```yaml
+```yaml [oci-config.yaml]
 helidon.oci:
   # "config-file" value can instruct integration to
   # load values from `~/.oci/config` file
@@ -68,7 +68,7 @@ More general information about Helidon OCI authentication integration can be fou
 
 To automatically create and add `OciGenAiChatModel` to the service registry add the following lines to `application.yaml`:
 
-```yaml
+```yaml [application.yaml]
 langchain4j:
   providers:
     oci-gen-ai:
@@ -87,32 +87,32 @@ Full list of configuration properties:
 
 <https://docs.oracle.com/en-us/iaas/api/#/EN/generative-ai-inference/20231130/datatypes/GenericChatRequest>
 
-| Key | Type | Description |
-|----|----|----|
-| `enabled` | boolean | If set to false, the component will not be available even if configured. |
-| `model-name` | string | The model name or model’s OCID to use. |
-| `compartment-id` | OCID | OCI Compartment OCID |
-| `region` | enum | Explicit region. If not configured, the current one is resolved. |
-| `auth-provider` | injected bean | Injected is default bean if exists, named bean can be configured with `auth-provider.service-registry.named: beanName` |
-| `gen-ai-client` | injected bean | Manually configured OCI SDK GenAi client. When set, values provided with `region` and `auth-provider` are ignored. Injected is default bean if exists, named bean can be configured with `gen-ai-client.service-registry.named: beanName` |
-| `serving-type` | enum | The model’s serving mode, which is either on-demand serving or dedicated serving. |
-| `top-k` | int | The maximum number of top-probability tokens to consider when generating text. |
-| `top-p` | double between 0 and 1 | If set to a probability 0.0 \< p \< 1.0, it ensures that only the most likely tokens, with total probability mass of p, are considered for generation at each step. |
-| `seed` | int | The seed for the random number generator used by the model. |
-| `temperature` | double \> 0 | A number that sets the randomness of the generated output. A lower temperature means a less random generations. Use lower numbers for tasks with a correct answer such as question answering or summarizing. High temperatures can generate hallucinations or factually incorrect information. Start with temperatures lower than 1.0 and increase the temperature for more creative outputs, as you regenerate the prompts to refine the outputs. Default is 1. |
-| `presence-penalty` | double between -2 and 2 | To reduce repetitiveness of generated tokens, this number penalizes new tokens based on whether they’ve appeared in the generated text so far. Values \> 0 encourage the model to use new tokens and values \< 0 encourage the model to repeat tokens. Similar to frequency penalty, a penalty is applied to previously present tokens, except that this penalty is applied equally to all tokens that have already appeared, regardless of how many times they’ve appeared. Set to 0 to disable. Default is 0. |
-| `stop` | list of strings | List of strings that stop the generation if they are generated for the response text. The returned output will not contain the stop strings. |
-| `max-tokens` | integer \> 1 | The maximum number of tokens that can be generated per output sequence. The token count of your prompt plus maxTokens must not exceed the model’s context length. Not setting a value for maxTokens results in the possible use of model’s full context length. |
-| `frequency-penalty` | double between -2 and 2 | To reduce repetitiveness of generated tokens, this number penalizes new tokens based on their frequency in the generated text so far. Values \> 0 encourage the model to use new tokens and values \< 0 encourage the model to repeat tokens. Set to 0 to disable. Default is 0. |
-| `num-generations` | int between 1 and 5 | The number of generated texts that will be returned. To eliminate tokens with low likelihood, assign p a minimum percentage for the next token’s likelihood. For example, when p is set to 0.75, the model eliminates the bottom 25 percent for the next token. Set to 1 to consider all tokens and set to 0 to disable. If both k and p are enabled, p acts after k. |
-| `log-probs` | int \> 0 | Includes the logarithmic probabilities for the most likely output tokens and the chosen tokens. For example, if the log probability is 5, the API returns a list of the 5 most likely tokens. The API returns the log probability of the sampled token, so there might be up to logprobs+1 elements in the response. |
-| `logit-bias` | json | Modifies the likelihood of specified tokens that appear in the completion. Example: `{"6395": 2, "8134": 1, "21943": 0.5, "5923": -100}` |
+| Key                 | Type                    | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+|---------------------|-------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `enabled`           | boolean                 | If set to false, the component will not be available even if configured.                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| `model-name`        | string                  | The model name or model’s OCID to use.                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| `compartment-id`    | OCID                    | OCI Compartment OCID                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `region`            | enum                    | Explicit region. If not configured, the current one is resolved.                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `auth-provider`     | injected bean           | Injected is default bean if exists, named bean can be configured with `auth-provider.service-registry.named: beanName`                                                                                                                                                                                                                                                                                                                                                                                          |
+| `gen-ai-client`     | injected bean           | Manually configured OCI SDK GenAi client. When set, values provided with `region` and `auth-provider` are ignored. Injected is default bean if exists, named bean can be configured with `gen-ai-client.service-registry.named: beanName`                                                                                                                                                                                                                                                                       |
+| `serving-type`      | enum                    | The model’s serving mode, which is either on-demand serving or dedicated serving.                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `top-k`             | int                     | The maximum number of top-probability tokens to consider when generating text.                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| `top-p`             | double between 0 and 1  | If set to a probability 0.0 \< p \< 1.0, it ensures that only the most likely tokens, with total probability mass of p, are considered for generation at each step.                                                                                                                                                                                                                                                                                                                                             |
+| `seed`              | int                     | The seed for the random number generator used by the model.                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `temperature`       | double \> 0             | A number that sets the randomness of the generated output. A lower temperature means a less random generations. Use lower numbers for tasks with a correct answer such as question answering or summarizing. High temperatures can generate hallucinations or factually incorrect information. Start with temperatures lower than 1.0 and increase the temperature for more creative outputs, as you regenerate the prompts to refine the outputs. Default is 1.                                                |
+| `presence-penalty`  | double between -2 and 2 | To reduce repetitiveness of generated tokens, this number penalizes new tokens based on whether they’ve appeared in the generated text so far. Values \> 0 encourage the model to use new tokens and values \< 0 encourage the model to repeat tokens. Similar to frequency penalty, a penalty is applied to previously present tokens, except that this penalty is applied equally to all tokens that have already appeared, regardless of how many times they’ve appeared. Set to 0 to disable. Default is 0. |
+| `stop`              | list of strings         | List of strings that stop the generation if they are generated for the response text. The returned output will not contain the stop strings.                                                                                                                                                                                                                                                                                                                                                                    |
+| `max-tokens`        | integer \> 1            | The maximum number of tokens that can be generated per output sequence. The token count of your prompt plus maxTokens must not exceed the model’s context length. Not setting a value for maxTokens results in the possible use of model’s full context length.                                                                                                                                                                                                                                                 |
+| `frequency-penalty` | double between -2 and 2 | To reduce repetitiveness of generated tokens, this number penalizes new tokens based on their frequency in the generated text so far. Values \> 0 encourage the model to use new tokens and values \< 0 encourage the model to repeat tokens. Set to 0 to disable. Default is 0.                                                                                                                                                                                                                                |
+| `num-generations`   | int between 1 and 5     | The number of generated texts that will be returned. To eliminate tokens with low likelihood, assign p a minimum percentage for the next token’s likelihood. For example, when p is set to 0.75, the model eliminates the bottom 25 percent for the next token. Set to 1 to consider all tokens and set to 0 to disable. If both k and p are enabled, p acts after k.                                                                                                                                           |
+| `log-probs`         | int \> 0                | Includes the logarithmic probabilities for the most likely output tokens and the chosen tokens. For example, if the log probability is 5, the API returns a list of the 5 most likely tokens. The API returns the log probability of the sampled token, so there might be up to logprobs+1 elements in the response.                                                                                                                                                                                            |
+| `logit-bias`        | json                    | Modifies the likelihood of specified tokens that appear in the completion. Example: `{"6395": 2, "8134": 1, "21943": 0.5, "5923": -100}`                                                                                                                                                                                                                                                                                                                                                                        |
 
 ### OciGenAiStreamingChatModel
 
 To automatically create and add `OciGenAiStreamingChatModel` to the service registry add the following lines to `application.yaml`:
 
-```yaml
+```yaml [application.yaml]
 langchain4j:
   providers:
     oci-gen-ai:
@@ -244,7 +244,7 @@ Full list of configuration properties:
 
 To automatically create and add `OciGenAiChatModel` to the service registry add the following lines to `application.yaml`:
 
-```yaml
+```yaml [application.yaml]
 langchain4j:
   providers:
     oci-gen-ai-cohere:
@@ -390,7 +390,7 @@ Full list of configuration properties:
 
 To automatically create and add `OciGenAiStreamingChatModel` to the service registry add the following lines to `application.yaml`:
 
-```yaml
+```yaml [application.yaml]
 langchain4j:
   providers:
     oci-gen-ai-cohere:

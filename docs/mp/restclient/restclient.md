@@ -166,6 +166,6 @@ By calling `GreetRestClient.getDefaultMessage()` you reach the endpoint of Helid
 
 ## Reference
 
-- [Helidon MicroProfile RestClient JavaDoc](/apidocs/io.helidon.microprofile.restclient/module-summary.html)
+- [Helidon MicroProfile RestClient Javadoc](/apidocs/io.helidon.microprofile.restclient/module-summary.html)
 - [MicroProfile RestClient Specification](https://download.eclipse.org/microprofile/microprofile-rest-client-3.0/microprofile-rest-client-spec-3.0.html)
 - [MicroProfile RestClient on GitHub](https://github.com/eclipse/microprofile-rest-client)

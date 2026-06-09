@@ -123,7 +123,7 @@ In addition, a client can specify the HTTP header `Accept` as either `applicatio
 
 The [MicroProfile OpenAPI specification](https://download.eclipse.org/microprofile/microprofile-open-api-3.1.1/microprofile-openapi-spec-3.1.1.html) gives a listing and brief examples of the annotations you can add to your code to convey OpenAPI information.
 
-The [MicroProfile OpenAPI JavaDocs](https://download.eclipse.org/microprofile/microprofile-open-api-3.1.1/apidocs) give full details of the annotations and the other classes and interfaces you can use in your code.
+The [MicroProfile OpenAPI Javadocs](https://download.eclipse.org/microprofile/microprofile-open-api-3.1.1/apidocs) give full details of the annotations and the other classes and interfaces you can use in your code.
 
 ## Configuration
 

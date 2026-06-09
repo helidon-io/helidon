@@ -195,12 +195,12 @@ WebServer server = WebServer.builder()
 
 Health support in Helidon is part of the observability feature. `HealthObserver` is a Helidon-provided observability implementation that contains a collection of registered `HealthCheck` instances and, when queried, invokes the registered health checks and returns a response with a status code representing the overall status of the application.
 
-|  |  |
-|----|----|
-| `200` | The application is healthy (with health check details in the response). |
+|       |                                                                              |
+|-------|------------------------------------------------------------------------------|
+| `200` | The application is healthy (with health check details in the response).      |
 | `204` | The application is healthy (with *no* health check details in the response). |
-| `503` | The application is not healthy. |
-| `500` | An error occurred while reporting the health. |
+| `503` | The application is not healthy.                                              |
+| `500` | An error occurred while reporting the health.                                |
 
 Health status codes
 
@@ -251,10 +251,10 @@ Response after 8 seconds: HTTP status 200:
 
 The following table provides a summary of the Health Check API classes.
 
-|  |  |
-|----|----|
-| `io.helidon.health.HealthCheck` | Java functional interface representing the logic of a single health check |
-| `io.helidon.health.HealthCheckResponse` | Result of a health check invocation that contains a status |
+| Class                                                | Description                                                                               |
+|------------------------------------------------------|-------------------------------------------------------------------------------------------|
+| `io.helidon.health.HealthCheck`                      | Java functional interface representing the logic of a single health check                 |
+| `io.helidon.health.HealthCheckResponse`              | Result of a health check invocation that contains a status                                |
 | `io.helidon.webserver.observe.health.HealthObserver` | WebServer service that exposes `/observe/health` and invokes the registered health checks |
 
 Health check API classes
@@ -275,7 +275,7 @@ You can use Helidon-provided health checks to report various common health check
 <tr>
 <th style="text-align: left;">Built-in health check</th>
 <th style="text-align: left;">Health check name</th>
-<th style="text-align: left;">JavaDoc</th>
+<th style="text-align: left;">Javadoc</th>
 <th style="text-align: left;">Config properties (within <code>server.features.observe.observers.health</code>)</th>
 <th style="text-align: left;">Default config value</th>
 </tr>
@@ -310,7 +310,8 @@ You can use Helidon-provided health checks to report various common health check
 </table>
 
 > [!NOTE]
-> Helidon cannot support the indicated health checks in the GraalVM native image environment, so with native image those health checks do not appear in the health output.
+> Helidon cannot support the indicated health checks in the GraalVM native image environment,
+> so with native image those health checks do not appear in the health output.
 
 Simply adding the built-in health check dependency is sufficient to register all the built-in health checks automatically. If you want to use only some of the built-in checks in your application, you can disable automatic discovery of the built-in health checks and register only the ones you want.
 
@@ -338,7 +339,8 @@ WebServer server = WebServer.builder()
 
 You can control the thresholds for built-in health checks in either of two ways:
 
-- Create the health checks individually using their builders instead of using the `HealthChecks` convenience class. Follow the JavaDoc links in the [table](#built-in-health-checks) above.
+- Create the health checks individually using their builders instead of using the `HealthChecks` convenience class.
+  See the [table](#built-in-health-checks) above.
 - Using configuration as explained in [Configuration](#configuration).
 
 ### Kubernetes Probes
@@ -365,12 +367,12 @@ A microservice exposed to HTTP traffic will typically implement both the livenes
 
 You can configure several parameters for probes. The following are the most relevant parameters:
 
-|  |  |
-|----|----|
+| Parameter             | Description                                                                                          |
+|-----------------------|------------------------------------------------------------------------------------------------------|
 | `initialDelaySeconds` | Number of seconds after the container has started before liveness or readiness probes are initiated. |
-| `periodSeconds` | Probe interval. Default to 10 seconds. Minimum value is 1. |
-| `timeoutSeconds` | Number of seconds after which the probe times out. Defaults to 1 second. Minimum value is 1 |
-| `failureThreshold` | Number of consecutive failures after which the probe should stop. Default: 3. Minimum: 1. |
+| `periodSeconds`       | Probe interval. Default to 10 seconds. Minimum value is 1.                                           |
+| `timeoutSeconds`      | Number of seconds after which the probe times out. Defaults to 1 second. Minimum value is 1          |
+| `failureThreshold`    | Number of consecutive failures after which the probe should stop. Default: 3. Minimum: 1.            |
 
 #### Liveness Probe
 
@@ -518,7 +520,7 @@ WebServer server = WebServer.builder()
 Kubernetes descriptor:
 
 <!--@mdc ::code-collapse -->
-```yaml
+```yaml [app.yaml]
 kind: Service
 apiVersion: v1
 metadata:
@@ -583,4 +585,4 @@ spec:
 
 ## Additional Information
 
-- [Health Checks SE API JavaDocs](/apidocs/io.helidon.health.checks/module-summary.html).
+- [Health Checks SE API Javadocs](/apidocs/io.helidon.health.checks/module-summary.html).

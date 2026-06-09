@@ -6,9 +6,9 @@ Although config values are originally text, you can use the config system’s bu
 
 ## Converting Configuration to Simple Types
 
-The [`Config`](/apidocs/io.helidon.config/io/helidon/config/Config.html) class itself provides many conversions to Java types. See the JavaDoc for the complete list.
+The [`Config`](/apidocs/io.helidon.config/io/helidon/config/Config.html) class itself provides many conversions to Java types. See the Javadoc for the complete list.
 
-The methods which support Java primitive types and their related classes follow a common pattern. The examples in the table below deal with conversion to a boolean but the same pattern applies to many data types listed in the JavaDoc.
+The methods which support Java primitive types and their related classes follow a common pattern. The examples in the table below deal with conversion to a boolean but the same pattern applies to many data types listed in the Javadoc.
 
 Assume a local variable has been assigned something like
 
@@ -70,7 +70,7 @@ Built-in Conversions to Simple Types
 
 </div>
 
-The numerous conversions defined on the `Config` class for other types (integers, doubles, etc.) will satisfy many of your application’s needs. The [`ConfigMappers`](/apidocs/io.helidon.config/io/helidon/config/ConfigMappers.html) class includes other related mappings from `String` (rather than from `Config`) to Java types (described in the JavaDoc).
+The numerous conversions defined on the `Config` class for other types (integers, doubles, etc.) will satisfy many of your application’s needs. The [`ConfigMappers`](/apidocs/io.helidon.config/io/helidon/config/ConfigMappers.html) class includes other related mappings from `String` (rather than from `Config`) to Java types (described in the Javadoc).
 
 For additional type mapping, you can use these methods defined on `Config`:
 
@@ -170,7 +170,7 @@ The [hierarchical features](hierarchical-features.md) section describes the tree
 
 ### Built-in Conversions to `List` and `Map`
 
-The `Config` class exposes several methods for mapping a structured config node to a Java `List` or `Map`. The [JavaDoc](/apidocs/io.helidon.config/io/helidon/config/Config.html) contains complete details, but briefly your application can convert a structured `Config` node into:
+The `Config` class exposes several methods for mapping a structured config node to a Java `List` or `Map`. The [Javadoc](/apidocs/io.helidon.config/io/helidon/config/Config.html) contains complete details, but briefly your application can convert a structured `Config` node into:
 
 - a `List<T>` of a given type
 - a `Map<String, String>` in which each key is the fully-qualified key `String` for a config entry and the value is its `String` value
@@ -179,7 +179,7 @@ The `Config` class exposes several methods for mapping a structured config node 
 
 Often your code will be simpler if you can treat parts of the configuration as custom, application-specific Java objects, rather than as a group of `String` keys and values. You will need customized conversions to do so.
 
-The config system provides many ways to accomplish this, described in the [`io.helidon.config` package JavaDoc](/apidocs/io.helidon.config/io/helidon/config/package-summary.html#conversions).
+The config system provides many ways to accomplish this, described in the [`io.helidon.config` package Javadoc](/apidocs/io.helidon.config/io/helidon/config/package-summary.html#conversions).
 
 Some of those approaches require that the target class — the class to which you want to convert the configuration data — have certain characteristics or that you add a method to the class to help do the mapping. You might want to avoid changing the target class else you might not even be able to if you do not control its source.
 
@@ -204,7 +204,7 @@ In this approach, your application:
 
 1.  Tells each `Config.Builder` that needs to know about the custom mapper by either:
     1.  registering an instance of your mapper by invoking `Config.Builder.addMapper`, or
-    2.  implementing [`ConfigMapperProvider`](/apidocs/io.helidon.config/io/helidon/config/spi/ConfigMapperProvider.html) so it returns an instance of your mapper (see the JavaDoc for complete information) and creating or editing the file `io.helidon.config.spi.ConfigMapperProvider` so it contains a line with the fully-qualified class name of your `ConfigMapperProvider`. The config system will use the Java service loader to find and invoke all `ConfigMapperProvider` classes listed and add the mappers they provide to each `Config.Builder` automatically.
+    2.  implementing [`ConfigMapperProvider`](/apidocs/io.helidon.config/io/helidon/config/spi/ConfigMapperProvider.html) so it returns an instance of your mapper (see the Javadoc for complete information) and creating or editing the file `io.helidon.config.spi.ConfigMapperProvider` so it contains a line with the fully-qualified class name of your `ConfigMapperProvider`. The config system will use the Java service loader to find and invoke all `ConfigMapperProvider` classes listed and add the mappers they provide to each `Config.Builder` automatically.
 2.  Converts using the mapper by invoking the `Config.as` method which accepts the target type to convert to, *not* the mapper itself that does the conversion.
 
 If your application converts to the same target type in several places in the code, this approach allows you to change which mapper it uses by changing only the *registration* of the mapper, not each use of it.

@@ -50,7 +50,7 @@ You may notice that the **safetySettings** property is manually configured in th
 
 LangChain4j provider config key is by default derived from the provider interface name, example: `NameOfTheProviderLc4jProvider` → `name-of-the-provider`.
 
-```yaml
+```yaml [application.yaml]
 langchain4j:
   providers:
     google-ai-gemini: 
@@ -76,7 +76,7 @@ List<GeminiSafetySetting> safetySettings();
 
 It is possible to configure named qualifiers for injected beans, config property `service-registry.named` prefixed with the key of desired property is used as named qualifier for lookup when such property exists.
 
-```yaml
+```yaml [application.yaml]
 langchain4j:
   providers:
     google-ai-gemini:

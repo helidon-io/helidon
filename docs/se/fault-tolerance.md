@@ -175,39 +175,35 @@ The Helidon Fault Tolerance module has support for some basic metrics to monitor
 
 The following tables list all the metrics created by the Fault Tolerance module. Note that these metrics are generated per command instance, and that each instance *must* be identified by a unique name —assigned either programmatically by the application developer or automatically by the API.
 
-|  |  |  |
-|----|----|----|
-| Name | Tags | Description |
-| ft.bulkhead.calls.total | name="\<bulkhead-name\>" | Counter for all calls entering a bulkhead |
-| ft.bulkhead.waitingDuration | name="\<bulkhead-name\>" | Distribution summary of waiting times to enter a bulkhead |
+Bulkheads:
+
+| Name                          | Tags                     | Description                                                         |
+|-------------------------------|--------------------------|---------------------------------------------------------------------|
+| ft.bulkhead.calls.total       | name="\<bulkhead-name\>" | Counter for all calls entering a bulkhead                           |
+| ft.bulkhead.waitingDuration   | name="\<bulkhead-name\>" | Distribution summary of waiting times to enter a bulkhead           |
 | ft.bulkhead.executionsRunning | name="\<bulkhead-name\>" | Gauge whose value is the number of executions running in a bulkhead |
 | ft.bulkhead.executionsWaiting | name="\<bulkhead-name\>" | Gauge whose value is the number of executions waiting in a bulkhead |
 
-Bulkheads
+Circuit Breakers:
 
-|  |  |  |
-|----|----|----|
-| Name | Tags | Description |
-| ft.circuitbreaker.calls.total | name="\<breaker-name\>" | Counter for all calls entering a circuit breaker |
+| Name                           | Tags                    | Description                                                                           |
+|--------------------------------|-------------------------|---------------------------------------------------------------------------------------|
+| ft.circuitbreaker.calls.total  | name="\<breaker-name\>" | Counter for all calls entering a circuit breaker                                      |
 | ft.circuitbreaker.opened.total | name="\<breaker-name\>" | Counter for the number of times a circuit breaker has moved from closed to open state |
 
-Circuit Breakers
+Retries:
 
-|  |  |  |
-|----|----|----|
-| Name | Tags | Description |
-| ft.retry.calls.total | name="\<retry-name\>" | Counter for all calls entering a retry |
+| Name                   | Tags                  | Description                                               |
+|------------------------|-----------------------|-----------------------------------------------------------|
+| ft.retry.calls.total   | name="\<retry-name\>" | Counter for all calls entering a retry                    |
 | ft.retry.retries.total | name="\<retry-name\>" | Counter for all retried calls, excluding the initial call |
 
-Retries
+Timeouts:
 
-|  |  |  |
-|----|----|----|
-| Name | Tags | Description |
-| ft.timeout.calls.total | name="\<timeout-name\>" | Counter for all calls entering a timeout |
+| Name                         | Tags                    | Description                                                  |
+|------------------------------|-------------------------|--------------------------------------------------------------|
+| ft.timeout.calls.total       | name="\<timeout-name\>" | Counter for all calls entering a timeout                     |
 | ft.timeout.executionDuration | name="\<timeout-name\>" | Distribution summary of all execution durations in a timeout |
-
-Timeouts
 
 ### Enabling Metrics Programmatically
 
@@ -223,7 +219,8 @@ Retry retry = Retry.builder()
 ```
 
 > [!NOTE]
-> The global config setting always takes precedence: that is, if metrics are enabled globally, they **cannot** be disabled individually by calling `enableMetrics(false)`.
+> The global config setting always takes precedence: that is, if metrics are enabled globally,
+> they **cannot** be disabled individually by calling `enableMetrics(false)`.
 
 ## Examples
 

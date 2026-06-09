@@ -147,9 +147,7 @@ In order for the Helidon Eureka Discovery provider to do any meaningful work, yo
 
 To do this, you specify attributes about the internal [HTTP client](webclient.md) it uses, specifically its [`base-uri` property](../config/io_helidon_webclient_api_HttpClientConfig.md):
 
-`application.yaml`
-
-```yaml
+```yaml [application.yaml]
 discovery: #(1)
   eureka: #(2)
     client: #(3)
@@ -169,9 +167,7 @@ The Helidon Eureka Discovery provider uses a local cache of discovered URIs by d
 - how often the cache refreshes
 - whether the cache is computed or fully replaced
 
-`application.yaml`
-
-```yaml
+```yaml [application.yaml]
 discovery: #(1)
   eureka: #(2)
     cache: #(3)
@@ -195,9 +191,7 @@ discovery: #(1)
 
 The Helidon Eureka Discovery provider can be configured to prefer IP addresses in URIs when possible (instead of hostnames).
 
-`application.yaml`
-
-```yaml
+```yaml [application.yaml]
 discovery: # (1)
   eureka: # (2)
     preferIpAddress: false # (3)
@@ -211,9 +205,7 @@ discovery: # (1)
 
 In some testing scenarios, it may be useful to disable the Helidon Eureka Discovery provider entirely. (When any Discovery provider is disabled, only default values supplied to the [`Discovery#uris(String, URI)` method](/apidocs/io.helidon.discovery/io/helidon/discovery/Discovery.html#uris(java.lang.String,java.net.URI)) will be returned.)
 
-`application.yaml`
-
-```yaml
+```yaml [application.yaml]
 discovery: # (1)
   eureka: # (2)
     enabled: false # (3)
@@ -269,9 +261,7 @@ The Helidon Web Client Discovery integration can be configured using [Helidon Co
 
 Because the Helidon Web Client Discovery integration is fundamentally a [Web Client Service](webclient.md#adding-service-to-webclient), you configure it under a Web Client’s `services` configuration node:
 
-`application.yaml`
-
-```yaml
+```yaml [application.yaml]
 webclient:
   services:
     discovery: # (1)
@@ -285,9 +275,7 @@ You also configure the Discovery provider in use following its documentation. Se
 
 To mark URIs requested by a Web Client as subject to discovery, and to use discovery names appropriate for them, you need to configure *prefix URIs*. URIs that match no prefix will not be subject to discovery:
 
-`application.yaml`
-
-```yaml
+```yaml [application.yaml]
 webclient:
   services:
     discovery:

@@ -485,7 +485,7 @@ WebServer.builder()
                 .trustedProxies(trustedProxies));
 ```
 
-- Create the `AllowList` describing the intermediate networks nodes to trust and not trust. Presumably the `lbxxx.mycorp.com` nodes are trusted load balancers except for the test load balancer `lbtest`, and no other nodes are trusted. `AllowList` accepts prefixes, suffixes, predicates, regex patterns, and exact matches. See the [`AllowList`](/apidocs/io.helidon.common.configurable/io/helidon/common/configurable/AllowList.html) JavaDoc for complete information.
+- Create the `AllowList` describing the intermediate networks nodes to trust and not trust. Presumably the `lbxxx.mycorp.com` nodes are trusted load balancers except for the test load balancer `lbtest`, and no other nodes are trusted. `AllowList` accepts prefixes, suffixes, predicates, regex patterns, and exact matches. See the [`AllowList`](/apidocs/io.helidon.common.configurable/io/helidon/common/configurable/AllowList.html) Javadoc for complete information.
 - Use `Forwarded` first, then try `X-Forwarded-*` on each request.
 - Set the `AllowList` for trusted intermediaries.
 
@@ -525,7 +525,7 @@ rules.get((req, res) -> {
 });
 ```
 
-See the [`UriInfo`](/apidocs/io.helidon.common.uri/io/helidon/common/uri/UriInfo.html) JavaDoc for more information.
+See the [`UriInfo`](/apidocs/io.helidon.common.uri/io/helidon/common/uri/UriInfo.html) Javadoc for more information.
 
 ## Error Handling
 
@@ -1364,10 +1364,10 @@ public static void main(String[] args) {
 <a id="reference"></a>
 ## Reference
 
-- [Helidon WebServer JavaDoc](/apidocs/io.helidon.webserver/module-summary.html)
+- [Helidon WebServer Javadoc](/apidocs/io.helidon.webserver/module-summary.html)
 
-- [Helidon WebServer Static Content JavaDoc](/apidocs/io.helidon.webserver.staticcontent/module-summary.html)
-- [Helidon JSON-B Support JavaDoc](/apidocs/io.helidon.http.media.jsonp/module-summary.html)
-- [Helidon JSON-P Support JavaDoc](/apidocs/io.helidon.http.media.jsonb/module-summary.html)
-- [Helidon Jackson Support JavaDoc](/apidocs/io.helidon.http.media.jackson/module-summary.html)
+- [Helidon WebServer Static Content Javadoc](/apidocs/io.helidon.webserver.staticcontent/module-summary.html)
+- [Helidon JSON-B Support Javadoc](/apidocs/io.helidon.http.media.jsonp/module-summary.html)
+- [Helidon JSON-P Support Javadoc](/apidocs/io.helidon.http.media.jsonb/module-summary.html)
+- [Helidon Jackson Support Javadoc](/apidocs/io.helidon.http.media.jackson/module-summary.html)
 - [Proxy Protocol Specification](https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt)

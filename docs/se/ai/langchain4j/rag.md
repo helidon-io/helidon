@@ -28,7 +28,7 @@ To use the `foo-bar-content-retriever` content retriever from the preceding exam
 
 See the complete configuration example below, which uses OpenAI models and the in-memory embedding store:
 
-```yaml
+```yaml [application.yaml]
 langchain4j:
 
   providers:
@@ -66,14 +66,14 @@ langchain4j:
 
 Full list of configuration properties:
 
-| Key | Type | Description |
-|----|----|----|
-| `display-name` | string | Display name. |
-| `enabled` | boolean | If set to `false`, embedding store content retriever will be disabled even if configured. |
-| `max-results` | int | Maximum number of results. |
-| `min-score` | double | Minimum score threshold. |
-| `embedding-model` | string | Name of the service in the service registry that implements `dev.langchain4j.model.embedding.EmbeddingModel`. |
-| `embedding-store` | string | Name of the service in the service registry that implements `dev.langchain4j.model.embedding.EmbeddingStore<TextSegment>`. |
+| Key               | Type    | Description                                                                                                                |
+|-------------------|---------|----------------------------------------------------------------------------------------------------------------------------|
+| `display-name`    | string  | Display name.                                                                                                              |
+| `enabled`         | boolean | If set to `false`, embedding store content retriever will be disabled even if configured.                                  |
+| `max-results`     | int     | Maximum number of results.                                                                                                 |
+| `min-score`       | double  | Minimum score threshold.                                                                                                   |
+| `embedding-model` | string  | Name of the service in the service registry that implements `dev.langchain4j.model.embedding.EmbeddingModel`.              |
+| `embedding-store` | string  | Name of the service in the service registry that implements `dev.langchain4j.model.embedding.EmbeddingStore<TextSegment>`. |
 
 ## Additional Information
 

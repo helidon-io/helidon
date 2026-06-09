@@ -126,14 +126,14 @@ CORS configuration is done through [`CorsFeature`](/apidocs/io.helidon.webserver
 
 ### Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="ae53cb-add-defaults"></span> `add-defaults` | `VALUE` | `Boolean` | `true` | Whether to add a default path configuration, that matches all paths, `GET, HEAD, POST` methods, and allows all origins, methods, and headers |
-| <span id="a6b476-enabled"></span> `enabled` | `VALUE` | `Boolean` |   | This feature can be disabled |
-| <span id="a44bb0-paths"></span> [`paths`](../config/io_helidon_webserver_cors_CorsPathConfig.md) | `LIST` | `i.h.w.c.CorsPathConfig` |   | Per path configuration |
-| <span id="a29c5b-paths-discover-services"></span> `paths-discover-services` | `VALUE` | `Boolean` | `true` | Whether to enable automatic service discovery for `paths` |
-| <span id="a93acb-sockets"></span> `sockets` | `LIST` | `String` |   | List of sockets to register this feature on |
-| <span id="a96481-weight"></span> `weight` | `VALUE` | `Double` | `850.0` | Weight of the CORS feature |
+| Key                                                                                              | Kind    | Type                     | Default Value | Description                                                                                                                                  |
+|--------------------------------------------------------------------------------------------------|---------|--------------------------|---------------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| <span id="ae53cb-add-defaults"></span> `add-defaults`                                            | `VALUE` | `Boolean`                | `true`        | Whether to add a default path configuration, that matches all paths, `GET, HEAD, POST` methods, and allows all origins, methods, and headers |
+| <span id="a6b476-enabled"></span> `enabled`                                                      | `VALUE` | `Boolean`                |               | This feature can be disabled                                                                                                                 |
+| <span id="a44bb0-paths"></span> [`paths`](../config/io_helidon_webserver_cors_CorsPathConfig.md) | `LIST`  | `i.h.w.c.CorsPathConfig` |               | Per path configuration                                                                                                                       |
+| <span id="a29c5b-paths-discover-services"></span> `paths-discover-services`                      | `VALUE` | `Boolean`                | `true`        | Whether to enable automatic service discovery for `paths`                                                                                    |
+| <span id="a93acb-sockets"></span> `sockets`                                                      | `LIST`  | `String`                 |               | List of sockets to register this feature on                                                                                                  |
+| <span id="a96481-weight"></span> `weight`                                                        | `VALUE` | `Double`                 | `850.0`       | Weight of the CORS feature                                                                                                                   |
 
 ## Examples
 
@@ -155,7 +155,7 @@ Use configuration to control whether and how each of the built-in services works
 
 In the `cors` configuration section add a block for each built-in service using its path as described in the CORS configuration section. The following example restricts sharing of the `/observe/health` resource, provided by the health built-in service, to only the origin `https://there.com`.
 
-```yaml
+```yaml [application.yaml]
 cors:
   paths:
     - "path-pattern": "/observe/health"

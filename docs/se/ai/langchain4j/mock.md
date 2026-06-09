@@ -36,7 +36,7 @@ public interface FoodExpertAiService {
 
 To configure `MockChatModel` to be used, for example, in a test scenario you define your model in `application.yaml` and override a chat model name configured by `@Ai.ChatModel` annotation in FoodExpertAiService:
 
-```yaml
+```yaml [application.yaml]
 langchain4j:
   services:
     food-service:
@@ -99,10 +99,10 @@ class FoodExpertTest {
 
 ### Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="ac9963-enabled"></span> `enabled` | `VALUE` | `Boolean` | `true` | If set to `false` , MockChatModel will not be available even if configured |
-| <span id="aa2a29-rules"></span> [`rules`](../../../config/io_helidon_integrations_langchain4j_providers_mock_MockChatRule.md) | `LIST` | `i.h.i.l.p.m.MockChatRule` |   | The list of `MockChatRule`s that the mock chat model evaluates |
+| Key                                                                                                                           | Kind    | Type                       | Default Value | Description                                                                |
+|-------------------------------------------------------------------------------------------------------------------------------|---------|----------------------------|---------------|----------------------------------------------------------------------------|
+| <span id="ac9963-enabled"></span> `enabled`                                                                                   | `VALUE` | `Boolean`                  | `true`        | If set to `false` , MockChatModel will not be available even if configured |
+| <span id="aa2a29-rules"></span> [`rules`](../../../config/io_helidon_integrations_langchain4j_providers_mock_MockChatRule.md) | `LIST`  | `i.h.i.l.p.m.MockChatRule` |               | The list of `MockChatRule`s that the mock chat model evaluates             |
 
 ## Additional Information
 

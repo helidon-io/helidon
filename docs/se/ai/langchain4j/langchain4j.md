@@ -82,21 +82,20 @@ public interface ChefAiService {
 
 Providers available out of the box:
 
-|  |  |  |
-|----|----|----|
-| Provider | Provider Key | Description |
-| [**LangChain4j content retriever**](lc4j-providers.md#content-retriever) | `lc4j-content-retriever` | Built-in content-retriever for RAG |
-| [**LangChain4j in-memory embedding store**](lc4j-providers.md#in-memory-embedding-store) | `lc4j-in-memory` | Built-in in-memory embedding store |
-| [**LangChain4j in-process models**](lc4j-in-process.md) | `lc4j-in-process` | Local [in-process models](https://docs.langchain4j.dev/integrations/embedding-models/in-process) |
-| [**Open AI**](open-ai.md) | `open-ai` | OpenAI and OpenAI compatible models providers |
-| [**OCI GenAI**](oci-genai.md) | `oci-gen-ai`, `oci-gen-ai-cohere` | Oracle Cloud Infrastructure GenAI models |
-| [**Jlama**](jlama.md) | `jlama` | Local inference with selected [Jlama](https://github.com/tjake/Jlama) models |
-| [**Google Gemini**](gemini.md) | `google-gemini` | Google Gemini hosted models |
-| [**Ollama**](ollama.md) | `ollama` | Ollama hosted models support |
-| [**Cohere**](cohere.md) | `cohere` | Cohere hosted models |
-| [**Oracle Embedding Store**](oracle.md) | `oracle` | Oracle Database as an embedding store |
-| [**Coherence Embedding Store**](coherence.md) | `coherence` | Coherence as embedding and chat memory store |
-| [**Mock**](mock.md) | `helidon-mock` | Mockable chat model for deterministic testing |
+| Provider                                                                                 | Provider Key                      | Description                                                                                      |
+|------------------------------------------------------------------------------------------|-----------------------------------|--------------------------------------------------------------------------------------------------|
+| [**LangChain4j content retriever**](lc4j-providers.md#content-retriever)                 | `lc4j-content-retriever`          | Built-in content-retriever for RAG                                                               |
+| [**LangChain4j in-memory embedding store**](lc4j-providers.md#in-memory-embedding-store) | `lc4j-in-memory`                  | Built-in in-memory embedding store                                                               |
+| [**LangChain4j in-process models**](lc4j-in-process.md)                                  | `lc4j-in-process`                 | Local [in-process models](https://docs.langchain4j.dev/integrations/embedding-models/in-process) |
+| [**Open AI**](open-ai.md)                                                                | `open-ai`                         | OpenAI and OpenAI compatible models providers                                                    |
+| [**OCI GenAI**](oci-genai.md)                                                            | `oci-gen-ai`, `oci-gen-ai-cohere` | Oracle Cloud Infrastructure GenAI models                                                         |
+| [**Jlama**](jlama.md)                                                                    | `jlama`                           | Local inference with selected [Jlama](https://github.com/tjake/Jlama) models                     |
+| [**Google Gemini**](gemini.md)                                                           | `google-gemini`                   | Google Gemini hosted models                                                                      |
+| [**Ollama**](ollama.md)                                                                  | `ollama`                          | Ollama hosted models support                                                                     |
+| [**Cohere**](cohere.md)                                                                  | `cohere`                          | Cohere hosted models                                                                             |
+| [**Oracle Embedding Store**](oracle.md)                                                  | `oracle`                          | Oracle Database as an embedding store                                                            |
+| [**Coherence Embedding Store**](coherence.md)                                            | `coherence`                       | Coherence as embedding and chat memory store                                                     |
+| [**Mock**](mock.md)                                                                      | `helidon-mock`                    | Mockable chat model for deterministic testing                                                    |
 
 > [!NOTE]
 > Missing your favorite AI vendor already supported by LangChain4j? You can generate your own Helidon integration with our [**LangChain4j Model Provider Generator**](codegen-provider.md) or use the supplier factory!
@@ -154,7 +153,7 @@ Key concepts:
 - **Overrides**: Component configuration overrides provider defaults during merge.
 
 <!--@mdc ::code-collapse -->
-```yaml
+```yaml [application.yaml]
 langchain4j:
   providers:
     foo-bar-provider-name:
@@ -206,7 +205,7 @@ Changes in 4.4:
 
 Pre 4.4 configuration:
 
-```yaml
+```yaml [application.yaml]
 langchain4j:
   open-ai:
     # Models were referenced by the provider name, in this case 'open-ai'
@@ -218,7 +217,7 @@ langchain4j:
 
 New configuration as documented in [Configuration](#configuration):
 
-```yaml
+```yaml [application.yaml]
 langchain4j:
   models:
     # Custom model names are required, to be referencable, in this case 'cheaper-model'
@@ -241,18 +240,17 @@ Services and Agents are typically Java interfaces annotated with LangChain4j and
 
 Both AI Services and Agents can be configured with the following Helidon annotations:
 
-|  |  |
-|----|----|
-| Annotation | Description |
-| `Ai.ChatModel` | Specifies the name of a service in the service registry that implements `ChatModel` to be used in the annotated AI Service. Mutually exclusive with `Ai.StreamingChatModel`. |
-| `Ai.StreamingChatModel` | Specifies the name of a service in the service registry that implements `StreamingChatModel` to use in the annotated Ai Service. Mutually exclusive with `Ai.ChatModel`. |
-| `Ai.ChatMemoryProvider` | Specifies the name of a service in the service registry that implements `ChatMemoryProvider` to use in the annotated Ai Service. |
-| `Ai.ModerationModel` | Specifies the name of a service in the service registry that implements `ModerationModel` to use in the annotated Ai Service. |
-| `Ai.ContentRetriever` | Specifies the name of a service in the service registry that implements `ContentRetriever` to use in the annotated Ai Service. Mutually exclusive with `Ai.RetrievalAugmentor`. |
-| `Ai.RetrievalAugmentor` | Specifies the name of a service in the service registry that implements `RetrievalAugmentor` to use in the annotated Ai Service. Mutually exclusive with `Ai.ContentRetriever`. |
-| `Ai.ToolProvider` | Specifies the name of a service in the service registry that implements `ToolProvider` to use in the annotated Ai Service. Mutually exclusive with `Ai.McpClients`. |
-| `Ai.Tools` | Specifies the classes with tools. In case a singleton service bean of the same type exists, its instance is supplied. |
-| `Ai.McpClients` | Specifies the name/s of a `McpClient` in the service registry that implements `ToolProvider` to use in the annotated Ai Service. `McpToolProvider` is created from these clients. Mutually exclusive with `Ai.ToolProvider`. |
+| Annotation              | Description                                                                                                                                                                                                                  |
+|-------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `Ai.ChatModel`          | Specifies the name of a service in the service registry that implements `ChatModel` to be used in the annotated AI Service. Mutually exclusive with `Ai.StreamingChatModel`.                                                 |
+| `Ai.StreamingChatModel` | Specifies the name of a service in the service registry that implements `StreamingChatModel` to use in the annotated Ai Service. Mutually exclusive with `Ai.ChatModel`.                                                     |
+| `Ai.ChatMemoryProvider` | Specifies the name of a service in the service registry that implements `ChatMemoryProvider` to use in the annotated Ai Service.                                                                                             |
+| `Ai.ModerationModel`    | Specifies the name of a service in the service registry that implements `ModerationModel` to use in the annotated Ai Service.                                                                                                |
+| `Ai.ContentRetriever`   | Specifies the name of a service in the service registry that implements `ContentRetriever` to use in the annotated Ai Service. Mutually exclusive with `Ai.RetrievalAugmentor`.                                              |
+| `Ai.RetrievalAugmentor` | Specifies the name of a service in the service registry that implements `RetrievalAugmentor` to use in the annotated Ai Service. Mutually exclusive with `Ai.ContentRetriever`.                                              |
+| `Ai.ToolProvider`       | Specifies the name of a service in the service registry that implements `ToolProvider` to use in the annotated Ai Service. Mutually exclusive with `Ai.McpClients`.                                                          |
+| `Ai.Tools`              | Specifies the classes with tools. In case a singleton service bean of the same type exists, its instance is supplied.                                                                                                        |
+| `Ai.McpClients`         | Specifies the name/s of a `McpClient` in the service registry that implements `ToolProvider` to use in the annotated Ai Service. `McpToolProvider` is created from these clients. Mutually exclusive with `Ai.ToolProvider`. |
 
 ### AI Services
 
@@ -327,7 +325,7 @@ public interface CliExpert {
 }
 ```
 
-Agent names are required (`@Ai.Agent("…​")`), can be arbitrary, and become declarative service bean names in Helidon. Use stable, descriptive names because these names are used for configuration (`langchain4j.agents.<name>`), injection, and programmatic lookup.
+Agent names are required (`@Ai.Agent("...")`), can be arbitrary, and become declarative service bean names in Helidon. Use stable, descriptive names because these names are used for configuration (`langchain4j.agents.<name>`), injection, and programmatic lookup.
 
 ```java
 @Service.Singleton
@@ -494,7 +492,7 @@ public interface HelidonSeExpert {
 
 Guardrails on Agents can be overridden by a named agent configuration:
 
-```yaml
+```yaml [application.yaml]
 langchain4j:
   agents:
     helidon-se-expert:

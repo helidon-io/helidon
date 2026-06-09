@@ -35,13 +35,13 @@ The following table lists the supported types of parameters for the `@SetUpRoute
 - Annotation - which annotations support this parameter
 - Modules - which webserver extension modules support this signature
 
-| Parameter Type | Annotation | Modules | Notes |
-|----|----|----|----|
-| `HttpRouting.Builder` | `@ServerTest`, `@RoutingTest` |  |  |
-| `HttpRules` | `@ServerTest`, `@RoutingTest` |  | Same as `HttpRouting.Builder`, only routing setup |
-| `Router.RouterBuilder<?>` | `@ServerTest`, `@RoutingTest` |  |  |
-| `SocketListener.Builder` | `@ServerTest` |  |  |
-| `WebSocketRouting.Builder` | `@ServerTest`, `@RoutingTest` | websocket |  |
+| Parameter Type             | Annotation                    | Modules   | Notes                                             |
+|----------------------------|-------------------------------|-----------|---------------------------------------------------|
+| `HttpRouting.Builder`      | `@ServerTest`, `@RoutingTest` |           |                                                   |
+| `HttpRules`                | `@ServerTest`, `@RoutingTest` |           | Same as `HttpRouting.Builder`, only routing setup |
+| `Router.RouterBuilder<?>`  | `@ServerTest`, `@RoutingTest` |           |                                                   |
+| `SocketListener.Builder`   | `@ServerTest`                 |           |                                                   |
+| `WebSocketRouting.Builder` | `@ServerTest`, `@RoutingTest` | websocket |                                                   |
 
 Parameters for the `@SetUpRoute` annotated methods.
 
@@ -58,16 +58,15 @@ The following table lists the injectable types (through constructor or method in
 - Modules - which WebServer extension modules support this injection
 - Notes - additional details
 
-|  |  |  |  |  |
-|----|----|----|----|----|
-| Type | Socket? | Annotation | Modules | Notes |
-| `WebServer` |  | `@ServerTest` |  | Server instance (already started) |
-| `URI` | x | `@ServerTest` |  | URI pointing to a port of the webserver |
-| `SocketHttpClient` | x | `@ServerTest` |  | This client allows you to send anything in order to test for bad requests or other issues. |
-| `Http1Client` | x | `@ServerTest` |  |  |
-| `DirectClient` | x | `@RoutingTest` |  | Implements `Http1Client` API |
-| `WsClient` | x | `@ServerTest` | websocket |  |
-| `DirectWsClient` | x | `@RoutingTest` | websocket | Implements `WsClient` API |
+| Type               | Socket? | Annotation     | Modules   | Notes                                                                                      |
+|--------------------|---------|----------------|-----------|--------------------------------------------------------------------------------------------|
+| `WebServer`        |         | `@ServerTest`  |           | Server instance (already started)                                                          |
+| `URI`              | x       | `@ServerTest`  |           | URI pointing to a port of the webserver                                                    |
+| `SocketHttpClient` | x       | `@ServerTest`  |           | This client allows you to send anything in order to test for bad requests or other issues. |
+| `Http1Client`      | x       | `@ServerTest`  |           |                                                                                            |
+| `DirectClient`     | x       | `@RoutingTest` |           | Implements `Http1Client` API                                                               |
+| `WsClient`         | x       | `@ServerTest`  | websocket |                                                                                            |
+| `DirectWsClient`   | x       | `@RoutingTest` | websocket | Implements `WsClient` API                                                                  |
 
 Injectable types.
 

@@ -75,4 +75,4 @@ This code snippet registers `MessageBoardEndpoint` at `/websocket/board` and ass
 
 ## Reference
 
-- [Helidon WebSocket JavaDoc](/apidocs/io.helidon.webserver.websocket/module-summary.html)
+- [Helidon WebSocket Javadoc](/apidocs/io.helidon.webserver.websocket/module-summary.html)

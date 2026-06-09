@@ -19,7 +19,7 @@ In a typical RAG setup (see [RAG](rag.md)), a named retriever references:
 
 Each entry under `langchain4j.content-retrievers` becomes a named singleton declarative service bean in the Helidon service registry. You can attach it to AI services or agents using `@Ai.ContentRetriever("name")`, or inject it directly by name.
 
-```yaml
+```yaml [application.yaml]
 langchain4j:
   content-retrievers:
     foo-bar-content-retriever:
@@ -61,15 +61,15 @@ Configuration properties:
 
 ### Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="aa8c41-display-name"></span> `display-name` | `VALUE` | `String` |   | Display name for this content retriever configuration |
-| <span id="aed316-embedding-model"></span> `embedding-model` | `VALUE` | `String` |   | Explicit embedding model to use in the content retriever |
-| <span id="aa55e0-embedding-store"></span> `embedding-store` | `VALUE` | `String` |   | Embedding store to use in the content retriever |
-| <span id="a2a276-enabled"></span> `enabled` | `VALUE` | `Boolean` | `true` | If set to `false`, component will be disabled even if configured |
-| <span id="a7fe57-max-results"></span> `max-results` | `VALUE` | `Integer` |   | Maximum number of results to return from the retriever |
-| <span id="a4bf10-min-score"></span> `min-score` | `VALUE` | `Double` |   | Minimum score threshold for retrieved results |
-| <span id="afd89c-type"></span> [`type`](../../../config/io_helidon_integrations_langchain4j_ContentRetrieverType.md) | `VALUE` | `i.h.i.l.ContentRetrieverType` | `EMBEDDING_STORE_CONTENT_RETRIEVER` | Type of content retriever to create |
+| Key                                                                                                                  | Kind    | Type                           | Default Value                       | Description                                                      |
+|----------------------------------------------------------------------------------------------------------------------|---------|--------------------------------|-------------------------------------|------------------------------------------------------------------|
+| <span id="aa8c41-display-name"></span> `display-name`                                                                | `VALUE` | `String`                       |                                     | Display name for this content retriever configuration            |
+| <span id="aed316-embedding-model"></span> `embedding-model`                                                          | `VALUE` | `String`                       |                                     | Explicit embedding model to use in the content retriever         |
+| <span id="aa55e0-embedding-store"></span> `embedding-store`                                                          | `VALUE` | `String`                       |                                     | Embedding store to use in the content retriever                  |
+| <span id="a2a276-enabled"></span> `enabled`                                                                          | `VALUE` | `Boolean`                      | `true`                              | If set to `false`, component will be disabled even if configured |
+| <span id="a7fe57-max-results"></span> `max-results`                                                                  | `VALUE` | `Integer`                      |                                     | Maximum number of results to return from the retriever           |
+| <span id="a4bf10-min-score"></span> `min-score`                                                                      | `VALUE` | `Double`                       |                                     | Minimum score threshold for retrieved results                    |
+| <span id="afd89c-type"></span> [`type`](../../../config/io_helidon_integrations_langchain4j_ContentRetrieverType.md) | `VALUE` | `i.h.i.l.ContentRetrieverType` | `EMBEDDING_STORE_CONTENT_RETRIEVER` | Type of content retriever to create                              |
 
 ## In-Memory Embedding Store
 
@@ -83,7 +83,7 @@ Each entry becomes a named singleton declarative service bean in the Helidon ser
 
 If `from-file` is configured, Helidon initializes the store by loading previously persisted embeddings and segments using LangChain4j `InMemoryEmbeddingStore.fromFile(…​)`. If `from-file` is not configured, the store starts empty.
 
-```yaml
+```yaml [application.yaml]
 langchain4j:
   embedding-stores:
     foo-bar-inmemory-embedding-store:
@@ -126,10 +126,10 @@ Configuration properties:
 
 ### Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="ae50fb-enabled"></span> `enabled` | `VALUE` | `Boolean` | `true` | Whether this embedding store component is enabled |
-| <span id="afeb29-from-file"></span> `from-file` | `VALUE` | `Path` |   | Path to a JSON file used to initialize the in-memory embedding store via `InMemoryEmbeddingStore.fromFile` |
+| Key                                             | Kind    | Type      | Default Value | Description                                                                                                |
+|-------------------------------------------------|---------|-----------|---------------|------------------------------------------------------------------------------------------------------------|
+| <span id="ae50fb-enabled"></span> `enabled`     | `VALUE` | `Boolean` | `true`        | Whether this embedding store component is enabled                                                          |
+| <span id="afeb29-from-file"></span> `from-file` | `VALUE` | `Path`    |               | Path to a JSON file used to initialize the in-memory embedding store via `InMemoryEmbeddingStore.fromFile` |
 
 ## Additional Information
 

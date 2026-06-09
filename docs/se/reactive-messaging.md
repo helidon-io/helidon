@@ -335,7 +335,7 @@ Messaging messaging = Messaging.builder()
 
 Example of connector config:
 
-```yaml
+```yaml [application.yaml]
 mp.messaging:
 
   incoming.from-kafka:
@@ -475,7 +475,7 @@ Messaging messaging = Messaging.builder()
 
 Example of connector config:
 
-```yaml
+```yaml [application.yaml]
 mp.messaging:
 
   incoming.from-jms:

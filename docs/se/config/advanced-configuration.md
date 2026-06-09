@@ -72,7 +72,7 @@ assert secrets.get("password") // (4)
 3.  The loaded config maps the key `username` to the value `jose`…​
 4.  …​and the key `password` to `^ery$ecretP&ssword`.
 
-Remember that your application can process the contents of a given file as configuration. See the [config sources](introduction.md#config_sources) section and the [`ConfigSources.file`](/apidocs/io.helidon.config/io/helidon/config/ConfigSources.html#file-java.lang.String-) JavaDoc.
+Remember that your application can process the contents of a given file as configuration. See the [config sources](introduction.md#config_sources) section and the [`ConfigSources.file`](/apidocs/io.helidon.config/io/helidon/config/ConfigSources.html#file-java.lang.String-) Javadoc.
 
 ### In-memory Config Sources
 
@@ -408,7 +408,7 @@ Each filter accepts a key and the value as defined in the source, and returns th
 
 The built-in [value-resolving](/apidocs/io.helidon.config/io/helidon/config/ConfigFilters.html#valueResolving--) filter enables the token substitution described below.
 
-See the [`ConfigFilter`](/apidocs/io.helidon.config/io/helidon/config/spi/ConfigFilter.html) JavaDoc for more information.
+See the [`ConfigFilter`](/apidocs/io.helidon.config/io/helidon/config/spi/ConfigFilter.html) Javadoc for more information.
 
 ### Overrides
 
@@ -424,7 +424,7 @@ Each override entry consists of a Java properties-format definition. The key is 
 
 See the
 
-`OverrideSource` JavaDoc for more detail.
+`OverrideSource` Javadoc for more detail.
 
 ### Tokens
 

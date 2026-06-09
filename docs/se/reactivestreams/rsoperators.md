@@ -109,5 +109,5 @@ publisherStage
 ## Reference
 
 - [MicroProfile Reactive Streams Operators Specification](https://download.eclipse.org/microprofile/microprofile-reactive-streams-operators-3.0/microprofile-reactive-streams-operators-spec-3.0.html)
-- [MicroProfile Reactive Streams Operators JavaDoc](https://download.eclipse.org/microprofile/microprofile-reactive-streams-operators-3.0/apidocs)
+- [MicroProfile Reactive Streams Operators Javadoc](https://download.eclipse.org/microprofile/microprofile-reactive-streams-operators-3.0/apidocs)
 - [MicroProfile Reactive Streams Operators on GitHub](https://github.com/eclipse/microprofile-reactive-streams-operators)

@@ -90,7 +90,7 @@ You must configure the data repository before using it.
 
 In the example below, Helidon Config sets up the data repository using the EclipseLink provider and a MySQL database as a custom connection:
 
-```yaml
+```yaml [application.yaml]
 data:
   persistence-units:
     jakarta:
@@ -108,7 +108,7 @@ data:
 
 In the next example, Helidon Config sets up the data repository using the Hibernate provider and a MySQL database as a Hikari `DataSource`:
 
-```yaml
+```yaml [application.yaml]
 data:
   sources:
     sql:
@@ -144,12 +144,12 @@ The `@Data.Repository` annotation takes no arguments. The `Data.GenericRepositor
 
 The `Data.GenericRepository` interface is extended by additional interfaces that add specific features:
 
-| Interface | Description |
-|----|----|
-| `Data.GenericRepository<E, ID>` | Root interface with entity type and primary key type as generic arguments. |
-| `Data.BasicRepository<E, ID>` | Extends `GenericRepository`; adds a set of basic entity life-cycle operations. |
-| `Data.CrudRepository<E, ID>` | Extends `BasicRepository`; adds `insert` and `update` methods to provide full CRUD support. |
-| `Data.PageableRepository<E, ID>` | Extends `GenericRepository`; adds pagination support. |
+| Interface                        | Description                                                                                 |
+|----------------------------------|---------------------------------------------------------------------------------------------|
+| `Data.GenericRepository<E, ID>`  | Root interface with entity type and primary key type as generic arguments.                  |
+| `Data.BasicRepository<E, ID>`    | Extends `GenericRepository`; adds a set of basic entity life-cycle operations.              |
+| `Data.CrudRepository<E, ID>`     | Extends `BasicRepository`; adds `insert` and `update` methods to provide full CRUD support. |
+| `Data.PageableRepository<E, ID>` | Extends `GenericRepository`; adds pagination support.                                       |
 
 ### Repository Interface Methods
 
@@ -199,15 +199,15 @@ long longCountByName(String name);
 
 The query return type depends on the return type keyword:
 
-| Keyword | Return Type | Description |
-|----|----|----|
-| count | Numeric type | Number of rows matching the query criteria |
-| exists | `boolean` or `Boolean` | Whether at least one matching row exists |
-| get | Query row type | Single result that throws an exception if there are zero or multiple results |
-| find | `Optional<…>` | Zero or single result that throws an exception if there are multiple results |
-| list | `Collection` or `List` | All matching rows |
-| list | `Slice` or `Page` | Pageable result set |
-| stream | `Stream` | Stream of matching rows |
+| Keyword | Return Type            | Description                                                                  |
+|---------|------------------------|------------------------------------------------------------------------------|
+| count   | Numeric type           | Number of rows matching the query criteria                                   |
+| exists  | `boolean` or `Boolean` | Whether at least one matching row exists                                     |
+| get     | Query row type         | Single result that throws an exception if there are zero or multiple results |
+| find    | `Optional<…>`          | Zero or single result that throws an exception if there are multiple results |
+| list    | `Collection` or `List` | All matching rows                                                            |
+| list    | `Slice` or `Page`      | Pageable result set                                                          |
+| stream  | `Stream`               | Stream of matching rows                                                      |
 
 > [!NOTE]
 > Validation of the keyword–return type mapping is not fully enforced by the code generator, though this may change in future releases.
@@ -216,14 +216,14 @@ The query return type depends on the return type keyword:
 
 The projection part is optional and follows directly after the return-type keyword. It consists of `expression` and `property` components:
 
-| Keyword | Example | Description |
-|----|----|----|
-| Distinct | `listDistinctNameByTrainer_Name` | Returns only unique values. |
-| First\<number\> | `listFirst10ByAge` | Returns up to `<number>` rows. |
-| Min | `getMinPoints` | Returns the minimum property value. Requires numeric type. |
-| Max | `getMaxPoints` | Returns the maximum property value. Requires numeric type. |
-| Sum | `getSumPoints` | Returns the sum of values. Requires numeric type. |
-| Avg | `getAvgPoints` | Returns the average value. Requires floating point type. |
+| Keyword         | Example                          | Description                                                |
+|-----------------|----------------------------------|------------------------------------------------------------|
+| Distinct        | `listDistinctNameByTrainer_Name` | Returns only unique values.                                |
+| First\<number\> | `listFirst10ByAge`               | Returns up to `<number>` rows.                             |
+| Min             | `getMinPoints`                   | Returns the minimum property value. Requires numeric type. |
+| Max             | `getMaxPoints`                   | Returns the maximum property value. Requires numeric type. |
+| Sum             | `getSumPoints`                   | Returns the sum of values. Requires numeric type.          |
+| Avg             | `getAvgPoints`                   | Returns the average value. Requires floating point type.   |
 
 The `property` part is the entity property name and it can contain underscores. An underscore is interpreted as a dot, which means navigation to a related entity attribute. For example, `Keeper_Name` on the `Pet` entity translates to the JPQL query `SELECT p.keeper.name FROM Pet p`.
 
@@ -264,25 +264,25 @@ Criteria modifiers:
 
 Supported condition keywords:
 
-| Keyword | Args | Description |
-|----|----|----|
-| After | 1 | The property value is after the given value. Requires a `Comparable` property and argument. Intended for date and time. Effectively equivalent to `GreaterThan`. |
-| Before | 1 | The property value is before the given value. Requires a `Comparable` property and argument. Intended for date and time. Effectively equivalent to `LessThan`. |
-| Contains | 1 | The property value contains the given value. Requires a `String` property and argument. |
-| EndsWith | 1 | The property value ends with the given value. Requires a `String` property and argument. |
-| StartsWith | 1 | The property value starts with the given value. Requires a `String` property and argument. |
-| Equal | 1 | The property value is equal to the given value. |
-| LessThan | 1 | The property value is less than the given value. Requires a `Comparable` property and argument. |
-| LessThanEqual | 1 | The property value is less or equal to the given value. Requires a `Comparable` property and argument. |
-| GreaterThan | 1 | The property value is greater than the given value. Requires a `Comparable` property and argument. |
-| GreaterThanEqual | 1 | The property value is greater or equal to the given value. Requires a `Comparable` property and argument. |
-| Between | 2 | The property value is between the given values. Requires `Comparable` properties and arguments. |
-| Like | 1 | The property value is `LIKE` the given value. Requires a `String` property and argument. |
-| In | 1 | The property value is in the given collection. Requires a `Collection` argument. |
-| Empty | 0 | The property value is empty. Requires a `Collection` property. |
-| Null | 0 | The property value is `NULL`. |
-| True | 0 | The property value is `true`. Requires `boolean` or `Boolean` property. |
-| False | 0 | The property value is `false`. Requires `boolean` or `Boolean` property. |
+| Keyword          | Args | Description                                                                                                                                                      |
+|------------------|------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| After            | 1    | The property value is after the given value. Requires a `Comparable` property and argument. Intended for date and time. Effectively equivalent to `GreaterThan`. |
+| Before           | 1    | The property value is before the given value. Requires a `Comparable` property and argument. Intended for date and time. Effectively equivalent to `LessThan`.   |
+| Contains         | 1    | The property value contains the given value. Requires a `String` property and argument.                                                                          |
+| EndsWith         | 1    | The property value ends with the given value. Requires a `String` property and argument.                                                                         |
+| StartsWith       | 1    | The property value starts with the given value. Requires a `String` property and argument.                                                                       |
+| Equal            | 1    | The property value is equal to the given value.                                                                                                                  |
+| LessThan         | 1    | The property value is less than the given value. Requires a `Comparable` property and argument.                                                                  |
+| LessThanEqual    | 1    | The property value is less or equal to the given value. Requires a `Comparable` property and argument.                                                           |
+| GreaterThan      | 1    | The property value is greater than the given value. Requires a `Comparable` property and argument.                                                               |
+| GreaterThanEqual | 1    | The property value is greater or equal to the given value. Requires a `Comparable` property and argument.                                                        |
+| Between          | 2    | The property value is between the given values. Requires `Comparable` properties and arguments.                                                                  |
+| Like             | 1    | The property value is `LIKE` the given value. Requires a `String` property and argument.                                                                         |
+| In               | 1    | The property value is in the given collection. Requires a `Collection` argument.                                                                                 |
+| Empty            | 0    | The property value is empty. Requires a `Collection` property.                                                                                                   |
+| Null             | 0    | The property value is `NULL`.                                                                                                                                    |
+| True             | 0    | The property value is `true`. Requires `boolean` or `Boolean` property.                                                                                          |
+| False            | 0    | The property value is `false`. Requires `boolean` or `Boolean` property.                                                                                         |
 
 An example repository method with criteria:
 
@@ -403,10 +403,10 @@ Pagination allows the caller to split a returned data collection into individual
 
 Returned page content types:
 
-| Name | Description |
-|----|----|
-| Slice | Contains the page data as a `List` or `Stream` and a `PageRequest` to retrieve this page. |
-| Page | Contains the page data as a `List` or `Stream`, the total result size across all pages, and a `PageRequest` to retrieve this page. |
+| Name  | Description                                                                                                                        |
+|-------|------------------------------------------------------------------------------------------------------------------------------------|
+| Slice | Contains the page data as a `List` or `Stream` and a `PageRequest` to retrieve this page.                                          |
+| Page  | Contains the page data as a `List` or `Stream`, the total result size across all pages, and a `PageRequest` to retrieve this page. |
 
 An example repository method with pagination:
 
@@ -500,24 +500,24 @@ If JTA transaction support is not provided, Helidon Data runtime will use `RESOU
 
 The `Tx` class defines several ways how transactional support can be applied to transactional method executions. Those ways are defined in `Tx.Type` enum. The `Tx` class also defines annotations that can be used to mark methods for transactional execution based on `Tx.Type` enum.
 
-| Enum | Annotation | Description |
-|----|----|----|
-| `MANDATORY` | `@Mandatory` | A transaction must already be in effect when a method executes. If called outside a transaction context, a `TxException` is thrown. If called inside a transaction context, method execution continues under that context. |
-| `NEW` | `@New` | A new transaction is started when a method executes. If called outside a transaction context, a new transaction is begun. If called inside a transaction context, the current transaction is suspended, a new transaction is begun, and the method execution continues inside this new transaction context. |
-| `NEVER` | `@Never` | No transaction must be in effect when a method executes. If called outside a transaction context, method execution continues outside a transaction context. If called inside a transaction context, a `TxException` is thrown. |
-| `REQUIRED` | `@Required` | A transaction will be in effect when a method executes. If called outside a transaction context, a new transaction is begun. If called inside a transaction context, method execution continues inside that transaction context. |
-| `SUPPORTED` | `@Supported` | A transaction may optionally be in effect when a method executes. If called outside a transaction context, method execution continues outside a transaction context. If called inside a transaction context, method execution continues inside that transaction context. |
+| Enum          | Annotation     | Description                                                                                                                                                                                                                                                                                                                                                                               |
+|---------------|----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `MANDATORY`   | `@Mandatory`   | A transaction must already be in effect when a method executes. If called outside a transaction context, a `TxException` is thrown. If called inside a transaction context, method execution continues under that context.                                                                                                                                                                |
+| `NEW`         | `@New`         | A new transaction is started when a method executes. If called outside a transaction context, a new transaction is begun. If called inside a transaction context, the current transaction is suspended, a new transaction is begun, and the method execution continues inside this new transaction context.                                                                               |
+| `NEVER`       | `@Never`       | No transaction must be in effect when a method executes. If called outside a transaction context, method execution continues outside a transaction context. If called inside a transaction context, a `TxException` is thrown.                                                                                                                                                            |
+| `REQUIRED`    | `@Required`    | A transaction will be in effect when a method executes. If called outside a transaction context, a new transaction is begun. If called inside a transaction context, method execution continues inside that transaction context.                                                                                                                                                          |
+| `SUPPORTED`   | `@Supported`   | A transaction may optionally be in effect when a method executes. If called outside a transaction context, method execution continues outside a transaction context. If called inside a transaction context, method execution continues inside that transaction context.                                                                                                                  |
 | `UNSUPPORTED` | `@Unsupported` | No transaction will be in effect when a method executes. If called outside a transaction context, method execution continues outside a transaction context. If called inside a transaction context, the current transaction is suspended, method execution continues outside a transaction context, and the previously suspended transaction is resumed after method execution completes. |
 
 ### Transaction Methods
 
 The `Tx` class provides several methods for executing tasks within a transaction:
 
-| Method | Description |
-|----|----|
-| `transaction(Callable<T> task)` | Executes a task with a managed transaction of type `REQUIRED`. |
-| `transaction(Type type, Callable<T> task)` | Executes a task with a managed transaction of the specified type. |
-| `transaction(CheckedRunnable<Exception> task)` | Executes a task with a managed transaction of type `REQUIRED` without returning a result. |
+| Method                                                    | Description                                                                                  |
+|-----------------------------------------------------------|----------------------------------------------------------------------------------------------|
+| `transaction(Callable<T> task)`                           | Executes a task with a managed transaction of type `REQUIRED`.                               |
+| `transaction(Type type, Callable<T> task)`                | Executes a task with a managed transaction of the specified type.                            |
+| `transaction(CheckedRunnable<Exception> task)`            | Executes a task with a managed transaction of type `REQUIRED` without returning a result.    |
 | `transaction(Type type, CheckedRunnable<Exception> task)` | Executes a task with a managed transaction of the specified type without returning a result. |
 
 ### Usage

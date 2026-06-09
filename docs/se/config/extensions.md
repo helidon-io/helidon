@@ -184,7 +184,7 @@ The application registers filters and filter providers by passing `ConfigFilter`
 
 ### Initializing Filters
 
-The `ConfigFilter` JavaDoc describes multiple methods for adding filters to a `Config.Builder`. Some accept a `ConfigFilter` directly and some accept a provider function which, when passed a `Config` instance, returns a `ConfigFilter`.
+The `ConfigFilter` Javadoc describes multiple methods for adding filters to a `Config.Builder`. Some accept a `ConfigFilter` directly and some accept a provider function which, when passed a `Config` instance, returns a `ConfigFilter`.
 
 ***Neither a `ConfigFilter` nor a provider function which furnishes one should access the `Config` instance passed to the provider function.***
 

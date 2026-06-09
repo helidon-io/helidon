@@ -21,7 +21,7 @@ In addition to the [Helidon integration with LangChain4j core dependencies](lang
 
 To automatically create and add `OpenAiChatModel` to the service registry add the following lines to `application.yaml`:
 
-```yaml
+```yaml [application.yaml]
 langchain4j:
   providers:
     open-ai:
@@ -37,32 +37,32 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 Full list of configuration properties:
 
-| Key | Type | Description |
-|----|----|----|
-| `api-key` | string | Required. The API key used to authenticate requests to the OpenAI API. |
-| `base-url` | string | The base URL for the OpenAI API. If not present, the default value supplied from LangChain4j is used. |
-| `custom-headers` | Map\<string, string\> | A map containing custom headers. |
-| `enabled` | boolean | If set to `false`, OpenAI model will not be available even if configured. |
-| `frequency-penalty` | double | The frequency penalty, between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency in the text so far, decreasing the model’s likelihood to repeat the same line. |
-| `log-requests` | boolean | Whether to log API requests. |
-| `log-responses` | boolean | Whether to log API responses. |
-| `logit-bias` | Map\<string, int\> | LogitBias adjusts the likelihood of specific tokens appearing in a model’s response. A map of token IDs to bias values (-100 to 100). Positive values increase the chance of the token, while negative values reduce it, allowing fine control over token preferences in the output. |
-| `max-completion-tokens` | int | The maximum number of tokens allowed for the model’s response. |
-| `max-retries` | integer | The maximum number of retries for failed API requests. |
-| `max-tokens` | int | The maximum number of tokens to generate in the completion. |
-| `model-name` | string | The model name to use (e.g., "gpt-3.5-turbo"). |
-| `organization-id` | string | The ID of the organization for API requests. |
-| `parallel-tool-calls` | boolean | Whether to allow parallel calls to tools. |
-| `presence-penalty` | double | The presence penalty, between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far, encouraging the model to use new words. |
-| `response-format` | string | The format in which the model should return the response. |
-| `seed` | int | The seed for the random number generator used by the model. |
-| `stop` | string\[\] | The list of sequences where the API will stop generating further tokens. |
-| `strict-json-schema` | boolean | Whether to enforce a strict JSON schema for the model’s output. |
-| `strict-tools` | boolean | Whether to enforce strict validation of tools used by the model. |
-| `temperature` | double | The sampling temperature to use, between 0 and 2. Higher values make the output more random, while lower values make it more focused and deterministic. |
-| `timeout` | duration | The timeout setting for API requests. See [here](https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-) for the format. |
-| `top-p` | double | The nucleus sampling value, where the model considers the results of the tokens with top_p probability mass. |
-| `user` | string | The user ID associated with the API requests. |
+| Key                     | Type                  | Description                                                                                                                                                                                                                                                                          |
+|-------------------------|-----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `api-key`               | string                | Required. The API key used to authenticate requests to the OpenAI API.                                                                                                                                                                                                               |
+| `base-url`              | string                | The base URL for the OpenAI API. If not present, the default value supplied from LangChain4j is used.                                                                                                                                                                                |
+| `custom-headers`        | Map\<string, string\> | A map containing custom headers.                                                                                                                                                                                                                                                     |
+| `enabled`               | boolean               | If set to `false`, OpenAI model will not be available even if configured.                                                                                                                                                                                                            |
+| `frequency-penalty`     | double                | The frequency penalty, between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency in the text so far, decreasing the model’s likelihood to repeat the same line.                                                                                    |
+| `log-requests`          | boolean               | Whether to log API requests.                                                                                                                                                                                                                                                         |
+| `log-responses`         | boolean               | Whether to log API responses.                                                                                                                                                                                                                                                        |
+| `logit-bias`            | Map\<string, int\>    | LogitBias adjusts the likelihood of specific tokens appearing in a model’s response. A map of token IDs to bias values (-100 to 100). Positive values increase the chance of the token, while negative values reduce it, allowing fine control over token preferences in the output. |
+| `max-completion-tokens` | int                   | The maximum number of tokens allowed for the model’s response.                                                                                                                                                                                                                       |
+| `max-retries`           | integer               | The maximum number of retries for failed API requests.                                                                                                                                                                                                                               |
+| `max-tokens`            | int                   | The maximum number of tokens to generate in the completion.                                                                                                                                                                                                                          |
+| `model-name`            | string                | The model name to use (e.g., "gpt-3.5-turbo").                                                                                                                                                                                                                                       |
+| `organization-id`       | string                | The ID of the organization for API requests.                                                                                                                                                                                                                                         |
+| `parallel-tool-calls`   | boolean               | Whether to allow parallel calls to tools.                                                                                                                                                                                                                                            |
+| `presence-penalty`      | double                | The presence penalty, between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far, encouraging the model to use new words.                                                                                                             |
+| `response-format`       | string                | The format in which the model should return the response.                                                                                                                                                                                                                            |
+| `seed`                  | int                   | The seed for the random number generator used by the model.                                                                                                                                                                                                                          |
+| `stop`                  | string\[\]            | The list of sequences where the API will stop generating further tokens.                                                                                                                                                                                                             |
+| `strict-json-schema`    | boolean               | Whether to enforce a strict JSON schema for the model’s output.                                                                                                                                                                                                                      |
+| `strict-tools`          | boolean               | Whether to enforce strict validation of tools used by the model.                                                                                                                                                                                                                     |
+| `temperature`           | double                | The sampling temperature to use, between 0 and 2. Higher values make the output more random, while lower values make it more focused and deterministic.                                                                                                                              |
+| `timeout`               | duration              | The timeout setting for API requests. See [here](https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-) for the format.                                                                                                                    |
+| `top-p`                 | double                | The nucleus sampling value, where the model considers the results of the tokens with top_p probability mass.                                                                                                                                                                         |
+| `user`                  | string                | The user ID associated with the API requests.                                                                                                                                                                                                                                        |
 
 #### Proxy
 
@@ -84,7 +84,7 @@ The framework attempts to resolve a tokenizer using the following strategy:
 
 To automatically create and add `OpenAiEmbeddingModel` to the service registry add the following lines to `application.yaml`:
 
-```yaml
+```yaml [application.yaml]
 langchain4j:
   providers:
     open-ai:
@@ -100,20 +100,20 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 Full list of configuration properties:
 
-| Key | Type | Description |
-|----|----|----|
-| `api-key` | string | Required. The API key used to authenticate requests to the OpenAI API. |
-| `base-url` | string | The base URL for the OpenAI API. If not present, the default value supplied from LangChain4j is used. |
-| `custom-headers` | Map\<string, string\> | A map containing custom headers. |
-| `dimensions` | int | The dimensionality of the embeddings generated by the model. |
-| `enabled` | boolean | If set to false, OpenAI model will not be available even if configured. |
-| `log-requests` | boolean | Whether to log API requests. |
-| `log-responses` | boolean | Whether to log API responses. |
-| `max-retries` | integer | The maximum number of retries for failed API requests. |
-| `model-name` | string | The model name to use. |
-| `organization-id` | string | The ID of the organization for API requests. |
-| `timeout` | duration | The timeout setting for API requests. See [here](https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-) for the format. |
-| `user` | string | The user ID associated with the API requests. |
+| Key               | Type                  | Description                                                                                                                                                       |
+|-------------------|-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `api-key`         | string                | Required. The API key used to authenticate requests to the OpenAI API.                                                                                            |
+| `base-url`        | string                | The base URL for the OpenAI API. If not present, the default value supplied from LangChain4j is used.                                                             |
+| `custom-headers`  | Map\<string, string\> | A map containing custom headers.                                                                                                                                  |
+| `dimensions`      | int                   | The dimensionality of the embeddings generated by the model.                                                                                                      |
+| `enabled`         | boolean               | If set to false, OpenAI model will not be available even if configured.                                                                                           |
+| `log-requests`    | boolean               | Whether to log API requests.                                                                                                                                      |
+| `log-responses`   | boolean               | Whether to log API responses.                                                                                                                                     |
+| `max-retries`     | integer               | The maximum number of retries for failed API requests.                                                                                                            |
+| `model-name`      | string                | The model name to use.                                                                                                                                            |
+| `organization-id` | string                | The ID of the organization for API requests.                                                                                                                      |
+| `timeout`         | duration              | The timeout setting for API requests. See [here](https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-) for the format. |
+| `user`            | string                | The user ID associated with the API requests.                                                                                                                     |
 
 #### Proxy
 
@@ -135,7 +135,7 @@ The framework attempts to resolve a tokenizer using the following strategy:
 
 To automatically create and add `OpenAiImageModel` to the service registry add the following lines to `application.yaml`:
 
-```yaml
+```yaml [application.yaml]
 langchain4j:
   providers:
     open-ai:
@@ -151,25 +151,25 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 Full list of configuration properties:
 
-| Key | Type | Description |
-|----|----|----|
-| `api-key` | string | Required. The API key used to authenticate requests to the OpenAI API. |
-| `base-url` | string | The base URL for the OpenAI API. If not present, the default value supplied from LangChain4j is used. |
-| `custom-headers` | Map\<string, string\> | A map containing custom headers. |
-| `enabled` | boolean | If set to false, the OpenAI model will not be available even if configured. |
-| `log-requests` | boolean | Whether to log API requests. |
-| `log-responses` | boolean | Whether to log API responses. |
-| `max-retries` | integer | The maximum number of retries for failed API requests. |
-| `model-name` | string | The model name to use. |
-| `organization-id` | string | The ID of the organization for API requests. |
-| `persist-to` | Path | The path or location where the generated images should be persisted. |
-| `quality` | string | The quality of the generated images. |
-| `response-format` | string | The format of the response. |
-| `size` | string | The desired size of the generated images. |
-| `style` | string | The style of the generated images. |
-| `timeout` | duration | The timeout setting for API requests. See [here](https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-) for the format. |
-| `user` | string | The unique identifier for the user making the request. |
-| `with-persisting` | boolean | The flag to indicate whether to persist the generated images. |
+| Key               | Type                  | Description                                                                                                                                                       |
+|-------------------|-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `api-key`         | string                | Required. The API key used to authenticate requests to the OpenAI API.                                                                                            |
+| `base-url`        | string                | The base URL for the OpenAI API. If not present, the default value supplied from LangChain4j is used.                                                             |
+| `custom-headers`  | Map\<string, string\> | A map containing custom headers.                                                                                                                                  |
+| `enabled`         | boolean               | If set to false, the OpenAI model will not be available even if configured.                                                                                       |
+| `log-requests`    | boolean               | Whether to log API requests.                                                                                                                                      |
+| `log-responses`   | boolean               | Whether to log API responses.                                                                                                                                     |
+| `max-retries`     | integer               | The maximum number of retries for failed API requests.                                                                                                            |
+| `model-name`      | string                | The model name to use.                                                                                                                                            |
+| `organization-id` | string                | The ID of the organization for API requests.                                                                                                                      |
+| `persist-to`      | Path                  | The path or location where the generated images should be persisted.                                                                                              |
+| `quality`         | string                | The quality of the generated images.                                                                                                                              |
+| `response-format` | string                | The format of the response.                                                                                                                                       |
+| `size`            | string                | The desired size of the generated images.                                                                                                                         |
+| `style`           | string                | The style of the generated images.                                                                                                                                |
+| `timeout`         | duration              | The timeout setting for API requests. See [here](https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-) for the format. |
+| `user`            | string                | The unique identifier for the user making the request.                                                                                                            |
+| `with-persisting` | boolean               | The flag to indicate whether to persist the generated images.                                                                                                     |
 
 #### Proxy
 
@@ -183,7 +183,7 @@ The framework attempts to resolve a proxy using the following strategy:
 
 To automatically create and add `OpenAiLanguageModel` to the service registry add the following lines to `application.yaml`:
 
-```yaml
+```yaml [application.yaml]
 langchain4j:
   providers:
     open-ai:
@@ -199,19 +199,19 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 Full list of configuration properties:
 
-| Key | Type | Description |
-|----|----|----|
-| `api-key` | string | Required. The API key used to authenticate requests to the OpenAI API. |
-| `base-url` | string | The base URL for the OpenAI API. If not present, the default value supplied from LangChain4j is used. |
-| `custom-headers` | Map\<string, string\> | A map containing custom headers. |
-| `enabled` | boolean | If set to false, the OpenAI model will not be available even if configured. |
-| `log-requests` | boolean | Whether to log API requests. |
-| `log-responses` | boolean | Whether to log API responses. |
-| `max-retries` | integer | The maximum number of retries for failed API requests. |
-| `model-name` | string | The model name to use. |
-| `organization-id` | string | The ID of the organization for API requests. |
-| `temperature` | double | The sampling temperature to use, between 0 and 2. Higher values make the output more random, while lower values make it more focused and deterministic. |
-| `timeout` | duration | The timeout setting for API requests. See [here](https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-) for the format. |
+| Key               | Type                  | Description                                                                                                                                                       |
+|-------------------|-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `api-key`         | string                | Required. The API key used to authenticate requests to the OpenAI API.                                                                                            |
+| `base-url`        | string                | The base URL for the OpenAI API. If not present, the default value supplied from LangChain4j is used.                                                             |
+| `custom-headers`  | Map\<string, string\> | A map containing custom headers.                                                                                                                                  |
+| `enabled`         | boolean               | If set to false, the OpenAI model will not be available even if configured.                                                                                       |
+| `log-requests`    | boolean               | Whether to log API requests.                                                                                                                                      |
+| `log-responses`   | boolean               | Whether to log API responses.                                                                                                                                     |
+| `max-retries`     | integer               | The maximum number of retries for failed API requests.                                                                                                            |
+| `model-name`      | string                | The model name to use.                                                                                                                                            |
+| `organization-id` | string                | The ID of the organization for API requests.                                                                                                                      |
+| `temperature`     | double                | The sampling temperature to use, between 0 and 2. Higher values make the output more random, while lower values make it more focused and deterministic.           |
+| `timeout`         | duration              | The timeout setting for API requests. See [here](https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-) for the format. |
 
 #### Proxy
 
@@ -233,7 +233,7 @@ The framework attempts to resolve a tokenizer using the following strategy:
 
 To automatically create and add `OpenAiModerationModel` to the service registry add the following lines to `application.yaml`:
 
-```yaml
+```yaml [application.yaml]
 langchain4j:
   providers:
     open-ai:
@@ -249,18 +249,18 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 Full list of configuration properties:
 
-| Key | Type | Description |
-|----|----|----|
-| `api-key` | string | Required. The API key used to authenticate requests to the OpenAI API. |
-| `base-url` | string | The base URL for the OpenAI API. If not present, the default value supplied from LangChain4j is used. |
-| `custom-headers` | Map\<string, string\> | A map containing custom headers. |
-| `enabled` | boolean | If set to false, the OpenAI model will not be available even if configured. |
-| `log-requests` | boolean | Whether to log API requests. |
-| `log-responses` | boolean | Whether to log API responses. |
-| `max-retries` | integer | The maximum number of retries for failed API requests. |
-| `model-name` | string | The model name to use. |
-| `organization-id` | string | The ID of the organization for API requests. |
-| `timeout` | duration | The timeout setting for API requests. See [here](https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-) for the format. |
+| Key               | Type                  | Description                                                                                                                                                       |
+|-------------------|-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `api-key`         | string                | Required. The API key used to authenticate requests to the OpenAI API.                                                                                            |
+| `base-url`        | string                | The base URL for the OpenAI API. If not present, the default value supplied from LangChain4j is used.                                                             |
+| `custom-headers`  | Map\<string, string\> | A map containing custom headers.                                                                                                                                  |
+| `enabled`         | boolean               | If set to false, the OpenAI model will not be available even if configured.                                                                                       |
+| `log-requests`    | boolean               | Whether to log API requests.                                                                                                                                      |
+| `log-responses`   | boolean               | Whether to log API responses.                                                                                                                                     |
+| `max-retries`     | integer               | The maximum number of retries for failed API requests.                                                                                                            |
+| `model-name`      | string                | The model name to use.                                                                                                                                            |
+| `organization-id` | string                | The ID of the organization for API requests.                                                                                                                      |
+| `timeout`         | duration              | The timeout setting for API requests. See [here](https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-) for the format. |
 
 #### Proxy
 
@@ -274,7 +274,7 @@ The framework attempts to resolve a proxy using the following strategy:
 
 To automatically create and add `OpenAiStreamingChatModel` to the service registry add the following lines to `application.yaml`:
 
-```yaml
+```yaml [application.yaml]
 langchain4j:
   providers:
     open-ai:
@@ -290,30 +290,30 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 Full list of configuration properties:
 
-| Key | Type | Description |
-|----|----|----|
-| `api-key` | string | Required. The API key used to authenticate requests to the OpenAI API. |
-| `base-url` | string | The base URL for the OpenAI API. If not present, the default value supplied from LangChain4j is used. |
-| `custom-headers` | Map\<string, string\> | A map containing custom headers. |
-| `enabled` | boolean | If set to `false`, OpenAI model will not be available even if configured. |
-| `frequency-penalty` | double | The frequency penalty, between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency in the text so far, decreasing the model’s likelihood to repeat the same line. |
-| `log-requests` | boolean | Whether to log API requests. |
-| `log-responses` | boolean | Whether to log API responses. |
-| `logit-bias` | Map\<string, int\> | LogitBias adjusts the likelihood of specific tokens appearing in a model’s response. A map of token IDs to bias values (-100 to 100). Positive values increase the chance of the token, while negative values reduce it, allowing fine control over token preferences in the output. |
-| `max-completion-tokens` | int | The maximum number of tokens allowed for the model’s response. |
-| `max-tokens` | int | The maximum number of tokens to generate in the completion. |
-| `model-name` | string | The model name to use (e.g., "gpt-3.5-turbo"). |
-| `organization-id` | string | The ID of the organization for API requests. |
-| `parallel-tool-calls` | boolean | Whether to allow parallel calls to tools. |
-| `presence-penalty` | double | The presence penalty, between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far, encouraging the model to use new words. |
-| `response-format` | string | The format in which the model should return the response. |
-| `seed` | int | The seed for the random number generator used by the model. |
-| `stop` | string\[\] | The list of sequences where the API will stop generating further tokens. |
-| `strict-tools` | boolean | Whether to enforce strict validation of tools used by the model. |
-| `temperature` | double | The sampling temperature to use, between 0 and 2. Higher values make the output more random, while lower values make it more focused and deterministic. |
-| `timeout` | duration | The timeout setting for API requests. See [here](https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-) for the format. |
-| `top-p` | double | The nucleus sampling value, where the model considers the results of the tokens with top_p probability mass. |
-| `user` | string | The user ID associated with the API requests. |
+| Key                     | Type                  | Description                                                                                                                                                                                                                                                                          |
+|-------------------------|-----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `api-key`               | string                | Required. The API key used to authenticate requests to the OpenAI API.                                                                                                                                                                                                               |
+| `base-url`              | string                | The base URL for the OpenAI API. If not present, the default value supplied from LangChain4j is used.                                                                                                                                                                                |
+| `custom-headers`        | Map\<string, string\> | A map containing custom headers.                                                                                                                                                                                                                                                     |
+| `enabled`               | boolean               | If set to `false`, OpenAI model will not be available even if configured.                                                                                                                                                                                                            |
+| `frequency-penalty`     | double                | The frequency penalty, between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency in the text so far, decreasing the model’s likelihood to repeat the same line.                                                                                    |
+| `log-requests`          | boolean               | Whether to log API requests.                                                                                                                                                                                                                                                         |
+| `log-responses`         | boolean               | Whether to log API responses.                                                                                                                                                                                                                                                        |
+| `logit-bias`            | Map\<string, int\>    | LogitBias adjusts the likelihood of specific tokens appearing in a model’s response. A map of token IDs to bias values (-100 to 100). Positive values increase the chance of the token, while negative values reduce it, allowing fine control over token preferences in the output. |
+| `max-completion-tokens` | int                   | The maximum number of tokens allowed for the model’s response.                                                                                                                                                                                                                       |
+| `max-tokens`            | int                   | The maximum number of tokens to generate in the completion.                                                                                                                                                                                                                          |
+| `model-name`            | string                | The model name to use (e.g., "gpt-3.5-turbo").                                                                                                                                                                                                                                       |
+| `organization-id`       | string                | The ID of the organization for API requests.                                                                                                                                                                                                                                         |
+| `parallel-tool-calls`   | boolean               | Whether to allow parallel calls to tools.                                                                                                                                                                                                                                            |
+| `presence-penalty`      | double                | The presence penalty, between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far, encouraging the model to use new words.                                                                                                             |
+| `response-format`       | string                | The format in which the model should return the response.                                                                                                                                                                                                                            |
+| `seed`                  | int                   | The seed for the random number generator used by the model.                                                                                                                                                                                                                          |
+| `stop`                  | string\[\]            | The list of sequences where the API will stop generating further tokens.                                                                                                                                                                                                             |
+| `strict-tools`          | boolean               | Whether to enforce strict validation of tools used by the model.                                                                                                                                                                                                                     |
+| `temperature`           | double                | The sampling temperature to use, between 0 and 2. Higher values make the output more random, while lower values make it more focused and deterministic.                                                                                                                              |
+| `timeout`               | duration              | The timeout setting for API requests. See [here](https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-) for the format.                                                                                                                    |
+| `top-p`                 | double                | The nucleus sampling value, where the model considers the results of the tokens with top_p probability mass.                                                                                                                                                                         |
+| `user`                  | string                | The user ID associated with the API requests.                                                                                                                                                                                                                                        |
 
 #### Proxy
 

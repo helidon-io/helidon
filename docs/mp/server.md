@@ -470,7 +470,7 @@ public class MyFilter implements ContainerRequestFilter {
 }
 ```
 
-See the [`UriInfo`](/apidocs/io.helidon.common.uri/io/helidon/common/uri/UriInfo.html) JavaDoc for more information.
+See the [`UriInfo`](/apidocs/io.helidon.common.uri/io/helidon/common/uri/UriInfo.html) Javadoc for more information.
 
 > [!NOTE]
 > The `requestContext.getUriInfo()` method returns the Jakarta RESTful web services `UriInfo` object, *not* the Helidon-provided requested URI information `UriInfo` record.

@@ -112,7 +112,7 @@ You can use Helidon-provided health checks to report various common health check
 <tr>
 <th style="text-align: left;">Built-in health check</th>
 <th style="text-align: left;">Health check name</th>
-<th style="text-align: left;">JavaDoc</th>
+<th style="text-align: left;">Javadoc</th>
 <th style="text-align: left;">Config properties (within <code>server.features.observe.observers.health</code>)</th>
 <th style="text-align: left;">Default config value</th>
 </tr>
@@ -503,7 +503,7 @@ Full example code is available [here](https://github.com/helidon-io/helidon-exam
 
 ## Reference
 
-- [Helidon MicroProfile Health JavaDoc](/apidocs/io.helidon.microprofile.health/module-summary.html)
-- [Helidon Built-in Checks JavaDoc](/apidocs/io.helidon.health.checks/module-summary.html)
+- [Helidon MicroProfile Health Javadoc](/apidocs/io.helidon.microprofile.health/module-summary.html)
+- [Helidon Built-in Checks Javadoc](/apidocs/io.helidon.health.checks/module-summary.html)
 - [MicroProfile Health Specification](https://download.eclipse.org/microprofile/microprofile-health-4.0/microprofile-health-spec-4.0.html)
 - [MicroProfile Health on GitHub](https://github.com/eclipse/microprofile-health)

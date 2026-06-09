@@ -127,13 +127,11 @@ WebClient currently supports `HTTP/1.1` and `HTTP/2` protocols. Below are the ru
 - Using plain socket triggers WebClient to process a request using `HTTP/1.1`.
 - When using TLS, the client will use ALPN (protocol negotiation) to use appropriate HTTP version (either 1.1, or 2). `HTTP/2` has a higher weight, so it is chosen if supported by both sides.
 - A specific protocol can be explicitly selected by calling `HttpClientRequest#protocolId(String)`.
-
-<!-- -->
-
-    String result = client.get()
-            .protocolId("http/1.1")
-            .requestEntity(String.class);
-
+   ```java
+  String result = client.get()
+      .protocolId("http/1.1")
+      .requestEntity(String.class);
+  ```
 - If `HTTP/2` is used, an upgrade attempt will be performed. If it fails, the client falls-back to `HTTP/1.1`.
 - The parameter `prior-knowledge` can be defined using `HTTP/2` protocol configuration. Please refer to [Setting Protocol configuration](#setting-protocol-configuration) on how to customize `HTTP/2`. In such a case, `prior-knowledge` will be used and fail if it is unable to switch to `HTTP/2`.
 
@@ -217,19 +215,19 @@ The class responsible for WebClient configuration is:
 
 ### Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="a48ec2-connect-timeout"></span> `connect-timeout` | `VALUE` | `Duration` |   | Connect timeout |
-| <span id="a5bc70-follow-redirects"></span> `follow-redirects` | `VALUE` | `Boolean` | `true` | Whether to follow redirects |
-| <span id="a6536a-keep-alive"></span> `keep-alive` | `VALUE` | `Boolean` | `true` | Determines if connection keep alive is enabled (NOT socket keep alive, but HTTP connection keep alive, to re-use the same connection for multiple requests) |
-| <span id="a04b74-max-redirects"></span> `max-redirects` | `VALUE` | `Integer` | `10` | Max number of followed redirects |
-| <span id="a419a4-properties"></span> `properties` | `MAP` | `String` |   | Properties configured for this client |
-| <span id="a3662c-protocol-configs"></span> [`protocol-configs`](../config/io_helidon_webclient_spi_ProtocolConfig.md) | `LIST` | `i.h.w.s.ProtocolConfig` |   | Configuration of client protocols |
-| <span id="adcd34-protocol-configs-discover-services"></span> `protocol-configs-discover-services` | `VALUE` | `Boolean` | `true` | Whether to enable automatic service discovery for `protocol-configs` |
-| <span id="a23735-protocol-preference"></span> `protocol-preference` | `LIST` | `String` |   | List of HTTP protocol IDs by order of preference |
-| <span id="a62d6a-proxy"></span> [`proxy`](../config/io_helidon_webclient_api_Proxy.md) | `VALUE` | `i.h.w.a.Proxy` |   | Proxy configuration to be used for requests |
-| <span id="aecd9d-read-timeout"></span> `read-timeout` | `VALUE` | `Duration` |   | Read timeout |
-| <span id="aba9ef-tls"></span> [`tls`](../config/io_helidon_common_tls_Tls.md) | `VALUE` | `i.h.c.t.Tls` |   | TLS configuration for any TLS request from this client |
+| Key                                                                                                                   | Kind    | Type                     | Default Value | Description                                                                                                                                                 |
+|-----------------------------------------------------------------------------------------------------------------------|---------|--------------------------|---------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| <span id="a48ec2-connect-timeout"></span> `connect-timeout`                                                           | `VALUE` | `Duration`               |               | Connect timeout                                                                                                                                             |
+| <span id="a5bc70-follow-redirects"></span> `follow-redirects`                                                         | `VALUE` | `Boolean`                | `true`        | Whether to follow redirects                                                                                                                                 |
+| <span id="a6536a-keep-alive"></span> `keep-alive`                                                                     | `VALUE` | `Boolean`                | `true`        | Determines if connection keep alive is enabled (NOT socket keep alive, but HTTP connection keep alive, to re-use the same connection for multiple requests) |
+| <span id="a04b74-max-redirects"></span> `max-redirects`                                                               | `VALUE` | `Integer`                | `10`          | Max number of followed redirects                                                                                                                            |
+| <span id="a419a4-properties"></span> `properties`                                                                     | `MAP`   | `String`                 |               | Properties configured for this client                                                                                                                       |
+| <span id="a3662c-protocol-configs"></span> [`protocol-configs`](../config/io_helidon_webclient_spi_ProtocolConfig.md) | `LIST`  | `i.h.w.s.ProtocolConfig` |               | Configuration of client protocols                                                                                                                           |
+| <span id="adcd34-protocol-configs-discover-services"></span> `protocol-configs-discover-services`                     | `VALUE` | `Boolean`                | `true`        | Whether to enable automatic service discovery for `protocol-configs`                                                                                        |
+| <span id="a23735-protocol-preference"></span> `protocol-preference`                                                   | `LIST`  | `String`                 |               | List of HTTP protocol IDs by order of preference                                                                                                            |
+| <span id="a62d6a-proxy"></span> [`proxy`](../config/io_helidon_webclient_api_Proxy.md)                                | `VALUE` | `i.h.w.a.Proxy`          |               | Proxy configuration to be used for requests                                                                                                                 |
+| <span id="aecd9d-read-timeout"></span> `read-timeout`                                                                 | `VALUE` | `Duration`               |               | Read timeout                                                                                                                                                |
+| <span id="aba9ef-tls"></span> [`tls`](../config/io_helidon_common_tls_Tls.md)                                         | `VALUE` | `i.h.c.t.Tls`            |               | TLS configuration for any TLS request from this client                                                                                                      |
 
 ### Protocol Specific Configuration
 
@@ -239,31 +237,31 @@ Protocol specific configuration can be set using the `protocol-configs` paramete
 
 #### Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="a7a44c-default-keep-alive"></span> `default-keep-alive` | `VALUE` | `Boolean` | `true` | Whether to use keep alive by default |
-| <span id="a81fda-max-buffered-entity-size"></span> `max-buffered-entity-size` | `VALUE` | `i.h.c.Size` | `64 KB` | Configure the maximum size allowed for an entity that can be explicitly buffered by the application by calling `io.helidon.http.media.ReadableEntity#buffer` |
-| <span id="a403a3-max-header-size"></span> `max-header-size` | `VALUE` | `Integer` | `16384` | Configure the maximum allowed header size of the response |
-| <span id="ab0904-max-status-line-length"></span> `max-status-line-length` | `VALUE` | `Integer` | `256` | Configure the maximum allowed length of the status line from the response |
-| <span id="a2ff23-name"></span> `name` | `VALUE` | `String` | `http_1_1` | `N/A` |
-| <span id="a607dc-validate-request-headers"></span> `validate-request-headers` | `VALUE` | `Boolean` | `false` | Sets whether the request header format is validated or not |
-| <span id="a21e77-validate-response-headers"></span> `validate-response-headers` | `VALUE` | `Boolean` | `true` | Sets whether the response header format is validated or not |
+| Key                                                                             | Kind    | Type         | Default Value | Description                                                                                                                                                  |
+|---------------------------------------------------------------------------------|---------|--------------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| <span id="a7a44c-default-keep-alive"></span> `default-keep-alive`               | `VALUE` | `Boolean`    | `true`        | Whether to use keep alive by default                                                                                                                         |
+| <span id="a81fda-max-buffered-entity-size"></span> `max-buffered-entity-size`   | `VALUE` | `i.h.c.Size` | `64 KB`       | Configure the maximum size allowed for an entity that can be explicitly buffered by the application by calling `io.helidon.http.media.ReadableEntity#buffer` |
+| <span id="a403a3-max-header-size"></span> `max-header-size`                     | `VALUE` | `Integer`    | `16384`       | Configure the maximum allowed header size of the response                                                                                                    |
+| <span id="ab0904-max-status-line-length"></span> `max-status-line-length`       | `VALUE` | `Integer`    | `256`         | Configure the maximum allowed length of the status line from the response                                                                                    |
+| <span id="a2ff23-name"></span> `name`                                           | `VALUE` | `String`     | `http_1_1`    | `N/A`                                                                                                                                                        |
+| <span id="a607dc-validate-request-headers"></span> `validate-request-headers`   | `VALUE` | `Boolean`    | `false`       | Sets whether the request header format is validated or not                                                                                                   |
+| <span id="a21e77-validate-response-headers"></span> `validate-response-headers` | `VALUE` | `Boolean`    | `true`        | Sets whether the response header format is validated or not                                                                                                  |
 
 - `HTTP/2`
 
 #### Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="a06f7b-flow-control-block-timeout"></span> `flow-control-block-timeout` | `VALUE` | `Duration` | `PT15S` | Timeout for blocking while waiting for window update when window is depleted |
-| <span id="a942dc-initial-window-size"></span> `initial-window-size` | `VALUE` | `Integer` | `65535` | Configure INITIAL_WINDOW_SIZE setting for new HTTP/2 connections |
-| <span id="a2ae0e-max-buffered-entity-size"></span> `max-buffered-entity-size` | `VALUE` | `i.h.c.Size` | `64 KB` | Configure the maximum size allowed for an entity that can be explicitly buffered by the application by calling `io.helidon.http.media.ReadableEntity#buffer` |
-| <span id="aecd63-max-frame-size"></span> `max-frame-size` | `VALUE` | `Integer` | `16384` | Configure initial MAX_FRAME_SIZE setting for new HTTP/2 connections |
-| <span id="aa6ab2-max-header-list-size"></span> `max-header-list-size` | `VALUE` | `Long` | `-1` | Configure initial MAX_HEADER_LIST_SIZE setting for new HTTP/2 connections |
-| <span id="ae847a-name"></span> `name` | `VALUE` | `String` | `h2` | `N/A` |
-| <span id="ac97c5-ping"></span> `ping` | `VALUE` | `Boolean` | `false` | Check healthiness of cached connections with HTTP/2.0 ping frame |
-| <span id="af75f0-ping-timeout"></span> `ping-timeout` | `VALUE` | `Duration` | `PT0.5S` | Timeout for ping probe used for checking healthiness of cached connections |
-| <span id="a8e968-prior-knowledge"></span> `prior-knowledge` | `VALUE` | `Boolean` | `false` | Prior knowledge of HTTP/2 capabilities of the server |
+| Key                                                                               | Kind    | Type         | Default Value | Description                                                                                                                                                  |
+|-----------------------------------------------------------------------------------|---------|--------------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| <span id="a06f7b-flow-control-block-timeout"></span> `flow-control-block-timeout` | `VALUE` | `Duration`   | `PT15S`       | Timeout for blocking while waiting for window update when window is depleted                                                                                 |
+| <span id="a942dc-initial-window-size"></span> `initial-window-size`               | `VALUE` | `Integer`    | `65535`       | Configure INITIAL_WINDOW_SIZE setting for new HTTP/2 connections                                                                                             |
+| <span id="a2ae0e-max-buffered-entity-size"></span> `max-buffered-entity-size`     | `VALUE` | `i.h.c.Size` | `64 KB`       | Configure the maximum size allowed for an entity that can be explicitly buffered by the application by calling `io.helidon.http.media.ReadableEntity#buffer` |
+| <span id="aecd63-max-frame-size"></span> `max-frame-size`                         | `VALUE` | `Integer`    | `16384`       | Configure initial MAX_FRAME_SIZE setting for new HTTP/2 connections                                                                                          |
+| <span id="aa6ab2-max-header-list-size"></span> `max-header-list-size`             | `VALUE` | `Long`       | `-1`          | Configure initial MAX_HEADER_LIST_SIZE setting for new HTTP/2 connections                                                                                    |
+| <span id="ae847a-name"></span> `name`                                             | `VALUE` | `String`     | `h2`          | `N/A`                                                                                                                                                        |
+| <span id="ac97c5-ping"></span> `ping`                                             | `VALUE` | `Boolean`    | `false`       | Check healthiness of cached connections with HTTP/2.0 ping frame                                                                                             |
+| <span id="af75f0-ping-timeout"></span> `ping-timeout`                             | `VALUE` | `Duration`   | `PT0.5S`      | Timeout for ping probe used for checking healthiness of cached connections                                                                                   |
+| <span id="a8e968-prior-knowledge"></span> `prior-knowledge`                       | `VALUE` | `Boolean`    | `false`       | Prior knowledge of HTTP/2 capabilities of the server                                                                                                         |
 
 ### Example of a WebClient Runtime Configuration
 
@@ -278,7 +276,7 @@ WebClient client = WebClient.builder()
 ### Example of a WebClient YAML Configuration
 
 <!--@mdc ::code-collapse -->
-```yaml
+```yaml [application.yaml]
 client:
   connect-timeout-millis: 2000
   read-timeout-millis: 2000
@@ -664,7 +662,7 @@ Dependency for exporting metrics semantic conventions data using OTLP:
 
 Configuration for an OpenTelemetry exporter:
 
-```yaml
+```yaml [application.yaml]
 telemetry:
   service: my-app
   signals:
@@ -677,7 +675,7 @@ To activate webclient telemetry collection using configuration, add the `telemet
 
 Enabling metrics and tracing telemetry using configuration:
 
-```yaml
+```yaml [application.yaml]
 client:
   services:
     telemetry:
@@ -712,7 +710,7 @@ To enable this feature (implemented as a WebClient service), add the following d
 
 Example configuration:
 
-```yaml
+```yaml [application.yaml]
 client:
   services:
     context:
@@ -738,8 +736,8 @@ Configuration of WebClient transport level propagation of context values.
 
 #### Configuration options
 
-| Key | Kind | Type | Description |
-|----|----|----|----|
+| Key                                                                                                            | Kind   | Type                            | Description                 |
+|----------------------------------------------------------------------------------------------------------------|--------|---------------------------------|-----------------------------|
 | <span id="ab403e-records"></span> [`records`](../config/io_helidon_common_context_http_ContextRecordConfig.md) | `LIST` | `i.h.c.c.h.ContextRecordConfig` | List of propagation records |
 
 See the [manifest](../config/manifest.md) for all available types.

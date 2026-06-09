@@ -41,7 +41,7 @@ Configuration can be loaded from different types of locations and expressed in d
 6.  A URL resource - contents is parsed according to its inferred format.
 7.  A variety of in-memory data structures (`String`, `Map`, `Properties`)
 
-See the JavaDoc for the [`ConfigSources`](/apidocs/io.helidon.config/io/helidon/config/ConfigSources.html) class for a complete list of the built-in config source types and how to use them.
+See the Javadoc for the [`ConfigSources`](/apidocs/io.helidon.config/io/helidon/config/ConfigSources.html) class for a complete list of the built-in config source types and how to use them.
 
 See the [advanced topics'](advanced-configuration.md#advanced-config-sources) page for further information on some more involved aspects of config sources.
 
@@ -85,7 +85,7 @@ Note that if you want to explicitly set the global configuration then you **must
 
 Although the default configuration is very simple to use, your application can take full control of all configuration sources and precedence. You can do so by creating and invoking methods on a `Config.Builder` object to construct a `Config` instance.
 
-When your application prepares a `Config.Builder` it sets what `ConfigSource`s and `ConfigParser`s the builder should use in constructing the resulting `Config` object. The JavaDoc explains how to use the [`Config.Builder`](/apidocs/io.helidon.config/io/helidon/config/Config.Builder.html).
+When your application prepares a `Config.Builder` it sets what `ConfigSource`s and `ConfigParser`s the builder should use in constructing the resulting `Config` object. The Javadoc explains how to use the [`Config.Builder`](/apidocs/io.helidon.config/io/helidon/config/Config.Builder.html).
 
 See the [Custom Configuration Sources](../../se/guides/config.md#_custom_configuration_sources) and [advanced config sources](advanced-configuration.md#advanced-config-sources) sections for detailed examples and further information.
 
@@ -112,7 +112,7 @@ web:
   page-size: 25
 ```
 
-The configuration has the same internal representation in `Config`. Once created, the `Config` object provides many methods the application can use to retrieve config data as various Java types. See the [`Config`](/apidocs/io.helidon.config/io/helidon/config/Config.html) JavaDoc for complete details.
+The configuration has the same internal representation in `Config`. Once created, the `Config` object provides many methods the application can use to retrieve config data as various Java types. See the [`Config`](/apidocs/io.helidon.config/io/helidon/config/Config.html) Javadoc for complete details.
 
 ```java
 int pageSize = config.get("web.page-size")
@@ -218,7 +218,7 @@ The config system includes two predefined retry policies:
 
 Predefined Retry Policies
 
-See the [`RetryPolicies`](/apidocs/io.helidon.config/io/helidon/config/RetryPolicies.html) JavaDoc for complete details on these built-in retry policies.
+See the [`RetryPolicies`](/apidocs/io.helidon.config/io/helidon/config/RetryPolicies.html) Javadoc for complete details on these built-in retry policies.
 
 You can devise your own policy. Implement the [`RetryPolicy`](/apidocs/io.helidon.config/io/helidon/config/spi/RetryPolicy.html) interface. Then pass an instance of your policy implementation to the config source builder’s `retryPolicy` method.
 
@@ -237,7 +237,7 @@ In `Config` system, you can do this through change support provided by these com
 
 If you want to receive `onChange` events, you must configure your Config with at least one source that is capable of providing changes (having a `PollingStrategy` or `ChangeWatcher` configured, or implementing `EventConfigSource`)
 
-The [mutability](mutability-support.md) documentation explains this in detail, and the [`PollingStrategies`](/apidocs/io.helidon.config/io/helidon/config/PollingStrategies.html) JavaDoc describes the built-in implementations.
+The [mutability](mutability-support.md) documentation explains this in detail, and the [`PollingStrategies`](/apidocs/io.helidon.config/io/helidon/config/PollingStrategies.html) Javadoc describes the built-in implementations.
 
 You can, of course, write your own by implementing the [`PollingStrategy`](/apidocs/io.helidon.config/io/helidon/config/spi/PollingStrategy.html) interface. On a config source builder invoke `pollingStrategy` with an instance of your custom strategy and then invoke `build` to create the `ConfigSource`.
 

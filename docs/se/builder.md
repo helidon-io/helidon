@@ -334,66 +334,62 @@ Usage:
 
 Annotations:
 
-|  |  |  |
-|----|----|----|
-| Annotation | Required | Description |
-| `Prototype.Blueprint` | Yes | Annotation on the blueprint interface is required to trigger annotation processing |
-| `Prototype.Implement` | No | Add additional implemented types to the generated prototype |
-| `Prototype.Annotated` | No | Allows adding an annotation (or annotations) to the generated class or methods |
-| <span class="line-through">Prototype.FactoryMethod</span> | No | This is now deprecated, use one of the three factory method types below |
-| `Prototype.PrototypeFactoryMethod` | No | Annotates a method in a `CustomMethods` type to be added as a static method to the prototype |
-| `Prototype.ConfigFactoryMethod` | No | Annotates a method in a `CustomMethods` type that creates an option from `Config` on a configured type |
-| `Prototype.RuntimeTypeFactoryMethod` | No | Annotates a method in a `CustomMethods` type that creates an option runtime type from its prototype (the parameter must be another prototype |
-| `Prototype.Singular` | No | Used for lists, sets, and maps to add methods `add*`/`put*` in addition to the full collection setters |
-| `Prototype.SameGeneric` | No | Use for maps, where we want a setter method to use the same generic type for key and for value (such as `Class<T> key, T valuel`) |
-| `Prototype.Redundant` | No | A redundant option will not be part of generated `toString`, `hashCode`, and `equals` methods (allows finer grained control) |
-| `Prototype.Confidential` | No | A confidential option will not have value visible when `toString` is called, only if it is `null` or it has a value (`**`) |
-| `Prototype.CustomMethods` | No | reference a class that will contain declarations (all static) of custom methods to be added to the generated code, can add prototype, builder, and factory methods |
-| `Prototype.BuilderMethod` | No | Annotation to be placed on factory methods that are to be added to builder, first parameter is the `BuilderBase<?, ?>` of the prototype |
-| `Prototype.PrototypeMethod` | No | Annotation to be placed on factory methods that are to be added to prototype, first parameter is the prototype instance |
-| `Prototype.IncludeDefaultMethods` | No | Add default methods on the blueprint (or a super interface) as option methods, allows list of method names to include (if annotation is present and the list is empty, all default getter methods will be considered options) |
-| `Prototype.Extension` | No | Allows registering of extensions to enhance the generated type (such as for JSON serialization and deserialization) |
-| <span class="line-through">RuntimeType.PrototypedBy</span> | No | This annotation is now deprecated and has no function, the information is available on the blueprint and this was redundant |
+| Annotation                                                 | Required | Description                                                                                                                                                                                                                   |
+|------------------------------------------------------------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `Prototype.Blueprint`                                      | Yes      | Annotation on the blueprint interface is required to trigger annotation processing                                                                                                                                            |
+| `Prototype.Implement`                                      | No       | Add additional implemented types to the generated prototype                                                                                                                                                                   |
+| `Prototype.Annotated`                                      | No       | Allows adding an annotation (or annotations) to the generated class or methods                                                                                                                                                |
+| <span class="line-through">Prototype.FactoryMethod</span>  | No       | This is now deprecated, use one of the three factory method types below                                                                                                                                                       |
+| `Prototype.PrototypeFactoryMethod`                         | No       | Annotates a method in a `CustomMethods` type to be added as a static method to the prototype                                                                                                                                  |
+| `Prototype.ConfigFactoryMethod`                            | No       | Annotates a method in a `CustomMethods` type that creates an option from `Config` on a configured type                                                                                                                        |
+| `Prototype.RuntimeTypeFactoryMethod`                       | No       | Annotates a method in a `CustomMethods` type that creates an option runtime type from its prototype (the parameter must be another prototype                                                                                  |
+| `Prototype.Singular`                                       | No       | Used for lists, sets, and maps to add methods `add*`/`put*` in addition to the full collection setters                                                                                                                        |
+| `Prototype.SameGeneric`                                    | No       | Use for maps, where we want a setter method to use the same generic type for key and for value (such as `Class<T> key, T valuel`)                                                                                             |
+| `Prototype.Redundant`                                      | No       | A redundant option will not be part of generated `toString`, `hashCode`, and `equals` methods (allows finer grained control)                                                                                                  |
+| `Prototype.Confidential`                                   | No       | A confidential option will not have value visible when `toString` is called, only if it is `null` or it has a value (`**`)                                                                                                    |
+| `Prototype.CustomMethods`                                  | No       | reference a class that will contain declarations (all static) of custom methods to be added to the generated code, can add prototype, builder, and factory methods                                                            |
+| `Prototype.BuilderMethod`                                  | No       | Annotation to be placed on factory methods that are to be added to builder, first parameter is the `BuilderBase<?, ?>` of the prototype                                                                                       |
+| `Prototype.PrototypeMethod`                                | No       | Annotation to be placed on factory methods that are to be added to prototype, first parameter is the prototype instance                                                                                                       |
+| `Prototype.IncludeDefaultMethods`                          | No       | Add default methods on the blueprint (or a super interface) as option methods, allows list of method names to include (if annotation is present and the list is empty, all default getter methods will be considered options) |
+| `Prototype.Extension`                                      | No       | Allows registering of extensions to enhance the generated type (such as for JSON serialization and deserialization)                                                                                                           |
+| <span class="line-through">RuntimeType.PrototypedBy</span> | No       | This annotation is now deprecated and has no function, the information is available on the blueprint and this was redundant                                                                                                   |
 
 Interfaces:
 
-|  |  |  |
-|----|----|----|
-| Interface | Required | Description |
-| `RuntimeType.Api` | No | Runtime type must implement this interface to mark which prototype is used to create it |
-| `Prototype.Factory` | No | If blueprint implements factory, it means the prototype is used to create a single runtime type and will have methods `build` and `get` both on builder an on prototype interface that create a new instance of the runtime object |
-| `Prototype.BuilderDecorator` | No | Custom decorator to modify builder before validation is done in method `build` |
-| `Prototype.Api` | Yes | All prototypes implement this interface |
-| `Prototype.Builder` | Yes | All prototype builders implement this interface, defines method `buildPrototype` |
-| `Prototype.ConfiguredBuilder` | Yes | all prototype builders that support configuration implement this interface, defines method `config(Config)` |
+| Interface                     | Required | Description                                                                                                                                                                                                                        |
+|-------------------------------|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `RuntimeType.Api`             | No       | Runtime type must implement this interface to mark which prototype is used to create it                                                                                                                                            |
+| `Prototype.Factory`           | No       | If blueprint implements factory, it means the prototype is used to create a single runtime type and will have methods `build` and `get` both on builder an on prototype interface that create a new instance of the runtime object |
+| `Prototype.BuilderDecorator`  | No       | Custom decorator to modify builder before validation is done in method `build`                                                                                                                                                     |
+| `Prototype.Api`               | Yes      | All prototypes implement this interface                                                                                                                                                                                            |
+| `Prototype.Builder`           | Yes      | All prototype builders implement this interface, defines method `buildPrototype`                                                                                                                                                   |
+| `Prototype.ConfiguredBuilder` | Yes      | all prototype builders that support configuration implement this interface, defines method `config(Config)`                                                                                                                        |
 
 ### Option
 
-|  |  |
-|----|----|
-| Annotation | Description |
-| `Option.Singular` | For collection based options. Adds setter for a single value (for `List<String> algorithms()`, there would be the following setters: `algorithms(List<String>)`, `addAlgorithms(List<String>)`, `addAlgorithm(String)`) |
-| `Option.Configured` | For options that are configured from config (must be explicitly marked, default is not-configured), also ignored unless `@Prototype.Configured` is specified on the blueprint interface |
-| `Option.Required` | We can recognize required options through signature in most cases (any option that does not return an `Optional` and does not have a default value); this option is useful for primitive types, where we need an explicit value set, rather than using the primitive’s default value |
-| `Option.Provider` | Satisfied by a provider implementation, see javadoc for details |
-| `Option.AllowedValues` | Allowed values for the property, not required for `enum`, where we create this automatically, though we can configure description of each value (works automatically for `enum` defined in the same module); the description is used for generated documentation |
-| `Option.SameGeneric` | Advanced configuration of a Map, where the map accepts two typed values, and we must use the same generic on setters (such as `Map<Class<Object>, Object>` - `<T> Builder put(Class<T>, T)`) |
-| `Option.Redundant` | Marks an option that is not used by equals and hashCode methods |
-| `Option.Confidential` | Marks an option that will not be visible in `toString()` |
-| `Option.Deprecated` | Marks a deprecated option that has a replacement option in this builder, use Java’s deprecation for other cases, they will be honored in the generated code |
-| `Option.Type` | Explicitly defined type of a property (may include generics), in case the type is code generated in the current module, and we cannot obtain the correct information from the annotation processing environment |
-| `Option.Decorator` | Support for field decoration (to do side-effects on setter call) |
-| `Option.ProtypedBy` | When using a third party runtime type and we have a prototype that builds it, we can specify the prototype class name (or fully qualified class name if in a different package) to add prototype methods and to read from configuration using that prototype |
+| Annotation             | Description                                                                                                                                                                                                                                                                          |
+|------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `Option.Singular`      | For collection based options. Adds setter for a single value (for `List<String> algorithms()`, there would be the following setters: `algorithms(List<String>)`, `addAlgorithms(List<String>)`, `addAlgorithm(String)`)                                                              |
+| `Option.Configured`    | For options that are configured from config (must be explicitly marked, default is not-configured), also ignored unless `@Prototype.Configured` is specified on the blueprint interface                                                                                              |
+| `Option.Required`      | We can recognize required options through signature in most cases (any option that does not return an `Optional` and does not have a default value); this option is useful for primitive types, where we need an explicit value set, rather than using the primitive’s default value |
+| `Option.Provider`      | Satisfied by a provider implementation, see javadoc for details                                                                                                                                                                                                                      |
+| `Option.AllowedValues` | Allowed values for the property, not required for `enum`, where we create this automatically, though we can configure description of each value (works automatically for `enum` defined in the same module); the description is used for generated documentation                     |
+| `Option.SameGeneric`   | Advanced configuration of a Map, where the map accepts two typed values, and we must use the same generic on setters (such as `Map<Class<Object>, Object>` - `<T> Builder put(Class<T>, T)`)                                                                                         |
+| `Option.Redundant`     | Marks an option that is not used by equals and hashCode methods                                                                                                                                                                                                                      |
+| `Option.Confidential`  | Marks an option that will not be visible in `toString()`                                                                                                                                                                                                                             |
+| `Option.Deprecated`    | Marks a deprecated option that has a replacement option in this builder, use Java’s deprecation for other cases, they will be honored in the generated code                                                                                                                          |
+| `Option.Type`          | Explicitly defined type of a property (may include generics), in case the type is code generated in the current module, and we cannot obtain the correct information from the annotation processing environment                                                                      |
+| `Option.Decorator`     | Support for field decoration (to do side-effects on setter call)                                                                                                                                                                                                                     |
+| `Option.ProtypedBy`    | When using a third party runtime type and we have a prototype that builds it, we can specify the prototype class name (or fully qualified class name if in a different package) to add prototype methods and to read from configuration using that prototype                         |
 
 To configure default value(s) of an option, one of the following annotations can be used (mutually exclusive!). Most defaults support an array, to provide default values for collections.
 
-|  |  |
-|----|----|
-| Annotation | Description |
-| `Option.Default` | Default value(s) that are `String` or we support coercion to the correct type (`enum`, `Duration`) |
-| `Option.DefaultInt` | Default value(s) that are `int` |
-| `Option.DefaultLong` | Default value(s) that are `long` |
-| `Option.DefaultDouble` | Default value(s) that are `double` |
-| `Option.DefaultBoolean` | Default value(s) that are `boolean` |
-| `Option.DefaultMethod` | Static method to invoke to obtain a default value |
-| `Option.DefaultCode` | Source code to add to the generated assignment, single line only supported |
+| Annotation              | Description                                                                                        |
+|-------------------------|----------------------------------------------------------------------------------------------------|
+| `Option.Default`        | Default value(s) that are `String` or we support coercion to the correct type (`enum`, `Duration`) |
+| `Option.DefaultInt`     | Default value(s) that are `int`                                                                    |
+| `Option.DefaultLong`    | Default value(s) that are `long`                                                                   |
+| `Option.DefaultDouble`  | Default value(s) that are `double`                                                                 |
+| `Option.DefaultBoolean` | Default value(s) that are `boolean`                                                                |
+| `Option.DefaultMethod`  | Static method to invoke to obtain a default value                                                  |
+| `Option.DefaultCode`    | Source code to add to the generated assignment, single line only supported                         |

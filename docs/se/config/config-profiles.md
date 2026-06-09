@@ -159,7 +159,7 @@ The config system supports these built-in types:
 </tbody>
 </table>
 
-Except for the `system-properties` and `environment-variables` types, the profile `properties` section for a source can also specify any optional settings for the corresponding config source type. The JavaDoc for the related config source type builders lists the supported properties for each type. (For example, [`FileConfigSource.Builder`](/apidocs/io.helidon.config/io/helidon/config/FileConfigSource.Builder.html).)
+Except for the `system-properties` and `environment-variables` types, the profile `properties` section for a source can also specify any optional settings for the corresponding config source type. The Javadoc for the related config source type builders lists the supported properties for each type. (For example, [`FileConfigSource.Builder`](/apidocs/io.helidon.config/io/helidon/config/FileConfigSource.Builder.html).)
 
 Here is an example profile in YAML format. Note how the `properties` sections are at the same level as the `type` or `class` within a `sources` array entry.
 
@@ -329,7 +329,7 @@ Config Profile Support for Built-in Polling Strategies
 
 To specify a custom polling strategy or custom retry policy, implement the interface (`io.helidon.config.spi.PollingStrategy`, `io.helidon.config.spi.ChangeWatcher`, or `io.helidon.config.spi.RetryPolicy`), and then implement the provider interface (`io.helidon.config.spi.PollingStrategyProvider`, `io.helidon.config.spi.ChangeWatcherProvider`, or `io.helidon.config.spi.RetryPolicyProvider`) to enable your custom implementations for profiles. You can then use any custom properties - these are provided as a `Config` instance to the `create` method of the Provider implementation.
 
-See [`RetryPolicy`](/apidocs/io.helidon.config/io/helidon/config/spi/RetryPolicy.html), [`ChangeWatcher`](/apidocs/io.helidon.config/io/helidon/config/spi/ChangeWatcher.html), and [`PollingStrategy`](/apidocs/io.helidon.config/io/helidon/config/spi/PollingStrategy.html) JavaDoc sections.
+See [`RetryPolicy`](/apidocs/io.helidon.config/io/helidon/config/spi/RetryPolicy.html), [`ChangeWatcher`](/apidocs/io.helidon.config/io/helidon/config/spi/ChangeWatcher.html), and [`PollingStrategy`](/apidocs/io.helidon.config/io/helidon/config/spi/PollingStrategy.html) Javadoc sections.
 
 ## Declarative
 

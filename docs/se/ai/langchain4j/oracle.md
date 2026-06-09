@@ -19,7 +19,7 @@ In addition to the [Helidon integration with LangChain4j core dependencies](lang
 
 To automatically create and add `OracleEmbeddingStore` to the service registry add the following lines to `application.yaml`:
 
-```yaml
+```yaml [application.yaml]
 # Oracle UCP datasource
 data:
   sources:
@@ -50,26 +50,26 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 Full list of configuration properties:
 
-| Key | Type | Description |
-|----|----|----|
-| `data-source` | string | The name of Helidon service containing a data source for connecting to the Oracle embedding store. If not present, the default unnamed service is used. |
-| `embedding-table` | [OracleEmbeddingTable](#oracleembeddingtable) | Root configuration key for `OracleEmbeddingTable` configuration. Contains properties of the embedding table associated with the Oracle embedding store. |
-| `enabled` | boolean | If set to `true`, Oracle embedding store will be enabled. |
-| `exact-search` | boolean | Specifies whether exact matching is used in searches. |
-| `vector-index-create-option` | string | The vector index creation option, which defines behavior when creating the vector index. Options are `CREATE_NONE` (default), `CREATE_IF_NOT_EXISTS`, `CREATE_OR_REPLACE`. |
+| Key                          | Type                                          | Description                                                                                                                                                                |
+|------------------------------|-----------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `data-source`                | string                                        | The name of Helidon service containing a data source for connecting to the Oracle embedding store. If not present, the default unnamed service is used.                    |
+| `embedding-table`            | [OracleEmbeddingTable](#oracleembeddingtable) | Root configuration key for `OracleEmbeddingTable` configuration. Contains properties of the embedding table associated with the Oracle embedding store.                    |
+| `enabled`                    | boolean                                       | If set to `true`, Oracle embedding store will be enabled.                                                                                                                  |
+| `exact-search`               | boolean                                       | Specifies whether exact matching is used in searches.                                                                                                                      |
+| `vector-index-create-option` | string                                        | The vector index creation option, which defines behavior when creating the vector index. Options are `CREATE_NONE` (default), `CREATE_IF_NOT_EXISTS`, `CREATE_OR_REPLACE`. |
 
 ### OracleEmbeddingTable
 
 Full list of configuration properties:
 
-| Key | Type | Description |
-|----|----|----|
-| `create-option` | string | Defines the behavior when creating the embedding table. Options are: `CREATE_NONE` (default), `CREATE_IF_NOT_EXISTS`, `CREATE_OR_REPLACE`. |
-| `embedding-column` | string | Name of the embedding column in the embedding table. Default is "embedding". |
-| `id-column` | string | Name of the ID column in the embedding table. Default is "id". |
-| `metadata-column` | string | Name of the metadata column in the embedding table. default is "metadata". |
-| `name` | string | Required. Name of the embedding table. |
-| `text-column` | string | Name of the text column in the embedding table. Default is "text". |
+| Key                | Type   | Description                                                                                                                                |
+|--------------------|--------|--------------------------------------------------------------------------------------------------------------------------------------------|
+| `create-option`    | string | Defines the behavior when creating the embedding table. Options are: `CREATE_NONE` (default), `CREATE_IF_NOT_EXISTS`, `CREATE_OR_REPLACE`. |
+| `embedding-column` | string | Name of the embedding column in the embedding table. Default is "embedding".                                                               |
+| `id-column`        | string | Name of the ID column in the embedding table. Default is "id".                                                                             |
+| `metadata-column`  | string | Name of the metadata column in the embedding table. default is "metadata".                                                                 |
+| `name`             | string | Required. Name of the embedding table.                                                                                                     |
+| `text-column`      | string | Name of the text column in the embedding table. Default is "text".                                                                         |
 
 ## Additional Information
 

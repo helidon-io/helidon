@@ -26,13 +26,13 @@ The API consists of a single `@ExecuteOn` annotation (with a few parameters) tha
 > [!NOTE]
 > This feature is based on CDI interceptors, so using it on a non-CDI bean method will have no effect.
 
-|  |  |  |
-|----|----|----|
-| Name | Value | Description |
-| value | ThreadType.PLATFORM, ThreadType.VIRTUAL, ThreadType.EXECUTOR | Type of thread used to execute a method invocation |
-| timeout | A long value | Maximum wait time for the method to return a value before triggering a timeout exception |
-| unit | A `TimeUnit` value | Unit for `timeout` parameter |
-| executorName | The name of an executor from which to obtain a thread | CDI producer with a `@Named` qualifier to access the executor |
+|              |                                                              |                                                                                          |
+|--------------|--------------------------------------------------------------|------------------------------------------------------------------------------------------|
+| Name         | Value                                                        | Description                                                                              |
+| value        | ThreadType.PLATFORM, ThreadType.VIRTUAL, ThreadType.EXECUTOR | Type of thread used to execute a method invocation                                       |
+| timeout      | A long value                                                 | Maximum wait time for the method to return a value before triggering a timeout exception |
+| unit         | A `TimeUnit` value                                           | Unit for `timeout` parameter                                                             |
+| executorName | The name of an executor from which to obtain a thread        | CDI producer with a `@Named` qualifier to access the executor                            |
 
 ## Configuration
 
