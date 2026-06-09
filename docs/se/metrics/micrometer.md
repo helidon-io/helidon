@@ -3,7 +3,7 @@
 ## Overview
 
 > [!NOTE]
-> Micrometer integration is deprecated beginning in Helidon 4.1 and is planned for removal in a future major release. Please use the [Helidon neutral metrics API](../../se/metrics/metrics.md).
+> Micrometer integration is deprecated beginning in Helidon 4.1 and is planned for removal in a future major release. Please use the [Helidon neutral metrics API][helidon-neutral-metrics-api].
 
 Helidon SE simplifies how you can use Micrometer for application-specific metrics:
 
@@ -15,7 +15,7 @@ In Helidon 4.4.0-SNAPSHOT, Micrometer support is separate from the Helidon SE me
 
 ## Maven Coordinates
 
-To enable {feature-name}, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable {feature-name}, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
 
 ```xml [pom.xml]
 <dependency>
@@ -34,7 +34,7 @@ Your users retrieve Micrometer meters using an endpoint which Helidon creates au
 
 ### Registering and Updating Meters
 
-Your code can create, look up, and update metrics programmatically using the Micrometer `MeterRegistry` API. The [Micrometer concepts document](https://docs.micrometer.io/micrometer/reference/concepts) provides a good starting point for learning how to use Micrometer’s interfaces and classes.
+Your code can create, look up, and update metrics programmatically using the Micrometer `MeterRegistry` API. The [Micrometer concepts document][micrometer-concepts-document] provides a good starting point for learning how to use Micrometer’s interfaces and classes.
 
 ### Accessing the Helidon Micrometer Endpoint
 
@@ -48,7 +48,7 @@ Within Helidon, each type of meter registry is paired with some code that examin
 
 Helidon provides no special API for dealing with Micrometer meters and meter registries beyond what Micrometer offers itself.
 
-Helidon *does* give you an easy way to expose a REST endpoint to report the meters stored in the Micrometer meter registry. The [`MicrometerSupport`](https://javadoc.io/doc/io.micrometer/io/helidon/integrations/micrometer/MicrometerSupport.html) interface exposes static methods to directly create an instance of `MicrometerSupport` and to return a [`Builder`](https://javadoc.io/doc/io.micrometer/io/helidon/integrations/micrometer/MicrometerSupport.Builder.html) instance so your code can fine-tune how the REST service behaves.
+Helidon *does* give you an easy way to expose a REST endpoint to report the meters stored in the Micrometer meter registry. The [`MicrometerSupport`][micrometersupport] interface exposes static methods to directly create an instance of `MicrometerSupport` and to return a [`Builder`][builder] instance so your code can fine-tune how the REST service behaves.
 
 ## Configuration
 
@@ -56,7 +56,7 @@ You can configure the Helidon Micrometer REST service as you can other built-in 
 
 ### Configuration options
 
-By default, Helidon Micrometer integration exposes the `/micrometer` endpoint. You can override the path using the [`Builder`](https://javadoc.io/doc/io.micrometer/MicrometerSupport.Builder.html) or the `micrometer.web-context` configuration key.
+By default, Helidon Micrometer integration exposes the `/micrometer` endpoint. You can override the path using the [`Builder`][builder-2] or the `micrometer.web-context` configuration key.
 
 Overriding the default Micrometer path:
 
@@ -67,11 +67,11 @@ micrometer:
 
 ## Examples
 
-Helidon SE includes an [example application](https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/integrations/micrometer/se) which uses Micrometer support.
+Helidon SE includes an [example application][example-application] which uses Micrometer support.
 
 The rest of this section takes you through the process of changing your application to use Helidon SE integration with Micrometer:
 
-1.  Register an instance of [`MicrometerSupport`](https://javadoc.io/doc/io.micrometer/io/helidon/integrations/micrometer/MicrometerSupport.html) with the web server.
+1.  Register an instance of [`MicrometerSupport`][micrometersupport] with the web server.
 2.  Create meters using the meter registry managed by Helidon’s `MicrometerSupport` and then update and query those meters.
 
 ### Register an Instance of MicrometerSupport with the Web Server
@@ -135,7 +135,7 @@ Unless you specify otherwise, Helidon uses defaults for any built-in Micrometer 
 
 You can override these defaults in either of two ways:
 
-- Using the [`MicrometerSupport.Builder`](https://javadoc.io/doc/io.micrometer/io/helidon/integrations/micrometer/MicrometerSupport.Builder.html) class
+- Using the [`MicrometerSupport.Builder`][builder] class
 - Using configuration
 
 #### Using MicrometerSupport.Builder
@@ -184,7 +184,7 @@ micrometer:
 
 Note that the first config example is equivalent to the default Helidon Micrometer behavior; Helidon by default supports the Prometheus meter registry.
 
-The configuration keys that are valid for the `builtin-registries` child entries depend on the type of Micrometer meter registry. For example, support in Helidon for the [Prometheus meter registry](https://javadoc.io/doc/io.micrometer/micrometer-registry-prometheus/1.11.1/io/micrometer/prometheus/PrometheusConfig.html) respects the `prefix` configuration setting but other meter registries might not and might support other settings. Refer to the documentation for the meter registry you want to configure to find out what items apply to that registry type.
+The configuration keys that are valid for the `builtin-registries` child entries depend on the type of Micrometer meter registry. For example, support in Helidon for the [Prometheus meter registry][prometheus-meter-registry] respects the `prefix` configuration setting but other meter registries might not and might support other settings. Refer to the documentation for the meter registry you want to configure to find out what items apply to that registry type.
 
 Helidon does not validate the configuration keys you specify for meter registries.
 
@@ -222,7 +222,7 @@ To create additional types of registries and enroll them with `MicrometerSupport
     ```
 
     - Create the meter registry. This example uses a Prometheus registry, but it can be any extension of `MeterRegistry`.
-    - Provide the function that checks if the [`ServerRequest`](/apidocs/io.helidon.webserver/io/helidon/webserver/http/ServerRequest.html)
+    - Provide the function that checks if the [`ServerRequest`][serverrequest]
     - A very simple in-line `Handler` that sets the response entity from the Prometheus registry’s `scrape()` method.
 
 ## Accessing the Helidon Micrometer Endpoint
@@ -235,4 +235,15 @@ When `MicrometerSupport` receives a request at the endpoint, it looks for the fi
 
 # Additional Information
 
-The [Micrometer website](https://micrometer.io) describes the project as a whole and has links to more information.
+The [Micrometer website][micrometer-website] describes the project as a whole and has links to more information.
+
+[helidon-neutral-metrics-api]: ../../se/metrics/metrics.md
+[managing-dependencies]: ../../managing-dependencies.md
+[micrometer-concepts-document]: https://docs.micrometer.io/micrometer/reference/concepts
+[micrometersupport]: https://javadoc.io/doc/io.micrometer/io/helidon/integrations/micrometer/MicrometerSupport.html
+[builder]: https://javadoc.io/doc/io.micrometer/io/helidon/integrations/micrometer/MicrometerSupport.Builder.html
+[builder-2]: https://javadoc.io/doc/io.micrometer/MicrometerSupport.Builder.html
+[example-application]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/integrations/micrometer/se
+[prometheus-meter-registry]: https://javadoc.io/doc/io.micrometer/micrometer-registry-prometheus/1.11.1/io/micrometer/prometheus/PrometheusConfig.html
+[serverrequest]: /apidocs/io.helidon.webserver/io/helidon/webserver/http/ServerRequest.html
+[micrometer-website]: https://micrometer.io

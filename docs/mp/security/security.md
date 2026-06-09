@@ -4,7 +4,7 @@ To add security, such as protecting resource methods with authentication, to a M
 
 ## Maven Coordinates
 
-To enable Security, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable Security, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
 
 ```xml [pom.xml]
 <dependency>
@@ -90,3 +90,5 @@ security.web-server.paths.0.roles-allowed=admin
 security.web-server.paths.3.path=/static/*
 security.web-server.paths.3.roles-allowed=user,monitor
 ```
+
+[managing-dependencies]: ../../managing-dependencies.md

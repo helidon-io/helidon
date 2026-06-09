@@ -2,13 +2,13 @@
 
 ## Overview
 
-JSON Web Tokens (JWT) are an open, industry standard [(RFC 7519)](https://datatracker.ietf.org/doc/html/rfc7519) method for representing claims securely between two parties.
+JSON Web Tokens (JWT) are an open, industry standard [(RFC 7519)][rfc-7519] method for representing claims securely between two parties.
 
 JSON Web Token defines a compact and self-contained way for securely transmitting information between parties as a JSON object. With JWT Auth you can integrate security features such as single sign on into your Helidon MP applications.
 
 ## Maven Coordinates
 
-To enable JWT Authentication, either add a dependency on the [helidon-microprofile bundle](introduction.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+To enable JWT Authentication, either add a dependency on the [helidon-microprofile bundle][helidon-microprofile-bundle] or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
 
 ```xml [pom.xml]
 <dependency>
@@ -44,7 +44,7 @@ The following interfaces and annotations are used to work with JWT in Helidon MP
 
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
-| <span id="a60991-mp-jwt-decrypt-key-algorithm"></span> [`mp.jwt.decrypt.key.algorithm`](../config/io_helidon_microprofile_jwt_auth_JwtAuthProviderMp_jwt_decrypt_key_algorithm.md) | `VALUE` | `i.h.m.j.a.J.j.d.k.algorithm` |   | Expected key management algorithm supported by the MP JWT endpoint |
+| <span id="a60991-mp-jwt-decrypt-key-algorithm"></span> [`mp.jwt.decrypt.key.algorithm`][mp-jwt-decrypt-key-algorithm] | `VALUE` | `i.h.m.j.a.J.j.d.k.algorithm` |   | Expected key management algorithm supported by the MP JWT endpoint |
 | <span id="a8604c-mp-jwt-decrypt-key-location"></span> `mp.jwt.decrypt.key.location` | `VALUE` | `String` |   | Private key for decryption of encrypted claims |
 | <span id="a703a3-mp-jwt-token-cookie"></span> `mp.jwt.token.cookie` | `VALUE` | `String` | `Bearer` | Specific cookie property name where we should search for JWT property |
 | <span id="a2f093-mp-jwt-token-header"></span> `mp.jwt.token.header` | `VALUE` | `String` | `Authorization` | Name of the header expected to contain the token |
@@ -56,18 +56,18 @@ The following interfaces and annotations are used to work with JWT in Helidon MP
 | <span id="abc722-mp-jwt-verify-token-age"></span> `mp.jwt.verify.token.age` | `VALUE` | `Integer` |   | Maximal expected token age in seconds |
 | <span id="ab6b52-security-providers-mp-jwt-auth-allow-impersonation"></span> `security.providers.mp-jwt-auth.allow-impersonation` | `VALUE` | `Boolean` | `false` | Whether to allow impersonation by explicitly overriding username from outbound requests using `io.helidon.security.EndpointConfig#PROPERTY_OUTBOUND_ID` property |
 | <span id="ad75f3-security-providers-mp-jwt-auth-atn-token-default-key-id"></span> `security.providers.mp-jwt-auth.atn-token.default-key-id` | `VALUE` | `String` |   | Default JWT key ID which should be used |
-| <span id="a18931-security-providers-mp-jwt-auth-atn-token-handler"></span> [`security.providers.mp-jwt-auth.atn-token.handler`](../config/io_helidon_security_util_TokenHandler.md) | `VALUE` | `i.h.s.u.TokenHandler` |   | Token handler to extract username from request |
-| <span id="a1127b-security-providers-mp-jwt-auth-atn-token-jwk-resource"></span> [`security.providers.mp-jwt-auth.atn-token.jwk.resource`](../config/io_helidon_common_configurable_Resource.md) | `VALUE` | `i.h.c.c.Resource` |   | JWK resource for authenticating the request |
+| <span id="a18931-security-providers-mp-jwt-auth-atn-token-handler"></span> [`security.providers.mp-jwt-auth.atn-token.handler`][security-providers-mp-jwt-auth-atn-token-handler] | `VALUE` | `i.h.s.u.TokenHandler` |   | Token handler to extract username from request |
+| <span id="a1127b-security-providers-mp-jwt-auth-atn-token-jwk-resource"></span> [`security.providers.mp-jwt-auth.atn-token.jwk.resource`][security-providers-mp-jwt-auth-atn-token-jwk-resource] | `VALUE` | `i.h.c.c.Resource` |   | JWK resource for authenticating the request |
 | <span id="a07466-security-providers-mp-jwt-auth-atn-token-jwt-audience"></span> `security.providers.mp-jwt-auth.atn-token.jwt-audience` | `VALUE` | `String` |   | Audience expected in inbound JWTs |
 | <span id="adc6c6-security-providers-mp-jwt-auth-atn-token-verify-key"></span> `security.providers.mp-jwt-auth.atn-token.verify-key` | `VALUE` | `String` |   | Path to public key |
 | <span id="a3d7f3-security-providers-mp-jwt-auth-authenticate"></span> `security.providers.mp-jwt-auth.authenticate` | `VALUE` | `Boolean` | `true` | Whether to authenticate requests |
 | <span id="af6ab6-security-providers-mp-jwt-auth-load-on-startup"></span> `security.providers.mp-jwt-auth.load-on-startup` | `VALUE` | `Boolean` | `false` | Whether to load JWK verification keys on server startup Default value is `false` |
 | <span id="aed295-security-providers-mp-jwt-auth-optional"></span> `security.providers.mp-jwt-auth.optional` | `VALUE` | `Boolean` | `false` | Whether authentication is required |
-| <span id="ace59e-security-providers-mp-jwt-auth-principal-type"></span> [`security.providers.mp-jwt-auth.principal-type`](../config/io_helidon_security_SubjectType.md) | `VALUE` | `i.h.s.SubjectType` | `USER` | Principal type this provider extracts (and also propagates) |
+| <span id="ace59e-security-providers-mp-jwt-auth-principal-type"></span> [`security.providers.mp-jwt-auth.principal-type`][security-providers-mp-jwt-auth-principal-type] | `VALUE` | `i.h.s.SubjectType` | `USER` | Principal type this provider extracts (and also propagates) |
 | <span id="a4bb6e-security-providers-mp-jwt-auth-jwt-groups-path"></span> `security.providers.mp-jwt-auth.jwt-groups-path` | `VALUE` | `String` | `groups` | Path to the JWT payload claim containing groups to add as role grants. Nested object claims can be configured with slash-separated path segments, such as `realm/groups`. |
 | <span id="a8f0bd-security-providers-mp-jwt-auth-jwt-groups-separator"></span> `security.providers.mp-jwt-auth.jwt-groups-separator` | `VALUE` | `String` |   | Separator used to split a string claim value into multiple groups. This is used only when `jwt-groups-path` is configured to a custom path other than `groups`; setting only `jwt-groups-separator` has no effect. |
 | <span id="a1f03b-security-providers-mp-jwt-auth-propagate"></span> `security.providers.mp-jwt-auth.propagate` | `VALUE` | `Boolean` | `true` | Whether to propagate identity |
-| <span id="a09fd1-security-providers-mp-jwt-auth-sign-token"></span> [`security.providers.mp-jwt-auth.sign-token`](../config/io_helidon_security_providers_common_OutboundConfig.md) | `VALUE` | `i.h.s.p.c.OutboundConfig` |   | Configuration of outbound rules |
+| <span id="a09fd1-security-providers-mp-jwt-auth-sign-token"></span> [`security.providers.mp-jwt-auth.sign-token`][security-providers-mp-jwt-auth-sign-token] | `VALUE` | `i.h.s.p.c.OutboundConfig` |   | Configuration of outbound rules |
 
 A configuration example in `microprofile-config.properties`:
 
@@ -140,9 +140,21 @@ which means that the request successfully passed authentication.
 ## Additional Information
 
 Learn more about JWT authentication at:  
-[Eclipse MicroProfile Interoperable JWT RBAC](https://download.eclipse.org/microprofile/microprofile-jwt-auth-2.1#_introduction)
+[Eclipse MicroProfile Interoperable JWT RBAC][eclipse-microprofile-interoperable-jwt-rbac]
 
 ## Reference
 
-- [MicroProfile JWT Auth Spec](https://download.eclipse.org/microprofile/microprofile-jwt-auth-2.1/microprofile-jwt-auth-spec-2.1.html)
-- [MicroProfile JWT Auth GitHub Repository](https://github.com/eclipse/microprofile-jwt-auth)
+- [MicroProfile JWT Auth Spec][microprofile-jwt-auth-spec]
+- [MicroProfile JWT Auth GitHub Repository][microprofile-jwt-auth-github-repository]
+
+[rfc-7519]: https://datatracker.ietf.org/doc/html/rfc7519
+[helidon-microprofile-bundle]: introduction.md
+[managing-dependencies]: ../managing-dependencies.md
+[mp-jwt-decrypt-key-algorithm]: ../config/io_helidon_microprofile_jwt_auth_JwtAuthProviderMp_jwt_decrypt_key_algorithm.md
+[security-providers-mp-jwt-auth-atn-token-handler]: ../config/io_helidon_security_util_TokenHandler.md
+[security-providers-mp-jwt-auth-atn-token-jwk-resource]: ../config/io_helidon_common_configurable_Resource.md
+[security-providers-mp-jwt-auth-principal-type]: ../config/io_helidon_security_SubjectType.md
+[security-providers-mp-jwt-auth-sign-token]: ../config/io_helidon_security_providers_common_OutboundConfig.md
+[eclipse-microprofile-interoperable-jwt-rbac]: https://download.eclipse.org/microprofile/microprofile-jwt-auth-2.1#_introduction
+[microprofile-jwt-auth-spec]: https://download.eclipse.org/microprofile/microprofile-jwt-auth-2.1/microprofile-jwt-auth-spec-2.1.html
+[microprofile-jwt-auth-github-repository]: https://github.com/eclipse/microprofile-jwt-auth

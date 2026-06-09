@@ -13,7 +13,7 @@ A typical health check combines the statuses of all the dependencies that affect
 
 ## Maven Coordinates
 
-To enable Health Checks, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+To enable Health Checks, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
 
 ```xml [pom.xml]
 <dependency>
@@ -340,7 +340,7 @@ WebServer server = WebServer.builder()
 You can control the thresholds for built-in health checks in either of two ways:
 
 - Create the health checks individually using their builders instead of using the `HealthChecks` convenience class.
-  See the [table](#built-in-health-checks) above.
+  See the [table][table] above.
 - Using configuration as explained in [Configuration](#configuration).
 
 ### Kubernetes Probes
@@ -349,7 +349,7 @@ You can control the thresholds for built-in health checks in either of two ways:
 - [Readiness Probe](#readiness-probe)
 - [Startup Probe](#startup-probe)
 
-Probes is the term used by Kubernetes to describe health checks for containers ([Kubernetes documentation](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes)).
+Probes is the term used by Kubernetes to describe health checks for containers ([Kubernetes documentation][kubernetes-documentation]).
 
 There are three types of probes:
 
@@ -423,7 +423,7 @@ kubectl get event --field-selector involvedObject.name=${POD_NAME}
 
 ## Configuration
 
-Built-in health checks can be configured using the config property keys described in this [table](#built-in-health-checks).
+Built-in health checks can be configured using the config property keys described in this [table][table].
 
 Further, you can suppress one or more health checks by setting the configuration item `server.features.observe.observers.health.exclude` to a comma-separated list of the health check names you want to exclude. The same table lists the name names for the built-in health checks.
 
@@ -585,4 +585,9 @@ spec:
 
 ## Additional Information
 
-- [Health Checks SE API Javadocs](/apidocs/io.helidon.health.checks/module-summary.html).
+- [Health Checks SE API Javadocs][health-checks-se-api-javadocs].
+
+[managing-dependencies]: ../managing-dependencies.md
+[table]: #built-in-health-checks
+[kubernetes-documentation]: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes
+[health-checks-se-api-javadocs]: /apidocs/io.helidon.health.checks/module-summary.html

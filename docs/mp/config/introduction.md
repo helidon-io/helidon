@@ -2,11 +2,11 @@
 
 ## Overview
 
-Helidon MicroProfile Config is an implementation of [Eclipse MicroProfile Config](https://github.com/eclipse/microprofile-config/). You can configure your applications using MicroProfile’s config configuration sources and APIs. You can also extend the configuration using MicroProfile SPI to add custom `ConfigSource` and `Converter`.
+Helidon MicroProfile Config is an implementation of [Eclipse MicroProfile Config][eclipse-microprofile-config]. You can configure your applications using MicroProfile’s config configuration sources and APIs. You can also extend the configuration using MicroProfile SPI to add custom `ConfigSource` and `Converter`.
 
 ## Maven Coordinates
 
-To enable MicroProfile Config, either add a dependency on the [helidon-microprofile bundle](../introduction.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable MicroProfile Config, either add a dependency on the [helidon-microprofile bundle][helidon-microprofile-bundle] or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
 
 ```xml [pom.xml]
 <dependency>
@@ -87,7 +87,7 @@ server.host=0.0.0.0
 
 MicroProfile Config supports a concept of configuration profiles. You can define a profile using the configuration property `mp.config.profile` This can be defined as a system property, environment variable or as a property in `microprofile-config.properties` (when default configuration is used). When a profile is defined, an additional config source is loaded: `microprofile-config-<profile_name>.properties` and properties in the profile specific config source will override properties set in the default config source.
 
-You can also use profiles on a per property level. Profile specific properties are defined using `%<profile_name>` prefix, such as `%dev.server.port`. This will override the plain property `server.port`. For more details see [How Config Profiles work](https://download.eclipse.org/microprofile/microprofile-config-3.1/microprofile-config-spec-3.1.html#_how_config_profile_works)
+You can also use profiles on a per property level. Profile specific properties are defined using `%<profile_name>` prefix, such as `%dev.server.port`. This will override the plain property `server.port`. For more details see [How Config Profiles work][how-config-profiles-work]
 
 ### Helidon MicroProfile Config Features
 
@@ -109,7 +109,7 @@ The following configuration sources can be used to retrieve the configuration:
 | File on classpath | Creates the source from a properties file on classpath with `MpConfigSources.classpath(String)`. |
 | YAML | Creates the source from YAML using `YamlMpConfigSource.create(Path)` or `YamlMpConfigSource.create(URL)`. |
 
-See [manual setup of config](advanced-configuration.md#creating-microprofile-config-sources-for-manual-setup-of-config) section for more information.
+See [manual setup of config][manual-setup-of-config] section for more information.
 
 #### References
 
@@ -158,7 +158,7 @@ See link:https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/nio/f
 
 #### Encryption
 
-You can encrypt secrets using a master password and store them in a configuration file. The config encryption filter in MicroProfile Config is enabled by default. For more information, see [Configuration Secrets](../../mp/security/configuration-secrets.md).
+You can encrypt secrets using a master password and store them in a configuration file. The config encryption filter in MicroProfile Config is enabled by default. For more information, see [Configuration Secrets][configuration-secrets].
 
 Example of encrypted secrets:
 
@@ -176,7 +176,7 @@ client_secret_clear=${CLEAR=known_password}
 
 You can configure the Config using Helidon MP Config meta configuration feature. The meta-config allows configuration of config sources and other configuration options, including addition of discovered sources and converters.
 
-See [MicroProfile Config Sources](advanced-configuration.md#creating-microprofile-config-sources-from-meta-config) for detailed information.
+See [MicroProfile Config Sources][microprofile-config-sources] for detailed information.
 
 > [!NOTE]
 > For backward compatibility, we will support usage of Helidon SE meta-configuration until version 3.0.0. Using this approach causes behavior that is not compatible with MicroProfile Config specification.
@@ -201,9 +201,20 @@ See [Config Profiles](#microprofile-config-profiles) for more information.
 
 | Name | Description |
 | --- | --- |
-| [MP Config Guide](../guides/config.md) | Step-by-step guide about using MicroProfile Config in your Helidon MP application. |
+| [MP Config Guide][mp-config-guide] | Step-by-step guide about using MicroProfile Config in your Helidon MP application. |
 
 ## Reference
 
-- [MicroProfile Config Specifications](https://download.eclipse.org/microprofile/microprofile-config-3.1/microprofile-config-spec-3.1.html)
-- [MicroProfile Config Javadocs](https://download.eclipse.org/microprofile/microprofile-config-3.1/apidocs)
+- [MicroProfile Config Specifications][microprofile-config-specifications]
+- [MicroProfile Config Javadocs][microprofile-config-javadocs]
+
+[eclipse-microprofile-config]: https://github.com/eclipse/microprofile-config/
+[helidon-microprofile-bundle]: ../introduction.md
+[managing-dependencies]: ../../managing-dependencies.md
+[how-config-profiles-work]: https://download.eclipse.org/microprofile/microprofile-config-3.1/microprofile-config-spec-3.1.html#_how_config_profile_works
+[manual-setup-of-config]: advanced-configuration.md#creating-microprofile-config-sources-for-manual-setup-of-config
+[configuration-secrets]: ../../mp/security/configuration-secrets.md
+[microprofile-config-sources]: advanced-configuration.md#creating-microprofile-config-sources-from-meta-config
+[mp-config-guide]: ../guides/config.md
+[microprofile-config-specifications]: https://download.eclipse.org/microprofile/microprofile-config-3.1/microprofile-config-spec-3.1.html
+[microprofile-config-javadocs]: https://download.eclipse.org/microprofile/microprofile-config-3.1/apidocs

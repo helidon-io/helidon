@@ -2,11 +2,11 @@
 
 ## Overview
 
-This module adds support for selected [Ollama](https://ollama.ai/) models.
+This module adds support for selected [Ollama][ollama] models.
 
 ## Maven Coordinates
 
-In addition to the [Helidon integration with LangChain4j core dependencies](langchain4j.md#maven-coordinates), you must add the following:
+In addition to the [Helidon integration with LangChain4j core dependencies][helidon-integration-with-langchain4j-core-dependencies], you must add the following:
 
 ```xml [pom.xml]
 <dependency>
@@ -51,7 +51,7 @@ Full list of configuration properties:
 | `seed`           | int        | The seed for the random number generator used by the model.                                                                                                                                                                                                                                                                                                                                                       |
 | `stop`           | string\[\] | List of sequences where the API will stop generating further tokens.                                                                                                                                                                                                                                                                                                                                              |
 | `temperature`    | double     | Sampling temperature to use, between 0 and 2. Higher values make the output more random, while lower values make it more focused and deterministic.                                                                                                                                                                                                                                                               |
-| `timeout`        | duration   | The timeout setting for API requests. See [here](https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-) for the format.                                                                                                                                                                                                                                                 |
+| `timeout`        | duration   | The timeout setting for API requests. See [here][here] for the format.                                                                                                                                                                                                                                                 |
 | `top-k`          | int        | Limits the token pool to the `topK` highest-probability tokens, controlling the balance between deterministic and diverse outputs. A smaller `topK` (e.g., 1) results in deterministic output, while a larger value (e.g., 50) allows for more variability and creativity.                                                                                                                                        |
 | `top-p`          | double     | Nucleus sampling value, where the model considers the results of the tokens with top_p probability mass.                                                                                                                                                                                                                                                                                                          |
 
@@ -83,7 +83,7 @@ Full list of configuration properties:
 | `log-responses` | boolean  | Whether to log API responses.                                                                                                                                     |
 | `max-retries`   | integer  | The maximum number of retries for failed API requests.                                                                                                            |
 | `model-name`    | string   | The model name to use.                                                                                                                                            |
-| `timeout`       | duration | The timeout setting for API requests. See [here](https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-) for the format. |
+| `timeout`       | duration | The timeout setting for API requests. See [here][here] for the format. |
 
 ### OllamaLanguageModel
 
@@ -119,7 +119,7 @@ Full list of configuration properties:
 | `seed`           | int        | The seed for the random number generator used by the model.                                                                                                                                                                                                                                                                                                                                                       |
 | `stop`           | string\[\] | List of sequences where the API will stop generating further tokens.                                                                                                                                                                                                                                                                                                                                              |
 | `temperature`    | double     | Sampling temperature to use, between 0 and 2. Higher values make the output more random, while lower values make it more focused and deterministic.                                                                                                                                                                                                                                                               |
-| `timeout`        | duration   | The timeout setting for API requests. See [here](https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-) for the format.                                                                                                                                                                                                                                                 |
+| `timeout`        | duration   | The timeout setting for API requests. See [here][here] for the format.                                                                                                                                                                                                                                                 |
 | `top-k`          | int        | Limits the token pool to the `topK` highest-probability tokens, controlling the balance between deterministic and diverse outputs. A smaller `topK` (e.g., 1) results in deterministic output, while a larger value (e.g., 50) allows for more variability and creativity.                                                                                                                                        |
 | `top-p`          | double     | Nucleus sampling value, where the model considers the results of the tokens with top_p probability mass.                                                                                                                                                                                                                                                                                                          |
 
@@ -157,12 +157,17 @@ Full list of configuration properties:
 | `seed`           | int        | The seed for the random number generator used by the model.                                                                                                                                                                                                                                                                                                                                                       |
 | `stop`           | string\[\] | List of sequences where the API will stop generating further tokens.                                                                                                                                                                                                                                                                                                                                              |
 | `temperature`    | double     | Sampling temperature to use, between 0 and 2. Higher values make the output more random, while lower values make it more focused and deterministic.                                                                                                                                                                                                                                                               |
-| `timeout`        | duration   | The timeout setting for API requests. See [here](https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-) for the format.                                                                                                                                                                                                                                                 |
+| `timeout`        | duration   | The timeout setting for API requests. See [here][here] for the format.                                                                                                                                                                                                                                                 |
 | `top-k`          | int        | Limits the token pool to the `topK` highest-probability tokens, controlling the balance between deterministic and diverse outputs. A smaller `topK` (e.g., 1) results in deterministic output, while a larger value (e.g., 50) allows for more variability and creativity.                                                                                                                                        |
 | `top-p`          | double     | Nucleus sampling value, where the model considers the results of the tokens with top_p probability mass.                                                                                                                                                                                                                                                                                                          |
 
 ## Additional Information
 
 - [LangChain4j Integration](langchain4j.md)
-- [LangChain4j Ollama Documentation](https://docs.langchain4j.dev/integrations/language-models/ollama/)
-- [Ollama Website](https://ollama.ai/)
+- [LangChain4j Ollama Documentation][langchain4j-ollama-documentation]
+- [Ollama Website][ollama]
+
+[ollama]: https://ollama.ai/
+[helidon-integration-with-langchain4j-core-dependencies]: langchain4j.md#maven-coordinates
+[here]: https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-
+[langchain4j-ollama-documentation]: https://docs.langchain4j.dev/integrations/language-models/ollama/

@@ -12,23 +12,23 @@ You have several options in approaching such a project.
 
 ### Using the Helidon OpenTelemetry Integration
 
-You can use the [Helidon OpenTelemetry integration](open-telemetry.md) *and also* use the OpenTelemetry API directly.
+You can use the [Helidon OpenTelemetry integration][helidon-opentelemetry-integration] *and also* use the OpenTelemetry API directly.
 
 Helidon’s integration prepares the OpenTelemetry `GlobalOpenTelemetry` instance according to the `telemetry` section in your Helidon configuration. Helidon also makes this instance available via Helidon declarative’s `@Service.Inject` and programmatically with `Services.get(OpenTelemetry.class)`. Your code then uses the global `OpenTelemetry` instance—​obtained in any of these ways—​as the entry point to the OpenTelemetry API to work with metrics and spans.
 
-You can also optionally have Helidon provide the tracing spans and metrics prescribed by the [OpenTelemetry semantic conventions](https://opentelemetry.io/docs/concepts/semantic-conventions/) simply by adding a dependency.
+You can also optionally have Helidon provide the tracing spans and metrics prescribed by the [OpenTelemetry semantic conventions][opentelemetry-semantic-conventions] simply by adding a dependency.
 
-If you must use the OpenTelemetry API from your code, Helidon recommends this option. The [Helidon OpenTelemetry integration](open-telemetry.md) documentation explains how to use the Helidon integration.
+If you must use the OpenTelemetry API from your code, Helidon recommends this option. The [Helidon OpenTelemetry integration][helidon-opentelemetry-integration] documentation explains how to use the Helidon integration.
 
 ### Using OpenTelemetry AutoConfiguration
 
-The [OpenTelemetry auto-configure feature](https://opentelemetry.io/docs/languages/java/configuration/) allows you to control many operational aspects of OpenTelemetry using environment variables, Java system properties, or—​with a little extra code—​config files rather than writing your own explicit Java code to prepare the runtime. Then your code can use the OpenTelemetry API as needed to manage tracing spans or metrics.
+The [OpenTelemetry auto-configure feature][opentelemetry-auto-configure-feature] allows you to control many operational aspects of OpenTelemetry using environment variables, Java system properties, or—​with a little extra code—​config files rather than writing your own explicit Java code to prepare the runtime. Then your code can use the OpenTelemetry API as needed to manage tracing spans or metrics.
 
 This approach prepares the OpenTelemetry runtime using OpenTelemetry’s autoconfiguration instead of Helidon’s integration with OpenTelemetry, but from there the programmatic use of the OpenTelemetry API is essentially the same in those two options: obtain the global `OpenTelemetry` instance and then use it to create and update spans and metrics. In this option your code must use the `GlobalOpenTelemetry` type; Helidon cannot provide the global instance via injection or Helidon services look-up.
 
 ### Using Only the OpenTelemetry API
 
-You can use the [OpenTelemetry API](https://github.com/open-telemetry/opentelemetry-java) exclusively (without auto-configure) to set up the OpenTelemetry runtime environment at start-up, then use the API to work with tracing spans or metrics.
+You can use the [OpenTelemetry API][opentelemetry-api] exclusively (without auto-configure) to set up the OpenTelemetry runtime environment at start-up, then use the API to work with tracing spans or metrics.
 
 Your code has full control—​and therefore full responsibility—​for preparing OpenTelemetry programmatically.
 
@@ -36,7 +36,7 @@ Your code has full control—​and therefore full responsibility—​for prepa
 
 OpenTelemetry offers a feature whereby it automatically instruments certain aspects of applications without requiring any changes to the application code. It relies on autoconfiguration to prepare the runtime, then intercepts HTTP requests to deal with spans and metrics.
 
-A third-party contributor has developed a module that provides [automatic instrumentation for Helidon services](https://github.com/open-telemetry/opentelemetry-java-instrumentation/tree/main/instrumentation/helidon-4.3/library).
+A third-party contributor has developed a module that provides [automatic instrumentation for Helidon services][automatic-instrumentation-for-helidon-services].
 
 ## Building a Helidon SE Service with OpenTelemetry Autoconfiguration
 
@@ -66,7 +66,7 @@ Including the OpenTelemetry BOM:
 </dependencyManagement>
 ```
 
-See the [example app](https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/telemetry/otel-auto-configure) which inspires the illustrations below.
+See the [example app][example-app] which inspires the illustrations below.
 
 Add the dependencies below. (You might be able to get away with fewer if you are willing to rely on transitive dependencies for components you use in your source code. The example shows them explicitly for completeness.)
 
@@ -118,7 +118,7 @@ Note the runtime dependency for `io.opentelemetry:opentelemetry-exporter-otlp`. 
 
 ### Set OpenTelemetry AutoConfigure Settings
 
-OpenTelemetry directly supports Java system properties and environment variables for autoconfiguring the OpenTelemetry runtime. The [OpenTelemetry autoconfiguration documentation](https://opentelemetry.io/docs/languages/java/configuration/#environment-variables-and-system-properties) describes the settings it supports.
+OpenTelemetry directly supports Java system properties and environment variables for autoconfiguring the OpenTelemetry runtime. The [OpenTelemetry autoconfiguration documentation][opentelemetry-autoconfiguration-documentation] describes the settings it supports.
 
 The following short list of system property settings is enough to get your service sending metrics and span data to a backend system such as Signoz running on the same system.
 
@@ -199,3 +199,11 @@ try (Scope ignored = mySpan.makeCurrent()) {
 ```
 
 Typically, application code creates and starts a span, activates it (makes it current), and then restores any previously-active span and ends the span, recording whether the span was successful.
+
+[helidon-opentelemetry-integration]: open-telemetry.md
+[opentelemetry-semantic-conventions]: https://opentelemetry.io/docs/concepts/semantic-conventions/
+[opentelemetry-auto-configure-feature]: https://opentelemetry.io/docs/languages/java/configuration/
+[opentelemetry-api]: https://github.com/open-telemetry/opentelemetry-java
+[automatic-instrumentation-for-helidon-services]: https://github.com/open-telemetry/opentelemetry-java-instrumentation/tree/main/instrumentation/helidon-4.3/library
+[example-app]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/telemetry/otel-auto-configure
+[opentelemetry-autoconfiguration-documentation]: https://opentelemetry.io/docs/languages/java/configuration/#environment-variables-and-system-properties

@@ -6,7 +6,7 @@ WebServer provides an API for creating HTTP servers. It uses virtual threads and
 
 ## Maven Coordinates
 
-To enable WebServer, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable WebServer, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
 
 ```xml [pom.xml]
 <dependency>
@@ -161,13 +161,13 @@ server:
 |----|----|----|----|----|
 | <span id="acb486-backlog"></span> `backlog` | `VALUE` | `Integer` | `1024` | Accept backlog |
 | <span id="a4fc52-bind-address"></span> `bind-address` | `VALUE` | `i.h.w.W.ListenerCustomMethods` |   | The address to bind to |
-| <span id="a32e67-concurrency-limit"></span> [`concurrency-limit`](../../config/io_helidon_common_concurrency_limits_Limit.md) | `VALUE` | `i.h.c.c.l.Limit` |   | Concurrency limit to use to limit concurrent execution of incoming requests |
+| <span id="a32e67-concurrency-limit"></span> [`concurrency-limit`][concurrency-limit] | `VALUE` | `i.h.c.c.l.Limit` |   | Concurrency limit to use to limit concurrent execution of incoming requests |
 | <span id="a3f7e3-concurrency-limit-discover-services"></span> `concurrency-limit-discover-services` | `VALUE` | `Boolean` | `false` | Whether to enable automatic service discovery for `concurrency-limit` |
-| <span id="ac9c91-connection-options"></span> [`connection-options`](../../config/io_helidon_common_socket_SocketOptions.md) | `VALUE` | `i.h.c.s.SocketOptions` |   | Options for connections accepted by this listener |
-| <span id="a511a0-content-encoding"></span> [`content-encoding`](../../config/io_helidon_http_encoding_ContentEncodingContext.md) | `VALUE` | `i.h.h.e.ContentEncodingContext` |   | Configure the listener specific `io.helidon.http.encoding.ContentEncodingContext` |
+| <span id="ac9c91-connection-options"></span> [`connection-options`][connection-options] | `VALUE` | `i.h.c.s.SocketOptions` |   | Options for connections accepted by this listener |
+| <span id="a511a0-content-encoding"></span> [`content-encoding`][content-encoding] | `VALUE` | `i.h.h.e.ContentEncodingContext` |   | Configure the listener specific `io.helidon.http.encoding.ContentEncodingContext` |
 | <span id="aa0fb8-enable-proxy-protocol"></span> `enable-proxy-protocol` | `VALUE` | `Boolean` | `false` | Enable proxy protocol support for this socket |
-| <span id="a92b62-error-handling"></span> [`error-handling`](../../config/io_helidon_webserver_ErrorHandling.md) | `VALUE` | `i.h.w.ErrorHandling` |   | Configuration for this listener's error handling |
-| <span id="ae9df6-features"></span> [`features`](../../config/io_helidon_webserver_spi_ServerFeature.md) | `LIST` | `i.h.w.s.ServerFeature` |   | Server features allow customization of the server, listeners, or routings |
+| <span id="a92b62-error-handling"></span> [`error-handling`][error-handling] | `VALUE` | `i.h.w.ErrorHandling` |   | Configuration for this listener's error handling |
+| <span id="ae9df6-features"></span> [`features`][features] | `LIST` | `i.h.w.s.ServerFeature` |   | Server features allow customization of the server, listeners, or routings |
 | <span id="a4431f-features-discover-services"></span> `features-discover-services` | `VALUE` | `Boolean` | `true` | Whether to enable automatic service discovery for `features` |
 | <span id="a47500-host"></span> `host` | `VALUE` | `String` | `0.0.0.0` | Host of the default socket |
 | <span id="a570c4-idle-connection-period"></span> `idle-connection-period` | `VALUE` | `Duration` | `PT2M` | How often should we check for `#idleConnectionTimeout()` |
@@ -177,18 +177,18 @@ server:
 | <span id="a23186-max-in-memory-entity"></span> `max-in-memory-entity` | `VALUE` | `Integer` | `131072` | If the entity is expected to be smaller that this number of bytes, it would be buffered in memory to optimize performance when writing it |
 | <span id="a6e9f1-max-payload-size"></span> `max-payload-size` | `VALUE` | `Long` | `-1` | Maximal number of bytes an entity may have |
 | <span id="ac255e-max-tcp-connections"></span> `max-tcp-connections` | `VALUE` | `Integer` | `-1` | Limits the number of connections that can be opened at a single point in time |
-| <span id="a847a9-media-context"></span> [`media-context`](../../config/io_helidon_http_media_MediaContext.md) | `VALUE` | `i.h.h.m.MediaContext` |   | Configure the listener specific `io.helidon.http.media.MediaContext` |
+| <span id="a847a9-media-context"></span> [`media-context`][media-context] | `VALUE` | `i.h.h.m.MediaContext` |   | Configure the listener specific `io.helidon.http.media.MediaContext` |
 | <span id="a390dc-name"></span> `name` | `VALUE` | `String` | `@default` | Name of this socket |
 | <span id="a9d956-port"></span> `port` | `VALUE` | `Integer` | `0` | Port of the default socket |
-| <span id="abdf05-protocols"></span> [`protocols`](../../config/io_helidon_webserver_spi_ProtocolConfig.md) | `LIST` | `i.h.w.s.ProtocolConfig` |   | Configuration of protocols |
+| <span id="abdf05-protocols"></span> [`protocols`][protocols] | `LIST` | `i.h.w.s.ProtocolConfig` |   | Configuration of protocols |
 | <span id="a4b6cc-protocols-discover-services"></span> `protocols-discover-services` | `VALUE` | `Boolean` | `true` | Whether to enable automatic service discovery for `protocols` |
-| <span id="aaf9ce-requested-uri-discovery"></span> [`requested-uri-discovery`](../../config/io_helidon_http_RequestedUriDiscoveryContext.md) | `VALUE` | `i.h.h.RequestedUriDiscoveryContext` |   | Requested URI discovery context |
+| <span id="aaf9ce-requested-uri-discovery"></span> [`requested-uri-discovery`][requested-uri-discovery] | `VALUE` | `i.h.h.RequestedUriDiscoveryContext` |   | Requested URI discovery context |
 | <span id="aa99af-restore-response-headers"></span> `restore-response-headers` | `VALUE` | `Boolean` | `true` | Copy and restore response headers before and after passing a request to Jersey for processing |
 | <span id="a875ae-shutdown-grace-period"></span> `shutdown-grace-period` | `VALUE` | `Duration` | `PT0.5S` | Grace period in ISO 8601 duration format to allow running tasks to complete before listener's shutdown |
 | <span id="aa36d3-shutdown-hook"></span> `shutdown-hook` | `VALUE` | `Boolean` | `true` | When true the webserver registers a shutdown hook with the JVM Runtime |
 | <span id="a3378e-smart-async-writes"></span> `smart-async-writes` | `VALUE` | `Boolean` | `false` | If enabled and `#writeQueueLength()` is greater than 1, then start with async writes but possibly switch to sync writes if async queue size is always below a certain threshold |
-| <span id="a03604-sockets"></span> [`sockets`](../../config/io_helidon_webserver_ListenerConfig.md) | `MAP` | `i.h.w.ListenerConfig` |   | Socket configurations |
-| <span id="ac9efa-tls"></span> [`tls`](../../config/io_helidon_common_tls_Tls.md) | `VALUE` | `i.h.c.t.Tls` |   | Listener TLS configuration |
+| <span id="a03604-sockets"></span> [`sockets`][sockets] | `MAP` | `i.h.w.ListenerConfig` |   | Socket configurations |
+| <span id="ac9efa-tls"></span> [`tls`][tls] | `VALUE` | `i.h.c.t.Tls` |   | Listener TLS configuration |
 | <span id="a5f9ab-use-nio"></span> `use-nio` | `VALUE` | `Boolean` | `true` | If set to `true`, use NIO socket channel, instead of a socket |
 | <span id="a57ab6-write-buffer-size"></span> `write-buffer-size` | `VALUE` | `Integer` | `4096` | Initial buffer size in bytes of `java.io.BufferedOutputStream` created internally to write data to a socket connection |
 | <span id="adda19-write-queue-length"></span> `write-queue-length` | `VALUE` | `Integer` | `0` | Number of buffers queued for write operations |
@@ -197,7 +197,7 @@ server:
 
 | Key | Kind | Type | Description |
 |----|----|----|----|
-| <span id="a20877-connection-config"></span> [`connection-config`](../../config/io_helidon_webserver_ConnectionConfig.md) | `VALUE` | `i.h.w.ConnectionConfig` | Configuration of a connection (established from client against our server) |
+| <span id="a20877-connection-config"></span> [`connection-config`][connection-config] | `VALUE` | `i.h.w.ConnectionConfig` | Configuration of a connection (established from client against our server) |
 | <span id="ab275b-receive-buffer-size"></span> `receive-buffer-size` | `VALUE` | `Integer` | Listener receive buffer size |
 
 ## Routing
@@ -334,7 +334,7 @@ static class MyService implements HttpService {
 
 By implementing the `io.helidon.webserver.http.HttpFeature` interface, you can organize multiple routes and/or filters into a feature, that will be setup according to its defined `io.helidon.common.Weight` (or using `io.helidon.common.Weighted`).
 
-Each service has access to the routing builder. HTTP Features are configured for each routing builder. If there is a need to configure a feature for multiple sockets, you can use [Server Feature](#server-features) instead.
+Each service has access to the routing builder. HTTP Features are configured for each routing builder. If there is a need to configure a feature for multiple sockets, you can use [Server Feature][server-feature] instead.
 
 ## Request Handling
 
@@ -342,7 +342,7 @@ Implement the logic to handle requests to WebServer in a `Handler`, which is a `
 
 - Process the request and [send](#sending-a-response) a response.
 - Act as a filter and forward requests to downstream handlers using the `response.next()` method.
-- Throw an exception to begin [error handling](#error-handling).
+- Throw an exception to begin [error handling][error-handling-2].
 
 ### Process Request and Produce Response
 
@@ -387,7 +387,7 @@ The handler forwards the request to the downstream handlers by *nexting*. There 
   - handler for any HTTP method using the `/hello` path
   - business logic implementation
   - forward the current request to the downstream handler
-- throw an exception to forward to [error handling](#error-handling)
+- throw an exception to forward to [error handling][error-handling-2]
 
   ``` java
   rules.any("/hello", (req, res) -> {
@@ -439,11 +439,11 @@ rules.get("/any-version", (req, res) -> res.send("HTTP Version " + req.prologue(
 - An HTTP/1.1 route registered on `/version-specific` path
 - An HTTP/2 route registered on `/version-specific` path
 
-While `Http1Route` for Http/1 is always available with Helidon webserver, other routes like `Http2Route` for [HTTP/2](#http2-support) needs to be added as additional dependency.
+While `Http1Route` for Http/1 is always available with Helidon webserver, other routes like `Http2Route` for [HTTP/2][http-2] needs to be added as additional dependency.
 
 ## Requested URI Discovery
 
-Proxies and reverse proxies between an HTTP client and your Helidon application mask important information (for example `Host` header, originating IP address, protocol) about the request the client sent. Fortunately, many of these intermediary network nodes set or update either the [standard HTTP `Forwarded` header](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Forwarded) or the [non-standard `X-Forwarded-*` family of headers](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For) to preserve information about the original client request.
+Proxies and reverse proxies between an HTTP client and your Helidon application mask important information (for example `Host` header, originating IP address, protocol) about the request the client sent. Fortunately, many of these intermediary network nodes set or update either the [standard HTTP `Forwarded` header][standard-http-forwarded-header] or the [non-standard `X-Forwarded-*` family of headers][non-standard-x-forwarded-family-of-headers] to preserve information about the original client request.
 
 Helidon’s requested URI discovery feature allows your application—​and Helidon itself—​to reconstruct information about the original request using the `Forwarded` header and the `X-Forwarded-*` family of headers.
 
@@ -460,7 +460,7 @@ When your application invokes `request.requestedUri()` Helidon iterates through 
 
 ### Setting Up Requested URI Discovery Programmatically
 
-To set up requested URI discovery on the default socket for your server, use the [`WebServerConfig.Builder`](/apidocs/io.helidon.webserver/io/helidon/webserver/WebServerConfig.Builder.html):
+To set up requested URI discovery on the default socket for your server, use the [`WebServerConfig.Builder`][webserverconfig-builder]:
 
 Requested URI set-up for the default server socket:
 
@@ -485,7 +485,7 @@ WebServer.builder()
                 .trustedProxies(trustedProxies));
 ```
 
-- Create the `AllowList` describing the intermediate networks nodes to trust and not trust. Presumably the `lbxxx.mycorp.com` nodes are trusted load balancers except for the test load balancer `lbtest`, and no other nodes are trusted. `AllowList` accepts prefixes, suffixes, predicates, regex patterns, and exact matches. See the [`AllowList`](/apidocs/io.helidon.common.configurable/io/helidon/common/configurable/AllowList.html) Javadoc for complete information.
+- Create the `AllowList` describing the intermediate networks nodes to trust and not trust. Presumably the `lbxxx.mycorp.com` nodes are trusted load balancers except for the test load balancer `lbtest`, and no other nodes are trusted. `AllowList` accepts prefixes, suffixes, predicates, regex patterns, and exact matches. See the [`AllowList`][allowlist] Javadoc for complete information.
 - Use `Forwarded` first, then try `X-Forwarded-*` on each request.
 - Set the `AllowList` for trusted intermediaries.
 
@@ -525,7 +525,7 @@ rules.get((req, res) -> {
 });
 ```
 
-See the [`UriInfo`](/apidocs/io.helidon.common.uri/io/helidon/common/uri/UriInfo.html) Javadoc for more information.
+See the [`UriInfo`][uriinfo] Javadoc for more information.
 
 ## Error Handling
 
@@ -589,9 +589,9 @@ If no user-defined error handler is matched, or if the error handler of the exce
 
 ## Direct Error Handling
 
-There are a number of scenarios where errors can be detected before the request routing phase is initiated, some of these include: error validating requests (e.g. a bad URI), CORS rejections, invalid payloads, unsupported HTTP versions, etc. For all these type of events, Helidon provides the so-called *direct handlers*. The complete list of events that are handled in this way is defined by the enum [EventType](/apidocs/io.helidon.http/io/helidon/http/DirectHandler.EventType.html).
+There are a number of scenarios where errors can be detected before the request routing phase is initiated, some of these include: error validating requests (e.g. a bad URI), CORS rejections, invalid payloads, unsupported HTTP versions, etc. For all these type of events, Helidon provides the so-called *direct handlers*. The complete list of events that are handled in this way is defined by the enum [EventType][eventtype].
 
-Direct handlers can be configured independently for each port exposed by the Webserver; similar to other config, if configured directly on the Webserver they will only apply to the default port. For more information see [directHandlers](/apidocs/io.helidon.webserver/io/helidon/webserver/ListenerConfig.BuilderBase.html#directHandlers(io.helidon.webserver.http.DirectHandlers)) method in `ListenerConfig`.
+Direct handlers can be configured independently for each port exposed by the Webserver; similar to other config, if configured directly on the Webserver they will only apply to the default port. For more information see [directHandlers][directhandlers] method in `ListenerConfig`.
 
 The following example shows how to register a custom handler for a request that is deemed invalid before the routing phase stars. The custom handler in this example simply returns a status code of 400 and a message that references the server log.
 
@@ -651,24 +651,24 @@ Any other port defined in your application may include an `error-handling` secti
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
 | <span id="a6e5c3-cipher-suite"></span> `cipher-suite` | `LIST` | `String` |   | Enabled cipher suites for TLS communication |
-| <span id="aa9957-client-auth"></span> [`client-auth`](../../config/io_helidon_common_tls_TlsClientAuth.md) | `VALUE` | `i.h.c.t.TlsClientAuth` | `NONE` | Configure requirement for mutual TLS |
+| <span id="aa9957-client-auth"></span> [`client-auth`][client-auth] | `VALUE` | `i.h.c.t.TlsClientAuth` | `NONE` | Configure requirement for mutual TLS |
 | <span id="ab3264-enabled"></span> `enabled` | `VALUE` | `Boolean` | `true` | Flag indicating whether Tls is enabled |
 | <span id="a734ef-endpoint-identification-algorithm"></span> `endpoint-identification-algorithm` | `VALUE` | `String` | `HTTPS` | Identification algorithm for SSL endpoints |
 | <span id="a4eeba-internal-keystore-provider"></span> `internal-keystore-provider` | `VALUE` | `String` |   | Provider of the key stores used internally to create a key and trust manager factories |
 | <span id="ab7ae6-internal-keystore-type"></span> `internal-keystore-type` | `VALUE` | `String` |   | Type of the key stores used internally to create a key and trust manager factories |
 | <span id="a93230-key-manager-factory-algorithm"></span> `key-manager-factory-algorithm` | `VALUE` | `String` |   | Algorithm of the key manager factory used when private key is defined |
-| <span id="a49b7a-manager"></span> [`manager`](../../config/io_helidon_common_tls_TlsManager.md) | `VALUE` | `i.h.c.t.TlsManager` |   | The Tls manager |
+| <span id="a49b7a-manager"></span> [`manager`][manager] | `VALUE` | `i.h.c.t.TlsManager` |   | The Tls manager |
 | <span id="a7cad5-manager-discover-services"></span> `manager-discover-services` | `VALUE` | `Boolean` | `false` | Whether to enable automatic service discovery for `manager` |
-| <span id="aeed7c-private-key"></span> [`private-key`](../../config/io_helidon_common_pki_Keys.md) | `VALUE` | `i.h.c.p.Keys` |   | Private key to use |
+| <span id="aeed7c-private-key"></span> [`private-key`][private-key] | `VALUE` | `i.h.c.p.Keys` |   | Private key to use |
 | <span id="a910b8-protocol"></span> `protocol` | `VALUE` | `String` | `TLS` | Configure the protocol used to obtain an instance of `javax.net.ssl.SSLContext` |
 | <span id="aef2f6-protocols"></span> `protocols` | `LIST` | `String` |   | Enabled protocols for TLS communication |
 | <span id="a0da60-provider"></span> `provider` | `VALUE` | `String` |   | Use explicit provider to obtain an instance of `javax.net.ssl.SSLContext` |
-| <span id="a7a660-revocation"></span> [`revocation`](../../config/io_helidon_common_tls_RevocationConfig.md) | `VALUE` | `i.h.c.t.RevocationConfig` |   | Certificate revocation check configuration |
+| <span id="a7a660-revocation"></span> [`revocation`][revocation] | `VALUE` | `i.h.c.t.RevocationConfig` |   | Certificate revocation check configuration |
 | <span id="ab9360-secure-random-algorithm"></span> `secure-random-algorithm` | `VALUE` | `String` |   | Algorithm to use when creating a new secure random |
 | <span id="a82d0c-secure-random-provider"></span> `secure-random-provider` | `VALUE` | `String` |   | Provider to use when creating a new secure random |
 | <span id="a59f4a-session-cache-size"></span> `session-cache-size` | `VALUE` | `Integer` | `20480` | SSL session cache size |
 | <span id="abf0bb-session-timeout"></span> `session-timeout` | `VALUE` | `Duration` | `PT24H` | SSL session timeout |
-| <span id="adbc4b-trust"></span> [`trust`](../../config/io_helidon_common_pki_Keys.md) | `LIST` | `i.h.c.p.Keys` |   | List of certificates that form the trust manager |
+| <span id="adbc4b-trust"></span> [`trust`][private-key] | `LIST` | `i.h.c.p.Keys` |   | List of certificates that form the trust manager |
 | <span id="a0346e-trust-all"></span> `trust-all` | `VALUE` | `Boolean` | `false` | Trust any certificate provided by the other side of communication |
 | <span id="af626f-trust-manager-factory-algorithm"></span> `trust-manager-factory-algorithm` | `VALUE` | `String` |   | Trust manager factory algorithm |
 
@@ -677,9 +677,9 @@ Any other port defined in your application may include an `error-handling` secti
 
 Server features provide additional functionality to the WebServer, through modification of the server configuration, listener configuration, or routing.
 
-A server feature can be added by implementing `io.helidon.webserver.spi.ServerFeature`. Server features support automated discovery, as long as the implementation is available through Java `ServiceLoader`. Server features can also be added through configuration, as can be seen above in [Configuration Options](#configuration-options), configuration key `features`.
+A server feature can be added by implementing `io.helidon.webserver.spi.ServerFeature`. Server features support automated discovery, as long as the implementation is available through Java `ServiceLoader`. Server features can also be added through configuration, as can be seen above in [Configuration Options][configuration-options], configuration key `features`.
 
-All features (both `ServerFeature` and [HttpFeature](#using-httpfeature)) honor weight of the feature (defined either through `@Weight` annotation, or by implementing `Weighted` interface) when registering routes, `HttpService`, or `Filter` to the routing.
+All features (both `ServerFeature` and [HttpFeature][httpfeature]) honor weight of the feature (defined either through `@Weight` annotation, or by implementing `Weighted` interface) when registering routes, `HttpService`, or `Filter` to the routing.
 
 The following table shows available server features and their weight. The highest weight is always registered (and invoked) first.
 
@@ -720,17 +720,17 @@ Configuration of context feature.
 
 ##### Usages
 
-- [`server.features.context`](../../config/io_helidon_webserver_spi_ServerFeature.md#a57af2-context)
+- [`server.features.context`][server-features-context]
 
 ##### Configuration options
 
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
-| <span id="aa10e9-records"></span> [`records`](../../config/io_helidon_common_context_http_ContextRecordConfig.md) | `LIST` | `i.h.c.c.h.ContextRecordConfig` |   | List of propagation records |
+| <span id="aa10e9-records"></span> [`records`][records] | `LIST` | `i.h.c.c.h.ContextRecordConfig` |   | List of propagation records |
 | <span id="ac7113-sockets"></span> `sockets` | `LIST` | `String` |   | List of sockets to register this feature on |
 | <span id="a37f63-weight"></span> `weight` | `VALUE` | `Double` | `1100.0` | Weight of the context feature |
 
-See the [manifest](../../config/manifest.md) for all available types.
+See the [manifest][manifest] for all available types.
 
 <a id="access-log"></a>
 ### Access Log
@@ -783,7 +783,7 @@ Configuration of access log feature.
 
 ##### Usages
 
-- [`server.features.access-log`](../../config/io_helidon_webserver_spi_ServerFeature.md#a42c97-access-log)
+- [`server.features.access-log`][server-features-access-log]
 
 ##### Configuration options
 
@@ -795,7 +795,7 @@ Configuration of access log feature.
 | <span id="a631a5-sockets"></span> `sockets` | `LIST` | `String` |   | List of sockets to register this feature on |
 | <span id="ac3d7a-weight"></span> `weight` | `VALUE` | `Double` | `1000.0` | Weight of the access log feature |
 
-See the [manifest](../../config/manifest.md) for all available types.
+See the [manifest][manifest] for all available types.
 
 <a id="supported-technologies"></a>
 ## Supported Technologies
@@ -877,7 +877,7 @@ server:
           location: "/static-content"
 ```
 
-See [Static Content Feature Configuration Reference](../../config/io_helidon_webserver_staticcontent_StaticContentFeature.md) for details of configuration options.
+See [Static Content Feature Configuration Reference][static-content-feature-configuration-reference] for details of configuration options.
 
 <a id="media-types-support"></a>
 ### Media Types Support
@@ -900,10 +900,10 @@ The following table lists JSON media supports:
 
 | Media type | TypeName | Maven groupId:artifactId | Supported Java type(s) |
 |----|----|----|----|
-| **[JSON-P](#json-p-support)** | JsonpSupport | `io.helidon.http.media:helidon-http-media-jsonp` | `JsonObject, JsonArray` |
-| **[JSON-B](#json-b-support)** | JsonbSupport | `io.helidon.http.media:helidon-http-media-jsonb` | Any \* |
-| **[Jackson](#jackson-support)** | JacksonSupport | `io.helidon.http.media:helidon-http-media-jackson` | Any \* |
-| **[Gson](#gson-support)** | GsonSupport | `io.helidon.http.media:helidon-http-media-gson` | Any \* |
+| **[JSON-P][json-p]** | JsonpSupport | `io.helidon.http.media:helidon-http-media-jsonp` | `JsonObject, JsonArray` |
+| **[JSON-B][json-b]** | JsonbSupport | `io.helidon.http.media:helidon-http-media-jsonb` | Any \* |
+| **[Jackson][jackson]** | JacksonSupport | `io.helidon.http.media:helidon-http-media-jackson` | Any \* |
+| **[Gson][gson]** | GsonSupport | `io.helidon.http.media:helidon-http-media-gson` | Any \* |
 
 - JSON-B and Jackson have lower weight, so they are used only when no other media type matched the object being written or read
 
@@ -961,7 +961,7 @@ Response body:
 
 #### JSON-B Support
 
-The WebServer supports the [JSON-B specification](http://json-b.net/). When this support is enabled, Java objects will be serialized to and deserialized from JSON automatically using [Yasson](https://github.com/eclipse-ee4j/yasson), an implementation of the [JSON-B specification](https://jakarta.ee/specifications/jsonb/3.0/jakarta-jsonb-spec-3.0.html).
+The WebServer supports the [JSON-B specification][json-b-specification]. When this support is enabled, Java objects will be serialized to and deserialized from JSON automatically using [Yasson][yasson], an implementation of the [JSON-B specification][json-b-specification-2].
 
 ##### Maven Coordinates
 
@@ -1000,7 +1000,7 @@ jsonb:
 
 ##### Usage
 
-Now that automatic JSON serialization and deserialization facilities have been set up, you can register a `Handler` that works with Java objects instead of raw JSON. Deserialization from and serialization to JSON will be handled according to the [JSON-B specification](https://jcp.org/en/jsr/detail?id=367).
+Now that automatic JSON serialization and deserialization facilities have been set up, you can register a `Handler` that works with Java objects instead of raw JSON. Deserialization from and serialization to JSON will be handled according to the [JSON-B specification][json-b-specification-3].
 
 Suppose you have a `Person` class that looks like this:
 
@@ -1047,7 +1047,7 @@ curl --noproxy '*' -X POST -H "Content-Type: application/json" \
 
 #### Jackson Support
 
-The WebServer supports [Jackson](https://github.com/FasterXML/jackson#jackson-project-home-github). When this support is enabled, Java objects will be serialized to and deserialized from JSON automatically using Jackson.
+The WebServer supports [Jackson][jackson-2]. When this support is enabled, Java objects will be serialized to and deserialized from JSON automatically using Jackson.
 
 ##### Maven Coordinates
 
@@ -1082,7 +1082,7 @@ jackson:
 
 ##### Usage
 
-Now that automatic JSON serialization and deserialization facilities have been set up, you can register a `Handler` that works with Java objects instead of raw JSON. Deserialization from and serialization to JSON will be handled by [Jackson](https://github.com/FasterXML/jackson#jackson-project-home-github).
+Now that automatic JSON serialization and deserialization facilities have been set up, you can register a `Handler` that works with Java objects instead of raw JSON. Deserialization from and serialization to JSON will be handled by [Jackson][jackson-2].
 
 Suppose you have a `Person` class that looks like this:
 
@@ -1134,7 +1134,7 @@ Response body:
 
 #### Gson Support
 
-The WebServer supports [Gson](https://github.com/google/gson#gson). When this support is enabled, Java objects will be serialized to and deserialized from JSON automatically using Gson.
+The WebServer supports [Gson][gson-2]. When this support is enabled, Java objects will be serialized to and deserialized from JSON automatically using Gson.
 
 ##### Maven Coordinates
 
@@ -1169,7 +1169,7 @@ gson:
 
 ##### Usage
 
-Now that automatic JSON serialization and deserialization facilities have been set up, you can register a `Handler` that works with Java objects instead of raw JSON. Deserialization from and serialization to JSON will be handled by [Gson](++https://github.com/google/gson#gson).
+Now that automatic JSON serialization and deserialization facilities have been set up, you can register a `Handler` that works with Java objects instead of raw JSON. Deserialization from and serialization to JSON will be handled by [Gson][gson-3].
 
 Suppose you have a `Person` class that looks like this:
 
@@ -1249,7 +1249,7 @@ Or use a config file using the following options:
 
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
-| <span id="ab960c-content-encodings"></span> [`content-encodings`](../../config/io_helidon_http_encoding_ContentEncoding.md) | `LIST` | `i.h.h.e.ContentEncoding` |   | List of content encodings that should be used |
+| <span id="ab960c-content-encodings"></span> [`content-encodings`][content-encodings] | `LIST` | `i.h.h.e.ContentEncoding` |   | List of content encodings that should be used |
 | <span id="ac89ac-content-encodings-discover-services"></span> `content-encodings-discover-services` | `VALUE` | `Boolean` | `true` | Whether to enable automatic service discovery for `content-encodings` |
 
 The following providers are currently available (simply add the library on the classpath):
@@ -1268,7 +1268,7 @@ For example, if the request includes `Accept-Encoding: gzip, deflate`, and HTTP 
 <a id="proxy-protocol-support"></a>
 ### Proxy Protocol Support
 
-The [Proxy Protocol](https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt) provides a way to convey client information across reverse proxies or load balancers which would otherwise be lost given that new connections are established for each network hop. Often times, this information can be carried in HTTP headers, but not all proxies support this feature. Helidon is capable of parsing a proxy protocol header (i.e., a network preamble) that is based on either V1 or V2 of the protocol, thus making client information available to service developers.
+The [Proxy Protocol][proxy-protocol] provides a way to convey client information across reverse proxies or load balancers which would otherwise be lost given that new connections are established for each network hop. Often times, this information can be carried in HTTP headers, but not all proxies support this feature. Helidon is capable of parsing a proxy protocol header (i.e., a network preamble) that is based on either V1 or V2 of the protocol, thus making client information available to service developers.
 
 Proxy Protocol support is enabled via configuration, and can be done either declaratively or programmatically. Once enabled, every new connection on the corresponding port **MUST** be preambled by a proxy header for the connection not to be rejected as invalid --that is, proxy headers are never optional.
 
@@ -1366,8 +1366,59 @@ public static void main(String[] args) {
 
 - [Helidon WebServer Javadoc](/apidocs/io.helidon.webserver/module-summary.html)
 
-- [Helidon WebServer Static Content Javadoc](/apidocs/io.helidon.webserver.staticcontent/module-summary.html)
-- [Helidon JSON-B Support Javadoc](/apidocs/io.helidon.http.media.jsonp/module-summary.html)
-- [Helidon JSON-P Support Javadoc](/apidocs/io.helidon.http.media.jsonb/module-summary.html)
-- [Helidon Jackson Support Javadoc](/apidocs/io.helidon.http.media.jackson/module-summary.html)
-- [Proxy Protocol Specification](https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt)
+- [Helidon WebServer Static Content Javadoc][helidon-webserver-static-content-javadoc]
+- [Helidon JSON-B Support Javadoc][helidon-json-b-support-javadoc]
+- [Helidon JSON-P Support Javadoc][helidon-json-p-support-javadoc]
+- [Helidon Jackson Support Javadoc][helidon-jackson-support-javadoc]
+- [Proxy Protocol Specification][proxy-protocol]
+
+[managing-dependencies]: ../../managing-dependencies.md
+[concurrency-limit]: ../../config/io_helidon_common_concurrency_limits_Limit.md
+[connection-options]: ../../config/io_helidon_common_socket_SocketOptions.md
+[content-encoding]: ../../config/io_helidon_http_encoding_ContentEncodingContext.md
+[error-handling]: ../../config/io_helidon_webserver_ErrorHandling.md
+[features]: ../../config/io_helidon_webserver_spi_ServerFeature.md
+[media-context]: ../../config/io_helidon_http_media_MediaContext.md
+[protocols]: ../../config/io_helidon_webserver_spi_ProtocolConfig.md
+[requested-uri-discovery]: ../../config/io_helidon_http_RequestedUriDiscoveryContext.md
+[sockets]: ../../config/io_helidon_webserver_ListenerConfig.md
+[tls]: ../../config/io_helidon_common_tls_Tls.md
+[connection-config]: ../../config/io_helidon_webserver_ConnectionConfig.md
+[server-feature]: #server-features
+[error-handling-2]: #error-handling
+[http-2]: #http2-support
+[standard-http-forwarded-header]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Forwarded
+[non-standard-x-forwarded-family-of-headers]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For
+[webserverconfig-builder]: /apidocs/io.helidon.webserver/io/helidon/webserver/WebServerConfig.Builder.html
+[allowlist]: /apidocs/io.helidon.common.configurable/io/helidon/common/configurable/AllowList.html
+[uriinfo]: /apidocs/io.helidon.common.uri/io/helidon/common/uri/UriInfo.html
+[eventtype]: /apidocs/io.helidon.http/io/helidon/http/DirectHandler.EventType.html
+[directhandlers]: </apidocs/io.helidon.webserver/io/helidon/webserver/ListenerConfig.BuilderBase.html#directHandlers(io.helidon.webserver.http.DirectHandlers)>
+[client-auth]: ../../config/io_helidon_common_tls_TlsClientAuth.md
+[manager]: ../../config/io_helidon_common_tls_TlsManager.md
+[private-key]: ../../config/io_helidon_common_pki_Keys.md
+[revocation]: ../../config/io_helidon_common_tls_RevocationConfig.md
+[configuration-options]: #configuration-options
+[httpfeature]: #using-httpfeature
+[server-features-context]: ../../config/io_helidon_webserver_spi_ServerFeature.md#a57af2-context
+[records]: ../../config/io_helidon_common_context_http_ContextRecordConfig.md
+[manifest]: ../../config/manifest.md
+[server-features-access-log]: ../../config/io_helidon_webserver_spi_ServerFeature.md#a42c97-access-log
+[static-content-feature-configuration-reference]: ../../config/io_helidon_webserver_staticcontent_StaticContentFeature.md
+[json-p]: #json-p-support
+[json-b]: #json-b-support
+[jackson]: #jackson-support
+[gson]: #gson-support
+[json-b-specification]: http://json-b.net/
+[yasson]: https://github.com/eclipse-ee4j/yasson
+[json-b-specification-2]: https://jakarta.ee/specifications/jsonb/3.0/jakarta-jsonb-spec-3.0.html
+[json-b-specification-3]: https://jcp.org/en/jsr/detail?id=367
+[jackson-2]: https://github.com/FasterXML/jackson#jackson-project-home-github
+[gson-2]: https://github.com/google/gson#gson
+[gson-3]: ++https://github.com/google/gson#gson
+[content-encodings]: ../../config/io_helidon_http_encoding_ContentEncoding.md
+[proxy-protocol]: https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt
+[helidon-webserver-static-content-javadoc]: /apidocs/io.helidon.webserver.staticcontent/module-summary.html
+[helidon-json-b-support-javadoc]: /apidocs/io.helidon.http.media.jsonp/module-summary.html
+[helidon-json-p-support-javadoc]: /apidocs/io.helidon.http.media.jsonb/module-summary.html
+[helidon-jackson-support-javadoc]: /apidocs/io.helidon.http.media.jackson/module-summary.html

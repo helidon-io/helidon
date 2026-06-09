@@ -8,10 +8,10 @@ For this 30 minute tutorial, you will need the following:
 
 | Requirement | Description |
 |-------------|-------------|
-| [Java 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
-| [Maven 3.8+](https://maven.apache.org/download.cgi) | Helidon requires Maven 3.8+. |
-| [Docker 18.09+](https://docs.docker.com/install/) | If you want to build and run Docker containers. |
-| [Kubectl 1.16.5+](https://kubernetes.io/docs/tasks/tools/install-kubectl/) | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
+| [Java 21][java-21] ([Open JDK 21][open-jdk-21]) | Helidon requires Java 21+ (25+ recommended). |
+| [Maven 3.8+][maven-3-8] | Helidon requires Maven 3.8+. |
+| [Docker 18.09+][docker-18-09] | If you want to build and run Docker containers. |
+| [Kubectl 1.16.5+][kubectl-1-16-5] | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
 
 Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
@@ -37,7 +37,7 @@ export JAVA_HOME=/usr/lib/jvm/jdk-21
 
 ## Introduction
 
-Distributed tracing is a critical feature of microservice based applications, since it traces workflow both within a service and across multiple services. This provides insight to sequence and timing data for specific blocks of work, which helps you identify performance and operational issues. Helidon MP includes support for distributed tracing through the [OpenTracing API](https://opentracing.io). Tracing is integrated with WebServer and Security using either the [Zipkin](https://zipkin.io) or [Jaeger](https://www.jaegertracing.io) tracers.
+Distributed tracing is a critical feature of microservice based applications, since it traces workflow both within a service and across multiple services. This provides insight to sequence and timing data for specific blocks of work, which helps you identify performance and operational issues. Helidon MP includes support for distributed tracing through the [OpenTracing API][opentracing-api]. Tracing is integrated with WebServer and Security using either the [Zipkin][zipkin] or [Jaeger][jaeger] tracers.
 
 ### Tracing Concepts
 
@@ -45,7 +45,7 @@ This section explains a few concepts that you need to understand before you get 
 
 - In the context of this document, a *service* is synonymous with an application.
 - A *span* is the basic unit of work done within a single service, on a single host. Every span has a name, starting timestamp, and duration. For example, the work done by a REST endpoint is a span. A span is associated to a single service, but its descendants can belong to different services and hosts.
-- A *trace* contains a collection of spans from one or more services, running on one or more hosts. For example, if you trace a service endpoint that calls another service, then the trace would contain spans from both services. Within a trace, spans are organized as a directed acyclic graph (DAG) and can belong to multiple services, running on multiple hosts. The *OpenTracing Data Model* describes the details at [The OpenTracing Semantic Specification](https://opentracing.io/specification). Spans are automatically created by Helidon as needed during execution of the REST request.
+- A *trace* contains a collection of spans from one or more services, running on one or more hosts. For example, if you trace a service endpoint that calls another service, then the trace would contain spans from both services. Within a trace, spans are organized as a directed acyclic graph (DAG) and can belong to multiple services, running on multiple hosts. The *OpenTracing Data Model* describes the details at [The OpenTracing Semantic Specification][the-opentracing-semantic-specification]. Spans are automatically created by Helidon as needed during execution of the REST request.
 
 ## Getting Started with Tracing
 
@@ -177,7 +177,7 @@ Click on a trace, and you will see the trace detail page where the spans are lis
 </figure>
 
 > [!NOTE]
-> A parent span might not depend on the result of the child. This is called a `FollowsFrom` reference, see [Open Tracing Semantic Spec](https://github.com/opentracing/specification/blob/master/specification.md). Note that the last span that writes the response after the root span ends falls into this category.
+> A parent span might not depend on the result of the child. This is called a `FollowsFrom` reference, see [Open Tracing Semantic Spec][open-tracing-semantic-spec]. Note that the last span that writes the response after the root span ends falls into this category.
 
 You can examine span details by clicking on the span row. Refer to the image below, which shows the `security` span details, including timing information. You can see times for each space relative to the root span. These rows are annotated with `Server Start` and `Server Finish`, as shown in the third column.
 
@@ -595,19 +595,19 @@ Applications and libraries can register listeners to be notified at several mome
 - After a span is activated (creating a new scope)
 - After a scope is closed
 
-The next sections explain how you can write and add a listener and what it can do. See the [`SpanListener`](/apidocs/io.helidon.tracing/io/helidon/tracing/SpanListener.html) Javadoc for more information.
+The next sections explain how you can write and add a listener and what it can do. See the [`SpanListener`][spanlistener] Javadoc for more information.
 
 ### Understanding What Listeners Do
 
 A listener cannot affect the lifecycle of a span or scope it is notified about, but it can add tags and events and update the baggage associated with a span. Often a listener does additional work that does not change the span or scope such as logging a message.
 
-When Helidon invokes the listener’s methods it passes proxies for the `Span.Builder`, `Span`, and `Scope` arguments. These proxies limit the access the listener has to the span builder, span, or scope, as summarized in the following table. If a listener method tries to invoke a forbidden operation, the proxy throws a [`SpanListener.ForbiddenOperationException`](/apidocs/io.helidon.tracing/io/helidon/tracing/SpanListener.ForbiddenOperationException.html) and Helidon then logs a `WARNING` message describing the invalid operation invocation.
+When Helidon invokes the listener’s methods it passes proxies for the `Span.Builder`, `Span`, and `Scope` arguments. These proxies limit the access the listener has to the span builder, span, or scope, as summarized in the following table. If a listener method tries to invoke a forbidden operation, the proxy throws a [`SpanListener.ForbiddenOperationException`][spanlistener-forbiddenoperationexception] and Helidon then logs a `WARNING` message describing the invalid operation invocation.
 
 | Tracing type | Changes allowed |
 |----|----|
-| [`Span.Builder`](/apidocs/io.helidon.tracing/io/helidon/tracing/Span.Builder.html) | Add tags |
-| [`Span`](/apidocs/io.helidon.tracing/io/helidon/tracing/Span.html) | Retrieve and update baggage, add events, add tags |
-| [`Scope`](/apidocs/io.helidon.tracing/io/helidon/tracing/Scope.html) | none |
+| [`Span.Builder`][span-builder] | Add tags |
+| [`Span`][span] | Retrieve and update baggage, add events, add tags |
+| [`Scope`][scope] | none |
 
 Summary of Permitted Operations on Proxies Passed to Listeners
 
@@ -628,7 +628,7 @@ The following tables list specifically what operations the proxies permit.
 > [!NOTE]
 > Helidon returns the unwrapped object, not a proxy for it.
 
-[`io.helidon.tracing.Span.Builder`](/apidocs/io.helidon.tracing/io/helidon/tracing/Span.Builder.html) Operations
+[`io.helidon.tracing.Span.Builder`][span-builder] Operations
 
 | Method | Purpose | OK? |
 |----|----|----|
@@ -643,14 +643,14 @@ The following tables list specifically what operations the proxies permit.
 > [!NOTE]
 > Helidon returns the unwrapped object, not a proxy to it.
 
-[`io.helidon.tracing.Span`](/apidocs/io.helidon.tracing/io/helidon/tracing/Span.html) Operations
+[`io.helidon.tracing.Span`][span] Operations
 
 | Method       | Purpose                              | OK? |
 |--------------|--------------------------------------|-----|
 | `close()`    | Close the scope.                     | \-  |
 | `isClosed()` | Reports whether the scope is closed. | ✓   |
 
-[`io.helidon.tracing.Scope`](/apidocs/io.helidon.tracing/io/helidon/tracing/Scope.html) Operations
+[`io.helidon.tracing.Scope`][scope] Operations
 
 | Method | Purpose | OK? |
 |----|----|----|
@@ -659,11 +659,11 @@ The following tables list specifically what operations the proxies permit.
 | `spanId()` | Returns the span ID. | ✓ |
 | `traceId()` | Returns the trace ID. | ✓ |
 
-[`io.helidon.tracing.SpanContext`](/apidocs/io.helidon.tracing/io/helidon/tracing/SpanContext.html) Operations
+[`io.helidon.tracing.SpanContext`][io-helidon-tracing-spancontext] Operations
 
 ### Adding a Listener
 
-#### Explicitly Registering a Listener on a [`Tracer`](/apidocs/io.helidon.tracing/io/helidon/tracing/Tracer.html)
+#### Explicitly Registering a Listener on a [`Tracer`][tracer]
 
 Create a `SpanListener` instance and invoke the `Tracer#register(SpanListener)` method to make the listener known to that tracer.
 
@@ -671,7 +671,7 @@ Create a `SpanListener` instance and invoke the `Tracer#register(SpanListener)` 
 
 Helidon also uses Java service loading to locate listeners and register them automatically on all `Tracer` objects. Follow these steps to add a listener service provider.
 
-1.  Implement the [`SpanListener`](/apidocs/io.helidon.tracing/io/helidon/tracing/SpanListener.html) interface.
+1.  Implement the [`SpanListener`][spanlistener] interface.
 2.  Declare your implementation as a service provider:
     1.  Create the file `META-INF/services/io.helidon.tracing.SpanListener` containing a line with the fully-qualified name of your class which implements `SpanListener`.
     2.  If your service has a `module-info.java` file add the following line to it:
@@ -707,6 +707,26 @@ This guide has demonstrated how to use the Helidon MP tracing feature with Jaege
 
 Refer to the following references for additional information:
 
-- [MicroProfile OpenTracing specification](https://download.eclipse.org/microprofile/microprofile-opentracing-3.0/microprofile-opentracing-spec-3.0.html)
-- [MicroProfile OpenTracing Javadoc](https://download.eclipse.org/microprofile/microprofile-opentracing-3.0/apidocs)
+- [MicroProfile OpenTracing specification][microprofile-opentracing-specification]
+- [MicroProfile OpenTracing Javadoc][microprofile-opentracing-javadoc]
 - [Helidon Javadoc](/apidocs/index.html?overview-summary.html)
+
+[java-21]: https://www.oracle.com/technetwork/java/javase/downloads
+[open-jdk-21]: http://jdk.java.net
+[maven-3-8]: https://maven.apache.org/download.cgi
+[docker-18-09]: https://docs.docker.com/install/
+[kubectl-1-16-5]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
+[opentracing-api]: https://opentracing.io
+[zipkin]: https://zipkin.io
+[jaeger]: https://www.jaegertracing.io
+[the-opentracing-semantic-specification]: https://opentracing.io/specification
+[open-tracing-semantic-spec]: https://github.com/opentracing/specification/blob/master/specification.md
+[spanlistener]: /apidocs/io.helidon.tracing/io/helidon/tracing/SpanListener.html
+[spanlistener-forbiddenoperationexception]: /apidocs/io.helidon.tracing/io/helidon/tracing/SpanListener.ForbiddenOperationException.html
+[span-builder]: /apidocs/io.helidon.tracing/io/helidon/tracing/Span.Builder.html
+[span]: /apidocs/io.helidon.tracing/io/helidon/tracing/Span.html
+[scope]: /apidocs/io.helidon.tracing/io/helidon/tracing/Scope.html
+[io-helidon-tracing-spancontext]: /apidocs/io.helidon.tracing/io/helidon/tracing/SpanContext.html
+[tracer]: /apidocs/io.helidon.tracing/io/helidon/tracing/Tracer.html
+[microprofile-opentracing-specification]: https://download.eclipse.org/microprofile/microprofile-opentracing-3.0/microprofile-opentracing-spec-3.0.html
+[microprofile-opentracing-javadoc]: https://download.eclipse.org/microprofile/microprofile-opentracing-3.0/apidocs

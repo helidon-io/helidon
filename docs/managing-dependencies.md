@@ -52,5 +52,10 @@ Component dependency:
 
 ## For More Information
 
-- Maven Build Guide for [SE](se/guides/maven-build.md) and [MP](mp/guides/maven-build.md)
-- Gradle Build Guide for [SE](se/guides/gradle-build.md) and [MP](mp/guides/gradle-build.md)
+- Maven Build Guide for [SE][se] and [MP][mp]
+- Gradle Build Guide for [SE][se-2] and [MP][mp-2]
+
+[se]: se/guides/maven-build.md
+[mp]: mp/guides/maven-build.md
+[se-2]: se/guides/gradle-build.md
+[mp-2]: mp/guides/gradle-build.md

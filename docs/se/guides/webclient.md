@@ -8,10 +8,10 @@ For this 15 minute tutorial, you will need the following:
 
 | Requirement | Description |
 |-------------|-------------|
-| [Java 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
-| [Maven 3.8+](https://maven.apache.org/download.cgi) | Helidon requires Maven 3.8+. |
-| [Docker 18.09+](https://docs.docker.com/install/) | If you want to build and run Docker containers. |
-| [Kubectl 1.16.5+](https://kubernetes.io/docs/tasks/tools/install-kubectl/) | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
+| [Java 21][java-21] ([Open JDK 21][open-jdk-21]) | Helidon requires Java 21+ (25+ recommended). |
+| [Maven 3.8+][maven-3-8] | Helidon requires Maven 3.8+. |
+| [Docker 18.09+][docker-18-09] | If you want to build and run Docker containers. |
+| [Kubectl 1.16.5+][kubectl-1-16-5] | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
 
 Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
@@ -49,7 +49,7 @@ WebClient provides the following features:
 - **Following redirects**: The WebClient is able to follow the redirect chain and perform requests on the correct endpoint for you. You no longer have to point your client to the correct/final endpoint.
 - **Tracing, metrics and security propagation**: When you configure the Helidon WebServer to use tracing, metrics and security, the settings are automatically propagated to the WebClient and used during request/response.
 
-For more information about the `WebClient`, please refer to the [WebClient Introduction](../webclient.md).
+For more information about the `WebClient`, please refer to the [WebClient Introduction][webclient-introduction].
 
 ### WebClient Usage
 
@@ -364,4 +364,12 @@ System.out.println(counterName + ": " + counter.count());
 - Send an HTTP GET request
 - Print out the metric result
 
-As demonstrated, using the configuration file reduces the amount of code needed in the source code. For more information about metrics, see the [Helidon Metrics Guide](metrics.md).
+As demonstrated, using the configuration file reduces the amount of code needed in the source code. For more information about metrics, see the [Helidon Metrics Guide][helidon-metrics-guide].
+
+[java-21]: https://www.oracle.com/technetwork/java/javase/downloads
+[open-jdk-21]: http://jdk.java.net
+[maven-3-8]: https://maven.apache.org/download.cgi
+[docker-18-09]: https://docs.docker.com/install/
+[kubectl-1-16-5]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
+[webclient-introduction]: ../webclient.md
+[helidon-metrics-guide]: metrics.md

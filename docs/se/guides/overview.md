@@ -11,7 +11,7 @@
 -->
 | Guide | Description |
 | --- | --- |
-| [Quickstart SE](quickstart.md) | Create your first Helidon SE application in under 5 minutes. |
+| [Quickstart SE][quickstart-se] | Create your first Helidon SE application in under 5 minutes. |
 <!--/mdc -->
 
 ## Helidon SE Guides
@@ -53,15 +53,15 @@
 | Guide | Description |
 | --- | --- |
 | [Config Guide](config.md) | Learn how to configure a Helidon SE application. |
-| [LangChain4j Guide](langchain4j.md) | Learn how to create AI powered Helidon SE applications. |
-| [Health Check Guide](health.md) | Learn how to use Helidon SE built-in and custom health checks. |
-| [Metrics Guide](metrics.md) | Learn how to use Helidon SE built-in and application metrics. |
+| [LangChain4j Guide][langchain4j-guide] | Learn how to create AI powered Helidon SE applications. |
+| [Health Check Guide][health-check-guide] | Learn how to use Helidon SE built-in and custom health checks. |
+| [Metrics Guide][metrics-guide] | Learn how to use Helidon SE built-in and application metrics. |
 | [Tracing Guide](tracing.md) | Learn how to trace a Helidon SE application. |
-| [OIDC Guide](security-oidc.md) | Learn how to set up an OIDC Helidon SE application |
-| [Helidon SE Upgrade Guide](upgrade.md) | Learn how to Upgrade your Helidon SE application |
-| [Helidon SE WebClient Guide](webclient.md) | Learn how to use the Helidon SE WebClient |
-| [Helidon SE DB Client Guide](dbclient.md) | Learn how to use the Helidon SE DB Client |
-| [Helidon SE Performance Tuning Guide](performance-tuning.md) | Learn how to tune your Helidon SE application |
+| [OIDC Guide][oidc-guide] | Learn how to set up an OIDC Helidon SE application |
+| [Helidon SE Upgrade Guide][helidon-se-upgrade-guide] | Learn how to Upgrade your Helidon SE application |
+| [Helidon SE WebClient Guide][helidon-se-webclient-guide] | Learn how to use the Helidon SE WebClient |
+| [Helidon SE DB Client Guide][helidon-se-db-client-guide] | Learn how to use the Helidon SE DB Client |
+| [Helidon SE Performance Tuning Guide][helidon-se-performance-tuning-guide] | Learn how to tune your Helidon SE application |
 <!--/mdc -->
 
 ## Build and Deploy
@@ -86,6 +86,18 @@
 | --- | --- |
 | [Maven Guide](maven-build.md) | Using Helidon in your Maven project. |
 | [Gradle Guide](gradle-build.md) | Using Helidon in your Gradle project. |
-| [GraalVM Native Images](graalnative.md) | Learn how to build a GraalVM native image for your Helidon application both on your desktop and as part of a Docker image. |
-| [Custom Runtime Images using jlink](jlink-image.md) | Learn how to build a custom runtime Java image for your Helidon application both on your desktop and as part of a Docker image. |
+| [GraalVM Native Images][graalvm-native-images] | Learn how to build a GraalVM native image for your Helidon application both on your desktop and as part of a Docker image. |
+| [Custom Runtime Images using jlink][custom-runtime-images-using-jlink] | Learn how to build a custom runtime Java image for your Helidon application both on your desktop and as part of a Docker image. |
 <!--/mdc -->
+
+[quickstart-se]: quickstart.md
+[langchain4j-guide]: langchain4j.md
+[health-check-guide]: health.md
+[metrics-guide]: metrics.md
+[oidc-guide]: security-oidc.md
+[helidon-se-upgrade-guide]: upgrade.md
+[helidon-se-webclient-guide]: webclient.md
+[helidon-se-db-client-guide]: dbclient.md
+[helidon-se-performance-tuning-guide]: performance-tuning.md
+[graalvm-native-images]: graalnative.md
+[custom-runtime-images-using-jlink]: jlink-image.md

@@ -10,19 +10,19 @@ Applications and libraries can register listeners to be notified at several mome
 - After a span is activated (creating a new scope)
 - After a scope is closed
 
-The next sections explain how you can write and add a listener and what it can do. See the [`SpanListener`](/apidocs/io.helidon.tracing/io/helidon/tracing/SpanListener.html) Javadoc for more information.
+The next sections explain how you can write and add a listener and what it can do. See the [`SpanListener`][spanlistener] Javadoc for more information.
 
 #### Understanding What Listeners Do
 
 A listener cannot affect the lifecycle of a span or scope it is notified about, but it can add tags and events and update the baggage associated with a span. Often a listener does additional work that does not change the span or scope such as logging a message.
 
-When Helidon invokes the listener’s methods it passes proxies for the `Span.Builder`, `Span`, and `Scope` arguments. These proxies limit the access the listener has to the span builder, span, or scope, as summarized in the following table. If a listener method tries to invoke a forbidden operation, the proxy throws a [`SpanListener.ForbiddenOperationException`](/apidocs/io.helidon.tracing/io/helidon/tracing/SpanListener.ForbiddenOperationException.html) and Helidon then logs a `WARNING` message describing the invalid operation invocation.
+When Helidon invokes the listener’s methods it passes proxies for the `Span.Builder`, `Span`, and `Scope` arguments. These proxies limit the access the listener has to the span builder, span, or scope, as summarized in the following table. If a listener method tries to invoke a forbidden operation, the proxy throws a [`SpanListener.ForbiddenOperationException`][spanlistener-forbiddenoperationexception] and Helidon then logs a `WARNING` message describing the invalid operation invocation.
 
 | Tracing type                                                                       | Changes allowed                                   |
 |------------------------------------------------------------------------------------|---------------------------------------------------|
-| [`Span.Builder`](/apidocs/io.helidon.tracing/io/helidon/tracing/Span.Builder.html) | Add tags                                          |
-| [`Span`](/apidocs/io.helidon.tracing/io/helidon/tracing/Span.html)                 | Retrieve and update baggage, add events, add tags |
-| [`Scope`](/apidocs/io.helidon.tracing/io/helidon/tracing/Scope.html)               | none                                              |
+| [`Span.Builder`][span-builder] | Add tags                                          |
+| [`Span`][span]                 | Retrieve and update baggage, add events, add tags |
+| [`Scope`][scope]               | none                                              |
 
 Summary of Permitted Operations on Proxies Passed to Listeners
 
@@ -43,7 +43,7 @@ The following tables list specifically what operations the proxies permit.
 > [!NOTE]
 > Helidon returns the unwrapped object, not a proxy for it.
 
-[`io.helidon.tracing.Span.Builder`](/apidocs/io.helidon.tracing/io/helidon/tracing/Span.Builder.html) Operations
+[`io.helidon.tracing.Span.Builder`][span-builder] Operations
 
 | Method             | Purpose                                                     | OK? |
 |--------------------|-------------------------------------------------------------|-----|
@@ -58,14 +58,14 @@ The following tables list specifically what operations the proxies permit.
 > [!NOTE]
 > Helidon returns the unwrapped object, not a proxy to it.
 
-[`io.helidon.tracing.Span`](/apidocs/io.helidon.tracing/io/helidon/tracing/Span.html) Operations
+[`io.helidon.tracing.Span`][span] Operations
 
 | Method       | Purpose                              | OK? |
 |--------------|--------------------------------------|-----|
 | `close()`    | Close the scope.                     | \-  |
 | `isClosed()` | Reports whether the scope is closed. | ✓   |
 
-[`io.helidon.tracing.Scope`](/apidocs/io.helidon.tracing/io/helidon/tracing/Scope.html) Operations
+[`io.helidon.tracing.Scope`][scope] Operations
 
 | Method                   | Purpose                                                      | OK? |
 |--------------------------|--------------------------------------------------------------|-----|
@@ -74,11 +74,11 @@ The following tables list specifically what operations the proxies permit.
 | `spanId()`               | Returns the span ID.                                         | ✓   |
 | `traceId()`              | Returns the trace ID.                                        | ✓   |
 
-[`io.helidon.tracing.SpanContext`](/apidocs/io.helidon.tracing/io/helidon/tracing/SpanContext.html) Operations
+[`io.helidon.tracing.SpanContext`][io-helidon-tracing-spancontext] Operations
 
 #### Adding a Listener
 
-##### Explicitly Registering a Listener on a [`Tracer`](/apidocs/io.helidon.tracing/io/helidon/tracing/Tracer.html)
+##### Explicitly Registering a Listener on a [`Tracer`][tracer]
 
 Create a `SpanListener` instance and invoke the `Tracer#register(SpanListener)` method to make the listener known to that tracer.
 
@@ -86,7 +86,7 @@ Create a `SpanListener` instance and invoke the `Tracer#register(SpanListener)` 
 
 Helidon also uses Java service loading to locate listeners and register them automatically on all `Tracer` objects. Follow these steps to add a listener service provider.
 
-1.  Implement the [`SpanListener`](/apidocs/io.helidon.tracing/io/helidon/tracing/SpanListener.html) interface.
+1.  Implement the [`SpanListener`][spanlistener] interface.
 2.  Declare your implementation as a service provider:
     1.  Create the file `META-INF/services/io.helidon.tracing.SpanListener` containing a line with the fully-qualified name of your class which implements `SpanListener`.
     2.  If your service has a `module-info.java` file add the following line to it:
@@ -109,3 +109,11 @@ Helidon invokes each listener’s methods in the following order:
 | `ended(Span span, Throwable t)`         | After a span has ended unsuccessfully.                                                                                |
 
 Order in which Helidon Invokes Listener Methods
+
+[spanlistener]: /apidocs/io.helidon.tracing/io/helidon/tracing/SpanListener.html
+[spanlistener-forbiddenoperationexception]: /apidocs/io.helidon.tracing/io/helidon/tracing/SpanListener.ForbiddenOperationException.html
+[span-builder]: /apidocs/io.helidon.tracing/io/helidon/tracing/Span.Builder.html
+[span]: /apidocs/io.helidon.tracing/io/helidon/tracing/Span.html
+[scope]: /apidocs/io.helidon.tracing/io/helidon/tracing/Scope.html
+[io-helidon-tracing-spancontext]: /apidocs/io.helidon.tracing/io/helidon/tracing/SpanContext.html
+[tracer]: /apidocs/io.helidon.tracing/io/helidon/tracing/Tracer.html

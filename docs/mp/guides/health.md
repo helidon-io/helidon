@@ -8,10 +8,10 @@ For this 15 minute tutorial, you will need the following:
 
 | Requirement | Description |
 |-------------|-------------|
-| [Java 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
-| [Maven 3.8+](https://maven.apache.org/download.cgi) | Helidon requires Maven 3.8+. |
-| [Docker 18.09+](https://docs.docker.com/install/) | If you want to build and run Docker containers. |
-| [Kubectl 1.16.5+](https://kubernetes.io/docs/tasks/tools/install-kubectl/) | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
+| [Java 21][java-21] ([Open JDK 21][open-jdk-21]) | Helidon requires Java 21+ (25+ recommended). |
+| [Maven 3.8+][maven-3-8] | Helidon requires Maven 3.8+. |
+| [Docker 18.09+][docker-18-09] | If you want to build and run Docker containers. |
+| [Kubectl 1.16.5+][kubectl-1-16-5] | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
 
 Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
@@ -646,6 +646,14 @@ This guide demonstrated how to use health checks in a Helidon MP application as 
 
 Refer to the following references for additional information:
 
-- [MicroProfile health check specification](https://download.eclipse.org/microprofile/microprofile-health-4.0/microprofile-health-spec-4.0.html)
-- [MicroProfile health check Javadoc](https://download.eclipse.org/microprofile/microprofile-health-4.0/apidocs)
+- [MicroProfile health check specification][microprofile-health-check-specification]
+- [MicroProfile health check Javadoc][microprofile-health-check-javadoc]
 - [Helidon Javadoc](/apidocs/index.html?overview-summary.html)
+
+[java-21]: https://www.oracle.com/technetwork/java/javase/downloads
+[open-jdk-21]: http://jdk.java.net
+[maven-3-8]: https://maven.apache.org/download.cgi
+[docker-18-09]: https://docs.docker.com/install/
+[kubectl-1-16-5]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
+[microprofile-health-check-specification]: https://download.eclipse.org/microprofile/microprofile-health-4.0/microprofile-health-spec-4.0.html
+[microprofile-health-check-javadoc]: https://download.eclipse.org/microprofile/microprofile-health-4.0/apidocs

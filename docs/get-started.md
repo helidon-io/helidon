@@ -39,7 +39,7 @@ Congratulations! 🎉
 
 You now have a simple service up and running using Helidon.
 If you prefer to use MicroProfile APIs replace `se` with `mp` in the commands above.
-If you prefer not to install the Helidon CLI you can use the [Helidon Starter](https://helidon.io/starter).
+If you prefer not to install the Helidon CLI you can use the [Helidon Starter][helidon-starter].
 
 ## In More Detail
 
@@ -52,11 +52,11 @@ You must have Java and Maven installed on your system to use Helidon.
 
 | Requirement                                                                                              | Description                                  |
 |----------------------------------------------------------------------------------------------------------|----------------------------------------------|
-| [Java 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
-| [Maven 3.8+](https://maven.apache.org/download.cgi)                                                      | Helidon requires Maven 3.8+.                 |
+| [Java 21][java-21] ([Open JDK 21][open-jdk-21]) | Helidon requires Java 21+ (25+ recommended). |
+| [Maven 3.8+][maven-3-8]                                                      | Helidon requires Maven 3.8+.                 |
 
 > [!NOTE]
-> Most of Helidon's examples use Maven, but Helidon can also be used with [Gradle](se/guides/gradle-build.md).
+> Most of Helidon's examples use Maven, but Helidon can also be used with [Gradle][gradle].
 
 Verify System Requirements:
 
@@ -99,3 +99,9 @@ Try out the Helidon MP and Helidon SE Quick Start tutorials to build your first 
 > Compare [Helidon MP](mp/introduction.md) and
 > [Helidon SE](se/introduction.md) to understand the differences between
 > Helidon MP and Helidon SE.
+
+[helidon-starter]: https://helidon.io/starter
+[java-21]: https://www.oracle.com/technetwork/java/javase/downloads
+[open-jdk-21]: http://jdk.java.net
+[maven-3-8]: https://maven.apache.org/download.cgi
+[gradle]: se/guides/gradle-build.md

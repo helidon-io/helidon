@@ -6,7 +6,7 @@ This module adds support for selected Oracle Cloud Infrastructure GenAI models.
 
 ## Maven Coordinates
 
-In addition to the [Helidon integration with LangChain4j core dependencies](langchain4j.md#maven-coordinates), you must add the following:
+In addition to the [Helidon integration with LangChain4j core dependencies][helidon-integration-with-langchain4j-core-dependencies], you must add the following:
 
 ```xml [pom.xml]
 <dependency>
@@ -17,7 +17,7 @@ In addition to the [Helidon integration with LangChain4j core dependencies](lang
 
 ## Authentication
 
-Integration uses OCI SDK authentication provider bean from the service registry. The simplest way to configure it is by adding [Helidon OCI integration](https://github.com/helidon-io/helidon/tree/main/integrations/oci/oci):
+Integration uses OCI SDK authentication provider bean from the service registry. The simplest way to configure it is by adding [Helidon OCI integration][helidon-oci-integration]:
 
 ```xml [pom.xml]
 <dependency>
@@ -58,9 +58,9 @@ helidon.oci:
   authentication-method: "config-file"
 ```
 
-All possible OCI configuration properties are documented at [OCI Configuration](../../../config/io_helidon_integrations_oci_OciConfig.md).
+All possible OCI configuration properties are documented at [OCI Configuration][oci-configuration].
 
-More general information about Helidon OCI authentication integration can be found in [Helidon OCI integration](https://github.com/helidon-io/helidon/tree/main/integrations/oci/oci)
+More general information about Helidon OCI authentication integration can be found in [Helidon OCI integration][helidon-oci-integration]
 
 ## Components
 
@@ -535,5 +535,11 @@ Full list of configuration properties:
 ## Additional Information
 
 - [LangChain4j Integration](langchain4j.md)
-- [LangChain4j OciGenAi Documentation](https://docs.langchain4j.dev/integrations/language-models/oci-genai)
-- [Oracle Cloud Infrastructure GenAI Services](https://www.oracle.com/artificial-intelligence/generative-ai/generative-ai-service/)
+- [LangChain4j OciGenAi Documentation][langchain4j-ocigenai-documentation]
+- [Oracle Cloud Infrastructure GenAI Services][oracle-cloud-infrastructure-genai-services]
+
+[helidon-integration-with-langchain4j-core-dependencies]: langchain4j.md#maven-coordinates
+[helidon-oci-integration]: https://github.com/helidon-io/helidon/tree/main/integrations/oci/oci
+[oci-configuration]: ../../../config/io_helidon_integrations_oci_OciConfig.md
+[langchain4j-ocigenai-documentation]: https://docs.langchain4j.dev/integrations/language-models/oci-genai
+[oracle-cloud-infrastructure-genai-services]: https://www.oracle.com/artificial-intelligence/generative-ai/generative-ai-service/

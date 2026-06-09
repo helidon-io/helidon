@@ -4,7 +4,7 @@ This guide describes how to create a sample AI powered Helidon SE project with L
 
 ## Introduction
 
-[LangChain4j](https://github.com/langchain4j/langchain4j) is a Java framework for building AI-powered applications using Large Language Models (LLMs). It provides seamless integration with multiple LLM providers, including OpenAI, Cohere, Hugging Face, and others. Key features include AI Services and Agents for model interaction, support for Retrieval-Augmented Generation (RAG) to enhance responses with external data, and tools for working with embeddings and knowledge retrieval.
+[LangChain4j][langchain4j] is a Java framework for building AI-powered applications using Large Language Models (LLMs). It provides seamless integration with multiple LLM providers, including OpenAI, Cohere, Hugging Face, and others. Key features include AI Services and Agents for model interaction, support for Retrieval-Augmented Generation (RAG) to enhance responses with external data, and tools for working with embeddings and knowledge retrieval.
 
 Helidon provides a LangChain4j integration module that simplifies the use of LangChain4j in Helidon applications.
 
@@ -17,10 +17,10 @@ For this 15 minute tutorial, you will need the following:
 
 | Requirement | Description |
 |-------------|-------------|
-| [Java 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
-| [Maven 3.8+](https://maven.apache.org/download.cgi) | Helidon requires Maven 3.8+. |
-| [Docker 18.09+](https://docs.docker.com/install/) | If you want to build and run Docker containers. |
-| [Kubectl 1.16.5+](https://kubernetes.io/docs/tasks/tools/install-kubectl/) | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
+| [Java 21][java-21] ([Open JDK 21][open-jdk-21]) | Helidon requires Java 21+ (25+ recommended). |
+| [Maven 3.8+][maven-3-8] | Helidon requires Maven 3.8+. |
+| [Docker 18.09+][docker-18-09] | If you want to build and run Docker containers. |
+| [Kubectl 1.16.5+][kubectl-1-16-5] | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
 
 Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
@@ -122,7 +122,7 @@ langchain4j:
 
 ## Ai Service
 
-Next we need to create LangChain4j [Ai service](https://docs.langchain4j.dev/tutorials/ai-services) and annotate it with `@Ai.Service` so Helidon can make a superfast build time bean from it.
+Next we need to create LangChain4j [Ai service][ai-service] and annotate it with `@Ai.Service` so Helidon can make a superfast build time bean from it.
 
 ```java
 @Ai.Service
@@ -162,7 +162,7 @@ We can test our pirate service with curl:
 
 ## Prompt Template Arguments
 
-Ofcourse all the features from LangChain4j Ai services are going to work, let’s try to expand the example with [template arguments](https://docs.langchain4j.dev/tutorials/ai-services#usermessage).
+Ofcourse all the features from LangChain4j Ai services are going to work, let’s try to expand the example with [template arguments][template-arguments].
 
 ```java
 @Ai.Service
@@ -201,7 +201,7 @@ We can test our pirate service with curl:
 
 ## Custom Memory Provider
 
-We can also extend the pirate example with [conversation memory](https://docs.langchain4j.dev/tutorials/chat-memory). First, we need to create a memory provider so our memory works per conversation ID.
+We can also extend the pirate example with [conversation memory][conversation-memory]. First, we need to create a memory provider so our memory works per conversation ID.
 
 ```java
 @Service.Singleton
@@ -263,3 +263,13 @@ We can test our pirate service with curl:
 
     echo "Do you remeber my name?" | curl -d @- -H "conversation-id: 123" localhost:8080/chat
     Aye, John! The name be etched in me memory like a ship’s anchor in the sand.
+
+[langchain4j]: https://github.com/langchain4j/langchain4j
+[java-21]: https://www.oracle.com/technetwork/java/javase/downloads
+[open-jdk-21]: http://jdk.java.net
+[maven-3-8]: https://maven.apache.org/download.cgi
+[docker-18-09]: https://docs.docker.com/install/
+[kubectl-1-16-5]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
+[ai-service]: https://docs.langchain4j.dev/tutorials/ai-services
+[template-arguments]: https://docs.langchain4j.dev/tutorials/ai-services#usermessage
+[conversation-memory]: https://docs.langchain4j.dev/tutorials/chat-memory

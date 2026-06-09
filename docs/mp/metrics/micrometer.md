@@ -3,7 +3,7 @@
 ## Overview
 
 > [!NOTE]
-> Micrometer integration is deprecated beginning in Helidon 4.1 and is planned for removal in a future major release. Please use the [Helidon MicroProfile Metrics API implementation and annotations](../../mp/metrics/metrics.md).
+> Micrometer integration is deprecated beginning in Helidon 4.1 and is planned for removal in a future major release. Please use the [Helidon MicroProfile Metrics API implementation and annotations][helidon-microprofile-metrics-api-implementation-and-annotations].
 
 Helidon MP simplifies how you can use Micrometer for application-specific metrics:
 
@@ -15,7 +15,7 @@ In Helidon 4.4.0-SNAPSHOT, Micrometer support is separate from the Helidon MP me
 
 ## Maven Coordinates
 
-To enable Micrometer support, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable Micrometer support, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
 
 ```xml [pom.xml]
 <dependency>
@@ -36,7 +36,7 @@ Your users retrieve Micrometer meters using an endpoint which Helidon creates au
 
 To use Micrometer support, you can simply add the Micrometer `@Timed` and `@Counted` annotations to methods in your application. Helidon automatically registers those meters with the Micrometer composite `MeterRegistry`.
 
-In addition to annotating your methods, your code can create, look up, and update metrics programmatically using the Micrometer `MeterRegistry` API. The [Micrometer concepts document](https://docs.micrometer.io/micrometer/reference/concepts) provides a good starting point for learning how to use Micrometer’s interfaces and classes.
+In addition to annotating your methods, your code can create, look up, and update metrics programmatically using the Micrometer `MeterRegistry` API. The [Micrometer concepts document][micrometer-concepts-document] provides a good starting point for learning how to use Micrometer’s interfaces and classes.
 
 ### Accessing the Helidon Micrometer Endpoint
 
@@ -54,7 +54,7 @@ If you want to use the Micrometer `MeterRegistry` directly from your own code, s
 
 ### The Micrometer API
 
-Your code can create, look up, and update metrics programmatically using the Micrometer `MeterRegistry` API. The [Micrometer concepts document](https://docs.micrometer.io/micrometer/reference/concepts) provides a good starting point for learning how to use Micrometer’s interfaces and classes.
+Your code can create, look up, and update metrics programmatically using the Micrometer `MeterRegistry` API. The [Micrometer concepts document][micrometer-concepts-document] provides a good starting point for learning how to use Micrometer’s interfaces and classes.
 
 ## Configuration
 
@@ -72,7 +72,7 @@ micrometer.web-context=my-micrometer
 
 ## Examples
 
-Helidon MP includes an [example application](https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/integrations/micrometer/mp) which uses Micrometer support.
+Helidon MP includes an [example application][example-application] which uses Micrometer support.
 
 The examples below take you step-by-step through the process of enhancing the Helidon MP QuickStart application to track (by time and invocation count) all `GET` methods and to count all requests for a personalized greeting.
 
@@ -142,10 +142,17 @@ micrometer.builtin-registries.0.prefix=myPrefix
 
 Note that the first config example is equivalent to the default Helidon Micrometer behavior; Helidon by default supports the Prometheus meter registry.
 
-The configuration keys that are valid for the `builtin-registries` child entries depend on the type of Micrometer meter registry. For example, support in Helidon for the [Prometheus meter registry](https://javadoc.io/doc/io.micrometer/micrometer-registry-prometheus/1.11.1/io/micrometer/prometheus/PrometheusConfig.html) respects the `prefix` configuration setting but other meter registries might not and might support other settings. Refer to the documentation for the meter registry you want to configure to find out what items apply to that registry type.
+The configuration keys that are valid for the `builtin-registries` child entries depend on the type of Micrometer meter registry. For example, support in Helidon for the [Prometheus meter registry][prometheus-meter-registry] respects the `prefix` configuration setting but other meter registries might not and might support other settings. Refer to the documentation for the meter registry you want to configure to find out what items apply to that registry type.
 
 Helidon does not validate the configuration keys you specify for meter registries.
 
 ## Additional Information
 
-The [Micrometer website](https://micrometer.io) describes the project as a whole and has links to more information.
+The [Micrometer website][micrometer-website] describes the project as a whole and has links to more information.
+
+[helidon-microprofile-metrics-api-implementation-and-annotations]: ../../mp/metrics/metrics.md
+[managing-dependencies]: ../../managing-dependencies.md
+[micrometer-concepts-document]: https://docs.micrometer.io/micrometer/reference/concepts
+[example-application]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/integrations/micrometer/mp
+[prometheus-meter-registry]: https://javadoc.io/doc/io.micrometer/micrometer-registry-prometheus/1.11.1/io/micrometer/prometheus/PrometheusConfig.html
+[micrometer-website]: https://micrometer.io

@@ -2,9 +2,9 @@
 
 ## Overview
 
-The [OpenAPI specification](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md) defines a standard way to express the interface exposed by a REST service.
+The [OpenAPI specification][openapi-specification] defines a standard way to express the interface exposed by a REST service.
 
-The [MicroProfile OpenAPI spec](https://download.eclipse.org/microprofile/microprofile-open-api-3.1.1/microprofile-openapi-spec-3.1.1.html) explains how MicroProfile embraces OpenAPI, adding annotations, configuration, and a service provider interface (SPI).
+The [MicroProfile OpenAPI spec][microprofile-openapi-spec] explains how MicroProfile embraces OpenAPI, adding annotations, configuration, and a service provider interface (SPI).
 
 OpenAPI support in Helidon SE draws its inspiration from MicroProfile OpenAPI but does not implement the spec because Helidon SE does not support annotations.
 
@@ -17,7 +17,7 @@ To construct the model, Helidon gathers information about the service API from a
 
 ## Maven Coordinates
 
-To enable OpenAPI, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable OpenAPI, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
 
 ```xml [pom.xml]
 <dependency>
@@ -38,7 +38,7 @@ To control the behavior of the OpenAPI feature programmatically, you can add and
 
 #### Create and Register `OpenApiFeature` in your application
 
-Helidon SE provides the [`OpenApiFeature`](/apidocs/io.helidon.openapi/io/helidon/openapi/OpenApiFeature.html) class which your application uses to assemble the in-memory model and expose the `/openapi` endpoint to clients. You can create an instance either using a static `create` method or by instantiating its [`Builder`](/apidocs/io.helidon.openapi/io/helidon/openapi/OpenApiFeatureConfig.Builder.html). The [example below](#register-openapifeature-explicitly) illustrates one way to do this.
+Helidon SE provides the [`OpenApiFeature`][openapifeature] class which your application uses to assemble the in-memory model and expose the `/openapi` endpoint to clients. You can create an instance either using a static `create` method or by instantiating its [`Builder`][builder]. The [example below][example-below] illustrates one way to do this.
 
 #### Furnish OpenAPI information about your endpoints
 
@@ -58,7 +58,7 @@ In addition, a client can specify the HTTP header `Accept` as either `applicatio
 
 ## API
 
-Helidon SE provides an API for creating and setting up the REST endpoint which serves OpenAPI documents to clients at the `/openapi` path. Use either static methods on [`OpenApiFeature`](/apidocs/io.helidon.openapi/io/helidon/openapi/OpenApiFeature.html) or use its [`Builder`](/apidocs/io.helidon.openapi/io/helidon/openapi/OpenApiFeatureConfig.Builder.html). Then add that instance or builder to your application’s routing. The [example](#register-openapifeature-explicitly) below shows how to do this.
+Helidon SE provides an API for creating and setting up the REST endpoint which serves OpenAPI documents to clients at the `/openapi` path. Use either static methods on [`OpenApiFeature`][openapifeature] or use its [`Builder`][builder]. Then add that instance or builder to your application’s routing. The [example][example-below] below shows how to do this.
 
 ## Configuration
 
@@ -69,11 +69,11 @@ Helidon SE OpenAPI configuration supports the settings described below in the `s
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
 | <span id="a9052a-enabled"></span> `enabled` | `VALUE` | `Boolean` | `true` | Sets whether the feature should be enabled |
-| <span id="a2bdbe-manager"></span> [`manager`](../../config/io_helidon_openapi_OpenApiManager.md) | `VALUE` | `i.h.o.OpenApiManager` |   | OpenAPI manager |
+| <span id="a2bdbe-manager"></span> [`manager`][manager] | `VALUE` | `i.h.o.OpenApiManager` |   | OpenAPI manager |
 | <span id="a8b0d5-manager-discover-services"></span> `manager-discover-services` | `VALUE` | `Boolean` | `false` | Whether to enable automatic service discovery for `manager` |
 | <span id="a99850-permit-all"></span> `permit-all` | `VALUE` | `Boolean` | `true` | Whether to allow anybody to access the endpoint |
 | <span id="ad5281-roles"></span> `roles` | `LIST` | `String` | `openapi` | Hints for role names the user is expected to be in |
-| <span id="a8653c-services"></span> [`services`](../../config/io_helidon_openapi_OpenApiService.md) | `LIST` | `i.h.o.OpenApiService` |   | OpenAPI services |
+| <span id="a8653c-services"></span> [`services`][services] | `LIST` | `i.h.o.OpenApiService` |   | OpenAPI services |
 | <span id="ae938a-services-discover-services"></span> `services-discover-services` | `VALUE` | `Boolean` | `true` | Whether to enable automatic service discovery for `services` |
 | <span id="a47a74-sockets"></span> `sockets` | `LIST` | `String` |   | List of sockets to register this feature on |
 | <span id="a0169c-static-file"></span> `static-file` | `VALUE` | `String` |   | Path of the static OpenAPI document file |
@@ -84,11 +84,11 @@ Helidon SE OpenAPI configuration supports the settings described below in the `s
 
 | Key | Kind | Type | Description |
 |----|----|----|----|
-| <span id="ab0d30-cors"></span> [`cors`](../../config/io_helidon_cors_CrossOriginConfig.md) | `VALUE` | `i.h.c.CrossOriginConfig` | CORS config |
+| <span id="ab0d30-cors"></span> [`cors`][cors] | `VALUE` | `i.h.c.CrossOriginConfig` | CORS config |
 
 ## Examples
 
-Helidon SE provides a [complete OpenAPI example](https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/openapi) based on the SE QuickStart sample app.
+Helidon SE provides a [complete OpenAPI example][complete-openapi-example] based on the SE QuickStart sample app.
 
 ### Configure OpenAPI behavior
 
@@ -127,3 +127,14 @@ WebServer server = WebServer.builder()
 - Adds the `OpenApiFeature` service to your server using the `openapi` section from configuration.
 
 If you need programmatic control over the `OpenApiFeature` instance, invoke `OpenApiFeature.builder()` to get an `OpenApiFeature.Builder` object and work with it, then invoke the builder’s `build` method and pass the resulting `OpenApiFeature` instance to the `WebServer.Builder` `addFeature` method.
+
+[openapi-specification]: https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md
+[microprofile-openapi-spec]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.1/microprofile-openapi-spec-3.1.1.html
+[managing-dependencies]: ../../managing-dependencies.md
+[openapifeature]: /apidocs/io.helidon.openapi/io/helidon/openapi/OpenApiFeature.html
+[builder]: /apidocs/io.helidon.openapi/io/helidon/openapi/OpenApiFeatureConfig.Builder.html
+[example-below]: #register-openapifeature-explicitly
+[manager]: ../../config/io_helidon_openapi_OpenApiManager.md
+[services]: ../../config/io_helidon_openapi_OpenApiService.md
+[cors]: ../../config/io_helidon_cors_CrossOriginConfig.md
+[complete-openapi-example]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/openapi

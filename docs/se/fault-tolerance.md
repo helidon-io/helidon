@@ -2,17 +2,17 @@
 
 ## Overview
 
-Helidon Fault Tolerance support is inspired by [MicroProfile Fault Tolerance](https://download.eclipse.org/microprofile/microprofile-fault-tolerance-4.0.2/microprofile-fault-tolerance-spec-4.0.2.html). The API defines the notion of a *fault handler* that can be combined with other handlers to improve application robustness. Handlers are created to manage error conditions (faults) that may occur in real-world application environments. Examples include service restarts, network delays, temporal infrastructure instabilities, etc.
+Helidon Fault Tolerance support is inspired by [MicroProfile Fault Tolerance][microprofile-fault-tolerance]. The API defines the notion of a *fault handler* that can be combined with other handlers to improve application robustness. Handlers are created to manage error conditions (faults) that may occur in real-world application environments. Examples include service restarts, network delays, temporal infrastructure instabilities, etc.
 
 The interaction of multiple microservices bring some new challenges from distributed systems that require careful planning. Faults in distributed systems should be compartmentalized to avoid unnecessary service interruptions. For example, if comparable information can be obtained from multiples sources, a user request *should not* be denied when a subset of these sources is unreachable or offline. Similarly, if a non-essential source has been flagged as unreachable, an application should avoid continuous access to that source as that would result in much higher response times.
 
 In order to tackle the most common types of application faults, the Helidon Fault Tolerance API provides support for circuit breakers, retries, timeouts, bulkheads and fallbacks. In addition, the API makes it very easy to create and monitor asynchronous tasks that do not require explicit creation and management of threads or executors.
 
-For more information, see [Fault Tolerance API Javadocs](/apidocs/io.helidon.faulttolerance/module-summary.html).
+For more information, see [Fault Tolerance API Javadocs][fault-tolerance-api-javadocs].
 
 ## Maven Coordinates
 
-To enable Fault Tolerance, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+To enable Fault Tolerance, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
 
 ```xml [pom.xml]
 <dependency>
@@ -171,7 +171,7 @@ The exact order in which handlers are added to a builder depends on the use case
 
 ## Metrics
 
-The Helidon Fault Tolerance module has support for some basic metrics to monitor certain application conditions. Metrics are disabled by default, but can be enabled programmatically as described in [Enabling Metrics Programmatically](#enabling-metrics-programmatically), and by including an actual metrics implementation in your classpath. For more information about metrics implementations see [Helidon Metrics](../se/metrics/metrics.md).
+The Helidon Fault Tolerance module has support for some basic metrics to monitor certain application conditions. Metrics are disabled by default, but can be enabled programmatically as described in [Enabling Metrics Programmatically][enabling-metrics-programmatically], and by including an actual metrics implementation in your classpath. For more information about metrics implementations see [Helidon Metrics][helidon-metrics].
 
 The following tables list all the metrics created by the Fault Tolerance module. Note that these metrics are generated per command instance, and that each instance *must* be identified by a unique name —assigned either programmatically by the application developer or automatically by the API.
 
@@ -228,4 +228,10 @@ See [API](#api) section for examples.
 
 ## Additional Information
 
-For additional information, see the [Fault Tolerance API Javadocs](/apidocs/io.helidon.faulttolerance/module-summary.html).
+For additional information, see the [Fault Tolerance API Javadocs][fault-tolerance-api-javadocs].
+
+[microprofile-fault-tolerance]: https://download.eclipse.org/microprofile/microprofile-fault-tolerance-4.0.2/microprofile-fault-tolerance-spec-4.0.2.html
+[fault-tolerance-api-javadocs]: /apidocs/io.helidon.faulttolerance/module-summary.html
+[managing-dependencies]: ../managing-dependencies.md
+[enabling-metrics-programmatically]: #enabling-metrics-programmatically
+[helidon-metrics]: ../se/metrics/metrics.md

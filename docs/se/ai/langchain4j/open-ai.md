@@ -6,7 +6,7 @@ This module adds support for selected Open AI models.
 
 ## Maven Coordinates
 
-In addition to the [Helidon integration with LangChain4j core dependencies](langchain4j.md#maven-coordinates), you must add the following:
+In addition to the [Helidon integration with LangChain4j core dependencies][helidon-integration-with-langchain4j-core-dependencies], you must add the following:
 
 ```xml [pom.xml]
 <dependency>
@@ -60,7 +60,7 @@ Full list of configuration properties:
 | `strict-json-schema`    | boolean               | Whether to enforce a strict JSON schema for the model’s output.                                                                                                                                                                                                                      |
 | `strict-tools`          | boolean               | Whether to enforce strict validation of tools used by the model.                                                                                                                                                                                                                     |
 | `temperature`           | double                | The sampling temperature to use, between 0 and 2. Higher values make the output more random, while lower values make it more focused and deterministic.                                                                                                                              |
-| `timeout`               | duration              | The timeout setting for API requests. See [here](https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-) for the format.                                                                                                                    |
+| `timeout`               | duration              | The timeout setting for API requests. See [here][here] for the format.                                                                                                                    |
 | `top-p`                 | double                | The nucleus sampling value, where the model considers the results of the tokens with top_p probability mass.                                                                                                                                                                         |
 | `user`                  | string                | The user ID associated with the API requests.                                                                                                                                                                                                                                        |
 
@@ -112,7 +112,7 @@ Full list of configuration properties:
 | `max-retries`     | integer               | The maximum number of retries for failed API requests.                                                                                                            |
 | `model-name`      | string                | The model name to use.                                                                                                                                            |
 | `organization-id` | string                | The ID of the organization for API requests.                                                                                                                      |
-| `timeout`         | duration              | The timeout setting for API requests. See [here](https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-) for the format. |
+| `timeout`         | duration              | The timeout setting for API requests. See [here][here] for the format. |
 | `user`            | string                | The user ID associated with the API requests.                                                                                                                     |
 
 #### Proxy
@@ -167,7 +167,7 @@ Full list of configuration properties:
 | `response-format` | string                | The format of the response.                                                                                                                                       |
 | `size`            | string                | The desired size of the generated images.                                                                                                                         |
 | `style`           | string                | The style of the generated images.                                                                                                                                |
-| `timeout`         | duration              | The timeout setting for API requests. See [here](https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-) for the format. |
+| `timeout`         | duration              | The timeout setting for API requests. See [here][here] for the format. |
 | `user`            | string                | The unique identifier for the user making the request.                                                                                                            |
 | `with-persisting` | boolean               | The flag to indicate whether to persist the generated images.                                                                                                     |
 
@@ -211,7 +211,7 @@ Full list of configuration properties:
 | `model-name`      | string                | The model name to use.                                                                                                                                            |
 | `organization-id` | string                | The ID of the organization for API requests.                                                                                                                      |
 | `temperature`     | double                | The sampling temperature to use, between 0 and 2. Higher values make the output more random, while lower values make it more focused and deterministic.           |
-| `timeout`         | duration              | The timeout setting for API requests. See [here](https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-) for the format. |
+| `timeout`         | duration              | The timeout setting for API requests. See [here][here] for the format. |
 
 #### Proxy
 
@@ -260,7 +260,7 @@ Full list of configuration properties:
 | `max-retries`     | integer               | The maximum number of retries for failed API requests.                                                                                                            |
 | `model-name`      | string                | The model name to use.                                                                                                                                            |
 | `organization-id` | string                | The ID of the organization for API requests.                                                                                                                      |
-| `timeout`         | duration              | The timeout setting for API requests. See [here](https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-) for the format. |
+| `timeout`         | duration              | The timeout setting for API requests. See [here][here] for the format. |
 
 #### Proxy
 
@@ -311,7 +311,7 @@ Full list of configuration properties:
 | `stop`                  | string\[\]            | The list of sequences where the API will stop generating further tokens.                                                                                                                                                                                                             |
 | `strict-tools`          | boolean               | Whether to enforce strict validation of tools used by the model.                                                                                                                                                                                                                     |
 | `temperature`           | double                | The sampling temperature to use, between 0 and 2. Higher values make the output more random, while lower values make it more focused and deterministic.                                                                                                                              |
-| `timeout`               | duration              | The timeout setting for API requests. See [here](https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-) for the format.                                                                                                                    |
+| `timeout`               | duration              | The timeout setting for API requests. See [here][here] for the format.                                                                                                                    |
 | `top-p`                 | double                | The nucleus sampling value, where the model considers the results of the tokens with top_p probability mass.                                                                                                                                                                         |
 | `user`                  | string                | The user ID associated with the API requests.                                                                                                                                                                                                                                        |
 
@@ -334,6 +334,10 @@ The framework attempts to resolve a tokenizer using the following strategy:
 ## Additional Information
 
 - [LangChain4j Integration](langchain4j.md)
-- [LangChain4j OpenAI Documentation](https://docs.langchain4j.dev/integrations/language-models/open-ai)
+- [LangChain4j OpenAI Documentation][langchain4j-openai-documentation]
 - [OpenAI API Documentation](https://platform.openai.com/docs/introduction)
 - [OpenAI API Reference](https://platform.openai.com/docs/api-reference)
+
+[helidon-integration-with-langchain4j-core-dependencies]: langchain4j.md#maven-coordinates
+[here]: https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-
+[langchain4j-openai-documentation]: https://docs.langchain4j.dev/integrations/language-models/open-ai

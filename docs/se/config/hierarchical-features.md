@@ -6,7 +6,7 @@ The config system represents configuration as a tree in memory. Many developers 
 
 ## Configuration Node Types
 
-The config system represents configuration in memory using three types of nodes, each a different interface defined within the [`ConfigNode`](/apidocs/io.helidon.config/io/helidon/config/spi/ConfigNode.html) interface.
+The config system represents configuration in memory using three types of nodes, each a different interface defined within the [`ConfigNode`][confignode] interface.
 
 | Type | Java Interface | Usage |
 |----|----|----|
@@ -49,7 +49,7 @@ config-key = *1( key-token *( "." key-token ) )
 
 ## In-memory Representation of Configuration
 
-The following example is in [HOCON](https://github.com/lightbend/config/blob/master/HOCON.md) (human-optimized config object notation) format. The config system supports HOCON as an [extension module](supported-formats.md#hoconjson).
+The following example is in [HOCON][hocon] (human-optimized config object notation) format. The config system supports HOCON as an [extension module][extension-module].
 
 HOCON `application.conf` file:
 
@@ -115,7 +115,7 @@ Notes
 
 </div>
 
-The `Config` object exposes methods to return the [`name`](/apidocs/io.helidon.config/io/helidon/config/Config.html#name--), [`key`](/apidocs/io.helidon.config/io/helidon/config/Config.html#key--), and [`type`](/apidocs/io.helidon.config/io/helidon/config/Config.html#type--) of the node.
+The `Config` object exposes methods to return the [`name`][name], [`key`][key], and [`type`][type] of the node.
 
 ## Access by Key
 
@@ -147,7 +147,7 @@ The `Config.get(key)` method always returns a `Config` object without throwing a
 | `exists` | Returns `true` or `false` |
 | `ifExists` | Execute functional operations for present nodes |
 | `type` | Returns enum value for the `Config.Type`; `Config.Type.MISSING` if the node represents a config value that *does not* exist |
-| `as` | Returns the `ConfigValue` with the correct type that has all methods of `Optional` and a few additional ones - see [`ConfigValue`](/apidocs/io.helidon.config/io/helidon/config/ConfigValue.html) interface. |
+| `as` | Returns the `ConfigValue` with the correct type that has all methods of `Optional` and a few additional ones - see [`ConfigValue`][configvalue] interface. |
 
 The config system throws a `MissingValueException` if the application tries to access the value of a missing node by invoking the `ConfigValue.get()` method.
 
@@ -288,7 +288,7 @@ VALUE   app.basic-range.1
 
 Sometimes it can be convenient to write part of your application to deal with configuration without it knowing if or where the relevant configuration is plugged into a larger config tree.
 
-For example, the [`application.properties`](introduction.md#accessing-config-values) from the introduction section contains several settings prefixed with `web` such as `web.page-size`. Perhaps in another config source the same information might be stored as `server.web.page-size`:
+For example, the [`application.properties`][application-properties] from the introduction section contains several settings prefixed with `web` such as `web.page-size`. Perhaps in another config source the same information might be stored as `server.web.page-size`:
 
 Alternate Structure for Web Config:
 
@@ -300,7 +300,7 @@ server.web.ratio = 1.4
 
 You might want to write the web portion of your app to work with a config subtree with keys that are independent of the subtree’s position in a larger tree. This would allow you to reuse the web portion of your application without change, regardless of which structure a config source used.
 
-One easy way to do this is to *detach* a subtree from a larger config tree. When your application invokes the [`Config.detach`](/apidocs/io.helidon.config/io/helidon/config/Config.html#detach--) method it gets back a *copy* of the config node but with no parent. The copy and the original node both point to the same objects for their child nodes (if any). The original node is unchanged.
+One easy way to do this is to *detach* a subtree from a larger config tree. When your application invokes the [`Config.detach`][config-detach] method it gets back a *copy* of the config node but with no parent. The copy and the original node both point to the same objects for their child nodes (if any). The original node is unchanged.
 
 Detaching a Subtree:
 
@@ -320,3 +320,13 @@ assert detachedFromAlternate.get("debug").equals("true");
 
 - Navigation depends on knowing the full structure of the config and so is different for the two cases.
 - Detaching so the `web` node is the root can use the same key regardless of where the config subtree came from.
+
+[confignode]: /apidocs/io.helidon.config/io/helidon/config/spi/ConfigNode.html
+[hocon]: https://github.com/lightbend/config/blob/master/HOCON.md
+[extension-module]: supported-formats.md#hoconjson
+[name]: /apidocs/io.helidon.config/io/helidon/config/Config.html#name--
+[key]: /apidocs/io.helidon.config/io/helidon/config/Config.html#key--
+[type]: /apidocs/io.helidon.config/io/helidon/config/Config.html#type--
+[configvalue]: /apidocs/io.helidon.config/io/helidon/config/ConfigValue.html
+[application-properties]: introduction.md#accessing-config-values
+[config-detach]: /apidocs/io.helidon.config/io/helidon/config/Config.html#detach--

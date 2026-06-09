@@ -2,7 +2,7 @@
 
 ## Overview
 
-Server-sent events (SSE) enable servers to push data to clients (e.g. Web browsers) using standard HTTP or HTTPS through a unidirectional server-to-client connection. In the server-sent events communication model, the client establishes the initial connection, and the server provides the data in the form of *event streams*. For more information about server-sent events, see the [`Server-sent events`](https://html.spec.whatwg.org/multipage/server-sent-events.html) specification.
+Server-sent events (SSE) enable servers to push data to clients (e.g. Web browsers) using standard HTTP or HTTPS through a unidirectional server-to-client connection. In the server-sent events communication model, the client establishes the initial connection, and the server provides the data in the form of *event streams*. For more information about server-sent events, see the [`Server-sent events`][server-sent-events] specification.
 
 SSE is an alternative technology to WebSockets when only server-to-client messaging is required and can be accomplished without the need to switch protocols (upgrades) and without using imperfect solutions such as long polling. A server-sent connection is typically a long-lived connection in which messages are sent to the client over a longer period of time compared to a normal request-response connection. It is useful for updating *live data* such as stock tickers, results of live events, etc.
 
@@ -147,4 +147,6 @@ try (Http1ClientResponse r = client.get("/sseJson")
 
 ## Additional Information
 
-The [`Server-sent events`](https://html.spec.whatwg.org/multipage/server-sent-events.html) specification.
+The [`Server-sent events`][server-sent-events] specification.
+
+[server-sent-events]: https://html.spec.whatwg.org/multipage/server-sent-events.html

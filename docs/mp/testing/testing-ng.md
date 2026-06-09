@@ -8,7 +8,7 @@ The test class is added as a CDI bean to support injection and the CDI container
 
 ## Maven Coordinates
 
-To enable Testing with TestNG, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable Testing with TestNG, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
 
 ```xml [pom.xml]
 <dependency>
@@ -56,9 +56,9 @@ By default, CDI discovery is enabled:
 > [!NOTE]
 > It is not recommended to provide a `beans.xml` along the test classes, as it would combine beans from all tests.
 >
-> Instead, you should use [`@AddBean`](/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddBean.html) to specify the beans per test or method.
+> Instead, you should use [`@AddBean`][addbean] to specify the beans per test or method.
 
-CDI discovery can be disabled using [`@DisableDiscovery`](/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/DisableDiscovery.html).
+CDI discovery can be disabled using [`@DisableDiscovery`][disablediscovery].
 
 Disable discovery:
 
@@ -75,7 +75,7 @@ class MyTest {
 
 When disabling discovery, it can be difficult to identify the CDI extensions needed to activate the desired features.
 
-JAXRS (Jersey) support can be added easily using [`@AddJaxRs`](/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddJaxRs.html).
+JAXRS (Jersey) support can be added easily using [`@AddJaxRs`][addjaxrs].
 
 Add JAX-RS (Jersey):
 
@@ -95,9 +95,9 @@ Note the following Helidon CDI extensions:
 
 | Extension | Note |
 |----|----|
-| [`ConfigCdiExtension`](/apidocs/io.helidon.microprofile.config/io/helidon/microprofile/config/ConfigCdiExtension.html) | Add MicroProfile Config injection support |
-| [`ServerCdiExtension`](/apidocs/io.helidon.microprofile.server/io/helidon/microprofile/server/ServerCdiExtension.html) | Optional if using [`@AddJaxRs`](/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddJaxRs.html) |
-| [`JaxRsCdiExtension`](/apidocs/io.helidon.microprofile.server/io/helidon/microprofile/server/JaxRsCdiExtension.html) | Optional if using [`@AddJaxRs`](/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddJaxRs.html) |
+| [`ConfigCdiExtension`][configcdiextension] | Add MicroProfile Config injection support |
+| [`ServerCdiExtension`][servercdiextension] | Optional if using [`@AddJaxRs`][addjaxrs] |
+| [`JaxRsCdiExtension`][jaxrscdiextension] | Optional if using [`@AddJaxRs`][addjaxrs] |
 
 ### CDI Container Afinity
 
@@ -155,7 +155,7 @@ The test configuration can be set up in two exclusive ways:
 - Using the "synthetic" configuration expressed with annotations (default)
 - Using the "existing" configuration of the current environment
 
-Use [`@Configuration`](/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/Configuration.html) to switch to the "existing" configuration.
+Use [`@Configuration`][configuration] to switch to the "existing" configuration.
 
 Switch to the existing configuration:
 
@@ -177,10 +177,10 @@ The "synthetic" configuration can be expressed using the following annotations:
 
 | Type | Usage |
 |----|----|
-| [`@AddConfig`](/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddConfig.html) | Key value pair |
-| [`@AddConfigBlock`](/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddConfigBlock.html) | Formatted text block |
-| [`@AddConfigSource`](/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddConfigSource.html) | Programmatic config source |
-| [`@Configuration`](/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/Configuration.html) | Classpath resources using |
+| [`@AddConfig`][addconfig] | Key value pair |
+| [`@AddConfigBlock`][addconfigblock] | Formatted text block |
+| [`@AddConfigSource`][addconfigsource] | Programmatic config source |
+| [`@Configuration`][configuration] | Classpath resources using |
 
 Add a key value pair:
 
@@ -245,7 +245,7 @@ class MyTest {
 
 #### Configuration Ordering
 
-The ordering of the test configuration can be controlled using the mechanism defined by the [MicroProfile Config specification](https://download.eclipse.org/microprofile/microprofile-config-3.1/microprofile-config-spec-3.1.html#_configsource_ordering).
+The ordering of the test configuration can be controlled using the mechanism defined by the [MicroProfile Config specification][microprofile-config-specification].
 
 Add a properties text block with ordinal:
 
@@ -263,10 +263,10 @@ The default ordering is the following
 
 | Annotation | Ordinal |
 |----|----|
-| [`@AddConfig`](/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddConfig.html) | 1000 |
-| [`@AddConfigBlock`](/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddConfigBlock.html) | 900 |
-| [`@AddConfigSource`](/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddConfigSource.html) | 800 |
-| [`@Configuration`](/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/Configuration.html) | 700 |
+| [`@AddConfig`][addconfig] | 1000 |
+| [`@AddConfigBlock`][addconfigblock] | 900 |
+| [`@AddConfigSource`][addconfigsource] | 800 |
+| [`@Configuration`][configuration] | 700 |
 
 ### Injectable Types
 
@@ -276,12 +276,12 @@ Here are all the built-in types that can be injected:
 
 | Type | Usage |
 |----|----|
-| [`WebTarget`](https://jakarta.ee/specifications/restful-ws/3.1/apidocs/jakarta/ws/rs/client/WebTarget.html) | A JAX-RS client configured for the current server. |
+| [`WebTarget`][webtarget] | A JAX-RS client configured for the current server. |
 | `URI` | A URI representing the current server |
 | `String` | A raw URI representing the current server |
 
 > [!NOTE]
-> Types that reflect the current server require [`ServerCdiExtension`](/apidocs/io.helidon.microprofile.server/io/helidon/microprofile/server/ServerCdiExtension.html)
+> Types that reflect the current server require [`ServerCdiExtension`][servercdiextension]
 
 Inject a JAX-RS client for the default socket:
 
@@ -294,7 +294,7 @@ class MyTest {
 }
 ```
 
-Use [`@Socket`](/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/Socket.html) to specify the socket for the clients and URIs.
+Use [`@Socket`][socket] to specify the socket for the clients and URIs.
 
 Inject a JAX-RS client for the admin socket:
 
@@ -309,7 +309,7 @@ class MyTest {
 ```
 
 > [!NOTE]
-> Except [`WebTarget`](https://jakarta.ee/specifications/restful-ws/3.1/apidocs/jakarta/ws/rs/client/WebTarget.html), all types require the [`@Socket`](/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/Socket.html) annotation
+> Except [`WebTarget`][webtarget], all types require the [`@Socket`][socket] annotation
 
 Inject a URI for the default socket:
 
@@ -387,22 +387,22 @@ Here is a brief overview of the MicroProfile testing annotations:
 
 | Annotation | Usage |
 |----|----|
-| [`@AddBean`](/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddBean.html) | Add a CDI bean class to the CDI container |
-| [`@AddExtension`](/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddExtension.html) | Add a CDI extension to the CDI container |
-| [`@DisableDiscovery`](/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/DisableDiscovery.html) | Disable automated discovery of beans and extensions |
-| [`@AddJaxRs`](/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddJaxRs.html) | Shorthand to add JAX-RS (Jersey) support |
-| [`@AddConfig`](/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddConfig.html) | Define a key value pair in the "synthetic" configuration |
-| [`@AddConfigBlock`](/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddConfigBlock.html) | Define a formatted text block in the "synthetic" configuration |
-| [`@AddConfigSource`](/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddConfigSource.html) | Add a programmatic config source to the "synthetic" configuration |
-| [`@Configuration`](/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/Configuration.html) | Switch between "synthetic" and "existing" ; Add classpath resources to the "synthetic" configuration |
-| [`@Socket`](/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/Socket.html) | CDI qualifier to inject a JAX-RS client or URI for a named socket |
-| [`@AfterStop`](/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AfterStop.html) | Mark a static method to be executed after the container is stopped |
+| [`@AddBean`][addbean] | Add a CDI bean class to the CDI container |
+| [`@AddExtension`][addextension] | Add a CDI extension to the CDI container |
+| [`@DisableDiscovery`][disablediscovery] | Disable automated discovery of beans and extensions |
+| [`@AddJaxRs`][addjaxrs] | Shorthand to add JAX-RS (Jersey) support |
+| [`@AddConfig`][addconfig] | Define a key value pair in the "synthetic" configuration |
+| [`@AddConfigBlock`][addconfigblock] | Define a formatted text block in the "synthetic" configuration |
+| [`@AddConfigSource`][addconfigsource] | Add a programmatic config source to the "synthetic" configuration |
+| [`@Configuration`][configuration] | Switch between "synthetic" and "existing" ; Add classpath resources to the "synthetic" configuration |
+| [`@Socket`][socket] | CDI qualifier to inject a JAX-RS client or URI for a named socket |
+| [`@AfterStop`][afterstop] | Mark a static method to be executed after the container is stopped |
 
 ## Examples
 
 ### Config Injection Example
 
-The following example demonstrates how to enable the use of [`@ConfigProperty`](https://download.eclipse.org/microprofile/microprofile-config-3.1/apidocs/org/eclipse/microprofile/config/inject/ConfigProperty.html) without CDI discovery.
+The following example demonstrates how to enable the use of [`@ConfigProperty`][configproperty] without CDI discovery.
 
 Config Injection Example:
 
@@ -437,13 +437,13 @@ class MyBean {
 
 - CDI discovery is disabled
 - Add `MyBean` to the CDI container
-- Add [`ConfigCdiExtension`](/apidocs/io.helidon.microprofile.config/io/helidon/microprofile/config/ConfigCdiExtension.html) to the CDI container
+- Add [`ConfigCdiExtension`][configcdiextension] to the CDI container
 - Define test configuration
 - Inject the configuration
 
 ### Request Scope Example
 
-The following example demonstrates how to use [`@RequestScoped`](https://jakarta.ee/specifications/cdi/4.0/apidocs/jakarta.cdi/jakarta/enterprise/context/RequestScoped.html) with JAXRS without CDI discovery.
+The following example demonstrates how to use [`@RequestScoped`][requestscoped] with JAXRS without CDI discovery.
 
 Request Scope Example:
 
@@ -499,7 +499,7 @@ To enable mock mupport add the following dependency to your project’s pom.xml.
 
 ### Usage
 
-Use the [`@MockBean`](/apidocs/io.helidon.microprofile.testing.mocking/io/helidon/microprofile/testing/mocking/MockBean.html) annotation to inject an instrumented CDI bean in your test, and customize it in the test method.
+Use the [`@MockBean`][mockbean] annotation to inject an instrumented CDI bean in your test, and customize it in the test method.
 
 #### Example
 
@@ -553,7 +553,7 @@ class MyService {
 
 ### Using CDI Alternative
 
-[`@Alternative`](https://jakarta.ee/specifications/cdi/4.0/apidocs/jakarta.cdi/jakarta/enterprise/inject/Alternative.html) can be used to replace a CDI bean with an instrumented instance.
+[`@Alternative`][alternative] can be used to replace a CDI bean with an instrumented instance.
 
 Mocking using CDI Alternative:
 
@@ -651,3 +651,24 @@ When pinning is detected, the test fails with a stacktrace pointing at the culpr
 ## Reference
 
 - [TestNG Documentation](https://testng.org)
+
+[managing-dependencies]: ../../managing-dependencies.md
+[addbean]: /apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddBean.html
+[disablediscovery]: /apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/DisableDiscovery.html
+[addjaxrs]: /apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddJaxRs.html
+[configcdiextension]: /apidocs/io.helidon.microprofile.config/io/helidon/microprofile/config/ConfigCdiExtension.html
+[servercdiextension]: /apidocs/io.helidon.microprofile.server/io/helidon/microprofile/server/ServerCdiExtension.html
+[jaxrscdiextension]: /apidocs/io.helidon.microprofile.server/io/helidon/microprofile/server/JaxRsCdiExtension.html
+[configuration]: /apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/Configuration.html
+[addconfig]: /apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddConfig.html
+[addconfigblock]: /apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddConfigBlock.html
+[addconfigsource]: /apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddConfigSource.html
+[microprofile-config-specification]: https://download.eclipse.org/microprofile/microprofile-config-3.1/microprofile-config-spec-3.1.html#_configsource_ordering
+[webtarget]: https://jakarta.ee/specifications/restful-ws/3.1/apidocs/jakarta/ws/rs/client/WebTarget.html
+[socket]: /apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/Socket.html
+[addextension]: /apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddExtension.html
+[afterstop]: /apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AfterStop.html
+[configproperty]: https://download.eclipse.org/microprofile/microprofile-config-3.1/apidocs/org/eclipse/microprofile/config/inject/ConfigProperty.html
+[requestscoped]: https://jakarta.ee/specifications/cdi/4.0/apidocs/jakarta.cdi/jakarta/enterprise/context/RequestScoped.html
+[mockbean]: /apidocs/io.helidon.microprofile.testing.mocking/io/helidon/microprofile/testing/mocking/MockBean.html
+[alternative]: https://jakarta.ee/specifications/cdi/4.0/apidocs/jakarta.cdi/jakarta/enterprise/inject/Alternative.html

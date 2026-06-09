@@ -2,11 +2,11 @@
 
 ## Overview
 
-This module adds support for selected [Jlama](https://github.com/tjake/Jlama) models.
+This module adds support for selected [Jlama][jlama] models.
 
 ## Maven Coordinates
 
-In addition to the [Helidon integration with LangChain4J core dependencies](langchain4j.md#maven-coordinates), you must add the following:
+In addition to the [Helidon integration with LangChain4J core dependencies][helidon-integration-with-langchain4j-core-dependencies], you must add the following:
 
 ```xml [pom.xml]
 <dependency>
@@ -45,7 +45,7 @@ Full list of configuration properties:
 | `working-quantized-type`    | enum    | Quantize the model at runtime. Default quantization is Q4.                                                                                          |
 | `model-cache-path`          | Path    | Path to a directory where the model will be cached once downloaded.                                                                                 |
 | `working-directory`         | Path    | Path to a directory where persistent ChatMemory can be stored on disk for a given model instance.                                                   |
-| `auth-token`                | string  | Token to use when fetching private models from [Hugging Face](https://huggingface.co/)                                                              |
+| `auth-token`                | string  | Token to use when fetching private models from [Hugging Face][hugging-face]                                                              |
 | `max-tokens`                | integer | Maximum number of tokens to generate.                                                                                                               |
 | `thread-count`              | integer | Number of threads to use.                                                                                                                           |
 | `quantize-model-at-runtime` | boolean | Whether quantize the model at runtime.                                                                                                              |
@@ -76,7 +76,7 @@ Full list of configuration properties:
 | `model-name`        | string  | The model name to use.                                                                            |
 | `model-cache-path`  | Path    | Path to a directory where the model will be cached once downloaded.                               |
 | `working-directory` | Path    | Path to a directory where persistent ChatMemory can be stored on disk for a given model instance. |
-| `auth-token`        | string  | Token to use when fetching private models from [Hugging Face](https://huggingface.co/)            |
+| `auth-token`        | string  | Token to use when fetching private models from [Hugging Face][hugging-face]            |
 | `thread-count`      | integer | Number of threads to use.                                                                         |
 | `pooling-type`      | enum    | Method of embedding pooling.                                                                      |
 
@@ -108,7 +108,7 @@ Full list of configuration properties:
 | `working-quantized-type`    | enum    | Quantize the model at runtime. Default quantization is Q4.                                                                                          |
 | `model-cache-path`          | Path    | Path to a directory where the model will be cached once downloaded.                                                                                 |
 | `working-directory`         | Path    | Path to a directory where persistent ChatMemory can be stored on disk for a given model instance.                                                   |
-| `auth-token`                | string  | Token to use when fetching private models from [Hugging Face](https://huggingface.co/)                                                              |
+| `auth-token`                | string  | Token to use when fetching private models from [Hugging Face][hugging-face]                                                              |
 | `max-tokens`                | integer | Maximum number of tokens to generate.                                                                                                               |
 | `thread-count`              | integer | Number of threads to use.                                                                                                                           |
 | `quantize-model-at-runtime` | boolean | Whether quantize the model at runtime.                                                                                                              |
@@ -141,7 +141,7 @@ Full list of configuration properties:
 | `working-quantized-type`    | enum    | Quantize the model at runtime. Default quantization is Q4.                                                                                          |
 | `model-cache-path`          | Path    | Path to a directory where the model will be cached once downloaded.                                                                                 |
 | `working-directory`         | Path    | Path to a directory where persistent ChatMemory can be stored on disk for a given model instance.                                                   |
-| `auth-token`                | string  | Token to use when fetching private models from [Hugging Face](https://huggingface.co/)                                                              |
+| `auth-token`                | string  | Token to use when fetching private models from [Hugging Face][hugging-face]                                                              |
 | `max-tokens`                | integer | Maximum number of tokens to generate.                                                                                                               |
 | `thread-count`              | integer | Number of threads to use.                                                                                                                           |
 | `quantize-model-at-runtime` | boolean | Whether quantize the model at runtime.                                                                                                              |
@@ -149,5 +149,10 @@ Full list of configuration properties:
 ## Additional Information
 
 - [LangChain4J Integration](langchain4j.md)
-- [LangChain4J Jlama Documentation](https://docs.langchain4j.dev/integrations/language-models/jlama/)
-- [Jlama Website](https://github.com/tjake/Jlama)
+- [LangChain4J Jlama Documentation][langchain4j-jlama-documentation]
+- [Jlama Website][jlama]
+
+[jlama]: https://github.com/tjake/Jlama
+[helidon-integration-with-langchain4j-core-dependencies]: langchain4j.md#maven-coordinates
+[hugging-face]: https://huggingface.co/
+[langchain4j-jlama-documentation]: https://docs.langchain4j.dev/integrations/language-models/jlama/

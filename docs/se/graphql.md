@@ -2,11 +2,11 @@
 
 ## Overview
 
-The Helidon GraphQL Server provides a framework for creating [GraphQL](https://github.com/graphql-java/graphql-java) applications that integrate with the Helidon WebServer. GraphQL is a query language to access server data. The Helidon GraphQL integration enables HTTP clients to issue queries over the network and retrieve data; it is an alternative to other protocols such as REST or GRPC.
+The Helidon GraphQL Server provides a framework for creating [GraphQL][graphql] applications that integrate with the Helidon WebServer. GraphQL is a query language to access server data. The Helidon GraphQL integration enables HTTP clients to issue queries over the network and retrieve data; it is an alternative to other protocols such as REST or GRPC.
 
 ## Maven Coordinates
 
-To enable GraphQL, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+To enable GraphQL, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
 
 ```xml [pom.xml]
 <dependency>
@@ -93,7 +93,7 @@ The following configuration keys can be used to set up GraphQL invocation:
 
 ## Examples
 
-Using the schema defined in Section [API](#api), you can probe the following endpoints:
+Using the schema defined in Section [API][api], you can probe the following endpoints:
 
 1.  Hello world endpoint
 
@@ -114,3 +114,7 @@ Using the schema defined in Section [API](#api), you can probe the following end
 ## Additional Information
 
 - [GraphQL Javadocs](/apidocs/io.helidon.graphql.server/module-summary.html)
+
+[graphql]: https://github.com/graphql-java/graphql-java
+[managing-dependencies]: ../managing-dependencies.md
+[api]: #api

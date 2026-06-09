@@ -2,13 +2,13 @@
 
 ## Maven Coordinates
 
-No additional dependencies are required beyond the [LangChain4j integration core dependencies](langchain4j.md#maven-coordinates).
+No additional dependencies are required beyond the [LangChain4j integration core dependencies][langchain4j-integration-core-dependencies].
 
 ## Content Retriever
 
 Provider key: `lc4j-content-retriever`.
 
-In LangChain4j [RAG](https://docs.langchain4j.dev/tutorials/rag), `ContentRetriever` is the component that takes a user query, retrieves relevant content from an underlying data source, and returns ranked content used to augment the prompt.
+In LangChain4j [RAG][rag], `ContentRetriever` is the component that takes a user query, retrieves relevant content from an underlying data source, and returns ranked content used to augment the prompt.
 
 In Helidon, this provider creates LangChain4j content retrievers from configuration. If `type` is not set, Helidon uses the default `embedding-store-content-retriever` (`ContentRetrieverType.EMBEDDING_STORE_CONTENT_RETRIEVER`) and wires it using the configured embedding model and embedding store.
 
@@ -69,13 +69,13 @@ Configuration properties:
 | <span id="a2a276-enabled"></span> `enabled`                                                                          | `VALUE` | `Boolean`                      | `true`                              | If set to `false`, component will be disabled even if configured |
 | <span id="a7fe57-max-results"></span> `max-results`                                                                  | `VALUE` | `Integer`                      |                                     | Maximum number of results to return from the retriever           |
 | <span id="a4bf10-min-score"></span> `min-score`                                                                      | `VALUE` | `Double`                       |                                     | Minimum score threshold for retrieved results                    |
-| <span id="afd89c-type"></span> [`type`](../../../config/io_helidon_integrations_langchain4j_ContentRetrieverType.md) | `VALUE` | `i.h.i.l.ContentRetrieverType` | `EMBEDDING_STORE_CONTENT_RETRIEVER` | Type of content retriever to create                              |
+| <span id="afd89c-type"></span> [`type`][type] | `VALUE` | `i.h.i.l.ContentRetrieverType` | `EMBEDDING_STORE_CONTENT_RETRIEVER` | Type of content retriever to create                              |
 
 ## In-Memory Embedding Store
 
 Provider key: `lc4j-in-memory`.
 
-In LangChain4j [in-memory embedding store integration](https://docs.langchain4j.dev/integrations/embedding-stores/in-memory), `InMemoryEmbeddingStore` is an in-process vector store implementation suitable for local or lightweight use cases.
+In LangChain4j [in-memory embedding store integration][in-memory-embedding-store-integration], `InMemoryEmbeddingStore` is an in-process vector store implementation suitable for local or lightweight use cases.
 
 In Helidon, this provider creates `InMemoryEmbeddingStore<TextSegment>` instances from `langchain4j.embedding-stores.<name>` configuration entries.
 
@@ -134,3 +134,8 @@ Configuration properties:
 ## Additional Information
 
 - [LangChain4j Integration](langchain4j.md)
+
+[langchain4j-integration-core-dependencies]: langchain4j.md#maven-coordinates
+[rag]: https://docs.langchain4j.dev/tutorials/rag
+[type]: ../../../config/io_helidon_integrations_langchain4j_ContentRetrieverType.md
+[in-memory-embedding-store-integration]: https://docs.langchain4j.dev/integrations/embedding-stores/in-memory

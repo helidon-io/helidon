@@ -6,7 +6,7 @@ Fault Tolerance is part of the MicroProfile set of specifications. This API defi
 
 ## Maven Coordinates
 
-To enable MicroProfile Fault Tolerance, either add a dependency on the [helidon-microprofile bundle](introduction.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+To enable MicroProfile Fault Tolerance, either add a dependency on the [helidon-microprofile bundle][helidon-microprofile-bundle] or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
 
 ```xml [pom.xml]
 <dependency>
@@ -104,7 +104,7 @@ scheduled-executor:
 > [!NOTE]
 > There is currently *no support* to configure these executor properties via a `microprofile-config.properties` file.
 
-For a complete set of properties available to configure these executors, see [ThreadPoolConfig](/apidocs/io.helidon.common.configurable/io/helidon/common/configurable/ThreadPoolConfig.html). [ScheduledThreadPoolConfig](/apidocs/io.helidon.common.configurable/io/helidon/common/configurable/ScheduledThreadPoolConfig.html).
+For a complete set of properties available to configure these executors, see [ThreadPoolConfig][threadpoolconfig]. [ScheduledThreadPoolConfig][scheduledthreadpoolconfig].
 
 ## Examples
 
@@ -143,8 +143,15 @@ For a complete set of properties available to configure these executors, see [Th
 
 ## Additional Information
 
-For additional information about this API, see the [MicroProfile Fault Tolerance Javadocs](https://download.eclipse.org/microprofile/microprofile-fault-tolerance-4.0.2/apidocs).
+For additional information about this API, see the [MicroProfile Fault Tolerance Javadocs][microprofile-fault-tolerance-javadocs].
 
 ## Reference
 
-- [MicroProfile Fault Tolerance](https://download.eclipse.org/microprofile/microprofile-fault-tolerance-4.0.2/microprofile-fault-tolerance-spec-4.0.2.html)
+- [MicroProfile Fault Tolerance][microprofile-fault-tolerance]
+
+[helidon-microprofile-bundle]: introduction.md
+[managing-dependencies]: ../managing-dependencies.md
+[threadpoolconfig]: /apidocs/io.helidon.common.configurable/io/helidon/common/configurable/ThreadPoolConfig.html
+[scheduledthreadpoolconfig]: /apidocs/io.helidon.common.configurable/io/helidon/common/configurable/ScheduledThreadPoolConfig.html
+[microprofile-fault-tolerance-javadocs]: https://download.eclipse.org/microprofile/microprofile-fault-tolerance-4.0.2/apidocs
+[microprofile-fault-tolerance]: https://download.eclipse.org/microprofile/microprofile-fault-tolerance-4.0.2/microprofile-fault-tolerance-spec-4.0.2.html

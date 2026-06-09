@@ -52,7 +52,7 @@ ServiceConfig serviceConfig = ServiceConfig.builder()
 
 ## Maven Coordinates
 
-To enable Builder, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+To enable Builder, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
 
 ```xml [pom.xml]
 <dependency>
@@ -393,3 +393,5 @@ To configure default value(s) of an option, one of the following annotations can
 | `Option.DefaultBoolean` | Default value(s) that are `boolean`                                                                |
 | `Option.DefaultMethod`  | Static method to invoke to obtain a default value                                                  |
 | `Option.DefaultCode`    | Source code to add to the generated assignment, single line only supported                         |
+
+[managing-dependencies]: ../managing-dependencies.md

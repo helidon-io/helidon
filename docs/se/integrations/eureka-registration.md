@@ -2,7 +2,7 @@
 
 ## Overview
 
-Helidon’s Eureka Server Service Instance Registration Integration provides a [`ServerFeature`](/apidocs/io.helidon.webserver/io/helidon/webserver/spi/ServerFeature.html) that offers support for automatically and unobtrusively attempting to register a running Helidon microservice with an available Netflix Eureka Server of at least version 2.0.5 in the microservice’s runtime environment.
+Helidon’s Eureka Server Service Instance Registration Integration provides a [`ServerFeature`][serverfeature] that offers support for automatically and unobtrusively attempting to register a running Helidon microservice with an available Netflix Eureka Server of at least version 2.0.5 in the microservice’s runtime environment.
 
 ## Usage
 
@@ -10,7 +10,7 @@ Helidon’s Eureka Server Service Instance Registration Integration provides a [
 
 ## Maven Coordinates
 
-To enable Eureka Server Service Instance Registration Integration, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable Eureka Server Service Instance Registration Integration, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
 
 ```xml [pom.xml]
 <dependency>
@@ -22,7 +22,7 @@ To enable Eureka Server Service Instance Registration Integration, add the follo
 
 - Most users do not need to interact programmatically with this feature; the scope is therefore usually `runtime`, indicating that the feature will be available on the runtime classpath.
 
-This feature is fundamentally a [`ServerFeature`](/apidocs/io.helidon.webserver/io/helidon/webserver/spi/ServerFeature.html), and is automatically installed by its [associated `ServerFeatureProvider`](/apidocs/io.helidon.integrations.eureka/io/helidon/integrations/eureka/EurekaRegistrationServerFeatureProvider) when the provider is found in configuration (see below).
+This feature is fundamentally a [`ServerFeature`][serverfeature], and is automatically installed by its [associated `ServerFeatureProvider`][associated-serverfeatureprovider] when the provider is found in configuration (see below).
 
 ### Configuration
 
@@ -39,7 +39,7 @@ server:
 - The feature’s configuration is a child of the `server.features.eureka` node, which lists available `ServerFeature` implementations. This feature is one such implementation.
 - Information about the HTTP client the feature uses to communicate with Eureka is a child of this node.
 - The `base-uri` needs to identify an available Netflix Eureka Server of at least version 2.0.5. Netflix Eureka Server is commonly made available on port `8761`.
-- Configuration under the `client` node is wholly defined by the [`HttpClientConfig`](/apidocs/io.helidon.webclient.api/io/helidon/webclient/api/HttpClientConfig.html) interface.
+- Configuration under the `client` node is wholly defined by the [`HttpClientConfig`][httpclientconfig] interface.
 
 All other configuration values can be (and ordinarily are) defaulted, but some are best set explicitly:
 
@@ -52,11 +52,11 @@ server:
         hostName: example.com 
 ```
 
-- The feature’s configuration pertaining to the registration itself is a child of the `server.features.eureka.instance` node. Configuration is designed to be familiar to current users of other Netflix Eureka libraries. See the [Helidon Config Reference](../../config/io_helidon_integrations_eureka_InstanceInfoConfig.md) for a full description of what configuration is allowed.
+- The feature’s configuration pertaining to the registration itself is a child of the `server.features.eureka.instance` node. Configuration is designed to be familiar to current users of other Netflix Eureka libraries. See the [Helidon Config Reference][helidon-config-reference] for a full description of what configuration is allowed.
 - The `name` describes the microservice application, not any given instance of it. Its default value is `unknown`, following Netflix Eureka client convention, so it is best to set it explicitly here instead.
 - The `hostName` node identifies the host. It defaults to the current host, which may or may not be suitable in your environment. Most of the time you can simply omit this node and use the defaulted value.
 
-Please consult the [Helidon Config Reference](../../config/io_helidon_integrations_eureka_EurekaRegistrationServerFeature.md) for a full description of the permitted configuration.
+Please consult the [Helidon Config Reference][helidon-config-reference-2] for a full description of the permitted configuration.
 
 ## Logging
 
@@ -68,4 +68,13 @@ Information about how this feature is communicating with the Eureka Server is lo
 
 ## Related Documentation
 
-Users of this feature may also be interested in the (related) [Discovery feature](../discovery.md), particularly its [Eureka provider](../discovery.md#eureka).
+Users of this feature may also be interested in the (related) [Discovery feature][discovery-feature], particularly its [Eureka provider][eureka-provider].
+
+[serverfeature]: /apidocs/io.helidon.webserver/io/helidon/webserver/spi/ServerFeature.html
+[managing-dependencies]: ../../managing-dependencies.md
+[associated-serverfeatureprovider]: /apidocs/io.helidon.integrations.eureka/io/helidon/integrations/eureka/EurekaRegistrationServerFeatureProvider
+[httpclientconfig]: /apidocs/io.helidon.webclient.api/io/helidon/webclient/api/HttpClientConfig.html
+[helidon-config-reference]: ../../config/io_helidon_integrations_eureka_InstanceInfoConfig.md
+[helidon-config-reference-2]: ../../config/io_helidon_integrations_eureka_EurekaRegistrationServerFeature.md
+[discovery-feature]: ../discovery.md
+[eureka-provider]: ../discovery.md#eureka

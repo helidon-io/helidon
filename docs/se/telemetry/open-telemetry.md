@@ -3,28 +3,28 @@
 ## Overview
 
 > [!NOTE]
-> Helidon SE support for OpenTelemetry configuration and semantic conventions as described below is currently a [preview feature](/apidocs/io.helidon.common.features.api/io/helidon/common/features/api/Preview.html). We intend to support it going forward, but we might change its external API and behavior in backward-incompatible ways across dot releases.
+> Helidon SE support for OpenTelemetry configuration and semantic conventions as described below is currently a [preview feature][preview-feature]. We intend to support it going forward, but we might change its external API and behavior in backward-incompatible ways across dot releases.
 
 Helidon SE supports OpenTelemetry in several important ways:
 
-- Implements the [neutral Helidon tracing API](../../se/tracing.md) using OpenTelemetry
+- Implements the [neutral Helidon tracing API][neutral-helidon-tracing-api] using OpenTelemetry
 - Allows users to assign OpenTelemetry settings as follows:
   - Declaratively, using Helidon config under the top-level `telemetry` config key
   - Programmatically, using the OpenTelemetry SDK API and the Helidon OpenTelemetry API
-- Conforms to the [OpenTelemetry semantic conventions](https://github.com/open-telemetry/semantic-conventions/blob/v1.58.0/docs/http/http-spans.md#http-server) for automatically-created spans and metrics for HTTP requests
-- Allows [publishing Helidon metrics](../../se/metrics/metrics.md#publishing-metrics-for-external-access) to backend systems using OTLP.
+- Conforms to the [OpenTelemetry semantic conventions][opentelemetry-semantic-conventions] for automatically-created spans and metrics for HTTP requests
+- Allows [publishing Helidon metrics][publishing-helidon-metrics] to backend systems using OTLP.
 
-OpenTelemetry models observability as a set of [*signals*](https://opentelemetry.io/docs/concepts/signals/). Each signal—​for example metrics, tracing, and logging—​is an origin of monitoring data, and each has configurable settings which control its behavior.
+OpenTelemetry models observability as a set of [*signals*][signals]. Each signal—​for example metrics, tracing, and logging—​is an origin of monitoring data, and each has configurable settings which control its behavior.
 
 Helidon’s config support for OpenTelemetry has certain config attributes which apply to OpenTelemetry as a whole, others which pertain to individual signals, and still more which describe lower-level elements within a signal.
 
 The Helidon OpenTelemetry configuration format, the Helidon OpenTelemetry API, and this documentation all follow this hierarchy:
 
-- [Top-level telemetry](#top-level-config)
+- [Top-level telemetry][top-level-telemetry]
   - Signals
-    - [Tracing](#tracing-config)
-    - [Metrics](#metrics-config)
-    - [Logging](#logger-config)
+    - [Tracing][tracing]
+    - [Metrics][metrics]
+    - [Logging][logging]
 
 This document describes how to configure each level in the hierarchy and covers general topics related to Helidon’s support of OpenTelemetry.
 
@@ -41,11 +41,11 @@ That said, application code can equally well use the OpenTelemetry API and its b
 
 Applications could even use both APIs together, reading configuration to construct a Helidon builder and then adding to that builder OpenTelemetry objects created separately using the OpenTelemetry API.
 
-The [Helidon OpenTelemetry API Javadoc](/apidocs/io.helidon.telemetry.otelconfig/io/helidon/telemetry/otelconfig/package-summary.html) page lists the various types developers can use to prepare OpenTelemetry objects programmatically. As a starting point, the [`OpenTelemetryConfig`](/apidocs/io.helidon.telemetry.otelconfig/io/helidon/telemetry/otelconfig/OpenTelemetryConfig.html) interface and its [`Builder`](/apidocs/io.helidon.telemetry.otelconfig/io/helidon/telemetry/otelconfig/OpenTelemetryConfig.BuilderBase.html) represents the top-level configuration for OpenTelemetry. Their Javadoc contains links to other types that compose the top-level object, and so on.
+The [Helidon OpenTelemetry API Javadoc][helidon-opentelemetry-api-javadoc] page lists the various types developers can use to prepare OpenTelemetry objects programmatically. As a starting point, the [`OpenTelemetryConfig`][opentelemetryconfig] interface and its [`Builder`][builder] represents the top-level configuration for OpenTelemetry. Their Javadoc contains links to other types that compose the top-level object, and so on.
 
 Later sections in this document also describe the configuration settings available.
 
-The [OpenTelemetry SDK documentation](https://opentelemetry.io/docs/languages/java/sdk/#sdk-components) explains its API.
+The [OpenTelemetry SDK documentation][opentelemetry-sdk-documentation] explains its API.
 
 > [!NOTE]
 > Many applications do not need to use either the Helidon OpenTelemetry API or the OpenTelemetry API directly. They can instead rely completely on declarative Helidon configuration of OpenTelemetry.
@@ -95,11 +95,11 @@ Using Helidon to set the global `OpenTelemetry` instance has these effects:
 
 ## Maven Coordinates
 
-To enable various aspects of OpenTelemetry Support add one or more of the following dependencies to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable various aspects of OpenTelemetry Support add one or more of the following dependencies to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
 
 ### Using the OpenTelemetry implementation of the Helidon Tracing API
 
-Helidon offers an implementation of its [ neutral tracing API](../../se/tracing.md) that uses OpenTelemetry. Add the following dependency to use OpenTelemetry for tracing.
+Helidon offers an implementation of its [ neutral tracing API][neutral-helidon-tracing-api] that uses OpenTelemetry. Add the following dependency to use OpenTelemetry for tracing.
 
 Dependency to use the Helidon OpenTelemetry implementation of Helidon tracing:
 
@@ -143,7 +143,7 @@ Dependency for automatic HTTP request tracing:
 
 By default, when Helidon SE creates spans automatically for HTTP requests, it uses a set of rules—​semantic conventions—​for choosing the span name and adding tags to each span.
 
-OpenTelemetry prescribes its own [semantic conventions](https://github.com/open-telemetry/semantic-conventions/blob/v1.58.0/docs/http/http-spans.md#http-server). If you add the following dependency, Helidon follows the OpenTelemetry semantic conventions for spans instead of its own.
+OpenTelemetry prescribes its own [semantic conventions][opentelemetry-semantic-conventions]. If you add the following dependency, Helidon follows the OpenTelemetry semantic conventions for spans instead of its own.
 
 Dependency for Helidon support of the OpenTelemetry tracing semantic conventions:
 
@@ -169,7 +169,7 @@ Dependency for automatic HTTP request measurements:
 </dependency>
 ```
 
-OpenTelemetry prescribes its own [semantic conventions](https://github.com/open-telemetry/semantic-conventions/blob/v1.58.0/docs/http/http-metrics.md#http-server) for metrics—​their names and tha attributes (tags) they have. If you add the following dependency, Helidon registers and updates meters according to the OpenTelemetry metrics semantic conventions.
+OpenTelemetry prescribes its own [semantic conventions][semantic-conventions] for metrics—​their names and tha attributes (tags) they have. If you add the following dependency, Helidon registers and updates meters according to the OpenTelemetry metrics semantic conventions.
 
 Dependency for Helidon support of the OpenTelemetry metrics semantic conventions for incoming HTTP requests:
 
@@ -183,23 +183,23 @@ Dependency for Helidon support of the OpenTelemetry metrics semantic conventions
 
 ### Enabling OpenTelemetry for Outgoing Helidon WebClient Traffic
 
-Helidon supports the OpenTelemetry semantic conventions for outgoing traffic which uses the Helidon WebClient. See the [Helidon WebClient documentation](../../se/webclient.md#configuring-telemetry).
+Helidon supports the OpenTelemetry semantic conventions for outgoing traffic which uses the Helidon WebClient. See the [Helidon WebClient documentation][helidon-webclient-documentation].
 
 <a id="note-about-exporter-dependencies"></a>
 ### Specifying Additional OpenTelemetry Dependencies
 
-Most applications need to declare other runtime dependencies on OpenTelemetry artifacts because the configuration specifies—​or the application code uses—​particular OpenTelemetry types packaged in other artifacts. For example, OpenTelemetry exporters are packaged individually or as related groups. See [this section below](#note-about-exporter-dependencies) for some specific dependencies to consider adding for particular exporters.
+Most applications need to declare other runtime dependencies on OpenTelemetry artifacts because the configuration specifies—​or the application code uses—​particular OpenTelemetry types packaged in other artifacts. For example, OpenTelemetry exporters are packaged individually or as related groups. See [this section below][this-section-below] for some specific dependencies to consider adding for particular exporters.
 
-These exporters transmit telemetry data using a different protocol. (See [this OpenTelemetry page](https://github.com/open-telemetry/opentelemetry-java/tree/v1.58.0/exporters).)
+These exporters transmit telemetry data using a different protocol. (See [this OpenTelemetry page][this-opentelemetry-page].)
 
 ## Configuration
 
 You can control almost all of OpenTelemetry’s overall, tracing, metrics, and logger runtime behavior using Helidon configuration settings. Helidon constructs an `OpenTelemetry` object using the configuration. The resulting `OpenTelemetry` instance reflects these settings from the Helidon configuration:
 
-- Settings that pertain to [overall OpenTelemetry behavior](#top-level-config), apart from a particular signal.
-- An OpenTelemetry tracer provider based on [tracing configuration](#tracing-config) in `signals.tracing`.
-- An OpenTelemetry meter provider based on [metrics configuration](#metrics-config) in `signals.metrics`.
-- An OpenTelemetry logger provider based on [logger configuration](#logger-config) in `signals.logging`.
+- Settings that pertain to [overall OpenTelemetry behavior][top-level-telemetry], apart from a particular signal.
+- An OpenTelemetry tracer provider based on [tracing configuration][tracing] in `signals.tracing`.
+- An OpenTelemetry meter provider based on [metrics configuration][metrics] in `signals.metrics`.
+- An OpenTelemetry logger provider based on [logger configuration][logging] in `signals.logging`.
 
 <a id="top-level-config"></a>
 ### Controlling Overall OpenTelemetry Behavior
@@ -214,14 +214,14 @@ Several settings control the operation of OpenTelemetry as a whole, as shown in 
 | <span id="a104b9-global"></span> `global` | `VALUE` | `Boolean` | `true` | Whether the `io.opentelemetry.api.OpenTelemetry` instance created from this configuration should be made the global one |
 | <span id="a9f65d-propagators"></span> `propagators` | `LIST` | `i.h.t.o.O.CustomMethods` |   | OpenTelemetry `io.opentelemetry.context.propagation.TextMapPropagator` instances added explicitly by the app |
 | <span id="a2f6cf-service"></span> `service` | `VALUE` | `String` |   | Service name used in sending telemetry data to the collector |
-| <span id="aa0da5-signals-logging"></span> [`signals.logging`](../../config/io_helidon_telemetry_otelconfig_OpenTelemetryLoggingConfig.md) | `VALUE` | `i.h.t.o.OpenTelemetryLoggingConfig` |   | OpenTelemetry logging settings |
-| <span id="a8cca2-signals-metrics"></span> [`signals.metrics`](../../config/io_helidon_telemetry_otelconfig_OpenTelemetryMetricsConfig.md) | `VALUE` | `i.h.t.o.OpenTelemetryMetricsConfig` |   | OpenTelemetry metrics settings |
-| <span id="a9cc8d-signals-tracing"></span> [`signals.tracing`](../../config/io_helidon_telemetry_otelconfig_OpenTelemetryTracingConfig.md) | `VALUE` | `i.h.t.o.OpenTelemetryTracingConfig` |   | OpenTelemetry tracing settings |
+| <span id="aa0da5-signals-logging"></span> [`signals.logging`][signals-logging] | `VALUE` | `i.h.t.o.OpenTelemetryLoggingConfig` |   | OpenTelemetry logging settings |
+| <span id="a8cca2-signals-metrics"></span> [`signals.metrics`][signals-metrics] | `VALUE` | `i.h.t.o.OpenTelemetryMetricsConfig` |   | OpenTelemetry metrics settings |
+| <span id="a9cc8d-signals-tracing"></span> [`signals.tracing`][signals-tracing] | `VALUE` | `i.h.t.o.OpenTelemetryTracingConfig` |   | OpenTelemetry tracing settings |
 
 Notes:
 
-- OpenTelemetry uses default propagators of `tracecontext` and `baggage`. (See the `otel.propagators` property in [this OpenTelemetry guide](https://opentelemetry.io/docs/languages/java/configuration/#properties-general).)
-- Setting `global` to `true` has the effect described in the [section](#effects-of-setting-global) about global instances.
+- OpenTelemetry uses default propagators of `tracecontext` and `baggage`. (See the `otel.propagators` property in [this OpenTelemetry guide][this-opentelemetry-guide].)
+- Setting `global` to `true` has the effect described in the [section][section] about global instances.
 
 <a id="common-config"></a>
 ### Common Configuration Across Signals
@@ -294,7 +294,7 @@ In the table below only the `type` and `exporters` setting apply to `simple` pro
 | <span id="abb28b-max-queue-size"></span> `max-queue-size` | `VALUE` | `Integer` | Maximum number of items retained before discarding excess unexported ones |
 | <span id="a9794f-schedule-delay"></span> `schedule-delay` | `VALUE` | `Duration` | Delay between consecutive exports |
 | <span id="a3709d-timeout"></span> `timeout` | `VALUE` | `Duration` | Maximum time an export can run before being cancelled |
-| <span id="a0ebee-type"></span> [`type`](../../config/io_helidon_telemetry_otelconfig_ProcessorType.md) | `VALUE` | `i.h.t.o.ProcessorType` | Processor type |
+| <span id="a0ebee-type"></span> [`type`][type] | `VALUE` | `i.h.t.o.ProcessorType` | Processor type |
 
 ##### Configuring Exporters
 
@@ -310,15 +310,15 @@ Most users choose an `Otlp` exporter which has two variations—​one using gRP
 
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
-| <span id="a13db1-certificate"></span> [`certificate`](../../config/io_helidon_common_configurable_Resource.md) | `VALUE` | `i.h.c.c.Resource` |   | Trusted certificates |
-| <span id="a5bbef-client-certificate"></span> [`client.certificate`](../../config/io_helidon_common_configurable_Resource.md) | `VALUE` | `i.h.c.c.Resource` |   | TLS certificate |
-| <span id="a75a00-client-key"></span> [`client.key`](../../config/io_helidon_common_configurable_Resource.md) | `VALUE` | `i.h.c.c.Resource` |   | TLS client key |
-| <span id="aeddd9-compression"></span> [`compression`](../../config/io_helidon_telemetry_otelconfig_CompressionType.md) | `VALUE` | `i.h.t.o.CompressionType` |   | Compression the exporter uses |
+| <span id="a13db1-certificate"></span> [`certificate`][certificate] | `VALUE` | `i.h.c.c.Resource` |   | Trusted certificates |
+| <span id="a5bbef-client-certificate"></span> [`client.certificate`][certificate] | `VALUE` | `i.h.c.c.Resource` |   | TLS certificate |
+| <span id="a75a00-client-key"></span> [`client.key`][certificate] | `VALUE` | `i.h.c.c.Resource` |   | TLS client key |
+| <span id="aeddd9-compression"></span> [`compression`][compression] | `VALUE` | `i.h.t.o.CompressionType` |   | Compression the exporter uses |
 | <span id="ade7dd-connect-timeout"></span> `connect-timeout` | `VALUE` | `Duration` |   | Connection timeout |
 | <span id="ac7f6f-endpoint"></span> `endpoint` | `VALUE` | `URI` |   | Endpoint of the collector to which the exporter should transmit |
 | <span id="ab438b-headers"></span> `headers` | `MAP` | `String` |   | Headers added to each export message |
-| <span id="a13506-internal-telemetry-version"></span> [`internal-telemetry-version`](../../config/io_opentelemetry_sdk_common_InternalTelemetryVersion.md) | `VALUE` | `i.o.s.c.InternalTelemetryVersion` |   | Self-monitoring telemetry OpenTelemetry should collect |
-| <span id="a2502b-memory-mode"></span> [`memory-mode`](../../config/io_opentelemetry_sdk_common_export_MemoryMode.md) | `VALUE` | `i.o.s.c.e.MemoryMode` |   | Memory mode |
+| <span id="a13506-internal-telemetry-version"></span> [`internal-telemetry-version`][internal-telemetry-version] | `VALUE` | `i.o.s.c.InternalTelemetryVersion` |   | Self-monitoring telemetry OpenTelemetry should collect |
+| <span id="a2502b-memory-mode"></span> [`memory-mode`][memory-mode] | `VALUE` | `i.o.s.c.e.MemoryMode` |   | Memory mode |
 | <span id="a83cb7-protocol"></span> `protocol` | `VALUE` | `i.h.t.o.O.CustomMethods` | `DEFAULT` | Exporter protocol type |
 | <span id="a8e89c-retry-policy"></span> `retry-policy` | `VALUE` | `i.h.t.o.O.CustomMethods` |   | Retry policy |
 | <span id="ab1755-timeout"></span> `timeout` | `VALUE` | `Duration` |   | Exporter timeout |
@@ -383,14 +383,14 @@ OpenTelemetry also supports a Zipkin exporter which it has recently deprecated.
 
 | Key | Kind | Type | Description |
 |----|----|----|----|
-| <span id="a1e003-compression"></span> [`compression`](../../config/io_helidon_telemetry_otelconfig_CompressionType.md) | `VALUE` | `i.h.t.o.CompressionType` | Compression type |
-| <span id="aa7e39-encoder"></span> [`encoder`](../../config/zipkin2_codec_SpanBytesEncoder.md) | `VALUE` | `z.c.SpanBytesEncoder` | Encoder type |
+| <span id="a1e003-compression"></span> [`compression`][compression] | `VALUE` | `i.h.t.o.CompressionType` | Compression type |
+| <span id="aa7e39-encoder"></span> [`encoder`][encoder] | `VALUE` | `z.c.SpanBytesEncoder` | Encoder type |
 | <span id="ad1fa8-endpoint"></span> `endpoint` | `VALUE` | `URI` | Collector endpoint to which this exporter should transmit |
 | <span id="a971c1-timeout"></span> `timeout` | `VALUE` | `Duration` | Exporter timeout |
 
 Configuration for Zipkin exporters
 
-The [OpenTelemetry documentation](https://opentelemetry.io/docs/languages/java/configuration/#properties-exporters) describes the defaults; see the "Properties for Zipkin span exporters" section there.
+The [OpenTelemetry documentation][opentelemetry-documentation] describes the defaults; see the "Properties for Zipkin span exporters" section there.
 
 | Setting       | OpenTelemetry default value          |
 |---------------|--------------------------------------|
@@ -563,14 +563,14 @@ OpenTelemetry applies the defaults described in the next table.
 
 | Setting | OpenTelemetry default (and OpenTelemetry doc link) |
 |----|----|
-| `exporters` | [`otlp` with `grpc` protocol](https://opentelemetry.io/docs/languages/java/configuration/#properties-exporters) - see "Properties: exporters, `otel.traces.exporter` property" |
-| `processors` | [`batch` with defaults](https://opentelemetry.io/docs/languages/java/configuration/#properties-traces) - see "Properties for batch span processor(s)" |
-| `sampler` | [`parentbased_always_on`](https://opentelemetry.io/docs/languages/java/configuration/#properties-traces) - see "Properties for sampler" |
-| `span-limits` | See [tracing](https://opentelemetry.io/docs/languages/java/configuration/#properties-traces) "Properties for span limits" |
+| `exporters` | [`otlp` with `grpc` protocol][opentelemetry-documentation] - see "Properties: exporters, `otel.traces.exporter` property" |
+| `processors` | [`batch` with defaults][batch-with-defaults] - see "Properties for batch span processor(s)" |
+| `sampler` | [`parentbased_always_on`][batch-with-defaults] - see "Properties for sampler" |
+| `span-limits` | See [tracing][batch-with-defaults] "Properties for span limits" |
 
 Default tracing settings applied by OpenTelemetry
 
-Refer to the earlier sections about [configuring attributes](#attributes-config) and [configuring processors and exporters](#exporters-and-processors).
+Refer to the earlier sections about [configuring attributes][configuring-attributes] and [configuring processors and exporters][configuring-processors-and-exporters].
 
 Sections below describe how to set up the tracing signal configuration:
 
@@ -580,7 +580,7 @@ Sections below describe how to set up the tracing signal configuration:
 <a id="span-sampler-config"></a>
 #### Configuring the Span Sampler
 
-OpenTelemetry offers different ways of sampling data—​deciding which tracing spans tp capture and send to the backend. The [OpenTelemetry documentation](https://opentelemetry.io/docs/languages/java/sdk/#sampler) describes sampling in more detail.
+OpenTelemetry offers different ways of sampling data—​deciding which tracing spans tp capture and send to the backend. The [OpenTelemetry documentation][opentelemetry-documentation-2] describes sampling in more detail.
 
 Helidon configuration supports the sampler implementations that reside in the `opentelemetry-sdk` as listed in the table below. Other samplers are in other components. If you need to use one of those:
 
@@ -593,7 +593,7 @@ Helidon configuration supports the sampler implementations that reside in the `o
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
 | <span id="a8f212-param"></span> `param` | `VALUE` | `Double` |   | Sampler parameter |
-| <span id="a08fdc-type"></span> [`type`](../../config/io_helidon_telemetry_otelconfig_SamplerType.md) | `VALUE` | `i.h.t.o.SamplerType` | `DEFAULT` | Sampler type |
+| <span id="a08fdc-type"></span> [`type`][type-2] | `VALUE` | `i.h.t.o.SamplerType` | `DEFAULT` | Sampler type |
 
 <a id="span-limits-config"></a>
 #### Configuring Span Limits
@@ -611,7 +611,7 @@ OpenTelemetry allows you to constrain certain aspects of the data it gathers in 
 | <span id="acea3c-max-events"></span> `max-events` | `VALUE` | `Integer` | Maximum number of events |
 | <span id="a090c5-max-links"></span> `max-links` | `VALUE` | `Integer` | Maximum number of links |
 
-The [OpenTelemetry documentation](https://opentelemetry.io/docs/languages/java/sdk/#sampler) describes the defaults; see the "Properties for span limits" section there.
+The [OpenTelemetry documentation][opentelemetry-documentation-2] describes the defaults; see the "Properties for span limits" section there.
 
 | Setting                      | OpenTelemetry Default |
 |------------------------------|-----------------------|
@@ -630,7 +630,7 @@ The settings under `signals.metrics` prepare an OpenTelemetry `MeterProvider`. I
 
 The sections below describe Helidon config settings that correspond very directly to OpenTelemetry builders for the relevant OpenTelemetry type. Refer to the relevant OpenTelemetry documentation or Javadoc to understand the effect each setting has.
 
-See the earlier sections about [configuring attributes](#attributes-config) and [configuring processors and exporters](#exporters-and-processors). A [later section below](#metric-exporters-config) describes some additional attributes on metrics exporters.
+See the earlier sections about [configuring attributes][configuring-attributes] and [configuring processors and exporters][configuring-processors-and-exporters]. A [later section below][later-section-below] describes some additional attributes on metrics exporters.
 
 The next table describes the OpenTelemetry metrics settings.
 
@@ -647,14 +647,14 @@ OpenTelemetry applies the defaults described in the next table.
 
 | Setting | OpenTelemetry default (and OpenTelemetry doc link) |
 |----|----|
-| `exporters` | [`otlp` with `grpc` protocol](https://opentelemetry.io/docs/languages/java/configuration/#properties-exporters) - see that web page’s "Properties: exporters, `otel.metrics.exporter` property"\] section. |
-| `readers` | [`PeriodicMetricReader`](https://opentelemetry.io/docs/languages/java/configuration/#properties-metrics) with an interval of one minute |
+| `exporters` | [`otlp` with `grpc` protocol][opentelemetry-documentation] - see that web page’s "Properties: exporters, `otel.metrics.exporter` property"\] section. |
+| `readers` | [`PeriodicMetricReader`][periodicmetricreader] with an interval of one minute |
 
 Default metric settings applied by OpenTelemetry
 
 Sections below describe how to set up the configuration that is specific to the metrics signal:
 
-- [Configuring Metric Exporters](#metric-exporters-config)
+- [Configuring Metric Exporters][later-section-below]
 - [Configuring Metric Readers](#metric-readers-config)
 - [Configuring Metric Views](#metric-views-config)
 
@@ -719,21 +719,21 @@ The configuration for metrics exporters has several additional settings beyond t
 
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
-| <span id="a54672-certificate"></span> [`certificate`](../../config/io_helidon_common_configurable_Resource.md) | `VALUE` | `i.h.c.c.Resource` |   | Trusted certificates |
-| <span id="a34754-client-certificate"></span> [`client.certificate`](../../config/io_helidon_common_configurable_Resource.md) | `VALUE` | `i.h.c.c.Resource` |   | TLS certificate |
-| <span id="ab930c-client-key"></span> [`client.key`](../../config/io_helidon_common_configurable_Resource.md) | `VALUE` | `i.h.c.c.Resource` |   | TLS client key |
-| <span id="a1de7a-compression"></span> [`compression`](../../config/io_helidon_telemetry_otelconfig_CompressionType.md) | `VALUE` | `i.h.t.o.CompressionType` |   | Compression the exporter uses |
+| <span id="a54672-certificate"></span> [`certificate`][certificate] | `VALUE` | `i.h.c.c.Resource` |   | Trusted certificates |
+| <span id="a34754-client-certificate"></span> [`client.certificate`][certificate] | `VALUE` | `i.h.c.c.Resource` |   | TLS certificate |
+| <span id="ab930c-client-key"></span> [`client.key`][certificate] | `VALUE` | `i.h.c.c.Resource` |   | TLS client key |
+| <span id="a1de7a-compression"></span> [`compression`][compression] | `VALUE` | `i.h.t.o.CompressionType` |   | Compression the exporter uses |
 | <span id="ac5879-connect-timeout"></span> `connect-timeout` | `VALUE` | `Duration` |   | Connection timeout |
 | <span id="ae5004-default-histogram-aggregation"></span> `default-histogram-aggregation` | `VALUE` | `i.h.t.o.M.CustomMethods` |   | Preferred default histogram aggregation technique, configurable as `io.helidon.telemetry.otelconfig.MetricDefaultHistogramAggregationConfig` |
 | <span id="a29159-endpoint"></span> `endpoint` | `VALUE` | `URI` |   | Endpoint of the collector to which the exporter should transmit |
 | <span id="a9e00c-headers"></span> `headers` | `MAP` | `String` |   | Headers added to each export message |
-| <span id="ac582d-internal-telemetry-version"></span> [`internal-telemetry-version`](../../config/io_opentelemetry_sdk_common_InternalTelemetryVersion.md) | `VALUE` | `i.o.s.c.InternalTelemetryVersion` |   | Self-monitoring telemetry OpenTelemetry should collect |
-| <span id="a8c72a-memory-mode"></span> [`memory-mode`](../../config/io_opentelemetry_sdk_common_export_MemoryMode.md) | `VALUE` | `i.o.s.c.e.MemoryMode` |   | Memory mode |
+| <span id="ac582d-internal-telemetry-version"></span> [`internal-telemetry-version`][internal-telemetry-version] | `VALUE` | `i.o.s.c.InternalTelemetryVersion` |   | Self-monitoring telemetry OpenTelemetry should collect |
+| <span id="a8c72a-memory-mode"></span> [`memory-mode`][memory-mode] | `VALUE` | `i.o.s.c.e.MemoryMode` |   | Memory mode |
 | <span id="a37375-protocol"></span> `protocol` | `VALUE` | `i.h.t.o.O.CustomMethods` | `DEFAULT` | Exporter protocol type |
 | <span id="aef8f0-retry-policy"></span> `retry-policy` | `VALUE` | `i.h.t.o.O.CustomMethods` |   | Retry policy |
 | <span id="a887fd-temporality-preference"></span> `temporality-preference` | `VALUE` | `i.h.t.o.M.CustomMethods` |   | Preferred output aggregation technique (how transmitted values reflect the values recorded locally), configurable as a `io.helidon.telemetry.otelconfig.MetricTemporalityPreferenceType` value: `CUMULATIVE, DELTA, LOWMEMORY` |
 | <span id="a426f1-timeout"></span> `timeout` | `VALUE` | `Duration` |   | Exporter timeout |
-| <span id="ab4fd4-type"></span> [`type`](../../config/io_helidon_telemetry_otelconfig_MetricExporterType.md) | `VALUE` | `i.h.t.o.MetricExporterType` | `OTLP` | Metric exporter type |
+| <span id="ab4fd4-type"></span> [`type`][type-3] | `VALUE` | `i.h.t.o.MetricExporterType` | `OTLP` | Metric exporter type |
 
 ##### Metric Aggregation
 
@@ -743,7 +743,7 @@ OpenTelemetry allows control over how each exporter aggregates histogram data pr
 
 | Key | Kind | Type | Description |
 |----|----|----|----|
-| <span id="adc504-type"></span> [`type`](../../config/io_helidon_telemetry_otelconfig_MetricDefaultHistogramAggregationType.md) | `VALUE` | `i.h.t.o.MetricDefaultHistogramAggregationType` | Type of aggregation default |
+| <span id="adc504-type"></span> [`type`][type-4] | `VALUE` | `i.h.t.o.MetricDefaultHistogramAggregationType` | Type of aggregation default |
 
 You can configure the explicit bucket boundaries for `EXPLICIT_BUCKET_HISTOGRAM` aggregation.
 
@@ -772,7 +772,7 @@ An OpenTelemetry metric reader collects metric data in the server and then uses 
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
 | <span id="a79a06-exporter"></span> `exporter` | `VALUE` | `String` |   | Name of the configured metric exporter to use for this metric reader |
-| <span id="a3f4d9-type"></span> [`type`](../../config/io_helidon_telemetry_otelconfig_MetricReaderType.md) | `VALUE` | `i.h.t.o.MetricReaderType` | `PERIODIC` | Metric reader type |
+| <span id="a3f4d9-type"></span> [`type`][type-5] | `VALUE` | `i.h.t.o.MetricReaderType` | `PERIODIC` | Metric reader type |
 
 The periodic reader supports the following settings.
 
@@ -782,7 +782,7 @@ The periodic reader supports the following settings.
 |----|----|----|----|----|
 | <span id="a173a8-exporter"></span> `exporter` | `VALUE` | `String` |   | Name of the configured metric exporter to use for this metric reader |
 | <span id="a5a14c-interval"></span> `interval` | `VALUE` | `Duration` |   | Metric reader read interval |
-| <span id="a1a217-type"></span> [`type`](../../config/io_helidon_telemetry_otelconfig_MetricReaderType.md) | `VALUE` | `i.h.t.o.MetricReaderType` | `PERIODIC` | Metric reader type |
+| <span id="a1a217-type"></span> [`type`][type-5] | `VALUE` | `i.h.t.o.MetricReaderType` | `PERIODIC` | Metric reader type |
 
 <a id="metric-views-config"></a>
 #### Metric Views
@@ -810,7 +810,7 @@ The instrument selector controls which meters this view reflects.
 | <span id="a7c47f-meter-schema-url"></span> `meter-schema-url` | `VALUE` | `String` | Meter schema URL |
 | <span id="a24c92-meter-version"></span> `meter-version` | `VALUE` | `String` | Meter version |
 | <span id="acf44a-name"></span> `name` | `VALUE` | `String` | Instrument name |
-| <span id="abc056-type"></span> [`type`](../../config/io_opentelemetry_sdk_metrics_InstrumentType.md) | `VALUE` | `i.o.s.m.InstrumentType` | Instrument type |
+| <span id="abc056-type"></span> [`type`][type-6] | `VALUE` | `i.o.s.m.InstrumentType` | Instrument type |
 | <span id="afa38c-unit"></span> `unit` | `VALUE` | `String` | Instrument unit |
 
 <a id="logger-config"></a>
@@ -830,7 +830,7 @@ The next table describes the OpenTelemetry logging settings.
 | <span id="aaa180-enabled"></span> `enabled` | `VALUE` | `Boolean` | Whether the OpenTelemetry logger should be enabled |
 | <span id="a5919f-exporters"></span> `exporters` | `MAP` | `i.h.t.o.O.CustomMethods` | Log record exporters |
 | <span id="afaf4d-log-limits"></span> `log-limits` | `VALUE` | `i.h.t.o.O.CustomMethods` | Log limits to apply to log transmission |
-| <span id="a33fd0-minimum-severity"></span> [`minimum-severity`](../../config/io_opentelemetry_api_logs_Severity.md) | `VALUE` | `i.o.a.l.Severity` | Minimum severity level of log records to process |
+| <span id="a33fd0-minimum-severity"></span> [`minimum-severity`][minimum-severity] | `VALUE` | `i.o.a.l.Severity` | Minimum severity level of log records to process |
 | <span id="af7d01-processors"></span> `processors` | `LIST` | `i.h.t.o.O.CustomMethods` | Settings for logging processors |
 | <span id="a251a3-trace-based"></span> `trace-based` | `VALUE` | `Boolean` | Whether to include only log records from traces which are sampled |
 
@@ -845,7 +845,7 @@ OpenTelemetry uses the following defaults:
 
 Default logging settings applied by OpenTelemetry
 
-Refer to the earlier sections about [configuring attributes](#attributes-config) and [configuring processors and exporters](#exporters-and-processors).
+Refer to the earlier sections about [configuring attributes][configuring-attributes] and [configuring processors and exporters][configuring-processors-and-exporters].
 
 Sections below explain how to set up the configuration that is specific to the logging signal:
 
@@ -868,9 +868,9 @@ OpenTelemetry applies the following defaults:
 |----|----|
 | `max-attribute-value-length` | `Integer.MAX_VALUE` |
 | `max-number-of-attributes` | 128 |
-| `exporters` | [`otlp` with `grpc` protocol](https://opentelemetry.io/docs/languages/java/configuration/#properties-exporters) - see that web page’s "Properties: exporters, `otel.logger.exporter` property" section. |
+| `exporters` | [`otlp` with `grpc` protocol][opentelemetry-documentation] - see that web page’s "Properties: exporters, `otel.logger.exporter` property" section. |
 | `log-limits` | \`max- |
-| `processors` | [`otlp`](https://opentelemetry.io/docs/languages/java/configuration/#properties-logs) - see that web page’s "Properties: logs" section. |
+| `processors` | [`otlp`][otlp] - see that web page’s "Properties: logs" section. |
 
 Default log limit settings applied by OpenTelemetry
 
@@ -908,17 +908,63 @@ telemetry:
 
 #### Logger Exporters and Processors
 
-You associate each logger processor with a logger exporter using the exporter’s name. See the [earlier section](#exporters-and-processors) for more information.
+You associate each logger processor with a logger exporter using the exporter’s name. See the [earlier section][configuring-processors-and-exporters] for more information.
 
 ## Additional Information
 
 ### Helidon Documentation
 
-- [Helidon Tracing](../../se/tracing.md)
+- [Helidon Tracing][neutral-helidon-tracing-api]
 
 ### OpenTelemetry Documentation
 
-- [Settings and defaults](https://opentelemetry.io/docs/languages/java/configuration/#properties-exporters)
-- [OpenTelemetry Java SDK reference](https://opentelemetry.io/docs/languages/java/sdk)
-- [HTTP semantic conventions](https://github.com/open-telemetry/semantic-conventions/blob/v1.58.0/docs/http/http-spans.md#http-server)
-- [Intro to OpenTelemetry Java](https://opentelemetry.io/docs/languages/java/intro/)
+- [Settings and defaults][opentelemetry-documentation]
+- [OpenTelemetry Java SDK reference][opentelemetry-java-sdk-reference]
+- [HTTP semantic conventions][opentelemetry-semantic-conventions]
+- [Intro to OpenTelemetry Java][intro-to-opentelemetry-java]
+
+[preview-feature]: /apidocs/io.helidon.common.features.api/io/helidon/common/features/api/Preview.html
+[neutral-helidon-tracing-api]: ../../se/tracing.md
+[opentelemetry-semantic-conventions]: https://github.com/open-telemetry/semantic-conventions/blob/v1.58.0/docs/http/http-spans.md#http-server
+[publishing-helidon-metrics]: ../../se/metrics/metrics.md#publishing-metrics-for-external-access
+[signals]: https://opentelemetry.io/docs/concepts/signals/
+[top-level-telemetry]: #top-level-config
+[tracing]: #tracing-config
+[metrics]: #metrics-config
+[logging]: #logger-config
+[helidon-opentelemetry-api-javadoc]: /apidocs/io.helidon.telemetry.otelconfig/io/helidon/telemetry/otelconfig/package-summary.html
+[opentelemetryconfig]: /apidocs/io.helidon.telemetry.otelconfig/io/helidon/telemetry/otelconfig/OpenTelemetryConfig.html
+[builder]: /apidocs/io.helidon.telemetry.otelconfig/io/helidon/telemetry/otelconfig/OpenTelemetryConfig.BuilderBase.html
+[opentelemetry-sdk-documentation]: https://opentelemetry.io/docs/languages/java/sdk/#sdk-components
+[managing-dependencies]: ../../managing-dependencies.md
+[semantic-conventions]: https://github.com/open-telemetry/semantic-conventions/blob/v1.58.0/docs/http/http-metrics.md#http-server
+[helidon-webclient-documentation]: ../../se/webclient.md#configuring-telemetry
+[this-section-below]: #note-about-exporter-dependencies
+[this-opentelemetry-page]: https://github.com/open-telemetry/opentelemetry-java/tree/v1.58.0/exporters
+[signals-logging]: ../../config/io_helidon_telemetry_otelconfig_OpenTelemetryLoggingConfig.md
+[signals-metrics]: ../../config/io_helidon_telemetry_otelconfig_OpenTelemetryMetricsConfig.md
+[signals-tracing]: ../../config/io_helidon_telemetry_otelconfig_OpenTelemetryTracingConfig.md
+[this-opentelemetry-guide]: https://opentelemetry.io/docs/languages/java/configuration/#properties-general
+[section]: #effects-of-setting-global
+[type]: ../../config/io_helidon_telemetry_otelconfig_ProcessorType.md
+[certificate]: ../../config/io_helidon_common_configurable_Resource.md
+[compression]: ../../config/io_helidon_telemetry_otelconfig_CompressionType.md
+[internal-telemetry-version]: ../../config/io_opentelemetry_sdk_common_InternalTelemetryVersion.md
+[memory-mode]: ../../config/io_opentelemetry_sdk_common_export_MemoryMode.md
+[encoder]: ../../config/zipkin2_codec_SpanBytesEncoder.md
+[opentelemetry-documentation]: https://opentelemetry.io/docs/languages/java/configuration/#properties-exporters
+[batch-with-defaults]: https://opentelemetry.io/docs/languages/java/configuration/#properties-traces
+[configuring-attributes]: #attributes-config
+[configuring-processors-and-exporters]: #exporters-and-processors
+[opentelemetry-documentation-2]: https://opentelemetry.io/docs/languages/java/sdk/#sampler
+[type-2]: ../../config/io_helidon_telemetry_otelconfig_SamplerType.md
+[later-section-below]: #metric-exporters-config
+[periodicmetricreader]: https://opentelemetry.io/docs/languages/java/configuration/#properties-metrics
+[type-3]: ../../config/io_helidon_telemetry_otelconfig_MetricExporterType.md
+[type-4]: ../../config/io_helidon_telemetry_otelconfig_MetricDefaultHistogramAggregationType.md
+[type-5]: ../../config/io_helidon_telemetry_otelconfig_MetricReaderType.md
+[type-6]: ../../config/io_opentelemetry_sdk_metrics_InstrumentType.md
+[minimum-severity]: ../../config/io_opentelemetry_api_logs_Severity.md
+[otlp]: https://opentelemetry.io/docs/languages/java/configuration/#properties-logs
+[opentelemetry-java-sdk-reference]: https://opentelemetry.io/docs/languages/java/sdk
+[intro-to-opentelemetry-java]: https://opentelemetry.io/docs/languages/java/intro/

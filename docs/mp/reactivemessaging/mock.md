@@ -6,7 +6,7 @@ Mock connector is a simple application scoped bean that can be used for emitting
 
 ## Maven Coordinates
 
-To enable Mock Connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable Mock Connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
 
 ```xml [pom.xml]
 <dependency>
@@ -62,7 +62,7 @@ mockConnector
 
 ## Helidon Test with Mock Connector
 
-Mock connector works great with built-in Helidon test support for [JUnit 5](/../../mp/reactivemessaging/../../testing/testing.adoc) or [TestNG](/../../mp/reactivemessaging/../../testing/testing-ng.adoc).
+Mock connector works great with built-in Helidon test support for [JUnit 5][junit-5] or [TestNG][testng].
 
 As Helidon test support makes a bean out of your test, you can inject MockConnector directly into it.
 
@@ -107,3 +107,7 @@ public class MessagingTest {
 - Inject mock connector so we can access publishers and subscribers registered within the mock connector
 - Messaging processing method connecting together channels `test-channel-in` and `test-channel-out`
 - Actual JUnit 5 test method which is going to block the thread until 3 items are intercepted on `test-channel-out` channel’s downstream and assert those with expected values.
+
+[managing-dependencies]: ../../managing-dependencies.md
+[junit-5]: /../../mp/reactivemessaging/../../testing/testing.adoc
+[testng]: /../../mp/reactivemessaging/../../testing/testing-ng.adoc

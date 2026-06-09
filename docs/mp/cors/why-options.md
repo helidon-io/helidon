@@ -5,8 +5,8 @@ There are some good reasons why it is `@OPTIONS` methods that you decorate with 
 Table of Contents
 
 - [The Resource](#the-resource)
-- [Methods, Resources, and Subresources in JAX-RS Resource Classes](#methods-resources-and-subresources-in-jax-rs-resource-classes)
-- [`OPTIONS` in CORS, `@OPTIONS` in JAX-RS, and Technical Reality](#options-in-cors-options-in-jax-rs-and-technical-reality)
+- [Methods, Resources, and Subresources in JAX-RS Resource Classes][methods-resources-and-subresources-in-jax-rs-resource-classes]
+- [`OPTIONS` in CORS, `@OPTIONS` in JAX-RS, and Technical Reality][options-in-cors-options-in-jax-rs-and-technical-reality]
 - [The Bottom Line](#the-bottom-line)
 
 ## The Resource
@@ -39,3 +39,6 @@ In a JAX-RS resource class, the `@OPTIONS` annotation denotes which endpoint met
 ## The Bottom Line
 
 If you want a resource to participate in CORS, Helidon MP needs you to implement the `@OPTIONS` endpoint method for the resource, even if the method does nothing. Given that you have to write that method, and given that any endpoint method uniquely identifies its resource, the `@OPTIONS` method is a reasonable place to ask you to annotate with `@Cors.*` annotations.
+
+[methods-resources-and-subresources-in-jax-rs-resource-classes]: #methods-resources-and-subresources-in-jax-rs-resource-classes
+[options-in-cors-options-in-jax-rs-and-technical-reality]: #options-in-cors-options-in-jax-rs-and-technical-reality

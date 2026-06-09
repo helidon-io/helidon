@@ -6,13 +6,13 @@ Helidon 4.x introduces significant changes to APIs and runtime behavior. Use thi
 
 The following sections describe the changes between Helidon 3.x and Helidon 4.x that can significantly impact your development process. Review them carefully.
 
-You can also review the [Helidon repository CHANGELOG](https://github.com/helidon-io/helidon/blob/main/CHANGELOG.md) to see a detailed history of changes made to the project.
+You can also review the [Helidon repository CHANGELOG][helidon-repository-changelog] to see a detailed history of changes made to the project.
 
 > [!NOTE]
-> Helidon adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). As such, Helidon 4.x includes changes that are not backward compatible with Helidon 3.x.
+> Helidon adheres to [Semantic Versioning][semantic-versioning]. As such, Helidon 4.x includes changes that are not backward compatible with Helidon 3.x.
 
 > [!TIP]
-> The [Helidon Examples repository](https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/) is a good resource for understanding how things work in Helidon 4.x.
+> The [Helidon Examples repository][helidon-examples-repository] is a good resource for understanding how things work in Helidon 4.x.
 
 ### Java SE Support
 
@@ -43,7 +43,7 @@ Use Helidon 4.x to extract a JSON body from an HTTP request and do something:
 doSomething(request.content().as(JsonObject.class), response);
 ```
 
-Learn more at [WebServer](../webserver/webserver.md).
+Learn more at [WebServer][webserver].
 
 ### Server Startup
 
@@ -150,7 +150,7 @@ If you want full control using the API, you still have that option.
 
 For more information, see:
 
-- [Observability Feature Support](../observability.md)
+- [Observability Feature Support][observability-feature-support]
 - [Media Types Support](../webserver/webserver.md#media-types-support)
 
 ### Routing Configuration
@@ -316,7 +316,7 @@ public class GreetService implements HttpService {
 - Use `routing(HttpRules rules)` to set up routing.
 - Handle a `Request` and return a `Response`.
 
-Learn more about `HttpService` and `Routing` at [Helidon SE WebServer](../webserver/webserver.md).
+Learn more about `HttpService` and `Routing` at [Helidon SE WebServer][webserver].
 
 ## Other Changes
 
@@ -380,7 +380,7 @@ Observability features moved to different packages. For `Health` and `Metrics`, 
 </dependencies>
 ```
 
-Observability has new endpoints. See them at [hObservability](../observability.md).
+Observability has new endpoints. See them at [hObservability][observability-feature-support].
 
 For System Metrics, you should now use:
 
@@ -400,7 +400,7 @@ By default, Observability features are discovered automatically if you add the a
 </dependency>
 ```
 
-Metrics has changed significantly in Helidon 4.x. For more information, see [Helidon SE Metrics](../metrics/metrics.md).
+Metrics has changed significantly in Helidon 4.x. For more information, see [Helidon SE Metrics][helidon-se-metrics].
 
 ### Security
 
@@ -440,3 +440,10 @@ If you use this handler in your `logging.properties` file, you will need to upda
   <scope>runtime</scope>
 </dependency>
 ```
+
+[helidon-repository-changelog]: https://github.com/helidon-io/helidon/blob/main/CHANGELOG.md
+[semantic-versioning]: https://semver.org/spec/v2.0.0.html
+[helidon-examples-repository]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/
+[webserver]: ../webserver/webserver.md
+[observability-feature-support]: ../observability.md
+[helidon-se-metrics]: ../metrics/metrics.md

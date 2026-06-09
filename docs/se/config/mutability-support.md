@@ -12,7 +12,7 @@ An in-memory config tree, once loaded, is immutable, even though the data in the
 
 ### Loading Time
 
-The config system records when it loads each configuration into memory. Your application can retrieve it by invoking the [timestamp method](/apidocs/io.helidon.config/io/helidon/config/Config.html#timestamp--) on any config node:
+The config system records when it loads each configuration into memory. Your application can retrieve it by invoking the [timestamp method][timestamp-method] on any config node:
 
 ```java
 Instant loadTime = myConfig.timestamp();
@@ -20,7 +20,7 @@ Instant loadTime = myConfig.timestamp();
 
 ### Config Context
 
-The config system maintains a [`Config.Context`](/apidocs/io.helidon.config/io/helidon/config/Config.Context.html) for each `Config` node. Your application can retrieve the context by invoking the `Config.context()` method and then use it for these operations:
+The config system maintains a [`Config.Context`][config-context] for each `Config` node. Your application can retrieve the context by invoking the `Config.context()` method and then use it for these operations:
 
 | Method | Usage |
 |----|----|
@@ -45,9 +45,9 @@ The following sections describe these steps in detail.
 
 ### Setting up Config Source Change Detection
 
-When the application creates a config source, it can set up change detection for that source. This is called *polling* in the Helidon API but specific change detection algorithms might not use actual polling. You choose a specific [`PollingStrategy`](/apidocs/io.helidon.config/io/helidon/config/spi/PollingStrategy.html) for each config source you want to monitor. See the section on [polling strategies](extensions.md#pollingstrategy-spi) in the config extensions doc page for more information.
+When the application creates a config source, it can set up change detection for that source. This is called *polling* in the Helidon API but specific change detection algorithms might not use actual polling. You choose a specific [`PollingStrategy`][pollingstrategy] for each config source you want to monitor. See the section on [polling strategies][polling-strategies] in the config extensions doc page for more information.
 
-The config system provides some built-in polling strategies, exposed as these methods on the [`PollingStrategies`](/apidocs/io.helidon.config/io/helidon/config/PollingStrategies.html) class:
+The config system provides some built-in polling strategies, exposed as these methods on the [`PollingStrategies`][pollingstrategies] class:
 
 - `regular(Duration interval)` - a general-purpose scheduled polling strategy with a specified, constant polling interval.
 - `watch(Path watchedPath)` - a filesystem-specific strategy to watch specified path. You can use this strategy with the `file` built-in config sources.
@@ -81,7 +81,7 @@ To know when config sources have changed, your application must register its int
 
 #### Registering Actions
 
-You register a function that runs when a change occurs by using the [`Config.onChange()`](/apidocs/io.helidon.config/io/helidon/config/Config.html#onChange(java.util.function.Consumer)) method on the node of interest.
+You register a function that runs when a change occurs by using the [`Config.onChange()`][config-onchange] method on the node of interest.
 
 Subscribe on greeting property changes via onChange method:
 
@@ -118,3 +118,10 @@ System.out.println("Always actual greeting value: " + greetingSupplier.get());
 
 > [!IMPORTANT]
 > Supplier support requires that you create the `Config` object from config sources that have proper polling strategies set up. The supplier returns refreshed values only after changes have been detected by the polling strategy.
+
+[timestamp-method]: /apidocs/io.helidon.config/io/helidon/config/Config.html#timestamp--
+[config-context]: /apidocs/io.helidon.config/io/helidon/config/Config.Context.html
+[pollingstrategy]: /apidocs/io.helidon.config/io/helidon/config/spi/PollingStrategy.html
+[polling-strategies]: extensions.md#pollingstrategy-spi
+[pollingstrategies]: /apidocs/io.helidon.config/io/helidon/config/PollingStrategies.html
+[config-onchange]: </apidocs/io.helidon.config/io/helidon/config/Config.html#onChange(java.util.function.Consumer)>

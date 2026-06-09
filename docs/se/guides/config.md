@@ -8,10 +8,10 @@ For this 20 minute tutorial, you will need the following:
 
 | Requirement | Description |
 |-------------|-------------|
-| [Java 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
-| [Maven 3.8+](https://maven.apache.org/download.cgi) | Helidon requires Maven 3.8+. |
-| [Docker 18.09+](https://docs.docker.com/install/) | If you want to build and run Docker containers. |
-| [Kubectl 1.16.5+](https://kubernetes.io/docs/tasks/tools/install-kubectl/) | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
+| [Java 21][java-21] ([Open JDK 21][open-jdk-21]) | Helidon requires Java 21+ (25+ recommended). |
+| [Maven 3.8+][maven-3-8] | Helidon requires Maven 3.8+. |
+| [Docker 18.09+][docker-18-09] | If you want to build and run Docker containers. |
+| [Kubectl 1.16.5+][kubectl-1-16-5] | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
 
 Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
@@ -37,7 +37,7 @@ export JAVA_HOME=/usr/lib/jvm/jdk-21
 
 ## Getting Started with Configuration
 
-Helidon provides a very flexible and comprehensive configuration system, offering you many application configuration choices. You can include configuration data from a variety of sources using different formats, like JSON and YAML. Furthermore, you can customize the precedence of sources and make them optional or mandatory. This guide introduces Helidon SE configuration and demonstrates the fundamental concepts using several examples. Refer to [Helidon Config](../config/introduction.md) for the full configuration concepts documentation.
+Helidon provides a very flexible and comprehensive configuration system, offering you many application configuration choices. You can include configuration data from a variety of sources using different formats, like JSON and YAML. Furthermore, you can customize the precedence of sources and make them optional or mandatory. This guide introduces Helidon SE configuration and demonstrates the fundamental concepts using several examples. Refer to [Helidon Config][helidon-config] for the full configuration concepts documentation.
 
 ### Create a Sample Helidon SE Project
 
@@ -97,7 +97,7 @@ In order to properly configure your application using configuration sources, you
 If any of the Helidon required properties are not specified in one of these source, like `server.port`, then Helidon will use a default value.
 
 > [!NOTE]
-> Because environment variable names are restricted to alphanumeric characters and underscore, Helidon adds aliases to the environment configuration source, allowing entries with dotted and/or hyphenated keys to be overridden. For example, this mapping allows an environment variable named "APP_GREETING" to override an entry key named "app.greeting". In the same way, an environment variable named "APP_dash_GREETING" will map to "app-greeting". See [Advanced Config](../config/advanced-configuration.md) for more information.
+> Because environment variable names are restricted to alphanumeric characters and underscore, Helidon adds aliases to the environment configuration source, allowing entries with dotted and/or hyphenated keys to be overridden. For example, this mapping allows an environment variable named "APP_GREETING" to override an entry key named "app.greeting". In the same way, an environment variable named "APP_dash_GREETING" will map to "app-greeting". See [Advanced Config][advanced-config] for more information.
 
 The following examples will demonstrate the default precedence order.
 
@@ -201,7 +201,7 @@ Here is the full list of external config sources that you can use programmatical
 5.  Directory - each non-directory file in the directory becomes a config entry: the file name is the key. and the contents of that file are used as the corresponding config String value.
 6.  A URL resource - contents is parsed according to its inferred format.
 
-You can also define custom sources, such as Git, and use them in your Helidon application. See [Advanced Config](../config/advanced-configuration.md) for more information.
+You can also define custom sources, such as Git, and use them in your Helidon application. See [Advanced Config][advanced-config] for more information.
 
 ### Classpath Sources
 
@@ -529,7 +529,7 @@ You can re-run the previous tests that exercised environment variables and syste
 
 ## Accessing Config within an Application
 
-You have used Helidon to customize configuration behavior from your code using the `Config` and `Config.Builder` classes. As discussed previously, Helidon reads configuration from a config source, which uses a config parser to translate the source into an in-memory tree which represents the configuration’s structure and values. Helidon offers a variety of methods to access in-memory configuration. These can be categorized as *key access* or *tree navigation*. You have been using *key access* for all the examples to this point. For example `app.greeting` is accessing the `greeting` child node of the `app` parent node. There are many options for accessing this data using navigation methods as described in [Hierarchical Config](../config/hierarchical-features.md) and [Advanced Config\>](../config/advanced-configuration.md).
+You have used Helidon to customize configuration behavior from your code using the `Config` and `Config.Builder` classes. As discussed previously, Helidon reads configuration from a config source, which uses a config parser to translate the source into an in-memory tree which represents the configuration’s structure and values. Helidon offers a variety of methods to access in-memory configuration. These can be categorized as *key access* or *tree navigation*. You have been using *key access* for all the examples to this point. For example `app.greeting` is accessing the `greeting` child node of the `app` parent node. There are many options for accessing this data using navigation methods as described in [Hierarchical Config][hierarchical-config] and [Advanced Config\>][advanced-config].
 
 ### Accessing Config Using Keys or Navigation
 
@@ -624,7 +624,7 @@ JSON response:
 
 ### Reacting to Configuration Updates
 
-Even though in-memory config trees are immutable, the config system internally records configuration source metadata that allows it to watch sources for changes. Your application listens for updates to the underlying config sources and reacts to the changes. See [Config Mutability Support](../config/mutability-support.md) for a full discussion on this topic. The following example demonstrates how to listen and react to configuration changes.
+Even though in-memory config trees are immutable, the config system internally records configuration source metadata that allows it to watch sources for changes. Your application listens for updates to the underlying config sources and reacts to the changes. See [Config Mutability Support][config-mutability-support] for a full discussion on this topic. The following example demonstrates how to listen and react to configuration changes.
 
 Replace the contents of the `config-profile.yaml` file:
 
@@ -869,7 +869,7 @@ kubectl delete configmap  helidon-configmap
 
 ## Summary
 
-This guide has demonstrated how to use basic Helidon configuration features. The full configuration documentation, starting with the introduction section at [Helidon Config](../config/introduction.md) has much more information including the following:
+This guide has demonstrated how to use basic Helidon configuration features. The full configuration documentation, starting with the introduction section at [Helidon Config][helidon-config] has much more information including the following:
 
 - Architecture
 - Parsers
@@ -883,3 +883,13 @@ This guide has demonstrated how to use basic Helidon configuration features. The
 Refer to the following references for additional information:
 
 - [Helidon Javadoc](/apidocs/index.html?overview-summary.html)
+
+[java-21]: https://www.oracle.com/technetwork/java/javase/downloads
+[open-jdk-21]: http://jdk.java.net
+[maven-3-8]: https://maven.apache.org/download.cgi
+[docker-18-09]: https://docs.docker.com/install/
+[kubectl-1-16-5]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
+[helidon-config]: ../config/introduction.md
+[advanced-config]: ../config/advanced-configuration.md
+[hierarchical-config]: ../config/hierarchical-features.md
+[config-mutability-support]: ../config/mutability-support.md

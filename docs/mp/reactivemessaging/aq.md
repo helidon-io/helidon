@@ -6,7 +6,7 @@ Connecting streams to Oracle AQ with Reactive Messaging couldn’t be easier. Th
 
 ## Maven Coordinates
 
-To enable AQ Connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable AQ Connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
 
 ```xml [pom.xml]
 <dependency>
@@ -23,7 +23,7 @@ Connector name: `helidon-aq`
 
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
-| <span id="a4e0a1-acknowledge-mode"></span> [`acknowledge-mode`](../../config/io_helidon_messaging_connectors_jms_AcknowledgeMode.md) | `VALUE` | `i.h.m.c.j.AcknowledgeMode` | `AUTO_ACKNOWLEDGE` | JMS acknowledgement mode |
+| <span id="a4e0a1-acknowledge-mode"></span> [`acknowledge-mode`][acknowledge-mode] | `VALUE` | `i.h.m.c.j.AcknowledgeMode` | `AUTO_ACKNOWLEDGE` | JMS acknowledgement mode |
 | <span id="aa8394-client-id"></span> `client-id` | `VALUE` | `String` |   | Client identifier for JMS connection |
 | <span id="ab7c5d-data-source"></span> `data-source` | `VALUE` | `String` |   | Mapping to `javax.sql.DataSource DataSource` supplied with `io.helidon.messaging.connectors.aq.AqConnector.AqConnectorBuilder#dataSource(String, javax.sql.DataSource) AqConnectorBuilder.dataSource()` |
 | <span id="a750e3-destination"></span> `destination` | `VALUE` | `String` |   | Queue or topic name |
@@ -39,7 +39,7 @@ Connector name: `helidon-aq`
 | <span id="a0166f-subscriber-name"></span> `subscriber-name` | `VALUE` | `String` |   | Subscriber name used to identify a durable subscription |
 | <span id="a82a72-topic"></span> `topic` | `VALUE` | `String` |   | Use supplied destination name and `Type#TOPIC TOPIC` as type |
 | <span id="a5eafc-transacted"></span> `transacted` | `VALUE` | `Boolean` | `false` | Indicates whether the session will use a local transaction |
-| <span id="aa2815-type"></span> [`type`](../../config/io_helidon_messaging_connectors_jms_Type.md) | `VALUE` | `i.h.m.c.j.Type` | `QUEUE` | Specify if connection is `io.helidon.messaging.connectors.jms.Type#QUEUE queue` or `io.helidon.messaging.connectors.jms.Type#TOPIC topic` |
+| <span id="aa2815-type"></span> [`type`][type] | `VALUE` | `i.h.m.c.j.Type` | `QUEUE` | Specify if connection is `io.helidon.messaging.connectors.jms.Type#QUEUE queue` or `io.helidon.messaging.connectors.jms.Type#TOPIC topic` |
 | <span id="a42b8b-username"></span> `username` | `VALUE` | `String` |   | User name used for creating JMS connection |
 
 ### Configured JMS Factory
@@ -71,7 +71,7 @@ mp:
       type: queue
 ```
 
-Its also possible and preferable to refer to [configured datasource](../persistence.md), in our example [Oracle UCP datasource](../persistence.md):
+Its also possible and preferable to refer to [configured datasource][configured-datasource], in our example [Oracle UCP datasource][configured-datasource]:
 
 Example of connector config with Oracle UCP datasource:
 
@@ -181,3 +181,8 @@ public PublisherBuilder<String> produceToAq() {
     return ReactiveStreams.of("test1", "test2");
 }
 ```
+
+[managing-dependencies]: ../../managing-dependencies.md
+[acknowledge-mode]: ../../config/io_helidon_messaging_connectors_jms_AcknowledgeMode.md
+[type]: ../../config/io_helidon_messaging_connectors_jms_Type.md
+[configured-datasource]: ../persistence.md

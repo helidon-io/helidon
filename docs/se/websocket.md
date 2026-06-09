@@ -2,7 +2,7 @@
 
 ## Overview
 
-Helidon integrates with [Tyrus](https://projects.eclipse.org/projects/ee4j.tyrus) to provide support for the [Jakarta WebSocket API](https://jakarta.ee/specifications/websocket/2.1/jakarta-websocket-spec-2.1.html). The WebSocket API enables Java applications to participate in WebSocket interactions as both servers and clients. The server API supports two flavors: annotated and programmatic endpoints.
+Helidon integrates with [Tyrus][tyrus] to provide support for the [Jakarta WebSocket API][jakarta-websocket-api]. The WebSocket API enables Java applications to participate in WebSocket interactions as both servers and clients. The server API supports two flavors: annotated and programmatic endpoints.
 
 Annotated endpoints, as suggested by their name, use Java annotations to provide the necessary meta-data to define WebSocket handlers; programmatic endpoints implement API interfaces and are annotation free. Annotated endpoints tend to be more flexible since they allow different method signatures depending on the application needs, whereas programmatic endpoints must implement an interface and are, therefore, bounded to its definition.
 
@@ -10,7 +10,7 @@ Helidon SE support is based on the `WebSocketRouting` class which enables Helido
 
 ## Maven Coordinates
 
-To enable WebSocket, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+To enable WebSocket, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
 
 ```xml [pom.xml]
 <dependency>
@@ -23,7 +23,7 @@ To enable WebSocket, add the following dependency to your project’s `pom.xml` 
 
 This section describes the implementation of a simple application that uses a REST resource to push messages into a shared queue and a programmatic WebSocket endpoint to download messages from the queue, one at a time, over a connection. The example will show how REST and WebSocket connections can be seamlessly combined into a Helidon application.
 
-The complete Helidon SE example is available [here](https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/webserver/websocket). Let us start by looking at `MessageQueueService`:
+The complete Helidon SE example is available [here][here]. Let us start by looking at `MessageQueueService`:
 
 ```java
 record MessageQueueService(Queue<String> messageQueue) implements HttpService {
@@ -75,4 +75,10 @@ This code snippet registers `MessageBoardEndpoint` at `/websocket/board` and ass
 
 ## Reference
 
-- [Helidon WebSocket Javadoc](/apidocs/io.helidon.webserver.websocket/module-summary.html)
+- [Helidon WebSocket Javadoc][helidon-websocket-javadoc]
+
+[tyrus]: https://projects.eclipse.org/projects/ee4j.tyrus
+[jakarta-websocket-api]: https://jakarta.ee/specifications/websocket/2.1/jakarta-websocket-spec-2.1.html
+[managing-dependencies]: ../managing-dependencies.md
+[here]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/webserver/websocket
+[helidon-websocket-javadoc]: /apidocs/io.helidon.webserver.websocket/module-summary.html

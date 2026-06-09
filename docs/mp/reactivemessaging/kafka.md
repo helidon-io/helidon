@@ -2,11 +2,11 @@
 
 ## Overview
 
-Connecting streams to Kafka with Reactive Messaging is easy to do. There is a standard Kafka client behind the scenes, all the [producer](https://kafka.apache.org/28/documentation.html#producerconfigs) and [consumer](https://kafka.apache.org/28/documentation.html#consumerconfigs) configs can be propagated through messaging config.
+Connecting streams to Kafka with Reactive Messaging is easy to do. There is a standard Kafka client behind the scenes, all the [producer][producer] and [consumer][consumer] configs can be propagated through messaging config.
 
 ## Maven Coordinates
 
-To enable Reactive Kafka Connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable Reactive Kafka Connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
 
 ```xml [pom.xml]
 <dependency>
@@ -43,17 +43,17 @@ mp.messaging:
 ```
 
 - Kafka client consumer’s property auto.offset.reset configuration for `from-kafka` channel only
-- Kafka client’s property [bootstrap.servers](https://kafka.apache.org/28/documentation.html#consumerconfigs_bootstrap.servers) configuration for all channels using the connector
+- Kafka client’s property [bootstrap.servers][bootstrap-servers] configuration for all channels using the connector
 
 > [!TIP]
-> Besides the following configuration options, any property from [consumer](https://kafka.apache.org/documentation/#consumerconfigs) or [producer](https://kafka.apache.org/documentation/#producerconfigs) configuration can be passed to the underlying Kafka client.
+> Besides the following configuration options, any property from [consumer][consumer-2] or [producer][producer-2] configuration can be passed to the underlying Kafka client.
 
 ### Configuration options
 
 | Key | Kind | Type | Description |
 |----|----|----|----|
 | <span id="a8b4a2-acks"></span> `acks` | `VALUE` | `String` | The number of acknowledgments the producer requires the leader to have received before considering a request complete |
-| <span id="afefb2-auto-offset-reset"></span> [`auto-offset-reset`](../../config/io_helidon_messaging_connectors_kafka_KafkaConfigBuilder_AutoOffsetReset.md) | `VALUE` | `i.h.m.c.k.K.AutoOffsetReset` | What to do when there is no initial offset in Kafka or if the current offset does not exist any more on the server (e.g |
+| <span id="afefb2-auto-offset-reset"></span> [`auto-offset-reset`][auto-offset-reset] | `VALUE` | `i.h.m.c.k.K.AutoOffsetReset` | What to do when there is no initial offset in Kafka or if the current offset does not exist any more on the server (e.g |
 | <span id="a79a73-batch-size"></span> `batch-size` | `VALUE` | `Integer` | The producer will attempt to batch records together into fewer requests whenever multiple records are being sent to the same partition |
 | <span id="a90745-bootstrap-servers"></span> `bootstrap-servers` | `VALUE` | `String` | A list of host/port pairs to use for establishing the initial connection to the Kafka cluster |
 | <span id="a62db1-buffer-memory"></span> `buffer-memory` | `VALUE` | `Long` | The total bytes of memory the producer can use to buffer records waiting to be sent to the server |
@@ -108,7 +108,7 @@ Default NACK strategy for Kafka connector. When
 
 ### Dead Letter Queue
 
-Sends nacked messages to error topic, [DLQ](https://en.wikipedia.org/wiki/Dead_letter_queue) is well known pattern for dealing with unprocessed messages.
+Sends nacked messages to error topic, [DLQ][dlq] is well known pattern for dealing with unprocessed messages.
 
 Helidon can derive connection settings for DLQ topic automatically if the error topic is present on the same Kafka cluster. Serializers are derived from deserializers used for consumption `org.apache.kafka.common.serialization.StringDeserializer` \> `org.apache.kafka.common.serialization.StringSerializer`. Note that the name of the error topic is needed only in this case.
 
@@ -154,3 +154,12 @@ mp.messaging:
 Don’t forget to check out the examples with pre-configured Kafka docker image, for easy testing:
 
 - <https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/messaging>
+
+[producer]: https://kafka.apache.org/28/documentation.html#producerconfigs
+[consumer]: https://kafka.apache.org/28/documentation.html#consumerconfigs
+[managing-dependencies]: ../../managing-dependencies.md
+[bootstrap-servers]: https://kafka.apache.org/28/documentation.html#consumerconfigs_bootstrap.servers
+[consumer-2]: https://kafka.apache.org/documentation/#consumerconfigs
+[producer-2]: https://kafka.apache.org/documentation/#producerconfigs
+[auto-offset-reset]: ../../config/io_helidon_messaging_connectors_kafka_KafkaConfigBuilder_AutoOffsetReset.md
+[dlq]: https://en.wikipedia.org/wiki/Dead_letter_queue

@@ -6,7 +6,7 @@ Helidon provides a very flexible and comprehensive configuration system, offerin
 
 ## Maven Coordinates
 
-To enable Config, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable Config, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
 
 ```xml [pom.xml]
 <dependency>
@@ -41,19 +41,19 @@ Configuration can be loaded from different types of locations and expressed in d
 6.  A URL resource - contents is parsed according to its inferred format.
 7.  A variety of in-memory data structures (`String`, `Map`, `Properties`)
 
-See the Javadoc for the [`ConfigSources`](/apidocs/io.helidon.config/io/helidon/config/ConfigSources.html) class for a complete list of the built-in config source types and how to use them.
+See the Javadoc for the [`ConfigSources`][configsources] class for a complete list of the built-in config source types and how to use them.
 
-See the [advanced topics'](advanced-configuration.md#advanced-config-sources) page for further information on some more involved aspects of config sources.
+See the [advanced topics'][advanced-topics] page for further information on some more involved aspects of config sources.
 
 ### Config Parsers
 
 When it reads configuration text from sources, the config system uses config parsers to translate that text into the in-memory data structures representing that configuration.
 
-The config system includes several built-in parsers, such as for the Java properties, YAML, JSON, and HOCON formats. See [this section](#built-in-support-for-config-formats) for how to change your `pom.xml` to make parsers for those formats available to your application. Then your application can invoke the [config builder’s `addParser`](/apidocs/io.helidon.config/io/helidon/config/Config.Builder.html#addParser-io.helidon.config.spi.ConfigParser-) method so that builder will use the parsers you choose.
+The config system includes several built-in parsers, such as for the Java properties, YAML, JSON, and HOCON formats. See [this section][this-section] for how to change your `pom.xml` to make parsers for those formats available to your application. Then your application can invoke the [config builder’s `addParser`][config-builder-s-addparser] method so that builder will use the parsers you choose.
 
-You can extend the system with custom parsers of your own. Implement the [`ConfigParser`](/apidocs/io.helidon.config/io/helidon/config/spi/ConfigParser.html) interface, then construct a `Config.Builder` using the `addParser` method, passing an instance of your customer parser. Invoke one of the `sources` methods to include a source that uses the custom format and then build the `Config` object.
+You can extend the system with custom parsers of your own. Implement the [`ConfigParser`][configparser] interface, then construct a `Config.Builder` using the `addParser` method, passing an instance of your customer parser. Invoke one of the `sources` methods to include a source that uses the custom format and then build the `Config` object.
 
-See the [advanced topics'](advanced-configuration.md#advanced-config-parsers) page for further information on some more involved aspects of config parsers.
+See the [advanced topics'][advanced-topics-2] page for further information on some more involved aspects of config parsers.
 
 ## Configuration
 
@@ -85,9 +85,9 @@ Note that if you want to explicitly set the global configuration then you **must
 
 Although the default configuration is very simple to use, your application can take full control of all configuration sources and precedence. You can do so by creating and invoking methods on a `Config.Builder` object to construct a `Config` instance.
 
-When your application prepares a `Config.Builder` it sets what `ConfigSource`s and `ConfigParser`s the builder should use in constructing the resulting `Config` object. The Javadoc explains how to use the [`Config.Builder`](/apidocs/io.helidon.config/io/helidon/config/Config.Builder.html).
+When your application prepares a `Config.Builder` it sets what `ConfigSource`s and `ConfigParser`s the builder should use in constructing the resulting `Config` object. The Javadoc explains how to use the [`Config.Builder`][config-builder].
 
-See the [Custom Configuration Sources](../../se/guides/config.md#_custom_configuration_sources) and [advanced config sources](advanced-configuration.md#advanced-config-sources) sections for detailed examples and further information.
+See the [Custom Configuration Sources][custom-configuration-sources] and [advanced config sources][advanced-topics] sections for detailed examples and further information.
 
 ### Accessing Config Values
 
@@ -112,7 +112,7 @@ web:
   page-size: 25
 ```
 
-The configuration has the same internal representation in `Config`. Once created, the `Config` object provides many methods the application can use to retrieve config data as various Java types. See the [`Config`](/apidocs/io.helidon.config/io/helidon/config/Config.html) Javadoc for complete details.
+The configuration has the same internal representation in `Config`. Once created, the `Config` object provides many methods the application can use to retrieve config data as various Java types. See the [`Config`][config] Javadoc for complete details.
 
 ```java
 int pageSize = config.get("web.page-size")
@@ -177,7 +177,7 @@ The filter resolves the `${host}` reference to the `localhost` value.
 
 This makes it easier to override values in testing and production, as you can just override the `host` key and leave the URIs same.
 
-See [Filter, Overrides, and Token Substitution](advanced-configuration.md#filters-overrides-and-token-substitution) section for further information on some more involved aspects.
+See [Filter, Overrides, and Token Substitution][filter-overrides-and-token-substitution] section for further information on some more involved aspects.
 
 ### Typed config values
 
@@ -201,7 +201,7 @@ ConfigValue\<T\> can be used to obtain:
 
   The config system automatically knows how to return `List` and `Map` complex types, and you can provide *config mappers* to convert a config subtree to whatever Java types your application needs.
 
-See [Property Mapping](property-mapping.md) page for details on how to use the built-in mappings and your own custom ones to convert to simple and complex types.
+See [Property Mapping][property-mapping] page for details on how to use the built-in mappings and your own custom ones to convert to simple and complex types.
 
 ### Dealing with Loading Errors: Retry Policies
 
@@ -218,9 +218,9 @@ The config system includes two predefined retry policies:
 
 Predefined Retry Policies
 
-See the [`RetryPolicies`](/apidocs/io.helidon.config/io/helidon/config/RetryPolicies.html) Javadoc for complete details on these built-in retry policies.
+See the [`RetryPolicies`][retrypolicies] Javadoc for complete details on these built-in retry policies.
 
-You can devise your own policy. Implement the [`RetryPolicy`](/apidocs/io.helidon.config/io/helidon/config/spi/RetryPolicy.html) interface. Then pass an instance of your policy implementation to the config source builder’s `retryPolicy` method.
+You can devise your own policy. Implement the [`RetryPolicy`][retrypolicy] interface. Then pass an instance of your policy implementation to the config source builder’s `retryPolicy` method.
 
 ### Change Support
 
@@ -237,9 +237,9 @@ In `Config` system, you can do this through change support provided by these com
 
 If you want to receive `onChange` events, you must configure your Config with at least one source that is capable of providing changes (having a `PollingStrategy` or `ChangeWatcher` configured, or implementing `EventConfigSource`)
 
-The [mutability](mutability-support.md) documentation explains this in detail, and the [`PollingStrategies`](/apidocs/io.helidon.config/io/helidon/config/PollingStrategies.html) Javadoc describes the built-in implementations.
+The [mutability][mutability] documentation explains this in detail, and the [`PollingStrategies`][pollingstrategies] Javadoc describes the built-in implementations.
 
-You can, of course, write your own by implementing the [`PollingStrategy`](/apidocs/io.helidon.config/io/helidon/config/spi/PollingStrategy.html) interface. On a config source builder invoke `pollingStrategy` with an instance of your custom strategy and then invoke `build` to create the `ConfigSource`.
+You can, of course, write your own by implementing the [`PollingStrategy`][pollingstrategy] interface. On a config source builder invoke `pollingStrategy` with an instance of your custom strategy and then invoke `build` to create the `ConfigSource`.
 
 ### Built-in Support for Config Formats
 
@@ -254,13 +254,13 @@ If you add additional Helidon config maven artifacts to your dependencies, then 
 
 Default Config Files (most to the least important)
 
-You can also extend the config system to handle other types of sources by implementing the [`ConfigSource`](/apidocs/io.helidon.config/io/helidon/config/spi/ConfigSource.html) interface. See the [extensions'](extensions.md) documentation for complete information.
+You can also extend the config system to handle other types of sources by implementing the [`ConfigSource`][configsource] interface. See the [extensions'][extensions] documentation for complete information.
 
 ## Reference
 
 | Name | Description |
 | --- | --- |
-| [SE Config Guide](../guides/config.md) | Step-by-step guide about using Config in your Helidon SE application. |
+| [SE Config Guide][se-config-guide] | Step-by-step guide about using Config in your Helidon SE application. |
 
 ## Additional Information
 
@@ -268,23 +268,49 @@ The links in the following tables lead you to more information about various oth
 
 | Topic | Documentation |
 |----|----|
-| Where config comes from | [Config sources](#config-sources),[Config Profiles](config-profiles.md) |
-| What format config data is expressed in | [Config parsers](#config-parsers), [supported formats](supported-formats.md) |
-| How to filter, override, and dereference values | [Filters and overrides](advanced-configuration.md#filters-overrides-and-token-substitution) |
-| What happens when config data changes | [Mutability Support](mutability-support.md) |
-| How to deal with loading errors | [Config retry policies](#dealing-with-loading-errors-retry-policies) |
+| Where config comes from | [Config sources][config-sources],[Config Profiles][config-profiles] |
+| What format config data is expressed in | [Config parsers][config-parsers], [supported formats][supported-formats] |
+| How to filter, override, and dereference values | [Filters and overrides][filter-overrides-and-token-substitution] |
+| What happens when config data changes | [Mutability Support][mutability] |
+| How to deal with loading errors | [Config retry policies][config-retry-policies] |
 
 Controlling How Config is Loaded
 
 | Topic | Documentation |
 |----|----|
-| How config data is translated into Java types | [Config mappers](property-mapping.md) |
+| How config data is translated into Java types | [Config mappers][property-mapping] |
 | How to navigate config trees | [Navigation](hierarchical-features.md) |
 
 Accessing Configuration Data
 
 | Topic              | Documentation                |
 |--------------------|------------------------------|
-| Writing extensions | [Extensions](extensions.md) |
+| Writing extensions | [Extensions][extensions] |
 
 Extending and Fine-tuning the Config System
+
+[managing-dependencies]: ../../managing-dependencies.md
+[configsources]: /apidocs/io.helidon.config/io/helidon/config/ConfigSources.html
+[advanced-topics]: advanced-configuration.md#advanced-config-sources
+[this-section]: #built-in-support-for-config-formats
+[config-builder-s-addparser]: /apidocs/io.helidon.config/io/helidon/config/Config.Builder.html#addParser-io.helidon.config.spi.ConfigParser-
+[configparser]: /apidocs/io.helidon.config/io/helidon/config/spi/ConfigParser.html
+[advanced-topics-2]: advanced-configuration.md#advanced-config-parsers
+[config-builder]: /apidocs/io.helidon.config/io/helidon/config/Config.Builder.html
+[custom-configuration-sources]: ../../se/guides/config.md#_custom_configuration_sources
+[config]: /apidocs/io.helidon.config/io/helidon/config/Config.html
+[filter-overrides-and-token-substitution]: advanced-configuration.md#filters-overrides-and-token-substitution
+[property-mapping]: property-mapping.md
+[retrypolicies]: /apidocs/io.helidon.config/io/helidon/config/RetryPolicies.html
+[retrypolicy]: /apidocs/io.helidon.config/io/helidon/config/spi/RetryPolicy.html
+[mutability]: mutability-support.md
+[pollingstrategies]: /apidocs/io.helidon.config/io/helidon/config/PollingStrategies.html
+[pollingstrategy]: /apidocs/io.helidon.config/io/helidon/config/spi/PollingStrategy.html
+[configsource]: /apidocs/io.helidon.config/io/helidon/config/spi/ConfigSource.html
+[extensions]: extensions.md
+[se-config-guide]: ../guides/config.md
+[config-sources]: #config-sources
+[config-profiles]: config-profiles.md
+[config-parsers]: #config-parsers
+[supported-formats]: supported-formats.md
+[config-retry-policies]: #dealing-with-loading-errors-retry-policies

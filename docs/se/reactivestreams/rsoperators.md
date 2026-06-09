@@ -2,11 +2,11 @@
 
 ## Overview
 
-Helidon implements [MicroProfile Reactive Streams Operators](https://download.eclipse.org/microprofile/microprofile-reactive-streams-operators-3.0/microprofile-reactive-streams-operators-spec-3.0.html) specification which defines reactive operators and provides a standardized tool for manipulation with [Reactive Streams](https://www.reactive-streams.org/). You can use MicroProfile Reactive Streams Operators when you want to maintain source-level portability between different implementations.
+Helidon implements [MicroProfile Reactive Streams Operators][microprofile-reactive-streams-operators] specification which defines reactive operators and provides a standardized tool for manipulation with [Reactive Streams][reactive-streams]. You can use MicroProfile Reactive Streams Operators when you want to maintain source-level portability between different implementations.
 
 ## Maven Coordinates
 
-To enable Reactive Streams, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable Reactive Streams, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
 
 ```xml [pom.xml]
 <dependency>
@@ -78,7 +78,7 @@ Operators(Stages) {#terms}
 
 ### Graphs
 
-[Graphs](https://download.eclipse.org/microprofile/microprofile-reactive-streams-operators-3.0/microprofile-reactive-streams-operators-spec-3.0.html#_graphs) are pre-prepared stream builders with [stages](https://download.eclipse.org/microprofile/microprofile-reactive-streams-operators-3.0/microprofile-reactive-streams-operators-spec-3.0.html#_stages), which can be combined to closed graph with methods `via` and `to`.
+[Graphs][graphs] are pre-prepared stream builders with [stages][stages], which can be combined to closed graph with methods `via` and `to`.
 
 Combining the graphs and running the stream:
 
@@ -108,6 +108,14 @@ publisherStage
 
 ## Reference
 
-- [MicroProfile Reactive Streams Operators Specification](https://download.eclipse.org/microprofile/microprofile-reactive-streams-operators-3.0/microprofile-reactive-streams-operators-spec-3.0.html)
-- [MicroProfile Reactive Streams Operators Javadoc](https://download.eclipse.org/microprofile/microprofile-reactive-streams-operators-3.0/apidocs)
-- [MicroProfile Reactive Streams Operators on GitHub](https://github.com/eclipse/microprofile-reactive-streams-operators)
+- [MicroProfile Reactive Streams Operators Specification][microprofile-reactive-streams-operators]
+- [MicroProfile Reactive Streams Operators Javadoc][microprofile-reactive-streams-operators-javadoc]
+- [MicroProfile Reactive Streams Operators on GitHub][microprofile-reactive-streams-operators-on-github]
+
+[microprofile-reactive-streams-operators]: https://download.eclipse.org/microprofile/microprofile-reactive-streams-operators-3.0/microprofile-reactive-streams-operators-spec-3.0.html
+[reactive-streams]: https://www.reactive-streams.org/
+[managing-dependencies]: ../../managing-dependencies.md
+[graphs]: https://download.eclipse.org/microprofile/microprofile-reactive-streams-operators-3.0/microprofile-reactive-streams-operators-spec-3.0.html#_graphs
+[stages]: https://download.eclipse.org/microprofile/microprofile-reactive-streams-operators-3.0/microprofile-reactive-streams-operators-spec-3.0.html#_stages
+[microprofile-reactive-streams-operators-javadoc]: https://download.eclipse.org/microprofile/microprofile-reactive-streams-operators-3.0/apidocs
+[microprofile-reactive-streams-operators-on-github]: https://github.com/eclipse/microprofile-reactive-streams-operators

@@ -6,7 +6,7 @@ This module adds support for the Oracle embedding store.
 
 ## Maven Coordinates
 
-In addition to the [Helidon integration with LangChain4j core dependencies](langchain4j.md#maven-coordinates), you must add the following:
+In addition to the [Helidon integration with LangChain4j core dependencies][helidon-integration-with-langchain4j-core-dependencies], you must add the following:
 
 ```xml [pom.xml]
 <dependency>
@@ -44,7 +44,7 @@ langchain4j:
         name: "foo-bar-embeddings"
 ```
 
-- Configured with `io.helidon.data.sql.datasource:helidon-data-sql-datasource-ucp` see [Helidon Data Repository](../../../se/data.md) for more info
+- Configured with `io.helidon.data.sql.datasource:helidon-data-sql-datasource-ucp` see [Helidon Data Repository][helidon-data-repository] for more info
 
 If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
 
@@ -53,7 +53,7 @@ Full list of configuration properties:
 | Key                          | Type                                          | Description                                                                                                                                                                |
 |------------------------------|-----------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `data-source`                | string                                        | The name of Helidon service containing a data source for connecting to the Oracle embedding store. If not present, the default unnamed service is used.                    |
-| `embedding-table`            | [OracleEmbeddingTable](#oracleembeddingtable) | Root configuration key for `OracleEmbeddingTable` configuration. Contains properties of the embedding table associated with the Oracle embedding store.                    |
+| `embedding-table`            | [OracleEmbeddingTable][oracleembeddingtable] | Root configuration key for `OracleEmbeddingTable` configuration. Contains properties of the embedding table associated with the Oracle embedding store.                    |
 | `enabled`                    | boolean                                       | If set to `true`, Oracle embedding store will be enabled.                                                                                                                  |
 | `exact-search`               | boolean                                       | Specifies whether exact matching is used in searches.                                                                                                                      |
 | `vector-index-create-option` | string                                        | The vector index creation option, which defines behavior when creating the vector index. Options are `CREATE_NONE` (default), `CREATE_IF_NOT_EXISTS`, `CREATE_OR_REPLACE`. |
@@ -74,4 +74,9 @@ Full list of configuration properties:
 ## Additional Information
 
 - [LangChain4j Integration](langchain4j.md)
-- [langChain4J Oracle Embedding Store Documentation](https://docs.langchain4j.dev/integrations/embedding-stores/oracle)
+- [langChain4J Oracle Embedding Store Documentation][langchain4j-oracle-embedding-store-documentation]
+
+[helidon-integration-with-langchain4j-core-dependencies]: langchain4j.md#maven-coordinates
+[helidon-data-repository]: ../../../se/data.md
+[oracleembeddingtable]: #oracleembeddingtable
+[langchain4j-oracle-embedding-store-documentation]: https://docs.langchain4j.dev/integrations/embedding-stores/oracle

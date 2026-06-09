@@ -6,7 +6,7 @@ This module adds support for selected Cohere models.
 
 ## Maven Coordinates
 
-In addition to the [Helidon integration with LangChain4j core dependencies](langchain4j.md#maven-coordinates), you must add the following:
+In addition to the [Helidon integration with LangChain4j core dependencies][helidon-integration-with-langchain4j-core-dependencies], you must add the following:
 
 ```xml [pom.xml]
 <dependency>
@@ -48,7 +48,7 @@ Full list of configuration properties:
 | `log-responses`          | boolean               | Whether to log API responses.                                                                                                                                     |
 | `max-segments-per-batch` | int                   | Maximum number of segments per batch.                                                                                                                             |
 | `model-name`             | string                | The model name to use.                                                                                                                                            |
-| `timeout`                | duration              | The timeout setting for API requests. See [here](https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-) for the format. |
+| `timeout`                | duration              | The timeout setting for API requests. See [here][here] for the format. |
 
 ### CohereScoringModel
 
@@ -80,9 +80,13 @@ Full list of configuration properties:
 | `log-responses`  | boolean               | Whether to log API responses.                                                                                                                                     |
 | `max-retries`    | int                   | The maximum number of retries for failed API requests.                                                                                                            |
 | `model-name`     | string                | The model name to use.                                                                                                                                            |
-| `timeout`        | duration              | The timeout setting for API requests. See [here](https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-) for the format. |
+| `timeout`        | duration              | The timeout setting for API requests. See [here][here] for the format. |
 
 ## Additional Information
 
 - [LangChain4j Integration](langchain4j.md)
-- [LangChain4j Cohere Documentation](https://docs.langchain4j.dev/integrations/embedding-models/cohere)
+- [LangChain4j Cohere Documentation][langchain4j-cohere-documentation]
+
+[helidon-integration-with-langchain4j-core-dependencies]: langchain4j.md#maven-coordinates
+[here]: https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-
+[langchain4j-cohere-documentation]: https://docs.langchain4j.dev/integrations/embedding-models/cohere

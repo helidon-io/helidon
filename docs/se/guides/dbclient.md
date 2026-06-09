@@ -8,10 +8,10 @@ For this 15 minute tutorial, you will need the following:
 
 | Requirement | Description |
 |-------------|-------------|
-| [Java 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
-| [Maven 3.8+](https://maven.apache.org/download.cgi) | Helidon requires Maven 3.8+. |
-| [Docker 18.09+](https://docs.docker.com/install/) | If you want to build and run Docker containers. |
-| [Kubectl 1.16.5+](https://kubernetes.io/docs/tasks/tools/install-kubectl/) | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
+| [Java 21][java-21] ([Open JDK 21][open-jdk-21]) | Helidon requires Java 21+ (25+ recommended). |
+| [Maven 3.8+][maven-3-8] | Helidon requires Maven 3.8+. |
+| [Docker 18.09+][docker-18-09] | If you want to build and run Docker containers. |
+| [Kubectl 1.16.5+][kubectl-1-16-5] | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
 
 Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
@@ -382,7 +382,7 @@ The `getBook` method reach the book from the database and send the information t
 
 DbExecute class provides many builders to create statements such as, DML, insert, update, delete, query and get statements. For each statement there are two builders which can be regrouped in 2 categories. Builders with methods containing `Named` keyword, they use a statement defined in the configuration file.
 
-And builders without `Named` keyword, they use a statement passed as an argument. More information on the Helidon DB Client [here](../dbclient.md).
+And builders without `Named` keyword, they use a statement passed as an argument. More information on the Helidon DB Client [here][here].
 
 Add getJsonBook to the LibraryService:
 
@@ -521,7 +521,7 @@ transfer-encoding: chunked
 connection: keep-alive
 ```
 
-This command creates an HTTP PUT request with the genre `Fantasy` content at the address [http://localhost:8080/library/{book-name}](http://localhost:8080/library/{book-name}). The 201 code means that Harry Potter book was successfully added to the library. You can now try to get it !
+This command creates an HTTP PUT request with the genre `Fantasy` content at the address [http://localhost:8080/library/{book-name}][http-localhost-8080-library-book-name]. The 201 code means that Harry Potter book was successfully added to the library. You can now try to get it !
 
 Get Harry Potter from the library:
 
@@ -636,4 +636,13 @@ The select-book statement was invoked four times.
 
 ### Summary
 
-This guide provided an introduction to the Helidon DB Client’s key features. If you want to learn more, see the Helidon DB Client samples in [GitHub](https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/dbclient).
+This guide provided an introduction to the Helidon DB Client’s key features. If you want to learn more, see the Helidon DB Client samples in [GitHub][github].
+
+[java-21]: https://www.oracle.com/technetwork/java/javase/downloads
+[open-jdk-21]: http://jdk.java.net
+[maven-3-8]: https://maven.apache.org/download.cgi
+[docker-18-09]: https://docs.docker.com/install/
+[kubectl-1-16-5]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
+[here]: ../dbclient.md
+[http-localhost-8080-library-book-name]: http://localhost:8080/library/{book-name}
+[github]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/dbclient

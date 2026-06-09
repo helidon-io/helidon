@@ -2,11 +2,11 @@
 
 ## Overview
 
-The Helidon WebServer provides a framework for creating [JSON-RPC 2.0](https://www.jsonrpc.org/specification) applications. The JSON-RPC protocol is a stateless and lightweight protocol based on JSON that runs on top of HTTP/1.1. It offers the ability to invoke remote methods passing parameters and getting results as JSON values.
+The Helidon WebServer provides a framework for creating [JSON-RPC 2.0][json-rpc-2-0] applications. The JSON-RPC protocol is a stateless and lightweight protocol based on JSON that runs on top of HTTP/1.1. It offers the ability to invoke remote methods passing parameters and getting results as JSON values.
 
 ## Maven Coordinates
 
-To enable WebServer/JSON-RPC, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable WebServer/JSON-RPC, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
 
 ```xml [pom.xml]
 <dependency>
@@ -89,7 +89,7 @@ public record StartStopResult(String status) {
 ```
 
 > [!NOTE]
-> Custom types used during serialization and deserialization must be annotated with `@Json.Entity` and compiled with the Helidon JSON annotation processor. See [Enabling Code Generation](../../se/json/json.md#enabling-code-generation) for the Maven annotation processor setup.
+> Custom types used during serialization and deserialization must be annotated with `@Json.Entity` and compiled with the Helidon JSON annotation processor. See [Enabling Code Generation][enabling-code-generation] for the Maven annotation processor setup.
 
 ## Configuration
 
@@ -99,4 +99,9 @@ At the time of writing, there is no configuration that is specific to the JSON-R
 
 The code snippets in this document are part of the JSON-RPC example available here:
 
-- [JSON-RPC Machine Example](https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/webserver/jsonrpc)
+- [JSON-RPC Machine Example][json-rpc-machine-example]
+
+[json-rpc-2-0]: https://www.jsonrpc.org/specification
+[managing-dependencies]: ../../managing-dependencies.md
+[enabling-code-generation]: ../../se/json/json.md#enabling-code-generation
+[json-rpc-machine-example]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/webserver/jsonrpc

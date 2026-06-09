@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Helidon gRPC server provides a framework for building [gRPC](http://grpc.io/) applications. While it supports deploying any standard gRPC service that implements the `io.grpc.BindableService` interface—including those generated from Protobuf IDL files—it also allows a degree of customization.
+The Helidon gRPC server provides a framework for building [gRPC][grpc] applications. While it supports deploying any standard gRPC service that implements the `io.grpc.BindableService` interface—including those generated from Protobuf IDL files—it also allows a degree of customization.
 
 Using the Helidon gRPC framework to implement your services offers several advantages:
 
@@ -12,7 +12,7 @@ Using the Helidon gRPC framework to implement your services offers several advan
 
 ## Maven Coordinates
 
-To enable gRPC Server, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable gRPC Server, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
 
 ```xml [pom.xml]
 <dependency>
@@ -21,7 +21,7 @@ To enable gRPC Server, add the following dependency to your project’s `pom.xml
 </dependency>
 ```
 
-Additional dependencies may be required depending on your application needs. See the [gRPC SE Example](https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/webserver/grpc) for a complete example.
+Additional dependencies may be required depending on your application needs. See the [gRPC SE Example][grpc-se-example] for a complete example.
 
 ## Usage
 
@@ -61,7 +61,7 @@ When registering a service, regardless of its type, you can customize its descri
 
 #### Implementing Protobuf Services
 
-To implement Protobuf-based services, you can follow the official [instructions](https://grpc.io/docs/quickstart/java.html) on the gRPC website, which boil down to the following:
+To implement Protobuf-based services, you can follow the official [instructions][instructions] on the gRPC website, which boil down to the following:
 
 ##### Define the Service IDL
 
@@ -84,7 +84,7 @@ message EchoResponse {
 }
 ```
 
-When using Maven, `.proto` files should be placed under the `src/main/proto` directory. It’s recommended to use the `protobuf-maven-plugin` to compile these files as part of the Maven build process. You can refer to the [pom.xml](https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/webserver/grpc/pom.xml) file in the Helidon gRPC SE example for guidance.
+When using Maven, `.proto` files should be placed under the `src/main/proto` directory. It’s recommended to use the `protobuf-maven-plugin` to compile these files as part of the Maven build process. You can refer to the [pom.xml][pom-xml] file in the Helidon gRPC SE example for guidance.
 
 The Protobuf compiler generates message classes (EchoRequest and EchoResponse), client stubs (for making RPC calls to the server), and a base class for the server-side service implementation. In this example, we’ll ignore the generated base class and instead implement the service using the Helidon gRPC framework.
 
@@ -126,7 +126,7 @@ class EchoService implements GrpcService {
 - Send the response back to the client by completing the response observer.
 
 > [!NOTE]
-> The `complete` method shown in the example above is just one of many helper methods available in the `ResponseHelper` class. See the full list [here](/apidocs/io.helidon.webserver.grpc/io/helidon/webserver/grpc/ResponseHelper.html).
+> The `complete` method shown in the example above is just one of many helper methods available in the `ResponseHelper` class. See the full list [here][here].
 
 ### Server Interceptors
 
@@ -151,7 +151,7 @@ This routing includes two server interceptor instances of types `Interceptor1` a
 
 ### Metrics
 
-Helidon supports a few metrics that are specific to gRPC and are based on those defined in [gRPC OpenTelemetry Metrics](https://grpc.io/docs/guides/opentelemetry-metrics/). Metrics are disabled by default, but can be easily enabled via configuration as we shall discuss shortly.
+Helidon supports a few metrics that are specific to gRPC and are based on those defined in [gRPC OpenTelemetry Metrics][grpc-opentelemetry-metrics]. Metrics are disabled by default, but can be easily enabled via configuration as we shall discuss shortly.
 
 Here is the list of gRPC server metrics available in Helidon:
 
@@ -175,7 +175,7 @@ server:
       enable-metrics: true
 ```
 
-The configuration above shall enable metrics on the Webserver’s default port 8080. For more information see [Helidon Metrics](../../se/metrics/metrics.md).
+The configuration above shall enable metrics on the Webserver’s default port 8080. For more information see [Helidon Metrics][helidon-metrics].
 
 ## Configuration
 
@@ -223,7 +223,7 @@ features:
     enabled: true
 ```
 
-The feature accepts a list of sockets, or if omitted as seen above, it would enable the feature on all sockets. For security reasons, the gRPC reflection service is *disabled by default*; if enabled, it is recommended to disable the feature for production to avoid any unwanted requests. For more information about gRPC reflection, see [gRPC Reflection](https://grpc.io/docs/guides/reflection/).
+The feature accepts a list of sockets, or if omitted as seen above, it would enable the feature on all sockets. For security reasons, the gRPC reflection service is *disabled by default*; if enabled, it is recommended to disable the feature for production to avoid any unwanted requests. For more information about gRPC reflection, see [gRPC Reflection][grpc-reflection].
 
 ### Configuring Compression
 
@@ -244,5 +244,16 @@ Compression is always *enabled* by default in Helidon, but can be disabled as sh
 
 The following gRPC examples for Helidon SE are available:
 
-- [gRPC SE Example](https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/webserver/grpc)
-- [Multiple protocols on a single WebServer](https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/webserver/protocols)
+- [gRPC SE Example][grpc-se-example]
+- [Multiple protocols on a single WebServer][multiple-protocols-on-a-single-webserver]
+
+[grpc]: http://grpc.io/
+[managing-dependencies]: ../../managing-dependencies.md
+[grpc-se-example]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/webserver/grpc
+[instructions]: https://grpc.io/docs/quickstart/java.html
+[pom-xml]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/webserver/grpc/pom.xml
+[here]: /apidocs/io.helidon.webserver.grpc/io/helidon/webserver/grpc/ResponseHelper.html
+[grpc-opentelemetry-metrics]: https://grpc.io/docs/guides/opentelemetry-metrics/
+[helidon-metrics]: ../../se/metrics/metrics.md
+[grpc-reflection]: https://grpc.io/docs/guides/reflection/
+[multiple-protocols-on-a-single-webserver]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/webserver/protocols

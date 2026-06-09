@@ -8,10 +8,10 @@ For this 30 minute tutorial, you will need the following:
 
 | Requirement | Description |
 |-------------|-------------|
-| [Java 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
-| [Maven 3.8+](https://maven.apache.org/download.cgi) | Helidon requires Maven 3.8+. |
-| [Docker 18.09+](https://docs.docker.com/install/) | If you want to build and run Docker containers. |
-| [Kubectl 1.16.5+](https://kubernetes.io/docs/tasks/tools/install-kubectl/) | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
+| [Java 21][java-21] ([Open JDK 21][open-jdk-21]) | Helidon requires Java 21+ (25+ recommended). |
+| [Maven 3.8+][maven-3-8] | Helidon requires Maven 3.8+. |
+| [Docker 18.09+][docker-18-09] | If you want to build and run Docker containers. |
+| [Kubectl 1.16.5+][kubectl-1-16-5] | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
 | [curl](https://curl.se/download.html) | (Optional) for testing |
 
 Verify Prerequisites:
@@ -108,7 +108,7 @@ The POM file contains the basic project information and configurations needed to
 - Adds plugins to be executed during the build. The `maven-dependency-plugin` is used to copy the runtime dependencies into your target directory. The `jandex-maven-plugin` builds an index of your class files for faster loading. The Helidon parent pom handles the details of configuring these plugins. But you can modify the configuration here.
 
 > [!TIP]
-> MicroProfile contains features like Metrics, Health Check, Streams Operators, Open Tracing, OpenAPI, REST client, and fault tolerance. You can find detailed information about MicroProfile on the [Eclipse MicroProfile](https://projects.eclipse.org/projects/technology.microprofile) site.
+> MicroProfile contains features like Metrics, Health Check, Streams Operators, Open Tracing, OpenAPI, REST client, and fault tolerance. You can find detailed information about MicroProfile on the [Eclipse MicroProfile][eclipse-microprofile] site.
 
 With this `pom.xml`, the application can be built successfully with Maven:
 
@@ -157,7 +157,7 @@ public class GreetResource {
 ```
 
 - This class is annotated with `Path` which sets the path for this resource as `/greet`.
-- The `RequestScoped` annotation defines that this bean is request scoped. The request scope is active only for the duration of one web service invocation, and it is destroyed at the end of that invocation. You can learn more about scopes and contexts, and how they are used from the [Specification](https://jakarta.ee/specifications/cdi/4.0/jakarta-cdi-spec-4.0.html).
+- The `RequestScoped` annotation defines that this bean is request scoped. The request scope is active only for the duration of one web service invocation, and it is destroyed at the end of that invocation. You can learn more about scopes and contexts, and how they are used from the [Specification][specification].
 - A `public JsonObject getDefaultMessage()` method is defined which is annotated with `GET`, meaning it will accept the HTTP GET method. It is also annotated with `Produces(MediaType.APPLICATION_JSON)` which declares that this method will return JSON data.
 - The method body creates a JSON object containing a single object named "message" with the content "Hello World". This method will be expanded and improved later in the tutorial.
 
@@ -255,7 +255,7 @@ server.host=0.0.0.0
 Rebuild the application and run it again. Notice that it now uses port 8080 as specified in the configuration file.
 
 > [!TIP]
-> You can learn more about options for configuring the Helidon Server on the [Server Configuration](../server.md) page.
+> You can learn more about options for configuring the Helidon Server on the [Server Configuration][server-configuration] page.
 
 In addition to predefined server properties, application-specific configuration information can be added to this file. Add the `app.greeting` property to the file as shown below. This property will be used to set the content of greeting message.
 
@@ -335,7 +335,7 @@ public class GreetResource {
 Rebuild and run the application. Notice that it now uses the greeting from the configuration file. Change the configuration file and restart the application, notice that it uses the changed value.
 
 > [!TIP]
-> To learn more about Helidon MP configuration please see the [Config](../config/introduction.md) section of the documentation.
+> To learn more about Helidon MP configuration please see the [Config][config] section of the documentation.
 
 ## Extending the Application
 
@@ -488,7 +488,7 @@ curl -s http://localhost:8080/metrics | grep classloader_current
 Helidon also support custom metrics. To add a new metric, annotate the JAX-RS resource with one of the metric annotations as shown in the example below:
 
 > [!TIP]
-> You can find details of the available annotations in the [MicroProfile Metrics Specification](https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/microprofile-metrics-spec-5.1.1.html)
+> You can find details of the available annotations in the [MicroProfile Metrics Specification][microprofile-metrics-specification]
 
 Updated `GreetResource.java` with custom metrics:
 
@@ -530,7 +530,7 @@ curl -H "Accept: application/json" http://localhost:8080/metrics/application
 }
 ```
 
-Learn more about using Helidon and MicroProfile metrics in the [Metrics Guide](metrics.md).
+Learn more about using Helidon and MicroProfile metrics in the [Metrics Guide][metrics-guide].
 
 ## Health Check
 
@@ -618,7 +618,7 @@ public class GreetHealthcheck implements HealthCheck {
 }
 ```
 
-- This class has the MicroProfile `Liveness` annotation which tells Helidon that this class provides a custom health check. You can learn more about the available annotations in the [MicroProfile Health Protocol and Wireformat](https://download.eclipse.org/microprofile/microprofile-health-4.0/microprofile-health-spec-4.0.html##_protocol_and_wireformat) document.
+- This class has the MicroProfile `Liveness` annotation which tells Helidon that this class provides a custom health check. You can learn more about the available annotations in the [MicroProfile Health Protocol and Wireformat][microprofile-health-protocol-and-wireformat] document.
 - This class also has the `ApplicationScoped` annotation, as seen previously.
 - The `GreetingProvider` is injected using Context and Dependency Service. This example will use the greeting to determine whether the application is healthy, this is a contrived example for demonstration purposes.
 - Health checks must implement the `HealthCheck` functional interface, which includes the method `HealthCheckResponse call()`. Helidon will invoke the `call()` method to verify the healthiness of the application.
@@ -848,11 +848,24 @@ There were several links to more detailed information included in the tutorial. 
 
 ## Related links
 
-- [Eclipse MicroProfile](https://projects.eclipse.org/projects/technology.microprofile)
-- [Contexts and Dependency Injection Specification](https://jakarta.ee/specifications/cdi/4.0/jakarta-cdi-spec-4.0.html)
-- [Server Configuration](../server.md)
-- [Config](../config/introduction.md)
-- [MicroProfile Metrics Specification](https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/microprofile-metrics-spec-5.1.1.html)
-- [Metrics Guide](metrics.md)
-- [MicroProfile Health Protocol and Wireformat](https://download.eclipse.org/microprofile/microprofile-health-4.0/microprofile-health-spec-4.0.html##_protocol_and_wireformat)
+- [Eclipse MicroProfile][eclipse-microprofile]
+- [Contexts and Dependency Injection Specification][specification]
+- [Server Configuration][server-configuration]
+- [Config][config]
+- [MicroProfile Metrics Specification][microprofile-metrics-specification]
+- [Metrics Guide][metrics-guide]
+- [MicroProfile Health Protocol and Wireformat][microprofile-health-protocol-and-wireformat]
 - Access to a Kubernetes cluster
+
+[java-21]: https://www.oracle.com/technetwork/java/javase/downloads
+[open-jdk-21]: http://jdk.java.net
+[maven-3-8]: https://maven.apache.org/download.cgi
+[docker-18-09]: https://docs.docker.com/install/
+[kubectl-1-16-5]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
+[eclipse-microprofile]: https://projects.eclipse.org/projects/technology.microprofile
+[specification]: https://jakarta.ee/specifications/cdi/4.0/jakarta-cdi-spec-4.0.html
+[server-configuration]: ../server.md
+[config]: ../config/introduction.md
+[microprofile-metrics-specification]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/microprofile-metrics-spec-5.1.1.html
+[metrics-guide]: metrics.md
+[microprofile-health-protocol-and-wireformat]: https://download.eclipse.org/microprofile/microprofile-health-4.0/microprofile-health-spec-4.0.html##_protocol_and_wireformat

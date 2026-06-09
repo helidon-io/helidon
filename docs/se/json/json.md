@@ -28,9 +28,9 @@ The JSON Binding module (`helidon-json-binding`) provides high-level object seri
 
 #### What Code Generation Does and When to Use It
 
-Code generation is how Helidon automatically supports your POJOs annotated with JSON binding annotations. At compile time, the processor generates efficient serializers/deserializers for classes annotated with [`@Json.Entity`](/apidocs/io.helidon.json.binding/io/helidon/json/binding/Json.Entity.html).
+Code generation is how Helidon automatically supports your POJOs annotated with JSON binding annotations. At compile time, the processor generates efficient serializers/deserializers for classes annotated with [`@Json.Entity`][json-entity].
 
-Use code generation if you want an automatic, annotation-driven mapping for your POJOs. If you do not enable code generation, you can still use JSON binding by implementing the conversion yourself (implement [`JsonSerializer`](/apidocs/io.helidon.json.binding/io/helidon/json/binding/JsonSerializer.html), [`JsonDeserializer`](/apidocs/io.helidon.json.binding/io/helidon/json/binding/JsonDeserializer.html), [`JsonConverter`](/apidocs/io.helidon.json.binding/io/helidon/json/binding/JsonConverter.html), or a [`JsonBindingFactory`](/apidocs/io.helidon.json.binding/io/helidon/json/binding/JsonBindingFactory.html)).
+Use code generation if you want an automatic, annotation-driven mapping for your POJOs. If you do not enable code generation, you can still use JSON binding by implementing the conversion yourself (implement [`JsonSerializer`][jsonserializer], [`JsonDeserializer`][jsondeserializer], [`JsonConverter`][jsonconverter], or a [`JsonBindingFactory`][jsonbindingfactory]).
 
 #### Enabling Code Generation
 
@@ -101,9 +101,9 @@ Annotation processor configuration:
 
 ### JSON Binding
 
-The main entry point for JSON binding is the [`JsonBinding`](/apidocs/io.helidon.json.binding/io/helidon/json/binding/JsonBinding.html) class.
+The main entry point for JSON binding is the [`JsonBinding`][jsonbinding] class.
 
-The [`JsonBinding`](/apidocs/io.helidon.json.binding/io/helidon/json/binding/JsonBinding.html) API provides common serialization and deserialization methods:
+The [`JsonBinding`][jsonbinding] API provides common serialization and deserialization methods:
 
 JsonBinding usage:
 
@@ -623,11 +623,11 @@ See [Helidon Declarative](../injection/declarative.md#overview)
 
 ### Binding Factories
 
-For more complex scenarios where you need to create serializers and deserializers for entire type families or generic types, you can implement custom [`JsonBindingFactory`](/apidocs/io.helidon.json.binding/io/helidon/json/binding/JsonBindingFactory.html) instances. Binding factories are particularly useful for handling parameterized types, collections, or types that require special instantiation logic.
+For more complex scenarios where you need to create serializers and deserializers for entire type families or generic types, you can implement custom [`JsonBindingFactory`][jsonbindingfactory] instances. Binding factories are particularly useful for handling parameterized types, collections, or types that require special instantiation logic.
 
 #### What is a Binding Factory?
 
-A [`JsonBindingFactory`](/apidocs/io.helidon.json.binding/io/helidon/json/binding/JsonBindingFactory.html) is responsible for creating type-specific serializers and deserializers for a family of related types. Unlike individual converters that handle specific types, binding factories can create converters dynamically for various subtypes or parameterized versions of a base type.
+A [`JsonBindingFactory`][jsonbindingfactory] is responsible for creating type-specific serializers and deserializers for a family of related types. Unlike individual converters that handle specific types, binding factories can create converters dynamically for various subtypes or parameterized versions of a base type.
 
 #### How Binding Factories Work
 
@@ -665,7 +665,7 @@ The JSON module (`helidon-json`) provides fundamental JSON parsing and generatio
 
 ### JsonParser
 
-[`JsonParser`](/apidocs/io.helidon.json/io/helidon/json/JsonParser.html) is a streaming JSON parser that provides efficient, low-level access to JSON data without loading the entire document into memory. It’s designed for processing large JSON documents or streaming data sources.
+[`JsonParser`][jsonparser] is a streaming JSON parser that provides efficient, low-level access to JSON data without loading the entire document into memory. It’s designed for processing large JSON documents or streaming data sources.
 
 #### What it’s used for
 
@@ -751,7 +751,7 @@ This approach provides fine-grained control over parsing, allowing you to handle
 
 ### JsonGenerator
 
-[`JsonGenerator`](/apidocs/io.helidon.json/io/helidon/json/JsonGenerator.html) is a streaming JSON generator that builds JSON output efficiently. It provides a fluent API for constructing JSON documents without building intermediate representations.
+[`JsonGenerator`][jsongenerator] is a streaming JSON generator that builds JSON output efficiently. It provides a fluent API for constructing JSON documents without building intermediate representations.
 
 #### What it’s used for
 
@@ -813,11 +813,11 @@ This generates the following JSON output:
 
 ### JsonValue Types
 
-[`JsonValue`](/apidocs/io.helidon.json/io/helidon/json/JsonValue.html) is the base class for all JSON value types in Helidon. It provides a type-safe representation of JSON data with specific implementations for different JSON data types.
+[`JsonValue`][jsonvalue] is the base class for all JSON value types in Helidon. It provides a type-safe representation of JSON data with specific implementations for different JSON data types.
 
 #### JsonObject
 
-[`JsonObject`](/apidocs/io.helidon.json/io/helidon/json/JsonObject.html) represents a JSON object (key-value pairs enclosed in `{}`). It’s used for structured data with named properties.
+[`JsonObject`][jsonobject] represents a JSON object (key-value pairs enclosed in `{}`). It’s used for structured data with named properties.
 
 Using JsonObject:
 
@@ -846,7 +846,7 @@ JsonObject personWithAddress = JsonObject.builder()
 
 #### JsonArray
 
-[`JsonArray`](/apidocs/io.helidon.json/io/helidon/json/JsonArray.html) represents a JSON array (ordered list of values enclosed in `[]`). It’s used for collections of values.
+[`JsonArray`][jsonarray] represents a JSON array (ordered list of values enclosed in `[]`). It’s used for collections of values.
 
 Using JsonArray:
 
@@ -863,7 +863,7 @@ List<JsonValue> numberValues = numbers.values();
 
 #### JsonString
 
-[`JsonString`](/apidocs/io.helidon.json/io/helidon/json/JsonString.html) represents a JSON string value (text enclosed in `"`). It’s used for textual data.
+[`JsonString`][jsonstring] represents a JSON string value (text enclosed in `"`). It’s used for textual data.
 
 Using JsonString:
 
@@ -878,7 +878,7 @@ JsonString greeting = parser.readJsonString();
 
 #### JsonNumber
 
-[`JsonNumber`](/apidocs/io.helidon.json/io/helidon/json/JsonNumber.html) represents a JSON number value. It’s used for numeric data and provides access to different numeric types.
+[`JsonNumber`][jsonnumber] represents a JSON number value. It’s used for numeric data and provides access to different numeric types.
 
 Using JsonNumber:
 
@@ -895,7 +895,7 @@ JsonNumber number = parser.readJsonNumber();
 
 #### JsonBoolean
 
-[`JsonBoolean`](/apidocs/io.helidon.json/io/helidon/json/JsonBoolean.html) represents a JSON boolean value (`true` or `false`). It’s used for logical values.
+[`JsonBoolean`][jsonboolean] represents a JSON boolean value (`true` or `false`). It’s used for logical values.
 
 Using JsonBoolean:
 
@@ -908,7 +908,7 @@ JsonBoolean inactive = JsonBoolean.FALSE; // Predefined constants
 
 #### JsonNull
 
-[`JsonNull`](/apidocs/io.helidon.json/io/helidon/json/JsonNull.html) represents a JSON null value. It’s used when a value is absent or undefined.
+[`JsonNull`][jsonnull] represents a JSON null value. It’s used when a value is absent or undefined.
 
 Using JsonNull:
 
@@ -921,3 +921,19 @@ JsonArray array = JsonArray.create(List.of(
     JsonNull.instance(), // null value
     JsonString.create("value3")));
 ```
+
+[json-entity]: /apidocs/io.helidon.json.binding/io/helidon/json/binding/Json.Entity.html
+[jsonserializer]: /apidocs/io.helidon.json.binding/io/helidon/json/binding/JsonSerializer.html
+[jsondeserializer]: /apidocs/io.helidon.json.binding/io/helidon/json/binding/JsonDeserializer.html
+[jsonconverter]: /apidocs/io.helidon.json.binding/io/helidon/json/binding/JsonConverter.html
+[jsonbindingfactory]: /apidocs/io.helidon.json.binding/io/helidon/json/binding/JsonBindingFactory.html
+[jsonbinding]: /apidocs/io.helidon.json.binding/io/helidon/json/binding/JsonBinding.html
+[jsonparser]: /apidocs/io.helidon.json/io/helidon/json/JsonParser.html
+[jsongenerator]: /apidocs/io.helidon.json/io/helidon/json/JsonGenerator.html
+[jsonvalue]: /apidocs/io.helidon.json/io/helidon/json/JsonValue.html
+[jsonobject]: /apidocs/io.helidon.json/io/helidon/json/JsonObject.html
+[jsonarray]: /apidocs/io.helidon.json/io/helidon/json/JsonArray.html
+[jsonstring]: /apidocs/io.helidon.json/io/helidon/json/JsonString.html
+[jsonnumber]: /apidocs/io.helidon.json/io/helidon/json/JsonNumber.html
+[jsonboolean]: /apidocs/io.helidon.json/io/helidon/json/JsonBoolean.html
+[jsonnull]: /apidocs/io.helidon.json/io/helidon/json/JsonNull.html

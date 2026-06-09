@@ -2,11 +2,11 @@
 
 ## Overview
 
-HashiCorp Vault is a commonly used Vault in many microservices. The APIs are REST-based and Helidon implements them using [WebClient](../../se/webclient.md).
+HashiCorp Vault is a commonly used Vault in many microservices. The APIs are REST-based and Helidon implements them using [WebClient][webclient].
 
 ## Maven Coordinates
 
-To enable HashiCorp Vault, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable HashiCorp Vault, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
 
 ```xml [pom.xml]
 <dependency>
@@ -524,4 +524,8 @@ This will create a Vault docker image, run it in background and open it on `loca
 
 ## References
 
-- [Hashicorp Vault Usage Examples](https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/integrations/vault)
+- [Hashicorp Vault Usage Examples][hashicorp-vault-usage-examples]
+
+[webclient]: ../../se/webclient.md
+[managing-dependencies]: ../../managing-dependencies.md
+[hashicorp-vault-usage-examples]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/integrations/vault

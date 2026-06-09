@@ -132,7 +132,7 @@ public class CustomConfigSource implements ConfigSource {
 
 ## Creating MicroProfile Config Sources from meta-config
 
-Instead of directly specifying the configuration sources in your code, you can use meta-configuration in a file that declares the configuration sources, and their attributes as mentioned in [MicroProfile Config](introduction.md).
+Instead of directly specifying the configuration sources in your code, you can use meta-configuration in a file that declares the configuration sources, and their attributes as mentioned in [MicroProfile Config][microprofile-config].
 
 When used, the MicroProfile Config uses configuration sources and flags configured in the meta configuration file.
 
@@ -291,3 +291,5 @@ Config config = ConfigProviderResolver.instance()
 
 - Creates a config source from Helidon Config.
 - Creates a MicroProfile config instance using Helidon Config.
+
+[microprofile-config]: introduction.md

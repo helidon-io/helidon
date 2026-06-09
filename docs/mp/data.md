@@ -13,7 +13,7 @@ The Helidon Data Repository supports Jakarta Persistence and major providers suc
 
 ## Maven Coordinates
 
-To enable Data Repository, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+To enable Data Repository, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
 
 ```xml [pom.xml]
 <dependency>
@@ -564,3 +564,5 @@ public class KeeperService {
     }
 }
 ```
+
+[managing-dependencies]: ../managing-dependencies.md

@@ -11,7 +11,7 @@
 -->
 | Guide | Description |
 | --- | --- |
-| [Quickstart MP](quickstart.md) | Create your first Helidon MP application in under 5 minutes. |
+| [Quickstart MP][quickstart-mp] | Create your first Helidon MP application in under 5 minutes. |
 <!--/mdc -->
 
 ## Helidon MP Guides
@@ -58,18 +58,18 @@
 -->
 | Guide | Description |
 | --- | --- |
-| [MP Config Guide](config.md) | Learn how to configure a Helidon MP application. |
-| [MP LangChain4j Guide](langchain4j.md) | Learn how to create AI powered Helidon MP applications. |
-| [MP Health Check Guide](health.md) | Learn how to use Helidon MP built-in and custom health checks. |
-| [MP Metrics Guide](metrics.md) | Learn how to use Helidon MP built-in and application metrics. |
-| [MP Tracing Guide](tracing.md) | Learn how to trace a Helidon MP application. |
-| [Helidon MP Tutorial](mp-tutorial.md) | Learn how to build a Helidon MicroProfile (MP) application from scratch. |
-| [Helidon MP Upgrade guide](upgrade.md) | Learn how to upgrade your Helidon MP application from 1.x to 2.x. |
-| [OIDC Tutorial](security-oidc.md) | Learn how to set up OIDC security in your Helidon MP application. |
-| [Helidon MP Tracing](tracing.md) | Learn how to use tracing in your Helidon MP application. |
-| [Testing with JUnit 5](testing-junit5.md) | Learn how to use JUnit5 for testing your applications. |
-| [Helidon MP and JBatch](jbatch.md) | Learn how to use JBatch with Helidon MP. |
-| [Performance tuning in Helidon MP](performance-tuning.md) | Learn how to improve performance of your application. |
+| [MP Config Guide][mp-config-guide] | Learn how to configure a Helidon MP application. |
+| [MP LangChain4j Guide][mp-langchain4j-guide] | Learn how to create AI powered Helidon MP applications. |
+| [MP Health Check Guide][mp-health-check-guide] | Learn how to use Helidon MP built-in and custom health checks. |
+| [MP Metrics Guide][mp-metrics-guide] | Learn how to use Helidon MP built-in and application metrics. |
+| [MP Tracing Guide][mp-tracing-guide] | Learn how to trace a Helidon MP application. |
+| [Helidon MP Tutorial][helidon-mp-tutorial] | Learn how to build a Helidon MicroProfile (MP) application from scratch. |
+| [Helidon MP Upgrade guide][helidon-mp-upgrade-guide] | Learn how to upgrade your Helidon MP application from 1.x to 2.x. |
+| [OIDC Tutorial][oidc-tutorial] | Learn how to set up OIDC security in your Helidon MP application. |
+| [Helidon MP Tracing][mp-tracing-guide] | Learn how to use tracing in your Helidon MP application. |
+| [Testing with JUnit 5][testing-with-junit-5] | Learn how to use JUnit5 for testing your applications. |
+| [Helidon MP and JBatch][helidon-mp-and-jbatch] | Learn how to use JBatch with Helidon MP. |
+| [Performance tuning in Helidon MP][performance-tuning-in-helidon-mp] | Learn how to improve performance of your application. |
 <!--/mdc -->
 
 ## Build and Deploy
@@ -97,7 +97,23 @@
 | --- | --- |
 | [Maven Guide](maven-build.md) | Using Helidon in your Maven project. |
 | [Gradle Guide](gradle-build.md) | Using Helidon in your Gradle project. |
-| [GraalVM Native Images](graalnative.md) | Learn how to build a GraalVM native image for your Helidon application both on your desktop and as part of a Docker image. |
-| [Custom Runtime Images using jlink](jlink-image.md) | Learn how to build a custom runtime Java image for your Helidon application both on your desktop and as part of a Docker image. |
-| [Deploying to OCI](oci-guide.md) | Learn how to deploy your application to Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE). |
+| [GraalVM Native Images][graalvm-native-images] | Learn how to build a GraalVM native image for your Helidon application both on your desktop and as part of a Docker image. |
+| [Custom Runtime Images using jlink][custom-runtime-images-using-jlink] | Learn how to build a custom runtime Java image for your Helidon application both on your desktop and as part of a Docker image. |
+| [Deploying to OCI][deploying-to-oci] | Learn how to deploy your application to Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE). |
 <!--/mdc -->
+
+[quickstart-mp]: quickstart.md
+[mp-config-guide]: config.md
+[mp-langchain4j-guide]: langchain4j.md
+[mp-health-check-guide]: health.md
+[mp-metrics-guide]: metrics.md
+[mp-tracing-guide]: tracing.md
+[helidon-mp-tutorial]: mp-tutorial.md
+[helidon-mp-upgrade-guide]: upgrade.md
+[oidc-tutorial]: security-oidc.md
+[testing-with-junit-5]: testing-junit5.md
+[helidon-mp-and-jbatch]: jbatch.md
+[performance-tuning-in-helidon-mp]: performance-tuning.md
+[graalvm-native-images]: graalnative.md
+[custom-runtime-images-using-jlink]: jlink-image.md
+[deploying-to-oci]: oci-guide.md

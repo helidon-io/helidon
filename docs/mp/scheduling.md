@@ -2,11 +2,11 @@
 
 ## Overview
 
-Scheduling is an essential feature for the Enterprise. Helidon has its own implementation of Scheduling functionality based on [Cron-utils](https://github.com/jmrozanec/cron-utils).
+Scheduling is an essential feature for the Enterprise. Helidon has its own implementation of Scheduling functionality based on [Cron-utils][cron-utils].
 
 ## Maven Coordinates
 
-To enable Scheduling, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+To enable Scheduling, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
 
 ```xml [pom.xml]
 <dependency>
@@ -199,5 +199,9 @@ public void methodName(CronInvocation inv) {
 
 ## Reference
 
-- [Cron-utils GitHub page](https://github.com/jmrozanec/cron-utils)
-- [Helidon Scheduling Javadoc](/apidocs/io.helidon.microprofile.scheduling/io/helidon/microprofile/scheduling/package-summary.html)
+- [Cron-utils GitHub page][cron-utils]
+- [Helidon Scheduling Javadoc][helidon-scheduling-javadoc]
+
+[cron-utils]: https://github.com/jmrozanec/cron-utils
+[managing-dependencies]: ../managing-dependencies.md
+[helidon-scheduling-javadoc]: /apidocs/io.helidon.microprofile.scheduling/io/helidon/microprofile/scheduling/package-summary.html

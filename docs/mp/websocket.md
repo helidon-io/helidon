@@ -2,11 +2,11 @@
 
 ## Overview
 
-Helidon integrates with [Tyrus](https://projects.eclipse.org/projects/ee4j.tyrus) to provide support for the [Jakarta WebSocket API](https://jakarta.ee/specifications/websocket/2.1/jakarta-websocket-spec-2.1.html).
+Helidon integrates with [Tyrus][tyrus] to provide support for the [Jakarta WebSocket API][jakarta-websocket-api].
 
 ## Maven Coordinates
 
-To enable Jakarta Websocket, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+To enable Jakarta Websocket, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
 
 ```xml [pom.xml]
 <dependency>
@@ -113,7 +113,7 @@ the root path for WebSocket endpoints will be `"/web"` instead of the default `"
 
 All endpoint methods in Helidon MP are executed in a separate thread pool, independently of Netty. Therefore, there is no need to create additional threads for blocking or long-running operations as these will not affect Netty’s ability to process networking data.
 
-For more information see the [example](https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/webserver/websocket).
+For more information see the [example][example].
 
 ### WebSocket Endpoints on Different Ports
 
@@ -159,4 +159,10 @@ This example assumes that port 8888 is reserved for admin users and binds the `M
 
 - [Eclipse Tyrus](https://projects.eclipse.org/proposals/eclipse-tyrus)
 - [WebSocket RFC 6455](https://datatracker.ietf.org/doc/html/rfc6455)
-- [Helidon MicroProfile Tyrus Javadoc](/apidocs/io.helidon.microprofile.tyrus/module-summary.html)
+- [Helidon MicroProfile Tyrus Javadoc][helidon-microprofile-tyrus-javadoc]
+
+[tyrus]: https://projects.eclipse.org/projects/ee4j.tyrus
+[jakarta-websocket-api]: https://jakarta.ee/specifications/websocket/2.1/jakarta-websocket-spec-2.1.html
+[managing-dependencies]: ../managing-dependencies.md
+[example]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/webserver/websocket
+[helidon-microprofile-tyrus-javadoc]: /apidocs/io.helidon.microprofile.tyrus/module-summary.html

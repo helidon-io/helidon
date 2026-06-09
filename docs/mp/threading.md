@@ -10,7 +10,7 @@ Helidon MP supports a new `@ExecuteOn` annotation to give developers full contro
 
 ## Maven Coordinates
 
-To enable ExecuteOn, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+To enable ExecuteOn, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
 
 ```xml [pom.xml]
 <dependency>
@@ -47,7 +47,7 @@ execute-on:
     queue-capacity: 10
 ```
 
-For more information see the Javadoc for [io.helidon.common.configurable.ThreadPoolSupplier](/apidocs/io.helidon.common.configurable/io/helidon/common/configurable/ThreadPoolSupplier.html). For virtual threads, only the thread name prefix can be overridden as follows:
+For more information see the Javadoc for [io.helidon.common.configurable.ThreadPoolSupplier][io-helidon-common-configurable-threadpoolsupplier]. For virtual threads, only the thread name prefix can be overridden as follows:
 
 ```yaml
 execute-on:
@@ -111,3 +111,6 @@ execute-on:
     }
     }
     ```
+
+[managing-dependencies]: ../managing-dependencies.md
+[io-helidon-common-configurable-threadpoolsupplier]: /apidocs/io.helidon.common.configurable/io/helidon/common/configurable/ThreadPoolSupplier.html

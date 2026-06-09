@@ -10,10 +10,10 @@ The Helidon CLI is a standalone executable for Linux, macOS, and Windows systems
 
 ### Prerequisites
 
-| Requirement                                                                                             | Description                                  |
-|---------------------------------------------------------------------------------------------------------|----------------------------------------------|
-| [Java 21](https://www.oracle.com/technetwork/java/javase/downloads) ([OpenJDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
-| [Maven 3.8+](https://maven.apache.org/download.cgi)                                                     | Helidon requires Maven 3.8+.                 |
+| Requirement                                   | Description                                  |
+|-----------------------------------------------|----------------------------------------------|
+| [Java 21][java-21] ([OpenJDK 21][openjdk-21]) | Helidon requires Java 21+ (25+ recommended). |
+| [Maven 3.8+][maven-3-8]                       | Helidon requires Maven 3.8+.                 |
 
 Make sure `java` and `mvn` are in your PATH:
 
@@ -24,7 +24,7 @@ mvn --version
 
 > [!TIP]
 > If you are on Windows then you will need the Visual C+ Redistributable Runtime.
-> Download at [Microsoft Visual C++ Redistributable latest supported downloads](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-c-redistributable-v14).
+> Download at [Microsoft Visual C++ Redistributable latest supported downloads][microsoft-visual-c-redistributable-latest-supported-downloads].
 
 ### Install the Helidon CLI on Linux
 
@@ -54,7 +54,7 @@ If you get a "the developer cannot be verified" warning when you run the Helidon
 
 ### Install the Helidon CLI on Windows
 
-1.  Install PowerShell and Visual C++ Redistributable Runtime. See [Helidon on Windows](windows.md).
+1.  Install PowerShell and Visual C++ Redistributable Runtime.
 2.  Run the following command to download and install the Helidon CLI on Windows systems:
 
     ``` powershell
@@ -100,3 +100,8 @@ Watch the following demo to see some of the functionality of the Helidon CLI.
 <figure>
 <img src="images/cli/Helidon_cli.gif" alt="CLI Demo" />
 </figure>
+
+[java-21]: https://www.oracle.com/technetwork/java/javase/downloads
+[openjdk-21]: http://jdk.java.net
+[maven-3-8]: https://maven.apache.org/download.cgi
+[microsoft-visual-c-redistributable-latest-supported-downloads]: https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170#visual-c-redistributable-v14

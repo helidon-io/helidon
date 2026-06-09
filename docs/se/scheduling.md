@@ -2,11 +2,11 @@
 
 ## Overview
 
-Scheduling is an essential feature for the Enterprise. Helidon has its own implementation of Scheduling functionality based on [Cron-utils](https://github.com/jmrozanec/cron-utils).
+Scheduling is an essential feature for the Enterprise. Helidon has its own implementation of Scheduling functionality based on [Cron-utils][cron-utils].
 
 ## Maven Coordinates
 
-To enable Scheduling, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+To enable Scheduling, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
 
 ```xml [pom.xml]
 <dependency>
@@ -48,7 +48,7 @@ FixedRate.builder()
 | Key                                                                                                         | Kind    | Type                | Default Value          | Description                                                                                                                   |
 |-------------------------------------------------------------------------------------------------------------|---------|---------------------|------------------------|-------------------------------------------------------------------------------------------------------------------------------|
 | <span id="a12d22-delay-by"></span> `delay-by`                                                               | `VALUE` | `Duration`          | `PT0S`                 | Initial delay of the first invocation                                                                                         |
-| <span id="a394d5-delay-type"></span> [`delay-type`](../config/io_helidon_scheduling_FixedRate_DelayType.md) | `VALUE` | `i.h.s.F.DelayType` | `SINCE_PREVIOUS_START` | Configure whether the interval between the invocations should be calculated from the time when previous task started or ended |
+| <span id="a394d5-delay-type"></span> [`delay-type`][delay-type] | `VALUE` | `i.h.s.F.DelayType` | `SINCE_PREVIOUS_START` | Configure whether the interval between the invocations should be calculated from the time when previous task started or ended |
 | <span id="a39c2a-enabled"></span> `enabled`                                                                 | `VALUE` | `Boolean`           | `true`                 | Whether the task is enabled                                                                                                   |
 | <span id="a27a1a-id"></span> `id`                                                                           | `VALUE` | `String`            |                        | Identification of the started task                                                                                            |
 | <span id="a4b0e9-interval"></span> `interval`                                                               | `VALUE` | `Duration`          |                        | Fixed interval between each invocation                                                                                        |
@@ -59,7 +59,7 @@ FixedRate.builder()
 |-----------------------------------------------------------------------------------------------|---------|------------|--------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | <span id="a44d13-delay"></span> `delay`                                                       | `VALUE` | `Long`     |                    | Fixed rate delay between each invocation                                                                                                                                                                                    |
 | <span id="a91a8f-initial-delay"></span> `initial-delay`                                       | `VALUE` | `Long`     |                    | Initial delay of the first invocation                                                                                                                                                                                       |
-| <span id="a776bc-time-unit"></span> [`time-unit`](../config/java_util_concurrent_TimeUnit.md) | `VALUE` | `TimeUnit` | `TimeUnit.SECONDS` | `java.util.concurrent.TimeUnit TimeUnit` used for interpretation of values provided with `io.helidon.scheduling.FixedRateConfig.Builder#delay(long)` and `io.helidon.scheduling.FixedRateConfig.Builder#initialDelay(long)` |
+| <span id="a776bc-time-unit"></span> [`time-unit`][time-unit] | `VALUE` | `TimeUnit` | `TimeUnit.SECONDS` | `java.util.concurrent.TimeUnit TimeUnit` used for interpretation of values provided with `io.helidon.scheduling.FixedRateConfig.Builder#delay(long)` and `io.helidon.scheduling.FixedRateConfig.Builder#initialDelay(long)` |
 
 ### Cron
 
@@ -205,5 +205,11 @@ FixedRate.builder()
 
 ## Reference
 
-- [Cron-utils GitHub page](https://github.com/jmrozanec/cron-utils)
-- [Helidon Scheduling Javadoc](/apidocs/io.helidon.microprofile.scheduling/io/helidon/microprofile/scheduling/package-summary.html)
+- [Cron-utils GitHub page][cron-utils]
+- [Helidon Scheduling Javadoc][helidon-scheduling-javadoc]
+
+[cron-utils]: https://github.com/jmrozanec/cron-utils
+[managing-dependencies]: ../managing-dependencies.md
+[delay-type]: ../config/io_helidon_scheduling_FixedRate_DelayType.md
+[time-unit]: ../config/java_util_concurrent_TimeUnit.md
+[helidon-scheduling-javadoc]: /apidocs/io.helidon.microprofile.scheduling/io/helidon/microprofile/scheduling/package-summary.html

@@ -10,8 +10,8 @@ Helidon WebServer is in large part self tuning. It uses default values that will
 
 For details on the following options please see:
 
-- [WebServer Configuration](../../se/webserver/webserver.md#configuration-options)
-- [WebServer Socket Configuration](../../config/io_helidon_common_socket_SocketOptions.md)
+- [WebServer Configuration][webserver-configuration]
+- [WebServer Socket Configuration][webserver-socket-configuration]
 
 ## Summary of Tuning Options
 
@@ -62,3 +62,6 @@ server:
       send-log: true|false
 ```
 <!--@mdc :: -->
+
+[webserver-configuration]: ../../se/webserver/webserver.md#configuration-options
+[webserver-socket-configuration]: ../../config/io_helidon_common_socket_SocketOptions.md

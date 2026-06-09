@@ -6,7 +6,7 @@ In Helidon 4 all observability features were moved to one logical module: `obser
 
 ## Maven Coordinates
 
-To enable Helidon Observability, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+To enable Helidon Observability, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
 
 ```xml [pom.xml]
 <dependency>
@@ -129,7 +129,7 @@ Health observability allows reading application readiness to serve requests, whe
 | `/health/started/{name}` | `HEAD` | Returns whether the service `name` is started without details |
 | `/health/check/{name}`   | `HEAD` | Returns all checks for service `name` without details         |
 
-For more information, please, check [Health](../se/health.md) documentation.
+For more information, please, check [Health][health] documentation.
 
 #### Information Observability
 
@@ -181,7 +181,7 @@ Clients can also limit the report by appending the metric type to the path:
 - `/observe/metrics/vendor`
 - `/observe/metrics/application`
 
-For more information see [Metrics](../se/metrics/metrics.md) documentation.
+For more information see [Metrics][metrics] documentation.
 
 ## Configuration
 
@@ -198,7 +198,7 @@ To control the observability features as a whole, add config settings under `ser
 |-----------------------------------------------------------------------------------------------------------|---------|----------------------|---------------|---------------------------------------------------------------|
 | <span id="a42c15-enabled"></span> `enabled`                                                               | `VALUE` | `Boolean`            | `true`        | Whether the observe support is enabled                        |
 | <span id="a0d210-endpoint"></span> `endpoint`                                                             | `VALUE` | `String`             | `/observe`    | Root endpoint to use for observe providers                    |
-| <span id="a837f0-observers"></span> [`observers`](../config/io_helidon_webserver_observe_spi_Observer.md) | `LIST`  | `i.h.w.o.s.Observer` |               | Observers to use with this observe features                   |
+| <span id="a837f0-observers"></span> [`observers`][observers] | `LIST`  | `i.h.w.o.s.Observer` |               | Observers to use with this observe features                   |
 | <span id="a1e406-observers-discover-services"></span> `observers-discover-services`                       | `VALUE` | `Boolean`            | `true`        | Whether to enable automatic service discovery for `observers` |
 | <span id="ace9c3-sockets"></span> `sockets`                                                               | `LIST`  | `String`             |               | Sockets the observability endpoint should be exposed on       |
 | <span id="a1bc81-weight"></span> `weight`                                                                 | `VALUE` | `Double`             | `80.0`        | Change the weight of this feature                             |
@@ -207,7 +207,7 @@ To control the observability features as a whole, add config settings under `ser
 
 | Key                                                                                     | Kind    | Type                      | Description                                                                   |
 |-----------------------------------------------------------------------------------------|---------|---------------------------|-------------------------------------------------------------------------------|
-| <span id="a25a02-cors"></span> [`cors`](../config/io_helidon_cors_CrossOriginConfig.md) | `VALUE` | `i.h.c.CrossOriginConfig` | Cors support inherited by each observe provider, unless explicitly configured |
+| <span id="a25a02-cors"></span> [`cors`][cors] | `VALUE` | `i.h.c.CrossOriginConfig` | Cors support inherited by each observe provider, unless explicitly configured |
 
 ## Additional Information
 
@@ -220,6 +220,13 @@ Feature is similar to `HttpService` but gives more freedom in setup. Main differ
 
 ## Reference
 
-- [MicroProfile Metrics Specification](https://download.eclipse.org/microprofile/microprofile-metrics-5.0.0/microprofile-metrics-spec-5.0.0.pdf)
-- [Metrics](../se/metrics/metrics.md) documentation.
-- [Health](../se/health.md) documentation.
+- [MicroProfile Metrics Specification][microprofile-metrics-specification]
+- [Metrics][metrics] documentation.
+- [Health][health] documentation.
+
+[managing-dependencies]: ../managing-dependencies.md
+[health]: ../se/health.md
+[metrics]: ../se/metrics/metrics.md
+[observers]: ../config/io_helidon_webserver_observe_spi_Observer.md
+[cors]: ../config/io_helidon_cors_CrossOriginConfig.md
+[microprofile-metrics-specification]: https://download.eclipse.org/microprofile/microprofile-metrics-5.0.0/microprofile-metrics-spec-5.0.0.pdf

@@ -6,7 +6,7 @@ Connecting streams to JMS with Reactive Messaging couldn’t be easier.
 
 ## Maven Coordinates
 
-To enable JMS Connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable JMS Connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
 
 ```xml [pom.xml]
 <dependency>
@@ -23,7 +23,7 @@ Connector name: `helidon-jms`
 
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
-| <span id="a4169a-acknowledge-mode"></span> [`acknowledge-mode`](../../config/io_helidon_messaging_connectors_jms_AcknowledgeMode.md) | `VALUE` | `i.h.m.c.j.AcknowledgeMode` | `AUTO_ACKNOWLEDGE` | JMS acknowledgement mode |
+| <span id="a4169a-acknowledge-mode"></span> [`acknowledge-mode`][acknowledge-mode] | `VALUE` | `i.h.m.c.j.AcknowledgeMode` | `AUTO_ACKNOWLEDGE` | JMS acknowledgement mode |
 | <span id="a871ed-destination"></span> `destination` | `VALUE` | `String` |   | Queue or topic name |
 | <span id="ad3b43-jndi-initial-context-properties"></span> `jndi-initial-context-properties` | `MAP` | `String` |   | Environment properties used for creating initial context java.naming.factory.initial, java.naming.provider.url |
 | <span id="a0518f-jndi-initial-factory"></span> `jndi-initial-factory` | `VALUE` | `String` |   | JNDI initial factory |
@@ -38,7 +38,7 @@ Connector name: `helidon-jms`
 | <span id="a0f3a9-session-group-id"></span> `session-group-id` | `VALUE` | `String` |   | When multiple channels share same session-group-id, they share same JMS session |
 | <span id="ab90ce-topic"></span> `topic` | `VALUE` | `String` |   | Use supplied destination name and `Type#TOPIC TOPIC` as type |
 | <span id="ac2dc3-transacted"></span> `transacted` | `VALUE` | `Boolean` | `false` | Indicates whether the session will use a local transaction |
-| <span id="aef876-type"></span> [`type`](../../config/io_helidon_messaging_connectors_jms_Type.md) | `VALUE` | `i.h.m.c.j.Type` | `QUEUE` | Specify if connection is `Type#QUEUE queue` or `Type#TOPIC topic` |
+| <span id="aef876-type"></span> [`type`][type] | `VALUE` | `i.h.m.c.j.Type` | `QUEUE` | Specify if connection is `Type#QUEUE queue` or `Type#TOPIC topic` |
 | <span id="af0324-username"></span> `username` | `VALUE` | `String` |   | User name used for creating JMS connection |
 
 > [!TIP]
@@ -187,3 +187,7 @@ public PublisherBuilder<Message<String>> produceToJms() {
             );
 }
 ```
+
+[managing-dependencies]: ../../managing-dependencies.md
+[acknowledge-mode]: ../../config/io_helidon_messaging_connectors_jms_AcknowledgeMode.md
+[type]: ../../config/io_helidon_messaging_connectors_jms_Type.md

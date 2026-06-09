@@ -8,10 +8,10 @@ For this 10 minute tutorial, you will need the following:
 
 | Requirement | Description |
 |-------------|-------------|
-| [Java 21](https://www.oracle.com/technetwork/java/javase/downloads) ([Open JDK 21](http://jdk.java.net)) | Helidon requires Java 21+ (25+ recommended). |
-| [Maven 3.8+](https://maven.apache.org/download.cgi) | Helidon requires Maven 3.8+. |
-| [Docker 18.09+](https://docs.docker.com/install/) | If you want to build and run Docker containers. |
-| [Kubectl 1.16.5+](https://kubernetes.io/docs/tasks/tools/install-kubectl/) | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
+| [Java 21][java-21] ([Open JDK 21][open-jdk-21]) | Helidon requires Java 21+ (25+ recommended). |
+| [Maven 3.8+][maven-3-8] | Helidon requires Maven 3.8+. |
+| [Docker 18.09+][docker-18-09] | If you want to build and run Docker containers. |
+| [Kubectl 1.16.5+][kubectl-1-16-5] | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
 
 Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
@@ -35,7 +35,7 @@ export JAVA_HOME=`/usr/libexec/java_home -v 21`
 export JAVA_HOME=/usr/lib/jvm/jdk-21
 ```
 
-Helidon MP supports [WebServer routing](../server.md) which brings possibility for reusing `io.helidon.webserver.HttpService` implementations in Helidon MP. Such feature can be quite useful for common solutions for filtering, auditing, logging or augmenting REST endpoints in hybrid Helidon SE/MP environment.
+Helidon MP supports [WebServer routing][webserver-routing] which brings possibility for reusing `io.helidon.webserver.HttpService` implementations in Helidon MP. Such feature can be quite useful for common solutions for filtering, auditing, logging or augmenting REST endpoints in hybrid Helidon SE/MP environment.
 
 Let’s define simple Helidon SE Service for adding special header to every REST response:
 
@@ -92,4 +92,11 @@ public class MyBean {
 You can leverage annotations:
 
 - @RoutingPath - path of the WebServer service
-- @RoutingName - select routing when [serving requests on multiple ports](../server.md)
+- @RoutingName - select routing when [serving requests on multiple ports][webserver-routing]
+
+[java-21]: https://www.oracle.com/technetwork/java/javase/downloads
+[open-jdk-21]: http://jdk.java.net
+[maven-3-8]: https://maven.apache.org/download.cgi
+[docker-18-09]: https://docs.docker.com/install/
+[kubectl-1-16-5]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
+[webserver-routing]: ../server.md

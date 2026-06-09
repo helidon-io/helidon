@@ -13,7 +13,7 @@ To choose a configuration profile to use at runtime, you can use:
 
 There are two ways to define a profile configuration:
 
-1.  Use a config source with a [profile specific name](#profile-config-sources)
+1.  Use a config source with a [profile specific name][profile-specific-name]
 2.  Use a [profile file](#profile-files) defining all configuration sources
 
 Configuration profiles can only be used when config is created using the `Config.create()` method without parameters. If you explicitly configure sources, profiles are ignored.
@@ -44,9 +44,9 @@ Let’s consider the selected profile is `dev`, and we have `yaml` configuration
 3.  `config-profile-dev.yaml` on classpath
 4.  `config-profile-dev.properties` on classpath
 
-If any of these files is discovered, it would be used to set up the configuration. In case none is found, the config falls back to [profile specific config sources](#profile-config-sources).
+If any of these files is discovered, it would be used to set up the configuration. In case none is found, the config falls back to [profile specific config sources][profile-specific-name].
 
-The structure of the file is described below in [profile file format](#profile-file-format).
+The structure of the file is described below in [profile file format][profile-file-format].
 
 In case you need to customize the location of the profile file, you can use the system property `io.helidon.config.meta-config`. For example if it is configured to `config/profile.yaml`, config looks for file `config/profile-dev.yaml` when `dev` profile is configured.
 
@@ -159,7 +159,7 @@ The config system supports these built-in types:
 </tbody>
 </table>
 
-Except for the `system-properties` and `environment-variables` types, the profile `properties` section for a source can also specify any optional settings for the corresponding config source type. The Javadoc for the related config source type builders lists the supported properties for each type. (For example, [`FileConfigSource.Builder`](/apidocs/io.helidon.config/io/helidon/config/FileConfigSource.Builder.html).)
+Except for the `system-properties` and `environment-variables` types, the profile `properties` section for a source can also specify any optional settings for the corresponding config source type. The Javadoc for the related config source type builders lists the supported properties for each type. (For example, [`FileConfigSource.Builder`][fileconfigsource-builder].)
 
 Here is an example profile in YAML format. Note how the `properties` sections are at the same level as the `type` or `class` within a `sources` array entry.
 
@@ -268,7 +268,7 @@ Your config profile can include the set-up for polling strategies, change watche
 
 | Strategy Type | Usage | Properties |
 |----|----|----|
-| `regular` | Periodic polling - See [`PollingStrategies.regular`](/apidocs/io.helidon.config/io/helidon/config/PollingStrategies.html#regular-java.time.Duration-) method | `interval` (`Duration`) - indicating how often to poll; e.g., `PT15S` represents 15 seconds |
+| `regular` | Periodic polling - See [`PollingStrategies.regular`][pollingstrategies-regular] method | `interval` (`Duration`) - indicating how often to poll; e.g., `PT15S` represents 15 seconds |
 
 Config Profile Support for Built-in Polling Strategies
 
@@ -329,7 +329,7 @@ Config Profile Support for Built-in Polling Strategies
 
 To specify a custom polling strategy or custom retry policy, implement the interface (`io.helidon.config.spi.PollingStrategy`, `io.helidon.config.spi.ChangeWatcher`, or `io.helidon.config.spi.RetryPolicy`), and then implement the provider interface (`io.helidon.config.spi.PollingStrategyProvider`, `io.helidon.config.spi.ChangeWatcherProvider`, or `io.helidon.config.spi.RetryPolicyProvider`) to enable your custom implementations for profiles. You can then use any custom properties - these are provided as a `Config` instance to the `create` method of the Provider implementation.
 
-See [`RetryPolicy`](/apidocs/io.helidon.config/io/helidon/config/spi/RetryPolicy.html), [`ChangeWatcher`](/apidocs/io.helidon.config/io/helidon/config/spi/ChangeWatcher.html), and [`PollingStrategy`](/apidocs/io.helidon.config/io/helidon/config/spi/PollingStrategy.html) Javadoc sections.
+See [`RetryPolicy`][retrypolicy], [`ChangeWatcher`][changewatcher], and [`PollingStrategy`][pollingstrategy] Javadoc sections.
 
 ## Declarative
 
@@ -382,3 +382,11 @@ public class MyProfiledConfigSource implements NodeConfigSource {
     }
 }
 ```
+
+[profile-specific-name]: #profile-config-sources
+[profile-file-format]: #profile-file-format
+[fileconfigsource-builder]: /apidocs/io.helidon.config/io/helidon/config/FileConfigSource.Builder.html
+[pollingstrategies-regular]: /apidocs/io.helidon.config/io/helidon/config/PollingStrategies.html#regular-java.time.Duration-
+[retrypolicy]: /apidocs/io.helidon.config/io/helidon/config/spi/RetryPolicy.html
+[changewatcher]: /apidocs/io.helidon.config/io/helidon/config/spi/ChangeWatcher.html
+[pollingstrategy]: /apidocs/io.helidon.config/io/helidon/config/spi/PollingStrategy.html

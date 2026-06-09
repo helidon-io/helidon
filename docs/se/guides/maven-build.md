@@ -12,14 +12,14 @@ Helidon supports Maven by providing the following:
 
 ## The Helidon Application POM
 
-Helidon examples and projects generated using the [Helidon Quickstart](../../se/guides/quickstart.md) use a Helidon application POM as their parent. This parent POM provides the following:
+Helidon examples and projects generated using the [Helidon Quickstart][helidon-quickstart] use a Helidon application POM as their parent. This parent POM provides the following:
 
 1.  Helidon dependency management.
 2.  Maven plugin configurations to help in the building and packaging of your Helidon application.
 
-If you want to use your own parent POM, then take a look at the [standalone quickstart example](https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/quickstarts/helidon-standalone-quickstart-se). This example has a standalone POM that you can pattern your own application POM after.
+If you want to use your own parent POM, then take a look at the [standalone quickstart example][standalone-quickstart-example]. This example has a standalone POM that you can pattern your own application POM after.
 
-For more details on Helidon application POMs see the [Helidon’s Application POMS](https://github.com/helidon-io/helidon/tree/main/docs-internal/application-pom.md)
+For more details on Helidon application POMs see the [Helidon’s Application POMS][helidon-s-application-poms]
 
 ## Dependency Management
 
@@ -63,10 +63,10 @@ Component dependency:
 
 Helidon provides a Maven plugin that, among other things, provides the following goals:
 
-1.  jlink-image: Build a [custom runtime Java image](../../se/guides/jlink-image.md).
-2.  native-image: Build a [GraalVM native image](../../se/guides/graalnative.md). Note: this capability is now provided via the [Maven plugin for GraalVM Native Image](https://graalvm.github.io/native-build-tools/latest/maven-plugin.html)
+1.  jlink-image: Build a [custom runtime Java image][custom-runtime-java-image].
+2.  native-image: Build a [GraalVM native image][graalvm-native-image]. Note: this capability is now provided via the [Maven plugin for GraalVM Native Image][maven-plugin-for-graalvm-native-image]
 
-For full documentation of the plugin please see the [Helidon Maven Plugin README](https://github.com/helidon-io/helidon-build-tools/tree/master/maven-plugins/helidon-maven-plugin).
+For full documentation of the plugin please see the [Helidon Maven Plugin README][helidon-maven-plugin-readme].
 
 If you use the Helidon application parent POM you will have this plugin configured for you. If you need to customize the `helidon-maven-plugin` you can do so in a few ways:
 
@@ -119,3 +119,11 @@ Turn off generation of the CDS Archive when generating a custom Java runtime ima
   </pluginManagement>
 </build>
 ```
+
+[helidon-quickstart]: ../../se/guides/quickstart.md
+[standalone-quickstart-example]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/quickstarts/helidon-standalone-quickstart-se
+[helidon-s-application-poms]: https://github.com/helidon-io/helidon/tree/main/docs-internal/application-pom.md
+[custom-runtime-java-image]: ../../se/guides/jlink-image.md
+[graalvm-native-image]: ../../se/guides/graalnative.md
+[maven-plugin-for-graalvm-native-image]: https://graalvm.github.io/native-build-tools/latest/maven-plugin.html
+[helidon-maven-plugin-readme]: https://github.com/helidon-io/helidon-build-tools/tree/master/maven-plugins/helidon-maven-plugin

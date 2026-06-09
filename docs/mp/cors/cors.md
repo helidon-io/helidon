@@ -2,7 +2,7 @@
 
 ## Overview
 
-The [cross-origin resource sharing (CORS) protocol](https://www.w3.org/TR/cors) helps developers control if and how REST resources served by their applications can be shared across origins. Helidon MP includes an implementation of CORS that you can use to add CORS behavior to the services you develop. You can define your application’s CORS behavior programmatically using the Helidon CORS API alone or together with configuration.
+The [cross-origin resource sharing (CORS) protocol][cross-origin-resource-sharing-cors-protocol] helps developers control if and how REST resources served by their applications can be shared across origins. Helidon MP includes an implementation of CORS that you can use to add CORS behavior to the services you develop. You can define your application’s CORS behavior programmatically using the Helidon CORS API alone or together with configuration.
 
 ## Before You Begin
 
@@ -12,7 +12,7 @@ Once you know the type of sharing you want to allow for each of your resources�
 
 ## Maven Coordinates
 
-To enable CORS, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable CORS, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies][managing-dependencies]).
 
 ```xml [pom.xml]
 <dependency>
@@ -41,24 +41,24 @@ For each resource class in your application:
 1.  Identify the resources and sub-resources—​in other words, the paths—​declared in the resource class which you want to support CORS.
 2.  For each of those resources and sub-resources which should support CORS:
     1.  Find or create a Java method annotated with `@OPTIONS` and with the correct `@Path`.
-    2.  To that `@OPTIONS` Java method add a Helidon [`@Cors.*`](/apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/Cors.html) annotation(s) that describes the cross-origin sharing you want for that resource.
+    2.  To that `@OPTIONS` Java method add a Helidon [`@Cors.*`][cors] annotation(s) that describes the cross-origin sharing you want for that resource.
 
 > [!NOTE]
 > Use the `@Cors.*` annotations *only* on methods which also have the `@OPTIONS` annotation. Remember that the CORS settings apply to a given path and therefore to all Java resource methods which share that path.
 >
 > Helidon MP aborts the server start-up if you use the `@Cors.*` annotations on a resource method other than an `@OPTIONS` method.
 >
-> For an informal look at the reasons for applying the `@Cors.*` annotations to the `@OPTIONS` method, instead of another method, see [Why `@OPTIONS`?](../../mp/cors/why-options.md).
+> For an informal look at the reasons for applying the `@Cors.*` annotations to the `@OPTIONS` method, instead of another method, see [Why `@OPTIONS`?][why-options].
 
 The following annotations are available:
 
-- [\`@Cors.Defaults](/apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/Cors.Defaults.html) - has no values, applies all defaults (do not combine with annotations below)
-- [\`@Cors.AllowOrigins](/apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/Cors.AllowOrigins.html) - value is the allowed origins, defaults to all origins
-- [\`@Cors.AllowHeaders](/apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/Cors.AllowHeaders.html) - value is the allowed HTTP header names, defaults to all headers
-- [\`@Cors.AllowMethods](/apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/Cors.AllowMethods.html) - value is the allowed HTTP method names, defaults to all methods
-- [\`@Cors.ExposeHeaders](/apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/Cors.ExposeHeaders.html) - value is the exposed HTTP header names, defaults to none
-- [\`@Cors.AllowCredentials](/apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/Cors.AllowCredentials.html) - value is a boolean, defaults to false
-- [\`@Cors.MaxAgeSeconds](/apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/Cors.MaxAgeSeconds.html) - value is the max age as a number of seconds
+- [\`@Cors.Defaults][cors-defaults] - has no values, applies all defaults (do not combine with annotations below)
+- [\`@Cors.AllowOrigins][cors-alloworigins] - value is the allowed origins, defaults to all origins
+- [\`@Cors.AllowHeaders][cors-allowheaders] - value is the allowed HTTP header names, defaults to all headers
+- [\`@Cors.AllowMethods][cors-allowmethods] - value is the allowed HTTP method names, defaults to all methods
+- [\`@Cors.ExposeHeaders][cors-exposeheaders] - value is the exposed HTTP header names, defaults to none
+- [\`@Cors.AllowCredentials][cors-allowcredentials] - value is a boolean, defaults to false
+- [\`@Cors.MaxAgeSeconds][cors-maxageseconds] - value is the max age as a number of seconds
 
 ## Configuration
 
@@ -89,7 +89,7 @@ cors.paths.i.enabled=
 
 The system uses the index `i`, not the position in the config file, to identify the settings for a particular resource.
 
-Path patterns can be any expression accepted by the [`PathMatcher`](/apidocs/io.helidon.http/io/helidon/http/PathMatcher.html) class.
+Path patterns can be any expression accepted by the [`PathMatcher`][pathmatcher] class.
 
 > [!NOTE]
 > Helidon scans the cross-origin entries in index order (0, 1, 2, etc.) until it finds an entry that matches an incoming request’s path and HTTP method, so be sure to assign index values to the entries so Helidon will check them in the order you want. In particular, use lower index values for entries with more specific path patterns.
@@ -111,12 +111,12 @@ Each annotation in `Cors` class (except for `Defaults`) is mapped to one of the 
 
 ## Examples
 
-The [Helidon MP Quickstart application](https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/quickstarts/helidon-quickstart-mp) allows users to:
+The [Helidon MP Quickstart application][helidon-mp-quickstart-application] allows users to:
 
 - obtain greetings by sending `GET` requests to the `/greet` resource, and
 - change the greeting message by sending a `PUT` request to the `/greet/greeting` resource.
 
-The [Helidon MP CORS Example](https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/microprofile/cors) shows the basic quickstart example enhanced for CORS.
+The [Helidon MP CORS Example][helidon-mp-cors-example] shows the basic quickstart example enhanced for CORS.
 
 The discussion below describes the changes in the application which:
 
@@ -204,7 +204,7 @@ cors.paths.1.allow-origins=https://foo.com
 
 The decisions the Helidon CORS feature makes depend on accurate information about each incoming request, particularly the host to which the request is sent. Conveyed as headers in the request, this information can be changed or overwritten by intermediate nodes—​such as load balancers—​between the origin of the request and your service.
 
-Well-behaved intermediate nodes preserve this important data in other headers, such as `Forwarded`. You can configure how the Helidon server handles these headers as described in the documentation for [requested URI discovery](../../mp/server.md#using-requested-uri-discovery).
+Well-behaved intermediate nodes preserve this important data in other headers, such as `Forwarded`. You can configure how the Helidon server handles these headers as described in the documentation for [requested URI discovery][requested-uri-discovery].
 
 The CORS support in Helidon uses the requested URI feature to discover the correct information about each request, according to your configuration, so it can make accurate decisions about whether to permit cross-origin accesses.
 
@@ -318,3 +318,19 @@ content-length: 461
 
 {"outcome":"UP",...}
 ```
+
+[cross-origin-resource-sharing-cors-protocol]: https://www.w3.org/TR/cors
+[managing-dependencies]: ../../managing-dependencies.md
+[cors]: /apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/Cors.html
+[why-options]: ../../mp/cors/why-options.md
+[cors-defaults]: /apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/Cors.Defaults.html
+[cors-alloworigins]: /apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/Cors.AllowOrigins.html
+[cors-allowheaders]: /apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/Cors.AllowHeaders.html
+[cors-allowmethods]: /apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/Cors.AllowMethods.html
+[cors-exposeheaders]: /apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/Cors.ExposeHeaders.html
+[cors-allowcredentials]: /apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/Cors.AllowCredentials.html
+[cors-maxageseconds]: /apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/Cors.MaxAgeSeconds.html
+[pathmatcher]: /apidocs/io.helidon.http/io/helidon/http/PathMatcher.html
+[helidon-mp-quickstart-application]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/quickstarts/helidon-quickstart-mp
+[helidon-mp-cors-example]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/microprofile/cors
+[requested-uri-discovery]: ../../mp/server.md#using-requested-uri-discovery
