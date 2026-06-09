@@ -197,7 +197,7 @@ public class MyBatchlet extends AbstractBatchlet {
 
 Add this code to your job descriptor.xml file:
 
-```xml [Updated descriptor file]
+```xml [descriptor.xml]
 <job id="myJob" xmlns="https://jakarta.ee/xml/ns/jakartaee"
                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                 xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/jobXML_2_0.xsd"
@@ -225,7 +225,9 @@ Add this code to your job descriptor.xml file:
 
 Create a small endpoint to activate the job:
 
-```java [new endpoint]
+new endpoint:
+
+```java
 @Path("/batch")
 @ApplicationScoped
 public class BatchResource {

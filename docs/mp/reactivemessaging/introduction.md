@@ -54,14 +54,18 @@ Consuming method can function in two ways:
 - consume every message coming from the stream connected to the [channels](#channels) - invoked per each message
 - prepare reactive stream’s subscriber and connect it to the channel - invoked only once during the channel construction
 
-```java [Example consuming every message from channel example-channel-2]
+Example consuming every message from channel example-channel-2:
+
+```java
 @Incoming("example-channel-2")
 public void printMessage(String msg) {
     System.out.println("Just received message: " + msg);
 }
 ```
 
-```java [Example preparing reactive stream subscriber for channel example-channel-1]
+Example preparing reactive stream subscriber for channel example-channel-1:
+
+```java
 @Incoming("example-channel-2")
 public Subscriber<String> printMessage() {
     return ReactiveStreams.<String>builder()
@@ -85,7 +89,10 @@ Helidon can inject following types of publishers:
 - `Multi<PAYLOAD>` - Helidon flow reactive operators with unwrapped payload
 - `Multi<Message<PAYLOAD>>` - Helidon flow reactive operators with whole message
 
-```java [Example of consuming payloads from channel example-channel-1 with injected publisher]
+Example of consuming payloads from channel example-channel-1 with injected
+publisher:
+
+```java
 @Inject
 public MyBean(@Channel("example-channel-1") Multi<String> multiChannel) {
     multiChannel
@@ -103,14 +110,19 @@ The annotated messaging method can function in two ways:
 - produce exactly one message to the stream connected to the [channel](https://download.eclipse.org/microprofile/microprofile-reactive-messaging-3.0/microprofile-reactive-messaging-spec-3.0.html#_channel)
 - prepare reactive stream’s publisher and connect it to the [channel](https://download.eclipse.org/microprofile/microprofile-reactive-messaging-3.0/microprofile-reactive-messaging-spec-3.0.html#_channel)
 
-```java [Example producing exactly one message to channel example-channel-1]
+Example producing exactly one message to channel example-channel-1:
+
+```java
 @Outgoing("example-channel-1")
 public String produceMessage() {
     return "foo";
 }
 ```
 
-```java [Example preparing reactive stream publisher publishing three messages to the channel example-channel-1]
+Example preparing reactive stream publisher publishing three messages to the
+channel example-channel-1:
+
+```java
 @Outgoing("example-channel-1")
 public Publisher<String> printMessage() {
     return ReactiveStreams.of("foo", "bar", "baz").buildRs();
@@ -124,7 +136,9 @@ public Publisher<String> printMessage() {
 
 To send messages from imperative code, you can inject a special channel source called an emitter. Emitter can serve only as an upstream, source of the messages, for messaging channel.
 
-```java [Example of sending message from JAX-RS method to channel example-channel-1]
+Example of sending message from JAX-RS method to channel example-channel-1:
+
+```java
 @Inject
 @Channel("example-channel-1")
 private Emitter<String> emitter;
@@ -169,7 +183,10 @@ Processing method can function in multiple ways:
 - prepare reactive stream’s processor and connect it between the channels
 - on every message prepare new publisher(equivalent to `flatMap` operator)
 
-```java [Example processing every message from channel example-channel-1 to channel example-channel-2]
+Example processing every message from channel example-channel-1 to channel
+example-channel-2:
+
+```java
 @Incoming("example-channel-1")
 @Outgoing("example-channel-2")
 public String processMessage(String msg) {
@@ -177,7 +194,10 @@ public String processMessage(String msg) {
 }
 ```
 
-```java [Example preparing processor stream to be connected between channels example-channel-1 and example-channel-2]
+Example preparing processor stream to be connected between channels
+example-channel-1 and example-channel-2:
+
+```java
 @Incoming("example-channel-1")
 @Outgoing("example-channel-2")
 public Processor<String, String> processMessage() {
@@ -187,7 +207,10 @@ public Processor<String, String> processMessage() {
 }
 ```
 
-```java [Example processing every message from channel example-channel-1 as stream to be flattened to channel example-channel-2]
+Example processing every message from channel example-channel-1 as stream to be
+flattened to channel example-channel-2:
+
+```java
 @Incoming("example-channel-1")
 @Outgoing("example-channel-2")
 public Publisher<String> processMessage(String msg) {
@@ -202,7 +225,9 @@ Messaging connector is an application-scoped bean that implements one or both of
 - `IncomingConnectorFactory` - connector can create an upstream publisher to produce messages to a channel
 - `OutgoingConnectorFactory` - connector can create a downstream subscriber to consume messages from a channel
 
-```java [Example connector example-connector]
+Example connector example-connector:
+
+```java
 @ApplicationScoped
 @Connector("example-connector")
 public class ExampleConnector implements IncomingConnectorFactory, OutgoingConnectorFactory {
@@ -226,7 +251,9 @@ public class ExampleConnector implements IncomingConnectorFactory, OutgoingConne
 
 The Reactive Messaging [Message](https://download.eclipse.org/microprofile/microprofile-reactive-messaging-3.0/microprofile-reactive-messaging-spec-3.0.html#_message) class can be used to wrap or unwrap data items between methods and connectors. The message wrapping and unwrapping can be performed explicitly by using `org.eclipse.microprofile.reactive.messaging.Message#of(T)` or implicitly through the messaging core.
 
-```java [Example of explicit and implicit wrapping and unwrapping]
+Example of explicit and implicit wrapping and unwrapping:
+
+```java
 @Outgoing("publisher-payload")
 public PublisherBuilder<Integer> streamOfMessages() {
     return ReactiveStreams.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
@@ -257,7 +284,9 @@ Messages carry a callback for reception acknowledgement (ack) and negative ackno
 
 Acknowledgement strategies {#terms}
 
-```java [Example of manual acknowledgment]
+Example of manual acknowledgment:
+
+```java
 @Outgoing("consume-and-ack")
 public Publisher<Message<String>> streamOfMessages() {
     return ReactiveStreams.of(Message.of("This is Payload", () -> {
@@ -275,7 +304,9 @@ public CompletionStage<Void> receiveAndAckMessage(Message<String> msg) {
 
 - Calling ack() will print "This particular message was acked!" to System.out
 
-```java [Example of manual acknowledgment]
+Example of manual acknowledgment:
+
+```java
 @Outgoing("consume-and-ack")
 public Publisher<Message<String>> streamOfMessages() {
     return ReactiveStreams.of(Message.of("This is Payload", () -> {
@@ -294,7 +325,9 @@ public CompletionStage<Void> receiveAndAckMessage(Message<String> msg) {
 
 - Calling ack() will print "This particular message was acked!" to System.out
 
-```java [Example of explicit pre-process acknowledgment]
+Example of explicit pre-process acknowledgment:
+
+```java
 @Outgoing("consume-and-ack")
 public Publisher<Message<String>> streamOfMessages() {
     return ReactiveStreams.of(Message.of("This is Payload", () -> {
@@ -316,7 +349,9 @@ public CompletionStage<Void> receiveAndAckMessage(Message<String> msg) {
 }
 ```
 
-```java [Example of explicit post-process acknowledgment]
+Example of explicit post-process acknowledgment:
+
+```java
 @Outgoing("consume-and-ack")
 public Publisher<Message<String>> streamOfMessages() {
     return ReactiveStreams.of(Message.of("This is Payload", () -> {
@@ -366,7 +401,9 @@ If you check your health endpoints `/health/live` and `/health/ready` you will d
 
 The channel must be configured to use connector as its upstream or downstream.
 
-```yaml [Example of channel to connector mapping config]
+Example of channel to connector mapping config:
+
+```yaml
 mp.messaging.outgoing.to-connector-channel.connector: example-connector
 mp.messaging.incoming.from-connector-channel.connector: example-connector
 ```
@@ -374,7 +411,9 @@ mp.messaging.incoming.from-connector-channel.connector: example-connector
 - Use connector `example-connector` as a downstream for channel `to-connector-channel` to consume the messages from the channel
 - Use connector `example-connector` as an upstream for channel `to-connector-channel` to produce messages to the channel
 
-```java [Example producing to connector]
+Example producing to connector:
+
+```java
 @Outgoing("to-connector-channel")
 public Publisher<String> produce() {
     return ReactiveStreams.of("fee", "fie").buildRs();
@@ -384,7 +423,9 @@ public Publisher<String> produce() {
 // > Connector says: fie
 ```
 
-```java [Example consuming from connector]
+Example consuming from connector:
+
+```java
 @Incoming("from-connector-channel")
 public void consume(String value) {
     System.out.println("Consuming: " + value);
@@ -402,7 +443,9 @@ When the connector constructs a publisher or subscriber for a given channel, it 
 
 Connector specific config (1) merged together with global connector config (2).
 
-```java [Example connector accessing configuration]
+Example connector accessing configuration:
+
+```java
 @ApplicationScoped
 @Connector("example-connector")
 public class ExampleConnector implements IncomingConnectorFactory {
@@ -423,7 +466,9 @@ public class ExampleConnector implements IncomingConnectorFactory {
 - Config context is merged from channel and connector contexts
 - Name of the channel requesting publisher as it’s upstream from this connector
 
-```yaml [Example of channel to connector mapping config with custom properties]
+Example of channel to connector mapping config with custom properties:
+
+```yaml
 mp.messaging.incoming.from-connector-channel.connector: example-connector
 mp.messaging.incoming.from-connector-channel.channel-specific-prop: foo
 mp.messaging.connector.example-connector.connector-specific-prop: bar
@@ -433,7 +478,9 @@ mp.messaging.connector.example-connector.connector-specific-prop: bar
 - Channel configuration properties
 - Connector configuration properties
 
-```java [Example consuming from connector]
+Example consuming from connector:
+
+```java
 @Incoming("from-connector-channel")
 public void consume(String value) {
     System.out.println("Consuming: " + value);

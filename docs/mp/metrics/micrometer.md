@@ -64,7 +64,9 @@ You can configure the Helidon Micrometer REST service as you can other built-in 
 
 By default, Helidon Micrometer integration exposes the `/micrometer` endpoint. You can override the path using the `micrometer.web-context` configuration key.
 
-```properties [Overriding the default Micrometer path]
+Overriding the default Micrometer path:
+
+```properties
 micrometer.web-context=my-micrometer
 ```
 
@@ -76,7 +78,9 @@ The examples below take you step-by-step through the process of enhancing the He
 
 ### Add Micrometer annotations
 
-```java [Adding Micrometer annotations to JAX-RS resource GET methods]
+Adding Micrometer annotations to JAX-RS resource GET methods:
+
+```java
 private static final String PERSONALIZED_GETS_COUNTER_NAME = "personalizedGets";
 private static final String PERSONALIZED_GETS_COUNTER_DESCRIPTION = "Counts personalized GET operations";
 private static final String GETS_TIMER_NAME = "allGets";
@@ -108,7 +112,9 @@ In addition to annotating your methods, you can create, look up, and update metr
 
 Add the following injection to a bean:
 
-```java [Inject the MeterRegistry]
+Inject the MeterRegistry:
+
+```java
 @Inject
 private MeterRegistry registry;
 ```
@@ -121,11 +127,15 @@ Unless you specify otherwise, Helidon uses defaults for any built-in Micrometer 
 
 To use configuration to control the selection and behavior of Helidon’s built-in Micrometer meter registries, include in your configuration (such as `application.yaml`) a `micrometer.builtin-registries` section.
 
-```properties [Enroll Prometheus built-in meter registry using default configuration]
+Enroll Prometheus built-in meter registry using default configuration:
+
+```properties
 micrometer.builtin-registries.0.type=prometheus
 ```
 
-```properties [Enroll Prometheus built-in meter registry with non-default configuration]
+Enroll Prometheus built-in meter registry with non-default configuration:
+
+```properties
 micrometer.builtin-registries.0.type=prometheus
 micrometer.builtin-registries.0.prefix=myPrefix
 ```

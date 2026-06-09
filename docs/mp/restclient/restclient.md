@@ -144,7 +144,9 @@ Configuration options affecting CDI and programmatically created clients:
 
 To be able to run and test this example, use the [Helidon MP examples/quickstarts](../guides/quickstart.md). Add a dependency on the Helidon Rest Client implementation and create the following client interface:
 
-```java [client interface]
+client interface:
+
+```java
 @Path("/greet")
 interface GreetRestClient {
 

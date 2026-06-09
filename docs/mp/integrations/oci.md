@@ -36,7 +36,9 @@ To configure authentication, add the `oci.auth-strategies` property to `/server/
 
 The `oci.auth-strategies` property specifies the OCI client authentication mechanism that should be used. It can be a single value or a list of authentication types, separated by commas. If you specify a list, it cycles through each type until the authentication is successful.
 
-```properties [oci.auth-strategies example]
+oci.auth-strategies example:
+
+```properties
 oci.auth-strategies=config-file,instance_principals,resource_principal
 ```
 
@@ -82,12 +84,16 @@ Adding the dependency for OCI Object Storage:
 
 Now you can inject OCI SDK Clients for Object Storage.
 
-```java [Field-injection example]
+Field-injection example:
+
+```java
 @Inject
 private ObjectStorage client;
 ```
 
-```java [Constructor-injection example]
+Constructor-injection example:
+
+```java
 public class MyClass {
 
     private final ObjectStorage client;

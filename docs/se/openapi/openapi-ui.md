@@ -86,7 +86,9 @@ With the Helidon OpenAPI UI dependency in your `pom.xml` file, the OpenAPI suppo
 
 Some applications explicitly create the `OpenApiFeature` object to tailor its behavior before registering it with the server. If your `pom.xml` includes a dependency on the OpenAPI UI component, then any `OpenApiFeature` object your application builds prepares the default OpenAPI UI behavior, possibly modified as above by any UI settings you have in your configuration.
 
-```java [Create OpenApiFeature with automatic UI]
+Create OpenApiFeature with automatic UI:
+
+```java
 WebServer server = WebServer.builder()
         .config(config.get("server"))
         .addFeature(OpenApiFeature.create(config.get("openapi")))
@@ -108,7 +110,9 @@ You can control some of the behavior of the UI programmatically in two steps:
 
 The following example illustrates these steps, combining configuration with explicit programmatic settings.
 
-```java [Create OpenApiUi and OpenAPISupport instances]
+Create OpenApiUi and OpenAPISupport instances:
+
+```java
 Config openApiConfig = config.get("openapi");
 WebServer server = WebServer.builder()
         .config(config.get("server"))
@@ -155,7 +159,9 @@ You can use configuration to affect the UI path in these ways:
 
   Recall that you can [configure the Helidon OpenAPI component](../../se/openapi/openapi.md#configuration) to change where it serves the OpenAPI document.
 
-  ```yaml [Configure OpenAPI behavior]
+  Configure OpenAPI behavior:
+
+  ```yaml
   server:
   port: 8080
   host: 0.0.0.0
@@ -172,7 +178,9 @@ You can use configuration to affect the UI path in these ways:
 
 - Separately, configure the entire web context path for the UI independently from the web context for OpenAPI.
 
-  ```yaml [Configuring the OpenAPI UI web context]
+  Configuring the OpenAPI UI web context:
+
+  ```yaml
   server:
   port: 8080
   host: 0.0.0.0

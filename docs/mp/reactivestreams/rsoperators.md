@@ -19,7 +19,9 @@ To enable {feature-name}, either add a dependency on the [helidon-microprofile b
 
 The MicroProfile Reactive Streams Operators specification provides a set of operators within stages, as well as the builders used to prepare graphs of stages from which streams can be built.
 
-```java [Example of simple closed graph usage]
+Example of simple closed graph usage:
+
+```java
 AtomicInteger sum = new AtomicInteger();
 
 ReactiveStreams.of("1", "2", "3", "4", "5")
@@ -78,7 +80,9 @@ Operators(Stages) {#terms}
 
 [Graphs](https://download.eclipse.org/microprofile/microprofile-reactive-streams-operators-3.0/microprofile-reactive-streams-operators-spec-3.0.html#_graphs) are pre-prepared stream builders with [stages](https://download.eclipse.org/microprofile/microprofile-reactive-streams-operators-3.0/microprofile-reactive-streams-operators-spec-3.0.html#_stages), which can be combined to closed graph with methods `via` and `to`.
 
-```java [Combining the graphs and running the stream]
+Combining the graphs and running the stream:
+
+```java
 // Assembly of stream, nothing is streamed yet
 PublisherBuilder<String> publisherStage =
         ReactiveStreams.of("foo", "bar")

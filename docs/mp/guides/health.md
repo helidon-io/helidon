@@ -83,7 +83,9 @@ Verify the health endpoint in a new terminal window:
 curl http://localhost:8080/health
 ```
 
-```json [JSON response]
+JSON response:
+
+```json
 {
   "status": "UP",
   "checks": [
@@ -123,7 +125,9 @@ curl http://localhost:8080/health
 
 You can create application-specific custom health checks and integrate them with Helidon using CDI. The following example shows how to add a custom liveness health check.
 
-```java [Create a new GreetLivenessCheck class with the following content]
+Create a new GreetLivenessCheck class with the following content:
+
+```java
 @Liveness 
 @ApplicationScoped 
 public class GreetLivenessCheck implements HealthCheck {
@@ -148,7 +152,9 @@ Build and run the application, then verify the custom liveness health endpoint:
 curl http://localhost:8080/health/live
 ```
 
-```json [JSON response]
+JSON response:
+
+```json
 {
   "status": "UP",
   "checks": [
@@ -167,7 +173,9 @@ curl http://localhost:8080/health/live
 
 You can add a readiness check to indicate that the application is ready to be used. In this example, the server will wait five seconds before it becomes ready.
 
-```java [Create a new GreetReadinessCheck class with the following content]
+Create a new GreetReadinessCheck class with the following content:
+
+```java
 @Readiness 
 @ApplicationScoped
 public class GreetReadinessCheck implements HealthCheck {
@@ -207,13 +215,17 @@ Build and run the application. Issue the curl command with -v within five second
 curl -v  http://localhost:8080/health/ready
 ```
 
-```text [HTTP response status]
+HTTP response status:
+
+```text
 < HTTP/1.1 503 Service Unavailable 
 ```
 
 - The HTTP status is `503` since the application is not ready.
 
-```json [Response body]
+Response body:
+
+```json
 {
   "status": "DOWN",
   "checks": [
@@ -234,13 +246,17 @@ After five seconds you will see the application is ready:
 curl -v http://localhost:8080/health/ready
 ```
 
-```text [HTTP response status]
+HTTP response status:
+
+```text
 < HTTP/1.1 200 OK 
 ```
 
 - The HTTP status is `200` indicating that the application is ready.
 
-```json [Response body]
+Response body:
+
+```json
 {
   "status": "UP",
   "checks": [
@@ -259,7 +275,9 @@ curl -v http://localhost:8080/health/ready
 
 You can add a startup check to indicate if the application is initialized to the point that the other health checks make sense. In this example, the server will wait eight seconds before it declares itself started.
 
-```java [Create a new GreetStartedCheck class with the following content]
+Create a new GreetStartedCheck class with the following content:
+
+```java
 @Startup 
 @ApplicationScoped
 public class GreetStartedCheck implements HealthCheck {
@@ -299,13 +317,17 @@ Build and run the application. Issue the curl command with -v within five second
 curl -v  http://localhost:8080/health/started
 ```
 
-```text [HTTP response status]
+HTTP response status:
+
+```text
 < HTTP/1.1 503 Service Unavailable 
 ```
 
 - The HTTP status is `503` since the application has not started.
 
-```json [Response body]
+Response body:
+
+```json
 {
   "status": "DOWN",
   "checks": [
@@ -326,13 +348,17 @@ After eight seconds you will see the application has started:
 curl -v http://localhost:8080/health/started
 ```
 
-```text [HTTP response status]
+HTTP response status:
+
+```text
 < HTTP/1.1 200 OK 
 ```
 
 - The HTTP status is `200` indicating that the application is started.
 
-```json [Response body]
+Response body:
+
+```json
 {
   "status": "UP",
   "checks": [
@@ -360,7 +386,9 @@ Get all the health check data, including custom data:
 curl http://localhost:8080/health
 ```
 
-```json [JSON response]
+JSON response:
+
+```json
 {
   "status": "UP",
   "checks": [
@@ -426,7 +454,10 @@ You can specify a custom port and root context for the root health endpoint path
 
 The example below will change the root path.
 
-```yaml [Create a file named application.yaml in the resources directory with the following contents]
+Create a file named `application.yaml` in the resources directory with the
+following contents:
+
+```yaml [application.yaml]
 health:
   endpoint: "/myhealth" 
 ```
@@ -444,7 +475,10 @@ curl http://localhost:8080/myhealth/started
 
 The following example will change the root path and the health port.
 
-```yaml [Update application.yaml to use a different port and root path for the health endpoint]
+Update `application.yaml` to use a different port and root path for the health
+endpoint:
+
+```yaml [application.yaml]
 server:
   port: 8080 
   sockets:
@@ -489,7 +523,10 @@ Stop the application and build the docker image:
 docker build -t helidon-quickstart-mp .
 ```
 
-```yaml [Create the Kubernetes YAML specification, named health.yaml, with the following content]
+Create the Kubernetes YAML specification, named `health.yaml`, with the
+following content:
+
+```yaml [health.yaml]
 kind: Service
 apiVersion: v1
 metadata:

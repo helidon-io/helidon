@@ -77,7 +77,9 @@ Extensions can enhance the features for the module `helidon-testing-junit5-webse
 
 You can create the following test to validate that the server returns the correct response:
 
-```java [Basic Helidon test framework usage.]
+Basic Helidon test framework usage:
+
+```java
 @ServerTest 
 class MyServerTest {
 
@@ -122,7 +124,9 @@ As everything above is performed by the testing framework, regular unit tests ca
 
 If there is no need to set up and run a server, a `DirectClient` client can be used. It is a testing client that bypasses HTTP transport and directly invokes the router.
 
-```java [Routing test using @RoutingTest and DirectClient.]
+Routing test using @RoutingTest and DirectClient:
+
+```java
 @RoutingTest 
 class MyRoutingTest {
 
@@ -166,7 +170,9 @@ Routing is configured the same way as in full server testing using the `@SetUpRo
 
 Helidon tests are able to detect Virtual Threads pinning. A situation when carrier thread is blocked in a way, that virtual thread scheduler can’t use it for scheduling of other virtual threads. This can happen for example when blocking native code is invoked, or prior to the JDK 24 when blocking IO operation happens in a synchronized block. Pinning can in some cases negatively affect application performance.
 
-```java [Enable pinning detection]
+Enable pinning detection:
+
+```java
 @ServerTest(pinningDetection = true)
 ```
 
@@ -174,7 +180,9 @@ Pinning is considered as harmful when it takes longer than 20 milliseconds, that
 
 Pinning threshold can be changed with:
 
-```java [Configure pinning threshold]
+Configure pinning threshold:
+
+```java
 @ServerTest(pinningDetection = true, pinningThreshold = 50)
 ```
 
@@ -220,7 +228,9 @@ If WebSocket testing is required, there is an additional module for it. It is ne
 
 The WebSocket Testing extension adds support for routing configuration and injection of WebSocket related artifacts, such as WebSockets and DirectWsClient in Helidon unit tests.
 
-```java [WebSocket sample test.]
+WebSocket sample test:
+
+```java
 @ServerTest
 class WsSocketTest {
 
@@ -251,7 +261,9 @@ class WsSocketTest {
 - Create and assign the clientside listener.
 - Check if the received message is correct.
 
-```java [ClientSideListener helper class.]
+ClientSideListener helper class:
+
+```java
 static class ClientSideListener implements WsListener {
     volatile String message;
     volatile Throwable error;
@@ -280,7 +292,9 @@ static class ClientSideListener implements WsListener {
 
 The WebSocket `ClientSideListener` is also a helper class that implements `WsListener` and is very straightforward:
 
-```java [ServerSideListener helper class.]
+ServerSideListener helper class:
+
+```java
 static class ServerSideListener implements WsListener {
     volatile String message;
 

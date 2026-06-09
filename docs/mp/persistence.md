@@ -167,7 +167,7 @@ All MicroProfile Config-compatible property names for Helidon MP’s named data 
 
 As an example, configuration to set an imaginary `foo.bar` property on the `test` data source’s associated connection pool or vendor-specific `DataSource` to `baz` looks like this in Java `.properties` format:
 
-```properties
+```properties [microprofile-config.properties]
 javax.sql.DataSource.test.foo.bar=baz
 ```
 
@@ -183,7 +183,7 @@ Here are some examples illustrating general named data source configuration patt
 
 Here is an example of some named data source configuration as might be found in a `src/main/resources/META-INF/microprofile-config.properties` configuration source:
 
-```properties
+```properties [microprofile-config.properties]
 javax.sql.DataSource.yourDataSourceName.somePropertyOfYourConnectionPoolAndDataSource = itsValue
 javax.sql.DataSource.yourDataSourceName.someOtherPropertyOfYourConnectionPoolAndDataSource = anotherValue
 ```
@@ -241,7 +241,7 @@ This example presumes you have:
 
 This example, in Java properties file format, configures an Oracle Universal Connection Pool-managed data source named `main` to [connect to an Oracle Database](https://docs.oracle.com/en/database/oracle/oracle-database/21/jjdbc/data-sources-and-URLs.html#GUID-C4F2CA86-0F68-400C-95DA-30171C9FB8F0) on `localhost` port `1521`, using the `oracle.jdbc.poolOracleDataSource` vendor-supplied `DataSource`, with a service name of `XE`, a `user` of `scott`, and a `password` of `tiger`:
 
-```properties
+```properties [microprofile-config.properties]
 javax.sql.DataSource.main.connectionFactoryClassName = oracle.jdbc.pool.OracleDataSource
 javax.sql.DataSource.main.URL = jdbc:oracle:thin:@//localhost:1521/XE
 javax.sql.DataSource.main.user = scott
@@ -267,7 +267,7 @@ This example presumes you have:
 
 This example, in Java properties file format, configures a HikariCP-managed data source named `test` to connect to an in-memory H2 database named `unit-testing` with a `user` of `sa` and an empty password:
 
-```properties
+```properties [microprofile-config.properties]
 javax.sql.DataSource.test.dataSourceClassName = org.h2.jdbcx.JdbcDataSource
 javax.sql.DataSource.test.dataSource.url = jdbc:h2:mem:unit-testing;DB_CLOSE_DELAY=-1
 javax.sql.DataSource.test.dataSource.user = sa

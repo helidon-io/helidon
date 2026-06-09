@@ -236,7 +236,9 @@ Remove the test scope from helidon-webclient dependency:
 
 The OIDC security provider configuration can be joined to helidon configuration file. This file is located here: `src/main/resources/application.yaml`. It can be easily used to configure the web server without modifying application code.
 
-```yaml [Add the following line to application.yaml]
+Add the following line to `application.yaml`:
+
+```yaml [application.yaml]
 server:
   port: 7987
   host: localhost
@@ -273,7 +275,9 @@ Make sure keycloak and the application are not running on the same port. The app
 
 If the port 7987 is already used, check what port is free on your machine.
 
-```yaml [Replace the old port into application.yaml]
+Replace the old port into `application.yaml`:
+
+```yaml [application.yaml]
 server:
   port: "{Your-new-port}"
 
@@ -284,7 +288,9 @@ frontend-uri: "http://localhost:{Your-new-port}"
 
 Once the properties are added, the web server must be setup. The `Main#routing` method gather all configuration properties.
 
-```java [Add the following to the Main#routing method]
+Add the following to the Main#routing method:
+
+```java
 Config config = Config.global();
 routing.addFeature(OidcFeature.create(config));   
 ```
@@ -340,7 +346,9 @@ For the first step, paste the following URL into your browser: `http://localhost
 
 In order to achieve the third step, we can use Postman to exchange the authorization code for tokens. In Postman, select the Http POST method. Keycloak endpoint to get token is the following: `http://localhost:8080/realms/myRealm/protocol/openid-connect/token`. In the body of the request, select `x-www-form-urlencoded` type. Add the following data:
 
-```json [Enter the key:value]
+Enter the key:value:
+
+```json
 [
   {"key":"grant_type","value":"authorization_code"},
   {"key":"client_id","value":"myClientID"},
@@ -357,7 +365,9 @@ The Direct Access Grants flow is used by REST clients that want to request token
 
 Note: Make sure your Helidon application is running. If it is not, please start it.
 
-```json [Enter the following information]
+Enter the following information:
+
+```json
 [
   {"key":"Header Prefix","value":"bearer"},
   {"key":"Grant type","value":"Password  Credentials"},
@@ -393,7 +403,9 @@ Add the following dependency to pom.xml:
 
 In the test folder open the application.yaml file: `helidon-quickstart-se/src/test/resources/application.yaml`
 
-```yaml [Copy these properties into application.yaml]
+Copy these properties into `application.yaml`:
+
+```yaml [application.yaml]
 app:
   greeting: "Hello"
 
@@ -431,7 +443,9 @@ Add the `http-basic-auth` properties in the security → providers property sect
 
 In the `AbstractMainTest.java` file, tests need to be modified to check the application security when accessing `/greet` path with a `GET` method.
 
-```java [Replace the first webclient call by this one into testRootRoute method]
+Replace the first webclient call by this one into testRootRoute method:
+
+```java
 try (HttpClientResponse response = client.get()
         .path("/greet")
         .request()) {
@@ -443,7 +457,9 @@ This piece of code uses the webclient to access the application on `/greet` path
 
 Only `jack` user has access to this part of the application.
 
-```java [Add new check to the testRootRoute method]
+Add new check to the testRootRoute method:
+
+```java
 String auth = "Basic " + Base64.getEncoder().encodeToString("jack:changeit".getBytes());
 JsonObject jsonObject = client.get()
         .path("/greet")
@@ -469,7 +485,9 @@ To give less access to an endpoint, it is possible to configure user role. So th
 
 Add a user and roles to the `helidon-quickstart-se/src/test/resources/application.yaml`.
 
-```yaml [Add jack role and create a new user named john]
+Add jack role and create a new user named john:
+
+```yaml
 - http-basic-auth:
     users:
       - login: "jack"
@@ -482,7 +500,9 @@ Add a user and roles to the `helidon-quickstart-se/src/test/resources/applicatio
 
 Into the `web-server` section, the `roles-allowed` parameter defines which roles have access to the protected path and method.
 
-```yaml [Add admin role]
+Add admin role:
+
+```yaml
 web-server:
     # protected paths on the web server
     # do not include paths served by Jersey
@@ -498,7 +518,9 @@ Now, only Jack has access to secure endpoint as he has an admin role. John, as a
 
 The user `john` has only the `user` role so when accessing protected endpoint, a 403 (Forbidden) http code is returned.
 
-```java [Check that john does not have access]
+Check that john does not have access:
+
+```java
 String auth = "Basic " + Base64.getEncoder().encodeToString("john:changeit".getBytes());
 try (HttpClientResponse response = client.get()
         .path("/greet")

@@ -59,13 +59,13 @@ io.helidon.examples.MyApplication:
 
 The same configuration works for `.properties` file:
 
-```properties
+```properties [microprofile-config.properties]
 io.helidon.examples.MyApplication.routing-path.path=/my-application
 ```
 
 If an `Application` is not provided, a *synthetic* subclass is created and can be configured using this property:
 
-```properties
+```properties [microprofile-config.properties]
 jakarta.ws.rs.core.Application.routing-path.path=/my-application
 ```
 

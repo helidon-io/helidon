@@ -86,7 +86,7 @@ which maps the current node to a type.
 
 The next example, and later ones below showing complex type mapping, use the example [`application.properties`](introduction.md#built-in-support-for-config-formats) configuration from the config introduction. Part of that example includes this line:
 
-```properties
+```properties [application.properties]
 bl.initial-id = 10000000000
 ```
 
@@ -213,7 +213,9 @@ If your application converts to the same target type in several places in the co
 
 The following examples build on the example configuration from the [`application.properties`](introduction.md#built-in-support-for-config-formats) example file in the introduction.
 
-```java [Java POJO to Hold web Properties Config]
+Java POJO to Hold web Properties Config:
+
+```java
 public class WebConfig {
     private boolean debug;
     private int pageSize;
@@ -239,7 +241,9 @@ public class WebConfig {
 }
 ```
 
-```java [Custom Mapper Class]
+Custom Mapper Class:
+
+```java
 public class WebConfigMapper implements Function<Config, WebConfig> {
 
     @Override
@@ -253,7 +257,9 @@ public class WebConfigMapper implements Function<Config, WebConfig> {
 }
 ```
 
-```java [Explicitly Using the Mapper]
+Explicitly Using the Mapper:
+
+```java
 Config config = Config.create(classpath("application.properties"));
 
 WebConfig web = config.get("web")
@@ -261,7 +267,9 @@ WebConfig web = config.get("web")
         .get();
 ```
 
-```java [Registering and Implicitly Using the Mapper]
+Registering and Implicitly Using the Mapper:
+
+```java
 Config config = Config.builder(classpath("application.properties"))
         .addMapper(WebConfig.class, new WebConfigMapper())
         .build();
@@ -391,7 +399,9 @@ To exclude a bean property from the config system bean processing annotate it wi
 
 Here is an example using the `app` portion of the example configuration from the introduction.
 
-```java [Java bean to load app properties into via setters]
+Java bean to load app properties into via setters:
+
+```java
 public class AppConfig {
     private Instant timestamp;
     private String greeting;
@@ -459,7 +469,9 @@ public class AppConfig {
 
 Here is an example of code loading config and mapping part of it to the `AppConfig` bean above.
 
-```java [Map app config node into AppConfig class]
+Map app config node into AppConfig class:
+
+```java
 Config config = Config.create(classpath("application.conf"));
 
 AppConfig app = config.get("app")
@@ -490,7 +502,9 @@ If the target class includes the public static method `builder()` that returns a
 
 You can augment the target class with the public static `builder()` method:
 
-```java [JavaBean for app properties, via a Builder]
+JavaBean for app properties, via a Builder:
+
+```java
 public static class Builder { 
 
     private String greeting;
@@ -535,7 +549,9 @@ Another option is to annotate the parameters to a *factory method* or to a const
 > [!WARNING]
 > Be sure to annotate each parameter of the `from` method or constructor with `@Value` and specify the key to use for the mapping. The parameter names in the Java code are not always available at runtime to map to config keys. (They might be `arg0`, `arg1`, etc.)
 
-```java [Target Class with Factory Method from]
+Target Class with Factory Method from:
+
+```java
 public static AppConfig from(
         @Value(key = "greeting") String greeting, 
         @Value(key = "page-size", withDefault = "10") int pageSize, 
@@ -549,7 +565,9 @@ public static AppConfig from(
 
 Alternatively, you can use an annotated constructor instead of a static factory method. Revising the example above, make the constructor public, annotate its parameters, and remove the now-unneeded `from` factory method.
 
-```java [Target Class with Annotated Public Constructor]
+Target Class with Annotated Public Constructor:
+
+```java
 public AppConfig( 
                   @Value(key = "greeting") 
                   String greeting,

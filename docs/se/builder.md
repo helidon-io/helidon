@@ -213,7 +213,7 @@ ServiceConfig serviceConfig = ServiceConfig.create(config);
 
 Example configuration in `application.properties` file:
 
-```properties
+```properties [application.properties]
 service.name=My Service
 service.page-size=10
 ```

@@ -30,7 +30,9 @@ MockConnector mockConnector;
 
 ### Emitting Data
 
-```java [Emitting String values a, b, c]
+Emitting String values a, b, c:
+
+```java
 mockConnector.incoming("my-incoming-channel", String.class) 
         .emit("a", "b", "c");
 ```
@@ -39,7 +41,9 @@ mockConnector.incoming("my-incoming-channel", String.class)
 
 ### Asserting Data
 
-```java [Awaiting and asserting payloads with custom mapper]
+Awaiting and asserting payloads with custom mapper:
+
+```java
 mockConnector
         .outgoing("my-outgoing-channel", String.class) 
         .awaitData(TIMEOUT, Message::getPayload, "a", "b", "c"); 

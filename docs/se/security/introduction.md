@@ -36,7 +36,9 @@ To integrate with a container, or to use Security standalone, we must create an 
 
 Once a security instance is built, it can be used to initialize an [integration with a container](containers-integration.md), or to use security from a program directly:
 
-```java [Security direct usage]
+Security direct usage:
+
+```java
 SecurityContext context = security.contextBuilder(UUID.randomUUID().toString()) 
         .env(SecurityEnvironment.builder()
                      .method("get")
@@ -60,7 +62,9 @@ if (response.status().isSuccess()) {
 
 ### Builder Pattern
 
-```java [Security through a builder]
+Security through a builder:
+
+```java
 Security security = Security.builder()
         .addProvider(HttpBasicAuthProvider.builder()) 
         .build();
@@ -72,7 +76,9 @@ Security security = Security.builder()
 
 See [Secure config](tools.md) for details about encrypting passwords in configuration files.
 
-```java [Security from configuration]
+Security from configuration:
+
+```java
 Security security = Security.create(config); 
 ```
 
@@ -82,7 +88,9 @@ As mentioned above, security features are implemented through providers, which a
 
 A key `enabled` can be used for each provider to provide fine control of which providers are enabled/disabled, for example to support different setup in testing and in production environments.
 
-```yaml [Security from configuration - application.yaml]
+Security from configuration:
+
+```yaml [application.yaml]
 # Uses config encryption filter to encrypt passwords
 security:
   providers:
@@ -104,7 +112,7 @@ When a configuration needs to be overridden, we may have problems with the list 
 
 Example:
 
-```properties
+```properties [application.properties]
 security.providers.1.type=header-atn
 security.providers.1.header-atn.authenticate=false
 ```
@@ -113,7 +121,9 @@ Would explicitly override the second provider (`http-basic-auth` in example abov
 
 ### Hybrid Pattern (Builder with Configuration)
 
-```java [Security from configuration and builder]
+Security from configuration and builder:
+
+```java
 Security security1 = Security.builder(config) 
         .addProvider(HttpBasicAuthProvider.builder())
         .build();

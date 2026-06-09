@@ -102,7 +102,9 @@ This property will be used to set the `Main-Class` attribute in the application 
 
 In your application code, Helidon uses the default configuration when you create a `Server` object without a custom `Config` object. See the following code from the project you created.
 
-```java [View Main#startServer]
+View Main#startServer:
+
+```java
 static Server startServer() {
     return Server.create().start(); 
 }
@@ -129,7 +131,10 @@ The following examples will demonstrate the default precedence order.
 
 Change a configuration parameter in the default configuration resource file, `META-INF/microprofile-config.properties`. There are no environment variable or system property overrides defined.
 
-```properties [Change app.greeting in the META-INF/microprofile-config.properties from Hello to HelloFromMPConfig]
+Change app.greeting in the `META-INF/microprofile-config.properties` from
+Hello to HelloFromMPConfig:
+
+```properties [microprofile-config.properties]
 app.greeting=HelloFromMPConfig
 ```
 
@@ -171,7 +176,9 @@ Invoke the endpoint:
 curl http://localhost:8080/greet
 ```
 
-```json [JSON response]
+JSON response:
+
+```json
 {
   "message": "HelloFromEnvironment World!" 
 }
@@ -195,7 +202,9 @@ Invoke the endpoint:
 curl http://localhost:8080/greet
 ```
 
-```json [JSON response]
+JSON response:
+
+```json
 {
   "message": "HelloFromSystemProperty World!" 
 }
@@ -209,7 +218,9 @@ The examples in this section will demonstrate how to access that config data at 
 
 The generated project already accesses configuration data in the `GreetingProvider` class as follows:
 
-```java [View the following code from GreetingProvider.java]
+View the following code from `GreetingProvider.java`:
+
+```java [GreetingProvider.java]
 @ApplicationScoped 
 public class GreetingProvider {
     private final AtomicReference<String> message = new AtomicReference<>(); 
@@ -237,7 +248,8 @@ public class GreetingProvider {
 
 You can inject configuration at the field level as shown below. Use the `volatile` keyword since you cannot use `AtomicReference` with field level injection.
 
-```yaml [Update the meta-config.yaml with the following contents]
+Update the meta configuration with the following content:
+```yaml [meta-config.yaml]
 sources:
   - type: "classpath"
     properties:
@@ -246,7 +258,9 @@ sources:
 
 - This example only uses the default classpath source.
 
-```java [Update the following code from GreetingProvider.java]
+Update the following code from `GreetingProvider.java`:
+
+```java [GreetingProvider.java]
 @ApplicationScoped
 public class GreetingProvider {
 
@@ -273,7 +287,9 @@ Build and run the application, then invoke the endpoint:
 curl http://localhost:8080/greet
 ```
 
-```json [JSON response]
+JSON response:
+
+```json
 {
   "message": "HelloFromMPConfig World!"
 }
@@ -283,7 +299,9 @@ curl http://localhost:8080/greet
 
 You can inject the `Config` object into the class and access it directly as shown below.
 
-```java [Replace the GreetingProvider class]
+Replace the GreetingProvider class:
+
+```java
 @ApplicationScoped
 public class GreetingProvider {
     private final AtomicReference<String> message = new AtomicReference<>();
@@ -313,7 +331,9 @@ Build and run the application, then invoke the endpoint:
 curl http://localhost:8080/greet
 ```
 
-```json [JSON response]
+JSON response:
+
+```json
 {
   "message": "HelloFromMPConfig World!"
 }
@@ -325,14 +345,16 @@ Helidon offers a variety of methods to access in-memory configuration. These can
 
 This simple example below demonstrates how to access a child node as a detached configuration subtree.
 
-```yaml [Create a file config-file.yaml in the helidon-quickstart-mp directory and add the following contents]
+Create the following file:
+```yaml [config-file.yaml]
 app:
   greeting:
     sender: Joe
     message: Hello-from-config-file.yaml
 ```
 
-```yaml [Update the meta-config.yaml with the following contents]
+Update the meta configuration:
+```yaml [meta-config.yaml]
 sources:
   - type: "classpath"
     properties:
@@ -342,7 +364,8 @@ sources:
       path: "./config-file.yaml"
 ```
 
-```java [Replace GreetingProvider class with the following code]
+Replace GreetingProvider class with the following code:
+```java [GreetingProvider.java]
 @ApplicationScoped
 public class GreetingProvider {
     private final AtomicReference<String> message = new AtomicReference<>();
@@ -377,7 +400,9 @@ Build and run the application, then invoke the endpoint:
 curl http://localhost:8080/greet
 ```
 
-```json [JSON response]
+JSON response:
+
+```json
 {
   "message": "Joe says Hello-from-config-file.yaml World!"
 }
@@ -387,7 +412,8 @@ curl http://localhost:8080/greet
 
 The following example uses a Kubernetes ConfigMap to pass the configuration data to your Helidon application deployed to Kubernetes. When the pod is created, Kubernetes will automatically create a local file within the container that has the contents of the configuration file used for the ConfigMap. This example will create the file at `/etc/config/config-file.properties`.
 
-```java [Update the Main class and replace the buildConfig method]
+Update the Main class and replace the buildConfig method:
+```java [Main.java]
 private static Config buildConfig() {
     return Config.builder()
             .sources(
@@ -400,7 +426,8 @@ private static Config buildConfig() {
 - The `app.greeting` value will be fetched from `/etc/config/config-file.properties` within the container.
 - The server port is specified in `META-INF/microprofile-config.properties` within the `helidon-quickstart-mp.jar`.
 
-```java [Update the following code from GreetingProvider.java]
+Update the following code from `GreetingProvider.java`:
+```java [GreetingProvider.java]
 @ApplicationScoped
 public class GreetingProvider {
 
@@ -424,7 +451,9 @@ Build and run the application, then invoke the endpoint:
 curl http://localhost:8080/greet
 ```
 
-```json [JSON response]
+JSON response:
+
+```json
 {
   "message": "HelloFromConfigFile World!"
 }
@@ -459,7 +488,8 @@ kind: ConfigMap
 - The file `config-file.properties` will be created within the Kubernetes container.
 - The `config-file.properties` file will have this single property defined.
 
-```yaml [Create the Kubernetes YAML specification, named k8s-config.yaml, with the following contents]
+Create the Kubernetes YAML specification:
+```yaml [k8s-config.yaml]
 kind: Service
 apiVersion: v1
 metadata:
@@ -537,7 +567,9 @@ Verify the configuration endpoint using port 31143, your port will likely be dif
 curl http://localhost:31143/greet
 ```
 
-```json [JSON response]
+JSON response:
+
+```json
 {
   "message": "HelloFromConfigFile World!" 
 }

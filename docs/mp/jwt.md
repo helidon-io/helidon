@@ -71,7 +71,7 @@ The following interfaces and annotations are used to work with JWT in Helidon MP
 
 A configuration example in `microprofile-config.properties`:
 
-```properties
+```properties [microprofile-config.properties]
 mp.jwt.verify.issuer=https://{PublicIssuerDomain}/oauth2/default
 mp.jwt.verify.publickey.location=${mp.jwt.verify.issuer}/v1/keys
 ```
@@ -107,7 +107,7 @@ public class HelloApplication extends Application {
 
 Add the following configuration in `microprofile-config.properties`:
 
-```properties
+```properties [microprofile-config.properties]
 mp.jwt.verify.issuer=https://{IssuerPublicDomain}/oauth2/default
 mp.jwt.verify.publickey.location=${mp.jwt.verify.issuer}/v1/keys
 ```

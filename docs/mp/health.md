@@ -87,7 +87,10 @@ Properties may be set in `application.yaml` or in `microprofile-config.propertie
 
 For example, you can specify a custom port and root context for the root health endpoint path. However, you cannot use different ports, such as <http://localhost:8080/myhealth> and <http://localhost:8081/myhealth/live>. Likewise, you cannot use different paths, such as <http://localhost:8080/health> and <http://localhost:8080/probe/live>. The example below will change the root path.
 
-```properties [Create a file named microprofile-config.properties in the resources/META-INF directory with the following contents]
+Create a file named `microprofile-config.properties` in the resources/META-INF
+directory with the following contents:
+
+```properties [microprofile-config.properties]
 health.endpoint=/myhealth  
 ```
 
@@ -188,7 +191,9 @@ Verify the health endpoint in a new terminal window:
 curl http://localhost:8080/health
 ```
 
-```json [JSON response]
+JSON response:
+
+```json
 {
   "status": "UP",
   "checks": [
@@ -228,7 +233,9 @@ curl http://localhost:8080/health
 
 You can create application-specific custom health checks and integrate them with Helidon using CDI. The following example shows how to add a custom liveness health check.
 
-```java [Create a new GreetLivenessCheck class with the following content]
+Create a new GreetLivenessCheck class with the following content:
+
+```java
 @Liveness 
 @ApplicationScoped 
 public class GreetLivenessCheck implements HealthCheck {
@@ -253,7 +260,9 @@ Build and run the application, then verify the custom liveness health endpoint:
 curl http://localhost:8080/health/live
 ```
 
-```json [JSON response]
+JSON response:
+
+```json
 {
   "status": "UP",
   "checks": [
@@ -272,7 +281,9 @@ curl http://localhost:8080/health/live
 
 You can add a readiness check to indicate that the application is ready to be used. In this example, the server will wait five seconds before it becomes ready.
 
-```java [Create a new GreetReadinessCheck class with the following content]
+Create a new GreetReadinessCheck class with the following content:
+
+```java
 @Readiness 
 @ApplicationScoped
 public class GreetReadinessCheck implements HealthCheck {
@@ -314,7 +325,9 @@ curl -v  http://localhost:8080/health/ready
 
 - The HTTP status is `503` since the application is not ready.
 
-```json [JSON response]
+JSON response:
+
+```json
 {
   "status": "DOWN",
   "checks": [
@@ -341,7 +354,9 @@ curl -v http://localhost:8080/health/ready
 
 - The HTTP status is `200` indicating that the application is ready.
 
-```json [JSON response]
+JSON response:
+
+```json
 {
   "status": "UP",
   "checks": [
@@ -362,7 +377,9 @@ Full example code is available [here](https://github.com/helidon-io/helidon-exam
 
 You can add a startup check to indicate whether or not the application has initialized to the point that the other health checks make sense. In this example, the server will wait eight seconds before it declares itself started.
 
-```java [Create a new GreetStartedCheck class with the following content]
+Create a new GreetStartedCheck class with the following content:
+
+```java
 @Startup 
 @ApplicationScoped
 public class GreetStartedCheck implements HealthCheck {
@@ -404,7 +421,9 @@ curl -v  http://localhost:8080/health/started
 
 - The HTTP status is `503` since the application has not started.
 
-```json [JSON response]
+JSON response:
+
+```json
 {
   "status": "DOWN",
   "checks": [
@@ -431,7 +450,9 @@ curl -v http://localhost:8080/health/started
 
 - The HTTP status is `200` indicating that the application is started.
 
-```json [JSON response]
+JSON response:
+
+```json
 {
   "status": "UP",
   "checks": [
@@ -459,7 +480,9 @@ Get all the health check data, including custom data:
 curl http://localhost:8080/health
 ```
 
-```json [JSON response]
+JSON response:
+
+```json
 {
   "status": "UP",
   "checks": [

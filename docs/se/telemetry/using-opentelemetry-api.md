@@ -139,7 +139,9 @@ Now for a bit of confusing terminology. In OpenTelemetry, a *meter* acts as a fa
 
 #### Creating the `OpenTelemetry` object
 
-```java [Creating a the global OpenTelemetry object using autoconfigure]
+Creating a the global OpenTelemetry object using autoconfigure:
+
+```java
 OpenTelemetry otel = AutoConfiguredOpenTelemetrySdk.builder()
         .setResultAsGlobal()
         .build()

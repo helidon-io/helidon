@@ -48,7 +48,9 @@ You can create an instance of a WebClient by executing `WebClient.create()` whic
 
 To change the default settings and register additional services, you can use simple builder that allows you to customize the client behavior.
 
-```java [Create a WebClient with simple builder]
+Create a WebClient with simple builder:
+
+```java
 WebClient client = WebClient.builder()
         .baseUri("http://localhost")
         .build();
@@ -69,7 +71,9 @@ Check out [HttpClient](/apidocs/io.helidon.webclient.api/io/helidon/webclient/ap
 
 Configuration can be set for every request type before it is sent.
 
-```java [Customizing a request]
+Customizing a request:
+
+```java
 client.get()
         .uri("http://example.com")
         .path("/path")
@@ -107,7 +111,9 @@ Once the request setup is completed, the following methods can be used to send i
 
 Each of the methods will provide a way to allow response to be retrieved in a particular response type. Refer to [ClientRequest API](/apidocs/io.helidon.webclient.api/io/helidon/webclient/api/ClientRequest.html) for more details about these methods.
 
-```java [Execute a simple GET request to endpoint and receive a String response]
+Execute a simple GET request to endpoint and receive a String response:
+
+```java
 ClientResponseTyped<String> response = client.get()
         .path("/endpoint")
         .request(String.class);
@@ -367,7 +373,9 @@ HttpClientResponse response = client.get("/proxiedresource")
 
 Proxy can also be configured in WebClient through the `application.yaml` configuration file.
 
-```yaml [WebClient Proxy configuration in application.yaml]
+WebClient Proxy configuration in `application.yaml`:
+
+```yaml [application.yaml]
 client:
   proxy:
     host: "hostName"
@@ -377,7 +385,10 @@ client:
 
 Then, in your application code, load the configuration from that file.
 
-```java [WebClient initialization using the application.yaml file located on the classpath]
+WebClient initialization using the `application.yaml` file located on the
+classpath:
+
+```java [application.yaml]
 Config config = Config.create();
 WebClient.builder()
         .config(config.get("client"))
@@ -408,7 +419,9 @@ WebClient.builder()
 
 Another way to configure TLS in WebClient is through the `application.yaml` configuration file.
 
-```yaml [WebClient TLS configuration in application.yaml]
+WebClient TLS configuration in `application.yaml`:
+
+```yaml [application.yaml]
 client:
   tls:
     trust:
@@ -424,7 +437,10 @@ client:
 
 In the application code, load the settings from the configuration file.
 
-```java [WebClient initialization using the application.yaml file located on the classpath]
+WebClient initialization using the `application.yaml` file located on the
+classpath:
+
+```java [application.yaml]
 Config config = Config.create();
 WebClient.builder()
         .config(config.get("client"))
@@ -526,7 +542,9 @@ WebClient.builder()
 
 Adding service in WebClient can also be done through the `application.yaml` configuration file.
 
-```yaml [WebClient Service configuration in application.yaml]
+WebClient Service configuration in `application.yaml`:
+
+```yaml [application.yaml]
 webclient:
   services:
     metrics:
@@ -545,7 +563,10 @@ webclient:
 
 Then, in your application code, load the configuration from that file.
 
-```java [WebClient initialization using the application.yaml file located on the classpath]
+WebClient initialization using the `application.yaml` file located on the
+classpath:
+
+```java [application.yaml]
 Config config = Config.create();
 WebClient.builder()
         .config(config.get("client"))
@@ -578,7 +599,9 @@ WebClient.builder()
 
 Protocol configuration can also be set in the `application.yaml` configuration file.
 
-```yaml [Setting up HTTP/1.1 and HTTP/2 protocol using application.yaml file.]
+Setting up HTTP/1.1 and HTTP/2 protocol using `application.yaml` file:
+
+```yaml [application.yaml]
 webclient:
   protocol-configs:
     http_1_1:
@@ -590,7 +613,10 @@ webclient:
 
 Then, in your application code, load the configuration from that file.
 
-```java [WebClient initialization using the application.yaml file located on the classpath]
+WebClient initialization using the `application.yaml` file located on the
+classpath:
+
+```java [application.yaml]
 Config config = Config.create();
 WebClient.builder()
         .config(config.get("client"))
@@ -634,7 +660,9 @@ Dependency for exporting metrics semantic conventions data using OTLP:
 </dependency>
 ```
 
-```yaml [Configuration for an OpenTelemetry exporter]
+Configuration for an OpenTelemetry exporter:
+
+```yaml
 telemetry:
   service: my-app
   signals:
@@ -645,7 +673,9 @@ telemetry:
 
 To activate webclient telemetry collection using configuration, add the `telemetry` config section under `client.services` and, below it, add `metrics`, `tracing`, or both.
 
-```yaml [Enabling metrics and tracing telemetry using configuration]
+Enabling metrics and tracing telemetry using configuration:
+
+```yaml
 client:
   services:
     telemetry:
@@ -657,7 +687,9 @@ The `metrics` and `tracing` subsections have no explicit settings.
 
 Alternatively, trigger webclient telemetry collection by modifying your client code to add one or more webclient telemetry services to the webclient builder. This example shows adding only telemetry metrics.
 
-```java [Enabling telemetry using code]
+Enabling telemetry using code:
+
+```java
 WebClient.builder()
         .addService(WebClientTelemetryMetrics.create())
         .build();

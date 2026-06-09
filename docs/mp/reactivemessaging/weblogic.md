@@ -56,7 +56,9 @@ Attributes
 
 Configuration is straight forward. Use JNDI for localizing and configuring of JMS ConnectionFactory from WebLogic. Notice the destination property which is used to define the queue with [WebLogic CDI Syntax](https://docs.oracle.com/cd/E24329_01/web.1211/e24387/lookup.htm#JMSPG915).
 
-```yaml [Example config]
+Example config:
+
+```yaml
 mp:
   messaging:
     connector:
@@ -96,14 +98,18 @@ Destination for UDD doesn’t have `./` prefix, because distributed destinations
 
 ### Consuming
 
-```java [Consuming one by one unwrapped value]
+Consuming one by one unwrapped value:
+
+```java
 @Incoming("from-wls")
 public void consumeWls(String msg) {
     System.out.println("WebLogic says: " + msg);
 }
 ```
 
-```java [Consuming one by one, manual ack]
+Consuming one by one, manual ack:
+
+```java
 @Incoming("from-wls")
 @Acknowledgment(Acknowledgment.Strategy.MANUAL)
 public CompletionStage<Void> consumewls(JmsMessage<String> msg) {
@@ -114,14 +120,18 @@ public CompletionStage<Void> consumewls(JmsMessage<String> msg) {
 
 ### Producing
 
-```java [Producing to WebLogic JMS]
+Producing to WebLogic JMS:
+
+```java
 @Outgoing("to-wls")
 public PublisherBuilder<String> produceToWls() {
     return ReactiveStreams.of("test1", "test2");
 }
 ```
 
-```java [Example of more advanced producing to WebLogic JMS]
+Example of more advanced producing to WebLogic JMS:
+
+```java
 @Outgoing("to-wls")
 public PublisherBuilder<Message<String>> produceToJms() {
     return ReactiveStreams.of("test1", "test2")
@@ -136,7 +146,9 @@ public PublisherBuilder<Message<String>> produceToJms() {
 }
 ```
 
-```java [Example of even more advanced producing to WebLogic JMS with custom mapper]
+Example of even more advanced producing to WebLogic JMS with custom mapper:
+
+```java
 @Outgoing("to-wls")
 public PublisherBuilder<Message<String>> produceToJms() {
     return ReactiveStreams.of("test1", "test2")
@@ -155,7 +167,9 @@ public PublisherBuilder<Message<String>> produceToJms() {
 
 For initiating SSL secured t3 connection, trust keystore with WLS public certificate is needed. Standard WLS installation has pre-configured Demo trust store: `WL_HOME/server/lib/DemoTrust.jks`, we can store it locally for connecting WLS over t3s.
 
-```yaml [Example config]
+Example config:
+
+```yaml
 mp:
   messaging:
     connector:

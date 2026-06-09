@@ -81,7 +81,9 @@ Helidon provides full access to OpenTelemetry Tracing API:
 
 Accessing and using these objects can be done as follows. For span:
 
-```java [Span sample]
+Span sample:
+
+```java
 @ApplicationScoped
 class HelidonBean {
 
@@ -104,7 +106,9 @@ class HelidonBean {
 
 You can inject OpenTelemetry `Tracer` using the regular `@Inject` annotation and use `SpanBuilder` to manually create, star and stop spans.
 
-```java [SpanBuilder usage]
+SpanBuilder usage:
+
+```java
 @Path("/")
 public class HelidonEndpoint {
 
@@ -131,7 +135,9 @@ public class HelidonEndpoint {
 
 Helidon MicroProfile Telemetry is integrated with [Helidon Tracing API](tracing.md). This means that both APIs can be mixed, and all parent hierarchies will be kept. In the case below, `@WithSpan` annotated method is mixed with manually created `io.helidon.tracing.Span`:
 
-```java [Inject Helidon Tracer]
+Inject Helidon Tracer:
+
+```java
 private io.helidon.tracing.Tracer helidonTracerInjected;
 
 @Inject
@@ -161,7 +167,9 @@ The span is then started and ended manually. Span parent relations will be prese
 
 Another option is to use the Global Tracer:
 
-```java [Obtain the Global tracer]
+Obtain the Global tracer:
+
+```java
 @GET
 @Path("mixed")
 @Produces(MediaType.APPLICATION_JSON)
@@ -187,7 +195,9 @@ The span is then started and ended manually. Span parent relations will be prese
 
 To obtain the current span, it can be injected by CDI. The current span can also be obtained using the static method `Span.current()`.
 
-```java [Inject the current span]
+Inject the current span:
+
+```java
 @Path("/")
 public class HelidonEndpoint {
     @Inject
@@ -215,7 +225,9 @@ public class HelidonEndpoint {
 
 The same functionality is available for the `Baggage` API:
 
-```java [Inject the current baggage]
+Inject the current baggage:
+
+```java
 @Path("/")
 public class HelidonEndpoint {
     @Inject
@@ -253,7 +265,9 @@ See the [Helidon SE documentation on span lifecycle support](../se/tracing.md#re
 
 Helidon MP applications which inject an OpenTelemetry `Tracer` or `Span` can easily request such notification by adding the Helidon [`@CallbackEnabled`](/apidocs/io.helidon.microprofile.telemetry/io/helidon/microprofile/telemetry/CallbackEnabled.html) annotation to injection points as shown in the following example.
 
-```java [Using @CallbackEnabled]
+Using @CallbackEnabled:
+
+```java
 @Inject
 @CallbackEnabled
 private Tracer otelTracer;
@@ -275,7 +289,9 @@ The following example shows how to allow automatic spans in the Helidon greet ex
 
 Your implementation of `HelidonTelemetryContainerFilterHelper` must have a CDI bean-defining annotation. The example shows `@ApplicationScoped`.
 
-```java [Example container helper for the Helidon MP Greeting app]
+Example container helper for the Helidon MP Greeting app:
+
+```java
 @ApplicationScoped
 public class CustomRestRequestFilterHelper implements HelidonTelemetryContainerFilterHelper {
 
@@ -299,7 +315,9 @@ The following example shows how to allow automatic spans in an app that invokes 
 
 Your implementation of `HelidonTelemetryClientFilterHelper` must have a CDI bean-defining annotation. The example shows `@ApplicationScoped`.
 
-```java [Example Client Helper for the Helidon MP Greeting App]
+Example Client Helper for the Helidon MP Greeting App:
+
+```java
 @ApplicationScoped
 public class CustomRestClientRequestFilterHelper implements HelidonTelemetryClientFilterHelper {
 
@@ -386,7 +404,9 @@ Together with Helidon Telemetry dependency, an OpenTelemetry Exporter dependency
 
 Add these lines to `META-INF/microprofile-config.properties`:
 
-```properties [MicroProfile Telemetry properties]
+MicroProfile Telemetry properties:
+
+```properties
 otel.sdk.disabled=false     
 otel.traces.exporter=jaeger 
 otel.service.name=greeting-service 
@@ -437,7 +457,9 @@ Next, launch the Jaeger UI at <http://localhost:16686/>. The expected output is:
 <img src="../images/telemetry/telemetry-greeting-jaeger.png" alt="Greeting service tracing output" />
 </figure>
 
-```java [Custom method]
+Custom method:
+
+```java
 @Inject
 private Tracer tracer; 
 
@@ -477,7 +499,9 @@ Again you can launch the Jaeger UI at <http://localhost:16686/>. The expected ou
 
 Now let us use multiple services calls. In the example below our main service will call the `secondary` services. Each method in each service will be annotated with `@WithSpan` annotation.
 
-```java [Outbound method]
+Outbound method:
+
+```java
 @Uri("http://localhost:8081/secondary")
 private WebTarget target; 
 
@@ -495,7 +519,9 @@ public String outbound() {
 
 The secondary service is basic; it has only one method, which is also annotated with `@WithSpan`.
 
-```java [Secondary service]
+Secondary service:
+
+```java
 @GET
 @WithSpan 
 public String getSecondaryMessage() {

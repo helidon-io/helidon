@@ -21,7 +21,9 @@ For scheduling periodic tasks, it is possible to choose a fixed rate or a Cron e
 
 ### Fixed rate
 
-```java [Scheduling with fixed rate using Scheduling.fixedRate() builder.]
+Scheduling with fixed rate using Scheduling.fixedRate() builder:
+
+```java
 FixedRate.builder()
         .delay(10)
         .initialDelay(5)
@@ -32,7 +34,9 @@ FixedRate.builder()
 
 Metadata like human-readable interval description or configured values are available through FixedRateInvocation provided as task parameter.
 
-```java [Invocation metadata]
+Invocation metadata:
+
+```java
 FixedRate.builder()
         .delay(10)
         .task(inv -> System.out.println("Method invoked " + inv.description()))
@@ -61,7 +65,9 @@ FixedRate.builder()
 
 For more complicated interval definition, Cron expression can be leveraged with `Scheduling.cron()` builder.
 
-```java [Scheduling with Cron expression]
+Scheduling with Cron expression:
+
+```java
 Cron.builder()
         .expression("0 15 8 ? * *")
         .task(inv -> System.out.println("Executer every day at 8:15"))
@@ -72,7 +78,9 @@ Cron.builder()
 
 By default, Cron expressions are evaluated using the system’s default timezone. You can specify a custom timezone to control when the cron expression triggers, regardless of the system’s timezone.
 
-```java [Scheduling with custom timezone]
+Scheduling with custom timezone:
+
+```java
 Cron.builder()
         .expression("0 0 9 * * ?")
         .zone(ZoneId.of("America/New_York"))
@@ -98,7 +106,9 @@ Cron expressions should be configured as follows.
 
 ### Cron expression
 
-```text [Cron expression format]
+Cron expression format:
+
+```text
 <seconds> <minutes> <hours> <day-of-month> <month> <day-of-week> <year>
 ```
 
@@ -143,7 +153,9 @@ Metadata like human-readable interval description or configured values are avail
 
 Scheduling is configurable with [Helidon Config](../se/config/introduction.md).
 
-```java [Example of configuring]
+Example of configuring:
+
+```java
 FixedRate.builder()
         .config(Config.create(() -> ConfigSources.create(
                 """
@@ -169,7 +181,9 @@ When using declarative programming model, the `TaskManager` can be injected. It 
 
 For simple fixed rate invocation use .
 
-```java [Example of scheduling with fixed rate using FixedRate.builder() builder.]
+Example of scheduling with fixed rate using FixedRate.builder() builder:
+
+```java
 FixedRate.builder()
         .delay(10)
         .initialDelay(5)
@@ -180,7 +194,9 @@ FixedRate.builder()
 
 Metadata like human-readable interval description or configured values are available through `FixedRateInvocation` provided as task parameter.
 
-```java [Example with invocation metadata]
+Example with invocation metadata:
+
+```java
 FixedRate.builder()
         .delay(10)
         .task(inv -> System.out.println("Method invoked " + inv.description()))

@@ -17,7 +17,9 @@ To enable Reactive Kafka Connector, add the following dependency to your project
 
 ## Config
 
-```yaml [Example of connector config]
+Example of connector config:
+
+```yaml
 mp.messaging:
 
   incoming.from-kafka:
@@ -71,7 +73,9 @@ mp.messaging:
 
 ## Consuming Messages
 
-```java [Example of consuming from Kafka]
+Example of consuming from Kafka:
+
+```java
 @Incoming("from-kafka")
 public void consumeKafka(String msg) {
     System.out.println("Kafka says: " + msg);
@@ -80,7 +84,9 @@ public void consumeKafka(String msg) {
 
 ## Producing Messages
 
-```java [Example of producing to Kafka]
+Example of producing to Kafka:
+
+```java
 @Outgoing("to-kafka")
 public PublisherBuilder<String> produceToKafka() {
     return ReactiveStreams.of("test1", "test2");
@@ -106,7 +112,9 @@ Sends nacked messages to error topic, [DLQ](https://en.wikipedia.org/wiki/Dead_l
 
 Helidon can derive connection settings for DLQ topic automatically if the error topic is present on the same Kafka cluster. Serializers are derived from deserializers used for consumption `org.apache.kafka.common.serialization.StringDeserializer` \> `org.apache.kafka.common.serialization.StringSerializer`. Note that the name of the error topic is needed only in this case.
 
-```yaml [Example of derived DLQ config]
+Example of derived DLQ config:
+
+```yaml
 mp.messaging:
   incoming:
     my-channel:
@@ -115,7 +123,9 @@ mp.messaging:
 
 If a custom connection is needed, then use the 'nack-dlq' key for all of the producer configuration.
 
-```yaml [Example of custom DLQ config]
+Example of custom DLQ config:
+
+```yaml
 mp.messaging:
   incoming:
     my-channel:
@@ -130,7 +140,9 @@ mp.messaging:
 
 Only logs nacked messages and throws them away, offset is committed and channel continues normally consuming subsequent messages.
 
-```yaml [Example of log only enabled nack strategy]
+Example of log only enabled nack strategy:
+
+```yaml
 mp.messaging:
   incoming:
     my-channel:

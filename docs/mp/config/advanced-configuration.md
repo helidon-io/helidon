@@ -46,7 +46,9 @@ To create an in-memory source from properties with custom name, use <code>create
 
 You can create MicroProfile Config Source from a map.
 
-```java [Create MicroProfile Config Source based on Environment Variables and Custom Map]
+Create MicroProfile Config Source based on Environment Variables and Custom Map:
+
+```java
 ConfigProviderResolver resolver = ConfigProviderResolver.instance();
 
 Config config = resolver.getBuilder() 
@@ -67,7 +69,9 @@ resolver.registerConfig(config, null);
 
 You can create YAML MicroProfile Config Source from a path or a URL. When you create a MicroProfile instance from the builder, the `YamlMpConfigSource` allows you to create a custom Config Source and register it with the builder.
 
-```java [Create YamlMPConfigSource from a path]
+Create YamlMPConfigSource from a path:
+
+```java
 ConfigProviderResolver.instance().getBuilder()
         .withSources(YamlMpConfigSource.create(path))
         .build();
@@ -132,9 +136,12 @@ When used, the MicroProfile Config uses configuration sources and flags configur
 
 If a file named `mp-meta-config.yaml`, or `mp-meta-config.properties` is in the current directory or on the classpath, and there is no explicit setup of configuration in the code, the configuration will be loaded from the `meta-config` file. The location of the file can be overridden using system property `io.helidon.config.mp.meta-config`, or environment variable `HELIDON_MP_META_CONFIG`.
 
-**Important Note:** Do not use custom files named `meta-config.*`, as even when using Micro-Profile, we still use Helidon configuration in some of our components, and this file would be recognized as a Helidon SE Meta Configuration file, which may cause erroneous behavior.
+> [!IMPORTANT]
+> Do not use custom files named `meta-config.*`, to avoid conflicting with Helidon SE Meta Configuration.
 
-```yaml [Example of a YAML meta configuration file]
+Example of a YAML meta configuration file:
+
+```yaml [mp-meta-config.yaml]
 add-discovered-sources: true 
 add-discovered-converters: false 
 add-default-sources: false 

@@ -61,7 +61,9 @@ A contract is a type that defines what the service registry should provide. It r
 
 For simplicity, a contract can be thought of as an interface, but it can also be an abstract class or even a concrete class.
 
-```java [Contract example]
+Contract example:
+
+```java
 interface GreetingContract {
 
     String greet(String name);
@@ -73,7 +75,9 @@ interface GreetingContract {
 
 This can be either a concrete class, which implements the contract (or is contract itself if it was a concrete class), or it can be a factory/producer (more about [Factories](#factories)), which creates a new instances to be registered into the service registry.
 
-```java [Service example]
+Service example:
+
+```java
 @Service.Singleton
 class MyGreetingService implements GreetingContract {
 
@@ -171,7 +175,9 @@ Annotation processor `helidon-service-codegen` generates a service descriptor (`
 
 To demonstrate how injection works, let’s create a simple working example where one service is injected into another.
 
-```java [Creating simple Greeter service.]
+Creating simple Greeter service:
+
+```java
 @Service.Singleton
 class Greeter {
 
@@ -184,7 +190,9 @@ class Greeter {
 
 Once the Greeter service is created, an injection point for this service is now required. Let’s create another service that injects the Greeter service as its constructor parameter.
 
-```java [Create simple injection point]
+Create simple injection point:
+
+```java
 @Service.Singleton
 class GreetingInjectionService {
 
@@ -203,7 +211,9 @@ class GreetingInjectionService {
 
 Now it just needs to be tested. The easiest way is to make a main method. The following piece of code initializes Service registry. After that we search for our `GreetingInjectionService` and execute it to print out `Hello David!`. To find out more about this manual approach, please take a look into the [Programmatic Lookup](#programmatic-lookup) chapter.
 
-```java [Lookup our created service and execute it manually]
+Lookup our created service and execute it manually:
+
+```java
 public static void main(String[] args) {
     var greetings = Services.get(GreetingInjectionService.class);
     greetings.printGreeting("David");
@@ -240,7 +250,9 @@ Both [`@Service.Named`](/apidocs/io.helidon.service.registry/io/helidon/service/
 
 Services can be assigned names, allowing them to be specified by name during injection. This ensures that the correct service is injected. To achieve this, we use the [`@Service.Named`](/apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.Named.html) annotation.
 
-```java [Create named services]
+Create named services:
+
+```java
 interface Color {
     String hexCode();
 }
@@ -268,13 +280,17 @@ public class Green implements Color {
 
 These named services can now be injected at specific injection points using their assigned names
 
-```java [Create BlueCircle with Blue color injected]
+Create BlueCircle with Blue color injected:
+
+```java
 @Service.Singleton
 record BlueCircle(@Service.Named("blue") Color color) {
 }
 ```
 
-```java [Create GreenCircle with Green color injected]
+Create GreenCircle with Green color injected:
+
+```java
 @Service.Singleton
 record GreenCircle(@Service.Named("green") Color color) {
 }
@@ -284,7 +300,9 @@ record GreenCircle(@Service.Named("green") Color color) {
 
 Alternatively, instead of using string-based names for services, a specific class can be used to "name" them. For this purpose, we use the [`@Service.NamedByType`](/apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.NamedByType.html) annotation.
 
-```java [Named by type usage example]
+Named by type usage example:
+
+```java
 @Service.NamedByType(Green.class)
 @Service.Singleton
 public class GreenNamedByType implements Color {
@@ -298,7 +316,9 @@ public class GreenNamedByType implements Color {
 
 The way it is used on the injection point, it is the same as it was in case of the [`@Service.Named`](/apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.Named.html).
 
-```java [Named by type injection point]
+Named by type injection point:
+
+```java
 @Service.Singleton
 record GreenCircleType(@Service.NamedByType(Green.class) Color color) {
 }
@@ -306,7 +326,9 @@ record GreenCircleType(@Service.NamedByType(Green.class) Color color) {
 
 [`@Service.Named`](/apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.Named.html) and [`@Service.NamedByType`](/apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.NamedByType.html) are even interchangeable. So it is possible to use [`@Service.Named`](/apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.Named.html) annotation with fully qualified class name of a class we used before. Let’s assume for this example, that our previously used class `Green` was in the `my.test` package. Now we can specify it as any other `String` name.
 
-```java [Named injection point]
+Named injection point:
+
+```java
 @Service.Singleton
 record GreenCircleStringType(@Service.Named("my.test.Green") Color color) {
 }
@@ -316,7 +338,9 @@ record GreenCircleStringType(@Service.Named("my.test.Green") Color color) {
 
 To make custom qualifiers, it is necessary to "meta-annotated" it with [`@Service.Qualifier`](/apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.Qualifier.html).
 
-```java [Create Blue and Green custom qualifiers]
+Create Blue and Green custom qualifiers:
+
+```java
 @Service.Qualifier
 public @interface Blue {
 }
@@ -328,7 +352,9 @@ public @interface Green {
 
 The `@Blue` and `@Green` annotations serve as our new qualifiers. It can now be used to qualify services in the same way as [`@Service.Named`](/apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.Named.html).
 
-```java [Custom qualifier Blue and Green usage]
+Custom qualifier Blue and Green usage:
+
+```java
 interface Color {
     String name();
 }
@@ -356,7 +382,9 @@ static class GreenColor implements Color {
 
 Once the services are created and qualified, they can be injected in the same way as before using the following approach
 
-```java [Custom qualifier usage on injection point]
+Custom qualifier usage on injection point:
+
+```java
 @Service.Singleton
 record BlueCircle(@Blue Color color) {
 }
@@ -398,7 +426,9 @@ These challenges can be addressed by implementing one of the factory interfaces 
 
 A factory that supplies a single instance (it can also return `Optional<MyContract>`)
 
-```java [Supplier factory]
+Supplier factory:
+
+```java
 /**
  * Supplier service factory.
  */
@@ -532,7 +562,9 @@ Interception wraps around the invocation, enabling it to:
 
 The [`Interception.Intercepted`](/apidocs/io.helidon.service.registry/io/helidon/service/registry/Interception.Intercepted.html) annotation is a marker used to indicate that an annotation should trigger interception.
 
-```java [Custom annotation for interception]
+Custom annotation for interception:
+
+```java
 /**
  * An annotation to mark methods to be intercepted.
  */
@@ -548,7 +580,9 @@ The [`Interception.Interceptor`](/apidocs/io.helidon.service.registry/io/helidon
 
 To properly handle the interception chain, the interceptor must always invoke the `proceed` method if the invocation should continue normally. However, it is also possible to return a custom value directly from the interceptor and effectively bypass the original method execution.
 
-```java [Sample Interceptor interface implementation]
+Sample Interceptor interface implementation:
+
+```java
 @Service.Singleton
 @Service.NamedByType(Traced.class) 
 class MyServiceInterceptor implements Interception.Interceptor {
@@ -569,7 +603,9 @@ The [`@Interception.Delegate`](/apidocs/io.helidon.service.registry/io/helidon/s
 
 Let’s make the same `@Traced` annotation and Interceptor as in the previous examples
 
-```java [Custom annotation and interceptor]
+Custom annotation and interceptor:
+
+```java
 @Interception.Intercepted
 @Target({ElementType.METHOD, ElementType.CONSTRUCTOR})
 @interface Traced {
@@ -589,7 +625,9 @@ class MyServiceInterceptor implements Interception.Interceptor {
 
 Now, let’s create the factory of the service instance.
 
-```java [Instance producer]
+Instance producer:
+
+```java
 @Service.Singleton
 class MyServiceProvider implements Supplier<MyService> {
     @Override
@@ -610,7 +648,9 @@ If you need to enable interception for classes using delegation, you should make
 - The constructor should have no side effects, as the instance will act only as a wrapper for the delegate
 - All invoked methods must be accessible (at least package local) and non-final
 
-```java [Delegate used on the class]
+Delegate used on the class:
+
+```java
 @Service.Contract
 @Interception.Delegate
 class MyService {
@@ -665,7 +705,9 @@ class SomeExternalClass {
 
 Now we need to apply the [`@Interception.ExternalDelegate`](/apidocs/io.helidon.service.registry/io/helidon/service/registry/Interception.ExternalDelegate.html) annotation on the factory class. Once this is done, interception will work as expected
 
-```java [ExternalDelegate annotation used on the factory]
+ExternalDelegate annotation used on the factory:
+
+```java
 @Service.Singleton
 @Interception.ExternalDelegate(SomeExternalClass.class)
 class SomeExternalClassProvider implements Supplier<SomeExternalClass> {
@@ -694,7 +736,9 @@ Key Terminology:
 
 To begin emitting events, the first step is to define the event type itself.
 
-```java [Create a desired event type]
+Create a desired event type:
+
+```java
 /**
  * A custom event payload.
  * @param msg message
@@ -715,7 +759,9 @@ An event producer is a service that triggers the event by using the event emitte
 
 To emit an event, inject the desired [`Event.Emitter`](/apidocs/io.helidon.service.registry/io/helidon/service/registry/Event.Emitter.html) Event.Emitter instance, construct the corresponding event object, and call the emit method on the emitter instance.
 
-```java [Event producer example]
+Event producer example:
+
+```java
 @Service.Singleton
 record MyEventProducer(Event.Emitter<MyEvent> emitter) {
 
@@ -736,7 +782,9 @@ To create an event observer:
 - create an observer method, with a single parameter of the event type you want to observe
 - annotate the method with [`@Event.Observer`](/apidocs/io.helidon.service.registry/io/helidon/service/registry/Event.Observer.html)
 
-```java [Event observer example]
+Event observer example:
+
+```java
 @Service.Singleton
 class MyEventObserver {
 
@@ -760,7 +808,9 @@ A qualified event can be produced with two options:
 
 We are using qualifier created in the chapter [Custom qualifier](#custom-qualifiers), to demonstrate how events work with qualifiers. Now we need to create a new event producer, which fires event only to observers qualified with `@Blue`.
 
-```java [Qualified event producer]
+Qualified event producer:
+
+```java
 @Service.Singleton
 record MyBlueProducer(@Blue Event.Emitter<String> emitter) {
 
@@ -774,7 +824,9 @@ record MyBlueProducer(@Blue Event.Emitter<String> emitter) {
 
 To consume a qualified event, observer method must be annotated with the correct qualifier(s). If we want to consume the same messages which are produced by the producer in the example above, our observer needs to be annotated with the same qualifier. In this case it is `@Blue`.
 
-```java [Qualified event observer]
+Qualified event observer:
+
+```java
 @Service.Singleton
 class MyBlueObserver {
 
@@ -800,7 +852,9 @@ All asynchronous event producers must use the `Event.Emitter.emitAsync(..)` meth
 
 The `emitAsync` method returns a `CompletionStage<MyEvent>` instance. When executed, it completes once all event observers have been submitted to the executor service. However, there is no guarantee that any event has been delivered—it may have been sent to anywhere from 0 to n observers (where n represents the number of synchronous observers).
 
-```java [Asynchronous Event Producer Example]
+Asynchronous Event Producer Example:
+
+```java
 @Service.Singleton
 record MyAsyncProducer(Event.Emitter<MyEvent> emitter) {
 
@@ -817,7 +871,9 @@ Asynchronous observer methods are invoked from separate threads (through the exe
 
 To declare an asynchronous observer use annotation [`@Event.AsyncObserver`](/apidocs/io.helidon.service.registry/io/helidon/service/registry/Event.AsyncObserver.html) instead of [`@Event.Observer`](/apidocs/io.helidon.service.registry/io/helidon/service/registry/Event.Observer.html).
 
-```java [Asynchronous Event Observer Example]
+Asynchronous Event Observer Example:
+
+```java
 @Service.Singleton
 class MyEventAsyncObserver {
 

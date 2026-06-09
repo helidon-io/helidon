@@ -66,7 +66,9 @@ You can define CORS behavior—​and you or your users can override behavior de
 
 For each resource you want to configure, add a section to `META-INF/microprofile-config.properties` file:
 
-```properties [General form of CORS configuration]
+General form of CORS configuration:
+
+```properties
 cors.enabled= 
 
 cors.paths.i.path-pattern= 
@@ -123,7 +125,9 @@ The discussion below describes the changes in the application which:
 
 ### Adding Annotations
 
-```java [Using annotations to declare CORS behavior]
+Using annotations to declare CORS behavior:
+
+```java
 @Path("/greet")
 public class GreetResource { 
 
@@ -164,7 +168,9 @@ public class GreetResource {
 
 You could use the following configuration in place of using annotations to set up the same CORS behavior.
 
-```properties [Using configuration to set up the same CORS behavior]
+Using configuration to set up the same CORS behavior:
+
+```properties
 cors.paths.0.path-pattern=/greet 
 
 cors.paths.1.path-pattern=/greet/greeting 
@@ -177,7 +183,9 @@ cors.paths.1.allow-methods=PUT
 
 Or, alternatively, the following configuration example augments the settings from the `@Cors.*` annotations in the code.
 
-```properties [Using configuration to augment or override declared CORS behavior]
+Using configuration to augment or override declared CORS behavior:
+
+```properties
 cors.paths.0.path-pattern=/greet 
 cors.paths.0.allow-methods=GET
 cors.paths.0.allow-origins=https://here.com,https://foo.com,https://there.com
@@ -211,7 +219,9 @@ The following example restricts sharing of
 - the `/health` resource, provided by the health built-in service, to only the origin `https://there.com`, and
 - the `/metrics` resource, provided by the metrics built-in service, to only the origin `https://foo.com`.
 
-```properties [Configuration which restricts sharing of the health and metrics resources]
+Configuration which restricts sharing of the health and metrics resources:
+
+```properties
 cors.paths.0.path-pattern=/health
 cors.paths.0.allow-origins=https://there.com
 cors.paths.1.path-pattern=/metrics
@@ -245,7 +255,9 @@ The metrics service rejects attempts to access metrics on behalf of a disallowed
 curl -i -H "Origin: https://other.com" http://localhost:8080/metrics
 ```
 
-```text [Curl output]
+Curl output:
+
+```text
 HTTP/1.1 403 Forbidden
 Date: Mon, 11 May 2020 11:08:09 -0500
 transfer-encoding: chunked
@@ -258,7 +270,9 @@ But accesses from `foo.com` succeed.
 curl -i -H "Origin: https://foo.com" http://localhost:8080/metrics
 ```
 
-```text [Curl output]
+Curl output:
+
+```text
 HTTP/1.1 200 OK
 Access-Control-Allow-Origin: https://foo.com
 Content-Type: text/plain

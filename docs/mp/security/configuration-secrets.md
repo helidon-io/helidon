@@ -102,7 +102,9 @@ RSA Configuration Options: Keystore
 
 RSA Configuration Options: PEM (PKCS#8) private key
 
-```yaml [Example yaml configuration]
+Example yaml configuration:
+
+```yaml
 security.config:
   # Set to true for production - if set to true, clear text passwords will cause failure
   require-encryption: false

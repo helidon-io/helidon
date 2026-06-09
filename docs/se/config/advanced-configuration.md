@@ -137,15 +137,13 @@ The config system lets you assign a prefix to all keys from a given source using
 
 File `app.conf`
 
-```properties
+```hocon [application.conf]
 greeting = "Hello"
 page-size = 20
 basic-range = [ -20, 20 ]
 ```
 
-File `data.conf`
-
-```yaml
+```hocon [data.conf]
 providers: [
     {
         name = "Provider1"

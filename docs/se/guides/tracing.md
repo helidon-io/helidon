@@ -187,7 +187,9 @@ You can examine span details by clicking on the span row. Refer to the image bel
 
 Your application can use the Helidon tracing API to create custom spans. The following code replaces the generated `getDefaultMessageHandler` method to add a custom span around the code which prepares the default greeting response. The new custom span’s parent span is set to the one which Helidon automatically creates for the REST endpoint.
 
-```java [Update the GreetService class, replacing the getDefaultMessageHandler method]
+Update the GreetService class, replacing the getDefaultMessageHandler method:
+
+```java
 private void getDefaultMessageHandler(ServerRequest request,
                                       ServerResponse response) {
     var spanBuilder = Tracer.global().spanBuilder("secondchildSpan"); 
@@ -223,7 +225,9 @@ Run the curl command in a new terminal window and check the response:
 curl http://localhost:8080/greet
 ```
 
-```json [JSON response]
+JSON response:
+
+```json
 {
   "message": "Hello World!"
 }
@@ -320,7 +324,9 @@ server:
 > [!NOTE]
 > The settings above are for development and experimental purposes only. For production environment, please see the [Tracing documentation](../../se/tracing.md).
 
-```java [Update the GreetService class. Replace the getDefaultMessageHandler method]
+Update the GreetService class. Replace the getDefaultMessageHandler method:
+
+```java
 private void getDefaultMessageHandler(ServerRequest request,
                                       ServerResponse response) {
 
@@ -352,7 +358,9 @@ Run the curl command in a new terminal window (**notice the port is 8081**):
 curl http://localhost:8081/greet
 ```
 
-```json [JSON response]
+JSON response:
+
+```json
 {
   "message": "Hello From SE-2 World!"
 }
@@ -390,13 +398,17 @@ Make the following changes to the `GreetFeature` class.
 
 1.  Add a `WebClient` field.
 
-    ```java [Add a private instance field (before the constructors)]
+    Add a private instance field (before the constructors):
+
+    ```java
     private WebClient webClient;
     ```
 
 2.  Add code to initialize the `WebClient` field.
 
-    ```java [Add the following code to the GreetService(Config) constructor]
+    Add the following code to the GreetService(Config) constructor:
+
+    ```java
     webClient = WebClient.builder()
         .baseUri("http://localhost:8081")
         .addService(WebClientTracing.create())
@@ -405,13 +417,18 @@ Make the following changes to the `GreetFeature` class.
 
 3.  Add a routing rule for the new endpoint `/outbound`.
 
-    ```java [Add the following line in the routing method as the first .get invocation in the method]
+    Add the following line in the routing method as the first .get invocation in
+    the method:
+
+    ```java
     .get("/outbound", this::outboundMessageHandler);
     ```
 
 4.  Add a method to handle requests to `/outbound`.
 
-    ```java [Add the following method]
+    Add the following method:
+
+    ```java
     private void outboundMessageHandler(ServerRequest request,
                                     ServerResponse response) {
     var spanBuilder = Tracer.global().spanBuilder("outboundMessageHandler");
@@ -445,7 +462,9 @@ curl -i http://localhost:8080/greet/outbound
 
 - The request goes to the service on `8080`, which then invokes the service at `8081` to get the greeting.
 
-```json [JSON response]
+JSON response:
+
+```json
 {
   "message": "Hello From SE-2 World!" 
 }
@@ -474,7 +493,10 @@ You can now stop your second service, it is no longer used in this guide.
 
 The following example demonstrates how to use Jaeger from a Helidon application running in Kubernetes.
 
-```yaml [Replace the tracing configuration in resources/application.yaml with the following]
+Replace the tracing configuration in resources/`application.yaml` with the
+following:
+
+```yaml [application.yaml]
 tracing: 
   service: helidon-se-1
   host: jaeger
@@ -490,7 +512,10 @@ docker build -t helidon-tracing-se .
 
 ### Deploy Jaeger into Kubernetes
 
-```yaml [Create the Kubernetes YAML specification, named jaeger.yaml, with the following contents]
+Create the Kubernetes YAML specification, named `jaeger.yaml`, with the
+following contents:
+
+```yaml [jaeger.yaml]
 apiVersion: v1
 kind: Service
 metadata:
@@ -533,7 +558,10 @@ Navigate to <http://localhost:16687/jaeger> to validate that you can access Jaeg
 
 ### Deploy Your Helidon Application into Kubernetes
 
-```yaml [Create the Kubernetes YAML specification, named tracing.yaml, with the following contents]
+Create the Kubernetes YAML specification, named `tracing.yaml`, with the
+following contents:
+
+```yaml [tracing.yaml]
 kind: Service
 apiVersion: v1
 metadata:
@@ -602,7 +630,9 @@ Verify the tracing endpoint using port 31143, your port will likely be different
 curl http://localhost:31143/greet
 ```
 
-```json [JSON response]
+JSON response:
+
+```json
 {
   "message": "Hello World!"
 }

@@ -55,9 +55,9 @@ This section describes how to configure and use the key features of the Helidon 
 
 #### From Docker
 
-Create a new file in `helidon-quickstart-se` named `Dockerfile.h2`. It will be used to create the H2 docker image to run H2 in a container.
+Create the following files:
 
-```dockerfile [Write the following content into the new file created]
+```dockerfile [dockerfile.h2]
 FROM openjdk:11-jre-slim
 
 ENV H2_VERSION "1.4.199"
@@ -77,9 +77,7 @@ CMD java \
        -ifNotExists
 ```
 
-Create a new file `h2.server.properties` in the current directory.
-
-```properties [Copy the properties into the properties file.]
+```properties [h2.server.properties]
 webSSL=false
 webAllowOthers=true
 webPort=8082
@@ -214,7 +212,9 @@ Copy these dependencies to pom.xml:
 
 To configure the application, Helidon uses the `application.yaml`. The DB Client configuration can be joined in the same file and is located here: `src/main/resources`.
 
-```yaml [Copy these properties into application.yaml]
+Copy these properties into `application.yaml`:
+
+```yaml [application.yaml]
 db:
   source: jdbc 
   connection: 
@@ -241,7 +241,9 @@ db:
 - SQL statements to manage the database.
 - Add a counter for metrics only for the `select-book` statement.
 
-```yaml [Copy these properties into application-test.yaml]
+Copy these properties into `application-test.yaml`:
+
+```yaml [application-test.yaml]
 db:
   connection:
     url: "jdbc:h2:mem:test" 
@@ -251,7 +253,9 @@ db:
 
 ### Set Up Helidon DB Client
 
-```java [Update Main#main]
+Update Main#main:
+
+```java
 public static void main(String[] args) {
 
     // load logging configuration
@@ -294,7 +298,9 @@ public static void main(String[] args) {
 
 Create LibraryService class into `io.helidon.examples.quickstart.se` package.
 
-```java [LibraryService class looks like this]
+LibraryService class looks like this:
+
+```java
 public class LibraryService implements HttpService {
 
     private final DbClient dbClient;    
@@ -324,7 +330,9 @@ public class LibraryService implements HttpService {
 
 As the LibraryService implements `io.helidon.webserver.HttpService`, the `routing(HttpRules)` method has to be implemented. It defines application endpoints and Http request which can be reached by clients.
 
-```java [Add update method to LibraryService]
+Add update method to LibraryService:
+
+```java
 @Override
 public void routing(HttpRules rules) {
     rules
@@ -342,7 +350,9 @@ public void routing(HttpRules rules) {
 
 To summarize, there is one endpoint that can manipulate books. The number of endpoints and application features can be changed from these rules by creating or modifying methods. `{name}` is a path parameter for the book name. The architecture of the application is defined, so the next step is to create these features.
 
-```java [Add getBook to the LibraryService]
+Add getBook to the LibraryService:
+
+```java
 private void getBook(ServerRequest request,
                      ServerResponse response) {
 
@@ -370,7 +380,9 @@ DbExecute class provides many builders to create statements such as, DML, insert
 
 And builders without `Named` keyword, they use a statement passed as an argument. More information on the Helidon DB Client [here](../dbclient.md).
 
-```java [Add getJsonBook to the LibraryService]
+Add getJsonBook to the LibraryService:
+
+```java
 private void getJsonBook(ServerRequest request,
                          ServerResponse response) {
 
@@ -389,7 +401,9 @@ private void getJsonBook(ServerRequest request,
 
 Instead of sending the `INFO` content of the targeted book, the `getJsonBook` method send the whole row of the database as a `JsonObject`.
 
-```java [Add addBook to the LibraryService]
+Add addBook to the LibraryService:
+
+```java
 private void addBook(ServerRequest request,
                      ServerResponse response) {
 
@@ -412,7 +426,9 @@ private void addBook(ServerRequest request,
 
 When a user adds a new book, it uses HTTP PUT method where the book name is in the URL and the information in the request content. To catch this content, the information is retrieved as a string and then the DB Client execute the `insert-book` script to add the book to the library. It requires two parameters, the book name and information which are passed to the dbClient thanks to `addParam` method. An HTTP 201 is sent back as a confirmation.
 
-```java [Add deleteBook to LibraryService]
+Add deleteBook to LibraryService:
+
+```java
 private void deleteBook(ServerRequest request,
                         ServerResponse response) {
 
@@ -432,7 +448,9 @@ To remove a book from the library, use the "delete-book" script in the way than 
 
 ### Set Up Routing
 
-```java [Modify the routing method in Main.java]
+Modify the routing method in `Main.java`:
+
+```java [Main.java]
 static void routing(HttpRouting.Builder routing) {
     routing
             .register("/greet", new GreetService())
@@ -473,7 +491,9 @@ Get a book from the library:
 curl -i http://localhost:8080/library/SomeBook
 ```
 
-```text [HTTP response]
+HTTP response:
+
+```text
 HTTP/1.1 404 Not Found
 Date: Tue, 12 Jan 2021 14:00:48 +0100
 transfer-encoding: chunked
@@ -488,7 +508,9 @@ Add a book from the library:
 curl -i -X PUT -d "Fantasy" http://localhost:8080/library/HarryPotter
 ```
 
-```text [HTTP response]
+HTTP response:
+
+```text
 HTTP/1.1 201 Created
 Date: Tue, 12 Jan 2021 14:01:08 +0100
 transfer-encoding: chunked
@@ -503,7 +525,9 @@ Get Harry Potter from the library:
 curl -i http://localhost:8080/library/HarryPotter
 ```
 
-```text [HTTP response]
+HTTP response:
+
+```text
 HTTP/1.1 200 OK
 Content-Type: text/plain
 Date: Tue, 12 Jan 2021 14:01:14 +0100
@@ -521,7 +545,9 @@ Get Harry Potter from the library in Json:
 curl -i http://localhost:8080/library/json/HarryPotter
 ```
 
-```text [HTTP response]
+HTTP response:
+
+```text
 HTTP/1.1 200 OK
 Content-Type: text/plain
 Date: Tue, 12 Jan 2021 14:01:14 +0100
@@ -539,7 +565,9 @@ Remove Harry Potter from the library:
 curl -i -X DELETE http://localhost:8080/library/HarryPotter
 ```
 
-```text [HTTP response]
+HTTP response:
+
+```text
 HTTP/1.1 204 No Content
 Date: Tue, 12 Jan 2021 14:01:22 +0100
 connection: keep-alive
@@ -553,7 +581,9 @@ Get Harry Potter from the library:
 curl -i http://localhost:8080/library/HarryPotter
 ```
 
-```text [HTTP response]
+HTTP response:
+
+```text
 HTTP/1.1 404 Not Found
 Date: Tue, 12 Jan 2021 14:00:48 +0100
 transfer-encoding: chunked
@@ -568,7 +598,9 @@ Check the health of your application:
 curl http://localhost:8080/observe/health
 ```
 
-```json [Response body]
+Response body:
+
+```json
 {
   "status": "UP",
   "checks": [
@@ -588,7 +620,9 @@ Check the metrics of your application:
 curl -H "Accept: application/json" http://localhost:8080/observe/metrics/application
 ```
 
-```json [Response body]
+Response body:
+
+```json
 {
   "db.counter.select-book" : 4
 }

@@ -37,7 +37,9 @@ To enable Validation, add the following dependency to your project’s `pom.xml`
 
 A type annotated with `@Validation.Validated` will have validation code generated.
 
-```java [Example of a validated type]
+Example of a validated type:
+
+```java
 @Validation.Validated
 record MyType(@Validation.String.Pattern(".*valid.*") @Validation.NotNull String validString,
               @Validation.Integer.Min(42) int validInt) {
@@ -46,14 +48,18 @@ record MyType(@Validation.String.Pattern(".*valid.*") @Validation.NotNull String
 
 Such code can then be validated using a service `TypeValidation`:
 
-```java [Example of validating a type]
+Example of validating a type:
+
+```java
 TypeValidation validator = Services.get(TypeValidation.class);
 var validationResponse = validator.validate(MyType.class, new MyType("valid", 43));
 ```
 
 Or using the check method(s) that throw a `ValidationException`:
 
-```java [Example of validating a type that throws an exception]
+Example of validating a type that throws an exception:
+
+```java
 TypeValidation validator = Services.get(TypeValidation.class);
 // throws a ValidationException if the object is invalid
 validator.check(MyType.class, new MyType("valid", 43));
@@ -85,11 +91,16 @@ An object can be validated using one of the built-in constraints through methods
 
 - [`io.helidon.validation.Validators`](/apidocs/io.helidon.validation/io/helidon/validation/Validators.html)
 
-```java [Example of validating an object using a built-in constraint]
+Example of validating an object using a built-in constraint:
+
+```java
 var validationResponse = Validators.validateNotNull(anInstance);
 ```
 
-```java [Example of validating an object using a built-in constraint that throws an exception]
+Example of validating an object using a built-in constraint that throws an
+exception:
+
+```java
 // throws a ValidationException if the object is invalid
 Validators.checkNotNull(anInstance);
 ```
@@ -98,7 +109,9 @@ The low-level approach allows use of any constraint (including custom constraint
 
 The first approach gives as a validation response:
 
-```java [Example of validating an object using any constraint]
+Example of validating an object using any constraint:
+
+```java
 var provider = Services.getNamed(ConstraintValidatorProvider.class, Validation.String.Pattern.class.getName()); 
 var context = ValidationContext.create(MyType.class); 
 var validator = provider.create(TypeNames.STRING, Annotation.create(Validation.String.Pattern.class, ".*valid.*")); 
@@ -114,7 +127,9 @@ var response = context.response();
 
 And the second throws an exception if validation failed:
 
-```java [Example of validating an object using any constraint that throws an exception]
+Example of validating an object using any constraint that throws an exception:
+
+```java
 var provider = Services.getNamed(ConstraintValidatorProvider.class, Validation.String.Pattern.class.getName()); 
 var context = ValidationContext.create(MyType.class); 
 var validator = provider.create(TypeNames.STRING, Annotation.create(Validation.String.Pattern.class, ".*valid.*")); 

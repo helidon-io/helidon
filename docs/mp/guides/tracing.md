@@ -124,7 +124,9 @@ Add the following dependency to pom.xml:
 
 All spans sent by Helidon to Jaeger need to be associated with a service. Specify the service name below.
 
-```properties [Add the following line to META-INF/microprofile-config.properties]
+Add the following line to `META-INF/microprofile-config.properties`:
+
+```properties [microprofile-config.properties]
 tracing.service=helidon-mp-1
 ```
 
@@ -141,7 +143,9 @@ Run the curl command in a new terminal window and check the response:
 curl http://localhost:8080/greet
 ```
 
-```json [JSON response]
+JSON response:
+
+```json
 {
   "message": "Hello World!"
 }
@@ -185,7 +189,9 @@ So far in this tutorial, you have used tracing with JAX-RS without needing to an
 
 To trace at the method level, you just annotate a method with @Traced.
 
-```java [Add the @Traced annotation to the getMessage method]
+Add the @Traced annotation to the getMessage method:
+
+```java
 class GreetingProvider {
     @Traced 
     String getMessage() {
@@ -208,7 +214,10 @@ Click the back button on your browser, then click on the UI refresh button to se
 
 To trace at the class level, annotate the class with @Traced. This will enable tracing for all class methods, except for the constructor and private methods.
 
-```java [Add @Traced to the GreetingProvider class and remove @Traced from the getMessage method]
+Add @Traced to the GreetingProvider class and remove @Traced from the getMessage
+method:
+
+```java
 @Traced 
 @ApplicationScoped
 public class GreetingProvider {
@@ -233,7 +242,9 @@ You can refresh the UI view and drill down the trace to see the new spans.
 > [!NOTE]
 > Methods invoked directly by your code are not enabled for tracing, even if you explicitly annotate them with @Traced. Tracing only works for methods invoked on CDI beans. See the example below.
 
-```java [Update the GreetingProvider class with the following code]
+Update the GreetingProvider class with the following code:
+
+```java
 @ApplicationScoped
 public class GreetingProvider {
     private final AtomicReference<String> message = new AtomicReference<>();
@@ -305,7 +316,9 @@ Add the following dependency to pom.xml:
 </dependency>
 ```
 
-```properties [Replace META-INF/microprofile-config.properties with the following]
+Replace `META-INF/microprofile-config.properties` with the following:
+
+```properties [microprofile-config.properties]
 app.greeting=Hello From MP-2
 tracing.service=helidon-mp-2
 
@@ -327,7 +340,9 @@ Run the curl command in a new terminal window and check the response (**notice t
 curl http://localhost:8081/greet
 ```
 
-```json [JSON response]
+JSON response:
+
+```json
 {
   "message": "Hello From MP-2 World!"
 }
@@ -337,7 +352,9 @@ curl http://localhost:8081/greet
 
 Once you have validated that the second service is running correctly, you need to modify the original application to call it.
 
-```java [Replace the GreetResource class with the following code]
+Replace the GreetResource class with the following code:
+
+```java
 @Path("/greet")
 @RequestScoped
 public class GreetResource {
@@ -407,7 +424,9 @@ You can now stop your second service, it is no longer used in this guide.
 
 The following example demonstrate how to use Jaeger from a Helidon application running in Kubernetes.
 
-```properties [Add the following line to META-INF/microprofile-config.properties]
+Add the following line to `META-INF/microprofile-config.properties`:
+
+```properties [microprofile-config.properties]
 tracing.host=jaeger
 ```
 
@@ -419,7 +438,10 @@ docker build -t helidon-tracing-mp .
 
 ### Deploy Jaeger into Kubernetes
 
-```yaml [Create the Kubernetes YAML specification, named jaeger.yaml, with the following contents]
+Create the Kubernetes YAML specification, named `jaeger.yaml`, with the
+following contents:
+
+```yaml [jaeger.yaml]
 apiVersion: v1
 kind: Service
 metadata:
@@ -464,7 +486,10 @@ Navigate to <http://localhost:16687/search> to validate that you can access Jaeg
 
 ### Deploy Your Helidon Application into Kubernetes
 
-```yaml [Create the Kubernetes YAML specification, named tracing.yaml, with the following contents]
+Create the Kubernetes YAML specification, named `tracing.yaml`, with the
+following contents:
+
+```yaml [tracing.yaml]
 kind: Service
 apiVersion: v1
 metadata:
@@ -533,7 +558,9 @@ Verify the tracing endpoint using port 31143, your port will likely be different
 curl http://localhost:31143/greet
 ```
 
-```json [JSON response]
+JSON response:
+
+```json
 {
   "message": "Hello World!"
 }

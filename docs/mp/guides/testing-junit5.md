@@ -65,7 +65,9 @@ This application provides an endpoint `/greet`, and we want to make sure this en
 
 First you’ll need to create a test class with an empty test method, and annotate it with `@HelidonTest`:
 
-```java [Test Class]
+Test Class:
+
+```java
 @HelidonTest
 class GreetTest {
     @Test
@@ -89,7 +91,9 @@ INFO io.helidon.microprofile.server.ServerCdiExtension: Server started on http:/
 
 The test is only useful if it invokes the server and verifies the result. To support testing, you can inject a `WebTarget` that is configured for the currently running server (it can also be a parameter to a test method). We can use the target to invoke our endpoint and validate the result.
 
-```java [Updated Class with webTarget]
+Updated Class with webTarget:
+
+```java
 @HelidonTest
 class GreetTest {
     @Inject

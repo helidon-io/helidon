@@ -6,7 +6,9 @@ Your application can use the MicroProfile Config or Helidon Config (or both). Mi
 
 You can inject values that the application can access from both MicroProfile Config and from Helidon Config.
 
-```java [Jakarta REST - inject a single config property]
+Jakarta REST - inject a single config property:
+
+```java
 @Inject
 public MyResource(@ConfigProperty(name = "app.name") String appName) {
     this.applicationName = appName;
@@ -15,7 +17,9 @@ public MyResource(@ConfigProperty(name = "app.name") String appName) {
 
 You can also inject the whole configuration instance, either `io.helidon.config.Config` or `org.eclipse.microprofile.config.Config`.
 
-```java [Jakarta REST - inject config]
+Jakarta REST - inject config:
+
+```java
 @Inject
 public MyResource(Config config) {
     this.config = config;

@@ -88,7 +88,9 @@ Verify the metrics endpoint in a new terminal window:
 curl http://localhost:8080/metrics
 ```
 
-```text [Text response (partial)]
+Text response (partial):
+
+```text
 # HELP classloader_loadedClasses_count Displays the number of classes that are currently loaded in the Java virtual machine.
 # TYPE classloader_loadedClasses_count gauge
 classloader_loadedClasses_count{mp_scope="base",} 4878.0
@@ -114,7 +116,9 @@ Verify the metrics endpoint with an HTTP accept header:
 curl -H "Accept: application/json"  http://localhost:8080/metrics
 ```
 
-```json [JSON response (partial)]
+JSON response (partial):
+
+```json
 {
   "application": {
     "personalizedGets": 0,
@@ -149,7 +153,9 @@ Get the Helidon requests.count metric:
 curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=vendor&name=requests.count'
 ```
 
-```json [JSON response]
+JSON response:
+
+```json
 {
   "requests.count": 6
 }
@@ -172,7 +178,9 @@ By adding a `metrics` section to your application configuration you can control 
 
 You can disable the metrics subsystem entirely using configuration:
 
-```properties [Configuration properties file disabling metrics]
+Configuration properties file disabling metrics:
+
+```properties
 metrics.enabled=false
 ```
 
@@ -191,7 +199,9 @@ Helidon MP also includes additional, extended KPI metrics which are disabled by 
 
 You can enable and control these metrics using configuration:
 
-```properties [Configuration properties file controlling extended KPI metrics]
+Configuration properties file controlling extended KPI metrics:
+
+```properties
 metrics.key-performance-indicators.extended = true
 metrics.key-performance-indicators.long-running.threshold-ms = 2000
 ```
@@ -222,7 +232,9 @@ Gathering data to compute the metrics for virtual threads is designed to be as e
 
 To enable the metrics describing virtual threads include a config setting as shown in the following example.
 
-```properties [Enabling virtual thread metrics]
+Enabling virtual thread metrics:
+
+```properties
 metrics.virtual-threads.enabled = true
 ```
 
@@ -230,7 +242,9 @@ metrics.virtual-threads.enabled = true
 
 Helidon measures pinned virtual threads only when the thread is pinned for a length of time at or above a threshold. Control the threshold as shown in the example below.
 
-```properties [Setting virtual thread pinning threshold to 100 ms]
+Setting virtual thread pinning threshold to 100 ms:
+
+```properties
 metrics.virtual-threads.pinned.threshold=PT0.100S
 ```
 
@@ -260,7 +274,9 @@ Get the metrics metadata using HTTP OPTIONS method:
 curl -X OPTIONS -H "Accept: application/json"  'http://localhost:8080/metrics?scope=base'
 ```
 
-```json [JSON response (truncated)]
+JSON response (truncated):
+
+```json
 {
    "classloader.loadedClasses.count": {
       "type": "gauge",
@@ -294,7 +310,9 @@ There are two metrics that you can use by annotating a method:
 
 The following example will demonstrate how to use the `@Counted` annotation to track the number of times the `/cards` endpoint is called.
 
-```java [Create a new class GreetingCards with the following code]
+Create a new class GreetingCards with the following code:
+
+```java
 @Path("/cards") 
 @RequestScoped 
 public class GreetingCards {
@@ -326,7 +344,9 @@ curl http://localhost:8080/cards
 curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=application'
 ```
 
-```json [JSON response (partial)]
+JSON response (partial):
+
+```json
 {
   "io.helidon.examples.quickstart.mp.GreetingCards.any-card":2 
 }
@@ -343,7 +363,9 @@ The `@Timed` annotation can also be used with a method. For the following exampl
 
 Note that when using multiple annotations on a method, you **must** give the metrics different names as shown below.
 
-```java [Replace the GreetingCards class with the following code]
+Replace the GreetingCards class with the following code:
+
+```java
 @Path("/cards")
 @RequestScoped
 public class GreetingCards {
@@ -375,7 +397,9 @@ curl http://localhost:8080/cards
 curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=application'
 ```
 
-```json [JSON response (partial)]
+JSON response (partial):
+
+```json
 {
   "cardTimer": {
     "count": 2,
@@ -397,7 +421,9 @@ curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=applica
 
 You can share a metric across multiple endpoints simply by specifying the same metric annotation as demonstrated below.
 
-```java [Replace the GreetingCards class with the following code]
+Replace the GreetingCards class with the following code:
+
+```java
 @Path("/cards")
 @RequestScoped
 public class GreetingCards {
@@ -445,7 +471,9 @@ curl  http://localhost:8080/cards
 curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=application'
 ```
 
-```json [JSON response (partial)]
+JSON response (partial):
+
+```json
 {
   "anyCard": 1,
   "specialEventCard": 2 
@@ -458,7 +486,9 @@ curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=applica
 
 You can collect metrics at the class-level to aggregate data from all methods in that class using the same metric. The following example introduces a metric to count all card queries. In the following example, the method-level metrics are not needed to aggregate the counts, but they are left in the example to demonstrate the combined output of all three metrics.
 
-```java [Replace the GreetingCards class with the following code]
+Replace the GreetingCards class with the following code:
+
+```java
 @Path("/cards")
 @RequestScoped
 @Counted(name = "totalCards") 
@@ -499,7 +529,9 @@ curl http://localhost:8080/cards/birthday
 curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=application'
 ```
 
-```json [JSON response (partial)]
+JSON response (partial):
+
+```json
 {
   "anyCard": 1,
   "birthdayCard": 1,
@@ -515,7 +547,9 @@ Field level metrics can be injected into managed objects, but they need to be up
 
 The following example shows how to use a field-level `Counter` metric to track cache hits.
 
-```java [Replace the GreetingCards class with the following code]
+Replace the GreetingCards class with the following code:
+
+```java
 @Path("/cards")
 @RequestScoped
 @Counted(name = "totalCards")
@@ -572,7 +606,9 @@ curl http://localhost:8080/cards/birthday
 curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=application'
 ```
 
-```json [JSON response (partial)]
+JSON response (partial):
+
+```json
 {
   "anyCard": 2,
   "birthdayCard": 3,
@@ -589,7 +625,9 @@ The `Gauge` metric measures a value that is maintained by code outside the metri
 
 The following example demonstrates how to use a `Gauge` to track application up-time.
 
-```java [Create a new GreetingCardsAppMetrics class with the following code]
+Create a new GreetingCardsAppMetrics class with the following code:
+
+```java
 @ApplicationScoped 
 public class GreetingCardsAppMetrics {
 
@@ -611,7 +649,10 @@ public class GreetingCardsAppMetrics {
 - Initialize the application start time.
 - Return the application `appUpTimeSeconds` metric, which will be included in the application metrics.
 
-```java [Update the GreetingCards class with the following code to simplify the metrics output]
+Update the GreetingCards class with the following code to simplify the metrics
+output:
+
+```java
 @Path("/cards")
 @RequestScoped
 public class GreetingCards {
@@ -637,7 +678,9 @@ Build and run the application, then invoke the application metrics endpoint:
 curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 ```
 
-```json [JSON response from /metrics/application]
+JSON response from /metrics/application:
+
+```json
 {
   "cardCount": 0,
   "io.helidon.examples.quickstart.mp.GreetingCardsAppMetrics.appUpTimeSeconds": 6 
@@ -658,7 +701,10 @@ Stop the application and build the docker image:
 docker build -t helidon-metrics-mp .
 ```
 
-```yaml [Create the Kubernetes YAML specification, named metrics.yaml, with the following content]
+Create the Kubernetes YAML specification, named `metrics.yaml`, with the
+following content:
+
+```yaml [metrics.yaml]
 kind: Service
 apiVersion: v1
 metadata:

@@ -17,7 +17,9 @@ To enable Security, add the following dependency to your project’s `pom.xml` (
 
 For JAX-RS resources, declare security by adding annotations to a resource class or method.
 
-```java [Protected resource method]
+Protected resource method:
+
+```java
 @GET
 @io.helidon.security.annotations.Authenticated
 @io.helidon.security.annotations.Authorized

@@ -541,7 +541,9 @@ The Helidon MP client generator creates a MicroProfile REST client interface for
 
 In the following example, `ExampleResource` (itself running in a server) invokes a remote Pet service and shows one way to use the generated `PetApi` REST client interface.
 
-```java [Using the generated PetApi returned from a separate service]
+Using the generated PetApi returned from a separate service:
+
+```java
 @Path("/exampleServiceCallingService") 
 public class ExampleOpenApiGenClientResource {
     @Inject 

@@ -73,7 +73,9 @@ These providers configure authentication with OCI by picking up OCI credentials 
 
 To configure authentication, add the `helidon.oci.authentication-method` property to `/server/src/main/resources/META-INF/oci-config.yaml`. This property specifies the OCI client authentication method that should be used.
 
-```yaml [oci-config.yaml helidon.oci.authentication-method example]
+`oci-config.yaml` helidon.oci.authentication-method example:
+
+```yaml [oci-config.yaml]
 helidon.oci:
   authentication-method: "auto"
   allowed-authentication-methods: ["config", "config-file", "session-token", "resource-principal", "instance-principal", "oke-workload-identity"]
@@ -160,7 +162,9 @@ The following information is made available from IMDS in `io.helidon.integration
 
 ## Configuration
 
-```yaml [oci-config.yaml auth config]
+`oci-config.yaml` auth config:
+
+```yaml [oci-config.yaml]
 helidon.oci:
   authentication-method: "auto" # can select a specific authentication method to use, defaults to auto to choose from allowed.
   allowed-authentication-methods: ["config", "config-file", "session-token", "resource-principal", "instance-principal", "oke-workload-identity"] # limit the list of authentication methods to try with auto

@@ -75,6 +75,7 @@ The Helidon MP OCI Starter Project also includes Helidon’s built in liveness a
 
 *The structure of the Helidon MP OCI Project*
 
+```
 ├── README.md
     ├── client
     │   ├── README.md
@@ -126,6 +127,7 @@ The Helidon MP OCI Starter Project also includes Helidon’s built in liveness a
     └── spec
         ├── README.md
         └── api.yaml
+```
 
 ## Running the Application Locally
 
@@ -259,7 +261,9 @@ Adding the dependency for OCI Streaming:
 
 Next, update `/server/src/main/resources/application.yaml` with streaming connection properties:
 
-```yaml [Example of an application.yaml configured for OCI Streaming]
+Example of an `application.yaml` configured for OCI Streaming:
+
+```yaml [application.yaml]
 oci:
  tenant: helidon-app-example 
  user: email@domain.com 
@@ -278,7 +282,9 @@ oci:
 
 Then, still in `/server/src/main/resources/application.yaml`, configure messaging channels to use Helidon’s Kafka connector.
 
-```yaml [Example of a configuration for the helidon-kafka connector]
+Example of a configuration for the helidon-kafka connector:
+
+```yaml
 mp.messaging:
 
   incoming.from-stream:

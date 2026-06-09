@@ -94,7 +94,9 @@ Helidon SE provides a [complete OpenAPI example](https://github.com/helidon-io/h
 
 The following example shows how to use configuration to customize how OpenAPI works, in this case changing the endpoint where Helidon provides the OpenAPI document.
 
-```yaml [Configure OpenAPI behavior]
+Configure OpenAPI behavior:
+
+```yaml
 server:
   port: 8080                  
   host: 0.0.0.0
@@ -111,7 +113,9 @@ Most Helidon SE applications need only add the dependency as explained above; He
 
 ### Register `OpenApiFeature` explicitly
 
-```java [Java Code to Create and Register OpenApiFeature]
+Java Code to Create and Register OpenApiFeature:
+
+```java
 WebServer server = WebServer.builder()
         .config(config.get("server"))
         .addFeature(OpenApiFeature.create(config.get("openapi"))) 

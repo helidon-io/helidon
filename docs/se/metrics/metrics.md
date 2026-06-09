@@ -162,7 +162,9 @@ The configuration directly mirrors the Micrometer `OtlpMeterRegistry` settings s
 
 The following example sets up an OTLP publisher to transmit metrics data every 30 seconds.
 
-```yaml [Example OTLP publisher settings]
+Example OTLP publisher settings:
+
+```yaml
 metrics:
   publishers:         
     otlp:  
@@ -197,7 +199,9 @@ In particular, Helidon *does not* use the inferred Prometheus publisher if you c
 
 You can configure other publishers and still have Helidon use the default one by simply adding the `prometheus` publisher entry. You do not need to specify further settings for it.
 
-```yaml [Using an OLTP publisher **and** the default Prometheus publisher]
+Using an OLTP publisher **and** the default Prometheus publisher:
+
+```yaml
 metrics:
   publishers:
     prometheus:
@@ -219,7 +223,9 @@ Look at Helidon’s [OTLP publisher blueprint]({https://github.com/helidon-io/he
 
 Refer to your publisher in configuration using the config key you set up in the publisher provider.
 
-```yaml [Example config using a hypothetical Datadog publisher]
+Example config using a hypothetical Datadog publisher:
+
+```yaml
 metrics:
   publishers:
     micrometer-datadog:
@@ -268,7 +274,9 @@ Example Reporting: JSON format:
 curl -s -H 'Accept: application/json' -X GET http://localhost:8080/observe/metrics
 ```
 
-```json [JSON response]
+JSON response:
+
+```json
 {
    "base" : {
       "memory.maxHeap" : 3817865216,
@@ -391,7 +399,9 @@ Unlike OpenMetrics/Prometheus output, which combines the data and the metadata i
 
 Helidon groups meters in the same scope together in JSON output as shown in the following example.
 
-```json [JSON metrics output structured by scope (partial)]
+JSON metrics output structured by scope (partial):
+
+```json
 {
   "application": {  
     "getTimer": {
@@ -423,7 +433,9 @@ Helidon groups meters in the same scope together in JSON output as shown in the 
 
 If an HTTP request [selects by scope](#scope-specific-retrieval), the output omits the extra level of structure that identifies the scope as shown in the following example.
 
-```json [JSON metrics output for the base scope (partial)]
+JSON metrics output for the base scope (partial):
+
+```json
 {
   "cpu.systemLoadAverage": {
     "type": "gauge",
@@ -440,11 +452,15 @@ If an HTTP request [selects by scope](#scope-specific-retrieval), the output omi
 
 The Helidon JSON format expresses each meter as either a single value (for example, a counter) or a structure with multiple values (for example, a timer).
 
-```json [JSON output for a single-valued meter (for example, Counter)]
+JSON output for a single-valued meter (for example, Counter):
+
+```json
 "requests.count": 5
 ```
 
-```json [JSON output for a multi-valued meter (for example, Timer)]
+JSON output for a multi-valued meter (for example, Timer):
+
+```json
 "getTimer": {
   "count": 3,
   "max": 0.0030455,
@@ -465,14 +481,18 @@ By default, Helidon formats time values contained in JSON output as seconds. You
 
 Access the metrics endpoint with an HTTP `OPTIONS` request and the `Accept: application/json` header to retrieve metadata in JSON format.
 
-```json [Example Counter metadata]
+Example Counter metadata:
+
+```json
 "requests.count": {
   "type": "counter",
   "description": "Each request (regardless of HTTP method) will increase this counter"
     }
 ```
 
-```json [Example Timer metadata]
+Example Timer metadata:
+
+```json
 "getTimer": {
   "type": "timer",
   "unit": "seconds",
@@ -490,7 +510,9 @@ By default, Helidon expresses timer data as seconds.
 
 You can change this using configuration:
 
-```yaml [Setting default timer units for JSON in application.yaml]
+Setting default timer units for JSON in `application.yaml`:
+
+```yaml [application.yaml]
 metrics:
   timers:
     json-units-default: units 
@@ -724,7 +746,9 @@ Helidon decides whether to measure incoming requests as follows:
 
 The `auto-http-metrics.sockets` setting controls which sockets are included in the measurements; if not set, Helidon measures requests on all sockets.
 
-```yaml [Including and Excluding Endpoints from Automatic Measurement]
+Including and Excluding Endpoints from Automatic Measurement:
+
+```yaml
 server:
   features:
     observe:
@@ -758,7 +782,9 @@ The rest of this section shows how to add a custom meter to your code and how to
 
 The following example, based on the Helidon SE QuickStart application, shows how to register and update a new `Counter` in application code. The counter tracks the number of times any of the service endpoints is accessed.
 
-```java [Define and use a Counter]
+Define and use a Counter:
+
+```java
 public class GreetService implements HttpService {
 
     private final Counter accessCtr = Metrics.globalRegistry() 
@@ -833,7 +859,9 @@ Access a service endpoint to retrieve a greeting:
 curl http://localhost:8080/greet
 ```
 
-```json [JSON response]
+JSON response:
+
+```json
 {"message":"Hello World"}
 ```
 
@@ -861,7 +889,9 @@ Metrics configuration is quite extensive and powerful and, therefore, a bit comp
 
 #### Disable Metrics Subsystem
 
-```yaml [Disabling metrics entirely]
+Disabling metrics entirely:
+
+```yaml
 server:
   features:
     observe:
@@ -880,7 +910,9 @@ Gathering data to compute the meters for virtual threads is designed to be as ef
 
 To enable the meters describing virtual threads include a config setting as shown in the following example.
 
-```yaml [Enabling virtual thread meters]
+Enabling virtual thread meters:
+
+```yaml
 metrics:
   virtual-threads:
     enabled: true
@@ -890,7 +922,9 @@ metrics:
 
 Helidon measures pinned virtual threads only when the thread is pinned for a length of time at or above a threshold. Control the threshold as shown in the example below.
 
-```yaml [Setting virtual thread pinning threshold to 100 ms]
+Setting virtual thread pinning threshold to 100 ms:
+
+```yaml
 metrics:
   virtual-threads:
     pinned:
@@ -912,7 +946,9 @@ Helidon SE also includes additional, extended KPI meters which are disabled by d
 
 You can enable and control these meters using configuration:
 
-```yaml [Controlling extended KPI meters]
+Controlling extended KPI meters:
+
+```yaml
 server:
   features:
     observe:

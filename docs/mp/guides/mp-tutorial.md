@@ -230,7 +230,9 @@ Try the Application:
 curl -X GET http://localhost:7001/greet
 ```
 
-```json [JSON response]
+JSON response:
+
+```json
 {"message":"Hello World!"}
 ```
 
@@ -294,7 +296,9 @@ public class GreetingProvider {
 
 The `GreetResource` must be updated to use this value instead of the hard coded response. Make the following updates to that class:
 
-```java [Updated GreetResource class]
+Updated GreetResource class:
+
+```java
 @Path("/greet")
 @RequestScoped
 public class GreetResource {
@@ -337,7 +341,9 @@ In this section, the application will be extended to add a PUT resource method w
 
 Here are the two new methods to add to `GreetResource.java`:
 
-```java [New methods for GreetResource.java]
+New methods for `GreetResource.java`:
+
+```java [GreetResource.java]
 @Path("/{name}")
 @GET
 @Produces(MediaType.APPLICATION_JSON)
@@ -393,7 +399,9 @@ The application logging can be customized. The default logging provider is `java
 
 Create a `logging.properties` file in `src/main/resources` with the following content:
 
-```properties [Example logging.properties file]
+Example `logging.properties` file:
+
+```properties [logging.properties]
 # Send messages to the console
 handlers=io.helidon.logging.jul.HelidonConsoleHandler 
 
@@ -447,7 +455,9 @@ curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
 
 It is possible to disable metrics by adding properties to the `microprofile-config.properties` file, for example:
 
-```properties [Disable a metric]
+Disable a metric:
+
+```properties
 metrics.base.classloader.currentLoadedClass.count.enabled=false
 ```
 
@@ -472,7 +482,9 @@ Helidon also support custom metrics. To add a new metric, annotate the JAX-RS re
 > [!TIP]
 > You can find details of the available annotations in the [MicroProfile Metrics Specification](https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/microprofile-metrics-spec-5.1.1.html)
 
-```java [Updated GreetResource.java with custom metrics]
+Updated `GreetResource.java` with custom metrics:
+
+```java [GreetResource.java]
 @GET
 @Produces(MediaType.APPLICATION_JSON)
 @Timed 
@@ -736,7 +748,9 @@ To deploy the application to Kubernetes, a Kubernetes YAML file that defines the
 
 Create a file called `app.yaml` in the project’s root directory with the following content:
 
-```yaml [Kubernetes YAML file]
+Kubernetes YAML file:
+
+```yaml
 ---
 kind: Service 
 apiVersion: v1

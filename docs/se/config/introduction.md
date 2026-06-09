@@ -101,7 +101,7 @@ Example of two config sources that can be used by `Config` with the same data tr
 
 A Properties source:
 
-```properties
+```properties [application.properties]
 web.page-size=25
 ```
 
@@ -167,7 +167,7 @@ There is a built-in filter called `ValueResolvingFilter` (enabled by default, ca
 
 Example: Let’s consider the following example properties file
 
-```properties
+```properties [application.properties]
 host=localhost
 first-service.host=${host}/firstservice
 second-service.host=${host}/secondservice

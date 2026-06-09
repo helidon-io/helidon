@@ -36,14 +36,18 @@ The YAML parser handles the following media type:
 
 - `application/x-yaml` - YAML format (file type `.yaml`)
 
-```java [Automatic selection]
+Automatic selection:
+
+```java
 void snippet_1() {
     Config config = Config.create(classpath("application.yaml")); 
 ```
 
 - The config system automatically maps the file type `.yaml` to the media type `application/x-yaml` which the Helidon YAML parser matches.
 
-```java [YAML parser specified - no file type on source]
+YAML parser specified - no file type on source:
+
+```java
 Config config = Config.create(classpath("my-config") 
                                       .parser(YamlConfigParser.create())); 
 ```
@@ -51,7 +55,9 @@ Config config = Config.create(classpath("my-config")
 - The media type of the source `my-config` is unknown, so the config system cannot choose a parser automatically.
 - The config system will parse the resource `my-config` on the runtime classpath using the YAML parser instance created by the [`YamlConfigParser`](/apidocs/io.helidon.config.yaml/io/helidon/config/yaml/YamlConfigParser.html). The `create()` method creates a config parser with default behavior.
 
-```java [Media type specified]
+Media type specified:
+
+```java
 Config config = Config.create(classpath("my-config") 
                                       .mediaType(MediaTypes.APPLICATION_X_YAML)); 
 ```
@@ -59,7 +65,9 @@ Config config = Config.create(classpath("my-config")
 - The media type of the source `my-config` is unknown, so the config system cannot choose a parser automatically.
 - Specifying the media type for the config source allows the config system to use its matching algorithm with the available parsers to choose a parser for that type.
 
-```java [YAML parser specified because parser services disabled]
+YAML parser specified because parser services disabled:
+
+```java
 Config config = Config.builder(classpath("application.yaml"))
         .disableParserServices() 
         .addParser(YamlConfigParser.create()) 
@@ -93,7 +101,9 @@ The parser handles the following media types:
 - `application/hocon` - HOCON format (file type `.conf`)
 - `application/json` - JSON format (file type `.json`)
 
-```java [Automatic selection]
+Automatic selection:
+
+```java
 Config config = Config.create(classpath("application.conf")); 
 ```
 
@@ -101,7 +111,9 @@ Config config = Config.create(classpath("application.conf"));
 
 The same module and parser supports file type `.json` and the media type `application/json`.
 
-```java [HOCON parser specified - no file type on source]
+HOCON parser specified - no file type on source:
+
+```java
 Config config = Config.create(classpath("my-config") 
                                       .parser(HoconConfigParser.create())); 
 ```
@@ -109,7 +121,9 @@ Config config = Config.create(classpath("my-config")
 - the media type of the source `my-config` is unknown, so the config system cannot choose a parser automatically.
 - The config system will parse the resource `my-config` using the HOCON parser created by the [HoconConfigParser](/apidocs/io.helidon.config.hocon/io/helidon/config/hocon/HoconConfigParser.html). The `create()` method creates a config parser with default behavior.
 
-```java [Media type specified]
+Media type specified:
+
+```java
 Config config = Config.create(classpath("my-config") 
                                       .mediaType(MediaTypes.APPLICATION_HOCON)); 
 ```
@@ -117,7 +131,9 @@ Config config = Config.create(classpath("my-config")
 - The media type of the source `my-config` is unknown, so the config system cannot choose a parser automatically.
 - Specifying the media type for the config source allows the config system to use its matching algorithm with the available parsers to choose a parser for that type.
 
-```java [HOCON parser specified because parser services disabled]
+HOCON parser specified because parser services disabled:
+
+```java
 Config config = Config.builder(classpath("application.conf"))
         .disableParserServices() 
         .addParser(HoconConfigParser.create()) 
@@ -127,7 +143,9 @@ Config config = Config.builder(classpath("application.conf"))
 - Disables automatic parser lookup and registration.
 - Explicit registration of the HOCON parser is therefore required.
 
-```java [Customized HOCON parser]
+Customized HOCON parser:
+
+```java
 Config config = Config.builder(classpath("application.conf"))
         .disableParserServices()
         .addParser(HoconConfigParser.builder() 
@@ -165,7 +183,9 @@ Config Etcd Dependency in pom.xml:
 
 To read configuration from an Etcd source, your application uses the [`EtcdConfigSourceBuilder`](/apidocs/io.helidon.config.etcd/io/helidon/config/etcd/EtcdConfigSourceBuilder.html).
 
-```java [Use Etcd config source]
+Use Etcd config source:
+
+```java
 Config config = Config.create(
         EtcdConfigSource 
                 .create(URI.create("http://my-etcd:2379"), 
@@ -186,7 +206,9 @@ The `EtcdConfigSourceBuilder` class extends [`AbstractConfigSourceBuilder`](/api
 
 The Etcd support includes a change watcher strategy designed for an etcd config source.
 
-```java [Use Etcd config source]
+Use Etcd config source:
+
+```java
 Config config = Config.create(
         EtcdConfigSource
                 .builder()
@@ -209,11 +231,15 @@ To read meta-configuration from an Etcd source set the following required proper
 
 Other optional `properties` are inherited from `AbstractConfigSourceBuilder`. (see [javadoc](/apidocs/io.helidon.config/io/helidon/config/AbstractConfigSourceBuilder.html#init-io.helidon.config.Config-))
 
-```java [Load Config from meta-configuration]
+Load Config from meta-configuration:
+
+```java
 Config config = Config.create(classpath("config-meta-etcd.yaml"));
 ```
 
-```YAML [Meta-config config-meta-etcd.yaml for the etcd source]
+Meta-config `config-meta-etcd.yaml` for the etcd source:
+
+```YAML [config-meta-etcd.yaml]
 sources:
     - type: "etcd"                                                 
       properties:
@@ -249,7 +275,9 @@ Config git Dependency in pom.xml:
 
 To read configuration from a git source, your application uses the [`GitConfigSourceBuilder`](/apidocs/io.helidon.config.git/io/helidon/config/git/GitConfigSourceBuilder.html).
 
-```java [Use git config source]
+Use git config source:
+
+```java
 Config config = Config.create(
         GitConfigSource
                 .builder() 
@@ -271,7 +299,9 @@ The `GitConfigSourceBuilder` supports the usual source builder properties becaus
 
 Your application can monitor changes to a configuration loaded from a git source associating the `regular` built-in polling strategy with the source.
 
-```java [Use of git config source with polling strategy]
+Use of git config source with polling strategy:
+
+```java
 Config config = Config.create(
         GitConfigSource.builder()
                 .uri(URI.create("https://github.com/okosatka/test-config.git"))
@@ -295,11 +325,15 @@ The config system can load information about config sources from meta-configurat
 
 The meta-configuration must set the `path` and one of `uri` or `directory`. Other optional `properties` are inherited from `AbstractConfigSourceBuilder` (see [javadoc](/apidocs/io.helidon.config/io/helidon/config/AbstractConfigSourceBuilder.html))
 
-```java [Load Config from meta-configuration]
+Load Config from meta-configuration:
+
+```java
 Config config = Config.create(classpath("config-meta-git.yaml"));
 ```
 
-```YAML [Meta-config config-meta-git.yaml for the git source]
+Meta-config `config-meta-git.yaml` for the git source:
+
+```YAML [config-meta-git.yaml]
 sources:
     - type: "git" 
       properties:

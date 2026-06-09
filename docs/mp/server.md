@@ -146,7 +146,9 @@ To enable Access logging add the following dependency to project’s `pom.xml`:
 
 Access log can be configured as follows:
 
-```properties [Access Log configuration file]
+Access Log configuration file:
+
+```properties
 server.port=8080
 server.host=0.0.0.0
 server.features.access-log.format=helidon
@@ -185,7 +187,9 @@ You can set the following properties:
 - Private key and certificate
   - Server certificate which will be used in TLS handshake
 
-```properties [META-INF/microprofile-config.properties - Server configuration]
+Server configuration:
+
+```properties [microprofile-config.properties]
 #Truststore setup
 server.tls.trust.keystore.resource.resource-path=server.p12
 server.tls.trust.keystore.passphrase=password
@@ -198,7 +202,9 @@ server.tls.private-key.keystore.passphrase=password
 
 Or the same configuration done in application.yaml file.
 
-```yaml [application.yaml - Server configuration]
+Server configuration:
+
+```yaml [application.yaml]
 server:
   tls:
     #Truststore setup
@@ -234,7 +240,9 @@ You can set the configuration in either `application.yaml` or `META-INF/micropro
 - The port `8011` is named "admin" (this is an arbitrary name)
 - Observability endpoints, such as metrics and health, use the "admin" port through the `features.observe.sockets` setting.
 
-```yaml [Server configuration using application.yaml]
+Server configuration using `application.yaml`:
+
+```yaml [application.yaml]
 server:
   port: 7011
   host: "localhost"
@@ -247,7 +255,9 @@ server:
       sockets: "admin"
 ```
 
-```properties [Server configuration using META-INF/microprofile-config.properties]
+Server configuration using `META-INF/microprofile-config.properties`:
+
+```properties [microprofile-config.properties]
 server.port=7011
 server.host=localhost
 server.sockets.0.name=admin
@@ -285,7 +295,9 @@ You can annotate a service bean with this annotation to assign it to a specific 
 
 The annotation has two attributes: - `value` that defines the routing name - `required` to mark that the routing name MUST be configured in Helidon server
 
-```java [@RoutingName example]
+@RoutingName example:
+
+```java
 @ApplicationScoped
 @RoutingName(value = "admin", required = true)
 @RoutingPath("/admin")
@@ -336,7 +348,9 @@ io.helidon.examples.AdminService:
 
 ### Serving Static Content
 
-```properties [META-INF/microprofile-config.properties - File system static content]
+File system static content:
+
+```properties [microprofile-config.properties]
 # Location of content on file system
 server.features.static-content.path.0.location=/var/www/html
 # default is index.html (only in Helidon MicroProfile)
@@ -345,7 +359,9 @@ server.features.static-content.path.0.welcome=resource.html
 # server.features.static-content.path.0.context=/static-file
 ```
 
-```properties [META-INF/microprofile-config.properties - Classpath static content]
+Classpath static content:
+
+```properties [microprofile-config.properties]
 # src/main/resources/WEB in your source tree
 server.features.static-content.classpath.0.location=/WEB
 # default is index.html
@@ -356,7 +372,9 @@ server.features.static-content.classpath.0.welcome=resource.html
 
 It is usually easier to configure list-based options using `application.yaml` instead, such as:
 
-```yaml [application.yaml - Static content]
+Static content:
+
+```yaml [application.yaml]
 server:
   features:
     static-content:
@@ -424,7 +442,9 @@ When your application receives a request Helidon iterates through the discovery 
 
 You can use configuration to set up the requested URI discovery behavior.
 
-```properties [Configuring Request URI Discovery (properties format)]
+Configuring Request URI Discovery (properties format):
+
+```properties
 server.port=8080
 server.requested-uri-discovery.types=FORWARDED,X_FORWARDED
 server.requested-uri-discovery.trusted-proxies.allow.pattern=lb.*\\.mycorp\\.com
@@ -437,7 +457,9 @@ This example might apply if `mycorp.com` had trusted load balancers named `lbxxx
 
 Helidon makes the requested URI information available as a property in the request context:
 
-```java [Retrieving Requested URI Information]
+Retrieving Requested URI Information:
+
+```java
 public class MyFilter implements ContainerRequestFilter {
 
     @Override

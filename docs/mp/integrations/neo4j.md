@@ -24,7 +24,7 @@ The support for Neo4j is implemented in Neo4j driver level. Just add the depende
 
 First describe Neo4j connection properties:
 
-```properties
+```properties [microprofile-config.properties]
 # Neo4j settings
 neo4j.uri=bolt://localhost:7687
 neo4j.authentication.username=neo4j
@@ -97,7 +97,7 @@ Now go to the `pom.xml` and add the following dependencies:
 
 Next add the connection configuration properties for Neo4j:
 
-```properties
+```properties [microprofile-config.properties]
 # Neo4j settings
 neo4j.uri=bolt://localhost:7687
 neo4j.authentication.username=neo4j
@@ -212,7 +212,7 @@ Neo4j’s metrics can be propagated to the user as `MicroProfile` metrics. This 
 
 To enable metrics in Neo4j, add the following property to `microprofile-config.properties`:
 
-```properties
+```properties [microprofile-config.properties]
 neo4j.pool.metricsEnabled=true
 ```
 

@@ -92,20 +92,22 @@ You can configure a custom service name using the `tracing.service` configuratio
 
 To disable Helidon tracing for web server and security:
 
-```properties
+```properties [microprofile-config.properties]
 tracing.components.web-server.enabled=false
 tracing.components.security.enabled=false
 ```
 
 To disables MP Tracing as by specification:
 
-```properties
+```properties [microprofile-config.properties]
 mp.opentracing.server.skip-pattern=.*
 ```
 
 Tracing configuration can be defined in `application.yaml` file.
 
-```yaml [Tracing configuration example]
+Tracing configuration example:
+
+```yaml
 tracing:
   paths:
     - path: "/favicon.ico"
@@ -135,7 +137,9 @@ To have a nicer overview in search pane of a tracer, you can customize the top-l
 
 Example:
 
-```properties [Configuration properties]
+Configuration properties:
+
+```properties
 tracing.components.web-server.spans.0.name="HTTP Request"
 tracing.components.web-server.spans.0.new-name: "HTTP %1$s %2$s"
 ```
@@ -217,7 +221,9 @@ Add the following dependency to pom.xml:
 </dependency>
 ```
 
-```properties [Replace META-INF/microprofile-config.properties with the following]
+Replace `META-INF/microprofile-config.properties` with the following:
+
+```properties [microprofile-config.properties]
 app.greeting=Hello From MP-2
 tracing.service=helidon-mp-2
 
@@ -238,7 +244,9 @@ Run the curl command in a new terminal window and check the response (**notice t
 curl http://localhost:8081/greet
 ```
 
-```json [Response body]
+Response body:
+
+```json
 {
   "message": "Hello From MP-2 World!"
 }
@@ -248,7 +256,9 @@ curl http://localhost:8081/greet
 
 Once you have validated that the second service is running correctly, you need to modify the original application to call it.
 
-```java [Replace the GreetResource class with the following code]
+Replace the GreetResource class with the following code:
+
+```java
 @Path("/greet")
 @RequestScoped
 public class GreetResource {
@@ -295,7 +305,9 @@ curl -i http://localhost:8080/greet/outbound
 
 - The request went to the service on `8080`, which then invoked the service at `8081` to get the greeting.
 
-```json [Response body]
+Response body:
+
+```json
 {
   "message": "Hello From MP-2 World!" 
 }
@@ -333,7 +345,10 @@ docker build -t helidon-tracing-mp .
 
 ### Deploy Jaeger into Kubernetes
 
-```yaml [Create the Kubernetes YAML specification, named jaeger.yaml, with the following contents]
+Create the Kubernetes YAML specification, named `jaeger.yaml`, with the
+following contents:
+
+```yaml [jaeger.yaml]
 apiVersion: v1
 kind: Service
 metadata:
@@ -378,7 +393,10 @@ Navigate to <http://localhost:16687/search> to validate that you can access Jaeg
 
 ### Deploy Your Helidon Application into Kubernetes
 
-```yaml [Create the Kubernetes YAML specification, named tracing.yaml, with the following contents]
+Create the Kubernetes YAML specification, named `tracing.yaml`, with the
+following contents:
+
+```yaml [tracing.yaml]
 kind: Service
 apiVersion: v1
 metadata:
@@ -486,7 +504,9 @@ There is an option to provide `SpanContext` programmatically (such as when writi
 
 You can either configure the span context as the active span, or explicitly define it as client property.
 
-```java [Tracing propagation with Jersey client]
+Tracing propagation with Jersey client:
+
+```java
 Response response = client.target(serviceEndpoint)
         .request()
         // tracer should be provided unless available as GlobalTracer

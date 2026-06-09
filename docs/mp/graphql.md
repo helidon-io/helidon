@@ -25,7 +25,9 @@ The MicroProfile GraphQL specification defines a number of key annotations to be
 
 For example, the following defines a GraphQL endpoint with a number of queries and mutations that work against a fictional `CustomerService` service and `Customer` class.
 
-```java [Simple ContactGraphQLApi]
+Simple ContactGraphQLApi:
+
+```java
 @ApplicationScoped
 @GraphQLApi
 public class ContactGraphQLApi {
@@ -73,7 +75,9 @@ public class customer {
 
 The example above would generate a GraphQL schema as shown below:
 
-```graphql [Sample GraphQL schema]
+Sample GraphQL schema:
+
+```graphql
 type Query {
    findAllCustomers: [Customer]
    findCustomer(customerId: Int!): Customer

@@ -58,7 +58,9 @@ Similarly, the Helidon tracing API has a global `Tracer`.
 
 In most cases, an application that prepares OpenTelemetry programmatically should initialize both of those by including code as shown in the following example.
 
-```java [Setting the global OpenTelemetry and Tracer instances in Helidon]
+Setting the global OpenTelemetry and Tracer instances in Helidon:
+
+```java
 import java.util.Map;
 import io.helidon.telemetry.otelconfig.HelidonOpenTelemetry;
 
@@ -244,7 +246,9 @@ You can add attributes to the configuration for any of the signals under the sig
 
 The following example shows attribute settings for the tracing signal.
 
-```yaml [Example attribute settings]
+Example attribute settings:
+
+```yaml
 telemetry:
   service: my-helidon-service
   tracing:
@@ -656,7 +660,9 @@ Sections below describe how to set up the configuration that is specific to the 
 
 The following example illustrates some of the ways you can configure OpenTelemetry metrics behavior. It is neither complete nor typical.
 
-```yaml [Example OpenTelemetry Metrics Configuration]
+Example OpenTelemetry Metrics Configuration:
+
+```yaml
 telemetry:
   service: "test-telemetry"
   signals:
@@ -868,7 +874,9 @@ Default log limit settings applied by OpenTelemetry
 
 The following example illustrates some of the ways you can configure OpenTelemetry logger behavior. It is neither complete nor typical.
 
-```yaml [Example OpenTelemetry Logger Configuration]
+Example OpenTelemetry Logger Configuration:
+
+```yaml
 telemetry:
   service: test-tel-logging
   global: false

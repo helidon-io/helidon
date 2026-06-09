@@ -134,7 +134,9 @@ The configuration directly mirrors the Micrometer `OtlpMeterRegistry` settings s
 
 The following example sets up an OTLP publisher to transmit metrics data every 30 seconds.
 
-```yaml [Example OTLP publisher settings]
+Example OTLP publisher settings:
+
+```yaml
 metrics:
   publishers:         
     otlp:  
@@ -169,7 +171,9 @@ In particular, Helidon *does not* use the inferred Prometheus publisher if you c
 
 You can configure other publishers and still have Helidon use the default one by simply adding the `prometheus` publisher entry. You do not need to specify further settings for it.
 
-```yaml [Using an OLTP publisher **and** the default Prometheus publisher]
+Using an OLTP publisher **and** the default Prometheus publisher:
+
+```yaml
 metrics:
   publishers:
     prometheus:
@@ -191,7 +195,9 @@ Look at Helidon’s [OTLP publisher blueprint]({https://github.com/helidon-io/he
 
 Refer to your publisher in configuration using the config key you set up in the publisher provider.
 
-```yaml [Example config using a hypothetical Datadog publisher]
+Example config using a hypothetical Datadog publisher:
+
+```yaml
 metrics:
   publishers:
     micrometer-datadog:
@@ -241,7 +247,9 @@ Example Reporting: JSON format:
 curl -s -H 'Accept: application/json' -X GET http://localhost:8080/metrics
 ```
 
-```json [JSON response]
+JSON response:
+
+```json
 {
    "base" : {
       "memory.maxHeap" : 3817865216,
@@ -364,7 +372,9 @@ Unlike OpenMetrics/Prometheus output, which combines the data and the metadata i
 
 Helidon groups metrics in the same scope together in JSON output as shown in the following example.
 
-```json [JSON metrics output structured by scope (partial)]
+JSON metrics output structured by scope (partial):
+
+```json
 {
   "application": {  
     "getTimer": {
@@ -396,7 +406,9 @@ Helidon groups metrics in the same scope together in JSON output as shown in the
 
 If an HTTP request [selects by scope](#scope-specific-retrieval), the output omits the extra level of structure that identifies the scope as shown in the following example.
 
-```json [JSON metrics output for the base scope (partial)]
+JSON metrics output for the base scope (partial):
+
+```json
 {
   "cpu.systemLoadAverage": {
     "type": "gauge",
@@ -413,11 +425,15 @@ If an HTTP request [selects by scope](#scope-specific-retrieval), the output omi
 
 The Helidon JSON format expresses each metric as either a single value (for example, a counter) or a structure with multiple values (for example, a timer).
 
-```json [JSON output for a single-valued metric (for example, Counter)]
+JSON output for a single-valued metric (for example, Counter):
+
+```json
 "requests.count": 5
 ```
 
-```json [JSON output for a multi-valued metric (for example, Timer)]
+JSON output for a multi-valued metric (for example, Timer):
+
+```json
 "getTimer": {
   "count": 3,
   "max": 0.0030455,
@@ -438,14 +454,18 @@ By default, Helidon formats time values contained in JSON output as seconds. You
 
 Access the metrics endpoint with an HTTP `OPTIONS` request and the `Accept: application/json` header to retrieve metadata in JSON format.
 
-```json [Example Counter metadata]
+Example Counter metadata:
+
+```json
 "requests.count": {
   "type": "counter",
   "description": "Each request (regardless of HTTP method) will increase this counter"
     }
 ```
 
-```json [Example Timer metadata]
+Example Timer metadata:
+
+```json
 "getTimer": {
   "type": "timer",
   "unit": "seconds",
@@ -516,7 +536,9 @@ Either of the following techniques gets a `MetricRegistry` reference. Remember t
 
 - `@Inject MetricRegistry`, optionally using [`@RegistryScope`](https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/apidocs/org/eclipse/microprofile/metrics/annotation/RegistryScope.html) to indicate the registry scope.
 
-  ```java [Injecting the default MetricRegistry (for the application scope)]
+  Injecting the default MetricRegistry (for the application scope):
+
+  ```java
   class Example {
 
     @Inject
@@ -524,7 +546,9 @@ Either of the following techniques gets a `MetricRegistry` reference. Remember t
   }
   ```
 
-  ```java [Injecting a non-default MetricRegistry]
+  Injecting a non-default MetricRegistry:
+
+  ```java
   class Example {
 
     @RegistryScope(scope = "myCustomScope")
@@ -707,7 +731,9 @@ Helidon decides whether to measure incoming requests as follows:
 
 The `auto-http-metrics.sockets` setting controls which sockets are included in the measurements; if not set, Helidon measures requests on all sockets.
 
-```properties [Including and Excluding Endpoints from Automatic Measurement]
+Including and Excluding Endpoints from Automatic Measurement:
+
+```properties
 server.features.observe.observers.metrics.auto-http-metrics.paths.0.path=/greet        
 server.features.observe.observers.metrics.auto-http-metrics.paths.0.methods=GET,HEAD
 
@@ -738,7 +764,9 @@ The rest of this section contains other examples of working with metrics:
 
 The following example adds a new resource class, `GreetingCards`, to the Helidon MP QuickStart example. It shows how to use the `@Counted` annotation to track the number of times the `/cards` endpoint is called.
 
-```java [Create a new class GreetingCards with the following code]
+Create a new class GreetingCards with the following code:
+
+```java
 @Path("/cards") 
 @RequestScoped 
 public class GreetingCards {
@@ -777,7 +805,9 @@ curl http://localhost:8080/cards
 curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=application'
 ```
 
-```text [JSON response]
+JSON response:
+
+```text
 {
   "io.helidon.examples.quickstart.mp.GreetingCards.any-card": 2, //  
   "personalizedGets": 0,
@@ -801,7 +831,9 @@ You can also use the @Timed\` annotation with a method. For the following exampl
 
 Note that when using multiple annotations on a method, you **must** give the metrics different names as shown below, although they do not have to be absolute.
 
-```java [Update the GreetingCards class with the following code]
+Update the GreetingCards class with the following code:
+
+```java
 @Path("/cards")
 @RequestScoped
 public class GreetingCards {
@@ -839,7 +871,9 @@ curl http://localhost:8080/cards
 curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=application'
 ```
 
-```json [JSON response]
+JSON response:
+
+```json
 {
   "cardTimer": {
     "count": 2,
@@ -862,7 +896,9 @@ curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=applica
 
 You can collect metrics at the class level to aggregate data from all methods in that class using the same metric. The following example introduces a metric to count all card queries. In the following example, the method-level metrics are not needed to aggregate the counts, but they are left in the example to demonstrate the combined output of all three metrics.
 
-```java [Update the GreetingCards class with the following code]
+Update the GreetingCards class with the following code:
+
+```java
 @Path("/cards")
 @RequestScoped
 @Counted(name = "totalCards") 
@@ -910,7 +946,9 @@ curl http://localhost:8080/cards/birthday
 curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=application'
 ```
 
-```json [JSON response from /metrics?scope=application]
+JSON response from /metrics?scope=application:
+
+```json
 {
   "birthdayCard": 1,
   "personalizedGets": 0,
@@ -933,7 +971,9 @@ Field level metrics can be injected into managed objects, but they need to be up
 
 The following example shows how to use a field-level `Counter` metric to track cache hits.
 
-```java [Update the GreetingCards class with the following code]
+Update the GreetingCards class with the following code:
+
+```java
 @Path("/cards")
 @RequestScoped
 @Counted(name = "totalCards")
@@ -990,7 +1030,9 @@ curl http://localhost:8080/cards/birthday
 curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=application'
 ```
 
-```json [JSON response from /metrics/application]
+JSON response from /metrics/application:
+
+```json
 {
   "birthdayCard": 3,
   "personalizedGets": 0,
@@ -1016,7 +1058,9 @@ The `Gauge` annotation is different from the other metric annotations. The appli
 
 The following example demonstrates how to use a `Gauge` to track application up-time.
 
-```java [Create a new GreetingCardsAppMetrics class with the following code]
+Create a new GreetingCardsAppMetrics class with the following code:
+
+```java
 @ApplicationScoped 
 public class GreetingCardsAppMetrics {
 
@@ -1038,7 +1082,10 @@ public class GreetingCardsAppMetrics {
 - Initialize the application start time.
 - Return the application `appUpTimeSeconds` metric, which will be included in the application metrics.
 
-```java [Update the GreetingCards class with the following code to simplify the metrics output]
+Update the GreetingCards class with the following code to simplify the metrics
+output:
+
+```java
 @Path("/cards")
 @RequestScoped
 public class GreetingCards {
@@ -1064,7 +1111,9 @@ Build and run the application, then invoke the application metrics endpoint:
 curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=application'
 ```
 
-```json [JSON response from /metrics/application]
+JSON response from /metrics/application:
+
+```json
 {
   "personalizedGets": 0,
   "allGets": {
@@ -1085,7 +1134,9 @@ curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=applica
 <a id="extension_example"></a>
 You can work with metrics from your own CDI extension by observing the `RuntimeStart` event.
 
-```java [CDI Extension that works correctly with metrics]
+CDI Extension that works correctly with metrics:
+
+```java
 public class MyExtension implements Extension {
     void startup(@Observes @RuntimeStart Object event,  
                  MetricRegistry metricRegistry) {       
@@ -1115,7 +1166,9 @@ Metrics configuration is quite extensive and powerful and, therefore, a bit comp
 
 #### Disable Metrics Subsystem
 
-```properties [Disabling metrics entirely]
+Disabling metrics entirely:
+
+```properties
 metrics.enabled=false
 ```
 
@@ -1129,7 +1182,9 @@ Gathering data to compute the metrics for virtual threads is designed to be as e
 
 To enable the metrics describing virtual threads include a config setting as shown in the following example.
 
-```properties [Enabling virtual thread metrics]
+Enabling virtual thread metrics:
+
+```properties
 metrics.virtual-threads.enabled = true
 ```
 
@@ -1137,7 +1192,9 @@ metrics.virtual-threads.enabled = true
 
 Helidon measures pinned virtual threads only when the thread is pinned for a length of time at or above a threshold. Control the threshold as shown in the example below.
 
-```properties [Setting virtual thread pinning threshold to 100 ms]
+Setting virtual thread pinning threshold to 100 ms:
+
+```properties
 metrics.virtual-threads.pinned.threshold=PT0.100S
 ```
 
@@ -1156,14 +1213,18 @@ Helidon MP also includes additional, extended KPI metrics which are disabled by 
 
 You can enable and control these metrics using configuration:
 
-```properties [Controlling extended KPI metrics]
+Controlling extended KPI metrics:
+
+```properties
 metrics.key-performance-indicators.extended = true
 metrics.key-performance-indicators.long-running.threshold-ms = 2000
 ```
 
 #### Enable `REST.request` Metrics
 
-```properties [Controlling REST request metrics]
+Controlling REST request metrics:
+
+```properties
 metrics.rest-request.enabled=true
 ```
 
@@ -1183,7 +1244,10 @@ Stop the application and build the docker image:
 docker build -t helidon-metrics-mp .
 ```
 
-```yaml [Create the Kubernetes YAML specification, named metrics.yaml, with the following content]
+Create the Kubernetes YAML specification, named `metrics.yaml`, with the
+following content:
+
+```yaml [metrics.yaml]
 kind: Service
 apiVersion: v1
 metadata:

@@ -293,7 +293,9 @@ io.helidon.microprofile.lra
 
 Optional configuration options
 
-```yaml [Example of LRA configuration]
+Example of LRA configuration:
+
+```yaml
 mp.lra:
   coordinator.url: http://localhost:8070/lra-coordinator 
   propagation.active: true 
@@ -312,7 +314,9 @@ The following example shows how a simple LRA participant starts and joins a tran
 
 If an exception occurs during startExample method execution, coordinator receives cancel call and `/compensate-example` is called by coordinator to compensate for cancelled LRA transaction.
 
-```java [Example of simple LRA participant]
+Example of simple LRA participant:
+
+```java
 @PUT
 @LRA(LRA.Type.REQUIRES_NEW) 
 @Path("start-example")
@@ -368,7 +372,9 @@ Dependency:
 
 Considering that you have LRA enabled JAX-RS resource you want to test.
 
-```java [Example JAX-RS resource with LRA.]
+Example JAX-RS resource with LRA:
+
+```java
 @ApplicationScoped
 @Path("/test")
 public class WithdrawResource {
@@ -404,7 +410,9 @@ public class WithdrawResource {
 
 Helidon test with enabled CDI discovery can look like this.
 
-```java [HelidonTest with LRA test support.]
+HelidonTest with LRA test support:
+
+```java
 @HelidonTest
 //@AddBean(WithdrawResource.class) 
 @AddBean(TestLraCoordinator.class) 
@@ -452,7 +460,9 @@ Testing LRA coordinator is started on additional named socket `test-lra-coordina
 
 Example: `-Dhelidon.lra.coordinator.test-socket.index=20`.
 
-```java [HelidonTest override LRA test feature default settings.]
+HelidonTest override LRA test feature default settings:
+
+```java
 @HelidonTest
 @AddBean(TestLraCoordinator.class)
 @AddConfig(key = "server.sockets.500.port", value = "8070") 
@@ -470,7 +480,9 @@ public class LraCustomConfigTest {
 
 When CDI bean auto-discovery is not desired, LRA and Config CDI extensions needs to be added manually.
 
-```java [HelidonTest setup with disabled discovery.]
+HelidonTest setup with disabled discovery:
+
+```java
 @HelidonTest
 @DisableDiscovery
 @AddJaxRs
@@ -527,7 +539,9 @@ docker container run --name otmm -v "$(pwd)":/app/config \
 
 To use MicroTx with Helidon LRA participant, `narayanaLraCompatibilityMode` needs to be enabled.
 
-```yaml [Configure MicroTx for development]
+Configure MicroTx for development:
+
+```yaml
 tmmAppName: tcs
 tmmConfiguration:
   listenAddr: 0.0.0.0:8080

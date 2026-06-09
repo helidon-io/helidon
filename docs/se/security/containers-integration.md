@@ -20,7 +20,9 @@ There are two steps to configure security with WebServer:
 1.  Create a security instance and register it with the server.
 2.  Protect server routes with optional security features.
 
-```java [Example using builders]
+Example using builders:
+
+```java
 WebServer.builder()
         .addFeature(SecurityFeature.builder() 
                             .security(security)
@@ -34,7 +36,9 @@ WebServer.builder()
 - Register the security feature in the web server, enforce authentication by default
 - Protect this route with authentication (from defaults) and role "user"
 
-```java [Example using configuration]
+Example using configuration:
+
+```java
 WebServer.builder()
         // This is step 1 - register security instance with web server processing
         // security - instance of security either from config or from a builder
@@ -48,7 +52,9 @@ WebServer.builder()
 - Helper method to load both security and web server security from configuration
 - Security for this route is defined in the configuration
 
-```yaml [Example using configuration (YAML)]
+Example using configuration (YAML):
+
+```yaml
 security:
   web-server: 
       defaults:

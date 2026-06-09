@@ -544,7 +544,9 @@ The rest of this sections focuses on your next steps if, on the other hand, you 
 
 The generator creates an implementation class as well as the abstract class for each API. The implementation class contains a `handle` method for each API operation with a very simple method body that returns a not-yet-implemented HTTP status in the response. The following example shows the generated method for the `addPet` OpenAPI operation.
 
-```java [The generated handleAddPet method in the PetApiImpl class]
+The generated handleAddPet method in the PetApiImpl class:
+
+```java
 public class PetServiceImpl extends PetService {
     @Override
     protected void handleAddPet(ServerRequest request, ServerResponse response,
@@ -556,7 +558,9 @@ public class PetServiceImpl extends PetService {
 
 Customize the class to manage the pets and revise the method to save the new pet and send the correct response, as shown next.
 
-```java [The customized handleAddPet method in the PetApiImpl class]
+The customized handleAddPet method in the PetApiImpl class:
+
+```java
 public class PetServiceImpl extends PetService {
 
     private final Map<Long, Pet> pets = new HashMap<>();
@@ -580,7 +584,9 @@ public class PetServiceImpl extends PetService {
 
 If a response has any *required* response parameters you would pass them as parameters to the `builder` method. Add *optional* response parameters using other generated builder methods. The following example illustrates this for the `findPetsByTags` operation and its `response` output parameter.
 
-```java [The customized findPetsByTags method in the PetApiImpl class]
+The customized findPetsByTags method in the PetApiImpl class:
+
+```java
 public class PetServiceImpl extends PetService {
 
     private final Map<Long, Pet> pets = new HashMap<>();
@@ -636,7 +642,9 @@ For each operation in an API the generator creates an inner class and, for each 
 1.  Write a class which extends the inner class for the operation.
 2.  In that subclass override the relevant method.
 
-    ```java [Customized AddPetOp class]
+    Customized AddPetOp class:
+
+    ```java
     public class AddPetOpCustom extends PetService.AddPetOp {
     @Override
     protected Pet pet(ServerRequest request, ValidatorUtils.Validator validator) {
@@ -659,7 +667,9 @@ For each operation in an API the generator creates an inner class and, for each 
 
 3.  In the implementation class for the API (`PetServiceImpl`) override the `createAddPetOp` method so it returns an instance of your new subclass `AddPetOpCustom` of the operation inner class `AddPetOp`.
 
-    ```java [Providing your custom implementation of AddPet]
+    Providing your custom implementation of AddPet:
+
+    ```java
     public class PetServiceImpl extends PetService {
     @Override
     protected AddPetOp createAddPetOp() {
@@ -700,7 +710,9 @@ The next sections describe, from simplest to most complicated, the ways your cod
 
 In the simplest case, your code can get an `ApiClient` instance directly.
 
-```java [Creating an ApiClient instance - simple case]
+Creating an ApiClient instance - simple case:
+
+```java
 public class ExampleClient {
 
     private ApiClient apiClient;
@@ -722,7 +734,9 @@ Your code can use the `ApiClient.Builder` to fine-tune the settings for the inte
 
 Your code does not need to know how the object mapper setting is conveyed to the internal `WebClientConfig.Builder`. The `ApiClient.Builder` knows how to do that.
 
-```java [Creating an ApiClient instance - influencing the ApiClient.Builder]
+Creating an ApiClient instance - influencing the ApiClient.Builder:
+
+```java
 public class ExampleClient {
 
     private ApiClient apiClient;
@@ -744,7 +758,9 @@ public class ExampleClient {
 
 In more complicated situations, your code can adjust the settings of the `WebClientConfig.Builder` which the `ApiClient.Builder` creates.
 
-```java [Creating an ApiClient instance - adjusting the WebClientConfig.Builder]
+Creating an ApiClient instance - adjusting the WebClientConfig.Builder:
+
+```java
 public class ExampleClient {
 
     private ApiClient apiClient;
@@ -773,7 +789,9 @@ The automatic `WebClientConfig.Builder` retains information derived from the Ope
 
 Lastly, you can construct the `WebClientConfig.Builder` entirely yourself and have the `ApiClient.Builder` use it instead of its own internal builder.
 
-```java [Creating an ApiClient instance - using a custom WebClientConfig.Builder]
+Creating an ApiClient instance - using a custom WebClientConfig.Builder:
+
+```java
 public class ExampleClient {
 
     private ApiClient apiClient;
@@ -806,7 +824,9 @@ The `ApiClient` represents the connection to the remote server but not the indiv
 
 To invoke an operation defined on the `PetApi` interface, your code instantiates a `PetApi` using an `ApiClient` object:
 
-```java [Preparing the PetStore Client API]
+Preparing the PetStore Client API:
+
+```java
 public class ExampleClient {
 
     private ApiClient apiClient;
@@ -848,7 +868,9 @@ You can adopt different styles of retrieving the results, depending on the speci
 
 ##### Access only the result
 
-```java [Access with only result access]
+Access with only result access:
+
+```java
 void findAvailablePets() {
     ApiResponse<List<Pet>> apiResponse =
             petApi.findPetsByStatus(List.of(Pet.StatusEnum.AVAILABLE.value()));
@@ -866,7 +888,9 @@ The Helidon WebClient programming model includes a `HTTPClientResponse` interfac
 
 The next example shows how your code can use the `HTTPClientResponse`.
 
-```java [Access with status checking]
+Access with status checking:
+
+```java
 void findAvailablePets() {
     ApiResponse<List<Pet>> apiResponse =
             petApi.findPetsByStatus(List.of(Pet.StatusEnum.AVAILABLE.value()));

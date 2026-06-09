@@ -108,7 +108,9 @@ You can use configuration to affect the UI path in these ways:
 
 - Separately, configure the entire web context path for the UI independently from the web context for OpenAPI.
 
-  ```properties [Configuring the OpenAPI UI web context]
+  Configuring the OpenAPI UI web context:
+
+  ```properties
   mp.openapi.services.ui.web-context=/my-ui
   ```
 

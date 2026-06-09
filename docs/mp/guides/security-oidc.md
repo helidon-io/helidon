@@ -229,7 +229,9 @@ Add the following dependencies to pom.xml:
 
 The OIDC security provider configuration can be joined to helidon configuration file. This file is located here: `src/main/resources/application.yaml`. It can be easily used to configure the web server without modifying application code.
 
-```yaml [Create application.yaml file and add the following line]
+Create `application.yaml` file and add the following line:
+
+```yaml [application.yaml]
 security:
   providers:
     - abac:
@@ -253,18 +255,24 @@ The client secret is the one generate into Keycloak Client Credentials. It must 
 
 Make sure keycloak and the application are not running on the same port. The application port value can be changed into microprofile-config.properties.
 
-```properties [Change these properties to configure the server host and port]
+Change these properties to configure the server host and port:
+
+```properties
 server.port=7987
 server.host=localhost
 ```
 
 If the port 7987 is already used, check what port is free on your machine.
 
-```properties [Replace the old port into microprofile-config.properties]
+Replace the old port into `microprofile-config.properties`:
+
+```properties [microprofile-config.properties]
 server.port="{Your-new-port}"
 ```
 
-```yaml [Replace the old port into application.yaml]
+Replace the old port into `application.yaml`:
+
+```yaml [application.yaml]
 frontend-uri: "http://localhost:{Your-new-port}"
 ```
 
@@ -272,7 +280,9 @@ frontend-uri: "http://localhost:{Your-new-port}"
 
 The `GreetResource` class is a JAX-RS resource available at the endpoint `/greet`. Use `@Authenticated` annotation to protect any method or endpoint. Modify the `getDefaultMessage` method with the `@Authenticated` to limit its access.
 
-```java [Add @Authenticated to secure getDefaultMessage]
+Add @Authenticated to secure getDefaultMessage:
+
+```java
 @Authenticated
 @GET
 @Produces(MediaType.APPLICATION_JSON)
@@ -328,7 +338,9 @@ touch application.yaml
 
 Open the application.yaml file you just created.
 
-```yaml [Copy these properties into the new application.yaml]
+Copy these properties into the new `application.yaml`:
+
+```yaml [application.yaml]
 security:
   providers:
     - type: oidc
@@ -349,7 +361,9 @@ Next step is to create the test to check that the application is correctly prote
 
 Firstly, create new test method `testHelloWorld`
 
-```java [Add this method to the test class]
+Add this method to the test class:
+
+```java
 @Test
 void testHelloWorld() {
 }
@@ -357,7 +371,9 @@ void testHelloWorld() {
 
 Now we can add the first test:
 
-```java [Add this code into testHelloWorld method]
+Add this code into testHelloWorld method:
+
+```java
 try (Response r = target
         .path("greet")
         .request()
@@ -370,7 +386,9 @@ This piece of code uses the JAX-RS client to access the application on `/greet` 
 
 Only `jack` user has access to this part of the application.
 
-```java [Change the testHelloWorld method]
+Change the testHelloWorld method:
+
+```java
 String encoding = Base64.getEncoder().encodeToString("jack:changeit".getBytes());
 Message jsonMessage = target
         .path("greet")
@@ -411,7 +429,9 @@ For the first step, paste the following URL into your browser: `http://localhost
 
 In order to achieve the third step, we can use Postman to exchange the authorization code for tokens. In Postman, select the Http POST method. Keycloak endpoint to get token is the following: `http://localhost:8080/realms/myRealm/protocol/openid-connect/token`. In the body of the request, select `x-www-form-urlencoded` type. Add the following data:
 
-```json [Enter the key:value]
+Enter the key:value:
+
+```json
 [
     {"key":"grant_type","value":"authorization_code"},
     {"key":"client_id","value":"myClientID"},
@@ -426,7 +446,9 @@ Do not forget to replace the `client secret` by its value (generated during Crea
 
 The Direct Access Grants flow is used by REST clients that want to request tokens on behalf of a user. To use Postman to make this request on behalf of `myUser`, select the GET method and enter this URL: `http://localhost:7987/greet/`. Under `Authorization` tab, select authorization type `OAuth 2.0`. Under it, complete the sentence `Add authorization data to` with `Request Headers`, and complete the required fields.
 
-```json [Enter the following information]
+Enter the following information:
+
+```json
 [
     {"key":"Header Prefix","value":"bearer"},
     {"key":"Grant type","value":"Password  Credentials"},
@@ -448,7 +470,9 @@ To give less access to a specific endpoint, it is possible to configure user rol
 
 Navigate to the GreetResource and find the `getDefaultMessage` with @Authenticate annotation.
 
-```java [Add the @RolesAllowed annotation]
+Add the @RolesAllowed annotation:
+
+```java
 @RolesAllowed("admin")
 class GreetResource {
 }
@@ -458,7 +482,9 @@ The annotation parameter is the role with access to the method. In this case, on
 
 Then, add a user and roles to the `helidon-quickstart-mp/src/test/resources/application.yaml` file.
 
-```yaml [Add jack roles and create a new user named john]
+Add jack roles and create a new user named john:
+
+```yaml
 - http-basic-auth:
     users:
       - login: "jack"
@@ -473,7 +499,9 @@ Now, only Jack has access to secure endpoint as he has an `admin` role. John, as
 
 The user `john` has only the `user` role so when accessing protected endpoint, a 403 (Forbidden) http code is returned.
 
-```java [Check that john does not have access]
+Check that john does not have access:
+
+```java
 String encoding = Base64.getEncoder().encodeToString("john:changeit".getBytes());
 
 try (Response r = target

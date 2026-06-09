@@ -34,7 +34,9 @@ WebServer.builder()
 
 You can also define the configuration in a file.
 
-```yaml [WebServer configuration file application.yaml]
+WebServer configuration file `application.yaml`:
+
+```yaml [application.yaml]
 server:
   port: 8080
   host: "0.0.0.0"
@@ -42,7 +44,10 @@ server:
 
 Then, in your application code, load the configuration from that file.
 
-```java [WebServer initialization using the application.yaml file located on the classpath]
+WebServer initialization using the `application.yaml` file located on the
+classpath:
+
+```java [application.yaml]
 Config config = Config.create();
 WebServer.builder()
         .config(config.get("server"));
@@ -76,7 +81,9 @@ WebServer.builder()
 
 It is also possible to configure TLS via the config file.
 
-```yaml [WebServer TLS configuration file application.yaml]
+WebServer TLS configuration file `application.yaml`:
+
+```yaml [application.yaml]
 server:
   tls:
     #Truststore setup
@@ -101,7 +108,10 @@ server:
 
 Then, in your application code, load the configuration from that file.
 
-```java [WebServer initialization using the application.yaml file located on the classpath]
+WebServer initialization using the `application.yaml` file located on the
+classpath:
+
+```java [application.yaml]
 Config config = Config.create();
 WebServer.builder()
         .config(config.get("server"));
@@ -112,7 +122,9 @@ WebServer.builder()
 
 Or you can only create WebServerTls instance based on the config file.
 
-```java [WebServerTls instance based on application.yaml file located on the classpath]
+WebServerTls instance based on `application.yaml` file located on the classpath:
+
+```java [application.yaml]
 Config config = Config.create();
 WebServer.builder()
         .tls(it -> it.config(config.get("server.tls")));
@@ -120,7 +132,9 @@ WebServer.builder()
 
 This can alternatively be configured with paths to PKCS#8 PEM files rather than KeyStores:
 
-```yaml [WebServer TLS configuration file application.yaml]
+WebServer TLS configuration file `application.yaml`:
+
+```yaml [application.yaml]
 server:
   tls:
     #Truststore setup
@@ -196,7 +210,9 @@ Routing also supports *Error Routing* which binds Java `Throwable` to the handli
 
 Configure HTTP request routing using `HttpRouting.Builder`.
 
-```java [Using HttpRouting.Builder to specify how HTTP requests are handled]
+Using HttpRouting.Builder to specify how HTTP requests are handled:
+
+```java
 WebServer.builder()
         .routing(it -> it
                 .get("/hello", (req, res) -> res.send("Hello World!")))
@@ -274,11 +290,15 @@ routing.route(HttpRoute.builder()
 
 By implementing the `io.helidon.webserver.http.HttpService` interface you can organize your code into one or more services, each with its own path prefix and set of handlers.
 
-```java [Use HttpRouting.Builder.register to register your service]
+Use HttpRouting.Builder.register to register your service:
+
+```java
 routing.register("/hello", new HelloService());
 ```
 
-```java [Service implementation]
+Service implementation:
+
+```java
 class HelloService implements HttpService {
     @Override
     public void routing(HttpRules rules) {
@@ -295,7 +315,9 @@ In this example, the `GET` handler matches requests to `/hello/subpath`.
 
 In Helidon 4 your `HttpService` can interpose on the server lifecycle by overriding the `beforeStart` and `afterStop` methods:
 
-```java [Helidon 4.x server lifecycle]
+Helidon 4.x server lifecycle:
+
+```java
 static class MyService implements HttpService {
     @Override
     public void beforeStart() {
@@ -405,7 +427,9 @@ rules.get("/hello", (req, res) -> {
 
 Handling routes based on the protocol version is possible by registering specific routes on routing builder.
 
-```java [Routing based on HTTP version]
+Routing based on HTTP version:
+
+```java
 rules.get("/any-version", (req, res) -> res.send("HTTP Version " + req.prologue().protocolVersion()))
         .route(Http1Route.route(Method.GET, "/version-specific", (req, res) -> res.send("HTTP/1.1 route")))
         .route(Http2Route.route(Method.GET, "/version-specific", (req, res) -> res.send("HTTP/2 route")));
@@ -438,7 +462,9 @@ When your application invokes `request.requestedUri()` Helidon iterates through 
 
 To set up requested URI discovery on the default socket for your server, use the [`WebServerConfig.Builder`](/apidocs/io.helidon.webserver/io/helidon/webserver/WebServerConfig.Builder.html):
 
-```java [Requested URI set-up for the default server socket]
+Requested URI set-up for the default server socket:
+
+```java
 import io.helidon.common.configurable.AllowList;
 import jakarta.json.Json;
 import jakarta.json.JsonBuilderFactory;
@@ -469,7 +495,9 @@ If you build your server with additional sockets, you can control requested URI 
 
 You can also use configuration to set up the requested URI discovery behavior. The following example replicates the settings assigned programmatically in the earlier code example:
 
-```yaml [Configuring requested URI behavior]
+Configuring requested URI behavior:
+
+```yaml
 server:
   port: 0
   requested-uri-discovery:
@@ -485,7 +513,9 @@ server:
 
 Your code obtains the requested URI information from the Helidon server request object:
 
-```java [Retrieving Requested URI Information]
+Retrieving Requested URI Information:
+
+```java
 import io.helidon.common.tls.Tls;
 import io.helidon.common.uri.UriInfo;
 
@@ -545,7 +575,9 @@ If no user-defined error handler is matched, or if the error handler of the exce
 
 - Subtypes of `HttpException` are translated to their associated HTTP error codes.
 
-  ```java [Reply with the 406 HTTP error code by throwing an exception]
+  Reply with the 406 HTTP error code by throwing an exception:
+
+  ```java
   rules.get((req, res) -> {
     throw new HttpException(
             "Amount of money must be greater than 0.",
@@ -563,7 +595,9 @@ Direct handlers can be configured independently for each port exposed by the Web
 
 The following example shows how to register a custom handler for a request that is deemed invalid before the routing phase stars. The custom handler in this example simply returns a status code of 400 and a message that references the server log.
 
-```java [Register a direct handler for bad requests in the Webserver]
+Register a direct handler for bad requests in the Webserver:
+
+```java
 public static void main(String[] args) {
     WebServer server = WebServer.builder()
             .directHandlers(DirectHandlers.builder()
@@ -595,7 +629,9 @@ Helidon includes a *default* direct handler that offers basic support for all th
 
 The default direct handler’s settings in the Webserver can be controlled via config:
 
-```yaml [Configuring error handling on default port]
+Configuring error handling on default port:
+
+```yaml
 server:
   error-handling:
     include-entity: true
@@ -727,7 +763,9 @@ WebServer.builder()
 
 Access log can be configured as follows:
 
-```yaml [Access Log configuration file]
+Access Log configuration file:
+
+```yaml
 server:
   port: 8080
   features:
@@ -803,7 +841,9 @@ To enable Static Content Support add the following dependency to your project’
 
 To register static content based on a file system (`/pictures`), and classpath (`/`):
 
-```java [server feature using WebServerConfig.Builder]
+server feature using WebServerConfig.Builder:
+
+```java
 builder.addFeature(StaticContentFeature.builder()
                            .addPath(p -> p.location(Paths.get("/some/WEB/pics"))
                                    .context("/pictures"))
@@ -884,7 +924,9 @@ To enable JSON Support add the following dependency to your project’s `pom.xml
 
 ##### Usage
 
-```java [Handler that receives and returns JSON objects]
+Handler that receives and returns JSON objects:
+
+```java
 static final JsonBuilderFactory JSON_FACTORY = Json.createBuilderFactory(Map.of());
 
 rules.post("/hello", (req, res) -> {
@@ -911,7 +953,9 @@ curl --noproxy '*' -X POST -H "Content-Type: application/json" \
     http://localhost:8080/sayhello -d '{"name":"Joe"}'
 ```
 
-```json [Response body]
+Response body:
+
+```json
 {"message":"Hello Joe"}
 ```
 
@@ -944,7 +988,9 @@ It is possible to configure the Jsonb instance via programmatic or configuration
 
 ###### Example
 
-```yaml [Example JSON-B configuration]
+Example JSON-B configuration:
+
+```yaml
 jsonb:
   boolean-properties:
     jsonb.null-values: true
@@ -958,7 +1004,9 @@ Now that automatic JSON serialization and deserialization facilities have been s
 
 Suppose you have a `Person` class that looks like this:
 
-```java [Hypothetical Person class]
+Hypothetical Person class:
+
+```java
 public class Person {
 
     private String name;
@@ -979,7 +1027,9 @@ public class Person {
 
 Then you can set up a `Handler` like this:
 
-```java [A Handler that works with Java objects instead of raw JSON]
+A Handler that works with Java objects instead of raw JSON:
+
+```java
 rules.post("/echo", (req, res) -> {
     res.send(req.content().as(Person.class));
 });
@@ -1022,7 +1072,9 @@ It is possible to configure the Jackson ObjectMapper instance via programmatic o
 
 ###### Example
 
-```yaml [Example Jackson configuration]
+Example Jackson configuration:
+
+```yaml
 jackson:
   properties:
     FAIL_ON_UNKNOWN_PROPERTIES: false
@@ -1034,7 +1086,9 @@ Now that automatic JSON serialization and deserialization facilities have been s
 
 Suppose you have a `Person` class that looks like this:
 
-```java [Hypothetical Person class]
+Hypothetical Person class:
+
+```java
 public class Person {
 
     private String name;
@@ -1055,7 +1109,9 @@ public class Person {
 
 Then you can set up a `Handler` like this:
 
-```java [A Handler that works with Java objects instead of raw JSON]
+A Handler that works with Java objects instead of raw JSON:
+
+```java
 rules.post("/echo", (req, res) -> {
     res.send(req.content().as(Person.class));
 });
@@ -1070,7 +1126,9 @@ curl --noproxy '*' -X POST -H "Content-Type: application/json" \
     http://localhost:8080/echo -d '{"name":"Joe"}'
 ```
 
-```json [Response body]
+Response body:
+
+```json
 {"name":"Joe"}
 ```
 
@@ -1101,7 +1159,9 @@ It is possible to configure the Gson instance via programmatic or configuration-
 
 ###### Example
 
-```yaml [Example Gson configuration]
+Example Gson configuration:
+
+```yaml
 gson:
   properties:
     serialize-nulls: false
@@ -1113,7 +1173,9 @@ Now that automatic JSON serialization and deserialization facilities have been s
 
 Suppose you have a `Person` class that looks like this:
 
-```java [Hypothetical Person class]
+Hypothetical Person class:
+
+```java
 public class Person {
 
     private String name;
@@ -1134,7 +1196,9 @@ public class Person {
 
 Then you can set up a `Handler` like this:
 
-```java [A Handler that works with Java objects instead of raw JSON]
+A Handler that works with Java objects instead of raw JSON:
+
+```java
 rules.post("/echo", (req, res) -> {
     res.send(req.content().as(Person.class));
 });
@@ -1149,7 +1213,9 @@ curl --noproxy '*' -X POST -H "Content-Type: application/json" \
     http://localhost:8080/echo -d '{"name":"Joe"}'
 ```
 
-```json [Response body]
+Response body:
+
+```json
 {"name":"Joe"}
 ```
 

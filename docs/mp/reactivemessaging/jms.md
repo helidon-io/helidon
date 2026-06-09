@@ -56,7 +56,9 @@ Custom Attributes Examples
 
 The simplest possible usage is looking up JMS ConnectionFactory in the naming context.
 
-```yaml [Example of connector config]
+Example of connector config:
+
+```yaml
 mp.messaging:
 
   incoming.from-jms:
@@ -121,14 +123,18 @@ mp:
 
 ### Consuming
 
-```java [Consuming one by one unwrapped value]
+Consuming one by one unwrapped value:
+
+```java
 @Incoming("from-jms")
 public void consumeJms(String msg) {
     System.out.println("JMS says: " + msg);
 }
 ```
 
-```java [Consuming one by one, manual ack]
+Consuming one by one, manual ack:
+
+```java
 @Incoming("from-jms")
 @Acknowledgment(Acknowledgment.Strategy.MANUAL)
 public CompletionStage<Void> consumeJms(JmsMessage<String> msg) {
@@ -139,14 +145,18 @@ public CompletionStage<Void> consumeJms(JmsMessage<String> msg) {
 
 ### Producing
 
-```java [Example of producing to JMS]
+Example of producing to JMS:
+
+```java
 @Outgoing("to-jms")
 public PublisherBuilder<String> produceToJms() {
     return ReactiveStreams.of("test1", "test2");
 }
 ```
 
-```java [Example of more advanced producing to JMS]
+Example of more advanced producing to JMS:
+
+```java
 @Outgoing("to-jms")
 public PublisherBuilder<Message<String>> produceToJms() {
     return ReactiveStreams.of("test1", "test2")
@@ -161,7 +171,9 @@ public PublisherBuilder<Message<String>> produceToJms() {
 }
 ```
 
-```java [Example of even more advanced producing to JMS with custom mapper]
+Example of even more advanced producing to JMS with custom mapper:
+
+```java
 @Outgoing("to-jms")
 public PublisherBuilder<Message<String>> produceToJms() {
     return ReactiveStreams.of("test1", "test2")

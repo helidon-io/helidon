@@ -18,7 +18,9 @@ Helidon support of Http/2 is no longer experimental.
 
 Http/2 needed to be explicitly enabled by configuration in Helidon 2:
 
-```yaml [Enabling Http/2 support in Helidon 2]
+Enabling Http/2 support in Helidon 2:
+
+```yaml
 server:
   port: 8080
   host: 0.0.0.0
@@ -42,7 +44,9 @@ With above dependency Helidon 3 supports Http/2 upgrade from Http/1, cleartext H
 
 In Helidon 2, max content length was configurable with `server.experimental.http2-max-content-length`, in Helidon 3 can be configured with `server.max-upgrade-content-length` globally or per socket with the same `max-upgrade-content-length` key.
 
-```yaml [Max upgrade content length in Helidon 3]
+Max upgrade content length in Helidon 3:
+
+```yaml
 server:
   port: 8080
   host: 0.0.0.0
@@ -75,7 +79,9 @@ Helidon 3 WebSocket support dependency:
 
 In Helidon 2, WebSocket routing is defined by registering `TyrusSupport` as additional service:
 
-```java [Helidon 2 WebSocket route registering]
+Helidon 2 WebSocket route registering:
+
+```java
 WebServer.builder(Routing.builder()
                           .register("/rest", new SomeRestService()) 
                           .register("/websocket", TyrusSupport.builder() 
@@ -94,7 +100,9 @@ WebServer.builder(Routing.builder()
 
 In Helidon 3, WebSocket routing is defined by adding another routing:
 
-```java [Helidon 3 WebSocket route registering]
+Helidon 3 WebSocket route registering:
+
+```java
 WebServer.builder()
         .routing(r -> r
                 .register("/rest", new SomeRestService()) 

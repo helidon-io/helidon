@@ -46,7 +46,9 @@ Connector name: `helidon-aq`
 
 The simplest possible usage is leaving construction of `AQjmsConnectionFactory` to the connector.
 
-```yaml [Example of connector config]
+Example of connector config:
+
+```yaml
 mp:
   messaging:
 
@@ -71,7 +73,9 @@ mp:
 
 Its also possible and preferable to refer to [configured datasource](../persistence.md), in our example [Oracle UCP datasource](../persistence.md):
 
-```yaml [Example of connector config with Oracle UCP datasource]
+Example of connector config with Oracle UCP datasource:
+
+```yaml
 javax:
   sql:
     DataSource:
@@ -144,14 +148,18 @@ mp:
 
 ### Consuming
 
-```java [Consuming one by one unwrapped value]
+Consuming one by one unwrapped value:
+
+```java
 @Incoming("from-aq")
 public void consumeAq(String msg) {
     System.out.println("Oracle AQ says: " + msg);
 }
 ```
 
-```java [Consuming one by one, manual ack]
+Consuming one by one, manual ack:
+
+```java
 @Incoming("from-aq")
 @Acknowledgment(Acknowledgment.Strategy.MANUAL)
 public CompletionStage<Void> consumeAq(AqMessage<String> msg) {
@@ -165,7 +173,9 @@ public CompletionStage<Void> consumeAq(AqMessage<String> msg) {
 
 ### Producing
 
-```java [Producing to AQ]
+Producing to AQ:
+
+```java
 @Outgoing("to-aq")
 public PublisherBuilder<String> produceToAq() {
     return ReactiveStreams.of("test1", "test2");

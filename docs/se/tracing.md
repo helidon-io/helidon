@@ -85,7 +85,9 @@ Support for specific tracers is abstracted. Your application can depend on the H
 
 ### Setup WebServer
 
-```java [Configuring Tracer]
+Configuring Tracer:
+
+```java
 Tracer tracer = TracerBuilder.create("helidon") 
         .build();
 
@@ -353,7 +355,9 @@ The components using tracing configuration use the `TracingConfigUtil`. This use
 
 Builder approach, example that disables a single span log event:
 
-```java [Configure tracing using a builder]
+Configure tracing using a builder:
+
+```java
 TracingConfig.builder()
         .addComponent(ComponentTracingConfig.builder("web-server")
                               .addSpan(SpanTracingConfig.builder("HTTP Request")
@@ -369,7 +373,9 @@ TracingConfig.builder()
 
 Tracing configuration can be defined in a config file.
 
-```yaml [Tracing configuration]
+Tracing configuration:
+
+```yaml
 tracing:
     components:
       web-server:
@@ -380,7 +386,9 @@ tracing:
                 enabled: false
 ```
 
-```java [Use the configuration in web server]
+Use the configuration in web server:
+
+```java
 Tracer tracer = TracerBuilder.create(config.get("tracing")).build(); 
 server.addFeature(ObserveFeature.builder()
                           .addObserver(TracingObserver.create(tracer)) 
@@ -396,7 +404,9 @@ For Web Server we have path-based support for configuring tracing, in addition t
 
 Configuration of path can use any path string supported by the WebServer. The configuration itself has the same possibilities as traced configuration described above. The path-specific configuration will be merged with global configuration (path is the "newer" configuration, global is the "older")
 
-```yaml [Configuration in YAML]
+Configuration in YAML:
+
+```yaml
 tracing:
   paths:
     - path: "/favicon.ico"
@@ -420,7 +430,9 @@ To have a nicer overview in search pane of a tracer, you can customize the top-l
 
 Example:
 
-```yaml [Configuration in YAML]
+Configuration in YAML:
+
+```yaml
 tracing:
   components:
     web-server:
@@ -456,7 +468,9 @@ Span propagation is supported with Helidon WebClient. Tracing propagation is aut
 </dependencies>
 ```
 
-```java [Tracing propagation with Helidon WebClient]
+Tracing propagation with Helidon WebClient:
+
+```java
 WebClient client = WebClient.builder()
         .addService(WebClientTracing.create())
         .build();
@@ -582,7 +596,9 @@ Dependency for OpenTelemetry support using tracing:
 | <span id="aec0bf-exporter-type"></span> [`exporter-type`](../config/io_helidon_tracing_providers_opentelemetry_OtlpExporterProtocolType.md) | `VALUE` | `i.h.t.p.o.OtlpExporterProtocolType` | `GRPC` | Type of OTLP exporter to use for pushing span data |
 | <span id="a0fe59-propagators"></span> `propagators` | `LIST` | `i.h.t.p.o.O.CustomMethods` |   | Context propagators |
 
-```yaml [Example Helidon configuration for OpenTelemetry tracing]
+Example Helidon configuration for OpenTelemetry tracing:
+
+```yaml
 tracing:
   service: helidon-otel-tracing-example 
   global: false      

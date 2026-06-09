@@ -274,7 +274,7 @@ public class SimpleAPIModelReader implements OASModelReader {
 
 Having written the filter and model reader classes, identify them by adding configuration to `META-INF/microprofile-config.properties` as the following example shows.
 
-```properties
+```properties [microprofile-config.properties]
 mp.openapi.filter=io.helidon.microprofile.examples.openapi.internal.SimpleAPIFilter
 mp.openapi.model.reader=io.helidon.microprofile.examples.openapi.internal.SimpleAPIModelReader
 ```

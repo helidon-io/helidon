@@ -94,7 +94,9 @@ Remove the test scope from WebClient dependency:
 
 In `io.helidon.examples.quickstart.se` package, create a new class named ClientExample. This class will use the WebClient to send request to the greeting application.
 
-```java [Create ClientExample class]
+Create ClientExample class:
+
+```java
 public class ClientExample {
 
     public static void main(String[] args) {
@@ -105,7 +107,9 @@ public class ClientExample {
 
 Add the following code to the main method to create a WebClient instance. The builder approach allows you to create the WebClient with specific settings and improves the readability and simplicity of the code.
 
-```java [Add WebClient instance to the main method]
+Add WebClient instance to the main method:
+
+```java
 WebClient webClient = WebClient.builder()
         .baseUri("http://localhost:8080") 
         .build();
@@ -115,7 +119,9 @@ WebClient webClient = WebClient.builder()
 
 By default, the Helidon quickstart application runs on localhost:8080. If for some reason the host name or port number of the quickstart application is changed, make sure that the baseURI is also modified to reflect that change. Once built, the WebClient can be used to send a GET request to the greeting application.
 
-```java [Send a GET request to the target endpoint]
+Send a GET request to the target endpoint:
+
+```java
 ClientResponseTyped<String> response = webClient.get() 
         .path("/greet") 
         .request(String.class); 
@@ -154,7 +160,9 @@ Run the client application:
 java -cp target/helidon-quickstart-se.jar io.helidon.examples.quickstart.se.ClientExample
 ```
 
-```json [JSON response]
+JSON response:
+
+```json
 {"message":"Hello World!"}
 ```
 
@@ -173,7 +181,9 @@ In practice, String is not the most useful return type, since it usually needs s
 
 Once the dependency is added, the feature will be automatically loaded as a service allowing the response methods to easily parse the JSON object.
 
-```java [Replace String with JsonObject]
+Replace String with JsonObject:
+
+```java
 ClientResponseTyped<JsonObject> response = webClient.get()
         .path("/greet/David")
         .request(JsonObject.class); 
@@ -194,7 +204,9 @@ Hello David!
 
 It is also possible to change the greeting word by using a PUT request to `/greet/greeting` path. The request also needs to include a body with JSON type and using a structure like `{"greeting" : "value"}`.
 
-```java [Modify the application greeting]
+Modify the application greeting:
+
+```java
 JsonObject entity = Json.createObjectBuilder() 
         .add("greeting", "Bonjour")
         .build();
@@ -243,7 +255,9 @@ Add the following dependency to pom.xml:
 
 Metrics can be registered on the WebClient directly. The following example shows how a `Counter` metric can be defined, created and monitored.
 
-```java [Example of metric creation]
+Example of metric creation:
+
+```java
 MeterRegistry METER_REGISTRY = Metrics.globalRegistry();
 
 String metricName = "counter.GET.localhost"; 
@@ -275,7 +289,9 @@ So for example, if the `nameFormat` value is `metric.%1$s.%2$s.%3$s` and a reque
 
 To register the metric service, simply use the `addService` method and pass in the created WebClient Metric Service as a parameter.
 
-```java [Add the metric service to the WebClient]
+Add the metric service to the WebClient:
+
+```java
 WebClient webClient = WebClient.builder()
         .baseUri("http://localhost:8080")
         .addService(clientServiceMetric) 
@@ -289,7 +305,9 @@ webClient.get().path("/greet").request();
 
 To verify that the metric is set up correctly, print the value of the Counter at the end of the main method.
 
-```java [Print the metric count]
+Print the metric count:
+
+```java
 System.out.println(metricName + ": " + counter.count());
 ```
 
@@ -305,7 +323,9 @@ counter.GET.localhost: 1
 
 Using the configuration file can reduce the code complexity and make the metrics simpler to use. With this approach, it eliminates the need to modify the source code for scenarios where the metric settings have to be changed. The `application.yaml` file is the default configuration file for Helidon and can be used to set up metrics settings.
 
-```yaml [Example of metric configuration]
+Example of metric configuration:
+
+```yaml
 client:
   services:
     metrics:
@@ -317,7 +337,9 @@ client:
 
 In the example configuration definition above, the metrics configuration are located under `client.services.metrics`. The metric setting can start either by its `type` or `methods`. The configuration file uses the same keywords as the programmatic way. For example, `type` defines the kind of metric and `methods` identifies the http methods that will be measured.
 
-```java [Add the metric service to the WebClient via the Configuration]
+Add the metric service to the WebClient via the Configuration:
+
+```java
 MeterRegistry METER_REGISTRY = Metrics.globalRegistry();
 
 String counterName = "counter.GET.localhost"; 

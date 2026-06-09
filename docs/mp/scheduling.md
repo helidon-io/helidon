@@ -40,7 +40,9 @@ public void methodName() { /* ... */ }
 
 ### Cron expression
 
-```text [Cron expression format]
+Cron expression format:
+
+```text
 <seconds> <minutes> <hours> <day-of-month> <month> <day-of-week> <year>
 ```
 
@@ -106,13 +108,17 @@ Configuration expressions is a reference to a configuration key, with optional d
 
 The Fixed rate annotation can have the delay by and value overridden using config.
 
-```java [Annotation that allows config overrides]
+Annotation that allows config overrides:
+
+```java
 @Scheduling.FixedRate(delayBy = "${app.schedule.cache.delay-by:PT5M}", value = "${app.schedule.cache.interval:PT10M}")
 ```
 
 The default values are 5 minutes for delay-by, and 10 minutes for interval, and could be overridden:
 
-```yaml [Overriding annotated values from config]
+Overriding annotated values from config:
+
+```yaml
 app:
   schedule:
     cache:
@@ -126,13 +132,17 @@ The configured values would be a 10-minute delay, with 1-hour interval.
 
 The Cron annotation can have the value overridden using config.
 
-```java [Annotation that allows config overrides]
+Annotation that allows config overrides:
+
+```java
 @Scheduling.Cron("${app.schedule.cache.cron:0 15 8 ? * *}")
 ```
 
 The default value is an expression of `0 15 8 ? * *`.
 
-```yaml [Overriding annotated values from config]
+Overriding annotated values from config:
+
+```yaml
 app:
   schedule:
     cache:
@@ -145,7 +155,9 @@ The configured values would be executing every 1 second.
 
 ### Fixed rate
 
-```java [Example of scheduling with fixed rate]
+Example of scheduling with fixed rate:
+
+```java
 @Scheduling.FixedRate(delayBy = "PT5M", value = "PT10M")
 public void methodName() {
     System.out.println("Every 10 minutes, first invocation 5 minutes after start");
@@ -154,7 +166,9 @@ public void methodName() {
 
 ### FixedRate Metadata Injection
 
-```java [Example with invocation metadata]
+Example with invocation metadata:
+
+```java
 @Scheduling.FixedRate(delayBy = "PT5M", value = "PT10M")
 public void methodName(FixedRateInvocation inv) {
     System.out.println("Method invoked " + inv.description());
@@ -163,7 +177,9 @@ public void methodName(FixedRateInvocation inv) {
 
 ### Cron expression
 
-```java [Example of scheduling with cron expression]
+Example of scheduling with cron expression:
+
+```java
 @Scheduling.Cron(value = "0 15 8 ? * *", concurrent = false)
 public void methodName() {
     System.out.println("Executer every day at 8:15");
@@ -172,7 +188,9 @@ public void methodName() {
 
 ### Scheduled Metadata Injection.
 
-```java [Example with invocation metadata]
+Example with invocation metadata:
+
+```java
 @Scheduling.Cron("0 15 8 ? * *")
 public void methodName(CronInvocation inv) {
     System.out.println("Method invoked " + inv.description());

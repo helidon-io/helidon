@@ -78,7 +78,9 @@ This can have unexpected results if your application declares a resource path `/
 
 One way to avoid this is to assign a weight from 101 to 200 to the observe feature in your configuration. Then Helidon prioritizes the routing of the observe feature ahead of routing your application endpoints.
 
-```yaml [Configuration in application.yaml Assigning Feature Weight to Control Routing]
+Assign feature weight to control routing in `application.yaml`:
+
+```yaml [application.yaml]
 server:
   features:
     observe:

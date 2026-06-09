@@ -61,7 +61,9 @@ Within an application different techniques might make sense for different custom
 
 If you gather the logic for computing the health check response into a method, then you can use a method reference to register the health check.
 
-```java [Declaring a health check response supplier method]
+Declaring a health check response supplier method:
+
+```java
 static HealthCheckResponse slowStartLivenessResponse() {
     long now = System.currentTimeMillis();
     return HealthCheckResponse.builder()
@@ -71,7 +73,9 @@ static HealthCheckResponse slowStartLivenessResponse() {
 }
 ```
 
-```java [Registering a health check using a method reference]
+Registering a health check using a method reference:
+
+```java
 ObserveFeature observe = ObserveFeature.builder()
         .config(config.get("server.features.observe")) 
         .addObserver(HealthObserver.builder() 
@@ -94,7 +98,9 @@ ObserveFeature observe = ObserveFeature.builder()
 
 If the logic for computing the health check response is fairly simple, express it as an in-line lambda when you register the health check.
 
-```java [Registering a health check using an in-line lambda expression]
+Registering a health check using an in-line lambda expression:
+
+```java
 ObserveFeature observe = ObserveFeature.builder()
         .config(config.get("server.features.observe"))
         .addObserver(HealthObserver.builder() 
@@ -125,7 +131,9 @@ If a custom health check requires a lot of information to compute its health che
 
 This example *is not* complicated in that way, but it’s useful to illustrate this technique of writing a custom health check.
 
-```java [Declaring a concrete HealthCheck implementation]
+Declaring a concrete HealthCheck implementation:
+
+```java
 /**
  * A custom readiness health check that reports UP 8 seconds after server start-up.
  */
@@ -152,7 +160,9 @@ class SlowStartHealthCheck implements HealthCheck {
 - Sets a detail value `time` associated with the response to the current time.
 - Reports `DOWN` until at least eight seconds have passed since the server start-up, then reports `UP` thereafter.
 
-```java [Registering a HealthCheck instance]
+Registering a HealthCheck instance:
+
+```java
 ObserveFeature observe = ObserveFeature.builder()
         .config(config.get("server.features.observe"))
         .addObserver(HealthObserver.builder() 
@@ -168,7 +178,9 @@ ObserveFeature observe = ObserveFeature.builder()
 
 The code examples above prepare the `observe` feature instance using the built-in and custom health checks. To activate the health subsystem and other auto-discovered observability subsystems, add that `observe` instance as a feature to the webserver and start the server.
 
-```java [Register the observe feature with the server and start it]
+Register the observe feature with the server and start it:
+
+```java
 WebServer server = WebServer.builder()
         .featuresDiscoverServices(false)
         .addFeature(observe) 
@@ -198,7 +210,9 @@ If you add the Helidon health dependency to your `pom.xml` file, Helidon automat
 
 Below are parts of health responses which include the custom health check added in the earlier example code. This first response shows the health output within the first eight seconds after start-up. Recall that the custom health check will report `DOWN` during that time, so the overall health is `DOWN` and the HTTP response status is `503 Service Unavailable`.
 
-```json [Response within 8 seconds: HTTP status 503 (not healthy)]
+Response within 8 seconds: HTTP status 503 (not healthy):
+
+```json
 {
   "status": "DOWN",
   "checks": [
@@ -215,7 +229,9 @@ Below are parts of health responses which include the custom health check added 
 
 The next response shows the health output once the server has been running for at least eight seconds. The custom health check now reports `UP` so the overall health status is also `UP` now and the HTTP status is `200`.
 
-```json [Response after 8 seconds: HTTP status 200]
+Response after 8 seconds: HTTP status 200:
+
+```json
 {
   "status": "UP",
   "checks": [
@@ -300,7 +316,9 @@ Simply adding the built-in health check dependency is sufficient to register all
 
 The following code adds only selected built-in health checks to your application:
 
-```java [Adding selected built-in health checks]
+Adding selected built-in health checks:
+
+```java
 WebServer server = WebServer.builder()
         .config(config.get("server"))
         .addFeature(ObserveFeature.create(HealthObserver.builder()
@@ -413,7 +431,9 @@ Further, you can suppress one or more health checks by setting the configuration
 
 Accessing the Helidon-provided `/observe/health` endpoint reports the health of your application as shown below:
 
-```json [JSON response]
+JSON response:
+
+```json
 {
     "status": "UP",
     "checks": [
@@ -453,7 +473,9 @@ Accessing the Helidon-provided `/observe/health` endpoint reports the health of 
 
 This example shows the usage of the Helidon health API in an application that implements health endpoints for the liveness and readiness probes. Note that the application code dissociates the health endpoints from the default routes, so that the health endpoints are not exposed by the service. An example YAML specification is also provided for the Kubernetes service and deployment.
 
-```java [Application code]
+Application code:
+
+```java
 ObserveFeature observeFeature = ObserveFeature.builder()
         .addObserver(HealthObserver.builder()
                              .useSystemServices(false)
@@ -491,7 +513,9 @@ WebServer server = WebServer.builder()
 - The default route: returns It works! for any request.
 - The `observe` socket uses port 8081 for the "/observe" routes.
 
-```yaml [Kubernetes descriptor]
+Kubernetes descriptor:
+
+```yaml
 kind: Service
 apiVersion: v1
 metadata:

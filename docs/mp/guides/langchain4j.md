@@ -107,7 +107,7 @@ Add to the configuration file `./src/main/resources/META-INF/microprofile-config
 
 Model configured under `langchain4j.models` has arbitrary name `pirate-chat-model`, it uses `open-ai` provider defined under `langchain4j.providers`. With a single configured chat model, default auto-discovery resolves it automatically. If you configure multiple chat models, use `@Ai.ChatModel("pirate-chat-model")` to select one explicitly.
 
-```properties
+```properties [microprofile-config.properties]
 langchain4j.providers.open-ai.base-url=http://langchain4j.dev/demo/openai/v1
 # Lc4j demo api key needs to be routed over lc4j proxy
 langchain4j.providers.open-ai.api-key=demo

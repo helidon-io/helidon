@@ -105,7 +105,10 @@ The successful status means all health checks reported `UP`.
 
 To see the details about each health check, add the following `features` configuration fragment in the `server` section of the `application.yaml`. Make sure the `features` key is at the same level as `port` and `host` that are already in the file.
 
-```yaml [Configuration fragment to include details in the health output (nested under server)]
+Configuration fragment to include details in the health output (nested under
+server):
+
+```yaml
 server:
   port: 8080
   host: 0.0.0.0
@@ -138,7 +141,9 @@ curl -v http://localhost:8080/observe/health
 
 This time the `curl` output shows not only the HTTP status—​as 200 instead of 204 because the response now contains data—​but also the detailed output for all health checks.
 
-```json [Health check details]
+Health check details:
+
+```json
 {
   "status": "UP", 
   "checks": [ 
@@ -186,7 +191,10 @@ The following trivial but illustrative example adds a custom start-up check that
 1.  Create an explicit instance of `ObserveFeature` which contains a custom `HealthObserver` with the custom check.
 2.  Add that `ObserveFeature` instance to the `WebServerConfig.Builder` as a feature.
 
-```java [Updated Main#main, augmenting the creation of WebServer instance with a custom health check]
+Updated Main#main, augmenting the creation of WebServer instance with a custom
+health check:
+
+```java
 void snippet1(Config config) {
     AtomicLong serverStartTime = new AtomicLong();  
 
@@ -249,7 +257,9 @@ curl -v http://localhost:8080/observe/health
 
 If you access the health endpoint before the server has been up for eight seconds, `curl` reports the response status as `503 Service Unavailable` and displays output similar to the following:
 
-```json [Health response shortly after server restart (partial)]
+Health response shortly after server restart (partial):
+
+```json
 {
   "status": "DOWN",
   "checks": [
@@ -276,7 +286,9 @@ curl -v http://localhost:8080/observe/health
 
 This time, `curl` reports `200 OK` for the response status and displays different output for the custom health check.
 
-```json [Health response after the server has been running a while (partial)]
+Health response after the server has been running a while (partial):
+
+```json
 {
   "status": "UP",
   "checks": [
@@ -293,7 +305,9 @@ This time, `curl` reports `200 OK` for the response status and displays differen
 
 The example code includes the built-in health checks in Helidon’s overall health assessment of the application. To exclude them invoke the `HealthObserver.Builder` `useSystemServices` method (for example, just after invoking `details` on the builder).
 
-```java [Disable all built-in health checks]
+Disable all built-in health checks:
+
+```java
 HealthObserver.builder()
         .useSystemServices(false)
         .build();
@@ -316,7 +330,9 @@ Get only start-up health checks:
 curl http://localhost:8080/observe/started
 ```
 
-```json [JSON response]
+JSON response:
+
+```json
 {
   "status": "UP",
   "checks": [
@@ -343,7 +359,9 @@ The next example customizes the URL path for the health endpoint, first explicit
 
 Customize the URL path for health checks by invoking the `endpoint` method on the `HealthObserver.Builder`.
 
-```java [Set a custom endpoint path]
+Set a custom endpoint path:
+
+```java
 HealthObserver healthObserver = HealthObserver.builder()
         .endpoint("/myhealth") 
         .build();
@@ -365,7 +383,9 @@ In addition to preparing the health observer builder with hard-coded settings, y
 
 The generated `Main` class in the application already creates a `Config` object for the top-level config node. Using the following code to create the observe feature also applies any health-related configuration settings to the custom health observer. Notice the added line just before the `HealthObserver.Build` `build()` invocation near the end of the example code.
 
-```java [Apply health configuration to your custom health observer]
+Apply health configuration to your custom health observer:
+
+```java
 HealthObserver healthObserver = HealthObserver.builder()
         .config(config.get("server.features.observe.observers.health")) 
         .build();
@@ -383,11 +403,16 @@ In general, most applications should apply settings from config *after* assignin
 
 The following example shows how to integrate the Helidon health API in an application that implements health endpoints for the Kubernetes liveness, readiness, and startup probes.
 
-```java [Add a readyTime variable to the Main class]
+Add a readyTime variable to the Main class:
+
+```java
 private static AtomicLong readyTime = new AtomicLong(0);
 ```
 
-```java [Change the HealthObserver builder in the Main#main method to use new built-in liveness checks and custom liveness, readiness, and startup checks]
+Change the HealthObserver builder in the Main#main method to use new built-in
+liveness checks and custom liveness, readiness, and startup checks:
+
+```java
 ObserveFeature observe = ObserveFeature.builder()
         .config(config.get("server.features.observe"))
         .addObserver(HealthObserver.builder()
@@ -430,7 +455,10 @@ Stop the application and build the docker image:
 docker build -t helidon-quickstart-se .
 ```
 
-```yaml [Create the Kubernetes YAML specification, named health.yaml, with the following content]
+Create the Kubernetes YAML specification, named `health.yaml`, with the
+following content:
+
+```yaml [health.yaml]
 kind: Service
 apiVersion: v1
 metadata:
