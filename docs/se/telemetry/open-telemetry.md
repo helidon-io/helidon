@@ -923,13 +923,13 @@ You associate each logger processor with a logger exporter using the exporter’
 - [HTTP semantic conventions][opentelemetry-se]
 - [Intro to OpenTelemetry Java][intro-to-opentel]
 
-[preview-feature]: /apidocs/io.helidon.common.features.api/io/helidon/common/features/api/Preview.html
+[preview-feature]: https://helidon.io/docs/v4/apidocs/io.helidon.common.features.api/io/helidon/common/features/api/Preview.html
 [opentelemetry-se]: https://github.com/open-telemetry/semantic-conventions/blob/v1.58.0/docs/http/http-spans.md#http-server
 [publishing-helid]: ../../se/metrics/metrics.md#publishing-metrics-for-external-access
 [signals]: https://opentelemetry.io/docs/concepts/signals/
-[helidon-opentele]: /apidocs/io.helidon.telemetry.otelconfig/io/helidon/telemetry/otelconfig/package-summary.html
-[opentelemetrycon]: /apidocs/io.helidon.telemetry.otelconfig/io/helidon/telemetry/otelconfig/OpenTelemetryConfig.html
-[builder]: /apidocs/io.helidon.telemetry.otelconfig/io/helidon/telemetry/otelconfig/OpenTelemetryConfig.BuilderBase.html
+[helidon-opentele]: https://helidon.io/docs/v4/apidocs/io.helidon.telemetry.otelconfig/io/helidon/telemetry/otelconfig/package-summary.html
+[opentelemetrycon]: https://helidon.io/docs/v4/apidocs/io.helidon.telemetry.otelconfig/io/helidon/telemetry/otelconfig/OpenTelemetryConfig.html
+[builder]: https://helidon.io/docs/v4/apidocs/io.helidon.telemetry.otelconfig/io/helidon/telemetry/otelconfig/OpenTelemetryConfig.BuilderBase.html
 [opentelemetry-sd]: https://opentelemetry.io/docs/languages/java/sdk/#sdk-components
 [semantic-convent]: https://github.com/open-telemetry/semantic-conventions/blob/v1.58.0/docs/http/http-metrics.md#http-server
 [helidon-webclien]: ../../se/webclient.md#configuring-telemetry

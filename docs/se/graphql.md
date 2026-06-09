@@ -116,4 +116,4 @@ Using the schema defined in Section [API](#api), you can probe the following end
 - [GraphQL Javadocs][graphql-javadocs]
 
 [graphql]: https://github.com/graphql-java/graphql-java
-[graphql-javadocs]: /apidocs/io.helidon.graphql.server/module-summary.html
+[graphql-javadocs]: https://helidon.io/docs/v4/apidocs/io.helidon.graphql.server/module-summary.html

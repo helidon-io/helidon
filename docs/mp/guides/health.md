@@ -657,4 +657,4 @@ Refer to the following references for additional information:
 [kubectl-1-16-5]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
 [microprofile-hea]: https://download.eclipse.org/microprofile/microprofile-health-4.0/microprofile-health-spec-4.0.html
 [microprofile-hea-2]: https://download.eclipse.org/microprofile/microprofile-health-4.0/apidocs
-[helidon-javadoc]: /apidocs/index.html?overview-summary.html
+[helidon-javadoc]: https://helidon.io/docs/v4/apidocs/index.html?overview-summary.html

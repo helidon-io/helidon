@@ -231,5 +231,5 @@ See [API](#api) section for examples.
 For additional information, see the [Fault Tolerance API Javadocs][fault-tolerance].
 
 [microprofile-fau]: https://download.eclipse.org/microprofile/microprofile-fault-tolerance-4.0.2/microprofile-fault-tolerance-spec-4.0.2.html
-[fault-tolerance]: /apidocs/io.helidon.faulttolerance/module-summary.html
+[fault-tolerance]: https://helidon.io/docs/v4/apidocs/io.helidon.faulttolerance/module-summary.html
 [enabling-metrics]: #enabling-metrics-programmatically

@@ -313,5 +313,5 @@ The testing class should be annotated with `@RoutingTest` only if routing tests 
 
 - [JUnit 5 User Guide][junit-5-user-gui]
 
-[webserverconfig]: /apidocs/io.helidon.webserver/io/helidon/webserver/WebServerConfig.Builder.html
+[webserverconfig]: https://helidon.io/docs/v4/apidocs/io.helidon.webserver/io/helidon/webserver/WebServerConfig.Builder.html
 [junit-5-user-gui]: https://junit.org/junit5/docs/current/user-guide/

@@ -166,4 +166,4 @@ This example assumes that port 8888 is reserved for admin users and binds the `M
 [example]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/webserver/websocket
 [eclipse-tyrus]: https://projects.eclipse.org/proposals/eclipse-tyrus
 [websocket-rfc-64]: https://datatracker.ietf.org/doc/html/rfc6455
-[helidon-micropro]: /apidocs/io.helidon.microprofile.tyrus/module-summary.html
+[helidon-micropro]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.tyrus/module-summary.html

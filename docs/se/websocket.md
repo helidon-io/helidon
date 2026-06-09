@@ -80,4 +80,4 @@ This code snippet registers `MessageBoardEndpoint` at `/websocket/board` and ass
 [tyrus]: https://projects.eclipse.org/projects/ee4j.tyrus
 [jakarta-websocke]: https://jakarta.ee/specifications/websocket/2.1/jakarta-websocket-spec-2.1.html
 [here]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/webserver/websocket
-[helidon-websocke]: /apidocs/io.helidon.webserver.websocket/module-summary.html
+[helidon-websocke]: https://helidon.io/docs/v4/apidocs/io.helidon.webserver.websocket/module-summary.html

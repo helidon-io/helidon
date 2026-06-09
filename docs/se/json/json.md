@@ -922,19 +922,19 @@ JsonArray array = JsonArray.create(List.of(
     JsonString.create("value3")));
 ```
 
-[json-entity]: /apidocs/io.helidon.json.binding/io/helidon/json/binding/Json.Entity.html
-[jsonserializer]: /apidocs/io.helidon.json.binding/io/helidon/json/binding/JsonSerializer.html
-[jsondeserializer]: /apidocs/io.helidon.json.binding/io/helidon/json/binding/JsonDeserializer.html
-[jsonconverter]: /apidocs/io.helidon.json.binding/io/helidon/json/binding/JsonConverter.html
-[jsonbindingfacto]: /apidocs/io.helidon.json.binding/io/helidon/json/binding/JsonBindingFactory.html
-[jsonbinding]: /apidocs/io.helidon.json.binding/io/helidon/json/binding/JsonBinding.html
+[json-entity]: https://helidon.io/docs/v4/apidocs/io.helidon.json.binding/io/helidon/json/binding/Json.Entity.html
+[jsonserializer]: https://helidon.io/docs/v4/apidocs/io.helidon.json.binding/io/helidon/json/binding/JsonSerializer.html
+[jsondeserializer]: https://helidon.io/docs/v4/apidocs/io.helidon.json.binding/io/helidon/json/binding/JsonDeserializer.html
+[jsonconverter]: https://helidon.io/docs/v4/apidocs/io.helidon.json.binding/io/helidon/json/binding/JsonConverter.html
+[jsonbindingfacto]: https://helidon.io/docs/v4/apidocs/io.helidon.json.binding/io/helidon/json/binding/JsonBindingFactory.html
+[jsonbinding]: https://helidon.io/docs/v4/apidocs/io.helidon.json.binding/io/helidon/json/binding/JsonBinding.html
 [helidon-declarat]: ../injection/declarative.md#overview
-[jsonparser]: /apidocs/io.helidon.json/io/helidon/json/JsonParser.html
-[jsongenerator]: /apidocs/io.helidon.json/io/helidon/json/JsonGenerator.html
-[jsonvalue]: /apidocs/io.helidon.json/io/helidon/json/JsonValue.html
-[jsonobject]: /apidocs/io.helidon.json/io/helidon/json/JsonObject.html
-[jsonarray]: /apidocs/io.helidon.json/io/helidon/json/JsonArray.html
-[jsonstring]: /apidocs/io.helidon.json/io/helidon/json/JsonString.html
-[jsonnumber]: /apidocs/io.helidon.json/io/helidon/json/JsonNumber.html
-[jsonboolean]: /apidocs/io.helidon.json/io/helidon/json/JsonBoolean.html
-[jsonnull]: /apidocs/io.helidon.json/io/helidon/json/JsonNull.html
+[jsonparser]: https://helidon.io/docs/v4/apidocs/io.helidon.json/io/helidon/json/JsonParser.html
+[jsongenerator]: https://helidon.io/docs/v4/apidocs/io.helidon.json/io/helidon/json/JsonGenerator.html
+[jsonvalue]: https://helidon.io/docs/v4/apidocs/io.helidon.json/io/helidon/json/JsonValue.html
+[jsonobject]: https://helidon.io/docs/v4/apidocs/io.helidon.json/io/helidon/json/JsonObject.html
+[jsonarray]: https://helidon.io/docs/v4/apidocs/io.helidon.json/io/helidon/json/JsonArray.html
+[jsonstring]: https://helidon.io/docs/v4/apidocs/io.helidon.json/io/helidon/json/JsonString.html
+[jsonnumber]: https://helidon.io/docs/v4/apidocs/io.helidon.json/io/helidon/json/JsonNumber.html
+[jsonboolean]: https://helidon.io/docs/v4/apidocs/io.helidon.json/io/helidon/json/JsonBoolean.html
+[jsonnull]: https://helidon.io/docs/v4/apidocs/io.helidon.json/io/helidon/json/JsonNull.html

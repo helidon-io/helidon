@@ -351,14 +351,14 @@ sources:
 - git source-specific properties: `path`, `uri`, `directory` and `branch`.
 - Polling strategy `regular` with an interval, in `Duration` format, of 5 minutes in this example.
 
-[disableparserser]: /apidocs/io.helidon.config/io/helidon/config/Config.Builder.html#disableParserServices--
-[yamlconfigparser]: /apidocs/io.helidon.config.yaml/io/helidon/config/yaml/YamlConfigParser.html
-[hoconconfigparse]: /apidocs/io.helidon.config.hocon/io/helidon/config/hocon/HoconConfigParser.html
+[disableparserser]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/Config.Builder.html#disableParserServices--
+[yamlconfigparser]: https://helidon.io/docs/v4/apidocs/io.helidon.config.yaml/io/helidon/config/yaml/YamlConfigParser.html
+[hoconconfigparse]: https://helidon.io/docs/v4/apidocs/io.helidon.config.hocon/io/helidon/config/hocon/HoconConfigParser.html
 [hocon-documentat]: https://github.com/lightbend/config/blob/master/HOCON.md#substitutions
 [configresolveopt]: https://github.com/lightbend/config/blob/master/config/src/main/java/com/typesafe/config/ConfigResolveOptions.java
-[etcdconfigsource]: /apidocs/io.helidon.config.etcd/io/helidon/config/etcd/EtcdConfigSourceBuilder.html
-[abstractconfigso]: /apidocs/io.helidon.config/io/helidon/config/AbstractConfigSourceBuilder.html
-[javadoc]: /apidocs/io.helidon.config/io/helidon/config/AbstractConfigSourceBuilder.html#init-io.helidon.config.Config-
-[gitconfigsourceb]: /apidocs/io.helidon.config.git/io/helidon/config/git/GitConfigSourceBuilder.html
-[pollingstrategy]: /apidocs/io.helidon.config/io/helidon/config/spi/PollingStrategy.html
+[etcdconfigsource]: https://helidon.io/docs/v4/apidocs/io.helidon.config.etcd/io/helidon/config/etcd/EtcdConfigSourceBuilder.html
+[abstractconfigso]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/AbstractConfigSourceBuilder.html
+[javadoc]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/AbstractConfigSourceBuilder.html#init-io.helidon.config.Config-
+[gitconfigsourceb]: https://helidon.io/docs/v4/apidocs/io.helidon.config.git/io/helidon/config/git/GitConfigSourceBuilder.html
+[pollingstrategy]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/spi/PollingStrategy.html
 [polling-strategy]: extensions.md#pollingstrategy-spi

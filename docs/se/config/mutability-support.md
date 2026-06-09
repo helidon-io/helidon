@@ -119,9 +119,9 @@ System.out.println("Always actual greeting value: " + greetingSupplier.get());
 > [!IMPORTANT]
 > Supplier support requires that you create the `Config` object from config sources that have proper polling strategies set up. The supplier returns refreshed values only after changes have been detected by the polling strategy.
 
-[timestamp-method]: /apidocs/io.helidon.config/io/helidon/config/Config.html#timestamp--
-[config-context]: /apidocs/io.helidon.config/io/helidon/config/Config.Context.html
-[pollingstrategy]: /apidocs/io.helidon.config/io/helidon/config/spi/PollingStrategy.html
+[timestamp-method]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/Config.html#timestamp--
+[config-context]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/Config.Context.html
+[pollingstrategy]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/spi/PollingStrategy.html
 [polling-strategi]: extensions.md#pollingstrategy-spi
-[pollingstrategie]: /apidocs/io.helidon.config/io/helidon/config/PollingStrategies.html
-[config-onchange]: </apidocs/io.helidon.config/io/helidon/config/Config.html#onChange(java.util.function.Consumer)>
+[pollingstrategie]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/PollingStrategies.html
+[config-onchange]: <https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/Config.html#onChange(java.util.function.Consumer)>

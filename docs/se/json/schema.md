@@ -98,6 +98,6 @@ Or obtain it over the static `find` method on the [`Schema`][schema] class. This
 Schema.find(MyClass.class);
 ```
 
-[jsonschema]: /apidocs/io.helidon.json.schema/io/helidon/json/schema/JsonSchema.html
-[schema]: /apidocs/io.helidon.json.schema/io/helidon/json/schema/Schema.html
-[service-named]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.Named.html
+[jsonschema]: https://helidon.io/docs/v4/apidocs/io.helidon.json.schema/io/helidon/json/schema/JsonSchema.html
+[schema]: https://helidon.io/docs/v4/apidocs/io.helidon.json.schema/io/helidon/json/schema/Schema.html
+[service-named]: https://helidon.io/docs/v4/apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.Named.html

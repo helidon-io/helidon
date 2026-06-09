@@ -295,24 +295,24 @@ webclient:
 - [Web Client Discovery Integration Javadoc][web-client-disco]
 - [Helidon Web Client](webclient.md)
 
-[io-helidon-disco]: /apidocs/io.helidon.discovery/io/helidon/discovery/Discovery.html
-[uris-string-uri]: </apidocs/io.helidon.discovery/io/helidon/discovery/Discovery.html#uris(java.lang.String,java.net.URI)>
-[io-helidon-disco-2]: /apidocs/io.helidon.discovery/io/helidon/discovery/DiscoveredUri.html
+[io-helidon-disco]: https://helidon.io/docs/v4/apidocs/io.helidon.discovery/io/helidon/discovery/Discovery.html
+[uris-string-uri]: <https://helidon.io/docs/v4/apidocs/io.helidon.discovery/io/helidon/discovery/Discovery.html#uris(java.lang.String,java.net.URI)>
+[io-helidon-disco-2]: https://helidon.io/docs/v4/apidocs/io.helidon.discovery/io/helidon/discovery/DiscoveredUri.html
 [uri]: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/net/URI.html
 [helidon-inject]: injection/injection.md#injection-points
-[io-helidon-servi]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.Inject.html
+[io-helidon-servi]: https://helidon.io/docs/v4/apidocs/io.helidon.service.registry/io/helidon/service/registry/Service.Inject.html
 [service-registry]: injection/injection.md#programmatic-lookup
-[io-helidon-servi-2]: /apidocs/io.helidon.service.registry/io/helidon/service/registry/Services.html
-[io-helidon-servi-3]: </apidocs/io.helidon.service.registry/io/helidon/service/registry/Services.html#get(java.lang.Class)>
+[io-helidon-servi-2]: https://helidon.io/docs/v4/apidocs/io.helidon.service.registry/io/helidon/service/registry/Services.html
+[io-helidon-servi-3]: <https://helidon.io/docs/v4/apidocs/io.helidon.service.registry/io/helidon/service/registry/Services.html#get(java.lang.Class)>
 [sequencedset]: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/SequencedSet.html
-[uri-method]: </apidocs/io.helidon.discovery/io/helidon/discovery/DiscoveredUri.html#uri()>
+[uri-method]: <https://helidon.io/docs/v4/apidocs/io.helidon.discovery/io/helidon/discovery/DiscoveredUri.html#uri()>
 [netflix-eureka-s]: https://github.com/Netflix/eureka/tree/v2.0.5
 [configuration-re]: ../config/io_helidon_discovery_providers_eureka_EurekaDiscovery.md
 [base-uri-propert]: ../config/io_helidon_webclient_api_HttpClientConfig.md
 [other-things]: ../config/io_helidon_discovery_providers_eureka_CacheConfig.md
 [eureka-server-se]: integrations/eureka-registration.md
-[fully-specified]: </apidocs/io.helidon.webclient.discovery/io/helidon/webclient/discovery/WebClientDiscovery.html#handle(io.helidon.webclient.spi.WebClientService.Chain,io.helidon.webclient.api.WebClientServiceRequest)>
+[fully-specified]: <https://helidon.io/docs/v4/apidocs/io.helidon.webclient.discovery/io/helidon/webclient/discovery/WebClientDiscovery.html#handle(io.helidon.webclient.spi.WebClientService.Chain,io.helidon.webclient.api.WebClientServiceRequest)>
 [web-client-servi]: webclient.md#adding-service-to-webclient
-[discovery-javado]: /apidocs/io.helidon.discovery/module-summary.html
-[eureka-discovery]: /apidocs/io.helidon.discovery.providers.eureka/module-summary.html
-[web-client-disco]: /apidocs/io.helidon.webclient.discovery/module-summary.html
+[discovery-javado]: https://helidon.io/docs/v4/apidocs/io.helidon.discovery/module-summary.html
+[eureka-discovery]: https://helidon.io/docs/v4/apidocs/io.helidon.discovery.providers.eureka/module-summary.html
+[web-client-disco]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.discovery/module-summary.html

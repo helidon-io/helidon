@@ -68,4 +68,4 @@ Try the Helidon SE quickstart guides to get your first Helidon SE application up
 [helidon-se-3x-up]: guides/upgrade_3x.md
 [helidon-se-2-x-u]: guides/upgrade.md
 [guides]: guides/overview.md
-[javadocs]: /apidocs
+[javadocs]: https://helidon.io/docs/v4/apidocs

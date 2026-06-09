@@ -130,8 +130,8 @@ If you need programmatic control over the `OpenApiFeature` instance, invoke `Ope
 
 [openapi-specific]: https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.0.md
 [microprofile-ope]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.1/microprofile-openapi-spec-3.1.1.html
-[openapifeature]: /apidocs/io.helidon.openapi/io/helidon/openapi/OpenApiFeature.html
-[builder]: /apidocs/io.helidon.openapi/io/helidon/openapi/OpenApiFeatureConfig.Builder.html
+[openapifeature]: https://helidon.io/docs/v4/apidocs/io.helidon.openapi/io/helidon/openapi/OpenApiFeature.html
+[builder]: https://helidon.io/docs/v4/apidocs/io.helidon.openapi/io/helidon/openapi/OpenApiFeatureConfig.Builder.html
 [example-below]: #register-openapifeature-explicitly
 [manager]: ../../config/io_helidon_openapi_OpenApiManager.md
 [services]: ../../config/io_helidon_openapi_OpenApiService.md

@@ -555,10 +555,10 @@ This example is available at the [Helidon official GitHub repository][helidon-of
 - [OpenTelemetry Documentation](https://opentelemetry.io/docs/)
 
 [helidon-se-docum]: ../se/tracing.md#responding-to-span-lifecycle-events
-[callbackenabled]: /apidocs/io.helidon.microprofile.telemetry/io/helidon/microprofile/telemetry/CallbackEnabled.html
-[helidontelemetry]: /apidocs/io.helidon.microprofile.telemetry/io/helidon/microprofile/telemetry/spi/HelidonTelemetryContainerFilterHelper.html
+[callbackenabled]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.telemetry/io/helidon/microprofile/telemetry/CallbackEnabled.html
+[helidontelemetry]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.telemetry/io/helidon/microprofile/telemetry/spi/HelidonTelemetryContainerFilterHelper.html
 [jakarta-rest-con]: https://jakarta.ee/specifications/restful-ws/3.1/apidocs/jakarta.ws.rs/jakarta/ws/rs/container/containerrequestcontext
-[helidontelemetry-2]: /apidocs/io.helidon.microprofile.telemetry/io/helidon/microprofile/telemetry/spi/HelidonTelemetryClientFilterHelper.html
+[helidontelemetry-2]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.telemetry/io/helidon/microprofile/telemetry/spi/HelidonTelemetryClientFilterHelper.html
 [jakarta-rest-cli]: https://jakarta.ee/specifications/restful-ws/3.1/apidocs/jakarta.ws.rs/jakarta/ws/rs/client/clientrequestcontext
 [opentelemetry-sd]: https://github.com/open-telemetry/opentelemetry-java/tree/v1.19.0/sdk-extensions/autoconfigure
 [manual-instrumen]: https://opentelemetry.io/docs/instrumentation/java/manual/

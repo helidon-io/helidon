@@ -515,22 +515,22 @@ By default, Helidon tracing support for OpenTelemetry uses OpenTelemetry’s OTL
 - [Opentracing Project (now part of OpenTelemetry)](https://opentracing.io/)
 
 [opentelemetry]: https://opentelemetry.io/docs/instrumentation/js/api/tracing/
-[span]: /apidocs/io.helidon.tracing/io/helidon/tracing/Span.html
-[writablebaggage]: /apidocs/io.helidon.tracing/io/helidon/tracing/WritableBaggage.html
-[spancontext]: /apidocs/io.helidon.tracing/io/helidon/tracing/SpanContext.html
-[baggage]: /apidocs/io.helidon.tracing/io/helidon/tracing/Baggage.html
+[span]: https://helidon.io/docs/v4/apidocs/io.helidon.tracing/io/helidon/tracing/Span.html
+[writablebaggage]: https://helidon.io/docs/v4/apidocs/io.helidon.tracing/io/helidon/tracing/WritableBaggage.html
+[spancontext]: https://helidon.io/docs/v4/apidocs/io.helidon.tracing/io/helidon/tracing/SpanContext.html
+[baggage]: https://helidon.io/docs/v4/apidocs/io.helidon.tracing/io/helidon/tracing/Baggage.html
 [responding-to-sp]: ../includes/tracing/common-callbacks.md#span-lifecycle-callbacks
-[helidonopentelem]: /apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html
-[tracer-callbacke]: </apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.helidon.tracing.Tracer)>
-[tracer-callbacke-2]: </apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.opentelemetry.api.trace.Tracer)>
-[span-callbackena]: </apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.helidon.tracing.Span)>
-[span-callbackena-2]: </apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.opentelemetry.api.trace.Span)>
-[wrapper]: /apidocs/io.helidon.tracing/io/helidon/tracing/Wrapper.html
+[helidonopentelem]: https://helidon.io/docs/v4/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html
+[tracer-callbacke]: <https://helidon.io/docs/v4/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.helidon.tracing.Tracer)>
+[tracer-callbacke-2]: <https://helidon.io/docs/v4/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.opentelemetry.api.trace.Tracer)>
+[span-callbackena]: <https://helidon.io/docs/v4/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.helidon.tracing.Span)>
+[span-callbackena-2]: <https://helidon.io/docs/v4/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.opentelemetry.api.trace.Span)>
+[wrapper]: https://helidon.io/docs/v4/apidocs/io.helidon.tracing/io/helidon/tracing/Wrapper.html
 [client-cert-pem]: ../config/io_helidon_common_configurable_Resource.md
 [propagation]: ../config/io_helidon_tracing_providers_jaeger_JaegerTracerBuilder_PropagationFormat.md
 [sampler-type]: ../config/io_helidon_tracing_providers_jaeger_JaegerTracerBuilder_SamplerType.md
 [span-processor-t]: ../config/io_helidon_tracing_providers_jaeger_JaegerTracerBuilder_SpanProcessorType.md
 [api-version]: ../config/io_helidon_tracing_providers_zipkin_ZipkinTracerBuilder_Version.md
-[opentelemetrycon]: /apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/OpenTelemetryTracerConfig.html
+[opentelemetrycon]: https://helidon.io/docs/v4/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/OpenTelemetryTracerConfig.html
 [telemetry-doc-pa]: ../se/telemetry/open-telemetry.md
 [exporter-type]: ../config/io_helidon_tracing_providers_opentelemetry_OtlpExporterProtocolType.md

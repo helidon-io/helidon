@@ -652,22 +652,22 @@ When pinning is detected, the test fails with a stacktrace pointing at the culpr
 
 - [TestNG Documentation](https://testng.org)
 
-[addbean]: /apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddBean.html
-[disablediscovery]: /apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/DisableDiscovery.html
-[addjaxrs]: /apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddJaxRs.html
-[configcdiextensi]: /apidocs/io.helidon.microprofile.config/io/helidon/microprofile/config/ConfigCdiExtension.html
-[servercdiextensi]: /apidocs/io.helidon.microprofile.server/io/helidon/microprofile/server/ServerCdiExtension.html
-[jaxrscdiextensio]: /apidocs/io.helidon.microprofile.server/io/helidon/microprofile/server/JaxRsCdiExtension.html
-[configuration]: /apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/Configuration.html
-[addconfig]: /apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddConfig.html
-[addconfigblock]: /apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddConfigBlock.html
-[addconfigsource]: /apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddConfigSource.html
+[addbean]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddBean.html
+[disablediscovery]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/DisableDiscovery.html
+[addjaxrs]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddJaxRs.html
+[configcdiextensi]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.config/io/helidon/microprofile/config/ConfigCdiExtension.html
+[servercdiextensi]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.server/io/helidon/microprofile/server/ServerCdiExtension.html
+[jaxrscdiextensio]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.server/io/helidon/microprofile/server/JaxRsCdiExtension.html
+[configuration]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/Configuration.html
+[addconfig]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddConfig.html
+[addconfigblock]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddConfigBlock.html
+[addconfigsource]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddConfigSource.html
 [microprofile-con]: https://download.eclipse.org/microprofile/microprofile-config-3.1/microprofile-config-spec-3.1.html#_configsource_ordering
 [webtarget]: https://jakarta.ee/specifications/restful-ws/3.1/apidocs/jakarta/ws/rs/client/WebTarget.html
-[socket]: /apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/Socket.html
-[addextension]: /apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddExtension.html
-[afterstop]: /apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AfterStop.html
+[socket]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/Socket.html
+[addextension]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddExtension.html
+[afterstop]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AfterStop.html
 [configproperty]: https://download.eclipse.org/microprofile/microprofile-config-3.1/apidocs/org/eclipse/microprofile/config/inject/ConfigProperty.html
 [requestscoped]: https://jakarta.ee/specifications/cdi/4.0/apidocs/jakarta.cdi/jakarta/enterprise/context/RequestScoped.html
-[mockbean]: /apidocs/io.helidon.microprofile.testing.mocking/io/helidon/microprofile/testing/mocking/MockBean.html
+[mockbean]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.testing.mocking/io/helidon/microprofile/testing/mocking/MockBean.html
 [alternative]: https://jakarta.ee/specifications/cdi/4.0/apidocs/jakarta.cdi/jakarta/enterprise/inject/Alternative.html

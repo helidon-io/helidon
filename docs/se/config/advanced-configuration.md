@@ -545,11 +545,11 @@ Config config = Config.create(
 3.  Uses the built-in *repeating* implementation of `RetryPolicy` that can be used with any config source, but typically for ones that might suffer brief, intermittent outages.
 4.  Specifies the executor to use for loading and retries.
 
-[configsources-fi]: /apidocs/io.helidon.config/io/helidon/config/ConfigSources.html#file-java.lang.String-
-[configsources-ja]: /apidocs/io.helidon.config/io/helidon/config/ConfigSources.html
-[configsources-pr]: /apidocs/io.helidon.config/io/helidon/config/ConfigSources.html#prefixed-java.lang.String-java.util.function.Supplier-
+[configsources-fi]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/ConfigSources.html#file-java.lang.String-
+[configsources-ja]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/ConfigSources.html
+[configsources-pr]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/ConfigSources.html#prefixed-java.lang.String-java.util.function.Supplier-
 [hierarchical-fea]: hierarchical-features.md#access-by-key
 [filters]: extensions.md#Config-SPI-ConfigFilter
-[value-resolving]: /apidocs/io.helidon.config/io/helidon/config/ConfigFilters.html#valueResolving--
-[configfilter]: /apidocs/io.helidon.config/io/helidon/config/spi/ConfigFilter.html
-[simpleretrypolic]: /apidocs/io.helidon.config/io/helidon/config/SimpleRetryPolicy.Builder.html
+[value-resolving]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/ConfigFilters.html#valueResolving--
+[configfilter]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/spi/ConfigFilter.html
+[simpleretrypolic]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/SimpleRetryPolicy.Builder.html

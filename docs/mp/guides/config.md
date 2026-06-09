@@ -607,4 +607,4 @@ Refer to the following references for additional information:
 [kubectl-1-16-5]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
 [microprofile-con]: https://download.eclipse.org/microprofile/microprofile-config-3.1/microprofile-config-spec-3.1.html
 [microprofile-con-2]: https://download.eclipse.org/microprofile/microprofile-config-3.1/apidocs
-[helidon-javadoc]: /apidocs/index.html?overview-summary.html
+[helidon-javadoc]: https://helidon.io/docs/v4/apidocs/index.html?overview-summary.html

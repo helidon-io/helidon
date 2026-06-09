@@ -203,4 +203,4 @@ public void methodName(CronInvocation inv) {
 - [Helidon Scheduling Javadoc][helidon-scheduli]
 
 [cron-utils]: https://github.com/jmrozanec/cron-utils
-[helidon-scheduli]: /apidocs/io.helidon.microprofile.scheduling/io/helidon/microprofile/scheduling/package-summary.html
+[helidon-scheduli]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.scheduling/io/helidon/microprofile/scheduling/package-summary.html

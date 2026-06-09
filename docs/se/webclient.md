@@ -754,22 +754,22 @@ See the [manifest](../config/manifest.md) for all available types.
 - [Helidon WebClient Security Support][helidon-webclien-8]
 - [Helidon WebClient Tracing Support][helidon-webclien-9]
 
-[httpclient]: /apidocs/io.helidon.webclient.api/io/helidon/webclient/api/HttpClient.html
-[httpclientreques]: /apidocs/io.helidon.webclient.api/io/helidon/webclient/api/HttpClientRequest.html
-[clientrequestbas]: /apidocs/io.helidon.webclient.api/io/helidon/webclient/api/ClientRequestBase.html
-[clientrequest]: /apidocs/io.helidon.webclient.api/io/helidon/webclient/api/ClientRequest.html
+[httpclient]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.api/io/helidon/webclient/api/HttpClient.html
+[httpclientreques]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.api/io/helidon/webclient/api/HttpClientRequest.html
+[clientrequestbas]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.api/io/helidon/webclient/api/ClientRequestBase.html
+[clientrequest]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.api/io/helidon/webclient/api/ClientRequest.html
 [protocol-configs]: ../config/io_helidon_webclient_spi_ProtocolConfig.md
 [proxy]: ../config/io_helidon_webclient_api_Proxy.md
 [tls]: ../config/io_helidon_common_tls_Tls.md
 [configuration-se]: ../mp/security/configuration-secrets.md
 [discovery]: discovery.md#web-client-discovery-integration
 [records]: ../config/io_helidon_common_context_http_ContextRecordConfig.md
-[helidon-webclien]: /apidocs/io.helidon.webclient.api/module-summary.html
-[helidon-webclien-2]: /apidocs/io.helidon.webclient.http1/module-summary.html
-[helidon-webclien-3]: /apidocs/io.helidon.webclient.http2/module-summary.html
-[helidon-webclien-4]: /apidocs/io.helidon.webclient.dns.resolver.first/module-summary.html
-[helidon-webclien-5]: /apidocs/io.helidon.webclient.dns.resolver.roundrobin/module-summary.html
-[helidon-webclien-6]: /apidocs/io.helidon.webclient.discovery/module-summary.html
-[helidon-webclien-7]: /apidocs/io.helidon.webclient.metrics/module-summary.html
-[helidon-webclien-8]: /apidocs/io.helidon.webclient.security/module-summary.html
-[helidon-webclien-9]: /apidocs/io.helidon.webclient.tracing/module-summary.html
+[helidon-webclien]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.api/module-summary.html
+[helidon-webclien-2]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.http1/module-summary.html
+[helidon-webclien-3]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.http2/module-summary.html
+[helidon-webclien-4]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.dns.resolver.first/module-summary.html
+[helidon-webclien-5]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.dns.resolver.roundrobin/module-summary.html
+[helidon-webclien-6]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.discovery/module-summary.html
+[helidon-webclien-7]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.metrics/module-summary.html
+[helidon-webclien-8]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.security/module-summary.html
+[helidon-webclien-9]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.tracing/module-summary.html

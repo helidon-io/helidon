@@ -837,7 +837,7 @@ Refer to the following references for additional information:
 
 - [MicroProfile Metrics specification][microprofile-met-2]
 - [MicroProfile Metrics Javadoc][microprofile-met-3]
-- Helidon Javadoc at /apidocs/index.html?overview-summary.html
+- Helidon Javadoc at https://helidon.io/docs/v4/apidocs/index.html?overview-summary.html
 
 [java-21]: https://www.oracle.com/technetwork/java/javase/downloads
 [open-jdk-21]: http://jdk.java.net

@@ -1013,17 +1013,17 @@ routing
 This example uses the default Prometheus `CollectorRegistry`. By default, the `PrometheusSupport` and exposes its REST endpoint at the path `/metrics`. Use the builder obtained by `PrometheusSupport.builder()` to configure a different `CollectorRegistry` or a different path.
 
 [longer-discussio]: #controlling-the-meter-type-for-gctime
-[counter]: /apidocs/io.helidon.metrics.api/io/helidon/metrics/api/Counter.html
+[counter]: https://helidon.io/docs/v4/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/Counter.html
 [counters]: https://docs.micrometer.io/micrometer/reference/concepts/counters.html
-[distributionsumm]: /apidocs/io.helidon.metrics.api/io/helidon/metrics/api/DistributionSummary.html
+[distributionsumm]: https://helidon.io/docs/v4/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/DistributionSummary.html
 [distribution-sum]: https://docs.micrometer.io/micrometer/reference/concepts/distribution-summaries.html
-[timer]: /apidocs/io.helidon.metrics.api/io/helidon/metrics/api/Timer.html
+[timer]: https://helidon.io/docs/v4/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/Timer.html
 [duration]: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/time/Duration.html
 [timers]: https://docs.micrometer.io/micrometer/reference/concepts/timers.html
-[gauge-extends-nu]: /apidocs/io.helidon.metrics.api/io/helidon/metrics/api/Gauge.html
+[gauge-extends-nu]: https://helidon.io/docs/v4/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/Gauge.html
 [number]: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java.lang.Number.html
 [gauges]: https://docs.micrometer.io/micrometer/reference/concepts/gauges.html
-[preview-feature]: /apidocs/io.helidon.common.features.api/io/helidon/common/features/api/Preview.html
+[preview-feature]: https://helidon.io/docs/v4/apidocs/io.helidon.common.features.api/io/helidon/common/features/api/Preview.html
 [this-later-secti]: #understanding-the-inferred-prometheus-publisher
 [aggregation-temp]: ../../config/io_micrometer_registry_otlp_AggregationTemporality.md
 [base-time-unit]: ../../config/java_util_concurrent_TimeUnit.md
@@ -1034,11 +1034,11 @@ This example uses the default Prometheus `CollectorRegistry`. By default, the `P
 [openmetrics-form]: https://github.com/prometheus/OpenMetrics/blob/main/specification/OpenMetrics.md
 [prometheus-expos]: https://github.com/prometheus/docs/blob/main/content/docs/instrumenting/exposition_formats.md
 [timeunit]: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/TimeUnit.html
-[metrics]: /apidocs/io.helidon.metrics.api/io/helidon/metrics/api/Metrics.html
-[meterregistry]: /apidocs/io.helidon.metrics.api/io/helidon/metrics/api/MeterRegistry.html
-[meter-builder-ba]: </apidocs/io.helidon.metrics.api/io/helidon/metrics/api/Meter.Builder.html#baseUnit(java.lang.String)>
-[timer-builder-ba]: </apidocs/io.helidon.metrics.api/io/helidon/metrics/api/Timer.Builder.html#baseUnit(java.util.concurrent.TimeUnit)>
-[wrapper]: /apidocs/io.helidon.metrics.api/io/helidon/metrics/api/Wrapper.html
+[metrics]: https://helidon.io/docs/v4/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/Metrics.html
+[meterregistry]: https://helidon.io/docs/v4/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/MeterRegistry.html
+[meter-builder-ba]: <https://helidon.io/docs/v4/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/Meter.Builder.html#baseUnit(java.lang.String)>
+[timer-builder-ba]: <https://helidon.io/docs/v4/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/Timer.Builder.html#baseUnit(java.util.concurrent.TimeUnit)>
+[wrapper]: https://helidon.io/docs/v4/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/Wrapper.html
 [built-in-meter-n]: ../../config/io_helidon_metrics_api_BuiltInMeterNameFormat.md
 [key-performance]: ../../config/io_helidon_metrics_api_KeyPerformanceIndicatorMetricsConfig.md
 [publishers]: ../../config/io_helidon_metrics_api_MetricsPublisher.md
@@ -1052,5 +1052,5 @@ This example uses the default Prometheus `CollectorRegistry`. By default, the `P
 [choose-whether-t]: #configuring-virtual-threads-meters
 [choose-whether-t-2]: #collecting-basic-and-extended-key-performance-indicator-kpi-meters
 [micrometer-metri]: https://docs.micrometer.io/micrometer/reference/concepts
-[prometheussuppor]: /apidocs/io.helidon.metrics.prometheus/io/helidon/metrics/prometheus/PrometheusSupport.html
-[builder]: /apidocs/io.helidon.metrics.prometheus/io/helidon/metrics/prometheus/PrometheusSupport.Builder.html
+[prometheussuppor]: https://helidon.io/docs/v4/apidocs/io.helidon.metrics.prometheus/io/helidon/metrics/prometheus/PrometheusSupport.html
+[builder]: https://helidon.io/docs/v4/apidocs/io.helidon.metrics.prometheus/io/helidon/metrics/prometheus/PrometheusSupport.Builder.html

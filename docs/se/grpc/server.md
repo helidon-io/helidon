@@ -250,7 +250,7 @@ The following gRPC examples for Helidon SE are available:
 [grpc-se-example]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/webserver/grpc
 [instructions]: https://grpc.io/docs/quickstart/java.html
 [pom-xml]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/webserver/grpc/pom.xml
-[here]: /apidocs/io.helidon.webserver.grpc/io/helidon/webserver/grpc/ResponseHelper.html
+[here]: https://helidon.io/docs/v4/apidocs/io.helidon.webserver.grpc/io/helidon/webserver/grpc/ResponseHelper.html
 [grpc-opentelemet]: https://grpc.io/docs/guides/opentelemetry-metrics/
 [grpc-reflection]: https://grpc.io/docs/guides/reflection/
 [multiple-protoco]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/webserver/protocols

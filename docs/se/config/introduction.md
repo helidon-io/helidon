@@ -289,21 +289,21 @@ Accessing Configuration Data
 
 Extending and Fine-tuning the Config System
 
-[configsources]: /apidocs/io.helidon.config/io/helidon/config/ConfigSources.html
+[configsources]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/ConfigSources.html
 [advanced-topics]: advanced-configuration.md#advanced-config-sources
 [this-section]: #built-in-support-for-config-formats
-[config-builder-s]: /apidocs/io.helidon.config/io/helidon/config/Config.Builder.html#addParser-io.helidon.config.spi.ConfigParser-
-[configparser]: /apidocs/io.helidon.config/io/helidon/config/spi/ConfigParser.html
+[config-builder-s]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/Config.Builder.html#addParser-io.helidon.config.spi.ConfigParser-
+[configparser]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/spi/ConfigParser.html
 [advanced-topics-2]: advanced-configuration.md#advanced-config-parsers
-[config-builder]: /apidocs/io.helidon.config/io/helidon/config/Config.Builder.html
+[config-builder]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/Config.Builder.html
 [custom-configura]: ../../se/guides/config.md#_custom_configuration_sources
-[config]: /apidocs/io.helidon.config/io/helidon/config/Config.html
+[config]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/Config.html
 [filter-overrides]: advanced-configuration.md#filters-overrides-and-token-substitution
-[retrypolicies]: /apidocs/io.helidon.config/io/helidon/config/RetryPolicies.html
-[retrypolicy]: /apidocs/io.helidon.config/io/helidon/config/spi/RetryPolicy.html
-[pollingstrategie]: /apidocs/io.helidon.config/io/helidon/config/PollingStrategies.html
-[pollingstrategy]: /apidocs/io.helidon.config/io/helidon/config/spi/PollingStrategy.html
-[configsource]: /apidocs/io.helidon.config/io/helidon/config/spi/ConfigSource.html
+[retrypolicies]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/RetryPolicies.html
+[retrypolicy]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/spi/RetryPolicy.html
+[pollingstrategie]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/PollingStrategies.html
+[pollingstrategy]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/spi/PollingStrategy.html
+[configsource]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/spi/ConfigSource.html
 [se-config-guide]: ../guides/config.md
 [config-sources]: #config-sources
 [config-profiles]: config-profiles.md

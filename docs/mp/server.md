@@ -496,6 +496,6 @@ See the [`UriInfo`][uriinfo] Javadoc for more information.
 [setting-applicat]: jaxrs/jaxrs-applications.md#setting-application-path
 [standard-http-fo]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Forwarded
 [non-standard-x-f]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For
-[uriinfo]: /apidocs/io.helidon.common.uri/io/helidon/common/uri/UriInfo.html
-[helidon-micropro]: /apidocs/io.helidon.microprofile.server/module-summary.html
+[uriinfo]: https://helidon.io/docs/v4/apidocs/io.helidon.common.uri/io/helidon/common/uri/UriInfo.html
+[helidon-micropro]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.server/module-summary.html
 [helidon-micropro-2]: https://github.com/helidon-io/helidon/tree/main/microprofile/server

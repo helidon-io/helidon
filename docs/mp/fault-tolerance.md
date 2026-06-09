@@ -149,7 +149,7 @@ For additional information about this API, see the [MicroProfile Fault Tolerance
 
 - [MicroProfile Fault Tolerance][microprofile-fau-2]
 
-[threadpoolconfig]: /apidocs/io.helidon.common.configurable/io/helidon/common/configurable/ThreadPoolConfig.html
-[scheduledthreadp]: /apidocs/io.helidon.common.configurable/io/helidon/common/configurable/ScheduledThreadPoolConfig.html
+[threadpoolconfig]: https://helidon.io/docs/v4/apidocs/io.helidon.common.configurable/io/helidon/common/configurable/ThreadPoolConfig.html
+[scheduledthreadp]: https://helidon.io/docs/v4/apidocs/io.helidon.common.configurable/io/helidon/common/configurable/ScheduledThreadPoolConfig.html
 [microprofile-fau]: https://download.eclipse.org/microprofile/microprofile-fault-tolerance-4.0.2/apidocs
 [microprofile-fau-2]: https://download.eclipse.org/microprofile/microprofile-fault-tolerance-4.0.2/microprofile-fault-tolerance-spec-4.0.2.html

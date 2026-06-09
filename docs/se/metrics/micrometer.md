@@ -243,4 +243,4 @@ The [Micrometer website](https://micrometer.io) describes the project as a whole
 [builder-2]: https://javadoc.io/doc/io.micrometer/MicrometerSupport.Builder.html
 [example-applicat]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/integrations/micrometer/se
 [prometheus-meter]: https://javadoc.io/doc/io.micrometer/micrometer-registry-prometheus/1.11.1/io/micrometer/prometheus/PrometheusConfig.html
-[serverrequest]: /apidocs/io.helidon.webserver/io/helidon/webserver/http/ServerRequest.html
+[serverrequest]: https://helidon.io/docs/v4/apidocs/io.helidon.webserver/io/helidon/webserver/http/ServerRequest.html

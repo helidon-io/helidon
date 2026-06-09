@@ -891,4 +891,4 @@ Refer to the following references for additional information:
 [kubectl-1-16-5]: https://kubernetes.io/docs/tasks/tools/install-kubectl/
 [advanced-config]: ../config/advanced-configuration.md
 [hierarchical-con]: ../config/hierarchical-features.md
-[helidon-javadoc]: /apidocs/index.html?overview-summary.html
+[helidon-javadoc]: https://helidon.io/docs/v4/apidocs/index.html?overview-summary.html

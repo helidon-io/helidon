@@ -110,4 +110,4 @@ For upgrade from Helidon 3.x to 4.x:
 [scheduling]: ../mp/scheduling.md
 [cron-utils]: https://github.com/jmrozanec/cron-utils
 [security]: ../mp/security/security.md
-[helidon-javadocs]: /apidocs/index.html?overview-summary.html
+[helidon-javadocs]: https://helidon.io/docs/v4/apidocs/index.html?overview-summary.html

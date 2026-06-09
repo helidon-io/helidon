@@ -211,4 +211,4 @@ FixedRate.builder()
 [cron-utils]: https://github.com/jmrozanec/cron-utils
 [delay-type]: ../config/io_helidon_scheduling_FixedRate_DelayType.md
 [time-unit]: ../config/java_util_concurrent_TimeUnit.md
-[helidon-scheduli]: /apidocs/io.helidon.microprofile.scheduling/io/helidon/microprofile/scheduling/package-summary.html
+[helidon-scheduli]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.scheduling/io/helidon/microprofile/scheduling/package-summary.html

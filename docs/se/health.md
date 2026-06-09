@@ -284,14 +284,14 @@ You can use Helidon-provided health checks to report various common health check
 <tr>
 <td style="text-align: left;"><p>deadlock detection</p></td>
 <td style="text-align: left;"><p><code>deadlock</code></p></td>
-<td style="text-align: left;"><p><a href="/apidocs/io.helidon.health.checks/io/helidon/health/checks/DeadlockHealthCheck.html"><code>DeadlockHealthCheck</code></a></p></td>
+<td style="text-align: left;"><p><a href="https://helidon.io/docs/v4/apidocs/io.helidon.health.checks/io/helidon/health/checks/DeadlockHealthCheck.html"><code>DeadlockHealthCheck</code></a></p></td>
 <td style="text-align: left;"><p>n/a</p></td>
 <td style="text-align: left;"><p>n/a</p></td>
 </tr>
 <tr>
 <td rowspan="2" style="text-align: left;"><p>available disk space</p></td>
 <td rowspan="2" style="text-align: left;"><p><code>diskSpace</code></p></td>
-<td rowspan="2" style="text-align: left;"><p><a href="/apidocs/io.helidon.health.checks/io/helidon/health/checks/DiskSpaceHealthCheck.html"><code>DiskSpaceHealthCheck</code></a></p></td>
+<td rowspan="2" style="text-align: left;"><p><a href="https://helidon.io/docs/v4/apidocs/io.helidon.health.checks/io/helidon/health/checks/DiskSpaceHealthCheck.html"><code>DiskSpaceHealthCheck</code></a></p></td>
 <td style="text-align: left;"><p><code>helidon.health.diskSpace.thresholdPercent</code></p></td>
 <td style="text-align: left;"><p><code>99.999</code></p></td>
 </tr>
@@ -302,7 +302,7 @@ You can use Helidon-provided health checks to report various common health check
 <tr>
 <td style="text-align: left;"><p>available heap memory</p></td>
 <td style="text-align: left;"><p><code>heapMemory</code></p></td>
-<td style="text-align: left;"><p><a href="/apidocs/io.helidon.health.checks/io/helidon/health/checks/HeapMemoryHealthCheck.html"><code>HeapMemoryHealthCheck</code></a></p></td>
+<td style="text-align: left;"><p><a href="https://helidon.io/docs/v4/apidocs/io.helidon.health.checks/io/helidon/health/checks/HeapMemoryHealthCheck.html"><code>HeapMemoryHealthCheck</code></a></p></td>
 <td style="text-align: left;"><p><code>helidon.health.heapMemory.thresholdPercent</code></p></td>
 <td style="text-align: left;"><p><code>98</code></p></td>
 </tr>
@@ -588,4 +588,4 @@ spec:
 - [Health Checks SE API Javadocs][health-checks-se].
 
 [kubernetes-docum]: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes
-[health-checks-se]: /apidocs/io.helidon.health.checks/module-summary.html
+[health-checks-se]: https://helidon.io/docs/v4/apidocs/io.helidon.health.checks/module-summary.html

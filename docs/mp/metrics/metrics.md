@@ -1388,7 +1388,7 @@ kubectl delete -f ./metrics.yaml
 [gauge-extends-nu]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/apidocs/org/eclipse/microprofile/metrics/Gauge.html
 [number]: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java.lang.Number.html
 [gauge]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/apidocs/org/eclipse/microprofile/metrics/annotation/Gauge.html
-[preview-feature]: /apidocs/io.helidon.common.features.api/io/helidon/common/features/api/Preview.html
+[preview-feature]: https://helidon.io/docs/v4/apidocs/io.helidon.common.features.api/io/helidon/common/features/api/Preview.html
 [this-later-secti]: #understanding-the-inferred-prometheus-publisher
 [aggregation-temp]: ../../config/io_micrometer_registry_otlp_AggregationTemporality.md
 [base-time-unit]: ../../config/java_util_concurrent_TimeUnit.md
@@ -1403,7 +1403,7 @@ kubectl delete -f ./metrics.yaml
 [metric]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/apidocs/org/eclipse/microprofile/metrics/annotation/Metric.html
 [metricregistry]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/apidocs/org/eclipse/microprofile/metrics/MetricRegistry.html
 [registryscope]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/apidocs/org/eclipse/microprofile/metrics/annotation/RegistryScope.html
-[registryfactory]: /apidocs/io.helidon.microprofile.metrics/io/helidon/microprofile/metrics/RegistryFactory.html
+[registryfactory]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.metrics/io/helidon/microprofile/metrics/RegistryFactory.html
 [built-in-meter-n]: ../../config/io_helidon_metrics_api_BuiltInMeterNameFormat.md
 [key-performance]: ../../config/io_helidon_metrics_api_KeyPerformanceIndicatorMetricsConfig.md
 [publishers]: ../../config/io_helidon_metrics_api_MetricsPublisher.md

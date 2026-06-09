@@ -158,7 +158,7 @@ VaultResource(Secrets secrets,
 [the-oracle-cloud]: https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/javasdk.htm
 [calling-services]: https://docs.oracle.com/en-us/iaas/Content/Identity/Tasks/callingservicesfrominstances.htm
 [about-using-reso]: https://docs.oracle.com/en/cloud/paas/autonomous-database/serverless/adbsb/resource-principal.html
-[ociextension]: /apidocs/io.helidon.integrations.oci.sdk.cdi/io/helidon/integrations/oci/sdk/cdi/OciExtension.html
+[ociextension]: https://helidon.io/docs/v4/apidocs/io.helidon.integrations.oci.sdk.cdi/io/helidon/integrations/oci/sdk/cdi/OciExtension.html
 [oci-service-supp]: https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/javasdk.htm#Services_Supported
 [oci-object-stora]: https://docs.oracle.com/en-us/iaas/Content/Object/Concepts/objectstorageoverview.htm
 [singleton-scope]: https://jakarta.ee/specifications/dependency-injection/2.0/apidocs/jakarta/inject/Singleton.html

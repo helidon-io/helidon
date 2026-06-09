@@ -319,15 +319,15 @@ content-length: 461
 {"outcome":"UP",...}
 ```
 
-[cors]: /apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/Cors.html
-[cors-defaults]: /apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/Cors.Defaults.html
-[cors-alloworigin]: /apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/Cors.AllowOrigins.html
-[cors-allowheader]: /apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/Cors.AllowHeaders.html
-[cors-allowmethod]: /apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/Cors.AllowMethods.html
-[cors-exposeheade]: /apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/Cors.ExposeHeaders.html
-[cors-allowcreden]: /apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/Cors.AllowCredentials.html
-[cors-maxagesecon]: /apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/Cors.MaxAgeSeconds.html
-[pathmatcher]: /apidocs/io.helidon.http/io/helidon/http/PathMatcher.html
+[cors]: https://helidon.io/docs/v4/apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/Cors.html
+[cors-defaults]: https://helidon.io/docs/v4/apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/Cors.Defaults.html
+[cors-alloworigin]: https://helidon.io/docs/v4/apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/Cors.AllowOrigins.html
+[cors-allowheader]: https://helidon.io/docs/v4/apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/Cors.AllowHeaders.html
+[cors-allowmethod]: https://helidon.io/docs/v4/apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/Cors.AllowMethods.html
+[cors-exposeheade]: https://helidon.io/docs/v4/apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/Cors.ExposeHeaders.html
+[cors-allowcreden]: https://helidon.io/docs/v4/apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/Cors.AllowCredentials.html
+[cors-maxagesecon]: https://helidon.io/docs/v4/apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/Cors.MaxAgeSeconds.html
+[pathmatcher]: https://helidon.io/docs/v4/apidocs/io.helidon.http/io/helidon/http/PathMatcher.html
 [helidon-mp-quick]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/quickstarts/helidon-quickstart-mp
 [helidon-mp-cors]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/microprofile/cors
 [requested-uri-di]: ../../mp/server.md#using-requested-uri-discovery

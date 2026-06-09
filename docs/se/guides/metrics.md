@@ -833,6 +833,6 @@ Refer to the following references for additional information:
 [key-performance]: #collecting-basic-and-extended-key-performance-indicator-kpi-metrics
 [disable-metrics]: #disabling-metrics-subsystem-entirely
 [virtual-threads]: #configuring-virtual-threads-meters
-[keyperformancein]: /apidocs/io.helidon.metrics.api/io/helidon/metrics/api/KeyPerformanceIndicatorMetricsConfig.html
-[builder]: /apidocs/io.helidon.metrics.api/io/helidon/metrics/api/KeyPerformanceIndicatorMetricsConfig.Builder.html
-[helidon-javadoc]: /apidocs/index.html?overview-summary.html
+[keyperformancein]: https://helidon.io/docs/v4/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/KeyPerformanceIndicatorMetricsConfig.html
+[builder]: https://helidon.io/docs/v4/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/KeyPerformanceIndicatorMetricsConfig.Builder.html
+[helidon-javadoc]: https://helidon.io/docs/v4/apidocs/index.html?overview-summary.html

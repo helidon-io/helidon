@@ -70,8 +70,8 @@ Information about how this feature is communicating with the Eureka Server is lo
 
 Users of this feature may also be interested in the (related) [Discovery feature](../discovery.md), particularly its [Eureka provider](../discovery.md#eureka).
 
-[serverfeature]: /apidocs/io.helidon.webserver/io/helidon/webserver/spi/ServerFeature.html
-[associated-serve]: /apidocs/io.helidon.integrations.eureka/io/helidon/integrations/eureka/EurekaRegistrationServerFeatureProvider
-[httpclientconfig]: /apidocs/io.helidon.webclient.api/io/helidon/webclient/api/HttpClientConfig.html
+[serverfeature]: https://helidon.io/docs/v4/apidocs/io.helidon.webserver/io/helidon/webserver/spi/ServerFeature.html
+[associated-serve]: https://helidon.io/docs/v4/apidocs/io.helidon.integrations.eureka/io/helidon/integrations/eureka/EurekaRegistrationServerFeatureProvider
+[httpclientconfig]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.api/io/helidon/webclient/api/HttpClientConfig.html
 [helidon-config-r]: ../../config/io_helidon_integrations_eureka_InstanceInfoConfig.md
 [helidon-config-r-2]: ../../config/io_helidon_integrations_eureka_EurekaRegistrationServerFeature.md

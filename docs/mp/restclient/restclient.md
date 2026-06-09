@@ -172,5 +172,5 @@ By calling `GreetRestClient.getDefaultMessage()` you reach the endpoint of Helid
 
 [rest-client-for]: https://download.eclipse.org/microprofile/microprofile-rest-client-3.0/microprofile-rest-client-spec-3.0.html
 [creating-new-cli]: #creating-a-new-client-using-a-builder
-[helidon-micropro]: /apidocs/io.helidon.microprofile.restclient/module-summary.html
+[helidon-micropro]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.restclient/module-summary.html
 [microprofile-res]: https://github.com/eclipse/microprofile-rest-client

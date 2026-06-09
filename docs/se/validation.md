@@ -144,4 +144,4 @@ context.throwOnFailure();
 - Throw and exception in case any of the checks failed
 
 [helidon-declarat]: ../se/injection/declarative.md#validation
-[io-helidon-valid]: /apidocs/io.helidon.validation/io/helidon/validation/Validators.html
+[io-helidon-valid]: https://helidon.io/docs/v4/apidocs/io.helidon.validation/io/helidon/validation/Validators.html

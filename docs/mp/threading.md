@@ -112,4 +112,4 @@ execute-on:
     }
     ```
 
-[io-helidon-commo]: /apidocs/io.helidon.common.configurable/io/helidon/common/configurable/ThreadPoolSupplier.html
+[io-helidon-commo]: https://helidon.io/docs/v4/apidocs/io.helidon.common.configurable/io/helidon/common/configurable/ThreadPoolSupplier.html

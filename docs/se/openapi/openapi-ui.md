@@ -211,7 +211,7 @@ The SmallRye OpenAPI UI component accepts several options, but they are of minim
 [SmallRye OpenAPI UI GitHub site][openapi-user-int]
 
 [openapi-user-int]: https://github.com/smallrye/smallrye-open-api/tree/3.3.4/ui/open-api-ui
-[openapiuiconfig]: /apidocs/io.helidon.integrations.openapi.ui/io/helidon/integrations/openapi/ui/OpenApiUiConfig.Builder.html
-[openapifeature-b]: /apidocs/io.helidon.openapi/io/helidon/openapi/OpenApiFeatureConfig.Builder.html
+[openapiuiconfig]: https://helidon.io/docs/v4/apidocs/io.helidon.integrations.openapi.ui/io/helidon/integrations/openapi/ui/OpenApiUiConfig.Builder.html
+[openapifeature-b]: https://helidon.io/docs/v4/apidocs/io.helidon.openapi/io/helidon/openapi/OpenApiFeatureConfig.Builder.html
 [configure-the-he]: ../../se/openapi/openapi.md#configuration
 [option-java]: https://github.com/smallrye/smallrye-open-api/tree/3.3.4/ui/open-api-ui/src/main/java/io/smallrye/openapi/ui/Option.java

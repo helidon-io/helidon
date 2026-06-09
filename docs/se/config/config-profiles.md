@@ -289,7 +289,7 @@ Config Profile Support for Built-in Polling Strategies
 <tbody>
 <tr>
 <td style="text-align: left;"><p><code>file</code></p></td>
-<td style="text-align: left;"><p>Filesystem monitoring - See <a href="/apidocs/io.helidon.config/io/helidon/config/FileSystemWatcher.html"><code>FileSystemWatcher</code></a> class</p></td>
+<td style="text-align: left;"><p>Filesystem monitoring - See <a href="https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/FileSystemWatcher.html"><code>FileSystemWatcher</code></a> class</p></td>
 <td style="text-align: left;"><p><code>initial-delay-millis</code> - delay between the start of the watcher and first check for changes</p>
 <p><code>delay-millis</code> - how often do we check the watcher service for changes</p></td>
 </tr>
@@ -313,7 +313,7 @@ Config Profile Support for Built-in Polling Strategies
 <tbody>
 <tr>
 <td style="text-align: left;"><p><code>repeat</code></p></td>
-<td style="text-align: left;"><p>Regularly-scheduled - see <a href="/apidocs/io.helidon.config/io/helidon/config/RetryPolicies.html#repeat-int-"><code>RetryPolicies.repeat</code></a>.</p></td>
+<td style="text-align: left;"><p>Regularly-scheduled - see <a href="https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/RetryPolicies.html#repeat-int-"><code>RetryPolicies.repeat</code></a>.</p></td>
 <td style="text-align: left;"><p><code>retries</code> (<code>int</code>) - number of retries to perform<br />
 </p>
 <p>Optional:</p>
@@ -383,8 +383,8 @@ public class MyProfiledConfigSource implements NodeConfigSource {
 }
 ```
 
-[fileconfigsource]: /apidocs/io.helidon.config/io/helidon/config/FileConfigSource.Builder.html
-[pollingstrategie]: /apidocs/io.helidon.config/io/helidon/config/PollingStrategies.html#regular-java.time.Duration-
-[retrypolicy]: /apidocs/io.helidon.config/io/helidon/config/spi/RetryPolicy.html
-[changewatcher]: /apidocs/io.helidon.config/io/helidon/config/spi/ChangeWatcher.html
-[pollingstrategy]: /apidocs/io.helidon.config/io/helidon/config/spi/PollingStrategy.html
+[fileconfigsource]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/FileConfigSource.Builder.html
+[pollingstrategie]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/PollingStrategies.html#regular-java.time.Duration-
+[retrypolicy]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/spi/RetryPolicy.html
+[changewatcher]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/spi/ChangeWatcher.html
+[pollingstrategy]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/spi/PollingStrategy.html

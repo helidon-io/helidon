@@ -321,11 +321,11 @@ assert detachedFromAlternate.get("debug").equals("true");
 - Navigation depends on knowing the full structure of the config and so is different for the two cases.
 - Detaching so the `web` node is the root can use the same key regardless of where the config subtree came from.
 
-[confignode]: /apidocs/io.helidon.config/io/helidon/config/spi/ConfigNode.html
+[confignode]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/spi/ConfigNode.html
 [hocon]: https://github.com/lightbend/config/blob/master/HOCON.md
-[name]: /apidocs/io.helidon.config/io/helidon/config/Config.html#name--
-[key]: /apidocs/io.helidon.config/io/helidon/config/Config.html#key--
-[type]: /apidocs/io.helidon.config/io/helidon/config/Config.html#type--
-[configvalue]: /apidocs/io.helidon.config/io/helidon/config/ConfigValue.html
+[name]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/Config.html#name--
+[key]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/Config.html#key--
+[type]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/Config.html#type--
+[configvalue]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/ConfigValue.html
 [application-prop]: introduction.md#accessing-config-values
-[config-detach]: /apidocs/io.helidon.config/io/helidon/config/Config.html#detach--
+[config-detach]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/Config.html#detach--
