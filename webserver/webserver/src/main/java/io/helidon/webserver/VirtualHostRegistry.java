@@ -23,6 +23,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 import io.helidon.common.tls.Tls;
+import io.helidon.common.tls.TlsMaterial;
 import io.helidon.common.uri.UriAuthority;
 import io.helidon.common.uri.UriHost;
 
@@ -107,6 +108,18 @@ final class VirtualHostRegistry {
         }
     }
 
+    void reloadTls(TlsMaterial material, String configuredHost) {
+        Objects.requireNonNull(material, "material");
+        HostEntry.HostKey key = HostEntry.key(configuredHost);
+        Map<String, HostEntry> target = key.wildcard() ? wildcardHosts : exactHosts;
+        HostEntry entry = target.get(key.indexKey());
+        if (entry == null) {
+            throw new IllegalArgumentException("Virtual host " + key.configuredHost()
+                                                       + " is not configured on listener " + socketName);
+        }
+        entry.tls().reload(material);
+    }
+
     Selection select(String presentedHost) {
         String host = Objects.requireNonNull(presentedHost);
         HostEntry entry = match(host);
@@ -169,8 +182,14 @@ final class VirtualHostRegistry {
 
     private record HostEntry(String configuredHost, String indexKey, boolean wildcard, Tls tls) {
         private static HostEntry create(String configuredHost, Tls tls) {
+            HostKey key = key(configuredHost);
+            return new HostEntry(key.configuredHost(), key.indexKey(), key.wildcard(), tls);
+        }
+
+        private static HostKey key(String configuredHost) {
+            Objects.requireNonNull(configuredHost, "configuredHost");
             if (configuredHost.startsWith("*.")) {
-                return wildcard(configuredHost, tls);
+                return wildcard(configuredHost);
             }
             if (configuredHost.indexOf('*') >= 0) {
                 throw new IllegalArgumentException("Virtual host wildcard must be the complete left-most label: "
@@ -181,10 +200,10 @@ final class VirtualHostRegistry {
             if (host.kind() != UriHost.Kind.DNS) {
                 throw new IllegalArgumentException("Virtual host must be a DNS name: " + configuredHost);
             }
-            return new HostEntry(host.value(), host.value(), false, tls);
+            return new HostKey(host.value(), host.value(), false);
         }
 
-        private static HostEntry wildcard(String configuredHost, Tls tls) {
+        private static HostKey wildcard(String configuredHost) {
             if (configuredHost.indexOf('*', 1) != -1) {
                 throw new IllegalArgumentException("Virtual host wildcard must be the complete left-most label: "
                                                            + configuredHost);
@@ -194,7 +213,10 @@ final class VirtualHostRegistry {
             if (host.kind() != UriHost.Kind.DNS) {
                 throw new IllegalArgumentException("Virtual host wildcard suffix must be a DNS name: " + configuredHost);
             }
-            return new HostEntry("*." + host.value(), host.value(), true, tls);
+            return new HostKey("*." + host.value(), host.value(), true);
+        }
+
+        private record HostKey(String configuredHost, String indexKey, boolean wildcard) {
         }
     }
 

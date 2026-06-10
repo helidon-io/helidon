@@ -28,6 +28,7 @@ import io.helidon.common.pki.Keys;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.tls.Tls;
 import io.helidon.common.tls.TlsClientAuth;
+import io.helidon.common.tls.TlsMaterial;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.logging.common.LogConfig;
@@ -81,8 +82,7 @@ class MtlsTest {
                                     .passphrase("password"))
                             .build();
 
-                    Tls tls = Tls.builder()
-                            .clientAuth(TlsClientAuth.REQUIRED)
+                    TlsMaterial material = TlsMaterial.builder()
                             .privateKey(privateKeyConfig.privateKey().get())
                             .privateKeyCertChain(privateKeyConfig.certChain())
                             .trust(trust -> trust
@@ -92,7 +92,7 @@ class MtlsTest {
                                             .keystore(Resource.create("second-valid/server.p12"))))
                             .build();
 
-                    server.reloadTls(tls);
+                    server.reloadTls(material);
                     res.status(Status.OK_200).send();
                 })
                 .get("/serverCert", (req, res) -> {

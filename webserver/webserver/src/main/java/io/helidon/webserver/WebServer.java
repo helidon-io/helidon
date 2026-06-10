@@ -21,6 +21,7 @@ import java.util.function.Consumer;
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.context.Context;
 import io.helidon.common.tls.Tls;
+import io.helidon.common.tls.TlsMaterial;
 
 /**
  * Server that opens server sockets and handles requests through routing.
@@ -146,7 +147,9 @@ public interface WebServer extends RuntimeType.Api<WebServerConfig> {
      * Reload TLS keystore and truststore configuration for the default socket.
      *
      * @param tls new TLS configuration
+     * @deprecated use {@link #reloadTls(TlsMaterial)}
      */
+    @Deprecated
     default void reloadTls(Tls tls) {
         reloadTls(DEFAULT_SOCKET_NAME, tls);
     }
@@ -156,6 +159,49 @@ public interface WebServer extends RuntimeType.Api<WebServerConfig> {
      *
      * @param socketName socket name to reload TLS configuration on
      * @param tls new TLS configuration
+     * @deprecated use {@link #reloadTls(io.helidon.common.tls.TlsMaterial, String)}
      */
+    @Deprecated
     void reloadTls(String socketName, Tls tls);
+
+    /**
+     * Reload TLS key and trust material for the default socket.
+     *
+     * @param material new TLS material
+     */
+    default void reloadTls(TlsMaterial material) {
+        reloadTls(material, DEFAULT_SOCKET_NAME);
+    }
+
+    /**
+     * Reload TLS key and trust material for the named socket.
+     *
+     * @param material new TLS material
+     * @param socketName socket name to reload TLS material on
+     */
+    default void reloadTls(TlsMaterial material, String socketName) {
+        throw new UnsupportedOperationException("TLS material reload is not supported by this WebServer implementation");
+    }
+
+    /**
+     * Reload TLS key and trust material for a virtual host configured on the default socket.
+     *
+     * @param material new TLS material
+     * @param host configured virtual host name
+     */
+    default void reloadVirtualHostTls(TlsMaterial material, String host) {
+        reloadVirtualHostTls(material, DEFAULT_SOCKET_NAME, host);
+    }
+
+    /**
+     * Reload TLS key and trust material for a virtual host configured on the named socket.
+     *
+     * @param material new TLS material
+     * @param socketName socket name containing the virtual host
+     * @param host configured virtual host name
+     */
+    default void reloadVirtualHostTls(TlsMaterial material, String socketName, String host) {
+        throw new UnsupportedOperationException("Virtual host TLS material reload is not supported by this WebServer "
+                                                        + "implementation");
+    }
 }

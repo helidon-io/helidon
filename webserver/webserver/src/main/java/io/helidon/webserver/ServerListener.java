@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.Timer;
@@ -56,6 +57,7 @@ import io.helidon.common.context.Context;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.task.HelidonTaskExecutor;
 import io.helidon.common.tls.Tls;
+import io.helidon.common.tls.TlsMaterial;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
 import io.helidon.metrics.api.Tag;
@@ -282,6 +284,7 @@ class ServerListener implements ListenerContext {
         return localServerThread == null ? null : localServerThread.getState();
     }
 
+    @Deprecated
     void reloadTls(Tls tls) {
         if (!this.tls.enabled()) {
             throw new IllegalArgumentException("TLS is not enabled on the socket " + socketName
@@ -291,6 +294,21 @@ class ServerListener implements ListenerContext {
             throw new UnsupportedOperationException("TLS cannot be disabled by reloading on the socket " + socketName);
         }
         this.tls.reload(tls);
+    }
+
+    void reloadTls(TlsMaterial material) {
+        Objects.requireNonNull(material, "material");
+        if (!this.tls.enabled()) {
+            throw new IllegalArgumentException("TLS is not enabled on the socket " + socketName
+                                                       + " and therefore cannot be reloaded");
+        }
+        this.tls.reload(material);
+    }
+
+    void reloadVirtualHostTls(TlsMaterial material, String host) {
+        Objects.requireNonNull(material, "material");
+        Objects.requireNonNull(host, "host");
+        virtualHosts.reloadTls(material, host);
     }
 
     void suspend() {

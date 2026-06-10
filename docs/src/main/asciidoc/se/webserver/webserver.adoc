@@ -177,6 +177,39 @@ server:
 
 SNI virtual hosts require listener TLS and the NIO socket-channel transport, which is the default.
 
+==== Reloading TLS Material
+
+You can reload the key and trust material used by an already running TLS listener.
+Build a `TlsMaterial` instance with the replacement private key and certificate chain, trust material, or both, and pass it
+to the running `WebServer`.
+
+[source,java]
+----
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_41, indent=0]
+----
+
+The same API can reload TLS material for a named socket by calling `reloadTls(TlsMaterial, String)`.
+
+TLS material reload depends on the configured TLS manager. TLS created from an explicit `SSLContext` cannot be reloaded.
+TLS material reload does not replace the listener, routing, SNI rules, application protocols, enabled protocols,
+cipher suites, endpoint identification, client-auth mode, session settings, or other TLS setup options.
+Existing connections continue to use their current TLS state. New full TLS handshakes use the reloaded material.
+Resumed TLS sessions can continue to use authentication state established before reload until the session is not reused.
+The initial TLS setup must include the key or trust manager that should be reloaded later; reload cannot add a
+manager that did not exist when the listener started.
+Reload fails if the target socket is not configured for TLS.
+
+For SNI virtual hosts, reload the material for one configured virtual-host name.
+
+[source,java]
+----
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_42, indent=0]
+----
+
+The named-socket overload `reloadVirtualHostTls(TlsMaterial, String, String)` reloads a virtual host on a specific
+socket. The virtual host must already be configured, otherwise reload fails. TLS reload does not add, remove, or remap
+virtual hosts.
+
 ==== Configuring TLS in the Config File
 
 It is also possible to configure TLS via the config file.

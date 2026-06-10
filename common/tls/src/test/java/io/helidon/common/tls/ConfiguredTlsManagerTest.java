@@ -35,7 +35,9 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 
 class ConfiguredTlsManagerTest {
     @Test
@@ -47,6 +49,69 @@ class ConfiguredTlsManagerTest {
                                                                () -> tls.reload(reload));
 
         assertThat(exception.getMessage(), is("Cannot set trust manager if one was not set during server start"));
+    }
+
+    @Test
+    void reloadMaterialCannotAddTrustManagerAfterStartingWithoutOne() {
+        Tls tls = Tls.create(it -> { });
+        TlsMaterial material = TlsMaterial.builder()
+                .trustAll(true)
+                .build();
+
+        UnsupportedOperationException exception = assertThrows(UnsupportedOperationException.class,
+                                                               () -> tls.reload(material));
+
+        assertThat(exception.getMessage(), is("Cannot set trust manager if one was not set during server start"));
+    }
+
+    @Test
+    void reloadMaterialRejectsEmptyMaterial() {
+        Tls tls = Tls.create(it -> it.trustAll(true));
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                                                          () -> tls.reload(TlsMaterial.create()));
+
+        assertThat(exception.getMessage(), is("TLS material must define private key or trust material"));
+    }
+
+    @Test
+    void reloadMaterialRejectsTrustAllWithTrustCertificates() {
+        Tls tls = Tls.create(it -> it.trustAll(true));
+        TlsMaterial material = TlsMaterial.builder()
+                .trustAll(true)
+                .addTrust(mock(X509Certificate.class))
+                .build();
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                                                          () -> tls.reload(material));
+
+        assertThat(exception.getMessage(), is("TLS material cannot combine trustAll and trust certificates"));
+    }
+
+    @Test
+    void reloadMaterialRejectsPrivateKeyWithoutCertificateChain() {
+        Tls tls = Tls.create(it -> it.trustAll(true));
+        TlsMaterial material = TlsMaterial.builder()
+                .privateKey(new TestPrivateKey("test"))
+                .build();
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                                                          () -> tls.reload(material));
+
+        assertThat(exception.getMessage(), is("TLS material with private key must also define the certificate chain"));
+    }
+
+    @Test
+    void reloadMaterialRejectsCertificateChainWithoutPrivateKey() {
+        Tls tls = Tls.create(it -> it.trustAll(true));
+        TlsMaterial material = TlsMaterial.builder()
+                .addPrivateKeyCertChain(mock(X509Certificate.class))
+                .build();
+
+        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+                                                          () -> tls.reload(material));
+
+        assertThat(exception.getMessage(), is("TLS material certificate chain requires a private key"));
     }
 
     @Test
@@ -71,7 +136,8 @@ class ConfiguredTlsManagerTest {
         UnsupportedOperationException exception = assertThrows(UnsupportedOperationException.class,
                                                                () -> tls.reload(reload));
 
-        assertThat(exception.getMessage(), is("Cannot set trust manager if one was not set during server start"));
+        assertThat(exception.getMessage(),
+                   is("TLS cannot be reloaded when an explicit instance of SSL context was used to create it"));
     }
 
     @Test
@@ -85,7 +151,23 @@ class ConfiguredTlsManagerTest {
         UnsupportedOperationException exception = assertThrows(UnsupportedOperationException.class,
                                                                () -> tls.reload(reload));
 
-        assertThat(exception.getMessage(), is("Cannot reload key manager if one was not set during server start"));
+        assertThat(exception.getMessage(),
+                   is("TLS cannot be reloaded when an explicit instance of SSL context was used to create it"));
+    }
+
+    @Test
+    void reloadCannotUseExplicitSslContextAsReplacement() {
+        Tls tls = Tls.create(it -> it.trustAll(true));
+        SSLContext sslContext = createSslContext();
+        Tls reload = Tls.create(it -> it.sslContext(sslContext));
+
+        assertThat(reload.sslContext(), sameInstance(sslContext));
+
+        UnsupportedOperationException exception = assertThrows(UnsupportedOperationException.class,
+                                                               () -> tls.reload(reload));
+
+        assertThat(exception.getMessage(),
+                   is("TLS cannot be reloaded when an explicit instance of SSL context was used to create it"));
     }
 
     @Test
@@ -146,6 +228,23 @@ class ConfiguredTlsManagerTest {
         assertThat(manager.reloadableKeyManager().getPrivateKey("test"), sameInstance(initialPrivateKey));
     }
 
+    @Test
+    void reloadMaterialUpdatesTrustManager() {
+        ConfiguredTlsManager manager = new ConfiguredTlsManager();
+        X509TrustManager initialTrustManager = new TestTrustManager();
+
+        manager.initSslContext(Tls.builder().buildPrototype(),
+                               new SecureRandom(),
+                               new KeyManager[0],
+                               new TrustManager[] {initialTrustManager});
+
+        manager.reload(TlsMaterial.builder()
+                               .trustAll(true)
+                               .build());
+
+        assertNotSame(initialTrustManager, manager.trustManager().orElseThrow());
+    }
+
     private static SSLContext createSslContext() {
         try {
             SSLContext sslContext = SSLContext.getInstance("TLS");
@@ -175,6 +274,7 @@ class ConfiguredTlsManagerTest {
         }
 
         @Override
+        @SuppressWarnings("removal")
         public void reload(Tls tls) {
         }
 

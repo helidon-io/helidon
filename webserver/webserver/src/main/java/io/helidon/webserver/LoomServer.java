@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.Timer;
 import java.util.concurrent.CancellationException;
@@ -45,6 +46,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 import io.helidon.common.resumable.Resumable;
 import io.helidon.common.resumable.ResumableSupport;
 import io.helidon.common.tls.Tls;
+import io.helidon.common.tls.TlsMaterial;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.MediaContext;
 import io.helidon.service.registry.Service;
@@ -193,14 +195,32 @@ class LoomServer implements WebServer, Resumable {
     }
 
     @Override
+    @Deprecated
     public void reloadTls(String socketName, Tls tls) {
+        ServerListener listener = listener(socketName);
+        listener.reloadTls(tls);
+    }
+
+    @Override
+    public void reloadTls(TlsMaterial material, String socketName) {
+        ServerListener listener = listener(socketName);
+        listener.reloadTls(material);
+    }
+
+    @Override
+    public void reloadVirtualHostTls(TlsMaterial material, String socketName, String host) {
+        ServerListener listener = listener(socketName);
+        listener.reloadVirtualHostTls(material, host);
+    }
+
+    private ServerListener listener(String socketName) {
+        Objects.requireNonNull(socketName, "socketName");
         ServerListener listener = listeners.get(socketName);
         if (listener == null) {
             throw new IllegalArgumentException("Cannot reload TLS on socket " + socketName
                                                        + " since this socket does not exist");
-        } else {
-            listener.reloadTls(tls);
         }
+        return listener;
     }
 
     @Override

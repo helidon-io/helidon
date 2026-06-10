@@ -20,18 +20,26 @@ import java.io.IOException;
 import java.security.AlgorithmConstraints;
 import java.security.AlgorithmParameters;
 import java.security.CryptoPrimitive;
+import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
+import javax.net.ssl.X509KeyManager;
+import javax.net.ssl.X509TrustManager;
 
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class TlsTest {
     @Test
@@ -114,5 +122,73 @@ public class TlsTest {
         SSLParameters engineParameters = tls.newEngine().getSSLParameters();
         assertThat(engineParameters.getApplicationProtocols(), arrayContaining("h2"));
         assertThat(engineParameters.getEndpointIdentificationAlgorithm(), is(Tls.ENDPOINT_IDENTIFICATION_HTTPS));
+    }
+
+    @Test
+    public void explicitSslContextUsesProvidedContext() {
+        SSLContext sslContext = createSslContext();
+
+        Tls tls = Tls.create(it -> it.sslContext(sslContext)
+                .manager(new FailingTlsManager()));
+
+        assertThat(tls.sslContext(), sameInstance(sslContext));
+        assertThat(tls.prototype().manager(), instanceOf(ExplicitContextTlsManager.class));
+    }
+
+    @Test
+    public void explicitSslContextRejectsMaterialReload() {
+        SSLContext sslContext = createSslContext();
+        Tls tls = Tls.create(it -> it.sslContext(sslContext));
+        TlsMaterial material = TlsMaterial.builder()
+                .trustAll(true)
+                .build();
+
+        UnsupportedOperationException exception = assertThrows(UnsupportedOperationException.class,
+                                                               () -> tls.reload(material));
+
+        assertThat(exception.getMessage(),
+                   is("TLS cannot be reloaded when an explicit instance of SSL context was used to create it"));
+    }
+
+    private static SSLContext createSslContext() {
+        try {
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(null, null, null);
+            return sslContext;
+        } catch (GeneralSecurityException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    private static final class FailingTlsManager implements TlsManager {
+        @Override
+        public void init(TlsConfig tls) {
+            throw new AssertionError("Explicit SSLContext should use ExplicitContextTlsManager");
+        }
+
+        @Override
+        public SSLContext sslContext() {
+            throw new AssertionError("Explicit SSLContext should use ExplicitContextTlsManager");
+        }
+
+        @Override
+        public Optional<X509KeyManager> keyManager() {
+            throw new AssertionError("Explicit SSLContext should use ExplicitContextTlsManager");
+        }
+
+        @Override
+        public Optional<X509TrustManager> trustManager() {
+            throw new AssertionError("Explicit SSLContext should use ExplicitContextTlsManager");
+        }
+
+        @Override
+        public String name() {
+            return "failing";
+        }
+
+        @Override
+        public String type() {
+            return "failing";
+        }
     }
 }

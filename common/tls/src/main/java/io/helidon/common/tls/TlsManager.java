@@ -22,6 +22,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 
+import io.helidon.common.DeprecationSupport;
 import io.helidon.config.NamedService;
 import io.helidon.service.registry.Service;
 
@@ -48,8 +49,31 @@ public interface TlsManager extends NamedService {
      *
      * @param tls the new tls instance
      * @see Tls#reload(Tls)
+     * @deprecated use {@link #reload(TlsMaterial)}, this method will be removed in the next major version of Helidon
      */
-    void reload(Tls tls);
+    @Deprecated(forRemoval = true, since = "27.0.0")
+    default void reload(Tls tls) {
+        Tls.validateReloadSource(tls);
+        reload(tls.prototype());
+    }
+
+    /**
+     * This method will multiplex the call to all {@link TlsReloadableComponent}s that are being managed by this manager.
+     *
+     * @param material the new TLS material
+     * @see Tls#reload(TlsMaterial)
+     */
+    default void reload(TlsMaterial material) {
+        // default to preserve backward compatibility - if this method is not implemented, the other one must be
+        // require the deprecated variant to be implemented
+        DeprecationSupport.requireOverride(this,
+                                           TlsManager.class,
+                                           "reload",
+                                           Tls.class);
+
+        // now call the original, deprecated method, as we know it exists, and we will not stack overflow
+        reload(TlsMaterialSupport.toTls(material));
+    }
 
     /**
      * SSL context created by this manager.

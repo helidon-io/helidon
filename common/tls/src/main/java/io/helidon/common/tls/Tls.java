@@ -70,13 +70,21 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
     private Tls(TlsConfig config) {
         // at this time, the TlsConfigDecorator should have created SSL parameters; the SSL context is the responsibility
         // of the manager to provide
-        this.tlsConfig = Objects.requireNonNull(config);
+        config = Objects.requireNonNull(config);
+        TlsConfig configuredTls = config;
         this.sslParameters = copySslParameters(config.sslParameters().orElseThrow());
         this.enabled = config.enabled();
 
         if (config.enabled()) {
-            this.tlsManager = config.manager();
-            this.tlsManager.init(config);
+            if (config.sslContext().isEmpty()) {
+                this.tlsManager = config.manager();
+            } else {
+                this.tlsManager = new ExplicitContextTlsManager(config.sslContext().get());
+                configuredTls = TlsConfig.builder(config)
+                        .manager(this.tlsManager)
+                        .buildPrototype();
+            }
+            this.tlsManager.init(configuredTls);
             this.sslContext = tlsManager.sslContext();
             this.sslSocketFactory = sslContext.getSocketFactory();
             this.sslServerSocketFactory = sslContext.getServerSocketFactory();
@@ -86,6 +94,7 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
             this.sslServerSocketFactory = null;
             this.tlsManager = null;
         }
+        this.tlsConfig = configuredTls;
     }
 
     /**
@@ -268,10 +277,26 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
      * Reload reloadable {@link TlsReloadableComponent}s with the new configuration.
      *
      * @param tls new TLS configuration
+     * @deprecated use {@link #reload(TlsMaterial)}
      */
+    @Deprecated
+    @SuppressWarnings("removal")
     public void reload(Tls tls) {
         if (enabled) {
+            validateReloadSource(tls);
             tlsManager.reload(tls);
+        }
+    }
+
+    /**
+     * Reload reloadable {@link TlsReloadableComponent}s with new key and trust material.
+     *
+     * @param material new TLS material
+     */
+    public void reload(TlsMaterial material) {
+        Objects.requireNonNull(material, "material");
+        if (enabled) {
+            tlsManager.reload(material);
         }
     }
 
@@ -290,6 +315,13 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
 
     Optional<X509TrustManager> trustManager() {
         return tlsManager.trustManager();
+    }
+
+    static void validateReloadSource(Tls tls) {
+        Objects.requireNonNull(tls, "tls");
+        if (tls.prototype().sslContext().isPresent()) {
+            throw new UnsupportedOperationException(ExplicitContextTlsManager.RELOAD_NOT_SUPPORTED_MESSAGE);
+        }
     }
 
     private static SSLParameters copySslParameters(SSLParameters source) {
