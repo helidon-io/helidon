@@ -1419,6 +1419,6 @@ public static void main(String[] args) {
 [proxy-protocol]: https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt
 [helidon-webserve]: https://helidon.io/docs/v4/apidocs/io.helidon.webserver/module-summary.html
 [helidon-webserve-2]: https://helidon.io/docs/v4/apidocs/io.helidon.webserver.staticcontent/module-summary.html
-[helidon-json-b-s]: https://helidon.io/docs/v4/apidocs/io.helidon.http.media.jsonp/module-summary.html
-[helidon-json-p-s]: https://helidon.io/docs/v4/apidocs/io.helidon.http.media.jsonb/module-summary.html
+[helidon-json-b-s]: https://helidon.io/docs/v4/apidocs/io.helidon.http.media.jsonb/module-summary.html
+[helidon-json-p-s]: https://helidon.io/docs/v4/apidocs/io.helidon.http.media.jsonp/module-summary.html
 [helidon-jackson]: https://helidon.io/docs/v4/apidocs/io.helidon.http.media.jackson/module-summary.html
