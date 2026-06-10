@@ -70,7 +70,7 @@
         <version.lib.hibernate-validator>7.0.5.Final</version.lib.hibernate-validator>
         <version.lib.hikaricp>5.0.1</version.lib.hikaricp>
         <version.lib.hystrix>1.5.18</version.lib.hystrix>
-        <version.lib.jackson>2.21.1</version.lib.jackson>
+        <version.lib.jackson>2.21.3</version.lib.jackson>
         <version.lib.jakarta.activation-api>2.0.1</version.lib.jakarta.activation-api>
         <version.lib.jakarta.annotation-api>2.0.0</version.lib.jakarta.annotation-api>
         <version.lib.jakarta.cdi-api>3.0.0</version.lib.jakarta.cdi-api>
@@ -128,7 +128,7 @@
         <version.lib.mysql-connector-j>8.2.0</version.lib.mysql-connector-j>
         <version.lib.narayana>5.12.0.Final</version.lib.narayana>
         <version.lib.neo4j>5.28.3</version.lib.neo4j>
-        <version.lib.netty>4.1.133.Final</version.lib.netty>
+        <version.lib.netty>4.1.135.Final</version.lib.netty>
         <version.lib.netty-io_uring>0.0.19.Final</version.lib.netty-io_uring>
         <version.lib.oci>3.76.0</version.lib.oci>
         <version.lib.ojdbc8>21.15.0.0</version.lib.ojdbc8>
@@ -150,7 +150,7 @@
         <version.lib.slf4j>2.0.17</version.lib.slf4j>
         <version.lib.smallrye-openapi>2.1.16</version.lib.smallrye-openapi>
         <version.lib.smallrye-openapi-ui>3.13.0</version.lib.smallrye-openapi-ui>
-        <version.lib.snakeyaml>2.5</version.lib.snakeyaml>
+        <version.lib.snakeyaml>2.6</version.lib.snakeyaml>
         <version.lib.typesafe-config>1.4.2</version.lib.typesafe-config>
         <version.lib.tyrus>2.1.5</version.lib.tyrus>
         <version.lib.weld-api>4.0.SP1</version.lib.weld-api>
