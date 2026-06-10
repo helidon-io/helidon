@@ -380,6 +380,19 @@
     <cve>CVE-2026-42154</cve>
 </suppress>
 
+<!-- False Positive
+     This CVE is againt Netty 4.2 not 4.1. The CVE references the class io.netty.handler.codec.http3.QpackDecoder
+     which is in Netty's HTTP3 support. Netty 4.1 does not have this class (nor does Netty 4.1 have HTTP3 support).
+     https://github.com/dependency-check/DependencyCheck/issues/8566
+-->
+<suppress>
+    <notes><![CDATA[
+    file name: netty-transport-4.1.135.Final.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.netty/netty-.*@.*$</packageUrl>
+    <cve>CVE-2026-42582</cve>
+</suppress>
+
 
 
 </suppressions>
