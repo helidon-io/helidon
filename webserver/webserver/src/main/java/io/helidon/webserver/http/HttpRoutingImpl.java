@@ -263,7 +263,7 @@ final class HttpRoutingImpl implements HttpRouting {
         }
 
         @Override
-        public Builder register(HttpServiceLocator locator) {
+        public Builder registerLocator(HttpServiceLocator locator) {
             mainRouting.serviceLocator(locator);
             return this;
         }
@@ -275,7 +275,7 @@ final class HttpRoutingImpl implements HttpRouting {
         }
 
         @Override
-        public Builder register(String pathPattern, HttpServiceLocator locator) {
+        public Builder registerLocator(String pathPattern, HttpServiceLocator locator) {
             mainRouting.serviceLocator(pathPattern, locator);
             return this;
         }
@@ -354,8 +354,8 @@ final class HttpRoutingImpl implements HttpRouting {
         }
 
         @Override
-        public Builder register(HttpServiceLocator locator) {
-            rootRules.register(locator);
+        public Builder registerLocator(HttpServiceLocator locator) {
+            rootRules.registerLocator(locator);
             return this;
         }
 
@@ -366,8 +366,8 @@ final class HttpRoutingImpl implements HttpRouting {
         }
 
         @Override
-        public Builder register(String pathPattern, HttpServiceLocator locator) {
-            rootRules.register(pathPattern, locator);
+        public Builder registerLocator(String pathPattern, HttpServiceLocator locator) {
+            rootRules.registerLocator(pathPattern, locator);
             return this;
         }
 

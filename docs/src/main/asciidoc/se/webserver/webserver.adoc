@@ -390,8 +390,10 @@ Return `Optional.empty()` when no service is available for a request; routing th
 through to the normal `404` response. Route order still applies, so register more specific locator prefixes before broader
 prefixes.
 
-WebServer caches located services by service instance identity until the server stops. Return stable service instances for
-stable item kinds so the cached route tree and lifecycle callbacks are reused.
+WebServer caches located services by service instance identity until the server stops. Return a stable, bounded set of
+service instances for stable item kinds so the cached route tree and lifecycle callbacks are reused. Each locator enforces
+a default maximum number of cached service instances; override `HttpServiceLocator.maxServiceCacheSize()` only when the
+locator intentionally exposes a larger bounded set.
 
 [[anchor-http-feature]]
 

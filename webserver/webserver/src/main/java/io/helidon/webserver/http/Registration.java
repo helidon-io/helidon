@@ -41,7 +41,7 @@ public interface Registration {
      * @param locator service locator to register
      * @return a new registration
      */
-    static Registration create(String path, HttpServiceLocator locator) {
+    static Registration createLocator(String path, HttpServiceLocator locator) {
         return new Registrations.ServiceLocatorPathRegistration(path, locator);
     }
 
@@ -61,7 +61,7 @@ public interface Registration {
      * @param locator service locator to register
      * @return a new registration
      */
-    static Registration create(HttpServiceLocator locator) {
+    static Registration createLocator(HttpServiceLocator locator) {
         return new Registrations.ServiceLocatorRegistration(locator);
     }
 

@@ -53,11 +53,11 @@ class HttpRoutingFeature implements HttpFeature, Weighted {
     }
 
     void serviceLocator(HttpServiceLocator locator) {
-        this.registrations.add(Registration.create(locator));
+        this.registrations.add(Registration.createLocator(locator));
     }
 
     void serviceLocator(String path, HttpServiceLocator locator) {
-        this.registrations.add(Registration.create(path, locator));
+        this.registrations.add(Registration.createLocator(path, locator));
     }
 
     void route(HttpRoute route) {

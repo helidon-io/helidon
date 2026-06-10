@@ -44,11 +44,12 @@ public interface HttpRules {
      * <p>
      * Unlike {@link #register(Supplier)}, the locator is invoked at request time after the current path matches.
      * If the locator returns {@link java.util.Optional#empty()}, routing continues with the next available route.
+     * Located services are cached by service instance identity up to {@link HttpServiceLocator#maxServiceCacheSize()}.
      *
      * @param locator service locator to register
      * @return updated rules
      */
-    default HttpRules register(HttpServiceLocator locator) {
+    default HttpRules registerLocator(HttpServiceLocator locator) {
         throw new UnsupportedOperationException("Service locator registration is not supported by this implementation");
     }
 
@@ -149,12 +150,13 @@ public interface HttpRules {
      * Unlike {@link #register(String, Supplier)}, the locator is invoked at request time after the provided path pattern
      * matches. Path parameters from the matched pattern are available from {@link ServerRequest#path()} before the locator
      * is invoked. If the locator returns {@link java.util.Optional#empty()}, routing continues with the next available route.
+     * Located services are cached by service instance identity up to {@link HttpServiceLocator#maxServiceCacheSize()}.
      *
      * @param pathPattern URI path pattern
      * @param locator     service locator to register
      * @return updated rules
      */
-    default HttpRules register(String pathPattern, HttpServiceLocator locator) {
+    default HttpRules registerLocator(String pathPattern, HttpServiceLocator locator) {
         throw new UnsupportedOperationException("Service locator registration is not supported by this implementation");
     }
 
