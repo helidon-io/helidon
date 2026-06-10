@@ -16,15 +16,22 @@
 
 package io.helidon.security.providers.oidc;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.PrintStream;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Handler;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 import io.helidon.common.http.FormParams;
 import io.helidon.common.http.Http;
@@ -53,6 +60,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.DEFAULT_TENANT_ID;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
@@ -100,6 +108,121 @@ class OidcSupportTest {
                                                        .build())
                                     .build())
             .build();
+
+    private static CallbackResult callbackResult(boolean useParam,
+                                                 boolean useCookie,
+                                                 String state,
+                                                 String tenantName) throws Exception {
+        AtomicInteger tokenRequestCount = new AtomicInteger();
+        AtomicReference<FormParams> tokenRequestParameters = new AtomicReference<>();
+        WebServer tokenServer = WebServer.builder()
+                .defaultSocket(socket -> socket.host("localhost"))
+                .routing(routing -> routing.post("/token",
+                                                 (req, res) -> req.content()
+                                                         .as(FormParams.class)
+                                                         .thenAccept(form -> {
+                                                             tokenRequestCount.incrementAndGet();
+                                                             tokenRequestParameters.set(form);
+                                                             res.headers().contentType(MediaType.APPLICATION_JSON);
+                                                             res.send("{\"access_token\":\"access-token\"}");
+                                                         })))
+                .build();
+        tokenServer.start().await(Duration.ofSeconds(10));
+
+        try {
+            OidcConfig config = OidcConfig.builder()
+                    .clientId("id")
+                    .clientSecret("secret")
+                    .identityUri(URI.create("http://localhost:" + tokenServer.port() + "/identity"))
+                    .tokenEndpointUri(URI.create("http://localhost:" + tokenServer.port() + "/token"))
+                    .authorizationEndpointUri(URI.create("http://localhost:" + tokenServer.port() + "/authorize"))
+                    .signJwk(JwkKeys.builder().build())
+                    .oidcMetadataWellKnown(false)
+                    .useParam(useParam)
+                    .useCookie(useCookie)
+                    .build();
+            Routing.Builder routing = Routing.builder();
+            OidcSupport.create(config).update(routing);
+            WebServer callbackServer = WebServer.builder()
+                    .defaultSocket(socket -> socket.host("localhost"))
+                    .addRouting(routing.build())
+                    .build();
+            callbackServer.start().await(Duration.ofSeconds(10));
+            try {
+                String callbackUri = "http://localhost:" + callbackServer.port()
+                        + config.redirectUri()
+                        + "?code=code&state=" + URLEncoder.encode(state, StandardCharsets.UTF_8);
+                if (!DEFAULT_TENANT_ID.equals(tenantName)) {
+                    callbackUri += "&" + config.tenantParamName() + "=" + tenantName;
+                }
+                String expectedRedirectUri = "http://localhost:" + callbackServer.port() + config.redirectUri();
+                if (!DEFAULT_TENANT_ID.equals(tenantName)) {
+                    expectedRedirectUri += "?" + config.tenantParamName() + "=" + tenantName;
+                }
+
+                WebClientResponse response = WebClient.builder()
+                        .build()
+                        .get()
+                        .uri(callbackUri)
+                        .followRedirects(false)
+                        .request()
+                        .await(Duration.ofSeconds(10));
+
+                try {
+                    assertThat(response.status(), is(Http.Status.TEMPORARY_REDIRECT_307));
+                    FormParams tokenParams = tokenRequestParameters.get();
+                    assertThat(tokenRequestCount.get(), is(1));
+                    assertThat(tokenParams.first("grant_type").orElseThrow(), is("authorization_code"));
+                    assertThat(tokenParams.first("code").orElseThrow(), is("code"));
+                    assertThat(tokenParams.first("redirect_uri").orElseThrow(), is(expectedRedirectUri));
+                    return new CallbackResult(response.headers()
+                                                      .first(Http.Header.LOCATION)
+                                                      .orElseThrow(),
+                                              response.headers().all(Http.Header.SET_COOKIE));
+                } finally {
+                    response.close().await(Duration.ofSeconds(10));
+                }
+            } finally {
+                callbackServer.shutdown().await(Duration.ofSeconds(10));
+            }
+        } finally {
+            tokenServer.shutdown().await(Duration.ofSeconds(10));
+        }
+    }
+
+    private static String waitForLog(ByteArrayOutputStream capturedLogs,
+                                     String expectedSnippet) throws InterruptedException {
+        String capturedLog = "";
+        for (int attempt = 0; attempt < 40; attempt++) {
+            flushRootHandlers();
+            capturedLog = capturedLogs.toString(StandardCharsets.UTF_8);
+            if (capturedLog.contains(expectedSnippet)) {
+                return capturedLog;
+            }
+            Thread.sleep(50);
+        }
+        return capturedLog;
+    }
+
+    private static void flushRootHandlers() {
+        for (Handler handler : Logger.getLogger("").getHandlers()) {
+            handler.flush();
+        }
+    }
+
+    private static void restoreLoggingConfiguration() throws Exception {
+        readLoggingConfigurationFromResource();
+    }
+
+    private static void readLoggingConfigurationFromResource() throws Exception {
+        try (InputStream stream = OidcSupportTest.class.getResourceAsStream("/logging.properties")) {
+            if (stream == null) {
+                LogManager.getLogManager().readConfiguration();
+            } else {
+                LogManager.getLogManager().readConfiguration(stream);
+            }
+        }
+    }
 
     @Test
     void testRedirectAttemptNoParams() {
@@ -250,6 +373,52 @@ class OidcSupportTest {
     }
 
     @Test
+    void testErrorCallbackEscapesNewLinesBeforeLogging() throws Exception {
+        ByteArrayOutputStream capturedLogs = new ByteArrayOutputStream();
+        PrintStream originalOut = System.out;
+        PrintStream captureOut = new PrintStream(capturedLogs, true, StandardCharsets.UTF_8);
+
+        WebServer server = WebServer.builder()
+                .defaultSocket(socket -> socket.host("localhost"))
+                .routing(rules -> rules.register(OidcSupport.create(oidcConfig)))
+                .build();
+
+        try {
+            System.setOut(captureOut);
+            readLoggingConfigurationFromResource();
+            server.start().await(Duration.ofSeconds(10));
+            capturedLogs.reset();
+            String forgedLine = "FORGED WARNING: attacker-controlled second line";
+            WebClientResponse response = WebClient.builder()
+                    .build()
+                    .get()
+                    .uri("http://localhost:" + server.port() + oidcConfig.redirectUri())
+                    .queryParam("error", "access_denied")
+                    .queryParam("error_description", "original error\r\n" + forgedLine)
+                    .request()
+                    .await(Duration.ofSeconds(10));
+
+            try {
+                assertThat(response.status(), is(Http.Status.BAD_REQUEST_400));
+                response.content().as(String.class).await(Duration.ofSeconds(10));
+            } finally {
+                response.close().await(Duration.ofSeconds(10));
+            }
+
+            String capturedLog = waitForLog(capturedLogs, "original error");
+            assertThat(capturedLog, containsString("Error description: original error\\r\\n" + forgedLine));
+            assertThat(Arrays.asList(capturedLog.split("\\R")), not(hasItem(forgedLine)));
+        } finally {
+            if (server.isRunning()) {
+                server.shutdown().await(Duration.ofSeconds(10));
+            }
+            System.setOut(originalOut);
+            restoreLoggingConfiguration();
+            captureOut.close();
+        }
+    }
+
+    @Test
     void testOutbound() {
         String tokenContent = "huhahihohyhe";
         TokenCredential tokenCredential = TokenCredential.builder()
@@ -325,87 +494,6 @@ class OidcSupportTest {
 
         assertThat(oidcSupport.hashCode(), not(0));
         assertThat(oidcSupport.toString(), notNullValue());
-    }
-
-    private static CallbackResult callbackResult(boolean useParam,
-                                                 boolean useCookie,
-                                                 String state,
-                                                 String tenantName) throws Exception {
-        AtomicInteger tokenRequestCount = new AtomicInteger();
-        AtomicReference<FormParams> tokenRequestParameters = new AtomicReference<>();
-        WebServer tokenServer = WebServer.builder()
-                .defaultSocket(socket -> socket.host("localhost"))
-                .routing(routing -> routing.post("/token",
-                                                 (req, res) -> req.content()
-                                                         .as(FormParams.class)
-                                                         .thenAccept(form -> {
-                                                             tokenRequestCount.incrementAndGet();
-                                                             tokenRequestParameters.set(form);
-                                                             res.headers().contentType(MediaType.APPLICATION_JSON);
-                                                             res.send("{\"access_token\":\"access-token\"}");
-                                                         })))
-                .build();
-        tokenServer.start().await(Duration.ofSeconds(10));
-
-        try {
-            OidcConfig config = OidcConfig.builder()
-                    .clientId("id")
-                    .clientSecret("secret")
-                    .identityUri(URI.create("http://localhost:" + tokenServer.port() + "/identity"))
-                    .tokenEndpointUri(URI.create("http://localhost:" + tokenServer.port() + "/token"))
-                    .authorizationEndpointUri(URI.create("http://localhost:" + tokenServer.port() + "/authorize"))
-                    .signJwk(JwkKeys.builder().build())
-                    .oidcMetadataWellKnown(false)
-                    .useParam(useParam)
-                    .useCookie(useCookie)
-                    .build();
-            Routing.Builder routing = Routing.builder();
-            OidcSupport.create(config).update(routing);
-            WebServer callbackServer = WebServer.builder()
-                    .defaultSocket(socket -> socket.host("localhost"))
-                    .addRouting(routing.build())
-                    .build();
-            callbackServer.start().await(Duration.ofSeconds(10));
-            try {
-                String callbackUri = "http://localhost:" + callbackServer.port()
-                        + config.redirectUri()
-                        + "?code=code&state=" + URLEncoder.encode(state, StandardCharsets.UTF_8);
-                if (!DEFAULT_TENANT_ID.equals(tenantName)) {
-                    callbackUri += "&" + config.tenantParamName() + "=" + tenantName;
-                }
-                String expectedRedirectUri = "http://localhost:" + callbackServer.port() + config.redirectUri();
-                if (!DEFAULT_TENANT_ID.equals(tenantName)) {
-                    expectedRedirectUri += "?" + config.tenantParamName() + "=" + tenantName;
-                }
-
-                WebClientResponse response = WebClient.builder()
-                        .build()
-                        .get()
-                        .uri(callbackUri)
-                        .followRedirects(false)
-                        .request()
-                        .await(Duration.ofSeconds(10));
-
-                try {
-                    assertThat(response.status(), is(Http.Status.TEMPORARY_REDIRECT_307));
-                    FormParams tokenParams = tokenRequestParameters.get();
-                    assertThat(tokenRequestCount.get(), is(1));
-                    assertThat(tokenParams.first("grant_type").orElseThrow(), is("authorization_code"));
-                    assertThat(tokenParams.first("code").orElseThrow(), is("code"));
-                    assertThat(tokenParams.first("redirect_uri").orElseThrow(), is(expectedRedirectUri));
-                    return new CallbackResult(response.headers()
-                                                      .first(Http.Header.LOCATION)
-                                                      .orElseThrow(),
-                                              response.headers().all(Http.Header.SET_COOKIE));
-                } finally {
-                    response.close().await(Duration.ofSeconds(10));
-                }
-            } finally {
-                callbackServer.shutdown().await(Duration.ofSeconds(10));
-            }
-        } finally {
-            tokenServer.shutdown().await(Duration.ofSeconds(10));
-        }
     }
 
     private static final class CallbackResult {
