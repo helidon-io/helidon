@@ -63,22 +63,7 @@ You can configure the Helidon Micrometer REST service as you can other built-in 
 ### Configuration options
 
 <!--@include ../../config/io.helidon.integrations.micrometer.MicrometerFeature.md#configuration-options offset=1 -->
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-This config type has no options.
+See [Configuration options](../../config/io.helidon.integrations.micrometer.MicrometerFeature.md#configuration-options).
 <!--/include-->
 
 

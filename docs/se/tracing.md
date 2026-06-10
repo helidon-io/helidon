@@ -132,7 +132,7 @@ Further, Helidon also provides read-only access to baggage linked to a [`SpanCon
 The Javadoc for the types describes how to get and set baggage entries, get all the baggage keys, and check whether a baggage key exists in the baggage.
 
 <!--@include ../includes/tracing/common-callbacks.md#span-lifecycle-callbacks -->
-See [Responding to Span Lifecycle Events][responding-to-sp].
+See [Span Lifecycle Callbacks](../includes/tracing/common-callbacks.md#span-lifecycle-callbacks).
 <!--/include-->
 
 #### Lifecycle Callbacks with OpenTelemetry Types
@@ -222,145 +222,7 @@ The following configuration should be supported by all tracer implementations (i
 ## Configuration options
 
 <!--@include ../config/io.helidon.tracing.Tracer.md#configuration-options offset=1 -->
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
-<thead>
-<tr>
-<th>Key</th>
-<th>Type</th>
-<th>Default</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<code>path</code>
-</td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
-</td>
-<td class="cm-default-cell">
-</td>
-<td>Path on the collector host to use when sending data to tracing collector</td>
-</tr>
-<tr>
-<td>
-<code>protocol</code>
-</td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
-</td>
-<td class="cm-default-cell">
-</td>
-<td>Protocol to use (such as <code>http</code> or <code>https</code>) to connect to tracing collector</td>
-</tr>
-<tr>
-<td>
-<code>boolean-tags</code>
-</td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, Boolean&gt;">Map&lt;String, Boolean&gt;</code>
-</td>
-<td class="cm-default-cell">
-</td>
-<td>Tracer level tags that get added to all reported spans</td>
-</tr>
-<tr>
-<td>
-<code>port</code>
-</td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
-</td>
-<td class="cm-default-cell">
-</td>
-<td>Port to use to connect to tracing collector</td>
-</tr>
-<tr>
-<td>
-<code>service</code>
-</td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
-</td>
-<td class="cm-default-cell">
-</td>
-<td>Service name of the traced service</td>
-</tr>
-<tr>
-<td>
-<code>host</code>
-</td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
-</td>
-<td class="cm-default-cell">
-</td>
-<td>Host to use to connect to tracing collector</td>
-</tr>
-<tr>
-<td>
-<code>global</code>
-</td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
-</td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
-</td>
-<td>When enabled, the created instance is also registered as a global tracer</td>
-</tr>
-<tr>
-<td>
-<code>int-tags</code>
-</td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, Integer&gt;">Map&lt;String, Integer&gt;</code>
-</td>
-<td class="cm-default-cell">
-</td>
-<td>Tracer level tags that get added to all reported spans</td>
-</tr>
-<tr>
-<td>
-<code>enabled</code>
-</td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
-</td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
-</td>
-<td>When enabled, tracing will be sent</td>
-</tr>
-<tr>
-<td>
-<code>tags</code>
-</td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code>
-</td>
-<td class="cm-default-cell">
-</td>
-<td>Tracer level tags that get added to all reported spans</td>
-</tr>
-</tbody>
-</table>
+See [Configuration options](../config/io.helidon.tracing.Tracer.md#configuration-options).
 <!--/include-->
 
 
@@ -518,180 +380,7 @@ String response = client.get()
 ## Configuration options
 
 <!--@include ../config/io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.md#configuration-options offset=1 -->
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
-<thead>
-<tr>
-<th>Key</th>
-<th>Type</th>
-<th>Default</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a id="propagation"></a>
-<a href="io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.PropagationFormat.md">
-<code>propagation</code>
-</a>
-</td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;PropagationFormat&gt;">List&lt;PropagationFormat&gt;</code>
-</td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">JAEGER</code>
-</td>
-<td>Add propagation format to use</td>
-</tr>
-<tr>
-<td>
-<code>sampler-param</code>
-</td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Number</code>
-</td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">1</code>
-</td>
-<td>The sampler parameter (number)</td>
-</tr>
-<tr>
-<td>
-<code>schedule-delay</code>
-</td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
-</td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">PT5S</code>
-</td>
-<td>Schedule Delay of exporter requests</td>
-</tr>
-<tr>
-<td>
-<a id="span-processor-type"></a>
-<a href="io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.SpanProcessorType.md">
-<code>span-processor-type</code>
-</a>
-</td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="SpanProcessorType">SpanProcessorType</code>
-</td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">batch</code>
-</td>
-<td>Span Processor type used</td>
-</tr>
-<tr>
-<td>
-<code>max-export-batch-size</code>
-</td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
-</td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">512</code>
-</td>
-<td>Maximum Export Batch Size of exporter requests</td>
-</tr>
-<tr>
-<td>
-<a id="trusted-cert-pem"></a>
-<a href="io.helidon.common.configurable.Resource.md">
-<code>trusted-cert-pem</code>
-</a>
-</td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Resource</code>
-</td>
-<td class="cm-default-cell">
-</td>
-<td>Trusted certificates in PEM format</td>
-</tr>
-<tr>
-<td>
-<code>exporter-timeout</code>
-</td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
-</td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">PT10S</code>
-</td>
-<td>Timeout of exporter requests</td>
-</tr>
-<tr>
-<td>
-<a id="sampler-type"></a>
-<a href="io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.SamplerType.md">
-<code>sampler-type</code>
-</a>
-</td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="SamplerType">SamplerType</code>
-</td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">CONSTANT</code>
-</td>
-<td>Sampler type</td>
-</tr>
-<tr>
-<td>
-<a id="private-key-pem"></a>
-<a href="io.helidon.common.configurable.Resource.md">
-<code>private-key-pem</code>
-</a>
-</td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Resource</code>
-</td>
-<td class="cm-default-cell">
-</td>
-<td>Private key in PEM format</td>
-</tr>
-<tr>
-<td>
-<a id="client-cert-pem"></a>
-<a href="io.helidon.common.configurable.Resource.md">
-<code>client-cert-pem</code>
-</a>
-</td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Resource</code>
-</td>
-<td class="cm-default-cell">
-</td>
-<td>Certificate of client in PEM format</td>
-</tr>
-<tr>
-<td>
-<code>max-queue-size</code>
-</td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
-</td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">2048</code>
-</td>
-<td>Maximum Queue Size of exporter requests</td>
-</tr>
-</tbody>
-</table>
+See [Configuration options](../config/io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.md#configuration-options).
 <!--/include-->
 
 
@@ -723,48 +412,7 @@ As the [Jaeger Tracing](#jaeger-tracing) section describes, you can use Jaeger t
 ## Configuration options
 
 <!--@include ../config/io.helidon.tracing.providers.zipkin.ZipkinTracerBuilder.md#configuration-options offset=1 -->
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
-<thead>
-<tr>
-<th>Key</th>
-<th>Type</th>
-<th>Default</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a id="api-version"></a>
-<a href="io.helidon.tracing.providers.zipkin.ZipkinTracerBuilder.Version.md">
-<code>api-version</code>
-</a>
-</td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Version</code>
-</td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">V2</code>
-</td>
-<td>Version of Zipkin API to use</td>
-</tr>
-</tbody>
-</table>
+See [Configuration options](../config/io.helidon.tracing.providers.zipkin.ZipkinTracerBuilder.md#configuration-options).
 <!--/include-->
 
 
@@ -822,59 +470,7 @@ Dependency for OpenTelemetry support using tracing:
 ## Configuration options
 
 <!--@include ../config/io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracer.md#configuration-options offset=1 -->
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
-<thead>
-<tr>
-<th>Key</th>
-<th>Type</th>
-<th>Default</th>
-<th>Description</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a id="exporter-type"></a>
-<a href="io.helidon.tracing.providers.opentelemetry.OtlpExporterProtocolType.md">
-<code>exporter-type</code>
-</a>
-</td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="OtlpExporterProtocolType">OtlpExporterProtocolType</code>
-</td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">GRPC</code>
-</td>
-<td>Type of OTLP exporter to use for pushing span data</td>
-</tr>
-<tr>
-<td>
-<code>propagators</code>
-</td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;CustomMethods&gt;">List&lt;CustomMethods&gt;</code>
-</td>
-<td class="cm-default-cell">
-</td>
-<td>Context propagators</td>
-</tr>
-</tbody>
-</table>
+See [Configuration options](../config/io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracer.md#configuration-options).
 <!--/include-->
 
 
@@ -907,7 +503,6 @@ By default, Helidon tracing support for OpenTelemetry uses OpenTelemetry’s OTL
 [writablebaggage]: https://helidon.io/docs/v4/apidocs/io.helidon.tracing/io/helidon/tracing/WritableBaggage.html
 [spancontext]: https://helidon.io/docs/v4/apidocs/io.helidon.tracing/io/helidon/tracing/SpanContext.html
 [baggage]: https://helidon.io/docs/v4/apidocs/io.helidon.tracing/io/helidon/tracing/Baggage.html
-[responding-to-sp]: ../includes/tracing/common-callbacks.md#span-lifecycle-callbacks
 [helidonopentelem]: https://helidon.io/docs/v4/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html
 [tracer-callbacke]: <https://helidon.io/docs/v4/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.helidon.tracing.Tracer)>
 [tracer-callbacke-2]: <https://helidon.io/docs/v4/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.opentelemetry.api.trace.Tracer)>
