@@ -283,6 +283,7 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
     @SuppressWarnings("removal")
     public void reload(Tls tls) {
         if (enabled) {
+            validateReloadSource(tls);
             tlsManager.reload(tls);
         }
     }
@@ -314,6 +315,13 @@ public class Tls implements RuntimeType.Api<TlsConfig> {
 
     Optional<X509TrustManager> trustManager() {
         return tlsManager.trustManager();
+    }
+
+    static void validateReloadSource(Tls tls) {
+        Objects.requireNonNull(tls, "tls");
+        if (tls.prototype().sslContext().isPresent()) {
+            throw new UnsupportedOperationException(ExplicitContextTlsManager.RELOAD_NOT_SUPPORTED_MESSAGE);
+        }
     }
 
     private static SSLParameters copySslParameters(SSLParameters source) {

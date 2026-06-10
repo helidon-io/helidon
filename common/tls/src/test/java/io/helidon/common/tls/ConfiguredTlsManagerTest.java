@@ -156,6 +156,21 @@ class ConfiguredTlsManagerTest {
     }
 
     @Test
+    void reloadCannotUseExplicitSslContextAsReplacement() {
+        Tls tls = Tls.create(it -> it.trustAll(true));
+        SSLContext sslContext = createSslContext();
+        Tls reload = Tls.create(it -> it.sslContext(sslContext));
+
+        assertThat(reload.sslContext(), sameInstance(sslContext));
+
+        UnsupportedOperationException exception = assertThrows(UnsupportedOperationException.class,
+                                                               () -> tls.reload(reload));
+
+        assertThat(exception.getMessage(),
+                   is("TLS cannot be reloaded when an explicit instance of SSL context was used to create it"));
+    }
+
+    @Test
     void failedReinitializationDoesNotClearReloadableManagers() {
         ConfiguredTlsManager manager = new ConfiguredTlsManager();
         X509KeyManager keyManager = new TestKeyManager();

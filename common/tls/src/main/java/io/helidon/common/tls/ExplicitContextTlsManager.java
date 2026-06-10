@@ -24,6 +24,9 @@ import javax.net.ssl.X509KeyManager;
 import javax.net.ssl.X509TrustManager;
 
 class ExplicitContextTlsManager implements TlsManager {
+    static final String RELOAD_NOT_SUPPORTED_MESSAGE =
+            "TLS cannot be reloaded when an explicit instance of SSL context was used to create it";
+
     private static final String TYPE = "explicit";
     private final SSLContext sslContext;
 
@@ -38,8 +41,7 @@ class ExplicitContextTlsManager implements TlsManager {
     @Override
     public void reload(TlsMaterial material) {
         Objects.requireNonNull(material);
-        throw new UnsupportedOperationException(
-                "TLS cannot be reloaded when an explicit instance of SSL context was used to create it");
+        throw new UnsupportedOperationException(RELOAD_NOT_SUPPORTED_MESSAGE);
     }
 
     @Override

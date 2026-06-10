@@ -106,7 +106,7 @@ public class ConfiguredTlsManager implements TlsManager {
     @Deprecated(forRemoval = true, since = "27.0.0")
     @SuppressWarnings("removal")
     public void reload(Tls tls) {
-        Objects.requireNonNull(tls, "tls");
+        Tls.validateReloadSource(tls);
         reload(tls.keyManager(), tls.trustManager());
     }
 
