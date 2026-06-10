@@ -6,25 +6,11 @@ ACME Logger configuration
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
 
 ### Experimental Options
 
 
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -37,8 +23,8 @@ ACME Logger configuration
 <td>
 <code>logger</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Logger name</td>
 </tr>
@@ -49,7 +35,7 @@ ACME Logger configuration
 ### Deprecated Options
 
 
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -66,11 +52,11 @@ ACME Logger configuration
 <code>level</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="AcmeLoggerConfigLevel">AcmeLoggerConfigLevel</code>
+<td>
+<code>Acme<wbr>Logger<wbr>Config<wbr>Level</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">INFO</code>
+<td>
+<code>INFO</code>
 </td>
 <td>Logging level</td>
 </tr>

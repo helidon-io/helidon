@@ -6,22 +6,8 @@ Helper configuration.
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -37,8 +23,8 @@ Helper configuration.
 <code>nested</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="AcmeNestedConfig">AcmeNestedConfig</code>
+<td>
+<code>Acme<wbr>Nested<wbr>Config</code>
 </td>
 <td>Nested</td>
 </tr>
@@ -46,8 +32,8 @@ Helper configuration.
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
 <td>Enabled</td>
 </tr>

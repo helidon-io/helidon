@@ -63,6 +63,8 @@ class CmDocCodegen {
     CmDocCodegen(Path outputDir, CmModel metadata) {
         var loader = new ClassPathTemplateLoader("/io/helidon/config/metadata/docs");
         var handlebars = new Handlebars(loader);
+        handlebars.registerHelper("codeBreaks", (context, options) -> CodeBreaks.code(stringValue(context)));
+        handlebars.registerHelper("codeBreaksHtml", (context, options) -> CodeBreaks.html(stringValue(context)));
         this.rootTemplate = template(handlebars, CONFIG_REFERENCE);
         this.manifestTemplate = template(handlebars, MANIFEST);
         this.configTemplate = template(handlebars, "config" + PAGE_EXT);
@@ -133,6 +135,10 @@ class CmDocCodegen {
         } catch (IOException e) {
             throw new IllegalStateException("Failed to load template: " + template, e);
         }
+    }
+
+    private static String stringValue(Object value) {
+        return value == null ? "" : value.toString();
     }
 
     private static class ValueResolverImpl extends MethodValueResolver {

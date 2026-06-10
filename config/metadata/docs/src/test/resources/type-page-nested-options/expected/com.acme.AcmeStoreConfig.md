@@ -6,22 +6,8 @@ Store configuration.
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -34,11 +20,11 @@ Store configuration.
 <td>
 <a id="ivf-index"></a>
 <a href="com.acme.AcmeIvfIndexConfig.md">
-<code>ivf-index</code>
+<code>ivf-<wbr>index</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="AcmeIvfIndexConfig">AcmeIvfIndexConfig</code>
+<td>
+<code>Acme<wbr>IvfIndex<wbr>Config</code>
 </td>
 <td>IVF index</td>
 </tr>
@@ -46,20 +32,20 @@ Store configuration.
 <td>
 <a id="json-index"></a>
 <a href="com.acme.AcmeJsonIndexConfig.md">
-<code>json-index</code>
+<code>json-<wbr>index</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="AcmeJsonIndexConfig">AcmeJsonIndexConfig</code>
+<td>
+<code>Acme<wbr>Json<wbr>Index<wbr>Config</code>
 </td>
 <td>JSON index</td>
 </tr>
 <tr>
 <td>
-<code>data-source</code>
+<code>data-<wbr>source</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Data source</td>
 </tr>

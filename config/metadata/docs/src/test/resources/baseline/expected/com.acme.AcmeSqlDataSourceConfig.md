@@ -6,22 +6,8 @@ ACME SQL data source configuration
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,13 +19,13 @@ ACME SQL data source configuration
 <tbody>
 <tr>
 <td>
-<code>max-pool-size</code>
+<code>max-<wbr>pool-<wbr>size</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">20</code>
+<td>
+<code>20</code>
 </td>
 <td>Maximum pool size</td>
 </tr>
@@ -47,10 +33,10 @@ ACME SQL data source configuration
 <td>
 <code>url</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>JDBC URL</td>
 </tr>

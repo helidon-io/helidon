@@ -2,14 +2,8 @@
 
 ## Config Roots
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-</style>
 
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -30,7 +24,7 @@
 <td>
 <a id="config_reference"></a>
 <a href="io.helidon.ConfigReferenceConfig.md">
-<code>config_reference</code>
+<code>config_<wbr>reference</code>
 </a>
 </td>
 <td>Configuration for config_reference</td>

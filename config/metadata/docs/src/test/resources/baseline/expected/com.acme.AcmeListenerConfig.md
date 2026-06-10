@@ -6,22 +6,8 @@ ACME Listener configuration
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,11 +21,11 @@ ACME Listener configuration
 <td>
 <code>port</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">0</code>
+<td>
+<code>0</code>
 </td>
 <td>Listen port</td>
 </tr>
@@ -47,11 +33,11 @@ ACME Listener configuration
 <td>
 <code>host</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">0.0.0.0</code>
+<td>
+<code>0.<wbr>0.0.<wbr>0</code>
 </td>
 <td>Listen address</td>
 </tr>

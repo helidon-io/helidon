@@ -2,14 +2,8 @@
 
 ## Config Roots
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-</style>
 
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -30,7 +24,7 @@
 <td>
 <a id="fault-tolerance"></a>
 <a href="io.helidon.FaultToleranceConfig.md">
-<code>fault-tolerance</code>
+<code>fault-<wbr>tolerance</code>
 </a>
 </td>
 <td>Configuration for fault-tolerance</td>

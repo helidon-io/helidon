@@ -6,22 +6,8 @@ ACME Server configuration.
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -38,10 +24,10 @@ ACME Server configuration.
 <code>features</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;AcmeFeature&gt;">List&lt;AcmeFeature&gt;</code>
+<td>
+<code>List&lt;<wbr>Acme<wbr>Feature&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Dynamic features</td>
 </tr>
@@ -49,11 +35,11 @@ ACME Server configuration.
 <td>
 <code>port</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">8080</code>
+<td>
+<code>8080</code>
 </td>
 <td>Listen port</td>
 </tr>
@@ -61,11 +47,11 @@ ACME Server configuration.
 <td>
 <code>host</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">localhost</code>
+<td>
+<code>localhost</code>
 </td>
 <td>Listen address</td>
 </tr>
@@ -76,10 +62,10 @@ ACME Server configuration.
 <code>sockets</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, AcmeListenerConfig&gt;">Map&lt;String, AcmeListenerConfig&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> Acme<wbr>Listener<wbr>Config&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Sockets</td>
 </tr>

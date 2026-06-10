@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 }}
 {{#if this~}}
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -36,27 +36,27 @@ limitations under the License.
 {{/if}}
 {{~#if fileName~}}
 <a href="{{fileName}}">
-<code>{{key}}</code>
+<code>{{{codeBreaks key}}}</code>
 </a>
 {{/if}}
 {{~#unless fileName~}}
-<code>{{key}}</code>
+<code>{{{codeBreaks key}}}</code>
 {{/unless~}}
 </td>
 {{#if ../hasTypes~}}
-<td class="cm-type-cell">
+<td>
 {{#if type~}}
-<code class="cm-truncate-value"{{#if hasTypeTooltip}} title="{{type}}"{{/if}}>{{type}}</code>
+<code>{{{codeBreaks type}}}</code>
 {{/if}}</td>
 {{/if}}
 {{~#if ../hasDefaults~}}
-<td class="cm-default-cell">
+<td>
 {{#if defaultValue~}}
-<code class="cm-truncate-value"{{#if hasDefaultTooltip}} title="{{defaultValue}}"{{/if}}>{{defaultValue}}</code>
+<code>{{{codeBreaks defaultValue}}}</code>
 {{/if~}}
 </td>
 {{/if~}}
-<td>{{{description}}}</td>
+<td>{{{codeBreaksHtml description}}}</td>
 </tr>
 {{/each}}</tbody>
 </table>

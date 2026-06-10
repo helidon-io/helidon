@@ -21,13 +21,7 @@ This type is an enumeration.
 
 ## Allowed Values
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-</style>
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Value</th>
@@ -37,8 +31,8 @@ This type is an enumeration.
 <tbody>
 {{~#each tables.standard.rows}}
 <tr>
-<td><code>{{key}}</code></td>
-<td>{{{description}}}</td>
+<td><code>{{{codeBreaks key}}}</code></td>
+<td>{{{codeBreaksHtml description}}}</td>
 </tr>
 {{~/each}}
 </tbody>

@@ -2,14 +2,8 @@
 
 ## Config Roots
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-</style>
 
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>

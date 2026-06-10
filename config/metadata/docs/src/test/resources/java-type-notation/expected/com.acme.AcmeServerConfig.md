@@ -6,22 +6,8 @@ ACME server configuration.
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -37,8 +23,8 @@ ACME server configuration.
 <code>mode</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">AcmeMode</code>
+<td>
+<code>Acme<wbr>Mode</code>
 </td>
 <td>Mode</td>
 </tr>
@@ -49,17 +35,17 @@ ACME server configuration.
 <code>features</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;AcmeFeature&gt;">List&lt;AcmeFeature&gt;</code>
+<td>
+<code>List&lt;<wbr>Acme<wbr>Feature&gt;</code>
 </td>
 <td>Dynamic features</td>
 </tr>
 <tr>
 <td>
-<code>external-handlers</code>
+<code>external-<wbr>handlers</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, ExternalHandler&gt;">Map&lt;String, ExternalHandler&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> External<wbr>Handler&gt;</code>
 </td>
 <td>Handlers</td>
 </tr>
@@ -67,11 +53,11 @@ ACME server configuration.
 <td>
 <a id="default-socket"></a>
 <a href="com.acme.AcmeListenerConfig.md">
-<code>default-socket</code>
+<code>default-<wbr>socket</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="AcmeListenerConfig">AcmeListenerConfig</code>
+<td>
+<code>Acme<wbr>Listener<wbr>Config</code>
 </td>
 <td>Default socket</td>
 </tr>
@@ -82,8 +68,8 @@ ACME server configuration.
 <code>modes</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;AcmeMode&gt;">List&lt;AcmeMode&gt;</code>
+<td>
+<code>List&lt;<wbr>Acme<wbr>Mode&gt;</code>
 </td>
 <td>Modes</td>
 </tr>
@@ -91,20 +77,20 @@ ACME server configuration.
 <td>
 <a id="named-modes"></a>
 <a href="com.acme.AcmeNamedMode.md">
-<code>named-modes</code>
+<code>named-<wbr>modes</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, AcmeNamedMode&gt;">Map&lt;String, AcmeNamedMode&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> Acme<wbr>Named<wbr>Mode&gt;</code>
 </td>
 <td>Named modes</td>
 </tr>
 <tr>
 <td>
-<code>external-listeners</code>
+<code>external-<wbr>listeners</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;ExternalListener&gt;">List&lt;ExternalListener&gt;</code>
+<td>
+<code>List&lt;<wbr>External<wbr>Listener&gt;</code>
 </td>
 <td>Listeners</td>
 </tr>
@@ -112,17 +98,17 @@ ACME server configuration.
 <td>
 <code>host</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Host</td>
 </tr>
 <tr>
 <td>
-<code>external-scalar</code>
+<code>external-<wbr>scalar</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="ExternalScalar">ExternalScalar</code>
+<td>
+<code>External<wbr>Scalar</code>
 </td>
 <td>External scalar</td>
 </tr>
@@ -133,8 +119,8 @@ ACME server configuration.
 <code>sockets</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, AcmeListenerConfig&gt;">Map&lt;String, AcmeListenerConfig&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> Acme<wbr>Listener<wbr>Config&gt;</code>
 </td>
 <td>Sockets</td>
 </tr>

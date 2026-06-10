@@ -6,22 +6,8 @@ ACME Tracing configuration
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,11 +21,11 @@ ACME Tracing configuration
 <td>
 <code>port</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">16686</code>
+<td>
+<code>16686</code>
 </td>
 <td>Tracing backend port</td>
 </tr>
@@ -47,10 +33,10 @@ ACME Tracing configuration
 <td>
 <code>host</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Tracing backend host</td>
 </tr>
@@ -58,10 +44,10 @@ ACME Tracing configuration
 <td>
 <code>tags</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>System tags</td>
 </tr>

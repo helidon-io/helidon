@@ -6,15 +6,9 @@ This type is a provider contract.
 
 ## Implementations
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-</style>
 
 
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -25,7 +19,7 @@ This type is a provider contract.
 <tr>
 <td>
 <a href="com.acme.AcmeOpenAiAltFeatureConfig.md">
-<code>open-ai</code>
+<code>open-<wbr>ai</code>
 </a>
 </td>
 <td>Alternative Open AI implementation.</td>
@@ -33,7 +27,7 @@ This type is a provider contract.
 <tr>
 <td>
 <a href="com.acme.AcmeOpenAiFeatureConfig.md">
-<code>open-ai</code>
+<code>open-<wbr>ai</code>
 </a>
 </td>
 <td>Open AI implementation.</td>

@@ -6,22 +6,8 @@ ACME Metrics observer configuration
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -34,8 +20,8 @@ ACME Metrics observer configuration
 <td>
 <code>endpoint</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Observation endpoint</td>
 </tr>
@@ -43,8 +29,8 @@ ACME Metrics observer configuration
 <td>
 <code>buckets</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
 <td>Published buckets</td>
 </tr>

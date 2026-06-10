@@ -6,22 +6,8 @@ Keys configuration.
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -37,7 +23,7 @@ Keys configuration.
 <code>group</code>
 </a>
 </td>
-<td class="cm-type-cell">
+<td>
 </td>
 <td>Configuration for group</td>
 </tr>
@@ -48,8 +34,8 @@ Keys configuration.
 <code>resource</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="AcmeResourceConfig">AcmeResourceConfig</code>
+<td>
+<code>Acme<wbr>Resource<wbr>Config</code>
 </td>
 <td>Top-level resource.</td>
 </tr>

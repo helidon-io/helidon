@@ -6,22 +6,8 @@ ACME Logging configuration
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -37,8 +23,8 @@ ACME Logging configuration
 <code>loggers</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;AcmeLoggerConfig&gt;">List&lt;AcmeLoggerConfig&gt;</code>
+<td>
+<code>List&lt;<wbr>Acme<wbr>Logger<wbr>Config&gt;</code>
 </td>
 <td>Loggers</td>
 </tr>

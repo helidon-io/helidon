@@ -42,18 +42,4 @@ class CmPageTest {
         assertThat(new Tables(empty, nonEmpty, empty).isEmpty(), is(false));
         assertThat(new Tables(empty, empty, nonEmpty).isEmpty(), is(false));
     }
-
-    @Test
-    void testRowTooltips() {
-        var noTooltip = new Row("key", "0123456789", "0123456789", "description", "", "");
-        var typeTooltip = new Row("key", "01234567890", "0123456789", "description", "", "");
-        var defaultTooltip = new Row("key", "0123456789", "01234567890", "description", "", "");
-
-        assertThat(noTooltip.hasTypeTooltip(), is(false));
-        assertThat(noTooltip.hasDefaultTooltip(), is(false));
-        assertThat(typeTooltip.hasTypeTooltip(), is(true));
-        assertThat(typeTooltip.hasDefaultTooltip(), is(false));
-        assertThat(defaultTooltip.hasTypeTooltip(), is(false));
-        assertThat(defaultTooltip.hasDefaultTooltip(), is(true));
-    }
 }

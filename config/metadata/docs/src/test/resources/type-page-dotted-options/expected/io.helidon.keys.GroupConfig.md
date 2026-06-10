@@ -6,22 +6,8 @@ Configuration for keys.group
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -34,8 +20,8 @@ Configuration for keys.group
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
 <td>Group enabled.</td>
 </tr>
@@ -43,8 +29,8 @@ Configuration for keys.group
 <td>
 <code>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Group name.</td>
 </tr>
@@ -55,8 +41,8 @@ Configuration for keys.group
 <code>resource</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="AcmeResourceConfig">AcmeResourceConfig</code>
+<td>
+<code>Acme<wbr>Resource<wbr>Config</code>
 </td>
 <td>Grouped resource.</td>
 </tr>

@@ -6,22 +6,8 @@ Merged configuration for metrics
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,10 +21,10 @@ Merged configuration for metrics
 <td>
 <code>buckets</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Published buckets</td>
 </tr>
@@ -46,11 +32,11 @@ Merged configuration for metrics
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Enable metrics</td>
 </tr>
@@ -58,10 +44,10 @@ Merged configuration for metrics
 <td>
 <code>endpoint</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Observation endpoint</td>
 </tr>
@@ -69,10 +55,10 @@ Merged configuration for metrics
 <td>
 <code>scope</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Metrics scope</td>
 </tr>
