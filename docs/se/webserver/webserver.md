@@ -155,12 +155,9 @@ server:
 
 ### Configuration Options
 
-#### Configuration options
-
-<!--@include ../../config/io.helidon.webserver.WebServer.md#configuration-options offset=2 -->
+<!--@include ../../config/io.helidon.webserver.WebServer.md#configuration-options offset=1 -->
 See [Configuration options](../../config/io.helidon.webserver.WebServer.md#configuration-options).
 <!--/include-->
-
 
 ## Routing
 
@@ -606,16 +603,12 @@ Note: Even though some request data can be reflected back in responses when `inc
 
 Any other port defined in your application may include an `error-handling` section to configure the default handler behavior on that port.
 
-## Configuration Options
+## TLS Configuration Options
 
-### Configuration options
-
-<!--@include ../../config/io.helidon.common.tls.Tls.md#configuration-options offset=2 -->
+<!--@include ../../config/io.helidon.common.tls.Tls.md#configuration-options -->
 See [Configuration options](../../config/io.helidon.common.tls.Tls.md#configuration-options).
 <!--/include-->
 
-
-<a id="server-features"></a>
 ## Server Features
 
 Server features provide additional functionality to the WebServer, through modification of the server configuration, listener configuration, or routing.
@@ -637,7 +630,6 @@ The following table shows available server features and their weight. The highes
 | [OpenAPI][openapi] | 90 |
 | [Observability][observability] | 80 |
 
-<a id="context"></a>
 ### Context
 
 Context feature adds a filter that executes all requests within the context of `io.helidon.common.context.Context`. A `Context` instance is available on `ServerRequest` even if this feature is not added. This feature adds support for obtaining request context through `io.helidon.common.context.Contexts.context()`.
@@ -655,26 +647,12 @@ To enable execution of routes within Context, add the following dependency to pr
 
 Context feature can be configured, all options shown below are also available both in config, and programmatically when using builder.
 
-#### io.helidon.webserver.context.ContextFeature
+#### Configuration options
 
-##### Description
-
-Configuration of context feature.
-
-##### Usages
-
-- [`server.features.context`][server-features]
-
-##### Configuration options
-
-<!--@include ../../config/io.helidon.webserver.context.ContextFeature.md#configuration-options offset=1 -->
+<!--@include ../../config/io.helidon.webserver.context.ContextFeature.md#configuration-options offset=2 -->
 See [Configuration options](../../config/io.helidon.webserver.context.ContextFeature.md#configuration-options).
 <!--/include-->
 
-
-See the [manifest](../../config/manifest.md) for all available types.
-
-<a id="access-log"></a>
 ### Access Log
 
 Access logging in Helidon is done by a dedicated module that can be added to WebServer and configured.
@@ -717,29 +695,17 @@ server:
 
 All options shown below are also available programmatically when using builder.
 
-#### io.helidon.webserver.accesslog.AccessLogFeature
+#### Configuration options
 
-##### Description
-
-Configuration of access log feature.
-
-##### Usages
-
-- [`server.features.access-log`][server-features-2]
-
-##### Configuration options
-
-<!--@include ../../config/io.helidon.webserver.accesslog.AccessLogFeature.md#configuration-options offset=1 -->
+<!--@include ../../config/io.helidon.webserver.accesslog.AccessLogFeature.md#configuration-options offset=2 -->
 See [Configuration options](../../config/io.helidon.webserver.accesslog.AccessLogFeature.md#configuration-options).
 <!--/include-->
 
 
 See the [manifest](../../config/manifest.md) for all available types.
 
-<a id="supported-technologies"></a>
 ## Supported Technologies
 
-<a id="http2-support"></a>
 ### HTTP/2 Support
 
 Helidon supports HTTP/2 upgrade from HTTP/1, HTTP/2 without prior knowledge, HTTP/2 with prior knowledge, and HTTP/2 with ALPN over TLS. HTTP/2 support is enabled in WebServer by default when it’s artifact is available on classpath.
@@ -758,7 +724,6 @@ To enable HTTP/2 support add the following dependency to your project’s `pom.x
 </dependency>
 ```
 
-<a id="static-content-support"></a>
 ### Static Content Support
 
 Static content is served through a `StaticContentFeature`. As with other server features, it can be configured through config, or registered with server config builder.
@@ -818,7 +783,6 @@ server:
 
 See [Static Content Feature Configuration Reference][static-content-f] for details of configuration options.
 
-<a id="media-types-support"></a>
 ### Media Types Support
 
 WebServer and WebClient share the HTTP media support of Helidon, and any supported media type can be used in both. The media type support is automatically discovered from classpath. Programmatic support is of course enabled as well through `MediaContext`.
@@ -1004,10 +968,9 @@ It is possible to configure the Jackson ObjectMapper instance via programmatic o
 
 ###### Configuration options
 
-<!--@include ../../config/io.helidon.http.media.jackson.JacksonSupport.md#configuration-options offset=3 -->
+<!--@include ../../config/io.helidon.http.media.jackson.JacksonSupport.md#configuration-options offset=4 -->
 See [Configuration options](../../config/io.helidon.http.media.jackson.JacksonSupport.md#configuration-options).
 <!--/include-->
-
 
 ###### Example
 
@@ -1092,7 +1055,7 @@ It is possible to configure the Gson instance via programmatic or configuration-
 
 ###### Configuration options
 
-<!--@include ../../config/io.helidon.http.media.gson.GsonSupport.md#configuration-options offset=3 -->
+<!--@include ../../config/io.helidon.http.media.gson.GsonSupport.md#configuration-options offset=4 -->
 See [Configuration options](../../config/io.helidon.http.media.gson.GsonSupport.md#configuration-options).
 <!--/include-->
 
@@ -1159,7 +1122,6 @@ Response body:
 {"name":"Joe"}
 ```
 
-<a id="http-content-encoding"></a>
 ### HTTP Content Encoding
 
 HTTP encoding can improve bandwidth utilization and transfer speeds in certain scenarios. It requires a few extra CPU cycles for compressing and uncompressing, but these can be offset if data is transferred over low-bandwidth network links.
@@ -1187,7 +1149,7 @@ Or use a config file using the following options:
 
 ##### Configuration options
 
-<!--@include ../../config/io.helidon.http.encoding.ContentEncodingContext.md#configuration-options offset=2 -->
+<!--@include ../../config/io.helidon.http.encoding.ContentEncodingContext.md#configuration-options offset=3 -->
 See [Configuration options](../../config/io.helidon.http.encoding.ContentEncodingContext.md#configuration-options).
 <!--/include-->
 
@@ -1205,7 +1167,6 @@ HTTP compression negotiation is controlled by clients using the `Accept-Encoding
 
 For example, if the request includes `Accept-Encoding: gzip, deflate`, and HTTP compression has been enabled as shown above, the response shall include the header `Content-Encoding: gzip` and a compressed payload.
 
-<a id="proxy-protocol-support"></a>
 ### Proxy Protocol Support
 
 The [Proxy Protocol][proxy-protocol] provides a way to convey client information across reverse proxies or load balancers which would otherwise be lost given that new connections are established for each network hop. Often times, this information can be carried in HTTP headers, but not all proxies support this feature. Helidon is capable of parsing a proxy protocol header (i.e., a network preamble) that is based on either V1 or V2 of the protocol, thus making client information available to service developers.
@@ -1277,7 +1238,6 @@ rules.get("/", (req, res) -> {
 });
 ```
 
-<a id="additional-information"></a>
 ## Additional Information
 
 Here is the code for a minimalist web application that runs on a random free port:
@@ -1301,7 +1261,6 @@ public static void main(String[] args) {
 
 - The server is bound to a random free port.
 
-<a id="reference"></a>
 ## Reference
 
 - [Helidon WebServer Javadoc][helidon-webserve]
