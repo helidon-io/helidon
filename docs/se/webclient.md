@@ -215,19 +215,170 @@ The class responsible for WebClient configuration is:
 
 ### Configuration options
 
-| Key                                                                                                                   | Kind    | Type                     | Default Value | Description                                                                                                                                                 |
-|-----------------------------------------------------------------------------------------------------------------------|---------|--------------------------|---------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| <span id="a48ec2-connect-timeout"></span> `connect-timeout`                                                           | `VALUE` | `Duration`               |               | Connect timeout                                                                                                                                             |
-| <span id="a5bc70-follow-redirects"></span> `follow-redirects`                                                         | `VALUE` | `Boolean`                | `true`        | Whether to follow redirects                                                                                                                                 |
-| <span id="a6536a-keep-alive"></span> `keep-alive`                                                                     | `VALUE` | `Boolean`                | `true`        | Determines if connection keep alive is enabled (NOT socket keep alive, but HTTP connection keep alive, to re-use the same connection for multiple requests) |
-| <span id="a04b74-max-redirects"></span> `max-redirects`                                                               | `VALUE` | `Integer`                | `10`          | Max number of followed redirects                                                                                                                            |
-| <span id="a419a4-properties"></span> `properties`                                                                     | `MAP`   | `String`                 |               | Properties configured for this client                                                                                                                       |
-| <span id="a3662c-protocol-configs"></span> [`protocol-configs`][protocol-configs] | `LIST`  | `i.h.w.s.ProtocolConfig` |               | Configuration of client protocols                                                                                                                           |
-| <span id="adcd34-protocol-configs-discover-services"></span> `protocol-configs-discover-services`                     | `VALUE` | `Boolean`                | `true`        | Whether to enable automatic service discovery for `protocol-configs`                                                                                        |
-| <span id="a23735-protocol-preference"></span> `protocol-preference`                                                   | `LIST`  | `String`                 |               | List of HTTP protocol IDs by order of preference                                                                                                            |
-| <span id="a62d6a-proxy"></span> [`proxy`][proxy]                                | `VALUE` | `i.h.w.a.Proxy`          |               | Proxy configuration to be used for requests                                                                                                                 |
-| <span id="aecd9d-read-timeout"></span> `read-timeout`                                                                 | `VALUE` | `Duration`               |               | Read timeout                                                                                                                                                |
-| <span id="aba9ef-tls"></span> [`tls`][tls]                                         | `VALUE` | `i.h.c.t.Tls`            |               | TLS configuration for any TLS request from this client                                                                                                      |
+<!--@include ../config/io.helidon.webclient.api.WebClient.md#configuration-options offset=1 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>connect-timeout</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Connect timeout</td>
+</tr>
+<tr>
+<td>
+<a id="proxy"></a>
+<a href="io.helidon.webclient.api.Proxy.md">
+<code>proxy</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Proxy</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Proxy configuration to be used for requests</td>
+</tr>
+<tr>
+<td>
+<code>follow-redirects</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to follow redirects</td>
+</tr>
+<tr>
+<td>
+<code>keep-alive</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Determines if connection keep alive is enabled (NOT socket keep alive, but HTTP connection keep alive, to re-use the same connection for multiple requests)</td>
+</tr>
+<tr>
+<td>
+<code>read-timeout</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Read timeout</td>
+</tr>
+<tr>
+<td>
+<code>max-redirects</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">10</code>
+</td>
+<td>Max number of followed redirects</td>
+</tr>
+<tr>
+<td>
+<a id="protocol-configs"></a>
+<a href="io.helidon.webclient.spi.ProtocolConfig.md">
+<code>protocol-configs</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;ProtocolConfig&gt;">List&lt;ProtocolConfig&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Configuration of client protocols</td>
+</tr>
+<tr>
+<td>
+<code>protocol-configs-discover-services</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to enable automatic service discovery for <code>protocol-configs</code></td>
+</tr>
+<tr>
+<td>
+<a id="tls"></a>
+<a href="io.helidon.common.tls.Tls.md">
+<code>tls</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Tls</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>TLS configuration for any TLS request from this client</td>
+</tr>
+<tr>
+<td>
+<code>protocol-preference</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>List of HTTP protocol IDs by order of preference</td>
+</tr>
+<tr>
+<td>
+<code>properties</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Properties configured for this client</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 ### Protocol Specific Configuration
 
@@ -237,31 +388,263 @@ Protocol specific configuration can be set using the `protocol-configs` paramete
 
 #### Configuration options
 
-| Key                                                                             | Kind    | Type         | Default Value | Description                                                                                                                                                  |
-|---------------------------------------------------------------------------------|---------|--------------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| <span id="a7a44c-default-keep-alive"></span> `default-keep-alive`               | `VALUE` | `Boolean`    | `true`        | Whether to use keep alive by default                                                                                                                         |
-| <span id="a81fda-max-buffered-entity-size"></span> `max-buffered-entity-size`   | `VALUE` | `i.h.c.Size` | `64 KB`       | Configure the maximum size allowed for an entity that can be explicitly buffered by the application by calling `io.helidon.http.media.ReadableEntity#buffer` |
-| <span id="a403a3-max-header-size"></span> `max-header-size`                     | `VALUE` | `Integer`    | `16384`       | Configure the maximum allowed header size of the response                                                                                                    |
-| <span id="ab0904-max-status-line-length"></span> `max-status-line-length`       | `VALUE` | `Integer`    | `256`         | Configure the maximum allowed length of the status line from the response                                                                                    |
-| <span id="a2ff23-name"></span> `name`                                           | `VALUE` | `String`     | `http_1_1`    | `N/A`                                                                                                                                                        |
-| <span id="a607dc-validate-request-headers"></span> `validate-request-headers`   | `VALUE` | `Boolean`    | `false`       | Sets whether the request header format is validated or not                                                                                                   |
-| <span id="a21e77-validate-response-headers"></span> `validate-response-headers` | `VALUE` | `Boolean`    | `true`        | Sets whether the response header format is validated or not                                                                                                  |
+<!--@include ../config/io.helidon.webclient.http1.Http1ClientProtocolConfig.md#configuration-options offset=2 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>validate-response-headers</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Sets whether the response header format is validated or not</td>
+</tr>
+<tr>
+<td>
+<code>max-buffered-entity-size</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Size</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">64 KB</code>
+</td>
+<td>Configure the maximum size allowed for an entity that can be explicitly buffered by the application by calling <code>io.helidon.http.media.ReadableEntity#buffer</code></td>
+</tr>
+<tr>
+<td>
+<code>max-header-size</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">16384</code>
+</td>
+<td>Configure the maximum allowed header size of the response</td>
+</tr>
+<tr>
+<td>
+<code>validate-request-headers</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>Sets whether the request header format is validated or not</td>
+</tr>
+<tr>
+<td>
+<code>max-status-line-length</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">256</code>
+</td>
+<td>Configure the maximum allowed length of the status line from the response</td>
+</tr>
+<tr>
+<td>
+<code>name</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">http_1_1</code>
+</td>
+<td><code>N/A</code></td>
+</tr>
+<tr>
+<td>
+<code>default-keep-alive</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to use keep alive by default</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 - `HTTP/2`
 
 #### Configuration options
 
-| Key                                                                               | Kind    | Type         | Default Value | Description                                                                                                                                                  |
-|-----------------------------------------------------------------------------------|---------|--------------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| <span id="a06f7b-flow-control-block-timeout"></span> `flow-control-block-timeout` | `VALUE` | `Duration`   | `PT15S`       | Timeout for blocking while waiting for window update when window is depleted                                                                                 |
-| <span id="a942dc-initial-window-size"></span> `initial-window-size`               | `VALUE` | `Integer`    | `65535`       | Configure INITIAL_WINDOW_SIZE setting for new HTTP/2 connections                                                                                             |
-| <span id="a2ae0e-max-buffered-entity-size"></span> `max-buffered-entity-size`     | `VALUE` | `i.h.c.Size` | `64 KB`       | Configure the maximum size allowed for an entity that can be explicitly buffered by the application by calling `io.helidon.http.media.ReadableEntity#buffer` |
-| <span id="aecd63-max-frame-size"></span> `max-frame-size`                         | `VALUE` | `Integer`    | `16384`       | Configure initial MAX_FRAME_SIZE setting for new HTTP/2 connections                                                                                          |
-| <span id="aa6ab2-max-header-list-size"></span> `max-header-list-size`             | `VALUE` | `Long`       | `-1`          | Configure initial MAX_HEADER_LIST_SIZE setting for new HTTP/2 connections                                                                                    |
-| <span id="ae847a-name"></span> `name`                                             | `VALUE` | `String`     | `h2`          | `N/A`                                                                                                                                                        |
-| <span id="ac97c5-ping"></span> `ping`                                             | `VALUE` | `Boolean`    | `false`       | Check healthiness of cached connections with HTTP/2.0 ping frame                                                                                             |
-| <span id="af75f0-ping-timeout"></span> `ping-timeout`                             | `VALUE` | `Duration`   | `PT0.5S`      | Timeout for ping probe used for checking healthiness of cached connections                                                                                   |
-| <span id="a8e968-prior-knowledge"></span> `prior-knowledge`                       | `VALUE` | `Boolean`    | `false`       | Prior knowledge of HTTP/2 capabilities of the server                                                                                                         |
+<!--@include ../config/io.helidon.webclient.http2.Http2ClientProtocolConfig.md#configuration-options offset=2 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>flow-control-block-timeout</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">PT15S</code>
+</td>
+<td>Timeout for blocking while waiting for window update when window is depleted</td>
+</tr>
+<tr>
+<td>
+<code>max-buffered-entity-size</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Size</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">64 KB</code>
+</td>
+<td>Configure the maximum size allowed for an entity that can be explicitly buffered by the application by calling <code>io.helidon.http.media.ReadableEntity#buffer</code></td>
+</tr>
+<tr>
+<td>
+<code>prior-knowledge</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>Prior knowledge of HTTP/2 capabilities of the server</td>
+</tr>
+<tr>
+<td>
+<code>max-frame-size</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">16384</code>
+</td>
+<td>Configure initial MAX_FRAME_SIZE setting for new HTTP/2 connections</td>
+</tr>
+<tr>
+<td>
+<code>ping</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>Check healthiness of cached connections with HTTP/2.0 ping frame</td>
+</tr>
+<tr>
+<td>
+<code>ping-timeout</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">PT0.5S</code>
+</td>
+<td>Timeout for ping probe used for checking healthiness of cached connections</td>
+</tr>
+<tr>
+<td>
+<code>name</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">h2</code>
+</td>
+<td><code>N/A</code></td>
+</tr>
+<tr>
+<td>
+<code>max-header-list-size</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Long</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">-1</code>
+</td>
+<td>Configure initial MAX_HEADER_LIST_SIZE setting for new HTTP/2 connections</td>
+</tr>
+<tr>
+<td>
+<code>initial-window-size</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">65535</code>
+</td>
+<td>Configure INITIAL_WINDOW_SIZE setting for new HTTP/2 connections</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 ### Example of a WebClient Runtime Configuration
 
@@ -736,9 +1119,47 @@ Configuration of WebClient transport level propagation of context values.
 
 #### Configuration options
 
-| Key                                                                                                            | Kind   | Type                            | Description                 |
-|----------------------------------------------------------------------------------------------------------------|--------|---------------------------------|-----------------------------|
-| <span id="ab403e-records"></span> [`records`][records] | `LIST` | `i.h.c.c.h.ContextRecordConfig` | List of propagation records |
+<!--@include ../config/io.helidon.webclient.context.WebClientContextService.md#configuration-options offset=1 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a id="records"></a>
+<a href="io.helidon.common.context.http.ContextRecordConfig.md">
+<code>records</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;ContextRecordConfig&gt;">List&lt;ContextRecordConfig&gt;</code>
+</td>
+<td>List of propagation records</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 See the [manifest](../config/manifest.md) for all available types.
 
@@ -758,12 +1179,8 @@ See the [manifest](../config/manifest.md) for all available types.
 [httpclientreques]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.api/io/helidon/webclient/api/HttpClientRequest.html
 [clientrequestbas]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.api/io/helidon/webclient/api/ClientRequestBase.html
 [clientrequest]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.api/io/helidon/webclient/api/ClientRequest.html
-[protocol-configs]: ../config/io.helidon.webclient.spi.ProtocolConfig.md
-[proxy]: ../config/io.helidon.webclient.api.Proxy.md
-[tls]: ../config/io.helidon.common.tls.Tls.md
 [configuration-se]: ../mp/security/configuration-secrets.md
 [discovery]: discovery.md#web-client-discovery-integration
-[records]: ../config/io.helidon.common.context.http.ContextRecordConfig.md
 [helidon-webclien]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.api/module-summary.html
 [helidon-webclien-2]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.http1/module-summary.html
 [helidon-webclien-3]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.http2/module-summary.html

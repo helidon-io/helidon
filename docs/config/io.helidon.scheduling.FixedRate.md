@@ -150,6 +150,8 @@ Scheduling periodically executed task with specified fixed rate
 </table>
 
 
+## Manifest
+
 ---
 
 See the [manifest](manifest.md) for all available types.

@@ -119,6 +119,8 @@ Multitenant IDCS role mapping provider
 
 
 
+## Manifest
+
 ---
 
 See the [manifest](manifest.md) for all available types.

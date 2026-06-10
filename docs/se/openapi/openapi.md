@@ -66,25 +66,198 @@ Helidon SE OpenAPI configuration supports the settings described below in the `s
 
 ### Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="a9052a-enabled"></span> `enabled` | `VALUE` | `Boolean` | `true` | Sets whether the feature should be enabled |
-| <span id="a2bdbe-manager"></span> [`manager`][manager] | `VALUE` | `i.h.o.OpenApiManager` |   | OpenAPI manager |
-| <span id="a8b0d5-manager-discover-services"></span> `manager-discover-services` | `VALUE` | `Boolean` | `false` | Whether to enable automatic service discovery for `manager` |
-| <span id="a99850-permit-all"></span> `permit-all` | `VALUE` | `Boolean` | `true` | Whether to allow anybody to access the endpoint |
-| <span id="ad5281-roles"></span> `roles` | `LIST` | `String` | `openapi` | Hints for role names the user is expected to be in |
-| <span id="a8653c-services"></span> [`services`][services] | `LIST` | `i.h.o.OpenApiService` |   | OpenAPI services |
-| <span id="ae938a-services-discover-services"></span> `services-discover-services` | `VALUE` | `Boolean` | `true` | Whether to enable automatic service discovery for `services` |
-| <span id="a47a74-sockets"></span> `sockets` | `LIST` | `String` |   | List of sockets to register this feature on |
-| <span id="a0169c-static-file"></span> `static-file` | `VALUE` | `String` |   | Path of the static OpenAPI document file |
-| <span id="ac378f-web-context"></span> `web-context` | `VALUE` | `String` | `/openapi` | Web context path for the OpenAPI endpoint |
-| <span id="adb903-weight"></span> `weight` | `VALUE` | `Double` | `90.0` | Weight of the OpenAPI feature |
+<!--@include ../../config/io.helidon.openapi.OpenApiFeature.md#configuration-options offset=1 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
 
-#### Deprecated Options
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
 
-| Key | Kind | Type | Description |
-|----|----|----|----|
-| <span id="ab0d30-cors"></span> [`cors`][cors] | `VALUE` | `i.h.c.CrossOriginConfig` | CORS config |
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>web-context</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">/openapi</code>
+</td>
+<td>Web context path for the OpenAPI endpoint</td>
+</tr>
+<tr>
+<td>
+<a id="manager"></a>
+<a href="io.helidon.openapi.OpenApiManager.md">
+<code>manager</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="OpenApiManager">OpenApiManager</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>OpenAPI manager</td>
+</tr>
+<tr>
+<td>
+<code>services-discover-services</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to enable automatic service discovery for <code>services</code></td>
+</tr>
+<tr>
+<td>
+<code>roles</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">openapi</code>
+</td>
+<td>Hints for role names the user is expected to be in</td>
+</tr>
+<tr>
+<td>
+<code>static-file</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Path of the static OpenAPI document file</td>
+</tr>
+<tr>
+<td>
+<code>weight</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Double</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">90.0</code>
+</td>
+<td>Weight of the OpenAPI feature</td>
+</tr>
+<tr>
+<td>
+<a id="services"></a>
+<a href="io.helidon.openapi.OpenApiService.md">
+<code>services</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;OpenApiService&gt;">List&lt;OpenApiService&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>OpenAPI services</td>
+</tr>
+<tr>
+<td>
+<code>sockets</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>List of sockets to register this feature on</td>
+</tr>
+<tr>
+<td>
+<code>manager-discover-services</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>Whether to enable automatic service discovery for <code>manager</code></td>
+</tr>
+<tr>
+<td>
+<code>permit-all</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to allow anybody to access the endpoint</td>
+</tr>
+<tr>
+<td>
+<code>enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Sets whether the feature should be enabled</td>
+</tr>
+</tbody>
+</table>
+
+
+### Deprecated Options
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a id="cors"></a>
+<a href="io.helidon.cors.CrossOriginConfig.md">
+<code>cors</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="CrossOriginConfig">CrossOriginConfig</code>
+</td>
+<td>CORS config</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 ## Examples
 
@@ -133,7 +306,4 @@ If you need programmatic control over the `OpenApiFeature` instance, invoke `Ope
 [openapifeature]: https://helidon.io/docs/v4/apidocs/io.helidon.openapi/io/helidon/openapi/OpenApiFeature.html
 [builder]: https://helidon.io/docs/v4/apidocs/io.helidon.openapi/io/helidon/openapi/OpenApiFeatureConfig.Builder.html
 [example-below]: #register-openapifeature-explicitly
-[manager]: ../../config/io.helidon.openapi.OpenApiManager.md
-[services]: ../../config/io.helidon.openapi.OpenApiService.md
-[cors]: ../../config/io.helidon.cors.CrossOriginConfig.md
 [complete-openapi]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/openapi

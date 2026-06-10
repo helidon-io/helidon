@@ -67,31 +67,199 @@ These are all the MCP Client configuration options currently supported:
 
 ### Configuration options
 
-| Key                                                                                                   | Kind    | Type          | Description                                                                                                         |
-|-------------------------------------------------------------------------------------------------------|---------|---------------|---------------------------------------------------------------------------------------------------------------------|
-| <span id="aa2f58-client-name"></span> `client-name`                                                   | `VALUE` | `String`      | Sets the name that the client will use to identify itself to the MCP server in the initialization message           |
-| <span id="a13f78-client-version"></span> `client-version`                                             | `VALUE` | `String`      | Sets the version string that the client will use to identify itself to the MCP server in the initialization message |
-| <span id="a10402-initialization-timeout"></span> `initialization-timeout`                             | `VALUE` | `Duration`    | Sets the timeout for initializing the client                                                                        |
-| <span id="ad969f-key"></span> `key`                                                                   | `VALUE` | `String`      | Sets a unique identifier for the client                                                                             |
-| <span id="afeabc-log-requests"></span> `log-requests`                                                 | `VALUE` | `Boolean`     | Whether to log request traffic                                                                                      |
-| <span id="a50414-log-responses"></span> `log-responses`                                               | `VALUE` | `Boolean`     | Whether to log response traffic                                                                                     |
-| <span id="af6558-ping-timeout"></span> `ping-timeout`                                                 | `VALUE` | `Duration`    | The timeout to apply when waiting for a ping response                                                               |
-| <span id="a0460e-prompts-timeout"></span> `prompts-timeout`                                           | `VALUE` | `Duration`    | The timeout for prompt-related operations (listing prompts as well as rendering the contents of a prompt)           |
-| <span id="ad11cb-protocol-version"></span> `protocol-version`                                         | `VALUE` | `String`      | Sets the protocol version that the client will advertise in the initialization message                              |
-| <span id="ad5cc0-reconnect-interval"></span> `reconnect-interval`                                     | `VALUE` | `Duration`    | The delay before attempting to reconnect after a failed connection                                                  |
-| <span id="a3257a-resources-timeout"></span> `resources-timeout`                                       | `VALUE` | `Duration`    | Sets the timeout for resource-related operations (listing resources as well as reading the contents of a resource)  |
-| <span id="accdc6-tls"></span> [`tls`][tls]                      | `VALUE` | `i.h.c.t.Tls` | TLS configuration for the MCP server connection                                                                     |
-| <span id="a93c51-tool-execution-timeout"></span> `tool-execution-timeout`                             | `VALUE` | `Duration`    | Sets the timeout for tool execution                                                                                 |
-| <span id="a35999-tool-execution-timeout-error-message"></span> `tool-execution-timeout-error-message` | `VALUE` | `String`      | The error message to return when a tool execution times out                                                         |
-| <span id="ae642c-uri"></span> `uri`                                                                   | `VALUE` | `URI`         | The URL of the MCP server                                                                                           |
+<!--@include ../../config/io.helidon.integrations.langchain4j.McpClientConfig.md#configuration-options offset=1 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
 
-#### Deprecated Options
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
 
-| Key                                         | Kind    | Type  | Description                                                               |
-|---------------------------------------------|---------|-------|---------------------------------------------------------------------------|
-| <span id="aa72c1-sse-uri"></span> `sse-uri` | `VALUE` | `URI` | The initial URI where to connect to the server and request an SSE channel |
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>ping-timeout</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td>The timeout to apply when waiting for a ping response</td>
+</tr>
+<tr>
+<td>
+<code>client-version</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td>Sets the version string that the client will use to identify itself to the MCP server in the initialization message</td>
+</tr>
+<tr>
+<td>
+<code>protocol-version</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td>Sets the protocol version that the client will advertise in the initialization message</td>
+</tr>
+<tr>
+<td>
+<code>log-responses</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td>Whether to log response traffic</td>
+</tr>
+<tr>
+<td>
+<code>reconnect-interval</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td>The delay before attempting to reconnect after a failed connection</td>
+</tr>
+<tr>
+<td>
+<code>uri</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">URI</code>
+</td>
+<td>The URL of the MCP server</td>
+</tr>
+<tr>
+<td>
+<code>prompts-timeout</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td>The timeout for prompt-related operations (listing prompts as well as rendering the contents of a prompt)</td>
+</tr>
+<tr>
+<td>
+<code>client-name</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td>Sets the name that the client will use to identify itself to the MCP server in the initialization message</td>
+</tr>
+<tr>
+<td>
+<code>resources-timeout</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td>Sets the timeout for resource-related operations (listing resources as well as reading the contents of a resource)</td>
+</tr>
+<tr>
+<td>
+<code>log-requests</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td>Whether to log request traffic</td>
+</tr>
+<tr>
+<td>
+<a id="tls"></a>
+<a href="io.helidon.common.tls.Tls.md">
+<code>tls</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Tls</code>
+</td>
+<td>TLS configuration for the MCP server connection</td>
+</tr>
+<tr>
+<td>
+<code>tool-execution-timeout-error-message</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td>The error message to return when a tool execution times out</td>
+</tr>
+<tr>
+<td>
+<code>key</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td>Sets a unique identifier for the client</td>
+</tr>
+<tr>
+<td>
+<code>tool-execution-timeout</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td>Sets the timeout for tool execution</td>
+</tr>
+<tr>
+<td>
+<code>initialization-timeout</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td>Sets the timeout for initializing the client</td>
+</tr>
+</tbody>
+</table>
+
+
+### Deprecated Options
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>sse-uri</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">URI</code>
+</td>
+<td>The initial URI where to connect to the server and request an SSE channel</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 [helidon-mcp-gith]: https://github.com/helidon-io/helidon-mcp
 [helidon-mcp-docu]: https://github.com/helidon-io/helidon-mcp#documentation
 [integration-with]: ../../se/ai/langchain4j/langchain4j.md
-[tls]: ../../config/io.helidon.common.tls.Tls.md

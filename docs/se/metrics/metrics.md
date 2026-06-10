@@ -141,22 +141,205 @@ If you configure an OTLP publisher, Helidon exports metrics data periodically to
 
 #### Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="a5a031-aggregation-temporality"></span> [`aggregation-temporality`][aggregation-temp] | `VALUE` | `i.m.r.o.AggregationTemporality` | `CUMULATIVE` | Algorithm to use for adjusting values before transmission |
-| <span id="a726ba-base-time-unit"></span> [`base-time-unit`][base-time-unit] | `VALUE` | `TimeUnit` | `java.util.concurrent.TimeUnit.MILLISECONDS` | Base time unit for timers |
-| <span id="ace1fb-batch-size"></span> `batch-size` | `VALUE` | `Integer` | `10000` | Number of measurements to send in a single request to the backend |
-| <span id="a6b5d5-enabled"></span> `enabled` | `VALUE` | `Boolean` | `true` | Whether the configured publisher is enabled |
-| <span id="a821e5-headers"></span> `headers` | `MAP` | `String` |   | Headers to add to each transmission message |
-| <span id="afbfb5-interval"></span> `interval` | `VALUE` | `Duration` | `PT60s` | Interval between successive transmissions of metrics data |
-| <span id="a65cf0-max-bucket-count"></span> `max-bucket-count` | `VALUE` | `Integer` | `160` | Maximum bucket count to apply to statistical histogram |
-| <span id="a11feb-max-buckets-per-meter"></span> `max-buckets-per-meter` | `MAP` | `Integer` |   | Maximum number of buckets to use for specific meters |
-| <span id="a52180-max-scale"></span> `max-scale` | `VALUE` | `Integer` | `20` | Maximum scale value to apply to statistical histogram |
-| <span id="a00636-name"></span> `name` | `VALUE` | `String` |   | `N/A` |
-| <span id="a64095-prefix"></span> `prefix` | `VALUE` | `String` | `otlp` | The prefix for settings |
-| <span id="afb329-properties"></span> `properties` | `MAP` | `String` |   | Property values to be returned by the OTLP meter registry configuration |
-| <span id="a5f081-resource-attributes"></span> `resource-attributes` | `MAP` | `String` |   | Attribute name/value pairs to be associated with all metrics transmissions |
-| <span id="a1f8b3-url"></span> `url` | `VALUE` | `String` | `http://localhost:4318/v1/metrics` | URL to which to send metrics telemetry |
+<!--@include ../../config/io.helidon.metrics.providers.micrometer.OtlpPublisher.md#configuration-options offset=2 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>headers</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Headers to add to each transmission message</td>
+</tr>
+<tr>
+<td>
+<a id="base-time-unit"></a>
+<a href="java.util.concurrent.TimeUnit.md">
+<code>base-time-unit</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">TimeUnit</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value" title="java.util.concurrent.TimeUnit.MILLISECONDS">java.util.concurrent.TimeUnit.MILLISECONDS</code>
+</td>
+<td>Base time unit for timers</td>
+</tr>
+<tr>
+<td>
+<code>prefix</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">otlp</code>
+</td>
+<td>The prefix for settings</td>
+</tr>
+<tr>
+<td>
+<a id="aggregation-temporality"></a>
+<a href="io.micrometer.registry.otlp.AggregationTemporality.md">
+<code>aggregation-temporality</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="AggregationTemporality">AggregationTemporality</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">CUMULATIVE</code>
+</td>
+<td>Algorithm to use for adjusting values before transmission</td>
+</tr>
+<tr>
+<td>
+<code>enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether the configured publisher is enabled</td>
+</tr>
+<tr>
+<td>
+<code>url</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value" title="http://localhost:4318/v1/metrics">http://localhost:4318/v1/metrics</code>
+</td>
+<td>URL to which to send metrics telemetry</td>
+</tr>
+<tr>
+<td>
+<code>max-scale</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">20</code>
+</td>
+<td>Maximum scale value to apply to statistical histogram</td>
+</tr>
+<tr>
+<td>
+<code>batch-size</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">10000</code>
+</td>
+<td>Number of measurements to send in a single request to the backend</td>
+</tr>
+<tr>
+<td>
+<code>max-bucket-count</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">160</code>
+</td>
+<td>Maximum bucket count to apply to statistical histogram</td>
+</tr>
+<tr>
+<td>
+<code>name</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td><code>N/A</code></td>
+</tr>
+<tr>
+<td>
+<code>interval</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">PT60s</code>
+</td>
+<td>Interval between successive transmissions of metrics data</td>
+</tr>
+<tr>
+<td>
+<code>max-buckets-per-meter</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="Map&lt;String, Integer&gt;">Map&lt;String, Integer&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Maximum number of buckets to use for specific meters</td>
+</tr>
+<tr>
+<td>
+<code>properties</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Property values to be returned by the OTLP meter registry configuration</td>
+</tr>
+<tr>
+<td>
+<code>resource-attributes</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Attribute name/value pairs to be associated with all metrics transmissions</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 The configuration directly mirrors the Micrometer `OtlpMeterRegistry` settings so you can control all behavior which Micrometer exposes for the meter registry.
 
@@ -181,13 +364,92 @@ If you configure a Prometheus publisher or rely on the inferred one, Helidon can
 
 #### Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="a6614e-descriptions"></span> `descriptions` | `VALUE` | `Boolean` |   | Whether to include meter descriptions in Prometheus output |
-| <span id="a248f8-enabled"></span> `enabled` | `VALUE` | `Boolean` | `true` | Whether the configured publisher is enabled |
-| <span id="ae8bbc-interval"></span> `interval` | `VALUE` | `Duration` |   | Step size used in computing "windowed" statistics |
-| <span id="abd446-name"></span> `name` | `VALUE` | `String` |   | `N/A` |
-| <span id="a3221e-prefix"></span> `prefix` | `VALUE` | `String` |   | Property name prefix |
+<!--@include ../../config/io.helidon.metrics.providers.micrometer.PrometheusPublisher.md#configuration-options offset=2 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>prefix</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Property name prefix</td>
+</tr>
+<tr>
+<td>
+<code>name</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td><code>N/A</code></td>
+</tr>
+<tr>
+<td>
+<code>interval</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Step size used in computing "windowed" statistics</td>
+</tr>
+<tr>
+<td>
+<code>descriptions</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Whether to include meter descriptions in Prometheus output</td>
+</tr>
+<tr>
+<td>
+<code>enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether the configured publisher is enabled</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 ##### Understanding the Inferred Prometheus Publisher
 
@@ -618,31 +880,279 @@ Certain default configuration values depend on the fact that you are using Helid
 
 ### Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="ab3e25-app-name"></span> `app-name` | `VALUE` | `String` |   | Value for the application tag to be added to each meter ID |
-| <span id="a0590e-app-tag-name"></span> `app-tag-name` | `VALUE` | `String` |   | Name for the application tag to be added to each meter ID |
-| <span id="a24eaf-built-in-meter-name-format"></span> [`built-in-meter-name-format`][built-in-meter-n] | `VALUE` | `i.h.m.a.BuiltInMeterNameFormat` | `CAMEL` | Output format for built-in meter names |
-| <span id="aac68d-enabled"></span> `enabled` | `VALUE` | `Boolean` | `true` | Whether metrics functionality is enabled |
-| <span id="a90f80-key-performance-indicators"></span> [`key-performance-indicators`][key-performance] | `VALUE` | `i.h.m.a.KeyPerformanceIndicatorMetricsConfig` |   | Key performance indicator metrics settings |
-| <span id="acbf94-permit-all"></span> `permit-all` | `VALUE` | `Boolean` | `true` | Whether to allow anybody to access the endpoint |
-| <span id="ae7437-publishers"></span> [`publishers`][publishers] | `LIST` | `i.h.m.a.MetricsPublisher` |   | Metrics publishers which make the metrics data available to external systems |
-| <span id="af1711-publishers-discover-services"></span> `publishers-discover-services` | `VALUE` | `Boolean` | `false` | Whether to enable automatic service discovery for `publishers` |
-| <span id="a1e75d-rest-request-enabled"></span> `rest-request.enabled` | `VALUE` | `Boolean` | `false` | Whether automatic REST request metrics should be measured |
-| <span id="a3d689-roles"></span> `roles` | `LIST` | `String` | `observe` | Hints for role names the user is expected to be in |
-| <span id="ae0eb0-scoping"></span> [`scoping`][scoping] | `VALUE` | `i.h.m.a.ScopingConfig` |   | Settings related to scoping management |
-| <span id="a995f3-tags"></span> `tags` | `LIST` | `i.h.m.a.MetricsConfigSupport` |   | Global tags |
-| <span id="a977e0-timers-json-units-default"></span> [`timers.json-units-default`][base-time-unit] | `VALUE` | `TimeUnit` |   | Default units for timer output in JSON if not specified on a given timer |
-| <span id="a9178f-virtual-threads-enabled"></span> `virtual-threads.enabled` | `VALUE` | `Boolean` | `false` | Whether Helidon should expose meters related to virtual threads |
-| <span id="a628d9-virtual-threads-pinned-threshold"></span> `virtual-threads.pinned.threshold` | `VALUE` | `Duration` | `PT0.020S` | Threshold for sampling pinned virtual threads to include in the pinned threads meter |
-| <span id="adb8b4-warn-on-multiple-registries"></span> `warn-on-multiple-registries` | `VALUE` | `Boolean` | `true` | Whether to log warnings when multiple registries are created |
+<!--@include ../../config/io.helidon.metrics.api.MetricsConfig.md#configuration-options offset=1 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
 
-#### Deprecated Options
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="a12103-gc-time-type"></span> [`gc-time-type`][gc-time-type] | `VALUE` | `i.h.m.a.GcTimeType` | `COUNTER` | Whether the `gc.time` meter should be registered as a gauge (vs |
-| <span id="aa1220-rest-request-enabled"></span> `rest-request-enabled` | `VALUE` | `Boolean` |   | Whether automatic REST request metrics should be measured (as indicated by the deprecated config key `rest-request-enabled`, the config key using a hyphen instead of a dot separator) |
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>publishers-discover-services</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>Whether to enable automatic service discovery for <code>publishers</code></td>
+</tr>
+<tr>
+<td>
+<code>rest-request.enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>Whether automatic REST request metrics should be measured</td>
+</tr>
+<tr>
+<td>
+<code>warn-on-multiple-registries</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to log warnings when multiple registries are created</td>
+</tr>
+<tr>
+<td>
+<code>roles</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">observe</code>
+</td>
+<td>Hints for role names the user is expected to be in</td>
+</tr>
+<tr>
+<td>
+<code>virtual-threads.pinned.threshold</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">PT0.020S</code>
+</td>
+<td>Threshold for sampling pinned virtual threads to include in the pinned threads meter</td>
+</tr>
+<tr>
+<td>
+<a id="built-in-meter-name-format"></a>
+<a href="io.helidon.metrics.api.BuiltInMeterNameFormat.md">
+<code>built-in-meter-name-format</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="BuiltInMeterNameFormat">BuiltInMeterNameFormat</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">CAMEL</code>
+</td>
+<td>Output format for built-in meter names</td>
+</tr>
+<tr>
+<td>
+<code>enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether metrics functionality is enabled</td>
+</tr>
+<tr>
+<td>
+<code>app-name</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Value for the application tag to be added to each meter ID</td>
+</tr>
+<tr>
+<td>
+<code>tags</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;MetricsConfigSupport&gt;">List&lt;MetricsConfigSupport&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Global tags</td>
+</tr>
+<tr>
+<td>
+<code>app-tag-name</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Name for the application tag to be added to each meter ID</td>
+</tr>
+<tr>
+<td>
+<code>virtual-threads.enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>Whether Helidon should expose meters related to virtual threads</td>
+</tr>
+<tr>
+<td>
+<a id="publishers"></a>
+<a href="io.helidon.metrics.api.MetricsPublisher.md">
+<code>publishers</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;MetricsPublisher&gt;">List&lt;MetricsPublisher&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Metrics publishers which make the metrics data available to external systems</td>
+</tr>
+<tr>
+<td>
+<a id="key-performance-indicators"></a>
+<a href="io.helidon.metrics.api.KeyPerformanceIndicatorMetricsConfig.md">
+<code>key-performance-indicators</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="KeyPerformanceIndicatorMetricsConfig">KeyPerformanceIndicatorMetricsConfig</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Key performance indicator metrics settings</td>
+</tr>
+<tr>
+<td>
+<code>permit-all</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to allow anybody to access the endpoint</td>
+</tr>
+<tr>
+<td>
+<a id="scoping"></a>
+<a href="io.helidon.metrics.api.ScopingConfig.md">
+<code>scoping</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="ScopingConfig">ScopingConfig</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Settings related to scoping management</td>
+</tr>
+<tr>
+<td>
+<a id="timers-json-units-default"></a>
+<a href="java.util.concurrent.TimeUnit.md">
+<code>timers.json-units-default</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">TimeUnit</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Default units for timer output in JSON if not specified on a given timer</td>
+</tr>
+</tbody>
+</table>
+
+
+### Deprecated Options
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>rest-request-enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Whether automatic REST request metrics should be measured (as indicated by the deprecated config key <code>rest-request-enabled</code>, the config key using a hyphen instead of a dot separator)</td>
+</tr>
+<tr>
+<td>
+<a id="gc-time-type"></a>
+<a href="io.helidon.metrics.api.GcTimeType.md">
+<code>gc-time-type</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">GcTimeType</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">COUNTER</code>
+</td>
+<td>Whether the <code>gc.time</code> meter should be registered as a gauge (vs</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 <a id="flavor-specific-defaults"></a>
 | Key                | Default Value |
@@ -683,12 +1193,84 @@ You can choose which endpoints to include in Helidon’s automatic measurements 
 
 #### Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="a9ac57-enabled"></span> `enabled` | `VALUE` | `Boolean` | `true` | Whether automatic metrics collection as a whole is enabled |
-| <span id="a61ecb-opt-in"></span> `opt-in` | `LIST` | `String` |   | Elective attribute for which to opt in |
-| <span id="a6fb0d-paths"></span> [`paths`][paths] | `LIST` | `i.h.w.o.m.AutoHttpMetricsPathConfig` |   | Automatic metrics collection settings |
-| <span id="af4ffb-sockets"></span> `sockets` | `LIST` | `String` |   | Socket names for sockets to be instrumented with automatic metrics |
+<!--@include ../../config/io.helidon.webserver.observe.metrics.AutoHttpMetricsConfig.md#configuration-options offset=2 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>opt-in</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Elective attribute for which to opt in</td>
+</tr>
+<tr>
+<td>
+<a id="paths"></a>
+<a href="io.helidon.webserver.observe.metrics.AutoHttpMetricsPathConfig.md">
+<code>paths</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;AutoHttpMetricsPathConfig&gt;">List&lt;AutoHttpMetricsPathConfig&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Automatic metrics collection settings</td>
+</tr>
+<tr>
+<td>
+<code>sockets</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Socket names for sockets to be instrumented with automatic metrics</td>
+</tr>
+<tr>
+<td>
+<code>enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether automatic metrics collection as a whole is enabled</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 The `paths` section contains zero or more entries, each entry having the following settings:
 
@@ -1025,8 +1607,6 @@ This example uses the default Prometheus `CollectorRegistry`. By default, the `P
 [gauges]: https://docs.micrometer.io/micrometer/reference/concepts/gauges.html
 [preview-feature]: https://helidon.io/docs/v4/apidocs/io.helidon.common.features.api/io/helidon/common/features/api/Preview.html
 [this-later-secti]: #understanding-the-inferred-prometheus-publisher
-[aggregation-temp]: ../../config/io.micrometer.registry.otlp.AggregationTemporality.md
-[base-time-unit]: ../../config/java.util.concurrent.TimeUnit.md
 [datadogmeterregi]: https://github.com/micrometer-metrics/micrometer/tree/main/implementations/micrometer-registry-datadog
 [settable-propert]: https://github.com/micrometer-metrics/micrometer/blob/main/implementations/micrometer-registry-datadog/src/main/java/io/micrometer/datadog/DatadogConfig.java
 [otlp-publisher-b]: {https://github.com/helidon-io/helidon/tree/main/metrics/providers/micrometer/src/main/java/io/helidon/metrics/providers/micrometer/OtlpPublisherConfigBlueprint.java
@@ -1039,14 +1619,8 @@ This example uses the default Prometheus `CollectorRegistry`. By default, the `P
 [meter-builder-ba]: <https://helidon.io/docs/v4/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/Meter.Builder.html#baseUnit(java.lang.String)>
 [timer-builder-ba]: <https://helidon.io/docs/v4/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/Timer.Builder.html#baseUnit(java.util.concurrent.TimeUnit)>
 [wrapper]: https://helidon.io/docs/v4/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/Wrapper.html
-[built-in-meter-n]: ../../config/io.helidon.metrics.api.BuiltInMeterNameFormat.md
-[key-performance]: ../../config/io.helidon.metrics.api.KeyPerformanceIndicatorMetricsConfig.md
-[publishers]: ../../config/io.helidon.metrics.api.MetricsPublisher.md
-[scoping]: ../../config/io.helidon.metrics.api.ScopingConfig.md
-[gc-time-type]: ../../config/io.helidon.metrics.api.GcTimeType.md
 [autohttpmetricsc]: ../../config/io.helidon.webserver.observe.metrics.AutoHttpMetricsConfig.md
 [helidon-opentele]: ../../se/telemetry/open-telemetry.md#enabling-automatic-metrics-for-incoming-http-requests
-[paths]: ../../config/io.helidon.webserver.observe.metrics.AutoHttpMetricsPathConfig.md
 [enabling-disabli]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/metrics/filtering/se
 [controlling-key]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/metrics/kpi
 [choose-whether-t]: #configuring-virtual-threads-meters

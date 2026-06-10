@@ -53,357 +53,656 @@ WebServer.builder()
 
 #### Configuration options
 
-<table class="tableblock frame-all grid-all stretch">
-<colgroup>
-<col style="width: 20%" />
-<col style="width: 20%" />
-<col style="width: 20%" />
-<col style="width: 20%" />
-<col style="width: 20%" />
-</colgroup>
+<!--@include ../../config/io.helidon.security.providers.oidc.OidcProvider.md#configuration-options offset=2 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
 <thead>
 <tr>
-<th class="tableblock halign-left valign-top">Key</th>
-<th class="tableblock halign-left valign-top">Kind</th>
-<th class="tableblock halign-left valign-top">Type</th>
-<th class="tableblock halign-left valign-top">Default Value</th>
-<th class="tableblock halign-left valign-top">Description</th>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="a3a883-access-token-ip-check"></span> <code>access-token-ip-check</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>Boolean</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>true</code></p></td>
-<td class="tableblock halign-left valign-top"><p>Whether to check if current IP address matches the one access token was issued for</p></td>
+<td>
+<code>force-https-redirects</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>Force HTTPS for redirects to identity provider</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="a7e9b5-client-credentials-config"></span> <a href="../../config/io.helidon.security.providers.oidc.common.ClientCredentialsConfig.md"><code>client-credentials-config</code></a></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>i.h.s.p.o.c.ClientCredentialsConfig</code></p></td>
-<td class="tableblock halign-left valign-top"><p> </p></td>
-<td class="tableblock halign-left valign-top"><p>Set the configuration related to the client credentials flow</p></td>
+<td>
+<a id="cors"></a>
+<a href="io.helidon.cors.CrossOriginConfig.md">
+<code>cors</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="CrossOriginConfig">CrossOriginConfig</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Assign cross-origin resource sharing settings</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="a9b107-cookie-domain"></span> <code>cookie-domain</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>String</code></p></td>
-<td class="tableblock halign-left valign-top"><p> </p></td>
-<td class="tableblock halign-left valign-top"><p>Domain the cookie is valid for</p></td>
+<td>
+<code>cookie-encryption-refresh-enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to encrypt refresh token cookie created by this microservice</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="a593cb-cookie-encryption-enabled"></span> <code>cookie-encryption-enabled</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>Boolean</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>false</code></p></td>
-<td class="tableblock halign-left valign-top"><p>Whether to encrypt token cookie created by this microservice</p></td>
+<td>
+<code>query-id-token-param-name</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">id_token</code>
+</td>
+<td>Name of a query parameter that contains the JWT id token when parameter is used</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="aaabc9-cookie-encryption-id-enabled"></span> <code>cookie-encryption-id-enabled</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>Boolean</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>true</code></p></td>
-<td class="tableblock halign-left valign-top"><p>Whether to encrypt id token cookie created by this microservice</p></td>
+<td>
+<code>header-use</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to expect JWT in a header field</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="ab14ce-cookie-encryption-name"></span> <code>cookie-encryption-name</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>String</code></p></td>
-<td class="tableblock halign-left valign-top"><p> </p></td>
-<td class="tableblock halign-left valign-top">Name of the encryption configuration available through
-Security#encrypt(String, byte[)&lt;/code&gt; and &lt;code&gt;Security#decrypt(String, String)&lt;/code&gt;]</td>
+<td>
+<a id="header-token"></a>
+<a href="io.helidon.security.util.TokenHandler.md">
+<code>header-token</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="TokenHandler">TokenHandler</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>A <code>TokenHandler</code> to process header containing a JWT</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="ac0d77-cookie-encryption-password"></span> <code>cookie-encryption-password</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>LIST</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>String</code></p></td>
-<td class="tableblock halign-left valign-top"><p> </p></td>
-<td class="tableblock halign-left valign-top"><p>Master password for encryption/decryption of cookies</p></td>
+<td>
+<code>cookie-name-state</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value" title="JSESSIONID_3">JSESSIONID_3</code>
+</td>
+<td>The name of the cookie to use for the state storage</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="ad8fc7-cookie-encryption-refresh-enabled"></span> <code>cookie-encryption-refresh-enabled</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>Boolean</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>true</code></p></td>
-<td class="tableblock halign-left valign-top"><p>Whether to encrypt refresh token cookie created by this microservice</p></td>
+<td>
+<a id="outbound"></a>
+<a href="io.helidon.security.providers.common.OutboundTarget.md">
+<code>outbound</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;OutboundTarget&gt;">List&lt;OutboundTarget&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Add a new target configuration</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="a5da71-cookie-encryption-state-enabled"></span> <code>cookie-encryption-state-enabled</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>Boolean</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>true</code></p></td>
-<td class="tableblock halign-left valign-top"><p>Whether to encrypt state cookie created by this microservice</p></td>
+<td>
+<code>propagate</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>Whether to propagate identity</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="a16963-cookie-encryption-tenant-enabled"></span> <code>cookie-encryption-tenant-enabled</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>Boolean</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>true</code></p></td>
-<td class="tableblock halign-left valign-top"><p>Whether to encrypt tenant name cookie created by this microservice</p></td>
+<td>
+<a id="client-credentials-config"></a>
+<a href="io.helidon.security.providers.oidc.common.ClientCredentialsConfig.md">
+<code>client-credentials-config</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="ClientCredentialsConfig">ClientCredentialsConfig</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Set the configuration related to the client credentials flow</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="ad2ea9-cookie-http-only"></span> <code>cookie-http-only</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>Boolean</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>true</code></p></td>
-<td class="tableblock halign-left valign-top"><p>When using cookie, if set to true, the HttpOnly attribute will be configured</p></td>
+<td>
+<code>cookie-name-refresh-token</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value" title="JSESSIONID_3">JSESSIONID_3</code>
+</td>
+<td>The name of the cookie to use for the refresh token</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="ae7d0f-cookie-max-age-seconds"></span> <code>cookie-max-age-seconds</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>Long</code></p></td>
-<td class="tableblock halign-left valign-top"><p> </p></td>
-<td class="tableblock halign-left valign-top"><p>When using cookie, used to set MaxAge attribute of the cookie, defining how long the cookie is valid</p></td>
+<td>
+<code>query-param-tenant-name</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">h_tenant</code>
+</td>
+<td>Name of a query parameter that contains the tenant name when the parameter is used</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="a423f0-cookie-name"></span> <code>cookie-name</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>String</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>JSESSIONID</code></p></td>
-<td class="tableblock halign-left valign-top"><p>Name of the cookie to use</p></td>
+<td>
+<code>query-param-name</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value" title="accessToken">accessToken</code>
+</td>
+<td>Name of a query parameter that contains the JWT access token when parameter is used</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="a47aa0-cookie-name-id-token"></span> <code>cookie-name-id-token</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>String</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>JSESSIONID_2</code></p></td>
-<td class="tableblock halign-left valign-top"><p>Name of the cookie to use for id token</p></td>
+<td>
+<a id="pkce-challenge-method"></a>
+<a href="io.helidon.security.providers.oidc.common.PkceChallengeMethod.md">
+<code>pkce-challenge-method</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="PkceChallengeMethod">PkceChallengeMethod</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">S256</code>
+</td>
+<td>Proof Key Code Exchange (PKCE) challenge creation method</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="afcd78-cookie-name-refresh-token"></span> <code>cookie-name-refresh-token</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>String</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>JSESSIONID_3</code></p></td>
-<td class="tableblock halign-left valign-top"><p>The name of the cookie to use for the refresh token</p></td>
+<td>
+<code>optional</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>Whether authentication is required</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="a3e5f9-cookie-name-state"></span> <code>cookie-name-state</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>String</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>JSESSIONID_3</code></p></td>
-<td class="tableblock halign-left valign-top"><p>The name of the cookie to use for the state storage</p></td>
+<td>
+<code>cookie-domain</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Domain the cookie is valid for</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="afcf69-cookie-name-tenant"></span> <code>cookie-name-tenant</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>String</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>HELIDON_TENANT</code></p></td>
-<td class="tableblock halign-left valign-top"><p>The name of the cookie to use for the tenant name</p></td>
+<td>
+<code>frontend-uri</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Full URI of this application that is visible from user browser</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="ae5841-cookie-path"></span> <code>cookie-path</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>String</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>/</code></p></td>
-<td class="tableblock halign-left valign-top"><p>Path the cookie is valid for</p></td>
+<td>
+<a id="cookie-same-site"></a>
+<a href="io.helidon.http.SetCookie.SameSite.md">
+<code>cookie-same-site</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">SameSite</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">LAX</code>
+</td>
+<td>When using cookie, used to set the SameSite cookie value</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="a0a656-cookie-same-site"></span> <a href="../../config/io.helidon.http.SetCookie.SameSite.md"><code>cookie-same-site</code></a></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>i.h.h.S.SameSite</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>LAX</code></p></td>
-<td class="tableblock halign-left valign-top"><p>When using cookie, used to set the SameSite cookie value</p></td>
+<td>
+<code>cookie-encryption-id-enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to encrypt id token cookie created by this microservice</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="a0f553-cookie-secure"></span> <code>cookie-secure</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>Boolean</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>false</code></p></td>
-<td class="tableblock halign-left valign-top"><p>When using cookie, if set to true, the Secure attribute will be configured</p></td>
+<td>
+<a id="webclient"></a>
+<a href="io.helidon.webclient.api.WebClient.md">
+<code>webclient</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">WebClient</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>WebClient configuration used for outbound requests to the identity server. This configuration sets the values to the OIDC WebClient default configuration</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="a70aa3-cookie-use"></span> <code>cookie-use</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>Boolean</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>true</code></p></td>
-<td class="tableblock halign-left valign-top"><p>Whether to use cookie to store JWT between requests</p></td>
+<td>
+<code>cookie-http-only</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>When using cookie, if set to true, the HttpOnly attribute will be configured</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="ad1309-cors"></span> <a href="../../config/io.helidon.cors.CrossOriginConfig.md"><code>cors</code></a></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>i.h.c.CrossOriginConfig</code></p></td>
-<td class="tableblock halign-left valign-top"><p> </p></td>
-<td class="tableblock halign-left valign-top"><p>Assign cross-origin resource sharing settings</p></td>
+<td>
+<code>cookie-encryption-enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>Whether to encrypt token cookie created by this microservice</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="afd33a-force-https-redirects"></span> <code>force-https-redirects</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>Boolean</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>false</code></p></td>
-<td class="tableblock halign-left valign-top"><p>Force HTTPS for redirects to identity provider</p></td>
+<td>
+<code>pkce-enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>Whether this provider should support PKCE</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="a069b5-frontend-uri"></span> <code>frontend-uri</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>String</code></p></td>
-<td class="tableblock halign-left valign-top"><p> </p></td>
-<td class="tableblock halign-left valign-top"><p>Full URI of this application that is visible from user browser</p></td>
+<td>
+<code>proxy-port</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">80</code>
+</td>
+<td>Proxy port</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="abf3fb-header-token"></span> <a href="../../config/io.helidon.security.util.TokenHandler.md"><code>header-token</code></a></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>i.h.s.u.TokenHandler</code></p></td>
-<td class="tableblock halign-left valign-top"><p> </p></td>
-<td class="tableblock halign-left valign-top"><p>A <code>TokenHandler</code> to process header containing a JWT</p></td>
+<td>
+<code>cookie-encryption-tenant-enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to encrypt tenant name cookie created by this microservice</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="a866f7-header-use"></span> <code>header-use</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>Boolean</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>true</code></p></td>
-<td class="tableblock halign-left valign-top"><p>Whether to expect JWT in a header field</p></td>
+<td>
+<code>use-jwt-groups</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Claim <code>groups</code> from JWT will be used to automatically add  groups to current subject (may be used with <code>jakarta.annotation.security.RolesAllowed</code> annotation)</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="a5a4ae-id-token-signature-validation"></span> <code>id-token-signature-validation</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>Boolean</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>true</code></p></td>
-<td class="tableblock halign-left valign-top"><p>Whether id token signature check should be enabled</p></td>
+<td>
+<code>token-signature-validation</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether access token signature check should be enabled</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="ab5728-max-redirects"></span> <code>max-redirects</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>Integer</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>5</code></p></td>
-<td class="tableblock halign-left valign-top"><p>Configure maximal number of redirects when redirecting to an OIDC provider within a single authentication attempt</p></td>
+<td>
+<code>cookie-name</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">JSESSIONID</code>
+</td>
+<td>Name of the cookie to use</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="ab32e8-optional"></span> <code>optional</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>Boolean</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>false</code></p></td>
-<td class="tableblock halign-left valign-top"><p>Whether authentication is required</p></td>
+<td>
+<code>cookie-use</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to use cookie to store JWT between requests</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="acf040-outbound"></span> <a href="../../config/io.helidon.security.providers.common.OutboundTarget.md"><code>outbound</code></a></p></td>
-<td class="tableblock halign-left valign-top"><p><code>LIST</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>i.h.s.p.c.OutboundTarget</code></p></td>
-<td class="tableblock halign-left valign-top"><p> </p></td>
-<td class="tableblock halign-left valign-top"><p>Add a new target configuration</p></td>
+<td>
+<a id="outbound-type"></a>
+<a href="io.helidon.security.providers.oidc.common.OidcOutboundType.md">
+<code>outbound-type</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="OidcOutboundType">OidcOutboundType</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">USER_JWT</code>
+</td>
+<td>Type of the OIDC outbound</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="aebe14-outbound-type"></span> <a href="../../config/io.helidon.security.providers.oidc.common.OidcOutboundType.md"><code>outbound-type</code></a></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>i.h.s.p.o.c.OidcOutboundType</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>USER_JWT</code></p></td>
-<td class="tableblock halign-left valign-top"><p>Type of the OIDC outbound</p></td>
+<td>
+<code>redirect</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>By default, the client should redirect to the identity server for the user to log in</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="a6ccfb-pkce-challenge-method"></span> <a href="../../config/io.helidon.security.providers.oidc.common.PkceChallengeMethod.md"><code>pkce-challenge-method</code></a></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>i.h.s.p.o.c.PkceChallengeMethod</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>S256</code></p></td>
-<td class="tableblock halign-left valign-top"><p>Proof Key Code Exchange (PKCE) challenge creation method</p></td>
+<td>
+<code>redirect-uri</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value" title="/oidc/redirect">/oidc/redirect</code>
+</td>
+<td>URI to register web server component on, used by the OIDC server to redirect authorization requests to after a user logs in or approves scopes</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="a4050c-pkce-enabled"></span> <code>pkce-enabled</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>Boolean</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>false</code></p></td>
-<td class="tableblock halign-left valign-top"><p>Whether this provider should support PKCE</p></td>
+<td>
+<code>cookie-name-id-token</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value" title="JSESSIONID_2">JSESSIONID_2</code>
+</td>
+<td>Name of the cookie to use for id token</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="ad84e8-propagate"></span> <code>propagate</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>Boolean</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>false</code></p></td>
-<td class="tableblock halign-left valign-top"><p>Whether to propagate identity</p></td>
+<td>
+<a id="tenants"></a>
+<a href="io.helidon.security.providers.oidc.common.TenantConfig.md">
+<code>tenants</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="TenantConfig">TenantConfig</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Configurations of the tenants</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="a03394-proxy-port"></span> <code>proxy-port</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>Integer</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>80</code></p></td>
-<td class="tableblock halign-left valign-top"><p>Proxy port</p></td>
+<td>
+<code>cookie-max-age-seconds</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Long</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>When using cookie, used to set MaxAge attribute of the cookie, defining how long the cookie is valid</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="aa5960-query-id-token-param-name"></span> <code>query-id-token-param-name</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>String</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>id_token</code></p></td>
-<td class="tableblock halign-left valign-top"><p>Name of a query parameter that contains the JWT id token when parameter is used</p></td>
+<td>
+<code>cookie-encryption-password</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Master password for encryption/decryption of cookies</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="a4e9c0-query-param-name"></span> <code>query-param-name</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>String</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>accessToken</code></p></td>
-<td class="tableblock halign-left valign-top"><p>Name of a query parameter that contains the JWT access token when parameter is used</p></td>
+<td>
+<code>cookie-encryption-state-enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to encrypt state cookie created by this microservice</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="a0b01e-query-param-tenant-name"></span> <code>query-param-tenant-name</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>String</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>h_tenant</code></p></td>
-<td class="tableblock halign-left valign-top"><p>Name of a query parameter that contains the tenant name when the parameter is used</p></td>
+<td>
+<code>cookie-path</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">/</code>
+</td>
+<td>Path the cookie is valid for</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="a3d4be-query-param-use"></span> <code>query-param-use</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>Boolean</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>false</code></p></td>
-<td class="tableblock halign-left valign-top"><p>Whether to use a query parameter to send JWT token from application to this server</p></td>
+<td>
+<code>query-param-use</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>Whether to use a query parameter to send JWT token from application to this server</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="aa4ba9-redirect"></span> <code>redirect</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>Boolean</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>false</code></p></td>
-<td class="tableblock halign-left valign-top"><p>By default, the client should redirect to the identity server for the user to log in</p></td>
+<td>
+<code>cookie-name-tenant</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value" title="HELIDON_TENANT">HELIDON_TENANT</code>
+</td>
+<td>The name of the cookie to use for the tenant name</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="adf51c-redirect-attempt-param"></span> <code>redirect-attempt-param</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>String</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>h_ra</code></p></td>
-<td class="tableblock halign-left valign-top"><p>Configure the parameter used to store the number of attempts in redirect</p></td>
+<td>
+<code>cookie-secure</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>When using cookie, if set to true, the Secure attribute will be configured</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="a21f20-redirect-uri"></span> <code>redirect-uri</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>String</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>/oidc/redirect</code></p></td>
-<td class="tableblock halign-left valign-top"><p>URI to register web server component on, used by the OIDC server to redirect authorization requests to after a user logs in or approves scopes</p></td>
+<td>
+<code>cookie-encryption-name</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Name of the encryption configuration available through <code>Security#encrypt(String, byte[])</code> and <code>Security#decrypt(String, String)</code></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="aef163-tenants"></span> <a href="../../config/io.helidon.security.providers.oidc.common.TenantConfig.md"><code>tenants</code></a></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>i.h.s.p.o.c.TenantConfig</code></p></td>
-<td class="tableblock halign-left valign-top"><p> </p></td>
-<td class="tableblock halign-left valign-top"><p>Configurations of the tenants</p></td>
+<td>
+<code>id-token-signature-validation</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether id token signature check should be enabled</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="a5f4ac-token-signature-validation"></span> <code>token-signature-validation</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>Boolean</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>true</code></p></td>
-<td class="tableblock halign-left valign-top"><p>Whether access token signature check should be enabled</p></td>
+<td>
+<code>max-redirects</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">5</code>
+</td>
+<td>Configure maximal number of redirects when redirecting to an OIDC provider within a single authentication attempt</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="a50324-use-jwt-groups"></span> <code>use-jwt-groups</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>Boolean</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>true</code></p></td>
-<td class="tableblock halign-left valign-top"><p>Claim <code>groups</code> from JWT will be used to automatically add groups to current subject (may be used with <code>jakarta.annotation.security.RolesAllowed</code> annotation)</p></td>
+<td>
+<code>access-token-ip-check</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to check if current IP address matches the one access token was issued for</td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="a85467-webclient"></span> <a href="../../config/io.helidon.webclient.api.WebClient.md"><code>webclient</code></a></p></td>
-<td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
-<td class="tableblock halign-left valign-top"><p><code>i.h.w.a.WebClient</code></p></td>
-<td class="tableblock halign-left valign-top"><p> </p></td>
-<td class="tableblock halign-left valign-top"><p>WebClient configuration used for outbound requests to the identity server. This configuration sets the values to the OIDC WebClient default configuration</p></td>
+<td>
+<code>redirect-attempt-param</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">h_ra</code>
+</td>
+<td>Configure the parameter used to store the number of attempts in redirect</td>
 </tr>
 </tbody>
 </table>
 
-##### Deprecated Options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="af9976-proxy-host"></span> `proxy-host` | `VALUE` | `String` |   | Proxy host to use |
-| <span id="aa965f-proxy-protocol"></span> `proxy-protocol` | `VALUE` | `String` | `http` | Proxy protocol to use when proxy is used |
-| <span id="abf0b4-relative-uris"></span> `relative-uris` | `VALUE` | `Boolean` | `false` | Can be set to `true` to force the use of relative URIs in all requests, regardless of the presence or absence of proxies or no-proxy lists |
+### Deprecated Options
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>relative-uris</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>Can be set to <code>true</code> to force the use of relative URIs in all requests, regardless of the presence or absence of proxies or no-proxy lists</td>
+</tr>
+<tr>
+<td>
+<code>proxy-host</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Proxy host to use</td>
+</tr>
+<tr>
+<td>
+<code>proxy-protocol</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">http</code>
+</td>
+<td>Proxy protocol to use when proxy is used</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 ### Example code
 
@@ -524,29 +823,284 @@ and the custom tenant configuration discovery can be provided by implementing SP
 
 ##### Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="a2e4f7-audience"></span> `audience` | `VALUE` | `String` |   | Audience of issued tokens |
-| <span id="a37c39-authorization-endpoint-uri"></span> `authorization-endpoint-uri` | `VALUE` | `URI` |   | URI of an authorization endpoint used to redirect users to for logging-in |
-| <span id="ad0521-base-scopes"></span> `base-scopes` | `VALUE` | `String` | `openid` | Configure base scopes |
-| <span id="a7bcb9-check-audience"></span> `check-audience` | `VALUE` | `Boolean` | `true` | Configure audience claim check |
-| <span id="a67ded-client-id"></span> `client-id` | `VALUE` | `String` |   | Client ID as generated by OIDC server |
-| <span id="abd29e-client-secret"></span> `client-secret` | `VALUE` | `String` |   | Client secret as generated by OIDC server |
-| <span id="a3942e-client-timeout-millis"></span> `client-timeout-millis` | `VALUE` | `Duration` | `30000` | Timeout of calls using web client |
-| <span id="a989a6-decryption-keys-resource"></span> [`decryption-keys.resource`][decryption-keys] | `VALUE` | `i.h.c.c.Resource` |   | A resource pointing to JWK with private keys used for JWE content key decryption |
-| <span id="aea75b-identity-uri"></span> `identity-uri` | `VALUE` | `URI` |   | URI of the identity server, base used to retrieve OIDC metadata |
-| <span id="a0f21f-introspect-endpoint-uri"></span> `introspect-endpoint-uri` | `VALUE` | `URI` |   | Endpoint to use to validate JWT |
-| <span id="aa6493-issuer"></span> `issuer` | `VALUE` | `String` |   | Issuer of issued tokens |
-| <span id="aaf0a0-name"></span> `name` | `VALUE` | `String` |   | Name of the tenant |
-| <span id="a14def-oidc-metadata-well-known"></span> `oidc-metadata-well-known` | `VALUE` | `Boolean` | `true` | If set to true, metadata will be loaded from default (well known) location, unless it is explicitly defined using oidc-metadata-resource |
-| <span id="a23e2c-oidc-metadata-resource"></span> [`oidc-metadata.resource`][decryption-keys] | `VALUE` | `i.h.c.c.Resource` |   | Resource configuration for OIDC Metadata containing endpoints to various identity services, as well as information about the identity server |
-| <span id="ac2900-optional-audience"></span> `optional-audience` | `VALUE` | `Boolean` | `false` | Allow audience claim to be optional |
-| <span id="aa8075-scope-audience"></span> `scope-audience` | `VALUE` | `String` |   | Audience of the scope required by this application |
-| <span id="af12f3-server-type"></span> `server-type` | `VALUE` | `String` | `@default` | Configure one of the supported types of identity servers |
-| <span id="a8cb9d-sign-jwk-resource"></span> [`sign-jwk.resource`][decryption-keys] | `VALUE` | `i.h.c.c.Resource` |   | A resource pointing to JWK with public keys of signing certificates used to validate JWT |
-| <span id="aa5a6b-token-endpoint-auth"></span> [`token-endpoint-auth`][token-endpoint-a] | `VALUE` | `i.h.s.p.o.c.O.ClientAuthentication` | `CLIENT_SECRET_BASIC` | Type of authentication to use when invoking the token endpoint |
-| <span id="a3ab59-token-endpoint-uri"></span> `token-endpoint-uri` | `VALUE` | `URI` |   | URI of a token endpoint used to obtain a JWT based on the authentication code |
-| <span id="aa43d0-validate-jwt-with-jwk"></span> `validate-jwt-with-jwk` | `VALUE` | `Boolean` | `true` | Use JWK (a set of keys to validate signatures of JWT) to validate tokens |
+<!--@include ../../config/io.helidon.security.providers.oidc.common.TenantConfig.md#configuration-options offset=3 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>audience</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Audience of issued tokens</td>
+</tr>
+<tr>
+<td>
+<code>authorization-endpoint-uri</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">URI</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>URI of an authorization endpoint used to redirect users to for logging-in</td>
+</tr>
+<tr>
+<td>
+<code>base-scopes</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">openid</code>
+</td>
+<td>Configure base scopes</td>
+</tr>
+<tr>
+<td>
+<code>check-audience</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Configure audience claim check</td>
+</tr>
+<tr>
+<td>
+<code>client-id</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Client ID as generated by OIDC server</td>
+</tr>
+<tr>
+<td>
+<code>client-secret</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Client secret as generated by OIDC server</td>
+</tr>
+<tr>
+<td>
+<code>client-timeout-millis</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">30000</code>
+</td>
+<td>Timeout of calls using web client</td>
+</tr>
+<tr>
+<td>
+<a id="decryption-keys"></a>
+<a href="io.helidon.security.providers.idcsRoleMapper.oidcConfig.tenants.DecryptionKeysConfig.md">
+<code>decryption-keys</code>
+</a>
+</td>
+<td class="cm-type-cell">
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Configuration for decryption-keys</td>
+</tr>
+<tr>
+<td>
+<code>identity-uri</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">URI</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>URI of the identity server, base used to retrieve OIDC metadata</td>
+</tr>
+<tr>
+<td>
+<code>introspect-endpoint-uri</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">URI</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Endpoint to use to validate JWT</td>
+</tr>
+<tr>
+<td>
+<code>issuer</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Issuer of issued tokens</td>
+</tr>
+<tr>
+<td>
+<code>name</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Name of the tenant</td>
+</tr>
+<tr>
+<td>
+<a id="oidc-metadata"></a>
+<a href="io.helidon.security.providers.idcsRoleMapper.oidcConfig.tenants.OidcMetadataConfig.md">
+<code>oidc-metadata</code>
+</a>
+</td>
+<td class="cm-type-cell">
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Configuration for oidc-metadata</td>
+</tr>
+<tr>
+<td>
+<code>oidc-metadata-well-known</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>If set to true, metadata will be loaded from default (well known) location, unless it is explicitly defined using oidc-metadata-resource</td>
+</tr>
+<tr>
+<td>
+<code>optional-audience</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>Allow audience claim to be optional</td>
+</tr>
+<tr>
+<td>
+<code>scope-audience</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Audience of the scope required by this application</td>
+</tr>
+<tr>
+<td>
+<code>server-type</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">@default</code>
+</td>
+<td>Configure one of the supported types of identity servers</td>
+</tr>
+<tr>
+<td>
+<a id="sign-jwk"></a>
+<a href="io.helidon.security.providers.idcsRoleMapper.oidcConfig.tenants.SignJwkConfig.md">
+<code>sign-jwk</code>
+</a>
+</td>
+<td class="cm-type-cell">
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Configuration for sign-jwk</td>
+</tr>
+<tr>
+<td>
+<a id="token-endpoint-auth"></a>
+<a href="io.helidon.security.providers.oidc.common.OidcConfig.ClientAuthentication.md">
+<code>token-endpoint-auth</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="ClientAuthentication">ClientAuthentication</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value" title="CLIENT_SECRET_BASIC">CLIENT_SECRET_BASIC</code>
+</td>
+<td>Type of authentication to use when invoking the token endpoint</td>
+</tr>
+<tr>
+<td>
+<code>token-endpoint-uri</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">URI</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>URI of a token endpoint used to obtain a JWT based on the authentication code</td>
+</tr>
+<tr>
+<td>
+<code>validate-jwt-with-jwk</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Use JWK (a set of keys to validate signatures of JWT) to validate tokens</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 #### How does that work?
 
@@ -579,13 +1133,103 @@ Maven dependency
 
 #### Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="a57c45-optional"></span> `optional` | `VALUE` | `Boolean` | `false` | Whether authentication is required |
-| <span id="aade93-outbound"></span> [`outbound`][outbound] | `LIST` | `i.h.s.p.c.OutboundTarget` |   | Add a new outbound target to configure identity propagation or explicit username/password |
-| <span id="aa4dbd-principal-type"></span> [`principal-type`][principal-type] | `VALUE` | `i.h.s.SubjectType` | `USER` | Principal type this provider extracts (and also propagates) |
-| <span id="a9be1e-realm"></span> `realm` | `VALUE` | `String` | `helidon` | Set the realm to use when challenging users |
-| <span id="a18d67-users"></span> [`users`][users] | `LIST` | `i.h.s.p.h.C.ConfigUser` |   | Set user store to validate users |
+<!--@include ../../config/io.helidon.security.providers.httpauth.HttpBasicAuthProvider.md#configuration-options offset=2 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a id="outbound"></a>
+<a href="io.helidon.security.providers.common.OutboundTarget.md">
+<code>outbound</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;OutboundTarget&gt;">List&lt;OutboundTarget&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Add a new outbound target to configure identity propagation or explicit username/password</td>
+</tr>
+<tr>
+<td>
+<code>optional</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>Whether authentication is required</td>
+</tr>
+<tr>
+<td>
+<code>realm</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">helidon</code>
+</td>
+<td>Set the realm to use when challenging users</td>
+</tr>
+<tr>
+<td>
+<a id="principal-type"></a>
+<a href="io.helidon.security.SubjectType.md">
+<code>principal-type</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="SubjectType">SubjectType</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">USER</code>
+</td>
+<td>Principal type this provider extracts (and also propagates)</td>
+</tr>
+<tr>
+<td>
+<a id="users"></a>
+<a href="io.helidon.security.providers.httpauth.ConfigUserStore.ConfigUser.md">
+<code>users</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;ConfigUser&gt;">List&lt;ConfigUser&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Set user store to validate users</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 #### Example code
 
@@ -672,16 +1316,142 @@ Maven dependency
 
 #### Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="a090f1-algorithm"></span> [`algorithm`][algorithm] | `VALUE` | `i.h.s.p.h.H.Algorithm` | `MD5` | Digest algorithm to use |
-| <span id="a0ad17-nonce-timeout-millis"></span> `nonce-timeout-millis` | `VALUE` | `Long` | `86400000` | How long will the nonce value be valid. When timed-out, browser will re-request username/password |
-| <span id="a45a23-optional"></span> `optional` | `VALUE` | `Boolean` | `false` | Whether authentication is required |
-| <span id="a5336f-principal-type"></span> [`principal-type`][principal-type] | `VALUE` | `i.h.s.SubjectType` | `USER` | Principal type this provider extracts (and also propagates) |
-| <span id="af980a-qop"></span> [`qop`][qop] | `VALUE` | `i.h.s.p.h.H.Qop` | `NONE` | Only \`AUTH\` supported. If left empty, uses the legacy approach (older RFC version). \`AUTH-INT\` is not supported |
-| <span id="a5d808-realm"></span> `realm` | `VALUE` | `String` | `Helidon` | Set the realm to use when challenging users |
-| <span id="abd869-server-secret"></span> `server-secret` | `LIST` | `String` |   | The nonce is encrypted using this secret - to make sure the nonce we get back was generated by us and to make sure we can safely time-out nonce values |
-| <span id="a97822-users"></span> [`users`][users] | `LIST` | `i.h.s.p.h.C.ConfigUser` |   | Set user store to obtain passwords and roles based on logins |
+<!--@include ../../config/io.helidon.security.providers.httpauth.HttpDigestAuthProvider.md#configuration-options offset=2 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a id="qop"></a>
+<a href="io.helidon.security.providers.httpauth.HttpDigest.Qop.md">
+<code>qop</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Qop</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">NONE</code>
+</td>
+<td>Only `AUTH` supported. If left empty, uses the legacy approach (older RFC version). `AUTH-INT` is not supported</td>
+</tr>
+<tr>
+<td>
+<code>server-secret</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>The nonce is encrypted using this secret - to make sure the nonce we get back was generated by us and to make sure we can safely time-out nonce values</td>
+</tr>
+<tr>
+<td>
+<code>optional</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>Whether authentication is required</td>
+</tr>
+<tr>
+<td>
+<code>realm</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">Helidon</code>
+</td>
+<td>Set the realm to use when challenging users</td>
+</tr>
+<tr>
+<td>
+<code>nonce-timeout-millis</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Long</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">86400000</code>
+</td>
+<td>How long will the nonce value be valid. When timed-out, browser will re-request username/password</td>
+</tr>
+<tr>
+<td>
+<a id="principal-type"></a>
+<a href="io.helidon.security.SubjectType.md">
+<code>principal-type</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="SubjectType">SubjectType</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">USER</code>
+</td>
+<td>Principal type this provider extracts (and also propagates)</td>
+</tr>
+<tr>
+<td>
+<a id="users"></a>
+<a href="io.helidon.security.providers.httpauth.ConfigUserStore.ConfigUser.md">
+<code>users</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;ConfigUser&gt;">List&lt;ConfigUser&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Set user store to obtain passwords and roles based on logins</td>
+</tr>
+<tr>
+<td>
+<a id="algorithm"></a>
+<a href="io.helidon.security.providers.httpauth.HttpDigest.Algorithm.md">
+<code>algorithm</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Algorithm</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">MD5</code>
+</td>
+<td>Digest algorithm to use</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 #### Example code
 
@@ -741,15 +1511,129 @@ Maven dependency
 
 #### Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="a9672f-atn-token"></span> [`atn-token`][atn-token] | `VALUE` | `i.h.s.u.TokenHandler` |   | Token handler to extract username from request |
-| <span id="a25377-authenticate"></span> `authenticate` | `VALUE` | `Boolean` | `true` | Whether to authenticate requests |
-| <span id="adbdf3-optional"></span> `optional` | `VALUE` | `Boolean` | `false` | Whether authentication is required |
-| <span id="aa4f36-outbound"></span> [`outbound`][outbound] | `LIST` | `i.h.s.p.c.OutboundTarget` |   | Configure outbound target for identity propagation |
-| <span id="ad5021-outbound-token"></span> [`outbound-token`][atn-token] | `VALUE` | `i.h.s.u.TokenHandler` |   | Token handler to create outbound headers to propagate identity |
-| <span id="aa8e94-principal-type"></span> [`principal-type`][principal-type] | `VALUE` | `i.h.s.SubjectType` | `USER` | Principal type this provider extracts (and also propagates) |
-| <span id="a0309f-propagate"></span> `propagate` | `VALUE` | `Boolean` | `false` | Whether to propagate identity |
+<!--@include ../../config/io.helidon.security.providers.header.HeaderAtnProvider.md#configuration-options offset=2 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a id="atn-token"></a>
+<a href="io.helidon.security.util.TokenHandler.md">
+<code>atn-token</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="TokenHandler">TokenHandler</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Token handler to extract username from request</td>
+</tr>
+<tr>
+<td>
+<code>authenticate</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to authenticate requests</td>
+</tr>
+<tr>
+<td>
+<a id="outbound"></a>
+<a href="io.helidon.security.providers.common.OutboundTarget.md">
+<code>outbound</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;OutboundTarget&gt;">List&lt;OutboundTarget&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Configure outbound target for identity propagation</td>
+</tr>
+<tr>
+<td>
+<code>propagate</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>Whether to propagate identity</td>
+</tr>
+<tr>
+<td>
+<code>optional</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>Whether authentication is required</td>
+</tr>
+<tr>
+<td>
+<a id="outbound-token"></a>
+<a href="io.helidon.security.util.TokenHandler.md">
+<code>outbound-token</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="TokenHandler">TokenHandler</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Token handler to create outbound headers to propagate identity</td>
+</tr>
+<tr>
+<td>
+<a id="principal-type"></a>
+<a href="io.helidon.security.SubjectType.md">
+<code>principal-type</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="SubjectType">SubjectType</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">USER</code>
+</td>
+<td>Principal type this provider extracts (and also propagates)</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 #### Example code
 
@@ -808,15 +1692,128 @@ Maven dependency
 
 #### Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="ac1d34-backward-compatible-eol"></span> `backward-compatible-eol` | `VALUE` | `Boolean` | `false` | Enable support for Helidon versions before 3.0.0 (exclusive) |
-| <span id="acc108-headers"></span> [`headers`][headers] | `LIST` | `i.h.s.p.h.HttpSignHeader` |   | Add a header that is validated on inbound requests |
-| <span id="abbc62-inbound-keys"></span> [`inbound.keys`][inbound-keys] | `LIST` | `i.h.s.p.h.InboundClientDefinition` |   | Add inbound configuration |
-| <span id="a9cb96-optional"></span> `optional` | `VALUE` | `Boolean` | `true` | Set whether the signature is optional |
-| <span id="af2400-outbound"></span> [`outbound`][outbound-2] | `VALUE` | `i.h.s.p.c.OutboundConfig` |   | Add outbound targets to this builder |
-| <span id="a4938a-realm"></span> `realm` | `VALUE` | `String` | `helidon` | Realm to use for challenging inbound requests that do not have "Authorization" header in case header is `HttpSignHeader#AUTHORIZATION` and singatures are not optional |
-| <span id="a4ba7d-sign-headers"></span> [`sign-headers`][sign-headers] | `LIST` | `i.h.s.p.h.S.HeadersConfig` |   | Override the default inbound required headers (e.g |
+<!--@include ../../config/io.helidon.security.providers.httpsign.HttpSignProvider.md#configuration-options offset=2 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a id="headers"></a>
+<a href="io.helidon.security.providers.httpsign.HttpSignHeader.md">
+<code>headers</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;HttpSignHeader&gt;">List&lt;HttpSignHeader&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Add a header that is validated on inbound requests</td>
+</tr>
+<tr>
+<td>
+<a id="outbound"></a>
+<a href="io.helidon.security.providers.common.OutboundConfig.md">
+<code>outbound</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="OutboundConfig">OutboundConfig</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Add outbound targets to this builder</td>
+</tr>
+<tr>
+<td>
+<a id="inbound-keys"></a>
+<a href="io.helidon.security.providers.httpsign.InboundClientDefinition.md">
+<code>inbound.keys</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;InboundClientDefinition&gt;">List&lt;InboundClientDefinition&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Add inbound configuration</td>
+</tr>
+<tr>
+<td>
+<code>backward-compatible-eol</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>Enable support for Helidon versions before 3.0.0 (exclusive)</td>
+</tr>
+<tr>
+<td>
+<code>optional</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Set whether the signature is optional</td>
+</tr>
+<tr>
+<td>
+<code>realm</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">helidon</code>
+</td>
+<td>Realm to use for challenging inbound requests that do not have "Authorization" header in case header is <code>HttpSignHeader#AUTHORIZATION</code> and singatures are not optional</td>
+</tr>
+<tr>
+<td>
+<a id="sign-headers"></a>
+<a href="io.helidon.security.providers.httpsign.SignedHeadersConfig.HeadersConfig.md">
+<code>sign-headers</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;HeadersConfig&gt;">List&lt;HeadersConfig&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Override the default inbound required headers (e.g</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 #### Example code
 
@@ -891,25 +1888,209 @@ Maven dependency
 
 #### Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="aed3ab-cache-config"></span> [`cache-config`][cache-config] | `VALUE` | `i.h.s.p.c.EvictableCache` |   | Use explicit `io.helidon.security.providers.common.EvictableCache` for role caching |
-| <span id="aa2e00-default-idcs-subject-type"></span> `default-idcs-subject-type` | `VALUE` | `String` | `user` | Configure subject type to use when requesting roles from IDCS |
-| <span id="a630af-oidc-config"></span> [`oidc-config`][oidc-config] | `VALUE` | `i.h.s.p.o.c.OidcConfig` |   | Use explicit `io.helidon.security.providers.oidc.common.OidcConfig` instance, e.g |
-| <span id="a477d4-subject-types"></span> [`subject-types`][principal-type] | `LIST` | `i.h.s.SubjectType` | `USER` | Add a supported subject type |
+<!--@include ../../config/io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProvider.md#configuration-options offset=2 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a id="cache-config"></a>
+<a href="io.helidon.security.providers.common.EvictableCache.md">
+<code>cache-config</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="EvictableCache">EvictableCache</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Use explicit <code>io.helidon.security.providers.common.EvictableCache</code> for role caching</td>
+</tr>
+<tr>
+<td>
+<code>default-idcs-subject-type</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">user</code>
+</td>
+<td>Configure subject type to use when requesting roles from IDCS</td>
+</tr>
+<tr>
+<td>
+<a id="oidc-config"></a>
+<a href="io.helidon.security.providers.oidc.common.OidcConfig.md">
+<code>oidc-config</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">OidcConfig</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Use explicit <code>io.helidon.security.providers.oidc.common.OidcConfig</code> instance, e.g</td>
+</tr>
+<tr>
+<td>
+<a id="subject-types"></a>
+<a href="io.helidon.security.SubjectType.md">
+<code>subject-types</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;SubjectType&gt;">List&lt;SubjectType&gt;</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">USER</code>
+</td>
+<td>Add a supported subject type</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 #### Multi-tenant IDCS Role Mapper
 
 #### Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="a6bc4c-cache-config"></span> [`cache-config`][cache-config] | `VALUE` | `i.h.s.p.c.EvictableCache` |   | Use explicit `io.helidon.security.providers.common.EvictableCache` for role caching |
-| <span id="a75027-default-idcs-subject-type"></span> `default-idcs-subject-type` | `VALUE` | `String` | `user` | Configure subject type to use when requesting roles from IDCS |
-| <span id="a89a70-idcs-app-name-handler"></span> [`idcs-app-name-handler`][atn-token] | `VALUE` | `i.h.s.u.TokenHandler` |   | Configure token handler for IDCS Application name |
-| <span id="af8920-idcs-tenant-handler"></span> [`idcs-tenant-handler`][atn-token] | `VALUE` | `i.h.s.u.TokenHandler` |   | Configure token handler for IDCS Tenant ID |
-| <span id="a2275a-oidc-config"></span> [`oidc-config`][oidc-config] | `VALUE` | `i.h.s.p.o.c.OidcConfig` |   | Use explicit `io.helidon.security.providers.oidc.common.OidcConfig` instance, e.g |
-| <span id="ab2c38-subject-types"></span> [`subject-types`][principal-type] | `LIST` | `i.h.s.SubjectType` | `USER` | Add a supported subject type |
+<!--@include ../../config/io.helidon.security.providers.idcs.mapper.IdcsMtRoleMapperProvider.md#configuration-options offset=2 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a id="cache-config"></a>
+<a href="io.helidon.security.providers.common.EvictableCache.md">
+<code>cache-config</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="EvictableCache">EvictableCache</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Use explicit <code>io.helidon.security.providers.common.EvictableCache</code> for role caching</td>
+</tr>
+<tr>
+<td>
+<code>default-idcs-subject-type</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">user</code>
+</td>
+<td>Configure subject type to use when requesting roles from IDCS</td>
+</tr>
+<tr>
+<td>
+<a id="idcs-app-name-handler"></a>
+<a href="io.helidon.security.util.TokenHandler.md">
+<code>idcs-app-name-handler</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="TokenHandler">TokenHandler</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Configure token handler for IDCS Application name</td>
+</tr>
+<tr>
+<td>
+<a id="oidc-config"></a>
+<a href="io.helidon.security.providers.oidc.common.OidcConfig.md">
+<code>oidc-config</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">OidcConfig</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Use explicit <code>io.helidon.security.providers.oidc.common.OidcConfig</code> instance, e.g</td>
+</tr>
+<tr>
+<td>
+<a id="subject-types"></a>
+<a href="io.helidon.security.SubjectType.md">
+<code>subject-types</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;SubjectType&gt;">List&lt;SubjectType&gt;</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">USER</code>
+</td>
+<td>Add a supported subject type</td>
+</tr>
+<tr>
+<td>
+<a id="idcs-tenant-handler"></a>
+<a href="io.helidon.security.util.TokenHandler.md">
+<code>idcs-tenant-handler</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="TokenHandler">TokenHandler</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Configure token handler for IDCS Tenant ID</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 #### Example code
 
@@ -951,10 +2132,60 @@ Maven dependency
 
 #### Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="a4f520-fail-if-none-validated"></span> `fail-if-none-validated` | `VALUE` | `Boolean` | `true` | Whether to fail if NONE of the attributes is validated |
-| <span id="a52725-fail-on-unvalidated"></span> `fail-on-unvalidated` | `VALUE` | `Boolean` | `true` | Whether to fail if any attribute is left unvalidated |
+<!--@include ../../config/io.helidon.security.providers.abac.AbacProvider.md#configuration-options offset=2 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>fail-if-none-validated</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to fail if NONE of the attributes is validated</td>
+</tr>
+<tr>
+<td>
+<code>fail-on-unvalidated</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to fail if any attribute is left unvalidated</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 #### Example code
 
@@ -1160,15 +2391,123 @@ Maven dependency
 
 #### Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="a8327f-client-id"></span> `client-id` | `VALUE` | `String` |   | Google application client id, to validate that the token was generated by Google for us |
-| <span id="a5eb30-optional"></span> `optional` | `VALUE` | `Boolean` | `false` | If set to true, this provider will return `io.helidon.security.SecurityResponse.SecurityStatus#ABSTAIN` instead of failing in case of invalid request |
-| <span id="a6fd85-outbound"></span> [`outbound`][outbound-2] | `VALUE` | `i.h.s.p.c.OutboundConfig` |   | Outbound configuration - a set of outbound targets that will have the token propagated |
-| <span id="a836e0-proxy-host"></span> `proxy-host` | `VALUE` | `String` |   | Set proxy host when talking to Google |
-| <span id="a72cab-proxy-port"></span> `proxy-port` | `VALUE` | `Integer` | `80` | Set proxy port when talking to Google |
-| <span id="a7871a-realm"></span> `realm` | `VALUE` | `String` | `helidon` | Set the authentication realm to build challenge, defaults to "helidon" |
-| <span id="af185f-token"></span> [`token`][atn-token] | `VALUE` | `i.h.s.u.TokenHandler` | `` `Authorization` header with `bearer` prefix `` | Token provider to extract Google access token from request, defaults to "Authorization" header with a "bearer " prefix |
+<!--@include ../../config/io.helidon.security.providers.google.login.GoogleTokenProvider.md#configuration-options offset=2 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>proxy-port</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">80</code>
+</td>
+<td>Set proxy port when talking to Google</td>
+</tr>
+<tr>
+<td>
+<a id="outbound"></a>
+<a href="io.helidon.security.providers.common.OutboundConfig.md">
+<code>outbound</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="OutboundConfig">OutboundConfig</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Outbound configuration - a set of outbound targets that will have the token propagated</td>
+</tr>
+<tr>
+<td>
+<code>proxy-host</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Set proxy host when talking to Google</td>
+</tr>
+<tr>
+<td>
+<code>optional</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>If set to true, this provider will return <code>io.helidon.security.SecurityResponse.SecurityStatus#ABSTAIN</code> instead of failing in case of invalid request</td>
+</tr>
+<tr>
+<td>
+<code>realm</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">helidon</code>
+</td>
+<td>Set the authentication realm to build challenge, defaults to "helidon"</td>
+</tr>
+<tr>
+<td>
+<code>client-id</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Google application client id, to validate that the token was generated by Google for us</td>
+</tr>
+<tr>
+<td>
+<a id="token"></a>
+<a href="io.helidon.security.util.TokenHandler.md">
+<code>token</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="TokenHandler">TokenHandler</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value" title="&#x60;Authorization&#x60; header with &#x60;bearer&#x60; prefix">&#x60;Authorization&#x60; header with &#x60;bearer&#x60; prefix</code>
+</td>
+<td>Token provider to extract Google access token from request, defaults to "Authorization" header with a "bearer " prefix</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 #### Example code
 
@@ -1225,22 +2564,150 @@ Maven dependency
 
 #### Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="a8e9cb-allow-impersonation"></span> `allow-impersonation` | `VALUE` | `Boolean` | `false` | Whether to allow impersonation by explicitly overriding username from outbound requests using `io.helidon.security.EndpointConfig#PROPERTY_OUTBOUND_ID` property |
-| <span id="ac7a36-allow-unsigned"></span> `allow-unsigned` | `VALUE` | `Boolean` | `false` | Configure support for unsigned JWT |
-| <span id="a31c89-atn-token-handler"></span> [`atn-token.handler`][atn-token] | `VALUE` | `i.h.s.u.TokenHandler` |   | Token handler to extract username from request |
-| <span id="ab9ed4-atn-token-jwk-resource"></span> [`atn-token.jwk.resource`][decryption-keys] | `VALUE` | `i.h.c.c.Resource` |   | JWK resource used to verify JWTs created by other parties |
-| <span id="a7fd00-atn-token-jwt-audience"></span> `atn-token.jwt-audience` | `VALUE` | `String` |   | Audience expected in inbound JWTs |
-| <span id="a1483b-atn-token-verify-signature"></span> `atn-token.verify-signature` | `VALUE` | `Boolean` | `true` | Configure whether to verify signatures |
-| <span id="a2bd0c-authenticate"></span> `authenticate` | `VALUE` | `Boolean` | `true` | Whether to authenticate requests |
-| <span id="ac625d-optional"></span> `optional` | `VALUE` | `Boolean` | `false` | Whether authentication is required |
-| <span id="af07ea-principal-type"></span> [`principal-type`][principal-type] | `VALUE` | `i.h.s.SubjectType` | `USER` | Principal type this provider extracts (and also propagates) |
-| <span id="a5a95f-propagate"></span> `propagate` | `VALUE` | `Boolean` | `true` | Whether to propagate identity |
-| <span id="a9294b-sign-token"></span> [`sign-token`][outbound-2] | `VALUE` | `i.h.s.p.c.OutboundConfig` |   | Configuration of outbound rules |
-| <span id="adc22c-sign-token-jwk-resource"></span> [`sign-token.jwk.resource`][decryption-keys] | `VALUE` | `i.h.c.c.Resource` |   | JWK resource used to sign JWTs created by us |
-| <span id="ab60c1-sign-token-jwt-issuer"></span> `sign-token.jwt-issuer` | `VALUE` | `String` |   | Issuer used to create new JWTs |
-| <span id="a8cde7-use-jwt-groups"></span> `use-jwt-groups` | `VALUE` | `Boolean` | `true` | Claim `groups` from JWT will be used to automatically add groups to current subject (may be used with `jakarta.annotation.security.RolesAllowed` annotation) |
+<!--@include ../../config/io.helidon.security.providers.jwt.JwtProvider.md#configuration-options offset=2 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>allow-impersonation</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>Whether to allow impersonation by explicitly overriding username from outbound requests using <code>io.helidon.security.EndpointConfig#PROPERTY_OUTBOUND_ID</code> property</td>
+</tr>
+<tr>
+<td>
+<code>allow-unsigned</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>Configure support for unsigned JWT</td>
+</tr>
+<tr>
+<td>
+<a id="atn-token"></a>
+<a href="io.helidon.security.providers.jwt.AtnTokenConfig.md">
+<code>atn-token</code>
+</a>
+</td>
+<td class="cm-type-cell">
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Configuration for atn-token</td>
+</tr>
+<tr>
+<td>
+<code>authenticate</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to authenticate requests</td>
+</tr>
+<tr>
+<td>
+<code>optional</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>Whether authentication is required</td>
+</tr>
+<tr>
+<td>
+<a id="principal-type"></a>
+<a href="io.helidon.security.SubjectType.md">
+<code>principal-type</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="SubjectType">SubjectType</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">USER</code>
+</td>
+<td>Principal type this provider extracts (and also propagates)</td>
+</tr>
+<tr>
+<td>
+<code>propagate</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to propagate identity</td>
+</tr>
+<tr>
+<td>
+<a id="sign-token"></a>
+<a href="io.helidon.security.providers.common.OutboundConfig.md">
+<code>sign-token</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="OutboundConfig">OutboundConfig</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Configuration of outbound rules</td>
+</tr>
+<tr>
+<td>
+<code>use-jwt-groups</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Claim <code>groups</code> from JWT will be used to automatically add  groups to current subject (may be used with <code>jakarta.annotation.security.RolesAllowed</code> annotation)</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 #### Example code
 
@@ -1299,22 +2766,8 @@ For outbound, we support either token propagation (e.g. the token from request i
 [google-login]: #google-login-provider
 [jwt-provider]: #jwt-provider
 [example]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/security/idcs-login
-[decryption-keys]: ../../config/io.helidon.common.configurable.Resource.md
-[token-endpoint-a]: ../../config/io.helidon.security.providers.oidc.common.OidcConfig.ClientAuthentication.md
-[outbound]: ../../config/io.helidon.security.providers.common.OutboundTarget.md
-[principal-type]: ../../config/io.helidon.security.SubjectType.md
-[users]: ../../config/io.helidon.security.providers.httpauth.ConfigUserStore.ConfigUser.md
 [example-2]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/security/outbound-override
-[algorithm]: ../../config/io.helidon.security.providers.httpauth.HttpDigest.Algorithm.md
-[qop]: ../../config/io.helidon.security.providers.httpauth.HttpDigest.Qop.md
-[atn-token]: ../../config/io.helidon.security.util.TokenHandler.md
-[headers]: ../../config/io.helidon.security.providers.httpsign.HttpSignHeader.md
-[inbound-keys]: ../../config/io.helidon.security.providers.httpsign.InboundClientDefinition.md
-[outbound-2]: ../../config/io.helidon.security.providers.common.OutboundConfig.md
-[sign-headers]: ../../config/io.helidon.security.providers.httpsign.SignedHeadersConfig.HeadersConfig.md
 [example-3]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/security/webserver-signatures
-[cache-config]: ../../config/io.helidon.security.providers.common.EvictableCache.md
-[oidc-config]: ../../config/io.helidon.security.providers.oidc.common.OidcConfig.md
 [example-4]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/security/idcs-login/
 [example-5]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/security/attribute-based-access-control
 [el-policy]: #expression-language-policy-validator

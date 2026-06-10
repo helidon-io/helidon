@@ -47,6 +47,8 @@ Configuration of WebClient transport level propagation of context values
 
 
 
+## Manifest
+
 ---
 
 See the [manifest](manifest.md) for all available types.

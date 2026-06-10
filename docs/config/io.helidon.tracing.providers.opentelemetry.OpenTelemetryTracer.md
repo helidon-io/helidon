@@ -62,6 +62,8 @@ Settings for OpenTelemetry tracer configuration under the <code>OpenTelemetryTra
 
 
 
+## Manifest
+
 ---
 
 See the [manifest](manifest.md) for all available types.

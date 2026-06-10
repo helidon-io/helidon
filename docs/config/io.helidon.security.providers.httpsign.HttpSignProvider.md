@@ -128,6 +128,8 @@ HTTP header signature provider
 
 
 
+## Manifest
+
 ---
 
 See the [manifest](manifest.md) for all available types.

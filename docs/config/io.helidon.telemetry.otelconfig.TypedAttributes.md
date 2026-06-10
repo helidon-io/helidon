@@ -71,6 +71,8 @@ Abstraction of typed attributes settable on OpenTelemetry elements
 
 
 
+## Manifest
+
 ---
 
 See the [manifest](manifest.md) for all available types.

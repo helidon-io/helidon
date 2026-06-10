@@ -93,6 +93,8 @@ Scheduling periodically executed task with specified cron expression
 
 
 
+## Manifest
+
 ---
 
 See the [manifest](manifest.md) for all available types.

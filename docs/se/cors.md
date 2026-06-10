@@ -126,14 +126,108 @@ CORS configuration is done through [`CorsFeature`][corsfeature], a `WebServer` f
 
 ### Configuration options
 
-| Key                                                                                              | Kind    | Type                     | Default Value | Description                                                                                                                                  |
-|--------------------------------------------------------------------------------------------------|---------|--------------------------|---------------|----------------------------------------------------------------------------------------------------------------------------------------------|
-| <span id="ae53cb-add-defaults"></span> `add-defaults`                                            | `VALUE` | `Boolean`                | `true`        | Whether to add a default path configuration, that matches all paths, `GET, HEAD, POST` methods, and allows all origins, methods, and headers |
-| <span id="a6b476-enabled"></span> `enabled`                                                      | `VALUE` | `Boolean`                |               | This feature can be disabled                                                                                                                 |
-| <span id="a44bb0-paths"></span> [`paths`][paths] | `LIST`  | `i.h.w.c.CorsPathConfig` |               | Per path configuration                                                                                                                       |
-| <span id="a29c5b-paths-discover-services"></span> `paths-discover-services`                      | `VALUE` | `Boolean`                | `true`        | Whether to enable automatic service discovery for `paths`                                                                                    |
-| <span id="a93acb-sockets"></span> `sockets`                                                      | `LIST`  | `String`                 |               | List of sockets to register this feature on                                                                                                  |
-| <span id="a96481-weight"></span> `weight`                                                        | `VALUE` | `Double`                 | `850.0`       | Weight of the CORS feature                                                                                                                   |
+<!--@include ../config/io.helidon.webserver.cors.CorsFeature.md#configuration-options offset=1 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a id="paths"></a>
+<a href="io.helidon.webserver.cors.CorsPathConfig.md">
+<code>paths</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;CorsPathConfig&gt;">List&lt;CorsPathConfig&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Per path configuration</td>
+</tr>
+<tr>
+<td>
+<code>weight</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Double</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">850.0</code>
+</td>
+<td>Weight of the CORS feature</td>
+</tr>
+<tr>
+<td>
+<code>add-defaults</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to add a default path configuration, that matches all paths, <code>GET, HEAD, POST</code> methods, and allows all origins, methods, and headers</td>
+</tr>
+<tr>
+<td>
+<code>sockets</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>List of sockets to register this feature on</td>
+</tr>
+<tr>
+<td>
+<code>enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>This feature can be disabled</td>
+</tr>
+<tr>
+<td>
+<code>paths-discover-services</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to enable automatic service discovery for <code>paths</code></td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 ## Examples
 
@@ -257,6 +351,5 @@ content-length: 461
 [corspathconfig]: https://helidon.io/docs/v4/apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/CorsPathConfig.html
 [helidon-se-quick]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/quickstarts/helidon-quickstart-se
 [routing]: ../se/webserver/webserver.md#routing
-[paths]: ../config/io.helidon.webserver.cors.CorsPathConfig.md
 [helidon-se-cors]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/cors
 [requested-uri-di]: ../se/webserver/webserver.md#requested-uri-discovery

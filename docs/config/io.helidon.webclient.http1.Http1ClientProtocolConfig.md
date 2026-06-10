@@ -120,6 +120,8 @@ Configuration of an HTTP/1.1 client
 
 
 
+## Manifest
+
 ---
 
 See the [manifest](manifest.md) for all available types.

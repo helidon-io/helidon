@@ -508,6 +508,8 @@ Configuration for LangChain4j model GoogleAiGeminiChatModel
 
 
 
+## Manifest
+
 ---
 
 See the [manifest](manifest.md) for all available types.

@@ -89,6 +89,8 @@ Settings for an OpenTelemetry metrics view registration
 
 
 
+## Manifest
+
 ---
 
 See the [manifest](manifest.md) for all available types.

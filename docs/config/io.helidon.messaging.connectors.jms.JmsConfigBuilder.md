@@ -234,6 +234,8 @@ Build Jms specific config
 
 
 
+## Manifest
+
 ---
 
 See the [manifest](manifest.md) for all available types.

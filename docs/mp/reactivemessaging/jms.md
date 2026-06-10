@@ -21,25 +21,234 @@ Connector name: `helidon-jms`
 
 ### Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="a4169a-acknowledge-mode"></span> [`acknowledge-mode`][acknowledge-mode] | `VALUE` | `i.h.m.c.j.AcknowledgeMode` | `AUTO_ACKNOWLEDGE` | JMS acknowledgement mode |
-| <span id="a871ed-destination"></span> `destination` | `VALUE` | `String` |   | Queue or topic name |
-| <span id="ad3b43-jndi-initial-context-properties"></span> `jndi-initial-context-properties` | `MAP` | `String` |   | Environment properties used for creating initial context java.naming.factory.initial, java.naming.provider.url |
-| <span id="a0518f-jndi-initial-factory"></span> `jndi-initial-factory` | `VALUE` | `String` |   | JNDI initial factory |
-| <span id="ac6c48-jndi-jms-factory"></span> `jndi-jms-factory` | `VALUE` | `String` |   | JNDI name of JMS factory |
-| <span id="a9ed59-jndi-provider-url"></span> `jndi-provider-url` | `VALUE` | `String` |   | JNDI provider url |
-| <span id="a81cf0-message-selector"></span> `message-selector` | `VALUE` | `String` |   | JMS API message selector expression based on a subset of the SQL92 |
-| <span id="a7ace3-named-factory"></span> `named-factory` | `VALUE` | `String` |   | To select from manually configured `jakarta.jms.ConnectionFactory ConnectionFactories` over `JmsConnector.JmsConnectorBuilder#connectionFactory(String, jakarta.jms.ConnectionFactory) JmsConnectorBuilder#connectionFactory()` |
-| <span id="a2d6e4-password"></span> `password` | `VALUE` | `String` |   | Password used for creating JMS connection |
-| <span id="a1b10e-period-executions"></span> `period-executions` | `VALUE` | `Long` | `100` | Period for executing poll cycles in millis |
-| <span id="ae0ce4-poll-timeout"></span> `poll-timeout` | `VALUE` | `Long` | `50` | Timeout for polling for next message in every poll cycle in millis |
-| <span id="a08c22-queue"></span> `queue` | `VALUE` | `String` |   | Use supplied destination name and `Type#QUEUE QUEUE` as type |
-| <span id="a0f3a9-session-group-id"></span> `session-group-id` | `VALUE` | `String` |   | When multiple channels share same session-group-id, they share same JMS session |
-| <span id="ab90ce-topic"></span> `topic` | `VALUE` | `String` |   | Use supplied destination name and `Type#TOPIC TOPIC` as type |
-| <span id="ac2dc3-transacted"></span> `transacted` | `VALUE` | `Boolean` | `false` | Indicates whether the session will use a local transaction |
-| <span id="aef876-type"></span> [`type`][type] | `VALUE` | `i.h.m.c.j.Type` | `QUEUE` | Specify if connection is `Type#QUEUE queue` or `Type#TOPIC topic` |
-| <span id="af0324-username"></span> `username` | `VALUE` | `String` |   | User name used for creating JMS connection |
+<!--@include ../../config/io.helidon.messaging.connectors.jms.JmsConfigBuilder.md#configuration-options offset=1 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>message-selector</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>JMS API message selector expression based on a subset of the SQL92</td>
+</tr>
+<tr>
+<td>
+<code>named-factory</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>To select from manually configured <code>jakarta.jms.ConnectionFactory ConnectionFactories</code> over <code>JmsConnector.JmsConnectorBuilder#connectionFactory(String, jakarta.jms.ConnectionFactory) JmsConnectorBuilder#connectionFactory()</code></td>
+</tr>
+<tr>
+<td>
+<code>destination</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Queue or topic name</td>
+</tr>
+<tr>
+<td>
+<code>transacted</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>Indicates whether the session will use a local transaction</td>
+</tr>
+<tr>
+<td>
+<a id="type"></a>
+<a href="io.helidon.messaging.connectors.jms.Type.md">
+<code>type</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Type</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">QUEUE</code>
+</td>
+<td>Specify if connection is <code>Type#QUEUE queue</code>  or <code>Type#TOPIC topic</code></td>
+</tr>
+<tr>
+<td>
+<code>jndi-initial-factory</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>JNDI initial factory</td>
+</tr>
+<tr>
+<td>
+<code>password</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Password used for creating JMS connection</td>
+</tr>
+<tr>
+<td>
+<code>poll-timeout</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Long</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">50</code>
+</td>
+<td>Timeout for polling for next message in every poll cycle in millis</td>
+</tr>
+<tr>
+<td>
+<code>jndi-jms-factory</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>JNDI name of JMS factory</td>
+</tr>
+<tr>
+<td>
+<code>topic</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Use supplied destination name and <code>Type#TOPIC TOPIC</code> as type</td>
+</tr>
+<tr>
+<td>
+<a id="acknowledge-mode"></a>
+<a href="io.helidon.messaging.connectors.jms.AcknowledgeMode.md">
+<code>acknowledge-mode</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="AcknowledgeMode">AcknowledgeMode</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value" title="AUTO_ACKNOWLEDGE">AUTO_ACKNOWLEDGE</code>
+</td>
+<td>JMS acknowledgement mode</td>
+</tr>
+<tr>
+<td>
+<code>jndi-initial-context-properties</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Environment properties used for creating initial context java.naming.factory.initial, java.naming.provider.url</td>
+</tr>
+<tr>
+<td>
+<code>jndi-provider-url</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>JNDI provider url</td>
+</tr>
+<tr>
+<td>
+<code>period-executions</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Long</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">100</code>
+</td>
+<td>Period for executing poll cycles in millis</td>
+</tr>
+<tr>
+<td>
+<code>queue</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Use supplied destination name and <code>Type#QUEUE QUEUE</code> as type</td>
+</tr>
+<tr>
+<td>
+<code>session-group-id</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>When multiple channels share same session-group-id, they share same JMS session</td>
+</tr>
+<tr>
+<td>
+<code>username</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>User name used for creating JMS connection</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 > [!TIP]
 > Besides the configuration options above, custom attributes can be passed over configuration.
@@ -187,6 +396,3 @@ public PublisherBuilder<Message<String>> produceToJms() {
             );
 }
 ```
-
-[acknowledge-mode]: ../../config/io.helidon.messaging.connectors.jms.AcknowledgeMode.md
-[type]: ../../config/io.helidon.messaging.connectors.jms.Type.md

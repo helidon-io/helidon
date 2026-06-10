@@ -61,15 +61,118 @@ Configuration properties:
 
 ### Configuration options
 
-| Key                                                                                                                  | Kind    | Type                           | Default Value                       | Description                                                      |
-|----------------------------------------------------------------------------------------------------------------------|---------|--------------------------------|-------------------------------------|------------------------------------------------------------------|
-| <span id="aa8c41-display-name"></span> `display-name`                                                                | `VALUE` | `String`                       |                                     | Display name for this content retriever configuration            |
-| <span id="aed316-embedding-model"></span> `embedding-model`                                                          | `VALUE` | `String`                       |                                     | Explicit embedding model to use in the content retriever         |
-| <span id="aa55e0-embedding-store"></span> `embedding-store`                                                          | `VALUE` | `String`                       |                                     | Embedding store to use in the content retriever                  |
-| <span id="a2a276-enabled"></span> `enabled`                                                                          | `VALUE` | `Boolean`                      | `true`                              | If set to `false`, component will be disabled even if configured |
-| <span id="a7fe57-max-results"></span> `max-results`                                                                  | `VALUE` | `Integer`                      |                                     | Maximum number of results to return from the retriever           |
-| <span id="a4bf10-min-score"></span> `min-score`                                                                      | `VALUE` | `Double`                       |                                     | Minimum score threshold for retrieved results                    |
-| <span id="afd89c-type"></span> [`type`][type] | `VALUE` | `i.h.i.l.ContentRetrieverType` | `EMBEDDING_STORE_CONTENT_RETRIEVER` | Type of content retriever to create                              |
+<!--@include ../../../config/io.helidon.integrations.langchain4j.ContentRetrieverConfig.md#configuration-options offset=1 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>embedding-model</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Explicit embedding model to use in the content retriever</td>
+</tr>
+<tr>
+<td>
+<code>display-name</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Display name for this content retriever configuration</td>
+</tr>
+<tr>
+<td>
+<code>embedding-store</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Embedding store to use in the content retriever</td>
+</tr>
+<tr>
+<td>
+<code>max-results</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Maximum number of results to return from the retriever</td>
+</tr>
+<tr>
+<td>
+<a id="type"></a>
+<a href="io.helidon.integrations.langchain4j.ContentRetrieverType.md">
+<code>type</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="ContentRetrieverType">ContentRetrieverType</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value" title="EMBEDDING_STORE_CONTENT_RETRIEVER">EMBEDDING_STORE_CONTENT_RETRIEVER</code>
+</td>
+<td>Type of content retriever to create</td>
+</tr>
+<tr>
+<td>
+<code>enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>If set to <code>false</code>, component will be disabled even if configured</td>
+</tr>
+<tr>
+<td>
+<code>min-score</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Double</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Minimum score threshold for retrieved results</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 ## In-Memory Embedding Store
 
@@ -126,15 +229,63 @@ Configuration properties:
 
 ### Configuration options
 
-| Key                                             | Kind    | Type      | Default Value | Description                                                                                                |
-|-------------------------------------------------|---------|-----------|---------------|------------------------------------------------------------------------------------------------------------|
-| <span id="ae50fb-enabled"></span> `enabled`     | `VALUE` | `Boolean` | `true`        | Whether this embedding store component is enabled                                                          |
-| <span id="afeb29-from-file"></span> `from-file` | `VALUE` | `Path`    |               | Path to a JSON file used to initialize the in-memory embedding store via `InMemoryEmbeddingStore.fromFile` |
+<!--@include ../../../config/io.helidon.integrations.langchain4j.InMemoryEmbeddingStoreConfig.md#configuration-options offset=1 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>from-file</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Path</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Path to a JSON file used to initialize the in-memory embedding store via <code>InMemoryEmbeddingStore.fromFile</code></td>
+</tr>
+<tr>
+<td>
+<code>enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether this embedding store component is enabled</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 ## Additional Information
 
 - [LangChain4j Integration](langchain4j.md)
 
 [rag]: https://docs.langchain4j.dev/tutorials/rag
-[type]: ../../../config/io.helidon.integrations.langchain4j.ContentRetrieverType.md
 [in-memory-embedd]: https://docs.langchain4j.dev/integrations/embedding-stores/in-memory

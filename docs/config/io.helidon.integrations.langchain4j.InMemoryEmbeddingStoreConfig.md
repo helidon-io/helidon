@@ -59,6 +59,8 @@ Configuration for LangChain4j in-memory embedding store components
 
 
 
+## Manifest
+
 ---
 
 See the [manifest](manifest.md) for all available types.

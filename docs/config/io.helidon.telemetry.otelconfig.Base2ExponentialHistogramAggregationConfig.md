@@ -53,6 +53,8 @@ Settings for the base 2 exponential histogram aggregation
 
 
 
+## Manifest
+
 ---
 
 See the [manifest](manifest.md) for all available types.

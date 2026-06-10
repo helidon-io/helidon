@@ -53,6 +53,8 @@ Settings for log limits
 
 
 
+## Manifest
+
 ---
 
 See the [manifest](manifest.md) for all available types.

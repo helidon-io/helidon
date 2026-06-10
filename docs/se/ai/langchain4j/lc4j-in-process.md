@@ -94,14 +94,109 @@ Configuration properties:
 
 ### Configuration options
 
-| Key                                                                                                                                        | Kind    | Type                             | Default Value | Description                                                      |
-|--------------------------------------------------------------------------------------------------------------------------------------------|---------|----------------------------------|---------------|------------------------------------------------------------------|
-| <span id="adebfb-enabled"></span> `enabled`                                                                                                | `VALUE` | `Boolean`                        | `true`        | Whether the embedding model is enabled                           |
-| <span id="a66290-executor"></span> `executor`                                                                                              | `VALUE` | `i.h.c.c.ThreadPoolConfig`       |               | Executor configuration used by the embedding model               |
-| <span id="abd52a-path-to-model"></span> `path-to-model`                                                                                    | `VALUE` | `Path`                           |               | The path to the modelPath file (e.g., "/path/to/model.onnx")     |
-| <span id="a6fca5-path-to-tokenizer"></span> `path-to-tokenizer`                                                                            | `VALUE` | `Path`                           |               | The path to the tokenizer file (e.g., "/path/to/tokenizer.json") |
-| <span id="a20f0e-pooling-mode"></span> [`pooling-mode`][pooling-mode]               | `VALUE` | `d.l.m.e.o.PoolingMode`          |               | The pooling model to use                                         |
-| <span id="ab207e-type"></span> [`type`][type] | `VALUE` | `i.h.i.l.p.l.InProcessModelType` |               | Which in-process ONNX model variant should be used               |
+<!--@include ../../../config/io.helidon.integrations.langchain4j.providers.lc4jinprocess.InProcessEmbeddingModelConfig.md#configuration-options offset=1 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>path-to-tokenizer</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Path</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>The path to the tokenizer file (e.g., "/path/to/tokenizer.json")</td>
+</tr>
+<tr>
+<td>
+<code>path-to-model</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Path</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>The path to the modelPath file (e.g., "/path/to/model.onnx")</td>
+</tr>
+<tr>
+<td>
+<code>executor</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="ThreadPoolConfig">ThreadPoolConfig</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Executor configuration used by the embedding model</td>
+</tr>
+<tr>
+<td>
+<a id="pooling-mode"></a>
+<a href="dev.langchain4j.model.embedding.onnx.PoolingMode.md">
+<code>pooling-mode</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="PoolingMode">PoolingMode</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>The pooling model to use</td>
+</tr>
+<tr>
+<td>
+<a id="type"></a>
+<a href="io.helidon.integrations.langchain4j.providers.lc4jinprocess.InProcessModelType.md">
+<code>type</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="InProcessModelType">InProcessModelType</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Which in-process ONNX model variant should be used</td>
+</tr>
+<tr>
+<td>
+<code>enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether the embedding model is enabled</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 ## Additional Information
 
@@ -110,5 +205,3 @@ Configuration properties:
 - [Retrieval-Augmented Generation (RAG)](rag.md)
 
 [langchain4j-docu]: https://docs.langchain4j.dev/integrations/embedding-models/in-process/
-[pooling-mode]: ../../../config/dev.langchain4j.model.embedding.onnx.PoolingMode.md
-[type]: ../../../config/io.helidon.integrations.langchain4j.providers.lc4jinprocess.InProcessModelType.md

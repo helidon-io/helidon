@@ -198,6 +198,8 @@ Main entry point for Neo4j support for Helidon
 
 
 
+## Manifest
+
 ---
 
 See the [manifest](manifest.md) for all available types.

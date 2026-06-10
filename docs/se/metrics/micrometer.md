@@ -56,6 +56,26 @@ You can configure the Helidon Micrometer REST service as you can other built-in 
 
 ### Configuration options
 
+<!--@include ../../config/io.helidon.integrations.micrometer.MicrometerFeature.md#configuration-options offset=1 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+This config type has no options.
+<!--/include-->
+
+
 By default, Helidon Micrometer integration exposes the `/micrometer` endpoint. You can override the path using the [`Builder`][builder-2] or the `micrometer.web-context` configuration key.
 
 Overriding the default Micrometer path:

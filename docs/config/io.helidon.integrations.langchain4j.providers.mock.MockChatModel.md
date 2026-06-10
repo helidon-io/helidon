@@ -62,6 +62,8 @@ Configuration blueprint for <code>MockChatModel</code>
 
 
 
+## Manifest
+
 ---
 
 See the [manifest](manifest.md) for all available types.

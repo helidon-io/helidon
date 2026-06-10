@@ -194,20 +194,137 @@ To control the observability features as a whole, add config settings under `ser
 
 ### Configuration options
 
-| Key                                                                                                       | Kind    | Type                 | Default Value | Description                                                   |
-|-----------------------------------------------------------------------------------------------------------|---------|----------------------|---------------|---------------------------------------------------------------|
-| <span id="a42c15-enabled"></span> `enabled`                                                               | `VALUE` | `Boolean`            | `true`        | Whether the observe support is enabled                        |
-| <span id="a0d210-endpoint"></span> `endpoint`                                                             | `VALUE` | `String`             | `/observe`    | Root endpoint to use for observe providers                    |
-| <span id="a837f0-observers"></span> [`observers`][observers] | `LIST`  | `i.h.w.o.s.Observer` |               | Observers to use with this observe features                   |
-| <span id="a1e406-observers-discover-services"></span> `observers-discover-services`                       | `VALUE` | `Boolean`            | `true`        | Whether to enable automatic service discovery for `observers` |
-| <span id="ace9c3-sockets"></span> `sockets`                                                               | `LIST`  | `String`             |               | Sockets the observability endpoint should be exposed on       |
-| <span id="a1bc81-weight"></span> `weight`                                                                 | `VALUE` | `Double`             | `80.0`        | Change the weight of this feature                             |
+<!--@include ../config/io.helidon.webserver.observe.ObserveFeature.md#configuration-options offset=1 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
 
-#### Deprecated Options
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
 
-| Key                                                                                     | Kind    | Type                      | Description                                                                   |
-|-----------------------------------------------------------------------------------------|---------|---------------------------|-------------------------------------------------------------------------------|
-| <span id="a25a02-cors"></span> [`cors`][cors] | `VALUE` | `i.h.c.CrossOriginConfig` | Cors support inherited by each observe provider, unless explicitly configured |
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>endpoint</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">/observe</code>
+</td>
+<td>Root endpoint to use for observe providers</td>
+</tr>
+<tr>
+<td>
+<code>weight</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Double</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">80.0</code>
+</td>
+<td>Change the weight of this feature</td>
+</tr>
+<tr>
+<td>
+<code>sockets</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Sockets the observability endpoint should be exposed on</td>
+</tr>
+<tr>
+<td>
+<code>enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether the observe support is enabled</td>
+</tr>
+<tr>
+<td>
+<a id="observers"></a>
+<a href="io.helidon.webserver.observe.spi.Observer.md">
+<code>observers</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;Observer&gt;">List&lt;Observer&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Observers to use with this observe features</td>
+</tr>
+<tr>
+<td>
+<code>observers-discover-services</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to enable automatic service discovery for <code>observers</code></td>
+</tr>
+</tbody>
+</table>
+
+
+### Deprecated Options
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a id="cors"></a>
+<a href="io.helidon.cors.CrossOriginConfig.md">
+<code>cors</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="CrossOriginConfig">CrossOriginConfig</code>
+</td>
+<td>Cors support inherited by each observe provider, unless explicitly configured</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 ## Additional Information
 
@@ -224,6 +341,4 @@ Feature is similar to `HttpService` but gives more freedom in setup. Main differ
 - [Metrics](../se/metrics/metrics.md) documentation.
 - [Health](../se/health.md) documentation.
 
-[observers]: ../config/io.helidon.webserver.observe.spi.Observer.md
-[cors]: ../config/io.helidon.cors.CrossOriginConfig.md
 [microprofile-met]: https://download.eclipse.org/microprofile/microprofile-metrics-5.0.0/microprofile-metrics-spec-5.0.0.pdf

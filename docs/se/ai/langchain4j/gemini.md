@@ -37,50 +37,508 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 ### Configuration options
 
-| Key                                                                                                                                           | Kind    | Type                                  | Default Value | Description                                                                                                                                                                               |
-|-----------------------------------------------------------------------------------------------------------------------------------------------|---------|---------------------------------------|---------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| <span id="a36971-allow-code-execution"></span> `allow-code-execution`                                                                         | `VALUE` | `Boolean`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#allowCodeExecution(java.lang.Boolean)`                                              |
-| <span id="a707ad-allow-google-maps"></span> `allow-google-maps`                                                                               | `VALUE` | `Boolean`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#allowGoogleMaps(java.lang.Boolean)`                                                 |
-| <span id="a90bfd-allow-google-search"></span> `allow-google-search`                                                                           | `VALUE` | `Boolean`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#allowGoogleSearch(java.lang.Boolean)`                                               |
-| <span id="a93fb4-allow-url-context"></span> `allow-url-context`                                                                               | `VALUE` | `Boolean`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#allowUrlContext(java.lang.Boolean)`                                                 |
-| <span id="abd114-api-key"></span> `api-key`                                                                                                   | `VALUE` | `String`                              |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#apiKey(java.lang.String)`                                                           |
-| <span id="ad4669-base-url"></span> `base-url`                                                                                                 | `VALUE` | `String`                              |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#baseUrl(java.lang.String)`                                                          |
-| <span id="acbd7f-default-request-parameters"></span> `default-request-parameters`                                                             | `VALUE` | `d.l.m.c.r.ChatRequestParameters`     |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#defaultRequestParameters(dev.langchain4j.model.chat.request.ChatRequestParameters)` |
-| <span id="a37fd0-default-request-parameters-discover-services"></span> `default-request-parameters-discover-services`                         | `VALUE` | `Boolean`                             | `true`        | Whether to enable automatic service discovery for `default-request-parameters`                                                                                                            |
-| <span id="a2d10c-enable-enhanced-civic-answers"></span> `enable-enhanced-civic-answers`                                                       | `VALUE` | `Boolean`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#enableEnhancedCivicAnswers(java.lang.Boolean)`                                      |
-| <span id="abb92d-enabled"></span> `enabled`                                                                                                   | `VALUE` | `Boolean`                             | `true`        | If set to `false`, GoogleAiGeminiChatModel will not be available even if configured                                                                                                       |
-| <span id="a5c07f-frequency-penalty"></span> `frequency-penalty`                                                                               | `VALUE` | `Double`                              |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#frequencyPenalty(java.lang.Double)`                                                 |
-| <span id="a9cf64-http-client-builder"></span> `http-client-builder`                                                                           | `VALUE` | `d.l.h.c.HttpClientBuilder`           |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#httpClientBuilder(dev.langchain4j.http.client.HttpClientBuilder)`                   |
-| <span id="a46339-http-client-builder-discover-services"></span> `http-client-builder-discover-services`                                       | `VALUE` | `Boolean`                             | `true`        | Whether to enable automatic service discovery for `http-client-builder`                                                                                                                   |
-| <span id="ae30ce-include-code-execution-output"></span> `include-code-execution-output`                                                       | `VALUE` | `Boolean`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#includeCodeExecutionOutput(java.lang.Boolean)`                                      |
-| <span id="a0e41a-listeners"></span> `listeners`                                                                                               | `LIST`  | `d.l.m.c.l.ChatModelListener`         |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#listeners(java.util.List)`                                                          |
-| <span id="a641a3-listeners-discover-services"></span> `listeners-discover-services`                                                           | `VALUE` | `Boolean`                             | `true`        | Whether to enable automatic service discovery for `listeners`                                                                                                                             |
-| <span id="a1c864-log-requests"></span> `log-requests`                                                                                         | `VALUE` | `Boolean`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#logRequests(java.lang.Boolean)`                                                     |
-| <span id="a32817-log-requests-and-responses"></span> `log-requests-and-responses`                                                             | `VALUE` | `Boolean`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#logRequestsAndResponses(java.lang.Boolean)`                                         |
-| <span id="aaa8a2-log-responses"></span> `log-responses`                                                                                       | `VALUE` | `Boolean`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#logResponses(java.lang.Boolean)`                                                    |
-| <span id="a35cec-logger"></span> `logger`                                                                                                     | `VALUE` | `o.s.Logger`                          |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#logger(org.slf4j.Logger)`                                                           |
-| <span id="a40ed5-logprobs"></span> `logprobs`                                                                                                 | `VALUE` | `Integer`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#logprobs(java.lang.Integer)`                                                        |
-| <span id="ac7af8-max-output-tokens"></span> `max-output-tokens`                                                                               | `VALUE` | `Integer`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#maxOutputTokens(java.lang.Integer)`                                                 |
-| <span id="aa325a-max-retries"></span> `max-retries`                                                                                           | `VALUE` | `Integer`                             |               | Generated from `dev.langchain4j.model.googleai.GoogleAiGeminiChatModel.GoogleAiGeminiChatModelBuilder#maxRetries(java.lang.Integer)`                                                      |
-| <span id="ac28a4-media-resolution"></span> [`media-resolution`][media-resolution] | `VALUE` | `d.l.m.g.GeminiMediaResolutionLevel`  |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#mediaResolution(dev.langchain4j.model.googleai.GeminiMediaResolutionLevel)`         |
-| <span id="a7d032-media-resolution-per-part-enabled"></span> `media-resolution-per-part-enabled`                                               | `VALUE` | `Boolean`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#mediaResolutionPerPartEnabled(java.lang.Boolean)`                                   |
-| <span id="a0df69-model-name"></span> `model-name`                                                                                             | `VALUE` | `String`                              |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#modelName(java.lang.String)`                                                        |
-| <span id="a43c1b-presence-penalty"></span> `presence-penalty`                                                                                 | `VALUE` | `Double`                              |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#presencePenalty(java.lang.Double)`                                                  |
-| <span id="a6dbee-response-format"></span> `response-format`                                                                                   | `VALUE` | `d.l.m.c.r.ResponseFormat`            |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#responseFormat(dev.langchain4j.model.chat.request.ResponseFormat)`                  |
-| <span id="a6ad86-response-logprobs"></span> `response-logprobs`                                                                               | `VALUE` | `Boolean`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#responseLogprobs(java.lang.Boolean)`                                                |
-| <span id="aa790b-retrieve-google-maps-widget-token"></span> `retrieve-google-maps-widget-token`                                               | `VALUE` | `Boolean`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#retrieveGoogleMapsWidgetToken(java.lang.Boolean)`                                   |
-| <span id="acac79-return-thinking"></span> `return-thinking`                                                                                   | `VALUE` | `Boolean`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#returnThinking(java.lang.Boolean)`                                                  |
-| <span id="a4abb2-safety-settings"></span> `safety-settings`                                                                                   | `LIST`  | `d.l.m.g.GeminiSafetySetting`         |               | Safety setting, affecting the safety-blocking behavior                                                                                                                                    |
-| <span id="a14134-seed"></span> `seed`                                                                                                         | `VALUE` | `Integer`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#seed(java.lang.Integer)`                                                            |
-| <span id="a68f81-send-thinking"></span> `send-thinking`                                                                                       | `VALUE` | `Boolean`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#sendThinking(java.lang.Boolean)`                                                    |
-| <span id="ac6b35-stop-sequences"></span> `stop-sequences`                                                                                     | `LIST`  | `String`                              |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#stopSequences(java.util.List)`                                                      |
-| <span id="a30544-supported-capabilities"></span> [`supported-capabilities`][supported-capabi]         | `LIST`  | `d.l.m.c.Capability`                  |               | Generated from `dev.langchain4j.model.googleai.GoogleAiGeminiChatModel.GoogleAiGeminiChatModelBuilder#supportedCapabilities(java.util.Set)`                                               |
-| <span id="a38c2c-temperature"></span> `temperature`                                                                                           | `VALUE` | `Double`                              |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#temperature(java.lang.Double)`                                                      |
-| <span id="a4af39-thinking-config"></span> `thinking-config`                                                                                   | `VALUE` | `d.l.m.g.GeminiThinkingConfig`        |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#thinkingConfig(dev.langchain4j.model.googleai.GeminiThinkingConfig)`                |
-| <span id="a7cb05-timeout"></span> `timeout`                                                                                                   | `VALUE` | `Duration`                            |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#timeout(java.time.Duration)`                                                        |
-| <span id="a97a94-tool-config"></span> `tool-config`                                                                                           | `VALUE` | `d.l.m.g.GeminiFunctionCallingConfig` |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#toolConfig(dev.langchain4j.model.googleai.GeminiFunctionCallingConfig)`             |
-| <span id="a34cda-top-k"></span> `top-k`                                                                                                       | `VALUE` | `Integer`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#topK(java.lang.Integer)`                                                            |
-| <span id="a5f7d4-top-p"></span> `top-p`                                                                                                       | `VALUE` | `Double`                              |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#topP(java.lang.Double)`                                                             |
+<!--@include ../../../config/io.helidon.integrations.langchain4j.providers.gemini.GoogleAiGeminiChatModelConfig.md#configuration-options offset=1 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>media-resolution-per-part-enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#mediaResolutionPerPartEnabled(java.lang.Boolean)</code></td>
+</tr>
+<tr>
+<td>
+<code>retrieve-google-maps-widget-token</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#retrieveGoogleMapsWidgetToken(java.lang.Boolean)</code></td>
+</tr>
+<tr>
+<td>
+<code>http-client-builder</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="HttpClientBuilder">HttpClientBuilder</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#httpClientBuilder(dev.langchain4j.http.client.HttpClientBuilder)</code></td>
+</tr>
+<tr>
+<td>
+<code>max-output-tokens</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#maxOutputTokens(java.lang.Integer)</code></td>
+</tr>
+<tr>
+<td>
+<a id="media-resolution"></a>
+<a href="dev.langchain4j.model.googleai.GeminiMediaResolutionLevel.md">
+<code>media-resolution</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="GeminiMediaResolutionLevel">GeminiMediaResolutionLevel</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#mediaResolution(dev.langchain4j.model.googleai.GeminiMediaResolutionLevel)</code></td>
+</tr>
+<tr>
+<td>
+<code>seed</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#seed(java.lang.Integer)</code></td>
+</tr>
+<tr>
+<td>
+<code>default-request-parameters-discover-services</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to enable automatic service discovery for <code>default-request-parameters</code></td>
+</tr>
+<tr>
+<td>
+<code>logger</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Logger</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#logger(org.slf4j.Logger)</code></td>
+</tr>
+<tr>
+<td>
+<code>max-retries</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.GoogleAiGeminiChatModel.GoogleAiGeminiChatModelBuilder#maxRetries(java.lang.Integer)</code></td>
+</tr>
+<tr>
+<td>
+<code>tool-config</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="GeminiFunctionCallingConfig">GeminiFunctionCallingConfig</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#toolConfig(dev.langchain4j.model.googleai.GeminiFunctionCallingConfig)</code></td>
+</tr>
+<tr>
+<td>
+<code>enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>If set to <code>false</code>, GoogleAiGeminiChatModel will not be available even if configured</td>
+</tr>
+<tr>
+<td>
+<code>timeout</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#timeout(java.time.Duration)</code></td>
+</tr>
+<tr>
+<td>
+<code>logprobs</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#logprobs(java.lang.Integer)</code></td>
+</tr>
+<tr>
+<td>
+<code>log-requests</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#logRequests(java.lang.Boolean)</code></td>
+</tr>
+<tr>
+<td>
+<code>api-key</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#apiKey(java.lang.String)</code></td>
+</tr>
+<tr>
+<td>
+<a id="supported-capabilities"></a>
+<a href="dev.langchain4j.model.chat.Capability.md">
+<code>supported-capabilities</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;Capability&gt;">List&lt;Capability&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.GoogleAiGeminiChatModel.GoogleAiGeminiChatModelBuilder#supportedCapabilities(java.util.Set)</code></td>
+</tr>
+<tr>
+<td>
+<code>temperature</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Double</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#temperature(java.lang.Double)</code></td>
+</tr>
+<tr>
+<td>
+<code>model-name</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#modelName(java.lang.String)</code></td>
+</tr>
+<tr>
+<td>
+<code>stop-sequences</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#stopSequences(java.util.List)</code></td>
+</tr>
+<tr>
+<td>
+<code>return-thinking</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#returnThinking(java.lang.Boolean)</code></td>
+</tr>
+<tr>
+<td>
+<code>base-url</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#baseUrl(java.lang.String)</code></td>
+</tr>
+<tr>
+<td>
+<code>allow-google-search</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#allowGoogleSearch(java.lang.Boolean)</code></td>
+</tr>
+<tr>
+<td>
+<code>frequency-penalty</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Double</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#frequencyPenalty(java.lang.Double)</code></td>
+</tr>
+<tr>
+<td>
+<code>default-request-parameters</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="ChatRequestParameters">ChatRequestParameters</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#defaultRequestParameters(dev.langchain4j.model.chat.request.ChatRequestParameters)</code></td>
+</tr>
+<tr>
+<td>
+<code>allow-url-context</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#allowUrlContext(java.lang.Boolean)</code></td>
+</tr>
+<tr>
+<td>
+<code>listeners</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;ChatModelListener&gt;">List&lt;ChatModelListener&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#listeners(java.util.List)</code></td>
+</tr>
+<tr>
+<td>
+<code>response-logprobs</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#responseLogprobs(java.lang.Boolean)</code></td>
+</tr>
+<tr>
+<td>
+<code>top-k</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#topK(java.lang.Integer)</code></td>
+</tr>
+<tr>
+<td>
+<code>allow-code-execution</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#allowCodeExecution(java.lang.Boolean)</code></td>
+</tr>
+<tr>
+<td>
+<code>log-requests-and-responses</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#logRequestsAndResponses(java.lang.Boolean)</code></td>
+</tr>
+<tr>
+<td>
+<code>allow-google-maps</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#allowGoogleMaps(java.lang.Boolean)</code></td>
+</tr>
+<tr>
+<td>
+<code>log-responses</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#logResponses(java.lang.Boolean)</code></td>
+</tr>
+<tr>
+<td>
+<code>response-format</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="ResponseFormat">ResponseFormat</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#responseFormat(dev.langchain4j.model.chat.request.ResponseFormat)</code></td>
+</tr>
+<tr>
+<td>
+<code>top-p</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Double</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#topP(java.lang.Double)</code></td>
+</tr>
+<tr>
+<td>
+<code>http-client-builder-discover-services</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to enable automatic service discovery for <code>http-client-builder</code></td>
+</tr>
+<tr>
+<td>
+<code>listeners-discover-services</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to enable automatic service discovery for <code>listeners</code></td>
+</tr>
+<tr>
+<td>
+<code>include-code-execution-output</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#includeCodeExecutionOutput(java.lang.Boolean)</code></td>
+</tr>
+<tr>
+<td>
+<code>safety-settings</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;GeminiSafetySetting&gt;">List&lt;GeminiSafetySetting&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Safety setting, affecting the safety-blocking behavior</td>
+</tr>
+<tr>
+<td>
+<code>thinking-config</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="GeminiThinkingConfig">GeminiThinkingConfig</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#thinkingConfig(dev.langchain4j.model.googleai.GeminiThinkingConfig)</code></td>
+</tr>
+<tr>
+<td>
+<code>send-thinking</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#sendThinking(java.lang.Boolean)</code></td>
+</tr>
+<tr>
+<td>
+<code>enable-enhanced-civic-answers</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#enableEnhancedCivicAnswers(java.lang.Boolean)</code></td>
+</tr>
+<tr>
+<td>
+<code>presence-penalty</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Double</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#presencePenalty(java.lang.Double)</code></td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 ### GoogleAiGeminiStreamingChatModel
 
@@ -102,48 +560,483 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 ### Configuration options
 
-| Key                                                                                                                                           | Kind    | Type                                  | Default Value | Description                                                                                                                                                                               |
-|-----------------------------------------------------------------------------------------------------------------------------------------------|---------|---------------------------------------|---------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| <span id="aefc4e-allow-code-execution"></span> `allow-code-execution`                                                                         | `VALUE` | `Boolean`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#allowCodeExecution(java.lang.Boolean)`                                              |
-| <span id="a24bf9-allow-google-maps"></span> `allow-google-maps`                                                                               | `VALUE` | `Boolean`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#allowGoogleMaps(java.lang.Boolean)`                                                 |
-| <span id="abb9b4-allow-google-search"></span> `allow-google-search`                                                                           | `VALUE` | `Boolean`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#allowGoogleSearch(java.lang.Boolean)`                                               |
-| <span id="aa3f89-allow-url-context"></span> `allow-url-context`                                                                               | `VALUE` | `Boolean`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#allowUrlContext(java.lang.Boolean)`                                                 |
-| <span id="a025f7-api-key"></span> `api-key`                                                                                                   | `VALUE` | `String`                              |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#apiKey(java.lang.String)`                                                           |
-| <span id="af89c6-base-url"></span> `base-url`                                                                                                 | `VALUE` | `String`                              |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#baseUrl(java.lang.String)`                                                          |
-| <span id="a37566-default-request-parameters"></span> `default-request-parameters`                                                             | `VALUE` | `d.l.m.c.r.ChatRequestParameters`     |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#defaultRequestParameters(dev.langchain4j.model.chat.request.ChatRequestParameters)` |
-| <span id="a928d4-default-request-parameters-discover-services"></span> `default-request-parameters-discover-services`                         | `VALUE` | `Boolean`                             | `true`        | Whether to enable automatic service discovery for `default-request-parameters`                                                                                                            |
-| <span id="a4c855-enable-enhanced-civic-answers"></span> `enable-enhanced-civic-answers`                                                       | `VALUE` | `Boolean`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#enableEnhancedCivicAnswers(java.lang.Boolean)`                                      |
-| <span id="a5949a-enabled"></span> `enabled`                                                                                                   | `VALUE` | `Boolean`                             | `true`        | If set to `false`, GoogleAiGeminiStreamingChatModel will not be available even if configured                                                                                              |
-| <span id="a7a6e0-frequency-penalty"></span> `frequency-penalty`                                                                               | `VALUE` | `Double`                              |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#frequencyPenalty(java.lang.Double)`                                                 |
-| <span id="a267b6-http-client-builder"></span> `http-client-builder`                                                                           | `VALUE` | `d.l.h.c.HttpClientBuilder`           |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#httpClientBuilder(dev.langchain4j.http.client.HttpClientBuilder)`                   |
-| <span id="aa5f81-http-client-builder-discover-services"></span> `http-client-builder-discover-services`                                       | `VALUE` | `Boolean`                             | `true`        | Whether to enable automatic service discovery for `http-client-builder`                                                                                                                   |
-| <span id="ab8d12-include-code-execution-output"></span> `include-code-execution-output`                                                       | `VALUE` | `Boolean`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#includeCodeExecutionOutput(java.lang.Boolean)`                                      |
-| <span id="abe342-listeners"></span> `listeners`                                                                                               | `LIST`  | `d.l.m.c.l.ChatModelListener`         |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#listeners(java.util.List)`                                                          |
-| <span id="af5b63-listeners-discover-services"></span> `listeners-discover-services`                                                           | `VALUE` | `Boolean`                             | `true`        | Whether to enable automatic service discovery for `listeners`                                                                                                                             |
-| <span id="a394ff-log-requests"></span> `log-requests`                                                                                         | `VALUE` | `Boolean`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#logRequests(java.lang.Boolean)`                                                     |
-| <span id="a1f8a7-log-requests-and-responses"></span> `log-requests-and-responses`                                                             | `VALUE` | `Boolean`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#logRequestsAndResponses(java.lang.Boolean)`                                         |
-| <span id="aba4d9-log-responses"></span> `log-responses`                                                                                       | `VALUE` | `Boolean`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#logResponses(java.lang.Boolean)`                                                    |
-| <span id="a01bc5-logger"></span> `logger`                                                                                                     | `VALUE` | `o.s.Logger`                          |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#logger(org.slf4j.Logger)`                                                           |
-| <span id="a1d643-logprobs"></span> `logprobs`                                                                                                 | `VALUE` | `Integer`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#logprobs(java.lang.Integer)`                                                        |
-| <span id="aae4c9-max-output-tokens"></span> `max-output-tokens`                                                                               | `VALUE` | `Integer`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#maxOutputTokens(java.lang.Integer)`                                                 |
-| <span id="abb6a1-media-resolution"></span> [`media-resolution`][media-resolution] | `VALUE` | `d.l.m.g.GeminiMediaResolutionLevel`  |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#mediaResolution(dev.langchain4j.model.googleai.GeminiMediaResolutionLevel)`         |
-| <span id="a7e616-media-resolution-per-part-enabled"></span> `media-resolution-per-part-enabled`                                               | `VALUE` | `Boolean`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#mediaResolutionPerPartEnabled(java.lang.Boolean)`                                   |
-| <span id="a8996d-model-name"></span> `model-name`                                                                                             | `VALUE` | `String`                              |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#modelName(java.lang.String)`                                                        |
-| <span id="a6ac07-presence-penalty"></span> `presence-penalty`                                                                                 | `VALUE` | `Double`                              |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#presencePenalty(java.lang.Double)`                                                  |
-| <span id="af2f0f-response-format"></span> `response-format`                                                                                   | `VALUE` | `d.l.m.c.r.ResponseFormat`            |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#responseFormat(dev.langchain4j.model.chat.request.ResponseFormat)`                  |
-| <span id="a1442f-response-logprobs"></span> `response-logprobs`                                                                               | `VALUE` | `Boolean`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#responseLogprobs(java.lang.Boolean)`                                                |
-| <span id="a5574d-retrieve-google-maps-widget-token"></span> `retrieve-google-maps-widget-token`                                               | `VALUE` | `Boolean`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#retrieveGoogleMapsWidgetToken(java.lang.Boolean)`                                   |
-| <span id="ab15e0-return-thinking"></span> `return-thinking`                                                                                   | `VALUE` | `Boolean`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#returnThinking(java.lang.Boolean)`                                                  |
-| <span id="a35d88-safety-settings"></span> `safety-settings`                                                                                   | `LIST`  | `d.l.m.g.GeminiSafetySetting`         |               | Safety setting, affecting the safety-blocking behavior                                                                                                                                    |
-| <span id="a8b284-seed"></span> `seed`                                                                                                         | `VALUE` | `Integer`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#seed(java.lang.Integer)`                                                            |
-| <span id="abd048-send-thinking"></span> `send-thinking`                                                                                       | `VALUE` | `Boolean`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#sendThinking(java.lang.Boolean)`                                                    |
-| <span id="a52102-stop-sequences"></span> `stop-sequences`                                                                                     | `LIST`  | `String`                              |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#stopSequences(java.util.List)`                                                      |
-| <span id="ab2c07-temperature"></span> `temperature`                                                                                           | `VALUE` | `Double`                              |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#temperature(java.lang.Double)`                                                      |
-| <span id="ac06bc-thinking-config"></span> `thinking-config`                                                                                   | `VALUE` | `d.l.m.g.GeminiThinkingConfig`        |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#thinkingConfig(dev.langchain4j.model.googleai.GeminiThinkingConfig)`                |
-| <span id="acfe6e-timeout"></span> `timeout`                                                                                                   | `VALUE` | `Duration`                            |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#timeout(java.time.Duration)`                                                        |
-| <span id="a30323-tool-config"></span> `tool-config`                                                                                           | `VALUE` | `d.l.m.g.GeminiFunctionCallingConfig` |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#toolConfig(dev.langchain4j.model.googleai.GeminiFunctionCallingConfig)`             |
-| <span id="a3c1a7-top-k"></span> `top-k`                                                                                                       | `VALUE` | `Integer`                             |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#topK(java.lang.Integer)`                                                            |
-| <span id="a57eab-top-p"></span> `top-p`                                                                                                       | `VALUE` | `Double`                              |               | Generated from `dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#topP(java.lang.Double)`                                                             |
+<!--@include ../../../config/io.helidon.integrations.langchain4j.providers.gemini.GoogleAiGeminiStreamingChatModelConfig.md#configuration-options offset=1 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>media-resolution-per-part-enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#mediaResolutionPerPartEnabled(java.lang.Boolean)</code></td>
+</tr>
+<tr>
+<td>
+<code>retrieve-google-maps-widget-token</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#retrieveGoogleMapsWidgetToken(java.lang.Boolean)</code></td>
+</tr>
+<tr>
+<td>
+<code>http-client-builder</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="HttpClientBuilder">HttpClientBuilder</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#httpClientBuilder(dev.langchain4j.http.client.HttpClientBuilder)</code></td>
+</tr>
+<tr>
+<td>
+<code>max-output-tokens</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#maxOutputTokens(java.lang.Integer)</code></td>
+</tr>
+<tr>
+<td>
+<a id="media-resolution"></a>
+<a href="dev.langchain4j.model.googleai.GeminiMediaResolutionLevel.md">
+<code>media-resolution</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="GeminiMediaResolutionLevel">GeminiMediaResolutionLevel</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#mediaResolution(dev.langchain4j.model.googleai.GeminiMediaResolutionLevel)</code></td>
+</tr>
+<tr>
+<td>
+<code>seed</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#seed(java.lang.Integer)</code></td>
+</tr>
+<tr>
+<td>
+<code>default-request-parameters-discover-services</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to enable automatic service discovery for <code>default-request-parameters</code></td>
+</tr>
+<tr>
+<td>
+<code>logger</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Logger</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#logger(org.slf4j.Logger)</code></td>
+</tr>
+<tr>
+<td>
+<code>tool-config</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="GeminiFunctionCallingConfig">GeminiFunctionCallingConfig</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#toolConfig(dev.langchain4j.model.googleai.GeminiFunctionCallingConfig)</code></td>
+</tr>
+<tr>
+<td>
+<code>enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>If set to <code>false</code>, GoogleAiGeminiStreamingChatModel will not be available even if configured</td>
+</tr>
+<tr>
+<td>
+<code>timeout</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#timeout(java.time.Duration)</code></td>
+</tr>
+<tr>
+<td>
+<code>logprobs</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#logprobs(java.lang.Integer)</code></td>
+</tr>
+<tr>
+<td>
+<code>log-requests</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#logRequests(java.lang.Boolean)</code></td>
+</tr>
+<tr>
+<td>
+<code>api-key</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#apiKey(java.lang.String)</code></td>
+</tr>
+<tr>
+<td>
+<code>temperature</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Double</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#temperature(java.lang.Double)</code></td>
+</tr>
+<tr>
+<td>
+<code>model-name</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#modelName(java.lang.String)</code></td>
+</tr>
+<tr>
+<td>
+<code>stop-sequences</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#stopSequences(java.util.List)</code></td>
+</tr>
+<tr>
+<td>
+<code>return-thinking</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#returnThinking(java.lang.Boolean)</code></td>
+</tr>
+<tr>
+<td>
+<code>base-url</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#baseUrl(java.lang.String)</code></td>
+</tr>
+<tr>
+<td>
+<code>allow-google-search</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#allowGoogleSearch(java.lang.Boolean)</code></td>
+</tr>
+<tr>
+<td>
+<code>frequency-penalty</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Double</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#frequencyPenalty(java.lang.Double)</code></td>
+</tr>
+<tr>
+<td>
+<code>default-request-parameters</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="ChatRequestParameters">ChatRequestParameters</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#defaultRequestParameters(dev.langchain4j.model.chat.request.ChatRequestParameters)</code></td>
+</tr>
+<tr>
+<td>
+<code>allow-url-context</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#allowUrlContext(java.lang.Boolean)</code></td>
+</tr>
+<tr>
+<td>
+<code>listeners</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;ChatModelListener&gt;">List&lt;ChatModelListener&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#listeners(java.util.List)</code></td>
+</tr>
+<tr>
+<td>
+<code>response-logprobs</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#responseLogprobs(java.lang.Boolean)</code></td>
+</tr>
+<tr>
+<td>
+<code>top-k</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#topK(java.lang.Integer)</code></td>
+</tr>
+<tr>
+<td>
+<code>allow-code-execution</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#allowCodeExecution(java.lang.Boolean)</code></td>
+</tr>
+<tr>
+<td>
+<code>log-requests-and-responses</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#logRequestsAndResponses(java.lang.Boolean)</code></td>
+</tr>
+<tr>
+<td>
+<code>allow-google-maps</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#allowGoogleMaps(java.lang.Boolean)</code></td>
+</tr>
+<tr>
+<td>
+<code>log-responses</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#logResponses(java.lang.Boolean)</code></td>
+</tr>
+<tr>
+<td>
+<code>response-format</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="ResponseFormat">ResponseFormat</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#responseFormat(dev.langchain4j.model.chat.request.ResponseFormat)</code></td>
+</tr>
+<tr>
+<td>
+<code>top-p</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Double</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#topP(java.lang.Double)</code></td>
+</tr>
+<tr>
+<td>
+<code>http-client-builder-discover-services</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to enable automatic service discovery for <code>http-client-builder</code></td>
+</tr>
+<tr>
+<td>
+<code>listeners-discover-services</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to enable automatic service discovery for <code>listeners</code></td>
+</tr>
+<tr>
+<td>
+<code>include-code-execution-output</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#includeCodeExecutionOutput(java.lang.Boolean)</code></td>
+</tr>
+<tr>
+<td>
+<code>safety-settings</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;GeminiSafetySetting&gt;">List&lt;GeminiSafetySetting&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Safety setting, affecting the safety-blocking behavior</td>
+</tr>
+<tr>
+<td>
+<code>thinking-config</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="GeminiThinkingConfig">GeminiThinkingConfig</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#thinkingConfig(dev.langchain4j.model.googleai.GeminiThinkingConfig)</code></td>
+</tr>
+<tr>
+<td>
+<code>send-thinking</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#sendThinking(java.lang.Boolean)</code></td>
+</tr>
+<tr>
+<td>
+<code>enable-enhanced-civic-answers</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#enableEnhancedCivicAnswers(java.lang.Boolean)</code></td>
+</tr>
+<tr>
+<td>
+<code>presence-penalty</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Double</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#presencePenalty(java.lang.Double)</code></td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 ## Additional Information
 
@@ -152,7 +1045,5 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 - [Google AI Gemini Website][google-ai-gemini]
 
 [google-gemini]: https://ai.google.dev/gemini-api/docs/models
-[media-resolution]: ../../../config/dev.langchain4j.model.googleai.GeminiMediaResolutionLevel.md
-[supported-capabi]: ../../../config/dev.langchain4j.model.chat.Capability.md
 [langchain4j-goog]: https://docs.langchain4j.dev/integrations/language-models/google-ai-gemini
 [google-ai-gemini]: https://ai.google.dev/gemini-api/docs

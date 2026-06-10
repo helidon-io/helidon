@@ -23,6 +23,8 @@ Implements simple Micrometer support
 
 This config type has no options.
 
+## Manifest
+
 ---
 
 See the [manifest](manifest.md) for all available types.

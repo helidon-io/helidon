@@ -197,6 +197,8 @@ Configuration for LangChain4j MCP (Model Context Protocol) clients
 </table>
 
 
+## Manifest
+
 ---
 
 See the [manifest](manifest.md) for all available types.

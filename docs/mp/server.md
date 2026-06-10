@@ -84,48 +84,487 @@ Configuration reference:
 
 ### Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="acb486-backlog"></span> `backlog` | `VALUE` | `Integer` | `1024` | Accept backlog |
-| <span id="a4fc52-bind-address"></span> `bind-address` | `VALUE` | `i.h.w.W.ListenerCustomMethods` |   | The address to bind to |
-| <span id="a32e67-concurrency-limit"></span> [`concurrency-limit`][concurrency-limi] | `VALUE` | `i.h.c.c.l.Limit` |   | Concurrency limit to use to limit concurrent execution of incoming requests |
-| <span id="a3f7e3-concurrency-limit-discover-services"></span> `concurrency-limit-discover-services` | `VALUE` | `Boolean` | `false` | Whether to enable automatic service discovery for `concurrency-limit` |
-| <span id="ac9c91-connection-options"></span> [`connection-options`][connection-optio] | `VALUE` | `i.h.c.s.SocketOptions` |   | Options for connections accepted by this listener |
-| <span id="a511a0-content-encoding"></span> [`content-encoding`][content-encoding] | `VALUE` | `i.h.h.e.ContentEncodingContext` |   | Configure the listener specific `io.helidon.http.encoding.ContentEncodingContext` |
-| <span id="aa0fb8-enable-proxy-protocol"></span> `enable-proxy-protocol` | `VALUE` | `Boolean` | `false` | Enable proxy protocol support for this socket |
-| <span id="a92b62-error-handling"></span> [`error-handling`][error-handling] | `VALUE` | `i.h.w.ErrorHandling` |   | Configuration for this listener's error handling |
-| <span id="ae9df6-features"></span> [`features`][features] | `LIST` | `i.h.w.s.ServerFeature` |   | Server features allow customization of the server, listeners, or routings |
-| <span id="a4431f-features-discover-services"></span> `features-discover-services` | `VALUE` | `Boolean` | `true` | Whether to enable automatic service discovery for `features` |
-| <span id="a47500-host"></span> `host` | `VALUE` | `String` | `0.0.0.0` | Host of the default socket |
-| <span id="a570c4-idle-connection-period"></span> `idle-connection-period` | `VALUE` | `Duration` | `PT2M` | How often should we check for `#idleConnectionTimeout()` |
-| <span id="abfcba-idle-connection-timeout"></span> `idle-connection-timeout` | `VALUE` | `Duration` | `PT5M` | How long should we wait before closing a connection that has no traffic on it |
-| <span id="acfc0a-ignore-invalid-named-routing"></span> `ignore-invalid-named-routing` | `VALUE` | `Boolean` |   | If set to `true`, any named routing configured that does not have an associated named listener will NOT cause an exception to be thrown (default behavior is to throw an exception) |
-| <span id="a71146-max-concurrent-requests"></span> `max-concurrent-requests` | `VALUE` | `Integer` | `-1` | Limits the number of requests that can be executed at the same time (the number of active virtual threads of requests) |
-| <span id="a23186-max-in-memory-entity"></span> `max-in-memory-entity` | `VALUE` | `Integer` | `131072` | If the entity is expected to be smaller that this number of bytes, it would be buffered in memory to optimize performance when writing it |
-| <span id="a6e9f1-max-payload-size"></span> `max-payload-size` | `VALUE` | `Long` | `-1` | Maximal number of bytes an entity may have |
-| <span id="ac255e-max-tcp-connections"></span> `max-tcp-connections` | `VALUE` | `Integer` | `-1` | Limits the number of connections that can be opened at a single point in time |
-| <span id="a847a9-media-context"></span> [`media-context`][media-context] | `VALUE` | `i.h.h.m.MediaContext` |   | Configure the listener specific `io.helidon.http.media.MediaContext` |
-| <span id="a390dc-name"></span> `name` | `VALUE` | `String` | `@default` | Name of this socket |
-| <span id="a9d956-port"></span> `port` | `VALUE` | `Integer` | `0` | Port of the default socket |
-| <span id="abdf05-protocols"></span> [`protocols`][protocols] | `LIST` | `i.h.w.s.ProtocolConfig` |   | Configuration of protocols |
-| <span id="a4b6cc-protocols-discover-services"></span> `protocols-discover-services` | `VALUE` | `Boolean` | `true` | Whether to enable automatic service discovery for `protocols` |
-| <span id="aaf9ce-requested-uri-discovery"></span> [`requested-uri-discovery`][requested-uri-di] | `VALUE` | `i.h.h.RequestedUriDiscoveryContext` |   | Requested URI discovery context |
-| <span id="aa99af-restore-response-headers"></span> `restore-response-headers` | `VALUE` | `Boolean` | `true` | Copy and restore response headers before and after passing a request to Jersey for processing |
-| <span id="a875ae-shutdown-grace-period"></span> `shutdown-grace-period` | `VALUE` | `Duration` | `PT0.5S` | Grace period in ISO 8601 duration format to allow running tasks to complete before listener's shutdown |
-| <span id="aa36d3-shutdown-hook"></span> `shutdown-hook` | `VALUE` | `Boolean` | `true` | When true the webserver registers a shutdown hook with the JVM Runtime |
-| <span id="a3378e-smart-async-writes"></span> `smart-async-writes` | `VALUE` | `Boolean` | `false` | If enabled and `#writeQueueLength()` is greater than 1, then start with async writes but possibly switch to sync writes if async queue size is always below a certain threshold |
-| <span id="a03604-sockets"></span> [`sockets`][sockets] | `MAP` | `i.h.w.ListenerConfig` |   | Socket configurations |
-| <span id="ac9efa-tls"></span> [`tls`][tls] | `VALUE` | `i.h.c.t.Tls` |   | Listener TLS configuration |
-| <span id="a5f9ab-use-nio"></span> `use-nio` | `VALUE` | `Boolean` | `true` | If set to `true`, use NIO socket channel, instead of a socket |
-| <span id="a57ab6-write-buffer-size"></span> `write-buffer-size` | `VALUE` | `Integer` | `4096` | Initial buffer size in bytes of `java.io.BufferedOutputStream` created internally to write data to a socket connection |
-| <span id="adda19-write-queue-length"></span> `write-queue-length` | `VALUE` | `Integer` | `0` | Number of buffers queued for write operations |
+<!--@include ../config/io.helidon.webserver.WebServer.md#configuration-options offset=1 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
 
-#### Deprecated Options
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
 
-| Key | Kind | Type | Description |
-|----|----|----|----|
-| <span id="a20877-connection-config"></span> [`connection-config`][connection-confi] | `VALUE` | `i.h.w.ConnectionConfig` | Configuration of a connection (established from client against our server) |
-| <span id="ab275b-receive-buffer-size"></span> `receive-buffer-size` | `VALUE` | `Integer` | Listener receive buffer size |
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>restore-response-headers</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Copy and restore response headers before and after passing a request to Jersey for processing</td>
+</tr>
+<tr>
+<td>
+<a id="concurrency-limit"></a>
+<a href="io.helidon.common.concurrency.limits.Limit.md">
+<code>concurrency-limit</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Limit</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Concurrency limit to use to limit concurrent execution of incoming requests</td>
+</tr>
+<tr>
+<td>
+<a id="content-encoding"></a>
+<a href="io.helidon.http.encoding.ContentEncodingContext.md">
+<code>content-encoding</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="ContentEncodingContext">ContentEncodingContext</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Configure the listener specific <code>io.helidon.http.encoding.ContentEncodingContext</code></td>
+</tr>
+<tr>
+<td>
+<a id="media-context"></a>
+<a href="io.helidon.http.media.MediaContext.md">
+<code>media-context</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="MediaContext">MediaContext</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Configure the listener specific <code>io.helidon.http.media.MediaContext</code></td>
+</tr>
+<tr>
+<td>
+<code>max-payload-size</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Long</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">-1</code>
+</td>
+<td>Maximal number of bytes an entity may have</td>
+</tr>
+<tr>
+<td>
+<a id="features"></a>
+<a href="io.helidon.webserver.spi.ServerFeature.md">
+<code>features</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;ServerFeature&gt;">List&lt;ServerFeature&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Server features allow customization of the server, listeners, or routings</td>
+</tr>
+<tr>
+<td>
+<code>use-nio</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>If set to <code>true</code>, use NIO socket channel, instead of a socket</td>
+</tr>
+<tr>
+<td>
+<code>protocols-discover-services</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to enable automatic service discovery for <code>protocols</code></td>
+</tr>
+<tr>
+<td>
+<code>enable-proxy-protocol</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>Enable proxy protocol support for this socket</td>
+</tr>
+<tr>
+<td>
+<code>host</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">0.0.0.0</code>
+</td>
+<td>Host of the default socket</td>
+</tr>
+<tr>
+<td>
+<code>write-queue-length</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">0</code>
+</td>
+<td>Number of buffers queued for write operations</td>
+</tr>
+<tr>
+<td>
+<a id="sockets"></a>
+<a href="io.helidon.webserver.ListenerConfig.md">
+<code>sockets</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="Map&lt;String, ListenerConfig&gt;">Map&lt;String, ListenerConfig&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Socket configurations</td>
+</tr>
+<tr>
+<td>
+<a id="protocols"></a>
+<a href="io.helidon.webserver.spi.ProtocolConfig.md">
+<code>protocols</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;ProtocolConfig&gt;">List&lt;ProtocolConfig&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Configuration of protocols</td>
+</tr>
+<tr>
+<td>
+<code>max-tcp-connections</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">-1</code>
+</td>
+<td>Limits the number of connections that can be opened at a single point in time</td>
+</tr>
+<tr>
+<td>
+<code>bind-address</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="ListenerCustomMethods">ListenerCustomMethods</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>The address to bind to</td>
+</tr>
+<tr>
+<td>
+<code>idle-connection-timeout</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">PT5M</code>
+</td>
+<td>How long should we wait before closing a connection that has no traffic on it</td>
+</tr>
+<tr>
+<td>
+<code>shutdown-grace-period</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">PT0.5S</code>
+</td>
+<td>Grace period in ISO 8601 duration format to allow running tasks to complete before listener's shutdown</td>
+</tr>
+<tr>
+<td>
+<code>max-concurrent-requests</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">-1</code>
+</td>
+<td>Limits the number of requests that can be executed at the same time (the number of active virtual threads of requests)</td>
+</tr>
+<tr>
+<td>
+<code>features-discover-services</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether to enable automatic service discovery for <code>features</code></td>
+</tr>
+<tr>
+<td>
+<code>shutdown-hook</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>When true the webserver registers a shutdown hook with the JVM Runtime</td>
+</tr>
+<tr>
+<td>
+<a id="error-handling"></a>
+<a href="io.helidon.webserver.ErrorHandling.md">
+<code>error-handling</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="ErrorHandling">ErrorHandling</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Configuration for this listener's error handling</td>
+</tr>
+<tr>
+<td>
+<code>concurrency-limit-discover-services</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>Whether to enable automatic service discovery for <code>concurrency-limit</code></td>
+</tr>
+<tr>
+<td>
+<code>backlog</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">1024</code>
+</td>
+<td>Accept backlog</td>
+</tr>
+<tr>
+<td>
+<code>max-in-memory-entity</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">131072</code>
+</td>
+<td>If the entity is expected to be smaller that this number of bytes, it would be buffered in memory to optimize performance when writing it</td>
+</tr>
+<tr>
+<td>
+<code>ignore-invalid-named-routing</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>If set to <code>true</code>, any named routing configured that does not have an associated named listener will NOT cause an exception to be thrown (default behavior is to throw an exception)</td>
+</tr>
+<tr>
+<td>
+<code>smart-async-writes</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>If enabled and <code>#writeQueueLength()</code> is greater than 1, then start with async writes but possibly switch to sync writes if async queue size is always below a certain threshold</td>
+</tr>
+<tr>
+<td>
+<a id="connection-options"></a>
+<a href="io.helidon.common.socket.SocketOptions.md">
+<code>connection-options</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="SocketOptions">SocketOptions</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Options for connections accepted by this listener</td>
+</tr>
+<tr>
+<td>
+<code>port</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">0</code>
+</td>
+<td>Port of the default socket</td>
+</tr>
+<tr>
+<td>
+<a id="requested-uri-discovery"></a>
+<a href="io.helidon.http.RequestedUriDiscoveryContext.md">
+<code>requested-uri-discovery</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="RequestedUriDiscoveryContext">RequestedUriDiscoveryContext</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Requested URI discovery context</td>
+</tr>
+<tr>
+<td>
+<code>idle-connection-period</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">PT2M</code>
+</td>
+<td>How often should we check for <code>#idleConnectionTimeout()</code></td>
+</tr>
+<tr>
+<td>
+<code>name</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">@default</code>
+</td>
+<td>Name of this socket</td>
+</tr>
+<tr>
+<td>
+<a id="tls"></a>
+<a href="io.helidon.common.tls.Tls.md">
+<code>tls</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Tls</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Listener TLS configuration</td>
+</tr>
+<tr>
+<td>
+<code>write-buffer-size</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">4096</code>
+</td>
+<td>Initial buffer size in bytes of <code>java.io.BufferedOutputStream</code> created internally to write data to a socket connection</td>
+</tr>
+</tbody>
+</table>
+
+
+### Deprecated Options
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a id="connection-config"></a>
+<a href="io.helidon.webserver.ConnectionConfig.md">
+<code>connection-config</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="ConnectionConfig">ConnectionConfig</code>
+</td>
+<td>Configuration of a connection (established from client against our server)</td>
+</tr>
+<tr>
+<td>
+<code>receive-buffer-size</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td>Listener receive buffer size</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 ## Examples
 
@@ -166,13 +605,94 @@ Configuration of access log feature.
 
 ### Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="aaefb9-enabled"></span> `enabled` | `VALUE` | `Boolean` | `true` | Whether this feature will be enabled |
-| <span id="a8717c-format"></span> `format` | `VALUE` | `String` |   | The format for log entries (similar to the Apache `LogFormat`) |
-| <span id="aeb9ad-logger-name"></span> `logger-name` | `VALUE` | `String` | `io.helidon.webserver.AccessLog` | Name of the logger used to obtain access log logger from `System#getLogger(String)` |
-| <span id="a631a5-sockets"></span> `sockets` | `LIST` | `String` |   | List of sockets to register this feature on |
-| <span id="ac3d7a-weight"></span> `weight` | `VALUE` | `Double` | `1000.0` | Weight of the access log feature |
+<!--@include ../config/io.helidon.webserver.accesslog.AccessLogFeature.md#configuration-options offset=1 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>format</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>The format for log entries (similar to the Apache <code>LogFormat</code>)</td>
+</tr>
+<tr>
+<td>
+<code>logger-name</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value" title="io.helidon.webserver.AccessLog">io.helidon.webserver.AccessLog</code>
+</td>
+<td>Name of the logger used to obtain access log logger from <code>System#getLogger(String)</code></td>
+</tr>
+<tr>
+<td>
+<code>weight</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Double</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">1000.0</code>
+</td>
+<td>Weight of the access log feature</td>
+</tr>
+<tr>
+<td>
+<code>sockets</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>List of sockets to register this feature on</td>
+</tr>
+<tr>
+<td>
+<code>enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether this feature will be enabled</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 See the [manifest](../config/manifest.md) for all available types.
 
@@ -480,17 +1000,6 @@ See the [`UriInfo`][uriinfo] Javadoc for more information.
 - [Helidon MicroProfile Server Javadoc][helidon-micropro]
 - [Helidon MicroProfile Server on GitHub][helidon-micropro-2]
 
-[concurrency-limi]: ../config/io.helidon.common.concurrency.limits.Limit.md
-[connection-optio]: ../config/io.helidon.common.socket.SocketOptions.md
-[content-encoding]: ../config/io.helidon.http.encoding.ContentEncodingContext.md
-[error-handling]: ../config/io.helidon.webserver.ErrorHandling.md
-[features]: ../config/io.helidon.webserver.spi.ServerFeature.md
-[media-context]: ../config/io.helidon.http.media.MediaContext.md
-[protocols]: ../config/io.helidon.webserver.spi.ProtocolConfig.md
-[requested-uri-di]: ../config/io.helidon.http.RequestedUriDiscoveryContext.md
-[sockets]: ../config/io.helidon.webserver.ListenerConfig.md
-[tls]: ../config/io.helidon.common.tls.Tls.md
-[connection-confi]: ../config/io.helidon.webserver.ConnectionConfig.md
 [server-features]: ../config/io.helidon.webserver.spi.ServerFeature.md#a42c97-access-log
 [static-content-f]: ../config/io.helidon.webserver.staticcontent.StaticContentFeature.md
 [setting-applicat]: jaxrs/jaxrs-applications.md#setting-application-path

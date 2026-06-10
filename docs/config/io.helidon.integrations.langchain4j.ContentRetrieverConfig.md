@@ -118,6 +118,8 @@ Configuration for LangChain4j <code>ContentRetriever</code> components
 
 
 
+## Manifest
+
 ---
 
 See the [manifest](manifest.md) for all available types.

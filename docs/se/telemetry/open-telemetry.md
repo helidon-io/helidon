@@ -208,15 +208,95 @@ Several settings control the operation of OpenTelemetry as a whole, as shown in 
 
 #### Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="acc8da-enabled"></span> `enabled` | `VALUE` | `Boolean` | `true` | Whether the OpenTelemetry support is enabled |
-| <span id="a104b9-global"></span> `global` | `VALUE` | `Boolean` | `true` | Whether the `io.opentelemetry.api.OpenTelemetry` instance created from this configuration should be made the global one |
-| <span id="a9f65d-propagators"></span> `propagators` | `LIST` | `i.h.t.o.O.CustomMethods` |   | OpenTelemetry `io.opentelemetry.context.propagation.TextMapPropagator` instances added explicitly by the app |
-| <span id="a2f6cf-service"></span> `service` | `VALUE` | `String` |   | Service name used in sending telemetry data to the collector |
-| <span id="aa0da5-signals-logging"></span> [`signals.logging`][signals-logging] | `VALUE` | `i.h.t.o.OpenTelemetryLoggingConfig` |   | OpenTelemetry logging settings |
-| <span id="a8cca2-signals-metrics"></span> [`signals.metrics`][signals-metrics] | `VALUE` | `i.h.t.o.OpenTelemetryMetricsConfig` |   | OpenTelemetry metrics settings |
-| <span id="a9cc8d-signals-tracing"></span> [`signals.tracing`][signals-tracing] | `VALUE` | `i.h.t.o.OpenTelemetryTracingConfig` |   | OpenTelemetry tracing settings |
+<!--@include ../../config/io.helidon.telemetry.otelconfig.HelidonOpenTelemetry.md#configuration-options offset=2 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether the OpenTelemetry support is enabled</td>
+</tr>
+<tr>
+<td>
+<code>global</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether the <code>io.opentelemetry.api.OpenTelemetry</code> instance created from this configuration should be made the global one</td>
+</tr>
+<tr>
+<td>
+<code>propagators</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;CustomMethods&gt;">List&lt;CustomMethods&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>OpenTelemetry <code>io.opentelemetry.context.propagation.TextMapPropagator</code> instances added explicitly by the app</td>
+</tr>
+<tr>
+<td>
+<code>service</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Service name used in sending telemetry data to the collector</td>
+</tr>
+<tr>
+<td>
+<a id="signals"></a>
+<a href="io.helidon.telemetry.SignalsConfig.md">
+<code>signals</code>
+</a>
+</td>
+<td class="cm-type-cell">
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Configuration for signals</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 Notes:
 
@@ -237,12 +317,71 @@ You can add attributes to the configuration for any of the signals under the sig
 
 ##### Configuration options
 
-| Key | Kind | Type | Description |
-|----|----|----|----|
-| <span id="a3fd47-booleans"></span> `booleans` | `MAP` | `Boolean` | Boolean attributes |
-| <span id="a4baae-doubles"></span> `doubles` | `MAP` | `Double` | Double attributes |
-| <span id="a4159e-longs"></span> `longs` | `MAP` | `Long` | Long attributes |
-| <span id="a7a017-strings"></span> `strings` | `MAP` | `String` | String attributes |
+<!--@include ../../config/io.helidon.telemetry.otelconfig.TypedAttributes.md#configuration-options offset=3 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>longs</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="Map&lt;String, Long&gt;">Map&lt;String, Long&gt;</code>
+</td>
+<td>Long attributes</td>
+</tr>
+<tr>
+<td>
+<code>strings</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code>
+</td>
+<td>String attributes</td>
+</tr>
+<tr>
+<td>
+<code>doubles</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="Map&lt;String, Double&gt;">Map&lt;String, Double&gt;</code>
+</td>
+<td>Double attributes</td>
+</tr>
+<tr>
+<td>
+<code>booleans</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="Map&lt;String, Boolean&gt;">Map&lt;String, Boolean&gt;</code>
+</td>
+<td>Boolean attributes</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 The following example shows attribute settings for the tracing signal.
 
@@ -287,14 +426,92 @@ In the table below only the `type` and `exporters` setting apply to `simple` pro
 
 ##### Configuration options
 
-| Key | Kind | Type | Description |
-|----|----|----|----|
-| <span id="a3fd48-exporters"></span> `exporters` | `LIST` | `String` | Name(s) of the exporter(s) this processor should use; specifying no names uses all configured exporters (or if no exporters are configured, the default OpenTelemetry exporter(s)) |
-| <span id="a945cc-max-export-batch-size"></span> `max-export-batch-size` | `VALUE` | `Integer` | Maximum number of items batched for export together |
-| <span id="abb28b-max-queue-size"></span> `max-queue-size` | `VALUE` | `Integer` | Maximum number of items retained before discarding excess unexported ones |
-| <span id="a9794f-schedule-delay"></span> `schedule-delay` | `VALUE` | `Duration` | Delay between consecutive exports |
-| <span id="a3709d-timeout"></span> `timeout` | `VALUE` | `Duration` | Maximum time an export can run before being cancelled |
-| <span id="a0ebee-type"></span> [`type`][type] | `VALUE` | `i.h.t.o.ProcessorType` | Processor type |
+<!--@include ../../config/io.helidon.telemetry.otelconfig.BatchProcessorConfig.md#configuration-options offset=3 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>schedule-delay</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td>Delay between consecutive exports</td>
+</tr>
+<tr>
+<td>
+<code>max-export-batch-size</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td>Maximum number of items batched for export together</td>
+</tr>
+<tr>
+<td>
+<a id="type"></a>
+<a href="io.helidon.telemetry.otelconfig.ProcessorType.md">
+<code>type</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="ProcessorType">ProcessorType</code>
+</td>
+<td>Processor type</td>
+</tr>
+<tr>
+<td>
+<code>max-queue-size</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td>Maximum number of items retained before discarding excess unexported ones</td>
+</tr>
+<tr>
+<td>
+<code>timeout</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td>Maximum time an export can run before being cancelled</td>
+</tr>
+<tr>
+<td>
+<code>exporters</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+</td>
+<td>Name(s) of the  exporter(s) this processor should use; specifying no names uses all configured exporters (or if no exporters are configured, the default OpenTelemetry exporter(s))</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 ##### Configuring Exporters
 
@@ -308,20 +525,187 @@ Most users choose an `Otlp` exporter which has two variations—​one using gRP
 
 ##### Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="a13db1-certificate"></span> [`certificate`][certificate] | `VALUE` | `i.h.c.c.Resource` |   | Trusted certificates |
-| <span id="a5bbef-client-certificate"></span> [`client.certificate`][certificate] | `VALUE` | `i.h.c.c.Resource` |   | TLS certificate |
-| <span id="a75a00-client-key"></span> [`client.key`][certificate] | `VALUE` | `i.h.c.c.Resource` |   | TLS client key |
-| <span id="aeddd9-compression"></span> [`compression`][compression] | `VALUE` | `i.h.t.o.CompressionType` |   | Compression the exporter uses |
-| <span id="ade7dd-connect-timeout"></span> `connect-timeout` | `VALUE` | `Duration` |   | Connection timeout |
-| <span id="ac7f6f-endpoint"></span> `endpoint` | `VALUE` | `URI` |   | Endpoint of the collector to which the exporter should transmit |
-| <span id="ab438b-headers"></span> `headers` | `MAP` | `String` |   | Headers added to each export message |
-| <span id="a13506-internal-telemetry-version"></span> [`internal-telemetry-version`][internal-telemet] | `VALUE` | `i.o.s.c.InternalTelemetryVersion` |   | Self-monitoring telemetry OpenTelemetry should collect |
-| <span id="a2502b-memory-mode"></span> [`memory-mode`][memory-mode] | `VALUE` | `i.o.s.c.e.MemoryMode` |   | Memory mode |
-| <span id="a83cb7-protocol"></span> `protocol` | `VALUE` | `i.h.t.o.O.CustomMethods` | `DEFAULT` | Exporter protocol type |
-| <span id="a8e89c-retry-policy"></span> `retry-policy` | `VALUE` | `i.h.t.o.O.CustomMethods` |   | Retry policy |
-| <span id="ab1755-timeout"></span> `timeout` | `VALUE` | `Duration` |   | Exporter timeout |
+<!--@include ../../config/io.helidon.telemetry.otelconfig.OtlpExporterConfig.md#configuration-options offset=3 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>connect-timeout</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Connection timeout</td>
+</tr>
+<tr>
+<td>
+<code>headers</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Headers added to each export message</td>
+</tr>
+<tr>
+<td>
+<code>endpoint</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">URI</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Endpoint of the collector to which the exporter should transmit</td>
+</tr>
+<tr>
+<td>
+<a id="memory-mode"></a>
+<a href="io.opentelemetry.sdk.common.export.MemoryMode.md">
+<code>memory-mode</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">MemoryMode</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Memory mode</td>
+</tr>
+<tr>
+<td>
+<code>protocol</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="CustomMethods">CustomMethods</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">DEFAULT</code>
+</td>
+<td>Exporter protocol type</td>
+</tr>
+<tr>
+<td>
+<a id="internal-telemetry-version"></a>
+<a href="io.opentelemetry.sdk.common.InternalTelemetryVersion.md">
+<code>internal-telemetry-version</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="InternalTelemetryVersion">InternalTelemetryVersion</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Self-monitoring telemetry OpenTelemetry should collect</td>
+</tr>
+<tr>
+<td>
+<a id="certificate"></a>
+<a href="io.helidon.common.configurable.Resource.md">
+<code>certificate</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Resource</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Trusted certificates</td>
+</tr>
+<tr>
+<td>
+<a id="client-key"></a>
+<a href="io.helidon.common.configurable.Resource.md">
+<code>client.key</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Resource</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>TLS client key</td>
+</tr>
+<tr>
+<td>
+<a id="client-certificate"></a>
+<a href="io.helidon.common.configurable.Resource.md">
+<code>client.certificate</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Resource</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>TLS certificate</td>
+</tr>
+<tr>
+<td>
+<a id="compression"></a>
+<a href="io.helidon.telemetry.otelconfig.CompressionType.md">
+<code>compression</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="CompressionType">CompressionType</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Compression the exporter uses</td>
+</tr>
+<tr>
+<td>
+<code>retry-policy</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="CustomMethods">CustomMethods</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Retry policy</td>
+</tr>
+<tr>
+<td>
+<code>timeout</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Exporter timeout</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 Common Configuration for OTLP exporters
 
@@ -368,12 +752,71 @@ You can control how each exporter retries if a transmission to a backend fails.
 
 ###### Configuration options
 
-| Key | Kind | Type | Description |
-|----|----|----|----|
-| <span id="a45b53-initial-backoff"></span> `initial-backoff` | `VALUE` | `Duration` | Initial backoff time |
-| <span id="a38788-max-attempts"></span> `max-attempts` | `VALUE` | `Integer` | Maximum number of retry attempts |
-| <span id="a56cea-max-backoff"></span> `max-backoff` | `VALUE` | `Duration` | Maximum backoff time |
-| <span id="a11229-max-backoff-multiplier"></span> `max-backoff-multiplier` | `VALUE` | `Double` | Maximum backoff multiplier |
+<!--@include ../../config/io.helidon.telemetry.otelconfig.RetryPolicyConfig.md#configuration-options offset=4 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>max-backoff</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td>Maximum backoff time</td>
+</tr>
+<tr>
+<td>
+<code>initial-backoff</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td>Initial backoff time</td>
+</tr>
+<tr>
+<td>
+<code>max-backoff-multiplier</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Double</code>
+</td>
+<td>Maximum backoff multiplier</td>
+</tr>
+<tr>
+<td>
+<code>max-attempts</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td>Maximum number of retry attempts</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 OpenTelemetry also supports a Zipkin exporter which it has recently deprecated.
 
@@ -381,12 +824,77 @@ OpenTelemetry also supports a Zipkin exporter which it has recently deprecated.
 
 ##### Configuration options
 
-| Key | Kind | Type | Description |
-|----|----|----|----|
-| <span id="a1e003-compression"></span> [`compression`][compression] | `VALUE` | `i.h.t.o.CompressionType` | Compression type |
-| <span id="aa7e39-encoder"></span> [`encoder`][encoder] | `VALUE` | `z.c.SpanBytesEncoder` | Encoder type |
-| <span id="ad1fa8-endpoint"></span> `endpoint` | `VALUE` | `URI` | Collector endpoint to which this exporter should transmit |
-| <span id="a971c1-timeout"></span> `timeout` | `VALUE` | `Duration` | Exporter timeout |
+<!--@include ../../config/io.helidon.telemetry.otelconfig.ZipkinExporterConfig.md#configuration-options offset=3 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>endpoint</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">URI</code>
+</td>
+<td>Collector endpoint to which this exporter should transmit</td>
+</tr>
+<tr>
+<td>
+<a id="compression"></a>
+<a href="io.helidon.telemetry.otelconfig.CompressionType.md">
+<code>compression</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="CompressionType">CompressionType</code>
+</td>
+<td>Compression type</td>
+</tr>
+<tr>
+<td>
+<a id="encoder"></a>
+<a href="zipkin2.codec.SpanBytesEncoder.md">
+<code>encoder</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="SpanBytesEncoder">SpanBytesEncoder</code>
+</td>
+<td>Encoder type</td>
+</tr>
+<tr>
+<td>
+<code>timeout</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td>Exporter timeout</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 Configuration for Zipkin exporters
 
@@ -551,13 +1059,80 @@ The next table describes the OpenTelemetry tracing settings.
 
 #### Configuration options
 
-| Key | Kind | Type | Description |
-|----|----|----|----|
-| <span id="a3d5a9-attributes"></span> `attributes` | `VALUE` | `i.h.t.o.O.CustomMethods` | Name/value pairs passed to OpenTelemetry |
-| <span id="ae0ab8-exporters"></span> `exporters` | `MAP` | `i.h.t.o.O.CustomMethods` | Span exporters |
-| <span id="ae1681-processors"></span> `processors` | `LIST` | `i.h.t.o.O.CustomMethods` | Settings for span processors |
-| <span id="ace1fe-sampler"></span> `sampler` | `VALUE` | `i.h.t.o.O.CustomMethods` | Tracing sampler |
-| <span id="abff29-span-limits"></span> `span-limits` | `VALUE` | `i.h.t.o.O.CustomMethods` | Tracing span limits |
+<!--@include ../../config/io.helidon.telemetry.otelconfig.OpenTelemetryTracingConfig.md#configuration-options offset=2 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>span-limits</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="CustomMethods">CustomMethods</code>
+</td>
+<td>Tracing span limits</td>
+</tr>
+<tr>
+<td>
+<code>attributes</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="CustomMethods">CustomMethods</code>
+</td>
+<td>Name/value pairs passed to OpenTelemetry</td>
+</tr>
+<tr>
+<td>
+<code>processors</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;CustomMethods&gt;">List&lt;CustomMethods&gt;</code>
+</td>
+<td>Settings for span processors</td>
+</tr>
+<tr>
+<td>
+<code>exporters</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="Map&lt;String, CustomMethods&gt;">Map&lt;String, CustomMethods&gt;</code>
+</td>
+<td>Span exporters</td>
+</tr>
+<tr>
+<td>
+<code>sampler</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="CustomMethods">CustomMethods</code>
+</td>
+<td>Tracing sampler</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 OpenTelemetry applies the defaults described in the next table.
 
@@ -590,10 +1165,62 @@ Helidon configuration supports the sampler implementations that reside in the `o
 
 #### Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="a8f212-param"></span> `param` | `VALUE` | `Double` |   | Sampler parameter |
-| <span id="a08fdc-type"></span> [`type`][type-2] | `VALUE` | `i.h.t.o.SamplerType` | `DEFAULT` | Sampler type |
+<!--@include ../../config/io.helidon.telemetry.otelconfig.SamplerConfig.md#configuration-options offset=2 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>param</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Double</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Sampler parameter</td>
+</tr>
+<tr>
+<td>
+<a id="type"></a>
+<a href="io.helidon.telemetry.otelconfig.SamplerType.md">
+<code>type</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="SamplerType">SamplerType</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">DEFAULT</code>
+</td>
+<td>Sampler type</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 <a id="span-limits-config"></a>
 #### Configuring Span Limits
@@ -602,14 +1229,89 @@ OpenTelemetry allows you to constrain certain aspects of the data it gathers in 
 
 #### Configuration options
 
-| Key | Kind | Type | Description |
-|----|----|----|----|
-| <span id="ab951d-max-attribute-value-length"></span> `max-attribute-value-length` | `VALUE` | `Integer` | Maximum attribute value length |
-| <span id="a87a84-max-attributes"></span> `max-attributes` | `VALUE` | `Integer` | Maximum number of attributes |
-| <span id="ac75ae-max-attributes-per-event"></span> `max-attributes-per-event` | `VALUE` | `Integer` | Maximum number of attributes per event |
-| <span id="aa0fbc-max-attributes-per-link"></span> `max-attributes-per-link` | `VALUE` | `Integer` | Maximum number of attributes per link |
-| <span id="acea3c-max-events"></span> `max-events` | `VALUE` | `Integer` | Maximum number of events |
-| <span id="a090c5-max-links"></span> `max-links` | `VALUE` | `Integer` | Maximum number of links |
+<!--@include ../../config/io.helidon.telemetry.otelconfig.SpanLimitsConfig.md#configuration-options offset=2 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>max-attribute-value-length</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td>Maximum attribute value length</td>
+</tr>
+<tr>
+<td>
+<code>max-events</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td>Maximum number of events</td>
+</tr>
+<tr>
+<td>
+<code>max-attributes-per-event</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td>Maximum number of attributes per event</td>
+</tr>
+<tr>
+<td>
+<code>max-attributes</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td>Maximum number of attributes</td>
+</tr>
+<tr>
+<td>
+<code>max-attributes-per-link</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td>Maximum number of attributes per link</td>
+</tr>
+<tr>
+<td>
+<code>max-links</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td>Maximum number of links</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 The [OpenTelemetry documentation][opentelemetry-do-2] describes the defaults; see the "Properties for span limits" section there.
 
@@ -636,12 +1338,71 @@ The next table describes the OpenTelemetry metrics settings.
 
 #### Configuration options
 
-| Key | Kind | Type | Description |
-|----|----|----|----|
-| <span id="a33ff0-attributes"></span> `attributes` | `VALUE` | `i.h.t.o.O.CustomMethods` | Name/value pairs passed to OpenTelemetry |
-| <span id="a0f4af-exporters"></span> `exporters` | `MAP` | `i.h.t.o.O.CustomMethods` | Metric exporter configurations, configurable using `io.helidon.telemetry.otelconfig.MetricExporterConfig` |
-| <span id="ab707a-readers"></span> `readers` | `LIST` | `i.h.t.o.O.CustomMethods` | Settings for metric readers |
-| <span id="a7406f-views"></span> `views` | `LIST` | `i.h.t.o.O.CustomMethods` | Metric view information, configurable using `io.helidon.telemetry.otelconfig.ViewRegistrationConfig` |
+<!--@include ../../config/io.helidon.telemetry.otelconfig.OpenTelemetryMetricsConfig.md#configuration-options offset=2 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>readers</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;CustomMethods&gt;">List&lt;CustomMethods&gt;</code>
+</td>
+<td>Settings for metric readers</td>
+</tr>
+<tr>
+<td>
+<code>attributes</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="CustomMethods">CustomMethods</code>
+</td>
+<td>Name/value pairs passed to OpenTelemetry</td>
+</tr>
+<tr>
+<td>
+<code>views</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;CustomMethods&gt;">List&lt;CustomMethods&gt;</code>
+</td>
+<td>Metric view information, configurable using <code>io.helidon.telemetry.otelconfig.ViewRegistrationConfig</code></td>
+</tr>
+<tr>
+<td>
+<code>exporters</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="Map&lt;String, CustomMethods&gt;">Map&lt;String, CustomMethods&gt;</code>
+</td>
+<td>Metric exporter configurations, configurable using <code>io.helidon.telemetry.otelconfig.MetricExporterConfig</code></td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 OpenTelemetry applies the defaults described in the next table.
 
@@ -717,23 +1478,224 @@ The configuration for metrics exporters has several additional settings beyond t
 
 #### Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="a54672-certificate"></span> [`certificate`][certificate] | `VALUE` | `i.h.c.c.Resource` |   | Trusted certificates |
-| <span id="a34754-client-certificate"></span> [`client.certificate`][certificate] | `VALUE` | `i.h.c.c.Resource` |   | TLS certificate |
-| <span id="ab930c-client-key"></span> [`client.key`][certificate] | `VALUE` | `i.h.c.c.Resource` |   | TLS client key |
-| <span id="a1de7a-compression"></span> [`compression`][compression] | `VALUE` | `i.h.t.o.CompressionType` |   | Compression the exporter uses |
-| <span id="ac5879-connect-timeout"></span> `connect-timeout` | `VALUE` | `Duration` |   | Connection timeout |
-| <span id="ae5004-default-histogram-aggregation"></span> `default-histogram-aggregation` | `VALUE` | `i.h.t.o.M.CustomMethods` |   | Preferred default histogram aggregation technique, configurable as `io.helidon.telemetry.otelconfig.MetricDefaultHistogramAggregationConfig` |
-| <span id="a29159-endpoint"></span> `endpoint` | `VALUE` | `URI` |   | Endpoint of the collector to which the exporter should transmit |
-| <span id="a9e00c-headers"></span> `headers` | `MAP` | `String` |   | Headers added to each export message |
-| <span id="ac582d-internal-telemetry-version"></span> [`internal-telemetry-version`][internal-telemet] | `VALUE` | `i.o.s.c.InternalTelemetryVersion` |   | Self-monitoring telemetry OpenTelemetry should collect |
-| <span id="a8c72a-memory-mode"></span> [`memory-mode`][memory-mode] | `VALUE` | `i.o.s.c.e.MemoryMode` |   | Memory mode |
-| <span id="a37375-protocol"></span> `protocol` | `VALUE` | `i.h.t.o.O.CustomMethods` | `DEFAULT` | Exporter protocol type |
-| <span id="aef8f0-retry-policy"></span> `retry-policy` | `VALUE` | `i.h.t.o.O.CustomMethods` |   | Retry policy |
-| <span id="a887fd-temporality-preference"></span> `temporality-preference` | `VALUE` | `i.h.t.o.M.CustomMethods` |   | Preferred output aggregation technique (how transmitted values reflect the values recorded locally), configurable as a `io.helidon.telemetry.otelconfig.MetricTemporalityPreferenceType` value: `CUMULATIVE, DELTA, LOWMEMORY` |
-| <span id="a426f1-timeout"></span> `timeout` | `VALUE` | `Duration` |   | Exporter timeout |
-| <span id="ab4fd4-type"></span> [`type`][type-3] | `VALUE` | `i.h.t.o.MetricExporterType` | `OTLP` | Metric exporter type |
+<!--@include ../../config/io.helidon.telemetry.otelconfig.MetricExporterConfig.md#configuration-options offset=2 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>headers</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Headers added to each export message</td>
+</tr>
+<tr>
+<td>
+<a id="memory-mode"></a>
+<a href="io.opentelemetry.sdk.common.export.MemoryMode.md">
+<code>memory-mode</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">MemoryMode</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Memory mode</td>
+</tr>
+<tr>
+<td>
+<code>temporality-preference</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="CustomMethods">CustomMethods</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Preferred output aggregation technique (how transmitted values reflect the values recorded locally), configurable as a <code>io.helidon.telemetry.otelconfig.MetricTemporalityPreferenceType</code> value: <code>CUMULATIVE, DELTA, LOWMEMORY</code></td>
+</tr>
+<tr>
+<td>
+<a id="internal-telemetry-version"></a>
+<a href="io.opentelemetry.sdk.common.InternalTelemetryVersion.md">
+<code>internal-telemetry-version</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="InternalTelemetryVersion">InternalTelemetryVersion</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Self-monitoring telemetry OpenTelemetry should collect</td>
+</tr>
+<tr>
+<td>
+<a id="certificate"></a>
+<a href="io.helidon.common.configurable.Resource.md">
+<code>certificate</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Resource</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Trusted certificates</td>
+</tr>
+<tr>
+<td>
+<a id="type"></a>
+<a href="io.helidon.telemetry.otelconfig.MetricExporterType.md">
+<code>type</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="MetricExporterType">MetricExporterType</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">OTLP</code>
+</td>
+<td>Metric exporter type</td>
+</tr>
+<tr>
+<td>
+<code>timeout</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Exporter timeout</td>
+</tr>
+<tr>
+<td>
+<code>connect-timeout</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Connection timeout</td>
+</tr>
+<tr>
+<td>
+<code>endpoint</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">URI</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Endpoint of the collector to which the exporter should transmit</td>
+</tr>
+<tr>
+<td>
+<code>protocol</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="CustomMethods">CustomMethods</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">DEFAULT</code>
+</td>
+<td>Exporter protocol type</td>
+</tr>
+<tr>
+<td>
+<a id="client-key"></a>
+<a href="io.helidon.common.configurable.Resource.md">
+<code>client.key</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Resource</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>TLS client key</td>
+</tr>
+<tr>
+<td>
+<code>default-histogram-aggregation</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="CustomMethods">CustomMethods</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Preferred default histogram aggregation technique, configurable as <code>io.helidon.telemetry.otelconfig.MetricDefaultHistogramAggregationConfig</code></td>
+</tr>
+<tr>
+<td>
+<a id="client-certificate"></a>
+<a href="io.helidon.common.configurable.Resource.md">
+<code>client.certificate</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Resource</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>TLS certificate</td>
+</tr>
+<tr>
+<td>
+<a id="compression"></a>
+<a href="io.helidon.telemetry.otelconfig.CompressionType.md">
+<code>compression</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="CompressionType">CompressionType</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Compression the exporter uses</td>
+</tr>
+<tr>
+<td>
+<code>retry-policy</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="CustomMethods">CustomMethods</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Retry policy</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 ##### Metric Aggregation
 
@@ -741,26 +1703,142 @@ OpenTelemetry allows control over how each exporter aggregates histogram data pr
 
 #### Configuration options
 
-| Key | Kind | Type | Description |
-|----|----|----|----|
-| <span id="adc504-type"></span> [`type`][type-4] | `VALUE` | `i.h.t.o.MetricDefaultHistogramAggregationType` | Type of aggregation default |
+<!--@include ../../config/io.helidon.telemetry.otelconfig.MetricDefaultHistogramAggregationConfig.md#configuration-options offset=2 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a id="type"></a>
+<a href="io.helidon.telemetry.otelconfig.MetricDefaultHistogramAggregationType.md">
+<code>type</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="MetricDefaultHistogramAggregationType">MetricDefaultHistogramAggregationType</code>
+</td>
+<td>Type of aggregation default</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 You can configure the explicit bucket boundaries for `EXPLICIT_BUCKET_HISTOGRAM` aggregation.
 
 #### Configuration options
 
-| Key | Kind | Type | Description |
-|----|----|----|----|
-| <span id="abd1fd-bucket-boundaries"></span> `bucket-boundaries` | `LIST` | `Double` | Explicit bucket boundaries |
+<!--@include ../../config/io.helidon.telemetry.otelconfig.ExplicitBucketHistogramAggregationConfig.md#configuration-options offset=2 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>bucket-boundaries</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;Double&gt;">List&lt;Double&gt;</code>
+</td>
+<td>Explicit bucket boundaries</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 You can configure the exponential histogram aggregation behavior.
 
 #### Configuration options
 
-| Key | Kind | Type | Description |
-|----|----|----|----|
-| <span id="ad284d-max-buckets"></span> `max-buckets` | `VALUE` | `Integer` | Maximum number of buckets |
-| <span id="a8834e-max-scale"></span> `max-scale` | `VALUE` | `Integer` | Maximum scale |
+<!--@include ../../config/io.helidon.telemetry.otelconfig.Base2ExponentialHistogramAggregationConfig.md#configuration-options offset=2 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>max-buckets</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td>Maximum number of buckets</td>
+</tr>
+<tr>
+<td>
+<code>max-scale</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td>Maximum scale</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 <a id="metric-readers-config"></a>
 #### Metric Readers
@@ -769,20 +1847,134 @@ An OpenTelemetry metric reader collects metric data in the server and then uses 
 
 #### Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="a79a06-exporter"></span> `exporter` | `VALUE` | `String` |   | Name of the configured metric exporter to use for this metric reader |
-| <span id="a3f4d9-type"></span> [`type`][type-5] | `VALUE` | `i.h.t.o.MetricReaderType` | `PERIODIC` | Metric reader type |
+<!--@include ../../config/io.helidon.telemetry.otelconfig.MetricReaderConfig.md#configuration-options offset=2 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>exporter</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Name of the configured metric exporter to use for this metric reader</td>
+</tr>
+<tr>
+<td>
+<a id="type"></a>
+<a href="io.helidon.telemetry.otelconfig.MetricReaderType.md">
+<code>type</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="MetricReaderType">MetricReaderType</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">PERIODIC</code>
+</td>
+<td>Metric reader type</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 The periodic reader supports the following settings.
 
 #### Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="a173a8-exporter"></span> `exporter` | `VALUE` | `String` |   | Name of the configured metric exporter to use for this metric reader |
-| <span id="a5a14c-interval"></span> `interval` | `VALUE` | `Duration` |   | Metric reader read interval |
-| <span id="a1a217-type"></span> [`type`][type-5] | `VALUE` | `i.h.t.o.MetricReaderType` | `PERIODIC` | Metric reader type |
+<!--@include ../../config/io.helidon.telemetry.otelconfig.PeriodicMetricReaderConfig.md#configuration-options offset=2 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>exporter</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Name of the configured metric exporter to use for this metric reader</td>
+</tr>
+<tr>
+<td>
+<code>interval</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Metric reader read interval</td>
+</tr>
+<tr>
+<td>
+<a id="type"></a>
+<a href="io.helidon.telemetry.otelconfig.MetricReaderType.md">
+<code>type</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="MetricReaderType">MetricReaderType</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">PERIODIC</code>
+</td>
+<td>Metric reader type</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 <a id="metric-views-config"></a>
 #### Metric Views
@@ -791,27 +1983,180 @@ OpenTelemetry metric views allow you to influence how meters are aggregated for 
 
 #### Configuration options
 
-| Key | Kind | Type | Description |
-|----|----|----|----|
-| <span id="a6e77f-aggregation"></span> `aggregation` | `VALUE` | `i.h.t.o.V.CustomMethods` | Aggregation for the metric view, configurable as an `io.helidon.telemetry.otelconfig.AggregationType`: `DROP, DEFAULT, SUM, LAST_VALUE, EXPLICIT_BUCKET_HISTOGRAM, BASE2_EXPONENTIAL_BUCKET_HISTOGRAM` |
-| <span id="a2d426-attribute-filter"></span> `attribute-filter` | `VALUE` | `i.h.t.o.V.CustomMethods` | Attribute name filter, configurable as a string compiled as a regular expression using `java.util.regex.Pattern` |
-| <span id="ae87fb-cardinality-limit"></span> `cardinality-limit` | `VALUE` | `Integer` | Cardinality limit |
-| <span id="abda85-description"></span> `description` | `VALUE` | `String` | Metric view description |
-| <span id="acbe0f-instrument-selector"></span> `instrument-selector` | `VALUE` | `i.h.t.o.V.CustomMethods` | Instrument selector, configurable using `io.helidon.telemetry.otelconfig.InstrumentSelectorConfig` |
-| <span id="a14ee9-name"></span> `name` | `VALUE` | `String` | Metrics view name |
+<!--@include ../../config/io.helidon.telemetry.otelconfig.ViewRegistrationConfig.md#configuration-options offset=2 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>cardinality-limit</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td>Cardinality limit</td>
+</tr>
+<tr>
+<td>
+<code>instrument-selector</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="CustomMethods">CustomMethods</code>
+</td>
+<td>Instrument selector, configurable using <code>io.helidon.telemetry.otelconfig.InstrumentSelectorConfig</code></td>
+</tr>
+<tr>
+<td>
+<code>attribute-filter</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="CustomMethods">CustomMethods</code>
+</td>
+<td>Attribute name filter, configurable as a string compiled as a regular expression using <code>java.util.regex.Pattern</code></td>
+</tr>
+<tr>
+<td>
+<code>name</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td>Metrics view name</td>
+</tr>
+<tr>
+<td>
+<code>description</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td>Metric view description</td>
+</tr>
+<tr>
+<td>
+<code>aggregation</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="CustomMethods">CustomMethods</code>
+</td>
+<td>Aggregation for the metric view, configurable as an <code>io.helidon.telemetry.otelconfig.AggregationType</code>: <code>DROP, DEFAULT, SUM, LAST_VALUE, EXPLICIT_BUCKET_HISTOGRAM, BASE2_EXPONENTIAL_BUCKET_HISTOGRAM</code></td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 The instrument selector controls which meters this view reflects.
 
 #### Configuration options
 
-| Key | Kind | Type | Description |
-|----|----|----|----|
-| <span id="a14bb9-meter-name"></span> `meter-name` | `VALUE` | `String` | Meter name |
-| <span id="a7c47f-meter-schema-url"></span> `meter-schema-url` | `VALUE` | `String` | Meter schema URL |
-| <span id="a24c92-meter-version"></span> `meter-version` | `VALUE` | `String` | Meter version |
-| <span id="acf44a-name"></span> `name` | `VALUE` | `String` | Instrument name |
-| <span id="abc056-type"></span> [`type`][type-6] | `VALUE` | `i.o.s.m.InstrumentType` | Instrument type |
-| <span id="afa38c-unit"></span> `unit` | `VALUE` | `String` | Instrument unit |
+<!--@include ../../config/io.helidon.telemetry.otelconfig.InstrumentSelectorConfig.md#configuration-options offset=2 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>unit</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td>Instrument unit</td>
+</tr>
+<tr>
+<td>
+<code>meter-name</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td>Meter name</td>
+</tr>
+<tr>
+<td>
+<code>name</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td>Instrument name</td>
+</tr>
+<tr>
+<td>
+<code>meter-schema-url</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td>Meter schema URL</td>
+</tr>
+<tr>
+<td>
+<code>meter-version</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td>Meter version</td>
+</tr>
+<tr>
+<td>
+<a id="type"></a>
+<a href="io.opentelemetry.sdk.metrics.InstrumentType.md">
+<code>type</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="InstrumentType">InstrumentType</code>
+</td>
+<td>Instrument type</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 <a id="logger-config"></a>
 ### Controlling OpenTelemetry Logger Behavior
@@ -824,15 +2169,101 @@ The next table describes the OpenTelemetry logging settings.
 
 #### Configuration options
 
-| Key | Kind | Type | Description |
-|----|----|----|----|
-| <span id="a070ac-attributes"></span> `attributes` | `VALUE` | `i.h.t.o.O.CustomMethods` | Name/value pairs passed to OpenTelemetry |
-| <span id="aaa180-enabled"></span> `enabled` | `VALUE` | `Boolean` | Whether the OpenTelemetry logger should be enabled |
-| <span id="a5919f-exporters"></span> `exporters` | `MAP` | `i.h.t.o.O.CustomMethods` | Log record exporters |
-| <span id="afaf4d-log-limits"></span> `log-limits` | `VALUE` | `i.h.t.o.O.CustomMethods` | Log limits to apply to log transmission |
-| <span id="a33fd0-minimum-severity"></span> [`minimum-severity`][minimum-severity] | `VALUE` | `i.o.a.l.Severity` | Minimum severity level of log records to process |
-| <span id="af7d01-processors"></span> `processors` | `LIST` | `i.h.t.o.O.CustomMethods` | Settings for logging processors |
-| <span id="a251a3-trace-based"></span> `trace-based` | `VALUE` | `Boolean` | Whether to include only log records from traces which are sampled |
+<!--@include ../../config/io.helidon.telemetry.otelconfig.OpenTelemetryLoggingConfig.md#configuration-options offset=2 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>trace-based</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td>Whether to include <em>only</em> log records from traces which are sampled</td>
+</tr>
+<tr>
+<td>
+<code>attributes</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="CustomMethods">CustomMethods</code>
+</td>
+<td>Name/value pairs passed to OpenTelemetry</td>
+</tr>
+<tr>
+<td>
+<a id="minimum-severity"></a>
+<a href="io.opentelemetry.api.logs.Severity.md">
+<code>minimum-severity</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Severity</code>
+</td>
+<td>Minimum severity level of log records to process</td>
+</tr>
+<tr>
+<td>
+<code>processors</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="List&lt;CustomMethods&gt;">List&lt;CustomMethods&gt;</code>
+</td>
+<td>Settings for logging processors</td>
+</tr>
+<tr>
+<td>
+<code>enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td>Whether the OpenTelemetry logger should be enabled</td>
+</tr>
+<tr>
+<td>
+<code>log-limits</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="CustomMethods">CustomMethods</code>
+</td>
+<td>Log limits to apply to log transmission</td>
+</tr>
+<tr>
+<td>
+<code>exporters</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="Map&lt;String, CustomMethods&gt;">Map&lt;String, CustomMethods&gt;</code>
+</td>
+<td>Log record exporters</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 OpenTelemetry uses the following defaults:
 
@@ -857,10 +2288,53 @@ For defaults, Helidon defers to the OpenTelemetry defaults, listed below.
 
 ##### Configuration options
 
-| Key | Kind | Type | Description |
-|----|----|----|----|
-| <span id="a85828-max-attribute-value-length"></span> `max-attribute-value-length` | `VALUE` | `Integer` | Maximum length of an attribute value |
-| <span id="a15268-max-number-of-attributes"></span> `max-number-of-attributes` | `VALUE` | `Integer` | Maximum number of attributes allowed |
+<!--@include ../../config/io.helidon.telemetry.otelconfig.LogLimitsConfig.md#configuration-options offset=3 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>max-attribute-value-length</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td>Maximum length of an attribute value</td>
+</tr>
+<tr>
+<td>
+<code>max-number-of-attributes</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Integer</code>
+</td>
+<td>Maximum number of attributes allowed</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 OpenTelemetry applies the following defaults:
 
@@ -935,26 +2409,11 @@ You associate each logger processor with a logger exporter using the exporter’
 [helidon-webclien]: ../../se/webclient.md#configuring-telemetry
 [this-section-bel]: #note-about-exporter-dependencies
 [this-opentelemet]: https://github.com/open-telemetry/opentelemetry-java/tree/v1.58.0/exporters
-[signals-logging]: ../../config/io.helidon.telemetry.otelconfig.OpenTelemetryLoggingConfig.md
-[signals-metrics]: ../../config/io.helidon.telemetry.otelconfig.OpenTelemetryMetricsConfig.md
-[signals-tracing]: ../../config/io.helidon.telemetry.otelconfig.OpenTelemetryTracingConfig.md
 [this-opentelemet-2]: https://opentelemetry.io/docs/languages/java/configuration/#properties-general
-[type]: ../../config/io.helidon.telemetry.otelconfig.ProcessorType.md
-[certificate]: ../../config/io.helidon.common.configurable.Resource.md
-[compression]: ../../config/io.helidon.telemetry.otelconfig.CompressionType.md
-[internal-telemet]: ../../config/io.opentelemetry.sdk.common.InternalTelemetryVersion.md
-[memory-mode]: ../../config/io.opentelemetry.sdk.common.export.MemoryMode.md
-[encoder]: ../../config/zipkin2.codec.SpanBytesEncoder.md
 [opentelemetry-do]: https://opentelemetry.io/docs/languages/java/configuration/#properties-exporters
 [batch-with-defau]: https://opentelemetry.io/docs/languages/java/configuration/#properties-traces
 [opentelemetry-do-2]: https://opentelemetry.io/docs/languages/java/sdk/#sampler
-[type-2]: ../../config/io.helidon.telemetry.otelconfig.SamplerType.md
 [periodicmetricre]: https://opentelemetry.io/docs/languages/java/configuration/#properties-metrics
-[type-3]: ../../config/io.helidon.telemetry.otelconfig.MetricExporterType.md
-[type-4]: ../../config/io.helidon.telemetry.otelconfig.MetricDefaultHistogramAggregationType.md
-[type-5]: ../../config/io.helidon.telemetry.otelconfig.MetricReaderType.md
-[type-6]: ../../config/io.opentelemetry.sdk.metrics.InstrumentType.md
-[minimum-severity]: ../../config/io.opentelemetry.api.logs.Severity.md
 [otlp]: https://opentelemetry.io/docs/languages/java/configuration/#properties-logs
 [opentelemetry-ja]: https://opentelemetry.io/docs/languages/java/sdk
 [intro-to-opentel]: https://opentelemetry.io/docs/languages/java/intro/

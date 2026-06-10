@@ -45,21 +45,151 @@ FixedRate.builder()
 
 #### Configuration options
 
-| Key                                                                                                         | Kind    | Type                | Default Value          | Description                                                                                                                   |
-|-------------------------------------------------------------------------------------------------------------|---------|---------------------|------------------------|-------------------------------------------------------------------------------------------------------------------------------|
-| <span id="a12d22-delay-by"></span> `delay-by`                                                               | `VALUE` | `Duration`          | `PT0S`                 | Initial delay of the first invocation                                                                                         |
-| <span id="a394d5-delay-type"></span> [`delay-type`][delay-type] | `VALUE` | `i.h.s.F.DelayType` | `SINCE_PREVIOUS_START` | Configure whether the interval between the invocations should be calculated from the time when previous task started or ended |
-| <span id="a39c2a-enabled"></span> `enabled`                                                                 | `VALUE` | `Boolean`           | `true`                 | Whether the task is enabled                                                                                                   |
-| <span id="a27a1a-id"></span> `id`                                                                           | `VALUE` | `String`            |                        | Identification of the started task                                                                                            |
-| <span id="a4b0e9-interval"></span> `interval`                                                               | `VALUE` | `Duration`          |                        | Fixed interval between each invocation                                                                                        |
+<!--@include ../config/io.helidon.scheduling.FixedRate.md#configuration-options offset=2 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
 
-##### Deprecated Options
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
 
-| Key                                                                                           | Kind    | Type       | Default Value      | Description                                                                                                                                                                                                                 |
-|-----------------------------------------------------------------------------------------------|---------|------------|--------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| <span id="a44d13-delay"></span> `delay`                                                       | `VALUE` | `Long`     |                    | Fixed rate delay between each invocation                                                                                                                                                                                    |
-| <span id="a91a8f-initial-delay"></span> `initial-delay`                                       | `VALUE` | `Long`     |                    | Initial delay of the first invocation                                                                                                                                                                                       |
-| <span id="a776bc-time-unit"></span> [`time-unit`][time-unit] | `VALUE` | `TimeUnit` | `TimeUnit.SECONDS` | `java.util.concurrent.TimeUnit TimeUnit` used for interpretation of values provided with `io.helidon.scheduling.FixedRateConfig.Builder#delay(long)` and `io.helidon.scheduling.FixedRateConfig.Builder#initialDelay(long)` |
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a id="delay-type"></a>
+<a href="io.helidon.scheduling.FixedRate.DelayType.md">
+<code>delay-type</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">DelayType</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value" title="SINCE_PREVIOUS_START">SINCE_PREVIOUS_START</code>
+</td>
+<td>Configure whether the interval between the invocations should be calculated from the time when previous task started or ended</td>
+</tr>
+<tr>
+<td>
+<code>delay-by</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">PT0S</code>
+</td>
+<td>Initial delay of the first invocation</td>
+</tr>
+<tr>
+<td>
+<code>interval</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Duration</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Fixed interval between each invocation</td>
+</tr>
+<tr>
+<td>
+<code>id</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Identification of the started task</td>
+</tr>
+<tr>
+<td>
+<code>enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether the task is enabled</td>
+</tr>
+</tbody>
+</table>
+
+
+### Deprecated Options
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>delay</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Long</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Fixed rate delay between each invocation</td>
+</tr>
+<tr>
+<td>
+<a id="time-unit"></a>
+<a href="java.util.concurrent.TimeUnit.md">
+<code>time-unit</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">TimeUnit</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value" title="TimeUnit.SECONDS">TimeUnit.SECONDS</code>
+</td>
+<td><code>java.util.concurrent.TimeUnit TimeUnit</code> used for interpretation of values provided with <code>io.helidon.scheduling.FixedRateConfig.Builder#delay(long)</code> and <code>io.helidon.scheduling.FixedRateConfig.Builder#initialDelay(long)</code></td>
+</tr>
+<tr>
+<td>
+<code>initial-delay</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Long</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Initial delay of the first invocation</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 ### Cron
 
@@ -92,13 +222,93 @@ The timezone determines when the cron expression triggers. For example, a cron e
 
 #### Configuration options
 
-| Key                                               | Kind    | Type      | Default Value | Description                                                                     |
-|---------------------------------------------------|---------|-----------|---------------|---------------------------------------------------------------------------------|
-| <span id="aa0a55-concurrent"></span> `concurrent` | `VALUE` | `Boolean` | `true`        | Allow concurrent execution if previous task didn't finish before next execution |
-| <span id="ac430f-enabled"></span> `enabled`       | `VALUE` | `Boolean` | `true`        | Whether the task is enabled                                                     |
-| <span id="a78a5d-expression"></span> `expression` | `VALUE` | `String`  |               | Cron expression for specifying period of execution                              |
-| <span id="acc650-id"></span> `id`                 | `VALUE` | `String`  |               | Identification of the started task                                              |
-| <span id="a0e1a4-zone"></span> `zone`             | `VALUE` | `ZoneId`  |               | Time zone to use for cron expression evaluation                                 |
+<!--@include ../config/io.helidon.scheduling.Cron.md#configuration-options offset=2 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>expression</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Cron expression for specifying period of execution</td>
+</tr>
+<tr>
+<td>
+<code>zone</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">ZoneId</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Time zone to use for cron expression evaluation</td>
+</tr>
+<tr>
+<td>
+<code>concurrent</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Allow concurrent execution if previous task didn't finish before next execution</td>
+</tr>
+<tr>
+<td>
+<code>id</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Identification of the started task</td>
+</tr>
+<tr>
+<td>
+<code>enabled</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">true</code>
+</td>
+<td>Whether the task is enabled</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 ### Cron expression syntax
 
@@ -209,6 +419,4 @@ FixedRate.builder()
 - [Helidon Scheduling Javadoc][helidon-scheduli]
 
 [cron-utils]: https://github.com/jmrozanec/cron-utils
-[delay-type]: ../config/io.helidon.scheduling.FixedRate.DelayType.md
-[time-unit]: ../config/java.util.concurrent.TimeUnit.md
 [helidon-scheduli]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.scheduling/io/helidon/microprofile/scheduling/package-summary.html

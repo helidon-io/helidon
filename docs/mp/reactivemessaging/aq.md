@@ -21,26 +21,247 @@ Connector name: `helidon-aq`
 
 ### Configuration options
 
-| Key | Kind | Type | Default Value | Description |
-|----|----|----|----|----|
-| <span id="a4e0a1-acknowledge-mode"></span> [`acknowledge-mode`][acknowledge-mode] | `VALUE` | `i.h.m.c.j.AcknowledgeMode` | `AUTO_ACKNOWLEDGE` | JMS acknowledgement mode |
-| <span id="aa8394-client-id"></span> `client-id` | `VALUE` | `String` |   | Client identifier for JMS connection |
-| <span id="ab7c5d-data-source"></span> `data-source` | `VALUE` | `String` |   | Mapping to `javax.sql.DataSource DataSource` supplied with `io.helidon.messaging.connectors.aq.AqConnector.AqConnectorBuilder#dataSource(String, javax.sql.DataSource) AqConnectorBuilder.dataSource()` |
-| <span id="a750e3-destination"></span> `destination` | `VALUE` | `String` |   | Queue or topic name |
-| <span id="ad5200-durable"></span> `durable` | `VALUE` | `Boolean` | `false` | Indicates whether the consumer should be created as durable (only relevant for topic destinations) |
-| <span id="a56105-message-selector"></span> `message-selector` | `VALUE` | `String` |   | JMS API message selector expression based on a subset of the SQL92 |
-| <span id="a4cfbb-named-factory"></span> `named-factory` | `VALUE` | `String` |   | Select `jakarta.jms.ConnectionFactory ConnectionFactory` in case factory is injected as a named bean or configured with name |
-| <span id="a1e92c-non-local"></span> `non-local` | `VALUE` | `Boolean` | `false` | When set to `true`, messages published by this connection, or any connection with the same client identifier, will not be delivered to this durable subscription |
-| <span id="a9446b-password"></span> `password` | `VALUE` | `String` |   | Password used for creating JMS connection |
-| <span id="a4c7fd-period-executions"></span> `period-executions` | `VALUE` | `Long` | `100` | Period for executing poll cycles in millis |
-| <span id="abdb87-poll-timeout"></span> `poll-timeout` | `VALUE` | `Long` | `50` | Timeout for polling for next message in every poll cycle in millis |
-| <span id="a5bcad-queue"></span> `queue` | `VALUE` | `String` |   | Use supplied destination name and `Type#QUEUE QUEUE` as type |
-| <span id="aad6ba-session-group-id"></span> `session-group-id` | `VALUE` | `String` |   | When multiple channels share same session-group-id, they share same JMS session |
-| <span id="a0166f-subscriber-name"></span> `subscriber-name` | `VALUE` | `String` |   | Subscriber name used to identify a durable subscription |
-| <span id="a82a72-topic"></span> `topic` | `VALUE` | `String` |   | Use supplied destination name and `Type#TOPIC TOPIC` as type |
-| <span id="a5eafc-transacted"></span> `transacted` | `VALUE` | `Boolean` | `false` | Indicates whether the session will use a local transaction |
-| <span id="aa2815-type"></span> [`type`][type] | `VALUE` | `i.h.m.c.j.Type` | `QUEUE` | Specify if connection is `io.helidon.messaging.connectors.jms.Type#QUEUE queue` or `io.helidon.messaging.connectors.jms.Type#TOPIC topic` |
-| <span id="a42b8b-username"></span> `username` | `VALUE` | `String` |   | User name used for creating JMS connection |
+<!--@include ../../config/io.helidon.messaging.connectors.aq.AqConfigBuilder.md#configuration-options offset=1 -->
+<style>
+    table.cm-table code {
+        white-space: nowrap !important;
+    }
+
+    table.cm-table .cm-truncate-value {
+        display: inline-block;
+        max-width: 10ch;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        vertical-align: bottom;
+    }
+</style>
+
+
+<table class="cm-table">
+<thead>
+<tr>
+<th>Key</th>
+<th>Type</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<code>message-selector</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>JMS API message selector expression based on a subset of the SQL92</td>
+</tr>
+<tr>
+<td>
+<code>named-factory</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Select <code>jakarta.jms.ConnectionFactory ConnectionFactory</code> in case factory is injected as a named bean or configured with name</td>
+</tr>
+<tr>
+<td>
+<code>destination</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Queue or topic name</td>
+</tr>
+<tr>
+<td>
+<code>subscriber-name</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Subscriber name used to identify a durable subscription</td>
+</tr>
+<tr>
+<td>
+<code>transacted</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>Indicates whether the session will use a local transaction</td>
+</tr>
+<tr>
+<td>
+<code>non-local</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>When set to <code>true</code>, messages published by this connection, or any connection with the same client identifier, will not be delivered to this durable subscription</td>
+</tr>
+<tr>
+<td>
+<a id="type"></a>
+<a href="io.helidon.messaging.connectors.jms.Type.md">
+<code>type</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Type</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">QUEUE</code>
+</td>
+<td>Specify if connection is <code>io.helidon.messaging.connectors.jms.Type#QUEUE queue</code> or <code>io.helidon.messaging.connectors.jms.Type#TOPIC topic</code></td>
+</tr>
+<tr>
+<td>
+<code>durable</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Boolean</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">false</code>
+</td>
+<td>Indicates whether the consumer should be created as durable (only relevant for topic destinations)</td>
+</tr>
+<tr>
+<td>
+<code>password</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Password used for creating JMS connection</td>
+</tr>
+<tr>
+<td>
+<code>poll-timeout</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Long</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">50</code>
+</td>
+<td>Timeout for polling for next message in every poll cycle in millis</td>
+</tr>
+<tr>
+<td>
+<code>data-source</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Mapping to <code>javax.sql.DataSource DataSource</code> supplied with <code>io.helidon.messaging.connectors.aq.AqConnector.AqConnectorBuilder#dataSource(String, javax.sql.DataSource) AqConnectorBuilder.dataSource()</code></td>
+</tr>
+<tr>
+<td>
+<code>topic</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Use supplied destination name and <code>Type#TOPIC TOPIC</code> as type</td>
+</tr>
+<tr>
+<td>
+<a id="acknowledge-mode"></a>
+<a href="io.helidon.messaging.connectors.jms.AcknowledgeMode.md">
+<code>acknowledge-mode</code>
+</a>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value" title="AcknowledgeMode">AcknowledgeMode</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value" title="AUTO_ACKNOWLEDGE">AUTO_ACKNOWLEDGE</code>
+</td>
+<td>JMS acknowledgement mode</td>
+</tr>
+<tr>
+<td>
+<code>client-id</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Client identifier for JMS connection</td>
+</tr>
+<tr>
+<td>
+<code>period-executions</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">Long</code>
+</td>
+<td class="cm-default-cell">
+<code class="cm-truncate-value">100</code>
+</td>
+<td>Period for executing poll cycles in millis</td>
+</tr>
+<tr>
+<td>
+<code>queue</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>Use supplied destination name and <code>Type#QUEUE QUEUE</code> as type</td>
+</tr>
+<tr>
+<td>
+<code>session-group-id</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>When multiple channels share same session-group-id, they share same JMS session</td>
+</tr>
+<tr>
+<td>
+<code>username</code>
+</td>
+<td class="cm-type-cell">
+<code class="cm-truncate-value">String</code>
+</td>
+<td class="cm-default-cell">
+</td>
+<td>User name used for creating JMS connection</td>
+</tr>
+</tbody>
+</table>
+<!--/include-->
+
 
 ### Configured JMS Factory
 
@@ -181,6 +402,3 @@ public PublisherBuilder<String> produceToAq() {
     return ReactiveStreams.of("test1", "test2");
 }
 ```
-
-[acknowledge-mode]: ../../config/io.helidon.messaging.connectors.jms.AcknowledgeMode.md
-[type]: ../../config/io.helidon.messaging.connectors.jms.Type.md
