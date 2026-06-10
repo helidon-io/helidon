@@ -100,8 +100,8 @@ class RouteCrawler {
                 if (accepts.accepted()) {
                     boolean requestAwareRoutes = nextRoute.requestAwareRoutes();
                     RoutedPath previousPath = requestAwareRoutes ? request.path() : null;
+                    String matchedPattern = matchingElement(nextRoute, accepts);
                     if (requestAwareRoutes || parentPattern != null) {
-                        String matchedPattern = matchingElement(nextRoute, accepts);
                         List<HttpRouteBase> routes;
                         if (requestAwareRoutes) {
                             RoutedPath matchedPath = parent == null
@@ -125,6 +125,7 @@ class RouteCrawler {
                                                       request,
                                                       nextRoute.routes(),
                                                       accepts.matchedPath(),
+                                                      matchedPattern,
                                                       accepts.unmatchedPath());
                     }
                     if (subCrawler.hasNext()) {

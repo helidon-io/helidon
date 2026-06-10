@@ -60,7 +60,7 @@ class ServiceRules implements HttpRules {
     }
 
     @Override
-    public HttpRules register(HttpServiceLocator locator) {
+    public HttpRules registerLocator(HttpServiceLocator locator) {
         routes.add(new ServiceLocatorRoute(locator, PathMatchers.any(), ALWAYS_PREDICATE));
         return this;
     }
@@ -79,7 +79,7 @@ class ServiceRules implements HttpRules {
     }
 
     @Override
-    public HttpRules register(String pathPattern, HttpServiceLocator locator) {
+    public HttpRules registerLocator(String pathPattern, HttpServiceLocator locator) {
         routes.add(new ServiceLocatorRoute(locator, PathMatchers.create(pathPattern), ALWAYS_PREDICATE));
         return this;
     }

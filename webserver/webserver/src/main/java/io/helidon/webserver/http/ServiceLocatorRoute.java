@@ -26,11 +26,13 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import io.helidon.http.HttpException;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.PathMatcher;
 import io.helidon.http.PathMatchers;
 import io.helidon.http.RoutedPath;
+import io.helidon.http.Status;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.WebServer;
 
@@ -40,6 +42,7 @@ class ServiceLocatorRoute extends HttpRouteBase implements HttpRoute {
     private final PathMatcher pathMatcher;
     private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
     private final Map<HttpService, RouteEntry> routes = new IdentityHashMap<>();
+    private final int maxServiceCacheSize;
 
     private boolean beforeStarted;
     private boolean stopped;
@@ -51,6 +54,10 @@ class ServiceLocatorRoute extends HttpRouteBase implements HttpRoute {
         this.locator = Objects.requireNonNull(locator);
         this.methodPredicate = methodPredicate;
         this.pathMatcher = pathMatcher;
+        this.maxServiceCacheSize = locator.maxServiceCacheSize();
+        if (maxServiceCacheSize < 1) {
+            throw new IllegalArgumentException("HttpServiceLocator maxServiceCacheSize must be greater than zero");
+        }
     }
 
     @Override
@@ -164,49 +171,62 @@ class ServiceLocatorRoute extends HttpRouteBase implements HttpRoute {
     private ServiceRoute route(HttpService service) {
         Objects.requireNonNull(service, "HttpServiceLocator must not locate a null service");
 
-        RouteEntry entry = routeEntry(service);
-        if (entry == null) {
-            return null;
-        }
-
+        RouteEntry entry = null;
+        boolean readLockHeld = false;
         try {
             lock.readLock().lock();
+            readLockHeld = true;
             try {
                 if (stopped) {
                     return null;
                 }
-                return entry.route(this, service);
+                entry = routes.get(service);
             } finally {
+                if (entry == null) {
+                    lock.readLock().unlock();
+                    readLockHeld = false;
+                }
+            }
+
+            if (entry == null) {
+                lock.writeLock().lock();
+                try {
+                    if (stopped) {
+                        return null;
+                    }
+                    entry = routes.get(service);
+                    if (entry == null) {
+                        if (routes.size() >= maxServiceCacheSize) {
+                            throw new HttpException("HttpServiceLocator service cache size of "
+                                                            + maxServiceCacheSize
+                                                            + " exceeded by " + locator,
+                                                    Status.SERVICE_UNAVAILABLE_503,
+                                                    true);
+                        }
+                        entry = new RouteEntry();
+                        routes.put(service, entry);
+                    }
+                    lock.readLock().lock();
+                    readLockHeld = true;
+                } finally {
+                    lock.writeLock().unlock();
+                }
+            }
+
+            return entry.route(this, service);
+        } catch (RuntimeException | Error e) {
+            if (readLockHeld) {
+                lock.readLock().unlock();
+                readLockHeld = false;
+            }
+            if (entry != null) {
+                removeEntryIfEmpty(service, entry);
+            }
+            throw e;
+        } finally {
+            if (readLockHeld) {
                 lock.readLock().unlock();
             }
-        } catch (RuntimeException | Error e) {
-            removeEntryIfEmpty(service, entry);
-            throw e;
-        }
-    }
-
-    private RouteEntry routeEntry(HttpService service) {
-        lock.readLock().lock();
-        try {
-            if (stopped) {
-                return null;
-            }
-            RouteEntry entry = routes.get(service);
-            if (entry != null) {
-                return entry;
-            }
-        } finally {
-            lock.readLock().unlock();
-        }
-
-        lock.writeLock().lock();
-        try {
-            if (stopped) {
-                return null;
-            }
-            return routes.computeIfAbsent(service, _ -> new RouteEntry());
-        } finally {
-            lock.writeLock().unlock();
         }
     }
 

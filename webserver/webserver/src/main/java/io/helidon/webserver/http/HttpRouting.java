@@ -97,8 +97,8 @@ public interface HttpRouting extends Routing, Prototype.Api {
         Builder register(HttpService... service);
 
         @Override
-        default Builder register(HttpServiceLocator locator) {
-            HttpRules.super.register(locator);
+        default Builder registerLocator(HttpServiceLocator locator) {
+            HttpRules.super.registerLocator(locator);
             return this;
         }
 
@@ -151,8 +151,8 @@ public interface HttpRouting extends Routing, Prototype.Api {
         Builder register(String path, HttpService... service);
 
         @Override
-        default Builder register(String pathPattern, HttpServiceLocator locator) {
-            HttpRules.super.register(pathPattern, locator);
+        default Builder registerLocator(String pathPattern, HttpServiceLocator locator) {
+            HttpRules.super.registerLocator(pathPattern, locator);
             return this;
         }
 

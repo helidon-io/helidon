@@ -81,7 +81,7 @@ public class RoutingJmhTest {
                         .register("/static", new StaticService())
                         .register("/fallback/{tenant}", new EmptyNestedService())
                         .get("/fallback/{tenant}/items/{id}", new OkHandler())
-                        .register("/located/{tenant}", new TenantLocator(Map.of("acme", new TenantService())))
+                        .registerLocator("/located/{tenant}", new TenantLocator(Map.of("acme", new TenantService())))
                         .get("/located/{tenant}/items/{id}", new OkHandler()))
                 .build()
                 .start();

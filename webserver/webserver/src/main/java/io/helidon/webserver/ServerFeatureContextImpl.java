@@ -380,8 +380,8 @@ class ServerFeatureContextImpl implements ServerFeature.ServerFeatureContext {
         }
 
         @Override
-        public HttpRouting.Builder register(HttpServiceLocator locator) {
-            delegate.register(locator);
+        public HttpRouting.Builder registerLocator(HttpServiceLocator locator) {
+            delegate.registerLocator(locator);
             return this;
         }
 
@@ -392,8 +392,8 @@ class ServerFeatureContextImpl implements ServerFeature.ServerFeatureContext {
         }
 
         @Override
-        public HttpRouting.Builder register(String pathPattern, HttpServiceLocator locator) {
-            delegate.register(pathPattern, locator);
+        public HttpRouting.Builder registerLocator(String pathPattern, HttpServiceLocator locator) {
+            delegate.registerLocator(pathPattern, locator);
             return this;
         }
 

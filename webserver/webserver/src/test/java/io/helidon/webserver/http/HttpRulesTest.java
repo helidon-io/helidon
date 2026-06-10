@@ -123,7 +123,7 @@ class HttpRulesTest {
         }
 
         @Override
-        public HttpRules register(HttpServiceLocator locator) {
+        public HttpRules registerLocator(HttpServiceLocator locator) {
             return null;
         }
 
@@ -133,7 +133,7 @@ class HttpRulesTest {
         }
 
         @Override
-        public HttpRules register(String pathPattern, HttpServiceLocator locator) {
+        public HttpRules registerLocator(String pathPattern, HttpServiceLocator locator) {
             return null;
         }
 

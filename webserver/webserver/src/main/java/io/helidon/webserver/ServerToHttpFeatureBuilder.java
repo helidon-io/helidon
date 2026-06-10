@@ -49,8 +49,8 @@ class ServerToHttpFeatureBuilder implements HttpRouting.Builder {
     }
 
     @Override
-    public HttpRouting.Builder register(HttpServiceLocator locator) {
-        registrations.add(Registration.create(locator));
+    public HttpRouting.Builder registerLocator(HttpServiceLocator locator) {
+        registrations.add(Registration.createLocator(locator));
         return this;
     }
 
@@ -61,8 +61,8 @@ class ServerToHttpFeatureBuilder implements HttpRouting.Builder {
     }
 
     @Override
-    public HttpRouting.Builder register(String pathPattern, HttpServiceLocator locator) {
-        registrations.add(Registration.create(pathPattern, locator));
+    public HttpRouting.Builder registerLocator(String pathPattern, HttpServiceLocator locator) {
+        registrations.add(Registration.createLocator(pathPattern, locator));
         return this;
     }
 

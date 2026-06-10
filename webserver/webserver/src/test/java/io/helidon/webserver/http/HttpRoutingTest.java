@@ -123,7 +123,7 @@ class HttpRoutingTest {
         }
 
         @Override
-        public HttpRouting.Builder register(HttpServiceLocator locator) {
+        public HttpRouting.Builder registerLocator(HttpServiceLocator locator) {
             return null;
         }
 
@@ -133,7 +133,7 @@ class HttpRoutingTest {
         }
 
         @Override
-        public HttpRouting.Builder register(String pathPattern, HttpServiceLocator locator) {
+        public HttpRouting.Builder registerLocator(String pathPattern, HttpServiceLocator locator) {
             return null;
         }
 

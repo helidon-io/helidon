@@ -179,7 +179,7 @@ class WebServerSnippets {
 
     void serviceLocator(ItemServiceRegistry registry) {
         HttpRouting routing = HttpRouting.builder()
-                .register("/{item}", new MetadataBackedLocator(registry))
+                .registerLocator("/{item}", new MetadataBackedLocator(registry))
                 .build();
     }
     // end::snippet_41[]

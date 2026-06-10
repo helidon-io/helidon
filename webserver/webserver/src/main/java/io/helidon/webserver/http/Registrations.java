@@ -56,7 +56,7 @@ class Registrations {
 
         @Override
         public void register(HttpRouting.Builder routing) {
-            routing.register(path, locator);
+            routing.registerLocator(path, locator);
         }
     }
 
@@ -69,7 +69,7 @@ class Registrations {
 
         @Override
         public void register(HttpRouting.Builder routing) {
-            routing.register(locator);
+            routing.registerLocator(locator);
         }
     }
 

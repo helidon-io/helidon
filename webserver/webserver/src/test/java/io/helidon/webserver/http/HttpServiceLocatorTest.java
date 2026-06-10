@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import io.helidon.common.uri.UriFragment;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
+import io.helidon.http.HttpException;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.PathMatchers;
@@ -63,7 +64,7 @@ class HttpServiceLocatorTest {
         var locatedItem = new AtomicReference<String>();
 
         HttpRouting routing = HttpRouting.builder()
-                .register("/{item}", request -> {
+                .registerLocator("/{item}", request -> {
                     String item = request.path().pathParameters().first("item").orElseThrow();
                     locatedItem.set(item);
                     return Optional.ofNullable(services.get(item));
@@ -82,9 +83,41 @@ class HttpServiceLocatorTest {
     }
 
     @Test
+    void testServiceLambdaRegisterRemainsService() throws Exception {
+        HttpRouting routing = HttpRouting.builder()
+                .register(rules -> rules.get("/hello", (req, res) -> res.send("ok")))
+                .register("/nested", rules -> rules.get("/hello", (req, res) -> res.send("nested")))
+                .registerLocator("/missing", request -> Optional.empty())
+                .build();
+
+        var invocation = RoutingInvocation.create("/hello");
+        invocation.route(routing);
+        assertThat(invocation.entity(), is("ok"));
+
+        invocation = RoutingInvocation.create("/nested/hello");
+        invocation.route(routing);
+        assertThat(invocation.entity(), is("nested"));
+    }
+
+    @Test
+    void testNestedLocatorPreservesParentMatchingPattern() throws Exception {
+        var located = new ItemService("nested");
+        HttpService tenant = rules -> rules.registerLocator("/{item}", request -> Optional.of(located));
+
+        HttpRouting routing = HttpRouting.builder()
+                .register("/{tenant}", tenant)
+                .build();
+
+        var invocation = RoutingInvocation.create("/t1/pipe/123");
+        invocation.route(routing);
+
+        assertThat(invocation.entity(), is("nested:pipe:123:/{tenant}/{item}/{id}"));
+    }
+
+    @Test
     void testEmptyLocatorFallsThrough() throws Exception {
         HttpRouting routing = HttpRouting.builder()
-                .register("/{item}", request -> Optional.empty())
+                .registerLocator("/{item}", request -> Optional.empty())
                 .get("/{item}/{id}", (req, res) -> res.send("fallback:" + req.path().pathParameters().first("item").get()))
                 .build();
 
@@ -97,7 +130,7 @@ class HttpServiceLocatorTest {
     @Test
     void testEmptyLocatorRestoresPathWhenNoRouteMatches() throws Exception {
         HttpRouting routing = HttpRouting.builder()
-                .register("/{item}", request -> Optional.empty())
+                .registerLocator("/{item}", request -> Optional.empty())
                 .build();
 
         var invocation = RoutingInvocation.create("/unknown/123");
@@ -110,7 +143,7 @@ class HttpServiceLocatorTest {
     void testLocatedServiceRestoresPathWhenChildDoesNotMatch() throws Exception {
         HttpService service = rules -> rules.get("/other", (req, res) -> res.send("located"));
         HttpRouting routing = HttpRouting.builder()
-                .register("/{item}", request -> Optional.of(service))
+                .registerLocator("/{item}", request -> Optional.of(service))
                 .build();
 
         var invocation = RoutingInvocation.create("/unknown/123");
@@ -125,7 +158,7 @@ class HttpServiceLocatorTest {
                 .get("/{id}", (req, res) -> res.send("located"));
 
         HttpRouting routing = HttpRouting.builder()
-                .register("/{item}", request -> Optional.of(serviceWithNext))
+                .registerLocator("/{item}", request -> Optional.of(serviceWithNext))
                 .get("/{item}/{id}", (req, res) -> res.send("fallback"))
                 .build();
 
@@ -136,7 +169,7 @@ class HttpServiceLocatorTest {
 
         HttpService serviceWithOnlyNext = rules -> rules.get("/{id}", (req, res) -> res.next());
         routing = HttpRouting.builder()
-                .register("/{item}", request -> Optional.of(serviceWithOnlyNext))
+                .registerLocator("/{item}", request -> Optional.of(serviceWithOnlyNext))
                 .get("/{item}/{id}", (req, res) -> res.send("fallback"))
                 .build();
 
@@ -154,7 +187,7 @@ class HttpServiceLocatorTest {
         Map<String, HttpService> services = Map.of("pipe", reroutingService, "manhole", manhole);
 
         HttpRouting routing = HttpRouting.builder()
-                .register("/{item}", request -> Optional.ofNullable(services.get(
+                .registerLocator("/{item}", request -> Optional.ofNullable(services.get(
                         request.path().pathParameters().first("item").orElseThrow())))
                 .build();
 
@@ -171,7 +204,7 @@ class HttpServiceLocatorTest {
         WebServer webServer = mock(WebServer.class);
 
         HttpRouting routing = HttpRouting.builder()
-                .register("/{item}", locator)
+                .registerLocator("/{item}", locator)
                 .build();
 
         routing.beforeStart();
@@ -272,6 +305,23 @@ class HttpServiceLocatorTest {
         assertThat(service.beforeStartCount.get(), is(2));
         assertThat(service.afterStartCount.get(), is(2));
         assertThat(service.afterStopCount.get(), is(1));
+    }
+
+    @Test
+    void testLocatedServiceCacheSizeIsBounded() {
+        var first = new LifecycleService("first");
+        var second = new LifecycleService("second");
+        var locator = new SwitchingLocator(first, false, 1);
+        var route = locatorRoute(locator);
+
+        locate(route);
+        locator.service(second);
+
+        HttpException failure = assertThrows(HttpException.class, () -> locate(route));
+
+        assertThat(failure.status(), is(Status.SERVICE_UNAVAILABLE_503));
+        assertThat(first.routingCount.get(), is(1));
+        assertThat(second.routingCount.get(), is(0));
     }
 
     @Test
@@ -399,16 +449,27 @@ class HttpServiceLocatorTest {
 
     private static class SwitchingLocator implements HttpServiceLocator {
         private final boolean failAfterStop;
+        private final int maxServiceCacheSize;
         private HttpService service;
 
         SwitchingLocator(HttpService service, boolean failAfterStop) {
+            this(service, failAfterStop, DEFAULT_MAX_SERVICE_CACHE_SIZE);
+        }
+
+        SwitchingLocator(HttpService service, boolean failAfterStop, int maxServiceCacheSize) {
             this.service = service;
             this.failAfterStop = failAfterStop;
+            this.maxServiceCacheSize = maxServiceCacheSize;
         }
 
         @Override
         public Optional<HttpService> locate(ServerRequest request) {
             return Optional.of(service);
+        }
+
+        @Override
+        public int maxServiceCacheSize() {
+            return maxServiceCacheSize;
         }
 
         @Override
