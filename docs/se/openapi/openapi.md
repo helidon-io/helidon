@@ -133,7 +133,7 @@ If you need programmatic control over the `OpenApiFeature` instance, invoke `Ope
 [openapifeature]: https://helidon.io/docs/v4/apidocs/io.helidon.openapi/io/helidon/openapi/OpenApiFeature.html
 [builder]: https://helidon.io/docs/v4/apidocs/io.helidon.openapi/io/helidon/openapi/OpenApiFeatureConfig.Builder.html
 [example-below]: #register-openapifeature-explicitly
-[manager]: ../../config/io_helidon_openapi_OpenApiManager.md
-[services]: ../../config/io_helidon_openapi_OpenApiService.md
-[cors]: ../../config/io_helidon_cors_CrossOriginConfig.md
+[manager]: ../../config/io.helidon.openapi.OpenApiManager.md
+[services]: ../../config/io.helidon.openapi.OpenApiService.md
+[cors]: ../../config/io.helidon.cors.CrossOriginConfig.md
 [complete-openapi]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/openapi

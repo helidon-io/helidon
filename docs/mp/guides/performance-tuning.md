@@ -83,4 +83,4 @@ server:
 <!--@mdc :: -->
 
 [webserver-config]: ../../se/webserver/webserver.md#configuration-options
-[webserver-socket]: ../../config/io_helidon_common_socket_SocketOptions.md
+[webserver-socket]: ../../config/io.helidon.common.socket.SocketOptions.md

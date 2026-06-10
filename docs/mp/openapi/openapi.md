@@ -378,9 +378,9 @@ You can add more than one dependency and scan for more than a single type. See t
 [org-eclipse-micr-2]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.1/apidocs/org/eclipse/microprofile/openapi/OASFilter.html
 [configuration-se]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.1/microprofile-openapi-spec-3.1.1.html#configuration
 [microprofile-ope-2]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.1/apidocs
-[manager]: ../../config/io_helidon_openapi_OpenApiManager.md
-[services]: ../../config/io_helidon_openapi_OpenApiService.md
-[cors]: ../../config/io_helidon_cors_CrossOriginConfig.md
+[manager]: ../../config/io.helidon.openapi.OpenApiManager.md
+[services]: ../../config/io.helidon.openapi.OpenApiService.md
+[cors]: ../../config/io.helidon.cors.CrossOriginConfig.md
 [the-microprofile]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.1/microprofile-openapi-spec-3.1.1.html#_configuration
 [complete-openapi]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/microprofile/openapi
 [jandex-maven-plu]: https://github.com/smallrye/jandex/tree/main/maven-plugin

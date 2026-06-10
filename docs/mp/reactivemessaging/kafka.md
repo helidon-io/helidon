@@ -160,5 +160,5 @@ Don’t forget to check out the examples with pre-configured Kafka docker image,
 [bootstrap-server]: https://kafka.apache.org/28/documentation.html#consumerconfigs_bootstrap.servers
 [consumer-2]: https://kafka.apache.org/documentation/#consumerconfigs
 [producer-2]: https://kafka.apache.org/documentation/#producerconfigs
-[auto-offset-rese]: ../../config/io_helidon_messaging_connectors_kafka_KafkaConfigBuilder_AutoOffsetReset.md
+[auto-offset-rese]: ../../config/io.helidon.messaging.connectors.kafka.KafkaConfigBuilder.AutoOffsetReset.md
 [dlq]: https://en.wikipedia.org/wiki/Dead_letter_queue

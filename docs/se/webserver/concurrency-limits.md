@@ -170,6 +170,6 @@ server:
 
 Be sure to add a dependency in your project for one of the Helidon tracing implementations. See the [Helidon tracing](../../se/tracing.md) documentation for more information.
 
-[fixedlimit]: ../../config/io_helidon_common_concurrency_limits_FixedLimit.md
-[throughputlimit]: ../../config/io_helidon_common_concurrency_limits_ThroughputLimit.md
-[aimdlimit]: ../../config/io_helidon_common_concurrency_limits_AimdLimit.md
+[fixedlimit]: ../../config/io.helidon.common.concurrency.limits.FixedLimit.md
+[throughputlimit]: ../../config/io.helidon.common.concurrency.limits.ThroughputLimit.md
+[aimdlimit]: ../../config/io.helidon.common.concurrency.limits.AimdLimit.md

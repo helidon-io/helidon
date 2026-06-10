@@ -188,5 +188,5 @@ public PublisherBuilder<Message<String>> produceToJms() {
 }
 ```
 
-[acknowledge-mode]: ../../config/io_helidon_messaging_connectors_jms_AcknowledgeMode.md
-[type]: ../../config/io_helidon_messaging_connectors_jms_Type.md
+[acknowledge-mode]: ../../config/io.helidon.messaging.connectors.jms.AcknowledgeMode.md
+[type]: ../../config/io.helidon.messaging.connectors.jms.Type.md

@@ -209,6 +209,6 @@ FixedRate.builder()
 - [Helidon Scheduling Javadoc][helidon-scheduli]
 
 [cron-utils]: https://github.com/jmrozanec/cron-utils
-[delay-type]: ../config/io_helidon_scheduling_FixedRate_DelayType.md
-[time-unit]: ../config/java_util_concurrent_TimeUnit.md
+[delay-type]: ../config/io.helidon.scheduling.FixedRate.DelayType.md
+[time-unit]: ../config/java.util.concurrent.TimeUnit.md
 [helidon-scheduli]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.scheduling/io/helidon/microprofile/scheduling/package-summary.html

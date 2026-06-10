@@ -152,7 +152,7 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 - [Google AI Gemini Website][google-ai-gemini]
 
 [google-gemini]: https://ai.google.dev/gemini-api/docs/models
-[media-resolution]: ../../../config/dev_langchain4j_model_googleai_GeminiMediaResolutionLevel.md
-[supported-capabi]: ../../../config/dev_langchain4j_model_chat_Capability.md
+[media-resolution]: ../../../config/dev.langchain4j.model.googleai.GeminiMediaResolutionLevel.md
+[supported-capabi]: ../../../config/dev.langchain4j.model.chat.Capability.md
 [langchain4j-goog]: https://docs.langchain4j.dev/integrations/language-models/google-ai-gemini
 [google-ai-gemini]: https://ai.google.dev/gemini-api/docs

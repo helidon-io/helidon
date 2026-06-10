@@ -480,19 +480,19 @@ See the [`UriInfo`][uriinfo] Javadoc for more information.
 - [Helidon MicroProfile Server Javadoc][helidon-micropro]
 - [Helidon MicroProfile Server on GitHub][helidon-micropro-2]
 
-[concurrency-limi]: ../config/io_helidon_common_concurrency_limits_Limit.md
-[connection-optio]: ../config/io_helidon_common_socket_SocketOptions.md
-[content-encoding]: ../config/io_helidon_http_encoding_ContentEncodingContext.md
-[error-handling]: ../config/io_helidon_webserver_ErrorHandling.md
-[features]: ../config/io_helidon_webserver_spi_ServerFeature.md
-[media-context]: ../config/io_helidon_http_media_MediaContext.md
-[protocols]: ../config/io_helidon_webserver_spi_ProtocolConfig.md
-[requested-uri-di]: ../config/io_helidon_http_RequestedUriDiscoveryContext.md
-[sockets]: ../config/io_helidon_webserver_ListenerConfig.md
-[tls]: ../config/io_helidon_common_tls_Tls.md
-[connection-confi]: ../config/io_helidon_webserver_ConnectionConfig.md
-[server-features]: ../config/io_helidon_webserver_spi_ServerFeature.md#a42c97-access-log
-[static-content-f]: ../config/io_helidon_webserver_staticcontent_StaticContentFeature.md
+[concurrency-limi]: ../config/io.helidon.common.concurrency.limits.Limit.md
+[connection-optio]: ../config/io.helidon.common.socket.SocketOptions.md
+[content-encoding]: ../config/io.helidon.http.encoding.ContentEncodingContext.md
+[error-handling]: ../config/io.helidon.webserver.ErrorHandling.md
+[features]: ../config/io.helidon.webserver.spi.ServerFeature.md
+[media-context]: ../config/io.helidon.http.media.MediaContext.md
+[protocols]: ../config/io.helidon.webserver.spi.ProtocolConfig.md
+[requested-uri-di]: ../config/io.helidon.http.RequestedUriDiscoveryContext.md
+[sockets]: ../config/io.helidon.webserver.ListenerConfig.md
+[tls]: ../config/io.helidon.common.tls.Tls.md
+[connection-confi]: ../config/io.helidon.webserver.ConnectionConfig.md
+[server-features]: ../config/io.helidon.webserver.spi.ServerFeature.md#a42c97-access-log
+[static-content-f]: ../config/io.helidon.webserver.staticcontent.StaticContentFeature.md
 [setting-applicat]: jaxrs/jaxrs-applications.md#setting-application-path
 [standard-http-fo]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Forwarded
 [non-standard-x-f]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For

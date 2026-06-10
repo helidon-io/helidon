@@ -758,12 +758,12 @@ See the [manifest](../config/manifest.md) for all available types.
 [httpclientreques]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.api/io/helidon/webclient/api/HttpClientRequest.html
 [clientrequestbas]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.api/io/helidon/webclient/api/ClientRequestBase.html
 [clientrequest]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.api/io/helidon/webclient/api/ClientRequest.html
-[protocol-configs]: ../config/io_helidon_webclient_spi_ProtocolConfig.md
-[proxy]: ../config/io_helidon_webclient_api_Proxy.md
-[tls]: ../config/io_helidon_common_tls_Tls.md
+[protocol-configs]: ../config/io.helidon.webclient.spi.ProtocolConfig.md
+[proxy]: ../config/io.helidon.webclient.api.Proxy.md
+[tls]: ../config/io.helidon.common.tls.Tls.md
 [configuration-se]: ../mp/security/configuration-secrets.md
 [discovery]: discovery.md#web-client-discovery-integration
-[records]: ../config/io_helidon_common_context_http_ContextRecordConfig.md
+[records]: ../config/io.helidon.common.context.http.ContextRecordConfig.md
 [helidon-webclien]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.api/module-summary.html
 [helidon-webclien-2]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.http1/module-summary.html
 [helidon-webclien-3]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.http2/module-summary.html

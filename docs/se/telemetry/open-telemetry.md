@@ -450,7 +450,7 @@ In the table below, the Maven artifacts are all in the `io.opentelemetry` group.
 <td style="text-align: left;"><p><code>OtlpHttp{signal}Exporter</code></p></td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><a href="../../se/telemetry/../../config/io_helidon_telemetry_otelconfig_ZipkinExporterConfig.xml"><code>zipkin</code></a></p></td>
+<td style="text-align: left;"><p><a href="../../config/io.helidon.telemetry.otelconfig.ZipkinExporterConfig.md"><code>zipkin</code></a></p></td>
 <td style="text-align: left;"><p><code>ZipkinSpanExporter</code></p></td>
 <td style="text-align: left;"><p><code>opentelemetry-exporter-zipkin</code></p></td>
 </tr>
@@ -935,26 +935,26 @@ You associate each logger processor with a logger exporter using the exporter’
 [helidon-webclien]: ../../se/webclient.md#configuring-telemetry
 [this-section-bel]: #note-about-exporter-dependencies
 [this-opentelemet]: https://github.com/open-telemetry/opentelemetry-java/tree/v1.58.0/exporters
-[signals-logging]: ../../config/io_helidon_telemetry_otelconfig_OpenTelemetryLoggingConfig.md
-[signals-metrics]: ../../config/io_helidon_telemetry_otelconfig_OpenTelemetryMetricsConfig.md
-[signals-tracing]: ../../config/io_helidon_telemetry_otelconfig_OpenTelemetryTracingConfig.md
+[signals-logging]: ../../config/io.helidon.telemetry.otelconfig.OpenTelemetryLoggingConfig.md
+[signals-metrics]: ../../config/io.helidon.telemetry.otelconfig.OpenTelemetryMetricsConfig.md
+[signals-tracing]: ../../config/io.helidon.telemetry.otelconfig.OpenTelemetryTracingConfig.md
 [this-opentelemet-2]: https://opentelemetry.io/docs/languages/java/configuration/#properties-general
-[type]: ../../config/io_helidon_telemetry_otelconfig_ProcessorType.md
-[certificate]: ../../config/io_helidon_common_configurable_Resource.md
-[compression]: ../../config/io_helidon_telemetry_otelconfig_CompressionType.md
-[internal-telemet]: ../../config/io_opentelemetry_sdk_common_InternalTelemetryVersion.md
-[memory-mode]: ../../config/io_opentelemetry_sdk_common_export_MemoryMode.md
-[encoder]: ../../config/zipkin2_codec_SpanBytesEncoder.md
+[type]: ../../config/io.helidon.telemetry.otelconfig.ProcessorType.md
+[certificate]: ../../config/io.helidon.common.configurable.Resource.md
+[compression]: ../../config/io.helidon.telemetry.otelconfig.CompressionType.md
+[internal-telemet]: ../../config/io.opentelemetry.sdk.common.InternalTelemetryVersion.md
+[memory-mode]: ../../config/io.opentelemetry.sdk.common.export.MemoryMode.md
+[encoder]: ../../config/zipkin2.codec.SpanBytesEncoder.md
 [opentelemetry-do]: https://opentelemetry.io/docs/languages/java/configuration/#properties-exporters
 [batch-with-defau]: https://opentelemetry.io/docs/languages/java/configuration/#properties-traces
 [opentelemetry-do-2]: https://opentelemetry.io/docs/languages/java/sdk/#sampler
-[type-2]: ../../config/io_helidon_telemetry_otelconfig_SamplerType.md
+[type-2]: ../../config/io.helidon.telemetry.otelconfig.SamplerType.md
 [periodicmetricre]: https://opentelemetry.io/docs/languages/java/configuration/#properties-metrics
-[type-3]: ../../config/io_helidon_telemetry_otelconfig_MetricExporterType.md
-[type-4]: ../../config/io_helidon_telemetry_otelconfig_MetricDefaultHistogramAggregationType.md
-[type-5]: ../../config/io_helidon_telemetry_otelconfig_MetricReaderType.md
-[type-6]: ../../config/io_opentelemetry_sdk_metrics_InstrumentType.md
-[minimum-severity]: ../../config/io_opentelemetry_api_logs_Severity.md
+[type-3]: ../../config/io.helidon.telemetry.otelconfig.MetricExporterType.md
+[type-4]: ../../config/io.helidon.telemetry.otelconfig.MetricDefaultHistogramAggregationType.md
+[type-5]: ../../config/io.helidon.telemetry.otelconfig.MetricReaderType.md
+[type-6]: ../../config/io.opentelemetry.sdk.metrics.InstrumentType.md
+[minimum-severity]: ../../config/io.opentelemetry.api.logs.Severity.md
 [otlp]: https://opentelemetry.io/docs/languages/java/configuration/#properties-logs
 [opentelemetry-ja]: https://opentelemetry.io/docs/languages/java/sdk
 [intro-to-opentel]: https://opentelemetry.io/docs/languages/java/intro/

@@ -659,11 +659,11 @@ See [Responding to Span Lifecycle Events][responding-to-sp].
 
 [microprofile-tel]: https://github.com/eclipse/microprofile-telemetry
 [the-opentracing]: https://opentracing.io/specification
-[client-cert-pem]: ../config/io_helidon_common_configurable_Resource.md
-[propagation]: ../config/io_helidon_tracing_providers_jaeger_JaegerTracerBuilder_PropagationFormat.md
-[sampler-type]: ../config/io_helidon_tracing_providers_jaeger_JaegerTracerBuilder_SamplerType.md
-[span-processor-t]: ../config/io_helidon_tracing_providers_jaeger_JaegerTracerBuilder_SpanProcessorType.md
-[api-version]: ../config/io_helidon_tracing_providers_zipkin_ZipkinTracerBuilder_Version.md
-[exporter-type]: ../config/io_helidon_tracing_providers_opentelemetry_OtlpExporterProtocolType.md
+[client-cert-pem]: ../config/io.helidon.common.configurable.Resource.md
+[propagation]: ../config/io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.PropagationFormat.md
+[sampler-type]: ../config/io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.SamplerType.md
+[span-processor-t]: ../config/io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.SpanProcessorType.md
+[api-version]: ../config/io.helidon.tracing.providers.zipkin.ZipkinTracerBuilder.Version.md
+[exporter-type]: ../config/io.helidon.tracing.providers.opentelemetry.OtlpExporterProtocolType.md
 [responding-to-sp]: ../includes/tracing/common-callbacks.md#span-lifecycle-callbacks
 [microprofile-ope]: https://download.eclipse.org/microprofile/microprofile-opentracing-3.0/microprofile-opentracing-spec-3.0.html

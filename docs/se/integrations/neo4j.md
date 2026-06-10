@@ -291,6 +291,6 @@ Health checks for Neo4j will be included in `/health` endpoint output.
 - [Neo4j Java developer guide][neo4j-documentat]
 
 [neo4j-documentat]: https://neo4j.com/developer/java/
-[trust-strategy]: ../../config/io_helidon_integrations_neo4j_Neo4j_Builder_TrustStrategy.md
+[trust-strategy]: ../../config/io.helidon.integrations.neo4j.Neo4j.Builder.TrustStrategy.md
 [play-movies]: http://localhost:7474/browser/?cmd=play&arg=movies
 [helidon-examples]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/integrations/neo4j

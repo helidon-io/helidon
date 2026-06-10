@@ -539,6 +539,6 @@ Full list of configuration properties:
 - [Oracle Cloud Infrastructure GenAI Services][oracle-cloud-inf]
 
 [helidon-oci-inte]: https://github.com/helidon-io/helidon/tree/main/integrations/oci/oci
-[oci-configuratio]: ../../../config/io_helidon_integrations_oci_OciConfig.md
+[oci-configuratio]: ../../../config/io.helidon.integrations.oci.OciConfig.md
 [langchain4j-ocig]: https://docs.langchain4j.dev/integrations/language-models/oci-genai
 [oracle-cloud-inf]: https://www.oracle.com/artificial-intelligence/generative-ai/generative-ai-service/

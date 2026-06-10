@@ -307,9 +307,9 @@ webclient:
 [sequencedset]: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/SequencedSet.html
 [uri-method]: <https://helidon.io/docs/v4/apidocs/io.helidon.discovery/io/helidon/discovery/DiscoveredUri.html#uri()>
 [netflix-eureka-s]: https://github.com/Netflix/eureka/tree/v2.0.5
-[configuration-re]: ../config/io_helidon_discovery_providers_eureka_EurekaDiscovery.md
-[base-uri-propert]: ../config/io_helidon_webclient_api_HttpClientConfig.md
-[other-things]: ../config/io_helidon_discovery_providers_eureka_CacheConfig.md
+[configuration-re]: ../config/io.helidon.discovery.providers.eureka.EurekaDiscovery.md
+[base-uri-propert]: ../config/io.helidon.webclient.api.HttpClientConfig.md
+[other-things]: ../config/io.helidon.discovery.providers.eureka.CacheConfig.md
 [eureka-server-se]: integrations/eureka-registration.md
 [fully-specified]: <https://helidon.io/docs/v4/apidocs/io.helidon.webclient.discovery/io/helidon/webclient/discovery/WebClientDiscovery.html#handle(io.helidon.webclient.spi.WebClientService.Chain,io.helidon.webclient.api.WebClientServiceRequest)>
 [web-client-servi]: webclient.md#adding-service-to-webclient

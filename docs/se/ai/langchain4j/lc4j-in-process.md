@@ -110,5 +110,5 @@ Configuration properties:
 - [Retrieval-Augmented Generation (RAG)](rag.md)
 
 [langchain4j-docu]: https://docs.langchain4j.dev/integrations/embedding-models/in-process/
-[pooling-mode]: ../../../config/dev_langchain4j_model_embedding_onnx_PoolingMode.md
-[type]: ../../../config/io_helidon_integrations_langchain4j_providers_lc4jinprocess_InProcessModelType.md
+[pooling-mode]: ../../../config/dev.langchain4j.model.embedding.onnx.PoolingMode.md
+[type]: ../../../config/io.helidon.integrations.langchain4j.providers.lc4jinprocess.InProcessModelType.md

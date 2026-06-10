@@ -108,4 +108,4 @@ class FoodExpertTest {
 
 - [LangChain4J Integration](langchain4j.md)
 
-[rules]: ../../../config/io_helidon_integrations_langchain4j_providers_mock_MockChatRule.md
+[rules]: ../../../config/io.helidon.integrations.langchain4j.providers.mock.MockChatRule.md

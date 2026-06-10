@@ -94,4 +94,4 @@ These are all the MCP Client configuration options currently supported:
 [helidon-mcp-gith]: https://github.com/helidon-io/helidon-mcp
 [helidon-mcp-docu]: https://github.com/helidon-io/helidon-mcp#documentation
 [integration-with]: ../../se/ai/langchain4j/langchain4j.md
-[tls]: ../../config/io_helidon_common_tls_Tls.md
+[tls]: ../../config/io.helidon.common.tls.Tls.md

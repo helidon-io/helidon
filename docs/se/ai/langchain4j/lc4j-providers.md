@@ -136,5 +136,5 @@ Configuration properties:
 - [LangChain4j Integration](langchain4j.md)
 
 [rag]: https://docs.langchain4j.dev/tutorials/rag
-[type]: ../../../config/io_helidon_integrations_langchain4j_ContentRetrieverType.md
+[type]: ../../../config/io.helidon.integrations.langchain4j.ContentRetrieverType.md
 [in-memory-embedd]: https://docs.langchain4j.dev/integrations/embedding-stores/in-memory

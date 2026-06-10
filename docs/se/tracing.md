@@ -526,11 +526,11 @@ By default, Helidon tracing support for OpenTelemetry uses OpenTelemetry’s OTL
 [span-callbackena]: <https://helidon.io/docs/v4/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.helidon.tracing.Span)>
 [span-callbackena-2]: <https://helidon.io/docs/v4/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.opentelemetry.api.trace.Span)>
 [wrapper]: https://helidon.io/docs/v4/apidocs/io.helidon.tracing/io/helidon/tracing/Wrapper.html
-[client-cert-pem]: ../config/io_helidon_common_configurable_Resource.md
-[propagation]: ../config/io_helidon_tracing_providers_jaeger_JaegerTracerBuilder_PropagationFormat.md
-[sampler-type]: ../config/io_helidon_tracing_providers_jaeger_JaegerTracerBuilder_SamplerType.md
-[span-processor-t]: ../config/io_helidon_tracing_providers_jaeger_JaegerTracerBuilder_SpanProcessorType.md
-[api-version]: ../config/io_helidon_tracing_providers_zipkin_ZipkinTracerBuilder_Version.md
+[client-cert-pem]: ../config/io.helidon.common.configurable.Resource.md
+[propagation]: ../config/io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.PropagationFormat.md
+[sampler-type]: ../config/io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.SamplerType.md
+[span-processor-t]: ../config/io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.SpanProcessorType.md
+[api-version]: ../config/io.helidon.tracing.providers.zipkin.ZipkinTracerBuilder.Version.md
 [opentelemetrycon]: https://helidon.io/docs/v4/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/OpenTelemetryTracerConfig.html
 [telemetry-doc-pa]: ../se/telemetry/open-telemetry.md
-[exporter-type]: ../config/io_helidon_tracing_providers_opentelemetry_OtlpExporterProtocolType.md
+[exporter-type]: ../config/io.helidon.tracing.providers.opentelemetry.OtlpExporterProtocolType.md

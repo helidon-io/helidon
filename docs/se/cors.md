@@ -257,6 +257,6 @@ content-length: 461
 [corspathconfig]: https://helidon.io/docs/v4/apidocs/io.helidon.webserver.cors/io/helidon/webserver/cors/CorsPathConfig.html
 [helidon-se-quick]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/quickstarts/helidon-quickstart-se
 [routing]: ../se/webserver/webserver.md#routing
-[paths]: ../config/io_helidon_webserver_cors_CorsPathConfig.md
+[paths]: ../config/io.helidon.webserver.cors.CorsPathConfig.md
 [helidon-se-cors]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/cors
 [requested-uri-di]: ../se/webserver/webserver.md#requested-uri-discovery

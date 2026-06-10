@@ -224,6 +224,6 @@ Feature is similar to `HttpService` but gives more freedom in setup. Main differ
 - [Metrics](../se/metrics/metrics.md) documentation.
 - [Health](../se/health.md) documentation.
 
-[observers]: ../config/io_helidon_webserver_observe_spi_Observer.md
-[cors]: ../config/io_helidon_cors_CrossOriginConfig.md
+[observers]: ../config/io.helidon.webserver.observe.spi.Observer.md
+[cors]: ../config/io.helidon.cors.CrossOriginConfig.md
 [microprofile-met]: https://download.eclipse.org/microprofile/microprofile-metrics-5.0.0/microprofile-metrics-spec-5.0.0.pdf

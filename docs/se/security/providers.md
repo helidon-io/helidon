@@ -79,7 +79,7 @@ WebServer.builder()
 <td class="tableblock halign-left valign-top"><p>Whether to check if current IP address matches the one access token was issued for</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="a7e9b5-client-credentials-config"></span> <a href="../../se/security/../../config/io_helidon_security_providers_oidc_common_ClientCredentialsConfig.html"><code>client-credentials-config</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p><span id="a7e9b5-client-credentials-config"></span> <a href="../../config/io.helidon.security.providers.oidc.common.ClientCredentialsConfig.md"><code>client-credentials-config</code></a></p></td>
 <td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
 <td class="tableblock halign-left valign-top"><p><code>i.h.s.p.o.c.ClientCredentialsConfig</code></p></td>
 <td class="tableblock halign-left valign-top"><p> </p></td>
@@ -199,7 +199,7 @@ Security#encrypt(String, byte[)&lt;/code&gt; and &lt;code&gt;Security#decrypt(St
 <td class="tableblock halign-left valign-top"><p>Path the cookie is valid for</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="a0a656-cookie-same-site"></span> <a href="../../se/security/../../config/io_helidon_http_SetCookie_SameSite.html"><code>cookie-same-site</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p><span id="a0a656-cookie-same-site"></span> <a href="../../config/io.helidon.http.SetCookie.SameSite.md"><code>cookie-same-site</code></a></p></td>
 <td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
 <td class="tableblock halign-left valign-top"><p><code>i.h.h.S.SameSite</code></p></td>
 <td class="tableblock halign-left valign-top"><p><code>LAX</code></p></td>
@@ -220,7 +220,7 @@ Security#encrypt(String, byte[)&lt;/code&gt; and &lt;code&gt;Security#decrypt(St
 <td class="tableblock halign-left valign-top"><p>Whether to use cookie to store JWT between requests</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="ad1309-cors"></span> <a href="../../se/security/../../config/io_helidon_cors_CrossOriginConfig.html"><code>cors</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p><span id="ad1309-cors"></span> <a href="../../config/io.helidon.cors.CrossOriginConfig.md"><code>cors</code></a></p></td>
 <td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
 <td class="tableblock halign-left valign-top"><p><code>i.h.c.CrossOriginConfig</code></p></td>
 <td class="tableblock halign-left valign-top"><p> </p></td>
@@ -241,7 +241,7 @@ Security#encrypt(String, byte[)&lt;/code&gt; and &lt;code&gt;Security#decrypt(St
 <td class="tableblock halign-left valign-top"><p>Full URI of this application that is visible from user browser</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="abf3fb-header-token"></span> <a href="../../se/security/../../config/io_helidon_security_util_TokenHandler.html"><code>header-token</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p><span id="abf3fb-header-token"></span> <a href="../../config/io.helidon.security.util.TokenHandler.md"><code>header-token</code></a></p></td>
 <td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
 <td class="tableblock halign-left valign-top"><p><code>i.h.s.u.TokenHandler</code></p></td>
 <td class="tableblock halign-left valign-top"><p> </p></td>
@@ -276,21 +276,21 @@ Security#encrypt(String, byte[)&lt;/code&gt; and &lt;code&gt;Security#decrypt(St
 <td class="tableblock halign-left valign-top"><p>Whether authentication is required</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="acf040-outbound"></span> <a href="../../se/security/../../config/io_helidon_security_providers_common_OutboundTarget.html"><code>outbound</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p><span id="acf040-outbound"></span> <a href="../../config/io.helidon.security.providers.common.OutboundTarget.md"><code>outbound</code></a></p></td>
 <td class="tableblock halign-left valign-top"><p><code>LIST</code></p></td>
 <td class="tableblock halign-left valign-top"><p><code>i.h.s.p.c.OutboundTarget</code></p></td>
 <td class="tableblock halign-left valign-top"><p> </p></td>
 <td class="tableblock halign-left valign-top"><p>Add a new target configuration</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="aebe14-outbound-type"></span> <a href="../../se/security/../../config/io_helidon_security_providers_oidc_common_OidcOutboundType.html"><code>outbound-type</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p><span id="aebe14-outbound-type"></span> <a href="../../config/io.helidon.security.providers.oidc.common.OidcOutboundType.md"><code>outbound-type</code></a></p></td>
 <td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
 <td class="tableblock halign-left valign-top"><p><code>i.h.s.p.o.c.OidcOutboundType</code></p></td>
 <td class="tableblock halign-left valign-top"><p><code>USER_JWT</code></p></td>
 <td class="tableblock halign-left valign-top"><p>Type of the OIDC outbound</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="a6ccfb-pkce-challenge-method"></span> <a href="../../se/security/../../config/io_helidon_security_providers_oidc_common_PkceChallengeMethod.html"><code>pkce-challenge-method</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p><span id="a6ccfb-pkce-challenge-method"></span> <a href="../../config/io.helidon.security.providers.oidc.common.PkceChallengeMethod.md"><code>pkce-challenge-method</code></a></p></td>
 <td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
 <td class="tableblock halign-left valign-top"><p><code>i.h.s.p.o.c.PkceChallengeMethod</code></p></td>
 <td class="tableblock halign-left valign-top"><p><code>S256</code></p></td>
@@ -367,7 +367,7 @@ Security#encrypt(String, byte[)&lt;/code&gt; and &lt;code&gt;Security#decrypt(St
 <td class="tableblock halign-left valign-top"><p>URI to register web server component on, used by the OIDC server to redirect authorization requests to after a user logs in or approves scopes</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="aef163-tenants"></span> <a href="../../se/security/../../config/io_helidon_security_providers_oidc_common_TenantConfig.html"><code>tenants</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p><span id="aef163-tenants"></span> <a href="../../config/io.helidon.security.providers.oidc.common.TenantConfig.md"><code>tenants</code></a></p></td>
 <td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
 <td class="tableblock halign-left valign-top"><p><code>i.h.s.p.o.c.TenantConfig</code></p></td>
 <td class="tableblock halign-left valign-top"><p> </p></td>
@@ -388,7 +388,7 @@ Security#encrypt(String, byte[)&lt;/code&gt; and &lt;code&gt;Security#decrypt(St
 <td class="tableblock halign-left valign-top"><p>Claim <code>groups</code> from JWT will be used to automatically add groups to current subject (may be used with <code>jakarta.annotation.security.RolesAllowed</code> annotation)</p></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><span id="a85467-webclient"></span> <a href="../../se/security/../../config/io_helidon_webclient_api_WebClient.html"><code>webclient</code></a></p></td>
+<td class="tableblock halign-left valign-top"><p><span id="a85467-webclient"></span> <a href="../../config/io.helidon.webclient.api.WebClient.md"><code>webclient</code></a></p></td>
 <td class="tableblock halign-left valign-top"><p><code>VALUE</code></p></td>
 <td class="tableblock halign-left valign-top"><p><code>i.h.w.a.WebClient</code></p></td>
 <td class="tableblock halign-left valign-top"><p> </p></td>
@@ -1299,22 +1299,22 @@ For outbound, we support either token propagation (e.g. the token from request i
 [google-login]: #google-login-provider
 [jwt-provider]: #jwt-provider
 [example]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/security/idcs-login
-[decryption-keys]: ../../config/io_helidon_common_configurable_Resource.md
-[token-endpoint-a]: ../../config/io_helidon_security_providers_oidc_common_OidcConfig_ClientAuthentication.md
-[outbound]: ../../config/io_helidon_security_providers_common_OutboundTarget.md
-[principal-type]: ../../config/io_helidon_security_SubjectType.md
-[users]: ../../config/io_helidon_security_providers_httpauth_ConfigUserStore_ConfigUser.md
+[decryption-keys]: ../../config/io.helidon.common.configurable.Resource.md
+[token-endpoint-a]: ../../config/io.helidon.security.providers.oidc.common.OidcConfig.ClientAuthentication.md
+[outbound]: ../../config/io.helidon.security.providers.common.OutboundTarget.md
+[principal-type]: ../../config/io.helidon.security.SubjectType.md
+[users]: ../../config/io.helidon.security.providers.httpauth.ConfigUserStore.ConfigUser.md
 [example-2]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/security/outbound-override
-[algorithm]: ../../config/io_helidon_security_providers_httpauth_HttpDigest_Algorithm.md
-[qop]: ../../config/io_helidon_security_providers_httpauth_HttpDigest_Qop.md
-[atn-token]: ../../config/io_helidon_security_util_TokenHandler.md
-[headers]: ../../config/io_helidon_security_providers_httpsign_HttpSignHeader.md
-[inbound-keys]: ../../config/io_helidon_security_providers_httpsign_InboundClientDefinition.md
-[outbound-2]: ../../config/io_helidon_security_providers_common_OutboundConfig.md
-[sign-headers]: ../../config/io_helidon_security_providers_httpsign_SignedHeadersConfig_HeadersConfig.md
+[algorithm]: ../../config/io.helidon.security.providers.httpauth.HttpDigest.Algorithm.md
+[qop]: ../../config/io.helidon.security.providers.httpauth.HttpDigest.Qop.md
+[atn-token]: ../../config/io.helidon.security.util.TokenHandler.md
+[headers]: ../../config/io.helidon.security.providers.httpsign.HttpSignHeader.md
+[inbound-keys]: ../../config/io.helidon.security.providers.httpsign.InboundClientDefinition.md
+[outbound-2]: ../../config/io.helidon.security.providers.common.OutboundConfig.md
+[sign-headers]: ../../config/io.helidon.security.providers.httpsign.SignedHeadersConfig.HeadersConfig.md
 [example-3]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/security/webserver-signatures
-[cache-config]: ../../config/io_helidon_security_providers_common_EvictableCache.md
-[oidc-config]: ../../config/io_helidon_security_providers_oidc_common_OidcConfig.md
+[cache-config]: ../../config/io.helidon.security.providers.common.EvictableCache.md
+[oidc-config]: ../../config/io.helidon.security.providers.oidc.common.OidcConfig.md
 [example-4]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/security/idcs-login/
 [example-5]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/security/attribute-based-access-control
 [el-policy]: #expression-language-policy-validator

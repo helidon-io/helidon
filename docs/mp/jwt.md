@@ -149,10 +149,10 @@ Learn more about JWT authentication at:
 
 [rfc-7519]: https://datatracker.ietf.org/doc/html/rfc7519
 [mp-jwt-decrypt-k]: ../config/io_helidon_microprofile_jwt_auth_JwtAuthProviderMp_jwt_decrypt_key_algorithm.md
-[security-provide]: ../config/io_helidon_security_util_TokenHandler.md
-[security-provide-2]: ../config/io_helidon_common_configurable_Resource.md
-[security-provide-3]: ../config/io_helidon_security_SubjectType.md
-[security-provide-4]: ../config/io_helidon_security_providers_common_OutboundConfig.md
+[security-provide]: ../config/io.helidon.security.util.TokenHandler.md
+[security-provide-2]: ../config/io.helidon.common.configurable.Resource.md
+[security-provide-3]: ../config/io.helidon.security.SubjectType.md
+[security-provide-4]: ../config/io.helidon.security.providers.common.OutboundConfig.md
 [eclipse-micropro]: https://download.eclipse.org/microprofile/microprofile-jwt-auth-2.1#_introduction
 [microprofile-jwt]: https://download.eclipse.org/microprofile/microprofile-jwt-auth-2.1/microprofile-jwt-auth-spec-2.1.html
 [microprofile-jwt-2]: https://github.com/eclipse/microprofile-jwt-auth

@@ -1372,17 +1372,17 @@ public static void main(String[] args) {
 - [Helidon Jackson Support Javadoc][helidon-jackson]
 - [Proxy Protocol Specification][proxy-protocol]
 
-[concurrency-limi]: ../../config/io_helidon_common_concurrency_limits_Limit.md
-[connection-optio]: ../../config/io_helidon_common_socket_SocketOptions.md
-[content-encoding]: ../../config/io_helidon_http_encoding_ContentEncodingContext.md
-[error-handling]: ../../config/io_helidon_webserver_ErrorHandling.md
-[features]: ../../config/io_helidon_webserver_spi_ServerFeature.md
-[media-context]: ../../config/io_helidon_http_media_MediaContext.md
-[protocols]: ../../config/io_helidon_webserver_spi_ProtocolConfig.md
-[requested-uri-di]: ../../config/io_helidon_http_RequestedUriDiscoveryContext.md
-[sockets]: ../../config/io_helidon_webserver_ListenerConfig.md
-[tls]: ../../config/io_helidon_common_tls_Tls.md
-[connection-confi]: ../../config/io_helidon_webserver_ConnectionConfig.md
+[concurrency-limi]: ../../config/io.helidon.common.concurrency.limits.Limit.md
+[connection-optio]: ../../config/io.helidon.common.socket.SocketOptions.md
+[content-encoding]: ../../config/io.helidon.http.encoding.ContentEncodingContext.md
+[error-handling]: ../../config/io.helidon.webserver.ErrorHandling.md
+[features]: ../../config/io.helidon.webserver.spi.ServerFeature.md
+[media-context]: ../../config/io.helidon.http.media.MediaContext.md
+[protocols]: ../../config/io.helidon.webserver.spi.ProtocolConfig.md
+[requested-uri-di]: ../../config/io.helidon.http.RequestedUriDiscoveryContext.md
+[sockets]: ../../config/io.helidon.webserver.ListenerConfig.md
+[tls]: ../../config/io.helidon.common.tls.Tls.md
+[connection-confi]: ../../config/io.helidon.webserver.ConnectionConfig.md
 [standard-http-fo]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Forwarded
 [non-standard-x-f]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For
 [webserverconfig]: https://helidon.io/docs/v4/apidocs/io.helidon.webserver/io/helidon/webserver/WebServerConfig.Builder.html
@@ -1390,10 +1390,10 @@ public static void main(String[] args) {
 [uriinfo]: https://helidon.io/docs/v4/apidocs/io.helidon.common.uri/io/helidon/common/uri/UriInfo.html
 [eventtype]: https://helidon.io/docs/v4/apidocs/io.helidon.http/io/helidon/http/DirectHandler.EventType.html
 [directhandlers]: <https://helidon.io/docs/v4/apidocs/io.helidon.webserver/io/helidon/webserver/ListenerConfig.BuilderBase.html#directHandlers(io.helidon.webserver.http.DirectHandlers)>
-[client-auth]: ../../config/io_helidon_common_tls_TlsClientAuth.md
-[manager]: ../../config/io_helidon_common_tls_TlsManager.md
-[private-key]: ../../config/io_helidon_common_pki_Keys.md
-[revocation]: ../../config/io_helidon_common_tls_RevocationConfig.md
+[client-auth]: ../../config/io.helidon.common.tls.TlsClientAuth.md
+[manager]: ../../config/io.helidon.common.tls.TlsManager.md
+[private-key]: ../../config/io.helidon.common.pki.Keys.md
+[revocation]: ../../config/io.helidon.common.tls.RevocationConfig.md
 [context]: #context
 [access-log]: #access-log
 [tracing]: ../../se/tracing.md
@@ -1401,10 +1401,10 @@ public static void main(String[] args) {
 [security]: ../../se/security/introduction.md
 [openapi]: ../../se/openapi/openapi.md
 [observability]: ../../se/observability.md
-[server-features]: ../../config/io_helidon_webserver_spi_ServerFeature.md#a57af2-context
-[records]: ../../config/io_helidon_common_context_http_ContextRecordConfig.md
-[server-features-2]: ../../config/io_helidon_webserver_spi_ServerFeature.md#a42c97-access-log
-[static-content-f]: ../../config/io_helidon_webserver_staticcontent_StaticContentFeature.md
+[server-features]: ../../config/io.helidon.webserver.spi.ServerFeature.md#a57af2-context
+[records]: ../../config/io.helidon.common.context.http.ContextRecordConfig.md
+[server-features-2]: ../../config/io.helidon.webserver.spi.ServerFeature.md#a42c97-access-log
+[static-content-f]: ../../config/io.helidon.webserver.staticcontent.StaticContentFeature.md
 [json-p]: #json-p-support
 [json-b]: #json-b-support
 [jackson]: #jackson-support
@@ -1415,7 +1415,7 @@ public static void main(String[] args) {
 [jackson-2]: https://github.com/FasterXML/jackson#jackson-project-home-github
 [gson-2]: https://github.com/google/gson#gson
 [gson-3]: ++https://github.com/google/gson#gson
-[content-encoding-2]: ../../config/io_helidon_http_encoding_ContentEncoding.md
+[content-encoding-2]: ../../config/io.helidon.http.encoding.ContentEncoding.md
 [proxy-protocol]: https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt
 [helidon-webserve]: https://helidon.io/docs/v4/apidocs/io.helidon.webserver/module-summary.html
 [helidon-webserve-2]: https://helidon.io/docs/v4/apidocs/io.helidon.webserver.staticcontent/module-summary.html
