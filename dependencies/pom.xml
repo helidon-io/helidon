@@ -72,7 +72,6 @@
         <version.lib.jakarta.transaction-api>2.0.1</version.lib.jakarta.transaction-api>
         <!-- Check Hibernate when upgrading to ensure its supplied jaxb-runtime is compatible. -->
         <version.lib.jakarta.xml.bind-api>4.0.2</version.lib.jakarta.xml.bind-api>
-        <version.lib.jandex>3.3.0</version.lib.jandex>
         <version.lib.jaxb-core>4.0.5</version.lib.jaxb-core>
         <version.lib.jaxb-impl>4.0.5</version.lib.jaxb-impl>
         <version.lib.jboss.logging>3.5.3.Final</version.lib.jboss.logging>
@@ -328,12 +327,6 @@
                 <groupId>io.micrometer</groupId>
                 <artifactId>micrometer-registry-otlp</artifactId>
                 <version>${version.lib.micrometer}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>io.smallrye</groupId>
-                <artifactId>jandex</artifactId>
-                <version>${version.lib.jandex}</version>
             </dependency>
 
             <!-- Integrations related -->
