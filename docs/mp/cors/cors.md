@@ -235,11 +235,9 @@ mvn package
 java -jar target/helidon-quickstart-mp.jar
 ```
 
-*Console output*
-
-...
-     2020.05.12 05:44:08 INFO io.helidon.microprofile.server.ServerCdiExtension Thread[main,5,main]: Server started on http://localhost:8080 (and all other host addresses) in 5280 milliseconds (since JVM startup).
-     ...
+```log [Output]
+2020.05.12 05:44:08 INFO io.helidon.microprofile.server.ServerCdiExtension Thread[main,5,main]: Server started on http://localhost:8080 (and all other host addresses) in 5280 milliseconds (since JVM startup).
+```
 
 ### Retrieve Metrics
 
@@ -249,9 +247,7 @@ The metrics service rejects attempts to access metrics on behalf of a disallowed
 curl -i -H "Origin: https://other.com" http://localhost:8080/metrics
 ```
 
-Curl output:
-
-```text
+```log [Output]
 HTTP/1.1 403 Forbidden
 Date: Mon, 11 May 2020 11:08:09 -0500
 transfer-encoding: chunked
@@ -264,9 +260,7 @@ But accesses from `foo.com` succeed.
 curl -i -H "Origin: https://foo.com" http://localhost:8080/metrics
 ```
 
-Curl output:
-
-```text
+```log [Output]
 HTTP/1.1 200 OK
 Access-Control-Allow-Origin: https://foo.com
 Content-Type: text/plain
@@ -288,7 +282,7 @@ The health service rejects requests from origins not specifically approved.
 curl -i -H "Origin: https://foo.com" http://localhost:8080/health
 ```
 
-```text
+```log [Output]
 HTTP/1.1 403 Forbidden
 Date: Mon, 11 May 2020 12:06:55 -0500
 transfer-encoding: chunked
@@ -301,7 +295,7 @@ And responds successfully only to cross-origin requests from `https://there.com`
 curl -i -H "Origin: https://there.com" http://localhost:8080/health
 ```
 
-```text
+```log [Output]
 HTTP/1.1 200 OK
 Access-Control-Allow-Origin: https://there.com
 Content-Type: application/json
