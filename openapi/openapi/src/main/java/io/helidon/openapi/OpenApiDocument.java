@@ -2750,6 +2750,20 @@ public final class OpenApiDocument {
             return link(name, builder.build());
         }
 
+        /**
+         * Add an extension.
+         * <p>
+         * Extension names must start with {@code x-}.
+         *
+         * @param name extension name
+         * @param value extension value
+         * @return updated builder
+         */
+        public ResponseBuilder extension(String name, JsonValue value) {
+            OpenApiDocument.extension(node, name, value);
+            return this;
+        }
+
         @Override
         public Response build() {
             if (!isReference(node)) {
