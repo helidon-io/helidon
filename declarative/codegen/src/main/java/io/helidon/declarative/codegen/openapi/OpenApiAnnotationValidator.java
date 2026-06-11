@@ -447,8 +447,26 @@ final class OpenApiAnnotationValidator {
     private void validateExamples(String owner, List<Annotation> examples) {
         Set<String> names = new HashSet<>();
         for (int i = 0; i < examples.size(); i++) {
-            String name = exampleName(examples.get(i), i);
+            Annotation example = examples.get(i);
+            String name = exampleName(example, i);
             validateUnique(owner, "example", name, names);
+            validateExampleValueFields(owner, name, example);
+        }
+    }
+
+    private void validateExampleValueFields(String owner, String name, Annotation example) {
+        boolean hasValue = hasConfiguredStringValue(example, "value");
+        boolean hasDataValue = hasConfiguredStringValue(example, "dataValue");
+        boolean hasSerializedValue = hasConfiguredStringValue(example, "serializedValue");
+        boolean hasExternalValue = hasConfiguredStringValue(example, "externalValue");
+
+        if (hasValue && (hasDataValue || hasSerializedValue || hasExternalValue)) {
+            throw new CodegenException(owner + " example " + name
+                                               + " cannot define value with dataValue, serializedValue, or externalValue");
+        }
+        if (hasSerializedValue && hasExternalValue) {
+            throw new CodegenException(owner + " example " + name
+                                               + " cannot define serializedValue and externalValue together");
         }
     }
 
