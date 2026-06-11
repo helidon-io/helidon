@@ -48,8 +48,8 @@ import io.helidon.webserver.WebServer;
                         flows = @OpenApi.OAuthFlows(clientCredentials = @OpenApi.OAuthFlow(
                                 tokenUrl = "https://id.example.com/oauth2/token",
                                 scopes = @OpenApi.OAuthScope(value = "greeting:read", description = "Read greetings"))))
-@OpenApi.SecurityRequirement("bearerAuth")
-@OpenApi.SecurityRequirement(value = "oauth2", scopes = "greeting:read")
+@OpenApi.SecurityRequirement(@OpenApi.SecuritySchemeRequirement("bearerAuth"))
+@OpenApi.SecurityRequirement(@OpenApi.SecuritySchemeRequirement(value = "oauth2", scopes = "greeting:read"))
 @Service.GenerateBinding // annotation is required to generate application binding
 public final class Main {
     static {

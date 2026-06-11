@@ -58,6 +58,8 @@ final class OpenApiCodegenTypes {
             TypeName.create("io.helidon.openapi.OpenApi.SecurityRequirement");
     static final TypeName OPENAPI_SECURITY_REQUIREMENTS_ANNOTATION =
             TypeName.create("io.helidon.openapi.OpenApi.SecurityRequirements");
+    static final TypeName OPENAPI_SECURITY_SCHEME_REQUIREMENT_ANNOTATION =
+            TypeName.create("io.helidon.openapi.OpenApi.SecuritySchemeRequirement");
     static final TypeName OPENAPI_OPERATION_ANNOTATION = TypeName.create("io.helidon.openapi.OpenApi.Operation");
     static final TypeName OPENAPI_PARAMETER_ANNOTATION = TypeName.create("io.helidon.openapi.OpenApi.Parameter");
     static final TypeName OPENAPI_PARAMETERS_ANNOTATION = TypeName.create("io.helidon.openapi.OpenApi.Parameters");

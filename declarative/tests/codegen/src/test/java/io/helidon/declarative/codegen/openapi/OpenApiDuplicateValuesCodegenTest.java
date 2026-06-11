@@ -659,7 +659,10 @@ class OpenApiDuplicateValuesCodegenTest {
     @Test
     void securityRequirementCannotDeclareDuplicateSchemes() {
         var result = compile("openapi-duplicate-security-requirement-schemes", """
-                @OpenApi.SecurityRequirement({"bearerAuth", "bearerAuth"})
+                @OpenApi.SecurityRequirement({
+                        @OpenApi.SecuritySchemeRequirement("bearerAuth"),
+                        @OpenApi.SecuritySchemeRequirement("bearerAuth")
+                })
                 @OpenApi.Document
                 @OpenApi.Info(title = "Test", version = "1.0")
                 @RestServer.Endpoint
@@ -681,8 +684,8 @@ class OpenApiDuplicateValuesCodegenTest {
     @Test
     void securityRequirementCannotRepeatSameRequirement() {
         var result = compile("openapi-duplicate-security-requirement", """
-                @OpenApi.SecurityRequirement("bearerAuth")
-                @OpenApi.SecurityRequirement("bearerAuth")
+                @OpenApi.SecurityRequirement(@OpenApi.SecuritySchemeRequirement("bearerAuth"))
+                @OpenApi.SecurityRequirement(@OpenApi.SecuritySchemeRequirement("bearerAuth"))
                 @OpenApi.Document
                 @OpenApi.Info(title = "Test", version = "1.0")
                 @RestServer.Endpoint
@@ -699,6 +702,108 @@ class OpenApiDuplicateValuesCodegenTest {
         assertCompilationFails(result,
                                "@OpenApi.SecurityRequirement on com.example.InvalidOpenApiEndpoint",
                                "cannot define security requirement [bearerAuth] more than once");
+    }
+
+    @Test
+    void securityRequirementCannotRepeatSameRequirementInDifferentOrder() {
+        var result = compile("openapi-duplicate-security-requirement-order", """
+                @OpenApi.SecurityRequirement({
+                        @OpenApi.SecuritySchemeRequirement("bearerAuth"),
+                        @OpenApi.SecuritySchemeRequirement(value = "oauth2", scopes = {"write", "read"})
+                })
+                @OpenApi.SecurityRequirement({
+                        @OpenApi.SecuritySchemeRequirement(value = "oauth2", scopes = {"read", "write"}),
+                        @OpenApi.SecuritySchemeRequirement("bearerAuth")
+                })
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/invalid")
+                class InvalidOpenApiEndpoint {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "@OpenApi.SecurityRequirement on com.example.InvalidOpenApiEndpoint",
+                               "cannot define security requirement");
+    }
+
+    @Test
+    void securitySchemeRequirementCannotUseDuplicateScopes() {
+        var result = compile("openapi-duplicate-security-requirement-scopes", """
+                @OpenApi.SecuritySchemeRequirement(value = "oauth2", scopes = {"read", "read"})
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/invalid")
+                class InvalidOpenApiEndpoint {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "@OpenApi.SecuritySchemeRequirement on com.example.InvalidOpenApiEndpoint"
+                                       + " for scheme oauth2",
+                               "cannot define scope read more than once");
+    }
+
+    @Test
+    void securitySchemeRequirementCannotCombineWithSecurityRequirement() {
+        var result = compile("openapi-mixed-security-requirements", """
+                @OpenApi.SecuritySchemeRequirement("bearerAuth")
+                @OpenApi.SecurityRequirement(@OpenApi.SecuritySchemeRequirement(value = "oauth2", scopes = "read"))
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/invalid")
+                class InvalidOpenApiEndpoint {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "@OpenApi.SecuritySchemeRequirement on com.example.InvalidOpenApiEndpoint",
+                               "cannot be combined with @OpenApi.SecurityRequirement or @OpenApi.SecurityRequirements");
+    }
+
+    @Test
+    void securityRequirementScopesApplyOnlyToTheirSchemes() throws IOException {
+        var result = compile("openapi-security-requirement-scopes", """
+                @OpenApi.SecurityRequirement({
+                        @OpenApi.SecuritySchemeRequirement("bearerAuth"),
+                        @OpenApi.SecuritySchemeRequirement(value = "oauth2", scopes = "read")
+                })
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/valid")
+                class InvalidOpenApiEndpoint {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+        String generated = generatedSource(result);
+        assertThat(generated, containsString(".scheme(\"bearerAuth\", java.util.List.of())"));
+        assertThat(generated, containsString(".scheme(\"oauth2\", java.util.List.of(\"read\"))"));
     }
 
     @Test
