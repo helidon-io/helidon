@@ -120,7 +120,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         WebClientServiceResponse.Builder builder = WebClientServiceResponse.builder();
         AtomicReference<WebClientServiceResponse> response = new AtomicReference<>();
 
-        if (mayHaveEntity(responseStatus, responseHeaders)) {
+        if (mayHaveEntity(serviceRequest.method(), responseStatus, responseHeaders)) {
             // this may be an entity (if content length is set to zero, we know there is no entity)
             builder.inputStream(inputStream(clientConfig,
                                             connection.helidonSocket(),
@@ -296,12 +296,18 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         return decoder.apply(inputStream);
     }
 
-    private static boolean mayHaveEntity(Status responseStatus, ClientResponseHeaders responseHeaders) {
+    private static boolean mayHaveEntity(Method requestMethod, Status responseStatus, ClientResponseHeaders responseHeaders) {
+        if (requestMethod == Method.HEAD) {
+            return false;
+        }
         if (responseHeaders.contains(HeaderValues.CONTENT_LENGTH_ZERO)) {
             return false;
         }
-        // Why is NOT_MODIFIED_304 not added here too?
-        if (responseStatus.code() == Status.NO_CONTENT_204.code()) {
+        int statusCode = responseStatus.code();
+        if (responseStatus.family() == Status.Family.INFORMATIONAL
+                || statusCode == Status.NO_CONTENT_204.code()
+                || statusCode == Status.RESET_CONTENT_205.code()
+                || statusCode == Status.NOT_MODIFIED_304.code()) {
             return false;
         }
         if ((
