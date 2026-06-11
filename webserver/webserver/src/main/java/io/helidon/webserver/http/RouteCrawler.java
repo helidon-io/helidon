@@ -36,6 +36,7 @@ class RouteCrawler {
     private final UriPath matchingPath;
     private final RoutedPath parent;
     private final String parentPattern;
+    private final RouteCrawler parentCrawler;
     private final HttpPrologue prologue;
 
     private CrawlerItem next;
@@ -49,6 +50,7 @@ class RouteCrawler {
         this.request = request;
         this.parent = null;
         this.parentPattern = null;
+        this.parentCrawler = null;
     }
 
     RouteCrawler(ConnectionContext ctx,
@@ -65,12 +67,23 @@ class RouteCrawler {
                  RoutedPath parent,
                  String parentPattern,
                  UriPath child) {
+        this(ctx, request, rootRoute, parent, parentPattern, null, child);
+    }
+
+    RouteCrawler(ConnectionContext ctx,
+                 RoutingRequest request,
+                 List<HttpRouteBase> rootRoute,
+                 RoutedPath parent,
+                 String parentPattern,
+                 RouteCrawler parentCrawler,
+                 UriPath child) {
         this.ctx = ctx;
         this.routeIterator = rootRoute.iterator();
         this.matchingPath = child;
         this.request = request;
         this.parent = parent;
         this.parentPattern = parentPattern;
+        this.parentCrawler = parentCrawler;
 
         this.prologue = request.prologue().withUriPath(child);
     }
@@ -101,33 +114,30 @@ class RouteCrawler {
                     boolean requestAwareRoutes = nextRoute.requestAwareRoutes();
                     RoutedPath previousPath = requestAwareRoutes ? request.path() : null;
                     String matchedPattern = matchingElement(nextRoute, accepts);
-                    if (requestAwareRoutes || parentPattern != null) {
-                        List<HttpRouteBase> routes;
-                        if (requestAwareRoutes) {
-                            RoutedPath matchedPath = parent == null
-                                    ? accepts.matchedPath()
-                                    : merge(parent, accepts.matchedPath());
-                            String fullMatchedPattern = parentPattern == null
-                                    ? matchedPattern
-                                    : parentPattern + matchedPattern;
-                            routes = nextRoute.routes(ctx, request, matchedPath, fullMatchedPattern);
-                        } else {
-                            routes = nextRoute.routes();
+                    RoutedPath matchedPath = accepts.matchedPath();
+                    List<HttpRouteBase> routes;
+                    if (requestAwareRoutes) {
+                        RoutedPath fullMatchedPath = matchedPath;
+                        String fullMatchedPattern = matchedPattern;
+                        for (RouteCrawler crawler = this;
+                                crawler != null && crawler.parent != null;
+                                crawler = crawler.parentCrawler) {
+                            fullMatchedPath = merge(crawler.parent, fullMatchedPath);
+                            fullMatchedPattern = (crawler.parentPattern == null
+                                    ? crawler.parent.path()
+                                    : crawler.parentPattern) + fullMatchedPattern;
                         }
-                        subCrawler = new RouteCrawler(ctx,
-                                                      request,
-                                                      routes,
-                                                      accepts.matchedPath(),
-                                                      matchedPattern,
-                                                      accepts.unmatchedPath());
+                        routes = nextRoute.routes(ctx, request, fullMatchedPath, fullMatchedPattern);
                     } else {
-                        subCrawler = new RouteCrawler(ctx,
-                                                      request,
-                                                      nextRoute.routes(),
-                                                      accepts.matchedPath(),
-                                                      matchedPattern,
-                                                      accepts.unmatchedPath());
+                        routes = nextRoute.routes();
                     }
+                    subCrawler = new RouteCrawler(ctx,
+                                                  request,
+                                                  routes,
+                                                  matchedPath,
+                                                  matchedPattern,
+                                                  this,
+                                                  accepts.unmatchedPath());
                     if (subCrawler.hasNext()) {
                         next = subCrawler.next();
 
