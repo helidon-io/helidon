@@ -171,7 +171,7 @@ class DeclarativeOpenApiTest {
         assertThat(object(language, "schema").get("type"), is("string"));
 
         Map<String, Object> include = parameter(operation, "include", "query");
-        assertThat(include.get("required"), is(false));
+        assertThat(include.get("required"), is(true));
         assertThat(include.get("style"), is("form"));
         assertThat(include.get("explode"), is(true));
         assertThat(object(object(include, "schema"), "items").get("type"), is("string"));
@@ -258,7 +258,7 @@ class DeclarativeOpenApiTest {
         assertThat(searchExample.get("value"), is("hi"));
 
         Map<String, Object> filter = parameter(operation, "filter", "query");
-        assertThat(filter.get("required"), is(false));
+        assertThat(filter.get("required"), is(true));
         assertThat(filter.get("style"), is("pipeDelimited"));
         assertThat(filter.get("explode"), is(false));
         assertThat(object(object(filter, "schema"), "items").get("type"), is("string"));
@@ -302,11 +302,10 @@ class DeclarativeOpenApiTest {
         assertThat(operation.get("x-test-operation"), is("documented-greeting"));
 
         List<Object> security = list(operation, "security");
-        assertThat(security.size(), is(2));
+        assertThat(security.size(), is(1));
         Map<String, Object> allRequired = object(security.getFirst());
         assertThat(list(allRequired, "bearerAuth"), is(List.of()));
-        assertThat(list(allRequired, "oauth2"), is(List.of()));
-        assertThat(list(object(security.get(1)), "oauth2"), contains("greeting:read"));
+        assertThat(list(allRequired, "oauth2"), contains("greeting:read"));
     }
 
     @Test

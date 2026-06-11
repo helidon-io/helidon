@@ -30,7 +30,7 @@ import io.helidon.webserver.http.RestServer;
  */
 @RestServer.Endpoint
 @Http.Path("/greetings")
-@OpenApi.SecurityRequirement("bearerAuth")
+@OpenApi.SecuritySchemeRequirement("bearerAuth")
 class GreetingEndpoint {
     private static final String ACCEPTED_MEDIA_TYPE = "application/vnd.greeting+json";
 
@@ -54,8 +54,10 @@ class GreetingEndpoint {
     @OpenApi.Server(value = "https://api.example.com/greetings", description = "Operation server")
     @OpenApi.ExternalDocs(value = "https://helidon.io/docs/openapi", description = "Operation documentation")
     @OpenApi.Extension(name = "x-test-operation", value = "documented-greeting")
-    @OpenApi.SecurityRequirement({"bearerAuth", "oauth2"})
-    @OpenApi.SecurityRequirement(value = "oauth2", scopes = "greeting:read")
+    @OpenApi.SecurityRequirement({
+            @OpenApi.SecuritySchemeRequirement("bearerAuth"),
+            @OpenApi.SecuritySchemeRequirement(value = "oauth2", scopes = "greeting:read")
+    })
     @OpenApi.Response(status = Status.OK_200_CODE,
                       description = "Greeting found",
                       content = @OpenApi.Content)
