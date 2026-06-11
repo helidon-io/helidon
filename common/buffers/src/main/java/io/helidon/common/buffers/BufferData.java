@@ -684,7 +684,9 @@ public interface BufferData {
      * or rewinds the buffer.
      *
      * @return an input stream backed by this buffer
+     * @deprecated this method will be removed without replacement
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     default InputStream asInputStream() {
         return new InputStream() {
             @Override
