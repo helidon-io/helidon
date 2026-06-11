@@ -16,6 +16,9 @@
 
 package io.helidon.declarative.codegen.openapi;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -51,6 +54,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class OpenApiPathCodegenTest {
@@ -81,6 +85,36 @@ class OpenApiPathCodegenTest {
             UriQuery.class,
             WebServer.class
     );
+
+    @Test
+    void interfaceEndpointIsNotDocumented() throws IOException {
+        var result = compile("openapi-interface-endpoint", """
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/valid")
+                class ValidOpenApiEndpoint {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+
+                @RestServer.Endpoint
+                @Http.Path("/ghost")
+                interface GhostEndpoint {
+                    @Http.GET
+                    String get();
+                }
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+        String generated = generatedSource(result);
+        assertThat(generated, containsString("document.path(\"/valid\""));
+        assertThat(generated, not(containsString("document.path(\"/ghost\"")));
+    }
 
     @Test
     void unsupportedHttpPathRequiresOpenApiPathOverride() {
@@ -207,6 +241,18 @@ class OpenApiPathCodegenTest {
                         """)
                 .build()
                 .compile();
+    }
+
+    private static String generatedSource(TestCompiler.Result result) throws IOException {
+        StringBuilder generatedContent = new StringBuilder();
+        var generatedSources = Files.walk(result.sourceOutput())
+                .filter(it -> it.getFileName().toString().endsWith(".java"))
+                .toList();
+        for (Path generatedSource : generatedSources) {
+            generatedContent.append(Files.readString(generatedSource, StandardCharsets.UTF_8));
+            generatedContent.append('\n');
+        }
+        return generatedContent.toString();
     }
 
     private static void assertCompilationFails(TestCompiler.Result result, String... diagnosticParts) {

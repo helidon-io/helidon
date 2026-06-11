@@ -36,6 +36,7 @@ import io.helidon.codegen.classmodel.Method;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
+import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -125,7 +126,8 @@ final class OpenApiSourceGenerator {
         }
 
         for (ServerEndpoint endpoint : endpoints) {
-            if (!hasAnnotation(endpoint.annotations(), OPENAPI_HIDDEN_ANNOTATION)) {
+            if (endpoint.type().kind() != ElementKind.INTERFACE
+                    && !hasAnnotation(endpoint.annotations(), OPENAPI_HIDDEN_ANNOTATION)) {
                 processEndpoint(roundContext, endpoint);
             }
         }
