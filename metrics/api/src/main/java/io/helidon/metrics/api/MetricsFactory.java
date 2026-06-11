@@ -82,14 +82,18 @@ public interface MetricsFactory {
     }
 
     /**
-     * Closes all {@link io.helidon.metrics.api.MetricsFactory} instances.
+     * No-op.
      *
      * <p>
-     *     Applications do not normally need to invoke this method.
+     *     Metrics instances obtained from the service registry are closed by the service registry lifecycle.
      * </p>
+     *
+     * @deprecated since 27.0.0, for removal. Metrics instances obtained from the service registry are closed by the
+     * service registry lifecycle.
      */
+    @Deprecated(since = "27.0.0", forRemoval = true)
     static void closeAll() {
-        MetricsFactoryManager.closeAll();
+        // No-op; service-registry-owned metrics instances are closed by service registry lifecycle.
     }
 
     /**

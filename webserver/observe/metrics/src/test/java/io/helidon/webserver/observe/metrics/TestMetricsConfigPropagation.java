@@ -26,6 +26,7 @@ import io.helidon.webserver.testing.junit5.SetUpRoute;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -57,6 +58,17 @@ class TestMetricsConfigPropagation {
 
             // Make sure that requests.count is absent because of the filtering in the config.
             assertThat("Metrics KPI requests.count", vendorMeters.value("requests.count").orElse(null), nullValue());
+        }
+    }
+
+    @Test
+    void checkScopeSelectionWithConfiguredTagName() {
+        try (Http1ClientResponse response = client.get("/observe/metrics")
+                .queryParam("scope", "vendor")
+                .accept(MediaTypes.TEXT_PLAIN)
+                .request()) {
+            assertThat("Metrics endpoint", response.status().code(), is(200));
+            assertThat("Metrics response", response.as(String.class), containsString("requests_load"));
         }
     }
 }

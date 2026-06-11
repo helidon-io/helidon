@@ -69,6 +69,9 @@ public interface SystemTagsManager {
 
     /**
      * Allows subscription to notification when a new system tags manager is created with a new configuration.
+     * <p>
+     * The implementation does not retain the listener strongly; callers must keep their own reference to the listener
+     * while they want to receive notifications.
      *
      * @param changeListener subscriber to receive change notifications
      */

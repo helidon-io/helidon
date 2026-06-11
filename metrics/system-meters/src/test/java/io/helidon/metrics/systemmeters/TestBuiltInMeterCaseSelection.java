@@ -24,8 +24,8 @@ import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.service.registry.Services;
+import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -34,13 +34,8 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 
+@Testing.Test(perMethod = true)
 class TestBuiltInMeterCaseSelection {
-
-    @AfterEach
-    void resetMetricsFactory() {
-        MetricsFactory.closeAll();
-    }
-
     @Test
     void testDefaults() {
         SystemMetersProvider provider = new SystemMetersProvider();

@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.ServiceLoader;
+import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
@@ -42,6 +43,7 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.MetricsPublisher;
+import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 import io.helidon.metrics.providers.micrometer.spi.SpanContextSupplierProvider;
@@ -60,11 +62,15 @@ import io.prometheus.client.exemplars.DefaultExemplarSampler;
 class MicrometerMetricsFactory implements MetricsFactory {
 
     private static final System.Logger LOGGER = System.getLogger(MicrometerMetricsFactory.class.getName());
+    private static final System.Logger MMETER_REGISTRY_LOGGER = System.getLogger(MMeterRegistry.class.getName());
 
     private final Collection<MetersProvider> metersProviders;
 
     private final Collection<MMeterRegistry> meterRegistries = new ConcurrentLinkedQueue<>();
+    private final Collection<io.micrometer.core.instrument.MeterRegistry> publisherRegistries =
+            new ConcurrentLinkedQueue<>();
     private final ReentrantLock lock = new ReentrantLock();
+    private final MultipleRegistryWarnings multipleRegistryWarnings = new MultipleRegistryWarnings();
 
     private final LazyValue<Collection<MeterRegistryLifeCycleListener>> meterRegistryLifeCycleListeners =
             LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(MeterRegistryLifeCycleListener.class))
@@ -76,18 +82,26 @@ class MicrometerMetricsFactory implements MetricsFactory {
                     .build()
                     .iterator()
                     .next());
+    private final Consumer<MicrometerMetricsFactory> onClose;
 
     private MMeterRegistry globalMeterRegistry;
     private MetricsConfig metricsConfig;
+    private SystemTagsManager systemTagsManager;
+    private boolean closed;
 
     private MicrometerMetricsFactory(MetricsConfig metricsConfig,
-                                     Collection<MetersProvider> metersProviders) {
+                                     Collection<MetersProvider> metersProviders,
+                                     Consumer<MicrometerMetricsFactory> onClose) {
         this.metricsConfig = metricsConfig;
         this.metersProviders = metersProviders;
+        this.onClose = onClose;
+        this.systemTagsManager = SystemTagsManager.create(metricsConfig);
     }
 
-    static MicrometerMetricsFactory create(MetricsConfig metricsConfig, Collection<MetersProvider> metersProviders) {
-        return new MicrometerMetricsFactory(metricsConfig, metersProviders);
+    static MicrometerMetricsFactory create(MetricsConfig metricsConfig,
+                                           Collection<MetersProvider> metersProviders,
+                                           Consumer<MicrometerMetricsFactory> onClose) {
+        return new MicrometerMetricsFactory(metricsConfig, metersProviders, onClose);
     }
 
     void onMeterAdded(io.micrometer.core.instrument.Meter meter) {
@@ -96,6 +110,13 @@ class MicrometerMetricsFactory implements MetricsFactory {
 
     void onMeterRemoved(io.micrometer.core.instrument.Meter meter) {
         meterRegistries.forEach(mr -> mr.onMeterRemoved(meter));
+    }
+
+    List<io.micrometer.core.instrument.Tag> micrometerSystemTags() {
+        List<io.micrometer.core.instrument.Tag> tags = new ArrayList<>();
+        systemTagsManager.displayTagPairs()
+                .forEach((name, value) -> tags.add(io.micrometer.core.instrument.Tag.of(name, value)));
+        return tags;
     }
 
     @Override
@@ -177,14 +198,14 @@ class MicrometerMetricsFactory implements MetricsFactory {
                 // But it's possible for it to be invoked more than once with different
                 // settings. In such a case we need to clear the old global registry and create a new one because
                 // the new settings might affect its behavior.
-                globalMeterRegistry.close();
-                meterRegistries.remove(globalMeterRegistry);
+                closeGlobalRegistry();
             }
 
-            var meterRegistries = prepareMeterRegistries(metricsConfig);
-            meterRegistries.forEach(Metrics.globalRegistry::add);
+            var registriesToPublish = prepareMeterRegistries(metricsConfig);
+            registriesToPublish.forEach(Metrics.globalRegistry::add);
+            publisherRegistries.addAll(registriesToPublish);
             Contexts.globalContext().register(MetricsFactory.PULL_PUBLISHERS_PRESENT,
-                                              meterRegistries.stream()
+                                              registriesToPublish.stream()
                                                       .anyMatch(r -> r instanceof PrometheusMeterRegistry));
 
             globalMeterRegistry = save(metricsConfig, MMeterRegistry.builder(Metrics.globalRegistry, this)
@@ -208,10 +229,34 @@ class MicrometerMetricsFactory implements MetricsFactory {
 
     @Override
     public void close() {
-        List<MMeterRegistry> registries = List.copyOf(meterRegistries);
-        registries.forEach(MMeterRegistry::close);
-        meterRegistries.clear();
-        globalMeterRegistry = null;
+        boolean notifyClosed = false;
+        lock.lock();
+        try {
+            if (closed) {
+                return;
+            }
+            closed = true;
+            notifyClosed = true;
+            List<MMeterRegistry> registries = List.copyOf(meterRegistries);
+            registries.forEach(MMeterRegistry::close);
+            meterRegistries.clear();
+            closePublisherRegistries();
+            metersProviders.forEach(provider -> {
+                if (provider instanceof AutoCloseable closeable) {
+                    try {
+                        closeable.close();
+                    } catch (Exception e) {
+                        LOGGER.log(System.Logger.Level.WARNING, "Error closing metrics meter provider", e);
+                    }
+                }
+            });
+            globalMeterRegistry = null;
+        } finally {
+            lock.unlock();
+            if (notifyClosed) {
+                onClose.accept(this);
+            }
+        }
     }
 
     @Override
@@ -361,7 +406,89 @@ class MicrometerMetricsFactory implements MetricsFactory {
 
     private MMeterRegistry save(MetricsConfig metricsConfig, MMeterRegistry meterRegistry) {
         this.metricsConfig = metricsConfig;
+        this.systemTagsManager = SystemTagsManager.create(metricsConfig);
         meterRegistries.add(meterRegistry);
         return meterRegistry;
+    }
+
+    void onMeterRegistryCreated(MetricsConfig metricsConfig) {
+        multipleRegistryWarnings.created(metricsConfig);
+    }
+
+    void onMeterRegistryClosed(MMeterRegistry meterRegistry) {
+        meterRegistries.remove(meterRegistry);
+        multipleRegistryWarnings.closed();
+    }
+
+    private void closeGlobalRegistry() {
+        if (globalMeterRegistry != null) {
+            globalMeterRegistry.close();
+            meterRegistries.remove(globalMeterRegistry);
+            globalMeterRegistry = null;
+        }
+        closePublisherRegistries();
+    }
+
+    private void closePublisherRegistries() {
+        List<io.micrometer.core.instrument.MeterRegistry> registries = List.copyOf(publisherRegistries);
+        registries.forEach(registry -> {
+            Metrics.globalRegistry.remove(registry);
+            registry.close();
+        });
+        publisherRegistries.clear();
+    }
+
+    private static class MultipleRegistryWarnings {
+        private final ReentrantLock lock = new ReentrantLock();
+
+        private StackTraceElement[] originalCreationStackTrace;
+        private boolean hasLoggedFirstMultiInstantiationWarning;
+        private int activeRegistries;
+
+        private void created(MetricsConfig metricsConfig) {
+            lock.lock();
+            try {
+                if (activeRegistries++ == 0) {
+                    originalCreationStackTrace = Thread.currentThread().getStackTrace();
+                } else if (metricsConfig.warnOnMultipleRegistries()) {
+                    if (!hasLoggedFirstMultiInstantiationWarning) {
+                        hasLoggedFirstMultiInstantiationWarning = true;
+                        MMETER_REGISTRY_LOGGER.log(System.Logger.Level.WARNING,
+                                                   "Unexpected duplicate instantiation\n"
+                                                           + "Original instantiation from:\n{0}\n\n"
+                                                           + "Additional instantiation from:\n{1}\n",
+
+                                                   stackTraceToString(originalCreationStackTrace),
+                                                   stackTraceToString(Thread.currentThread().getStackTrace()));
+                    } else {
+                        MMETER_REGISTRY_LOGGER.log(System.Logger.Level.WARNING,
+                                                   "Unexpected additional instantiation from:\n{0}\n",
+                                                   stackTraceToString(Thread.currentThread().getStackTrace()));
+                    }
+                }
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        private void closed() {
+            lock.lock();
+            try {
+                if (activeRegistries > 0 && --activeRegistries == 0) {
+                    originalCreationStackTrace = null;
+                    hasLoggedFirstMultiInstantiationWarning = false;
+                }
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        private static String stackTraceToString(StackTraceElement[] stackTraceElements) {
+            StringJoiner joiner = new StringJoiner("\n");
+            for (StackTraceElement element : stackTraceElements) {
+                joiner.add(element.toString());
+            }
+            return joiner.toString();
+        }
     }
 }

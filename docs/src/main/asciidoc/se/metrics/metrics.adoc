@@ -143,12 +143,13 @@ Use these replacements instead:
 
 * Replace `Metrics.globalRegistry()` with injection of `MeterRegistry` or `Services.get(MeterRegistry.class)`.
 * Replace `Metrics.createMeterRegistry()` and `Metrics.createMeterRegistry(metricsConfig)` with
-  `MeterRegistry.create()` and `MeterRegistry.create(metricsConfig)`.
+  `Services.get(MetricsFactory.class).globalRegistry()` for the shared registry, or
+  `Services.get(MetricsFactory.class).createMeterRegistry(metricsConfig)` for a custom registry.
 * Replace `Metrics.getOrCreate(builder)` with `meterRegistry.getOrCreate(builder)`.
 * Replace the `Metrics.getCounter`, `Metrics.getSummary`, `Metrics.getGauge`, `Metrics.getTimer`, and `Metrics.get`
   lookup helpers with the corresponding `MeterRegistry` lookup methods.
-* Replace `Metrics.tag(key, value)` with `Tag.create(key, value)`, and create multiple tags by collecting individual
-  `Tag.create` results.
+* Replace `Metrics.tag(key, value)` with `Services.get(MetricsFactory.class).tagCreate(key, value)`, and create multiple
+  tags using the same `MetricsFactory` instance.
 
 === Helidon Metrics API
 

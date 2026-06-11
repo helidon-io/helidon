@@ -15,6 +15,7 @@
  */
 package io.helidon.metrics.systemmeters;
 
+import java.lang.ref.WeakReference;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -26,7 +27,6 @@ import java.util.function.Consumer;
 
 import io.helidon.Main;
 import io.helidon.common.Api;
-import io.helidon.common.LazyValue;
 import io.helidon.common.resumable.Resumable;
 import io.helidon.common.resumable.ResumableSupport;
 import io.helidon.metrics.api.Meter;
@@ -35,7 +35,6 @@ import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.api.Timer;
 import io.helidon.metrics.spi.MetersProvider;
-import io.helidon.service.registry.Services;
 import io.helidon.spi.HelidonShutdownHandler;
 
 import jdk.jfr.consumer.RecordedEvent;
@@ -54,7 +53,7 @@ import jdk.jfr.consumer.RecordingStream;
  * JFR delivers events in batches. For performance the values we track are stored as longs without
  * concern for concurrent updates which should not happen anyway.
  */
-public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutdownHandler, Resumable {
+public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutdownHandler, Resumable, AutoCloseable {
 
     // Parts of the meter names.
     static final String METER_NAME_PREFIX = "vthreads.";
@@ -67,14 +66,20 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
     private static final String METER_SCOPE = Meter.Scope.BASE;
 
     private static final System.Logger LOGGER = System.getLogger(VThreadSystemMetersProvider.class.getName());
-    private final LazyValue<Timer> recentPinnedVirtualThreads = LazyValue.create(this::findPinned);
+    private Timer recentPinnedVirtualThreads;
     private long virtualThreadSubmitFails;
     private long pinnedVirtualThreads;
     private long virtualThreads;
     private long virtualThreadStarts;
     private long pinnedVirtualThreadsThresholdMillis;
     private RecordingStream recordingStream;
+    private MetricsFactory metricsFactory;
     private MetricsConfig metricsConfig;
+    private SystemTagsManager systemTagsManager;
+    private boolean shutdownHandlerRegistered;
+    private boolean resumableRegistered;
+    private boolean closed;
+    private long resumableGeneration;
 
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.
@@ -86,13 +91,22 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
     @Override
     public Collection<Meter.Builder<?, ?>> meterBuilders(MetricsFactory metricsFactory) {
 
+        closed = false;
+        this.metricsFactory = metricsFactory;
         metricsConfig = metricsFactory.metricsConfig();
+        systemTagsManager = SystemTagsManager.create(metricsConfig);
         if (!metricsConfig.virtualThreadsEnabled()) {
             return List.of();
         }
 
-        Main.addShutdownHandler(this);
-        ResumableSupport.get().register(this);
+        if (!shutdownHandlerRegistered) {
+            Main.addShutdownHandler(this);
+            shutdownHandlerRegistered = true;
+        }
+        if (!resumableRegistered) {
+            ResumableSupport.get().register(new WeakResumable(this, resumableGeneration));
+            resumableRegistered = true;
+        }
         pinnedVirtualThreadsThresholdMillis = metricsConfig.virtualThreadsPinnedThreshold().toMillis();
 
         var meterBuilders = new ArrayList<>(List.of(
@@ -125,13 +139,31 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
     }
 
     @Override
+    public void close() {
+        closed = true;
+        resumableGeneration++;
+        shutdown();
+        if (shutdownHandlerRegistered) {
+            Main.removeShutdownHandler(this);
+            shutdownHandlerRegistered = false;
+        }
+        recentPinnedVirtualThreads = null;
+        metricsFactory = null;
+        metricsConfig = null;
+        systemTagsManager = null;
+        resumableRegistered = false;
+    }
+
+    @Override
     public void suspend() {
         this.shutdown();
     }
 
     @Override
     public void resume() {
-        this.startRecordingStream();
+        if (!closed && metricsConfig != null && metricsConfig.virtualThreadsEnabled()) {
+            this.startRecordingStream();
+        }
     }
 
     // For testing
@@ -140,6 +172,10 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
     }
 
     private void startRecordingStream() {
+
+        if (recordingStream != null) {
+            stopRecordingStream();
+        }
 
         this.recordingStream = new RecordingStream();
         recordingStream.setSettings(Map.of("jdk.VirtualThreadPinned#threshold",
@@ -175,10 +211,10 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
 
     // visible for testing
     Timer findPinned() {
-        var result = Services.get(MetricsFactory.class)
+        var result = metricsFactory
                 .globalRegistry()
                 .timer(METER_NAME_PREFIX + RECENT_PINNED,
-                       Services.get(SystemTagsManager.class).withScopeTag(Collections.emptyList(), Optional.of(METER_SCOPE)));
+                       systemTagsManager.withScopeTag(Collections.emptyList(), Optional.of(METER_SCOPE)));
         if (result.isEmpty()) {
             throw new IllegalStateException(METER_NAME_PREFIX + RECENT_PINNED + " meter expected but not registered");
         }
@@ -205,6 +241,37 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
 
     private void recordThreadPin(RecordedEvent event) {
         pinnedVirtualThreads++;
-        recentPinnedVirtualThreads.get().record(event.getDuration());
+        Timer timer = recentPinnedVirtualThreads;
+        if (timer == null) {
+            timer = findPinned();
+            recentPinnedVirtualThreads = timer;
+        }
+        timer.record(event.getDuration());
+    }
+
+    private static class WeakResumable implements Resumable {
+        private final WeakReference<VThreadSystemMetersProvider> providerRef;
+        private final long generation;
+
+        private WeakResumable(VThreadSystemMetersProvider provider, long generation) {
+            this.providerRef = new WeakReference<>(provider);
+            this.generation = generation;
+        }
+
+        @Override
+        public void suspend() {
+            VThreadSystemMetersProvider provider = providerRef.get();
+            if (provider != null && provider.resumableGeneration == generation) {
+                provider.suspend();
+            }
+        }
+
+        @Override
+        public void resume() {
+            VThreadSystemMetersProvider provider = providerRef.get();
+            if (provider != null && provider.resumableGeneration == generation) {
+                provider.resume();
+            }
+        }
     }
 }

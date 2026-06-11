@@ -24,11 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.StringJoiner;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -83,10 +80,6 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     private static final System.Logger LOGGER = System.getLogger(MMeterRegistry.class.getName());
 
-    private static StackTraceElement[] originalCreationStackTrace;
-    private static boolean hasLoggedFirstMultiInstantiationWarning = false;
-    private static final Lock WARNING_INFO_LOCK = new ReentrantLock();
-
     private final io.micrometer.core.instrument.MeterRegistry delegate;
 
     /*
@@ -104,6 +97,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     private final MicrometerMetricsFactory metricsFactory;
     private final MetricsConfig metricsConfig;
     private final SystemTagsManager systemTagsManager;
+    private boolean closed;
 
     /**
      * Once a Micrometer meter is registered, this map records the corresponding Helidon meter wrapper for it. This allows us,
@@ -128,7 +122,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         this.metricsFactory = metricsFactory;
         this.metricsConfig = metricsConfig;
         this.systemTagsManager = SystemTagsManager.create(metricsConfig);
-        checkMultipleInstantiations(metricsConfig);
+        metricsFactory.onMeterRegistryCreated(metricsConfig);
     }
 
     static Builder builder(
@@ -232,8 +226,14 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     @Override
     public void close() {
+        boolean notifyClosed = false;
         lock.writeLock().lock();
         try {
+            if (closed) {
+                return;
+            }
+            closed = true;
+            notifyClosed = true;
             onAddListeners.clear();
             onRemoveListeners.clear();
             List.copyOf(meters.values()).forEach(this::remove);
@@ -243,6 +243,9 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             metersById.clear();
         } finally {
             lock.writeLock().unlock();
+            if (notifyClosed) {
+                metricsFactory.onMeterRegistryClosed(this);
+            }
         }
     }
 
@@ -571,56 +574,6 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         } finally {
             lock.writeLock().unlock();
         }
-    }
-
-    // For testing.
-    static void clearMultipleInstantiationInfo() {
-        WARNING_INFO_LOCK.lock();
-        try {
-            hasLoggedFirstMultiInstantiationWarning = false;
-            originalCreationStackTrace = null;
-        } finally {
-            WARNING_INFO_LOCK.unlock();
-        }
-    }
-
-    private static void checkMultipleInstantiations(MetricsConfig metricsConfig) {
-        /*
-        We have not seen cases where multiple instantiations occur concurrently, but it's possible. Locking guards against the
-        very rare but probably very confusing possibility of our attempt at clarifying where multiple instantiations are occurring
-        actually getting corrupted by concurrent access to the static fields.
-         */
-        WARNING_INFO_LOCK.lock();
-        try {
-            if (originalCreationStackTrace == null) {
-                originalCreationStackTrace = Thread.currentThread().getStackTrace();
-            } else if (metricsConfig.warnOnMultipleRegistries()) {
-                if (!hasLoggedFirstMultiInstantiationWarning) {
-                    hasLoggedFirstMultiInstantiationWarning = true;
-                    LOGGER.log(Level.WARNING,
-                               "Unexpected duplicate instantiation\n"
-                                       + "Original instantiation from:\n{0}\n\n"
-                                       + "Additional instantiation from:\n{1}\n",
-
-                               stackTraceToString(originalCreationStackTrace),
-                               stackTraceToString(Thread.currentThread().getStackTrace()));
-                } else {
-                    LOGGER.log(Level.WARNING,
-                               "Unexpected additional instantiation from:\n{0}\n",
-                               stackTraceToString(Thread.currentThread().getStackTrace()));
-                }
-            }
-        } finally {
-            WARNING_INFO_LOCK.unlock();
-        }
-    }
-
-    private static String stackTraceToString(StackTraceElement[] stackTraceElements) {
-        StringJoiner joiner = new StringJoiner("\n");
-        for (StackTraceElement element : stackTraceElements) {
-            joiner.add(element.toString());
-        }
-        return joiner.toString();
     }
 
     private io.helidon.metrics.api.Meter noopMeterIfDisabled(io.helidon.metrics.api.Meter.Builder<?, ?> builder) {

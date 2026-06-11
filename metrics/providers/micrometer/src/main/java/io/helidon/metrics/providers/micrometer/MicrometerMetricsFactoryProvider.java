@@ -15,9 +15,12 @@
  */
 package io.helidon.metrics.providers.micrometer;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.Api;
 import io.helidon.config.Config;
@@ -28,6 +31,7 @@ import io.helidon.metrics.spi.MetricsFactoryProvider;
 
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.config.MeterFilter;
 
 /**
@@ -35,54 +39,95 @@ import io.micrometer.core.instrument.config.MeterFilter;
  */
 public class MicrometerMetricsFactoryProvider implements MetricsFactoryProvider {
 
-    private final List<MicrometerMetricsFactory> metricsFactories = new ArrayList<>();
+    /*
+     * Micrometer's global registry accepts listeners but does not expose a way to remove them. Keep one JVM-level
+     * callback bridge, but only weakly reference Helidon factories so service registry shutdown releases owned state.
+     */
+    private static final GlobalRegistryObserver GLOBAL_REGISTRY_OBSERVER = new GlobalRegistryObserver();
+
+    private final List<MicrometerMetricsFactory> metricsFactories = new CopyOnWriteArrayList<>();
 
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.
      */
     @Api.Internal
     public MicrometerMetricsFactoryProvider() {
-        observeGlobalRegistry();
-        addSystemTagsFilter();
+        GLOBAL_REGISTRY_OBSERVER.configure();
     }
 
     @Override
     public MetricsFactory create(Config rootConfig, MetricsConfig metricsConfig, Collection<MetersProvider> metersProviders) {
-        return save(MicrometerMetricsFactory.create(metricsConfig, metersProviders));
+        return save(MicrometerMetricsFactory.create(metricsConfig, metersProviders, this::remove));
     }
 
     @Override
     public void close() {
-        metricsFactories.forEach(MetricsFactory::close);
+        List.copyOf(metricsFactories).forEach(MetricsFactory::close);
         metricsFactories.clear();
-        MMeterRegistry.clearMultipleInstantiationInfo();
-        List<Meter> meters = List.copyOf(Metrics.globalRegistry.getMeters());
-        meters.forEach(Metrics.globalRegistry::remove);
     }
 
     private MicrometerMetricsFactory save(MicrometerMetricsFactory metricsFactory) {
         metricsFactories.add(metricsFactory);
+        GLOBAL_REGISTRY_OBSERVER.add(metricsFactory);
         return metricsFactory;
     }
 
-    private void onMeterAdded(Meter meter) {
-        metricsFactories.forEach(mf -> mf.onMeterAdded(meter));
+    private void remove(MicrometerMetricsFactory metricsFactory) {
+        metricsFactories.remove(metricsFactory);
+        GLOBAL_REGISTRY_OBSERVER.remove(metricsFactory);
     }
 
-    private void onMeterRemoved(Meter meter) {
-        metricsFactories.forEach(mf -> mf.onMeterRemoved(meter));
-    }
+    private static class GlobalRegistryObserver {
+        private final AtomicBoolean configured = new AtomicBoolean();
+        private final List<WeakReference<MicrometerMetricsFactory>> metricsFactories = new CopyOnWriteArrayList<>();
 
-    private void observeGlobalRegistry() {
-        Metrics.globalRegistry.config().onMeterAdded(this::onMeterAdded);
-        Metrics.globalRegistry.config().onMeterRemoved(this::onMeterRemoved);
-    }
+        private void configure() {
+            if (configured.compareAndSet(false, true)) {
+                Metrics.globalRegistry.config().onMeterAdded(this::onMeterAdded);
+                Metrics.globalRegistry.config().onMeterRemoved(this::onMeterRemoved);
+                Metrics.globalRegistry.config().meterFilter(new MeterFilter() {
+                    @Override
+                    public Meter.Id map(Meter.Id id) {
+                        List<io.micrometer.core.instrument.Tag> tags = liveFactories().stream()
+                                .findFirst()
+                                .map(MicrometerMetricsFactory::micrometerSystemTags)
+                                .orElseGet(List::of);
+                        return id.replaceTags(Tags.concat(tags, id.getTagsAsIterable()));
+                    }
+                });
+            }
+        }
 
-    private void addSystemTagsFilter() {
-        Metrics.globalRegistry
-                .config()
-                .meterFilter(MeterFilter.commonTags(SystemTagsMeterFilterManager
-                                                            .instance()
-                                                            .tags()));
+        private void add(MicrometerMetricsFactory metricsFactory) {
+            metricsFactories.add(new WeakReference<>(metricsFactory));
+        }
+
+        private void remove(MicrometerMetricsFactory metricsFactory) {
+            metricsFactories.removeIf(ref -> {
+                MicrometerMetricsFactory found = ref.get();
+                return found == null || found == metricsFactory;
+            });
+        }
+
+        private void onMeterAdded(Meter meter) {
+            liveFactories().forEach(mf -> mf.onMeterAdded(meter));
+        }
+
+        private void onMeterRemoved(Meter meter) {
+            liveFactories().forEach(mf -> mf.onMeterRemoved(meter));
+        }
+
+        private List<MicrometerMetricsFactory> liveFactories() {
+            List<MicrometerMetricsFactory> result = new ArrayList<>();
+            metricsFactories.removeIf(ref -> {
+                MicrometerMetricsFactory metricsFactory = ref.get();
+                if (metricsFactory == null) {
+                    return true;
+                }
+                result.add(metricsFactory);
+                return false;
+            });
+            return result;
+        }
     }
 }

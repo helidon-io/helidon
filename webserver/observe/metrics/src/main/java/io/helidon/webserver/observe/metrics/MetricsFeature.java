@@ -35,7 +35,6 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
-import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.spi.MeterRegistryFormatterProvider;
 import io.helidon.service.registry.Services;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
@@ -117,7 +116,7 @@ class MetricsFeature {
                        Iterable<String> nameSelection) {
         MeterRegistryFormatter formatter = chooseFormatter(meterRegistry,
                                                            mediaType,
-                                                           Services.get(SystemTagsManager.class).scopeTagName(),
+                                                           metricsConfig.scoping().tagName(),
                                                            scopeSelection,
                                                            nameSelection);
 
@@ -134,7 +133,7 @@ class MetricsFeature {
                        Iterable<String> nameSelection) {
         MeterRegistryFormatter formatter = chooseFormatter(meterRegistry,
                                                            mediaType,
-                                                           Services.get(SystemTagsManager.class).scopeTagName(),
+                                                           metricsConfig.scoping().tagName(),
                                                            scopeSelection,
                                                            nameSelection);
 

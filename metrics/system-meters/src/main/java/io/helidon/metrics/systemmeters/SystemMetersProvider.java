@@ -41,7 +41,7 @@ import io.helidon.metrics.spi.MetersProvider;
 /**
  * Provider for the built-in system meters.
  */
-public class SystemMetersProvider implements MetersProvider {
+public class SystemMetersProvider implements MetersProvider, AutoCloseable {
 
     private static final String BYTES = "bytes";
     private static final String SECONDS = "seconds";
@@ -185,6 +185,11 @@ public class SystemMetersProvider implements MetersProvider {
     public Collection<Meter.Builder<?, ?>> meterBuilders(MetricsFactory metricsFactory) {
         this.metricsFactory = metricsFactory; // save at the instance level for ease of access
         return prepareMeterBuilders();
+    }
+
+    @Override
+    public void close() {
+        metricsFactory = null;
     }
 
     /**
