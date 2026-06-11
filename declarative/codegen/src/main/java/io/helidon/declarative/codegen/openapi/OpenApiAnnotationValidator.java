@@ -69,13 +69,13 @@ final class OpenApiAnnotationValidator {
         }
     }
 
-    void validateSecuritySchemes(String owner, List<Annotation> schemes) {
+    void validateSecuritySchemes(String owner, List<OpenApiSecurityScheme> schemes) {
         Set<String> names = new HashSet<>();
-        for (Annotation scheme : schemes) {
+        for (OpenApiSecurityScheme scheme : schemes) {
             String name = stringValue(scheme, "name")
                     .filter(not(String::isBlank))
-                    .orElseThrow(() -> new CodegenException("@OpenApi.SecurityScheme name is required"));
-            validateUnique("@OpenApi.SecurityScheme on " + owner, "security scheme", name, names);
+                    .orElseThrow(() -> new CodegenException(scheme.annotationName() + " name is required"));
+            validateUnique(scheme.annotationName() + " on " + owner, "security scheme", name, names);
             validateSecurityScheme(owner, scheme, name);
         }
     }
@@ -278,8 +278,8 @@ final class OpenApiAnnotationValidator {
                                                                       content));
     }
 
-    private void validateSecurityScheme(String owner, Annotation scheme, String name) {
-        String location = "@OpenApi.SecurityScheme on " + owner + " for security scheme " + name;
+    private void validateSecurityScheme(String owner, OpenApiSecurityScheme scheme, String name) {
+        String location = scheme.annotationName() + " on " + owner + " for security scheme " + name;
         String type = requireString(location, scheme, "type");
         switch (type) {
         case "apiKey" -> {
@@ -289,18 +289,59 @@ final class OpenApiAnnotationValidator {
                 throw new CodegenException(location
                                                    + " apiKey in must be one of query, header, or cookie: " + in);
             }
+            rejectFields(location, type, scheme, "scheme", "bearerFormat", "openIdConnectUrl", "oauth2MetadataUrl");
+            rejectFlows(location, type, scheme);
         }
-        case "http" -> requireString(location, scheme, "scheme");
+        case "http" -> {
+            String securityScheme = requireString(location, scheme, "scheme");
+            rejectFields(location, type, scheme, "apiKeyName", "in", "openIdConnectUrl", "oauth2MetadataUrl");
+            rejectFlows(location, type, scheme);
+            if (hasConfiguredStringValue(scheme, "bearerFormat")
+                    && !"bearer".equalsIgnoreCase(securityScheme)
+                    && !securityScheme.startsWith("${")) {
+                throw new CodegenException(location + " http scheme " + securityScheme
+                                                   + " cannot define bearerFormat");
+            }
+        }
         case "mutualTLS" -> {
+            rejectFields(location, type, scheme, "apiKeyName", "in", "scheme", "bearerFormat", "openIdConnectUrl",
+                         "oauth2MetadataUrl");
+            rejectFlows(location, type, scheme);
         }
-        case "oauth2" -> validateOAuth2SecurityScheme(owner, scheme, name, location);
-        case "openIdConnect" -> requireString(location, scheme, "openIdConnectUrl");
+        case "oauth2" -> {
+            validateOAuth2SecurityScheme(owner, scheme, name, location);
+            rejectFields(location, type, scheme, "apiKeyName", "in", "scheme", "bearerFormat", "openIdConnectUrl");
+        }
+        case "openIdConnect" -> {
+            requireString(location, scheme, "openIdConnectUrl");
+            rejectFields(location, type, scheme, "apiKeyName", "in", "scheme", "bearerFormat", "oauth2MetadataUrl");
+            rejectFlows(location, type, scheme);
+        }
         default -> throw new CodegenException(location + " type must be one of apiKey, http, mutualTLS, oauth2, "
                                                       + "or openIdConnect: " + type);
         }
     }
 
-    private void validateOAuth2SecurityScheme(String owner, Annotation scheme, String name, String location) {
+    private void rejectFields(String location, String type, OpenApiSecurityScheme annotation, String... properties) {
+        for (String property : properties) {
+            if (hasConfiguredStringValue(annotation, property)) {
+                throw new CodegenException(location + " type " + type + " cannot define " + property);
+            }
+        }
+    }
+
+    private void rejectFlows(String location, String type, OpenApiSecurityScheme scheme) {
+        scheme.annotationValue("flows")
+                .filter(this::hasOAuthFlowsMetadata)
+                .ifPresent(_ -> {
+                    throw new CodegenException(location + " type " + type + " cannot define flows");
+                });
+    }
+
+    private void validateOAuth2SecurityScheme(String owner,
+                                              OpenApiSecurityScheme scheme,
+                                              String name,
+                                              String location) {
         Annotation flows = scheme.annotationValue("flows")
                 .orElseThrow(() -> new CodegenException(location + " requires OAuth flows"));
         boolean hasFlow = false;
@@ -319,14 +360,30 @@ final class OpenApiAnnotationValidator {
     }
 
     private boolean hasOAuthFlowMetadata(Annotation flow) {
-        return hasStringValue(flow, "authorizationUrl")
-                || hasStringValue(flow, "deviceAuthorizationUrl")
-                || hasStringValue(flow, "tokenUrl")
-                || hasStringValue(flow, "refreshUrl")
+        return hasConfiguredStringValue(flow, "authorizationUrl")
+                || hasConfiguredStringValue(flow, "deviceAuthorizationUrl")
+                || hasConfiguredStringValue(flow, "tokenUrl")
+                || hasConfiguredStringValue(flow, "refreshUrl")
                 || !flow.annotationValues("scopes").orElseGet(List::of).isEmpty();
     }
 
+    private boolean hasOAuthFlowsMetadata(Annotation flows) {
+        for (String flowName : List.of("implicit", "password", "clientCredentials", "authorizationCode",
+                                       "deviceAuthorization")) {
+            if (flows.annotationValue(flowName).filter(this::hasOAuthFlowMetadata).isPresent()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     private String requireString(String location, Annotation annotation, String property) {
+        return stringValue(annotation, property)
+                .filter(not(String::isBlank))
+                .orElseThrow(() -> new CodegenException(location + " requires " + property));
+    }
+
+    private String requireString(String location, OpenApiSecurityScheme annotation, String property) {
         return stringValue(annotation, property)
                 .filter(not(String::isBlank))
                 .orElseThrow(() -> new CodegenException(location + " requires " + property));
@@ -336,11 +393,30 @@ final class OpenApiAnnotationValidator {
         return stringValue(annotation, property).filter(not(String::isBlank)).isPresent();
     }
 
+    private boolean hasStringValue(OpenApiSecurityScheme annotation, String property) {
+        return stringValue(annotation, property).filter(not(String::isBlank)).isPresent();
+    }
+
+    private boolean hasConfiguredStringValue(Annotation annotation, String property) {
+        Optional<String> value = "value".equals(property)
+                ? annotation.stringValue()
+                : annotation.stringValue(property);
+        return value.filter(not(String::isBlank)).isPresent();
+    }
+
+    private boolean hasConfiguredStringValue(OpenApiSecurityScheme annotation, String property) {
+        return annotation.stringValue(property).filter(not(String::isBlank)).isPresent();
+    }
+
     private Optional<String> stringValue(Annotation annotation, String property) {
         Optional<String> value = "value".equals(property)
                 ? annotation.stringValue()
                 : annotation.stringValue(property);
         return value.map(this::expressionDefaultValue);
+    }
+
+    private Optional<String> stringValue(OpenApiSecurityScheme annotation, String property) {
+        return annotation.stringValue(property).map(this::expressionDefaultValue);
     }
 
     private List<String> stringValues(Annotation annotation, String property) {

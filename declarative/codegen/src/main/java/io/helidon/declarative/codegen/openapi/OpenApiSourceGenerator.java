@@ -59,7 +59,6 @@ import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_HEADER_PARAM_AN
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_PATH_PARAM_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_QUERY_PARAM_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_REQUEST_PARAMS_ANNOTATION;
-import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.JSON_OBJECT;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.JSON_SCHEMA_PROVIDER;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.JSON_STRING;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_CONTACT_ANNOTATION;
@@ -82,8 +81,6 @@ import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_RESPONSE_ANNOTATION;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_SECURITY_REQUIREMENTS_ANNOTATION;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_SECURITY_REQUIREMENT_ANNOTATION;
-import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_SECURITY_SCHEMES_ANNOTATION;
-import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_SECURITY_SCHEME_ANNOTATION;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_SERVERS_ANNOTATION;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_SERVER_ANNOTATION;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_SOURCE_BASE;
@@ -101,6 +98,8 @@ final class OpenApiSourceGenerator {
 
     private final OpenApiAnnotationValidator validator = new OpenApiAnnotationValidator();
     private final OpenApiSourceExpressions expressions = new OpenApiSourceExpressions(validator);
+    private final OpenApiSecuritySchemeCodegen securitySchemeCodegen = new OpenApiSecuritySchemeCodegen(validator,
+                                                                                                        expressions);
     private final OpenApiSchemaCodegen schemas = new OpenApiSchemaCodegen(expressions, this::examplesExpression);
     private final OpenApiFormRequestBodyCodegen formRequestBodies = new OpenApiFormRequestBodyCodegen(
             validator,
@@ -253,11 +252,9 @@ final class OpenApiSourceGenerator {
                                                             OPENAPI_EXTENSION_ANNOTATION);
         validator.validateExtensions(owner, extensions);
         extensions.forEach(extension -> writeExtension(method, "document.extension", true, extension));
-        List<Annotation> securitySchemes = repeatableAnnotations(annotations,
-                                                                 OPENAPI_SECURITY_SCHEMES_ANNOTATION,
-                                                                 OPENAPI_SECURITY_SCHEME_ANNOTATION);
+        List<OpenApiSecurityScheme> securitySchemes = securitySchemeCodegen.securitySchemes(annotations);
         validator.validateSecuritySchemes(owner, securitySchemes);
-        securitySchemes.forEach(scheme -> writeSecurityScheme(method, owner, scheme));
+        securitySchemes.forEach(scheme -> securitySchemeCodegen.writeSecurityScheme(method, owner, scheme));
         List<Annotation> securityRequirements = repeatableAnnotations(annotations,
                                                                       OPENAPI_SECURITY_REQUIREMENTS_ANNOTATION,
                                                                       OPENAPI_SECURITY_REQUIREMENT_ANNOTATION);
@@ -490,74 +487,6 @@ final class OpenApiSourceGenerator {
                 .addContentLine(statement ? "));" : "))");
     }
 
-    private void writeSecurityScheme(Method.Builder method, String owner, Annotation scheme) {
-        String name = scheme.stringValue("name")
-                .filter(not(String::isBlank))
-                .orElseThrow(() -> new CodegenException("@OpenApi.SecurityScheme name is required"));
-        String schemeName = validator.expressionDefaultValue(name);
-        String type = scheme.stringValue("type")
-                .filter(not(String::isBlank))
-                .orElseThrow(() -> new CodegenException("@OpenApi.SecurityScheme type is required"));
-        method.addContent("document.components(components -> components.securityScheme(")
-                .addContent(expressions.validatedStringExpression(name))
-                .addContentLine(",")
-                .increaseContentPadding()
-                .increaseContentPadding()
-                .addContent("security -> security.type(")
-                .addContent(expressions.validatedStringExpression(type))
-                .addContentLine(")")
-                .increaseContentPadding()
-                .increaseContentPadding();
-        scheme.stringValue("description")
-                .filter(not(String::isBlank))
-                .ifPresent(description -> method.addContent(".description(")
-                        .addContent(expressions.stringExpression(description))
-                        .addContentLine(")"));
-        scheme.stringValue("apiKeyName")
-                .filter(not(String::isBlank))
-                .ifPresent(apiKeyName -> method.addContent(".name(")
-                        .addContent(expressions.stringExpression(apiKeyName))
-                        .addContentLine(")"));
-        scheme.stringValue("scheme")
-                .filter(not(String::isBlank))
-                .ifPresent(securityScheme -> method.addContent(".scheme(")
-                        .addContent(expressions.stringExpression(securityScheme))
-                        .addContentLine(")"));
-        scheme.stringValue("bearerFormat")
-                .filter(not(String::isBlank))
-                .ifPresent(format -> method.addContent(".bearerFormat(")
-                        .addContent(expressions.stringExpression(format))
-                        .addContentLine(")"));
-        scheme.stringValue("in")
-                .filter(not(String::isBlank))
-                .ifPresent(in -> method.addContent(".in(")
-                        .addContent(expressions.validatedStringExpression(in))
-                        .addContentLine(")"));
-        scheme.annotationValue("flows")
-                .flatMap(flows -> oauthFlowsExpression(owner, schemeName, flows))
-                .ifPresent(flows -> method.addContent(".flows(")
-                        .addContent(flows)
-                        .addContentLine(")"));
-        scheme.stringValue("openIdConnectUrl")
-                .filter(not(String::isBlank))
-                .ifPresent(url -> method.addContent(".openIdConnectUrl(")
-                        .addContent(expressions.stringExpression(url))
-                        .addContentLine(")"));
-        scheme.stringValue("oauth2MetadataUrl")
-                .filter(not(String::isBlank))
-                .ifPresent(url -> method.addContent(".oauth2MetadataUrl(")
-                        .addContent(expressions.stringExpression(url))
-                        .addContentLine(")"));
-        scheme.booleanValue("deprecated")
-                .filter(Boolean::booleanValue)
-                .ifPresent(deprecated -> method.addContentLine(".deprecated(true)"));
-        method.addContentLine("));")
-                .decreaseContentPadding()
-                .decreaseContentPadding()
-                .decreaseContentPadding()
-                .decreaseContentPadding();
-    }
-
     private void writeSecurityRequirement(Method.Builder method,
                                           String call,
                                           boolean statement,
@@ -582,75 +511,6 @@ final class OpenApiSourceGenerator {
         method.addContentLine(statement ? ");" : ")")
                 .decreaseContentPadding()
                 .decreaseContentPadding();
-    }
-
-    private Optional<String> oauthFlowsExpression(String owner, String schemeName, Annotation flows) {
-        List<JsonObjectEntry> entries = new ArrayList<>();
-        addOauthFlow(entries, owner, schemeName, flows, "implicit");
-        addOauthFlow(entries, owner, schemeName, flows, "password");
-        addOauthFlow(entries, owner, schemeName, flows, "clientCredentials");
-        addOauthFlow(entries, owner, schemeName, flows, "authorizationCode");
-        addOauthFlow(entries, owner, schemeName, flows, "deviceAuthorization");
-        if (entries.isEmpty()) {
-            return Optional.empty();
-        }
-        return Optional.of(jsonObjectExpression(entries));
-    }
-
-    private void addOauthFlow(List<JsonObjectEntry> entries,
-                              String owner,
-                              String schemeName,
-                              Annotation flows,
-                              String name) {
-        flows.annotationValue(name)
-                .flatMap(flow -> oauthFlowExpression(owner, schemeName, name, flow))
-                .ifPresent(flow -> entries.add(new JsonObjectEntry(name, flow)));
-    }
-
-    private Optional<String> oauthFlowExpression(String owner, String schemeName, String flowName, Annotation flow) {
-        List<JsonObjectEntry> entries = new ArrayList<>();
-        addStringJsonEntry(entries, flow, "authorizationUrl");
-        addStringJsonEntry(entries, flow, "deviceAuthorizationUrl");
-        addStringJsonEntry(entries, flow, "tokenUrl");
-        addStringJsonEntry(entries, flow, "refreshUrl");
-
-        List<Annotation> scopes = flow.annotationValues("scopes").orElseGet(List::of);
-        validator.validateOAuthScopes(owner, schemeName, flowName, scopes);
-        if (entries.isEmpty() && scopes.isEmpty()) {
-            return Optional.empty();
-        }
-        String scopesExpression = scopes.isEmpty() ? JSON_OBJECT.fqName() + ".empty()" : oauthScopesExpression(scopes);
-        entries.add(new JsonObjectEntry("scopes", scopesExpression));
-        return Optional.of(jsonObjectExpression(entries));
-    }
-
-    private void addStringJsonEntry(List<JsonObjectEntry> entries, Annotation annotation, String name) {
-        annotation.stringValue(name)
-                .filter(not(String::isBlank))
-                .ifPresent(value -> entries.add(new JsonObjectEntry(name, expressions.stringExpression(value))));
-    }
-
-    private String oauthScopesExpression(List<Annotation> scopes) {
-        List<JsonObjectEntry> entries = new ArrayList<>();
-        scopes.forEach(scope -> {
-            String name = scope.stringValue()
-                    .filter(not(String::isBlank))
-                    .orElseThrow(() -> new CodegenException("@OpenApi.OAuthScope value is required"));
-            String description = scope.stringValue("description")
-                    .orElse("");
-            entries.add(new JsonObjectEntry(name, expressions.stringExpression(description)));
-        });
-        return jsonObjectExpression(entries);
-    }
-
-    private String jsonObjectExpression(List<JsonObjectEntry> entries) {
-        StringBuilder result = new StringBuilder(JSON_OBJECT.fqName()).append(".builder()");
-        entries.forEach(entry -> result.append(".set(")
-                .append(expressions.validatedStringExpression(entry.name()))
-                .append(", ")
-                .append(entry.valueExpression())
-                .append(")"));
-        return result.append(".build()").toString();
     }
 
     private void addOperation(Method.Builder method,
@@ -1499,7 +1359,7 @@ final class OpenApiSourceGenerator {
             }
             return true;
         }
-        boolean required = parameterRequired(in, type, schemaType, parameter.annotations());
+        boolean required = parameterRequired(type, parameter.annotations());
         if (required && explicit.filter(Predicate.not(Boolean::booleanValue)).isPresent()
                 && ("query".equals(in) || "header".equals(in) || "cookie".equals(in))) {
             throw new CodegenException("@OpenApi.Parameter on " + restMethodDescription(restMethod)
@@ -1509,15 +1369,11 @@ final class OpenApiSourceGenerator {
     }
 
     private boolean formParameterRequired(RestMethodParameter parameter) {
-        TypeName schemaType = schemas.schemaType(parameter.typeName());
-        return parameterRequired("form", parameter.typeName(), schemaType, parameter.annotations());
+        return parameterRequired(parameter.typeName(), parameter.annotations());
     }
 
-    private boolean parameterRequired(String in, TypeName type, TypeName schemaType, Collection<Annotation> annotations) {
+    private boolean parameterRequired(TypeName type, Collection<Annotation> annotations) {
         if (type.isOptional()) {
-            return false;
-        }
-        if ("query".equals(in) && schemaType.isList()) {
             return false;
         }
 
@@ -1973,6 +1829,4 @@ final class OpenApiSourceGenerator {
         };
     }
 
-    private record JsonObjectEntry(String name, String valueExpression) {
-    }
 }

@@ -34,6 +34,26 @@ final class OpenApiCodegenTypes {
             TypeName.create("io.helidon.openapi.OpenApi.SecurityScheme");
     static final TypeName OPENAPI_SECURITY_SCHEMES_ANNOTATION =
             TypeName.create("io.helidon.openapi.OpenApi.SecuritySchemes");
+    static final TypeName OPENAPI_API_KEY_SECURITY_SCHEME_ANNOTATION =
+            TypeName.create("io.helidon.openapi.OpenApi.ApiKeySecurityScheme");
+    static final TypeName OPENAPI_API_KEY_SECURITY_SCHEMES_ANNOTATION =
+            TypeName.create("io.helidon.openapi.OpenApi.ApiKeySecuritySchemes");
+    static final TypeName OPENAPI_HTTP_SECURITY_SCHEME_ANNOTATION =
+            TypeName.create("io.helidon.openapi.OpenApi.HttpSecurityScheme");
+    static final TypeName OPENAPI_HTTP_SECURITY_SCHEMES_ANNOTATION =
+            TypeName.create("io.helidon.openapi.OpenApi.HttpSecuritySchemes");
+    static final TypeName OPENAPI_MUTUAL_TLS_SECURITY_SCHEME_ANNOTATION =
+            TypeName.create("io.helidon.openapi.OpenApi.MutualTlsSecurityScheme");
+    static final TypeName OPENAPI_MUTUAL_TLS_SECURITY_SCHEMES_ANNOTATION =
+            TypeName.create("io.helidon.openapi.OpenApi.MutualTlsSecuritySchemes");
+    static final TypeName OPENAPI_OAUTH2_SECURITY_SCHEME_ANNOTATION =
+            TypeName.create("io.helidon.openapi.OpenApi.OAuth2SecurityScheme");
+    static final TypeName OPENAPI_OAUTH2_SECURITY_SCHEMES_ANNOTATION =
+            TypeName.create("io.helidon.openapi.OpenApi.OAuth2SecuritySchemes");
+    static final TypeName OPENAPI_OIDC_SECURITY_SCHEME_ANNOTATION =
+            TypeName.create("io.helidon.openapi.OpenApi.OidcSecurityScheme");
+    static final TypeName OPENAPI_OIDC_SECURITY_SCHEMES_ANNOTATION =
+            TypeName.create("io.helidon.openapi.OpenApi.OidcSecuritySchemes");
     static final TypeName OPENAPI_SECURITY_REQUIREMENT_ANNOTATION =
             TypeName.create("io.helidon.openapi.OpenApi.SecurityRequirement");
     static final TypeName OPENAPI_SECURITY_REQUIREMENTS_ANNOTATION =

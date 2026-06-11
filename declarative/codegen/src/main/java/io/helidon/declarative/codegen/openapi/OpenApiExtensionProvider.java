@@ -43,6 +43,16 @@ public class OpenApiExtensionProvider implements RegistryCodegenExtensionProvide
     @Override
     public Set<TypeName> supportedAnnotations() {
         return Set.of(OpenApiCodegenTypes.OPENAPI_DOCUMENT_ANNOTATION,
+                      OpenApiCodegenTypes.OPENAPI_API_KEY_SECURITY_SCHEMES_ANNOTATION,
+                      OpenApiCodegenTypes.OPENAPI_API_KEY_SECURITY_SCHEME_ANNOTATION,
+                      OpenApiCodegenTypes.OPENAPI_HTTP_SECURITY_SCHEMES_ANNOTATION,
+                      OpenApiCodegenTypes.OPENAPI_HTTP_SECURITY_SCHEME_ANNOTATION,
+                      OpenApiCodegenTypes.OPENAPI_MUTUAL_TLS_SECURITY_SCHEMES_ANNOTATION,
+                      OpenApiCodegenTypes.OPENAPI_MUTUAL_TLS_SECURITY_SCHEME_ANNOTATION,
+                      OpenApiCodegenTypes.OPENAPI_OAUTH2_SECURITY_SCHEMES_ANNOTATION,
+                      OpenApiCodegenTypes.OPENAPI_OAUTH2_SECURITY_SCHEME_ANNOTATION,
+                      OpenApiCodegenTypes.OPENAPI_OIDC_SECURITY_SCHEMES_ANNOTATION,
+                      OpenApiCodegenTypes.OPENAPI_OIDC_SECURITY_SCHEME_ANNOTATION,
                       ServerEndpointAnalyzer.endpointAnnotation());
     }
 

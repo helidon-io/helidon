@@ -130,6 +130,55 @@ class OpenApiParameterRequirednessCodegenTest {
     }
 
     @Test
+    void nonOptionalQueryListParameterCannotBeDocumentedAsOptional() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .procOnly()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/openapi-required-query-list"))
+                .addSource("InvalidOpenApiEndpoint.java", """
+                        package com.example;
+
+                        import java.util.List;
+
+                        import io.helidon.http.Http;
+                        import io.helidon.openapi.OpenApi;
+                        import io.helidon.service.registry.Service;
+                        import io.helidon.webserver.http.RestServer;
+
+                        @OpenApi.Document
+                        @OpenApi.Info(title = "Test", version = "1.0")
+                        @RestServer.Endpoint
+                        @Service.Singleton
+                        @Http.Path("/invalid")
+                        class InvalidOpenApiEndpoint {
+                            @Http.GET
+                            String get(@OpenApi.Parameter(required = OpenApi.Required.FALSE)
+                                       @Http.QueryParam("include") List<String> include) {
+                                return include.toString();
+                            }
+                        }
+                        """)
+                .addSource("Main.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.GenerateBinding
+                        class Main {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat("Build should fail", result.success(), is(false));
+        assertThat(diagnostics, containsString("@OpenApi.Parameter on com.example.InvalidOpenApiEndpoint.get"));
+        assertThat(diagnostics, containsString("cannot make a required query parameter optional"));
+    }
+
+    @Test
     void nonOptionalHeaderParameterCannotBeDocumentedAsOptional() {
         var result = TestCompiler.builder()
                 .currentRelease()
