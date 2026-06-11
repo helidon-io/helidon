@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,27 @@
 
 package io.helidon.webserver.spi;
 
-import java.util.Set;
-
 import io.helidon.config.NamedService;
 
 /**
- * Protocol configuration abstraction, used to setup a protocol.
+ * Transport binding configuration abstraction.
  */
-public interface ProtocolConfig extends NamedService {
+public interface TransportBindingConfig extends NamedService {
     /**
-     * Transport binding provider keys compatible with this protocol.
-     * <p>
-     * An empty set means this protocol has no transport preference and can use the listener default binding.
-     * Otherwise, at least one returned transport binding type must be active on the listener.
+     * Whether this binding is enabled.
      *
-     * @return compatible transport binding types for this protocol
+     * @return whether this binding is enabled
      */
-    default Set<String> transportBindingTypes() {
-        return Set.of();
+    default boolean enabled() {
+        return true;
+    }
+
+    /**
+     * Whether this binding is required to become active.
+     *
+     * @return whether this binding is required
+     */
+    default boolean required() {
+        return false;
     }
 }
