@@ -23,7 +23,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Optional break points for inline code in generated markdown.
+ * Optional break points for inline code.
  */
 final class CodeBreaks {
     static final int MIN_CHARS_BETWEEN_BREAKS = 4;
@@ -60,30 +60,43 @@ final class CodeBreaks {
     }
 
     private static void appendCode(StringBuilder result, String text) {
-        var code = new ArrayList<CodeChar>(text.length());
+        var code = new ArrayList<String>(text.length());
         appendCodeChars(code, text);
         appendCode(result, code);
     }
 
     private static String codeHtml(String html) {
-        var code = new ArrayList<CodeChar>(html.length());
+        var code = new ArrayList<String>(html.length());
         appendCodeHtmlChars(code, html);
         var result = new StringBuilder(html.length() + 32);
         appendCode(result, code);
         return result.toString();
     }
 
-    private static void appendCode(StringBuilder result, List<CodeChar> code) {
+    private static void appendCode(StringBuilder result, List<String> code) {
         var breaks = breakPositions(code);
         for (int index = 0; index < code.size(); index++) {
             if (breaks[index]) {
                 result.append(WBR);
             }
-            code.get(index).appendTo(result);
+            String str = code.get(index);
+            if (str.length() == 1) {
+                char ch = str.charAt(0);
+                switch (ch) {
+                    case '&' -> result.append("&amp;");
+                    case '<' -> result.append("&lt;");
+                    case '>' -> result.append("&gt;");
+                    case '"' -> result.append("&quot;");
+                    case '\'' -> result.append("&#39;");
+                    default -> result.append(ch);
+                }
+            } else {
+                result.append(str);
+            }
         }
     }
 
-    private static boolean[] breakPositions(List<CodeChar> code) {
+    private static boolean[] breakPositions(List<String> code) {
         var result = new boolean[code.size() + 1];
         var accepted = false;
         var previous = 0;
@@ -113,13 +126,13 @@ final class CodeBreaks {
         return false;
     }
 
-    private static void appendCodeChars(List<CodeChar> code, String text) {
+    private static void appendCodeChars(List<String> code, String text) {
         for (int index = 0; index < text.length(); index++) {
-            code.add(CodeChar.character(text.charAt(index)));
+            code.add(text.substring(index, index + 1));
         }
     }
 
-    private static void appendCodeHtmlChars(List<CodeChar> code, String html) {
+    private static void appendCodeHtmlChars(List<String> code, String html) {
         var chunkStart = 0;
         for (int index = 0; index < html.length(); index++) {
             if (html.charAt(index) != '&') {
@@ -131,12 +144,20 @@ final class CodeBreaks {
             }
             var entity = html.substring(index + 1, semicolon);
             var decoded = decodeEntity(entity);
-            if (decoded == null && !namedEntity(entity)) {
-                continue;
+            if (decoded == null) {
+                if (entity.isEmpty() || entity.charAt(0) == '#') {
+                    continue;
+                }
+                if (!Character.isLetter(entity.charAt(0))) {
+                    continue;
+                }
+                if (!entity.chars().allMatch(Character::isLetterOrDigit)) {
+                    continue;
+                }
             }
             appendCodeChars(code, html.substring(chunkStart, index));
             if (decoded == null) {
-                code.add(CodeChar.rawHtml("&" + entity + ";"));
+                code.add("&" + entity + ";");
             } else {
                 appendCodeChars(code, decoded);
             }
@@ -146,47 +167,42 @@ final class CodeBreaks {
         appendCodeChars(code, html.substring(chunkStart));
     }
 
-    private static boolean camelCaseBoundary(List<CodeChar> code, int index) {
-        if (index <= 0 || index >= code.size()) {
-            return false;
+    private static boolean camelCaseBoundary(List<String> code, int index) {
+        if (index > 0 && index < code.size()) {
+            var previous = code.get(index - 1);
+            var current = code.get(index);
+            if (previous.length() == 1 && current.length() == 1) {
+                char pch = previous.charAt(0);
+                char cch = current.charAt(0);
+                if (!Character.isLetter(pch) || !Character.isLetter(cch)) {
+                    return false;
+                }
+                if (Character.isLowerCase(pch) && Character.isUpperCase(cch)) {
+                    return true;
+                }
+                if (Character.isUpperCase(pch) && Character.isUpperCase(cch)) {
+                    if (index + 1 < code.size()) {
+                        char nch = code.get(index + 1).charAt(0);
+                        return Character.isLowerCase(nch);
+                    }
+                }
+            }
         }
-
-        var previous = code.get(index - 1);
-        var current = code.get(index);
-        if (!previous.letter() || !current.letter()) {
-            return false;
-        }
-        if (previous.lowerCase() && current.upperCase()) {
-            return true;
-        }
-        return previous.upperCase()
-                && current.upperCase()
-                && index + 1 < code.size()
-                && code.get(index + 1).lowerCase();
+        return false;
     }
 
-    private static boolean separatorBoundary(List<CodeChar> code, int index) {
-        return index > 0
-                && index + 1 < code.size()
-                && code.get(index).separator();
-    }
-
-    private static boolean separator(char ch) {
-        return switch (ch) {
-            case '.', '/', '\\', ':', '?', '&', '=', '-', '_', '#', ',', '(', '<', '>' -> true;
-            default -> false;
-        };
-    }
-
-    private static void appendEscaped(StringBuilder result, char ch) {
-        switch (ch) {
-        case '&' -> result.append("&amp;");
-        case '<' -> result.append("&lt;");
-        case '>' -> result.append("&gt;");
-        case '"' -> result.append("&quot;");
-        case '\'' -> result.append("&#39;");
-        default -> result.append(ch);
+    private static boolean separatorBoundary(List<String> code, int index) {
+        if (index > 0 && index + 1 < code.size()) {
+            String str = code.get(index);
+            if (str.length() == 1) {
+                char ch = str.charAt(0);
+                return switch (ch) {
+                    case '.', '/', '\\', ':', '?', '&', '=', '-', '_', '#', ',', '(', '<', '>' -> true;
+                    default -> false;
+                };
+            }
         }
+        return false;
     }
 
     private static String decodeEntity(String entity) {
@@ -207,16 +223,6 @@ final class CodeBreaks {
         };
     }
 
-    private static boolean namedEntity(String entity) {
-        if (entity.isEmpty() || entity.charAt(0) == '#') {
-            return false;
-        }
-        if (!Character.isLetter(entity.charAt(0))) {
-            return false;
-        }
-        return entity.chars().allMatch(Character::isLetterOrDigit);
-    }
-
     private static String decodeNumericEntity(String entity) {
         try {
             int codePoint;
@@ -231,40 +237,6 @@ final class CodeBreaks {
             return Character.toString(codePoint);
         } catch (NumberFormatException ex) {
             return null;
-        }
-    }
-
-    private record CodeChar(char ch, String rawHtml) {
-        private static CodeChar character(char ch) {
-            return new CodeChar(ch, null);
-        }
-
-        private static CodeChar rawHtml(String rawHtml) {
-            return new CodeChar('\0', rawHtml);
-        }
-
-        private void appendTo(StringBuilder result) {
-            if (rawHtml == null) {
-                appendEscaped(result, ch);
-            } else {
-                result.append(rawHtml);
-            }
-        }
-
-        private boolean letter() {
-            return rawHtml == null && Character.isLetter(ch);
-        }
-
-        private boolean lowerCase() {
-            return rawHtml == null && Character.isLowerCase(ch);
-        }
-
-        private boolean upperCase() {
-            return rawHtml == null && Character.isUpperCase(ch);
-        }
-
-        private boolean separator() {
-            return rawHtml == null && CodeBreaks.separator(ch);
         }
     }
 }
