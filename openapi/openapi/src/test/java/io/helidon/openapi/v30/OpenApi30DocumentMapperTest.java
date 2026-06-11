@@ -111,6 +111,26 @@ class OpenApi30DocumentMapperTest {
     }
 
     @Test
+    void preservesResponseExtensions() {
+        OpenApiDocument document = OpenApi30DocumentMapper.parse(Map.of(
+                "openapi", "3.0.3",
+                "info", Map.of(
+                        "title", "Static API",
+                        "version", "1.0.0"),
+                "paths", Map.of(
+                        "/static", Map.of(
+                                "get", Map.of(
+                                        "responses", Map.of(
+                                                "200", Map.of(
+                                                        "description", "OK",
+                                                        "x-static-response", "preserved")))))));
+        Map<String, Object> rendered = OpenApi30DocumentMapper.render(document, "3.0.3");
+        Map<String, Object> response = map(map(map(map(rendered, "paths"), "/static"), "get"), "responses");
+
+        assertThat(map(response, "200").get("x-static-response"), is("preserved"));
+    }
+
+    @Test
     void openApi30RenderPreservesNullConstAsEnum() {
         OpenApiDocument document = OpenApiDocument.builder()
                 .info("Generated API", "1.0.0")
