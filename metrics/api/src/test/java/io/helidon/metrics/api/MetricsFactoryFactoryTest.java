@@ -22,9 +22,8 @@ import io.helidon.service.registry.Services;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -33,20 +32,11 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@Testing.Test(perMethod = true)
 class MetricsFactoryFactoryTest {
     private static final Config ROOT_CONFIG = Config.just(ConfigSources.create(Map.of(
             "metrics.app-name", "metrics-app",
             "server.features.observe.observers.metrics.app-name", "observe-app")));
-
-    @BeforeEach
-    void setUp() {
-        MetricsFactory.closeAll();
-    }
-
-    @AfterEach
-    void tearDown() {
-        MetricsFactory.closeAll();
-    }
 
     @Test
     void reusesCurrentMetricsFactory() {
@@ -115,7 +105,8 @@ class MetricsFactoryFactoryTest {
     }
 
     @Test
-    void servicesLookupKeepsSingletonAfterCloseAll() {
+    @SuppressWarnings("removal")
+    void closeAllDoesNotAffectServicesLookup() {
         MetricsFactory firstFactory = Services.get(MetricsFactory.class);
 
         MetricsFactory.closeAll();
