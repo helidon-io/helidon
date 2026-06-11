@@ -16,6 +16,7 @@
 
 package io.helidon.declarative.codegen.openapi;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -80,19 +81,30 @@ final class OpenApiAnnotationValidator {
         }
     }
 
-    void validateSecurityRequirements(String owner, List<Annotation> requirements) {
+    void validateSecurityRequirements(String owner, List<OpenApiSecurityRequirement> requirements) {
         Set<String> signatures = new HashSet<>();
-        for (Annotation requirement : requirements) {
-            List<String> schemes = stringValues(requirement, "value");
-            List<String> scopes = stringValues(requirement, "scopes");
-            validateUniqueValues("@OpenApi.SecurityRequirement on " + owner, "scheme", schemes);
-            validateUniqueValues("@OpenApi.SecurityRequirement on " + owner, "scope", scopes);
-            if (!schemes.isEmpty()) {
-                String signature = String.join("\n", schemes) + "\n\n" + String.join("\n", scopes);
+        for (OpenApiSecurityRequirement requirement : requirements) {
+            Set<String> schemes = new HashSet<>();
+            List<String> signature = new ArrayList<>();
+            List<String> description = new ArrayList<>();
+            for (Annotation schemeRequirement : requirement.schemes()) {
+                String scheme = stringValue(schemeRequirement, "value")
+                        .filter(not(String::isBlank))
+                        .orElseThrow(() -> new CodegenException(
+                                "@OpenApi.SecuritySchemeRequirement value is required"));
+                List<String> scopes = stringValues(schemeRequirement, "scopes");
+                validateUnique("@OpenApi.SecurityRequirement on " + owner, "scheme", scheme, schemes);
+                validateUniqueValues("@OpenApi.SecuritySchemeRequirement on " + owner + " for scheme " + scheme,
+                                     "scope",
+                                     scopes);
+                signature.add(scheme + "\n" + String.join("\n", scopes.stream().sorted().toList()));
+                description.add(scheme + (scopes.isEmpty() ? "" : " with scopes " + scopes));
+            }
+            if (!signature.isEmpty()) {
                 validateUnique("@OpenApi.SecurityRequirement on " + owner,
                                "security requirement",
-                               schemes + (scopes.isEmpty() ? "" : " with scopes " + scopes),
-                               signature,
+                               description.toString(),
+                               String.join("\n\n", signature.stream().sorted().toList()),
                                signatures);
             }
         }

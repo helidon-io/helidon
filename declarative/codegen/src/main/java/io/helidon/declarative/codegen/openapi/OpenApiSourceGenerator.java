@@ -82,6 +82,7 @@ import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_RESPONSE_ANNOTATION;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_SECURITY_REQUIREMENTS_ANNOTATION;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_SECURITY_REQUIREMENT_ANNOTATION;
+import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_SECURITY_SCHEME_REQUIREMENT_ANNOTATION;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_SERVERS_ANNOTATION;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_SERVER_ANNOTATION;
 import static io.helidon.declarative.codegen.openapi.OpenApiCodegenTypes.OPENAPI_SOURCE_BASE;
@@ -257,9 +258,7 @@ final class OpenApiSourceGenerator {
         List<OpenApiSecurityScheme> securitySchemes = securitySchemeCodegen.securitySchemes(annotations);
         validator.validateSecuritySchemes(owner, securitySchemes);
         securitySchemes.forEach(scheme -> securitySchemeCodegen.writeSecurityScheme(method, owner, scheme));
-        List<Annotation> securityRequirements = repeatableAnnotations(annotations,
-                                                                      OPENAPI_SECURITY_REQUIREMENTS_ANNOTATION,
-                                                                      OPENAPI_SECURITY_REQUIREMENT_ANNOTATION);
+        List<OpenApiSecurityRequirement> securityRequirements = securityRequirements(owner, annotations);
         validator.validateSecurityRequirements(owner, securityRequirements);
         securityRequirements.forEach(requirement -> writeSecurityRequirement(method,
                                                                             "document.securityRequirement",
@@ -274,9 +273,9 @@ final class OpenApiSourceGenerator {
         Map<TypeName, String> componentNames = schemas.componentNames(schemaBindings);
         Set<Annotation> endpointAnnotations = endpoint.annotations();
         boolean endpointClearsSecurity = hasEmptySecurityRequirements(endpointAnnotations);
-        List<Annotation> endpointSecurityRequirements = repeatableAnnotations(endpointAnnotations,
-                                                                              OPENAPI_SECURITY_REQUIREMENTS_ANNOTATION,
-                                                                              OPENAPI_SECURITY_REQUIREMENT_ANNOTATION);
+        List<OpenApiSecurityRequirement> endpointSecurityRequirements = securityRequirements(endpoint.type().typeName()
+                                                                                                     .fqName(),
+                                                                                             endpointAnnotations);
         if (!endpointClearsSecurity) {
             validator.validateSecurityRequirements(endpoint.type().typeName().fqName(), endpointSecurityRequirements);
         }
@@ -492,24 +491,26 @@ final class OpenApiSourceGenerator {
     private void writeSecurityRequirement(Method.Builder method,
                                           String call,
                                           boolean statement,
-                                          Annotation requirement) {
-        List<String> schemes = requirement.stringValues().orElseGet(List::of);
+                                          OpenApiSecurityRequirement requirement) {
+        List<Annotation> schemes = requirement.schemes();
         if (schemes.isEmpty()) {
             method.addContent(call)
                     .addContentLine(statement ? "(security -> { });" : "(security -> { })");
             return;
         }
-        List<String> scopes = requirement.stringValues("scopes").orElseGet(List::of);
         method.addContent(call)
                 .addContent("(security -> security")
                 .addContentLine()
                 .increaseContentPadding()
                 .increaseContentPadding();
-        schemes.forEach(scheme -> method.addContent(".scheme(")
-                .addContent(expressions.validatedStringExpression(scheme))
-                .addContent(", ")
-                .addContent(expressions.validatedStringListExpression(scopes))
-                .addContentLine(")"));
+        schemes.forEach(scheme -> {
+            List<String> scopes = scheme.stringValues("scopes").orElseGet(List::of);
+            method.addContent(".scheme(")
+                    .addContent(expressions.validatedStringExpression(scheme.stringValue().orElseThrow()))
+                    .addContent(", ")
+                    .addContent(expressions.validatedStringListExpression(scopes))
+                    .addContentLine(")");
+        });
         method.addContentLine(statement ? ");" : ")")
                 .decreaseContentPadding()
                 .decreaseContentPadding();
@@ -520,7 +521,7 @@ final class OpenApiSourceGenerator {
                               RestMethod restMethod,
                               String endpointTag,
                               Map<TypeName, String> componentNames,
-                              List<Annotation> endpointSecurityRequirements,
+                              List<OpenApiSecurityRequirement> endpointSecurityRequirements,
                               boolean endpointClearsSecurity) {
         Optional<Annotation> operation = operationAnnotation(restMethod);
         List<RestMethodParameter> pathParameters = pathParameters(restMethod);
@@ -594,7 +595,7 @@ final class OpenApiSourceGenerator {
 
     private void addOperationMetadata(Method.Builder method,
                                       RestMethod restMethod,
-                                      List<Annotation> endpointSecurityRequirements,
+                                      List<OpenApiSecurityRequirement> endpointSecurityRequirements,
                                       boolean endpointClearsSecurity) {
         Set<Annotation> annotations = restMethod.annotations();
         List<Annotation> servers = repeatableAnnotations(annotations,
@@ -613,9 +614,8 @@ final class OpenApiSourceGenerator {
             method.addContentLine(".security(java.util.List.of())");
             return;
         }
-        List<Annotation> securityRequirements = repeatableAnnotations(annotations,
-                                                                      OPENAPI_SECURITY_REQUIREMENTS_ANNOTATION,
-                                                                      OPENAPI_SECURITY_REQUIREMENT_ANNOTATION);
+        List<OpenApiSecurityRequirement> securityRequirements = securityRequirements(restMethodDescription(restMethod),
+                                                                                    annotations);
         if (!securityRequirements.isEmpty()) {
             validator.validateSecurityRequirements(restMethodDescription(restMethod), securityRequirements);
             securityRequirements.forEach(requirement -> writeSecurityRequirement(method,
@@ -1773,7 +1773,37 @@ final class OpenApiSourceGenerator {
                 .flatMap(Annotation::annotationValues)
                 .filter(List::isEmpty)
                 .isPresent()
-                && Annotations.findFirst(OPENAPI_SECURITY_REQUIREMENT_ANNOTATION, annotations).isEmpty();
+                && Annotations.findFirst(OPENAPI_SECURITY_REQUIREMENT_ANNOTATION, annotations).isEmpty()
+                && Annotations.findFirst(OPENAPI_SECURITY_SCHEME_REQUIREMENT_ANNOTATION, annotations).isEmpty();
+    }
+
+    private List<OpenApiSecurityRequirement> securityRequirements(String owner, Set<Annotation> annotations) {
+        Optional<Annotation> direct = Annotations.findFirst(OPENAPI_SECURITY_SCHEME_REQUIREMENT_ANNOTATION,
+                                                            annotations);
+        Optional<Annotation> container = Annotations.findFirst(OPENAPI_SECURITY_REQUIREMENTS_ANNOTATION, annotations);
+        Optional<Annotation> requirement = Annotations.findFirst(OPENAPI_SECURITY_REQUIREMENT_ANNOTATION, annotations);
+
+        if (direct.isPresent()) {
+            if (container.isPresent() || requirement.isPresent()) {
+                throw new CodegenException("@OpenApi.SecuritySchemeRequirement on " + owner
+                                                   + " cannot be combined with @OpenApi.SecurityRequirement or "
+                                                   + "@OpenApi.SecurityRequirements");
+            }
+            return List.of(new OpenApiSecurityRequirement(List.of(direct.get())));
+        }
+
+        List<OpenApiSecurityRequirement> result = new ArrayList<>();
+        if (container.isPresent()) {
+            container.get()
+                    .annotationValues()
+                    .orElseGet(List::of)
+                    .forEach(it -> result.add(new OpenApiSecurityRequirement(it.annotationValues()
+                            .orElseGet(List::of))));
+        } else {
+            requirement.ifPresent(it -> result.add(new OpenApiSecurityRequirement(it.annotationValues()
+                    .orElseGet(List::of))));
+        }
+        return result;
     }
 
     private List<Annotation> repeatableAnnotations(Set<Annotation> annotations,

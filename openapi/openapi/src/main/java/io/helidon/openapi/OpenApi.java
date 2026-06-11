@@ -1473,13 +1473,47 @@ public final class OpenApi {
     }
 
     /**
+     * OpenAPI Security Requirement Object scheme entry metadata.
+     * <p>
+     * Use directly on {@link Document @OpenApi.Document} metadata types, endpoint types, or methods to declare a single
+     * security requirement object with one scheme. Use inside {@link SecurityRequirement @OpenApi.SecurityRequirement}
+     * to declare multiple schemes required together by one OpenAPI security requirement object.
+     * <p>
+     * On {@link Document @OpenApi.Document} metadata types, direct type-level usage emits a top-level document security
+     * requirement. On endpoint types, direct type-level usage applies to generated operations for the endpoint.
+     * Method-level usage replaces inherited endpoint requirements for that operation. Direct usage cannot be combined
+     * with {@link SecurityRequirement @OpenApi.SecurityRequirement} or
+     * {@link SecurityRequirements @OpenApi.SecurityRequirements} on the same type or method.
+     */
+    @Target({ElementType.TYPE, ElementType.METHOD})
+    @Retention(RetentionPolicy.CLASS)
+    @Documented
+    public @interface SecuritySchemeRequirement {
+        /**
+         * Required scheme name.
+         *
+         * @return scheme name
+         */
+        String value();
+
+        /**
+         * OAuth/OpenID Connect scopes for this scheme.
+         *
+         * @return scopes
+         */
+        String[] scopes() default {};
+    }
+
+    /**
      * OpenAPI Security Requirement Object metadata.
      * <p>
      * On {@link Document @OpenApi.Document} metadata types, type-level requirements emit top-level document security
      * requirements. On endpoint types, type-level requirements apply to generated operations for the endpoint.
-     * Method-level requirements replace inherited endpoint requirements for that operation. A requirement with one or
-     * more {@link #value()} entries adds one OpenAPI security requirement object containing those scheme names and
-     * optional {@link #scopes()}.
+     * Method-level requirements replace inherited endpoint requirements for that operation. Each annotation emits one
+     * OpenAPI security requirement object. Multiple
+     * {@link SecuritySchemeRequirement @OpenApi.SecuritySchemeRequirement} entries inside one annotation require all
+     * listed schemes together. Repeated {@code @OpenApi.SecurityRequirement} annotations declare alternative
+     * requirement objects.
      * <p>
      * An empty individual requirement emits an empty OpenAPI security requirement object. To clear inherited endpoint
      * security for an operation, use an empty {@link SecurityRequirements} container instead.
@@ -1490,29 +1524,22 @@ public final class OpenApi {
     @Documented
     public @interface SecurityRequirement {
         /**
-         * Required scheme names.
+         * Required schemes. All schemes are required together.
          * <p>
-         * Leaving this empty emits an empty OpenAPI security requirement object. Use an empty
+         * Using an empty value emits an empty OpenAPI security requirement object. Use an empty
          * {@link SecurityRequirements} container to declare an operation with no security requirements.
          *
-         * @return scheme names
+         * @return scheme requirements
          */
-        String[] value() default {};
-
-        /**
-         * OAuth/OpenID Connect scopes for all named schemes.
-         *
-         * @return scopes
-         */
-        String[] scopes() default {};
+        SecuritySchemeRequirement[] value();
     }
 
     /**
      * Container for repeated {@link SecurityRequirement}.
      * <p>
-     * An empty container on a method clears inherited endpoint security and emits {@code security: []} for the generated
-     * operation. An empty container on an endpoint clears endpoint-level security for operations which do not declare
-     * method-level security requirements.
+     * An empty container on a method clears inherited endpoint security and emits {@code security: []} for the
+     * generated operation. An empty container on an endpoint clears endpoint-level security for operations which do not
+     * declare method-level security requirements.
      */
     @Target({ElementType.TYPE, ElementType.METHOD})
     @Retention(RetentionPolicy.CLASS)
