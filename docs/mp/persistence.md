@@ -667,7 +667,7 @@ Your `META-INF/persistence.xml` file must begin (and end) with the following XML
 ```
 
 - Helidon MP’s Jakarta Persistence integration supports [Jakarta Persistence version 3.1][jakarta-persiste].
-- \`\<persistence-unit\> elements are listed here.
+- `<persistence-unit>` elements are listed here.
 
 #### Persistence Unit
 

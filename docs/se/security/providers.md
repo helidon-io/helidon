@@ -789,7 +789,7 @@ security:
 
 #### How does it work?
 
-We expect to receive a token (with sufficient scopes) from the inbound request, such as when using the Google login button on a page. The page has access to the token in javascript and can send it to backend with every request in a header field (`Authorization` with \`bearer \` prefix is assumed by default).
+We expect to receive a token (with sufficient scopes) from the inbound request, such as when using the Google login button on a page. The page has access to the token in javascript and can send it to backend with every request in a header field (`Authorization` with `bearer` prefix is assumed by default).
 
 Once we receive the token in Helidon, we parse it and:
 

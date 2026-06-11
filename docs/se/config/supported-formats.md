@@ -107,7 +107,7 @@ Automatic selection:
 Config config = Config.create(classpath("application.conf")); 
 ```
 
-- The config system automatically maps the file type `.conf` to the media type \`application/hocon which the Helidon HOCON parser matches.
+- The config system automatically maps the file type `.conf` to the media type `application/hocon` which the Helidon HOCON parser matches.
 
 The same module and parser supports file type `.json` and the media type `application/json`.
 

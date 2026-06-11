@@ -24,7 +24,7 @@ You can add CORS support to your application in either or both of the following 
 
 - Use the Helidon CORS WebServer Feature to add CORS support programmatically
 
-  Your code creates an instance of `io.helidon.webserver.cors.CorsFeature` with custom \`CorsPathConfig\`s, and adds it to the server builder.
+  Your code creates an instance of `io.helidon.webserver.cors.CorsFeature` with custom `CorsPathConfig`(s), and adds it to the server builder.
 
 The following sections briefly illustrate each approach.
 

@@ -165,7 +165,7 @@ sources:
 
 - If configured to `true`, config sources discovered through service loader will be added
 - If configured to `true`, converters discovered through service loader will be added
-- If configured to `true`, default config sources (system properties, environment variables, and \`META-INF/microprofile-config.properties) will be added
+- If configured to `true`, default config sources (system properties, environment variables, and `META-INF/microprofile-config.properties`) will be added
 - Loads the environment variables config source.
 - Loads the system properties config source.
 - Loads a properties file

@@ -80,13 +80,12 @@ Later sections of this document describe how to do this.
 
 Helidon supports meters inspired by [Micrometer](https://micrometer.io) and summarized in the following table:
 
-|  |  |  |
-|----|----|----|
-| Meter Type | Description | Micrometer reference |
-| [`Counter`][counter] | Monotonically-increasing `long` value. | [Counters][counters] |
-| [`DistributionSummary`][distributionsumm] | Summary of samples each with a `long` value. Reports aggregate information over all samples (count, total, mean, max) as well as the distribution of sample values using percentiles and bucket counts. | [Distribution summaries][distribution-sum] |
-| [`Timer`][timer] | Accumulation of short-duration (typically under a minute) intervals. Typically updated using a Java [`Duration`][duration] or by recording the time taken by a method invocation or lambda. Reports the count, total time, max, and mean; provides a distribution summary of the samples. | [Timers][timers] |
-| [`Gauge<? extends Number>`][gauge-extends-nu] | View of a value that is assignment-compatible with a subtype of Java [`Number`][number]. The underlying value is updated by code elsewhere in the system, not by invoking methods on the gauge itself. | [Gauges][gauges] |
+| Meter Type                                    | Description                                                                                                                                                                                                                                                                               | Micrometer reference                       |
+|-----------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------|
+| [`Counter`][counter]                          | Monotonically-increasing `long` value.                                                                                                                                                                                                                                                    | [Counters][counters]                       |
+| [`DistributionSummary`][distributionsumm]     | Summary of samples each with a `long` value. Reports aggregate information over all samples (count, total, mean, max) as well as the distribution of sample values using percentiles and bucket counts.                                                                                   | [Distribution summaries][distribution-sum] |
+| [`Timer`][timer]                              | Accumulation of short-duration (typically under a minute) intervals. Typically updated using a Java [`Duration`][duration] or by recording the time taken by a method invocation or lambda. Reports the count, total time, max, and mean; provides a distribution summary of the samples. | [Timers][timers]                           |
+| [`Gauge<? extends Number>`][gauge-extends-nu] | View of a value that is assignment-compatible with a subtype of Java [`Number`][number]. The underlying value is updated by code elsewhere in the system, not by invoking methods on the gauge itself.                                                                                    | [Gauges][gauges]                           |
 
 Types of Meters
 

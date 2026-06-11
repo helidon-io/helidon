@@ -580,8 +580,8 @@ Supported method parameters (no annotation required):
 - [`io.helidon.common.buffers.BufferData`][io-helidon-commo-3] (`@WebSocket.OnMessage`) - the message delivered (binary)
 - `java.nio.ByteBuffer` (`@WebSocket.OnMessage`) - the message delivered (binary)
 - `java.io.InputStream` (`@WebSocket.OnMessage`) - the message delivered (binary)
-- `io.helidon.http.HttpPrologue` (\`@WebSocket.OnHttpUpgrade) - the HTTP prologue (method, path, protocol version)
-- `io.helidon.http.Headers` (\`@WebSocket.OnHttpUpgrade) - the request headers
+- `io.helidon.http.HttpPrologue` (`@WebSocket.OnHttpUpgrade`) - the HTTP prologue (method, path, protocol version)
+- `io.helidon.http.Headers` (`@WebSocket.OnHttpUpgrade`) - the request headers
 - `int` (`@WebSocket.OnClose`) - the close code
 - `java.lang.String` (`@WebSocket.OnClose`) - the close reason
 - `java.lang.Throwable` (`@WebSocket.OnError`) - the throwable thrown

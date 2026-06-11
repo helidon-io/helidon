@@ -51,11 +51,11 @@ Later sections of this document describe how to do each of these.
 Helidon supports meters described by the [MicroProfile Metrics][microprofile-met-2] spec and summarized in the following table:
 
 |  |  |  |
-|----|----|----|
 | Metric Type | Description | Related MicroProfile annotation |
+|----|----|----|
 | [`Counter`][counter] | Monotonically-increasing `long` value. | [`@Counted`][counted] |
 | [`Histogram`][histogram] | Summary of samples each with a `long` value. Reports aggregate information over all samples (count, total, mean, max) as well as the distribution of sample values using percentiles and bucket counts. | (none) |
-| [`Timer`][timer] | Accumulation of short-duration (typically under a minute) intervals. Typically updated using a Java [`Duration`][duration] or by recording the time taken by a method invocation or lambda. Reports the count, total time, max, and mean; provides a histogram of the samples. | [`@Timed`][timed] |
+| [`Timer`][timer] | Accumulation of short-duration (typically under a minute) intervals. Typically, updated using a Java [`Duration`][duration] or by recording the time taken by a method invocation or lambda. Reports the count, total time, max, and mean; provides a histogram of the samples. | [`@Timed`][timed] |
 | [`Gauge<? extends Number>`][gauge-extends-nu] | View of a value that is assignment-compatible with a subtype of Java [`Number`][number]. The underlying value is updated by code elsewhere in the system, not by invoking methods on the gauge itself. | [`@Gauge`][gauge] |
 
 Types of Metrics
@@ -789,7 +789,7 @@ JSON response:
 
 #### Additional Method-level Metrics
 
-You can also use the @Timed\` annotation with a method. For the following example. you can just annotate the same method with `@Timed`. Timers significant information about the measured methods, but at a cost of some overhead and more complicated output.
+You can also use the `@Timed` annotation with a method. For the following example. you can just annotate the same method with `@Timed`. Timers significant information about the measured methods, but at a cost of some overhead and more complicated output.
 
 Note that when using multiple annotations on a method, you **must** give the metrics different names as shown below, although they do not have to be absolute.
 

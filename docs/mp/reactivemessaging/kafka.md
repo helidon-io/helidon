@@ -79,12 +79,11 @@ public PublisherBuilder<String> produceToKafka() {
 
 ## NACK Strategy
 
-|  |  |
-|----|----|
-| Strategy | Description |
+| Strategy     | Description                                                                                                  |
+|--------------|--------------------------------------------------------------------------------------------------------------|
 | Kill channel | Nacked message sends error signal and causes channel failure so Messaging Health check can report it as DOWN |
-| DLQ | Nacked messages are sent to specified dead-letter-queue |
-| Log only | Nacked message is logged and channel continues normally |
+| DLQ          | Nacked messages are sent to specified dead-letter-queue                                                      |
+| Log only     | Nacked message is logged and channel continues normally                                                      |
 
 ### Kill channel
 

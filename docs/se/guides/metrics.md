@@ -452,7 +452,7 @@ public class GreetingCards implements HttpService {
 ```
 
 1.  Declare a `Counter` member field.
-2.  Create and register the `Counter` meter in the global meter registry\`. This `Counter` will exist for the lifetime of the application.
+2.  Create and register the `Counter` meter in the global meter registry. This `Counter` will exist for the lifetime of the application.
 3.  Increment the count.
 
 Update the `routing` method in the main class as follows:

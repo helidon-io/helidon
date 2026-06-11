@@ -195,12 +195,12 @@ WebServer server = WebServer.builder()
 
 Health support in Helidon is part of the observability feature. `HealthObserver` is a Helidon-provided observability implementation that contains a collection of registered `HealthCheck` instances and, when queried, invokes the registered health checks and returns a response with a status code representing the overall status of the application.
 
-|       |                                                                              |
-|-------|------------------------------------------------------------------------------|
-| `200` | The application is healthy (with health check details in the response).      |
-| `204` | The application is healthy (with *no* health check details in the response). |
-| `503` | The application is not healthy.                                              |
-| `500` | An error occurred while reporting the health.                                |
+| Status | Description                                                                  |
+|--------|------------------------------------------------------------------------------|
+| `200`  | The application is healthy (with health check details in the response).      |
+| `204`  | The application is healthy (with *no* health check details in the response). |
+| `503`  | The application is not healthy.                                              |
+| `500`  | An error occurred while reporting the health.                                |
 
 Health status codes
 

@@ -812,7 +812,7 @@ public class ExampleClient {
 - Creates a new `WebClientConfig.Builder`.
 - Sets the connection timeout directly on the `WebClientConfig.Builder`.
 - Sets the base URI on the `WebClienConfig.Builder`.
-- Creates a new \`ApiClient.Builder'.
+- Creates a new `ApiClient.Builder`.
 - Sets the `WebClientConfig.Builder` which the `ApiClient.Builder` should use (instead of the one it prepares internally).
 - Builds the `ApiClient` which uses the newly-assigned `WebClientConfig.Builder` in the process.
 

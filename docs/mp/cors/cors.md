@@ -52,13 +52,13 @@ For each resource class in your application:
 
 The following annotations are available:
 
-- [\`@Cors.Defaults][cors-defaults] - has no values, applies all defaults (do not combine with annotations below)
-- [\`@Cors.AllowOrigins][cors-alloworigin] - value is the allowed origins, defaults to all origins
-- [\`@Cors.AllowHeaders][cors-allowheader] - value is the allowed HTTP header names, defaults to all headers
-- [\`@Cors.AllowMethods][cors-allowmethod] - value is the allowed HTTP method names, defaults to all methods
-- [\`@Cors.ExposeHeaders][cors-exposeheade] - value is the exposed HTTP header names, defaults to none
-- [\`@Cors.AllowCredentials][cors-allowcreden] - value is a boolean, defaults to false
-- [\`@Cors.MaxAgeSeconds][cors-maxagesecon] - value is the max age as a number of seconds
+- [`@Cors.Defaults`][cors-defaults] - has no values, applies all defaults (do not combine with annotations below)
+- [`@Cors.AllowOrigins`][cors-alloworigin] - value is the allowed origins, defaults to all origins
+- [`@Cors.AllowHeaders`][cors-allowheader] - value is the allowed HTTP header names, defaults to all headers
+- [`@Cors.AllowMethods`][cors-allowmethod] - value is the allowed HTTP method names, defaults to all methods
+- [`@Cors.ExposeHeaders`][cors-exposeheade] - value is the exposed HTTP header names, defaults to none
+- [`@Cors.AllowCredentials`][cors-allowcreden] - value is a boolean, defaults to false
+- [`@Cors.MaxAgeSeconds`][cors-maxagesecon] - value is the max age as a number of seconds
 
 ## Configuration
 

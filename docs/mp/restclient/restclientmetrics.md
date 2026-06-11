@@ -61,9 +61,8 @@ When a REST client is made known to Helidon the logging reports the actual regis
 
 Use the following annotations from `org.eclipse.microprofile.metrics.annotation` listed in the following table to trigger REST client metrics.
 
-|            |                                                 |
-|------------|-------------------------------------------------|
 | Annotation | Description                                     |
+|------------|-------------------------------------------------|
 | `@Counted` | Counts the invocations of a REST client method. |
 | `@Timed`   | Times the invocations of a REST client method.  |
 
@@ -81,7 +80,7 @@ The `enabled` configuration setting allows developers to build REST client metri
 
 ## Examples
 
-This example is similar to the [Helidon REST Client doc example](restclient.md#_examples) which starts with the [Helidon MP QuickStart example](../guides/quickstart.md).
+This example is similar to the [Helidon REST Client doc example](restclient.md#examples) which starts with the [Helidon MP QuickStart example](../guides/quickstart.md).
 
 This sample app adds a new resource which mimics the functionality of the `GreetResource` but delegates each incoming request to its counterpart on the `GreetResource` using a REST client interface for that `GreetResource`. In short, the example application delegates to itself. Of course no production application would operate this way, but this contrived situation helps illustrate how to use REST client metrics simply with a single runnable project.
 
@@ -130,70 +129,70 @@ To create this REST client metrics example follow these steps.
 
     - Times all outbound method invocations using separate timers for each method.
     - Counts the number of times a request is sent to get the default greeting message.
-3.  Add a new resource class, similar to the `GreetService` resource class, but which delegates all incoming requests using the REST client.
+   3.  Add a new resource class, similar to the `GreetService` resource class, but which delegates all incoming requests using the REST client.
 
-    <!--@mdc ::code-collapse -->
-    ``` java
-    @Path("/delegate")
-    public class DelegatingResource {
+       <!--@mdc ::code-collapse -->
+       ``` java
+       @Path("/delegate")
+       public class DelegatingResource {
 
-    private static LazyValue<GreetRestClient> greetRestClient = LazyValue.create(DelegatingResource::prepareClient);
+           private static LazyValue<GreetRestClient> greetRestClient = LazyValue.create(DelegatingResource::prepareClient);
 
-    /**
-     * Return a worldly greeting message.
-     *
-     * @return {@link GreetingMessage}
-     */
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public GreetingMessage getDefaultMessage() {
-        return greetRestClient.get().getDefaultMessage();
-    }
+           /**
+            * Return a worldly greeting message.
+            *
+            * @return {@link GreetingMessage}
+            */
+           @GET
+           @Produces(MediaType.APPLICATION_JSON)
+           public GreetingMessage getDefaultMessage() {
+               return greetRestClient.get().getDefaultMessage();
+           }
 
-    /**
-     * Return a greeting message using the name that was provided.
-     *
-     * @param name the name to greet
-     * @return {@link GreetingMessage}
-     */
-    @Path("/{name}")
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public GreetingMessage getMessage(@PathParam("name") String name) {
-        return greetRestClient.get().getMessage(name);
-    }
+           /**
+            * Return a greeting message using the name that was provided.
+            *
+            * @param name the name to greet
+            * @return {@link GreetingMessage}
+            */
+           @Path("/{name}")
+           @GET
+           @Produces(MediaType.APPLICATION_JSON)
+           public GreetingMessage getMessage(@PathParam("name") String name) {
+               return greetRestClient.get().getMessage(name);
+           }
 
-    /**
-     * Set the greeting to use in future messages.
-     *
-     * @param message JSON containing the new greeting
-     * @return {@link jakarta.ws.rs.core.Response}
-     */
-    @Path("/greeting")
-    @PUT
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response updateGreeting(GreetingMessage message) {
-        return greetRestClient.get().updateGreeting(message);
-    }
+           /**
+            * Set the greeting to use in future messages.
+            *
+            * @param message JSON containing the new greeting
+            * @return {@link jakarta.ws.rs.core.Response}
+            */
+           @Path("/greeting")
+           @PUT
+           @Consumes(MediaType.APPLICATION_JSON)
+           @Produces(MediaType.APPLICATION_JSON)
+           public Response updateGreeting(GreetingMessage message) {
+               return greetRestClient.get().updateGreeting(message);
+           }
 
-    private static GreetRestClient prepareClient() {
-        Config config = ConfigProvider.getConfig();
-        String serverHost = config.getOptionalValue("server.host", String.class).orElse("localhost");
-        String serverPort = config.getOptionalValue("server.port", String.class).orElse("8080");
-        return RestClientBuilder.newBuilder()
-                .baseUri(URI.create("http://" + serverHost + ":" + serverPort))
-                .build(GreetRestClient.class);
-    }
-    }
-    ```
-    <!--@mdc :: -->
+           private static GreetRestClient prepareClient() {
+               Config config = ConfigProvider.getConfig();
+               String serverHost = config.getOptionalValue("server.host", String.class).orElse("localhost");
+               String serverPort = config.getOptionalValue("server.port", String.class).orElse("8080");
+               return RestClientBuilder.newBuilder()
+                       .baseUri(URI.create("http://" + serverHost + ":" + serverPort))
+                       .build(GreetRestClient.class);
+           }
+       }
+       ```
+       <!--@mdc :: -->
 
-    - Holds the prepared REST client for use by the delegating methods.
-    - Prepares the REST client. The example shows only one of many ways of doing this step.
-    - Each delegating method invokes the corresponding REST client method and returns the result from it.
+       - Holds the prepared REST client for use by the delegating methods.
+       - Prepares the REST client. The example shows only one of many ways of doing this step.
+       - Each delegating method invokes the corresponding REST client method and returns the result from it.
 
-      By default, resource classes such as `DelegatingResource` are instantiated for each incoming request, but generally a Helidon server making outbound requests reuses the client data structures and connections. To create and reuse only a single REST client instance this example resource uses the Helidon `LazyValue` utility class so even as the system creates multiple instances of `DelegatingResource` they all reuse the same REST client.
+         By default, resource classes such as `DelegatingResource` are instantiated for each incoming request, but generally a Helidon server making outbound requests reuses the client data structures and connections. To create and reuse only a single REST client instance this example resource uses the Helidon `LazyValue` utility class so even as the system creates multiple instances of `DelegatingResource` they all reuse the same REST client.
 
 4.  Build and run the application.
 

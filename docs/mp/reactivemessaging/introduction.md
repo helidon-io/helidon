@@ -154,16 +154,15 @@ public Response sendMessage(final String payload) {
 
 Emitters, as a source of messages for reactive channels, need to address possible backpressure from the downstream side of the channel. In case there is not enough demand from the downstream, you can configure a buffer size strategy using the `@OnOverflow` annotation. Additional overflow strategies are described below.
 
-|  |  |
-|----|----|
-| Strategy | Description |
-| BUFFER | Buffer unconsumed values until configured bufferSize is reached, when reached calling `Emitter.emit` throws `IllegalStateException`. Buffer size can be configured with `@OnOverflow` or with config key `mp.messaging.emitter.default-buffer-size`. Default value is `128`. |
-| UNBOUNDED_BUFFER | Buffer unconsumed values until application runs out of memory. |
-| THROW_EXCEPTION | Calling `Emitter.emit` throws `IllegalStateException` if there is not enough items requested by downstream. |
-| DROP | If there is not enough items requested by downstream, emitted message is silently dropped. |
-| FAIL | If there is not enough items requested by downstream, emitting message causes error signal being send to downstream. Whole channel is terminated. No other messages can be sent. |
-| LATEST | Keeps only the latest item. Any previous unconsumed message is silently dropped. |
-| NONE | Messages are sent to downstream even if there is no demand. Backpressure is effectively ignored. |
+| Strategy         | Description                                                                                                                                                                                                                                                                  |
+|------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| BUFFER           | Buffer unconsumed values until configured bufferSize is reached, when reached calling `Emitter.emit` throws `IllegalStateException`. Buffer size can be configured with `@OnOverflow` or with config key `mp.messaging.emitter.default-buffer-size`. Default value is `128`. |
+| UNBOUNDED_BUFFER | Buffer unconsumed values until application runs out of memory.                                                                                                                                                                                                               |
+| THROW_EXCEPTION  | Calling `Emitter.emit` throws `IllegalStateException` if there is not enough items requested by downstream.                                                                                                                                                                  |
+| DROP             | If there is not enough items requested by downstream, emitted message is silently dropped.                                                                                                                                                                                   |
+| FAIL             | If there is not enough items requested by downstream, emitting message causes error signal being send to downstream. Whole channel is terminated. No other messages can be sent.                                                                                             |
+| LATEST           | Keeps only the latest item. Any previous unconsumed message is silently dropped.                                                                                                                                                                                             |
+| NONE             | Messages are sent to downstream even if there is no demand. Backpressure is effectively ignored.                                                                                                                                                                             |
 
 Overflow strategies
 
@@ -275,12 +274,12 @@ public void consumeImplicitlyUnwrappedMessage(String value) {
 
 Messages carry a callback for reception acknowledgement (ack) and negative acknowledgement (nack). An acknowledgement in messaging methods is possible manually by `org.eclipse.microprofile.reactive.messaging.Message#ack` or automatically according explicit or implicit acknowledgement strategy by the messaging core. Explicit strategy configuration is possible with `@Acknowledgment` annotation which has one required attribute `value` that expects the strategy type from enum `org.eclipse.microprofile.reactive.messaging.Acknowledgment.Strategy`. More information about supported signatures and implicit automatic acknowledgement can be found in specification [Message acknowledgement][message-acknowle].
 
-|  |  |
-|----|----|
-| `@Acknowledgment(Acknowledgment.Strategy.NONE)` | No acknowledgment |
-| `@Acknowledgment(Acknowledgment.Strategy.MANUAL)` | No automatic acknowledgment |
-| `@Acknowledgment(Acknowledgment.Strategy.PRE_PROCESSING)` | Ack automatically before method invocation or processing |
-| `@Acknowledgment(Acknowledgment.Strategy.POST_PROCESSING)` | Ack automatically after method invocation or processing |
+| Acknowledgment                                             | Description                                              |
+|------------------------------------------------------------|----------------------------------------------------------|
+| `@Acknowledgment(Acknowledgment.Strategy.NONE)`            | No acknowledgment                                        |
+| `@Acknowledgment(Acknowledgment.Strategy.MANUAL)`          | No automatic acknowledgment                              |
+| `@Acknowledgment(Acknowledgment.Strategy.PRE_PROCESSING)`  | Ack automatically before method invocation or processing |
+| `@Acknowledgment(Acknowledgment.Strategy.POST_PROCESSING)` | Ack automatically after method invocation or processing  |
 
 Example of manual acknowledgment:
 

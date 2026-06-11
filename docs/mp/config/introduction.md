@@ -99,15 +99,14 @@ Helidon configuration sources can use different formats for the configuration da
 
 The following configuration sources can be used to retrieve the configuration:
 
-|  |  |
-|----|----|
-| Source | Description |
-| File | Creates the source from a properties file on the file system with `MpConfigSources.create(Path)`. |
-| URL | Creates the source from properties from a URL with `MpConfigSources.create(URL)`. |
-| `Map<String, String>` | Creates the source from a Map with `MpConfigSources.create(Map)`. |
-| `Properties` | Creates the source directly from Properties with `MpConfigSources.create(Properties)`. |
-| File on classpath | Creates the source from a properties file on classpath with `MpConfigSources.classpath(String)`. |
-| YAML | Creates the source from YAML using `YamlMpConfigSource.create(Path)` or `YamlMpConfigSource.create(URL)`. |
+| Source                | Description                                                                                               |
+|-----------------------|-----------------------------------------------------------------------------------------------------------|
+| File                  | Creates the source from a properties file on the file system with `MpConfigSources.create(Path)`.         |
+| URL                   | Creates the source from properties from a URL with `MpConfigSources.create(URL)`.                         |
+| `Map<String, String>` | Creates the source from a Map with `MpConfigSources.create(Map)`.                                         |
+| `Properties`          | Creates the source directly from Properties with `MpConfigSources.create(Properties)`.                    |
+| File on classpath     | Creates the source from a properties file on classpath with `MpConfigSources.classpath(String)`.          |
+| YAML                  | Creates the source from YAML using `YamlMpConfigSource.create(Path)` or `YamlMpConfigSource.create(URL)`. |
 
 See [manual setup of config][manual-setup-of] section for more information.
 

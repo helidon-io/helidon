@@ -762,7 +762,7 @@ See [Configuration options](../../config/io.helidon.telemetry.otelconfig.Instrum
 <a id="logger-config"></a>
 ### Controlling OpenTelemetry Logger Behavior
 
-The settings under `signal.logging` prepare an OpenTelemetry \`LoggerProvider.
+The settings under `signal.logging` prepare an OpenTelemetry `LoggerProvider`.
 
 The sections below describe Helidon config settings that correspond directly to OpenTelemetry builders for the relevant OpenTelemetry type. Refer to the relevant OpenTelemetry documentation or Javadoc to understand the effect each setting has.
 
@@ -810,7 +810,7 @@ OpenTelemetry applies the following defaults:
 | `max-attribute-value-length` | `Integer.MAX_VALUE` |
 | `max-number-of-attributes` | 128 |
 | `exporters` | [`otlp` with `grpc` protocol][opentelemetry-do] - see that web page’s "Properties: exporters, `otel.logger.exporter` property" section. |
-| `log-limits` | \`max- |
+| `log-limits` | `max-` |
 | `processors` | [`otlp`][otlp] - see that web page’s "Properties: logs" section. |
 
 Default log limit settings applied by OpenTelemetry

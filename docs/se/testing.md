@@ -47,8 +47,8 @@ Parameters for the `@SetUpRoute` annotated methods.
 
 In addition:
 
-- a static method annotated with `@SetUpServer` can be defined for tests, which has a single parameter of [`WebServerConfig.Builder`][webserverconfig].
-- a static method annotated with `@SetUpFeatures` can be defined for tests, which returns `List<? extends ServerFeature>` to configure additional features, or update discovered features, feature discovery can be disabled using the annotation `` value()` ``
+- Static methods annotated with `@SetUpServer` can be defined for tests, which has a single parameter of type [`WebServerConfig.Builder`][webserverconfig].
+- Static methods annotated with `@SetUpFeatures` can be defined for tests, which returns `List<? extends ServerFeature>` to configure additional features, or update discovered features, feature discovery can be disabled using the annotation value
 
 The following table lists the injectable types (through constructor or method injection).
 
@@ -205,7 +205,7 @@ Required dependency:
 </dependency>
 ```
 
-To add the extension to your test class, annotate the class with `@io.helidon.testing.junit5.Testing.Test`. In case you use one of the existing testing annotation for server or routing (`@ServerTest`, \`@RoutingTest), this is implied.
+To add the extension to your test class, annotate the class with `@io.helidon.testing.junit5.Testing.Test`. In case you use one of the existing testing annotation for server or routing (`@ServerTest`, `@RoutingTest`), this is implied.
 
 You can also use `@Service.Named` qualifier on such parameters to only inject the named instance(s).
 

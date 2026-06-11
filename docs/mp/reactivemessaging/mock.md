@@ -54,11 +54,10 @@ mockConnector
 
 ## Configuration
 
-|  |  |  |
-|----|----|----|
-| Key | Default value | Description |
-| mock-data |  | Initial data emitted to the channel immediately after subscription |
-| mock-data-type | java.lang.String | Type of the emitted initial data to be emitted |
+| Key            | Default value    | Description                                                        |
+|----------------|------------------|--------------------------------------------------------------------|
+| mock-data      |                  | Initial data emitted to the channel immediately after subscription |
+| mock-data-type | java.lang.String | Type of the emitted initial data to be emitted                     |
 
 ## Helidon Test with Mock Connector
 

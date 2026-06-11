@@ -361,7 +361,7 @@ Do not forget to replace the `client secret` by its value (generated during Crea
 
 #### Resource Owner Password Credentials Grant (Direct Access Grants)
 
-The Direct Access Grants flow is used by REST clients that want to request tokens on behalf of a user. To use Postman to make this request on behalf of `myuser`, select the GET method and enter this URL: `http://localhost:7987/greet/`. Under `Authorization` tab, select authorization type\`OAuth 2.0\`. Under it, complete the sentence `Add authorization data to` with `Request Headers`, and complete the required fields.
+The Direct Access Grants flow is used by REST clients that want to request tokens on behalf of a user. To use Postman to make this request on behalf of `myuser`, select the GET method and enter this URL: `http://localhost:7987/greet/`. Under `Authorization` tab, select authorization type `OAuth 2.0`. Under it, complete the sentence `Add authorization data to` with `Request Headers`, and complete the required fields.
 
 Note: Make sure your Helidon application is running. If it is not, please start it.
 
