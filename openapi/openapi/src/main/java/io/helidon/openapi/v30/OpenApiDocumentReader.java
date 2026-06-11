@@ -281,6 +281,7 @@ public final class OpenApiDocumentReader {
                                              value -> builder.content(mediaType, mediaType(value)))));
         object(source, "links", links -> links.keysAsStrings()
                 .forEach(name -> object(links, name, link -> builder.link(name, link(link)))));
+        extensions(source, builder::extension);
         return builder.build();
     }
 
