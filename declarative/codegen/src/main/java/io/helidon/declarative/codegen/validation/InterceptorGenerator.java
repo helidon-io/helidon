@@ -167,14 +167,19 @@ class InterceptorGenerator {
         if (type.kind() != ElementKind.INTERFACE) {
             return false;
         }
+        if (!type.hasAnnotation(ServiceCodegenTypes.SERVICE_ANNOTATION_CONTRACT)) {
+            return false;
+        }
 
         List<TypedElementInfo> elementsWithValidation = type.elementInfo()
                 .stream()
                 .filter(it -> ValidationHelper.needsWork(constraintAnnotations, it))
                 .toList();
 
-        return !elementsWithValidation.isEmpty()
-                && elementsWithValidation.stream()
+        if (elementsWithValidation.isEmpty()) {
+            return false;
+        }
+        return elementsWithValidation.stream()
                 .allMatch(it -> ElementInfoPredicates.isMethod(it)
                         && !ElementInfoPredicates.isPrivate(it)
                         && !ElementInfoPredicates.isStatic(it));

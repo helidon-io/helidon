@@ -293,6 +293,14 @@ class DescribedService {
         return serviceType;
     }
 
+    Set<ResolvedType> directProviderContracts() {
+        return directProviderContracts;
+    }
+
+    Set<ResolvedType> providerFactoryContracts() {
+        return providerFactoryContracts;
+    }
+
     Set<ResolvedType> providerContracts() {
         Set<ResolvedType> result = new HashSet<>(directProviderContracts);
         result.addAll(providerFactoryContracts);

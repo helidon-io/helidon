@@ -448,7 +448,7 @@ class ValidationCodegenTest {
     }
 
     @Test
-    void testPlainInterfaceMethodConstraintDoesNotRequireValidated() {
+    void testNonServiceInterfaceMethodConstraintRequiresValidated() {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .addClasspath(CLASSPATH)
@@ -466,13 +466,9 @@ class ValidationCodegenTest {
                 .compile();
 
         String diagnostics = String.join("\n", result.diagnostics());
-        assertThat(diagnostics, result.success(), is(true));
-        assertThat(Files.exists(result.sourceOutput()
-                                        .resolve("com/example/DefaultApi__ValidationInterceptor_0.java")),
-                   is(false));
-        assertThat(Files.exists(result.sourceOutput()
-                                        .resolve("com/example/DefaultApi__Validated.java")),
-                   is(false));
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString(ValidationTypes.VALIDATION_VALIDATED.fqName()
+                                                      + " annotation is required on non-service type"));
     }
 
     @Test
@@ -549,6 +545,9 @@ class ValidationCodegenTest {
                 .addSource("DefaultApi.java", """
                         package com.example;
 
+                        import io.helidon.service.registry.Service;
+
+                        @Service.Contract
                         public interface DefaultApi {
                             String validate(@CustomConstraint String name);
                         }
@@ -691,8 +690,10 @@ class ValidationCodegenTest {
                 .addSource("LowApi.java", """
                         package com.example;
 
+                        import io.helidon.service.registry.Service;
                         import io.helidon.validation.Validation;
 
+                        @Service.Contract
                         interface LowApi {
                             String validate(@Validation.Integer.Min(1) int count);
                         }
@@ -700,8 +701,10 @@ class ValidationCodegenTest {
                 .addSource("HighApi.java", """
                         package com.example;
 
+                        import io.helidon.service.registry.Service;
                         import io.helidon.validation.Validation;
 
+                        @Service.Contract
                         interface HighApi {
                             String validate(@Validation.Integer.Min(10) int count);
                         }
