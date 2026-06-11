@@ -40,6 +40,7 @@ public class TestTransportBindingProvider implements TransportBindingProvider<Te
     private static final Map<String, Optional<SocketAddress>> BIND_ADDRESS_AT_PLAN = new ConcurrentHashMap<>();
     private static final Map<String, String> HOST_AT_PLAN = new ConcurrentHashMap<>();
     private static final Map<String, Integer> PORT_AT_PLAN = new ConcurrentHashMap<>();
+    private static final Map<String, Integer> PORT_AT_CREATE = new ConcurrentHashMap<>();
     private static final Map<String, Integer> PORT_AT_START = new ConcurrentHashMap<>();
     private static final Map<String, Integer> BOUND_PORTS = new ConcurrentHashMap<>();
     private static final Map<String, AtomicInteger> STARTS = new ConcurrentHashMap<>();
@@ -53,6 +54,7 @@ public class TestTransportBindingProvider implements TransportBindingProvider<Te
         BIND_ADDRESS_AT_PLAN.clear();
         HOST_AT_PLAN.clear();
         PORT_AT_PLAN.clear();
+        PORT_AT_CREATE.clear();
         PORT_AT_START.clear();
         BOUND_PORTS.clear();
         STARTS.clear();
@@ -72,6 +74,10 @@ public class TestTransportBindingProvider implements TransportBindingProvider<Te
 
     static int portAtPlan(String name) {
         return PORT_AT_PLAN.getOrDefault(name, -1);
+    }
+
+    static int portAtCreate(String name) {
+        return PORT_AT_CREATE.getOrDefault(name, -1);
     }
 
     static int portAtStart(String name) {
@@ -130,6 +136,7 @@ public class TestTransportBindingProvider implements TransportBindingProvider<Te
 
     @Override
     public TransportBinding create(TransportBindingContext context, TestTransportBindingConfig config) {
+        PORT_AT_CREATE.put(config.name(), context.boundPort().orElse(-1));
         return new TestTransportBinding(context, config);
     }
 

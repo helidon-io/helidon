@@ -66,7 +66,7 @@ final class TcpTransportBinding implements PortTransportBinding, TlsTransportBin
 
     private static final System.Logger LOGGER = System.getLogger(TcpTransportBinding.class.getName());
 
-    private final ServerListener listenerContext;
+    private final TransportBindingContext listenerContext;
     private final String name;
     private final String socketName;
     private final ListenerConfig listenerConfig;
@@ -88,7 +88,7 @@ final class TcpTransportBinding implements PortTransportBinding, TlsTransportBin
     private volatile Thread serverThread;
     private volatile CompletableFuture<Void> closeFuture;
 
-    TcpTransportBinding(ServerListener listenerContext,
+    TcpTransportBinding(TransportBindingContext listenerContext,
                         String name,
                         ListenerConfig listenerConfig,
                         SocketAddress configuredAddress,

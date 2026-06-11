@@ -63,8 +63,8 @@ public class TcpTransportBindingProvider implements TransportBindingProvider<Tcp
     public TransportBinding create(TransportBindingContext context, TcpTransportConfig config) {
         Objects.requireNonNull(context, "context");
         Objects.requireNonNull(config, "config");
-        if (context instanceof ServerListener serverListener) {
-            return serverListener.createTcpTransportBinding(config);
+        if (context instanceof TcpTransportBindingContext tcpContext) {
+            return tcpContext.createTcpTransportBinding(config);
         }
         throw new IllegalArgumentException("TCP transport binding requires a Helidon WebServer listener context");
     }

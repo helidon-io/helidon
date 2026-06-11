@@ -25,6 +25,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -75,7 +76,28 @@ class WebServerTlsReloadTest {
 
     @Test
     @SuppressWarnings("removal")
-    void reloadDeprecatedTlsDispatchesAsMaterialToBinding() {
+    void reloadDeprecatedTlsDefaultTcpBindingReloadsOriginalTlsWithMaterial() {
+        Tls listenerTls = tls();
+        Tls reloadTls = mock(Tls.class);
+        when(reloadTls.enabled()).thenReturn(true);
+        when(reloadTls.prototype()).thenReturn(Tls.builder()
+                                                .trustAll(true)
+                                                .buildPrototype());
+        WebServer server = WebServer.builder()
+                .shutdownHook(false)
+                .tls(listenerTls)
+                .build();
+
+        server.reloadTls(reloadTls);
+
+        verify(listenerTls).reload(any(TlsMaterial.class));
+        verify(listenerTls, never()).reload(reloadTls);
+        verify(reloadTls, never()).reload(any(TlsMaterial.class));
+    }
+
+    @Test
+    @SuppressWarnings("removal")
+    void reloadDeprecatedTlsDispatchesAsMaterialToNonTcpBinding() {
         TestTransportBindingProvider.reset();
         Tls listenerTls = tls();
         Tls reloadTls = Tls.builder()
