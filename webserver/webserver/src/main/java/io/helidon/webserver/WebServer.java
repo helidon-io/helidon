@@ -149,7 +149,7 @@ public interface WebServer extends RuntimeType.Api<WebServerConfig> {
      * @param tls new TLS configuration
      * @deprecated use {@link #reloadTls(TlsMaterial)}
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "27.0.0")
     default void reloadTls(Tls tls) {
         reloadTls(DEFAULT_SOCKET_NAME, tls);
     }
@@ -161,7 +161,7 @@ public interface WebServer extends RuntimeType.Api<WebServerConfig> {
      * @param tls new TLS configuration
      * @deprecated use {@link #reloadTls(io.helidon.common.tls.TlsMaterial, String)}
      */
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "27.0.0")
     void reloadTls(String socketName, Tls tls);
 
     /**
