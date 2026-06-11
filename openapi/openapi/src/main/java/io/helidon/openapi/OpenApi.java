@@ -813,6 +813,11 @@ public final class OpenApi {
 
     /**
      * OpenAPI Example Object metadata.
+     * <p>
+     * {@link #value()} is mutually exclusive with {@link #dataValue()}, {@link #serializedValue()}, and
+     * {@link #externalValue()}. {@link #serializedValue()} and {@link #externalValue()} are mutually exclusive.
+     * {@link #dataValue()} can be used by itself, or with either {@link #serializedValue()} or
+     * {@link #externalValue()} for OpenAPI 3.2 output.
      */
     @Target({})
     @Retention(RetentionPolicy.CLASS)
@@ -844,6 +849,8 @@ public final class OpenApi {
          * <p>
          * Declarative OpenAPI generation parses valid JSON as a structured OpenAPI value and emits non-JSON text as a
          * string.
+         * <p>
+         * Mutually exclusive with {@link #dataValue()}, {@link #serializedValue()}, and {@link #externalValue()}.
          *
          * @return value
          */
@@ -856,6 +863,9 @@ public final class OpenApi {
          * string.
          * <p>
          * Rendered only for OpenAPI 3.2 output.
+         * <p>
+         * Can be used with either {@link #serializedValue()} or {@link #externalValue()}. Mutually exclusive with
+         * {@link #value()}.
          *
          * @return data value
          */
@@ -867,6 +877,9 @@ public final class OpenApi {
          * Declarative OpenAPI generation emits this value as a string and does not parse it as JSON.
          * <p>
          * Rendered only for OpenAPI 3.2 output.
+         * <p>
+         * Can be used with {@link #dataValue()}. Mutually exclusive with {@link #value()} and
+         * {@link #externalValue()}.
          *
          * @return serialized value
          */
@@ -874,6 +887,9 @@ public final class OpenApi {
 
         /**
          * External example value URI.
+         * <p>
+         * Can be used with {@link #dataValue()}. Mutually exclusive with {@link #value()} and
+         * {@link #serializedValue()}.
          *
          * @return external value URI
          */
