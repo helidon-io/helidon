@@ -199,7 +199,7 @@ class ServiceLocatorRoute extends HttpRouteBase implements HttpRoute {
                         if (routes.size() >= maxServiceCacheSize) {
                             throw new HttpException("HttpServiceLocator service cache size of "
                                                             + maxServiceCacheSize
-                                                            + " exceeded by " + locator,
+                                                            + " exceeded",
                                                     Status.SERVICE_UNAVAILABLE_503,
                                                     true);
                         }

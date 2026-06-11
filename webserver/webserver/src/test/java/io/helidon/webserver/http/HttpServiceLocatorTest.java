@@ -20,6 +20,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -112,6 +114,38 @@ class HttpServiceLocatorTest {
         invocation.route(routing);
 
         assertThat(invocation.entity(), is("nested:pipe:123:/{tenant}/{item}/{id}"));
+    }
+
+    @Test
+    void testLocatorNestedBelowLocatedServiceSeesAncestorPathParameters() throws Exception {
+        var locatedTenant = new AtomicReference<String>();
+        var locatedItem = new AtomicReference<String>();
+        var locatedPart = new AtomicReference<String>();
+        HttpService located = rules -> rules.get("/{id}", (req, res) -> res.send(
+                req.path().pathParameters().first("tenant").orElseThrow()
+                        + ":" + req.path().pathParameters().first("item").orElseThrow()
+                        + ":" + req.path().pathParameters().first("part").orElseThrow()
+                        + ":" + req.path().pathParameters().first("id").orElseThrow()
+                        + ":" + req.matchingPattern().orElse("")));
+        HttpService item = rules -> rules.registerLocator("/{part}", request -> {
+            locatedTenant.set(request.path().pathParameters().first("tenant").orElseThrow());
+            locatedItem.set(request.path().pathParameters().first("item").orElseThrow());
+            locatedPart.set(request.path().pathParameters().first("part").orElseThrow());
+            return Optional.of(located);
+        });
+        HttpService tenant = rules -> rules.registerLocator("/{item}", request -> Optional.of(item));
+
+        HttpRouting routing = HttpRouting.builder()
+                .registerLocator("/{tenant}", request -> Optional.of(tenant))
+                .build();
+
+        var invocation = RoutingInvocation.create("/acme/pipe/steel/123");
+        invocation.route(routing);
+
+        assertThat(locatedTenant.get(), is("acme"));
+        assertThat(locatedItem.get(), is("pipe"));
+        assertThat(locatedPart.get(), is("steel"));
+        assertThat(invocation.entity(), is("acme:pipe:steel:123:/{tenant}/{item}/{part}/{id}"));
     }
 
     @Test
@@ -311,7 +345,12 @@ class HttpServiceLocatorTest {
     void testLocatedServiceCacheSizeIsBounded() {
         var first = new LifecycleService("first");
         var second = new LifecycleService("second");
-        var locator = new SwitchingLocator(first, false, 1);
+        var locator = new SwitchingLocator(first, false, 1) {
+            @Override
+            public String toString() {
+                return "sensitive locator details";
+            }
+        };
         var route = locatorRoute(locator);
 
         locate(route);
@@ -320,6 +359,7 @@ class HttpServiceLocatorTest {
         HttpException failure = assertThrows(HttpException.class, () -> locate(route));
 
         assertThat(failure.status(), is(Status.SERVICE_UNAVAILABLE_503));
+        assertThat(failure.getMessage(), is("HttpServiceLocator service cache size of 1 exceeded"));
         assertThat(first.routingCount.get(), is(1));
         assertThat(second.routingCount.get(), is(0));
     }
@@ -333,22 +373,24 @@ class HttpServiceLocatorTest {
 
         locate(route, "/fast/1");
 
-        CompletableFuture<Void> slowCreation = CompletableFuture.runAsync(() -> locate(route, "/slow/1"));
-        if (!slow.awaitStarted()) {
-            slow.release();
-            fail("Cold service route creation did not start");
-        }
+        try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+            CompletableFuture<Void> slowCreation = CompletableFuture.runAsync(() -> locate(route, "/slow/1"), executor);
+            if (!slow.awaitStarted()) {
+                slow.release();
+                fail("Cold service route creation did not start");
+            }
 
-        CompletableFuture<Void> fastHit = CompletableFuture.runAsync(() -> locate(route, "/fast/2"));
-        try {
-            fastHit.get(1, TimeUnit.SECONDS);
-        } catch (Exception e) {
-            fail("Cached route should not wait for another service identity to finish cold creation", e);
-        } finally {
-            slow.release();
-        }
+            CompletableFuture<Void> fastHit = CompletableFuture.runAsync(() -> locate(route, "/fast/2"), executor);
+            try {
+                fastHit.get(1, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                fail("Cached route should not wait for another service identity to finish cold creation", e);
+            } finally {
+                slow.release();
+            }
 
-        slowCreation.get(5, TimeUnit.SECONDS);
+            slowCreation.get(5, TimeUnit.SECONDS);
+        }
         assertThat(fast.routingCount.get(), is(1));
         assertThat(slow.routingCount.get(), is(1));
     }
