@@ -2,26 +2,12 @@
 
 ## Description
 
-<code>N/A</code>
+<code>N/<wbr>A</code>
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,13 +19,13 @@
 <tbody>
 <tr>
 <td>
-<code>max-read-buffer-size</code>
+<code>max-<wbr>read-<wbr>buffer-<wbr>size</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">2097152</code>
+<td>
+<code>2097152</code>
 </td>
 <td>Max size of gRPC reading buffer</td>
 </tr>
@@ -47,51 +33,51 @@
 <td>
 <a id="grpc-services"></a>
 <a href="io.helidon.webserver.grpc.spi.GrpcServerService.md">
-<code>grpc-services</code>
+<code>grpc-<wbr>services</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;GrpcServerService&gt;">List&lt;GrpcServerService&gt;</code>
+<td>
+<code>List&lt;<wbr>Grpc<wbr>Server<wbr>Service&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>gRPC server services</td>
 </tr>
 <tr>
 <td>
-<code>enable-compression</code>
+<code>enable-<wbr>compression</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether to support compression if requested by a client</td>
 </tr>
 <tr>
 <td>
-<code>enable-metrics</code>
+<code>enable-<wbr>metrics</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Whether to collect metrics for gRPC server calls</td>
 </tr>
 <tr>
 <td>
-<code>grpc-services-discover-services</code>
+<code>grpc-<wbr>services-<wbr>discover-<wbr>services</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
-<td>Whether to enable automatic service discovery for <code>grpc-services</code></td>
+<td>Whether to enable automatic service discovery for <code>grpc-<wbr>services</code></td>
 </tr>
 </tbody>
 </table>

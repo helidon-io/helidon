@@ -6,22 +6,8 @@ HTTP/2 server configuration
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,61 +19,61 @@ HTTP/2 server configuration
 <tbody>
 <tr>
 <td>
-<code>max-buffered-entity-size</code>
+<code>max-<wbr>buffered-<wbr>entity-<wbr>size</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Size</code>
+<td>
+<code>Size</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">64 KB</code>
+<td>
+<code>64 KB</code>
 </td>
-<td>Configure the maximum size allowed for an entity that can be explicitly buffered by the application by calling <code>io.helidon.http.media.ReadableEntity#buffer</code></td>
+<td>Configure the maximum size allowed for an entity that can be explicitly buffered by the application by calling <code>io.<wbr>helidon.<wbr>http.<wbr>media.<wbr>Readable<wbr>Entity#<wbr>buffer</code></td>
 </tr>
 <tr>
 <td>
-<code>max-rapid-resets</code>
+<code>max-<wbr>rapid-<wbr>resets</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">50</code>
+<td>
+<code>50</code>
 </td>
 <td>Maximum number of rapid resets(stream RST sent by client before any data have been sent by server)</td>
 </tr>
 <tr>
 <td>
-<code>max-concurrent-streams</code>
+<code>max-<wbr>concurrent-<wbr>streams</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Long</code>
+<td>
+<code>Long</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">8192</code>
+<td>
+<code>8192</code>
 </td>
 <td>Maximum number of concurrent streams that the server will allow</td>
 </tr>
 <tr>
 <td>
-<code>rapid-reset-check-period</code>
+<code>rapid-<wbr>reset-<wbr>check-<wbr>period</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">PT10S</code>
+<td>
+<code>PT10S</code>
 </td>
 <td>Period for counting rapid resets(stream RST sent by client before any data have been sent by server)</td>
 </tr>
 <tr>
 <td>
-<code>max-frame-size</code>
+<code>max-<wbr>frame-<wbr>size</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">16384</code>
+<td>
+<code>16384</code>
 </td>
 <td>The size of the largest frame payload that the sender is willing to receive in bytes</td>
 </tr>
@@ -95,85 +81,85 @@ HTTP/2 server configuration
 <td>
 <a id="requested-uri-discovery"></a>
 <a href="io.helidon.http.RequestedUriDiscoveryContext.md">
-<code>requested-uri-discovery</code>
+<code>requested-<wbr>uri-<wbr>discovery</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="RequestedUriDiscoveryContext">RequestedUriDiscoveryContext</code>
+<td>
+<code>Requested<wbr>UriDiscovery<wbr>Context</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Requested URI discovery settings</td>
 </tr>
 <tr>
 <td>
-<code>flow-control-timeout</code>
+<code>flow-<wbr>control-<wbr>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">PT15S</code>
+<td>
+<code>PT15S</code>
 </td>
-<td>Outbound flow control blocking timeout configured as <code>java.time.Duration</code> or text in ISO-8601 format</td>
+<td>Outbound flow control blocking timeout configured as <code>java.<wbr>time.<wbr>Duration</code> or text in ISO-8601 format</td>
 </tr>
 <tr>
 <td>
-<code>send-error-details</code>
+<code>send-<wbr>error-<wbr>details</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Whether to send error message over HTTP to client</td>
 </tr>
 <tr>
 <td>
-<code>max-header-list-size</code>
+<code>max-<wbr>header-<wbr>list-<wbr>size</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Long</code>
+<td>
+<code>Long</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">8192</code>
+<td>
+<code>8192</code>
 </td>
 <td>The maximum field section size that the sender is prepared to accept in bytes</td>
 </tr>
 <tr>
 <td>
-<code>initial-window-size</code>
+<code>initial-<wbr>window-<wbr>size</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">1048576</code>
+<td>
+<code>1048576</code>
 </td>
 <td>This setting indicates the sender's maximum window size in bytes for stream-level flow control</td>
 </tr>
 <tr>
 <td>
-<code>validate-path</code>
+<code>validate-<wbr>path</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>If set to false, any path is accepted (even containing illegal characters)</td>
 </tr>
 <tr>
 <td>
-<code>max-empty-frames</code>
+<code>max-<wbr>empty-<wbr>frames</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">10</code>
+<td>
+<code>10</code>
 </td>
 <td>Maximum number of consecutive empty frames allowed on connection</td>
 </tr>

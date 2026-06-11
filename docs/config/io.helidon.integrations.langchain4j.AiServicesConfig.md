@@ -2,26 +2,12 @@
 
 ## Description
 
-<code>N/A</code>
+<code>N/<wbr>A</code>
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -32,12 +18,12 @@
 <tbody>
 <tr>
 <td>
-<code>chat-model</code>
+<code>chat-<wbr>model</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td><code>N/A</code></td>
+<td><code>N/<wbr>A</code></td>
 </tr>
 </tbody>
 </table>

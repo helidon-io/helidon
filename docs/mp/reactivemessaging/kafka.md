@@ -50,7 +50,7 @@ mp.messaging:
 
 ### Configuration options
 
-<!--@include ../../config/io.helidon.messaging.connectors.kafka.KafkaConfigBuilder.md#configuration-options offset=1 -->
+<!--@include ../../config/io.helidon.messaging.connectors.kafka.KafkaConfigBuilder.md#configuration-options offset=1 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.messaging.connectors.kafka.KafkaConfigBuilder.md#configuration-options).
 <!--/include-->
 

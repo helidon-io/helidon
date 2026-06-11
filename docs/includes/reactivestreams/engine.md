@@ -48,6 +48,7 @@ Single.just("1")
 
 Operators:
 
+<!--@mdc ::table-collapse -->
 | Operator               | Description                                                                                                                                                                                                                                                                                            |
 |------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | defer                  | Call the given supplier function for each individual downstream Subscriber to return a Flow.Publisher to subscribe to.                                                                                                                                                                                 |
@@ -107,8 +108,7 @@ Operators:
 | retry                  | Retry a failing upstream at most the given number of times before giving up.                                                                                                                                                                                                                           |
 | retry                  | Retry a failing upstream if the predicate returns true.                                                                                                                                                                                                                                                |
 | retryWhen              | Retry a failing upstream when the given function returns a publisher that signals an item.                                                                                                                                                                                                             |
-
-Operators {#terms}
+<!--@mdc :: -->
 
 ### Operator Chains Composition
 

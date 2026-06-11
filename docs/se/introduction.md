@@ -8,6 +8,7 @@ The REST framework for Helidon SE is the Helidon WebServer. It was built from th
 
 Helidon SE supports a number of additional Helidon features:
 
+<!--@mdc ::table-collapse -->
 | Name | Description |
 | --- | --- |
 | [Config][config] | A flexible configuration framework with support for multiple sources and formats. |
@@ -27,6 +28,7 @@ Helidon SE supports a number of additional Helidon features:
 | [WebClient][webclient] | HTTP client that handles responses to the HTTP requests. |
 | [WebServer][webserver] | A programmatic HTTP API that uses virtual threads to handle nearly unlimited concurrent requests without blocking a platform thread or starving other requests. |
 | [WebSocket][websocket] | Enables Java applications to participate in WebSocket interactions as both servers and clients. |
+<!--@mdc :: -->
 
 ## Upgrade
 

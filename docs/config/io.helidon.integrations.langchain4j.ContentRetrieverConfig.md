@@ -2,26 +2,12 @@
 
 ## Description
 
-Configuration for LangChain4j <code>ContentRetriever</code> components
+Configuration for LangChain4j <code>Content<wbr>Retriever</code> components
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,45 +19,45 @@ Configuration for LangChain4j <code>ContentRetriever</code> components
 <tbody>
 <tr>
 <td>
-<code>embedding-model</code>
+<code>embedding-<wbr>model</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Explicit embedding model to use in the content retriever</td>
 </tr>
 <tr>
 <td>
-<code>display-name</code>
+<code>display-<wbr>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Display name for this content retriever configuration</td>
 </tr>
 <tr>
 <td>
-<code>embedding-store</code>
+<code>embedding-<wbr>store</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Embedding store to use in the content retriever</td>
 </tr>
 <tr>
 <td>
-<code>max-results</code>
+<code>max-<wbr>results</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Maximum number of results to return from the retriever</td>
 </tr>
@@ -82,11 +68,11 @@ Configuration for LangChain4j <code>ContentRetriever</code> components
 <code>type</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="ContentRetrieverType">ContentRetrieverType</code>
+<td>
+<code>Content<wbr>Retriever<wbr>Type</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value" title="EMBEDDING_STORE_CONTENT_RETRIEVER">EMBEDDING_STORE_CONTENT_RETRIEVER</code>
+<td>
+<code>EMBEDDING_<wbr>STORE_<wbr>CONTENT_<wbr>RETRIEVER</code>
 </td>
 <td>Type of content retriever to create</td>
 </tr>
@@ -94,22 +80,22 @@ Configuration for LangChain4j <code>ContentRetriever</code> components
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>If set to <code>false</code>, component will be disabled even if configured</td>
 </tr>
 <tr>
 <td>
-<code>min-score</code>
+<code>min-<wbr>score</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Double</code>
+<td>
+<code>Double</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Minimum score threshold for retrieved results</td>
 </tr>
@@ -117,8 +103,6 @@ Configuration for LangChain4j <code>ContentRetriever</code> components
 </table>
 
 
-
-## Manifest
 
 ---
 

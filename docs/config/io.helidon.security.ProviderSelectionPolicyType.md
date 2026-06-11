@@ -6,13 +6,7 @@ This type is an enumeration.
 
 ## Allowed Values
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-</style>
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Value</th>
@@ -30,7 +24,7 @@ This type is an enumeration.
 </tr>
 <tr>
 <td><code>CLASS</code></td>
-<td>Explicit class for a custom <code>ProviderSelectionPolicyType</code></td>
+<td>Explicit class for a custom <code>Provider<wbr>Selection<wbr>Policy<wbr>Type</code></td>
 </tr>
 </tbody>
 </table>

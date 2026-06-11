@@ -84,7 +84,7 @@ Configuration reference:
 
 ### Configuration options
 
-<!--@include ../config/io.helidon.webserver.WebServer.md#configuration-options offset=1 -->
+<!--@include ../config/io.helidon.webserver.WebServer.md#configuration-options offset=1 collapseTables=10 -->
 See [Configuration options](../config/io.helidon.webserver.WebServer.md#configuration-options).
 <!--/include-->
 
@@ -128,7 +128,7 @@ Configuration of access log feature.
 
 ### Configuration options
 
-<!--@include ../config/io.helidon.webserver.accesslog.AccessLogFeature.md#configuration-options offset=1 -->
+<!--@include ../config/io.helidon.webserver.accesslog.AccessLogFeature.md#configuration-options offset=1 collapseTables=10 -->
 See [Configuration options](../config/io.helidon.webserver.accesslog.AccessLogFeature.md#configuration-options).
 <!--/include-->
 

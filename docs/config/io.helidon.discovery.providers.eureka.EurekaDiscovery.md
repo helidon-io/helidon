@@ -2,26 +2,12 @@
 
 ## Description
 
-Prototypical state for <code>EurekaDiscovery</code> instances
+Prototypical state for <code>Eureka<wbr>Discovery</code> instances
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -37,10 +23,10 @@ Prototypical state for <code>EurekaDiscovery</code> instances
 <code>cache</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="CacheConfig">CacheConfig</code>
+<td>
+<code>Cache<wbr>Config</code>
 </td>
-<td>The <code>CacheConfig</code> to use controlling how a local cache of Eureka server information is used</td>
+<td>The <code>Cache<wbr>Config</code> to use controlling how a local cache of Eureka server information is used</td>
 </tr>
 <tr>
 <td>
@@ -49,19 +35,19 @@ Prototypical state for <code>EurekaDiscovery</code> instances
 <code>client</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Http1Client">Http1Client</code>
+<td>
+<code>Http1Client</code>
 </td>
 <td>The <code>Http1Client</code> to use to communicate with the Eureka server</td>
 </tr>
 <tr>
 <td>
-<code>prefer-ip-address</code>
+<code>prefer-<wbr>ip-address</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td>Whether the <dfn>host</dfn> component of any <code>java.net.URI URI</code> should be set to the IP address stored by Eureka, or the hostname; <code>false</code> by default</td>
+<td>Whether the <dfn>host</dfn> component of any <code>java.<wbr>net.<wbr>URI URI</code> should be set to the IP address stored by Eureka, or the hostname; <code>false</code> by default</td>
 </tr>
 </tbody>
 </table>

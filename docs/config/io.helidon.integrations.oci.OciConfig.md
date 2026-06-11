@@ -6,22 +6,8 @@ Meta configuration of OCI integration for Helidon
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,14 +19,14 @@ Meta configuration of OCI integration for Helidon
 <tbody>
 <tr>
 <td>
-<code>allowed-authentication-methods</code>
+<code>allowed-<wbr>authentication-<wbr>methods</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>List of attempted authentication strategies in case <code>io.helidon.integrations.oci.OciConfig#authenticationMethod()</code> is set to <code>#AUTHENTICATION_METHOD_AUTO</code></td>
+<td>List of attempted authentication strategies in case <code>io.<wbr>helidon.<wbr>integrations.<wbr>oci.<wbr>OciConfig#<wbr>authentication<wbr>Method(<wbr>)</code> is set to <code>#AUTHENTICATION_<wbr>METHOD_<wbr>AUTO</code></td>
 </tr>
 <tr>
 <td>
@@ -49,78 +35,78 @@ Meta configuration of OCI integration for Helidon
 <code>authentication</code>
 </a>
 </td>
-<td class="cm-type-cell">
+<td>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Configuration for authentication</td>
 </tr>
 <tr>
 <td>
-<code>authentication-method</code>
+<code>authentication-<wbr>method</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">auto</code>
+<td>
+<code>auto</code>
 </td>
 <td>Authentication method to use</td>
 </tr>
 <tr>
 <td>
-<code>authentication-timeout</code>
+<code>authentication-<wbr>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">PT10S</code>
+<td>
+<code>PT10S</code>
 </td>
 <td>Timeout of authentication operations, where applicable</td>
 </tr>
 <tr>
 <td>
-<code>federation-endpoint</code>
+<code>federation-<wbr>endpoint</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">URI</code>
+<td>
+<code>URI</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Customization of federation endpoint for authentication providers</td>
 </tr>
 <tr>
 <td>
-<code>imds-base-uri</code>
+<code>imds-<wbr>base-<wbr>uri</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">URI</code>
+<td>
+<code>URI</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>The OCI IMDS URI (http URL pointing to the metadata service, if customization needed)</td>
 </tr>
 <tr>
 <td>
-<code>imds-detect-retries</code>
+<code>imds-<wbr>detect-<wbr>retries</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Customize the number of retries to contact IMDS service</td>
 </tr>
 <tr>
 <td>
-<code>imds-timeout</code>
+<code>imds-<wbr>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">PT1S</code>
+<td>
+<code>PT1S</code>
 </td>
 <td>The OCI IMDS connection timeout</td>
 </tr>
@@ -128,21 +114,21 @@ Meta configuration of OCI integration for Helidon
 <td>
 <code>region</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="OciConfigSupport">OciConfigSupport</code>
+<td>
+<code>Oci<wbr>Config<wbr>Support</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Explicit region</td>
 </tr>
 <tr>
 <td>
-<code>tenant-id</code>
+<code>tenant-<wbr>id</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>OCI tenant id for Instance Principal, Resource Principal or OKE Workload</td>
 </tr>

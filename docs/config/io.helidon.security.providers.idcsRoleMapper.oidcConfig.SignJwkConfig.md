@@ -6,22 +6,8 @@ Configuration for security.providers.idcs-role-mapper.oidc-config.sign-jwk
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -37,8 +23,8 @@ Configuration for security.providers.idcs-role-mapper.oidc-config.sign-jwk
 <code>resource</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Resource</code>
+<td>
+<code>Resource</code>
 </td>
 <td>A resource pointing to JWK with public keys of signing certificates used to validate JWT</td>
 </tr>

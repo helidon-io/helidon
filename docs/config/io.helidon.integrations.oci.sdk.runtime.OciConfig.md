@@ -2,26 +2,12 @@
 
 ## Description
 
-Configuration used by <code>OciAuthenticationDetailsProvider</code>
+Configuration used by <code>Oci<wbr>Authentication<wbr>Details<wbr>Provider</code>
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -37,7 +23,7 @@ Configuration used by <code>OciAuthenticationDetailsProvider</code>
 <code>auth</code>
 </a>
 </td>
-<td class="cm-type-cell">
+<td>
 </td>
 <td>Configuration for auth</td>
 </tr>
@@ -45,23 +31,23 @@ Configuration used by <code>OciAuthenticationDetailsProvider</code>
 <td>
 <a id="auth-strategies"></a>
 <a href="io.helidon.integrations.oci.sdk.runtime.OciConfigAuthStrategies.md">
-<code>auth-strategies</code>
+<code>auth-<wbr>strategies</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;OciConfigAuthStrategies&gt;">List&lt;OciConfigAuthStrategies&gt;</code>
+<td>
+<code>List&lt;<wbr>OciConfig<wbr>Auth<wbr>Strategies&gt;</code>
 </td>
-<td>The list of authentication strategies that will be attempted by <code>com.oracle.bmc.auth.AbstractAuthenticationDetailsProvider</code> when one is called for</td>
+<td>The list of authentication strategies that will be attempted by <code>com.<wbr>oracle.<wbr>bmc.<wbr>auth.<wbr>Abstract<wbr>Authentication<wbr>Details<wbr>Provider</code> when one is called for</td>
 </tr>
 <tr>
 <td>
 <a id="auth-strategy"></a>
 <a href="io.helidon.integrations.oci.sdk.runtime.OciConfigAuthStrategy.md">
-<code>auth-strategy</code>
+<code>auth-<wbr>strategy</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="OciConfigAuthStrategy">OciConfigAuthStrategy</code>
+<td>
+<code>Oci<wbr>Config<wbr>Auth<wbr>Strategy</code>
 </td>
 <td>The singular authentication strategy to apply</td>
 </tr>
@@ -72,7 +58,7 @@ Configuration used by <code>OciAuthenticationDetailsProvider</code>
 <code>config</code>
 </a>
 </td>
-<td class="cm-type-cell">
+<td>
 </td>
 <td>Configuration for config</td>
 </tr>
@@ -83,7 +69,7 @@ Configuration used by <code>OciAuthenticationDetailsProvider</code>
 <code>imds</code>
 </a>
 </td>
-<td class="cm-type-cell">
+<td>
 </td>
 <td>Configuration for imds</td>
 </tr>

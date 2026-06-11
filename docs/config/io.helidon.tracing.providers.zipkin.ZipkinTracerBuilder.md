@@ -6,22 +6,8 @@ Zipkin tracer configuration
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,14 +21,14 @@ Zipkin tracer configuration
 <td>
 <a id="api-version"></a>
 <a href="io.helidon.tracing.providers.zipkin.ZipkinTracerBuilder.Version.md">
-<code>api-version</code>
+<code>api-<wbr>version</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Version</code>
+<td>
+<code>Version</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">V2</code>
+<td>
+<code>V2</code>
 </td>
 <td>Version of Zipkin API to use</td>
 </tr>
@@ -50,8 +36,6 @@ Zipkin tracer configuration
 </table>
 
 
-
-## Manifest
 
 ---
 

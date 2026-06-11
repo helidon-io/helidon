@@ -6,13 +6,7 @@ This type is an enumeration.
 
 ## Allowed Values
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-</style>
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Value</th>
@@ -22,15 +16,15 @@ This type is an enumeration.
 <tbody>
 <tr>
 <td><code>FORWARDED</code></td>
-<td>The <code>io.helidon.http.Header#FORWARDED</code> header is used to discover the original requested URI</td>
+<td>The <code>io.<wbr>helidon.<wbr>http.<wbr>Header#<wbr>FORWARDED</code> header is used to discover the original requested URI</td>
 </tr>
 <tr>
-<td><code>X_FORWARDED</code></td>
-<td>The <code>io.helidon.http.Header#X_FORWARDED_PROTO</code>, <code>io.helidon.http.Header#X_FORWARDED_HOST</code>, <code>io.helidon.http.Header#X_FORWARDED_PORT</code>, <code>io.helidon.http.Header#X_FORWARDED_PREFIX</code> headers are used to discover the original requested URI</td>
+<td><code>X_<wbr>FORWARDED</code></td>
+<td>The <code>io.<wbr>helidon.<wbr>http.<wbr>Header#<wbr>X_FORWARDED_<wbr>PROTO</code>, <code>io.<wbr>helidon.<wbr>http.<wbr>Header#<wbr>X_FORWARDED_<wbr>HOST</code>, <code>io.<wbr>helidon.<wbr>http.<wbr>Header#<wbr>X_FORWARDED_<wbr>PORT</code>, <code>io.<wbr>helidon.<wbr>http.<wbr>Header#<wbr>X_FORWARDED_<wbr>PREFIX</code> headers are used to discover the original requested URI</td>
 </tr>
 <tr>
 <td><code>HOST</code></td>
-<td>This is the default, only the <code>io.helidon.http.Header#HOST</code> header is used to discover requested URI</td>
+<td>This is the default, only the <code>io.<wbr>helidon.<wbr>http.<wbr>Header#<wbr>HOST</code> header is used to discover requested URI</td>
 </tr>
 </tbody>
 </table>

@@ -6,22 +6,8 @@ Configuration of Static content feature
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -38,10 +24,10 @@ Configuration of Static content feature
 <code>path</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;FileSystemHandlerConfig&gt;">List&lt;FileSystemHandlerConfig&gt;</code>
+<td>
+<code>List&lt;<wbr>File<wbr>System<wbr>Handler<wbr>Config&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>List of file system based static content handlers</td>
 </tr>
@@ -49,24 +35,24 @@ Configuration of Static content feature
 <td>
 <a id="temporary-storage"></a>
 <a href="io.helidon.webserver.staticcontent.TemporaryStorage.md">
-<code>temporary-storage</code>
+<code>temporary-<wbr>storage</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="TemporaryStorage">TemporaryStorage</code>
+<td>
+<code>Temporary<wbr>Storage</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Temporary storage to use across all classpath handlers</td>
 </tr>
 <tr>
 <td>
-<code>content-types</code>
+<code>content-<wbr>types</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, StaticContentMethods&gt;">Map&lt;String, StaticContentMethods&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> Static<wbr>Content<wbr>Methods&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Maps a filename extension to the response content type</td>
 </tr>
@@ -77,10 +63,10 @@ Configuration of Static content feature
 <code>classpath</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;ClasspathHandlerConfig&gt;">List&lt;ClasspathHandlerConfig&gt;</code>
+<td>
+<code>List&lt;<wbr>Classpath<wbr>Handler<wbr>Config&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>List of classpath based static content handlers</td>
 </tr>
@@ -88,13 +74,13 @@ Configuration of Static content feature
 <td>
 <a id="memory-cache"></a>
 <a href="io.helidon.webserver.staticcontent.MemoryCache.md">
-<code>memory-cache</code>
+<code>memory-<wbr>cache</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="MemoryCache">MemoryCache</code>
+<td>
+<code>Memory<wbr>Cache</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Memory cache shared by the whole feature</td>
 </tr>
@@ -102,11 +88,11 @@ Configuration of Static content feature
 <td>
 <code>weight</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Double</code>
+<td>
+<code>Double</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">95.0</code>
+<td>
+<code>95.<wbr>0</code>
 </td>
 <td>Weight of the static content feature</td>
 </tr>
@@ -114,10 +100,10 @@ Configuration of Static content feature
 <td>
 <code>sockets</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Sockets names (listeners) that will host static content handlers, defaults to all configured sockets</td>
 </tr>
@@ -125,10 +111,10 @@ Configuration of Static content feature
 <td>
 <code>welcome</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Welcome-file name</td>
 </tr>
@@ -136,11 +122,11 @@ Configuration of Static content feature
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether this feature is enabled, defaults to <code>true</code></td>
 </tr>

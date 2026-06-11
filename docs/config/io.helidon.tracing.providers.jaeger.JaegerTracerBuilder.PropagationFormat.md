@@ -6,13 +6,7 @@ This type is an enumeration.
 
 ## Allowed Values
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-</style>
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Value</th>
@@ -25,7 +19,7 @@ This type is an enumeration.
 <td>The Zipkin B3 trace context propagation format using multiple headers</td>
 </tr>
 <tr>
-<td><code>B3_SINGLE</code></td>
+<td><code>B3_<wbr>SINGLE</code></td>
 <td>B3 trace context propagation using a single header</td>
 </tr>
 <tr>

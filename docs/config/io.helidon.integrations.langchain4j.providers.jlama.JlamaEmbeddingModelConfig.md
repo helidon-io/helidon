@@ -6,22 +6,8 @@ Configuration for LangChain4j model JlamaEmbeddingModel
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,95 +19,95 @@ Configuration for LangChain4j model JlamaEmbeddingModel
 <tbody>
 <tr>
 <td>
-<code>thread-count</code>
+<code>thread-<wbr>count</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.jlama.JlamaEmbeddingModel.JlamaEmbeddingModelBuilder#threadCount(java.lang.Integer)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>jlama.<wbr>Jlama<wbr>Embedding<wbr>Model.<wbr>Jlama<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>thread<wbr>Count(<wbr>java.<wbr>lang.<wbr>Integer)</code></td>
 </tr>
 <tr>
 <td>
 <a id="pooling-type"></a>
 <a href="com.github.tjake.jlama.model.functions.Generator.PoolingType.md">
-<code>pooling-type</code>
+<code>pooling-<wbr>type</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="PoolingType">PoolingType</code>
+<td>
+<code>Pooling<wbr>Type</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.jlama.JlamaEmbeddingModel.JlamaEmbeddingModelBuilder#poolingType(com.github.tjake.jlama.model.functions.Generator.PoolingType)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>jlama.<wbr>Jlama<wbr>Embedding<wbr>Model.<wbr>Jlama<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>pooling<wbr>Type(<wbr>com.<wbr>github.<wbr>tjake.<wbr>jlama.<wbr>model.<wbr>functions.<wbr>Generator.<wbr>Pooling<wbr>Type)</code></td>
 </tr>
 <tr>
 <td>
-<code>model-cache-path</code>
+<code>model-<wbr>cache-<wbr>path</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Path</code>
+<td>
+<code>Path</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.jlama.JlamaEmbeddingModel.JlamaEmbeddingModelBuilder#modelCachePath(java.nio.file.Path)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>jlama.<wbr>Jlama<wbr>Embedding<wbr>Model.<wbr>Jlama<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>model<wbr>Cache<wbr>Path(<wbr>java.<wbr>nio.<wbr>file.<wbr>Path)</code></td>
 </tr>
 <tr>
 <td>
-<code>quantize-model-at-runtime</code>
+<code>quantize-<wbr>model-<wbr>at-runtime</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.jlama.JlamaEmbeddingModel.JlamaEmbeddingModelBuilder#quantizeModelAtRuntime(java.lang.Boolean)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>jlama.<wbr>Jlama<wbr>Embedding<wbr>Model.<wbr>Jlama<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>quantize<wbr>Model<wbr>AtRuntime(<wbr>java.<wbr>lang.<wbr>Boolean)</code></td>
 </tr>
 <tr>
 <td>
-<code>model-name</code>
+<code>model-<wbr>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Configure the model name</td>
 </tr>
 <tr>
 <td>
-<code>working-directory</code>
+<code>working-<wbr>directory</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Path</code>
+<td>
+<code>Path</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.jlama.JlamaEmbeddingModel.JlamaEmbeddingModelBuilder#workingDirectory(java.nio.file.Path)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>jlama.<wbr>Jlama<wbr>Embedding<wbr>Model.<wbr>Jlama<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>working<wbr>Directory(<wbr>java.<wbr>nio.<wbr>file.<wbr>Path)</code></td>
 </tr>
 <tr>
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>If set to <code>false</code>, JlamaEmbeddingModel will not be available even if configured</td>
 </tr>
 <tr>
 <td>
-<code>auth-token</code>
+<code>auth-<wbr>token</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.jlama.JlamaEmbeddingModel.JlamaEmbeddingModelBuilder#authToken(java.lang.String)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>jlama.<wbr>Jlama<wbr>Embedding<wbr>Model.<wbr>Jlama<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>auth<wbr>Token(<wbr>java.<wbr>lang.<wbr>String)</code></td>
 </tr>
 </tbody>
 </table>

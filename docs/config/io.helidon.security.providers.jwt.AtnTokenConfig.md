@@ -6,22 +6,8 @@ Configuration for security.providers.jwt.atn-token
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -38,10 +24,10 @@ Configuration for security.providers.jwt.atn-token
 <code>handler</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="TokenHandler">TokenHandler</code>
+<td>
+<code>Token<wbr>Handler</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Token handler to extract username from request</td>
 </tr>
@@ -52,32 +38,32 @@ Configuration for security.providers.jwt.atn-token
 <code>jwk</code>
 </a>
 </td>
-<td class="cm-type-cell">
+<td>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Configuration for jwk</td>
 </tr>
 <tr>
 <td>
-<code>jwt-audience</code>
+<code>jwt-<wbr>audience</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Audience expected in inbound JWTs</td>
 </tr>
 <tr>
 <td>
-<code>verify-signature</code>
+<code>verify-<wbr>signature</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Configure whether to verify signatures</td>
 </tr>

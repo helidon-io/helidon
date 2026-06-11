@@ -6,22 +6,8 @@ HTTP Basic Authentication provider
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -38,10 +24,10 @@ HTTP Basic Authentication provider
 <code>outbound</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;OutboundTarget&gt;">List&lt;OutboundTarget&gt;</code>
+<td>
+<code>List&lt;<wbr>Outbound<wbr>Target&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Add a new outbound target to configure identity propagation or explicit username/password</td>
 </tr>
@@ -49,11 +35,11 @@ HTTP Basic Authentication provider
 <td>
 <code>optional</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Whether authentication is required</td>
 </tr>
@@ -61,11 +47,11 @@ HTTP Basic Authentication provider
 <td>
 <code>realm</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">helidon</code>
+<td>
+<code>helidon</code>
 </td>
 <td>Set the realm to use when challenging users</td>
 </tr>
@@ -73,14 +59,14 @@ HTTP Basic Authentication provider
 <td>
 <a id="principal-type"></a>
 <a href="io.helidon.security.SubjectType.md">
-<code>principal-type</code>
+<code>principal-<wbr>type</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="SubjectType">SubjectType</code>
+<td>
+<code>Subject<wbr>Type</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">USER</code>
+<td>
+<code>USER</code>
 </td>
 <td>Principal type this provider extracts (and also propagates)</td>
 </tr>
@@ -91,10 +77,10 @@ HTTP Basic Authentication provider
 <code>users</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;ConfigUser&gt;">List&lt;ConfigUser&gt;</code>
+<td>
+<code>List&lt;<wbr>Config<wbr>User&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Set user store to validate users</td>
 </tr>

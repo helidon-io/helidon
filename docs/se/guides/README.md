@@ -2,6 +2,7 @@
 
 Index of Guides documentation.
 
+<!--@mdc ::table-collapse -->
 | Topic | Description |
 | --- | --- |
 | [Overview](overview.md) | Helidon SE Guides |
@@ -23,3 +24,4 @@ Index of Guides documentation.
 | [WebClient Guide](webclient.md) | Helidon WebClient |
 | [Maven Guide](maven-build.md) | Helidon Maven Guide |
 | [Performance Tuning](performance-tuning.md) | Helidon SE Performance Tuning |
+<!--@mdc :: -->

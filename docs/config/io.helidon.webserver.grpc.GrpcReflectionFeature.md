@@ -6,22 +6,8 @@ Configuration of gRPC Reflection feature
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,10 +21,10 @@ Configuration of gRPC Reflection feature
 <td>
 <code>sockets</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>List of sockets to register this feature on</td>
 </tr>
@@ -46,11 +32,11 @@ Configuration of gRPC Reflection feature
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>This feature can be enabled</td>
 </tr>

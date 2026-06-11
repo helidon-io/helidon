@@ -6,13 +6,7 @@ This type is an enumeration.
 
 ## Allowed Values
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-</style>
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Value</th>
@@ -21,23 +15,23 @@ This type is an enumeration.
 </thead>
 <tbody>
 <tr>
-<td><code>CLIENT_SECRET_BASIC</code></td>
+<td><code>CLIENT_<wbr>SECRET_<wbr>BASIC</code></td>
 <td>Clients that have received a client_secret value from the Authorization Server authenticate with the Authorization Server in accordance with Section 2.3.1 of OAuth 2.0 [RFC6749] using the HTTP Basic authentication scheme</td>
 </tr>
 <tr>
-<td><code>CLIENT_SECRET_POST</code></td>
+<td><code>CLIENT_<wbr>SECRET_<wbr>POST</code></td>
 <td>Clients that have received a client_secret value from the Authorization Server, authenticate with the Authorization Server in accordance with Section 2.3.1 of OAuth 2.0 [RFC6749] by including the Client Credentials in the request body</td>
 </tr>
 <tr>
-<td><code>CLIENT_SECRET_JWT</code></td>
+<td><code>CLIENT_<wbr>SECRET_<wbr>JWT</code></td>
 <td>Clients that have received a client_secret value from the Authorization Server create a JWT using an HMAC SHA algorithm, such as HMAC SHA-256</td>
 </tr>
 <tr>
-<td><code>PRIVATE_KEY_JWT</code></td>
+<td><code>PRIVATE_<wbr>KEY_<wbr>JWT</code></td>
 <td>Clients that have registered a public key sign a JWT using that key</td>
 </tr>
 <tr>
-<td><code>CLIENT_CERTIFICATE</code></td>
+<td><code>CLIENT_<wbr>CERTIFICATE</code></td>
 <td>Authentication is done via the client certificate used with MTLS</td>
 </tr>
 <tr>

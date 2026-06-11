@@ -6,22 +6,8 @@ Settings for an OTLP publisher
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,10 +21,10 @@ Settings for an OTLP publisher
 <td>
 <code>headers</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Headers to add to each transmission message</td>
 </tr>
@@ -46,14 +32,14 @@ Settings for an OTLP publisher
 <td>
 <a id="base-time-unit"></a>
 <a href="java.util.concurrent.TimeUnit.md">
-<code>base-time-unit</code>
+<code>base-<wbr>time-<wbr>unit</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">TimeUnit</code>
+<td>
+<code>Time<wbr>Unit</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value" title="java.util.concurrent.TimeUnit.MILLISECONDS">java.util.concurrent.TimeUnit.MILLISECONDS</code>
+<td>
+<code>java.<wbr>util.<wbr>concurrent.<wbr>Time<wbr>Unit.<wbr>MILLISECONDS</code>
 </td>
 <td>Base time unit for timers</td>
 </tr>
@@ -61,11 +47,11 @@ Settings for an OTLP publisher
 <td>
 <code>prefix</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">otlp</code>
+<td>
+<code>otlp</code>
 </td>
 <td>The prefix for settings</td>
 </tr>
@@ -73,14 +59,14 @@ Settings for an OTLP publisher
 <td>
 <a id="aggregation-temporality"></a>
 <a href="io.micrometer.registry.otlp.AggregationTemporality.md">
-<code>aggregation-temporality</code>
+<code>aggregation-<wbr>temporality</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="AggregationTemporality">AggregationTemporality</code>
+<td>
+<code>Aggregation<wbr>Temporality</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">CUMULATIVE</code>
+<td>
+<code>CUMULATIVE</code>
 </td>
 <td>Algorithm to use for adjusting values before transmission</td>
 </tr>
@@ -88,11 +74,11 @@ Settings for an OTLP publisher
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether the configured publisher is enabled</td>
 </tr>
@@ -100,47 +86,47 @@ Settings for an OTLP publisher
 <td>
 <code>url</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value" title="http://localhost:4318/v1/metrics">http://localhost:4318/v1/metrics</code>
+<td>
+<code>http:<wbr>//localhost:<wbr>4318/<wbr>v1/metrics</code>
 </td>
 <td>URL to which to send metrics telemetry</td>
 </tr>
 <tr>
 <td>
-<code>max-scale</code>
+<code>max-<wbr>scale</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">20</code>
+<td>
+<code>20</code>
 </td>
 <td>Maximum scale value to apply to statistical histogram</td>
 </tr>
 <tr>
 <td>
-<code>batch-size</code>
+<code>batch-<wbr>size</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">10000</code>
+<td>
+<code>10000</code>
 </td>
 <td>Number of measurements to send in a single request to the backend</td>
 </tr>
 <tr>
 <td>
-<code>max-bucket-count</code>
+<code>max-<wbr>bucket-<wbr>count</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">160</code>
+<td>
+<code>160</code>
 </td>
 <td>Maximum bucket count to apply to statistical histogram</td>
 </tr>
@@ -148,33 +134,33 @@ Settings for an OTLP publisher
 <td>
 <code>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td><code>N/A</code></td>
+<td><code>N/<wbr>A</code></td>
 </tr>
 <tr>
 <td>
 <code>interval</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">PT60s</code>
+<td>
+<code>PT60s</code>
 </td>
 <td>Interval between successive transmissions of metrics data</td>
 </tr>
 <tr>
 <td>
-<code>max-buckets-per-meter</code>
+<code>max-<wbr>buckets-<wbr>per-<wbr>meter</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, Integer&gt;">Map&lt;String, Integer&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> Integer&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Maximum number of buckets to use for specific meters</td>
 </tr>
@@ -182,21 +168,21 @@ Settings for an OTLP publisher
 <td>
 <code>properties</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Property values to be returned by the OTLP meter registry configuration</td>
 </tr>
 <tr>
 <td>
-<code>resource-attributes</code>
+<code>resource-<wbr>attributes</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Attribute name/value pairs to be associated with all metrics transmissions</td>
 </tr>

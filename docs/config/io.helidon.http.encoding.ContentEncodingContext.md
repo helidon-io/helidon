@@ -6,22 +6,8 @@ Content encoding support to obtain encoders and decoders
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,27 +21,27 @@ Content encoding support to obtain encoders and decoders
 <td>
 <a id="content-encodings"></a>
 <a href="io.helidon.http.encoding.ContentEncoding.md">
-<code>content-encodings</code>
+<code>content-<wbr>encodings</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;ContentEncoding&gt;">List&lt;ContentEncoding&gt;</code>
+<td>
+<code>List&lt;<wbr>Content<wbr>Encoding&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>List of content encodings that should be used</td>
 </tr>
 <tr>
 <td>
-<code>content-encodings-discover-services</code>
+<code>content-<wbr>encodings-<wbr>discover-<wbr>services</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
-<td>Whether to enable automatic service discovery for <code>content-encodings</code></td>
+<td>Whether to enable automatic service discovery for <code>content-<wbr>encodings</code></td>
 </tr>
 </tbody>
 </table>

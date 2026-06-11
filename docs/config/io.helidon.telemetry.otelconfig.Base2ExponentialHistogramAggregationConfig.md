@@ -6,22 +6,8 @@ Settings for the base 2 exponential histogram aggregation
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -32,19 +18,19 @@ Settings for the base 2 exponential histogram aggregation
 <tbody>
 <tr>
 <td>
-<code>max-buckets</code>
+<code>max-<wbr>buckets</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Maximum number of buckets</td>
 </tr>
 <tr>
 <td>
-<code>max-scale</code>
+<code>max-<wbr>scale</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Maximum scale</td>
 </tr>
@@ -52,8 +38,6 @@ Settings for the base 2 exponential histogram aggregation
 </table>
 
 
-
-## Manifest
 
 ---
 

@@ -264,6 +264,7 @@ Criteria modifiers:
 
 Supported condition keywords:
 
+<!--@mdc ::table-collapse -->
 | Keyword          | Args | Description                                                                                                                                                      |
 |------------------|------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | After            | 1    | The property value is after the given value. Requires a `Comparable` property and argument. Intended for date and time. Effectively equivalent to `GreaterThan`. |
@@ -283,6 +284,7 @@ Supported condition keywords:
 | Null             | 0    | The property value is `NULL`.                                                                                                                                    |
 | True             | 0    | The property value is `true`. Requires `boolean` or `Boolean` property.                                                                                          |
 | False            | 0    | The property value is `false`. Requires `boolean` or `Boolean` property.                                                                                         |
+<!--@mdc :: -->
 
 An example repository method with criteria:
 

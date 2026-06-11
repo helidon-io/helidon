@@ -6,22 +6,8 @@ Configuration for server.features.security.security.providers.oidc.webclient.tls
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -34,8 +20,8 @@ Configuration for server.features.security.security.providers.oidc.webclient.tls
 <td>
 <code>alias</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Alias of the private key in the keystore</td>
 </tr>
@@ -43,8 +29,8 @@ Configuration for server.features.security.security.providers.oidc.webclient.tls
 <td>
 <code>passphrase</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Pass-phrase of the key in the keystore (used for private keys)</td>
 </tr>

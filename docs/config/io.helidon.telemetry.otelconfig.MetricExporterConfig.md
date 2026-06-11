@@ -6,22 +6,8 @@ OpenTelemetry metric exporter settings
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,10 +21,10 @@ OpenTelemetry metric exporter settings
 <td>
 <code>headers</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Headers added to each export message</td>
 </tr>
@@ -46,38 +32,38 @@ OpenTelemetry metric exporter settings
 <td>
 <a id="memory-mode"></a>
 <a href="io.opentelemetry.sdk.common.export.MemoryMode.md">
-<code>memory-mode</code>
+<code>memory-<wbr>mode</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">MemoryMode</code>
+<td>
+<code>Memory<wbr>Mode</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Memory mode</td>
 </tr>
 <tr>
 <td>
-<code>temporality-preference</code>
+<code>temporality-<wbr>preference</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="CustomMethods">CustomMethods</code>
+<td>
+<code>Custom<wbr>Methods</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Preferred output aggregation technique (how transmitted values reflect the values recorded locally), configurable as a <code>io.helidon.telemetry.otelconfig.MetricTemporalityPreferenceType</code> value: <code>CUMULATIVE, DELTA, LOWMEMORY</code></td>
+<td>Preferred output aggregation technique (how transmitted values reflect the values recorded locally), configurable as a <code>io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Metric<wbr>Temporality<wbr>Preference<wbr>Type</code> value: <code>CUMULATIVE,<wbr> DELTA,<wbr> LOWMEMORY</code></td>
 </tr>
 <tr>
 <td>
 <a id="internal-telemetry-version"></a>
 <a href="io.opentelemetry.sdk.common.InternalTelemetryVersion.md">
-<code>internal-telemetry-version</code>
+<code>internal-<wbr>telemetry-<wbr>version</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="InternalTelemetryVersion">InternalTelemetryVersion</code>
+<td>
+<code>Internal<wbr>Telemetry<wbr>Version</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Self-monitoring telemetry OpenTelemetry should collect</td>
 </tr>
@@ -88,10 +74,10 @@ OpenTelemetry metric exporter settings
 <code>certificate</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Resource</code>
+<td>
+<code>Resource</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Trusted certificates</td>
 </tr>
@@ -102,11 +88,11 @@ OpenTelemetry metric exporter settings
 <code>type</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="MetricExporterType">MetricExporterType</code>
+<td>
+<code>Metric<wbr>Exporter<wbr>Type</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">OTLP</code>
+<td>
+<code>OTLP</code>
 </td>
 <td>Metric exporter type</td>
 </tr>
@@ -114,21 +100,21 @@ OpenTelemetry metric exporter settings
 <td>
 <code>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Exporter timeout</td>
 </tr>
 <tr>
 <td>
-<code>connect-timeout</code>
+<code>connect-<wbr>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Connection timeout</td>
 </tr>
@@ -136,10 +122,10 @@ OpenTelemetry metric exporter settings
 <td>
 <code>endpoint</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">URI</code>
+<td>
+<code>URI</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Endpoint of the collector to which the exporter should transmit</td>
 </tr>
@@ -147,11 +133,11 @@ OpenTelemetry metric exporter settings
 <td>
 <code>protocol</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="CustomMethods">CustomMethods</code>
+<td>
+<code>Custom<wbr>Methods</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">DEFAULT</code>
+<td>
+<code>DEFAULT</code>
 </td>
 <td>Exporter protocol type</td>
 </tr>
@@ -159,38 +145,38 @@ OpenTelemetry metric exporter settings
 <td>
 <a id="client-key"></a>
 <a href="io.helidon.common.configurable.Resource.md">
-<code>client.key</code>
+<code>client.<wbr>key</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Resource</code>
+<td>
+<code>Resource</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>TLS client key</td>
 </tr>
 <tr>
 <td>
-<code>default-histogram-aggregation</code>
+<code>default-<wbr>histogram-<wbr>aggregation</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="CustomMethods">CustomMethods</code>
+<td>
+<code>Custom<wbr>Methods</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Preferred default histogram aggregation technique, configurable as <code>io.helidon.telemetry.otelconfig.MetricDefaultHistogramAggregationConfig</code></td>
+<td>Preferred default histogram aggregation technique, configurable as <code>io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Metric<wbr>Default<wbr>Histogram<wbr>Aggregation<wbr>Config</code></td>
 </tr>
 <tr>
 <td>
 <a id="client-certificate"></a>
 <a href="io.helidon.common.configurable.Resource.md">
-<code>client.certificate</code>
+<code>client.<wbr>certificate</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Resource</code>
+<td>
+<code>Resource</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>TLS certificate</td>
 </tr>
@@ -201,21 +187,21 @@ OpenTelemetry metric exporter settings
 <code>compression</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="CompressionType">CompressionType</code>
+<td>
+<code>Compression<wbr>Type</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Compression the exporter uses</td>
 </tr>
 <tr>
 <td>
-<code>retry-policy</code>
+<code>retry-<wbr>policy</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="CustomMethods">CustomMethods</code>
+<td>
+<code>Custom<wbr>Methods</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Retry policy</td>
 </tr>
@@ -223,8 +209,6 @@ OpenTelemetry metric exporter settings
 </table>
 
 
-
-## Manifest
 
 ---
 

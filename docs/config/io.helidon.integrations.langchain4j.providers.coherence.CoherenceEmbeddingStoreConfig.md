@@ -6,22 +6,8 @@ Configuration for LangChain4j model CoherenceEmbeddingStore
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,79 +19,79 @@ Configuration for LangChain4j model CoherenceEmbeddingStore
 <tbody>
 <tr>
 <td>
-<code>embedding-model</code>
+<code>embedding-<wbr>model</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="EmbeddingModel">EmbeddingModel</code>
+<td>
+<code>Embedding<wbr>Model</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>The embedding model to use</td>
 </tr>
 <tr>
 <td>
-<code>normalize-embeddings</code>
+<code>normalize-<wbr>embeddings</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.store.embedding.coherence.CoherenceEmbeddingStore.Builder#normalizeEmbeddings(boolean)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>store.<wbr>embedding.<wbr>coherence.<wbr>Coherence<wbr>Embedding<wbr>Store.<wbr>Builder#<wbr>normalize<wbr>Embeddings(<wbr>boolean)</code></td>
 </tr>
 <tr>
 <td>
 <code>session</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.store.embedding.coherence.CoherenceEmbeddingStore.Builder#session(java.lang.String)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>store.<wbr>embedding.<wbr>coherence.<wbr>Coherence<wbr>Embedding<wbr>Store.<wbr>Builder#<wbr>session(<wbr>java.<wbr>lang.<wbr>String)</code></td>
 </tr>
 <tr>
 <td>
 <code>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.store.embedding.coherence.CoherenceEmbeddingStore.Builder#name(java.lang.String)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>store.<wbr>embedding.<wbr>coherence.<wbr>Coherence<wbr>Embedding<wbr>Store.<wbr>Builder#<wbr>name(<wbr>java.<wbr>lang.<wbr>String)</code></td>
 </tr>
 <tr>
 <td>
 <code>index</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>The index name to use</td>
 </tr>
 <tr>
 <td>
-<code>embedding-model-discover-services</code>
+<code>embedding-<wbr>model-<wbr>discover-<wbr>services</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
-<td>Whether to enable automatic service discovery for <code>embedding-model</code></td>
+<td>Whether to enable automatic service discovery for <code>embedding-<wbr>model</code></td>
 </tr>
 <tr>
 <td>
 <code>dimension</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>The number of dimensions in the embeddings</td>
 </tr>
@@ -113,11 +99,11 @@ Configuration for LangChain4j model CoherenceEmbeddingStore
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>If set to <code>false</code>, CoherenceEmbeddingStore will not be available even if configured</td>
 </tr>

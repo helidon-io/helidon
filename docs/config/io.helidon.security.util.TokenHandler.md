@@ -6,22 +6,8 @@ Extracts a security token from request or updates headers with the token
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -34,8 +20,8 @@ Extracts a security token from request or updates headers with the token
 <td>
 <code>regexp</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Set the token pattern (Regular expression) to extract the token</td>
 </tr>
@@ -43,8 +29,8 @@ Extracts a security token from request or updates headers with the token
 <td>
 <code>prefix</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Set the prefix of header value to extract the token</td>
 </tr>
@@ -52,8 +38,8 @@ Extracts a security token from request or updates headers with the token
 <td>
 <code>format</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Token format for creating outbound tokens</td>
 </tr>
@@ -61,8 +47,8 @@ Extracts a security token from request or updates headers with the token
 <td>
 <code>header</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Set the name of header to look into to extract the token</td>
 </tr>

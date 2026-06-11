@@ -6,13 +6,7 @@ This type is an enumeration.
 
 ## Allowed Values
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-</style>
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Value</th>
@@ -33,15 +27,15 @@ This type is an enumeration.
 <td>Aggregates measurements into a double sum or long sum</td>
 </tr>
 <tr>
-<td><code>LAST_VALUE</code></td>
+<td><code>LAST_<wbr>VALUE</code></td>
 <td>Records the last seen measurement as a double aauge or long gauge</td>
 </tr>
 <tr>
-<td><code>EXPLICIT_BUCKET_HISTOGRAM</code></td>
+<td><code>EXPLICIT_<wbr>BUCKET_<wbr>HISTOGRAM</code></td>
 <td>Aggregates measurements into a histogram using default or explicit bucket boundaries</td>
 </tr>
 <tr>
-<td><code>BASE2_EXPONENTIAL_BUCKET_HISTOGRAM</code></td>
+<td><code>BASE2_<wbr>EXPONENTIAL_<wbr>BUCKET_<wbr>HISTOGRAM</code></td>
 <td>Aggregates measurements into a base-2 exponential histogram using default or explicit maximum number of buckets and maximum scale</td>
 </tr>
 </tbody>

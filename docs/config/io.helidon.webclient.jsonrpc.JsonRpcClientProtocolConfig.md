@@ -6,22 +6,8 @@ Configuration of a JSON-RPC client
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,11 +21,11 @@ Configuration of a JSON-RPC client
 <td>
 <code>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">jsonrpc</code>
+<td>
+<code>jsonrpc</code>
 </td>
 <td>Name identifying this client protocol</td>
 </tr>

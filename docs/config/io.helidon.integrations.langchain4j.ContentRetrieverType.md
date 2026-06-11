@@ -6,13 +6,7 @@ This type is an enumeration.
 
 ## Allowed Values
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-</style>
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Value</th>
@@ -21,11 +15,11 @@ This type is an enumeration.
 </thead>
 <tbody>
 <tr>
-<td><code>EMBEDDING_STORE_CONTENT_RETRIEVER</code></td>
+<td><code>EMBEDDING_<wbr>STORE_<wbr>CONTENT_<wbr>RETRIEVER</code></td>
 <td>Embedding store-backed content retriever</td>
 </tr>
 <tr>
-<td><code>WEB_SEARCH_CONTENT_RETRIEVER</code></td>
+<td><code>WEB_<wbr>SEARCH_<wbr>CONTENT_<wbr>RETRIEVER</code></td>
 <td>Web search-backed content retriever</td>
 </tr>
 </tbody>

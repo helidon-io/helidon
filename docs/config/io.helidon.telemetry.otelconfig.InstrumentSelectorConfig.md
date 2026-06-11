@@ -6,22 +6,8 @@ Settings for OpenTelemetry instrument selectors
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -34,17 +20,17 @@ Settings for OpenTelemetry instrument selectors
 <td>
 <code>unit</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Instrument unit</td>
 </tr>
 <tr>
 <td>
-<code>meter-name</code>
+<code>meter-<wbr>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Meter name</td>
 </tr>
@@ -52,26 +38,26 @@ Settings for OpenTelemetry instrument selectors
 <td>
 <code>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Instrument name</td>
 </tr>
 <tr>
 <td>
-<code>meter-schema-url</code>
+<code>meter-<wbr>schema-<wbr>url</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Meter schema URL</td>
 </tr>
 <tr>
 <td>
-<code>meter-version</code>
+<code>meter-<wbr>version</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Meter version</td>
 </tr>
@@ -82,8 +68,8 @@ Settings for OpenTelemetry instrument selectors
 <code>type</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="InstrumentType">InstrumentType</code>
+<td>
+<code>Instrument<wbr>Type</code>
 </td>
 <td>Instrument type</td>
 </tr>
@@ -91,8 +77,6 @@ Settings for OpenTelemetry instrument selectors
 </table>
 
 
-
-## Manifest
 
 ---
 

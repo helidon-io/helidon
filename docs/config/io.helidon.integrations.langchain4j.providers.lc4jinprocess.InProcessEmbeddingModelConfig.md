@@ -6,22 +6,8 @@ Configuration blueprint for LangChain4j in-process models
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,23 +19,23 @@ Configuration blueprint for LangChain4j in-process models
 <tbody>
 <tr>
 <td>
-<code>path-to-tokenizer</code>
+<code>path-<wbr>to-tokenizer</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Path</code>
+<td>
+<code>Path</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>The path to the tokenizer file (e.g., "/path/to/tokenizer.json")</td>
 </tr>
 <tr>
 <td>
-<code>path-to-model</code>
+<code>path-<wbr>to-model</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Path</code>
+<td>
+<code>Path</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>The path to the modelPath file (e.g., "/path/to/model.onnx")</td>
 </tr>
@@ -57,10 +43,10 @@ Configuration blueprint for LangChain4j in-process models
 <td>
 <code>executor</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="ThreadPoolConfig">ThreadPoolConfig</code>
+<td>
+<code>Thread<wbr>Pool<wbr>Config</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Executor configuration used by the embedding model</td>
 </tr>
@@ -68,13 +54,13 @@ Configuration blueprint for LangChain4j in-process models
 <td>
 <a id="pooling-mode"></a>
 <a href="dev.langchain4j.model.embedding.onnx.PoolingMode.md">
-<code>pooling-mode</code>
+<code>pooling-<wbr>mode</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="PoolingMode">PoolingMode</code>
+<td>
+<code>Pooling<wbr>Mode</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>The pooling model to use</td>
 </tr>
@@ -85,10 +71,10 @@ Configuration blueprint for LangChain4j in-process models
 <code>type</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="InProcessModelType">InProcessModelType</code>
+<td>
+<code>In<wbr>Process<wbr>Model<wbr>Type</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Which in-process ONNX model variant should be used</td>
 </tr>
@@ -96,11 +82,11 @@ Configuration blueprint for LangChain4j in-process models
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether the embedding model is enabled</td>
 </tr>

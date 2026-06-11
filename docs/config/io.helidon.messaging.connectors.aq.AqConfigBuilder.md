@@ -6,22 +6,8 @@ Build AQ specific config
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,45 +19,45 @@ Build AQ specific config
 <tbody>
 <tr>
 <td>
-<code>message-selector</code>
+<code>message-<wbr>selector</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>JMS API message selector expression based on a subset of the SQL92</td>
 </tr>
 <tr>
 <td>
-<code>named-factory</code>
+<code>named-<wbr>factory</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Select <code>jakarta.jms.ConnectionFactory ConnectionFactory</code> in case factory is injected as a named bean or configured with name</td>
+<td>Select <code>jakarta.<wbr>jms.<wbr>Connection<wbr>Factory Connection<wbr>Factory</code> in case factory is injected as a named bean or configured with name</td>
 </tr>
 <tr>
 <td>
 <code>destination</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Queue or topic name</td>
 </tr>
 <tr>
 <td>
-<code>subscriber-name</code>
+<code>subscriber-<wbr>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Subscriber name used to identify a durable subscription</td>
 </tr>
@@ -79,23 +65,23 @@ Build AQ specific config
 <td>
 <code>transacted</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Indicates whether the session will use a local transaction</td>
 </tr>
 <tr>
 <td>
-<code>non-local</code>
+<code>non-<wbr>local</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>When set to <code>true</code>, messages published by this connection, or any connection with the same client identifier, will not be delivered to this durable subscription</td>
 </tr>
@@ -106,23 +92,23 @@ Build AQ specific config
 <code>type</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Type</code>
+<td>
+<code>Type</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">QUEUE</code>
+<td>
+<code>QUEUE</code>
 </td>
-<td>Specify if connection is <code>io.helidon.messaging.connectors.jms.Type#QUEUE queue</code> or <code>io.helidon.messaging.connectors.jms.Type#TOPIC topic</code></td>
+<td>Specify if connection is <code>io.<wbr>helidon.<wbr>messaging.<wbr>connectors.<wbr>jms.<wbr>Type#<wbr>QUEUE queue</code> or <code>io.<wbr>helidon.<wbr>messaging.<wbr>connectors.<wbr>jms.<wbr>Type#<wbr>TOPIC topic</code></td>
 </tr>
 <tr>
 <td>
 <code>durable</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Indicates whether the consumer should be created as durable (only relevant for topic destinations)</td>
 </tr>
@@ -130,82 +116,82 @@ Build AQ specific config
 <td>
 <code>password</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Password used for creating JMS connection</td>
 </tr>
 <tr>
 <td>
-<code>poll-timeout</code>
+<code>poll-<wbr>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Long</code>
+<td>
+<code>Long</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">50</code>
+<td>
+<code>50</code>
 </td>
 <td>Timeout for polling for next message in every poll cycle in millis</td>
 </tr>
 <tr>
 <td>
-<code>data-source</code>
+<code>data-<wbr>source</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Mapping to <code>javax.sql.DataSource DataSource</code> supplied with <code>io.helidon.messaging.connectors.aq.AqConnector.AqConnectorBuilder#dataSource(String, javax.sql.DataSource) AqConnectorBuilder.dataSource()</code></td>
+<td>Mapping to <code>javax.<wbr>sql.<wbr>Data<wbr>Source Data<wbr>Source</code> supplied with <code>io.<wbr>helidon.<wbr>messaging.<wbr>connectors.<wbr>aq.Aq<wbr>Connector.<wbr>AqConnector<wbr>Builder#<wbr>data<wbr>Source(<wbr>String,<wbr> javax.<wbr>sql.<wbr>Data<wbr>Source) Aq<wbr>Connector<wbr>Builder.<wbr>data<wbr>Source(<wbr>)</code></td>
 </tr>
 <tr>
 <td>
 <code>topic</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Use supplied destination name and <code>Type#TOPIC TOPIC</code> as type</td>
+<td>Use supplied destination name and <code>Type#<wbr>TOPIC TOPIC</code> as type</td>
 </tr>
 <tr>
 <td>
 <a id="acknowledge-mode"></a>
 <a href="io.helidon.messaging.connectors.jms.AcknowledgeMode.md">
-<code>acknowledge-mode</code>
+<code>acknowledge-<wbr>mode</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="AcknowledgeMode">AcknowledgeMode</code>
+<td>
+<code>Acknowledge<wbr>Mode</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value" title="AUTO_ACKNOWLEDGE">AUTO_ACKNOWLEDGE</code>
+<td>
+<code>AUTO_<wbr>ACKNOWLEDGE</code>
 </td>
 <td>JMS acknowledgement mode</td>
 </tr>
 <tr>
 <td>
-<code>client-id</code>
+<code>client-<wbr>id</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Client identifier for JMS connection</td>
 </tr>
 <tr>
 <td>
-<code>period-executions</code>
+<code>period-<wbr>executions</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Long</code>
+<td>
+<code>Long</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">100</code>
+<td>
+<code>100</code>
 </td>
 <td>Period for executing poll cycles in millis</td>
 </tr>
@@ -213,21 +199,21 @@ Build AQ specific config
 <td>
 <code>queue</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Use supplied destination name and <code>Type#QUEUE QUEUE</code> as type</td>
+<td>Use supplied destination name and <code>Type#<wbr>QUEUE QUEUE</code> as type</td>
 </tr>
 <tr>
 <td>
-<code>session-group-id</code>
+<code>session-<wbr>group-<wbr>id</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>When multiple channels share same session-group-id, they share same JMS session</td>
 </tr>
@@ -235,10 +221,10 @@ Build AQ specific config
 <td>
 <code>username</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>User name used for creating JMS connection</td>
 </tr>
@@ -246,8 +232,6 @@ Build AQ specific config
 </table>
 
 
-
-## Manifest
 
 ---
 

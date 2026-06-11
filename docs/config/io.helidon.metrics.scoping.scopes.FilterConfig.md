@@ -6,22 +6,8 @@ Configuration for metrics.scoping.scopes.filter
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -34,8 +20,8 @@ Configuration for metrics.scoping.scopes.filter
 <td>
 <code>exclude</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Pattern</code>
+<td>
+<code>Pattern</code>
 </td>
 <td>Regular expression for meter names to exclude</td>
 </tr>
@@ -43,8 +29,8 @@ Configuration for metrics.scoping.scopes.filter
 <td>
 <code>include</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Pattern</code>
+<td>
+<code>Pattern</code>
 </td>
 <td>Regular expression for meter names to include</td>
 </tr>

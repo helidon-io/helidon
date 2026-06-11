@@ -76,7 +76,7 @@ The class responsible for configuration is:
 
 ### Configuration options
 
-<!--@include ../config/io.helidon.webserver.observe.health.HealthObserver.md#configuration-options offset=1 -->
+<!--@include ../config/io.helidon.webserver.observe.health.HealthObserver.md#configuration-options offset=1 collapseTables=10 -->
 See [Configuration options](../config/io.helidon.webserver.observe.health.HealthObserver.md#configuration-options).
 <!--/include-->
 

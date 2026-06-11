@@ -2,26 +2,12 @@
 
 ## Description
 
-<code>N/A</code>
+<code>N/<wbr>A</code>
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -32,42 +18,42 @@
 <tbody>
 <tr>
 <td>
-<code>is-unique</code>
+<code>is-<wbr>unique</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td>Generated from <code>dev.langchain4j.store.embedding.oracle.JSONIndexBuilder#isUnique(boolean)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>store.<wbr>embedding.<wbr>oracle.<wbr>JSON<wbr>Index<wbr>Builder#<wbr>isUnique(<wbr>boolean)</code></td>
 </tr>
 <tr>
 <td>
 <a id="create-option"></a>
 <a href="dev.langchain4j.store.embedding.oracle.CreateOption.md">
-<code>create-option</code>
+<code>create-<wbr>option</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="CreateOption">CreateOption</code>
+<td>
+<code>Create<wbr>Option</code>
 </td>
-<td>Generated from <code>dev.langchain4j.store.embedding.oracle.IndexBuilder#createOption(dev.langchain4j.store.embedding.oracle.CreateOption)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>store.<wbr>embedding.<wbr>oracle.<wbr>Index<wbr>Builder#<wbr>create<wbr>Option(<wbr>dev.<wbr>langchain4j.<wbr>store.<wbr>embedding.<wbr>oracle.<wbr>Create<wbr>Option)</code></td>
 </tr>
 <tr>
 <td>
-<code>is-bitmap</code>
+<code>is-<wbr>bitmap</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td>Generated from <code>dev.langchain4j.store.embedding.oracle.JSONIndexBuilder#isBitmap(boolean)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>store.<wbr>embedding.<wbr>oracle.<wbr>JSON<wbr>Index<wbr>Builder#<wbr>isBitmap(<wbr>boolean)</code></td>
 </tr>
 <tr>
 <td>
 <code>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td>Generated from <code>dev.langchain4j.store.embedding.oracle.IndexBuilder#name(java.lang.String)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>store.<wbr>embedding.<wbr>oracle.<wbr>Index<wbr>Builder#<wbr>name(<wbr>java.<wbr>lang.<wbr>String)</code></td>
 </tr>
 </tbody>
 </table>

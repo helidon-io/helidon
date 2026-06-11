@@ -6,13 +6,7 @@ This type is an enumeration.
 
 ## Allowed Values
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-</style>
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Value</th>
@@ -21,11 +15,11 @@ This type is an enumeration.
 </thead>
 <tbody>
 <tr>
-<td><code>ALL_MINILM_L6_V2</code></td>
+<td><code>ALL_<wbr>MINILM_<wbr>L6_V2</code></td>
 <td>The default "all-minilm-l6-v2" in-process embedding model</td>
 </tr>
 <tr>
-<td><code>ALL_MINILM_L6_V2_Q</code></td>
+<td><code>ALL_<wbr>MINILM_<wbr>L6_V2_<wbr>Q</code></td>
 <td>The quantized variant of the "all-minilm-l6-v2" in-process embedding model, typically offering reduced memory footprint and potentially faster inference at some quality cost</td>
 </tr>
 <tr>

@@ -6,22 +6,8 @@ Info Observer configuration
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,22 +21,22 @@ Info Observer configuration
 <td>
 <code>endpoint</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">info</code>
+<td>
+<code>info</code>
 </td>
-<td><code>N/A</code></td>
+<td><code>N/<wbr>A</code></td>
 </tr>
 <tr>
 <td>
 <code>values</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Values to be exposed using this observability endpoint</td>
 </tr>

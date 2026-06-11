@@ -37,6 +37,7 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 Full list of configuration properties:
 
+<!--@mdc ::table-collapse -->
 | Key                      | Type                  | Description                                                                                                                                                       |
 |--------------------------|-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `api-key`                | string                | Required. The API key used to authenticate requests to the Cohere API.                                                                                            |
@@ -49,6 +50,7 @@ Full list of configuration properties:
 | `max-segments-per-batch` | int                   | Maximum number of segments per batch.                                                                                                                             |
 | `model-name`             | string                | The model name to use.                                                                                                                                            |
 | `timeout`                | duration              | The timeout setting for API requests. See [here][here] for the format. |
+<!--@mdc :: -->
 
 ### CohereScoringModel
 
@@ -70,6 +72,7 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 Full list of configuration properties:
 
+<!--@mdc ::table-collapse -->
 | Key              | Type                  | Description                                                                                                                                                       |
 |------------------|-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `api-key`        | string                | Required. The API key used to authenticate requests to the Cohere API.                                                                                            |
@@ -81,6 +84,7 @@ Full list of configuration properties:
 | `max-retries`    | int                   | The maximum number of retries for failed API requests.                                                                                                            |
 | `model-name`     | string                | The model name to use.                                                                                                                                            |
 | `timeout`        | duration              | The timeout setting for API requests. See [here][here] for the format. |
+<!--@mdc :: -->
 
 ## Additional Information
 

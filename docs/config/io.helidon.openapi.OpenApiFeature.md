@@ -2,26 +2,12 @@
 
 ## Description
 
-<code>OpenApiFeature</code> prototype
+<code>Open<wbr>ApiFeature</code> prototype
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,13 +19,13 @@
 <tbody>
 <tr>
 <td>
-<code>web-context</code>
+<code>web-<wbr>context</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">/openapi</code>
+<td>
+<code>/openapi</code>
 </td>
 <td>Web context path for the OpenAPI endpoint</td>
 </tr>
@@ -50,22 +36,22 @@
 <code>manager</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="OpenApiManager">OpenApiManager</code>
+<td>
+<code>Open<wbr>ApiManager</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>OpenAPI manager</td>
 </tr>
 <tr>
 <td>
-<code>services-discover-services</code>
+<code>services-<wbr>discover-<wbr>services</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether to enable automatic service discovery for <code>services</code></td>
 </tr>
@@ -73,22 +59,22 @@
 <td>
 <code>roles</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">openapi</code>
+<td>
+<code>openapi</code>
 </td>
 <td>Hints for role names the user is expected to be in</td>
 </tr>
 <tr>
 <td>
-<code>static-file</code>
+<code>static-<wbr>file</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Path of the static OpenAPI document file</td>
 </tr>
@@ -96,11 +82,11 @@
 <td>
 <code>weight</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Double</code>
+<td>
+<code>Double</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">90.0</code>
+<td>
+<code>90.<wbr>0</code>
 </td>
 <td>Weight of the OpenAPI feature</td>
 </tr>
@@ -111,10 +97,10 @@
 <code>services</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;OpenApiService&gt;">List&lt;OpenApiService&gt;</code>
+<td>
+<code>List&lt;<wbr>Open<wbr>ApiService&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>OpenAPI services</td>
 </tr>
@@ -122,34 +108,34 @@
 <td>
 <code>sockets</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>List of sockets to register this feature on</td>
 </tr>
 <tr>
 <td>
-<code>manager-discover-services</code>
+<code>manager-<wbr>discover-<wbr>services</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Whether to enable automatic service discovery for <code>manager</code></td>
 </tr>
 <tr>
 <td>
-<code>permit-all</code>
+<code>permit-<wbr>all</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether to allow anybody to access the endpoint</td>
 </tr>
@@ -157,11 +143,11 @@
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Sets whether the feature should be enabled</td>
 </tr>
@@ -172,7 +158,7 @@
 ### Deprecated Options
 
 
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -188,8 +174,8 @@
 <code>cors</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="CrossOriginConfig">CrossOriginConfig</code>
+<td>
+<code>Cross<wbr>Origin<wbr>Config</code>
 </td>
 <td>CORS config</td>
 </tr>

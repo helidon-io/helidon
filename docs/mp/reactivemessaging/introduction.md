@@ -282,8 +282,6 @@ Messages carry a callback for reception acknowledgement (ack) and negative ackno
 | `@Acknowledgment(Acknowledgment.Strategy.PRE_PROCESSING)` | Ack automatically before method invocation or processing |
 | `@Acknowledgment(Acknowledgment.Strategy.POST_PROCESSING)` | Ack automatically after method invocation or processing |
 
-Acknowledgement strategies {#terms}
-
 Example of manual acknowledgment:
 
 ```java

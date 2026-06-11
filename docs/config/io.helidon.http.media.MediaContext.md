@@ -6,22 +6,8 @@ Media context to obtain readers and writers of various supported content types
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,25 +19,25 @@ Media context to obtain readers and writers of various supported content types
 <tbody>
 <tr>
 <td>
-<code>media-supports-discover-services</code>
+<code>media-<wbr>supports-<wbr>discover-<wbr>services</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
-<td>Whether to enable automatic service discovery for <code>media-supports</code></td>
+<td>Whether to enable automatic service discovery for <code>media-<wbr>supports</code></td>
 </tr>
 <tr>
 <td>
-<code>register-defaults</code>
+<code>register-<wbr>defaults</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Should we register defaults of Helidon, such as String media support</td>
 </tr>
@@ -59,13 +45,13 @@ Media context to obtain readers and writers of various supported content types
 <td>
 <a id="media-supports"></a>
 <a href="io.helidon.http.media.MediaSupport.md">
-<code>media-supports</code>
+<code>media-<wbr>supports</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;MediaSupport&gt;">List&lt;MediaSupport&gt;</code>
+<td>
+<code>List&lt;<wbr>Media<wbr>Support&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Media supports to use</td>
 </tr>
@@ -76,10 +62,10 @@ Media context to obtain readers and writers of various supported content types
 <code>fallback</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="MediaContext">MediaContext</code>
+<td>
+<code>Media<wbr>Context</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Existing context to be used as a fallback for this context</td>
 </tr>

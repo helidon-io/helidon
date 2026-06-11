@@ -37,6 +37,7 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 Full list of configuration properties:
 
+<!--@mdc ::table-collapse -->
 | Key                     | Type                  | Description                                                                                                                                                                                                                                                                          |
 |-------------------------|-----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `api-key`               | string                | Required. The API key used to authenticate requests to the OpenAI API.                                                                                                                                                                                                               |
@@ -63,6 +64,7 @@ Full list of configuration properties:
 | `timeout`               | duration              | The timeout setting for API requests. See [here][here] for the format.                                                                                                                    |
 | `top-p`                 | double                | The nucleus sampling value, where the model considers the results of the tokens with top_p probability mass.                                                                                                                                                                         |
 | `user`                  | string                | The user ID associated with the API requests.                                                                                                                                                                                                                                        |
+<!--@mdc :: -->
 
 #### Proxy
 
@@ -100,6 +102,7 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 Full list of configuration properties:
 
+<!--@mdc ::table-collapse -->
 | Key               | Type                  | Description                                                                                                                                                       |
 |-------------------|-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `api-key`         | string                | Required. The API key used to authenticate requests to the OpenAI API.                                                                                            |
@@ -114,6 +117,7 @@ Full list of configuration properties:
 | `organization-id` | string                | The ID of the organization for API requests.                                                                                                                      |
 | `timeout`         | duration              | The timeout setting for API requests. See [here][here] for the format. |
 | `user`            | string                | The user ID associated with the API requests.                                                                                                                     |
+<!--@mdc :: -->
 
 #### Proxy
 
@@ -151,6 +155,7 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 Full list of configuration properties:
 
+<!--@mdc ::table-collapse -->
 | Key               | Type                  | Description                                                                                                                                                       |
 |-------------------|-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `api-key`         | string                | Required. The API key used to authenticate requests to the OpenAI API.                                                                                            |
@@ -170,6 +175,7 @@ Full list of configuration properties:
 | `timeout`         | duration              | The timeout setting for API requests. See [here][here] for the format. |
 | `user`            | string                | The unique identifier for the user making the request.                                                                                                            |
 | `with-persisting` | boolean               | The flag to indicate whether to persist the generated images.                                                                                                     |
+<!--@mdc :: -->
 
 #### Proxy
 
@@ -199,6 +205,7 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 Full list of configuration properties:
 
+<!--@mdc ::table-collapse -->
 | Key               | Type                  | Description                                                                                                                                                       |
 |-------------------|-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `api-key`         | string                | Required. The API key used to authenticate requests to the OpenAI API.                                                                                            |
@@ -212,6 +219,7 @@ Full list of configuration properties:
 | `organization-id` | string                | The ID of the organization for API requests.                                                                                                                      |
 | `temperature`     | double                | The sampling temperature to use, between 0 and 2. Higher values make the output more random, while lower values make it more focused and deterministic.           |
 | `timeout`         | duration              | The timeout setting for API requests. See [here][here] for the format. |
+<!--@mdc :: -->
 
 #### Proxy
 
@@ -249,6 +257,7 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 Full list of configuration properties:
 
+<!--@mdc ::table-collapse -->
 | Key               | Type                  | Description                                                                                                                                                       |
 |-------------------|-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `api-key`         | string                | Required. The API key used to authenticate requests to the OpenAI API.                                                                                            |
@@ -261,6 +270,7 @@ Full list of configuration properties:
 | `model-name`      | string                | The model name to use.                                                                                                                                            |
 | `organization-id` | string                | The ID of the organization for API requests.                                                                                                                      |
 | `timeout`         | duration              | The timeout setting for API requests. See [here][here] for the format. |
+<!--@mdc :: -->
 
 #### Proxy
 
@@ -290,6 +300,7 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 Full list of configuration properties:
 
+<!--@mdc ::table-collapse -->
 | Key                     | Type                  | Description                                                                                                                                                                                                                                                                          |
 |-------------------------|-----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `api-key`               | string                | Required. The API key used to authenticate requests to the OpenAI API.                                                                                                                                                                                                               |
@@ -314,6 +325,7 @@ Full list of configuration properties:
 | `timeout`               | duration              | The timeout setting for API requests. See [here][here] for the format.                                                                                                                    |
 | `top-p`                 | double                | The nucleus sampling value, where the model considers the results of the tokens with top_p probability mass.                                                                                                                                                                         |
 | `user`                  | string                | The user ID associated with the API requests.                                                                                                                                                                                                                                        |
+<!--@mdc :: -->
 
 #### Proxy
 

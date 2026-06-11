@@ -6,13 +6,7 @@ This type is an enumeration.
 
 ## Allowed Values
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-</style>
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Value</th>
@@ -22,31 +16,31 @@ This type is an enumeration.
 <tbody>
 <tr>
 <td><code>COUNTER</code></td>
-<td><code>N/A</code></td>
+<td><code>N/<wbr>A</code></td>
 </tr>
 <tr>
-<td><code>UP_DOWN_COUNTER</code></td>
-<td><code>N/A</code></td>
+<td><code>UP_<wbr>DOWN_<wbr>COUNTER</code></td>
+<td><code>N/<wbr>A</code></td>
 </tr>
 <tr>
 <td><code>HISTOGRAM</code></td>
-<td><code>N/A</code></td>
+<td><code>N/<wbr>A</code></td>
 </tr>
 <tr>
-<td><code>OBSERVABLE_COUNTER</code></td>
-<td><code>N/A</code></td>
+<td><code>OBSERVABLE_<wbr>COUNTER</code></td>
+<td><code>N/<wbr>A</code></td>
 </tr>
 <tr>
-<td><code>OBSERVABLE_UP_DOWN_COUNTER</code></td>
-<td><code>N/A</code></td>
+<td><code>OBSERVABLE_<wbr>UP_DOWN_<wbr>COUNTER</code></td>
+<td><code>N/<wbr>A</code></td>
 </tr>
 <tr>
-<td><code>OBSERVABLE_GAUGE</code></td>
-<td><code>N/A</code></td>
+<td><code>OBSERVABLE_<wbr>GAUGE</code></td>
+<td><code>N/<wbr>A</code></td>
 </tr>
 <tr>
 <td><code>GAUGE</code></td>
-<td><code>N/A</code></td>
+<td><code>N/<wbr>A</code></td>
 </tr>
 </tbody>
 </table>

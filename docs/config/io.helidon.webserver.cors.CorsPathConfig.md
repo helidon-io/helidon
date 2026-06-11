@@ -6,22 +6,8 @@ Configuration of CORS for a specific path
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,83 +19,83 @@ Configuration of CORS for a specific path
 <tbody>
 <tr>
 <td>
-<code>allow-headers</code>
+<code>allow-<wbr>headers</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">*</code>
+<td>
+<code>*</code>
 </td>
 <td>Set of allowed headers, defaults to all</td>
 </tr>
 <tr>
 <td>
-<code>allow-credentials</code>
+<code>allow-<wbr>credentials</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Whether to allow credentials</td>
 </tr>
 <tr>
 <td>
-<code>max-age</code>
+<code>max-<wbr>age</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="PathCustomMethods">PathCustomMethods</code>
+<td>
+<code>Path<wbr>Custom<wbr>Methods</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">PT1H</code>
+<td>
+<code>PT1H</code>
 </td>
 <td>Max age as a duration</td>
 </tr>
 <tr>
 <td>
-<code>allow-origins</code>
+<code>allow-<wbr>origins</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">*</code>
+<td>
+<code>*</code>
 </td>
 <td>Set of allowed origins, defaults to all</td>
 </tr>
 <tr>
 <td>
-<code>expose-headers</code>
+<code>expose-<wbr>headers</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Set of exposed headers, defaults to none</td>
 </tr>
 <tr>
 <td>
-<code>path-pattern</code>
+<code>path-<wbr>pattern</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Path pattern to apply this configuration for</td>
 </tr>
 <tr>
 <td>
-<code>allow-methods</code>
+<code>allow-<wbr>methods</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">*</code>
+<td>
+<code>*</code>
 </td>
 <td>Set of allowed methods, defaults to all</td>
 </tr>
@@ -117,11 +103,11 @@ Configuration of CORS for a specific path
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether this CORS configuration should be enabled or not</td>
 </tr>

@@ -6,22 +6,8 @@ Configuration for server.sockets.tls.private-key.pem.cert-chain
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -37,8 +23,8 @@ Configuration for server.sockets.tls.private-key.pem.cert-chain
 <code>resource</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Resource</code>
+<td>
+<code>Resource</code>
 </td>
 <td>Load certificate chain from PEM resource</td>
 </tr>

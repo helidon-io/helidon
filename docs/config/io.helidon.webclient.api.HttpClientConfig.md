@@ -6,22 +6,8 @@ This can be used by any HTTP client version, and does not act as a factory, for 
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,58 +19,58 @@ This can be used by any HTTP client version, and does not act as a factory, for 
 <tbody>
 <tr>
 <td>
-<code>default-headers</code>
+<code>default-<wbr>headers</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Default headers to be used in every request from configuration</td>
 </tr>
 <tr>
 <td>
-<code>follow-redirects</code>
+<code>follow-<wbr>redirects</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether to follow redirects</td>
 </tr>
 <tr>
 <td>
-<code>base-uri</code>
+<code>base-<wbr>uri</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="HttpCustomMethods">HttpCustomMethods</code>
+<td>
+<code>Http<wbr>Custom<wbr>Methods</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Base uri used by the client in all requests</td>
 </tr>
 <tr>
 <td>
-<code>read-timeout</code>
+<code>read-<wbr>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Read timeout</td>
 </tr>
 <tr>
 <td>
-<code>connection-cache-size</code>
+<code>connection-<wbr>cache-<wbr>size</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">256</code>
+<td>
+<code>256</code>
 </td>
 <td>Maximal size of the connection cache for a single connection key</td>
 </tr>
@@ -92,42 +78,42 @@ This can be used by any HTTP client version, and does not act as a factory, for 
 <td>
 <a id="content-encoding"></a>
 <a href="io.helidon.http.encoding.ContentEncodingContext.md">
-<code>content-encoding</code>
+<code>content-<wbr>encoding</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="ContentEncodingContext">ContentEncodingContext</code>
+<td>
+<code>Content<wbr>Encoding<wbr>Context</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Configure the listener specific <code>io.helidon.http.encoding.ContentEncodingContext</code></td>
+<td>Configure the listener specific <code>io.<wbr>helidon.<wbr>http.<wbr>encoding.<wbr>Content<wbr>Encoding<wbr>Context</code></td>
 </tr>
 <tr>
 <td>
 <a id="media-context"></a>
 <a href="io.helidon.http.media.MediaContext.md">
-<code>media-context</code>
+<code>media-<wbr>context</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="MediaContext">MediaContext</code>
+<td>
+<code>Media<wbr>Context</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">create()</code>
+<td>
+<code>create(<wbr>)</code>
 </td>
-<td>Configure the listener specific <code>io.helidon.http.media.MediaContext</code></td>
+<td>Configure the listener specific <code>io.<wbr>helidon.<wbr>http.<wbr>media.<wbr>Media<wbr>Context</code></td>
 </tr>
 <tr>
 <td>
 <a id="cookie-manager"></a>
 <a href="io.helidon.webclient.api.WebClientCookieManager.md">
-<code>cookie-manager</code>
+<code>cookie-<wbr>manager</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="WebClientCookieManager">WebClientCookieManager</code>
+<td>
+<code>Web<wbr>Client<wbr>Cookie<wbr>Manager</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>WebClient cookie manager</td>
 </tr>
@@ -138,45 +124,45 @@ This can be used by any HTTP client version, and does not act as a factory, for 
 <code>services</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;WebClientService&gt;">List&lt;WebClientService&gt;</code>
+<td>
+<code>List&lt;<wbr>WebClient<wbr>Service&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>WebClient services</td>
 </tr>
 <tr>
 <td>
-<code>relative-uris</code>
+<code>relative-<wbr>uris</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Can be set to <code>true</code> to force the use of relative URIs in all requests, regardless of the presence or absence of proxies or no-proxy lists</td>
 </tr>
 <tr>
 <td>
-<code>send-expect-continue</code>
+<code>send-<wbr>expect-<wbr>continue</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether Expect-100-Continue header is sent to verify server availability before sending an entity</td>
 </tr>
 <tr>
 <td>
-<code>connect-timeout</code>
+<code>connect-<wbr>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Connect timeout</td>
 </tr>
@@ -187,10 +173,10 @@ This can be used by any HTTP client version, and does not act as a factory, for 
 <code>proxy</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Proxy</code>
+<td>
+<code>Proxy</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Proxy configuration to be used for requests</td>
 </tr>
@@ -198,74 +184,74 @@ This can be used by any HTTP client version, and does not act as a factory, for 
 <td>
 <a id="media-type-parser-mode"></a>
 <a href="io.helidon.common.media.type.ParserMode.md">
-<code>media-type-parser-mode</code>
+<code>media-<wbr>type-<wbr>parser-<wbr>mode</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">ParserMode</code>
+<td>
+<code>Parser<wbr>Mode</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">STRICT</code>
+<td>
+<code>STRICT</code>
 </td>
-<td>Configure media type parsing mode for HTTP <code>Content-Type</code> header</td>
+<td>Configure media type parsing mode for HTTP <code>Content-<wbr>Type</code> header</td>
 </tr>
 <tr>
 <td>
-<code>keep-alive</code>
+<code>keep-<wbr>alive</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Determines if connection keep alive is enabled (NOT socket keep alive, but HTTP connection keep alive, to re-use the same connection for multiple requests)</td>
 </tr>
 <tr>
 <td>
-<code>max-in-memory-entity</code>
+<code>max-<wbr>in-memory-<wbr>entity</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">131072</code>
+<td>
+<code>131072</code>
 </td>
 <td>If the entity is expected to be smaller that this number of bytes, it would be buffered in memory to optimize performance</td>
 </tr>
 <tr>
 <td>
-<code>share-connection-cache</code>
+<code>share-<wbr>connection-<wbr>cache</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether to share connection cache between all the WebClient instances in JVM</td>
 </tr>
 <tr>
 <td>
-<code>services-discover-services</code>
+<code>services-<wbr>discover-<wbr>services</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether to enable automatic service discovery for <code>services</code></td>
 </tr>
 <tr>
 <td>
-<code>max-redirects</code>
+<code>max-<wbr>redirects</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">10</code>
+<td>
+<code>10</code>
 </td>
 <td>Max number of followed redirects</td>
 </tr>
@@ -273,13 +259,13 @@ This can be used by any HTTP client version, and does not act as a factory, for 
 <td>
 <a id="socket-options"></a>
 <a href="io.helidon.common.socket.SocketOptions.md">
-<code>socket-options</code>
+<code>socket-<wbr>options</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="SocketOptions">SocketOptions</code>
+<td>
+<code>Socket<wbr>Options</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Socket options for connections opened by this client</td>
 </tr>
@@ -290,22 +276,22 @@ This can be used by any HTTP client version, and does not act as a factory, for 
 <code>tls</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Tls</code>
+<td>
+<code>Tls</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>TLS configuration for any TLS request from this client</td>
 </tr>
 <tr>
 <td>
-<code>write-buffer-size</code>
+<code>write-<wbr>buffer-<wbr>size</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">4096</code>
+<td>
+<code>4096</code>
 </td>
 <td>Buffer size used when writing data to the underlying socket on a client TCP connection</td>
 </tr>
@@ -313,22 +299,22 @@ This can be used by any HTTP client version, and does not act as a factory, for 
 <td>
 <code>properties</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Properties configured for this client</td>
 </tr>
 <tr>
 <td>
-<code>read-continue-timeout</code>
+<code>read-<wbr>continue-<wbr>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">PT1S</code>
+<td>
+<code>PT1S</code>
 </td>
 <td>Socket 100-Continue read timeout</td>
 </tr>

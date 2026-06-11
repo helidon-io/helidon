@@ -6,13 +6,7 @@ This type is an enumeration.
 
 ## Allowed Values
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-</style>
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Value</th>
@@ -21,11 +15,11 @@ This type is an enumeration.
 </thead>
 <tbody>
 <tr>
-<td><code>EXPLICIT_BUCKET_HISTOGRAM</code></td>
+<td><code>EXPLICIT_<wbr>BUCKET_<wbr>HISTOGRAM</code></td>
 <td>Explicit buckets</td>
 </tr>
 <tr>
-<td><code>BASE2_EXPONENTIAL_BUCKET_HISTOGRAM</code></td>
+<td><code>BASE2_<wbr>EXPONENTIAL_<wbr>BUCKET_<wbr>HISTOGRAM</code></td>
 <td>Base 2 exponential bucket</td>
 </tr>
 </tbody>

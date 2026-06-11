@@ -29,6 +29,7 @@ To enable WebLogic JMS connector, add the following dependency to your projectâ€
 
 Connector name: `helidon-weblogic-jms`
 
+<!--@mdc ::table-collapse -->
 |  |  |
 |----|----|
 | `jms-factory` | The JNDI name of the JMS factory configured in WebLogic. |
@@ -51,6 +52,7 @@ Connector name: `helidon-weblogic-jms`
 | `period-executions` | The period for executing poll cycles in millis. Default value: `100` |
 | `session-group-id` | When multiple channels share the same `session-group-id`, they also share the same JMS session and JDBC connection. |
 | `producer.unit-of-order` | All messages from the same unit of order will be processed sequentially in the order they were created. |
+<!--@mdc :: -->
 
 Attributes
 

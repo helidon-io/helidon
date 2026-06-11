@@ -6,22 +6,8 @@ Configuration of access log feature
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,34 +21,34 @@ Configuration of access log feature
 <td>
 <code>format</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>The format for log entries (similar to the Apache <code>LogFormat</code>)</td>
+<td>The format for log entries (similar to the Apache <code>Log<wbr>Format</code>)</td>
 </tr>
 <tr>
 <td>
-<code>logger-name</code>
+<code>logger-<wbr>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value" title="io.helidon.webserver.AccessLog">io.helidon.webserver.AccessLog</code>
+<td>
+<code>io.<wbr>helidon.<wbr>webserver.<wbr>Access<wbr>Log</code>
 </td>
-<td>Name of the logger used to obtain access log logger from <code>System#getLogger(String)</code></td>
+<td>Name of the logger used to obtain access log logger from <code>System#<wbr>getLogger(<wbr>String)</code></td>
 </tr>
 <tr>
 <td>
 <code>weight</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Double</code>
+<td>
+<code>Double</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">1000.0</code>
+<td>
+<code>1000.<wbr>0</code>
 </td>
 <td>Weight of the access log feature</td>
 </tr>
@@ -70,10 +56,10 @@ Configuration of access log feature
 <td>
 <code>sockets</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>List of sockets to register this feature on</td>
 </tr>
@@ -81,11 +67,11 @@ Configuration of access log feature
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether this feature will be enabled</td>
 </tr>

@@ -6,22 +6,8 @@ Log Observer configuration
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,13 +21,13 @@ Log Observer configuration
 <td>
 <code>endpoint</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">log</code>
+<td>
+<code>log</code>
 </td>
-<td><code>N/A</code></td>
+<td><code>N/<wbr>A</code></td>
 </tr>
 <tr>
 <td>
@@ -50,21 +36,21 @@ Log Observer configuration
 <code>stream</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="LogStreamConfig">LogStreamConfig</code>
+<td>
+<code>Log<wbr>Stream<wbr>Config</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Configuration of log stream</td>
 </tr>
 <tr>
 <td>
-<code>permit-all</code>
+<code>permit-<wbr>all</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Permit all access, even when not authorized</td>
 </tr>

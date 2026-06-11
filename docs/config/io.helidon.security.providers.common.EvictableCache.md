@@ -6,22 +6,8 @@ Generic cache with eviction support
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,96 +19,96 @@ Generic cache with eviction support
 <tbody>
 <tr>
 <td>
-<code>cache-enabled</code>
+<code>cache-<wbr>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>If the cacheEnabled is set to false, no caching will be done</td>
 </tr>
 <tr>
 <td>
-<code>parallelism-threshold</code>
+<code>parallelism-<wbr>threshold</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Long</code>
+<td>
+<code>Long</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">10000</code>
+<td>
+<code>10000</code>
 </td>
 <td>Configure parallelism threshold</td>
 </tr>
 <tr>
 <td>
-<code>evictor-class</code>
+<code>evictor-<wbr>class</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Class</code>
+<td>
+<code>Class</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Configure evictor to check if a record is still valid</td>
 </tr>
 <tr>
 <td>
-<code>cache-evict-delay-millis</code>
+<code>cache-<wbr>evict-<wbr>delay-<wbr>millis</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Long</code>
+<td>
+<code>Long</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">60000</code>
+<td>
+<code>60000</code>
 </td>
 <td>Delay from the creation of the cache to first eviction</td>
 </tr>
 <tr>
 <td>
-<code>cache-evict-period-millis</code>
+<code>cache-<wbr>evict-<wbr>period-<wbr>millis</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Long</code>
+<td>
+<code>Long</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">300000</code>
+<td>
+<code>300000</code>
 </td>
 <td>How often to evict records</td>
 </tr>
 <tr>
 <td>
-<code>max-size</code>
+<code>max-<wbr>size</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Long</code>
+<td>
+<code>Long</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">100000</code>
+<td>
+<code>100000</code>
 </td>
 <td>Configure maximal cache size</td>
 </tr>
 <tr>
 <td>
-<code>cache-timeout-millis</code>
+<code>cache-<wbr>timeout-<wbr>millis</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Long</code>
+<td>
+<code>Long</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">3600000</code>
+<td>
+<code>3600000</code>
 </td>
 <td>Configure record timeout since last access</td>
 </tr>
 <tr>
 <td>
-<code>cache-overall-timeout-millis</code>
+<code>cache-<wbr>overall-<wbr>timeout-<wbr>millis</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Long</code>
+<td>
+<code>Long</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">3600000</code>
+<td>
+<code>3600000</code>
 </td>
 <td>Configure record timeout since its creation</td>
 </tr>

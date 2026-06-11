@@ -6,22 +6,8 @@ Configuration for langchain4j.providers
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -51,7 +37,7 @@ Configuration for langchain4j.providers
 <td>
 <a id="google-gemini"></a>
 <a href="io.helidon.langchain4j.providers.GoogleGeminiConfig.md">
-<code>google-gemini</code>
+<code>google-<wbr>gemini</code>
 </a>
 </td>
 <td>Configuration for google-gemini</td>
@@ -60,7 +46,7 @@ Configuration for langchain4j.providers
 <td>
 <a id="helidon-mock"></a>
 <a href="io.helidon.langchain4j.providers.HelidonMockConfig.md">
-<code>helidon-mock</code>
+<code>helidon-<wbr>mock</code>
 </a>
 </td>
 <td>Configuration for helidon-mock</td>
@@ -78,7 +64,7 @@ Configuration for langchain4j.providers
 <td>
 <a id="lc4j-in-process"></a>
 <a href="io.helidon.integrations.langchain4j.providers.lc4jinprocess.InProcessEmbeddingModelConfig.md">
-<code>lc4j-in-process</code>
+<code>lc4j-<wbr>in-process</code>
 </a>
 </td>
 <td>Configuration for lc4j-in-process</td>
@@ -87,7 +73,7 @@ Configuration for langchain4j.providers
 <td>
 <a id="oci-gen-ai"></a>
 <a href="io.helidon.langchain4j.providers.OciGenAiConfig.md">
-<code>oci-gen-ai</code>
+<code>oci-<wbr>gen-<wbr>ai</code>
 </a>
 </td>
 <td>Configuration for oci-gen-ai</td>
@@ -96,7 +82,7 @@ Configuration for langchain4j.providers
 <td>
 <a id="oci-gen-ai-cohere"></a>
 <a href="io.helidon.langchain4j.providers.OciGenAiCohereConfig.md">
-<code>oci-gen-ai-cohere</code>
+<code>oci-<wbr>gen-<wbr>ai-cohere</code>
 </a>
 </td>
 <td>Configuration for oci-gen-ai-cohere</td>
@@ -114,7 +100,7 @@ Configuration for langchain4j.providers
 <td>
 <a id="open-ai"></a>
 <a href="io.helidon.langchain4j.providers.OpenAiConfig.md">
-<code>open-ai</code>
+<code>open-<wbr>ai</code>
 </a>
 </td>
 <td>Configuration for open-ai</td>

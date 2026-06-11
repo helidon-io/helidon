@@ -2,26 +2,12 @@
 
 ## Description
 
-Configuration of <code>io.helidon.common.concurrency.limits.AimdLimit</code>
+Configuration of <code>io.<wbr>helidon.<wbr>common.<wbr>concurrency.<wbr>limits.<wbr>Aimd<wbr>Limit</code>
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,37 +19,37 @@ Configuration of <code>io.helidon.common.concurrency.limits.AimdLimit</code>
 <tbody>
 <tr>
 <td>
-<code>queue-timeout</code>
+<code>queue-<wbr>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">PT1S</code>
+<td>
+<code>PT1S</code>
 </td>
 <td>How long to wait for a permit when enqueued</td>
 </tr>
 <tr>
 <td>
-<code>min-limit</code>
+<code>min-<wbr>limit</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">20</code>
+<td>
+<code>20</code>
 </td>
 <td>Minimal limit</td>
 </tr>
 <tr>
 <td>
-<code>enable-metrics</code>
+<code>enable-<wbr>metrics</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Whether to collect metrics for the AIMD implementation</td>
 </tr>
@@ -71,35 +57,35 @@ Configuration of <code>io.helidon.common.concurrency.limits.AimdLimit</code>
 <td>
 <code>fair</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
-<td>Whether the <code>java.util.concurrent.Semaphore</code> should be <code>java.util.concurrent.Semaphore#isFair()</code></td>
+<td>Whether the <code>java.<wbr>util.<wbr>concurrent.<wbr>Semaphore</code> should be <code>java.<wbr>util.<wbr>concurrent.<wbr>Semaphore#<wbr>isFair(<wbr>)</code></td>
 </tr>
 <tr>
 <td>
-<code>initial-limit</code>
+<code>initial-<wbr>limit</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">20</code>
+<td>
+<code>20</code>
 </td>
 <td>Initial limit</td>
 </tr>
 <tr>
 <td>
-<code>max-limit</code>
+<code>max-<wbr>limit</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">200</code>
+<td>
+<code>200</code>
 </td>
 <td>Maximal limit</td>
 </tr>
@@ -107,35 +93,35 @@ Configuration of <code>io.helidon.common.concurrency.limits.AimdLimit</code>
 <td>
 <code>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">PT5S</code>
+<td>
+<code>PT5S</code>
 </td>
 <td>Timeout that when exceeded is the same as if the task failed</td>
 </tr>
 <tr>
 <td>
-<code>backoff-ratio</code>
+<code>backoff-<wbr>ratio</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Double</code>
+<td>
+<code>Double</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">0.9</code>
+<td>
+<code>0.<wbr>9</code>
 </td>
 <td>Backoff ratio to use for the algorithm</td>
 </tr>
 <tr>
 <td>
-<code>queue-length</code>
+<code>queue-<wbr>length</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">0</code>
+<td>
+<code>0</code>
 </td>
 <td>How many requests can be enqueued waiting for a permit after the max limit is reached</td>
 </tr>

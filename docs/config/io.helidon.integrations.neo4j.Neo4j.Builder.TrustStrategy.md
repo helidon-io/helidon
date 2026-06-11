@@ -6,13 +6,7 @@ This type is an enumeration.
 
 ## Allowed Values
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-</style>
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Value</th>
@@ -21,15 +15,15 @@ This type is an enumeration.
 </thead>
 <tbody>
 <tr>
-<td><code>TRUST_ALL_CERTIFICATES</code></td>
+<td><code>TRUST_<wbr>ALL_<wbr>CERTIFICATES</code></td>
 <td>Trust all</td>
 </tr>
 <tr>
-<td><code>TRUST_CUSTOM_CA_SIGNED_CERTIFICATES</code></td>
+<td><code>TRUST_<wbr>CUSTOM_<wbr>CA_SIGNED_<wbr>CERTIFICATES</code></td>
 <td>Trust custom certificates</td>
 </tr>
 <tr>
-<td><code>TRUST_SYSTEM_CA_SIGNED_CERTIFICATES</code></td>
+<td><code>TRUST_<wbr>SYSTEM_<wbr>CA_SIGNED_<wbr>CERTIFICATES</code></td>
 <td>Trust system CA</td>
 </tr>
 </tbody>

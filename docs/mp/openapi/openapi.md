@@ -131,7 +131,7 @@ Helidon OpenAPI configuration supports the following settings:
 
 ### Configuration options
 
-<!--@include ../../config/io.helidon.openapi.OpenApiFeature.md#configuration-options offset=1 -->
+<!--@include ../../config/io.helidon.openapi.OpenApiFeature.md#configuration-options offset=1 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.openapi.OpenApiFeature.md#configuration-options).
 <!--/include-->
 

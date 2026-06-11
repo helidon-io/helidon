@@ -2,26 +2,12 @@
 
 ## Description
 
-Configuration blueprint for <code>MockChatModel</code>
+Configuration blueprint for <code>Mock<wbr>Chat<wbr>Model</code>
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -38,22 +24,22 @@ Configuration blueprint for <code>MockChatModel</code>
 <code>rules</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;MockChatRule&gt;">List&lt;MockChatRule&gt;</code>
+<td>
+<code>List&lt;<wbr>Mock<wbr>Chat<wbr>Rule&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>The list of <code>MockChatRule</code>s that the mock chat model evaluates</td>
+<td>The list of <code>Mock<wbr>Chat<wbr>Rule</code>s that the mock chat model evaluates</td>
 </tr>
 <tr>
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>If set to <code>false</code> , MockChatModel will not be available even if configured</td>
 </tr>
@@ -61,8 +47,6 @@ Configuration blueprint for <code>MockChatModel</code>
 </table>
 
 
-
-## Manifest
 
 ---
 

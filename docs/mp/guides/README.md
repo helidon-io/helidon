@@ -2,6 +2,7 @@
 
 Index of Guides documentation.
 
+<!--@mdc ::table-collapse -->
 | Topic                                                | Description |
 |------------------------------------------------------| --- |
 | [Overview](overview.md)                              | Helidon MP Guides |
@@ -26,3 +27,4 @@ Index of Guides documentation.
 | [Oracle Cloud Infrastructure Tutorial](oci-guide.md) | Helidon OCI Integration |
 | [Performance Tuning](performance-tuning.md)          | Helidon MP Performance Tuning |
 | [Reusing Helidon SE services](se-services.md)        | Helidon WebServer Routing |
+<!--@mdc :: -->

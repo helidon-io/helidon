@@ -334,6 +334,7 @@ Usage:
 
 Annotations:
 
+<!--@mdc ::table-collapse -->
 | Annotation                                                 | Required | Description                                                                                                                                                                                                                   |
 |------------------------------------------------------------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `Prototype.Blueprint`                                      | Yes      | Annotation on the blueprint interface is required to trigger annotation processing                                                                                                                                            |
@@ -353,6 +354,7 @@ Annotations:
 | `Prototype.IncludeDefaultMethods`                          | No       | Add default methods on the blueprint (or a super interface) as option methods, allows list of method names to include (if annotation is present and the list is empty, all default getter methods will be considered options) |
 | `Prototype.Extension`                                      | No       | Allows registering of extensions to enhance the generated type (such as for JSON serialization and deserialization)                                                                                                           |
 | <span class="line-through">RuntimeType.PrototypedBy</span> | No       | This annotation is now deprecated and has no function, the information is available on the blueprint and this was redundant                                                                                                   |
+<!--@mdc :: -->
 
 Interfaces:
 
@@ -367,6 +369,7 @@ Interfaces:
 
 ### Option
 
+<!--@mdc ::table-collapse -->
 | Annotation             | Description                                                                                                                                                                                                                                                                          |
 |------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `Option.Singular`      | For collection based options. Adds setter for a single value (for `List<String> algorithms()`, there would be the following setters: `algorithms(List<String>)`, `addAlgorithms(List<String>)`, `addAlgorithm(String)`)                                                              |
@@ -381,6 +384,7 @@ Interfaces:
 | `Option.Type`          | Explicitly defined type of a property (may include generics), in case the type is code generated in the current module, and we cannot obtain the correct information from the annotation processing environment                                                                      |
 | `Option.Decorator`     | Support for field decoration (to do side-effects on setter call)                                                                                                                                                                                                                     |
 | `Option.ProtypedBy`    | When using a third party runtime type and we have a prototype that builds it, we can specify the prototype class name (or fully qualified class name if in a different package) to add prototype methods and to read from configuration using that prototype                         |
+<!--@mdc :: -->
 
 To configure default value(s) of an option, one of the following annotations can be used (mutually exclusive!). Most defaults support an array, to provide default values for collections.
 

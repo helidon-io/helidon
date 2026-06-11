@@ -6,22 +6,8 @@ Settings for a metric reader
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,10 +21,10 @@ Settings for a metric reader
 <td>
 <code>exporter</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Name of the configured metric exporter to use for this metric reader</td>
 </tr>
@@ -49,11 +35,11 @@ Settings for a metric reader
 <code>type</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="MetricReaderType">MetricReaderType</code>
+<td>
+<code>Metric<wbr>Reader<wbr>Type</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">PERIODIC</code>
+<td>
+<code>PERIODIC</code>
 </td>
 <td>Metric reader type</td>
 </tr>

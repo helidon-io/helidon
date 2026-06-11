@@ -155,7 +155,7 @@ server:
 
 ### Configuration Options
 
-<!--@include ../../config/io.helidon.webserver.WebServer.md#configuration-options offset=1 -->
+<!--@include ../../config/io.helidon.webserver.WebServer.md#configuration-options offset=1 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.webserver.WebServer.md#configuration-options).
 <!--/include-->
 
@@ -185,6 +185,7 @@ WebServer.builder()
 
 `HttpRouting.Builder` lets you specify how to handle each HTTP method. For example:
 
+<!--@mdc ::table-collapse -->
 | HTTP Method | HttpRouting.Builder example |
 |----|----|
 | **GET** | `.get(handler)` |
@@ -197,6 +198,7 @@ WebServer.builder()
 | *any method* | `.any(handler)` |
 | *multiple methods* | `.route(Method.predicate(Method.GET, Method.POST), path, handler)` |
 | *custom method* | `.route(Method.create("CUSTOM"), handler)` |
+<!--@mdc :: -->
 
 ### Path Matcher Routing
 
@@ -605,7 +607,7 @@ Any other port defined in your application may include an `error-handling` secti
 
 ## TLS Configuration Options
 
-<!--@include ../../config/io.helidon.common.tls.Tls.md#configuration-options -->
+<!--@include ../../config/io.helidon.common.tls.Tls.md#configuration-options collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.common.tls.Tls.md#configuration-options).
 <!--/include-->
 
@@ -649,7 +651,7 @@ Context feature can be configured, all options shown below are also available bo
 
 #### Configuration options
 
-<!--@include ../../config/io.helidon.webserver.context.ContextFeature.md#configuration-options offset=2 -->
+<!--@include ../../config/io.helidon.webserver.context.ContextFeature.md#configuration-options offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.webserver.context.ContextFeature.md#configuration-options).
 <!--/include-->
 
@@ -697,7 +699,7 @@ All options shown below are also available programmatically when using builder.
 
 #### Configuration options
 
-<!--@include ../../config/io.helidon.webserver.accesslog.AccessLogFeature.md#configuration-options offset=2 -->
+<!--@include ../../config/io.helidon.webserver.accesslog.AccessLogFeature.md#configuration-options offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.webserver.accesslog.AccessLogFeature.md#configuration-options).
 <!--/include-->
 
@@ -883,10 +885,9 @@ It is possible to configure the Jsonb instance via programmatic or configuration
 
 ###### Configuration options
 
-<!--@include ../../config/io.helidon.http.media.jsonb.JsonbSupport.md#configuration-options offset=3 -->
+<!--@include ../../config/io.helidon.http.media.jsonb.JsonbSupport.md#configuration-options offset=3 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.http.media.jsonb.JsonbSupport.md#configuration-options).
 <!--/include-->
-
 
 ###### Example
 
@@ -968,7 +969,7 @@ It is possible to configure the Jackson ObjectMapper instance via programmatic o
 
 ###### Configuration options
 
-<!--@include ../../config/io.helidon.http.media.jackson.JacksonSupport.md#configuration-options offset=4 -->
+<!--@include ../../config/io.helidon.http.media.jackson.JacksonSupport.md#configuration-options offset=4 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.http.media.jackson.JacksonSupport.md#configuration-options).
 <!--/include-->
 
@@ -1055,7 +1056,7 @@ It is possible to configure the Gson instance via programmatic or configuration-
 
 ###### Configuration options
 
-<!--@include ../../config/io.helidon.http.media.gson.GsonSupport.md#configuration-options offset=4 -->
+<!--@include ../../config/io.helidon.http.media.gson.GsonSupport.md#configuration-options offset=4 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.http.media.gson.GsonSupport.md#configuration-options).
 <!--/include-->
 
@@ -1149,7 +1150,7 @@ Or use a config file using the following options:
 
 ##### Configuration options
 
-<!--@include ../../config/io.helidon.http.encoding.ContentEncodingContext.md#configuration-options offset=3 -->
+<!--@include ../../config/io.helidon.http.encoding.ContentEncodingContext.md#configuration-options offset=3 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.http.encoding.ContentEncodingContext.md#configuration-options).
 <!--/include-->
 

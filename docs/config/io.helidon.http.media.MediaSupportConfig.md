@@ -6,22 +6,8 @@ A set of configurable options expected to be used by each media support
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -32,10 +18,10 @@ A set of configurable options expected to be used by each media support
 <tbody>
 <tr>
 <td>
-<code>accepted-media-types</code>
+<code>accepted-<wbr>media-<wbr>types</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;CustomMethods&gt;">List&lt;CustomMethods&gt;</code>
+<td>
+<code>List&lt;<wbr>Custom<wbr>Methods&gt;</code>
 </td>
 <td>Types accepted by this media support</td>
 </tr>
@@ -43,17 +29,17 @@ A set of configurable options expected to be used by each media support
 <td>
 <code>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Name of the support</td>
 </tr>
 <tr>
 <td>
-<code>content-type</code>
+<code>content-<wbr>type</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="CustomMethods">CustomMethods</code>
+<td>
+<code>Custom<wbr>Methods</code>
 </td>
 <td>Content type to use if not configured (in response headers for server, and in request headers for client)</td>
 </tr>

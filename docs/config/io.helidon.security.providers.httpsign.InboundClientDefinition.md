@@ -6,22 +6,8 @@ Configuration of inbound client
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,12 +19,12 @@ Configuration of inbound client
 <tbody>
 <tr>
 <td>
-<code>key-id</code>
+<code>key-<wbr>id</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>The key id of this client to map to this signature validation configuration</td>
 </tr>
@@ -46,35 +32,35 @@ Configuration of inbound client
 <td>
 <a id="public-key"></a>
 <a href="io.helidon.common.pki.Keys.md">
-<code>public-key</code>
+<code>public-<wbr>key</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Keys</code>
+<td>
+<code>Keys</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>For algorithms based on public/private key (such as rsa-sha256), this provides access to the public key of the client</td>
 </tr>
 <tr>
 <td>
-<code>hmac.secret</code>
+<code>hmac.<wbr>secret</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Helper method to configure a password-like secret (instead of byte based <code>#hmacSecret(byte[])</code></td>
+<td>Helper method to configure a password-like secret (instead of byte based <code>#hmac<wbr>Secret(<wbr>byte[])</code></td>
 </tr>
 <tr>
 <td>
-<code>principal-name</code>
+<code>principal-<wbr>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>The principal name of the client, defaults to keyId if not configured</td>
 </tr>
@@ -82,14 +68,14 @@ Configuration of inbound client
 <td>
 <a id="principal-type"></a>
 <a href="io.helidon.security.SubjectType.md">
-<code>principal-type</code>
+<code>principal-<wbr>type</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="SubjectType">SubjectType</code>
+<td>
+<code>Subject<wbr>Type</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">SERVICE</code>
+<td>
+<code>SERVICE</code>
 </td>
 <td>The type of principal we have authenticated (either user or service, defaults to service)</td>
 </tr>
@@ -97,10 +83,10 @@ Configuration of inbound client
 <td>
 <code>algorithm</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Algorithm of signature used by this client</td>
 </tr>

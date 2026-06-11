@@ -6,22 +6,8 @@ Settings for an OpenTelemetry metrics view registration
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -32,37 +18,37 @@ Settings for an OpenTelemetry metrics view registration
 <tbody>
 <tr>
 <td>
-<code>cardinality-limit</code>
+<code>cardinality-<wbr>limit</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Cardinality limit</td>
 </tr>
 <tr>
 <td>
-<code>instrument-selector</code>
+<code>instrument-<wbr>selector</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="CustomMethods">CustomMethods</code>
+<td>
+<code>Custom<wbr>Methods</code>
 </td>
-<td>Instrument selector, configurable using <code>io.helidon.telemetry.otelconfig.InstrumentSelectorConfig</code></td>
+<td>Instrument selector, configurable using <code>io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Instrument<wbr>Selector<wbr>Config</code></td>
 </tr>
 <tr>
 <td>
-<code>attribute-filter</code>
+<code>attribute-<wbr>filter</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="CustomMethods">CustomMethods</code>
+<td>
+<code>Custom<wbr>Methods</code>
 </td>
-<td>Attribute name filter, configurable as a string compiled as a regular expression using <code>java.util.regex.Pattern</code></td>
+<td>Attribute name filter, configurable as a string compiled as a regular expression using <code>java.<wbr>util.<wbr>regex.<wbr>Pattern</code></td>
 </tr>
 <tr>
 <td>
 <code>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Metrics view name</td>
 </tr>
@@ -70,8 +56,8 @@ Settings for an OpenTelemetry metrics view registration
 <td>
 <code>description</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Metric view description</td>
 </tr>
@@ -79,17 +65,15 @@ Settings for an OpenTelemetry metrics view registration
 <td>
 <code>aggregation</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="CustomMethods">CustomMethods</code>
+<td>
+<code>Custom<wbr>Methods</code>
 </td>
-<td>Aggregation for the metric view, configurable as an <code>io.helidon.telemetry.otelconfig.AggregationType</code>: <code>DROP, DEFAULT, SUM, LAST_VALUE, EXPLICIT_BUCKET_HISTOGRAM, BASE2_EXPONENTIAL_BUCKET_HISTOGRAM</code></td>
+<td>Aggregation for the metric view, configurable as an <code>io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Aggregation<wbr>Type</code>: <code>DROP,<wbr> DEFAULT,<wbr> SUM,<wbr> LAST_<wbr>VALUE,<wbr> EXPLICIT_<wbr>BUCKET_<wbr>HISTOGRAM,<wbr> BASE2_<wbr>EXPONENTIAL_<wbr>BUCKET_<wbr>HISTOGRAM</code></td>
 </tr>
 </tbody>
 </table>
 
 
-
-## Manifest
 
 ---
 

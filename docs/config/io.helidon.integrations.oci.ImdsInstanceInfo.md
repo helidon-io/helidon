@@ -6,22 +6,8 @@ Information about the instance retrieved from Imds
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -32,28 +18,28 @@ Information about the instance retrieved from Imds
 <tbody>
 <tr>
 <td>
-<code>display-name</code>
+<code>display-<wbr>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Display Name</td>
 </tr>
 <tr>
 <td>
-<code>compartment-id</code>
+<code>compartment-<wbr>id</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Compartment Id</td>
 </tr>
 <tr>
 <td>
-<code>oci-ad-name</code>
+<code>oci-<wbr>ad-name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Oci Availability Domain Name</td>
 </tr>
@@ -61,35 +47,35 @@ Information about the instance retrieved from Imds
 <td>
 <code>json</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">JsonObject</code>
+<td>
+<code>Json<wbr>Object</code>
 </td>
 <td>Instance Data</td>
 </tr>
 <tr>
 <td>
-<code>canonical-region-name</code>
+<code>canonical-<wbr>region-<wbr>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Canonical Region Name</td>
 </tr>
 <tr>
 <td>
-<code>host-name</code>
+<code>host-<wbr>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Host Name</td>
 </tr>
 <tr>
 <td>
-<code>fault-domain</code>
+<code>fault-<wbr>domain</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Fault Domain Name</td>
 </tr>
@@ -97,17 +83,17 @@ Information about the instance retrieved from Imds
 <td>
 <code>region</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Region Name</td>
 </tr>
 <tr>
 <td>
-<code>tenant-id</code>
+<code>tenant-<wbr>id</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Tenant Id</td>
 </tr>
@@ -118,7 +104,7 @@ Information about the instance retrieved from Imds
 ### Deprecated Options
 
 
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -129,10 +115,10 @@ Information about the instance retrieved from Imds
 <tbody>
 <tr>
 <td>
-<code>json-object</code>
+<code>json-<wbr>object</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">JsonObject</code>
+<td>
+<code>Json<wbr>Object</code>
 </td>
 <td>Instance Data</td>
 </tr>

@@ -6,13 +6,7 @@ This type is an enumeration.
 
 ## Allowed Values
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-</style>
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Value</th>
@@ -21,24 +15,24 @@ This type is an enumeration.
 </thead>
 <tbody>
 <tr>
-<td><code>MEDIA_RESOLUTION_UNSPECIFIED</code></td>
-<td><code>N/A</code></td>
+<td><code>MEDIA_<wbr>RESOLUTION_<wbr>UNSPECIFIED</code></td>
+<td><code>N/<wbr>A</code></td>
 </tr>
 <tr>
-<td><code>MEDIA_RESOLUTION_LOW</code></td>
-<td><code>N/A</code></td>
+<td><code>MEDIA_<wbr>RESOLUTION_<wbr>LOW</code></td>
+<td><code>N/<wbr>A</code></td>
 </tr>
 <tr>
-<td><code>MEDIA_RESOLUTION_MEDIUM</code></td>
-<td><code>N/A</code></td>
+<td><code>MEDIA_<wbr>RESOLUTION_<wbr>MEDIUM</code></td>
+<td><code>N/<wbr>A</code></td>
 </tr>
 <tr>
-<td><code>MEDIA_RESOLUTION_HIGH</code></td>
-<td><code>N/A</code></td>
+<td><code>MEDIA_<wbr>RESOLUTION_<wbr>HIGH</code></td>
+<td><code>N/<wbr>A</code></td>
 </tr>
 <tr>
-<td><code>MEDIA_RESOLUTION_ULTRA_HIGH</code></td>
-<td><code>N/A</code></td>
+<td><code>MEDIA_<wbr>RESOLUTION_<wbr>ULTRA_<wbr>HIGH</code></td>
+<td><code>N/<wbr>A</code></td>
 </tr>
 </tbody>
 </table>

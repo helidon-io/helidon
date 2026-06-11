@@ -6,22 +6,8 @@ Configuration of context feature
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -38,10 +24,10 @@ Configuration of context feature
 <code>records</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;ContextRecordConfig&gt;">List&lt;ContextRecordConfig&gt;</code>
+<td>
+<code>List&lt;<wbr>Context<wbr>Record<wbr>Config&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>List of propagation records</td>
 </tr>
@@ -49,11 +35,11 @@ Configuration of context feature
 <td>
 <code>weight</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Double</code>
+<td>
+<code>Double</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">1100.0</code>
+<td>
+<code>1100.<wbr>0</code>
 </td>
 <td>Weight of the context feature</td>
 </tr>
@@ -61,10 +47,10 @@ Configuration of context feature
 <td>
 <code>sockets</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>List of sockets to register this feature on</td>
 </tr>

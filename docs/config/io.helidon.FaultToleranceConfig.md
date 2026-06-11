@@ -6,22 +6,8 @@ Configuration for fault-tolerance
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -42,7 +28,7 @@ Configuration for fault-tolerance
 <td>
 <a id="circuit-breakers"></a>
 <a href="io.helidon.faulttolerance.CircuitBreaker.md">
-<code>circuit-breakers</code>
+<code>circuit-<wbr>breakers</code>
 </a>
 </td>
 <td>Configuration for circuit-breakers</td>

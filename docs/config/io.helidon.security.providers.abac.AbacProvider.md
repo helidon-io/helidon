@@ -6,22 +6,8 @@ Attribute Based Access Control provider
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,25 +19,25 @@ Attribute Based Access Control provider
 <tbody>
 <tr>
 <td>
-<code>fail-if-none-validated</code>
+<code>fail-<wbr>if-none-<wbr>validated</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether to fail if NONE of the attributes is validated</td>
 </tr>
 <tr>
 <td>
-<code>fail-on-unvalidated</code>
+<code>fail-<wbr>on-unvalidated</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether to fail if any attribute is left unvalidated</td>
 </tr>

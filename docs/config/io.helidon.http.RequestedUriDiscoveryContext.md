@@ -6,22 +6,8 @@ Requested URI discovery settings for a socket
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -38,10 +24,10 @@ Requested URI discovery settings for a socket
 <code>types</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;RequestedUriDiscoveryType&gt;">List&lt;RequestedUriDiscoveryType&gt;</code>
+<td>
+<code>List&lt;<wbr>Requested<wbr>UriDiscovery<wbr>Type&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Sets the discovery types for requested URI discovery for requests arriving on the socket</td>
 </tr>
@@ -49,13 +35,13 @@ Requested URI discovery settings for a socket
 <td>
 <a id="trusted-proxies"></a>
 <a href="io.helidon.common.configurable.AllowList.md">
-<code>trusted-proxies</code>
+<code>trusted-<wbr>proxies</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">AllowList</code>
+<td>
+<code>Allow<wbr>List</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Sets the trusted proxies for requested URI discovery for requests arriving on the socket</td>
 </tr>
@@ -63,11 +49,11 @@ Requested URI discovery settings for a socket
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value" title="true if &#x27;types&#x27; or &#x27;trusted-proxies&#x27; is set; false otherwise">true if &#x27;types&#x27; or &#x27;trusted-proxies&#x27; is set; false otherwise</code>
+<td>
+<code>true if &#39;types&#39; or &#39;trusted-<wbr>proxies&#39; is set; false otherwise</code>
 </td>
 <td>Sets whether requested URI discovery is enabled for requestes arriving on the socket</td>
 </tr>

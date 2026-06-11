@@ -6,13 +6,7 @@ This type is an enumeration.
 
 ## Allowed Values
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-</style>
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Value</th>
@@ -22,11 +16,11 @@ This type is an enumeration.
 <tbody>
 <tr>
 <td><code>Off</code></td>
-<td><code>N/A</code></td>
+<td><code>N/<wbr>A</code></td>
 </tr>
 <tr>
-<td><code>AutoPreserveOrder</code></td>
-<td><code>N/A</code></td>
+<td><code>Auto<wbr>Preserve<wbr>Order</code></td>
+<td><code>N/<wbr>A</code></td>
 </tr>
 </tbody>
 </table>

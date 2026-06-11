@@ -6,22 +6,8 @@ Configuration for LangChain4j model CohereEmbeddingModel
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,101 +19,101 @@ Configuration for LangChain4j model CohereEmbeddingModel
 <tbody>
 <tr>
 <td>
-<code>base-url</code>
+<code>base-<wbr>url</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.cohere.CohereEmbeddingModel.CohereEmbeddingModelBuilder#baseUrl(java.lang.String)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>cohere.<wbr>Cohere<wbr>Embedding<wbr>Model.<wbr>Cohere<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>base<wbr>Url(<wbr>java.<wbr>lang.<wbr>String)</code></td>
 </tr>
 <tr>
 <td>
-<code>log-requests</code>
+<code>log-<wbr>requests</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.cohere.CohereEmbeddingModel.CohereEmbeddingModelBuilder#logRequests(java.lang.Boolean)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>cohere.<wbr>Cohere<wbr>Embedding<wbr>Model.<wbr>Cohere<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>logRequests(<wbr>java.<wbr>lang.<wbr>Boolean)</code></td>
 </tr>
 <tr>
 <td>
-<code>api-key</code>
+<code>api-<wbr>key</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.cohere.CohereEmbeddingModel.CohereEmbeddingModelBuilder#apiKey(java.lang.String)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>cohere.<wbr>Cohere<wbr>Embedding<wbr>Model.<wbr>Cohere<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>apiKey(<wbr>java.<wbr>lang.<wbr>String)</code></td>
 </tr>
 <tr>
 <td>
 <code>logger</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Logger</code>
+<td>
+<code>Logger</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.cohere.CohereEmbeddingModel.CohereEmbeddingModelBuilder#logger(org.slf4j.Logger)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>cohere.<wbr>Cohere<wbr>Embedding<wbr>Model.<wbr>Cohere<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>logger(<wbr>org.<wbr>slf4j.<wbr>Logger)</code></td>
 </tr>
 <tr>
 <td>
-<code>model-name</code>
+<code>model-<wbr>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.cohere.CohereEmbeddingModel.CohereEmbeddingModelBuilder#modelName(java.lang.String)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>cohere.<wbr>Cohere<wbr>Embedding<wbr>Model.<wbr>Cohere<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>model<wbr>Name(<wbr>java.<wbr>lang.<wbr>String)</code></td>
 </tr>
 <tr>
 <td>
-<code>input-type</code>
+<code>input-<wbr>type</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.cohere.CohereEmbeddingModel.CohereEmbeddingModelBuilder#inputType(java.lang.String)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>cohere.<wbr>Cohere<wbr>Embedding<wbr>Model.<wbr>Cohere<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>input<wbr>Type(<wbr>java.<wbr>lang.<wbr>String)</code></td>
 </tr>
 <tr>
 <td>
-<code>log-responses</code>
+<code>log-<wbr>responses</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.cohere.CohereEmbeddingModel.CohereEmbeddingModelBuilder#logResponses(java.lang.Boolean)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>cohere.<wbr>Cohere<wbr>Embedding<wbr>Model.<wbr>Cohere<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>logResponses(<wbr>java.<wbr>lang.<wbr>Boolean)</code></td>
 </tr>
 <tr>
 <td>
-<code>max-segments-per-batch</code>
+<code>max-<wbr>segments-<wbr>per-<wbr>batch</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.cohere.CohereEmbeddingModel.CohereEmbeddingModelBuilder#maxSegmentsPerBatch(java.lang.Integer)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>cohere.<wbr>Cohere<wbr>Embedding<wbr>Model.<wbr>Cohere<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>maxSegments<wbr>PerBatch(<wbr>java.<wbr>lang.<wbr>Integer)</code></td>
 </tr>
 <tr>
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>If set to <code>false</code>, CohereEmbeddingModel will not be available even if configured</td>
 </tr>
@@ -135,12 +121,12 @@ Configuration for LangChain4j model CohereEmbeddingModel
 <td>
 <code>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.cohere.CohereEmbeddingModel.CohereEmbeddingModelBuilder#timeout(java.time.Duration)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>cohere.<wbr>Cohere<wbr>Embedding<wbr>Model.<wbr>Cohere<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>timeout(<wbr>java.<wbr>time.<wbr>Duration)</code></td>
 </tr>
 </tbody>
 </table>

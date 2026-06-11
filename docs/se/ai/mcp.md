@@ -67,7 +67,7 @@ These are all the MCP Client configuration options currently supported:
 
 ### Configuration options
 
-<!--@include ../../config/io.helidon.integrations.langchain4j.McpClientConfig.md#configuration-options offset=1 -->
+<!--@include ../../config/io.helidon.integrations.langchain4j.McpClientConfig.md#configuration-options offset=1 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.integrations.langchain4j.McpClientConfig.md#configuration-options).
 <!--/include-->
 

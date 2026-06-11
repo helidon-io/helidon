@@ -2,26 +2,12 @@
 
 ## Description
 
-Configuration of <code>ThroughputLimit</code>
+Configuration of <code>Throughput<wbr>Limit</code>
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,23 +21,23 @@ Configuration of <code>ThroughputLimit</code>
 <td>
 <code>duration</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">PT1S</code>
+<td>
+<code>PT1S</code>
 </td>
 <td>Duration of the time window over which operations will be counted</td>
 </tr>
 <tr>
 <td>
-<code>queue-timeout</code>
+<code>queue-<wbr>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">PT1S</code>
+<td>
+<code>PT1S</code>
 </td>
 <td>How long to wait for a permit when enqueued</td>
 </tr>
@@ -59,11 +45,11 @@ Configuration of <code>ThroughputLimit</code>
 <td>
 <code>amount</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">0</code>
+<td>
+<code>0</code>
 </td>
 <td>Number of operations to allow during the relevant time window</td>
 </tr>
@@ -71,26 +57,26 @@ Configuration of <code>ThroughputLimit</code>
 <td>
 <a id="rate-limiting-algorithm"></a>
 <a href="io.helidon.common.concurrency.limits.RateLimitingAlgorithmType.md">
-<code>rate-limiting-algorithm</code>
+<code>rate-<wbr>limiting-<wbr>algorithm</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="RateLimitingAlgorithmType">RateLimitingAlgorithmType</code>
+<td>
+<code>Rate<wbr>Limiting<wbr>Algorithm<wbr>Type</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value" title="TOKEN_BUCKET">TOKEN_BUCKET</code>
+<td>
+<code>TOKEN_<wbr>BUCKET</code>
 </td>
 <td>The rate limiting algorithm to apply</td>
 </tr>
 <tr>
 <td>
-<code>enable-metrics</code>
+<code>enable-<wbr>metrics</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Whether to collect metrics for the throughput limit implementation</td>
 </tr>
@@ -98,23 +84,23 @@ Configuration of <code>ThroughputLimit</code>
 <td>
 <code>fair</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
-<td>Whether the <code>java.util.concurrent.Semaphore</code> should be <code>java.util.concurrent.Semaphore#isFair()</code></td>
+<td>Whether the <code>java.<wbr>util.<wbr>concurrent.<wbr>Semaphore</code> should be <code>java.<wbr>util.<wbr>concurrent.<wbr>Semaphore#<wbr>isFair(<wbr>)</code></td>
 </tr>
 <tr>
 <td>
-<code>queue-length</code>
+<code>queue-<wbr>length</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">0</code>
+<td>
+<code>0</code>
 </td>
 <td>How many requests can be enqueued waiting for a permit</td>
 </tr>

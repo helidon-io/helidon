@@ -2,6 +2,7 @@
 
 Index of SE documentation.
 
+<!--@mdc ::table-collapse -->
 | Topic                                                                             | Description                              |
 |-----------------------------------------------------------------------------------|------------------------------------------|
 | [Introduction](introduction.md) <!--@icon i-lucide-lightbulb -->                  | Helidon SE introduction                  |
@@ -36,3 +37,4 @@ Index of SE documentation.
 | [WebSocket](websocket.md) <!--@icon i-lucide-repeat-2 -->                         | Helidon WebSocket Introduction           |
 | [Guides](guides/README.md) <!--@icon i-lucide-compass -->                         | Index of Guides documentation            |
 | [Integrations](integrations/README.md) <!--@icon i-lucide-cloud -->               | Index of Integrations documentation      |
+<!--@mdc :: -->

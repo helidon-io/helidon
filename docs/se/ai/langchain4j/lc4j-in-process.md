@@ -94,7 +94,7 @@ Configuration properties:
 
 ### Configuration options
 
-<!--@include ../../../config/io.helidon.integrations.langchain4j.providers.lc4jinprocess.InProcessEmbeddingModelConfig.md#configuration-options offset=1 -->
+<!--@include ../../../config/io.helidon.integrations.langchain4j.providers.lc4jinprocess.InProcessEmbeddingModelConfig.md#configuration-options offset=1 collapseTables=10 -->
 See [Configuration options](../../../config/io.helidon.integrations.langchain4j.providers.lc4jinprocess.InProcessEmbeddingModelConfig.md#configuration-options).
 <!--/include-->
 

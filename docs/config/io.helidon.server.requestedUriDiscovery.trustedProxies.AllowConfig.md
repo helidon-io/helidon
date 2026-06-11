@@ -6,22 +6,8 @@ Configuration for server.requested-uri-discovery.trusted-proxies.allow
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,11 +21,11 @@ Configuration for server.requested-uri-discovery.trusted-proxies.allow
 <td>
 <code>all</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Allows all strings to match (subject to "deny" conditions)</td>
 </tr>
@@ -47,10 +33,10 @@ Configuration for server.requested-uri-discovery.trusted-proxies.allow
 <td>
 <code>exact</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Exact strings to allow</td>
 </tr>
@@ -58,10 +44,10 @@ Configuration for server.requested-uri-discovery.trusted-proxies.allow
 <td>
 <code>pattern</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;Pattern&gt;">List&lt;Pattern&gt;</code>
+<td>
+<code>List&lt;<wbr>Pattern&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td><code>Pattern</code>s specifying strings to allow</td>
 </tr>
@@ -69,10 +55,10 @@ Configuration for server.requested-uri-discovery.trusted-proxies.allow
 <td>
 <code>prefix</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Prefixes specifying strings to allow</td>
 </tr>
@@ -80,10 +66,10 @@ Configuration for server.requested-uri-discovery.trusted-proxies.allow
 <td>
 <code>suffix</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Suffixes specifying strings to allow</td>
 </tr>

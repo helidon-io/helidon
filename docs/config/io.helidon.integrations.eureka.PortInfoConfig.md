@@ -2,26 +2,12 @@
 
 ## Description
 
-A <code>Prototype.Api prototype</code> describing initial Eureka Server service instance registration port details
+A <code>Prototype.<wbr>Api prototype</code> describing initial Eureka Server service instance registration port details
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -34,8 +20,8 @@ A <code>Prototype.Api prototype</code> describing initial Eureka Server service 
 <td>
 <code>port</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>The port number</td>
 </tr>
@@ -43,8 +29,8 @@ A <code>Prototype.Api prototype</code> describing initial Eureka Server service 
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
 <td>Whether the port is enabled</td>
 </tr>

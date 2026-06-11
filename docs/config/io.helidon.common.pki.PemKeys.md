@@ -6,22 +6,8 @@ PEM files based keys - accepts private key and certificate chain
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,7 +19,7 @@ PEM files based keys - accepts private key and certificate chain
 <td>
 <a id="cert-chain"></a>
 <a href="io.helidon.clients.tls.privateKey.pem.CertChainConfig.md">
-<code>cert-chain</code>
+<code>cert-<wbr>chain</code>
 </a>
 </td>
 <td>Configuration for cert-chain</td>
@@ -60,7 +46,7 @@ PEM files based keys - accepts private key and certificate chain
 <td>
 <a id="public-key"></a>
 <a href="io.helidon.clients.tls.privateKey.pem.PublicKeyConfig.md">
-<code>public-key</code>
+<code>public-<wbr>key</code>
 </a>
 </td>
 <td>Configuration for public-key</td>

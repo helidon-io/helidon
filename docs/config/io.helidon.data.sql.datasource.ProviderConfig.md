@@ -6,15 +6,9 @@ This type is a provider contract.
 
 ## Implementations
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-</style>
 
 
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -28,7 +22,7 @@ This type is a provider contract.
 <code>hikari</code>
 </a>
 </td>
-<td>Hikari connection pool specific configuration for <code>javax.sql.DataSource</code></td>
+<td>Hikari connection pool specific configuration for <code>javax.<wbr>sql.<wbr>Data<wbr>Source</code></td>
 </tr>
 <tr>
 <td>
@@ -44,7 +38,7 @@ This type is a provider contract.
 <code>ucp</code>
 </a>
 </td>
-<td>UCP specific configuration for <code>javax.sql.DataSource</code></td>
+<td>UCP specific configuration for <code>javax.<wbr>sql.<wbr>Data<wbr>Source</code></td>
 </tr>
 </tbody>
 </table>

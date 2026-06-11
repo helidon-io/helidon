@@ -82,6 +82,7 @@ public interface ChefAiService {
 
 Providers available out of the box:
 
+<!--@mdc ::table-collapse -->
 | Provider                                                                                 | Provider Key                      | Description                                                                                      |
 |------------------------------------------------------------------------------------------|-----------------------------------|--------------------------------------------------------------------------------------------------|
 | [**LangChain4j content retriever**][langchain4j-cont]                 | `lc4j-content-retriever`          | Built-in content-retriever for RAG                                                               |
@@ -96,6 +97,7 @@ Providers available out of the box:
 | [**Oracle Embedding Store**][oracle-embedding]                                                  | `oracle`                          | Oracle Database as an embedding store                                                            |
 | [**Coherence Embedding Store**][coherence-embedd]                                            | `coherence`                       | Coherence as embedding and chat memory store                                                     |
 | [**Mock**][mock]                                                                      | `helidon-mock`                    | Mockable chat model for deterministic testing                                                    |
+<!--@mdc :: -->
 
 > [!NOTE]
 > Missing your favorite AI vendor already supported by LangChain4j? You can generate your own Helidon integration with our [**LangChain4j Model Provider Generator**](codegen-provider.md) or use the supplier factory!
@@ -240,6 +242,7 @@ Services and Agents are typically Java interfaces annotated with LangChain4j and
 
 Both AI Services and Agents can be configured with the following Helidon annotations:
 
+<!--@mdc ::table-collapse -->
 | Annotation              | Description                                                                                                                                                                                                                  |
 |-------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `Ai.ChatModel`          | Specifies the name of a service in the service registry that implements `ChatModel` to be used in the annotated AI Service. Mutually exclusive with `Ai.StreamingChatModel`.                                                 |
@@ -251,6 +254,7 @@ Both AI Services and Agents can be configured with the following Helidon annotat
 | `Ai.ToolProvider`       | Specifies the name of a service in the service registry that implements `ToolProvider` to use in the annotated Ai Service. Mutually exclusive with `Ai.McpClients`.                                                          |
 | `Ai.Tools`              | Specifies the classes with tools. In case a singleton service bean of the same type exists, its instance is supplied.                                                                                                        |
 | `Ai.McpClients`         | Specifies the name/s of a `McpClient` in the service registry that implements `ToolProvider` to use in the annotated Ai Service. `McpToolProvider` is created from these clients. Mutually exclusive with `Ai.ToolProvider`. |
+<!--@mdc :: -->
 
 ### AI Services
 

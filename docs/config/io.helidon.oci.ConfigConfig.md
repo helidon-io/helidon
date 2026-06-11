@@ -6,22 +6,8 @@ Configuration for oci.config
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,10 +21,10 @@ Configuration for oci.config
 <td>
 <code>path</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>The OCI configuration profile path</td>
 </tr>
@@ -46,11 +32,11 @@ Configuration for oci.config
 <td>
 <code>profile</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">DEFAULT</code>
+<td>
+<code>DEFAULT</code>
 </td>
 <td>The OCI configuration/auth profile name</td>
 </tr>

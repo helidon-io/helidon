@@ -2,26 +2,12 @@
 
 ## Description
 
-<code>N/A</code>
+<code>N/<wbr>A</code>
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -38,11 +24,11 @@
 <code>type</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="SpanExporterType">SpanExporterType</code>
+<td>
+<code>Span<wbr>Exporter<wbr>Type</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">DEFAULT</code>
+<td>
+<code>DEFAULT</code>
 </td>
 <td>Span exporter type</td>
 </tr>

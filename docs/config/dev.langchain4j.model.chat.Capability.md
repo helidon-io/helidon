@@ -6,13 +6,7 @@ This type is an enumeration.
 
 ## Allowed Values
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-</style>
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Value</th>
@@ -21,8 +15,8 @@ This type is an enumeration.
 </thead>
 <tbody>
 <tr>
-<td><code>RESPONSE_FORMAT_JSON_SCHEMA</code></td>
-<td><code>N/A</code></td>
+<td><code>RESPONSE_<wbr>FORMAT_<wbr>JSON_<wbr>SCHEMA</code></td>
+<td><code>N/<wbr>A</code></td>
 </tr>
 </tbody>
 </table>

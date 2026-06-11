@@ -37,6 +37,7 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 Full list of configuration properties:
 
+<!--@mdc ::table-collapse -->
 | Key              | Type       | Description                                                                                                                                                                                                                                                                                                                                                                                                       |
 |------------------|------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `base-url`       | string     | The base URL for the Ollama API. If not present, the default value supplied from LangChain4j is used.                                                                                                                                                                                                                                                                                                             |
@@ -54,6 +55,7 @@ Full list of configuration properties:
 | `timeout`        | duration   | The timeout setting for API requests. See [here][here] for the format.                                                                                                                                                                                                                                                 |
 | `top-k`          | int        | Limits the token pool to the `topK` highest-probability tokens, controlling the balance between deterministic and diverse outputs. A smaller `topK` (e.g., 1) results in deterministic output, while a larger value (e.g., 50) allows for more variability and creativity.                                                                                                                                        |
 | `top-p`          | double     | Nucleus sampling value, where the model considers the results of the tokens with top_p probability mass.                                                                                                                                                                                                                                                                                                          |
+<!--@mdc :: -->
 
 ### OllamaEmbeddingModel
 
@@ -105,6 +107,7 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 Full list of configuration properties:
 
+<!--@mdc ::table-collapse -->
 | Key              | Type       | Description                                                                                                                                                                                                                                                                                                                                                                                                       |
 |------------------|------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `base-url`       | string     | The base URL for the Ollama API. If not present, the default value supplied from LangChain4j is used.                                                                                                                                                                                                                                                                                                             |
@@ -122,6 +125,7 @@ Full list of configuration properties:
 | `timeout`        | duration   | The timeout setting for API requests. See [here][here] for the format.                                                                                                                                                                                                                                                 |
 | `top-k`          | int        | Limits the token pool to the `topK` highest-probability tokens, controlling the balance between deterministic and diverse outputs. A smaller `topK` (e.g., 1) results in deterministic output, while a larger value (e.g., 50) allows for more variability and creativity.                                                                                                                                        |
 | `top-p`          | double     | Nucleus sampling value, where the model considers the results of the tokens with top_p probability mass.                                                                                                                                                                                                                                                                                                          |
+<!--@mdc :: -->
 
 ### OllamaStreamingChatModel
 
@@ -143,6 +147,7 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 Full list of configuration properties:
 
+<!--@mdc ::table-collapse -->
 | Key              | Type       | Description                                                                                                                                                                                                                                                                                                                                                                                                       |
 |------------------|------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `base-url`       | string     | The base URL for the Ollama API. If not present, the default value supplied from LangChain4j is used.                                                                                                                                                                                                                                                                                                             |
@@ -160,6 +165,7 @@ Full list of configuration properties:
 | `timeout`        | duration   | The timeout setting for API requests. See [here][here] for the format.                                                                                                                                                                                                                                                 |
 | `top-k`          | int        | Limits the token pool to the `topK` highest-probability tokens, controlling the balance between deterministic and diverse outputs. A smaller `topK` (e.g., 1) results in deterministic output, while a larger value (e.g., 50) allows for more variability and creativity.                                                                                                                                        |
 | `top-p`          | double     | Nucleus sampling value, where the model considers the results of the tokens with top_p probability mass.                                                                                                                                                                                                                                                                                                          |
+<!--@mdc :: -->
 
 ## Additional Information
 

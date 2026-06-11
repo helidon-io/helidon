@@ -6,22 +6,8 @@ Configuration settings for metrics
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,37 +19,37 @@ Configuration settings for metrics
 <tbody>
 <tr>
 <td>
-<code>publishers-discover-services</code>
+<code>publishers-<wbr>discover-<wbr>services</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Whether to enable automatic service discovery for <code>publishers</code></td>
 </tr>
 <tr>
 <td>
-<code>rest-request.enabled</code>
+<code>rest-<wbr>request.<wbr>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Whether automatic REST request metrics should be measured</td>
 </tr>
 <tr>
 <td>
-<code>warn-on-multiple-registries</code>
+<code>warn-<wbr>on-multiple-<wbr>registries</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether to log warnings when multiple registries are created</td>
 </tr>
@@ -71,23 +57,23 @@ Configuration settings for metrics
 <td>
 <code>roles</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">observe</code>
+<td>
+<code>observe</code>
 </td>
 <td>Hints for role names the user is expected to be in</td>
 </tr>
 <tr>
 <td>
-<code>virtual-threads.pinned.threshold</code>
+<code>virtual-<wbr>threads.<wbr>pinned.<wbr>threshold</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">PT0.020S</code>
+<td>
+<code>PT0.<wbr>020S</code>
 </td>
 <td>Threshold for sampling pinned virtual threads to include in the pinned threads meter</td>
 </tr>
@@ -95,14 +81,14 @@ Configuration settings for metrics
 <td>
 <a id="built-in-meter-name-format"></a>
 <a href="io.helidon.metrics.api.BuiltInMeterNameFormat.md">
-<code>built-in-meter-name-format</code>
+<code>built-<wbr>in-meter-<wbr>name-<wbr>format</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="BuiltInMeterNameFormat">BuiltInMeterNameFormat</code>
+<td>
+<code>Built<wbr>InMeter<wbr>Name<wbr>Format</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">CAMEL</code>
+<td>
+<code>CAMEL</code>
 </td>
 <td>Output format for built-in meter names</td>
 </tr>
@@ -110,22 +96,22 @@ Configuration settings for metrics
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether metrics functionality is enabled</td>
 </tr>
 <tr>
 <td>
-<code>app-name</code>
+<code>app-<wbr>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Value for the application tag to be added to each meter ID</td>
 </tr>
@@ -133,33 +119,33 @@ Configuration settings for metrics
 <td>
 <code>tags</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;MetricsConfigSupport&gt;">List&lt;MetricsConfigSupport&gt;</code>
+<td>
+<code>List&lt;<wbr>Metrics<wbr>Config<wbr>Support&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Global tags</td>
 </tr>
 <tr>
 <td>
-<code>app-tag-name</code>
+<code>app-<wbr>tag-<wbr>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Name for the application tag to be added to each meter ID</td>
 </tr>
 <tr>
 <td>
-<code>virtual-threads.enabled</code>
+<code>virtual-<wbr>threads.<wbr>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Whether Helidon should expose meters related to virtual threads</td>
 </tr>
@@ -170,10 +156,10 @@ Configuration settings for metrics
 <code>publishers</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;MetricsPublisher&gt;">List&lt;MetricsPublisher&gt;</code>
+<td>
+<code>List&lt;<wbr>Metrics<wbr>Publisher&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Metrics publishers which make the metrics data available to external systems</td>
 </tr>
@@ -181,25 +167,25 @@ Configuration settings for metrics
 <td>
 <a id="key-performance-indicators"></a>
 <a href="io.helidon.metrics.api.KeyPerformanceIndicatorMetricsConfig.md">
-<code>key-performance-indicators</code>
+<code>key-<wbr>performance-<wbr>indicators</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="KeyPerformanceIndicatorMetricsConfig">KeyPerformanceIndicatorMetricsConfig</code>
+<td>
+<code>Key<wbr>Performance<wbr>Indicator<wbr>Metrics<wbr>Config</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Key performance indicator metrics settings</td>
 </tr>
 <tr>
 <td>
-<code>permit-all</code>
+<code>permit-<wbr>all</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether to allow anybody to access the endpoint</td>
 </tr>
@@ -210,10 +196,10 @@ Configuration settings for metrics
 <code>scoping</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="ScopingConfig">ScopingConfig</code>
+<td>
+<code>Scoping<wbr>Config</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Settings related to scoping management</td>
 </tr>
@@ -221,13 +207,13 @@ Configuration settings for metrics
 <td>
 <a id="timers-json-units-default"></a>
 <a href="java.util.concurrent.TimeUnit.md">
-<code>timers.json-units-default</code>
+<code>timers.<wbr>json-<wbr>units-<wbr>default</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">TimeUnit</code>
+<td>
+<code>Time<wbr>Unit</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Default units for timer output in JSON if not specified on a given timer</td>
 </tr>
@@ -238,7 +224,7 @@ Configuration settings for metrics
 ### Deprecated Options
 
 
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -250,29 +236,29 @@ Configuration settings for metrics
 <tbody>
 <tr>
 <td>
-<code>rest-request-enabled</code>
+<code>rest-<wbr>request-<wbr>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Whether automatic REST request metrics should be measured (as indicated by the deprecated config key <code>rest-request-enabled</code>, the config key using a hyphen instead of a dot separator)</td>
+<td>Whether automatic REST request metrics should be measured (as indicated by the deprecated config key <code>rest-<wbr>request-<wbr>enabled</code>, the config key using a hyphen instead of a dot separator)</td>
 </tr>
 <tr>
 <td>
 <a id="gc-time-type"></a>
 <a href="io.helidon.metrics.api.GcTimeType.md">
-<code>gc-time-type</code>
+<code>gc-<wbr>time-<wbr>type</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">GcTimeType</code>
+<td>
+<code>Gc<wbr>Time<wbr>Type</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">COUNTER</code>
+<td>
+<code>COUNTER</code>
 </td>
-<td>Whether the <code>gc.time</code> meter should be registered as a gauge (vs</td>
+<td>Whether the <code>gc.<wbr>time</code> meter should be registered as a gauge (vs</td>
 </tr>
 </tbody>
 </table>

@@ -2,26 +2,12 @@
 
 ## Description
 
-<code>N/A</code>
+<code>N/<wbr>A</code>
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,13 +21,13 @@
 <td>
 <code>default</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value" title="application">application</code>
+<td>
+<code>application</code>
 </td>
-<td>Default scope value to associate with meters that are registered without an explicit setting; no setting means meters are assigned scope <code>io.helidon.metrics.api.Meter.Scope#DEFAULT</code></td>
+<td>Default scope value to associate with meters that are registered without an explicit setting; no setting means meters are assigned scope <code>io.<wbr>helidon.<wbr>metrics.<wbr>api.<wbr>Meter.<wbr>Scope#<wbr>DEFAULT</code></td>
 </tr>
 <tr>
 <td>
@@ -50,22 +36,22 @@
 <code>scopes</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, ScopeConfig&gt;">Map&lt;String, ScopeConfig&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> Scope<wbr>Config&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Settings for individual scopes</td>
 </tr>
 <tr>
 <td>
-<code>tag-name</code>
+<code>tag-<wbr>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">scope</code>
+<td>
+<code>scope</code>
 </td>
 <td>Tag name for storing meter scope values in the underlying implementation meter registry</td>
 </tr>

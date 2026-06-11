@@ -2,26 +2,12 @@
 
 ## Description
 
-<code>AllowList</code> defines a list of allowed and/or denied matches and tests if a particular value conforms to the conditions
+<code>Allow<wbr>List</code> defines a list of allowed and/or denied matches and tests if a particular value conforms to the conditions
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>

@@ -6,22 +6,8 @@ Classpath based static content handler configuration
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,48 +19,48 @@ Classpath based static content handler configuration
 <tbody>
 <tr>
 <td>
-<code>cached-files</code>
+<code>cached-<wbr>files</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>A set of files that are cached in memory at startup</td>
 </tr>
 <tr>
 <td>
-<code>single-file</code>
+<code>single-<wbr>file</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Classpath content usually starts from a <code>ClasspathHandlerConfig#location()</code> on classpath, and resolves all requested paths against this content root</td>
+<td>Classpath content usually starts from a <code>Classpath<wbr>Handler<wbr>Config#<wbr>location(<wbr>)</code> on classpath, and resolves all requested paths against this content root</td>
 </tr>
 <tr>
 <td>
 <a id="temporary-storage"></a>
 <a href="io.helidon.webserver.staticcontent.TemporaryStorage.md">
-<code>temporary-storage</code>
+<code>temporary-<wbr>storage</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="TemporaryStorage">TemporaryStorage</code>
+<td>
+<code>Temporary<wbr>Storage</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Customization of temporary storage configuration</td>
 </tr>
 <tr>
 <td>
-<code>content-types</code>
+<code>content-<wbr>types</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, BaseMethods&gt;">Map&lt;String, BaseMethods&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> Base<wbr>Methods&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Maps a filename extension to the response content type</td>
 </tr>
@@ -82,36 +68,36 @@ Classpath based static content handler configuration
 <td>
 <a id="memory-cache"></a>
 <a href="io.helidon.webserver.staticcontent.MemoryCache.md">
-<code>memory-cache</code>
+<code>memory-<wbr>cache</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="MemoryCache">MemoryCache</code>
+<td>
+<code>Memory<wbr>Cache</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Handles will use memory cache configured on <code>StaticContentConfig#memoryCache()</code> by default</td>
+<td>Handles will use memory cache configured on <code>Static<wbr>Content<wbr>Config#<wbr>memory<wbr>Cache(<wbr>)</code> by default</td>
 </tr>
 <tr>
 <td>
 <code>context</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">/</code>
+<td>
+<code>/</code>
 </td>
 <td>Context that will serve this handler's static resources, defaults to <code>/</code></td>
 </tr>
 <tr>
 <td>
-<code>record-cache-capacity</code>
+<code>record-<wbr>cache-<wbr>capacity</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Configure capacity of cache used for resources</td>
 </tr>
@@ -119,10 +105,10 @@ Classpath based static content handler configuration
 <td>
 <code>location</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>The location on classpath that contains the root of the static content</td>
 </tr>
@@ -130,10 +116,10 @@ Classpath based static content handler configuration
 <td>
 <code>sockets</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Sockets names (listeners) that will host this static content handler, defaults to all configured sockets</td>
 </tr>
@@ -141,10 +127,10 @@ Classpath based static content handler configuration
 <td>
 <code>welcome</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Welcome-file name</td>
 </tr>
@@ -152,11 +138,11 @@ Classpath based static content handler configuration
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether this handle is enabled, defaults to <code>true</code></td>
 </tr>

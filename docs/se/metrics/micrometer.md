@@ -56,7 +56,7 @@ You can configure the Helidon Micrometer REST service as you can other built-in 
 
 ### Configuration options
 
-<!--@include ../../config/io.helidon.integrations.micrometer.MicrometerFeature.md#configuration-options offset=1 -->
+<!--@include ../../config/io.helidon.integrations.micrometer.MicrometerFeature.md#configuration-options offset=1 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.integrations.micrometer.MicrometerFeature.md#configuration-options).
 <!--/include-->
 

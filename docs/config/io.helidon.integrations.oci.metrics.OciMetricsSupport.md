@@ -6,22 +6,8 @@ OCI Metrics Support
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,13 +19,13 @@ OCI Metrics Support
 <tbody>
 <tr>
 <td>
-<code>batch-size</code>
+<code>batch-<wbr>size</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">50</code>
+<td>
+<code>50</code>
 </td>
 <td>Sets the maximum no</td>
 </tr>
@@ -47,34 +33,34 @@ OCI Metrics Support
 <td>
 <code>delay</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Long</code>
+<td>
+<code>Long</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">60</code>
+<td>
+<code>60</code>
 </td>
-<td>Sets the delay interval between metric posting (defaults to <code>#DEFAULT_SCHEDULER_DELAY</code>)</td>
+<td>Sets the delay interval between metric posting (defaults to <code>#DEFAULT_<wbr>SCHEDULER_<wbr>DELAY</code>)</td>
 </tr>
 <tr>
 <td>
-<code>description-enabled</code>
+<code>description-<wbr>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Sets whether the description should be enabled or not</td>
 </tr>
 <tr>
 <td>
-<code>compartment-id</code>
+<code>compartment-<wbr>id</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Sets the compartment ID</td>
 </tr>
@@ -82,48 +68,48 @@ OCI Metrics Support
 <td>
 <code>namespace</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Sets the namespace</td>
 </tr>
 <tr>
 <td>
-<code>batch-delay</code>
+<code>batch-<wbr>delay</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Long</code>
+<td>
+<code>Long</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">1</code>
+<td>
+<code>1</code>
 </td>
-<td>Sets the delay interval if metrics are posted in batches (defaults to <code>#DEFAULT_BATCH_DELAY</code>)</td>
+<td>Sets the delay interval if metrics are posted in batches (defaults to <code>#DEFAULT_<wbr>BATCH_<wbr>DELAY</code>)</td>
 </tr>
 <tr>
 <td>
 <a id="scheduling-time-unit"></a>
 <a href="java.util.concurrent.TimeUnit.md">
-<code>scheduling-time-unit</code>
+<code>scheduling-<wbr>time-<wbr>unit</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">TimeUnit</code>
+<td>
+<code>Time<wbr>Unit</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value" title="TimeUnit.SECONDS">TimeUnit.SECONDS</code>
+<td>
+<code>Time<wbr>Unit.<wbr>SECONDS</code>
 </td>
-<td>Sets the time unit applied to the initial delay and delay values (defaults to <code>TimeUnit.SECONDS</code>)</td>
+<td>Sets the time unit applied to the initial delay and delay values (defaults to <code>Time<wbr>Unit.<wbr>SECONDS</code>)</td>
 </tr>
 <tr>
 <td>
-<code>resource-group</code>
+<code>resource-<wbr>group</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Sets the resource group</td>
 </tr>
@@ -131,35 +117,35 @@ OCI Metrics Support
 <td>
 <code>scopes</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">All scopes</code>
+<td>
+<code>All scopes</code>
 </td>
 <td>Sets which metrics scopes (e.g., base, vendor, application) should be sent to OCI</td>
 </tr>
 <tr>
 <td>
-<code>initial-delay</code>
+<code>initial-<wbr>delay</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Long</code>
+<td>
+<code>Long</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">1</code>
+<td>
+<code>1</code>
 </td>
-<td>Sets the initial delay before metrics are sent to OCI (defaults to <code>#DEFAULT_SCHEDULER_INITIAL_DELAY</code>)</td>
+<td>Sets the initial delay before metrics are sent to OCI (defaults to <code>#DEFAULT_<wbr>SCHEDULER_<wbr>INITIAL_<wbr>DELAY</code>)</td>
 </tr>
 <tr>
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Sets whether metrics transmission to OCI is enabled</td>
 </tr>

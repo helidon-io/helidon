@@ -6,22 +6,8 @@ Secrets and Encryption provider using just configuration
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -32,10 +18,10 @@ Secrets and Encryption provider using just configuration
 <tbody>
 <tr>
 <td>
-<code>master-password</code>
+<code>master-<wbr>password</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
 <td>Configure master password used for encryption/decryption</td>
 </tr>

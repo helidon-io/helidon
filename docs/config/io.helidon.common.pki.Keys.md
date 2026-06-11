@@ -6,22 +6,8 @@ Configuration of keys
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -37,8 +23,8 @@ Configuration of keys
 <code>pem</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">PemKeys</code>
+<td>
+<code>Pem<wbr>Keys</code>
 </td>
 <td>Configure keys from pem file(s)</td>
 </tr>
@@ -49,8 +35,8 @@ Configuration of keys
 <code>keystore</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="KeystoreKeys">KeystoreKeys</code>
+<td>
+<code>Keystore<wbr>Keys</code>
 </td>
 <td>Configure keys from a keystore</td>
 </tr>

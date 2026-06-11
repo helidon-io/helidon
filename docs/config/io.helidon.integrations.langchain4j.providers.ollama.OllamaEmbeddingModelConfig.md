@@ -6,22 +6,8 @@ Configuration for LangChain4j model OllamaEmbeddingModel
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,102 +19,102 @@ Configuration for LangChain4j model OllamaEmbeddingModel
 <tbody>
 <tr>
 <td>
-<code>base-url</code>
+<code>base-<wbr>url</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.ollama.OllamaEmbeddingModel.OllamaEmbeddingModelBuilder#baseUrl(java.lang.String)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>ollama.<wbr>Ollama<wbr>Embedding<wbr>Model.<wbr>Ollama<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>base<wbr>Url(<wbr>java.<wbr>lang.<wbr>String)</code></td>
 </tr>
 <tr>
 <td>
-<code>log-requests</code>
+<code>log-<wbr>requests</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.ollama.OllamaEmbeddingModel.OllamaEmbeddingModelBuilder#logRequests(java.lang.Boolean)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>ollama.<wbr>Ollama<wbr>Embedding<wbr>Model.<wbr>Ollama<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>logRequests(<wbr>java.<wbr>lang.<wbr>Boolean)</code></td>
 </tr>
 <tr>
 <td>
-<code>http-client-builder</code>
+<code>http-<wbr>client-<wbr>builder</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="HttpClientBuilder">HttpClientBuilder</code>
+<td>
+<code>Http<wbr>Client<wbr>Builder</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.ollama.OllamaEmbeddingModel.OllamaEmbeddingModelBuilder#httpClientBuilder(dev.langchain4j.http.client.HttpClientBuilder)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>ollama.<wbr>Ollama<wbr>Embedding<wbr>Model.<wbr>Ollama<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>http<wbr>Client<wbr>Builder(<wbr>dev.<wbr>langchain4j.<wbr>http.<wbr>client.<wbr>Http<wbr>Client<wbr>Builder)</code></td>
 </tr>
 <tr>
 <td>
-<code>http-client-builder-discover-services</code>
+<code>http-<wbr>client-<wbr>builder-<wbr>discover-<wbr>services</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
-<td>Whether to enable automatic service discovery for <code>http-client-builder</code></td>
+<td>Whether to enable automatic service discovery for <code>http-<wbr>client-<wbr>builder</code></td>
 </tr>
 <tr>
 <td>
-<code>custom-headers</code>
+<code>custom-<wbr>headers</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.ollama.OllamaEmbeddingModel.OllamaEmbeddingModelBuilder#customHeaders(java.util.Map)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>ollama.<wbr>Ollama<wbr>Embedding<wbr>Model.<wbr>Ollama<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>custom<wbr>Headers(<wbr>java.<wbr>util.<wbr>Map)</code></td>
 </tr>
 <tr>
 <td>
-<code>max-retries</code>
+<code>max-<wbr>retries</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.ollama.OllamaEmbeddingModel.OllamaEmbeddingModelBuilder#maxRetries(java.lang.Integer)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>ollama.<wbr>Ollama<wbr>Embedding<wbr>Model.<wbr>Ollama<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>maxRetries(<wbr>java.<wbr>lang.<wbr>Integer)</code></td>
 </tr>
 <tr>
 <td>
-<code>model-name</code>
+<code>model-<wbr>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.ollama.OllamaEmbeddingModel.OllamaEmbeddingModelBuilder#modelName(java.lang.String)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>ollama.<wbr>Ollama<wbr>Embedding<wbr>Model.<wbr>Ollama<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>model<wbr>Name(<wbr>java.<wbr>lang.<wbr>String)</code></td>
 </tr>
 <tr>
 <td>
-<code>log-responses</code>
+<code>log-<wbr>responses</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.ollama.OllamaEmbeddingModel.OllamaEmbeddingModelBuilder#logResponses(java.lang.Boolean)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>ollama.<wbr>Ollama<wbr>Embedding<wbr>Model.<wbr>Ollama<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>logResponses(<wbr>java.<wbr>lang.<wbr>Boolean)</code></td>
 </tr>
 <tr>
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>If set to <code>false</code>, OllamaEmbeddingModel will not be available even if configured</td>
 </tr>
@@ -136,12 +122,12 @@ Configuration for LangChain4j model OllamaEmbeddingModel
 <td>
 <code>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.ollama.OllamaEmbeddingModel.OllamaEmbeddingModelBuilder#timeout(java.time.Duration)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>ollama.<wbr>Ollama<wbr>Embedding<wbr>Model.<wbr>Ollama<wbr>Embedding<wbr>Model<wbr>Builder#<wbr>timeout(<wbr>java.<wbr>time.<wbr>Duration)</code></td>
 </tr>
 </tbody>
 </table>

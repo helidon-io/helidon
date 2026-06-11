@@ -6,22 +6,8 @@ Log stream configuration for Log Observer
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,61 +19,61 @@ Log stream configuration for Log Observer
 <tbody>
 <tr>
 <td>
-<code>idle-message-timeout</code>
+<code>idle-<wbr>message-<wbr>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">PT5S</code>
+<td>
+<code>PT5S</code>
 </td>
 <td>How long to wait before we send the idle message, to make sure we keep the stream alive</td>
 </tr>
 <tr>
 <td>
-<code>queue-size</code>
+<code>queue-<wbr>size</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">100</code>
+<td>
+<code>100</code>
 </td>
 <td>Length of the in-memory queue that buffers log messages from loggers before sending them over the network</td>
 </tr>
 <tr>
 <td>
-<code>content-type</code>
+<code>content-<wbr>type</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="HttpMediaType">HttpMediaType</code>
+<td>
+<code>Http<wbr>Media<wbr>Type</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td><code>N/A</code></td>
+<td><code>N/<wbr>A</code></td>
 </tr>
 <tr>
 <td>
-<code>idle-string</code>
+<code>idle-<wbr>string</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">%
+<td>
+<code>%
 </code>
 </td>
-<td>String sent when there are no log messages within the <code>#idleMessageTimeout()</code></td>
+<td>String sent when there are no log messages within the <code>#idle<wbr>Message<wbr>Timeout(<wbr>)</code></td>
 </tr>
 <tr>
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether stream is enabled</td>
 </tr>

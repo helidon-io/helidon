@@ -6,15 +6,9 @@ This type is a provider contract.
 
 ## Implementations
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-</style>
 
 
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -25,7 +19,7 @@ This type is a provider contract.
 <tr>
 <td>
 <a href="io.helidon.webserver.accesslog.AccessLogFeature.md">
-<code>access-log</code>
+<code>access-<wbr>log</code>
 </a>
 </td>
 <td>Configuration of access log feature</td>
@@ -52,12 +46,12 @@ This type is a provider contract.
 <code>eureka</code>
 </a>
 </td>
-<td>A <code>Prototype.Api prototype</code> for <code>EurekaRegistrationServerFeature</code> <code>io.helidon.builder.api.RuntimeType.Api runtime type</code> instances</td>
+<td>A <code>Prototype.<wbr>Api prototype</code> for <code>Eureka<wbr>Registration<wbr>Server<wbr>Feature</code> <code>io.<wbr>helidon.<wbr>builder.<wbr>api.<wbr>Runtime<wbr>Type.<wbr>Api runtime type</code> instances</td>
 </tr>
 <tr>
 <td>
 <a href="io.helidon.webserver.grpc.GrpcReflectionFeature.md">
-<code>grpc-reflection</code>
+<code>grpc-<wbr>reflection</code>
 </a>
 </td>
 <td>Configuration of gRPC Reflection feature</td>
@@ -84,7 +78,7 @@ This type is a provider contract.
 <code>openapi</code>
 </a>
 </td>
-<td><code>OpenApiFeature</code> prototype</td>
+<td><code>Open<wbr>ApiFeature</code> prototype</td>
 </tr>
 <tr>
 <td>
@@ -92,12 +86,12 @@ This type is a provider contract.
 <code>security</code>
 </a>
 </td>
-<td>Configuration of security feature for webserver</td>
+<td>Configuration of security feature fow webserver</td>
 </tr>
 <tr>
 <td>
 <a href="io.helidon.webserver.staticcontent.StaticContentFeature.md">
-<code>static-content</code>
+<code>static-<wbr>content</code>
 </a>
 </td>
 <td>Configuration of Static content feature</td>

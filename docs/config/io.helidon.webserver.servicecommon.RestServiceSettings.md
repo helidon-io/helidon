@@ -6,22 +6,8 @@ Common settings across REST services
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,21 +21,21 @@ Common settings across REST services
 <td>
 <code>routing</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Sets the routing name to use for setting up the service's endpoint</td>
 </tr>
 <tr>
 <td>
-<code>web-context</code>
+<code>web-<wbr>context</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Sets the web context to use for the service's endpoint</td>
 </tr>
@@ -60,10 +46,10 @@ Common settings across REST services
 <code>cors</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, CrossOriginConfig&gt;">Map&lt;String, CrossOriginConfig&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> Cross<wbr>Origin<wbr>Config&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Sets the cross-origin config builder for use in establishing CORS support for the service endpoints</td>
 </tr>
@@ -71,11 +57,11 @@ Common settings across REST services
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Is this service enabled or not</td>
 </tr>

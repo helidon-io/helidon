@@ -6,22 +6,8 @@ Configuration for security.environment
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -34,11 +20,11 @@ Configuration for security.environment
 <td>
 <a id="server-time"></a>
 <a href="io.helidon.security.SecurityTime.md">
-<code>server-time</code>
+<code>server-<wbr>time</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="SecurityTime">SecurityTime</code>
+<td>
+<code>Security<wbr>Time</code>
 </td>
 <td>Server time to use when evaluating security policies that depend on time</td>
 </tr>

@@ -6,22 +6,8 @@ Scheduling periodically executed task with specified fixed rate
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,26 +21,26 @@ Scheduling periodically executed task with specified fixed rate
 <td>
 <a id="delay-type"></a>
 <a href="io.helidon.scheduling.FixedRate.DelayType.md">
-<code>delay-type</code>
+<code>delay-<wbr>type</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">DelayType</code>
+<td>
+<code>Delay<wbr>Type</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value" title="SINCE_PREVIOUS_START">SINCE_PREVIOUS_START</code>
+<td>
+<code>SINCE_<wbr>PREVIOUS_<wbr>START</code>
 </td>
 <td>Configure whether the interval between the invocations should be calculated from the time when previous task started or ended</td>
 </tr>
 <tr>
 <td>
-<code>delay-by</code>
+<code>delay-<wbr>by</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">PT0S</code>
+<td>
+<code>PT0S</code>
 </td>
 <td>Initial delay of the first invocation</td>
 </tr>
@@ -62,10 +48,10 @@ Scheduling periodically executed task with specified fixed rate
 <td>
 <code>interval</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Fixed interval between each invocation</td>
 </tr>
@@ -73,10 +59,10 @@ Scheduling periodically executed task with specified fixed rate
 <td>
 <code>id</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Identification of the started task</td>
 </tr>
@@ -84,11 +70,11 @@ Scheduling periodically executed task with specified fixed rate
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether the task is enabled</td>
 </tr>
@@ -99,7 +85,7 @@ Scheduling periodically executed task with specified fixed rate
 ### Deprecated Options
 
 
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -113,10 +99,10 @@ Scheduling periodically executed task with specified fixed rate
 <td>
 <code>delay</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Long</code>
+<td>
+<code>Long</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Fixed rate delay between each invocation</td>
 </tr>
@@ -124,33 +110,31 @@ Scheduling periodically executed task with specified fixed rate
 <td>
 <a id="time-unit"></a>
 <a href="java.util.concurrent.TimeUnit.md">
-<code>time-unit</code>
+<code>time-<wbr>unit</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">TimeUnit</code>
+<td>
+<code>Time<wbr>Unit</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value" title="TimeUnit.SECONDS">TimeUnit.SECONDS</code>
+<td>
+<code>Time<wbr>Unit.<wbr>SECONDS</code>
 </td>
-<td><code>java.util.concurrent.TimeUnit TimeUnit</code> used for interpretation of values provided with <code>io.helidon.scheduling.FixedRateConfig.Builder#delay(long)</code> and <code>io.helidon.scheduling.FixedRateConfig.Builder#initialDelay(long)</code></td>
+<td><code>java.<wbr>util.<wbr>concurrent.<wbr>Time<wbr>Unit Time<wbr>Unit</code> used for interpretation of values provided with <code>io.<wbr>helidon.<wbr>scheduling.<wbr>Fixed<wbr>Rate<wbr>Config.<wbr>Builder#<wbr>delay(<wbr>long)</code> and <code>io.<wbr>helidon.<wbr>scheduling.<wbr>Fixed<wbr>Rate<wbr>Config.<wbr>Builder#<wbr>initial<wbr>Delay(<wbr>long)</code></td>
 </tr>
 <tr>
 <td>
-<code>initial-delay</code>
+<code>initial-<wbr>delay</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Long</code>
+<td>
+<code>Long</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Initial delay of the first invocation</td>
 </tr>
 </tbody>
 </table>
 
-
-## Manifest
 
 ---
 

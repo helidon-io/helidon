@@ -2,26 +2,12 @@
 
 ## Description
 
-<code>N/A</code>
+<code>N/<wbr>A</code>
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,27 +19,27 @@
 <tbody>
 <tr>
 <td>
-<code>include-entity</code>
+<code>include-<wbr>entity</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
-<td>Whether to include a response entity when mapping a <code>io.helidon.http.RequestException</code> using a <code>io.helidon.http.DirectHandler</code></td>
+<td>Whether to include a response entity when mapping a <code>io.<wbr>helidon.<wbr>http.<wbr>Request<wbr>Exception</code> using a <code>io.<wbr>helidon.<wbr>http.<wbr>Direct<wbr>Handler</code></td>
 </tr>
 <tr>
 <td>
-<code>log-all-messages</code>
+<code>log-<wbr>all-<wbr>messages</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
-<td>Whether to log all messages in a <code>io.helidon.http.RequestException</code> or not</td>
+<td>Whether to log all messages in a <code>io.<wbr>helidon.<wbr>http.<wbr>Request<wbr>Exception</code> or not</td>
 </tr>
 </tbody>
 </table>

@@ -6,22 +6,8 @@ Configuration for a batch processor
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -32,19 +18,19 @@ Configuration for a batch processor
 <tbody>
 <tr>
 <td>
-<code>schedule-delay</code>
+<code>schedule-<wbr>delay</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
 <td>Delay between consecutive exports</td>
 </tr>
 <tr>
 <td>
-<code>max-export-batch-size</code>
+<code>max-<wbr>export-<wbr>batch-<wbr>size</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Maximum number of items batched for export together</td>
 </tr>
@@ -55,17 +41,17 @@ Configuration for a batch processor
 <code>type</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="ProcessorType">ProcessorType</code>
+<td>
+<code>Processor<wbr>Type</code>
 </td>
 <td>Processor type</td>
 </tr>
 <tr>
 <td>
-<code>max-queue-size</code>
+<code>max-<wbr>queue-<wbr>size</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Maximum number of items retained before discarding excess unexported ones</td>
 </tr>
@@ -73,8 +59,8 @@ Configuration for a batch processor
 <td>
 <code>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
 <td>Maximum time an export can run before being cancelled</td>
 </tr>
@@ -82,8 +68,8 @@ Configuration for a batch processor
 <td>
 <code>exporters</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
 <td>Name(s) of the  exporter(s) this processor should use; specifying no names uses all configured exporters (or if no exporters are configured, the default OpenTelemetry exporter(s))</td>
 </tr>
@@ -91,8 +77,6 @@ Configuration for a batch processor
 </table>
 
 
-
-## Manifest
 
 ---
 

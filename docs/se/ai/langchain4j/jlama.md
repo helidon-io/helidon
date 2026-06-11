@@ -37,6 +37,7 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 Full list of configuration properties:
 
+<!--@mdc ::table-collapse -->
 | Key                         | Type    | Description                                                                                                                                         |
 |-----------------------------|---------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
 | `enabled`                   | boolean | If set to false, the component will not be available even if configured.                                                                            |
@@ -49,6 +50,7 @@ Full list of configuration properties:
 | `max-tokens`                | integer | Maximum number of tokens to generate.                                                                                                               |
 | `thread-count`              | integer | Number of threads to use.                                                                                                                           |
 | `quantize-model-at-runtime` | boolean | Whether quantize the model at runtime.                                                                                                              |
+<!--@mdc :: -->
 
 ### JlamaEmbeddingModel
 
@@ -100,6 +102,7 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 Full list of configuration properties:
 
+<!--@mdc ::table-collapse -->
 | Key                         | Type    | Description                                                                                                                                         |
 |-----------------------------|---------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
 | `enabled`                   | boolean | If set to false, the component will not be available even if configured.                                                                            |
@@ -112,6 +115,7 @@ Full list of configuration properties:
 | `max-tokens`                | integer | Maximum number of tokens to generate.                                                                                                               |
 | `thread-count`              | integer | Number of threads to use.                                                                                                                           |
 | `quantize-model-at-runtime` | boolean | Whether quantize the model at runtime.                                                                                                              |
+<!--@mdc :: -->
 
 ### JlamaStreamingChatModel
 
@@ -133,6 +137,7 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 Full list of configuration properties:
 
+<!--@mdc ::table-collapse -->
 | Key                         | Type    | Description                                                                                                                                         |
 |-----------------------------|---------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
 | `enabled`                   | boolean | If set to false, the component will not be available even if configured.                                                                            |
@@ -145,6 +150,7 @@ Full list of configuration properties:
 | `max-tokens`                | integer | Maximum number of tokens to generate.                                                                                                               |
 | `thread-count`              | integer | Number of threads to use.                                                                                                                           |
 | `quantize-model-at-runtime` | boolean | Whether quantize the model at runtime.                                                                                                              |
+<!--@mdc :: -->
 
 ## Additional Information
 

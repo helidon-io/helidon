@@ -6,22 +6,8 @@ Configuration of a resource
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,45 +21,45 @@ Configuration of a resource
 <td>
 <code>path</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Path</code>
+<td>
+<code>Path</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Resource is located on filesystem</td>
 </tr>
 <tr>
 <td>
-<code>proxy-port</code>
+<code>proxy-<wbr>port</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">80</code>
+<td>
+<code>80</code>
 </td>
 <td>Port of the proxy when using URI</td>
 </tr>
 <tr>
 <td>
-<code>resource-path</code>
+<code>resource-<wbr>path</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Resource is located on classpath</td>
 </tr>
 <tr>
 <td>
-<code>use-proxy</code>
+<code>use-<wbr>proxy</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether to use proxy</td>
 </tr>
@@ -81,21 +67,21 @@ Configuration of a resource
 <td>
 <code>description</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Description of this resource when configured through plain text or binary</td>
 </tr>
 <tr>
 <td>
-<code>proxy-host</code>
+<code>proxy-<wbr>host</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Host of the proxy when using URI</td>
 </tr>
@@ -103,32 +89,32 @@ Configuration of a resource
 <td>
 <code>uri</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">URI</code>
+<td>
+<code>URI</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Resource is available on a <code>java.net.URI</code></td>
+<td>Resource is available on a <code>java.<wbr>net.<wbr>URI</code></td>
 </tr>
 <tr>
 <td>
 <code>content</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Binary content of the resource (base64 encoded)</td>
 </tr>
 <tr>
 <td>
-<code>content-plain</code>
+<code>content-<wbr>plain</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Plain content of the resource (text)</td>
 </tr>

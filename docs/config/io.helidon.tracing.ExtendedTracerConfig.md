@@ -6,22 +6,8 @@ Common settings for tracers including settings for span processors and secure cl
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,36 +19,36 @@ Common settings for tracers including settings for span processors and secure cl
 <tbody>
 <tr>
 <td>
-<code>export-timeout</code>
+<code>export-<wbr>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">PT10S</code>
+<td>
+<code>PT10S</code>
 </td>
 <td>Maximum time a transmission can be in progress before being cancelled</td>
 </tr>
 <tr>
 <td>
-<code>sampler-param</code>
+<code>sampler-<wbr>param</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Double</code>
+<td>
+<code>Double</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">1.0</code>
+<td>
+<code>1.<wbr>0</code>
 </td>
 <td>Parameter value used by the selected sampler; interpretation depends on the sampler type</td>
 </tr>
 <tr>
 <td>
-<code>boolean-tags</code>
+<code>boolean-<wbr>tags</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, Boolean&gt;">Map&lt;String, Boolean&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> Boolean&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Tracer-level tags with boolean values added to all reported spans</td>
 </tr>
@@ -70,14 +56,14 @@ Common settings for tracers including settings for span processors and secure cl
 <td>
 <a id="span-processor-type"></a>
 <a href="io.helidon.tracing.SpanProcessorType.md">
-<code>span-processor-type</code>
+<code>span-<wbr>processor-<wbr>type</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="SpanProcessorType">SpanProcessorType</code>
+<td>
+<code>Span<wbr>Processor<wbr>Type</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">BATCH</code>
+<td>
+<code>BATCH</code>
 </td>
 <td>Type of span processor for accumulating spans before transmission to the tracing collector</td>
 </tr>
@@ -85,13 +71,13 @@ Common settings for tracers including settings for span processors and secure cl
 <td>
 <a id="trusted-cert-pem"></a>
 <a href="io.helidon.common.configurable.Resource.md">
-<code>trusted-cert-pem</code>
+<code>trusted-<wbr>cert-<wbr>pem</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Resource</code>
+<td>
+<code>Resource</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Trusted certificates for connecting to the tracing collector</td>
 </tr>
@@ -99,14 +85,14 @@ Common settings for tracers including settings for span processors and secure cl
 <td>
 <a id="sampler-type"></a>
 <a href="io.helidon.tracing.SamplerType.md">
-<code>sampler-type</code>
+<code>sampler-<wbr>type</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="SamplerType">SamplerType</code>
+<td>
+<code>Sampler<wbr>Type</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">CONSTANT</code>
+<td>
+<code>CONSTANT</code>
 </td>
 <td>Type of sampler for collecting spans</td>
 </tr>
@@ -114,11 +100,11 @@ Common settings for tracers including settings for span processors and secure cl
 <td>
 <code>global</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether to create and register a tracer as the global tracer</td>
 </tr>
@@ -126,13 +112,13 @@ Common settings for tracers including settings for span processors and secure cl
 <td>
 <a id="client-cert-pem"></a>
 <a href="io.helidon.common.configurable.Resource.md">
-<code>client-cert-pem</code>
+<code>client-<wbr>cert-<wbr>pem</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Resource</code>
+<td>
+<code>Resource</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Client certificate for connecting securely to the tracing collector</td>
 </tr>
@@ -140,10 +126,10 @@ Common settings for tracers including settings for span processors and secure cl
 <td>
 <code>uri</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">URI</code>
+<td>
+<code>URI</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>URI for the collector to which to send tracing data</td>
 </tr>
@@ -151,11 +137,11 @@ Common settings for tracers including settings for span processors and secure cl
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether to enable tracing</td>
 </tr>
@@ -163,10 +149,10 @@ Common settings for tracers including settings for span processors and secure cl
 <td>
 <code>tags</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Tracer-level tags with <code>String</code> values added to all reported spans</td>
 </tr>
@@ -174,10 +160,10 @@ Common settings for tracers including settings for span processors and secure cl
 <td>
 <code>path</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Path at the collector host and port used when sending trace data to the collector</td>
 </tr>
@@ -185,10 +171,10 @@ Common settings for tracers including settings for span processors and secure cl
 <td>
 <code>protocol</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Protocol (such as <code>http</code> or <code>https</code>) used in connecting to the tracing collector</td>
 </tr>
@@ -196,45 +182,45 @@ Common settings for tracers including settings for span processors and secure cl
 <td>
 <code>port</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Port used in connecting to the tracing collector</td>
 </tr>
 <tr>
 <td>
-<code>schedule-delay</code>
+<code>schedule-<wbr>delay</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">PT5S</code>
+<td>
+<code>PT5S</code>
 </td>
 <td>Delay between consecutive transmissions to the tracing collector (batch processing)</td>
 </tr>
 <tr>
 <td>
-<code>max-export-batch-size</code>
+<code>max-<wbr>export-<wbr>batch-<wbr>size</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">512</code>
+<td>
+<code>512</code>
 </td>
-<td>Maximum number of spans grouped for transmission together; typically does not exceed <code>#maxQueueSize()</code> (batch processing)</td>
+<td>Maximum number of spans grouped for transmission together; typically does not exceed <code>#max<wbr>Queue<wbr>Size(<wbr>)</code> (batch processing)</td>
 </tr>
 <tr>
 <td>
 <code>service</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Service name of the traced service</td>
 </tr>
@@ -242,10 +228,10 @@ Common settings for tracers including settings for span processors and secure cl
 <td>
 <code>host</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Host used in connecting to the tracing collector</td>
 </tr>
@@ -253,36 +239,36 @@ Common settings for tracers including settings for span processors and secure cl
 <td>
 <a id="private-key-pem"></a>
 <a href="io.helidon.common.configurable.Resource.md">
-<code>private-key-pem</code>
+<code>private-<wbr>key-<wbr>pem</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Resource</code>
+<td>
+<code>Resource</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Private key for connecting securely to the tracing collector</td>
 </tr>
 <tr>
 <td>
-<code>int-tags</code>
+<code>int-<wbr>tags</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, Integer&gt;">Map&lt;String, Integer&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> Integer&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Tracer level tags with integer values added to all reported spans</td>
 </tr>
 <tr>
 <td>
-<code>max-queue-size</code>
+<code>max-<wbr>queue-<wbr>size</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">2048</code>
+<td>
+<code>2048</code>
 </td>
 <td>Maximum number of spans retained before discarding any not sent to the tracing collector (batch processing)</td>
 </tr>

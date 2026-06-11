@@ -6,22 +6,8 @@ OpenTelemetry metrics settings
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -34,8 +20,8 @@ OpenTelemetry metrics settings
 <td>
 <code>readers</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;CustomMethods&gt;">List&lt;CustomMethods&gt;</code>
+<td>
+<code>List&lt;<wbr>Custom<wbr>Methods&gt;</code>
 </td>
 <td>Settings for metric readers</td>
 </tr>
@@ -43,8 +29,8 @@ OpenTelemetry metrics settings
 <td>
 <code>attributes</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="CustomMethods">CustomMethods</code>
+<td>
+<code>Custom<wbr>Methods</code>
 </td>
 <td>Name/value pairs passed to OpenTelemetry</td>
 </tr>
@@ -52,19 +38,19 @@ OpenTelemetry metrics settings
 <td>
 <code>views</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;CustomMethods&gt;">List&lt;CustomMethods&gt;</code>
+<td>
+<code>List&lt;<wbr>Custom<wbr>Methods&gt;</code>
 </td>
-<td>Metric view information, configurable using <code>io.helidon.telemetry.otelconfig.ViewRegistrationConfig</code></td>
+<td>Metric view information, configurable using <code>io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>View<wbr>Registration<wbr>Config</code></td>
 </tr>
 <tr>
 <td>
 <code>exporters</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, CustomMethods&gt;">Map&lt;String, CustomMethods&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> Custom<wbr>Methods&gt;</code>
 </td>
-<td>Metric exporter configurations, configurable using <code>io.helidon.telemetry.otelconfig.MetricExporterConfig</code></td>
+<td>Metric exporter configurations, configurable using <code>io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Metric<wbr>Exporter<wbr>Config</code></td>
 </tr>
 </tbody>
 </table>

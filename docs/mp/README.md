@@ -2,6 +2,7 @@
 
 Index of MP documentation.
 
+<!--@mdc ::table-collapse -->
 | Topic                                                                                  | Description                               |
 |----------------------------------------------------------------------------------------|-------------------------------------------|
 | [Introduction](introduction.md) <!--@icon i-lucide-lightbulb -->                       | About Helidon MP                          |
@@ -34,3 +35,4 @@ Index of MP documentation.
 | [WebSocket](websocket.md) <!--@icon i-lucide-repeat-2 -->                              | Helidon MP WebSocket Support              |
 | [Integrations](integrations/README.md) <!--@icon i-lucide-cloud -->                    | Index of Integrations documentation       |
 | [Guides](guides/README.md) <!--@icon i-lucide-compass -->                              | Index of Guides documentation             |
+<!--@mdc :: -->

@@ -6,22 +6,8 @@ Configuration for helidon.oci.authentication
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -37,8 +23,8 @@ Configuration for helidon.oci.authentication
 <code>config</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="ConfigMethodConfig">ConfigMethodConfig</code>
+<td>
+<code>Config<wbr>Method<wbr>Config</code>
 </td>
 <td>Config method configuration (if provided and used)</td>
 </tr>
@@ -46,11 +32,11 @@ Configuration for helidon.oci.authentication
 <td>
 <a id="config-file"></a>
 <a href="io.helidon.integrations.oci.ConfigFileMethodConfig.md">
-<code>config-file</code>
+<code>config-<wbr>file</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="ConfigFileMethodConfig">ConfigFileMethodConfig</code>
+<td>
+<code>Config<wbr>File<wbr>Method<wbr>Config</code>
 </td>
 <td>Config file method configuration (if provided and used)</td>
 </tr>
@@ -58,11 +44,11 @@ Configuration for helidon.oci.authentication
 <td>
 <a id="session-token"></a>
 <a href="io.helidon.integrations.oci.SessionTokenMethodConfig.md">
-<code>session-token</code>
+<code>session-<wbr>token</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="SessionTokenMethodConfig">SessionTokenMethodConfig</code>
+<td>
+<code>Session<wbr>Token<wbr>Method<wbr>Config</code>
 </td>
 <td>Session token method configuration (if provided and used)</td>
 </tr>

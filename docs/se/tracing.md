@@ -176,6 +176,7 @@ Remember that operations on the `nativeOtelSpan` variable *do not* notify span l
 
 The following table lists all spans traced by Helidon components:
 
+<!--@mdc ::table-collapse -->
 | component    | span name            | description                                                                                                                                                               |
 |--------------|----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `web-server` | `HTTP Request`       | The overall span of the Web Server from request initiation until response Note that in `Zipkin` the name is replaced with `jax-rs` span name if `jax-rs` tracing is used. |
@@ -188,6 +189,7 @@ The following table lists all spans traced by Helidon components:
 | `security`   | `security:outbound`  | Processing of outbound security                                                                                                                                           |
 | `jax-rs`     | A generated name     | Span for the resource method invocation, name is generated from class and method name                                                                                     |
 | `jax-rs`     | `jersey-client-call` | Span for outbound client call                                                                                                                                             |
+<!--@mdc :: -->
 
 Some of these spans `log` to the span. These log events can be (in most cases) configured:
 
@@ -203,6 +205,7 @@ Some of these spans `log` to the span. These log events can be (in most cases) c
 
 There are also tags that are set by Helidon components. These are not configurable.
 
+<!--@mdc ::table-collapse -->
 | span name            | tag name           | description                                                                                       |
 |----------------------|--------------------|---------------------------------------------------------------------------------------------------|
 | `HTTP Request`       | `component`        | name of the component - `helidon-webserver`, or `jaxrs` when using MP                             |
@@ -214,6 +217,7 @@ There are also tags that are set by Helidon components. These are not configurab
 | `jersey-client-call` | `http.method`      | HTTP method of the client request                                                                 |
 | `jersey-client-call` | `http.status_code` | HTTP status code of client response                                                               |
 | `jersey-client-call` | `http.url`         | Full URL of the request (such as `http://localhost:8080/greet`)                                   |
+<!--@mdc :: -->
 
 ## Configuration
 
@@ -221,7 +225,7 @@ The following configuration should be supported by all tracer implementations (i
 
 ## Configuration options
 
-<!--@include ../config/io.helidon.tracing.Tracer.md#configuration-options offset=1 -->
+<!--@include ../config/io.helidon.tracing.Tracer.md#configuration-options offset=1 collapseTables=10 -->
 See [Configuration options](../config/io.helidon.tracing.Tracer.md#configuration-options).
 <!--/include-->
 
@@ -379,7 +383,7 @@ String response = client.get()
 
 ## Configuration options
 
-<!--@include ../config/io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.md#configuration-options offset=1 -->
+<!--@include ../config/io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.md#configuration-options offset=1 collapseTables=10 -->
 See [Configuration options](../config/io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.md#configuration-options).
 <!--/include-->
 
@@ -411,7 +415,7 @@ As the [Jaeger Tracing](#jaeger-tracing) section describes, you can use Jaeger t
 
 ## Configuration options
 
-<!--@include ../config/io.helidon.tracing.providers.zipkin.ZipkinTracerBuilder.md#configuration-options offset=1 -->
+<!--@include ../config/io.helidon.tracing.providers.zipkin.ZipkinTracerBuilder.md#configuration-options offset=1 collapseTables=10 -->
 See [Configuration options](../config/io.helidon.tracing.providers.zipkin.ZipkinTracerBuilder.md#configuration-options).
 <!--/include-->
 
@@ -469,7 +473,7 @@ Dependency for OpenTelemetry support using tracing:
 
 ## Configuration options
 
-<!--@include ../config/io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracer.md#configuration-options offset=1 -->
+<!--@include ../config/io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracer.md#configuration-options offset=1 collapseTables=10 -->
 See [Configuration options](../config/io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracer.md#configuration-options).
 <!--/include-->
 

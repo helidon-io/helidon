@@ -2,26 +2,12 @@
 
 ## Description
 
-<code>OpenApiUi</code> prototype
+<code>Open<wbr>ApiUi</code> prototype
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,12 +19,12 @@
 <tbody>
 <tr>
 <td>
-<code>web-context</code>
+<code>web-<wbr>context</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Full web context (not just the suffix)</td>
 </tr>
@@ -46,10 +32,10 @@
 <td>
 <code>options</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Merges implementation-specific UI options</td>
 </tr>
@@ -57,11 +43,11 @@
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Sets whether the service should be enabled</td>
 </tr>
@@ -69,8 +55,6 @@
 </table>
 
 
-
-## Manifest
 
 ---
 

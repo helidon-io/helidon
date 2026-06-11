@@ -6,15 +6,9 @@ This type is a provider contract.
 
 ## Implementations
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-</style>
 
 
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -28,12 +22,12 @@ This type is a provider contract.
 <code>grpc</code>
 </a>
 </td>
-<td><code>N/A</code></td>
+<td><code>N/<wbr>A</code></td>
 </tr>
 <tr>
 <td>
 <a href="io.helidon.webserver.http1.Http1Config.md">
-<code>http_1_1</code>
+<code>http_<wbr>1_1</code>
 </a>
 </td>
 <td>HTTP/1.1 server configuration</td>
@@ -41,7 +35,7 @@ This type is a provider contract.
 <tr>
 <td>
 <a href="io.helidon.webserver.http2.Http2Config.md">
-<code>http_2</code>
+<code>http_<wbr>2</code>
 </a>
 </td>
 <td>HTTP/2 server configuration</td>

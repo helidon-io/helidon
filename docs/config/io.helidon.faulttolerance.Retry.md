@@ -6,22 +6,8 @@
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,13 +19,13 @@
 <tbody>
 <tr>
 <td>
-<code>overall-timeout</code>
+<code>overall-<wbr>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">PT1S</code>
+<td>
+<code>PT1S</code>
 </td>
 <td>Overall timeout of all retries combined</td>
 </tr>
@@ -47,11 +33,11 @@
 <td>
 <code>delay</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">PT0.2S</code>
+<td>
+<code>PT0.<wbr>2S</code>
 </td>
 <td>Base delay between try and retry</td>
 </tr>
@@ -59,47 +45,47 @@
 <td>
 <code>jitter</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">PT-1S</code>
+<td>
+<code>PT-<wbr>1S</code>
 </td>
-<td>Jitter for <code>Retry.JitterRetryPolicy</code></td>
+<td>Jitter for <code>Retry.<wbr>Jitter<wbr>Retry<wbr>Policy</code></td>
 </tr>
 <tr>
 <td>
 <code>calls</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">3</code>
+<td>
+<code>3</code>
 </td>
 <td>Number of calls (first try + retries)</td>
 </tr>
 <tr>
 <td>
-<code>delay-factor</code>
+<code>delay-<wbr>factor</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Double</code>
+<td>
+<code>Double</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">-1.0</code>
+<td>
+<code>-1.<wbr>0</code>
 </td>
 <td>Delay retry policy factor</td>
 </tr>
 <tr>
 <td>
-<code>enable-metrics</code>
+<code>enable-<wbr>metrics</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Flag to enable metrics for this instance</td>
 </tr>

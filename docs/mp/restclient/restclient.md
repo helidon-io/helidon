@@ -115,6 +115,7 @@ Required configuration options:
 
 Optional configuration options:
 
+<!--@mdc ::table-collapse -->
 | key | type | default value | description |
 |----|----|----|----|
 | `$restClient/mp-rest/scope` | string | `jakarta.enterprise.context.Dependent` | The fully qualified classname to a CDI scope to use for injection. |
@@ -130,6 +131,7 @@ Optional configuration options:
 | `$restClient/mp-rest/keyStorePassword` | string |   | Sets the password for the keystore. |
 | `$restClient/mp-rest/keyStoreType` | string | `JKS` | Sets the type of the keystore. |
 | `$restClient/mp-rest/hostnameVerifier` | string |   | Sets the hostname verifier class. This class must have a public no-argument constructor. |
+<!--@mdc :: -->
 
 Configuration options affecting CDI and programmatically created clients:
 

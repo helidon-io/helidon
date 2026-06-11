@@ -6,22 +6,8 @@ Configuration of a single propagation record, a mapping of a header name to its 
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -32,10 +18,10 @@ Configuration of a single propagation record, a mapping of a header name to its 
 <tbody>
 <tr>
 <td>
-<code>default-value</code>
+<code>default-<wbr>value</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Default value to send if not configured in context</td>
 </tr>
@@ -43,17 +29,17 @@ Configuration of a single propagation record, a mapping of a header name to its 
 <td>
 <code>array</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
 <td>Whether to treat the option as an array of strings</td>
 </tr>
 <tr>
 <td>
-<code>default-values</code>
+<code>default-<wbr>values</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
 <td>Default values to send if not configured in context</td>
 </tr>
@@ -61,17 +47,17 @@ Configuration of a single propagation record, a mapping of a header name to its 
 <td>
 <code>classifier</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td>String classifier of the value that will be used with <code>io.helidon.common.context.Context#get(Object, Class)</code></td>
+<td>String classifier of the value that will be used with <code>io.<wbr>helidon.<wbr>common.<wbr>context.<wbr>Context#<wbr>get(<wbr>Object,<wbr> Class)</code></td>
 </tr>
 <tr>
 <td>
 <code>header</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="RecordCustomMethods">RecordCustomMethods</code>
+<td>
+<code>Record<wbr>Custom<wbr>Methods</code>
 </td>
 <td>Name of the header to use when sending the context value over the network</td>
 </tr>

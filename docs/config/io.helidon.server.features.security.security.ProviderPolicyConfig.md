@@ -6,22 +6,8 @@ Configuration for server.features.security.security.provider-policy
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,12 +19,12 @@ Configuration for server.features.security.security.provider-policy
 <tbody>
 <tr>
 <td>
-<code>class-name</code>
+<code>class-<wbr>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Class</code>
+<td>
+<code>Class</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Provider selection policy class name, only used when type is set to CLASS</td>
 </tr>
@@ -49,11 +35,11 @@ Configuration for server.features.security.security.provider-policy
 <code>type</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="ProviderSelectionPolicyType">ProviderSelectionPolicyType</code>
+<td>
+<code>Provider<wbr>Selection<wbr>Policy<wbr>Type</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">FIRST</code>
+<td>
+<code>FIRST</code>
 </td>
 <td>Type of the policy</td>
 </tr>

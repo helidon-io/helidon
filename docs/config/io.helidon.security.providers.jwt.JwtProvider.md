@@ -6,22 +6,8 @@ JWT authentication provider
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,25 +19,25 @@ JWT authentication provider
 <tbody>
 <tr>
 <td>
-<code>allow-impersonation</code>
+<code>allow-<wbr>impersonation</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
-<td>Whether to allow impersonation by explicitly overriding username from outbound requests using <code>io.helidon.security.EndpointConfig#PROPERTY_OUTBOUND_ID</code> property</td>
+<td>Whether to allow impersonation by explicitly overriding username from outbound requests using <code>io.<wbr>helidon.<wbr>security.<wbr>Endpoint<wbr>Config#<wbr>PROPERTY_<wbr>OUTBOUND_<wbr>ID</code> property</td>
 </tr>
 <tr>
 <td>
-<code>allow-unsigned</code>
+<code>allow-<wbr>unsigned</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Configure support for unsigned JWT</td>
 </tr>
@@ -59,12 +45,12 @@ JWT authentication provider
 <td>
 <a id="atn-token"></a>
 <a href="io.helidon.security.providers.jwt.AtnTokenConfig.md">
-<code>atn-token</code>
+<code>atn-<wbr>token</code>
 </a>
 </td>
-<td class="cm-type-cell">
+<td>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Configuration for atn-token</td>
 </tr>
@@ -72,11 +58,11 @@ JWT authentication provider
 <td>
 <code>authenticate</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether to authenticate requests</td>
 </tr>
@@ -84,11 +70,11 @@ JWT authentication provider
 <td>
 <code>optional</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Whether authentication is required</td>
 </tr>
@@ -96,14 +82,14 @@ JWT authentication provider
 <td>
 <a id="principal-type"></a>
 <a href="io.helidon.security.SubjectType.md">
-<code>principal-type</code>
+<code>principal-<wbr>type</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="SubjectType">SubjectType</code>
+<td>
+<code>Subject<wbr>Type</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">USER</code>
+<td>
+<code>USER</code>
 </td>
 <td>Principal type this provider extracts (and also propagates)</td>
 </tr>
@@ -111,11 +97,11 @@ JWT authentication provider
 <td>
 <code>propagate</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether to propagate identity</td>
 </tr>
@@ -123,27 +109,27 @@ JWT authentication provider
 <td>
 <a id="sign-token"></a>
 <a href="io.helidon.security.providers.common.OutboundConfig.md">
-<code>sign-token</code>
+<code>sign-<wbr>token</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="OutboundConfig">OutboundConfig</code>
+<td>
+<code>Outbound<wbr>Config</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Configuration of outbound rules</td>
 </tr>
 <tr>
 <td>
-<code>use-jwt-groups</code>
+<code>use-<wbr>jwt-<wbr>groups</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
-<td>Claim <code>groups</code> from JWT will be used to automatically add  groups to current subject (may be used with <code>jakarta.annotation.security.RolesAllowed</code> annotation)</td>
+<td>Claim <code>groups</code> from JWT will be used to automatically add  groups to current subject (may be used with <code>jakarta.<wbr>annotation.<wbr>security.<wbr>Roles<wbr>Allowed</code> annotation)</td>
 </tr>
 </tbody>
 </table>

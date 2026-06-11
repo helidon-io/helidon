@@ -6,22 +6,8 @@ Configuration of a grpc client
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,14 +21,14 @@ Configuration of a grpc client
 <td>
 <a id="protocol-config"></a>
 <a href="io.helidon.webclient.grpc.GrpcClientProtocolConfig.md">
-<code>protocol-config</code>
+<code>protocol-<wbr>config</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="GrpcClientProtocolConfig">GrpcClientProtocolConfig</code>
+<td>
+<code>Grpc<wbr>Client<wbr>Protocol<wbr>Config</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">create()</code>
+<td>
+<code>create(<wbr>)</code>
 </td>
 <td>gRPC specific configuration</td>
 </tr>
@@ -50,39 +36,39 @@ Configuration of a grpc client
 <td>
 <a id="grpc-services"></a>
 <a href="io.helidon.webclient.grpc.spi.GrpcClientService.md">
-<code>grpc-services</code>
+<code>grpc-<wbr>services</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;GrpcClientService&gt;">List&lt;GrpcClientService&gt;</code>
+<td>
+<code>List&lt;<wbr>Grpc<wbr>Client<wbr>Service&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>gRPC client services</td>
 </tr>
 <tr>
 <td>
-<code>enable-metrics</code>
+<code>enable-<wbr>metrics</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Whether to collect metrics for gRPC client calls</td>
 </tr>
 <tr>
 <td>
-<code>grpc-services-discover-services</code>
+<code>grpc-<wbr>services-<wbr>discover-<wbr>services</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
-<td>Whether to enable automatic service discovery for <code>grpc-services</code></td>
+<td>Whether to enable automatic service discovery for <code>grpc-<wbr>services</code></td>
 </tr>
 </tbody>
 </table>

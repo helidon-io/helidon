@@ -6,15 +6,9 @@ This type is a provider contract.
 
 ## Implementations
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-</style>
 
 
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -25,7 +19,7 @@ This type is a provider contract.
 <tr>
 <td>
 <a href="io.helidon.security.providers.config.vault.ConfigVaultProvider.SecretConfig.md">
-<code>config-vault</code>
+<code>config-<wbr>vault</code>
 </a>
 </td>
 <td>Provider of secrets defined in configuration itself</td>

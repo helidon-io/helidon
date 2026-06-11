@@ -6,22 +6,8 @@ Configuration of the <code>config</code> authentication method
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -32,28 +18,28 @@ Configuration of the <code>config</code> authentication method
 <tbody>
 <tr>
 <td>
-<code>refresh-period</code>
+<code>refresh-<wbr>period</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
 <td>Refresh period, i.e</td>
 </tr>
 <tr>
 <td>
-<code>initial-refresh-delay</code>
+<code>initial-<wbr>refresh-<wbr>delay</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
 <td>Delay of the first refresh</td>
 </tr>
 <tr>
 <td>
-<code>user-id</code>
+<code>user-<wbr>id</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>The OCI user id</td>
 </tr>
@@ -61,8 +47,8 @@ Configuration of the <code>config</code> authentication method
 <td>
 <code>fingerprint</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>The OCI authentication fingerprint</td>
 </tr>
@@ -70,8 +56,8 @@ Configuration of the <code>config</code> authentication method
 <td>
 <code>passphrase</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>The OCI authentication passphrase</td>
 </tr>
@@ -79,53 +65,53 @@ Configuration of the <code>config</code> authentication method
 <td>
 <code>region</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>The OCI region</td>
 </tr>
 <tr>
 <td>
-<code>session-token</code>
+<code>session-<wbr>token</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Session token value</td>
 </tr>
 <tr>
 <td>
-<code>private-key-path</code>
+<code>private-<wbr>key-<wbr>path</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Path</code>
+<td>
+<code>Path</code>
 </td>
 <td>The OCI authentication private key resource</td>
 </tr>
 <tr>
 <td>
-<code>session-lifetime-hours</code>
+<code>session-<wbr>lifetime-<wbr>hours</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Long</code>
+<td>
+<code>Long</code>
 </td>
 <td>Maximal lifetime of a session</td>
 </tr>
 <tr>
 <td>
-<code>session-token-path</code>
+<code>session-<wbr>token-<wbr>path</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Path</code>
+<td>
+<code>Path</code>
 </td>
 <td>Session token path</td>
 </tr>
 <tr>
 <td>
-<code>tenant-id</code>
+<code>tenant-<wbr>id</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>The OCI tenant id</td>
 </tr>

@@ -37,7 +37,7 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 ### Configuration options
 
-<!--@include ../../../config/io.helidon.integrations.langchain4j.providers.gemini.GoogleAiGeminiChatModelConfig.md#configuration-options offset=1 -->
+<!--@include ../../../config/io.helidon.integrations.langchain4j.providers.gemini.GoogleAiGeminiChatModelConfig.md#configuration-options offset=1 collapseTables=10 -->
 See [Configuration options](../../../config/io.helidon.integrations.langchain4j.providers.gemini.GoogleAiGeminiChatModelConfig.md#configuration-options).
 <!--/include-->
 
@@ -62,7 +62,7 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 ### Configuration options
 
-<!--@include ../../../config/io.helidon.integrations.langchain4j.providers.gemini.GoogleAiGeminiStreamingChatModelConfig.md#configuration-options offset=1 -->
+<!--@include ../../../config/io.helidon.integrations.langchain4j.providers.gemini.GoogleAiGeminiStreamingChatModelConfig.md#configuration-options offset=1 collapseTables=10 -->
 See [Configuration options](../../../config/io.helidon.integrations.langchain4j.providers.gemini.GoogleAiGeminiStreamingChatModelConfig.md#configuration-options).
 <!--/include-->
 

@@ -6,22 +6,8 @@ Configuration for security.providers.oidc.webclient.tls.trust.keystore.cert-chai
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -34,8 +20,8 @@ Configuration for security.providers.oidc.webclient.tls.trust.keystore.cert-chai
 <td>
 <code>alias</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Alias of an X.509 chain</td>
 </tr>

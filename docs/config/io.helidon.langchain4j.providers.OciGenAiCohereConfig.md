@@ -6,22 +6,8 @@ Merged configuration for langchain4j.providers.oci-gen-ai-cohere
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,266 +19,266 @@ Merged configuration for langchain4j.providers.oci-gen-ai-cohere
 <tbody>
 <tr>
 <td>
-<code>auth-provider</code>
+<code>auth-<wbr>provider</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="BasicAuthenticationDetailsProvider">BasicAuthenticationDetailsProvider</code>
+<td>
+<code>Basic<wbr>Authentication<wbr>Details<wbr>Provider</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Authentication provider is by default used from default Service bean found in Service Registry</td>
 </tr>
 <tr>
 <td>
-<code>auth-provider-discover-services</code>
+<code>auth-<wbr>provider-<wbr>discover-<wbr>services</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
-<td>Whether to enable automatic service discovery for <code>auth-provider</code></td>
+<td>Whether to enable automatic service discovery for <code>auth-<wbr>provider</code></td>
 </tr>
 <tr>
 <td>
 <a id="citation-quality"></a>
 <a href="com.oracle.bmc.generativeaiinference.model.CohereChatRequest.CitationQuality.md">
-<code>citation-quality</code>
+<code>citation-<wbr>quality</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="CitationQuality">CitationQuality</code>
+<td>
+<code>Citation<wbr>Quality</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.community.model.oracle.oci.genai.BaseCohereChatModel.Builder#citationQuality(com.oracle.bmc.generativeaiinference.model.CohereChatRequest.CitationQuality)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>community.<wbr>model.<wbr>oracle.<wbr>oci.<wbr>genai.<wbr>Base<wbr>Cohere<wbr>Chat<wbr>Model.<wbr>Builder#<wbr>citation<wbr>Quality(<wbr>com.<wbr>oracle.<wbr>bmc.<wbr>generativeaiinference.<wbr>model.<wbr>Cohere<wbr>Chat<wbr>Request.<wbr>Citation<wbr>Quality)</code></td>
 </tr>
 <tr>
 <td>
-<code>compartment-id</code>
+<code>compartment-<wbr>id</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>OCI Compartment OCID</td>
 </tr>
 <tr>
 <td>
-<code>default-request-parameters</code>
+<code>default-<wbr>request-<wbr>parameters</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="ChatRequestParameters">ChatRequestParameters</code>
+<td>
+<code>Chat<wbr>Request<wbr>Parameters</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.community.model.oracle.oci.genai.BaseChatModel.Builder#defaultRequestParameters(dev.langchain4j.model.chat.request.ChatRequestParameters)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>community.<wbr>model.<wbr>oracle.<wbr>oci.<wbr>genai.<wbr>Base<wbr>Chat<wbr>Model.<wbr>Builder#<wbr>default<wbr>Request<wbr>Parameters(<wbr>dev.<wbr>langchain4j.<wbr>model.<wbr>chat.<wbr>request.<wbr>Chat<wbr>Request<wbr>Parameters)</code></td>
 </tr>
 <tr>
 <td>
-<code>default-request-parameters-discover-services</code>
+<code>default-<wbr>request-<wbr>parameters-<wbr>discover-<wbr>services</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
-<td>Whether to enable automatic service discovery for <code>default-request-parameters</code></td>
+<td>Whether to enable automatic service discovery for <code>default-<wbr>request-<wbr>parameters</code></td>
 </tr>
 <tr>
 <td>
 <code>documents</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;Object&gt;">List&lt;Object&gt;</code>
+<td>
+<code>List&lt;<wbr>Object&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.community.model.oracle.oci.genai.BaseCohereChatModel.Builder#documents(java.util.List)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>community.<wbr>model.<wbr>oracle.<wbr>oci.<wbr>genai.<wbr>Base<wbr>Cohere<wbr>Chat<wbr>Model.<wbr>Builder#<wbr>documents(<wbr>java.<wbr>util.<wbr>List)</code></td>
 </tr>
 <tr>
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>If set to <code>false</code>, OciGenAiCohereChatModel will not be available even if configured</td>
 </tr>
 <tr>
 <td>
-<code>frequency-penalty</code>
+<code>frequency-<wbr>penalty</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Double</code>
+<td>
+<code>Double</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.community.model.oracle.oci.genai.BaseChatModel.Builder#frequencyPenalty(java.lang.Double)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>community.<wbr>model.<wbr>oracle.<wbr>oci.<wbr>genai.<wbr>Base<wbr>Chat<wbr>Model.<wbr>Builder#<wbr>frequency<wbr>Penalty(<wbr>java.<wbr>lang.<wbr>Double)</code></td>
 </tr>
 <tr>
 <td>
-<code>gen-ai-client</code>
+<code>gen-<wbr>ai-client</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="GenerativeAiInferenceClient">GenerativeAiInferenceClient</code>
+<td>
+<code>Generative<wbr>AiInference<wbr>Client</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Custom http client builder</td>
 </tr>
 <tr>
 <td>
-<code>gen-ai-client-discover-services</code>
+<code>gen-<wbr>ai-client-<wbr>discover-<wbr>services</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
-<td>Whether to enable automatic service discovery for <code>gen-ai-client</code></td>
+<td>Whether to enable automatic service discovery for <code>gen-<wbr>ai-client</code></td>
 </tr>
 <tr>
 <td>
-<code>is-raw-prompting</code>
+<code>is-<wbr>raw-<wbr>prompting</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.community.model.oracle.oci.genai.BaseCohereChatModel.Builder#isRawPrompting(java.lang.Boolean)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>community.<wbr>model.<wbr>oracle.<wbr>oci.<wbr>genai.<wbr>Base<wbr>Cohere<wbr>Chat<wbr>Model.<wbr>Builder#<wbr>isRaw<wbr>Prompting(<wbr>java.<wbr>lang.<wbr>Boolean)</code></td>
 </tr>
 <tr>
 <td>
-<code>is-search-queries-only</code>
+<code>is-<wbr>search-<wbr>queries-<wbr>only</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.community.model.oracle.oci.genai.BaseCohereChatModel.Builder#isSearchQueriesOnly(java.lang.Boolean)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>community.<wbr>model.<wbr>oracle.<wbr>oci.<wbr>genai.<wbr>Base<wbr>Cohere<wbr>Chat<wbr>Model.<wbr>Builder#<wbr>isSearch<wbr>Queries<wbr>Only(<wbr>java.<wbr>lang.<wbr>Boolean)</code></td>
 </tr>
 <tr>
 <td>
 <code>listeners</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;ChatModelListener&gt;">List&lt;ChatModelListener&gt;</code>
+<td>
+<code>List&lt;<wbr>Chat<wbr>Model<wbr>Listener&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.community.model.oracle.oci.genai.BaseChatModel.Builder#listeners(java.util.List)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>community.<wbr>model.<wbr>oracle.<wbr>oci.<wbr>genai.<wbr>Base<wbr>Chat<wbr>Model.<wbr>Builder#<wbr>listeners(<wbr>java.<wbr>util.<wbr>List)</code></td>
 </tr>
 <tr>
 <td>
-<code>listeners-discover-services</code>
+<code>listeners-<wbr>discover-<wbr>services</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether to enable automatic service discovery for <code>listeners</code></td>
 </tr>
 <tr>
 <td>
-<code>max-input-tokens</code>
+<code>max-<wbr>input-<wbr>tokens</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.community.model.oracle.oci.genai.BaseCohereChatModel.Builder#maxInputTokens(java.lang.Integer)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>community.<wbr>model.<wbr>oracle.<wbr>oci.<wbr>genai.<wbr>Base<wbr>Cohere<wbr>Chat<wbr>Model.<wbr>Builder#<wbr>maxInput<wbr>Tokens(<wbr>java.<wbr>lang.<wbr>Integer)</code></td>
 </tr>
 <tr>
 <td>
-<code>max-tokens</code>
+<code>max-<wbr>tokens</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.community.model.oracle.oci.genai.BaseChatModel.Builder#maxTokens(java.lang.Integer)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>community.<wbr>model.<wbr>oracle.<wbr>oci.<wbr>genai.<wbr>Base<wbr>Chat<wbr>Model.<wbr>Builder#<wbr>maxTokens(<wbr>java.<wbr>lang.<wbr>Integer)</code></td>
 </tr>
 <tr>
 <td>
-<code>model-name</code>
+<code>model-<wbr>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>OCI LLM Model name or OCID</td>
 </tr>
 <tr>
 <td>
-<code>preamble-override</code>
+<code>preamble-<wbr>override</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.community.model.oracle.oci.genai.BaseCohereChatModel.Builder#preambleOverride(java.lang.String)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>community.<wbr>model.<wbr>oracle.<wbr>oci.<wbr>genai.<wbr>Base<wbr>Cohere<wbr>Chat<wbr>Model.<wbr>Builder#<wbr>preamble<wbr>Override(<wbr>java.<wbr>lang.<wbr>String)</code></td>
 </tr>
 <tr>
 <td>
-<code>presence-penalty</code>
+<code>presence-<wbr>penalty</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Double</code>
+<td>
+<code>Double</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.community.model.oracle.oci.genai.BaseChatModel.Builder#presencePenalty(java.lang.Double)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>community.<wbr>model.<wbr>oracle.<wbr>oci.<wbr>genai.<wbr>Base<wbr>Chat<wbr>Model.<wbr>Builder#<wbr>presence<wbr>Penalty(<wbr>java.<wbr>lang.<wbr>Double)</code></td>
 </tr>
 <tr>
 <td>
 <a id="prompt-truncation"></a>
 <a href="com.oracle.bmc.generativeaiinference.model.CohereChatRequest.PromptTruncation.md">
-<code>prompt-truncation</code>
+<code>prompt-<wbr>truncation</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="PromptTruncation">PromptTruncation</code>
+<td>
+<code>Prompt<wbr>Truncation</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.community.model.oracle.oci.genai.BaseCohereChatModel.Builder#promptTruncation(com.oracle.bmc.generativeaiinference.model.CohereChatRequest.PromptTruncation)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>community.<wbr>model.<wbr>oracle.<wbr>oci.<wbr>genai.<wbr>Base<wbr>Cohere<wbr>Chat<wbr>Model.<wbr>Builder#<wbr>prompt<wbr>Truncation(<wbr>com.<wbr>oracle.<wbr>bmc.<wbr>generativeaiinference.<wbr>model.<wbr>Cohere<wbr>Chat<wbr>Request.<wbr>Prompt<wbr>Truncation)</code></td>
 </tr>
 <tr>
 <td>
 <code>region</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="OciFactoryMethods">OciFactoryMethods</code>
+<td>
+<code>Oci<wbr>Factory<wbr>Methods</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Region is by default set to the current OCI region detected by OCI SDK</td>
 </tr>
 <tr>
 <td>
-<code>region-discover-services</code>
+<code>region-<wbr>discover-<wbr>services</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether to enable automatic service discovery for <code>region</code></td>
 </tr>
@@ -300,67 +286,67 @@ Merged configuration for langchain4j.providers.oci-gen-ai-cohere
 <td>
 <code>seed</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.community.model.oracle.oci.genai.BaseChatModel.Builder#seed(java.lang.Integer)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>community.<wbr>model.<wbr>oracle.<wbr>oci.<wbr>genai.<wbr>Base<wbr>Chat<wbr>Model.<wbr>Builder#<wbr>seed(<wbr>java.<wbr>lang.<wbr>Integer)</code></td>
 </tr>
 <tr>
 <td>
-<code>serving-type</code>
+<code>serving-<wbr>type</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="OciFactoryMethods">OciFactoryMethods</code>
+<td>
+<code>Oci<wbr>Factory<wbr>Methods</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.community.model.oracle.oci.genai.BaseChatModel.Builder#servingType(com.oracle.bmc.generativeaiinference.model.ServingMode.ServingType)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>community.<wbr>model.<wbr>oracle.<wbr>oci.<wbr>genai.<wbr>Base<wbr>Chat<wbr>Model.<wbr>Builder#<wbr>serving<wbr>Type(<wbr>com.<wbr>oracle.<wbr>bmc.<wbr>generativeaiinference.<wbr>model.<wbr>Serving<wbr>Mode.<wbr>Serving<wbr>Type)</code></td>
 </tr>
 <tr>
 <td>
 <code>stop</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.community.model.oracle.oci.genai.BaseChatModel.Builder#stop(java.util.List)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>community.<wbr>model.<wbr>oracle.<wbr>oci.<wbr>genai.<wbr>Base<wbr>Chat<wbr>Model.<wbr>Builder#<wbr>stop(<wbr>java.<wbr>util.<wbr>List)</code></td>
 </tr>
 <tr>
 <td>
 <code>temperature</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Double</code>
+<td>
+<code>Double</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.community.model.oracle.oci.genai.BaseChatModel.Builder#temperature(java.lang.Double)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>community.<wbr>model.<wbr>oracle.<wbr>oci.<wbr>genai.<wbr>Base<wbr>Chat<wbr>Model.<wbr>Builder#<wbr>temperature(<wbr>java.<wbr>lang.<wbr>Double)</code></td>
 </tr>
 <tr>
 <td>
-<code>top-k</code>
+<code>top-<wbr>k</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.community.model.oracle.oci.genai.BaseChatModel.Builder#topK(java.lang.Integer)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>community.<wbr>model.<wbr>oracle.<wbr>oci.<wbr>genai.<wbr>Base<wbr>Chat<wbr>Model.<wbr>Builder#<wbr>topK(<wbr>java.<wbr>lang.<wbr>Integer)</code></td>
 </tr>
 <tr>
 <td>
-<code>top-p</code>
+<code>top-<wbr>p</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Double</code>
+<td>
+<code>Double</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.community.model.oracle.oci.genai.BaseChatModel.Builder#topP(java.lang.Double)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>community.<wbr>model.<wbr>oracle.<wbr>oci.<wbr>genai.<wbr>Base<wbr>Chat<wbr>Model.<wbr>Builder#<wbr>topP(<wbr>java.<wbr>lang.<wbr>Double)</code></td>
 </tr>
 </tbody>
 </table>

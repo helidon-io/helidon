@@ -6,22 +6,8 @@ JDBC Data source configuration
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -34,17 +20,17 @@ JDBC Data source configuration
 <td>
 <code>schema</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Set the default schema name to be set on connections</td>
 </tr>
 <tr>
 <td>
-<code>auto-commit</code>
+<code>auto-<wbr>commit</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
 <td>Set the default auto-commit behavior of create connections</td>
 </tr>
@@ -52,17 +38,17 @@ JDBC Data source configuration
 <td>
 <code>catalog</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Set the default catalog name to be set on connections</td>
 </tr>
 <tr>
 <td>
-<code>read-only</code>
+<code>read-<wbr>only</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
 <td>Whether the connection should be read only</td>
 </tr>
@@ -70,11 +56,11 @@ JDBC Data source configuration
 <td>
 <a id="transaction-isolation"></a>
 <a href="io.helidon.data.sql.datasource.TransactionIsolation.md">
-<code>transaction-isolation</code>
+<code>transaction-<wbr>isolation</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="TransactionIsolation">TransactionIsolation</code>
+<td>
+<code>Transaction<wbr>Isolation</code>
 </td>
 <td>Set the default transaction isolation level</td>
 </tr>
@@ -82,8 +68,8 @@ JDBC Data source configuration
 <td>
 <code>properties</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> String&gt;</code>
 </td>
 <td>Add properties (name/value pair) that will be used to configure the DataSource/Driver</td>
 </tr>

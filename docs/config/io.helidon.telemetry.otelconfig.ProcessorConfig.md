@@ -2,26 +2,12 @@
 
 ## Description
 
-Generic configuration for a processor such as a <code>io.opentelemetry.sdk.trace.SpanProcessor</code>, linked to an exporter such as a <code>io.opentelemetry.sdk.trace.export.SpanExporter</code> by its name in the configuration
+Generic configuration for a processor such as a <code>io.<wbr>opentelemetry.<wbr>sdk.<wbr>trace.<wbr>Span<wbr>Processor</code>, linked to an exporter such as a <code>io.<wbr>opentelemetry.<wbr>sdk.<wbr>trace.<wbr>export.<wbr>Span<wbr>Exporter</code> by its name in the configuration
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -37,8 +23,8 @@ Generic configuration for a processor such as a <code>io.opentelemetry.sdk.trace
 <code>type</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="ProcessorType">ProcessorType</code>
+<td>
+<code>Processor<wbr>Type</code>
 </td>
 <td>Processor type</td>
 </tr>
@@ -46,8 +32,8 @@ Generic configuration for a processor such as a <code>io.opentelemetry.sdk.trace
 <td>
 <code>exporters</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
 <td>Name(s) of the  exporter(s) this processor should use; specifying no names uses all configured exporters (or if no exporters are configured, the default OpenTelemetry exporter(s))</td>
 </tr>

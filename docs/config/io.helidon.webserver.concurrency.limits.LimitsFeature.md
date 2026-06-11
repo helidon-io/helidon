@@ -6,22 +6,8 @@ Server feature that adds limits as filters
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,27 +19,27 @@ Server feature that adds limits as filters
 <tbody>
 <tr>
 <td>
-<code>concurrency-limit-discover-services</code>
+<code>concurrency-<wbr>limit-<wbr>discover-<wbr>services</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
-<td>Whether to enable automatic service discovery for <code>concurrency-limit</code></td>
+<td>Whether to enable automatic service discovery for <code>concurrency-<wbr>limit</code></td>
 </tr>
 <tr>
 <td>
 <a id="concurrency-limit"></a>
 <a href="io.helidon.common.concurrency.limits.Limit.md">
-<code>concurrency-limit</code>
+<code>concurrency-<wbr>limit</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Limit</code>
+<td>
+<code>Limit</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Concurrency limit to use to limit concurrent execution of incoming requests</td>
 </tr>
@@ -61,11 +47,11 @@ Server feature that adds limits as filters
 <td>
 <code>weight</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Double</code>
+<td>
+<code>Double</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">2000.0</code>
+<td>
+<code>2000.<wbr>0</code>
 </td>
 <td>Weight of the context feature</td>
 </tr>
@@ -73,10 +59,10 @@ Server feature that adds limits as filters
 <td>
 <code>sockets</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>List of sockets to register this feature on</td>
 </tr>
@@ -84,11 +70,11 @@ Server feature that adds limits as filters
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether this feature is enabled, defaults to <code>true</code></td>
 </tr>

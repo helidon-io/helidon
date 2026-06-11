@@ -6,15 +6,9 @@ This type is a provider contract.
 
 ## Implementations
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-</style>
 
 
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -28,7 +22,7 @@ This type is a provider contract.
 <code>aimd</code>
 </a>
 </td>
-<td>Configuration of <code>io.helidon.common.concurrency.limits.AimdLimit</code></td>
+<td>Configuration of <code>io.<wbr>helidon.<wbr>common.<wbr>concurrency.<wbr>limits.<wbr>Aimd<wbr>Limit</code></td>
 </tr>
 <tr>
 <td>
@@ -36,7 +30,7 @@ This type is a provider contract.
 <code>fixed</code>
 </a>
 </td>
-<td>Configuration of <code>FixedLimit</code></td>
+<td>Configuration of <code>Fixed<wbr>Limit</code></td>
 </tr>
 <tr>
 <td>
@@ -44,7 +38,7 @@ This type is a provider contract.
 <code>throughput</code>
 </a>
 </td>
-<td>Configuration of <code>ThroughputLimit</code></td>
+<td>Configuration of <code>Throughput<wbr>Limit</code></td>
 </tr>
 </tbody>
 </table>

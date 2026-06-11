@@ -6,22 +6,8 @@ Common configuration for HTTP protocols
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,12 +19,12 @@ Common configuration for HTTP protocols
 <tbody>
 <tr>
 <td>
-<code>connect-timeout</code>
+<code>connect-<wbr>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Connect timeout</td>
 </tr>
@@ -49,57 +35,57 @@ Common configuration for HTTP protocols
 <code>proxy</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Proxy</code>
+<td>
+<code>Proxy</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Proxy configuration to be used for requests</td>
 </tr>
 <tr>
 <td>
-<code>follow-redirects</code>
+<code>follow-<wbr>redirects</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether to follow redirects</td>
 </tr>
 <tr>
 <td>
-<code>keep-alive</code>
+<code>keep-<wbr>alive</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Determines if connection keep alive is enabled (NOT socket keep alive, but HTTP connection keep alive, to re-use the same connection for multiple requests)</td>
 </tr>
 <tr>
 <td>
-<code>read-timeout</code>
+<code>read-<wbr>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Read timeout</td>
 </tr>
 <tr>
 <td>
-<code>max-redirects</code>
+<code>max-<wbr>redirects</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">10</code>
+<td>
+<code>10</code>
 </td>
 <td>Max number of followed redirects</td>
 </tr>
@@ -110,10 +96,10 @@ Common configuration for HTTP protocols
 <code>tls</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Tls</code>
+<td>
+<code>Tls</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>TLS configuration for any TLS request from this client</td>
 </tr>
@@ -121,10 +107,10 @@ Common configuration for HTTP protocols
 <td>
 <code>properties</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Properties configured for this client</td>
 </tr>

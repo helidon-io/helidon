@@ -6,22 +6,8 @@ Configuration for observability feature itself
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,11 +21,11 @@ Configuration for observability feature itself
 <td>
 <code>endpoint</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">/observe</code>
+<td>
+<code>/observe</code>
 </td>
 <td>Root endpoint to use for observe providers</td>
 </tr>
@@ -47,11 +33,11 @@ Configuration for observability feature itself
 <td>
 <code>weight</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Double</code>
+<td>
+<code>Double</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">80.0</code>
+<td>
+<code>80.<wbr>0</code>
 </td>
 <td>Change the weight of this feature</td>
 </tr>
@@ -59,10 +45,10 @@ Configuration for observability feature itself
 <td>
 <code>sockets</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Sockets the observability endpoint should be exposed on</td>
 </tr>
@@ -70,11 +56,11 @@ Configuration for observability feature itself
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether the observe support is enabled</td>
 </tr>
@@ -85,22 +71,22 @@ Configuration for observability feature itself
 <code>observers</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;Observer&gt;">List&lt;Observer&gt;</code>
+<td>
+<code>List&lt;<wbr>Observer&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Observers to use with this observe features</td>
 </tr>
 <tr>
 <td>
-<code>observers-discover-services</code>
+<code>observers-<wbr>discover-<wbr>services</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether to enable automatic service discovery for <code>observers</code></td>
 </tr>
@@ -111,7 +97,7 @@ Configuration for observability feature itself
 ### Deprecated Options
 
 
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -127,8 +113,8 @@ Configuration for observability feature itself
 <code>cors</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="CrossOriginConfig">CrossOriginConfig</code>
+<td>
+<code>Cross<wbr>Origin<wbr>Config</code>
 </td>
 <td>Cors support inherited by each observe provider, unless explicitly configured</td>
 </tr>

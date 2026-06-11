@@ -6,22 +6,8 @@ Configuration for LangChain4j model GoogleAiGeminiStreamingChatModel
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,116 +19,116 @@ Configuration for LangChain4j model GoogleAiGeminiStreamingChatModel
 <tbody>
 <tr>
 <td>
-<code>media-resolution-per-part-enabled</code>
+<code>media-<wbr>resolution-<wbr>per-<wbr>part-<wbr>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#mediaResolutionPerPartEnabled(java.lang.Boolean)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>media<wbr>Resolution<wbr>PerPart<wbr>Enabled(<wbr>java.<wbr>lang.<wbr>Boolean)</code></td>
 </tr>
 <tr>
 <td>
-<code>retrieve-google-maps-widget-token</code>
+<code>retrieve-<wbr>google-<wbr>maps-<wbr>widget-<wbr>token</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#retrieveGoogleMapsWidgetToken(java.lang.Boolean)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>retrieve<wbr>Google<wbr>Maps<wbr>Widget<wbr>Token(<wbr>java.<wbr>lang.<wbr>Boolean)</code></td>
 </tr>
 <tr>
 <td>
-<code>http-client-builder</code>
+<code>http-<wbr>client-<wbr>builder</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="HttpClientBuilder">HttpClientBuilder</code>
+<td>
+<code>Http<wbr>Client<wbr>Builder</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#httpClientBuilder(dev.langchain4j.http.client.HttpClientBuilder)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>http<wbr>Client<wbr>Builder(<wbr>dev.<wbr>langchain4j.<wbr>http.<wbr>client.<wbr>Http<wbr>Client<wbr>Builder)</code></td>
 </tr>
 <tr>
 <td>
-<code>max-output-tokens</code>
+<code>max-<wbr>output-<wbr>tokens</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#maxOutputTokens(java.lang.Integer)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>maxOutput<wbr>Tokens(<wbr>java.<wbr>lang.<wbr>Integer)</code></td>
 </tr>
 <tr>
 <td>
 <a id="media-resolution"></a>
 <a href="dev.langchain4j.model.googleai.GeminiMediaResolutionLevel.md">
-<code>media-resolution</code>
+<code>media-<wbr>resolution</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="GeminiMediaResolutionLevel">GeminiMediaResolutionLevel</code>
+<td>
+<code>Gemini<wbr>Media<wbr>Resolution<wbr>Level</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#mediaResolution(dev.langchain4j.model.googleai.GeminiMediaResolutionLevel)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>media<wbr>Resolution(<wbr>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Gemini<wbr>Media<wbr>Resolution<wbr>Level)</code></td>
 </tr>
 <tr>
 <td>
 <code>seed</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#seed(java.lang.Integer)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>seed(<wbr>java.<wbr>lang.<wbr>Integer)</code></td>
 </tr>
 <tr>
 <td>
-<code>default-request-parameters-discover-services</code>
+<code>default-<wbr>request-<wbr>parameters-<wbr>discover-<wbr>services</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
-<td>Whether to enable automatic service discovery for <code>default-request-parameters</code></td>
+<td>Whether to enable automatic service discovery for <code>default-<wbr>request-<wbr>parameters</code></td>
 </tr>
 <tr>
 <td>
 <code>logger</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Logger</code>
+<td>
+<code>Logger</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#logger(org.slf4j.Logger)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>logger(<wbr>org.<wbr>slf4j.<wbr>Logger)</code></td>
 </tr>
 <tr>
 <td>
-<code>tool-config</code>
+<code>tool-<wbr>config</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="GeminiFunctionCallingConfig">GeminiFunctionCallingConfig</code>
+<td>
+<code>Gemini<wbr>Function<wbr>Calling<wbr>Config</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#toolConfig(dev.langchain4j.model.googleai.GeminiFunctionCallingConfig)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>tool<wbr>Config(<wbr>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Gemini<wbr>Function<wbr>Calling<wbr>Config)</code></td>
 </tr>
 <tr>
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>If set to <code>false</code>, GoogleAiGeminiStreamingChatModel will not be available even if configured</td>
 </tr>
@@ -150,340 +136,338 @@ Configuration for LangChain4j model GoogleAiGeminiStreamingChatModel
 <td>
 <code>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#timeout(java.time.Duration)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>timeout(<wbr>java.<wbr>time.<wbr>Duration)</code></td>
 </tr>
 <tr>
 <td>
 <code>logprobs</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#logprobs(java.lang.Integer)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>logprobs(<wbr>java.<wbr>lang.<wbr>Integer)</code></td>
 </tr>
 <tr>
 <td>
-<code>log-requests</code>
+<code>log-<wbr>requests</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#logRequests(java.lang.Boolean)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>logRequests(<wbr>java.<wbr>lang.<wbr>Boolean)</code></td>
 </tr>
 <tr>
 <td>
-<code>api-key</code>
+<code>api-<wbr>key</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#apiKey(java.lang.String)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>apiKey(<wbr>java.<wbr>lang.<wbr>String)</code></td>
 </tr>
 <tr>
 <td>
 <code>temperature</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Double</code>
+<td>
+<code>Double</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#temperature(java.lang.Double)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>temperature(<wbr>java.<wbr>lang.<wbr>Double)</code></td>
 </tr>
 <tr>
 <td>
-<code>model-name</code>
+<code>model-<wbr>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#modelName(java.lang.String)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>model<wbr>Name(<wbr>java.<wbr>lang.<wbr>String)</code></td>
 </tr>
 <tr>
 <td>
-<code>stop-sequences</code>
+<code>stop-<wbr>sequences</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#stopSequences(java.util.List)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>stop<wbr>Sequences(<wbr>java.<wbr>util.<wbr>List)</code></td>
 </tr>
 <tr>
 <td>
-<code>return-thinking</code>
+<code>return-<wbr>thinking</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#returnThinking(java.lang.Boolean)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>return<wbr>Thinking(<wbr>java.<wbr>lang.<wbr>Boolean)</code></td>
 </tr>
 <tr>
 <td>
-<code>base-url</code>
+<code>base-<wbr>url</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#baseUrl(java.lang.String)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>base<wbr>Url(<wbr>java.<wbr>lang.<wbr>String)</code></td>
 </tr>
 <tr>
 <td>
-<code>allow-google-search</code>
+<code>allow-<wbr>google-<wbr>search</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#allowGoogleSearch(java.lang.Boolean)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>allow<wbr>Google<wbr>Search(<wbr>java.<wbr>lang.<wbr>Boolean)</code></td>
 </tr>
 <tr>
 <td>
-<code>frequency-penalty</code>
+<code>frequency-<wbr>penalty</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Double</code>
+<td>
+<code>Double</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#frequencyPenalty(java.lang.Double)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>frequency<wbr>Penalty(<wbr>java.<wbr>lang.<wbr>Double)</code></td>
 </tr>
 <tr>
 <td>
-<code>default-request-parameters</code>
+<code>default-<wbr>request-<wbr>parameters</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="ChatRequestParameters">ChatRequestParameters</code>
+<td>
+<code>Chat<wbr>Request<wbr>Parameters</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#defaultRequestParameters(dev.langchain4j.model.chat.request.ChatRequestParameters)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>default<wbr>Request<wbr>Parameters(<wbr>dev.<wbr>langchain4j.<wbr>model.<wbr>chat.<wbr>request.<wbr>Chat<wbr>Request<wbr>Parameters)</code></td>
 </tr>
 <tr>
 <td>
-<code>allow-url-context</code>
+<code>allow-<wbr>url-<wbr>context</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#allowUrlContext(java.lang.Boolean)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>allow<wbr>UrlContext(<wbr>java.<wbr>lang.<wbr>Boolean)</code></td>
 </tr>
 <tr>
 <td>
 <code>listeners</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;ChatModelListener&gt;">List&lt;ChatModelListener&gt;</code>
+<td>
+<code>List&lt;<wbr>Chat<wbr>Model<wbr>Listener&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#listeners(java.util.List)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>listeners(<wbr>java.<wbr>util.<wbr>List)</code></td>
 </tr>
 <tr>
 <td>
-<code>response-logprobs</code>
+<code>response-<wbr>logprobs</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#responseLogprobs(java.lang.Boolean)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>response<wbr>Logprobs(<wbr>java.<wbr>lang.<wbr>Boolean)</code></td>
 </tr>
 <tr>
 <td>
-<code>top-k</code>
+<code>top-<wbr>k</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#topK(java.lang.Integer)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>topK(<wbr>java.<wbr>lang.<wbr>Integer)</code></td>
 </tr>
 <tr>
 <td>
-<code>allow-code-execution</code>
+<code>allow-<wbr>code-<wbr>execution</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#allowCodeExecution(java.lang.Boolean)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>allow<wbr>Code<wbr>Execution(<wbr>java.<wbr>lang.<wbr>Boolean)</code></td>
 </tr>
 <tr>
 <td>
-<code>log-requests-and-responses</code>
+<code>log-<wbr>requests-<wbr>and-<wbr>responses</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#logRequestsAndResponses(java.lang.Boolean)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>logRequests<wbr>AndResponses(<wbr>java.<wbr>lang.<wbr>Boolean)</code></td>
 </tr>
 <tr>
 <td>
-<code>allow-google-maps</code>
+<code>allow-<wbr>google-<wbr>maps</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#allowGoogleMaps(java.lang.Boolean)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>allow<wbr>Google<wbr>Maps(<wbr>java.<wbr>lang.<wbr>Boolean)</code></td>
 </tr>
 <tr>
 <td>
-<code>log-responses</code>
+<code>log-<wbr>responses</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#logResponses(java.lang.Boolean)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>logResponses(<wbr>java.<wbr>lang.<wbr>Boolean)</code></td>
 </tr>
 <tr>
 <td>
-<code>response-format</code>
+<code>response-<wbr>format</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="ResponseFormat">ResponseFormat</code>
+<td>
+<code>Response<wbr>Format</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#responseFormat(dev.langchain4j.model.chat.request.ResponseFormat)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>response<wbr>Format(<wbr>dev.<wbr>langchain4j.<wbr>model.<wbr>chat.<wbr>request.<wbr>Response<wbr>Format)</code></td>
 </tr>
 <tr>
 <td>
-<code>top-p</code>
+<code>top-<wbr>p</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Double</code>
+<td>
+<code>Double</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#topP(java.lang.Double)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>topP(<wbr>java.<wbr>lang.<wbr>Double)</code></td>
 </tr>
 <tr>
 <td>
-<code>http-client-builder-discover-services</code>
+<code>http-<wbr>client-<wbr>builder-<wbr>discover-<wbr>services</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
-<td>Whether to enable automatic service discovery for <code>http-client-builder</code></td>
+<td>Whether to enable automatic service discovery for <code>http-<wbr>client-<wbr>builder</code></td>
 </tr>
 <tr>
 <td>
-<code>listeners-discover-services</code>
+<code>listeners-<wbr>discover-<wbr>services</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether to enable automatic service discovery for <code>listeners</code></td>
 </tr>
 <tr>
 <td>
-<code>include-code-execution-output</code>
+<code>include-<wbr>code-<wbr>execution-<wbr>output</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#includeCodeExecutionOutput(java.lang.Boolean)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>include<wbr>Code<wbr>Execution<wbr>Output(<wbr>java.<wbr>lang.<wbr>Boolean)</code></td>
 </tr>
 <tr>
 <td>
-<code>safety-settings</code>
+<code>safety-<wbr>settings</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;GeminiSafetySetting&gt;">List&lt;GeminiSafetySetting&gt;</code>
+<td>
+<code>List&lt;<wbr>Gemini<wbr>Safety<wbr>Setting&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Safety setting, affecting the safety-blocking behavior</td>
 </tr>
 <tr>
 <td>
-<code>thinking-config</code>
+<code>thinking-<wbr>config</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="GeminiThinkingConfig">GeminiThinkingConfig</code>
+<td>
+<code>Gemini<wbr>Thinking<wbr>Config</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#thinkingConfig(dev.langchain4j.model.googleai.GeminiThinkingConfig)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>thinking<wbr>Config(<wbr>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Gemini<wbr>Thinking<wbr>Config)</code></td>
 </tr>
 <tr>
 <td>
-<code>send-thinking</code>
+<code>send-<wbr>thinking</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#sendThinking(java.lang.Boolean)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>send<wbr>Thinking(<wbr>java.<wbr>lang.<wbr>Boolean)</code></td>
 </tr>
 <tr>
 <td>
-<code>enable-enhanced-civic-answers</code>
+<code>enable-<wbr>enhanced-<wbr>civic-<wbr>answers</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#enableEnhancedCivicAnswers(java.lang.Boolean)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>enable<wbr>Enhanced<wbr>Civic<wbr>Answers(<wbr>java.<wbr>lang.<wbr>Boolean)</code></td>
 </tr>
 <tr>
 <td>
-<code>presence-penalty</code>
+<code>presence-<wbr>penalty</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Double</code>
+<td>
+<code>Double</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.googleai.BaseGeminiChatModel.GoogleAiGeminiChatModelBaseBuilder#presencePenalty(java.lang.Double)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Base<wbr>Gemini<wbr>Chat<wbr>Model.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Base<wbr>Builder#<wbr>presence<wbr>Penalty(<wbr>java.<wbr>lang.<wbr>Double)</code></td>
 </tr>
 </tbody>
 </table>
 
 
-
-## Manifest
 
 ---
 

@@ -6,13 +6,7 @@ This type is an enumeration.
 
 ## Allowed Values
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-</style>
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Value</th>
@@ -21,11 +15,11 @@ This type is an enumeration.
 </thead>
 <tbody>
 <tr>
-<td><code>SINCE_PREVIOUS_START</code></td>
+<td><code>SINCE_<wbr>PREVIOUS_<wbr>START</code></td>
 <td>Next invocation start is measured from the previous invocation task start</td>
 </tr>
 <tr>
-<td><code>SINCE_PREVIOUS_END</code></td>
+<td><code>SINCE_<wbr>PREVIOUS_<wbr>END</code></td>
 <td>Next invocation start is measured from the previous invocation task end</td>
 </tr>
 </tbody>

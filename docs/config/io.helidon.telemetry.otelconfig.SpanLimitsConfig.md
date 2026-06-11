@@ -6,22 +6,8 @@ Tracing span limits settings
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -32,55 +18,55 @@ Tracing span limits settings
 <tbody>
 <tr>
 <td>
-<code>max-attribute-value-length</code>
+<code>max-<wbr>attribute-<wbr>value-<wbr>length</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Maximum attribute value length</td>
 </tr>
 <tr>
 <td>
-<code>max-events</code>
+<code>max-<wbr>events</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Maximum number of events</td>
 </tr>
 <tr>
 <td>
-<code>max-attributes-per-event</code>
+<code>max-<wbr>attributes-<wbr>per-<wbr>event</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Maximum number of attributes per event</td>
 </tr>
 <tr>
 <td>
-<code>max-attributes</code>
+<code>max-<wbr>attributes</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Maximum number of attributes</td>
 </tr>
 <tr>
 <td>
-<code>max-attributes-per-link</code>
+<code>max-<wbr>attributes-<wbr>per-<wbr>link</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Maximum number of attributes per link</td>
 </tr>
 <tr>
 <td>
-<code>max-links</code>
+<code>max-<wbr>links</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Maximum number of links</td>
 </tr>
@@ -88,8 +74,6 @@ Tracing span limits settings
 </table>
 
 
-
-## Manifest
 
 ---
 

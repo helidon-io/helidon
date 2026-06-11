@@ -231,7 +231,7 @@ There are a few configuration options (see table below) that are specific to a `
 
 ### Configuration options
 
-<!--@include ../../config/io.helidon.webclient.grpc.GrpcClientProtocolConfig.md#configuration-options offset=1 -->
+<!--@include ../../config/io.helidon.webclient.grpc.GrpcClientProtocolConfig.md#configuration-options offset=1 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.webclient.grpc.GrpcClientProtocolConfig.md#configuration-options).
 <!--/include-->
 

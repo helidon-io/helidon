@@ -6,15 +6,9 @@ This type is a provider contract.
 
 ## Implementations
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-</style>
 
 
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -28,7 +22,7 @@ This type is a provider contract.
 <code>gson</code>
 </a>
 </td>
-<td>Configuration of the <code>GsonSupport</code></td>
+<td>Configuration of the <code>Gson<wbr>Support</code></td>
 </tr>
 <tr>
 <td>
@@ -36,7 +30,7 @@ This type is a provider contract.
 <code>jackson</code>
 </a>
 </td>
-<td>Configuration of the <code>JacksonSupport</code></td>
+<td>Configuration of the <code>Jackson<wbr>Support</code></td>
 </tr>
 <tr>
 <td>
@@ -49,7 +43,7 @@ This type is a provider contract.
 <tr>
 <td>
 <a href="io.helidon.http.media.json.binding.JsonBindingSupport.md">
-<code>json-binding</code>
+<code>json-<wbr>binding</code>
 </a>
 </td>
 <td>Configuration for Helidon JSON Binding media support</td>
@@ -60,7 +54,7 @@ This type is a provider contract.
 <code>jsonb</code>
 </a>
 </td>
-<td>Configuration of the <code>JsonbSupport</code></td>
+<td>Configuration of the <code>Jsonb<wbr>Support</code></td>
 </tr>
 <tr>
 <td>

@@ -6,22 +6,8 @@ Time used in security, configurable
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,22 +21,22 @@ Time used in security, configurable
 <td>
 <code>month</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Long</code>
+<td>
+<code>Long</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Set an explicit value for one of the time fields (such as <code>ChronoField#YEAR</code>)</td>
+<td>Set an explicit value for one of the time fields (such as <code>Chrono<wbr>Field#<wbr>YEAR</code>)</td>
 </tr>
 <tr>
 <td>
-<code>shift-by-seconds</code>
+<code>shift-<wbr>by-seconds</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Long</code>
+<td>
+<code>Long</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">0</code>
+<td>
+<code>0</code>
 </td>
 <td>Configure a time-shift in seconds, to move the current time to past or future</td>
 </tr>
@@ -58,54 +44,54 @@ Time used in security, configurable
 <td>
 <code>year</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Long</code>
+<td>
+<code>Long</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Set an explicit value for one of the time fields (such as <code>ChronoField#YEAR</code>)</td>
+<td>Set an explicit value for one of the time fields (such as <code>Chrono<wbr>Field#<wbr>YEAR</code>)</td>
 </tr>
 <tr>
 <td>
 <code>millisecond</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Long</code>
+<td>
+<code>Long</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Set an explicit value for one of the time fields (such as <code>ChronoField#YEAR</code>)</td>
+<td>Set an explicit value for one of the time fields (such as <code>Chrono<wbr>Field#<wbr>YEAR</code>)</td>
 </tr>
 <tr>
 <td>
-<code>hour-of-day</code>
+<code>hour-<wbr>of-day</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Long</code>
+<td>
+<code>Long</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Set an explicit value for one of the time fields (such as <code>ChronoField#YEAR</code>)</td>
+<td>Set an explicit value for one of the time fields (such as <code>Chrono<wbr>Field#<wbr>YEAR</code>)</td>
 </tr>
 <tr>
 <td>
-<code>day-of-month</code>
+<code>day-<wbr>of-month</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Long</code>
+<td>
+<code>Long</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Set an explicit value for one of the time fields (such as <code>ChronoField#YEAR</code>)</td>
+<td>Set an explicit value for one of the time fields (such as <code>Chrono<wbr>Field#<wbr>YEAR</code>)</td>
 </tr>
 <tr>
 <td>
-<code>time-zone</code>
+<code>time-<wbr>zone</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">ZoneId</code>
+<td>
+<code>Zone<wbr>Id</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Override current time zone</td>
 </tr>
@@ -113,23 +99,23 @@ Time used in security, configurable
 <td>
 <code>minute</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Long</code>
+<td>
+<code>Long</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Set an explicit value for one of the time fields (such as <code>ChronoField#YEAR</code>)</td>
+<td>Set an explicit value for one of the time fields (such as <code>Chrono<wbr>Field#<wbr>YEAR</code>)</td>
 </tr>
 <tr>
 <td>
 <code>second</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Long</code>
+<td>
+<code>Long</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Set an explicit value for one of the time fields (such as <code>ChronoField#YEAR</code>)</td>
+<td>Set an explicit value for one of the time fields (such as <code>Chrono<wbr>Field#<wbr>YEAR</code>)</td>
 </tr>
 </tbody>
 </table>

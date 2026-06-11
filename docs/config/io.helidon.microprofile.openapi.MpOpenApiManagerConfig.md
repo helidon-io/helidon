@@ -2,26 +2,12 @@
 
 ## Description
 
-<code>MpOpenApiManager</code> prototype
+<code>Mp<wbr>Open<wbr>ApiManager</code> prototype
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -32,12 +18,12 @@
 <tbody>
 <tr>
 <td>
-<code>mp.openapi.extensions.helidon.use-jaxrs-semantics</code>
+<code>mp.<wbr>openapi.<wbr>extensions.<wbr>helidon.<wbr>use-<wbr>jaxrs-<wbr>semantics</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td>If <code>true</code> and the <code>jakarta.ws.rs.core.Application</code> class returns a non-empty set, endpoints defined by other resources are not included in the OpenAPI document</td>
+<td>If <code>true</code> and the <code>jakarta.<wbr>ws.rs.<wbr>core.<wbr>Application</code> class returns a non-empty set, endpoints defined by other resources are not included in the OpenAPI document</td>
 </tr>
 </tbody>
 </table>

@@ -6,22 +6,8 @@ Security provider that extracts a username (or service name) from a header
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,13 +21,13 @@ Security provider that extracts a username (or service name) from a header
 <td>
 <a id="atn-token"></a>
 <a href="io.helidon.security.util.TokenHandler.md">
-<code>atn-token</code>
+<code>atn-<wbr>token</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="TokenHandler">TokenHandler</code>
+<td>
+<code>Token<wbr>Handler</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Token handler to extract username from request</td>
 </tr>
@@ -49,11 +35,11 @@ Security provider that extracts a username (or service name) from a header
 <td>
 <code>authenticate</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether to authenticate requests</td>
 </tr>
@@ -64,10 +50,10 @@ Security provider that extracts a username (or service name) from a header
 <code>outbound</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;OutboundTarget&gt;">List&lt;OutboundTarget&gt;</code>
+<td>
+<code>List&lt;<wbr>Outbound<wbr>Target&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Configure outbound target for identity propagation</td>
 </tr>
@@ -75,11 +61,11 @@ Security provider that extracts a username (or service name) from a header
 <td>
 <code>propagate</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Whether to propagate identity</td>
 </tr>
@@ -87,11 +73,11 @@ Security provider that extracts a username (or service name) from a header
 <td>
 <code>optional</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Whether authentication is required</td>
 </tr>
@@ -99,13 +85,13 @@ Security provider that extracts a username (or service name) from a header
 <td>
 <a id="outbound-token"></a>
 <a href="io.helidon.security.util.TokenHandler.md">
-<code>outbound-token</code>
+<code>outbound-<wbr>token</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="TokenHandler">TokenHandler</code>
+<td>
+<code>Token<wbr>Handler</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Token handler to create outbound headers to propagate identity</td>
 </tr>
@@ -113,14 +99,14 @@ Security provider that extracts a username (or service name) from a header
 <td>
 <a id="principal-type"></a>
 <a href="io.helidon.security.SubjectType.md">
-<code>principal-type</code>
+<code>principal-<wbr>type</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="SubjectType">SubjectType</code>
+<td>
+<code>Subject<wbr>Type</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">USER</code>
+<td>
+<code>USER</code>
 </td>
 <td>Principal type this provider extracts (and also propagates)</td>
 </tr>

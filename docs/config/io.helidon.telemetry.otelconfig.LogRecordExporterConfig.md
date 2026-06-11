@@ -6,22 +6,8 @@ Settings for a log record exporter
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,10 +21,10 @@ Settings for a log record exporter
 <td>
 <code>headers</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Headers added to each export message</td>
 </tr>
@@ -46,13 +32,13 @@ Settings for a log record exporter
 <td>
 <a id="memory-mode"></a>
 <a href="io.opentelemetry.sdk.common.export.MemoryMode.md">
-<code>memory-mode</code>
+<code>memory-<wbr>mode</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">MemoryMode</code>
+<td>
+<code>Memory<wbr>Mode</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Memory mode</td>
 </tr>
@@ -60,13 +46,13 @@ Settings for a log record exporter
 <td>
 <a id="internal-telemetry-version"></a>
 <a href="io.opentelemetry.sdk.common.InternalTelemetryVersion.md">
-<code>internal-telemetry-version</code>
+<code>internal-<wbr>telemetry-<wbr>version</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="InternalTelemetryVersion">InternalTelemetryVersion</code>
+<td>
+<code>Internal<wbr>Telemetry<wbr>Version</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Self-monitoring telemetry OpenTelemetry should collect</td>
 </tr>
@@ -77,10 +63,10 @@ Settings for a log record exporter
 <code>certificate</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Resource</code>
+<td>
+<code>Resource</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Trusted certificates</td>
 </tr>
@@ -91,11 +77,11 @@ Settings for a log record exporter
 <code>type</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="LogExporterType">LogExporterType</code>
+<td>
+<code>Log<wbr>Exporter<wbr>Type</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">DEFAULT</code>
+<td>
+<code>DEFAULT</code>
 </td>
 <td>Logger exporter type</td>
 </tr>
@@ -103,21 +89,21 @@ Settings for a log record exporter
 <td>
 <code>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Exporter timeout</td>
 </tr>
 <tr>
 <td>
-<code>connect-timeout</code>
+<code>connect-<wbr>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Connection timeout</td>
 </tr>
@@ -125,10 +111,10 @@ Settings for a log record exporter
 <td>
 <code>endpoint</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">URI</code>
+<td>
+<code>URI</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Endpoint of the collector to which the exporter should transmit</td>
 </tr>
@@ -136,11 +122,11 @@ Settings for a log record exporter
 <td>
 <code>protocol</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="CustomMethods">CustomMethods</code>
+<td>
+<code>Custom<wbr>Methods</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">DEFAULT</code>
+<td>
+<code>DEFAULT</code>
 </td>
 <td>Exporter protocol type</td>
 </tr>
@@ -148,13 +134,13 @@ Settings for a log record exporter
 <td>
 <a id="client-key"></a>
 <a href="io.helidon.common.configurable.Resource.md">
-<code>client.key</code>
+<code>client.<wbr>key</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Resource</code>
+<td>
+<code>Resource</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>TLS client key</td>
 </tr>
@@ -162,13 +148,13 @@ Settings for a log record exporter
 <td>
 <a id="client-certificate"></a>
 <a href="io.helidon.common.configurable.Resource.md">
-<code>client.certificate</code>
+<code>client.<wbr>certificate</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Resource</code>
+<td>
+<code>Resource</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>TLS certificate</td>
 </tr>
@@ -179,21 +165,21 @@ Settings for a log record exporter
 <code>compression</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="CompressionType">CompressionType</code>
+<td>
+<code>Compression<wbr>Type</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Compression the exporter uses</td>
 </tr>
 <tr>
 <td>
-<code>retry-policy</code>
+<code>retry-<wbr>policy</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="CustomMethods">CustomMethods</code>
+<td>
+<code>Custom<wbr>Methods</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Retry policy</td>
 </tr>

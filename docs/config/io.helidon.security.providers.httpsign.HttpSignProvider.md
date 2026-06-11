@@ -6,22 +6,8 @@ HTTP header signature provider
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -38,10 +24,10 @@ HTTP header signature provider
 <code>headers</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;HttpSignHeader&gt;">List&lt;HttpSignHeader&gt;</code>
+<td>
+<code>List&lt;<wbr>Http<wbr>Sign<wbr>Header&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Add a header that is validated on inbound requests</td>
 </tr>
@@ -52,10 +38,10 @@ HTTP header signature provider
 <code>outbound</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="OutboundConfig">OutboundConfig</code>
+<td>
+<code>Outbound<wbr>Config</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Add outbound targets to this builder</td>
 </tr>
@@ -63,25 +49,25 @@ HTTP header signature provider
 <td>
 <a id="inbound-keys"></a>
 <a href="io.helidon.security.providers.httpsign.InboundClientDefinition.md">
-<code>inbound.keys</code>
+<code>inbound.<wbr>keys</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;InboundClientDefinition&gt;">List&lt;InboundClientDefinition&gt;</code>
+<td>
+<code>List&lt;<wbr>Inbound<wbr>Client<wbr>Definition&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Add inbound configuration</td>
 </tr>
 <tr>
 <td>
-<code>backward-compatible-eol</code>
+<code>backward-<wbr>compatible-<wbr>eol</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Enable support for Helidon versions before 3.0.0 (exclusive)</td>
 </tr>
@@ -89,11 +75,11 @@ HTTP header signature provider
 <td>
 <code>optional</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Set whether the signature is optional</td>
 </tr>
@@ -101,25 +87,25 @@ HTTP header signature provider
 <td>
 <code>realm</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">helidon</code>
+<td>
+<code>helidon</code>
 </td>
-<td>Realm to use for challenging inbound requests that do not have "Authorization" header in case header is <code>HttpSignHeader#AUTHORIZATION</code> and singatures are not optional</td>
+<td>Realm to use for challenging inbound requests that do not have "Authorization" header in case header is <code>Http<wbr>Sign<wbr>Header#<wbr>AUTHORIZATION</code> and singatures are not optional</td>
 </tr>
 <tr>
 <td>
 <a id="sign-headers"></a>
 <a href="io.helidon.security.providers.httpsign.SignedHeadersConfig.HeadersConfig.md">
-<code>sign-headers</code>
+<code>sign-<wbr>headers</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;HeadersConfig&gt;">List&lt;HeadersConfig&gt;</code>
+<td>
+<code>List&lt;<wbr>Headers<wbr>Config&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Override the default inbound required headers (e.g</td>
 </tr>
@@ -127,8 +113,6 @@ HTTP header signature provider
 </table>
 
 
-
-## Manifest
 
 ---
 

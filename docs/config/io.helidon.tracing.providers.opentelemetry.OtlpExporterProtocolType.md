@@ -6,13 +6,7 @@ This type is an enumeration.
 
 ## Allowed Values
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-</style>
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Value</th>
@@ -21,7 +15,7 @@ This type is an enumeration.
 </thead>
 <tbody>
 <tr>
-<td><code>HTTP_PROTO</code></td>
+<td><code>HTTP_<wbr>PROTO</code></td>
 <td>http/proto protocol type</td>
 </tr>
 <tr>

@@ -6,22 +6,8 @@ Scheduling periodically executed task with specified cron expression
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,10 +21,10 @@ Scheduling periodically executed task with specified cron expression
 <td>
 <code>expression</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Cron expression for specifying period of execution</td>
 </tr>
@@ -46,10 +32,10 @@ Scheduling periodically executed task with specified cron expression
 <td>
 <code>zone</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">ZoneId</code>
+<td>
+<code>Zone<wbr>Id</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Time zone to use for cron expression evaluation</td>
 </tr>
@@ -57,11 +43,11 @@ Scheduling periodically executed task with specified cron expression
 <td>
 <code>concurrent</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Allow concurrent execution if previous task didn't finish before next execution</td>
 </tr>
@@ -69,10 +55,10 @@ Scheduling periodically executed task with specified cron expression
 <td>
 <code>id</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Identification of the started task</td>
 </tr>
@@ -80,11 +66,11 @@ Scheduling periodically executed task with specified cron expression
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether the task is enabled</td>
 </tr>
@@ -92,8 +78,6 @@ Scheduling periodically executed task with specified cron expression
 </table>
 
 
-
-## Manifest
 
 ---
 

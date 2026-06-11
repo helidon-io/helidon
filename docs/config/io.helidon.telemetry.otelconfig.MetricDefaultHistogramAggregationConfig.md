@@ -6,22 +6,8 @@ Default histogram aggregation settings
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -37,8 +23,8 @@ Default histogram aggregation settings
 <code>type</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="MetricDefaultHistogramAggregationType">MetricDefaultHistogramAggregationType</code>
+<td>
+<code>Metric<wbr>Default<wbr>Histogram<wbr>Aggregation<wbr>Type</code>
 </td>
 <td>Type of aggregation default</td>
 </tr>
@@ -46,8 +32,6 @@ Default histogram aggregation settings
 </table>
 
 
-
-## Manifest
 
 ---
 

@@ -56,6 +56,7 @@ There are some additional properties that can be passed via `ClientConfig` that 
 
 The complete list of properties supported by the Helidon connector is listed below:
 
+<!--@mdc ::table-collapse -->
 | Property Name | Type | Scope | Default |
 |----|----|----|----|
 | jersey.config.client.connectTimeout | `Integer` | client | 10000 (millis) |
@@ -68,6 +69,7 @@ The complete list of properties supported by the Helidon connector is listed bel
 | jersey.connector.helidon.defaultHeaders | `Map<String, String>` | client | (none) |
 | jersey.connector.helidon.protocolId | `String` | invocation | (none) |
 | jersey.connector.helidon.shareConnectionCache | `Boolean` | client | false |
+<!--@mdc :: -->
 
 > [!NOTE]
 > Each of the properties in the table above accepts a well-defined type for its value. If passing a value whose type cannot be converted to the required one, the property is simply ignored by the connector.

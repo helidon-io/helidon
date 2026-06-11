@@ -2,26 +2,12 @@
 
 ## Description
 
-UCP specific configuration for <code>javax.sql.DataSource</code>
+UCP specific configuration for <code>javax.<wbr>sql.<wbr>Data<wbr>Source</code>
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -32,37 +18,37 @@ UCP specific configuration for <code>javax.sql.DataSource</code>
 <tbody>
 <tr>
 <td>
-<code>connection-repurpose-threshold</code>
+<code>connection-<wbr>repurpose-<wbr>threshold</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Sets the connection repurpose threshold for the pool</td>
 </tr>
 <tr>
 <td>
-<code>min-idle</code>
+<code>min-<wbr>idle</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Sets the minimum number of idle connections</td>
 </tr>
 <tr>
 <td>
-<code>role-name</code>
+<code>role-<wbr>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Sets the data source role name</td>
 </tr>
 <tr>
 <td>
-<code>ons-configuration</code>
+<code>ons-<wbr>configuration</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Sets the configuration string used for remote ONS subscription</td>
 </tr>
@@ -70,350 +56,350 @@ UCP specific configuration for <code>javax.sql.DataSource</code>
 <td>
 <code>description</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Sets the data source description</td>
 </tr>
 <tr>
 <td>
-<code>connection-harvest-max-count</code>
+<code>connection-<wbr>harvest-<wbr>max-<wbr>count</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Sets the maximum number of connections that may be harvested when the connection harvesting occurs</td>
 </tr>
 <tr>
 <td>
-<code>connection-factory-class-name</code>
+<code>connection-<wbr>factory-<wbr>class-<wbr>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Sets the connection factory class name</td>
 </tr>
 <tr>
 <td>
-<code>connection-harvest-trigger-count</code>
+<code>connection-<wbr>harvest-<wbr>trigger-<wbr>count</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Sets the number of available connections below which the connection pool's connection harvesting will occur</td>
 </tr>
 <tr>
 <td>
-<code>query-timeout</code>
+<code>query-<wbr>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Sets the number of seconds the driver will wait for a Statement object to execute to the given number of seconds</td>
 </tr>
 <tr>
 <td>
-<code>max-connection-reuse-count</code>
+<code>max-<wbr>connection-<wbr>reuse-<wbr>count</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Sets the maximum connection reuse count</td>
 </tr>
 <tr>
 <td>
-<code>read-only-instance-allowed</code>
+<code>read-<wbr>only-<wbr>instance-<wbr>allowed</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
 <td>Sets the read-only instance allowed value on the datasource</td>
 </tr>
 <tr>
 <td>
-<code>server-name</code>
+<code>server-<wbr>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Sets the database server name</td>
 </tr>
 <tr>
 <td>
-<code>timeout-check-interval</code>
+<code>timeout-<wbr>check-<wbr>interval</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Sets the timeout check interval in seconds</td>
 </tr>
 <tr>
 <td>
-<code>max-connections-per-shard</code>
+<code>max-<wbr>connections-<wbr>per-<wbr>shard</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Sets the max number of connections that can be created per shard from this connection pool</td>
 </tr>
 <tr>
 <td>
-<code>validate-connection-on-borrow</code>
+<code>validate-<wbr>connection-<wbr>on-borrow</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td>Makes the pool validate the connection before returning it to the user by calling the JDBC API <code>isValid</code></td>
+<td>Makes the pool validate the connection before returning it to the user by calling the JDBC API <code>is<wbr>Valid</code></td>
 </tr>
 <tr>
 <td>
-<code>max-idle-time</code>
+<code>max-<wbr>idle-<wbr>time</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Sets the maximum idle time for available connections in the pool in seconds</td>
 </tr>
 <tr>
 <td>
-<code>max-statements</code>
+<code>max-<wbr>statements</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Sets the maximum number of statements that may be pooled or cached on a connection</td>
 </tr>
 <tr>
 <td>
-<code>connection-wait-duration</code>
+<code>connection-<wbr>wait-<wbr>duration</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
 <td>Configures how much time a connection request call may wait before it either successfully returns a connection or throws an exception</td>
 </tr>
 <tr>
 <td>
-<code>property-cycle</code>
+<code>property-<wbr>cycle</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Sets the property cycle in seconds</td>
 </tr>
 <tr>
 <td>
-<code>connection-validation-timeout</code>
+<code>connection-<wbr>validation-<wbr>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Sets the connection validation timeout in seconds</td>
 </tr>
 <tr>
 <td>
-<code>high-cost-connection-reuse-threshold</code>
+<code>high-<wbr>cost-<wbr>connection-<wbr>reuse-<wbr>threshold</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Sets the high-cost connection reuse threshold for connection labeling</td>
 </tr>
 <tr>
 <td>
-<code>fast-connection-failover-enabled</code>
+<code>fast-<wbr>connection-<wbr>failover-<wbr>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
 <td>Enables Fast Connection Failover (FCF) for the connection pool accessed using this pool-enabled data source</td>
 </tr>
 <tr>
 <td>
-<code>sharding-mode</code>
+<code>sharding-<wbr>mode</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
 <td>Change the mode of UCP when UCP is using a Sharded Database</td>
 </tr>
 <tr>
 <td>
-<code>connection-labeling-high-cost</code>
+<code>connection-<wbr>labeling-<wbr>high-<wbr>cost</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Sets the cost value which identifies a connection as "high-cost" for connection labeling</td>
 </tr>
 <tr>
 <td>
-<code>network-protocol</code>
+<code>network-<wbr>protocol</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Sets the data source network protocol</td>
 </tr>
 <tr>
 <td>
-<code>commit-on-connection-return</code>
+<code>commit-<wbr>on-connection-<wbr>return</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
 <td>Sets the <code>boolean</code> value for the property that controls the behavior of UCP when a connection is released back to the pool with pending uncommitted changes in an active transaction</td>
 </tr>
 <tr>
 <td>
-<code>min-pool-size</code>
+<code>min-<wbr>pool-<wbr>size</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Sets the minimum number of connections</td>
 </tr>
 <tr>
 <td>
-<code>initial-pool-size</code>
+<code>initial-<wbr>pool-<wbr>size</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Sets the initial pool size</td>
 </tr>
 <tr>
 <td>
-<code>abandoned-connection-timeout</code>
+<code>abandoned-<wbr>connection-<wbr>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Sets the abandoned connection timeout</td>
 </tr>
 <tr>
 <td>
-<code>seconds-to-trust-idle-connection</code>
+<code>seconds-<wbr>to-trust-<wbr>idle-<wbr>connection</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Sets the time to trust an idle connection to skip a validation test in seconds</td>
 </tr>
 <tr>
 <td>
-<code>xa-data-source</code>
+<code>xa-<wbr>data-<wbr>source</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
 <td>Support for distributed transactions</td>
 </tr>
 <tr>
 <td>
-<code>port-number</code>
+<code>port-<wbr>number</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Sets the database port number</td>
 </tr>
 <tr>
 <td>
-<code>connection-properties</code>
+<code>connection-<wbr>properties</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> String&gt;</code>
 </td>
 <td>Sets the connection properties on the connection factory</td>
 </tr>
 <tr>
 <td>
-<code>time-to-live-connection-timeout</code>
+<code>time-<wbr>to-live-<wbr>connection-<wbr>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Sets the maximum time a connection may remain in-use in seconds</td>
 </tr>
 <tr>
 <td>
-<code>max-pool-size</code>
+<code>max-<wbr>pool-<wbr>size</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Sets the maximum number of connections</td>
 </tr>
 <tr>
 <td>
-<code>connection-factory-properties</code>
+<code>connection-<wbr>factory-<wbr>properties</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> String&gt;</code>
 </td>
 <td>Sets the connection factory properties on the connection factory</td>
 </tr>
 <tr>
 <td>
-<code>max-connection-reuse-time</code>
+<code>max-<wbr>connection-<wbr>reuse-<wbr>time</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Long</code>
+<td>
+<code>Long</code>
 </td>
 <td>Sets the maximum connection reuse time in seconds</td>
 </tr>
 <tr>
 <td>
-<code>sql-for-validate-connection</code>
+<code>sql-<wbr>for-<wbr>validate-<wbr>connection</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Sets the SQL statement to validate the database connection</td>
 </tr>
 <tr>
 <td>
-<code>database-name</code>
+<code>database-<wbr>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Sets the database name</td>
 </tr>
 <tr>
 <td>
-<code>connection-pool-name</code>
+<code>connection-<wbr>pool-<wbr>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Sets the connection pool name</td>
 </tr>
 <tr>
 <td>
-<code>data-source-name</code>
+<code>data-<wbr>source-<wbr>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Sets the data source name</td>
 </tr>
 <tr>
 <td>
-<code>inactive-connection-timeout</code>
+<code>inactive-<wbr>connection-<wbr>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Sets the inactive connection timeout</td>
 </tr>
 <tr>
 <td>
-<code>create-connection-in-borrow-thread</code>
+<code>create-<wbr>connection-<wbr>in-borrow-<wbr>thread</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
 <td>Set this flag to <code>true</code> to make UCP use the borrowing thread to create new connections</td>
 </tr>

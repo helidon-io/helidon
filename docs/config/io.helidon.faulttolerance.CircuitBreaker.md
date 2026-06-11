@@ -6,22 +6,8 @@ Configuration of a circuit breaker
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,11 +21,11 @@ Configuration of a circuit breaker
 <td>
 <code>volume</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">10</code>
+<td>
+<code>10</code>
 </td>
 <td>Rolling window size used to calculate ratio of failed requests</td>
 </tr>
@@ -47,47 +33,47 @@ Configuration of a circuit breaker
 <td>
 <code>delay</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">PT5S</code>
+<td>
+<code>PT5S</code>
 </td>
 <td>How long to wait before transitioning from open to half-open state</td>
 </tr>
 <tr>
 <td>
-<code>error-ratio</code>
+<code>error-<wbr>ratio</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">60</code>
+<td>
+<code>60</code>
 </td>
 <td>How many failures out of 100 will trigger the circuit to open</td>
 </tr>
 <tr>
 <td>
-<code>enable-metrics</code>
+<code>enable-<wbr>metrics</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Flag to enable metrics for this instance</td>
 </tr>
 <tr>
 <td>
-<code>success-threshold</code>
+<code>success-<wbr>threshold</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">1</code>
+<td>
+<code>1</code>
 </td>
 <td>How many successful calls will close a half-open circuit</td>
 </tr>

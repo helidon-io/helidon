@@ -2,26 +2,12 @@
 
 ## Description
 
-Configuration of the <code>GsonSupport</code>
+Configuration of the <code>Gson<wbr>Support</code>
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -34,8 +20,8 @@ Configuration of the <code>GsonSupport</code>
 <td>
 <code>properties</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, Boolean&gt;">Map&lt;String, Boolean&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> Boolean&gt;</code>
 </td>
 <td>Gson configuration properties</td>
 </tr>

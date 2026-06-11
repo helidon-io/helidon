@@ -6,22 +6,8 @@ Configuration for LangChain4j in-memory embedding store components
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,24 +19,24 @@ Configuration for LangChain4j in-memory embedding store components
 <tbody>
 <tr>
 <td>
-<code>from-file</code>
+<code>from-<wbr>file</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Path</code>
+<td>
+<code>Path</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Path to a JSON file used to initialize the in-memory embedding store via <code>InMemoryEmbeddingStore.fromFile</code></td>
+<td>Path to a JSON file used to initialize the in-memory embedding store via <code>In<wbr>Memory<wbr>Embedding<wbr>Store.<wbr>from<wbr>File</code></td>
 </tr>
 <tr>
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether this embedding store component is enabled</td>
 </tr>
@@ -58,8 +44,6 @@ Configuration for LangChain4j in-memory embedding store components
 </table>
 
 
-
-## Manifest
 
 ---
 

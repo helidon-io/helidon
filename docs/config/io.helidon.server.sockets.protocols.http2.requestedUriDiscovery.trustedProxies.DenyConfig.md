@@ -6,22 +6,8 @@ Configuration for server.sockets.protocols.http_2.requested-uri-discovery.truste
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -34,8 +20,8 @@ Configuration for server.sockets.protocols.http_2.requested-uri-discovery.truste
 <td>
 <code>exact</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
 <td>Exact strings to deny</td>
 </tr>
@@ -43,8 +29,8 @@ Configuration for server.sockets.protocols.http_2.requested-uri-discovery.truste
 <td>
 <code>pattern</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;Pattern&gt;">List&lt;Pattern&gt;</code>
+<td>
+<code>List&lt;<wbr>Pattern&gt;</code>
 </td>
 <td>Patterns specifying strings to deny</td>
 </tr>
@@ -52,8 +38,8 @@ Configuration for server.sockets.protocols.http_2.requested-uri-discovery.truste
 <td>
 <code>prefix</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
 <td>Prefixes specifying strings to deny</td>
 </tr>
@@ -61,8 +47,8 @@ Configuration for server.sockets.protocols.http_2.requested-uri-discovery.truste
 <td>
 <code>suffix</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
 <td>Suffixes specifying strings to deny</td>
 </tr>

@@ -6,22 +6,8 @@ Configuration of CORS feature
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -38,10 +24,10 @@ Configuration of CORS feature
 <code>paths</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;CorsPathConfig&gt;">List&lt;CorsPathConfig&gt;</code>
+<td>
+<code>List&lt;<wbr>Cors<wbr>Path<wbr>Config&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Per path configuration</td>
 </tr>
@@ -49,34 +35,34 @@ Configuration of CORS feature
 <td>
 <code>weight</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Double</code>
+<td>
+<code>Double</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">850.0</code>
+<td>
+<code>850.<wbr>0</code>
 </td>
 <td>Weight of the CORS feature</td>
 </tr>
 <tr>
 <td>
-<code>add-defaults</code>
+<code>add-<wbr>defaults</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
-<td>Whether to add a default path configuration, that matches all paths, <code>GET, HEAD, POST</code> methods, and allows all origins, methods, and headers</td>
+<td>Whether to add a default path configuration, that matches all paths, <code>GET,<wbr> HEAD,<wbr> POST</code> methods, and allows all origins, methods, and headers</td>
 </tr>
 <tr>
 <td>
 <code>sockets</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>List of sockets to register this feature on</td>
 </tr>
@@ -84,22 +70,22 @@ Configuration of CORS feature
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>This feature can be disabled</td>
 </tr>
 <tr>
 <td>
-<code>paths-discover-services</code>
+<code>paths-<wbr>discover-<wbr>services</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether to enable automatic service discovery for <code>paths</code></td>
 </tr>

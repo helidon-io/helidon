@@ -6,22 +6,8 @@ Helidon WebClient cookie manager
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,36 +19,36 @@ Helidon WebClient cookie manager
 <tbody>
 <tr>
 <td>
-<code>automatic-store-enabled</code>
+<code>automatic-<wbr>store-<wbr>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Whether automatic cookie store is enabled or not</td>
 </tr>
 <tr>
 <td>
-<code>cookie-policy</code>
+<code>cookie-<wbr>policy</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="CookiePolicy">CookiePolicy</code>
+<td>
+<code>Cookie<wbr>Policy</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value" title="java.net.CookiePolicy.ACCEPT_ORIGINAL_SERVER">java.net.CookiePolicy.ACCEPT_ORIGINAL_SERVER</code>
+<td>
+<code>java.<wbr>net.<wbr>Cookie<wbr>Policy.<wbr>ACCEPT_<wbr>ORIGINAL_<wbr>SERVER</code>
 </td>
 <td>Current cookie policy for this client</td>
 </tr>
 <tr>
 <td>
-<code>default-cookies</code>
+<code>default-<wbr>cookies</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Map of default cookies to include in all requests if cookies enabled</td>
 </tr>

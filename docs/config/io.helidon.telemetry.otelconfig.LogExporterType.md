@@ -6,13 +6,7 @@ This type is an enumeration.
 
 ## Allowed Values
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-</style>
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Value</th>
@@ -22,15 +16,15 @@ This type is an enumeration.
 <tbody>
 <tr>
 <td><code>OTLP</code></td>
-<td>OpenTelemetry Protocol <code>io.opentelemetry.exporter.otlp.http.logs.OtlpHttpLogRecordExporter</code> and <code>io.opentelemetry.exporter.otlp.logs.OtlpGrpcLogRecordExporterBuilder</code></td>
+<td>OpenTelemetry Protocol <code>io.<wbr>opentelemetry.<wbr>exporter.<wbr>otlp.<wbr>http.<wbr>logs.<wbr>Otlp<wbr>Http<wbr>LogRecord<wbr>Exporter</code> and <code>io.<wbr>opentelemetry.<wbr>exporter.<wbr>otlp.<wbr>logs.<wbr>Otlp<wbr>Grpc<wbr>LogRecord<wbr>Exporter<wbr>Builder</code></td>
 </tr>
 <tr>
 <td><code>CONSOLE</code></td>
-<td>Console <code>io.opentelemetry.exporter.logging.SystemOutLogRecordExporter</code></td>
+<td>Console <code>io.<wbr>opentelemetry.<wbr>exporter.<wbr>logging.<wbr>System<wbr>OutLog<wbr>Record<wbr>Exporter</code></td>
 </tr>
 <tr>
-<td><code>LOGGING_OTLP</code></td>
-<td>Writes logs to a Logger in OTLP JSON format <code>io.opentelemetry.exporter.logging.otlp.OtlpJsonLoggingLogRecordExporter</code></td>
+<td><code>LOGGING_<wbr>OTLP</code></td>
+<td>Writes logs to a Logger in OTLP JSON format <code>io.<wbr>opentelemetry.<wbr>exporter.<wbr>logging.<wbr>otlp.<wbr>Otlp<wbr>Json<wbr>Logging<wbr>LogRecord<wbr>Exporter</code></td>
 </tr>
 </tbody>
 </table>

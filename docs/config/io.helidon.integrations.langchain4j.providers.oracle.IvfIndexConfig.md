@@ -2,26 +2,12 @@
 
 ## Description
 
-<code>N/A</code>
+<code>N/<wbr>A</code>
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -32,69 +18,69 @@
 <tbody>
 <tr>
 <td>
-<code>degree-of-parallelism</code>
+<code>degree-<wbr>of-parallelism</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td>Generated from <code>dev.langchain4j.store.embedding.oracle.IVFIndexBuilder#degreeOfParallelism(int)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>store.<wbr>embedding.<wbr>oracle.<wbr>IVFIndex<wbr>Builder#<wbr>degree<wbr>OfParallelism(<wbr>int)</code></td>
 </tr>
 <tr>
 <td>
-<code>target-accuracy</code>
+<code>target-<wbr>accuracy</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td>Generated from <code>dev.langchain4j.store.embedding.oracle.IVFIndexBuilder#targetAccuracy(int)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>store.<wbr>embedding.<wbr>oracle.<wbr>IVFIndex<wbr>Builder#<wbr>target<wbr>Accuracy(<wbr>int)</code></td>
 </tr>
 <tr>
 <td>
 <a id="create-option"></a>
 <a href="dev.langchain4j.store.embedding.oracle.CreateOption.md">
-<code>create-option</code>
+<code>create-<wbr>option</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="CreateOption">CreateOption</code>
+<td>
+<code>Create<wbr>Option</code>
 </td>
-<td>Generated from <code>dev.langchain4j.store.embedding.oracle.IndexBuilder#createOption(dev.langchain4j.store.embedding.oracle.CreateOption)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>store.<wbr>embedding.<wbr>oracle.<wbr>Index<wbr>Builder#<wbr>create<wbr>Option(<wbr>dev.<wbr>langchain4j.<wbr>store.<wbr>embedding.<wbr>oracle.<wbr>Create<wbr>Option)</code></td>
 </tr>
 <tr>
 <td>
-<code>neighbor-partitions</code>
+<code>neighbor-<wbr>partitions</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td>Generated from <code>dev.langchain4j.store.embedding.oracle.IVFIndexBuilder#neighborPartitions(int)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>store.<wbr>embedding.<wbr>oracle.<wbr>IVFIndex<wbr>Builder#<wbr>neighbor<wbr>Partitions(<wbr>int)</code></td>
 </tr>
 <tr>
 <td>
-<code>min-vectors-per-partition</code>
+<code>min-<wbr>vectors-<wbr>per-<wbr>partition</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td>Generated from <code>dev.langchain4j.store.embedding.oracle.IVFIndexBuilder#minVectorsPerPartition(int)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>store.<wbr>embedding.<wbr>oracle.<wbr>IVFIndex<wbr>Builder#<wbr>minVectors<wbr>PerPartition(<wbr>int)</code></td>
 </tr>
 <tr>
 <td>
 <code>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td>Generated from <code>dev.langchain4j.store.embedding.oracle.IndexBuilder#name(java.lang.String)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>store.<wbr>embedding.<wbr>oracle.<wbr>Index<wbr>Builder#<wbr>name(<wbr>java.<wbr>lang.<wbr>String)</code></td>
 </tr>
 <tr>
 <td>
-<code>sample-per-partition</code>
+<code>sample-<wbr>per-<wbr>partition</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td>Generated from <code>dev.langchain4j.store.embedding.oracle.IVFIndexBuilder#samplePerPartition(int)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>store.<wbr>embedding.<wbr>oracle.<wbr>IVFIndex<wbr>Builder#<wbr>sample<wbr>PerPartition(<wbr>int)</code></td>
 </tr>
 </tbody>
 </table>

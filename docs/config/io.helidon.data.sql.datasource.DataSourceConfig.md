@@ -2,26 +2,12 @@
 
 ## Description
 
-<code>javax.sql.DataSource</code> configuration
+<code>javax.<wbr>sql.<wbr>Data<wbr>Source</code> configuration
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -38,10 +24,10 @@
 <code>provider</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="ProviderConfig">ProviderConfig</code>
+<td>
+<code>Provider<wbr>Config</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Configuration of the used provider, such as UCP</td>
 </tr>
@@ -49,23 +35,23 @@
 <td>
 <code>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">@default</code>
+<td>
+<code>@default</code>
 </td>
-<td><code>javax.sql.DataSource</code> name</td>
+<td><code>javax.<wbr>sql.<wbr>Data<wbr>Source</code> name</td>
 </tr>
 <tr>
 <td>
-<code>provider-discover-services</code>
+<code>provider-<wbr>discover-<wbr>services</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether to enable automatic service discovery for <code>provider</code></td>
 </tr>

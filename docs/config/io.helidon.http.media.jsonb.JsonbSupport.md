@@ -2,26 +2,12 @@
 
 ## Description
 
-Configuration of the <code>JsonbSupport</code>
+Configuration of the <code>Jsonb<wbr>Support</code>
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -32,19 +18,19 @@ Configuration of the <code>JsonbSupport</code>
 <tbody>
 <tr>
 <td>
-<code>boolean-properties</code>
+<code>boolean-<wbr>properties</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, Boolean&gt;">Map&lt;String, Boolean&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> Boolean&gt;</code>
 </td>
 <td>Jsonb <code>boolean</code> configuration properties</td>
 </tr>
 <tr>
 <td>
-<code>class-properties</code>
+<code>class-<wbr>properties</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, Class&gt;">Map&lt;String, Class&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> Class&gt;</code>
 </td>
 <td>Jsonb <code>Class</code> configuration properties</td>
 </tr>
@@ -52,8 +38,8 @@ Configuration of the <code>JsonbSupport</code>
 <td>
 <code>properties</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> String&gt;</code>
 </td>
 <td>Jsonb <code>String</code> configuration properties</td>
 </tr>

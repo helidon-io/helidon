@@ -6,22 +6,8 @@ Certificate revocation configuration
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,48 +19,48 @@ Certificate revocation configuration
 <tbody>
 <tr>
 <td>
-<code>soft-fail-enabled</code>
+<code>soft-<wbr>fail-<wbr>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Allow revocation check to succeed if the revocation status cannot be determined for one of the following reasons: <ul>  <li>The CRL or OCSP response cannot be obtained because of a      network error.</li></ul></td>
 </tr>
 <tr>
 <td>
-<code>ocsp-responder-uri</code>
+<code>ocsp-<wbr>responder-<wbr>uri</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">URI</code>
+<td>
+<code>URI</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>The URI that identifies the location of the OCSP responder</td>
 </tr>
 <tr>
 <td>
-<code>check-only-end-entity</code>
+<code>check-<wbr>only-<wbr>end-<wbr>entity</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Only check the revocation status of end-entity certificates</td>
 </tr>
 <tr>
 <td>
-<code>prefer-crl-over-ocsp</code>
+<code>prefer-<wbr>crl-<wbr>over-<wbr>ocsp</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Prefer CRL over OCSP</td>
 </tr>
@@ -82,23 +68,23 @@ Certificate revocation configuration
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Flag indicating whether this revocation config is enabled</td>
 </tr>
 <tr>
 <td>
-<code>fallback-enabled</code>
+<code>fallback-<wbr>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Enable fallback to the less preferred checking option</td>
 </tr>

@@ -6,22 +6,8 @@ Configuration for LangChain4j MCP (Model Context Protocol) clients
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -32,46 +18,46 @@ Configuration for LangChain4j MCP (Model Context Protocol) clients
 <tbody>
 <tr>
 <td>
-<code>ping-timeout</code>
+<code>ping-<wbr>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
 <td>The timeout to apply when waiting for a ping response</td>
 </tr>
 <tr>
 <td>
-<code>client-version</code>
+<code>client-<wbr>version</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Sets the version string that the client will use to identify itself to the MCP server in the initialization message</td>
 </tr>
 <tr>
 <td>
-<code>protocol-version</code>
+<code>protocol-<wbr>version</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Sets the protocol version that the client will advertise in the initialization message</td>
 </tr>
 <tr>
 <td>
-<code>log-responses</code>
+<code>log-<wbr>responses</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
 <td>Whether to log response traffic</td>
 </tr>
 <tr>
 <td>
-<code>reconnect-interval</code>
+<code>reconnect-<wbr>interval</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
 <td>The delay before attempting to reconnect after a failed connection</td>
 </tr>
@@ -79,44 +65,44 @@ Configuration for LangChain4j MCP (Model Context Protocol) clients
 <td>
 <code>uri</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">URI</code>
+<td>
+<code>URI</code>
 </td>
 <td>The URL of the MCP server</td>
 </tr>
 <tr>
 <td>
-<code>prompts-timeout</code>
+<code>prompts-<wbr>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
 <td>The timeout for prompt-related operations (listing prompts as well as rendering the contents of a prompt)</td>
 </tr>
 <tr>
 <td>
-<code>client-name</code>
+<code>client-<wbr>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Sets the name that the client will use to identify itself to the MCP server in the initialization message</td>
 </tr>
 <tr>
 <td>
-<code>resources-timeout</code>
+<code>resources-<wbr>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
 <td>Sets the timeout for resource-related operations (listing resources as well as reading the contents of a resource)</td>
 </tr>
 <tr>
 <td>
-<code>log-requests</code>
+<code>log-<wbr>requests</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
 <td>Whether to log request traffic</td>
 </tr>
@@ -127,17 +113,17 @@ Configuration for LangChain4j MCP (Model Context Protocol) clients
 <code>tls</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Tls</code>
+<td>
+<code>Tls</code>
 </td>
 <td>TLS configuration for the MCP server connection</td>
 </tr>
 <tr>
 <td>
-<code>tool-execution-timeout-error-message</code>
+<code>tool-<wbr>execution-<wbr>timeout-<wbr>error-<wbr>message</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>The error message to return when a tool execution times out</td>
 </tr>
@@ -145,26 +131,26 @@ Configuration for LangChain4j MCP (Model Context Protocol) clients
 <td>
 <code>key</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Sets a unique identifier for the client</td>
 </tr>
 <tr>
 <td>
-<code>tool-execution-timeout</code>
+<code>tool-<wbr>execution-<wbr>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
 <td>Sets the timeout for tool execution</td>
 </tr>
 <tr>
 <td>
-<code>initialization-timeout</code>
+<code>initialization-<wbr>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
 <td>Sets the timeout for initializing the client</td>
 </tr>
@@ -175,7 +161,7 @@ Configuration for LangChain4j MCP (Model Context Protocol) clients
 ### Deprecated Options
 
 
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -186,18 +172,16 @@ Configuration for LangChain4j MCP (Model Context Protocol) clients
 <tbody>
 <tr>
 <td>
-<code>sse-uri</code>
+<code>sse-<wbr>uri</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">URI</code>
+<td>
+<code>URI</code>
 </td>
 <td>The initial URI where to connect to the server and request an SSE channel</td>
 </tr>
 </tbody>
 </table>
 
-
-## Manifest
 
 ---
 

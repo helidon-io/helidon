@@ -6,22 +6,8 @@ Base builder of the OIDC config components
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,24 +21,24 @@ Base builder of the OIDC config components
 <td>
 <a id="oidc-metadata-resource"></a>
 <a href="io.helidon.common.configurable.Resource.md">
-<code>oidc-metadata.resource</code>
+<code>oidc-<wbr>metadata.<wbr>resource</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Resource</code>
+<td>
+<code>Resource</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Resource configuration for OIDC Metadata containing endpoints to various identity services, as well as information about the identity server</td>
 </tr>
 <tr>
 <td>
-<code>identity-uri</code>
+<code>identity-<wbr>uri</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">URI</code>
+<td>
+<code>URI</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>URI of the identity server, base used to retrieve OIDC metadata</td>
 </tr>
@@ -60,33 +46,33 @@ Base builder of the OIDC config components
 <td>
 <code>audience</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Audience of issued tokens</td>
 </tr>
 <tr>
 <td>
-<code>optional-audience</code>
+<code>optional-<wbr>audience</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Allow audience claim to be optional</td>
 </tr>
 <tr>
 <td>
-<code>introspect-endpoint-uri</code>
+<code>introspect-<wbr>endpoint-<wbr>uri</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">URI</code>
+<td>
+<code>URI</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Endpoint to use to validate JWT</td>
 </tr>
@@ -94,25 +80,25 @@ Base builder of the OIDC config components
 <td>
 <a id="sign-jwk-resource"></a>
 <a href="io.helidon.common.configurable.Resource.md">
-<code>sign-jwk.resource</code>
+<code>sign-<wbr>jwk.<wbr>resource</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Resource</code>
+<td>
+<code>Resource</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>A resource pointing to JWK with public keys of signing certificates used to validate JWT</td>
 </tr>
 <tr>
 <td>
-<code>base-scopes</code>
+<code>base-<wbr>scopes</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">openid</code>
+<td>
+<code>openid</code>
 </td>
 <td>Configure base scopes</td>
 </tr>
@@ -120,49 +106,49 @@ Base builder of the OIDC config components
 <td>
 <a id="decryption-keys-resource"></a>
 <a href="io.helidon.common.configurable.Resource.md">
-<code>decryption-keys.resource</code>
+<code>decryption-<wbr>keys.<wbr>resource</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Resource</code>
+<td>
+<code>Resource</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>A resource pointing to JWK with private keys used for JWE content key decryption</td>
 </tr>
 <tr>
 <td>
-<code>server-type</code>
+<code>server-<wbr>type</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">@default</code>
+<td>
+<code>@default</code>
 </td>
 <td>Configure one of the supported types of identity servers</td>
 </tr>
 <tr>
 <td>
-<code>check-audience</code>
+<code>check-<wbr>audience</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Configure audience claim check</td>
 </tr>
 <tr>
 <td>
-<code>client-timeout-millis</code>
+<code>client-<wbr>timeout-<wbr>millis</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">30000</code>
+<td>
+<code>30000</code>
 </td>
 <td>Timeout of calls using web client</td>
 </tr>
@@ -170,89 +156,89 @@ Base builder of the OIDC config components
 <td>
 <code>issuer</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Issuer of issued tokens</td>
 </tr>
 <tr>
 <td>
-<code>authorization-endpoint-uri</code>
+<code>authorization-<wbr>endpoint-<wbr>uri</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">URI</code>
+<td>
+<code>URI</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>URI of an authorization endpoint used to redirect users to for logging-in</td>
 </tr>
 <tr>
 <td>
-<code>token-endpoint-uri</code>
+<code>token-<wbr>endpoint-<wbr>uri</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">URI</code>
+<td>
+<code>URI</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>URI of a token endpoint used to obtain a JWT based on the authentication code</td>
 </tr>
 <tr>
 <td>
-<code>validate-jwt-with-jwk</code>
+<code>validate-<wbr>jwt-<wbr>with-<wbr>jwk</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Use JWK (a set of keys to validate signatures of JWT) to validate tokens</td>
 </tr>
 <tr>
 <td>
-<code>client-secret</code>
+<code>client-<wbr>secret</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Client secret as generated by OIDC server</td>
 </tr>
 <tr>
 <td>
-<code>oidc-metadata-well-known</code>
+<code>oidc-<wbr>metadata-<wbr>well-<wbr>known</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>If set to true, metadata will be loaded from default (well known) location, unless it is explicitly defined using oidc-metadata-resource</td>
 </tr>
 <tr>
 <td>
-<code>scope-audience</code>
+<code>scope-<wbr>audience</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Audience of the scope required by this application</td>
 </tr>
 <tr>
 <td>
-<code>client-id</code>
+<code>client-<wbr>id</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Client ID as generated by OIDC server</td>
 </tr>
@@ -260,14 +246,14 @@ Base builder of the OIDC config components
 <td>
 <a id="token-endpoint-auth"></a>
 <a href="io.helidon.security.providers.oidc.common.OidcConfig.ClientAuthentication.md">
-<code>token-endpoint-auth</code>
+<code>token-<wbr>endpoint-<wbr>auth</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="ClientAuthentication">ClientAuthentication</code>
+<td>
+<code>Client<wbr>Authentication</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value" title="CLIENT_SECRET_BASIC">CLIENT_SECRET_BASIC</code>
+<td>
+<code>CLIENT_<wbr>SECRET_<wbr>BASIC</code>
 </td>
 <td>Type of authentication to use when invoking the token endpoint</td>
 </tr>

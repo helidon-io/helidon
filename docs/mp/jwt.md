@@ -42,6 +42,7 @@ The following interfaces and annotations are used to work with JWT in Helidon MP
 
 ### Configuration options
 
+<!--@mdc ::table-collapse -->
 | Key | Kind | Type | Default Value | Description |
 |----|----|----|----|----|
 | <span id="a60991-mp-jwt-decrypt-key-algorithm"></span> [`mp.jwt.decrypt.key.algorithm`][mp-jwt-decrypt-k] | `VALUE` | `i.h.m.j.a.J.j.d.k.algorithm` |   | Expected key management algorithm supported by the MP JWT endpoint |
@@ -68,6 +69,7 @@ The following interfaces and annotations are used to work with JWT in Helidon MP
 | <span id="a8f0bd-security-providers-mp-jwt-auth-jwt-groups-separator"></span> `security.providers.mp-jwt-auth.jwt-groups-separator` | `VALUE` | `String` |   | Separator used to split a string claim value into multiple groups. This is used only when `jwt-groups-path` is configured to a custom path other than `groups`; setting only `jwt-groups-separator` has no effect. |
 | <span id="a1f03b-security-providers-mp-jwt-auth-propagate"></span> `security.providers.mp-jwt-auth.propagate` | `VALUE` | `Boolean` | `true` | Whether to propagate identity |
 | <span id="a09fd1-security-providers-mp-jwt-auth-sign-token"></span> [`security.providers.mp-jwt-auth.sign-token`][security-provide-4] | `VALUE` | `i.h.s.p.c.OutboundConfig` |   | Configuration of outbound rules |
+<!--@mdc :: -->
 
 A configuration example in `microprofile-config.properties`:
 

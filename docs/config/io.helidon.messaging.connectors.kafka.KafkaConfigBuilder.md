@@ -6,22 +6,8 @@ Build Kafka specific config
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -32,19 +18,19 @@ Build Kafka specific config
 <tbody>
 <tr>
 <td>
-<code>value-deserializer</code>
+<code>value-<wbr>deserializer</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Class</code>
+<td>
+<code>Class</code>
 </td>
-<td>Deserializer class for value that implements the <code>org.apache.kafka.common.serialization.Deserializer</code> interface</td>
+<td>Deserializer class for value that implements the <code>org.<wbr>apache.<wbr>kafka.<wbr>common.<wbr>serialization.<wbr>Deserializer</code> interface</td>
 </tr>
 <tr>
 <td>
-<code>group-id</code>
+<code>group-<wbr>id</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>A unique string that identifies the consumer group this consumer belongs to</td>
 </tr>
@@ -52,20 +38,20 @@ Build Kafka specific config
 <td>
 <a id="auto-offset-reset"></a>
 <a href="io.helidon.messaging.connectors.kafka.KafkaConfigBuilder.AutoOffsetReset.md">
-<code>auto-offset-reset</code>
+<code>auto-<wbr>offset-<wbr>reset</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="AutoOffsetReset">AutoOffsetReset</code>
+<td>
+<code>Auto<wbr>Offset<wbr>Reset</code>
 </td>
 <td>What to do when there is no initial offset in Kafka or if the current offset does not exist any more on the server (e.g</td>
 </tr>
 <tr>
 <td>
-<code>topic-pattern</code>
+<code>topic-<wbr>pattern</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Pattern</code>
+<td>
+<code>Pattern</code>
 </td>
 <td>Pattern for topic names to consume from</td>
 </tr>
@@ -73,53 +59,53 @@ Build Kafka specific config
 <td>
 <code>acks</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>The number of acknowledgments the producer requires the leader to have received before considering a request complete</td>
 </tr>
 <tr>
 <td>
-<code>bootstrap-servers</code>
+<code>bootstrap-<wbr>servers</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>A list of host/port pairs to use for establishing the initial connection to the Kafka cluster</td>
 </tr>
 <tr>
 <td>
-<code>key-serializer</code>
+<code>key-<wbr>serializer</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Class</code>
+<td>
+<code>Class</code>
 </td>
-<td>Serializer class for key that implements the <code>org.apache.kafka.common.serialization.Serializer</code> interface</td>
+<td>Serializer class for key that implements the <code>org.<wbr>apache.<wbr>kafka.<wbr>common.<wbr>serialization.<wbr>Serializer</code> interface</td>
 </tr>
 <tr>
 <td>
-<code>enable-auto-commit</code>
+<code>enable-<wbr>auto-<wbr>commit</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
 <td>If true the consumer's offset will be periodically committed in the background</td>
 </tr>
 <tr>
 <td>
-<code>batch-size</code>
+<code>batch-<wbr>size</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>The producer will attempt to batch records together into fewer requests whenever multiple records are being sent to the same partition</td>
 </tr>
 <tr>
 <td>
-<code>dlq-topic</code>
+<code>dlq-<wbr>topic</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
 <td>Names of the "dead letter queue" topics to be used in case message is nacked</td>
 </tr>
@@ -127,35 +113,35 @@ Build Kafka specific config
 <td>
 <code>retries</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Setting a value greater than zero will cause the client to resend any record whose send fails with a potentially transient error</td>
 </tr>
 <tr>
 <td>
-<code>buffer-memory</code>
+<code>buffer-<wbr>memory</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Long</code>
+<td>
+<code>Long</code>
 </td>
 <td>The total bytes of memory the producer can use to buffer records waiting to be sent to the server</td>
 </tr>
 <tr>
 <td>
-<code>poll-timeout</code>
+<code>poll-<wbr>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Long</code>
+<td>
+<code>Long</code>
 </td>
 <td>The maximum time to block polling loop in milliseconds</td>
 </tr>
 <tr>
 <td>
-<code>compression-type</code>
+<code>compression-<wbr>type</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>The compression type for all data generated by the producer</td>
 </tr>
@@ -163,44 +149,42 @@ Build Kafka specific config
 <td>
 <code>topic</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
 <td>Names of the topics to consume from</td>
 </tr>
 <tr>
 <td>
-<code>value-serializer</code>
+<code>value-<wbr>serializer</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Class</code>
+<td>
+<code>Class</code>
 </td>
-<td>Serializer class for value that implements the <code>org.apache.kafka.common.serialization.Serializer</code> interface</td>
+<td>Serializer class for value that implements the <code>org.<wbr>apache.<wbr>kafka.<wbr>common.<wbr>serialization.<wbr>Serializer</code> interface</td>
 </tr>
 <tr>
 <td>
-<code>period-executions</code>
+<code>period-<wbr>executions</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Long</code>
+<td>
+<code>Long</code>
 </td>
 <td>Period between successive executions of polling loop</td>
 </tr>
 <tr>
 <td>
-<code>key-deserializer</code>
+<code>key-<wbr>deserializer</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Class</code>
+<td>
+<code>Class</code>
 </td>
-<td>Deserializer class for key that implements the <code>org.apache.kafka.common.serialization.Deserializer</code> interface</td>
+<td>Deserializer class for key that implements the <code>org.<wbr>apache.<wbr>kafka.<wbr>common.<wbr>serialization.<wbr>Deserializer</code> interface</td>
 </tr>
 </tbody>
 </table>
 
 
-
-## Manifest
 
 ---
 

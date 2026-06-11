@@ -6,22 +6,8 @@ Configuration of memory cache for static content
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,11 +21,11 @@ Configuration of memory cache for static content
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether the cache is enabled, defaults to <code>true</code></td>
 </tr>
@@ -47,11 +33,11 @@ Configuration of memory cache for static content
 <td>
 <code>capacity</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Size</code>
+<td>
+<code>Size</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">50 mB</code>
+<td>
+<code>50 m<wbr>B</code>
 </td>
 <td>Capacity of the cached bytes of file content</td>
 </tr>

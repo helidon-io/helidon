@@ -2,26 +2,12 @@
 
 ## Description
 
-Settings for OpenTelemetry tracer configuration under the <code>OpenTelemetryTracerConfig#TRACING_CONFIG_KEY</code> config key
+Settings for OpenTelemetry tracer configuration under the <code>Open<wbr>Telemetry<wbr>Tracer<wbr>Config#<wbr>TRACING_<wbr>CONFIG_<wbr>KEY</code> config key
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,14 +21,14 @@ Settings for OpenTelemetry tracer configuration under the <code>OpenTelemetryTra
 <td>
 <a id="exporter-type"></a>
 <a href="io.helidon.tracing.providers.opentelemetry.OtlpExporterProtocolType.md">
-<code>exporter-type</code>
+<code>exporter-<wbr>type</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="OtlpExporterProtocolType">OtlpExporterProtocolType</code>
+<td>
+<code>Otlp<wbr>Exporter<wbr>Protocol<wbr>Type</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">GRPC</code>
+<td>
+<code>GRPC</code>
 </td>
 <td>Type of OTLP exporter to use for pushing span data</td>
 </tr>
@@ -50,10 +36,10 @@ Settings for OpenTelemetry tracer configuration under the <code>OpenTelemetryTra
 <td>
 <code>propagators</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;CustomMethods&gt;">List&lt;CustomMethods&gt;</code>
+<td>
+<code>List&lt;<wbr>Custom<wbr>Methods&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Context propagators</td>
 </tr>
@@ -61,8 +47,6 @@ Settings for OpenTelemetry tracer configuration under the <code>OpenTelemetryTra
 </table>
 
 
-
-## Manifest
 
 ---
 

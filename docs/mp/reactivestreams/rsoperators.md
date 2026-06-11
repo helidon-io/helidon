@@ -34,6 +34,7 @@ ReactiveStreams.of("1", "2", "3", "4", "5")
 // >Sum: 6
 ```
 
+<!--@mdc ::table-collapse -->
 |  |  |
 |----|----|
 | fromIterable | Create new PublisherBuilder from supplied Iterable |
@@ -73,8 +74,7 @@ ReactiveStreams.of("1", "2", "3", "4", "5")
 | reduce | Reduction with provided expression |
 | cancel | Cancel stream immediately |
 | findFirst | Return first intercepted element |
-
-Operators(Stages) {#terms}
+<!--@mdc :: -->
 
 ### Graphs
 

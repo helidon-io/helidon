@@ -2,26 +2,12 @@
 
 ## Description
 
-A <code>Prototype.Api prototype</code> describing initial Eureka Server service instance registration details
+A <code>Prototype.<wbr>Api prototype</code> describing initial Eureka Server service instance registration details
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,102 +19,102 @@ A <code>Prototype.Api prototype</code> describing initial Eureka Server service 
 <tbody>
 <tr>
 <td>
-<code>appGroup</code>
+<code>app<wbr>Group</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">unknown</code>
+<td>
+<code>unknown</code>
 </td>
 <td>The app group name</td>
 </tr>
 <tr>
 <td>
-<code>asgName</code>
+<code>asg<wbr>Name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>The ASG name</td>
 </tr>
 <tr>
 <td>
-<code>healthCheckUrl</code>
+<code>health<wbr>Check<wbr>Url</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">URI</code>
+<td>
+<code>URI</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>The health check URL</td>
 </tr>
 <tr>
 <td>
-<code>healthCheckUrlPath</code>
+<code>health<wbr>Check<wbr>UrlPath</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>The health check URL path (used if any health check URL is not explicitly set)</td>
 </tr>
 <tr>
 <td>
-<code>homePageUrl</code>
+<code>home<wbr>Page<wbr>Url</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">URI</code>
+<td>
+<code>URI</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>The home page URL</td>
 </tr>
 <tr>
 <td>
-<code>homePageUrlPath</code>
+<code>home<wbr>Page<wbr>UrlPath</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">/</code>
+<td>
+<code>/</code>
 </td>
 <td>The home page URL path (used if the homepage URL is not explicitly set)</td>
 </tr>
 <tr>
 <td>
-<code>hostName</code>
+<code>host<wbr>Name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>The hostname</td>
 </tr>
 <tr>
 <td>
-<code>instanceId</code>
+<code>instance<wbr>Id</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>The instance id</td>
 </tr>
 <tr>
 <td>
-<code>ipAddr</code>
+<code>ip<wbr>Addr</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>The IP address</td>
 </tr>
@@ -139,21 +125,21 @@ A <code>Prototype.Api prototype</code> describing initial Eureka Server service 
 <code>lease</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="LeaseInfoConfig">LeaseInfoConfig</code>
+<td>
+<code>Lease<wbr>Info<wbr>Config</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>The <code>LeaseInfoConfig</code></td>
+<td>The <code>Lease<wbr>Info<wbr>Config</code></td>
 </tr>
 <tr>
 <td>
 <code>metadata</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Metadata</td>
 </tr>
@@ -161,11 +147,11 @@ A <code>Prototype.Api prototype</code> describing initial Eureka Server service 
 <td>
 <code>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">unknown</code>
+<td>
+<code>unknown</code>
 </td>
 <td>The app name</td>
 </tr>
@@ -176,21 +162,21 @@ A <code>Prototype.Api prototype</code> describing initial Eureka Server service 
 <code>port</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="PortInfoConfig">PortInfoConfig</code>
+<td>
+<code>Port<wbr>Info<wbr>Config</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>(Non-secure) port information</td>
 </tr>
 <tr>
 <td>
-<code>secureHealthCheckUrl</code>
+<code>secure<wbr>Health<wbr>Check<wbr>Url</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">URI</code>
+<td>
+<code>URI</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>The secure health check URL</td>
 </tr>
@@ -198,47 +184,47 @@ A <code>Prototype.Api prototype</code> describing initial Eureka Server service 
 <td>
 <a id="securePort"></a>
 <a href="io.helidon.integrations.eureka.PortInfoConfig.md">
-<code>securePort</code>
+<code>secure<wbr>Port</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="PortInfoConfig">PortInfoConfig</code>
+<td>
+<code>Port<wbr>Info<wbr>Config</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Secure port information</td>
 </tr>
 <tr>
 <td>
-<code>secureVipAddress</code>
+<code>secure<wbr>VipAddress</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>The secure VIP address</td>
 </tr>
 <tr>
 <td>
-<code>statusPageUrl</code>
+<code>status<wbr>Page<wbr>Url</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">URI</code>
+<td>
+<code>URI</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>The status page URL</td>
 </tr>
 <tr>
 <td>
-<code>statusPageUrlPath</code>
+<code>status<wbr>Page<wbr>UrlPath</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">/Status</code>
+<td>
+<code>/Status</code>
 </td>
 <td>The status page URL path (used if status page URL is not explicitly set)</td>
 </tr>
@@ -249,20 +235,20 @@ A <code>Prototype.Api prototype</code> describing initial Eureka Server service 
 <code>traffic</code>
 </a>
 </td>
-<td class="cm-type-cell">
+<td>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Configuration for traffic</td>
 </tr>
 <tr>
 <td>
-<code>vipAddress</code>
+<code>vip<wbr>Address</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>The VIP address</td>
 </tr>

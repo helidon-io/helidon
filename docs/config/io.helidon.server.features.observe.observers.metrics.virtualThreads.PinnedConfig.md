@@ -6,22 +6,8 @@ Configuration for server.features.observe.observers.metrics.virtual-threads.pinn
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,11 +21,11 @@ Configuration for server.features.observe.observers.metrics.virtual-threads.pinn
 <td>
 <code>threshold</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">PT0.020S</code>
+<td>
+<code>PT0.<wbr>020S</code>
 </td>
 <td>Threshold for sampling pinned virtual threads to include in the pinned threads meter</td>
 </tr>

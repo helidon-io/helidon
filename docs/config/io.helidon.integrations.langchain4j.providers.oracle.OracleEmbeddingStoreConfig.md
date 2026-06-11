@@ -6,22 +6,8 @@ Configuration for LangChain4j model OracleEmbeddingStore
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,38 +19,38 @@ Configuration for LangChain4j model OracleEmbeddingStore
 <tbody>
 <tr>
 <td>
-<code>data-source</code>
+<code>data-<wbr>source</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">DataSource</code>
+<td>
+<code>Data<wbr>Source</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Configures a data source that connects to an Oracle Database</td>
 </tr>
 <tr>
 <td>
-<code>data-source-discover-services</code>
+<code>data-<wbr>source-<wbr>discover-<wbr>services</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
-<td>Whether to enable automatic service discovery for <code>data-source</code></td>
+<td>Whether to enable automatic service discovery for <code>data-<wbr>source</code></td>
 </tr>
 <tr>
 <td>
 <a id="embedding-table"></a>
 <a href="io.helidon.integrations.langchain4j.providers.oracle.EmbeddingTableConfig.md">
-<code>embedding-table</code>
+<code>embedding-<wbr>table</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="EmbeddingTableConfig">EmbeddingTableConfig</code>
+<td>
+<code>Embedding<wbr>Table<wbr>Config</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Configures a table used to store embeddings, text, and metadata</td>
 </tr>
@@ -72,52 +58,52 @@ Configuration for LangChain4j model OracleEmbeddingStore
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>If set to <code>false</code>, OracleEmbeddingStore will not be available even if configured</td>
 </tr>
 <tr>
 <td>
-<code>exact-search</code>
+<code>exact-<wbr>search</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.store.embedding.oracle.OracleEmbeddingStore.Builder#exactSearch(boolean)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>store.<wbr>embedding.<wbr>oracle.<wbr>Oracle<wbr>Embedding<wbr>Store.<wbr>Builder#<wbr>exact<wbr>Search(<wbr>boolean)</code></td>
 </tr>
 <tr>
 <td>
 <a id="ivf-index"></a>
 <a href="io.helidon.integrations.langchain4j.providers.oracle.IvfIndexConfig.md">
-<code>ivf-index</code>
+<code>ivf-<wbr>index</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;IvfIndexConfig&gt;">List&lt;IvfIndexConfig&gt;</code>
+<td>
+<code>List&lt;<wbr>IvfIndex<wbr>Config&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>IVFIndex allows configuring an Inverted File Flat (IVF) index on the embedding column of the <code>EmbeddingTable</code></td>
+<td>IVFIndex allows configuring an Inverted File Flat (IVF) index on the embedding column of the <code>Embedding<wbr>Table</code></td>
 </tr>
 <tr>
 <td>
 <a id="json-index"></a>
 <a href="io.helidon.integrations.langchain4j.providers.oracle.JsonIndexConfig.md">
-<code>json-index</code>
+<code>json-<wbr>index</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;JsonIndexConfig&gt;">List&lt;JsonIndexConfig&gt;</code>
+<td>
+<code>List&lt;<wbr>Json<wbr>Index<wbr>Config&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>JSONIndex allows configuring a function-based index on one or several keys of the metadata column of the <code>EmbeddingTable</code></td>
+<td>JSONIndex allows configuring a function-based index on one or several keys of the metadata column of the <code>Embedding<wbr>Table</code></td>
 </tr>
 <tr>
 <td>
@@ -126,9 +112,9 @@ Configuration for LangChain4j model OracleEmbeddingStore
 <code>oracle</code>
 </a>
 </td>
-<td class="cm-type-cell">
+<td>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Configuration for oracle</td>
 </tr>
@@ -136,13 +122,13 @@ Configuration for LangChain4j model OracleEmbeddingStore
 <td>
 <a id="vector-index"></a>
 <a href="dev.langchain4j.store.embedding.oracle.CreateOption.md">
-<code>vector-index</code>
+<code>vector-<wbr>index</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="CreateOption">CreateOption</code>
+<td>
+<code>Create<wbr>Option</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>The vector index creation option, which defines behavior when creating the vector index</td>
 </tr>

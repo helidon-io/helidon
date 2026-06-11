@@ -6,13 +6,7 @@ This type is an enumeration.
 
 ## Allowed Values
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-</style>
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Value</th>
@@ -21,16 +15,16 @@ This type is an enumeration.
 </thead>
 <tbody>
 <tr>
-<td><code>CREATE_NONE</code></td>
-<td><code>N/A</code></td>
+<td><code>CREATE_<wbr>NONE</code></td>
+<td><code>N/<wbr>A</code></td>
 </tr>
 <tr>
-<td><code>CREATE_IF_NOT_EXISTS</code></td>
-<td><code>N/A</code></td>
+<td><code>CREATE_<wbr>IF_NOT_<wbr>EXISTS</code></td>
+<td><code>N/<wbr>A</code></td>
 </tr>
 <tr>
-<td><code>CREATE_OR_REPLACE</code></td>
-<td><code>N/A</code></td>
+<td><code>CREATE_<wbr>OR_REPLACE</code></td>
+<td><code>N/<wbr>A</code></td>
 </tr>
 </tbody>
 </table>

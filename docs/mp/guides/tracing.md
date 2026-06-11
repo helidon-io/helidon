@@ -613,6 +613,7 @@ Summary of Permitted Operations on Proxies Passed to Listeners
 
 The following tables list specifically what operations the proxies permit.
 
+<!--@mdc ::table-collapse -->
 | Method | Purpose | OK? |
 |----|----|----|
 | `build()` | Starts the span. | \- |
@@ -624,6 +625,7 @@ The following tables list specifically what operations the proxies permit.
 | `start(Instant)` | Starts the span. | \- |
 | `tag` methods | Add a tag to the builder before the span is built. | ✓ |
 | `unwrap(Class)` | Cast the builder to the specified implementation type. | ✓ |
+<!--@mdc :: -->
 
 > [!NOTE]
 > Helidon returns the unwrapped object, not a proxy for it.

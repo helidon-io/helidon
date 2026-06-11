@@ -6,22 +6,8 @@ Prototypical state for the portion of Eureka Discovery configuration related to 
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,49 +19,49 @@ Prototypical state for the portion of Eureka Discovery configuration related to 
 <tbody>
 <tr>
 <td>
-<code>sync-interval</code>
+<code>sync-<wbr>interval</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">PT30S</code>
+<td>
+<code>PT30S</code>
 </td>
 <td>The time between retrievals of service information from the Eureka server; 30 seconds by default</td>
 </tr>
 <tr>
 <td>
-<code>defer-sync</code>
+<code>defer-<wbr>sync</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Whether to defer immediate cache synchronization; <code>false</code> by default</td>
 </tr>
 <tr>
 <td>
-<code>fetch-thread-name</code>
+<code>fetch-<wbr>thread-<wbr>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value" title="Eureka registry fetch thread">Eureka registry fetch thread</code>
+<td>
+<code>Eureka registry fetch thread</code>
 </td>
 <td>The name of the <code>Thread</code> used to retrieve service information from the Eureka server; "Eureka registry fetch thread" by default</td>
 </tr>
 <tr>
 <td>
-<code>compute-changes</code>
+<code>compute-<wbr>changes</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether the state of the cache should be computed from changes reported by Eureka, or replaced in full; <code>true</code> by default</td>
 </tr>
@@ -83,11 +69,11 @@ Prototypical state for the portion of Eureka Discovery configuration related to 
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether a local cache of Eureka information is used or not; <code>true</code> by default</td>
 </tr>

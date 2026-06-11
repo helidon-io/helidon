@@ -6,22 +6,8 @@ Configuration for oci.imds
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,11 +21,11 @@ Configuration for oci.imds
 <td>
 <code>hostname</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value" title="169.254.169.254">169.254.169.254</code>
+<td>
+<code>169.<wbr>254.<wbr>169.<wbr>254</code>
 </td>
 <td>The OCI IMDS hostname</td>
 </tr>
@@ -50,9 +36,9 @@ Configuration for oci.imds
 <code>timeout</code>
 </a>
 </td>
-<td class="cm-type-cell">
+<td>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Configuration for timeout</td>
 </tr>

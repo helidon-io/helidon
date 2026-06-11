@@ -2,26 +2,12 @@
 
 ## Description
 
-Configuration settings for a scope within the <code>MetricsConfigBlueprint#METRICS_CONFIG_KEY</code> config section
+Configuration settings for a scope within the <code>Metrics<wbr>Config<wbr>Blueprint#<wbr>METRICS_<wbr>CONFIG_<wbr>KEY</code> config section
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,11 +21,11 @@ Configuration settings for a scope within the <code>MetricsConfigBlueprint#METRI
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether the scope is enabled</td>
 </tr>
@@ -50,9 +36,9 @@ Configuration settings for a scope within the <code>MetricsConfigBlueprint#METRI
 <code>filter</code>
 </a>
 </td>
-<td class="cm-type-cell">
+<td>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Configuration for filter</td>
 </tr>
@@ -60,10 +46,10 @@ Configuration settings for a scope within the <code>MetricsConfigBlueprint#METRI
 <td>
 <code>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Name of the scope to which the configuration applies</td>
 </tr>

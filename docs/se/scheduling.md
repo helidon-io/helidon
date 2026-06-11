@@ -45,7 +45,7 @@ FixedRate.builder()
 
 #### Configuration options
 
-<!--@include ../config/io.helidon.scheduling.FixedRate.md#configuration-options offset=2 -->
+<!--@include ../config/io.helidon.scheduling.FixedRate.md#configuration-options offset=2 collapseTables=10 -->
 See [Configuration options](../config/io.helidon.scheduling.FixedRate.md#configuration-options).
 <!--/include-->
 
@@ -81,7 +81,7 @@ The timezone determines when the cron expression triggers. For example, a cron e
 
 #### Configuration options
 
-<!--@include ../config/io.helidon.scheduling.Cron.md#configuration-options offset=2 -->
+<!--@include ../config/io.helidon.scheduling.Cron.md#configuration-options offset=2 collapseTables=10 -->
 See [Configuration options](../config/io.helidon.scheduling.Cron.md#configuration-options).
 <!--/include-->
 
@@ -110,6 +110,7 @@ Cron expression format:
 
 Cron expression fields
 
+<!--@mdc ::table-collapse -->
 | Name      | Regex format        | Example | Description                                                                 |
 |-----------|---------------------|---------|-----------------------------------------------------------------------------|
 | CONST     | \d+                 | 12      | exact value                                                                 |
@@ -121,6 +122,7 @@ Cron expression fields
 | NTH       | \\                  | 1#3     | nth day of the month, 2#3 means third monday of the month                   |
 | LAST      | \d\*L(+\d+\|\\\d+)? | 3L-3    | last day of the month in day-of-month or last nth day in the day-of-week    |
 | WEEKDAY   | \\                  | 1#3     | nearest weekday of the nth day of month, 1W is the first monday of the week |
+<!--@mdc :: -->
 
 Field formats
 

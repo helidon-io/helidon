@@ -6,22 +6,8 @@ Configuration for LangChain4j model CohereScoringModel
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,113 +19,113 @@ Configuration for LangChain4j model CohereScoringModel
 <tbody>
 <tr>
 <td>
-<code>base-url</code>
+<code>base-<wbr>url</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.cohere.CohereScoringModel.CohereScoringModelBuilder#baseUrl(java.lang.String)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>cohere.<wbr>Cohere<wbr>Scoring<wbr>Model.<wbr>Cohere<wbr>Scoring<wbr>Model<wbr>Builder#<wbr>base<wbr>Url(<wbr>java.<wbr>lang.<wbr>String)</code></td>
 </tr>
 <tr>
 <td>
 <code>proxy</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Proxy</code>
+<td>
+<code>Proxy</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Proxy to use</td>
 </tr>
 <tr>
 <td>
-<code>log-requests</code>
+<code>log-<wbr>requests</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.cohere.CohereScoringModel.CohereScoringModelBuilder#logRequests(java.lang.Boolean)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>cohere.<wbr>Cohere<wbr>Scoring<wbr>Model.<wbr>Cohere<wbr>Scoring<wbr>Model<wbr>Builder#<wbr>logRequests(<wbr>java.<wbr>lang.<wbr>Boolean)</code></td>
 </tr>
 <tr>
 <td>
-<code>api-key</code>
+<code>api-<wbr>key</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.cohere.CohereScoringModel.CohereScoringModelBuilder#apiKey(java.lang.String)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>cohere.<wbr>Cohere<wbr>Scoring<wbr>Model.<wbr>Cohere<wbr>Scoring<wbr>Model<wbr>Builder#<wbr>apiKey(<wbr>java.<wbr>lang.<wbr>String)</code></td>
 </tr>
 <tr>
 <td>
 <code>logger</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Logger</code>
+<td>
+<code>Logger</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.cohere.CohereScoringModel.CohereScoringModelBuilder#logger(org.slf4j.Logger)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>cohere.<wbr>Cohere<wbr>Scoring<wbr>Model.<wbr>Cohere<wbr>Scoring<wbr>Model<wbr>Builder#<wbr>logger(<wbr>org.<wbr>slf4j.<wbr>Logger)</code></td>
 </tr>
 <tr>
 <td>
-<code>max-retries</code>
+<code>max-<wbr>retries</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.cohere.CohereScoringModel.CohereScoringModelBuilder#maxRetries(java.lang.Integer)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>cohere.<wbr>Cohere<wbr>Scoring<wbr>Model.<wbr>Cohere<wbr>Scoring<wbr>Model<wbr>Builder#<wbr>maxRetries(<wbr>java.<wbr>lang.<wbr>Integer)</code></td>
 </tr>
 <tr>
 <td>
-<code>model-name</code>
+<code>model-<wbr>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.cohere.CohereScoringModel.CohereScoringModelBuilder#modelName(java.lang.String)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>cohere.<wbr>Cohere<wbr>Scoring<wbr>Model.<wbr>Cohere<wbr>Scoring<wbr>Model<wbr>Builder#<wbr>model<wbr>Name(<wbr>java.<wbr>lang.<wbr>String)</code></td>
 </tr>
 <tr>
 <td>
-<code>log-responses</code>
+<code>log-<wbr>responses</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.cohere.CohereScoringModel.CohereScoringModelBuilder#logResponses(java.lang.Boolean)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>cohere.<wbr>Cohere<wbr>Scoring<wbr>Model.<wbr>Cohere<wbr>Scoring<wbr>Model<wbr>Builder#<wbr>logResponses(<wbr>java.<wbr>lang.<wbr>Boolean)</code></td>
 </tr>
 <tr>
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>If set to <code>false</code>, CohereScoringModel will not be available even if configured</td>
 </tr>
 <tr>
 <td>
-<code>proxy-discover-services</code>
+<code>proxy-<wbr>discover-<wbr>services</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether to enable automatic service discovery for <code>proxy</code></td>
 </tr>
@@ -147,12 +133,12 @@ Configuration for LangChain4j model CohereScoringModel
 <td>
 <code>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.cohere.CohereScoringModel.CohereScoringModelBuilder#timeout(java.time.Duration)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>cohere.<wbr>Cohere<wbr>Scoring<wbr>Model.<wbr>Cohere<wbr>Scoring<wbr>Model<wbr>Builder#<wbr>timeout(<wbr>java.<wbr>time.<wbr>Duration)</code></td>
 </tr>
 </tbody>
 </table>

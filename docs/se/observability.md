@@ -112,6 +112,7 @@ Configuration observability allows reading the current application configuration
 
 Health observability allows reading application readiness to serve requests, whether the services are alive. Health observability defines the following endpoints:
 
+<!--@mdc ::table-collapse -->
 | Endpoint                 | Method | Action                                                        |
 |--------------------------|--------|---------------------------------------------------------------|
 | `/health/ready`          | `GET`  | Returns Service Readiness                                     |
@@ -128,6 +129,7 @@ Health observability allows reading application readiness to serve requests, whe
 | `/health/live/{name}`    | `HEAD` | Returns whether the service `name` is alive without details   |
 | `/health/started/{name}` | `HEAD` | Returns whether the service `name` is started without details |
 | `/health/check/{name}`   | `HEAD` | Returns all checks for service `name` without details         |
+<!--@mdc :: -->
 
 For more information, please, check [Health](../se/health.md) documentation.
 
@@ -194,7 +196,7 @@ To control the observability features as a whole, add config settings under `ser
 
 ### Configuration options
 
-<!--@include ../config/io.helidon.webserver.observe.ObserveFeature.md#configuration-options offset=1 -->
+<!--@include ../config/io.helidon.webserver.observe.ObserveFeature.md#configuration-options offset=1 collapseTables=10 -->
 See [Configuration options](../config/io.helidon.webserver.observe.ObserveFeature.md#configuration-options).
 <!--/include-->
 

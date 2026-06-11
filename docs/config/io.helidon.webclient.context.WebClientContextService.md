@@ -6,22 +6,8 @@ Configuration of WebClient transport level propagation of context values
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -37,8 +23,8 @@ Configuration of WebClient transport level propagation of context values
 <code>records</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;ContextRecordConfig&gt;">List&lt;ContextRecordConfig&gt;</code>
+<td>
+<code>List&lt;<wbr>Context<wbr>Record<wbr>Config&gt;</code>
 </td>
 <td>List of propagation records</td>
 </tr>
@@ -46,8 +32,6 @@ Configuration of WebClient transport level propagation of context values
 </table>
 
 
-
-## Manifest
 
 ---
 

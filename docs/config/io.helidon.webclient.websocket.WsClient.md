@@ -6,22 +6,8 @@ WebSocket full webclient configuration
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,14 +21,14 @@ WebSocket full webclient configuration
 <td>
 <a id="protocol-config"></a>
 <a href="io.helidon.webclient.websocket.WsClientProtocolConfig.md">
-<code>protocol-config</code>
+<code>protocol-<wbr>config</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="WsClientProtocolConfig">WsClientProtocolConfig</code>
+<td>
+<code>Ws<wbr>Client<wbr>Protocol<wbr>Config</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">create()</code>
+<td>
+<code>create(<wbr>)</code>
 </td>
 <td>WebSocket specific configuration</td>
 </tr>

@@ -2,26 +2,12 @@
 
 ## Description
 
-Configuration of security feature for webserver
+Configuration of security feature fow webserver
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -38,10 +24,10 @@ Configuration of security feature for webserver
 <code>security</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Security</code>
+<td>
+<code>Security</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Security associated with this feature</td>
 </tr>
@@ -52,10 +38,10 @@ Configuration of security feature for webserver
 <code>defaults</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="SecurityHandler">SecurityHandler</code>
+<td>
+<code>Security<wbr>Handler</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>The default security handler</td>
 </tr>
@@ -66,10 +52,10 @@ Configuration of security feature for webserver
 <code>paths</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;PathsConfig&gt;">List&lt;PathsConfig&gt;</code>
+<td>
+<code>List&lt;<wbr>Paths<wbr>Config&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Configuration for webserver paths</td>
 </tr>
@@ -77,11 +63,11 @@ Configuration of security feature for webserver
 <td>
 <code>weight</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Double</code>
+<td>
+<code>Double</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">800.0</code>
+<td>
+<code>800.<wbr>0</code>
 </td>
 <td>Weight of the security feature</td>
 </tr>

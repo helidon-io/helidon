@@ -6,22 +6,8 @@ Configuration settings for OpenTelemetry logging
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -32,10 +18,10 @@ Configuration settings for OpenTelemetry logging
 <tbody>
 <tr>
 <td>
-<code>trace-based</code>
+<code>trace-<wbr>based</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
 <td>Whether to include <em>only</em> log records from traces which are sampled</td>
 </tr>
@@ -43,8 +29,8 @@ Configuration settings for OpenTelemetry logging
 <td>
 <code>attributes</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="CustomMethods">CustomMethods</code>
+<td>
+<code>Custom<wbr>Methods</code>
 </td>
 <td>Name/value pairs passed to OpenTelemetry</td>
 </tr>
@@ -52,11 +38,11 @@ Configuration settings for OpenTelemetry logging
 <td>
 <a id="minimum-severity"></a>
 <a href="io.opentelemetry.api.logs.Severity.md">
-<code>minimum-severity</code>
+<code>minimum-<wbr>severity</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Severity</code>
+<td>
+<code>Severity</code>
 </td>
 <td>Minimum severity level of log records to process</td>
 </tr>
@@ -64,8 +50,8 @@ Configuration settings for OpenTelemetry logging
 <td>
 <code>processors</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;CustomMethods&gt;">List&lt;CustomMethods&gt;</code>
+<td>
+<code>List&lt;<wbr>Custom<wbr>Methods&gt;</code>
 </td>
 <td>Settings for logging processors</td>
 </tr>
@@ -73,17 +59,17 @@ Configuration settings for OpenTelemetry logging
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
 <td>Whether the OpenTelemetry logger should be enabled</td>
 </tr>
 <tr>
 <td>
-<code>log-limits</code>
+<code>log-<wbr>limits</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="CustomMethods">CustomMethods</code>
+<td>
+<code>Custom<wbr>Methods</code>
 </td>
 <td>Log limits to apply to log transmission</td>
 </tr>
@@ -91,8 +77,8 @@ Configuration settings for OpenTelemetry logging
 <td>
 <code>exporters</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, CustomMethods&gt;">Map&lt;String, CustomMethods&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> Custom<wbr>Methods&gt;</code>
 </td>
 <td>Log record exporters</td>
 </tr>

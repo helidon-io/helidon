@@ -6,22 +6,8 @@ Tracing sampler settings
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,10 +21,10 @@ Tracing sampler settings
 <td>
 <code>param</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Double</code>
+<td>
+<code>Double</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Sampler parameter</td>
 </tr>
@@ -49,11 +35,11 @@ Tracing sampler settings
 <code>type</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="SamplerType">SamplerType</code>
+<td>
+<code>Sampler<wbr>Type</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">DEFAULT</code>
+<td>
+<code>DEFAULT</code>
 </td>
 <td>Sampler type</td>
 </tr>
@@ -61,8 +47,6 @@ Tracing sampler settings
 </table>
 
 
-
-## Manifest
 
 ---
 

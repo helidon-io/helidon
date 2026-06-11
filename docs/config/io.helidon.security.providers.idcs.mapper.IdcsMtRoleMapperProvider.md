@@ -6,22 +6,8 @@ Multitenant IDCS role mapping provider
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,25 +21,25 @@ Multitenant IDCS role mapping provider
 <td>
 <a id="cache-config"></a>
 <a href="io.helidon.security.providers.common.EvictableCache.md">
-<code>cache-config</code>
+<code>cache-<wbr>config</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="EvictableCache">EvictableCache</code>
+<td>
+<code>Evictable<wbr>Cache</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Use explicit <code>io.helidon.security.providers.common.EvictableCache</code> for role caching</td>
+<td>Use explicit <code>io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>common.<wbr>Evictable<wbr>Cache</code> for role caching</td>
 </tr>
 <tr>
 <td>
-<code>default-idcs-subject-type</code>
+<code>default-<wbr>idcs-<wbr>subject-<wbr>type</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">user</code>
+<td>
+<code>user</code>
 </td>
 <td>Configure subject type to use when requesting roles from IDCS</td>
 </tr>
@@ -61,13 +47,13 @@ Multitenant IDCS role mapping provider
 <td>
 <a id="idcs-app-name-handler"></a>
 <a href="io.helidon.security.util.TokenHandler.md">
-<code>idcs-app-name-handler</code>
+<code>idcs-<wbr>app-<wbr>name-<wbr>handler</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="TokenHandler">TokenHandler</code>
+<td>
+<code>Token<wbr>Handler</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Configure token handler for IDCS Application name</td>
 </tr>
@@ -75,28 +61,28 @@ Multitenant IDCS role mapping provider
 <td>
 <a id="oidc-config"></a>
 <a href="io.helidon.security.providers.oidc.common.OidcConfig.md">
-<code>oidc-config</code>
+<code>oidc-<wbr>config</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">OidcConfig</code>
+<td>
+<code>Oidc<wbr>Config</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Use explicit <code>io.helidon.security.providers.oidc.common.OidcConfig</code> instance, e.g</td>
+<td>Use explicit <code>io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>common.<wbr>Oidc<wbr>Config</code> instance, e.g</td>
 </tr>
 <tr>
 <td>
 <a id="subject-types"></a>
 <a href="io.helidon.security.SubjectType.md">
-<code>subject-types</code>
+<code>subject-<wbr>types</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;SubjectType&gt;">List&lt;SubjectType&gt;</code>
+<td>
+<code>List&lt;<wbr>Subject<wbr>Type&gt;</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">USER</code>
+<td>
+<code>USER</code>
 </td>
 <td>Add a supported subject type</td>
 </tr>
@@ -104,13 +90,13 @@ Multitenant IDCS role mapping provider
 <td>
 <a id="idcs-tenant-handler"></a>
 <a href="io.helidon.security.util.TokenHandler.md">
-<code>idcs-tenant-handler</code>
+<code>idcs-<wbr>tenant-<wbr>handler</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="TokenHandler">TokenHandler</code>
+<td>
+<code>Token<wbr>Handler</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Configure token handler for IDCS Tenant ID</td>
 </tr>
@@ -118,8 +104,6 @@ Multitenant IDCS role mapping provider
 </table>
 
 
-
-## Manifest
 
 ---
 

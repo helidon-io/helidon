@@ -6,22 +6,8 @@ Configuration for LangChain4j model OllamaLanguageModel
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,112 +19,112 @@ Configuration for LangChain4j model OllamaLanguageModel
 <tbody>
 <tr>
 <td>
-<code>base-url</code>
+<code>base-<wbr>url</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.ollama.OllamaLanguageModel.OllamaLanguageModelBuilder#baseUrl(java.lang.String)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>ollama.<wbr>Ollama<wbr>Language<wbr>Model.<wbr>Ollama<wbr>Language<wbr>Model<wbr>Builder#<wbr>base<wbr>Url(<wbr>java.<wbr>lang.<wbr>String)</code></td>
 </tr>
 <tr>
 <td>
-<code>http-client-builder</code>
+<code>http-<wbr>client-<wbr>builder</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="HttpClientBuilder">HttpClientBuilder</code>
+<td>
+<code>Http<wbr>Client<wbr>Builder</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.ollama.OllamaLanguageModel.OllamaLanguageModelBuilder#httpClientBuilder(dev.langchain4j.http.client.HttpClientBuilder)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>ollama.<wbr>Ollama<wbr>Language<wbr>Model.<wbr>Ollama<wbr>Language<wbr>Model<wbr>Builder#<wbr>http<wbr>Client<wbr>Builder(<wbr>dev.<wbr>langchain4j.<wbr>http.<wbr>client.<wbr>Http<wbr>Client<wbr>Builder)</code></td>
 </tr>
 <tr>
 <td>
 <code>seed</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.ollama.OllamaLanguageModel.OllamaLanguageModelBuilder#seed(java.lang.Integer)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>ollama.<wbr>Ollama<wbr>Language<wbr>Model.<wbr>Ollama<wbr>Language<wbr>Model<wbr>Builder#<wbr>seed(<wbr>java.<wbr>lang.<wbr>Integer)</code></td>
 </tr>
 <tr>
 <td>
-<code>top-k</code>
+<code>top-<wbr>k</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.ollama.OllamaLanguageModel.OllamaLanguageModelBuilder#topK(java.lang.Integer)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>ollama.<wbr>Ollama<wbr>Language<wbr>Model.<wbr>Ollama<wbr>Language<wbr>Model<wbr>Builder#<wbr>topK(<wbr>java.<wbr>lang.<wbr>Integer)</code></td>
 </tr>
 <tr>
 <td>
-<code>custom-headers</code>
+<code>custom-<wbr>headers</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.ollama.OllamaLanguageModel.OllamaLanguageModelBuilder#customHeaders(java.util.Map)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>ollama.<wbr>Ollama<wbr>Language<wbr>Model.<wbr>Ollama<wbr>Language<wbr>Model<wbr>Builder#<wbr>custom<wbr>Headers(<wbr>java.<wbr>util.<wbr>Map)</code></td>
 </tr>
 <tr>
 <td>
-<code>max-retries</code>
+<code>max-<wbr>retries</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.ollama.OllamaLanguageModel.OllamaLanguageModelBuilder#maxRetries(java.lang.Integer)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>ollama.<wbr>Ollama<wbr>Language<wbr>Model.<wbr>Ollama<wbr>Language<wbr>Model<wbr>Builder#<wbr>maxRetries(<wbr>java.<wbr>lang.<wbr>Integer)</code></td>
 </tr>
 <tr>
 <td>
-<code>num-ctx</code>
+<code>num-<wbr>ctx</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.ollama.OllamaLanguageModel.OllamaLanguageModelBuilder#numCtx(java.lang.Integer)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>ollama.<wbr>Ollama<wbr>Language<wbr>Model.<wbr>Ollama<wbr>Language<wbr>Model<wbr>Builder#<wbr>numCtx(<wbr>java.<wbr>lang.<wbr>Integer)</code></td>
 </tr>
 <tr>
 <td>
-<code>log-responses</code>
+<code>log-<wbr>responses</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.ollama.OllamaLanguageModel.OllamaLanguageModelBuilder#logResponses(java.lang.Boolean)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>ollama.<wbr>Ollama<wbr>Language<wbr>Model.<wbr>Ollama<wbr>Language<wbr>Model<wbr>Builder#<wbr>logResponses(<wbr>java.<wbr>lang.<wbr>Boolean)</code></td>
 </tr>
 <tr>
 <td>
-<code>response-format</code>
+<code>response-<wbr>format</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="ResponseFormat">ResponseFormat</code>
+<td>
+<code>Response<wbr>Format</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.ollama.OllamaLanguageModel.OllamaLanguageModelBuilder#responseFormat(dev.langchain4j.model.chat.request.ResponseFormat)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>ollama.<wbr>Ollama<wbr>Language<wbr>Model.<wbr>Ollama<wbr>Language<wbr>Model<wbr>Builder#<wbr>response<wbr>Format(<wbr>dev.<wbr>langchain4j.<wbr>model.<wbr>chat.<wbr>request.<wbr>Response<wbr>Format)</code></td>
 </tr>
 <tr>
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>If set to <code>false</code>, OllamaLanguageModel will not be available even if configured</td>
 </tr>
@@ -146,101 +132,101 @@ Configuration for LangChain4j model OllamaLanguageModel
 <td>
 <code>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.ollama.OllamaLanguageModel.OllamaLanguageModelBuilder#timeout(java.time.Duration)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>ollama.<wbr>Ollama<wbr>Language<wbr>Model.<wbr>Ollama<wbr>Language<wbr>Model<wbr>Builder#<wbr>timeout(<wbr>java.<wbr>time.<wbr>Duration)</code></td>
 </tr>
 <tr>
 <td>
-<code>top-p</code>
+<code>top-<wbr>p</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Double</code>
+<td>
+<code>Double</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.ollama.OllamaLanguageModel.OllamaLanguageModelBuilder#topP(java.lang.Double)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>ollama.<wbr>Ollama<wbr>Language<wbr>Model.<wbr>Ollama<wbr>Language<wbr>Model<wbr>Builder#<wbr>topP(<wbr>java.<wbr>lang.<wbr>Double)</code></td>
 </tr>
 <tr>
 <td>
-<code>log-requests</code>
+<code>log-<wbr>requests</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.ollama.OllamaLanguageModel.OllamaLanguageModelBuilder#logRequests(java.lang.Boolean)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>ollama.<wbr>Ollama<wbr>Language<wbr>Model.<wbr>Ollama<wbr>Language<wbr>Model<wbr>Builder#<wbr>logRequests(<wbr>java.<wbr>lang.<wbr>Boolean)</code></td>
 </tr>
 <tr>
 <td>
-<code>http-client-builder-discover-services</code>
+<code>http-<wbr>client-<wbr>builder-<wbr>discover-<wbr>services</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
-<td>Whether to enable automatic service discovery for <code>http-client-builder</code></td>
+<td>Whether to enable automatic service discovery for <code>http-<wbr>client-<wbr>builder</code></td>
 </tr>
 <tr>
 <td>
 <code>stop</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.ollama.OllamaLanguageModel.OllamaLanguageModelBuilder#stop(java.util.List)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>ollama.<wbr>Ollama<wbr>Language<wbr>Model.<wbr>Ollama<wbr>Language<wbr>Model<wbr>Builder#<wbr>stop(<wbr>java.<wbr>util.<wbr>List)</code></td>
 </tr>
 <tr>
 <td>
-<code>repeat-penalty</code>
+<code>repeat-<wbr>penalty</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Double</code>
+<td>
+<code>Double</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.ollama.OllamaLanguageModel.OllamaLanguageModelBuilder#repeatPenalty(java.lang.Double)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>ollama.<wbr>Ollama<wbr>Language<wbr>Model.<wbr>Ollama<wbr>Language<wbr>Model<wbr>Builder#<wbr>repeat<wbr>Penalty(<wbr>java.<wbr>lang.<wbr>Double)</code></td>
 </tr>
 <tr>
 <td>
 <code>temperature</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Double</code>
+<td>
+<code>Double</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.ollama.OllamaLanguageModel.OllamaLanguageModelBuilder#temperature(java.lang.Double)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>ollama.<wbr>Ollama<wbr>Language<wbr>Model.<wbr>Ollama<wbr>Language<wbr>Model<wbr>Builder#<wbr>temperature(<wbr>java.<wbr>lang.<wbr>Double)</code></td>
 </tr>
 <tr>
 <td>
-<code>model-name</code>
+<code>model-<wbr>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.ollama.OllamaLanguageModel.OllamaLanguageModelBuilder#modelName(java.lang.String)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>ollama.<wbr>Ollama<wbr>Language<wbr>Model.<wbr>Ollama<wbr>Language<wbr>Model<wbr>Builder#<wbr>model<wbr>Name(<wbr>java.<wbr>lang.<wbr>String)</code></td>
 </tr>
 <tr>
 <td>
-<code>num-predict</code>
+<code>num-<wbr>predict</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Generated from <code>dev.langchain4j.model.ollama.OllamaLanguageModel.OllamaLanguageModelBuilder#numPredict(java.lang.Integer)</code></td>
+<td>Generated from <code>dev.<wbr>langchain4j.<wbr>model.<wbr>ollama.<wbr>Ollama<wbr>Language<wbr>Model.<wbr>Ollama<wbr>Language<wbr>Model<wbr>Builder#<wbr>numPredict(<wbr>java.<wbr>lang.<wbr>Integer)</code></td>
 </tr>
 </tbody>
 </table>

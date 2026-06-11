@@ -6,22 +6,8 @@ Settings for path-based automatic metrics configuration
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,10 +21,10 @@ Settings for path-based automatic metrics configuration
 <td>
 <code>path</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Path matching expression for this path config entry</td>
 </tr>
@@ -46,10 +32,10 @@ Settings for path-based automatic metrics configuration
 <td>
 <code>methods</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>HTTP methods for which this path config applies; default is to match all HTTP methods</td>
 </tr>
@@ -57,13 +43,13 @@ Settings for path-based automatic metrics configuration
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
-<td>Whether automatic metrics are to be enabled for requests which match the specified <code>io.helidon.http.PathMatcher</code> and HTTP methods</td>
+<td>Whether automatic metrics are to be enabled for requests which match the specified <code>io.<wbr>helidon.<wbr>http.<wbr>Path<wbr>Matcher</code> and HTTP methods</td>
 </tr>
 </tbody>
 </table>

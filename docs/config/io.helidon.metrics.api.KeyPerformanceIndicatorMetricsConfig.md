@@ -6,22 +6,8 @@ Config bean for KPI metrics configuration
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,11 +21,11 @@ Config bean for KPI metrics configuration
 <td>
 <code>extended</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Whether KPI extended metrics are enabled</td>
 </tr>
@@ -47,12 +33,12 @@ Config bean for KPI metrics configuration
 <td>
 <a id="long-running-requests"></a>
 <a href="io.helidon.metrics.keyPerformanceIndicators.LongRunningRequestsConfig.md">
-<code>long-running-requests</code>
+<code>long-<wbr>running-<wbr>requests</code>
 </a>
 </td>
-<td class="cm-type-cell">
+<td>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Configuration for long-running-requests</td>
 </tr>

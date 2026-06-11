@@ -6,15 +6,9 @@ This type is a provider contract.
 
 ## Implementations
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-</style>
 
 
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,7 +27,7 @@ This type is a provider contract.
 <tr>
 <td>
 <a href="io.helidon.security.providers.config.vault.ConfigVaultProvider.md">
-<code>config-vault</code>
+<code>config-<wbr>vault</code>
 </a>
 </td>
 <td>Secrets and Encryption provider using just configuration</td>
@@ -41,7 +35,7 @@ This type is a provider contract.
 <tr>
 <td>
 <a href="io.helidon.security.providers.google.login.GoogleTokenProvider.md">
-<code>google-login</code>
+<code>google-<wbr>login</code>
 </a>
 </td>
 <td>Google Authentication provider</td>
@@ -49,7 +43,7 @@ This type is a provider contract.
 <tr>
 <td>
 <a href="io.helidon.security.providers.header.HeaderAtnProvider.md">
-<code>header-atn</code>
+<code>header-<wbr>atn</code>
 </a>
 </td>
 <td>Security provider that extracts a username (or service name) from a header</td>
@@ -57,7 +51,7 @@ This type is a provider contract.
 <tr>
 <td>
 <a href="io.helidon.security.providers.httpauth.HttpBasicAuthProvider.md">
-<code>http-basic-auth</code>
+<code>http-<wbr>basic-<wbr>auth</code>
 </a>
 </td>
 <td>HTTP Basic Authentication provider</td>
@@ -65,7 +59,7 @@ This type is a provider contract.
 <tr>
 <td>
 <a href="io.helidon.security.providers.httpauth.HttpDigestAuthProvider.md">
-<code>http-digest-auth</code>
+<code>http-<wbr>digest-<wbr>auth</code>
 </a>
 </td>
 <td>Http digest authentication security provider</td>
@@ -73,7 +67,7 @@ This type is a provider contract.
 <tr>
 <td>
 <a href="io.helidon.security.providers.idcs.mapper.IdcsMtRoleMapperProvider.md">
-<code>idcs-role-mapper</code>
+<code>idcs-<wbr>role-<wbr>mapper</code>
 </a>
 </td>
 <td>Multitenant IDCS role mapping provider</td>
@@ -81,7 +75,7 @@ This type is a provider contract.
 <tr>
 <td>
 <a href="io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProvider.md">
-<code>idcs-role-mapper</code>
+<code>idcs-<wbr>role-<wbr>mapper</code>
 </a>
 </td>
 <td>IDCS role mapping provider</td>

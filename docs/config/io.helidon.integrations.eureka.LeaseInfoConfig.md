@@ -2,26 +2,12 @@
 
 ## Description
 
-A <code>Prototype.Api prototype</code> describing initial Eureka Server service instance registration lease details
+A <code>Prototype.<wbr>Api prototype</code> describing initial Eureka Server service instance registration lease details
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,23 +21,23 @@ A <code>Prototype.Api prototype</code> describing initial Eureka Server service 
 <td>
 <code>duration</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">90</code>
+<td>
+<code>90</code>
 </td>
 <td>The lease duration in seconds; the default value is strongly recommended</td>
 </tr>
 <tr>
 <td>
-<code>renewalInterval</code>
+<code>renewal<wbr>Interval</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">30</code>
+<td>
+<code>30</code>
 </td>
 <td>The lease renewal interval in seconds; the default value is strongly recommended</td>
 </tr>

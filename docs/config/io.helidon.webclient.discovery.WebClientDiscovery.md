@@ -2,26 +2,12 @@
 
 ## Description
 
-A <code>Prototype.Api prototype</code> and <code>Prototype.Factory factory</code> for <code>WebClientDiscovery</code> instances
+A <code>Prototype.<wbr>Api prototype</code> and <code>Prototype.<wbr>Factory factory</code> for <code>Web<wbr>Client<wbr>Discovery</code> instances
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,22 +21,22 @@ A <code>Prototype.Api prototype</code> and <code>Prototype.Factory factory</code
 <td>
 <code>name</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">discovery</code>
+<td>
+<code>discovery</code>
 </td>
 <td>The name to assign to the runtime type (<code>discovery</code> by default)</td>
 </tr>
 <tr>
 <td>
-<code>prefix-uris</code>
+<code>prefix-<wbr>uris</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, URI&gt;">Map&lt;String, URI&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> URI&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>A <code>Map</code> of <code>URI</code> prefixes indexed under discovery names</td>
 </tr>

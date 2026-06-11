@@ -447,6 +447,7 @@ class AnnotationOnMethod {
 
 Here is a brief overview of the MicroProfile testing annotations:
 
+<!--@mdc ::table-collapse -->
 | Annotation | Usage |
 |----|----|
 | [`@AddBean`][addbean] | Add a CDI bean class to the CDI container |
@@ -459,6 +460,7 @@ Here is a brief overview of the MicroProfile testing annotations:
 | [`@Configuration`][configuration] | Switch between "synthetic" and "existing" ; Add classpath resources to the "synthetic" configuration |
 | [`@Socket`][socket] | CDI qualifier to inject a JAX-RS client or URI for a named socket |
 | [`@AfterStop`][afterstop] | Mark a static method to be executed after the container is stopped |
+<!--@mdc :: -->
 
 ## Examples
 

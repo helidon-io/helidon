@@ -6,22 +6,8 @@ Outbound configuration for outbound security
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -37,16 +23,16 @@ Outbound configuration for outbound security
 <code>jwk</code>
 </a>
 </td>
-<td class="cm-type-cell">
+<td>
 </td>
 <td>Configuration for jwk</td>
 </tr>
 <tr>
 <td>
-<code>jwt-issuer</code>
+<code>jwt-<wbr>issuer</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>Issuer used to create new JWTs</td>
 </tr>
@@ -57,8 +43,8 @@ Outbound configuration for outbound security
 <code>outbound</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;OutboundTarget&gt;">List&lt;OutboundTarget&gt;</code>
+<td>
+<code>List&lt;<wbr>Outbound<wbr>Target&gt;</code>
 </td>
 <td>Add a new target configuration</td>
 </tr>

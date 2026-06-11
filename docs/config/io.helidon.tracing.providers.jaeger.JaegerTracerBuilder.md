@@ -6,22 +6,8 @@ Jaeger tracer configuration
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -38,35 +24,35 @@ Jaeger tracer configuration
 <code>propagation</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;PropagationFormat&gt;">List&lt;PropagationFormat&gt;</code>
+<td>
+<code>List&lt;<wbr>Propagation<wbr>Format&gt;</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">JAEGER</code>
+<td>
+<code>JAEGER</code>
 </td>
 <td>Add propagation format to use</td>
 </tr>
 <tr>
 <td>
-<code>sampler-param</code>
+<code>sampler-<wbr>param</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Number</code>
+<td>
+<code>Number</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">1</code>
+<td>
+<code>1</code>
 </td>
 <td>The sampler parameter (number)</td>
 </tr>
 <tr>
 <td>
-<code>schedule-delay</code>
+<code>schedule-<wbr>delay</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">PT5S</code>
+<td>
+<code>PT5S</code>
 </td>
 <td>Schedule Delay of exporter requests</td>
 </tr>
@@ -74,26 +60,26 @@ Jaeger tracer configuration
 <td>
 <a id="span-processor-type"></a>
 <a href="io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.SpanProcessorType.md">
-<code>span-processor-type</code>
+<code>span-<wbr>processor-<wbr>type</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="SpanProcessorType">SpanProcessorType</code>
+<td>
+<code>Span<wbr>Processor<wbr>Type</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">batch</code>
+<td>
+<code>batch</code>
 </td>
 <td>Span Processor type used</td>
 </tr>
 <tr>
 <td>
-<code>max-export-batch-size</code>
+<code>max-<wbr>export-<wbr>batch-<wbr>size</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">512</code>
+<td>
+<code>512</code>
 </td>
 <td>Maximum Export Batch Size of exporter requests</td>
 </tr>
@@ -101,25 +87,25 @@ Jaeger tracer configuration
 <td>
 <a id="trusted-cert-pem"></a>
 <a href="io.helidon.common.configurable.Resource.md">
-<code>trusted-cert-pem</code>
+<code>trusted-<wbr>cert-<wbr>pem</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Resource</code>
+<td>
+<code>Resource</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Trusted certificates in PEM format</td>
 </tr>
 <tr>
 <td>
-<code>exporter-timeout</code>
+<code>exporter-<wbr>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">PT10S</code>
+<td>
+<code>PT10S</code>
 </td>
 <td>Timeout of exporter requests</td>
 </tr>
@@ -127,14 +113,14 @@ Jaeger tracer configuration
 <td>
 <a id="sampler-type"></a>
 <a href="io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.SamplerType.md">
-<code>sampler-type</code>
+<code>sampler-<wbr>type</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="SamplerType">SamplerType</code>
+<td>
+<code>Sampler<wbr>Type</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">CONSTANT</code>
+<td>
+<code>CONSTANT</code>
 </td>
 <td>Sampler type</td>
 </tr>
@@ -142,13 +128,13 @@ Jaeger tracer configuration
 <td>
 <a id="private-key-pem"></a>
 <a href="io.helidon.common.configurable.Resource.md">
-<code>private-key-pem</code>
+<code>private-<wbr>key-<wbr>pem</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Resource</code>
+<td>
+<code>Resource</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Private key in PEM format</td>
 </tr>
@@ -156,25 +142,25 @@ Jaeger tracer configuration
 <td>
 <a id="client-cert-pem"></a>
 <a href="io.helidon.common.configurable.Resource.md">
-<code>client-cert-pem</code>
+<code>client-<wbr>cert-<wbr>pem</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Resource</code>
+<td>
+<code>Resource</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Certificate of client in PEM format</td>
 </tr>
 <tr>
 <td>
-<code>max-queue-size</code>
+<code>max-<wbr>queue-<wbr>size</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">2048</code>
+<td>
+<code>2048</code>
 </td>
 <td>Maximum Queue Size of exporter requests</td>
 </tr>
@@ -182,8 +168,6 @@ Jaeger tracer configuration
 </table>
 
 
-
-## Manifest
 
 ---
 

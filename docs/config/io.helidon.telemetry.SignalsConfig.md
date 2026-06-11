@@ -6,22 +6,8 @@ Configuration for telemetry.signals
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -37,8 +23,8 @@ Configuration for telemetry.signals
 <code>logging</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="OpenTelemetryLoggingConfig">OpenTelemetryLoggingConfig</code>
+<td>
+<code>Open<wbr>Telemetry<wbr>Logging<wbr>Config</code>
 </td>
 <td>OpenTelemetry logging settings</td>
 </tr>
@@ -49,8 +35,8 @@ Configuration for telemetry.signals
 <code>metrics</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="OpenTelemetryMetricsConfig">OpenTelemetryMetricsConfig</code>
+<td>
+<code>Open<wbr>Telemetry<wbr>Metrics<wbr>Config</code>
 </td>
 <td>OpenTelemetry metrics settings</td>
 </tr>
@@ -61,8 +47,8 @@ Configuration for telemetry.signals
 <code>tracing</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="OpenTelemetryTracingConfig">OpenTelemetryTracingConfig</code>
+<td>
+<code>Open<wbr>Telemetry<wbr>Tracing<wbr>Config</code>
 </td>
 <td>OpenTelemetry tracing settings</td>
 </tr>

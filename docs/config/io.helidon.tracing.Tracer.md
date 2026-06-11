@@ -6,22 +6,8 @@ Tracer configuration
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -35,10 +21,10 @@ Tracer configuration
 <td>
 <code>path</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Path on the collector host to use when sending data to tracing collector</td>
 </tr>
@@ -46,21 +32,21 @@ Tracer configuration
 <td>
 <code>protocol</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Protocol to use (such as <code>http</code> or <code>https</code>) to connect to tracing collector</td>
 </tr>
 <tr>
 <td>
-<code>boolean-tags</code>
+<code>boolean-<wbr>tags</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, Boolean&gt;">Map&lt;String, Boolean&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> Boolean&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Tracer level tags that get added to all reported spans</td>
 </tr>
@@ -68,10 +54,10 @@ Tracer configuration
 <td>
 <code>port</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Port to use to connect to tracing collector</td>
 </tr>
@@ -79,10 +65,10 @@ Tracer configuration
 <td>
 <code>service</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Service name of the traced service</td>
 </tr>
@@ -90,10 +76,10 @@ Tracer configuration
 <td>
 <code>host</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Host to use to connect to tracing collector</td>
 </tr>
@@ -101,22 +87,22 @@ Tracer configuration
 <td>
 <code>global</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>When enabled, the created instance is also registered as a global tracer</td>
 </tr>
 <tr>
 <td>
-<code>int-tags</code>
+<code>int-<wbr>tags</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, Integer&gt;">Map&lt;String, Integer&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> Integer&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Tracer level tags that get added to all reported spans</td>
 </tr>
@@ -124,11 +110,11 @@ Tracer configuration
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>When enabled, tracing will be sent</td>
 </tr>
@@ -136,10 +122,10 @@ Tracer configuration
 <td>
 <code>tags</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Tracer level tags that get added to all reported spans</td>
 </tr>
@@ -147,8 +133,6 @@ Tracer configuration
 </table>
 
 
-
-## Manifest
 
 ---
 

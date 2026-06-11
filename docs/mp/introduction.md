@@ -21,6 +21,7 @@ Even though Helidon MP supports Jakarta EE APIs it does not require an applicati
 
 ## Supported MicroProfile Specifications
 
+<!--@mdc ::table-collapse -->
 | Specification | Version | Description |
 |----|----|----|
 | [MicroProfile Config][microprofile-con] | [3.1][3-1-3] | A flexible configuration framework with support for multiple sources and formats |
@@ -35,6 +36,7 @@ Even though Helidon MP supports Jakarta EE APIs it does not require an applicati
 | [MicroProfile Reactive Messaging][microprofile-rea] | [3.0][3-0-4] | Standard API for sending and receiving messages/events using streams |
 | [MicroProfile Reactive Streams Operators][microprofile-rea-2] | [3.0][3-0-5] | Control flow and error processing for event streams |
 | [MicroProfile REST Client][microprofile-res] | [3.0][3-0-6] | Type-safe API for RESTful Web Services |
+<!--@mdc :: -->
 
 ## Other Components
 

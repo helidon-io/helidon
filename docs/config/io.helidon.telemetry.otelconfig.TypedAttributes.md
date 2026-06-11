@@ -6,22 +6,8 @@ Abstraction of typed attributes settable on OpenTelemetry elements
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -34,8 +20,8 @@ Abstraction of typed attributes settable on OpenTelemetry elements
 <td>
 <code>longs</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, Long&gt;">Map&lt;String, Long&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> Long&gt;</code>
 </td>
 <td>Long attributes</td>
 </tr>
@@ -43,8 +29,8 @@ Abstraction of typed attributes settable on OpenTelemetry elements
 <td>
 <code>strings</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> String&gt;</code>
 </td>
 <td>String attributes</td>
 </tr>
@@ -52,8 +38,8 @@ Abstraction of typed attributes settable on OpenTelemetry elements
 <td>
 <code>doubles</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, Double&gt;">Map&lt;String, Double&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> Double&gt;</code>
 </td>
 <td>Double attributes</td>
 </tr>
@@ -61,8 +47,8 @@ Abstraction of typed attributes settable on OpenTelemetry elements
 <td>
 <code>booleans</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, Boolean&gt;">Map&lt;String, Boolean&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> Boolean&gt;</code>
 </td>
 <td>Boolean attributes</td>
 </tr>
@@ -70,8 +56,6 @@ Abstraction of typed attributes settable on OpenTelemetry elements
 </table>
 
 
-
-## Manifest
 
 ---
 

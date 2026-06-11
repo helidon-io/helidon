@@ -6,13 +6,7 @@ This type is an enumeration.
 
 ## Allowed Values
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-</style>
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Value</th>
@@ -29,15 +23,15 @@ This type is an enumeration.
 <td>simple authentication provider</td>
 </tr>
 <tr>
-<td><code>config-file</code></td>
+<td><code>config-<wbr>file</code></td>
 <td>config file authentication provider</td>
 </tr>
 <tr>
-<td><code>instance-principals</code></td>
+<td><code>instance-<wbr>principals</code></td>
 <td>instance principals authentication provider</td>
 </tr>
 <tr>
-<td><code>resource-principal</code></td>
+<td><code>resource-<wbr>principal</code></td>
 <td>resource principals authentication provider</td>
 </tr>
 </tbody>

@@ -6,22 +6,8 @@ Settings for explicit bucket histogram default aggregation
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -32,10 +18,10 @@ Settings for explicit bucket histogram default aggregation
 <tbody>
 <tr>
 <td>
-<code>bucket-boundaries</code>
+<code>bucket-<wbr>boundaries</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;Double&gt;">List&lt;Double&gt;</code>
+<td>
+<code>List&lt;<wbr>Double&gt;</code>
 </td>
 <td>Explicit bucket boundaries</td>
 </tr>
@@ -43,8 +29,6 @@ Settings for explicit bucket histogram default aggregation
 </table>
 
 
-
-## Manifest
 
 ---
 

@@ -6,12 +6,6 @@ This type is a provider contract.
 
 ## Implementations
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-</style>
-
 
 No implementations are currently known.
 

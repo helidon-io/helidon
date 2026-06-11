@@ -6,22 +6,8 @@ Configuration of temporary storage for classpath based handlers
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,37 +19,37 @@ Configuration of temporary storage for classpath based handlers
 <tbody>
 <tr>
 <td>
-<code>file-prefix</code>
+<code>file-<wbr>prefix</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">helidon-ws</code>
+<td>
+<code>helidon-<wbr>ws</code>
 </td>
 <td>Prefix of the files in temporary storage</td>
 </tr>
 <tr>
 <td>
-<code>delete-on-exit</code>
+<code>delete-<wbr>on-exit</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether temporary files should be deleted on JVM exit</td>
 </tr>
 <tr>
 <td>
-<code>file-suffix</code>
+<code>file-<wbr>suffix</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">.je</code>
+<td>
+<code>.je</code>
 </td>
 <td>Suffix of the files in temporary storage</td>
 </tr>
@@ -71,10 +57,10 @@ Configuration of temporary storage for classpath based handlers
 <td>
 <code>directory</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Path</code>
+<td>
+<code>Path</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Location of the temporary storage, defaults to temporary storage configured for the JVM</td>
 </tr>
@@ -82,11 +68,11 @@ Configuration of temporary storage for classpath based handlers
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Whether the temporary storage is enabled, defaults to <code>true</code></td>
 </tr>

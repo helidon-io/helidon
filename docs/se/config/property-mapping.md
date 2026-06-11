@@ -304,6 +304,7 @@ If you can change the target class you can add any one of the following methods 
 
 Continuing with the [WebConfig](#continuing-the-web-example) example introduced earlier:
 
+<!--@mdc ::table-collapse -->
 |                                        |
 |----------------------------------------|
 | `static WebConfig create(Config);`     |
@@ -315,6 +316,7 @@ Continuing with the [WebConfig](#continuing-the-web-example) example introduced 
 | `static WebConfig valueOf(String);`    |
 | `static WebConfig fromConfig(Config);` |
 | `static WebConfig fromString(String);` |
+<!--@mdc :: -->
 
 Methods Supporting Auto-mapping
 

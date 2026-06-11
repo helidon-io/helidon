@@ -6,22 +6,8 @@ Represents information about cross origin request sharing
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,84 +19,84 @@ Represents information about cross origin request sharing
 <tbody>
 <tr>
 <td>
-<code>allow-headers</code>
+<code>allow-<wbr>headers</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">*</code>
+<td>
+<code>*</code>
 </td>
 <td>Sets the allow headers</td>
 </tr>
 <tr>
 <td>
-<code>allow-credentials</code>
+<code>allow-<wbr>credentials</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Sets the allow credentials flag</td>
 </tr>
 <tr>
 <td>
-<code>max-age-seconds</code>
+<code>max-<wbr>age-<wbr>seconds</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Long</code>
+<td>
+<code>Long</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">3600</code>
+<td>
+<code>3600</code>
 </td>
 <td>Sets the maximum age</td>
 </tr>
 <tr>
 <td>
-<code>allow-origins</code>
+<code>allow-<wbr>origins</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">*</code>
+<td>
+<code>*</code>
 </td>
 <td>Sets the allowOrigins</td>
 </tr>
 <tr>
 <td>
-<code>expose-headers</code>
+<code>expose-<wbr>headers</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Sets the expose headers</td>
 </tr>
 <tr>
 <td>
-<code>path-pattern</code>
+<code>path-<wbr>pattern</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">{+}</code>
+<td>
+<code>{+}</code>
 </td>
 <td>Updates the path prefix for this cross-origin config</td>
 </tr>
 <tr>
 <td>
-<code>allow-methods</code>
+<code>allow-<wbr>methods</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">*</code>
+<td>
+<code>*</code>
 </td>
 <td>Sets the allow methods</td>
 </tr>
@@ -118,11 +104,11 @@ Represents information about cross origin request sharing
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Sets whether this config should be enabled or not</td>
 </tr>

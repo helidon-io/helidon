@@ -6,22 +6,8 @@ TLS configuration - common for server and client
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -38,33 +24,33 @@ TLS configuration - common for server and client
 <code>trust</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">List&lt;Keys&gt;</code>
+<td>
+<code>List&lt;<wbr>Keys&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>List of certificates that form the trust manager</td>
 </tr>
 <tr>
 <td>
-<code>session-timeout</code>
+<code>session-<wbr>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">PT24H</code>
+<td>
+<code>PT24H</code>
 </td>
 <td>SSL session timeout</td>
 </tr>
 <tr>
 <td>
-<code>internal-keystore-provider</code>
+<code>internal-<wbr>keystore-<wbr>provider</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Provider of the key stores used internally to create a key and trust manager factories</td>
 </tr>
@@ -75,22 +61,22 @@ TLS configuration - common for server and client
 <code>manager</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">TlsManager</code>
+<td>
+<code>Tls<wbr>Manager</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>The Tls manager</td>
 </tr>
 <tr>
 <td>
-<code>endpoint-identification-algorithm</code>
+<code>endpoint-<wbr>identification-<wbr>algorithm</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">HTTPS</code>
+<td>
+<code>HTTPS</code>
 </td>
 <td>Identification algorithm for SSL endpoints</td>
 </tr>
@@ -98,59 +84,59 @@ TLS configuration - common for server and client
 <td>
 <a id="private-key"></a>
 <a href="io.helidon.common.pki.Keys.md">
-<code>private-key</code>
+<code>private-<wbr>key</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Keys</code>
+<td>
+<code>Keys</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Private key to use</td>
 </tr>
 <tr>
 <td>
-<code>key-manager-factory-algorithm</code>
+<code>key-<wbr>manager-<wbr>factory-<wbr>algorithm</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Algorithm of the key manager factory used when private key is defined</td>
 </tr>
 <tr>
 <td>
-<code>manager-discover-services</code>
+<code>manager-<wbr>discover-<wbr>services</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Whether to enable automatic service discovery for <code>manager</code></td>
 </tr>
 <tr>
 <td>
-<code>secure-random-provider</code>
+<code>secure-<wbr>random-<wbr>provider</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Provider to use when creating a new secure random</td>
 </tr>
 <tr>
 <td>
-<code>session-cache-size</code>
+<code>session-<wbr>cache-<wbr>size</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">20480</code>
+<td>
+<code>20480</code>
 </td>
 <td>SSL session cache size</td>
 </tr>
@@ -158,11 +144,11 @@ TLS configuration - common for server and client
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Flag indicating whether Tls is enabled</td>
 </tr>
@@ -173,10 +159,10 @@ TLS configuration - common for server and client
 <code>revocation</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="RevocationConfig">RevocationConfig</code>
+<td>
+<code>Revocation<wbr>Config</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Certificate revocation check configuration</td>
 </tr>
@@ -184,82 +170,82 @@ TLS configuration - common for server and client
 <td>
 <code>protocol</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">TLS</code>
+<td>
+<code>TLS</code>
 </td>
-<td>Configure the protocol used to obtain an instance of <code>javax.net.ssl.SSLContext</code></td>
+<td>Configure the protocol used to obtain an instance of <code>javax.<wbr>net.<wbr>ssl.<wbr>SSLContext</code></td>
 </tr>
 <tr>
 <td>
 <code>provider</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Use explicit provider to obtain an instance of <code>javax.net.ssl.SSLContext</code></td>
+<td>Use explicit provider to obtain an instance of <code>javax.<wbr>net.<wbr>ssl.<wbr>SSLContext</code></td>
 </tr>
 <tr>
 <td>
 <a id="client-auth"></a>
 <a href="io.helidon.common.tls.TlsClientAuth.md">
-<code>client-auth</code>
+<code>client-<wbr>auth</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="TlsClientAuth">TlsClientAuth</code>
+<td>
+<code>Tls<wbr>Client<wbr>Auth</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">NONE</code>
+<td>
+<code>NONE</code>
 </td>
 <td>Configure requirement for mutual TLS</td>
 </tr>
 <tr>
 <td>
-<code>cipher-suite</code>
+<code>cipher-<wbr>suite</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Enabled cipher suites for TLS communication</td>
 </tr>
 <tr>
 <td>
-<code>internal-keystore-type</code>
+<code>internal-<wbr>keystore-<wbr>type</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Type of the key stores used internally to create a key and trust manager factories</td>
 </tr>
 <tr>
 <td>
-<code>trust-manager-factory-algorithm</code>
+<code>trust-<wbr>manager-<wbr>factory-<wbr>algorithm</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Trust manager factory algorithm</td>
 </tr>
 <tr>
 <td>
-<code>trust-all</code>
+<code>trust-<wbr>all</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Trust any certificate provided by the other side of communication</td>
 </tr>
@@ -267,21 +253,21 @@ TLS configuration - common for server and client
 <td>
 <code>protocols</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;String&gt;">List&lt;String&gt;</code>
+<td>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Enabled protocols for TLS communication</td>
 </tr>
 <tr>
 <td>
-<code>secure-random-algorithm</code>
+<code>secure-<wbr>random-<wbr>algorithm</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Algorithm to use when creating a new secure random</td>
 </tr>

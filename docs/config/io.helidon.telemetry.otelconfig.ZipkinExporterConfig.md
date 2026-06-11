@@ -2,26 +2,12 @@
 
 ## Description
 
-<code>N/A</code>
+<code>N/<wbr>A</code>
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -34,8 +20,8 @@
 <td>
 <code>endpoint</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">URI</code>
+<td>
+<code>URI</code>
 </td>
 <td>Collector endpoint to which this exporter should transmit</td>
 </tr>
@@ -46,8 +32,8 @@
 <code>compression</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="CompressionType">CompressionType</code>
+<td>
+<code>Compression<wbr>Type</code>
 </td>
 <td>Compression type</td>
 </tr>
@@ -58,8 +44,8 @@
 <code>encoder</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="SpanBytesEncoder">SpanBytesEncoder</code>
+<td>
+<code>Span<wbr>Bytes<wbr>Encoder</code>
 </td>
 <td>Encoder type</td>
 </tr>
@@ -67,8 +53,8 @@
 <td>
 <code>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
 <td>Exporter timeout</td>
 </tr>
@@ -76,8 +62,6 @@
 </table>
 
 
-
-## Manifest
 
 ---
 

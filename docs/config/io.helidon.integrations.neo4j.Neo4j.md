@@ -6,22 +6,8 @@ Main entry point for Neo4j support for Helidon
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,13 +19,13 @@ Main entry point for Neo4j support for Helidon
 <tbody>
 <tr>
 <td>
-<code>idle-time-before-connection-test</code>
+<code>idle-<wbr>time-<wbr>before-<wbr>connection-<wbr>test</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">PT1MS</code>
+<td>
+<code>PT1MS</code>
 </td>
 <td>Set idle time</td>
 </tr>
@@ -47,44 +33,44 @@ Main entry point for Neo4j support for Helidon
 <td>
 <code>certificate</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Path</code>
+<td>
+<code>Path</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Set certificate path</td>
 </tr>
 <tr>
 <td>
-<code>max-connection-pool-size</code>
+<code>max-<wbr>connection-<wbr>pool-<wbr>size</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">100</code>
+<td>
+<code>100</code>
 </td>
 <td>Set pool size</td>
 </tr>
 <tr>
 <td>
-<code>hostname-verification-enabled</code>
+<code>hostname-<wbr>verification-<wbr>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Enable hostname verification</td>
 </tr>
 <tr>
 <td>
-<code>metrics-enabled</code>
+<code>metrics-<wbr>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Enable metrics</td>
 </tr>
@@ -92,13 +78,13 @@ Main entry point for Neo4j support for Helidon
 <td>
 <a id="trust-strategy"></a>
 <a href="io.helidon.integrations.neo4j.Neo4j.Builder.TrustStrategy.md">
-<code>trust-strategy</code>
+<code>trust-<wbr>strategy</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="TrustStrategy">TrustStrategy</code>
+<td>
+<code>Trust<wbr>Strategy</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Set trust strategy</td>
 </tr>
@@ -106,34 +92,34 @@ Main entry point for Neo4j support for Helidon
 <td>
 <code>uri</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Create uri</td>
 </tr>
 <tr>
 <td>
-<code>connection-acquisition-timeout</code>
+<code>connection-<wbr>acquisition-<wbr>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">PT1M</code>
+<td>
+<code>PT1M</code>
 </td>
 <td>Set connection acquisition timeout</td>
 </tr>
 <tr>
 <td>
-<code>authentication-enabled</code>
+<code>authentication-<wbr>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Enable authentication</td>
 </tr>
@@ -141,10 +127,10 @@ Main entry point for Neo4j support for Helidon
 <td>
 <code>password</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Create password</td>
 </tr>
@@ -152,33 +138,33 @@ Main entry point for Neo4j support for Helidon
 <td>
 <code>encrypted</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Enable encrypted field</td>
 </tr>
 <tr>
 <td>
-<code>log-leaked-sessions</code>
+<code>log-<wbr>leaked-<wbr>sessions</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Enable log leaked sessions</td>
 </tr>
 <tr>
 <td>
-<code>max-connection-lifetime</code>
+<code>max-<wbr>connection-<wbr>lifetime</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">PT5H</code>
+<td>
+<code>PT5H</code>
 </td>
 <td>Set max life time</td>
 </tr>
@@ -186,10 +172,10 @@ Main entry point for Neo4j support for Helidon
 <td>
 <code>username</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Create username</td>
 </tr>
@@ -197,8 +183,6 @@ Main entry point for Neo4j support for Helidon
 </table>
 
 
-
-## Manifest
 
 ---
 

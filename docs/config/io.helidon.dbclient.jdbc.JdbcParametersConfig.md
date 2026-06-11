@@ -6,22 +6,8 @@ JDBC parameters setter configuration
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,75 +19,75 @@ JDBC parameters setter configuration
 <tbody>
 <tr>
 <td>
-<code>use-byte-array-binding</code>
+<code>use-<wbr>byte-<wbr>array-<wbr>binding</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
-<td>Use <code>java.sql.PreparedStatement#setBinaryStream(int, java.io.InputStream, int)</code> binding for <code>byte[]</code> values</td>
+<td>Use <code>java.<wbr>sql.<wbr>Prepared<wbr>Statement#<wbr>setBinary<wbr>Stream(<wbr>int,<wbr> java.<wbr>io.Input<wbr>Stream,<wbr> int)</code> binding for <code>byte[]</code> values</td>
 </tr>
 <tr>
 <td>
-<code>use-string-binding</code>
+<code>use-<wbr>string-<wbr>binding</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
-<td>Use <code>java.sql.PreparedStatement#setCharacterStream(int, java.io.Reader, int)</code> binding for <code>String</code> values with length above <code>#stringBindingSize()</code> limit</td>
+<td>Use <code>java.<wbr>sql.<wbr>Prepared<wbr>Statement#<wbr>setCharacter<wbr>Stream(<wbr>int,<wbr> java.<wbr>io.Reader,<wbr> int)</code> binding for <code>String</code> values with length above <code>#string<wbr>Binding<wbr>Size(<wbr>)</code> limit</td>
 </tr>
 <tr>
 <td>
-<code>timestamp-for-local-time</code>
+<code>timestamp-<wbr>for-<wbr>local-<wbr>time</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
-<td>Use <code>java.sql.PreparedStatement#setTimestamp(int, java.sql.Timestamp)</code> to set <code>java.time.LocalTime</code> values when <code>true</code> or use <code>java.sql.PreparedStatement#setTime(int, java.sql.Time)</code> when <code>false</code></td>
+<td>Use <code>java.<wbr>sql.<wbr>Prepared<wbr>Statement#<wbr>setTimestamp(<wbr>int,<wbr> java.<wbr>sql.<wbr>Timestamp)</code> to set <code>java.<wbr>time.<wbr>Local<wbr>Time</code> values when <code>true</code> or use <code>java.<wbr>sql.<wbr>Prepared<wbr>Statement#<wbr>setTime(<wbr>int,<wbr> java.<wbr>sql.<wbr>Time)</code> when <code>false</code></td>
 </tr>
 <tr>
 <td>
-<code>string-binding-size</code>
+<code>string-<wbr>binding-<wbr>size</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">1024</code>
+<td>
+<code>1024</code>
 </td>
-<td><code>String</code> values with length above this limit will be bound using <code>java.sql.PreparedStatement#setCharacterStream(int, java.io.Reader, int)</code> if <code>#useStringBinding()</code> is set to <code>true</code></td>
+<td><code>String</code> values with length above this limit will be bound using <code>java.<wbr>sql.<wbr>Prepared<wbr>Statement#<wbr>setCharacter<wbr>Stream(<wbr>int,<wbr> java.<wbr>io.Reader,<wbr> int)</code> if <code>#use<wbr>String<wbr>Binding(<wbr>)</code> is set to <code>true</code></td>
 </tr>
 <tr>
 <td>
-<code>use-n-string</code>
+<code>use-<wbr>n-string</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Use SQL <code>NCHAR</code>, <code>NVARCHAR</code> or <code>LONGNVARCHAR</code> value conversion for <code>String</code> values</td>
 </tr>
 <tr>
 <td>
-<code>set-object-for-java-time</code>
+<code>set-<wbr>object-<wbr>for-<wbr>java-<wbr>time</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
-<td>Set all <code>java.time</code> Date/Time values directly using <code>java.sql.PreparedStatement#setObject(int, Object)</code></td>
+<td>Set all <code>java.<wbr>time</code> Date/Time values directly using <code>java.<wbr>sql.<wbr>Prepared<wbr>Statement#<wbr>setObject(<wbr>int,<wbr> Object)</code></td>
 </tr>
 </tbody>
 </table>

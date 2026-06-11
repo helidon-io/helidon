@@ -6,22 +6,8 @@ Configuration of security providers, integration and other security options
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,23 +19,23 @@ Configuration of security providers, integration and other security options
 <tbody>
 <tr>
 <td>
-<code>default-authentication-provider</code>
+<code>default-<wbr>authentication-<wbr>provider</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>ID of the default authentication provider</td>
 </tr>
 <tr>
 <td>
-<code>default-authorization-provider</code>
+<code>default-<wbr>authorization-<wbr>provider</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>ID of the default authorization provider</td>
 </tr>
@@ -57,11 +43,11 @@ Configuration of security providers, integration and other security options
 <td>
 <code>enabled</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">true</code>
+<td>
+<code>true</code>
 </td>
 <td>Security can be disabled using configuration, or explicitly</td>
 </tr>
@@ -72,9 +58,9 @@ Configuration of security providers, integration and other security options
 <code>environment</code>
 </a>
 </td>
-<td class="cm-type-cell">
+<td>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Configuration for environment</td>
 </tr>
@@ -82,12 +68,12 @@ Configuration of security providers, integration and other security options
 <td>
 <a id="provider-policy"></a>
 <a href="io.helidon.security.ProviderPolicyConfig.md">
-<code>provider-policy</code>
+<code>provider-<wbr>policy</code>
 </a>
 </td>
-<td class="cm-type-cell">
+<td>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Configuration for provider-policy</td>
 </tr>
@@ -98,12 +84,12 @@ Configuration of security providers, integration and other security options
 <code>providers</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;SecurityProvider&gt;">List&lt;SecurityProvider&gt;</code>
+<td>
+<code>List&lt;<wbr>Security<wbr>Provider&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Add a provider, works as <code>#addProvider(io.helidon.security.spi.SecurityProvider, String)</code>, where the name is set to <code>Class#getSimpleName()</code></td>
+<td>Add a provider, works as <code>#add<wbr>Provider(<wbr>io.helidon.<wbr>security.<wbr>spi.<wbr>Security<wbr>Provider,<wbr> String)</code>, where the name is set to <code>Class#<wbr>getSimple<wbr>Name(<wbr>)</code></td>
 </tr>
 <tr>
 <td>
@@ -112,10 +98,10 @@ Configuration of security providers, integration and other security options
 <code>secrets</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="List&lt;Config&gt;">List&lt;Config&gt;</code>
+<td>
+<code>List&lt;<wbr>Config&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Configured secrets</td>
 </tr>
@@ -126,9 +112,9 @@ Configuration of security providers, integration and other security options
 <code>tracing</code>
 </a>
 </td>
-<td class="cm-type-cell">
+<td>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Configuration for tracing</td>
 </tr>

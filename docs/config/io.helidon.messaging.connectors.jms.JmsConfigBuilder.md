@@ -6,22 +6,8 @@ Build Jms specific config
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -33,34 +19,34 @@ Build Jms specific config
 <tbody>
 <tr>
 <td>
-<code>message-selector</code>
+<code>message-<wbr>selector</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>JMS API message selector expression based on a subset of the SQL92</td>
 </tr>
 <tr>
 <td>
-<code>named-factory</code>
+<code>named-<wbr>factory</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>To select from manually configured <code>jakarta.jms.ConnectionFactory ConnectionFactories</code> over <code>JmsConnector.JmsConnectorBuilder#connectionFactory(String, jakarta.jms.ConnectionFactory) JmsConnectorBuilder#connectionFactory()</code></td>
+<td>To select from manually configured <code>jakarta.<wbr>jms.<wbr>Connection<wbr>Factory Connection<wbr>Factories</code> over <code>Jms<wbr>Connector.<wbr>JmsConnector<wbr>Builder#<wbr>connection<wbr>Factory(<wbr>String,<wbr> jakarta.<wbr>jms.<wbr>Connection<wbr>Factory) Jms<wbr>Connector<wbr>Builder#<wbr>connection<wbr>Factory(<wbr>)</code></td>
 </tr>
 <tr>
 <td>
 <code>destination</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Queue or topic name</td>
 </tr>
@@ -68,11 +54,11 @@ Build Jms specific config
 <td>
 <code>transacted</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Boolean</code>
+<td>
+<code>Boolean</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">false</code>
+<td>
+<code>false</code>
 </td>
 <td>Indicates whether the session will use a local transaction</td>
 </tr>
@@ -83,22 +69,22 @@ Build Jms specific config
 <code>type</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Type</code>
+<td>
+<code>Type</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">QUEUE</code>
+<td>
+<code>QUEUE</code>
 </td>
-<td>Specify if connection is <code>Type#QUEUE queue</code>  or <code>Type#TOPIC topic</code></td>
+<td>Specify if connection is <code>Type#<wbr>QUEUE queue</code>  or <code>Type#<wbr>TOPIC topic</code></td>
 </tr>
 <tr>
 <td>
-<code>jndi-initial-factory</code>
+<code>jndi-<wbr>initial-<wbr>factory</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>JNDI initial factory</td>
 </tr>
@@ -106,33 +92,33 @@ Build Jms specific config
 <td>
 <code>password</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Password used for creating JMS connection</td>
 </tr>
 <tr>
 <td>
-<code>poll-timeout</code>
+<code>poll-<wbr>timeout</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Long</code>
+<td>
+<code>Long</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">50</code>
+<td>
+<code>50</code>
 </td>
 <td>Timeout for polling for next message in every poll cycle in millis</td>
 </tr>
 <tr>
 <td>
-<code>jndi-jms-factory</code>
+<code>jndi-<wbr>jms-<wbr>factory</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>JNDI name of JMS factory</td>
 </tr>
@@ -140,59 +126,59 @@ Build Jms specific config
 <td>
 <code>topic</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Use supplied destination name and <code>Type#TOPIC TOPIC</code> as type</td>
+<td>Use supplied destination name and <code>Type#<wbr>TOPIC TOPIC</code> as type</td>
 </tr>
 <tr>
 <td>
 <a id="acknowledge-mode"></a>
 <a href="io.helidon.messaging.connectors.jms.AcknowledgeMode.md">
-<code>acknowledge-mode</code>
+<code>acknowledge-<wbr>mode</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="AcknowledgeMode">AcknowledgeMode</code>
+<td>
+<code>Acknowledge<wbr>Mode</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value" title="AUTO_ACKNOWLEDGE">AUTO_ACKNOWLEDGE</code>
+<td>
+<code>AUTO_<wbr>ACKNOWLEDGE</code>
 </td>
 <td>JMS acknowledgement mode</td>
 </tr>
 <tr>
 <td>
-<code>jndi-initial-context-properties</code>
+<code>jndi-<wbr>initial-<wbr>context-<wbr>properties</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value" title="Map&lt;String, String&gt;">Map&lt;String, String&gt;</code>
+<td>
+<code>Map&lt;<wbr>String,<wbr> String&gt;</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>Environment properties used for creating initial context java.naming.factory.initial, java.naming.provider.url</td>
 </tr>
 <tr>
 <td>
-<code>jndi-provider-url</code>
+<code>jndi-<wbr>provider-<wbr>url</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>JNDI provider url</td>
 </tr>
 <tr>
 <td>
-<code>period-executions</code>
+<code>period-<wbr>executions</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Long</code>
+<td>
+<code>Long</code>
 </td>
-<td class="cm-default-cell">
-<code class="cm-truncate-value">100</code>
+<td>
+<code>100</code>
 </td>
 <td>Period for executing poll cycles in millis</td>
 </tr>
@@ -200,21 +186,21 @@ Build Jms specific config
 <td>
 <code>queue</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
-<td>Use supplied destination name and <code>Type#QUEUE QUEUE</code> as type</td>
+<td>Use supplied destination name and <code>Type#<wbr>QUEUE QUEUE</code> as type</td>
 </tr>
 <tr>
 <td>
-<code>session-group-id</code>
+<code>session-<wbr>group-<wbr>id</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>When multiple channels share same session-group-id, they share same JMS session</td>
 </tr>
@@ -222,10 +208,10 @@ Build Jms specific config
 <td>
 <code>username</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
-<td class="cm-default-cell">
+<td>
 </td>
 <td>User name used for creating JMS connection</td>
 </tr>
@@ -233,8 +219,6 @@ Build Jms specific config
 </table>
 
 
-
-## Manifest
 
 ---
 

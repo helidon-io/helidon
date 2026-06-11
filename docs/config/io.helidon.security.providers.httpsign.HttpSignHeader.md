@@ -6,13 +6,7 @@ This type is an enumeration.
 
 ## Allowed Values
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
-</style>
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Value</th>
@@ -30,7 +24,7 @@ This type is an enumeration.
 </tr>
 <tr>
 <td><code>CUSTOM</code></td>
-<td>Custom provided using a <code>io.helidon.security.util.TokenHandler</code></td>
+<td>Custom provided using a <code>io.<wbr>helidon.<wbr>security.<wbr>util.<wbr>Token<wbr>Handler</code></td>
 </tr>
 </tbody>
 </table>

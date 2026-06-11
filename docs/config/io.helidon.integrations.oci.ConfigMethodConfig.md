@@ -6,22 +6,8 @@ Configuration of the <code>config</code> authentication method
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -34,20 +20,20 @@ Configuration of the <code>config</code> authentication method
 <td>
 <a id="private-key"></a>
 <a href="io.helidon.common.configurable.Resource.md">
-<code>private-key</code>
+<code>private-<wbr>key</code>
 </a>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Resource</code>
+<td>
+<code>Resource</code>
 </td>
 <td>The OCI authentication private key resource</td>
 </tr>
 <tr>
 <td>
-<code>user-id</code>
+<code>user-<wbr>id</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>The OCI user id</td>
 </tr>
@@ -55,8 +41,8 @@ Configuration of the <code>config</code> authentication method
 <td>
 <code>fingerprint</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>The OCI authentication fingerprint</td>
 </tr>
@@ -64,8 +50,8 @@ Configuration of the <code>config</code> authentication method
 <td>
 <code>passphrase</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>The OCI authentication passphrase</td>
 </tr>
@@ -73,17 +59,17 @@ Configuration of the <code>config</code> authentication method
 <td>
 <code>region</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>The OCI region</td>
 </tr>
 <tr>
 <td>
-<code>tenant-id</code>
+<code>tenant-<wbr>id</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">String</code>
+<td>
+<code>String</code>
 </td>
 <td>The OCI tenant id</td>
 </tr>

@@ -6,22 +6,8 @@ Retry policy settings
 
 ## Configuration options
 
-<style>
-    table.cm-table code {
-        white-space: nowrap !important;
-    }
 
-    table.cm-table .cm-truncate-value {
-        display: inline-block;
-        max-width: 10ch;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        vertical-align: bottom;
-    }
-</style>
-
-
-<table class="cm-table">
+<table>
 <thead>
 <tr>
 <th>Key</th>
@@ -32,37 +18,37 @@ Retry policy settings
 <tbody>
 <tr>
 <td>
-<code>max-backoff</code>
+<code>max-<wbr>backoff</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
 <td>Maximum backoff time</td>
 </tr>
 <tr>
 <td>
-<code>initial-backoff</code>
+<code>initial-<wbr>backoff</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Duration</code>
+<td>
+<code>Duration</code>
 </td>
 <td>Initial backoff time</td>
 </tr>
 <tr>
 <td>
-<code>max-backoff-multiplier</code>
+<code>max-<wbr>backoff-<wbr>multiplier</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Double</code>
+<td>
+<code>Double</code>
 </td>
 <td>Maximum backoff multiplier</td>
 </tr>
 <tr>
 <td>
-<code>max-attempts</code>
+<code>max-<wbr>attempts</code>
 </td>
-<td class="cm-type-cell">
-<code class="cm-truncate-value">Integer</code>
+<td>
+<code>Integer</code>
 </td>
 <td>Maximum number of retry attempts</td>
 </tr>
@@ -70,8 +56,6 @@ Retry policy settings
 </table>
 
 
-
-## Manifest
 
 ---
 
