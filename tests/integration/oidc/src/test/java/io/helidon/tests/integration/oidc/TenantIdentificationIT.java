@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,9 +48,12 @@ class TenantIdentificationIT {
 
     @Test
     @AddConfig(key = "security.providers.1.oidc.tenant-id-style", value = "host-header")
+    @AddConfig(key = "security.providers.1.oidc.tenants.0.name", value = "localhost")
     void testHostHeaderTenantId(WebTarget webTarget) {
         try (Response response = webTarget.property(ClientProperties.FOLLOW_REDIRECTS, false).path("/test").request().get()) {
-            String redirectUri = queryParamValue((String) response.getHeaders().getFirst(HttpHeaders.LOCATION), "redirect_uri");
+            String location = redirectLocation(response);
+            assertThat(queryParamValue(location, "client_id"), is("clientTwo"));
+            String redirectUri = queryParamValue(location, "redirect_uri");
             String tenantName = queryParamValue(redirectUri, OidcConfig.DEFAULT_TENANT_PARAM_NAME);
             assertThat(tenantName, is("localhost"));
         }
@@ -59,6 +62,7 @@ class TenantIdentificationIT {
     @Test
     @AddConfig(key = "security.providers.1.oidc.tenant-id-style", value = "token-handler")
     @AddConfig(key = "security.providers.1.oidc.tenant-id-handler.header", value = "test-tenant-name")
+    @AddConfig(key = "security.providers.1.oidc.tenants.0.name", value = "test-tenant")
     void testTokenHandlerTenantId(WebTarget webTarget) {
         String expectedTenantName = "test-tenant";
         try (Response response = webTarget.property(ClientProperties.FOLLOW_REDIRECTS, false)
@@ -66,7 +70,9 @@ class TenantIdentificationIT {
                 .request()
                 .header("test-tenant-name", expectedTenantName)
                 .get()) {
-            String redirectUri = queryParamValue((String) response.getHeaders().getFirst(HttpHeaders.LOCATION), "redirect_uri");
+            String location = redirectLocation(response);
+            assertThat(queryParamValue(location, "client_id"), is("clientTwo"));
+            String redirectUri = queryParamValue(location, "redirect_uri");
             String tenantName = queryParamValue(redirectUri, OidcConfig.DEFAULT_TENANT_PARAM_NAME);
             assertThat(tenantName, is(expectedTenantName));
         }
@@ -75,9 +81,12 @@ class TenantIdentificationIT {
     @Test
     @AddConfig(key = "security.providers.1.oidc.tenant-id-style", value = "domain")
     @AddConfig(key = "security.providers.1.oidc.tenant-id-domain-level", value = "1")
+    @AddConfig(key = "security.providers.1.oidc.tenants.0.name", value = "localhost")
     void testDomainTenantId(WebTarget webTarget) {
         try (Response response = webTarget.property(ClientProperties.FOLLOW_REDIRECTS, false).path("/test").request().get()) {
-            String redirectUri = queryParamValue((String) response.getHeaders().getFirst(HttpHeaders.LOCATION), "redirect_uri");
+            String location = redirectLocation(response);
+            assertThat(queryParamValue(location, "client_id"), is("clientTwo"));
+            String redirectUri = queryParamValue(location, "redirect_uri");
             String tenantName = queryParamValue(redirectUri, OidcConfig.DEFAULT_TENANT_PARAM_NAME);
             assertThat(tenantName, is("localhost"));
         }
@@ -87,10 +96,18 @@ class TenantIdentificationIT {
     @AddConfig(key = "security.providers.1.oidc.tenant-id-style", value = "none")
     void testNoneTenantId(WebTarget webTarget) {
         try (Response response = webTarget.property(ClientProperties.FOLLOW_REDIRECTS, false).path("/test").request().get()) {
-            String redirectUri = queryParamValue((String) response.getHeaders().getFirst(HttpHeaders.LOCATION), "redirect_uri");
+            String location = redirectLocation(response);
+            String redirectUri = queryParamValue(location, "redirect_uri");
             URI uri = URI.create(redirectUri);
             assertThat(uri.getRawQuery(), nullValue());
         }
+    }
+
+    private String redirectLocation(Response response) {
+        assertThat(response.getStatus(), is(Response.Status.TEMPORARY_REDIRECT.getStatusCode()));
+        String location = response.getHeaderString(HttpHeaders.LOCATION);
+        assertThat(location, notNullValue());
+        return location;
     }
 
     private String queryParamValue(String uriString, String queryName) {

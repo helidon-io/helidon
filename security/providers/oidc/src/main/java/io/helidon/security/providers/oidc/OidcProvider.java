@@ -32,6 +32,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import io.helidon.common.configurable.LruCache;
+import io.helidon.common.http.Http;
 import io.helidon.common.reactive.Single;
 import io.helidon.common.serviceloader.HelidonServiceLoader;
 import io.helidon.config.Config;
@@ -43,6 +44,7 @@ import io.helidon.security.EndpointConfig;
 import io.helidon.security.OutboundSecurityResponse;
 import io.helidon.security.ProviderRequest;
 import io.helidon.security.SecurityEnvironment;
+import io.helidon.security.SecurityResponse;
 import io.helidon.security.Subject;
 import io.helidon.security.abac.scope.ScopeValidator;
 import io.helidon.security.providers.common.OutboundConfig;
@@ -146,27 +148,53 @@ public final class OidcProvider implements AuthenticationProvider, OutboundSecur
     }
 
     private CompletionStage<AuthenticationResponse> authenticateWithTenant(String tenantId, ProviderRequest providerRequest) {
-        Optional<TenantAuthenticationHandler> tenantHandler = tenantAuthHandlers.get(tenantId);
-        if (tenantHandler.isPresent()) {
-            return tenantHandler.get().authenticate(tenantId, providerRequest);
-        } else {
-            return CompletableFuture.supplyAsync(
-                            () -> {
-                                TenantConfig possibleConfig = tenantConfigFinders.stream()
-                                        .map(tenantConfigFinder -> tenantConfigFinder.config(tenantId))
-                                        .flatMap(Optional::stream)
-                                        .findFirst()
-                                        .orElse(oidcConfig.tenantConfig(tenantId));
-                                Tenant tenant = Tenant.create(oidcConfig, possibleConfig);
-                                TenantAuthenticationHandler handler = new TenantAuthenticationHandler(oidcConfig,
-                                                                                                      tenant,
-                                                                                                      useJwtGroups,
-                                                                                                      optional);
-                                return tenantAuthHandlers.computeValue(tenantId, () -> Optional.of(handler)).get();
-                            },
-                            providerRequest.securityContext().executorService())
-                    .thenCompose(handler -> handler.authenticate(tenantId, providerRequest));
+        return cachedTenantAuthenticationHandler(tenantId, providerRequest)
+                .thenCompose(tenantHandler -> tenantHandler
+                        .map(handler -> handler.authenticate(tenantId, providerRequest))
+                        .orElseGet(() -> CompletableFuture.completedFuture(unknownTenantResponse())));
+    }
+
+    private CompletionStage<Optional<TenantAuthenticationHandler>> cachedTenantAuthenticationHandler(
+            String tenantId,
+            ProviderRequest providerRequest) {
+        Optional<TenantAuthenticationHandler> cachedHandler = tenantAuthHandlers.get(tenantId);
+        if (cachedHandler.isPresent()) {
+            return CompletableFuture.completedFuture(cachedHandler);
         }
+        return CompletableFuture.supplyAsync(
+                () -> TenantConfigResolver.resolve(tenantConfigFinders, oidcConfig, tenantId)
+                        .flatMap(this::cachedTenantAuthenticationHandler),
+                providerRequest.securityContext().executorService());
+    }
+
+    private Optional<TenantAuthenticationHandler> cachedTenantAuthenticationHandler(
+            TenantConfigResolver.ResolvedTenantConfig resolvedTenant) {
+        return tenantAuthHandlers.computeValue(
+                resolvedTenant.cacheKey(),
+                () -> Optional.of(tenantAuthenticationHandler(resolvedTenant.tenantConfig())));
+    }
+
+    private TenantAuthenticationHandler tenantAuthenticationHandler(TenantConfig tenantConfig) {
+        Tenant tenant = Tenant.create(oidcConfig, tenantConfig);
+        return new TenantAuthenticationHandler(oidcConfig,
+                                               tenant,
+                                               useJwtGroups,
+                                               optional);
+    }
+
+    private AuthenticationResponse unknownTenantResponse() {
+        if (optional) {
+            return AuthenticationResponse.builder()
+                    .status(SecurityResponse.SecurityStatus.ABSTAIN)
+                    .description("Tenant configuration is not available")
+                    .build();
+        }
+        return AuthenticationResponse.builder()
+                .status(SecurityResponse.SecurityStatus.FAILURE)
+                .statusCode(Http.Status.UNAUTHORIZED_401.code())
+                .responseHeader(Http.Header.WWW_AUTHENTICATE, "Bearer realm=\"" + oidcConfig.realm() + "\"")
+                .description("Tenant configuration is not available")
+                .build();
     }
 
     private Single<String> findTenantIdFromRedirects(ProviderRequest providerRequest) {

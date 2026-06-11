@@ -71,6 +71,7 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                 .authorizationEndpointUri(URI.create("http://identity.oracle.com/authorization"))
                 .introspectEndpointUri(URI.create("http://identity.oracle.com/introspect"))
                 .relativeUris(true)
+                .fallbackToDefaultTenantEnabled(true)
                 .build();
     }
 
@@ -107,6 +108,7 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                 () -> assertThat("Client Timeout", config.clientTimeout(),
                                  is(Duration.ofSeconds(OidcConfig.Builder.DEFAULT_TIMEOUT_SECONDS))),
                 () -> assertThat("Force HTTPS Redirects", config.forceHttpsRedirects(), is(OidcConfig.DEFAULT_FORCE_HTTPS_REDIRECTS)),
+                () -> assertThat("Fallback to default tenant", config.fallbackToDefaultTenantEnabled(), is(false)),
                 () -> assertThat("Token Refresh Skew", config.tokenRefreshSkew(), is(OidcConfig.DEFAULT_TOKEN_REFRESH_SKEW)),
                 // cookie options should be separated by space as defined by the specification
                 () -> assertThat("Cookie options", config.cookieOptions(), is("; Path=/; HttpOnly; SameSite=Lax")),

@@ -51,6 +51,7 @@ import io.helidon.security.providers.common.OutboundConfig;
 import io.helidon.security.providers.common.OutboundTarget;
 import io.helidon.security.providers.common.TokenCredential;
 import io.helidon.security.providers.oidc.common.OidcConfig;
+import io.helidon.security.providers.oidc.common.TenantConfig;
 import io.helidon.webclient.WebClient;
 import io.helidon.webclient.WebClientResponse;
 import io.helidon.webserver.Routing;
@@ -65,6 +66,7 @@ import static org.hamcrest.CoreMatchers.endsWith;
 import static org.hamcrest.CoreMatchers.hasItem;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNot.not;
 import static org.mockito.Mockito.when;
@@ -74,6 +76,7 @@ import static org.mockito.Mockito.when;
  */
 class OidcSupportTest {
     private static final String PARAM_NAME = "my-param-attempts";
+    private static final String WELL_KNOWN_PATH = "/identity/.well-known/openid-configuration";
 
     private final OidcConfig oidcConfig = OidcConfig.builder()
             .clientId("id")
@@ -130,7 +133,7 @@ class OidcSupportTest {
         tokenServer.start().await(Duration.ofSeconds(10));
 
         try {
-            OidcConfig config = OidcConfig.builder()
+            OidcConfig.Builder configBuilder = OidcConfig.builder()
                     .clientId("id")
                     .clientSecret("secret")
                     .identityUri(URI.create("http://localhost:" + tokenServer.port() + "/identity"))
@@ -139,8 +142,11 @@ class OidcSupportTest {
                     .signJwk(JwkKeys.builder().build())
                     .oidcMetadataWellKnown(false)
                     .useParam(useParam)
-                    .useCookie(useCookie)
-                    .build();
+                    .useCookie(useCookie);
+            if (!DEFAULT_TENANT_ID.equals(tenantName)) {
+                configBuilder.addTenantConfig(tenantConfig(tenantName, tokenServer.port()));
+            }
+            OidcConfig config = configBuilder.build();
             Routing.Builder routing = Routing.builder();
             OidcSupport.create(config).update(routing);
             WebServer callbackServer = WebServer.builder()
@@ -333,6 +339,470 @@ class OidcSupportTest {
     }
 
     @Test
+    void testUnknownRedirectTenantDoesNotUseDefaultTokenEndpoint() throws Exception {
+        AtomicInteger tokenRequestCount = new AtomicInteger();
+        WebServer tokenServer = WebServer.builder()
+                .defaultSocket(socket -> socket.host("localhost"))
+                .routing(routing -> routing.post("/token",
+                                                 (req, res) -> {
+                                                     tokenRequestCount.incrementAndGet();
+                                                     res.headers().contentType(MediaType.APPLICATION_JSON);
+                                                     res.send("{\"access_token\":\"access-token\"}");
+                                                 }))
+                .build();
+        tokenServer.start().await(Duration.ofSeconds(10));
+
+        try {
+            OidcConfig config = OidcConfig.builder()
+                    .clientId("id")
+                    .clientSecret("secret")
+                    .identityUri(URI.create("http://localhost:" + tokenServer.port() + "/identity"))
+                    .tokenEndpointUri(URI.create("http://localhost:" + tokenServer.port() + "/token"))
+                    .authorizationEndpointUri(URI.create("http://localhost:" + tokenServer.port() + "/authorize"))
+                    .signJwk(JwkKeys.builder().build())
+                    .oidcMetadataWellKnown(false)
+                    .useParam(true)
+                    .useCookie(false)
+                    .build();
+            Routing.Builder routing = Routing.builder();
+            OidcSupport.create(config).update(routing);
+            WebServer callbackServer = WebServer.builder()
+                    .defaultSocket(socket -> socket.host("localhost"))
+                    .addRouting(routing.build())
+                    .build();
+            callbackServer.start().await(Duration.ofSeconds(10));
+            try {
+                WebClientResponse response = WebClient.builder()
+                        .build()
+                        .get()
+                        .uri("http://localhost:" + callbackServer.port()
+                                     + config.redirectUri()
+                                     + "?code=code&state=/test&"
+                                     + config.tenantParamName()
+                                     + "=unknown")
+                        .followRedirects(false)
+                        .request()
+                        .await(Duration.ofSeconds(10));
+
+                try {
+                    assertThat(response.status(), is(Http.Status.UNAUTHORIZED_401));
+                    assertThat("unknown tenant must not use default token endpoint", tokenRequestCount.get(), is(0));
+                } finally {
+                    response.close().await(Duration.ofSeconds(10));
+                }
+            } finally {
+                callbackServer.shutdown().await(Duration.ofSeconds(10));
+            }
+        } finally {
+            tokenServer.shutdown().await(Duration.ofSeconds(10));
+        }
+    }
+
+    @Test
+    void testFallbackRedirectTenantUsesDefaultTokenEndpoint() throws Exception {
+        AtomicInteger tokenRequestCount = new AtomicInteger();
+        WebServer tokenServer = WebServer.builder()
+                .defaultSocket(socket -> socket.host("localhost"))
+                .routing(routing -> routing.post("/token",
+                                                 (req, res) -> {
+                                                     tokenRequestCount.incrementAndGet();
+                                                     res.headers().contentType(MediaType.APPLICATION_JSON);
+                                                     res.send("{\"access_token\":\"access-token\"}");
+                                                 }))
+                .build();
+        tokenServer.start().await(Duration.ofSeconds(10));
+
+        try {
+            OidcConfig config = OidcConfig.builder()
+                    .clientId("id")
+                    .clientSecret("secret")
+                    .identityUri(URI.create("http://localhost:" + tokenServer.port() + "/identity"))
+                    .tokenEndpointUri(URI.create("http://localhost:" + tokenServer.port() + "/token"))
+                    .authorizationEndpointUri(URI.create("http://localhost:" + tokenServer.port() + "/authorize"))
+                    .signJwk(JwkKeys.builder().build())
+                    .oidcMetadataWellKnown(false)
+                    .useParam(true)
+                    .useCookie(false)
+                    .fallbackToDefaultTenantEnabled(true)
+                    .build();
+            Routing.Builder routing = Routing.builder();
+            OidcSupport.create(config).update(routing);
+            WebServer callbackServer = WebServer.builder()
+                    .defaultSocket(socket -> socket.host("localhost"))
+                    .addRouting(routing.build())
+                    .build();
+            callbackServer.start().await(Duration.ofSeconds(10));
+            try {
+                WebClientResponse response = WebClient.builder()
+                        .build()
+                        .get()
+                        .uri("http://localhost:" + callbackServer.port()
+                                     + config.redirectUri()
+                                     + "?code=code&state=/test&"
+                                     + config.tenantParamName()
+                                     + "=unknown")
+                        .followRedirects(false)
+                        .request()
+                        .await(Duration.ofSeconds(10));
+
+                try {
+                    assertThat(response.status(), is(Http.Status.TEMPORARY_REDIRECT_307));
+                    assertThat("unknown tenant should use default token endpoint when fallback is enabled",
+                               tokenRequestCount.get(),
+                               is(1));
+                    assertThat(response.headers().first(Http.Header.LOCATION).orElseThrow(),
+                               is("/test?accessToken=access-token&h_tenant=unknown&h_ra=1"));
+                } finally {
+                    response.close().await(Duration.ofSeconds(10));
+                }
+            } finally {
+                callbackServer.shutdown().await(Duration.ofSeconds(10));
+            }
+        } finally {
+            tokenServer.shutdown().await(Duration.ofSeconds(10));
+        }
+    }
+
+    @Test
+    void testUnknownLogoutTenantDoesNotResolveDefaultTenant() throws Exception {
+        try (MockIdpServer idp = new MockIdpServer()) {
+            OidcConfig config = OidcConfig.builder()
+                    .clientId("id")
+                    .clientSecret("secret")
+                    .identityUri(idp.identityUri())
+                    .signJwk(JwkKeys.builder().build())
+                    .logoutEnabled(true)
+                    .postLogoutUri(URI.create("/logged-out"))
+                    .useParam(true)
+                    .build();
+            Routing.Builder routing = Routing.builder();
+            OidcSupport.create(config).update(routing);
+            WebServer logoutServer = WebServer.builder()
+                    .defaultSocket(socket -> socket.host("localhost"))
+                    .addRouting(routing.build())
+                    .build();
+            logoutServer.start().await(Duration.ofSeconds(10));
+            try {
+                WebClientResponse response = WebClient.builder()
+                        .build()
+                        .get()
+                        .uri("http://localhost:" + logoutServer.port()
+                                     + config.logoutUri()
+                                     + "?"
+                                     + config.tenantParamName()
+                                     + "=unknown")
+                        .headers(headers -> headers.add(Http.Header.COOKIE, logoutCookies(config)))
+                        .followRedirects(false)
+                        .request()
+                        .await(Duration.ofSeconds(10));
+
+                try {
+                    assertThat(response.status(), is(Http.Status.UNAUTHORIZED_401));
+                    assertThat("unknown logout tenant must not resolve default metadata", idp.wellKnownHits(), is(0));
+                    List<String> cookies = response.headers().all(Http.Header.SET_COOKIE);
+                    assertRemoveCookie(cookies, config.tokenCookieHandler().cookieName());
+                    assertRemoveCookie(cookies, config.idTokenCookieHandler().cookieName());
+                    assertRemoveCookie(cookies, config.tenantCookieHandler().cookieName());
+                } finally {
+                    response.close().await(Duration.ofSeconds(10));
+                }
+            } finally {
+                logoutServer.shutdown().await(Duration.ofSeconds(10));
+            }
+        }
+    }
+
+    @Test
+    void testFallbackLogoutTenantUsesDefaultTenant() throws Exception {
+        try (MockIdpServer idp = new MockIdpServer()) {
+            OidcConfig config = OidcConfig.builder()
+                    .clientId("id")
+                    .clientSecret("secret")
+                    .identityUri(idp.identityUri())
+                    .signJwk(JwkKeys.builder().build())
+                    .logoutEnabled(true)
+                    .postLogoutUri(URI.create("/logged-out"))
+                    .useParam(true)
+                    .fallbackToDefaultTenantEnabled(true)
+                    .build();
+            Routing.Builder routing = Routing.builder();
+            OidcSupport.create(config).update(routing);
+            WebServer logoutServer = WebServer.builder()
+                    .defaultSocket(socket -> socket.host("localhost"))
+                    .addRouting(routing.build())
+                    .build();
+            logoutServer.start().await(Duration.ofSeconds(10));
+            try {
+                WebClientResponse response = WebClient.builder()
+                        .build()
+                        .get()
+                        .uri("http://localhost:" + logoutServer.port()
+                                     + config.logoutUri()
+                                     + "?"
+                                     + config.tenantParamName()
+                                     + "=unknown")
+                        .headers(headers -> headers.add(Http.Header.COOKIE, logoutCookies(config, "unknown")))
+                        .followRedirects(false)
+                        .request()
+                        .await(Duration.ofSeconds(10));
+
+                try {
+                    assertThat(response.status(), is(Http.Status.TEMPORARY_REDIRECT_307));
+                    assertThat("unknown logout tenant should resolve default metadata when fallback is enabled",
+                               idp.wellKnownHits(),
+                               is(1));
+                    assertThat(response.headers().first(Http.Header.LOCATION).orElseThrow(),
+                               startsWith(idp.logoutEndpointUri()
+                                                  + "?id_token_hint=id-token&post_logout_redirect_uri=http://localhost:"
+                                                  + logoutServer.port()
+                                                  + "/logged-out"));
+                } finally {
+                    response.close().await(Duration.ofSeconds(10));
+                }
+            } finally {
+                logoutServer.shutdown().await(Duration.ofSeconds(10));
+            }
+        }
+    }
+
+    @Test
+    void testLogoutStateIsEncoded() throws Exception {
+        try (MockIdpServer idp = new MockIdpServer()) {
+            OidcConfig config = OidcConfig.builder()
+                    .clientId("id")
+                    .clientSecret("secret")
+                    .identityUri(idp.identityUri())
+                    .signJwk(JwkKeys.builder().build())
+                    .logoutEnabled(true)
+                    .postLogoutUri(URI.create("/logged-out"))
+                    .build();
+            Routing.Builder routing = Routing.builder();
+            OidcSupport.create(config).update(routing);
+            WebServer logoutServer = WebServer.builder()
+                    .defaultSocket(socket -> socket.host("localhost"))
+                    .addRouting(routing.build())
+                    .build();
+            logoutServer.start().await(Duration.ofSeconds(10));
+            try {
+                WebClientResponse response = WebClient.builder()
+                        .build()
+                        .get()
+                        .uri("http://localhost:" + logoutServer.port()
+                                     + config.logoutUri()
+                                     + "?state=a%26x%3Dy")
+                        .headers(headers -> headers.add(Http.Header.COOKIE, logoutCookies(config, DEFAULT_TENANT_ID)))
+                        .followRedirects(false)
+                        .skipUriEncoding()
+                        .request()
+                        .await(Duration.ofSeconds(10));
+
+                try {
+                    assertThat(response.status(), is(Http.Status.TEMPORARY_REDIRECT_307));
+                    String location = response.headers().first(Http.Header.LOCATION).orElseThrow();
+                    assertThat(location, containsString("&state=a%26x%3Dy"));
+                    assertThat(location, not(containsString("&x=y")));
+                } finally {
+                    response.close().await(Duration.ofSeconds(10));
+                }
+            } finally {
+                logoutServer.shutdown().await(Duration.ofSeconds(10));
+            }
+        }
+    }
+
+    @Test
+    void testInvalidLogoutStateRejected() throws Exception {
+        try (MockIdpServer idp = new MockIdpServer()) {
+            OidcConfig config = OidcConfig.builder()
+                    .clientId("id")
+                    .clientSecret("secret")
+                    .identityUri(idp.identityUri())
+                    .signJwk(JwkKeys.builder().build())
+                    .logoutEnabled(true)
+                    .postLogoutUri(URI.create("/logged-out"))
+                    .build();
+            Routing.Builder routing = Routing.builder();
+            OidcSupport.create(config).update(routing);
+            WebServer logoutServer = WebServer.builder()
+                    .defaultSocket(socket -> socket.host("localhost"))
+                    .addRouting(routing.build())
+                    .build();
+            logoutServer.start().await(Duration.ofSeconds(10));
+            try {
+                WebClientResponse response = WebClient.builder()
+                        .build()
+                        .get()
+                        .uri("http://localhost:" + logoutServer.port()
+                                     + config.logoutUri()
+                                     + "?state=a%0D%0AInjected:%20value")
+                        .headers(headers -> headers.add(Http.Header.COOKIE, logoutCookies(config, DEFAULT_TENANT_ID)))
+                        .followRedirects(false)
+                        .skipUriEncoding()
+                        .request()
+                        .await(Duration.ofSeconds(10));
+
+                try {
+                    assertThat(response.status(), is(Http.Status.BAD_REQUEST_400));
+                    assertThat(response.headers().first(Http.Header.LOCATION), is(Optional.empty()));
+                    assertThat("invalid state must not resolve tenant metadata", idp.wellKnownHits(), is(0));
+                } finally {
+                    response.close().await(Duration.ofSeconds(10));
+                }
+            } finally {
+                logoutServer.shutdown().await(Duration.ofSeconds(10));
+            }
+        }
+    }
+
+    @Test
+    void testLogoutWithoutIdTokenDoesNotResolveTenant() throws Exception {
+        try (MockIdpServer idp = new MockIdpServer()) {
+            OidcConfig config = OidcConfig.builder()
+                    .clientId("id")
+                    .clientSecret("secret")
+                    .identityUri(idp.identityUri())
+                    .signJwk(JwkKeys.builder().build())
+                    .logoutEnabled(true)
+                    .postLogoutUri(URI.create("/logged-out"))
+                    .useParam(true)
+                    .build();
+            Routing.Builder routing = Routing.builder();
+            OidcSupport.create(config).update(routing);
+            WebServer logoutServer = WebServer.builder()
+                    .defaultSocket(socket -> socket.host("localhost"))
+                    .addRouting(routing.build())
+                    .build();
+            logoutServer.start().await(Duration.ofSeconds(10));
+            try {
+                assertLogoutWithoutIdToken(logoutServer, config, DEFAULT_TENANT_ID);
+                assertLogoutWithoutIdToken(logoutServer, config, "unknown");
+                assertThat("logout without ID token must not resolve tenant metadata", idp.wellKnownHits(), is(0));
+            } finally {
+                logoutServer.shutdown().await(Duration.ofSeconds(10));
+            }
+        }
+    }
+
+    @Test
+    void testInvalidLogoutIdTokenDoesNotResolveTenant() throws Exception {
+        try (MockIdpServer idp = new MockIdpServer()) {
+            OidcConfig config = OidcConfig.builder()
+                    .clientId("id")
+                    .clientSecret("secret")
+                    .identityUri(idp.identityUri())
+                    .signJwk(JwkKeys.builder().build())
+                    .logoutEnabled(true)
+                    .postLogoutUri(URI.create("/logged-out"))
+                    .useParam(true)
+                    .build();
+            Routing.Builder routing = Routing.builder();
+            OidcSupport.create(config).update(routing);
+            WebServer logoutServer = WebServer.builder()
+                    .defaultSocket(socket -> socket.host("localhost"))
+                    .addRouting(routing.build())
+                    .build();
+            logoutServer.start().await(Duration.ofSeconds(10));
+            try {
+                assertLogoutWithInvalidIdToken(logoutServer, config, DEFAULT_TENANT_ID);
+                assertLogoutWithInvalidIdToken(logoutServer, config, "unknown");
+                assertThat("invalid ID token must not resolve tenant metadata", idp.wellKnownHits(), is(0));
+            } finally {
+                logoutServer.shutdown().await(Duration.ofSeconds(10));
+            }
+        }
+    }
+
+    private static String logoutCookies(OidcConfig config) {
+        return logoutCookies(config, "unknown");
+    }
+
+    private static String logoutCookies(OidcConfig config, String tenantName) {
+        return logoutCookies(config, tenantName, idTokenCookie(config, "id-token"));
+    }
+
+    private static String logoutCookies(OidcConfig config, String tenantName, String idTokenCookie) {
+        return config.tokenCookieHandler().cookieName() + "=token; "
+                + idTokenCookie + "; "
+                + config.tenantCookieHandler().cookieName() + "=" + tenantName;
+    }
+
+    private static String idTokenCookie(OidcConfig config, String idToken) {
+        String setCookie = config.idTokenCookieHandler()
+                .createCookie(idToken)
+                .map(cookie -> cookie.build().toString())
+                .await(Duration.ofSeconds(10));
+        int optionsIndex = setCookie.indexOf(';');
+        return optionsIndex < 0 ? setCookie : setCookie.substring(0, optionsIndex);
+    }
+
+    private static void assertLogoutWithoutIdToken(WebServer logoutServer,
+                                                   OidcConfig config,
+                                                   String tenantName) throws Exception {
+        String logoutUri = "http://localhost:" + logoutServer.port() + config.logoutUri();
+        if (!DEFAULT_TENANT_ID.equals(tenantName)) {
+            logoutUri += "?" + config.tenantParamName() + "=" + tenantName;
+        }
+
+        WebClientResponse response = WebClient.builder()
+                .build()
+                .get()
+                .uri(logoutUri)
+                .headers(headers -> headers.add(Http.Header.COOKIE, logoutCookiesWithoutIdToken(config, tenantName)))
+                .followRedirects(false)
+                .request()
+                .await(Duration.ofSeconds(10));
+
+        try {
+            assertThat(response.status(), is(Http.Status.FORBIDDEN_403));
+            assertThat(response.headers().all(Http.Header.SET_COOKIE), is(List.of()));
+        } finally {
+            response.close().await(Duration.ofSeconds(10));
+        }
+    }
+
+    private static void assertLogoutWithInvalidIdToken(WebServer logoutServer,
+                                                       OidcConfig config,
+                                                       String tenantName) throws Exception {
+        String logoutUri = "http://localhost:" + logoutServer.port() + config.logoutUri();
+        if (!DEFAULT_TENANT_ID.equals(tenantName)) {
+            logoutUri += "?" + config.tenantParamName() + "=" + tenantName;
+        }
+
+        WebClientResponse response = WebClient.builder()
+                .build()
+                .get()
+                .uri(logoutUri)
+                .headers(headers -> headers.add(Http.Header.COOKIE,
+                                                logoutCookies(config,
+                                                              tenantName,
+                                                              config.idTokenCookieHandler().cookieName() + "=invalid")))
+                .followRedirects(false)
+                .request()
+                .await(Duration.ofSeconds(10));
+
+        try {
+            assertThat(response.status(), is(Http.Status.UNAUTHORIZED_401));
+            List<String> cookies = response.headers().all(Http.Header.SET_COOKIE);
+            assertRemoveCookie(cookies, config.tokenCookieHandler().cookieName());
+            assertRemoveCookie(cookies, config.idTokenCookieHandler().cookieName());
+            assertRemoveCookie(cookies, config.tenantCookieHandler().cookieName());
+        } finally {
+            response.close().await(Duration.ofSeconds(10));
+        }
+    }
+
+    private static String logoutCookiesWithoutIdToken(OidcConfig config, String tenantName) {
+        return config.tokenCookieHandler().cookieName() + "=token; "
+                + config.tenantCookieHandler().cookieName() + "=" + tenantName;
+    }
+
+    private static void assertRemoveCookie(List<String> cookies, String cookieName) {
+        assertThat("remove cookie " + cookieName,
+                   cookies.stream().anyMatch(cookie -> cookie.startsWith(cookieName + "=;")),
+                   is(true));
+    }
+
+    @Test
     void testOriginalUriHeaderUsesRawRequestPathAndQuery() throws Exception {
         Routing.Builder routing = Routing.builder();
         OidcSupport.create(oidcConfig).update(routing);
@@ -494,6 +964,65 @@ class OidcSupportTest {
 
         assertThat(oidcSupport.hashCode(), not(0));
         assertThat(oidcSupport.toString(), notNullValue());
+    }
+
+    private static TenantConfig tenantConfig(String tenantName, int tokenServerPort) {
+        return TenantConfig.tenantBuilder()
+                .name(tenantName)
+                .clientId("id")
+                .clientSecret("secret")
+                .identityUri(URI.create("http://localhost:" + tokenServerPort + "/identity"))
+                .tokenEndpointUri(URI.create("http://localhost:" + tokenServerPort + "/token"))
+                .authorizationEndpointUri(URI.create("http://localhost:" + tokenServerPort + "/authorize"))
+                .signJwk(JwkKeys.builder().build())
+                .oidcMetadataWellKnown(false)
+                .build();
+    }
+
+    private static final class MockIdpServer implements AutoCloseable {
+        private final AtomicInteger wellKnownHits = new AtomicInteger();
+        private final String[] metadataHolder = new String[1];
+        private final WebServer server;
+        private final URI identityUri;
+
+        private MockIdpServer() {
+            this.server = WebServer.builder()
+                    .defaultSocket(socket -> socket.host("localhost"))
+                    .routing(routing -> routing.get(WELL_KNOWN_PATH, (req, res) -> {
+                        wellKnownHits.incrementAndGet();
+                        res.headers().contentType(MediaType.APPLICATION_JSON);
+                        res.send(metadataHolder[0]);
+                    }))
+                    .build();
+            server.start().await(Duration.ofSeconds(10));
+            this.identityUri = URI.create("http://localhost:" + server.port() + "/identity");
+            metadataHolder[0] = """
+                    {
+                        "issuer": "%s",
+                        "token_endpoint": "http://localhost:%d/oauth2/v1/token",
+                        "authorization_endpoint": "http://localhost:%d/oauth2/v1/authorize",
+                        "end_session_endpoint": "http://localhost:%d/oauth2/v1/userlogout",
+                        "introspection_endpoint": "http://localhost:%d/oauth2/v1/introspect"
+                    }
+                    """.formatted(identityUri, server.port(), server.port(), server.port(), server.port());
+        }
+
+        private URI identityUri() {
+            return identityUri;
+        }
+
+        private URI logoutEndpointUri() {
+            return URI.create("http://localhost:" + server.port() + "/oauth2/v1/userlogout");
+        }
+
+        private int wellKnownHits() {
+            return wellKnownHits.get();
+        }
+
+        @Override
+        public void close() {
+            server.shutdown().await(Duration.ofSeconds(10));
+        }
     }
 
     private static final class CallbackResult {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,20 +52,26 @@ class DefaultTenantIdProvider implements TenantIdProvider {
             case "domain":
                 return new DomainTenantId(config.get("tenant-id-domain-level").asInt().orElse(3));
             case "none":
-                return new NoTenantId();
+                return new NoTenantId(Optional.empty());
             default:
                 throw new IllegalArgumentException("Invalid configuration of multi tenancy id style. Type "
                                                            + mtIdLookup + " is not supported");
             }
         } else {
-            return new NoTenantId();
+            return new NoTenantId(DEFAULT_TENANT_ID_VALUE);
         }
     }
 
     private static class NoTenantId implements TenantIdFinder {
+        private final Optional<String> tenantId;
+
+        private NoTenantId(Optional<String> tenantId) {
+            this.tenantId = tenantId;
+        }
+
         @Override
         public Optional<String> tenantId(ProviderRequest providerRequest) {
-            return DEFAULT_TENANT_ID_VALUE;
+            return tenantId;
         }
     }
 

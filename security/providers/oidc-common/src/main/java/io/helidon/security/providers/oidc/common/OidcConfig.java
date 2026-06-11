@@ -340,6 +340,7 @@ public final class OidcConfig extends TenantConfigImpl {
     static final boolean DEFAULT_FORCE_HTTPS_REDIRECTS = false;
     static final Duration DEFAULT_TOKEN_REFRESH_SKEW = Duration.ofSeconds(5);
     static final boolean DEFAULT_RELATIVE_URIS = false;
+    static final boolean DEFAULT_FALLBACK_TO_DEFAULT_TENANT_ENABLED = false;
     static final int DEFAULT_PROXY_PORT = 80;
     static final String DEFAULT_PROXY_PROTOCOL = "http";
     static final String TENANT_IDENT = "name";
@@ -365,6 +366,7 @@ public final class OidcConfig extends TenantConfigImpl {
     private final boolean forceHttpsRedirects;
     private final Duration tokenRefreshSkew;
     private final boolean relativeUris;
+    private final boolean fallbackToDefaultTenantEnabled;
     private final Client generalClient;
     private final WebClient webClient;
     private final LazyValue<Optional<WebTarget>> introspectEndpoint;
@@ -398,6 +400,7 @@ public final class OidcConfig extends TenantConfigImpl {
         this.webClient = builder.webClient;
         this.generalClient = builder.generalClient;
         this.relativeUris = builder.relativeUris;
+        this.fallbackToDefaultTenantEnabled = builder.fallbackToDefaultTenantEnabled;
 
         this.useParam = builder.useParam;
         this.paramName = builder.paramName;
@@ -786,6 +789,15 @@ public final class OidcConfig extends TenantConfigImpl {
     }
 
     /**
+     * Whether unknown tenant ids fall back to the default tenant.
+     *
+     * @return whether unknown tenant ids use default tenant configuration
+     */
+    public boolean fallbackToDefaultTenantEnabled() {
+        return fallbackToDefaultTenantEnabled;
+    }
+
+    /**
      * Token endpoint of the OIDC server.
      *
      * @return target the endpoint is on
@@ -1030,6 +1042,7 @@ public final class OidcConfig extends TenantConfigImpl {
         private boolean useCookie = DEFAULT_COOKIE_USE;
         private boolean cookieSameSiteDefault = true;
         private boolean relativeUris = DEFAULT_RELATIVE_URIS;
+        private boolean fallbackToDefaultTenantEnabled = DEFAULT_FALLBACK_TO_DEFAULT_TENANT_ENABLED;
 
         protected Builder() {
         }
@@ -1138,6 +1151,7 @@ public final class OidcConfig extends TenantConfigImpl {
             config.get("redirect-attempt-param").asString().ifPresent(this::redirectAttemptParam);
             config.get("max-redirects").asInt().ifPresent(this::maxRedirects);
             config.get("force-https-redirects").asBoolean().ifPresent(this::forceHttpsRedirects);
+            config.get("fallback-to-default-tenant-enabled").asBoolean().ifPresent(this::fallbackToDefaultTenantEnabled);
 
             config.get("cors").as(CrossOriginConfig::create).ifPresent(this::crossOriginConfig);
 
@@ -1230,6 +1244,20 @@ public final class OidcConfig extends TenantConfigImpl {
         @ConfiguredOption("false")
         public Builder forceHttpsRedirects(boolean forceHttpsRedirects) {
             this.forceHttpsRedirects = forceHttpsRedirects;
+            return this;
+        }
+
+        /**
+         * Whether unknown tenant ids should use default tenant configuration.
+         * When set to {@code false}, unknown tenant ids are rejected instead of silently using the default tenant.
+         * Set to {@code true} to restore the previous fallback behavior.
+         *
+         * @param enabled whether unknown tenant ids fall back to default tenant
+         * @return updated builder instance
+         */
+        @ConfiguredOption("false")
+        public Builder fallbackToDefaultTenantEnabled(boolean enabled) {
+            this.fallbackToDefaultTenantEnabled = enabled;
             return this;
         }
 
