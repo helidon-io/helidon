@@ -79,6 +79,12 @@ Annotation string values that identify or select generated metadata, such as ext
 names and types, media types, parameter names and locations, and security requirement scheme names and scopes, are resolved
 when OpenAPI metadata is generated. For those values Helidon uses the expression default value, if one is present.
 
+For generated security scheme components, prefer the type-specific annotations
+`@OpenApi.ApiKeySecurityScheme`, `@OpenApi.HttpSecurityScheme`, `@OpenApi.MutualTlsSecurityScheme`,
+`@OpenApi.OAuth2SecurityScheme`, and `@OpenApi.OidcSecurityScheme`. Each exposes only the OpenAPI fields relevant to
+that scheme type. Use the generic `@OpenApi.SecurityScheme` only when you need the lower-level OpenAPI Security Scheme
+Object shape directly; Helidon rejects fields that do not apply to the selected scheme type.
+
 endif::se-flavor[]
 // end::furnish-openapi-info[]
 

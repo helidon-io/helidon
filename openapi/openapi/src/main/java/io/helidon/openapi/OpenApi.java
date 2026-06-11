@@ -925,10 +925,16 @@ public final class OpenApi {
      * OpenAPI Security Scheme Object metadata.
      * <p>
      * Supported {@link #type()} values are {@code apiKey}, {@code http}, {@code mutualTLS}, {@code oauth2}, and
-     * {@code openIdConnect}. The {@code apiKey} type requires {@link #apiKeyName()} and {@link #in()} with {@code query},
-     * {@code header}, or {@code cookie}. The {@code http} type requires {@link #scheme()}. The {@code mutualTLS} type has
-     * no additional required fields. The {@code oauth2} type requires {@link #flows()} with at least one configured flow.
+     * {@code openIdConnect}. The {@code apiKey} type requires {@link #apiKeyName()} and {@link #in()} with
+     * {@code query}, {@code header}, or {@code cookie}. The {@code http} type requires {@link #scheme()}. The
+     * {@code mutualTLS} type has no additional required fields. The {@code oauth2} type requires {@link #flows()} with
+     * at least one configured flow.
      * The {@code openIdConnect} type requires {@link #openIdConnectUrl()}.
+     * <p>
+     * Declarative OpenAPI generation rejects fields that do not apply to the selected {@link #type()}.
+     * Prefer the type-specific annotations such as {@link ApiKeySecurityScheme}, {@link HttpSecurityScheme},
+     * {@link MutualTlsSecurityScheme}, {@link OAuth2SecurityScheme}, and {@link OidcSecurityScheme} when they match
+     * the security scheme you need.
      * <p>
      * Use only on {@link Document @OpenApi.Document} metadata types.
      */
@@ -960,47 +966,228 @@ public final class OpenApi {
         String description() default "";
 
         /**
-         * API key parameter name. Required when {@link #type()} is {@code apiKey}.
+         * API key parameter name. Valid only when {@link #type()} is {@code apiKey}, where it is required.
          *
          * @return API key parameter name
          */
         String apiKeyName() default "";
 
         /**
-         * HTTP authorization scheme. Required when {@link #type()} is {@code http}.
+         * HTTP authorization scheme. Valid only when {@link #type()} is {@code http}, where it is required.
          *
          * @return scheme
          */
         String scheme() default "";
 
         /**
-         * Bearer format.
+         * Bearer format. Valid only when {@link #type()} is {@code http} and {@link #scheme()} is {@code bearer}.
          *
          * @return bearer format
          */
         String bearerFormat() default "";
 
         /**
-         * API key location. Required when {@link #type()} is {@code apiKey}; supported values are {@code query},
-         * {@code header}, and {@code cookie}.
+         * API key location. Valid only when {@link #type()} is {@code apiKey}, where it is required; supported values
+         * are {@code query}, {@code header}, and {@code cookie}.
          *
          * @return location
          */
         String in() default "";
 
         /**
-         * OAuth flows. Required when {@link #type()} is {@code oauth2}; at least one flow must be configured.
+         * OAuth flows. Valid only when {@link #type()} is {@code oauth2}, where at least one flow must be configured.
          *
          * @return OAuth flows
          */
         OAuthFlows flows() default @OAuthFlows;
 
         /**
-         * OpenID Connect discovery URL. Required when {@link #type()} is {@code openIdConnect}.
+         * OpenID Connect discovery URL. Valid only when {@link #type()} is {@code openIdConnect}, where it is
+         * required.
          *
          * @return OpenID Connect discovery URL
          */
         String openIdConnectUrl() default "";
+
+        /**
+         * OpenAPI 3.2 OAuth 2 metadata URL. Valid only when {@link #type()} is {@code oauth2}.
+         * <p>
+         * Rendered only for OpenAPI 3.2 output.
+         *
+         * @return OAuth 2 metadata URL
+         */
+        String oauth2MetadataUrl() default "";
+
+        /**
+         * Whether the security scheme is deprecated.
+         * <p>
+         * Rendered only for OpenAPI 3.2 output.
+         *
+         * @return deprecated flag
+         */
+        boolean deprecated() default false;
+    }
+
+    /**
+     * OpenAPI API Key Security Scheme Object metadata.
+     * <p>
+     * Use only on {@link Document @OpenApi.Document} metadata types.
+     */
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.CLASS)
+    @Repeatable(ApiKeySecuritySchemes.class)
+    @Documented
+    public @interface ApiKeySecurityScheme {
+        /**
+         * Component name.
+         *
+         * @return name
+         */
+        String name();
+
+        /**
+         * Security scheme description.
+         *
+         * @return description
+         */
+        String description() default "";
+
+        /**
+         * API key parameter name.
+         *
+         * @return API key parameter name
+         */
+        String apiKeyName();
+
+        /**
+         * API key location; supported values are {@code query}, {@code header}, and {@code cookie}.
+         *
+         * @return location
+         */
+        String in();
+
+        /**
+         * Whether the security scheme is deprecated.
+         * <p>
+         * Rendered only for OpenAPI 3.2 output.
+         *
+         * @return deprecated flag
+         */
+        boolean deprecated() default false;
+    }
+
+    /**
+     * OpenAPI HTTP Security Scheme Object metadata.
+     * <p>
+     * Use only on {@link Document @OpenApi.Document} metadata types.
+     */
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.CLASS)
+    @Repeatable(HttpSecuritySchemes.class)
+    @Documented
+    public @interface HttpSecurityScheme {
+        /**
+         * Component name.
+         *
+         * @return name
+         */
+        String name();
+
+        /**
+         * Security scheme description.
+         *
+         * @return description
+         */
+        String description() default "";
+
+        /**
+         * HTTP authorization scheme.
+         *
+         * @return scheme
+         */
+        String scheme();
+
+        /**
+         * Bearer format. Valid only when {@link #scheme()} is {@code bearer}.
+         *
+         * @return bearer format
+         */
+        String bearerFormat() default "";
+
+        /**
+         * Whether the security scheme is deprecated.
+         * <p>
+         * Rendered only for OpenAPI 3.2 output.
+         *
+         * @return deprecated flag
+         */
+        boolean deprecated() default false;
+    }
+
+    /**
+     * OpenAPI Mutual TLS Security Scheme Object metadata.
+     * <p>
+     * Use only on {@link Document @OpenApi.Document} metadata types.
+     */
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.CLASS)
+    @Repeatable(MutualTlsSecuritySchemes.class)
+    @Documented
+    public @interface MutualTlsSecurityScheme {
+        /**
+         * Component name.
+         *
+         * @return name
+         */
+        String name();
+
+        /**
+         * Security scheme description.
+         *
+         * @return description
+         */
+        String description() default "";
+
+        /**
+         * Whether the security scheme is deprecated.
+         * <p>
+         * Rendered only for OpenAPI 3.2 output.
+         *
+         * @return deprecated flag
+         */
+        boolean deprecated() default false;
+    }
+
+    /**
+     * OpenAPI OAuth 2 Security Scheme Object metadata.
+     * <p>
+     * Use only on {@link Document @OpenApi.Document} metadata types.
+     */
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.CLASS)
+    @Repeatable(OAuth2SecuritySchemes.class)
+    @Documented
+    public @interface OAuth2SecurityScheme {
+        /**
+         * Component name.
+         *
+         * @return name
+         */
+        String name();
+
+        /**
+         * Security scheme description.
+         *
+         * @return description
+         */
+        String description() default "";
+
+        /**
+         * OAuth flows. At least one flow must be configured.
+         *
+         * @return OAuth flows
+         */
+        OAuthFlows flows();
 
         /**
          * OpenAPI 3.2 OAuth 2 metadata URL.
@@ -1010,6 +1197,47 @@ public final class OpenApi {
          * @return OAuth 2 metadata URL
          */
         String oauth2MetadataUrl() default "";
+
+        /**
+         * Whether the security scheme is deprecated.
+         * <p>
+         * Rendered only for OpenAPI 3.2 output.
+         *
+         * @return deprecated flag
+         */
+        boolean deprecated() default false;
+    }
+
+    /**
+     * OpenAPI OIDC Security Scheme Object metadata.
+     * <p>
+     * Use only on {@link Document @OpenApi.Document} metadata types.
+     */
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.CLASS)
+    @Repeatable(OidcSecuritySchemes.class)
+    @Documented
+    public @interface OidcSecurityScheme {
+        /**
+         * Component name.
+         *
+         * @return name
+         */
+        String name();
+
+        /**
+         * Security scheme description.
+         *
+         * @return description
+         */
+        String description() default "";
+
+        /**
+         * OpenID Connect discovery URL.
+         *
+         * @return OpenID Connect discovery URL
+         */
+        String openIdConnectUrl();
 
         /**
          * Whether the security scheme is deprecated.
@@ -1151,6 +1379,81 @@ public final class OpenApi {
          * @return security schemes
          */
         SecurityScheme[] value();
+    }
+
+    /**
+     * Container for repeated {@link ApiKeySecurityScheme}.
+     */
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.CLASS)
+    @Documented
+    public @interface ApiKeySecuritySchemes {
+        /**
+         * Security schemes.
+         *
+         * @return security schemes
+         */
+        ApiKeySecurityScheme[] value();
+    }
+
+    /**
+     * Container for repeated {@link HttpSecurityScheme}.
+     */
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.CLASS)
+    @Documented
+    public @interface HttpSecuritySchemes {
+        /**
+         * Security schemes.
+         *
+         * @return security schemes
+         */
+        HttpSecurityScheme[] value();
+    }
+
+    /**
+     * Container for repeated {@link MutualTlsSecurityScheme}.
+     */
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.CLASS)
+    @Documented
+    public @interface MutualTlsSecuritySchemes {
+        /**
+         * Security schemes.
+         *
+         * @return security schemes
+         */
+        MutualTlsSecurityScheme[] value();
+    }
+
+    /**
+     * Container for repeated {@link OAuth2SecurityScheme}.
+     */
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.CLASS)
+    @Documented
+    public @interface OAuth2SecuritySchemes {
+        /**
+         * Security schemes.
+         *
+         * @return security schemes
+         */
+        OAuth2SecurityScheme[] value();
+    }
+
+    /**
+     * Container for repeated {@link OidcSecurityScheme}.
+     */
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.CLASS)
+    @Documented
+    public @interface OidcSecuritySchemes {
+        /**
+         * Security schemes.
+         *
+         * @return security schemes
+         */
+        OidcSecurityScheme[] value();
     }
 
     /**

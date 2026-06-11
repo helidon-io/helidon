@@ -244,10 +244,33 @@ class OpenApiDuplicateValuesCodegenTest {
                         return "ok";
                     }
                 }
-                """);
+        """);
 
         assertCompilationFails(result,
                                "@OpenApi.SecurityScheme on com.example.InvalidOpenApiEndpoint",
+                               "cannot define security scheme bearerAuth more than once");
+    }
+
+    @Test
+    void securitySchemeCannotUseDuplicateNameAcrossTypedAndGenericAnnotations() {
+        var result = compile("openapi-duplicate-typed-security-scheme", """
+                @OpenApi.SecurityScheme(name = "bearerAuth", type = "http", scheme = "bearer")
+                @OpenApi.HttpSecurityScheme(name = "bearerAuth", scheme = "basic")
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/invalid")
+                class InvalidOpenApiEndpoint {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+        """);
+
+        assertCompilationFails(result,
+                               "@OpenApi.HttpSecurityScheme on com.example.InvalidOpenApiEndpoint",
                                "cannot define security scheme bearerAuth more than once");
     }
 
@@ -284,6 +307,69 @@ class OpenApiDuplicateValuesCodegenTest {
         assertThat(generated, containsString(".in(\"header\")"));
         assertThat(generated, containsString("OpenApiDocumentContextSupport.resolveExpression(context, "
                                                      + "\"${openapi.api-key.name:X-API-Key}\")"));
+    }
+
+    @Test
+    void typedSecuritySchemesGenerateComponents() throws IOException {
+        var result = compile("openapi-typed-security-schemes", """
+                @OpenApi.ApiKeySecurityScheme(name = "apiKeyAuth",
+                                              apiKeyName = "X-API-Key",
+                                              in = "header")
+                @OpenApi.HttpSecurityScheme(name = "bearerAuth",
+                                            scheme = "bearer",
+                                            bearerFormat = "JWT")
+                @OpenApi.MutualTlsSecurityScheme(name = "mtls")
+                @OpenApi.OAuth2SecurityScheme(
+                        name = "oauth2",
+                        flows = @OpenApi.OAuthFlows(
+                                clientCredentials = @OpenApi.OAuthFlow(
+                                        tokenUrl = "https://api.example.com/token",
+                                        scopes = @OpenApi.OAuthScope(value = "read", description = "Read"))),
+                        oauth2MetadataUrl = "https://api.example.com/.well-known/oauth-authorization-server")
+                @OpenApi.OidcSecurityScheme(
+                        name = "oidc",
+                        openIdConnectUrl = "https://id.example.com/.well-known/openid-configuration")
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/valid")
+                class InvalidOpenApiEndpoint {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        String generated = generatedSource(result);
+        assertThat(generated, containsString(".securityScheme(\"apiKeyAuth\","));
+        assertThat(generated, containsString(".type(\"apiKey\")"));
+        assertThat(generated, containsString(".name(io.helidon.openapi.OpenApiDocumentContextSupport"
+                                                     + ".resolveExpression(context, \"X-API-Key\"))"));
+        assertThat(generated, containsString(".in(\"header\")"));
+        assertThat(generated, containsString(".securityScheme(\"bearerAuth\","));
+        assertThat(generated, containsString(".type(\"http\")"));
+        assertThat(generated, containsString(".scheme(io.helidon.openapi.OpenApiDocumentContextSupport"
+                                                     + ".resolveExpression(context, \"bearer\"))"));
+        assertThat(generated, containsString(".bearerFormat(io.helidon.openapi.OpenApiDocumentContextSupport"
+                                                     + ".resolveExpression(context, \"JWT\"))"));
+        assertThat(generated, containsString(".securityScheme(\"mtls\","));
+        assertThat(generated, containsString(".type(\"mutualTLS\")"));
+        assertThat(generated, containsString(".securityScheme(\"oauth2\","));
+        assertThat(generated, containsString(".type(\"oauth2\")"));
+        assertThat(generated, containsString(".flows("));
+        assertThat(generated, containsString(".oauth2MetadataUrl(io.helidon.openapi.OpenApiDocumentContextSupport"
+                                                     + ".resolveExpression(context, \"https://api.example.com/"
+                                                     + ".well-known/oauth-authorization-server\"))"));
+        assertThat(generated, containsString(".securityScheme(\"oidc\","));
+        assertThat(generated, containsString(".type(\"openIdConnect\")"));
+        assertThat(generated, containsString(".openIdConnectUrl(io.helidon.openapi.OpenApiDocumentContextSupport"
+                                                     + ".resolveExpression(context, \"https://id.example.com/"
+                                                     + ".well-known/openid-configuration\"))"));
     }
 
     @Test
@@ -356,6 +442,114 @@ class OpenApiDuplicateValuesCodegenTest {
                                "@OpenApi.SecurityScheme on com.example.InvalidOpenApiEndpoint "
                                        + "for security scheme httpAuth",
                                "requires scheme");
+    }
+
+    @Test
+    void httpSecuritySchemeRejectsApiKeyFields() {
+        var result = compile("openapi-security-scheme-http-api-key-fields", """
+                @OpenApi.SecurityScheme(name = "httpAuth",
+                                        type = "http",
+                                        scheme = "bearer",
+                                        apiKeyName = "X-API-Key",
+                                        in = "header")
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/invalid")
+                class InvalidOpenApiEndpoint {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "@OpenApi.SecurityScheme on com.example.InvalidOpenApiEndpoint "
+                                       + "for security scheme httpAuth",
+                               "type http cannot define apiKeyName");
+    }
+
+    @Test
+    void securitySchemeRejectsInvalidFieldWithBlankExpressionDefault() {
+        var result = compile("openapi-security-scheme-invalid-field-blank-expression-default", """
+                @OpenApi.SecurityScheme(name = "apiKeyAuth",
+                                        type = "apiKey",
+                                        in = "header",
+                                        apiKeyName = "X-API-Key",
+                                        scheme = "${openapi.http.scheme:}")
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/invalid")
+                class InvalidOpenApiEndpoint {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "@OpenApi.SecurityScheme on com.example.InvalidOpenApiEndpoint "
+                                       + "for security scheme apiKeyAuth",
+                               "type apiKey cannot define scheme");
+    }
+
+    @Test
+    void securitySchemeRejectsInvalidFlowWithBlankExpressionDefault() {
+        var result = compile("openapi-security-scheme-invalid-flow-blank-expression-default", """
+                @OpenApi.SecurityScheme(name = "mtls",
+                                        type = "mutualTLS",
+                                        flows = @OpenApi.OAuthFlows(
+                                                clientCredentials = @OpenApi.OAuthFlow(
+                                                        tokenUrl = "${openapi.oauth.token:}")))
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/invalid")
+                class InvalidOpenApiEndpoint {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "@OpenApi.SecurityScheme on com.example.InvalidOpenApiEndpoint "
+                                       + "for security scheme mtls",
+                               "type mutualTLS cannot define flows");
+    }
+
+    @Test
+    void apiKeySecuritySchemeRejectsHttpFields() {
+        var result = compile("openapi-security-scheme-api-key-http-fields", """
+                @OpenApi.SecurityScheme(name = "apiKeyAuth",
+                                        type = "apiKey",
+                                        apiKeyName = "X-API-Key",
+                                        in = "header",
+                                        scheme = "bearer")
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/invalid")
+                class InvalidOpenApiEndpoint {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "@OpenApi.SecurityScheme on com.example.InvalidOpenApiEndpoint "
+                                       + "for security scheme apiKeyAuth",
+                               "type apiKey cannot define scheme");
     }
 
     @Test
