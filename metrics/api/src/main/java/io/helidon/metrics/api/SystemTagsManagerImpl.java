@@ -15,12 +15,14 @@
  */
 package io.helidon.metrics.api;
 
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
@@ -53,7 +55,7 @@ import io.helidon.service.registry.Services;
 @Weight(Weighted.DEFAULT_WEIGHT - 10)
 class SystemTagsManagerImpl implements SystemTagsManager {
 
-    private static final Collection<Consumer<SystemTagsManager>> ON_CHANGE_SUBSCRIBERS = new ArrayList<>();
+    private static final Collection<WeakReference<Consumer<SystemTagsManager>>> ON_CHANGE_SUBSCRIBERS = new ArrayList<>();
     private static final ReentrantReadWriteLock ON_CHANGE_LOCK = new ReentrantReadWriteLock();
 
     private final Map<String, String> systemTagPairs = new TreeMap<>();
@@ -105,18 +107,28 @@ class SystemTagsManagerImpl implements SystemTagsManager {
 
         this.reservedTagNames = reservedTagNames;
 
-        ON_CHANGE_LOCK.readLock().lock();
+        List<Consumer<SystemTagsManager>> subscribers = new ArrayList<>();
+        ON_CHANGE_LOCK.writeLock().lock();
         try {
-            ON_CHANGE_SUBSCRIBERS.forEach(c -> c.accept(this));
+            ON_CHANGE_SUBSCRIBERS.removeIf(ref -> {
+                Consumer<SystemTagsManager> subscriber = ref.get();
+                if (subscriber == null) {
+                    return true;
+                }
+                subscribers.add(subscriber);
+                return false;
+            });
         } finally {
-            ON_CHANGE_LOCK.readLock().unlock();
+            ON_CHANGE_LOCK.writeLock().unlock();
         }
+        subscribers.forEach(c -> c.accept(this));
     }
 
     static void onChange(Consumer<SystemTagsManager> subscriber) {
+        Objects.requireNonNull(subscriber);
         ON_CHANGE_LOCK.writeLock().lock();
         try {
-            ON_CHANGE_SUBSCRIBERS.add(subscriber);
+            ON_CHANGE_SUBSCRIBERS.add(new WeakReference<>(subscriber));
         } finally {
             ON_CHANGE_LOCK.writeLock().unlock();
         }

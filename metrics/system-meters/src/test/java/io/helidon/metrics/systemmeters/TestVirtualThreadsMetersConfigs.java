@@ -24,8 +24,8 @@ import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Timer;
 import io.helidon.service.registry.Services;
+import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.metrics.systemmeters.MeterBuilderMatcher.withName;
@@ -42,13 +42,8 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
 
+@Testing.Test(perMethod = true)
 class TestVirtualThreadsMetersConfigs {
-
-    @AfterEach
-    void resetMetricsFactory() {
-        MetricsFactory.closeAll();
-    }
-
     @Test
     void checkDefault() {
         Config config = Config.just(ConfigSources.create(Map.of()));

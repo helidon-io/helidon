@@ -33,7 +33,7 @@ public interface Tag extends Wrapper {
      * @return new {@code Tag} representing the key and value
      * @deprecated use {@link io.helidon.metrics.api.MetricsFactory#tagCreate(String, String)} instead
      */
-     @Deprecated(forRemoval = true, since = "27.0.0")
+    @Deprecated(forRemoval = true, since = "27.0.0")
     static Tag create(String key, String value) {
         return Services.get(MetricsFactory.class).tagCreate(key, value);
     }
