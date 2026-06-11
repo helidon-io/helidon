@@ -840,6 +840,23 @@ class ServerListenerLifecycleTest {
     }
 
     @Test
+    void defaultTcpTransportBindingStartsWhenBindingDiscoveryIsDisabled() {
+        WebServer server = WebServer.builder()
+                .shutdownHook(false)
+                .address(InetAddress.getLoopbackAddress())
+                .port(0)
+                .bindingsDiscoverServices(false)
+                .build()
+                .start();
+
+        try {
+            assertThat(server.port() > 0, is(true));
+        } finally {
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
     void explicitNamedTcpBindingCanUseRandomPortWithoutDefaultDuplicate() {
         WebServer server = WebServer.builder()
                 .shutdownHook(false)
@@ -875,6 +892,17 @@ class ServerListenerLifecycleTest {
         } finally {
             stopUntilStopped(server);
         }
+    }
+
+    @Test
+    void transportBindingContextCanQueryBoundPortDuringPlanning() {
+        TestTransportBindingProvider.reset();
+        WebServer.builder()
+                .shutdownHook(false)
+                .addBinding(new TestTransportBindingConfig("test", true))
+                .build();
+
+        assertThat(TestTransportBindingProvider.portAtCreate("test"), is(-1));
     }
 
     @Test
@@ -1017,10 +1045,13 @@ class ServerListenerLifecycleTest {
     }
 
     @Test
-    void listenerPlanningFailsWithoutActiveTransportBindings() {
+    void listenerPlanningFailsWhenDefaultTcpTransportBindingIsDisabled() {
         RuntimeException failure = assertThrows(RuntimeException.class, () -> WebServer.builder()
                 .shutdownHook(false)
                 .bindingsDiscoverServices(false)
+                .addBinding(TcpTransportConfig.builder()
+                                    .enabled(false)
+                                    .buildPrototype())
                 .build()
                 .start());
 

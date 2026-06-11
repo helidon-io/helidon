@@ -67,7 +67,7 @@ import io.helidon.webserver.spi.TransportBindingProvider;
 
 import static java.lang.System.Logger.Level.DEBUG;
 
-class ServerListener implements ListenerContext, TransportBindingContext {
+class ServerListener implements ListenerContext {
     private static final System.Logger LOGGER = System.getLogger(ServerListener.class.getName());
     private static final String EXPLICIT_SSL_CONTEXT_RELOAD_NOT_SUPPORTED =
             "TLS cannot be reloaded when an explicit instance of SSL context was used to create it";
@@ -96,6 +96,7 @@ class ServerListener implements ListenerContext, TransportBindingContext {
     private final Duration gracePeriod;
     private final Timer idleConnectionTimer;
     private final FatalBindingFailureHandler fatalBindingFailureHandler;
+    private final TcpTransportBindingContext transportBindingContext;
     private final Lock idleTimeoutLock = new ReentrantLock();
     private final List<TransportBinding> transportBindings;
 
@@ -188,6 +189,7 @@ class ServerListener implements ListenerContext, TransportBindingContext {
         this.router = router;
         this.idleConnectionTimer = idleConnectionTimer;
         this.fatalBindingFailureHandler = Objects.requireNonNull(fatalBindingFailureHandler, "fatalBindingFailureHandler");
+        this.transportBindingContext = new ListenerTransportBindingContext();
         this.transportBindings = planTransportBindings(protocolConfigs);
     }
 
@@ -216,7 +218,6 @@ class ServerListener implements ListenerContext, TransportBindingContext {
         return listenerConfig;
     }
 
-    @Override
     public String name() {
         return socketName;
     }
@@ -235,9 +236,12 @@ class ServerListener implements ListenerContext, TransportBindingContext {
         return boundPort().orElse(-1);
     }
 
-    @Override
     public OptionalInt boundPort() {
-        for (TransportBinding binding : transportBindings) {
+        List<TransportBinding> localTransportBindings = transportBindings;
+        if (localTransportBindings == null) {
+            return OptionalInt.empty();
+        }
+        for (TransportBinding binding : localTransportBindings) {
             if (binding instanceof PortTransportBinding portBinding) {
                 int port = portBinding.port();
                 if (port != -1) {
@@ -248,24 +252,20 @@ class ServerListener implements ListenerContext, TransportBindingContext {
         return OptionalInt.empty();
     }
 
-    @Override
     public Timer timer() {
         return idleConnectionTimer;
     }
 
-    @Override
     public Limit requestLimit() {
         return requestLimit;
     }
 
-    @Override
     public void fatalBindingFailure(TransportBinding binding, Throwable cause) {
         Objects.requireNonNull(binding, "binding");
         Objects.requireNonNull(cause, "cause");
         fatalBindingFailureHandler.handle(this, binding, cause);
     }
 
-    @Override
     public Router router() {
         return router;
     }
@@ -409,9 +409,9 @@ class ServerListener implements ListenerContext, TransportBindingContext {
         return InitializationContext.create(socketName, List.of(Tag.create("socketName", socketName)));
     }
 
-    TcpTransportBinding createTcpTransportBinding(TcpTransportConfig config) {
+    private TcpTransportBinding createTcpTransportBinding(TransportBindingContext context, TcpTransportConfig config) {
         Objects.requireNonNull(config, "config");
-        return new TcpTransportBinding(this,
+        return new TcpTransportBinding(context,
                                        config.name(),
                                        listenerConfig,
                                        configuredAddress,
@@ -527,7 +527,7 @@ class ServerListener implements ListenerContext, TransportBindingContext {
                 continue;
             }
 
-            TransportBinding binding = Objects.requireNonNull(provider.create(this, config),
+            TransportBinding binding = Objects.requireNonNull(provider.create(transportBindingContext, config),
                                                               "Transport binding provider returned null");
             if (!bindingNames.add(binding.name())) {
                 throw new IllegalArgumentException("Duplicate transport binding name \"" + binding.name()
@@ -562,6 +562,7 @@ class ServerListener implements ListenerContext, TransportBindingContext {
     }
 
     private static List<TransportBindingConfig> orderedBindingConfigs(List<TransportBindingConfig> configs) {
+        configs = withDefaultTcpBinding(configs);
         if (hasNamedTcpBinding(configs)) {
             return configs;
         }
@@ -581,6 +582,29 @@ class ServerListener implements ListenerContext, TransportBindingContext {
 
         orderedConfigs.add(0, defaultTcpConfig);
         return orderedConfigs;
+    }
+
+    private static List<TransportBindingConfig> withDefaultTcpBinding(List<TransportBindingConfig> configs) {
+        boolean hasDefaultTcpBinding = false;
+        boolean hasEnabledNamedTcpBinding = false;
+        for (TransportBindingConfig config : configs) {
+            if (!TcpTransportBinding.TYPE.equals(config.type())) {
+                continue;
+            }
+            if (TcpTransportBinding.TYPE.equals(config.name())) {
+                hasDefaultTcpBinding = true;
+            } else if (config.enabled()) {
+                hasEnabledNamedTcpBinding = true;
+            }
+        }
+        if (hasDefaultTcpBinding || hasEnabledNamedTcpBinding) {
+            return configs;
+        }
+
+        List<TransportBindingConfig> result = new ArrayList<>(configs.size() + 1);
+        result.add(TcpTransportConfig.create());
+        result.addAll(configs);
+        return result;
     }
 
     private static boolean supportsTcpTransportBinding(ProtocolConfig config) {
@@ -1059,6 +1083,73 @@ class ServerListener implements ListenerContext, TransportBindingContext {
                                               Optional<SocketAddress> bindAddress,
                                               String host,
                                               int port) implements BindingPlanContext {
+    }
+
+    private final class ListenerTransportBindingContext implements TcpTransportBindingContext {
+        @Override
+        public String name() {
+            return ServerListener.this.name();
+        }
+
+        @Override
+        public Router router() {
+            return ServerListener.this.router();
+        }
+
+        @Override
+        public Timer timer() {
+            return ServerListener.this.timer();
+        }
+
+        @Override
+        public Limit requestLimit() {
+            return ServerListener.this.requestLimit();
+        }
+
+        @Override
+        public OptionalInt boundPort() {
+            return ServerListener.this.boundPort();
+        }
+
+        @Override
+        public void fatalBindingFailure(TransportBinding binding, Throwable cause) {
+            ServerListener.this.fatalBindingFailure(binding, cause);
+        }
+
+        @Override
+        public TcpTransportBinding createTcpTransportBinding(TcpTransportConfig config) {
+            return ServerListener.this.createTcpTransportBinding(this, config);
+        }
+
+        @Override
+        public MediaContext mediaContext() {
+            return ServerListener.this.mediaContext();
+        }
+
+        @Override
+        public ContentEncodingContext contentEncodingContext() {
+            return ServerListener.this.contentEncodingContext();
+        }
+
+        @Override
+        public DirectHandlers directHandlers() {
+            return ServerListener.this.directHandlers();
+        }
+
+        @Override
+        public Context context() {
+            return ServerListener.this.context();
+        }
+
+        @Override
+        public ListenerConfig config() {
+            return ServerListener.this.config();
+        }
+
+        @Override
+        public ExecutorService executor() {
+            return ServerListener.this.executor();
+        }
     }
 
     private record BindingStop(TransportBinding binding, CompletableFuture<TransportBinding.ShutdownResult> future) {
