@@ -853,6 +853,115 @@ class OpenApiDuplicateValuesCodegenTest {
     }
 
     @Test
+    void contentExampleCannotUseValueWithDataValue() {
+        var result = compile("openapi-example-value-and-data-value", """
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/invalid")
+                class InvalidOpenApiEndpoint {
+                    @Http.GET
+                    @OpenApi.Response(status = 200,
+                                      description = "OK",
+                                      content = @OpenApi.Content(
+                                              examples = @OpenApi.Example(name = "sample",
+                                                                          value = "one",
+                                                                          dataValue = "two")))
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "@OpenApi.Response on com.example.InvalidOpenApiEndpoint.get",
+                               "example sample cannot define value with dataValue, serializedValue, or externalValue");
+    }
+
+    @Test
+    void contentExampleCannotUseValueWithExternalValue() {
+        var result = compile("openapi-example-value-and-external-value", """
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/invalid")
+                class InvalidOpenApiEndpoint {
+                    @Http.GET
+                    @OpenApi.Response(status = 200,
+                                      description = "OK",
+                                      content = @OpenApi.Content(
+                                              examples = @OpenApi.Example(name = "sample",
+                                                                          value = "one",
+                                                                          externalValue = "examples/sample.json")))
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "@OpenApi.Response on com.example.InvalidOpenApiEndpoint.get",
+                               "example sample cannot define value with dataValue, serializedValue, or externalValue");
+    }
+
+    @Test
+    void contentExampleCannotUseValueWithSerializedValue() {
+        var result = compile("openapi-example-value-and-serialized-value", """
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/invalid")
+                class InvalidOpenApiEndpoint {
+                    @Http.GET
+                    @OpenApi.Response(status = 200,
+                                      description = "OK",
+                                      content = @OpenApi.Content(
+                                              examples = @OpenApi.Example(name = "sample",
+                                                                          value = "one",
+                                                                          serializedValue = "two")))
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "@OpenApi.Response on com.example.InvalidOpenApiEndpoint.get",
+                               "example sample cannot define value with dataValue, serializedValue, or externalValue");
+    }
+
+    @Test
+    void contentExampleCannotUseSerializedValueWithExternalValue() {
+        var result = compile("openapi-example-serialized-value-and-external-value", """
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/invalid")
+                class InvalidOpenApiEndpoint {
+                    @Http.GET
+                    @OpenApi.Response(status = 200,
+                                      description = "OK",
+                                      content = @OpenApi.Content(
+                                              examples = @OpenApi.Example(name = "sample",
+                                                                          dataValue = "{\\"value\\":\\"one\\"}",
+                                                                          serializedValue = "{\\"value\\":\\"one\\"}",
+                                                                          externalValue = "examples/sample.json")))
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "@OpenApi.Response on com.example.InvalidOpenApiEndpoint.get",
+                               "example sample cannot define serializedValue and externalValue together");
+    }
+
+    @Test
     void responseCannotDeclareDuplicateHeaderNames() {
         var result = compile("openapi-duplicate-response-headers", """
                 @OpenApi.Document
