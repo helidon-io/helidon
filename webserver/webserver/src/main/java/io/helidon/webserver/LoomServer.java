@@ -29,6 +29,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -53,6 +54,7 @@ import io.helidon.service.registry.Service;
 import io.helidon.spi.HelidonShutdownHandler;
 import io.helidon.webserver.http.DirectHandlers;
 import io.helidon.webserver.spi.ServerFeature;
+import io.helidon.webserver.spi.TransportBinding;
 
 @Service.Singleton
 class LoomServer implements WebServer, Resumable {
@@ -62,6 +64,7 @@ class LoomServer implements WebServer, Resumable {
 
     private final Map<String, ServerListener> listeners;
     private final AtomicBoolean running = new AtomicBoolean();
+    private final AtomicBoolean fatalBindingFailureReported = new AtomicBoolean();
     private final Lock lifecycleLock = new ReentrantLock();
     private final ExecutorService executorService;
     private final Context context;
@@ -114,7 +117,8 @@ class LoomServer implements WebServer, Resumable {
                                                idleConnectionTimer,
                                                serverConfig.mediaContext().orElseGet(MediaContext::create),
                                                serverConfig.contentEncoding().orElseGet(ContentEncodingContext::create),
-                                               serverConfig.directHandlers().orElseGet(DirectHandlers::create)));
+                                               serverConfig.directHandlers().orElseGet(DirectHandlers::create),
+                                               this::fatalBindingFailure));
         });
 
         validateRoutingsHaveNamedListener(serverConfig, listenerMap.keySet());
@@ -195,7 +199,8 @@ class LoomServer implements WebServer, Resumable {
     }
 
     @Override
-    @Deprecated
+    @Deprecated(forRemoval = true, since = "27.0.0")
+    @SuppressWarnings("removal")
     public void reloadTls(String socketName, Tls tls) {
         ServerListener listener = listener(socketName);
         listener.reloadTls(tls);
@@ -336,6 +341,52 @@ class LoomServer implements WebServer, Resumable {
             result = LifecycleFailures.add(result, e);
         }
         return result;
+    }
+
+    private void fatalBindingFailure(ServerListener listener, TransportBinding binding, Throwable cause) {
+        Objects.requireNonNull(listener, "listener");
+        Objects.requireNonNull(binding, "binding");
+        Objects.requireNonNull(cause, "cause");
+        if (!fatalBindingFailureReported.compareAndSet(false, true)) {
+            return;
+        }
+        LOGGER.log(System.Logger.Level.ERROR,
+                   "Fatal failure in listener " + listener + " binding " + binding.name(),
+                   cause);
+        try {
+            executorService.execute(() -> stopAfterFatalBindingFailure(cause));
+        } catch (RejectedExecutionException e) {
+            cause.addSuppressed(e);
+            stopAfterFatalBindingFailure(cause);
+        }
+    }
+
+    private void stopAfterFatalBindingFailure(Throwable cause) {
+        Throwable failure = LifecycleFailures.add(null, cause);
+        try {
+            lifecycleLock.lockInterruptibly();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            failure = LifecycleFailures.add(failure,
+                                            new IllegalStateException("Interrupted while stopping after fatal transport "
+                                                                              + "binding failure", e));
+            LOGGER.log(System.Logger.Level.ERROR, "Failed to stop after fatal transport binding failure", failure);
+            return;
+        }
+        try {
+            if (running.get()) {
+                try {
+                    stopIt();
+                } catch (RuntimeException | Error e) {
+                    failure = LifecycleFailures.add(failure, e);
+                }
+            }
+        } finally {
+            lifecycleLock.unlock();
+        }
+        if (failure != null) {
+            LOGGER.log(System.Logger.Level.ERROR, "Stopped after fatal transport binding failure", failure);
+        }
     }
 
     private void startIt() {
