@@ -48,6 +48,7 @@
         <version.lib.google-protobuf>4.31.1</version.lib.google-protobuf>
         <version.lib.google-j2objc-annotations>3.0.0</version.lib.google-j2objc-annotations>
         <version.lib.graphql-java>22.1</version.lib.graphql-java>
+        <version.lib.graphql-java.extended.scalars>22.0</version.lib.graphql-java.extended.scalars>
         <version.lib.grpc>1.73.0</version.lib.grpc>
         <version.lib.guava>33.3.1-jre</version.lib.guava>
         <version.lib.h2>2.4.240</version.lib.h2>
@@ -358,6 +359,21 @@
                 <groupId>com.graphql-java</groupId>
                 <artifactId>graphql-java</artifactId>
                 <version>${version.lib.graphql-java}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.graphql-java</groupId>
+                <artifactId>graphql-java-extended-scalars</artifactId>
+                <version>${version.lib.graphql-java.extended.scalars}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>com.squareup.okhttp3</groupId>
+                        <artifactId>okhttp</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>com.squareup.okio</groupId>
+                        <artifactId>okio</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.jetbrains</groupId>
