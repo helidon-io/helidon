@@ -43,7 +43,6 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.MetricsPublisher;
-import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 import io.helidon.metrics.providers.micrometer.spi.SpanContextSupplierProvider;
@@ -86,7 +85,6 @@ class MicrometerMetricsFactory implements MetricsFactory {
 
     private MMeterRegistry globalMeterRegistry;
     private MetricsConfig metricsConfig;
-    private SystemTagsManager systemTagsManager;
     private boolean closed;
 
     private MicrometerMetricsFactory(MetricsConfig metricsConfig,
@@ -95,7 +93,6 @@ class MicrometerMetricsFactory implements MetricsFactory {
         this.metricsConfig = metricsConfig;
         this.metersProviders = metersProviders;
         this.onClose = onClose;
-        this.systemTagsManager = SystemTagsManager.create(metricsConfig);
     }
 
     static MicrometerMetricsFactory create(MetricsConfig metricsConfig,
@@ -110,13 +107,6 @@ class MicrometerMetricsFactory implements MetricsFactory {
 
     void onMeterRemoved(io.micrometer.core.instrument.Meter meter) {
         meterRegistries.forEach(mr -> mr.onMeterRemoved(meter));
-    }
-
-    List<io.micrometer.core.instrument.Tag> micrometerSystemTags() {
-        List<io.micrometer.core.instrument.Tag> tags = new ArrayList<>();
-        systemTagsManager.displayTagPairs()
-                .forEach((name, value) -> tags.add(io.micrometer.core.instrument.Tag.of(name, value)));
-        return tags;
     }
 
     @Override
@@ -406,7 +396,6 @@ class MicrometerMetricsFactory implements MetricsFactory {
 
     private MMeterRegistry save(MetricsConfig metricsConfig, MMeterRegistry meterRegistry) {
         this.metricsConfig = metricsConfig;
-        this.systemTagsManager = SystemTagsManager.create(metricsConfig);
         meterRegistries.add(meterRegistry);
         return meterRegistry;
     }

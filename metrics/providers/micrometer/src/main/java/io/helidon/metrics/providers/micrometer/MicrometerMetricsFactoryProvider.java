@@ -19,8 +19,10 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 import io.helidon.common.Api;
 import io.helidon.config.Config;
@@ -44,6 +46,7 @@ public class MicrometerMetricsFactoryProvider implements MetricsFactoryProvider 
      * callback bridge, but only weakly reference Helidon factories so service registry shutdown releases owned state.
      */
     private static final GlobalRegistryObserver GLOBAL_REGISTRY_OBSERVER = new GlobalRegistryObserver();
+    private static final ThreadLocal<List<io.micrometer.core.instrument.Tag>> CURRENT_SYSTEM_TAGS = new ThreadLocal<>();
 
     private final List<MicrometerMetricsFactory> metricsFactories = new CopyOnWriteArrayList<>();
 
@@ -77,6 +80,22 @@ public class MicrometerMetricsFactoryProvider implements MetricsFactoryProvider 
         GLOBAL_REGISTRY_OBSERVER.remove(metricsFactory);
     }
 
+    static <T> T withSystemTags(Map<String, String> systemTags, Supplier<T> registration) {
+        List<io.micrometer.core.instrument.Tag> previousTags = CURRENT_SYSTEM_TAGS.get();
+        List<io.micrometer.core.instrument.Tag> currentTags = new ArrayList<>();
+        systemTags.forEach((name, value) -> currentTags.add(io.micrometer.core.instrument.Tag.of(name, value)));
+        CURRENT_SYSTEM_TAGS.set(currentTags);
+        try {
+            return registration.get();
+        } finally {
+            if (previousTags == null) {
+                CURRENT_SYSTEM_TAGS.remove();
+            } else {
+                CURRENT_SYSTEM_TAGS.set(previousTags);
+            }
+        }
+    }
+
     private static class GlobalRegistryObserver {
         private final AtomicBoolean configured = new AtomicBoolean();
         private final List<WeakReference<MicrometerMetricsFactory>> metricsFactories = new CopyOnWriteArrayList<>();
@@ -88,10 +107,10 @@ public class MicrometerMetricsFactoryProvider implements MetricsFactoryProvider 
                 Metrics.globalRegistry.config().meterFilter(new MeterFilter() {
                     @Override
                     public Meter.Id map(Meter.Id id) {
-                        List<io.micrometer.core.instrument.Tag> tags = liveFactories().stream()
-                                .findFirst()
-                                .map(MicrometerMetricsFactory::micrometerSystemTags)
-                                .orElseGet(List::of);
+                        List<io.micrometer.core.instrument.Tag> tags = CURRENT_SYSTEM_TAGS.get();
+                        if (tags == null || tags.isEmpty()) {
+                            return id;
+                        }
                         return id.replaceTags(Tags.concat(tags, id.getTagsAsIterable()));
                     }
                 });

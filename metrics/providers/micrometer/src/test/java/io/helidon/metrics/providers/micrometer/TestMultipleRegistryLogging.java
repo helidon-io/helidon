@@ -22,6 +22,8 @@ import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.service.registry.ServiceRegistryManager;
@@ -39,6 +41,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 
@@ -115,6 +118,32 @@ class TestMultipleRegistryLogging {
 
         assertThat("Two meter registrations with warnings suppressed", testHandler.messages, hasSize(0));
 
+    }
+
+    @Test
+    void testProgrammaticRegistriesUseOwnSystemTags() {
+        String counterName = "firstRegistryCounter";
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        MetricsConfig firstConfig = MetricsConfig.builder()
+                .tags(List.of(metricsFactory.tagCreate("registry", "first")))
+                .warnOnMultipleRegistries(false)
+                .build();
+        MetricsConfig secondConfig = MetricsConfig.builder()
+                .tags(List.of(metricsFactory.tagCreate("registry", "second")))
+                .warnOnMultipleRegistries(false)
+                .build();
+
+        MeterRegistry firstRegistry = metricsFactory.createMeterRegistry(firstConfig);
+        metricsFactory.createMeterRegistry(secondConfig);
+
+        Counter counter = firstRegistry.getOrCreate(metricsFactory.counterBuilder(counterName));
+        counter.increment();
+        io.micrometer.core.instrument.Counter micrometerCounter =
+                counter.unwrap(io.micrometer.core.instrument.Counter.class);
+
+        assertThat("System tag from the first registry",
+                   micrometerCounter.getId().getTag("registry"),
+                   equalTo("first"));
     }
 
     @Test
