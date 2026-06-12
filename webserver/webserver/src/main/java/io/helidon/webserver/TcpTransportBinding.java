@@ -36,9 +36,9 @@ import java.util.Objects;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BooleanSupplier;
 
 import javax.net.ssl.SSLParameters;
@@ -218,20 +218,19 @@ final class TcpTransportBinding implements PortTransportBinding, TlsTransportBin
     }
 
     @Override
-    public CompletionStage<ShutdownResult> stop(Duration gracefulPeriod) {
+    public ShutdownResult stop(Duration gracefulPeriod) {
         Objects.requireNonNull(gracefulPeriod, "gracefulPeriod");
         stopRequested();
         Throwable failure = null;
-        closeServerSocketForStop();
+        ShutdownResult result = ShutdownResult.GRACEFUL;
+        failure = LifecycleFailures.add(failure, closeServerSocketForStop());
         failure = LifecycleFailures.add(failure, closeOpenConnections(false));
-        failure = LifecycleFailures.add(failure, closeOpenConnections(true));
         failure = LifecycleFailures.add(failure, awaitClose());
-        CompletableFuture<ShutdownResult> result = new CompletableFuture<>();
-        if (failure == null) {
-            result.complete(ShutdownResult.GRACEFUL);
-        } else {
-            result.completeExceptionally(failure);
+        if (!awaitConnectionHandlers(gracefulPeriod)) {
+            result = ShutdownResult.FORCED;
+            failure = LifecycleFailures.add(failure, closeOpenConnections(true));
         }
+        LifecycleFailures.throwIfFailed(failure, "Failed to stop TCP transport binding " + name);
         return result;
     }
 
@@ -275,35 +274,17 @@ final class TcpTransportBinding implements PortTransportBinding, TlsTransportBin
         closeFuture = null;
     }
 
-    void closeServerSocketOnFailure() {
+    Throwable closeServerSocketForStop() {
         ServerSocketChannel localServerSocket = serverSocket;
         if (localServerSocket == null) {
-            return;
+            return null;
         }
-        boolean bound = serverSocketBound(localServerSocket, "Failed to check server socket binding after failed start");
-        try {
-            localServerSocket.close();
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to close server socket after failed start", e);
-        } finally {
-            serverSocket = null;
-            connectedPort = -1;
-        }
-        if (bound) {
-            deleteUnixSocketFile();
-        }
-    }
-
-    void closeServerSocketForStop() {
-        ServerSocketChannel localServerSocket = serverSocket;
-        if (localServerSocket == null) {
-            return;
-        }
+        Throwable failure = null;
         boolean bound = serverSocketBound(localServerSocket, "Failed to check server socket binding before stop");
         try {
             localServerSocket.close();
         } catch (IOException e) {
-            LOGGER.log(INFO, "Exception thrown on socket close", e);
+            failure = LifecycleFailures.add(failure, new UncheckedIOException("Failed to close server socket", e));
         } finally {
             serverSocket = null;
             connectedPort = -1;
@@ -311,6 +292,7 @@ final class TcpTransportBinding implements PortTransportBinding, TlsTransportBin
         if (bound) {
             deleteUnixSocketFile();
         }
+        return failure;
     }
 
     Throwable closeOpenConnections(boolean interrupt) {
@@ -343,6 +325,41 @@ final class TcpTransportBinding implements PortTransportBinding, TlsTransportBin
             }
         }
         return failure;
+    }
+
+    private boolean awaitConnectionHandlers(Duration gracefulPeriod) {
+        long stopAtNanos = stopAtNanos(gracefulPeriod);
+        while (!connectionHandlers.isEmpty()) {
+            long remainingNanos = stopAtNanos - System.nanoTime();
+            if (remainingNanos <= 0) {
+                return false;
+            }
+            try {
+                TimeUnit.NANOSECONDS.sleep(Math.min(remainingNanos, TimeUnit.MILLISECONDS.toNanos(100)));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static long stopAtNanos(Duration gracefulPeriod) {
+        long timeoutNanos = timeoutNanos(gracefulPeriod);
+        long now = System.nanoTime();
+        long stopAtNanos = now + timeoutNanos;
+        return stopAtNanos < now ? Long.MAX_VALUE : stopAtNanos;
+    }
+
+    private static long timeoutNanos(Duration gracefulPeriod) {
+        if (gracefulPeriod.isNegative()) {
+            return 0;
+        }
+        try {
+            return gracefulPeriod.toNanos();
+        } catch (ArithmeticException _) {
+            return Long.MAX_VALUE;
+        }
     }
 
     List<ConnectionHandler> connectionHandlers() {

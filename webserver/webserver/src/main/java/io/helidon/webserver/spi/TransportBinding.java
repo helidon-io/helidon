@@ -17,7 +17,6 @@
 package io.helidon.webserver.spi;
 
 import java.time.Duration;
-import java.util.concurrent.CompletionStage;
 
 /**
  * Transport binding owned by a logical WebServer listener.
@@ -40,7 +39,7 @@ public interface TransportBinding {
     /**
      * Transport binding name.
      * <p>
-     * This distinguishes bindings within a listener and is used by listener-level lookup APIs.
+     * This distinguishes bindings within a listener for uniqueness checks and diagnostics.
      *
      * @return transport binding name
      */
@@ -66,13 +65,13 @@ public interface TransportBinding {
     /**
      * Stop accepting new work and shut down active transport work.
      * <p>
-     * Implementations must stop accepting new work before returning the completion stage. The stage completes when active
-     * work has either drained or been force-stopped and transport resources have been released.
+     * Implementations must stop accepting new work and release transport resources before returning. Active work must
+     * either drain or be force-stopped within the graceful period.
      *
      * @param gracefulPeriod maximum graceful shutdown period
-     * @return completion stage with shutdown result
+     * @return shutdown result
      */
-    CompletionStage<ShutdownResult> stop(Duration gracefulPeriod);
+    ShutdownResult stop(Duration gracefulPeriod);
 
     /**
      * Suspend the binding for checkpoint.
