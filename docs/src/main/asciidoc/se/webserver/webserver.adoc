@@ -405,6 +405,29 @@ include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_7, indent=0]
 ----
 In this example, the `GET` handler matches requests to `/hello/subpath`.
 
+=== Locating Services at Request Time
+
+Use `HttpServiceLocator` when the stable part of a route is known when the server starts, but the service that should own
+the remaining route depends on request data or application metadata that can change later.
+
+[source,java]
+.Select an `HttpService` from request path data
+----
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_41, indent=0]
+----
+
+The locator path pattern is prefix-matched before `locate` is invoked. In the example, the locator sees the `item` path
+parameter from `/{item}`, and the located service owns the remaining path such as `/{id}`.
+
+Return `Optional.empty()` when no service is available for a request; routing then continues with later routes and can fall
+through to the normal `404` response. Route order still applies, so register more specific locator prefixes before broader
+prefixes.
+
+WebServer caches located services by service instance identity until the server stops. Return a stable, bounded set of
+service instances for stable item kinds so the cached route tree and lifecycle callbacks are reused. Each locator enforces
+a default maximum number of cached service instances; override `HttpServiceLocator.maxServiceCacheSize()` only when the
+locator intentionally exposes a larger bounded set.
+
 [[anchor-http-feature]]
 
 === Server Lifecycle

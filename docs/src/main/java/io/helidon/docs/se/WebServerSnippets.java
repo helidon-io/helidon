@@ -20,6 +20,7 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 // tag::snippet_13[]
@@ -52,6 +53,8 @@ import io.helidon.webserver.http.HttpRoute;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.HttpServiceLocator;
+import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http1.Http1Route;
 import io.helidon.webserver.http2.Http2Route;
 import io.helidon.webserver.staticcontent.StaticContentFeature;
@@ -137,6 +140,49 @@ class WebServerSnippets {
         }
     }
     // end::snippet_7[]
+
+    // tag::snippet_41[]
+    interface ItemServiceRegistry {
+        Optional<HttpService> service(String item);
+    }
+
+    static final class MetadataBackedLocator implements HttpServiceLocator {
+        private final ItemServiceRegistry registry;
+
+        MetadataBackedLocator(ItemServiceRegistry registry) {
+            this.registry = registry;
+        }
+
+        @Override
+        public Optional<HttpService> locate(ServerRequest request) {
+            String item = request.path()
+                    .pathParameters()
+                    .first("item")
+                    .orElseThrow();
+            return registry.service(item);
+        }
+    }
+
+    static final class ItemService implements HttpService {
+        @Override
+        public void routing(HttpRules rules) {
+            rules.get("/{id}", (req, res) -> {
+                String id = req.path().pathParameters().first("id").orElseThrow();
+                res.send(loadItem(id));
+            });
+        }
+
+        private String loadItem(String id) {
+            return id;
+        }
+    }
+
+    void serviceLocator(ItemServiceRegistry registry) {
+        HttpRouting routing = HttpRouting.builder()
+                .registerLocator("/{item}", new MetadataBackedLocator(registry))
+                .build();
+    }
+    // end::snippet_41[]
 
     void snippet_8(HttpRouting.Builder routing) {
         // tag::snippet_8[]

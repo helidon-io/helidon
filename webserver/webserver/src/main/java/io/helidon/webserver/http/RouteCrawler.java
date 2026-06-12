@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,8 @@ class RouteCrawler {
     private final Iterator<HttpRouteBase> routeIterator;
     private final UriPath matchingPath;
     private final RoutedPath parent;
+    private final String parentPattern;
+    private final RouteCrawler parentCrawler;
     private final HttpPrologue prologue;
 
     private CrawlerItem next;
@@ -47,6 +49,8 @@ class RouteCrawler {
         this.prologue = request.prologue();
         this.request = request;
         this.parent = null;
+        this.parentPattern = null;
+        this.parentCrawler = null;
     }
 
     RouteCrawler(ConnectionContext ctx,
@@ -54,11 +58,32 @@ class RouteCrawler {
                  List<HttpRouteBase> rootRoute,
                  RoutedPath parent,
                  UriPath child) {
+        this(ctx, request, rootRoute, parent, null, child);
+    }
+
+    RouteCrawler(ConnectionContext ctx,
+                 RoutingRequest request,
+                 List<HttpRouteBase> rootRoute,
+                 RoutedPath parent,
+                 String parentPattern,
+                 UriPath child) {
+        this(ctx, request, rootRoute, parent, parentPattern, null, child);
+    }
+
+    RouteCrawler(ConnectionContext ctx,
+                 RoutingRequest request,
+                 List<HttpRouteBase> rootRoute,
+                 RoutedPath parent,
+                 String parentPattern,
+                 RouteCrawler parentCrawler,
+                 UriPath child) {
         this.ctx = ctx;
         this.routeIterator = rootRoute.iterator();
         this.matchingPath = child;
         this.request = request;
         this.parent = parent;
+        this.parentPattern = parentPattern;
+        this.parentCrawler = parentCrawler;
 
         HttpPrologue prologue = request.prologue();
         this.prologue = HttpPrologue.create(prologue.rawProtocol(),
@@ -81,7 +106,7 @@ class RouteCrawler {
                 next = subCrawler.next();
 
                 if (parent != null) {
-                    next = next.parent(parent);
+                    next = parentPattern == null ? next.parent(parent) : next.parent(parent, parentPattern);
                 }
                 return true;
             }
@@ -93,32 +118,57 @@ class RouteCrawler {
             if (nextRoute.isList()) {
                 PathMatchers.PrefixMatchResult accepts = nextRoute.acceptsPrefix(prologue);
                 if (accepts.accepted()) {
+                    boolean requestAwareRoutes = nextRoute.requestAwareRoutes();
+                    RoutedPath previousPath = requestAwareRoutes ? request.path() : null;
+                    String matchedPattern = matchingElement(nextRoute, accepts);
+                    RoutedPath matchedPath = accepts.matchedPath();
+                    List<HttpRouteBase> routes;
+                    if (requestAwareRoutes) {
+                        RoutedPath fullMatchedPath = matchedPath;
+                        String fullMatchedPattern = matchedPattern;
+                        for (RouteCrawler crawler = this;
+                                crawler != null && crawler.parent != null;
+                                crawler = crawler.parentCrawler) {
+                            fullMatchedPath = merge(crawler.parent, fullMatchedPath);
+                            fullMatchedPattern = (crawler.parentPattern == null
+                                    ? crawler.parent.path()
+                                    : crawler.parentPattern) + fullMatchedPattern;
+                        }
+                        routes = nextRoute.routes(ctx, request, fullMatchedPath, fullMatchedPattern);
+                    } else {
+                        routes = nextRoute.routes();
+                    }
                     subCrawler = new RouteCrawler(ctx,
                                                   request,
-                                                  nextRoute.routes(),
-                                                  accepts.matchedPath(),
+                                                  routes,
+                                                  matchedPath,
+                                                  matchedPattern,
+                                                  this,
                                                   accepts.unmatchedPath());
                     if (subCrawler.hasNext()) {
                         next = subCrawler.next();
 
                         if (parent != null) {
-                            next = next.parent(parent);
+                            next = parentPattern == null ? next.parent(parent) : next.parent(parent, parentPattern);
                         }
                         return true;
                     }
                     // no, this subcrawler was not the one
                     subCrawler = null;
+                    if (requestAwareRoutes) {
+                        nextRoute.afterNoMatch(request, previousPath);
+                    }
                 }
             } else {
                 PathMatchers.MatchResult accepts = nextRoute.accepts(prologue, request.headers());
                 if (accepts.accepted()) {
                     PathMatcher pathMatcher = nextRoute.pathMatcher().orElse(null);
                     next = new CrawlerItem(accepts.path(),
-                                           pathMatcher != null ? pathMatcher.matchingElement().orElse("") : null,
+                                           pathMatcher != null ? pathMatcher.matchingElement().orElse("") : "",
                                            nextRoute.handler());
 
                     if (parent != null) {
-                        next = next.parent(parent);
+                        next = parentPattern == null ? next.parent(parent) : next.parent(parent, parentPattern);
                     }
 
                     return true;
@@ -129,6 +179,16 @@ class RouteCrawler {
         return false;
     }
 
+    private String matchingElement(HttpRouteBase route, PathMatchers.PrefixMatchResult accepts) {
+        return route.pathMatcher()
+                .flatMap(PathMatcher::matchingElement)
+                .orElseGet(() -> accepts.matchedPath().path());
+    }
+
+    private static RoutedPath merge(RoutedPath parent, RoutedPath path) {
+        return CrawlerItem.merge(parent, path);
+    }
+
     CrawlerItem next() {
         CrawlerItem result = next;
         next = null;
@@ -137,6 +197,16 @@ class RouteCrawler {
 
     record CrawlerItem(RoutedPath path, String matchingElement, Handler handler) {
         public CrawlerItem parent(RoutedPath parent) {
+            RoutedPath result = merge(parent, path);
+            return new CrawlerItem(result, parent.path() + matchingElement, handler);
+        }
+
+        public CrawlerItem parent(RoutedPath parent, String parentPattern) {
+            RoutedPath result = merge(parent, path);
+            return new CrawlerItem(result, parentPattern + matchingElement, handler);
+        }
+
+        private static RoutedPath merge(RoutedPath parent, RoutedPath path) {
             Map<String, List<String>> newParams = new HashMap<>();
 
             Parameters params = parent.pathParameters();
@@ -149,22 +219,17 @@ class RouteCrawler {
             }
             newParams.replaceAll((name, values) -> List.copyOf(values));
             // this is called for each request, optimize qualifiers so the do not get parsed each time
-            RoutedPath result = new CrawlerRoutedPath(path,
-                                                      matchingElement,
-                                                      Parameters.create("http/path", newParams, "http", "path"));
-            return new CrawlerItem(result, parent.path() + matchingElement, handler);
+            return new CrawlerRoutedPath(path,
+                                         Parameters.create("http/path", newParams, "http", "path"));
         }
 
         private static final class CrawlerRoutedPath implements RoutedPath {
             private final UriPath path;
             private final Parameters templateParams;
-            private final String matchingElement;
 
             private CrawlerRoutedPath(UriPath path,
-                                      String matchingElement,
                                       Parameters templateParams) {
                 this.path = path;
-                this.matchingElement = matchingElement;
                 this.templateParams = templateParams;
             }
 
@@ -200,7 +265,7 @@ class RouteCrawler {
 
             @Override
             public RoutedPath absolute() {
-                return new CrawlerRoutedPath(path.absolute(), matchingElement, templateParams);
+                return new CrawlerRoutedPath(path.absolute(), templateParams);
             }
         }
     }

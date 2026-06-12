@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import io.helidon.webserver.http.HttpRoute;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.HttpSecurity;
 import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.HttpServiceLocator;
 import io.helidon.webserver.http.Registration;
 
 class ServerToHttpFeatureBuilder implements HttpRouting.Builder {
@@ -48,8 +49,20 @@ class ServerToHttpFeatureBuilder implements HttpRouting.Builder {
     }
 
     @Override
+    public HttpRouting.Builder registerLocator(HttpServiceLocator locator) {
+        registrations.add(Registration.createLocator(locator));
+        return this;
+    }
+
+    @Override
     public HttpRouting.Builder register(String path, HttpService... services) {
         registrations.add(Registration.create(path, services));
+        return this;
+    }
+
+    @Override
+    public HttpRouting.Builder registerLocator(String pathPattern, HttpServiceLocator locator) {
+        registrations.add(Registration.createLocator(pathPattern, locator));
         return this;
     }
 

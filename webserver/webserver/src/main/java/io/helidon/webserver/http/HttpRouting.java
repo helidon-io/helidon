@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,6 +97,12 @@ public interface HttpRouting extends Routing, Prototype.Api {
         Builder register(HttpService... service);
 
         @Override
+        default Builder registerLocator(HttpServiceLocator locator) {
+            HttpRules.super.registerLocator(locator);
+            return this;
+        }
+
+        @Override
         default Builder register(Supplier<? extends HttpService> service) {
             HttpRules.super.register(service);
             return this;
@@ -143,6 +149,12 @@ public interface HttpRouting extends Routing, Prototype.Api {
 
         @Override
         Builder register(String path, HttpService... service);
+
+        @Override
+        default Builder registerLocator(String pathPattern, HttpServiceLocator locator) {
+            HttpRules.super.registerLocator(pathPattern, locator);
+            return this;
+        }
 
         @Override
         default Builder register(String pathPattern, Supplier<? extends HttpService> service) {
