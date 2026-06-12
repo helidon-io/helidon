@@ -22,7 +22,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -35,6 +37,7 @@ import io.helidon.common.socket.PeerInfo;
 import io.helidon.grpc.core.WeightedBag;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.Headers;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.FlowControl;
 import io.helidon.http.http2.Http2Flag;
@@ -66,6 +69,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -73,6 +77,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class GrpcProtocolHandlerTest {
 
     private static final HeaderName GRPC_ACCEPT_ENCODING = HeaderNames.create("grpc-accept-encoding");
+    private static final int GRPC_PREFIX_LENGTH = 5;
 
     @Test
     @SuppressWarnings("unchecked")
@@ -518,6 +523,216 @@ class GrpcProtocolHandlerTest {
                 return 0;
             }
         };
+    }
+
+    /**
+     * When message processing throws a {@link StatusRuntimeException} (e.g. {@code RESOURCE_EXHAUSTED}
+     * for an oversized message), the call is closed with that status, but the client may still be
+     * sending request data. The handler must keep consuming those frames: if its stream state left
+     * the set accepted by {@code Http2ServerStream.DATA_RECEIVABLE_STATES}, the stream's read loop
+     * would stop while the connection thread keeps queueing DATA frames into the stream's bounded
+     * queue, eventually blocking the connection thread.
+     */
+    @Nested
+    class EarlyCloseOnStatusException {
+
+        private static final Metadata.Key<String> DEBUG_KEY =
+                Metadata.Key.of("x-test-debug", Metadata.ASCII_STRING_MARSHALLER);
+
+        // allocateReadBuffer() checks the limit only for messages larger than its initial
+        // 16 KB buffer, so the limit must be at least that for the rejection to trigger
+        private static final int LIMIT = 16 * 1024;
+
+        private final RecordingWriter writer = new RecordingWriter();
+        private final RecordingListener listener = new RecordingListener();
+        private final AtomicReference<ServerCall<String, String>> callRef = new AtomicReference<>();
+
+        @Test
+        void oversizedMessageKeepsConsumingInboundData() {
+            GrpcProtocolHandler<String, String> handler = handler(listener);
+
+            handler.data(dataHeader(false), messagePrefix(LIMIT + 1));
+
+            assertAll(
+                    () -> assertThat(trailerStatus(), is(Status.Code.RESOURCE_EXHAUSTED.value())),
+                    () -> assertThat("read loop must keep running to drain the request",
+                                     handler.streamState(), is(Http2StreamState.OPEN)),
+                    () -> assertThat(listener.completes, is(1))
+            );
+
+            // remaining request data is discarded without reaching the listener
+            handler.data(dataHeader(false), message("hi"));
+            assertAll(
+                    () -> assertThat(listener.messages, is(List.of())),
+                    () -> assertThat(writer.headersWritten, hasSize(1)),
+                    () -> assertThat(handler.streamState(), is(Http2StreamState.OPEN))
+            );
+
+            // end of stream completes the drain and lets the stream close
+            handler.data(dataHeader(true), BufferData.empty());
+            assertAll(
+                    () -> assertThat(handler.streamState(), is(Http2StreamState.CLOSED)),
+                    () -> assertThat(listener.halfCloses, is(0))
+            );
+        }
+
+        @Test
+        void oversizedMessageOnLastFrameClosesStream() {
+            GrpcProtocolHandler<String, String> handler = handler(listener);
+
+            handler.data(dataHeader(true), messagePrefix(LIMIT + 1));
+
+            assertAll(
+                    () -> assertThat(trailerStatus(), is(Status.Code.RESOURCE_EXHAUSTED.value())),
+                    () -> assertThat("no more inbound data, nothing left to drain",
+                                     handler.streamState(), is(Http2StreamState.CLOSED))
+            );
+        }
+
+        @Test
+        void statusExceptionTrailersArePropagated() {
+            Metadata trailers = new Metadata();
+            trailers.put(DEBUG_KEY, "details");
+            GrpcProtocolHandler<String, String> handler = handler(new RecordingListener() {
+                @Override
+                public void onMessage(String message) {
+                    throw Status.FAILED_PRECONDITION.asRuntimeException(trailers);
+                }
+            });
+
+            handler.data(dataHeader(false), message("hi"));
+
+            Headers written = writer.headersWritten.getFirst().httpHeaders();
+            assertAll(
+                    () -> assertThat(trailerStatus(), is(Status.Code.FAILED_PRECONDITION.value())),
+                    () -> assertThat(written.get(HeaderNames.create("x-test-debug")).get(), is("details"))
+            );
+        }
+
+        @Test
+        void rstStreamAfterCloseDoesNotCancelListener() {
+            GrpcProtocolHandler<String, String> handler = handler(listener);
+            callRef.get().close(Status.OK, new Metadata());
+
+            // a late RST_STREAM, e.g. the client cancelling the remainder of a rejected request,
+            // must not surface as a cancellation after the call has already completed
+            handler.rstStream(new Http2RstStream(io.helidon.http.http2.Http2ErrorCode.CANCEL));
+
+            assertAll(
+                    () -> assertThat(listener.cancels, is(0)),
+                    () -> assertThat(listener.completes, is(1))
+            );
+        }
+
+        private GrpcProtocolHandler<String, String> handler(ServerCall.Listener<String> callListener) {
+            GrpcProtocolHandler<String, String> handler = new GrpcProtocolHandler<>(
+                    new UnimplementedGrpcConnectionContext(),
+                    Http2Headers.create(WritableHeaders.create()),
+                    writer,
+                    1,
+                    null,
+                    Http2StreamState.OPEN,
+                    route(new ServerCallHandler<>() {
+                        @Override
+                        public ServerCall.Listener<String> startCall(ServerCall<String, String> call, Metadata headers) {
+                            callRef.set(call);
+                            call.request(2);
+                            return callListener;
+                        }
+                    }),
+                    GrpcConfig.builder().maxReadBufferSize(LIMIT).build());
+            handler.init();
+            return handler;
+        }
+
+        private int trailerStatus() {
+            return writer.headersWritten.getFirst().httpHeaders().get(GrpcStatus.STATUS_NAME).get(int.class);
+        }
+
+        private Http2FrameHeader dataHeader(boolean endOfStream) {
+            return Http2FrameHeader.create(0,
+                                           Http2FrameTypes.DATA,
+                                           Http2Flag.DataFlags.create(endOfStream ? Http2Flag.END_OF_STREAM : 0),
+                                           1);
+        }
+
+        /**
+         * A gRPC length-prefixed frame header declaring {@code length} bytes, without the payload.
+         * The declared size alone is enough for the server to reject the message.
+         */
+        private BufferData messagePrefix(int length) {
+            BufferData buffer = BufferData.create(GRPC_PREFIX_LENGTH);
+            buffer.write(0);
+            buffer.writeUnsignedInt32(length);
+            return buffer;
+        }
+
+        private BufferData message(String content) {
+            byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
+            BufferData buffer = BufferData.create(GRPC_PREFIX_LENGTH + bytes.length);
+            buffer.write(0);
+            buffer.writeUnsignedInt32(bytes.length);
+            buffer.write(bytes);
+            return buffer;
+        }
+    }
+
+    private static class RecordingListener extends ServerCall.Listener<String> {
+        private final List<String> messages = new ArrayList<>();
+        private int halfCloses;
+        private int cancels;
+        private int completes;
+
+        @Override
+        public void onMessage(String message) {
+            messages.add(message);
+        }
+
+        @Override
+        public void onHalfClose() {
+            halfCloses++;
+        }
+
+        @Override
+        public void onCancel() {
+            cancels++;
+        }
+
+        @Override
+        public void onComplete() {
+            completes++;
+        }
+    }
+
+    private static final class RecordingWriter implements Http2StreamWriter {
+        private final List<Http2Headers> headersWritten = new ArrayList<>();
+
+        @Override
+        public void write(Http2FrameData frame) {
+        }
+
+        @Override
+        public void writeData(Http2FrameData frame, FlowControl.Outbound flowControl) {
+        }
+
+        @Override
+        public int writeHeaders(Http2Headers headers,
+                                int streamId,
+                                Http2Flag.HeaderFlags flags,
+                                FlowControl.Outbound flowControl) {
+            headersWritten.add(headers);
+            return 0;
+        }
+
+        @Override
+        public int writeHeaders(Http2Headers headers,
+                                int streamId,
+                                Http2Flag.HeaderFlags flags,
+                                Http2FrameData dataFrame,
+                                FlowControl.Outbound flowControl) {
+            headersWritten.add(headers);
+            return 0;
+        }
     }
 
     @Nested

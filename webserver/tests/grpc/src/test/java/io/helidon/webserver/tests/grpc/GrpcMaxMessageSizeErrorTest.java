@@ -116,4 +116,64 @@ class GrpcMaxMessageSizeErrorTest extends BaseServiceTest {
         Status status = Status.fromThrowable(errorRef.get());
         assertThat(status.getCode(), is(Status.Code.RESOURCE_EXHAUSTED));
     }
+
+    /**
+     * The server must keep reading the remainder of a rejected request. If it stops, the
+     * per-stream inbound frame queue (32 frames) fills up and blocks the HTTP/2 connection
+     * thread, wedging every call on the connection. A payload much larger than
+     * {@code 32 * 16 KB} (queue capacity x default frame size) makes that deterministic.
+     */
+    @Test
+    void connectionRemainsUsableAfterOversizedMessage() throws Exception {
+        CountDownLatch errorLatch = new CountDownLatch(1);
+        AtomicReference<Throwable> errorRef = new AtomicReference<>();
+
+        StreamObserver<Data> oversized = stub.upload(new StreamObserver<>() {
+            @Override
+            public void onNext(Ack value) {
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                errorRef.set(t);
+                errorLatch.countDown();
+            }
+
+            @Override
+            public void onCompleted() {
+            }
+        });
+
+        oversized.onNext(Data.newBuilder()
+                .setPayload(ByteString.copyFrom(new byte[2 * 1024 * 1024]))
+                .build());
+
+        assertThat("Server did not respond within timeout", errorLatch.await(10, TimeUnit.SECONDS), is(true));
+        assertThat(Status.fromThrowable(errorRef.get()).getCode(), is(Status.Code.RESOURCE_EXHAUSTED));
+
+        // a second call on the same channel reuses the HTTP/2 connection
+        CountDownLatch ackLatch = new CountDownLatch(1);
+        StreamObserver<Data> small = stub.upload(new StreamObserver<>() {
+            @Override
+            public void onNext(Ack value) {
+                ackLatch.countDown();
+            }
+
+            @Override
+            public void onError(Throwable t) {
+            }
+
+            @Override
+            public void onCompleted() {
+            }
+        });
+
+        small.onNext(Data.newBuilder()
+                .setPayload(ByteString.copyFromUtf8("hello"))
+                .build());
+        small.onCompleted();
+
+        assertThat("Connection unusable after oversized message was rejected",
+                   ackLatch.await(10, TimeUnit.SECONDS), is(true));
+    }
 }
