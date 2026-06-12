@@ -35,7 +35,7 @@ By default, the following configuration sources are used to retrieve the
 configuration:
 
 | Source                                    | Description                                                                                                                                           |
-| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+|-------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|
 | System properties                         | A mutable source that uses `System.getProperties()` to obtain configuration values.                                                                   |
 | Environment variables                     | An immutable source that uses `System.env()` to obtain configuration values and resolves aliases as defined by the MicroProfile Config specification. |
 | `META-INF/microprofile-config.properties` | The properties config source as defined by MicroProfile Config specification.                                                                         |
@@ -188,7 +188,7 @@ below), or using `MpConfigSources.create(Path)`, or
 <tr>
 <td style="text-align: left;"><p><code>helidon.config.polling.duration</code></p></td>
 <td style="text-align: left;"><p>Polling period duration, defaults to 10 seconds ('PT10S`)<br />
-See <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/time/Duration.html#parse(java.lang.CharSequence)">javadoc</a></p></td>
+See <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/time/Duration.html#parse(java.lang.CharSequence)">Javadoc</a></p></td>
 </tr>
 <tr>
 <td style="text-align: left;"><p><code>helidon.config.watcher.enabled</code></p></td>
@@ -238,9 +238,9 @@ The class responsible for configuration is:
 
 ### Configuration options
 
-| Key                                         | Kind    | Type     | Description                        |
-| ------------------------------------------- | ------- | -------- | ---------------------------------- |
-| <span id="a2c415-profile"></span> `profile` | `VALUE` | `String` | Configure an explicit profile name |
+| Key       | Kind    | Type     | Description                        |
+|-----------|---------|----------|------------------------------------|
+| `profile` | `VALUE` | `String` | Configure an explicit profile name |
 
 Current properties may be set in `application.yaml` or in
 `microprofile-config.properties` with `mp.config` prefix.
@@ -250,7 +250,7 @@ See [Config Profiles](#microprofile-config-profiles) for more information.
 ## Additional Information
 
 | Name                               | Description                                                                        |
-| ---------------------------------- | ---------------------------------------------------------------------------------- |
+|------------------------------------|------------------------------------------------------------------------------------|
 | [MP Config Guide][mp-config-guide] | Step-by-step guide about using MicroProfile Config in your Helidon MP application. |
 
 ## Reference

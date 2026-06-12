@@ -199,7 +199,7 @@ example:
 
 <!--@mdc ::table-collapse -->
 | HTTP Method        | HttpRouting.Builder example                                        |
-| ------------------ | ------------------------------------------------------------------ |
+|--------------------|--------------------------------------------------------------------|
 | **GET**            | `.get(handler)`                                                    |
 | **PUT**            | `.put(handler)`                                                    |
 | **POST**           | `.post(handler)`                                                   |
@@ -732,7 +732,7 @@ The following table shows available server features and their weight. The
 highest weight is always registered (and invoked) first.
 
 | Feature                            | Weight |
-| ---------------------------------- | ------ |
+|------------------------------------|--------|
 | [Context][context]                 | 1100   |
 | [Access Log][access-log]           | 1000   |
 | [Tracing][tracing]                 | 900    |
@@ -948,7 +948,7 @@ reading entities of a specific type.
 The following table lists JSON media supports:
 
 | Media type             | TypeName       | Maven groupId:artifactId                           | Supported Java type(s)  |
-| ---------------------- | -------------- | -------------------------------------------------- | ----------------------- |
+|------------------------|----------------|----------------------------------------------------|-------------------------|
 | **[JSON-P][json-p]**   | JsonpSupport   | `io.helidon.http.media:helidon-http-media-jsonp`   | `JsonObject, JsonArray` |
 | **[JSON-B][json-b]**   | JsonbSupport   | `io.helidon.http.media:helidon-http-media-jsonb`   | Any \*                  |
 | **[Jackson][jackson]** | JacksonSupport | `io.helidon.http.media:helidon-http-media-jackson` | Any \*                  |
@@ -1342,7 +1342,7 @@ The following providers are currently available (simply add the library on the
 classpath):
 
 | Encoding type | TypeName       | Maven groupId:artifactId                                 |
-| ------------- | -------------- | -------------------------------------------------------- |
+|---------------|----------------|----------------------------------------------------------|
 | **gzip**      | GzipEncoding   | `io.helidon.http.encoding:helidon-http-encoding-gzip`    |
 | **deflate**   | DeflateSupport | `io.helidon.http.encoding:helidon-http-encoding-deflate` |
 

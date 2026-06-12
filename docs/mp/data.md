@@ -168,7 +168,7 @@ The `Data.GenericRepository` interface is extended by additional interfaces that
 add specific features:
 
 | Interface                        | Description                                                                                 |
-| -------------------------------- | ------------------------------------------------------------------------------------------- |
+|----------------------------------|---------------------------------------------------------------------------------------------|
 | `Data.GenericRepository<E, ID>`  | Root interface with entity type and primary key type as generic arguments.                  |
 | `Data.BasicRepository<E, ID>`    | Extends `GenericRepository`; adds a set of basic entity life-cycle operations.              |
 | `Data.CrudRepository<E, ID>`     | Extends `BasicRepository`; adds `insert` and `update` methods to provide full CRUD support. |
@@ -232,7 +232,7 @@ long longCountByName(String name);
 The query return type depends on the return type keyword:
 
 | Keyword | Return Type            | Description                                                                  |
-| ------- | ---------------------- | ---------------------------------------------------------------------------- |
+|---------|------------------------|------------------------------------------------------------------------------|
 | count   | Numeric type           | Number of rows matching the query criteria                                   |
 | exists  | `boolean` or `Boolean` | Whether at least one matching row exists                                     |
 | get     | Query row type         | Single result that throws an exception if there are zero or multiple results |
@@ -251,7 +251,7 @@ The projection part is optional and follows directly after the return-type
 keyword. It consists of `expression` and `property` components:
 
 | Keyword         | Example                          | Description                                                |
-| --------------- | -------------------------------- | ---------------------------------------------------------- |
+|-----------------|----------------------------------|------------------------------------------------------------|
 | Distinct        | `listDistinctNameByTrainer_Name` | Returns only unique values.                                |
 | First\<number\> | `listFirst10ByAge`               | Returns up to `<number>` rows.                             |
 | Min             | `getMinPoints`                   | Returns the minimum property value. Requires numeric type. |
@@ -310,7 +310,7 @@ Supported condition keywords:
 
 <!--@mdc ::table-collapse -->
 | Keyword          | Args | Description                                                                                                                                                      |
-| ---------------- | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|------------------|------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | After            | 1    | The property value is after the given value. Requires a `Comparable` property and argument. Intended for date and time. Effectively equivalent to `GreaterThan`. |
 | Before           | 1    | The property value is before the given value. Requires a `Comparable` property and argument. Intended for date and time. Effectively equivalent to `LessThan`.   |
 | Contains         | 1    | The property value contains the given value. Requires a `String` property and argument.                                                                          |
@@ -466,7 +466,7 @@ type `PageRequest`. The return type of the method is `Slice` or `Page`. The
 Returned page content types:
 
 | Name  | Description                                                                                                                        |
-| ----- | ---------------------------------------------------------------------------------------------------------------------------------- |
+|-------|------------------------------------------------------------------------------------------------------------------------------------|
 | Slice | Contains the page data as a `List` or `Stream` and a `PageRequest` to retrieve this page.                                          |
 | Page  | Contains the page data as a `List` or `Stream`, the total result size across all pages, and a `PageRequest` to retrieve this page. |
 
@@ -584,7 +584,7 @@ transactional method executions. Those ways are defined in `Tx.Type` enum. The
 transactional execution based on `Tx.Type` enum.
 
 | Enum          | Annotation     | Description                                                                                                                                                                                                                                                                                                                                                                               |
-| ------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|---------------|----------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `MANDATORY`   | `@Mandatory`   | A transaction must already be in effect when a method executes. If called outside a transaction context, a `TxException` is thrown. If called inside a transaction context, method execution continues under that context.                                                                                                                                                                |
 | `NEW`         | `@New`         | A new transaction is started when a method executes. If called outside a transaction context, a new transaction is begun. If called inside a transaction context, the current transaction is suspended, a new transaction is begun, and the method execution continues inside this new transaction context.                                                                               |
 | `NEVER`       | `@Never`       | No transaction must be in effect when a method executes. If called outside a transaction context, method execution continues outside a transaction context. If called inside a transaction context, a `TxException` is thrown.                                                                                                                                                            |
@@ -598,7 +598,7 @@ The `Tx` class provides several methods for executing tasks within a
 transaction:
 
 | Method                                                    | Description                                                                                  |
-| --------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+|-----------------------------------------------------------|----------------------------------------------------------------------------------------------|
 | `transaction(Callable<T> task)`                           | Executes a task with a managed transaction of type `REQUIRED`.                               |
 | `transaction(Type type, Callable<T> task)`                | Executes a task with a managed transaction of the specified type.                            |
 | `transaction(CheckedRunnable<Exception> task)`            | Executes a task with a managed transaction of type `REQUIRED` without returning a result.    |

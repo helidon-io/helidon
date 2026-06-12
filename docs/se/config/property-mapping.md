@@ -516,7 +516,7 @@ Use the [`Value`][value] annotation to control some of JavaBean processing for a
 given property.
 
 | Attribute             | Usage                                                                          |
-| --------------------- | ------------------------------------------------------------------------------ |
+|-----------------------|--------------------------------------------------------------------------------|
 | `key`                 | Indicates which config key should match this JavaBean property                 |
 | `withDefault`         | `String` used for the bean property default value if none is set in the config |
 | `withDefaultSupplier` | `Supplier` of the default bean property value if not is set in the config      |

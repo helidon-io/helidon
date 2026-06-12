@@ -3,7 +3,7 @@
 Index of Config documentation.
 
 | Topic                                                            | Description                                  |
-| ---------------------------------------------------------------- | -------------------------------------------- |
+|------------------------------------------------------------------|----------------------------------------------|
 | [Config](introduction.md)                                        | Helidon config introduction                  |
 | [Hierarchical Features](hierarchical-features.md)                | Helidon hierarchical features                |
 | [Property Mapping](property-mapping.md)                          | Helidon config property mapping              |

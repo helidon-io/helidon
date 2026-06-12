@@ -12,7 +12,7 @@ Helidon SE supports a number of additional Helidon features:
 
 <!--@mdc ::table-collapse -->
 | Name                                   | Description                                                                                                                                                     |
-| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|----------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | [Config][config]                       | A flexible configuration framework with support for multiple sources and formats.                                                                               |
 | [CORS][cors]                           | Add support for CORS to your application using a Helidon module.                                                                                                |
 | [DB Client][db-client]                 | Provides a unified, reactive API for working with databases.                                                                                                    |
@@ -37,7 +37,7 @@ Helidon SE supports a number of additional Helidon features:
 In case you need to upgrade the version of Helidon, follow the upgrade guides:
 
 | Name                                             | Description                                                            |
-| ------------------------------------------------ | ---------------------------------------------------------------------- |
+|--------------------------------------------------|------------------------------------------------------------------------|
 | [Helidon SE 4x Upgrade Guide][helidon-se-4x-up]  | Follow this guide to migrate your application from Helidon 3.x to 4.x. |
 | [Helidon SE 3x Upgrade Guide][helidon-se-3x-up]  | Follow this guide to migrate your application from Helidon 2.x to 3.x. |
 | [Helidon SE 2.x Upgrade Guide][helidon-se-2-x-u] | Follow this guide to migrate your application from Helidon 1.x to 2.x. |
@@ -48,7 +48,7 @@ Try the Helidon SE quickstart guides to get your first Helidon SE application up
 and running in minutes.
 
 | Name                 | Description                                                             |
-| -------------------- | ----------------------------------------------------------------------- |
+|----------------------|-------------------------------------------------------------------------|
 | [Guides][guides]     | Follow step-by-step guides to build your applications using Helidon SE. |
 | [Javadocs][javadocs] | Browse the Helidon Javadocs.                                            |
 

@@ -102,7 +102,7 @@ Configuration observability allows reading the current application configuration
 values. Configuration observability defines the following endpoints:
 
 | Endpoint                | Method | Action                                          |
-| ----------------------- | ------ | ----------------------------------------------- |
+|-------------------------|--------|-------------------------------------------------|
 | `/config/profile`       | `GET`  | Returns the current configuration profile       |
 | `/config/values`        | `GET`  | Returns the current configuration values        |
 | `/config/values/{name}` | `GET`  | Returns specified by `name` configuration value |
@@ -118,7 +118,7 @@ endpoints:
 
 <!--@mdc ::table-collapse -->
 | Endpoint                 | Method | Action                                                        |
-| ------------------------ | ------ | ------------------------------------------------------------- |
+|--------------------------|--------|---------------------------------------------------------------|
 | `/health/ready`          | `GET`  | Returns Service Readiness                                     |
 | `/health/live`           | `GET`  | Returns whether the service is alive                          |
 | `/health/started`        | `GET`  | Returns whether the service is started                        |
@@ -143,7 +143,7 @@ Info observability allows configuration of custom properties to be available to
 users. Information observability defines the following endpoints:
 
 | Endpoint       | Method | Action                                                       |
-| -------------- | ------ | ------------------------------------------------------------ |
+|----------------|--------|--------------------------------------------------------------|
 | `/info`        | `GET`  | Returns the Application information                          |
 | `/info/{name}` | `GET`  | Returns the Application information for the specified `name` |
 
@@ -166,7 +166,7 @@ endpoints:
 Helidon distinguishes among three general *types*, or scopes, of metrics.
 
 | Type/scope  | Typical Usage                                                                                                  |
-| ----------- | -------------------------------------------------------------------------------------------------------------- |
+|-------------|----------------------------------------------------------------------------------------------------------------|
 | base        | OS or Java runtime measurements (available heap, disk space, etc.).                                            |
 | vendor      | Implemented by vendors, including the `REST.request` metrics and other key performance indicator measurements. |
 | application | Declared via annotations or programmatically registered by your service code.                                  |

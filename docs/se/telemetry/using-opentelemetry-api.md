@@ -178,7 +178,7 @@ service sending metrics and span data to a backend system such as Signoz running
 on the same system.
 
 | System property               | Value                   | Description                                           |
-| ----------------------------- | ----------------------- | ----------------------------------------------------- |
+|-------------------------------|-------------------------|-------------------------------------------------------|
 | `otel.sdk.disabled`           | `false`                 | Enables the OpenTelemetry SDK                         |
 | `otel.service.name`           | `my-helidon-service`    | Name associated with telemetry sent from this service |
 | `otel.exporter.otlp.endpoint` | `http://localhost:4318` | URL to which to transmit data                         |

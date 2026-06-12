@@ -15,7 +15,7 @@ each a different interface defined within the [`ConfigNode`][confignode]
 interface.
 
 | Type   | Java Interface          | Usage                                                                         |
-| ------ | ----------------------- | ----------------------------------------------------------------------------- |
+|--------|-------------------------|-------------------------------------------------------------------------------|
 | object | `ConfigNode.ObjectNode` | Represents complex structure (a subtree). Its child nodes can be of any type. |
 | list   | `ConfigNode.ListNode`   | Represents a list of nodes. Its components can be of any type.                |
 | value  | `ConfigNode.ValueNode`  | Represents a leaf node.                                                       |
@@ -171,7 +171,7 @@ node of type `MISSING`. There are several ways your application can tell whether
 a given config value exists.
 
 | Method     | Usage                                                                                                                                                      |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `exists`   | Returns `true` or `false`                                                                                                                                  |
 | `ifExists` | Execute functional operations for present nodes                                                                                                            |
 | `type`     | Returns enum value for the `Config.Type`; `Config.Type.MISSING` if the node represents a config value that *does not* exist                                |

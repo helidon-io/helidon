@@ -304,7 +304,7 @@ a way similar to how you declare the config sources themselves: by `type` and
 with accompanying `properties`.
 
 | Strategy Type | Usage                                                                         | Properties                                                                                  |
-| ------------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+|---------------|-------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
 | `regular`     | Periodic polling - See [`PollingStrategies.regular`][pollingstrategie] method | `interval` (`Duration`) - indicating how often to poll; e.g., `PT15S` represents 15 seconds |
 
 Config Profile Support for Built-in Polling Strategies

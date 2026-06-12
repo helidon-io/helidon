@@ -32,11 +32,11 @@ Dependencies](../../managing-dependencies.md)).
 ## API
 
 | Class                                                  | Description                                                                                                         |
-| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
+|--------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------|
 | org.eclipse.microprofile.rest.client.RestClientBuilder | Base builder instance. Contains configuration options and a `build` method that creates the actual client instance. |
 
 | Annotation          | Description                                                                                                  |
-| ------------------- | ------------------------------------------------------------------------------------------------------------ |
+|---------------------|--------------------------------------------------------------------------------------------------------------|
 | @RegisterRestClient | A marker annotation to register a client at runtime. This marker must be applied to any CDI managed clients. |
 | @RestClient         | RestClient qualifier which should be used on an CDI injection points.                                        |
 
@@ -133,7 +133,7 @@ below to indicate an alias or a class name.
 Required configuration options:
 
 | key                       | type   | default value | description                                                                                                                                          |
-| ------------------------- | ------ | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+|---------------------------|--------|---------------|------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `$restClient/mp-rest/url` | string |               | Sets the base URL to use for this service. This option or `/mp-rest/uri` need to be set if the value is not present in `RegisterRestClient#baseUri`. |
 | `$restClient/mp-rest/uri` | string |               | Sets the base URI to use for this service. This option or `/mp-rest/url` need to be set if the value is not present in `RegisterRestClient#baseUri`. |
 
@@ -141,7 +141,7 @@ Optional configuration options:
 
 <!--@mdc ::table-collapse -->
 | key                                      | type                                               | default value                          | description                                                                                                                                                               |
-| ---------------------------------------- | -------------------------------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|------------------------------------------|----------------------------------------------------|----------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `$restClient/mp-rest/scope`              | string                                             | `jakarta.enterprise.context.Dependent` | The fully qualified classname to a CDI scope to use for injection.                                                                                                        |
 | `$restClient/mp-rest/connectTimeout`     | long                                               |                                        | Sets timeout in milliseconds to wait to connect to the remote endpoint.                                                                                                   |
 | `$restClient/mp-rest/readTimeout`        | long                                               |                                        | Sets timeout in milliseconds to wait for a response from the remote endpoint.                                                                                             |
@@ -160,7 +160,7 @@ Optional configuration options:
 Configuration options affecting CDI and programmatically created clients:
 
 | key                                                                           | type    | default value | description                                                                                                                                                               |
-| ----------------------------------------------------------------------------- | ------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|-------------------------------------------------------------------------------|---------|---------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `$restClient/mp-rest/providers`                                               | string  |               | A comma separated list of fully-qualified provider classnames to include in the client.                                                                                   |
 | `$restClient/mp-rest/providers/<fully-qualified-provider-classname>/priority` | string  |               | Sets the priority of the provider for this interface.                                                                                                                     |
 | `org.eclipse.microprofile.rest.client.propagateHeaders`                       | string  |               | To specify which headers to propagate from the inbound JAX-RS request to the outbound MP Rest Client request. Should not be prefixed with the rest client class or alias. |

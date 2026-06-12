@@ -13,7 +13,7 @@ We have upgraded to OpenTracing version 0.33.0 that is not backward compatible.
 OpenTracing introduced the following breaking changes:
 
 | Removed                                            | Replacement                                                            |
-| -------------------------------------------------- | ---------------------------------------------------------------------- |
+|----------------------------------------------------|------------------------------------------------------------------------|
 | `ScopeManager.active()`                            | `Tracer.activeSpan()`                                                  |
 | `ScopeManager.activate(Span, boolean)`             | `ScopeManager.activate(Span)` - second parameter is now always `false` |
 | `SpanBuilder.startActive()`                        | `Tracer.activateSpan(Span)`                                            |

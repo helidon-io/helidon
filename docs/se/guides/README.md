@@ -3,7 +3,7 @@
 Index of Guides documentation.
 
 | Topic                                                | Description                                                      |
-| ---------------------------------------------------- | ---------------------------------------------------------------- |
+|------------------------------------------------------|------------------------------------------------------------------|
 | [Overview](overview.md)                              | Helidon SE Guides                                                |
 | [CRaC](crac.md)                                      | Coordinated Restore at Checkpoint(CRaC) with Helidon application |
 | [Custom Runtime Images with `jlink`](jlink-image.md) | Helidon Custom Runtime Images                                    |

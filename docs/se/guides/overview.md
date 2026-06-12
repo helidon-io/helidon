@@ -10,7 +10,7 @@
 ::
 -->
 | Guide                          | Description                                                  |
-| ------------------------------ | ------------------------------------------------------------ |
+|--------------------------------|--------------------------------------------------------------|
 | [Quickstart SE][quickstart-se] | Create your first Helidon SE application in under 5 minutes. |
 <!--/mdc -->
 
@@ -51,7 +51,7 @@
 ::
 -->
 | Guide                                                   | Description                                                    |
-| ------------------------------------------------------- | -------------------------------------------------------------- |
+|---------------------------------------------------------|----------------------------------------------------------------|
 | [Config Guide][config-guide]                            | Learn how to configure a Helidon SE application.               |
 | [LangChain4j Guide][langchain4j-guid]                   | Learn how to create AI powered Helidon SE applications.        |
 | [Health Check Guide][health-check-gui]                  | Learn how to use Helidon SE built-in and custom health checks. |
@@ -83,7 +83,7 @@
 ::
 -->
 | Guide                                                 | Description                                                                                                                     |
-| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+|-------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------|
 | [Maven Guide][maven-guide]                            | Using Helidon in your Maven project.                                                                                            |
 | [Gradle Guide][gradle-guide]                          | Using Helidon in your Gradle project.                                                                                           |
 | [GraalVM Native Images][graalvm-native-i]             | Learn how to build a GraalVM native image for your Helidon application both on your desktop and as part of a Docker image.      |

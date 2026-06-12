@@ -32,7 +32,7 @@ The config system maintains a [`Config.Context`][config-context] for each
 `Config.context()` method and then use it for these operations:
 
 | Method                | Usage                                                                                                                                        |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+|-----------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
 | `Instant timestamp()` | Returns the load time of the last loaded configuration that used the context.                                                                |
 | `Config last()`       | Returns the most recently loaded configuration that used the context.                                                                        |
 | `Config reload()`     | Reloads the entire config tree from the current contents of the same config sources used to load the tree in which the current node resides. |

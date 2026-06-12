@@ -102,7 +102,7 @@ class MyTest {
 Note the following Helidon CDI extensions:
 
 | Extension                                | Note                                      |
-| ---------------------------------------- | ----------------------------------------- |
+|------------------------------------------|-------------------------------------------|
 | [`ConfigCdiExtension`][configcdiextensi] | Add MicroProfile Config injection support |
 | [`ServerCdiExtension`][servercdiextensi] | Optional if using [`@AddJaxRs`][addjaxrs] |
 | [`JaxRsCdiExtension`][jaxrscdiextensio]  | Optional if using [`@AddJaxRs`][addjaxrs] |
@@ -186,7 +186,7 @@ class MyTest {
 The "synthetic" configuration can be expressed using the following annotations:
 
 | Type                                  | Usage                      |
-| ------------------------------------- | -------------------------- |
+|---------------------------------------|----------------------------|
 | [`@AddConfig`][addconfig]             | Key value pair             |
 | [`@AddConfigBlock`][addconfigblock]   | Formatted text block       |
 | [`@AddConfigSource`][addconfigsource] | Programmatic config source |
@@ -273,7 +273,7 @@ class MyTest {
 The default ordering is the following
 
 | Annotation                            | Ordinal |
-| ------------------------------------- | ------- |
+|---------------------------------------|---------|
 | [`@AddConfig`][addconfig]             | 1000    |
 | [`@AddConfigBlock`][addconfigblock]   | 900     |
 | [`@AddConfigSource`][addconfigsource] | 800     |
@@ -287,7 +287,7 @@ E.g. JAXRS client.
 Here are all the built-in types that can be injected:
 
 | Type                     | Usage                                              |
-| ------------------------ | -------------------------------------------------- |
+|--------------------------|----------------------------------------------------|
 | [`WebTarget`][webtarget] | A JAX-RS client configured for the current server. |
 | `URI`                    | A URI representing the current server              |
 | `String`                 | A raw URI representing the current server          |
@@ -468,7 +468,7 @@ Here is a brief overview of the MicroProfile testing annotations:
 
 <!--@mdc ::table-collapse -->
 | Annotation                              | Usage                                                                                                |
-| --------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+|-----------------------------------------|------------------------------------------------------------------------------------------------------|
 | [`@AddBean`][addbean]                   | Add a CDI bean class to the CDI container                                                            |
 | [`@AddExtension`][addextension]         | Add a CDI extension to the CDI container                                                             |
 | [`@DisableDiscovery`][disablediscovery] | Disable automated discovery of beans and extensions                                                  |

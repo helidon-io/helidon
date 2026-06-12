@@ -214,7 +214,7 @@ disabled by default, but can be easily enabled as we shall discuss shortly.
 Here is the list of gRPC client metrics available in Helidon:
 
 | Metric                                                 | Type                 | Labels                                | Description                                                                                       |
-| ------------------------------------------------------ | -------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------- |
+|--------------------------------------------------------|----------------------|---------------------------------------|---------------------------------------------------------------------------------------------------|
 | grpc.client.attempt.started                            | Counter              | grpc.method, grpc.target              | The total number of calls started, including not completed ones, for a certain method and target. |
 | grpc.client.attempt.duration                           | Timer                | grpc.method, grpc.target, grpc.status | Timer that tracks call durations for a certain method and target.                                 |
 | grpc.client.attempt.sent_total_compressed_message_size | Distribution Summary | grpc.method, grpc.target, grpc.status | Summary of message sizes sent to clients for a certain method and target.                         |

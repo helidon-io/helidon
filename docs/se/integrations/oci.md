@@ -82,7 +82,7 @@ OCI SDK Integration provides following authentication integrations
 out-of-the-box:
 
 | Provider              | Weight | Description                                                                                                                                                                                                              |
-| --------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+|-----------------------|--------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Config                | 90     | Uses the user authentication specified in the Helidon `oci-config.yaml` file.                                                                                                                                            |
 | Session Token         | 85     | Uses config or config file, if it contains session token.                                                                                                                                                                |
 | Config File           | 80     | Uses the user authentication specified in `~/.oci/config`.                                                                                                                                                               |

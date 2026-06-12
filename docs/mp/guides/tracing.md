@@ -8,7 +8,7 @@ be used to run some basic examples using tracing with Helidon MP.
 For this 30 minute tutorial, you will need the following:
 
 | Requirement                                     | Description                                                                       |
-| ----------------------------------------------- | --------------------------------------------------------------------------------- |
+|-------------------------------------------------|-----------------------------------------------------------------------------------|
 | [Java 21][java-21] ([Open JDK 21][open-jdk-21]) | Helidon requires Java 21+ (25+ recommended).                                      |
 | [Maven 3.8+][maven-3-8]                         | Helidon requires Maven 3.8+.                                                      |
 | [Docker 18.09+][docker-18-09]                   | If you want to build and run Docker containers.                                   |
@@ -688,7 +688,7 @@ and Helidon then logs a `WARNING` message describing the invalid operation
 invocation.
 
 | Tracing type                   | Changes allowed                                   |
-| ------------------------------ | ------------------------------------------------- |
+|--------------------------------|---------------------------------------------------|
 | [`Span.Builder`][span-builder] | Add tags                                          |
 | [`Span`][span]                 | Retrieve and update baggage, add events, add tags |
 | [`Scope`][scope]               | none                                              |
@@ -699,7 +699,7 @@ The following tables list specifically what operations the proxies permit.
 
 <!--@mdc ::table-collapse -->
 | Method                | Purpose                                                     | OK? |
-| --------------------- | ----------------------------------------------------------- | --- |
+|-----------------------|-------------------------------------------------------------|-----|
 | `build()`             | Starts the span.                                            | \-  |
 | `end` methods         | Ends the span.                                              | \-  |
 | `get()`               | Starts the span.                                            | \-  |
@@ -717,7 +717,7 @@ The following tables list specifically what operations the proxies permit.
 [`io.helidon.tracing.Span.Builder`][span-builder] Operations
 
 | Method             | Purpose                                                     | OK? |
-| ------------------ | ----------------------------------------------------------- | --- |
+|--------------------|-------------------------------------------------------------|-----|
 | `activate()`       | Makes the span "current", returning a `Scope`.              | \-  |
 | `addEvent` methods | Associate a string (and optionally other info) with a span. | ✓   |
 | `baggage()`        | Returns the `Baggage` instance associated with the span.    | ✓   |
@@ -739,7 +739,7 @@ The following tables list specifically what operations the proxies permit.
 [`io.helidon.tracing.Scope`][scope] Operations
 
 | Method                   | Purpose                                                      | OK? |
-| ------------------------ | ------------------------------------------------------------ | --- |
+|--------------------------|--------------------------------------------------------------|-----|
 | `asParent(Span.Builder)` | Sets this context as the parent of a new span builder.       | ✓   |
 | `baggage()`              | Returns `Baggage` instance associated with the span context. | ✓   |
 | `spanId()`               | Returns the span ID.                                         | ✓   |
@@ -778,7 +778,7 @@ methods, so your listener can implement only the methods it needs to.
 Helidon invokes each listener’s methods in the following order:
 
 | Method                                  | When invoked                                                                                                          |
-| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+|-----------------------------------------|-----------------------------------------------------------------------------------------------------------------------|
 | `starting(Span.Builder<?> spanBuilder)` | Just before a span is started from its builder.                                                                       |
 | `started(Span span)`                    | Just after a span has started.                                                                                        |
 | `activated(Span span, Scope scope)`     | After a span has been activated, creating a new scope. A given span might never be activated; it depends on the code. |

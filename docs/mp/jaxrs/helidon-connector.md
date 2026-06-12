@@ -84,7 +84,7 @@ below:
 
 <!--@mdc ::table-collapse -->
 | Property Name                                               | Type                             | Scope              | Default        |
-| ----------------------------------------------------------- | -------------------------------- | ------------------ | -------------- |
+|-------------------------------------------------------------|----------------------------------|--------------------|----------------|
 | jersey.config.client.connectTimeout                         | `Integer`                        | client             | 10000 (millis) |
 | jersey.config.client.readTimeout                            | `Integer`                        | client, invocation | 10000 (millis) |
 | jersey.config.client.followRedirects                        | `Boolean`                        | client, invocation | true           |

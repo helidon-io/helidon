@@ -15,7 +15,7 @@ benefits of a low overhead server built on Java virtual threads.
 ## Supported Jakarta EE Specifications
 
 | Specification                                            | Version      | Description                                                 |
-| -------------------------------------------------------- | ------------ | ----------------------------------------------------------- |
+|----------------------------------------------------------|--------------|-------------------------------------------------------------|
 | [Jakarta Bean Validation][jakarta-bean-val]              | [3.0][3-0]   | Object level constraint declaration and validation facility |
 | Jakarta Context and Dependency Injection (CDI)           | [4.0][4-0]   | Declarative dependency injection and supporting services    |
 | Jakarta JSON Processing (JSON-P)                         | [2.1][2-1]   | API to parse, generate, transform, and query JSON docs      |
@@ -29,7 +29,7 @@ benefits of a low overhead server built on Java virtual threads.
 
 <!--@mdc ::table-collapse -->
 | Specification                                                 | Version        | Description                                                                                                     |
-| ------------------------------------------------------------- | -------------- | --------------------------------------------------------------------------------------------------------------- |
+|---------------------------------------------------------------|----------------|-----------------------------------------------------------------------------------------------------------------|
 | [MicroProfile Config][microprofile-con]                       | [3.1][3-1-3]   | A flexible configuration framework with support for multiple sources and formats                                |
 | [MicroProfile Fault Tolerance][microprofile-fau]              | [4.0.2][4-0-2] | Common strategies for various system problems such as time-outs, retries, Circuit Breaker, etc.                 |
 | [MicroProfile GraphQL][microprofile-gra]                      | [2.0][2-0-2]   | API for working with GraphQL                                                                                    |
@@ -47,7 +47,7 @@ benefits of a low overhead server built on Java virtual threads.
 ## Other Components
 
 | Component                | Description                                                                                                                        |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+|--------------------------|------------------------------------------------------------------------------------------------------------------------------------|
 | [CORS][cors]             | Cross Origin Resource Sharing – API to control if and how REST resources served by their applications can be shared across origins |
 | [gRPC][grpc]             | gRPC server and client                                                                                                             |
 | [OCI SDK][oci-sdk]       | Full set of APIs for working with OCI services                                                                                     |

@@ -3,7 +3,7 @@
 Index of LangChain4j documentation.
 
 | Topic                                               | Description                                                                      |
-| --------------------------------------------------- | -------------------------------------------------------------------------------- |
+|-----------------------------------------------------|----------------------------------------------------------------------------------|
 | [LangChain4j](langchain4j.md)                       | Helidon LangChain4j Integration                                                  |
 | [RAG](rag.md)                                       | LangChain4j Retrieval-Augmented Generation                                       |
 | [OpenAI](open-ai.md)                                | LangChain4j OpenAI                                                               |

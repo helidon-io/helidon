@@ -444,7 +444,7 @@ which simply invokes the function without any retry. That class also exposes a
 builder for constructing a time-based retry policy, with several parameters:
 
 | Parameter        | Usage                                                                                                         | Default |
-| ---------------- | ------------------------------------------------------------------------------------------------------------- | ------- |
+|------------------|---------------------------------------------------------------------------------------------------------------|---------|
 | `delay`          | Initial delay between calls to the function                                                                   | 200 ms  |
 | `delayFactor`    | Multiplier applied to `delay` on each successive call                                                         | 2       |
 | `callTimeout`    | Time limit for each individual call of the function                                                           | 500 ms  |
