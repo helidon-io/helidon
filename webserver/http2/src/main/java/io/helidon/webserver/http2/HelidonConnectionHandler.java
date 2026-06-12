@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,13 +26,16 @@ import io.netty.handler.codec.http.HttpScheme;
 import io.netty.handler.codec.http.HttpServerUpgradeHandler;
 import io.netty.handler.codec.http2.AbstractHttp2ConnectionHandlerBuilder;
 import io.netty.handler.codec.http2.DefaultHttp2Headers;
+import io.netty.handler.codec.http2.Http2CodecUtil;
 import io.netty.handler.codec.http2.Http2ConnectionDecoder;
 import io.netty.handler.codec.http2.Http2ConnectionEncoder;
+import io.netty.handler.codec.http2.Http2Error;
 import io.netty.handler.codec.http2.Http2Exception;
 import io.netty.handler.codec.http2.Http2Flags;
 import io.netty.handler.codec.http2.Http2FrameListener;
 import io.netty.handler.codec.http2.Http2FrameLogger;
 import io.netty.handler.codec.http2.Http2Headers;
+import io.netty.handler.codec.http2.Http2RemoteFlowController;
 import io.netty.handler.codec.http2.Http2Settings;
 import io.netty.handler.codec.http2.HttpToHttp2ConnectionHandler;
 import io.netty.handler.codec.http2.InboundHttp2ToHttpAdapter;
@@ -122,6 +125,8 @@ class HelidonConnectionHandler extends HttpToHttp2ConnectionHandler implements H
 
     @Override
     public void onSettingsRead(ChannelHandlerContext ctx, Http2Settings settings) throws Http2Exception {
+        validateInitialWindowSize(settings);
+        encoder().writeSettingsAck(ctx, ctx.newPromise());
         inboundAdapter.onSettingsRead(ctx, settings);
     }
 
@@ -173,6 +178,7 @@ class HelidonConnectionHandler extends HttpToHttp2ConnectionHandler implements H
 
         HelidonHttp2ConnectionHandlerBuilder() {
             frameLogger(LOGGER);
+            autoAckSettingsFrame(false);
         }
 
         public HelidonHttp2ConnectionHandlerBuilder maxContentLength(int maxContentLength) {
@@ -193,6 +199,28 @@ class HelidonConnectionHandler extends HttpToHttp2ConnectionHandler implements H
             frameListener(handler);
             return handler;
         }
+    }
+
+    private void validateInitialWindowSize(Http2Settings settings) throws Http2Exception {
+        Integer initialWindowSize = settings.initialWindowSize();
+        if (initialWindowSize == null) {
+            return;
+        }
+
+        Http2RemoteFlowController flowController = encoder().flowController();
+        int delta = initialWindowSize - flowController.initialWindowSize();
+        if (delta <= 0) {
+            return;
+        }
+
+        encoder().connection().forEachActiveStream(stream -> {
+            if (flowController.windowSize(stream) > Http2CodecUtil.MAX_INITIAL_WINDOW_SIZE - delta) {
+                throw Http2Exception.connectionError(Http2Error.FLOW_CONTROL_ERROR,
+                                                     "Window size overflow for stream: %d",
+                                                     stream.id());
+            }
+            return true;
+        });
     }
 }
 
