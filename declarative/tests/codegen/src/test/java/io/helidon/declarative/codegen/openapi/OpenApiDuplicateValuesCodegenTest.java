@@ -310,6 +310,37 @@ class OpenApiDuplicateValuesCodegenTest {
     }
 
     @Test
+    void httpSecuritySchemeWithConfiguredSchemeGuardsBearerFormat() throws IOException {
+        var result = compile("openapi-http-security-scheme-configured-scheme-bearer-format", """
+                @OpenApi.HttpSecurityScheme(name = "bearerAuth",
+                                            scheme = "${auth.scheme:bearer}",
+                                            bearerFormat = "JWT")
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/valid")
+                class ValidOpenApiEndpoint {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        String generated = generatedSource(result);
+        assertThat(generated, containsString("String resolvedScheme = io.helidon.openapi.OpenApiDocumentContextSupport"
+                                                     + ".resolveExpression(context, \"${auth.scheme:bearer}\");"));
+        assertThat(generated, containsString("security.scheme(resolvedScheme);"));
+        assertThat(generated, containsString("if (\"bearer\".equalsIgnoreCase(resolvedScheme)) {"));
+        assertThat(generated, containsString("security.bearerFormat(io.helidon.openapi.OpenApiDocumentContextSupport"
+                                                     + ".resolveExpression(context, \"JWT\"));"));
+    }
+
+    @Test
     void typedSecuritySchemesGenerateComponents() throws IOException {
         var result = compile("openapi-typed-security-schemes", """
                 @OpenApi.ApiKeySecurityScheme(name = "apiKeyAuth",
@@ -804,6 +835,37 @@ class OpenApiDuplicateValuesCodegenTest {
         String generated = generatedSource(result);
         assertThat(generated, containsString(".scheme(\"bearerAuth\", java.util.List.of())"));
         assertThat(generated, containsString(".scheme(\"oauth2\", java.util.List.of(\"read\"))"));
+    }
+
+    @Test
+    void methodSecurityRequirementOverridesInheritedRequirement() throws IOException {
+        var result = compile("openapi-method-security-requirement-overrides-inherited-requirement", """
+                interface SecuredApi {
+                    @Http.GET
+                    @OpenApi.SecurityRequirement(@OpenApi.SecuritySchemeRequirement("oauth2"))
+                    String get();
+                }
+
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/valid")
+                class ValidOpenApiEndpoint implements SecuredApi {
+                    @Override
+                    @OpenApi.SecuritySchemeRequirement("bearerAuth")
+                    public String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        String generated = generatedSource(result);
+        assertThat(generated, containsString(".scheme(\"bearerAuth\", java.util.List.of())"));
+        assertThat(generated.contains(".scheme(\"oauth2\", java.util.List.of())"), is(false));
     }
 
     @Test

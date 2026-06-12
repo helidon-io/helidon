@@ -247,6 +247,7 @@ public final class OpenApiDocumentReader {
         object(source, "content", content -> content.keysAsStrings()
                 .forEach(mediaType -> object(content, mediaType,
                                              value -> builder.content(mediaType, mediaType(value)))));
+        extensions(source, builder::extension);
         return builder.build();
     }
 
@@ -301,6 +302,7 @@ public final class OpenApiDocumentReader {
                 .forEach(name -> object(encodings, name, encoding -> builder.encoding(name, encoding(encoding)))));
         array(source, "prefixEncoding", builder::prefixEncoding);
         object(source, "itemEncoding", itemEncoding -> builder.itemEncoding(encoding(itemEncoding)));
+        extensions(source, builder::extension);
         return builder.build();
     }
 
