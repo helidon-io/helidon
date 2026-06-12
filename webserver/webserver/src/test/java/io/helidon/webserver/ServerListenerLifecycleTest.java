@@ -31,9 +31,11 @@ import java.nio.channels.SocketChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Timer;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -44,8 +46,12 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.context.Context;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.tls.Tls;
+import io.helidon.http.encoding.ContentEncodingContext;
+import io.helidon.http.media.MediaContext;
+import io.helidon.webserver.http.DirectHandlers;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.spi.ServerConnection;
@@ -1045,6 +1051,61 @@ class ServerListenerLifecycleTest {
     }
 
     @Test
+    void concurrentListenerStopsRunCleanupOnlyOnce() throws Exception {
+        TestTransportBindingProvider.reset();
+        BlockingAfterStopRouter router = new BlockingAfterStopRouter();
+        Timer timer = new Timer("test-listener-concurrent-stop", true);
+        ServerListener listener = new ServerListener(WebServer.DEFAULT_SOCKET_NAME,
+                                                     listenerConfigWithoutTcp(),
+                                                     router,
+                                                     Context.builder()
+                                                             .id("listener-concurrent-stop-test")
+                                                             .build(),
+                                                     timer,
+                                                     MediaContext.create(),
+                                                     ContentEncodingContext.create(),
+                                                     DirectHandlers.create());
+        AtomicReference<Throwable> firstStopFailure = new AtomicReference<>();
+        AtomicReference<Throwable> secondStopFailure = new AtomicReference<>();
+        Thread firstStop = null;
+        Thread secondStop = null;
+
+        try {
+            listener.start();
+
+            firstStop = Thread.ofPlatform()
+                    .name("test-listener-stop-first")
+                    .start(() -> stopListener(listener, firstStopFailure));
+            assertThat(router.awaitAfterStop(), is(true));
+
+            secondStop = Thread.ofPlatform()
+                    .name("test-listener-stop-second")
+                    .start(() -> stopListener(listener, secondStopFailure));
+            secondStop.join(TimeUnit.SECONDS.toMillis(5));
+
+            assertThat(secondStop.isAlive(), is(false));
+            assertThat(secondStopFailure.get(), nullValue());
+            assertThat(TestTransportBindingProvider.stops("test"), is(1));
+            assertThat(router.afterStops(), is(1));
+        } finally {
+            router.releaseAfterStop();
+            if (firstStop != null) {
+                firstStop.join(TimeUnit.SECONDS.toMillis(5));
+                if (firstStop.isAlive()) {
+                    firstStop.interrupt();
+                }
+            }
+            if (secondStop != null && secondStop.isAlive()) {
+                secondStop.interrupt();
+            }
+            listener.stop();
+            timer.cancel();
+        }
+
+        assertThat(firstStopFailure.get(), nullValue());
+    }
+
+    @Test
     void listenerPlanningFailsWhenDefaultTcpTransportBindingIsDisabled() {
         RuntimeException failure = assertThrows(RuntimeException.class, () -> WebServer.builder()
                 .shutdownHook(false)
@@ -1237,6 +1298,25 @@ class ServerListenerLifecycleTest {
         }
     }
 
+    private static void stopListener(ServerListener listener, AtomicReference<Throwable> failure) {
+        try {
+            listener.stop();
+        } catch (RuntimeException | Error e) {
+            failure.set(e);
+        }
+    }
+
+    private static WebServerConfig listenerConfigWithoutTcp() {
+        return WebServer.builder()
+                .shutdownHook(false)
+                .bindingsDiscoverServices(false)
+                .addBinding(TcpTransportConfig.builder()
+                                    .enabled(false)
+                                    .buildPrototype())
+                .addBinding(new TestTransportBindingConfig("test", true))
+                .buildPrototype();
+    }
+
     private static void assertPortCanBind(int port) throws Exception {
         assertThat(port > 0, is(true));
         try (ServerSocket _ = new ServerSocket(port, 50, InetAddress.getLoopbackAddress())) {
@@ -1375,6 +1455,50 @@ class ServerListenerLifecycleTest {
 
         private void release() {
             release.countDown();
+        }
+    }
+
+    private static final class BlockingAfterStopRouter implements Router {
+        private final CountDownLatch afterStopEntered = new CountDownLatch(1);
+        private final CountDownLatch releaseAfterStop = new CountDownLatch(1);
+        private final AtomicInteger afterStops = new AtomicInteger();
+
+        @Override
+        public <T extends Routing> T routing(Class<T> routingType, T defaultValue) {
+            return defaultValue;
+        }
+
+        @Override
+        public void afterStop() {
+            afterStops.incrementAndGet();
+            afterStopEntered.countDown();
+            try {
+                releaseAfterStop.await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("Interrupted while waiting in router afterStop", e);
+            }
+        }
+
+        @Override
+        public void beforeStart() {
+        }
+
+        @Override
+        public List<? extends Routing> routings() {
+            return List.of();
+        }
+
+        private boolean awaitAfterStop() throws InterruptedException {
+            return afterStopEntered.await(5, TimeUnit.SECONDS);
+        }
+
+        private void releaseAfterStop() {
+            releaseAfterStop.countDown();
+        }
+
+        private int afterStops() {
+            return afterStops.get();
         }
     }
 
