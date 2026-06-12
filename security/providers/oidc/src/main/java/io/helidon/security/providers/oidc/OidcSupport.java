@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.ServiceLoader;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
@@ -127,12 +128,27 @@ import static io.helidon.security.providers.oidc.common.spi.TenantConfigFinder.D
  * <tr>
  *     <td>query-param-use</td>
  *     <td>false</td>
- *     <td>Whether to use query parameter to add to the request when redirecting to
- *              original URI</td></tr>
+ *     <td>Whether to use query parameter to add encrypted access token handoff to
+ *              the request when redirecting to original URI</td></tr>
  * <tr>
  *     <td>query-param-name</td>
  *     <td>accessToken</td>
- *     <td>Name of the query parameter to set (and expect)</td>
+ *     <td>Name of the query parameter to set with encrypted handoff (and expect)</td>
+ * </tr>
+ * <tr>
+ *     <td>legacy-state-param</td>
+ *     <td>false</td>
+ *     <td>Whether to write and accept legacy raw local redirect URI in OIDC state during rolling updates.</td>
+ * </tr>
+ * <tr>
+ *     <td>legacy-state-fallback</td>
+ *     <td>false</td>
+ *     <td>Whether to accept legacy raw local redirect URI from OIDC state after encrypted validation fails.</td>
+ * </tr>
+ * <tr>
+ *     <td>legacy-query-param-handoff</td>
+ *     <td>false</td>
+ *     <td>Whether to write legacy raw access token query parameter handoff during rolling updates.</td>
  * </tr>
  * </table>
  */
@@ -141,7 +157,6 @@ public final class OidcSupport implements Service {
     private static final Supplier<ExecutorService> OIDC_SUPPORT_SERVICE = ThreadPoolSupplier.create("oidc-support");
     private static final String CODE_PARAM_NAME = "code";
     private static final String STATE_PARAM_NAME = "state";
-    private static final String DEFAULT_REDIRECT = "/index.html";
 
     private final List<TenantConfigFinder> oidcConfigFinders;
     private final LruCache<String, Tenant> tenants = LruCache.create();
@@ -157,6 +172,7 @@ public final class OidcSupport implements Service {
             this.oidcConfigFinders = List.copyOf(builder.tenantConfigFinders);
 
             this.oidcConfigFinders.forEach(tenantConfigFinder -> tenantConfigFinder.onChange(tenants::remove));
+            warnWhenQueryParamHandoffIsUnbound();
         } else {
             this.corsSupport = null;
             this.oidcConfigFinders = List.of();
@@ -425,6 +441,21 @@ public final class OidcSupport implements Service {
 
     private void processCodeWithTenant(String code, ServerRequest req, ServerResponse res, String tenantName, Tenant tenant) {
         TenantConfig tenantConfig = tenant.tenantConfig();
+        Optional<String> stateNonce = loginStateNonceCookie(req);
+        Optional<String> originalUri = req.queryParams()
+                .first(STATE_PARAM_NAME)
+                .flatMap(state -> OidcState.loginRedirect(state, tenantConfig, stateNonce, true)
+                        .or(() -> oidcConfig.legacyStateFallback()
+                                ? OidcState.loginRedirect(state, tenantConfig, stateNonce, false)
+                                : Optional.empty())
+                        .or(() -> oidcConfig.legacyStateParam() || oidcConfig.legacyStateFallback()
+                                ? OidcUtil.localRedirectUri(state)
+                                : Optional.empty()));
+        if (originalUri.isEmpty()) {
+            sendErrorResponse(res);
+            return;
+        }
+        stateNonce.ifPresent(it -> res.headers().add(Http.Header.SET_COOKIE, loginStateNonceRemoveCookie()));
 
         WebClient webClient = tenant.appWebClient();
 
@@ -441,7 +472,7 @@ public final class OidcSupport implements Service {
 
         OidcConfig.postJsonResponse(post,
                                     form.build(),
-                                    json -> processJsonResponse(req, res, json, tenantName),
+                                    json -> processJsonResponse(res, json, tenantName, tenantConfig, originalUri.get()),
                                     (status, errorEntity) -> processError(res, status, errorEntity),
                                     (t, message) -> processError(res, t, message))
                 .ignoreElement();
@@ -480,23 +511,29 @@ public final class OidcSupport implements Service {
         return uri;
     }
 
-    private String processJsonResponse(ServerRequest req,
-                                       ServerResponse res,
+    private String processJsonResponse(ServerResponse res,
                                        JsonObject json,
-                                       String tenantName) {
+                                       String tenantName,
+                                       TenantConfig tenantConfig,
+                                       String state) {
         String tokenValue = json.getString("access_token");
         String idToken = json.getString("id_token", null);
+        String queryResultNonce = queryResultNonce();
 
-        //redirect to "state"
-        String state = OidcUtil.localRedirectUri(req.queryParams().first(STATE_PARAM_NAME).orElse(DEFAULT_REDIRECT))
-                .orElse(DEFAULT_REDIRECT);
         res.status(Http.Status.TEMPORARY_REDIRECT_307);
         if (oidcConfig.useParam()) {
             StringBuilder redirectUri = new StringBuilder(state)
                     .append(state.contains("?") ? '&' : '?')
                     .append(encode(oidcConfig.paramName()))
                     .append('=')
-                    .append(tokenValue);
+                    .append(encode(oidcConfig.legacyQueryParamHandoff()
+                                           ? tokenValue
+                                           : queryResultNonce == null
+                                                   ? OidcState.createQueryResult(tokenValue, json, tenantConfig)
+                                                   : OidcState.createQueryResult(tokenValue,
+                                                                                 json,
+                                                                                 tenantConfig,
+                                                                                 queryResultNonce)));
             if (!DEFAULT_TENANT_ID.equals(tenantName)) {
                 redirectUri.append('&')
                         .append(encode(oidcConfig.tenantParamName()))
@@ -511,6 +548,9 @@ public final class OidcSupport implements Service {
 
         if (oidcConfig.useCookie()) {
             ResponseHeaders headers = res.headers();
+            if (queryResultNonce != null) {
+                headers.add(Http.Header.SET_COOKIE, queryResultNonceSetCookie(queryResultNonce));
+            }
 
             OidcCookieHandler tenantCookieHandler = oidcConfig.tenantCookieHandler();
             tenantCookieHandler.createCookie(tenantName)
@@ -538,6 +578,45 @@ public final class OidcSupport implements Service {
         }
 
         return "done";
+    }
+
+    private void warnWhenQueryParamHandoffIsUnbound() {
+        if (oidcConfig.useParam() && !oidcConfig.useCookie() && !oidcConfig.legacyQueryParamHandoff()) {
+            LOGGER.warning("OIDC query parameter handoff is enabled without cookies. When possible, enable cookie-use "
+                                   + "to bind the handoff to the browser session.");
+        }
+    }
+
+    private String queryResultNonce() {
+        if (oidcConfig.useParam() && oidcConfig.useCookie() && !oidcConfig.legacyQueryParamHandoff()) {
+            return UUID.randomUUID().toString();
+        }
+        return null;
+    }
+
+    @SuppressWarnings({"deprecation", "removal"})
+    private String queryResultNonceSetCookie(String nonce) {
+        return OidcState.queryResultNonceSetCookie(oidcConfig.tokenCookieHandler().cookieName(),
+                                                   nonce,
+                                                   oidcConfig.cookieOptions());
+    }
+
+    private String queryResultNonceRemoveCookie() {
+        return removeNonceCookie(OidcState.queryResultNonceCookieName(oidcConfig.tokenCookieHandler().cookieName()));
+    }
+
+    @SuppressWarnings({"deprecation", "removal"})
+    private String loginStateNonceRemoveCookie() {
+        return OidcState.loginStateNonceRemoveCookie(oidcConfig.tokenCookieHandler().cookieName(),
+                                                     oidcConfig.redirectUri(),
+                                                     oidcConfig.cookieOptions());
+    }
+
+    private String removeNonceCookie(String nonceCookieName) {
+        OidcCookieHandler tokenCookieHandler = oidcConfig.tokenCookieHandler();
+        String tokenCookieName = tokenCookieHandler.cookieName();
+        String tokenRemoveCookie = tokenCookieHandler.removeCookie().build().toString();
+        return nonceCookieName + tokenRemoveCookie.substring(tokenCookieName.length());
     }
 
     private String encode(String toEncode) {
@@ -585,6 +664,14 @@ public final class OidcSupport implements Service {
         headers.addCookie(tokenCookieHandler.removeCookie().build());
         headers.addCookie(idTokenCookieHandler.removeCookie().build());
         headers.addCookie(tenantCookieHandler.removeCookie().build());
+        headers.add(Http.Header.SET_COOKIE, queryResultNonceRemoveCookie());
+        headers.add(Http.Header.SET_COOKIE, loginStateNonceRemoveCookie());
+    }
+
+    private Optional<String> loginStateNonceCookie(ServerRequest req) {
+        return req.headers()
+                .cookies()
+                .first(OidcState.loginStateNonceCookieName(oidcConfig.tokenCookieHandler().cookieName()));
     }
 
     private Optional<String> processError(ServerResponse serverResponse, Http.ResponseStatus status, String entity) {

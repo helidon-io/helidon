@@ -186,7 +186,11 @@ class TenantAuthenticationHandler {
                 token = token.or(() -> PARAM_HEADER_HANDLER.extractToken(providerRequest.env().headers()));
 
                 if (token.isEmpty()) {
-                    token = token.or(() -> providerRequest.env().queryParams().first(oidcConfig.paramName()));
+                    token = token.or(() -> queryResultAccessToken(providerRequest));
+                }
+
+                if (token.isEmpty()) {
+                    token = token.or(() -> rawQueryParamAccessToken(providerRequest));
                 }
 
                 if (token.isEmpty()) {
@@ -236,6 +240,69 @@ class TenantAuthenticationHandler {
         }
     }
 
+    Optional<String> queryResultAccessToken(ProviderRequest providerRequest) {
+        List<String> values = providerRequest.env().queryParams().all(oidcConfig.paramName());
+        Optional<String> queryResult = Optional.empty();
+        for (int i = values.size() - 1; i >= 0; i--) {
+            String value = values.get(i);
+            if (OidcState.isQueryResult(value)) {
+                queryResult = Optional.of(value);
+                break;
+            }
+        }
+        if (queryResult.isEmpty()) {
+            return Optional.empty();
+        }
+
+        boolean requireNonce = oidcConfig.useCookie() && !oidcConfig.legacyQueryParamHandoff();
+        Optional<String> nonce = oidcConfig.useCookie() ? queryResultNonceCookie(providerRequest) : Optional.empty();
+        if (requireNonce && nonce.isEmpty()) {
+            return Optional.empty();
+        }
+        return OidcState.queryResultAccessToken(queryResult.get(), tenantConfig, nonce, requireNonce);
+    }
+
+    private Optional<String> queryResultNonceCookie(ProviderRequest providerRequest) {
+        if (!oidcConfig.useCookie()) {
+            return Optional.empty();
+        }
+        List<String> cookies = providerRequest.env().headers().get("Cookie");
+        if (cookies == null || cookies.isEmpty()) {
+            return Optional.empty();
+        }
+
+        String valuePrefix = OidcState.queryResultNonceCookieName(oidcConfig.tokenCookieHandler().cookieName()) + "=";
+        for (String cookie : cookies) {
+            String[] cookieValues = cookie.split(";\\s?");
+            for (String cookieValue : cookieValues) {
+                String trimmed = cookieValue.trim();
+                if (trimmed.startsWith(valuePrefix)) {
+                    return Optional.of(trimmed.substring(valuePrefix.length()));
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
+    Optional<String> rawQueryParamAccessToken(ProviderRequest providerRequest) {
+        List<String> values = providerRequest.env().queryParams().all(oidcConfig.paramName());
+        if (values.isEmpty()) {
+            return Optional.empty();
+        }
+        if (oidcConfig.legacyQueryParamHandoff()) {
+            for (int i = values.size() - 1; i >= 0; i--) {
+                String value = values.get(i);
+                if (!OidcState.isQueryResult(value)) {
+                    return Optional.of(value);
+                }
+            }
+            return Optional.empty();
+        }
+        return values.stream()
+                .filter(value -> !OidcState.isQueryResult(value))
+                .findFirst();
+    }
+
     private Set<String> expectedScopes(ProviderRequest request) {
 
         Set<String> result = new HashSet<>();
@@ -270,8 +337,8 @@ class TenantAuthenticationHandler {
                                                  String tenantId) {
         if (oidcConfig.shouldRedirect()) {
             // make sure we do not exceed redirect limit
-            String state = origUri(providerRequest);
-            int redirectAttempt = redirectAttempt(state);
+            String originalUri = origUri(providerRequest);
+            int redirectAttempt = redirectAttempt(originalUri);
             if (redirectAttempt >= oidcConfig.maxRedirects()) {
                 return errorResponseNoRedirect(code, description, status);
             }
@@ -297,6 +364,9 @@ class TenantAuthenticationHandler {
 
             String authorizationEndpoint = tenant.authorizationEndpointUri();
             String nonce = UUID.randomUUID().toString();
+            Optional<String> stateNonce = oidcConfig.legacyStateParam()
+                    ? Optional.empty()
+                    : Optional.of(UUID.randomUUID().toString());
             String redirectUri;
             if (DEFAULT_TENANT_ID.equals(tenantId)) {
                 redirectUri = encode(redirectUri(providerRequest.env()));
@@ -311,20 +381,34 @@ class TenantAuthenticationHandler {
             queryString.append("response_type=code&");
             queryString.append("redirect_uri=").append(redirectUri).append("&");
             queryString.append("scope=").append(scopeString).append("&");
+            String state = oidcConfig.legacyStateParam()
+                    ? originalUri
+                    : OidcState.createLoginState(originalUri, tenantConfig, stateNonce.orElseThrow());
+
             queryString.append("nonce=").append(nonce).append("&");
             queryString.append("state=").append(encode(state));
 
             // must redirect
-            return AuthenticationResponse
-                    .builder()
+            AuthenticationResponse.Builder responseBuilder = AuthenticationResponse.builder()
                     .status(SecurityResponse.SecurityStatus.FAILURE_FINISH)
                     .statusCode(Http.Status.TEMPORARY_REDIRECT_307.code())
                     .description("Redirecting to identity server: " + description)
-                    .responseHeader("Location", authorizationEndpoint + queryString)
-                    .build();
+                    .responseHeader("Location", authorizationEndpoint + queryString);
+            stateNonce.ifPresent(it -> responseBuilder.responseHeader(
+                    Http.Header.SET_COOKIE,
+                    loginStateNonceSetCookie(it)));
+            return responseBuilder.build();
         } else {
             return errorResponseNoRedirect(code, description, status);
         }
+    }
+
+    @SuppressWarnings({"deprecation", "removal"})
+    private String loginStateNonceSetCookie(String nonce) {
+        return OidcState.loginStateNonceSetCookie(oidcConfig.tokenCookieHandler().cookieName(),
+                                                  nonce,
+                                                  oidcConfig.redirectUri(),
+                                                  oidcConfig.cookieOptions());
     }
 
     private String redirectUri(SecurityEnvironment env) {

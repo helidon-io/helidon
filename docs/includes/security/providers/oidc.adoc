@@ -97,6 +97,35 @@ These flags are temporary compatibility controls for upgrades, not steady-state 
 These flags only affect password-based OIDC cookie encryption; named Security encryption configured with
 `cookie-encryption-name` uses its own encryption configuration.
 
+==== OIDC Redirect State Rolling Updates
+
+OIDC redirects use encrypted state by default.
+For rolling updates from nodes that still use the older raw state format or encrypted state without nonce binding,
+the following temporary flags are available:
+
+* `legacy-state-param` writes the old raw local redirect URI into OIDC `state`.
+  It also lets that node accept raw state values that pass local redirect validation.
+* `legacy-state-fallback` accepts encrypted `state` values that were created before login state nonce binding,
+  and then accepts an old raw local redirect URI from OIDC `state` after encrypted state validation fails.
+* `legacy-query-param-handoff` writes the old raw access token query parameter when `query-param-use` is enabled.
+
+When `query-param-use` is enabled and `legacy-query-param-handoff` is disabled, OIDC callback redirects use a short-lived
+encrypted query parameter handoff instead of writing the raw access token to the redirect URL.
+Encrypted login `state` is bound to a short-lived nonce cookie.
+When `cookie-use` is also enabled, Helidon binds that encrypted handoff to a short-lived nonce cookie.
+When `query-param-use` is enabled without cookies, the handoff remains URL-only and Helidon logs a recommendation to
+enable cookies when possible.
+Encrypted login `state` values expire after 300 seconds.
+Encrypted query parameter handoff values expire after 60 seconds or the token response `expires_in`, whichever is shorter.
+Validation allows 60 seconds of clock skew for these encrypted values.
+
+Use these only during a controlled rolling update.
+For example, deploy with legacy writes enabled, disable legacy writes after old nodes are gone, and then
+disable fallback after in-flight login redirects have expired.
+While legacy flags are enabled, the hardened encrypted state and query handoff behavior is intentionally relaxed for
+compatibility. Raw `state` values are not authenticated or time-bound; use the raw state flags only for the shortest
+rolling-update window that can clear old login redirects.
+
 Helidon obtains a token from request (from cookie, header, or query parameter):
 
 1. Token is parsed as a singed JWT

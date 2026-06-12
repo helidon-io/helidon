@@ -110,6 +110,9 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                 () -> assertThat("Relative URIs", config.relativeUris(), is(OidcConfig.DEFAULT_RELATIVE_URIS)),
                 () -> assertThat("Use Cookie", config.useCookie(), is(OidcConfig.DEFAULT_COOKIE_USE)),
                 () -> assertThat("Use Header", config.useHeader(), is(OidcConfig.DEFAULT_HEADER_USE)),
+                () -> assertThat("Legacy state parameter", config.legacyStateParam(), is(false)),
+                () -> assertThat("Legacy state fallback", config.legacyStateFallback(), is(false)),
+                () -> assertThat("Legacy query parameter handoff", config.legacyQueryParamHandoff(), is(false)),
                 () -> assertThat("Base scopes to use", config.baseScopes(), is(OidcConfig.Builder.DEFAULT_BASE_SCOPES)),
                 () -> assertThat("Cookie value prefix", config.cookieValuePrefix(), is(OidcConfig.DEFAULT_COOKIE_NAME + "=")),
                 () -> assertThat("Cookie name", config.cookieName(), is(OidcConfig.DEFAULT_COOKIE_NAME)),
@@ -130,6 +133,43 @@ class OidcConfigFromBuilderTest extends OidcConfigAbstractTest {
                 () -> assertThat("Client with authentication", config.appClient(), notNullValue()),
                 () -> assertThat("JWK Keys", config.signJwk(), notNullValue())
         );
+    }
+
+    @Test
+    void testLegacyRollingUpdateFlags() {
+        OidcConfig config = OidcConfig.builder()
+                .identityUri(URI.create("https://identity.oracle.com"))
+                .clientId("client-id-value")
+                .clientSecret("client-secret-value")
+                .oidcMetadataWellKnown(false)
+                .legacyStateParam(true)
+                .legacyStateFallback(true)
+                .legacyQueryParamHandoff(true)
+                .build();
+
+        assertAll("Legacy rolling update flags",
+                  () -> assertThat("Legacy state parameter", config.legacyStateParam(), is(true)),
+                  () -> assertThat("Legacy state fallback", config.legacyStateFallback(), is(true)),
+                  () -> assertThat("Legacy query parameter handoff", config.legacyQueryParamHandoff(), is(true)));
+    }
+
+    @Test
+    void testLegacyRollingUpdateFlagsFromConfig() {
+        OidcConfig config = OidcConfig.builder()
+                .identityUri(URI.create("https://identity.oracle.com"))
+                .clientId("client-id-value")
+                .clientSecret("client-secret-value")
+                .oidcMetadataWellKnown(false)
+                .config(Config.create(ConfigSources.create(Map.of(
+                        "legacy-state-param", "true",
+                        "legacy-state-fallback", "true",
+                        "legacy-query-param-handoff", "true"))))
+                .build();
+
+        assertAll("Legacy rolling update flags from config",
+                  () -> assertThat("Legacy state parameter", config.legacyStateParam(), is(true)),
+                  () -> assertThat("Legacy state fallback", config.legacyStateFallback(), is(true)),
+                  () -> assertThat("Legacy query parameter handoff", config.legacyQueryParamHandoff(), is(true)));
     }
 
     @Test
