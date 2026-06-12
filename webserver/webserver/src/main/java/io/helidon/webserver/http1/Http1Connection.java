@@ -152,12 +152,9 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
     public void handle(Limit limit) throws InterruptedException {
         this.myThread = Thread.currentThread();
         try {
-            // look for protocol data
             ProxyProtocolData proxyProtocolData = ctx.proxyProtocolData().orElse(null);
 
-            // handle connection until an exception (or explicit connection close)
             while (canRun) {
-                // prologue (first line of request)
                 currentlyReadingPrologue = true;
                 HttpPrologue prologue = http1prologue.readPrologue();
                 currentlyReadingPrologue = false;
@@ -184,7 +181,6 @@ public class Http1Connection implements ServerConnection, InterruptableTask<Void
                         .ifPresent(name -> headers.set(X_HELIDON_CN, name));
                 recvListener.headers(ctx, headers);
 
-                // proxy protocol related headers X-Forwarded-For and X-Forwarded-Port
                 if (proxyProtocolData != null) {
                     String sourceAddress = proxyProtocolData.sourceAddress();
                     if (!sourceAddress.isEmpty()) {

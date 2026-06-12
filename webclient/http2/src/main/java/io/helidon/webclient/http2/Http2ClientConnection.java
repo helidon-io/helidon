@@ -283,6 +283,13 @@ public class Http2ClientConnection {
      * @return a new client stream with one reserved peer-concurrency slot
      */
     Http2ClientStream createStream(Http2StreamConfig config) {
+        return createStream(config, clientConfig, sendListener, recvListener);
+    }
+
+    Http2ClientStream createStream(Http2StreamConfig config,
+                                   Http2ClientConfig clientConfig,
+                                   Http2FrameListener sendListener,
+                                   Http2FrameListener recvListener) {
         // The peer can tighten MAX_CONCURRENT_STREAMS in its first SETTINGS frame.
         awaitInitialSettings();
         if (!reserveStream()) {
@@ -351,8 +358,15 @@ public class Http2ClientConnection {
     }
 
     Http2ClientStream tryStream(Http2StreamConfig config) {
+        return tryStream(config, clientConfig, sendListener, recvListener);
+    }
+
+    Http2ClientStream tryStream(Http2StreamConfig config,
+                                Http2ClientConfig clientConfig,
+                                Http2FrameListener sendListener,
+                                Http2FrameListener recvListener) {
         try {
-            return createStream(config);
+            return createStream(config, clientConfig, sendListener, recvListener);
         } catch (IllegalStateException | UncheckedIOException e) {
             return null;
         }

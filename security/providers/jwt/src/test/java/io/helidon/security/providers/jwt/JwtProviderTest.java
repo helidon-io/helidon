@@ -247,10 +247,12 @@ public class JwtProviderTest {
 
     @Test
     public void testJwtGroupsSeparatorIgnoredForDefaultGroupsPath() {
-        JwtProvider provider = JwtProvider.builder()
+        JwtProvider.Builder builder = JwtProvider.builder()
                 .verifySignature(false)
-                .jwtGroupsSeparator(",")
-                .build();
+                .expectedIssuer("jwt.example.com")
+                .jwtGroupsSeparator(",");
+        builder.expectedAudience("audience.application.id");
+        JwtProvider provider = builder.build();
         Instant now = Instant.now();
         Jwt jwt = Jwt.builder()
                 .subject("user1-id")
@@ -260,6 +262,7 @@ public class JwtProviderTest {
                 .keyId("verify-rsa")
                 .issueTime(now)
                 .expirationTime(now.plus(1, ChronoUnit.HOURS))
+                .addAudience("audience.application.id")
                 .addPayloadClaim("groups", "inventory:read,inventory:write")
                 .build();
         SignedJwt signedJwt = SignedJwt.sign(jwt, signKeys.forKeyId("sign-rsa").orElseThrow());

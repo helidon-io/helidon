@@ -47,6 +47,7 @@ import io.helidon.webserver.Router;
 import io.helidon.webserver.SniContext;
 import io.helidon.webserver.SniMatchType;
 import io.helidon.webserver.http.DirectHandlers;
+import io.helidon.webserver.http.HttpRouting;
 
 import org.junit.jupiter.api.Test;
 
@@ -78,7 +79,7 @@ class Http2ServerStreamSniTest {
         stream.headers(headersWithoutAuthority(), false);
 
         stream.run();
-        streams.doMaintenance(0);
+        streams.doMaintenance();
 
         assertThat(writer.status, is(Status.BAD_REQUEST_400));
         assertThat(writer.rstStreamCount, is(1));
@@ -173,7 +174,7 @@ class Http2ServerStreamSniTest {
         stream.headers(headersWithAuthority("bad authority"), true);
 
         stream.run();
-        streams.doMaintenance(0);
+        streams.doMaintenance();
 
         assertThat(writer.status, is(nullValue()));
         assertThat(writer.rstStreamCodes, hasItems(Http2ErrorCode.PROTOCOL));
@@ -213,6 +214,7 @@ class Http2ServerStreamSniTest {
         return new Http2ServerStream(connectionContext(sniContext),
                                      streams,
                                      null,
+                                     HttpRouting.empty(),
                                      config,
                                      List.of(),
                                      STREAM_ID,

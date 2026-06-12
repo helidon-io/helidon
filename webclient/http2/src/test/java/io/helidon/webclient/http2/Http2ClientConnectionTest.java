@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -42,6 +43,7 @@ import io.helidon.http.http2.Http2ErrorCode;
 import io.helidon.http.http2.Http2Flag;
 import io.helidon.http.http2.Http2FrameData;
 import io.helidon.http.http2.Http2FrameHeader;
+import io.helidon.http.http2.Http2FrameListener;
 import io.helidon.http.http2.Http2FrameTypes;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2HuffmanEncoder;
@@ -830,6 +832,8 @@ class Http2ClientConnectionTest {
 
             when(client.protocolConfig()).thenReturn(protocolConfig);
             when(client.clientConfig()).thenReturn(clientConfig);
+            when(client.sendListener()).thenReturn(Http2FrameListener.create(List.of()));
+            when(client.recvListener()).thenReturn(Http2FrameListener.create(List.of()));
             when(client.webClient()).thenReturn(webClient);
             when(webClient.executor()).thenReturn(connectionExecutor);
             when(clientConnection.reader()).thenReturn(DataReader.create(this::nextInboundFrame));

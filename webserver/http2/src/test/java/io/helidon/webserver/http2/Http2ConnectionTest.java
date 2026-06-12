@@ -176,7 +176,7 @@ class Http2ConnectionTest {
 
         try (TestLogHandler handler = TestLogHandler.install()) {
             assertDoesNotThrow(() -> new Http2Connection.StreamRunnable(streams, stream, Thread.currentThread()).run());
-            streams.doMaintenance(0);
+            streams.doMaintenance();
             LogRecord record = handler.await();
 
             assertAll(
@@ -199,7 +199,7 @@ class Http2ConnectionTest {
 
         try (TestLogHandler handler = TestLogHandler.install()) {
             assertDoesNotThrow(() -> new Http2Connection.StreamRunnable(streams, stream, Thread.currentThread()).run());
-            streams.doMaintenance(0);
+            streams.doMaintenance();
             LogRecord record = handler.await();
 
             assertAll(
@@ -225,7 +225,7 @@ class Http2ConnectionTest {
             assertDoesNotThrow(() -> new Http2Connection.StreamRunnable(streams, stream, Thread.currentThread()).run());
             boolean interrupted = Thread.currentThread().isInterrupted();
             Thread.interrupted();
-            streams.doMaintenance(0);
+            streams.doMaintenance();
             LogRecord record = handler.await();
 
             assertAll(

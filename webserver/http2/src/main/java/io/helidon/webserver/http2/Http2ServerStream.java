@@ -640,7 +640,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
             } catch (SocketWriterException | UncheckedIOException e) {
                 throw new ServerConnectionException("Failed to write reset stream", e);
             }
-            connectionAttackVectorMetrics.madeYouResetCheck(streamId);
+            connectionAttackVectorMetrics.madeYouResetCheck();
         }
     }
 

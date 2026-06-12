@@ -34,15 +34,6 @@ public class ConfigUserStore implements SecureUserStore {
     private final Map<String, ConfigUser> users = new HashMap<>();
 
     /**
-     * Create an empty user store.
-     *
-     * @deprecated Use {@link #create(Config)} instead.
-     */
-    @Deprecated(forRemoval = true, since = "27.0.0")
-    public ConfigUserStore() {
-    }
-
-    /**
      * Create an instance from config. Expects key "users" to be the current key.
      * Example:
      * <pre>
@@ -90,20 +81,10 @@ public class ConfigUserStore implements SecureUserStore {
         private final String login;
         private final char[] password;
 
-        // default constructor deprecated in 4.x so we can hide it here
         private ConfigUser(String login, char[] password, List<String> roles) {
             this.login = login;
             this.password = password;
             this.roles = new LinkedHashSet<>(roles);
-        }
-
-        /**
-         * Create an empty config user.
-         *
-         * @deprecated Use {@link #create(Config)} instead.
-         */
-        @Deprecated(forRemoval = true, since = "27.0.0")
-        public ConfigUser() {
         }
 
         /**
@@ -121,8 +102,6 @@ public class ConfigUserStore implements SecureUserStore {
                           description = "List of roles the user is in")
         // method must be public so the annotation processor sees it
         public static ConfigUser create(Config config) {
-
-
             String login = config.get("login").asString().get();
             char[] password = config.get("password").asString().orElse("").toCharArray();
             List<String> roles = config.get("roles").asList(String.class).orElse(List.of());
@@ -163,9 +142,9 @@ public class ConfigUserStore implements SecureUserStore {
             return roles;
         }
 
-    @Override
-    public String toString() {
-        return "User info for \"" + login + "\"";
-    }
+        @Override
+        public String toString() {
+            return "User info for \"" + login + "\"";
+        }
     }
 }

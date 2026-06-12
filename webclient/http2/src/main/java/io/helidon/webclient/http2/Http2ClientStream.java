@@ -98,6 +98,8 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
      * @param http2StreamConfig stream configuration
      * @param http2ClientConfig client configuration
      * @param streamIdSeq stream ID sequence
+     * @param sendListener listener for sent frames
+     * @param recvListener listener for received frames
      */
     protected Http2ClientStream(Http2ClientConnection connection,
                                 Http2Settings serverSettings,
