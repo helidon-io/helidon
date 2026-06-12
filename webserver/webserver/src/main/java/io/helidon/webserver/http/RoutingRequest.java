@@ -46,7 +46,7 @@ public interface RoutingRequest extends ServerRequest {
      * Update the pattern used to match this request. Such as "/foo/{bar}".
      * For internal use only to Helidon.
      *
-     * @param matchingPattern the matching pattern
+     * @param matchingPattern the matching pattern, or {@code null} to clear it
      * @return this instance
      */
     @Api.Internal

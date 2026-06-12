@@ -44,9 +44,9 @@ class ServiceLocatorRoute extends HttpRouteBase implements HttpRoute {
     private final Map<HttpService, RouteEntry> routes = new IdentityHashMap<>();
     private final int maxServiceCacheSize;
 
-    private boolean beforeStarted;
-    private boolean stopped;
-    private WebServer webServer;
+    private volatile boolean beforeStarted;
+    private volatile boolean stopped;
+    private volatile WebServer webServer;
 
     ServiceLocatorRoute(HttpServiceLocator locator,
                         PathMatcher pathMatcher,
@@ -93,10 +93,7 @@ class ServiceLocatorRoute extends HttpRouteBase implements HttpRoute {
             webServer = null;
             Throwable failure = run(null, locator::afterStop);
             for (RouteEntry entry : routes.values()) {
-                ServiceRoute route = entry.route();
-                if (route != null) {
-                    failure = run(failure, route::afterStop);
-                }
+                failure = entry.afterStop(failure);
             }
             routes.clear();
             throwIfFailed(failure);
@@ -129,13 +126,19 @@ class ServiceLocatorRoute extends HttpRouteBase implements HttpRoute {
                                RoutingRequest request,
                                RoutedPath matchedPath,
                                String matchingPattern) {
+        Optional<String> previousMatchingPattern = request.matchingPattern();
         request.path(matchedPath);
+        request.matchingPattern(matchingPattern);
 
-        Optional<HttpService> locatedService = Objects.requireNonNull(locator.locate(request),
-                                                                      "HttpServiceLocator must not return null");
-        return locatedService.map(this::route)
-                .map(ServiceRoute::routes)
-                .orElseGet(List::of);
+        try {
+            Optional<HttpService> locatedService = Objects.requireNonNull(locator.locate(request),
+                                                                          "HttpServiceLocator must not return null");
+            return locatedService.map(this::route)
+                    .map(ServiceRoute::routes)
+                    .orElseGet(List::of);
+        } finally {
+            request.matchingPattern(previousMatchingPattern.orElse(null));
+        }
     }
 
     @Override
@@ -172,20 +175,15 @@ class ServiceLocatorRoute extends HttpRouteBase implements HttpRoute {
         Objects.requireNonNull(service, "HttpServiceLocator must not locate a null service");
 
         RouteEntry entry = null;
-        boolean readLockHeld = false;
         try {
             lock.readLock().lock();
-            readLockHeld = true;
             try {
                 if (stopped) {
                     return null;
                 }
                 entry = routes.get(service);
             } finally {
-                if (entry == null) {
-                    lock.readLock().unlock();
-                    readLockHeld = false;
-                }
+                lock.readLock().unlock();
             }
 
             if (entry == null) {
@@ -206,27 +204,24 @@ class ServiceLocatorRoute extends HttpRouteBase implements HttpRoute {
                         entry = new RouteEntry();
                         routes.put(service, entry);
                     }
-                    lock.readLock().lock();
-                    readLockHeld = true;
                 } finally {
                     lock.writeLock().unlock();
                 }
             }
 
-            return entry.route(this, service);
-        } catch (RuntimeException | Error e) {
-            if (readLockHeld) {
-                lock.readLock().unlock();
-                readLockHeld = false;
+            ServiceRoute route = entry.route(this, service);
+            if (route == null) {
+                if (!stopped) {
+                    removeEntryIfEmpty(service, entry);
+                }
+                return null;
             }
+            return stopped ? null : route;
+        } catch (RuntimeException | Error e) {
             if (entry != null) {
                 removeEntryIfEmpty(service, entry);
             }
             throw e;
-        } finally {
-            if (readLockHeld) {
-                lock.readLock().unlock();
-            }
         }
     }
 
@@ -244,26 +239,7 @@ class ServiceLocatorRoute extends HttpRouteBase implements HttpRoute {
     private ServiceRoute createRoute(HttpService service) {
         ServiceRules subRules = new ServiceRules(service, PathMatchers.any(), methodPredicate);
         service.routing(subRules);
-        ServiceRoute route = subRules.build();
-
-        boolean lifecycleStartAttempted = false;
-        try {
-            if (beforeStarted) {
-                lifecycleStartAttempted = true;
-                route.beforeStart();
-            }
-            if (webServer != null) {
-                lifecycleStartAttempted = true;
-                route.afterStart(webServer);
-            }
-        } catch (RuntimeException | Error e) {
-            if (lifecycleStartAttempted) {
-                run(e, route::afterStop);
-            }
-            throw e;
-        }
-
-        return route;
+        return subRules.build();
     }
 
     private static Throwable run(Throwable failure, Runnable runnable) {
@@ -292,19 +268,49 @@ class ServiceLocatorRoute extends HttpRouteBase implements HttpRoute {
     private static final class RouteEntry {
         private final ReentrantLock lock = new ReentrantLock();
         private volatile ServiceRoute route;
+        private volatile boolean initialized;
 
         private ServiceRoute route(ServiceLocatorRoute owner, HttpService service) {
             ServiceRoute current = route;
-            if (current != null) {
+            if (initialized && current != null) {
                 return current;
             }
 
             lock.lock();
             try {
-                if (route == null) {
-                    route = owner.createRoute(service);
+                if (initialized) {
+                    return route;
                 }
-                return route;
+
+                current = owner.createRoute(service);
+                if (owner.stopped) {
+                    return null;
+                }
+
+                route = current;
+                boolean lifecycleStartAttempted = false;
+                try {
+                    if (!owner.stopped && owner.beforeStarted) {
+                        lifecycleStartAttempted = true;
+                        current.beforeStart();
+                    }
+                    WebServer webServer = owner.webServer;
+                    if (!owner.stopped && webServer != null) {
+                        lifecycleStartAttempted = true;
+                        current.afterStart(webServer);
+                    }
+                    if (route != null) {
+                        initialized = true;
+                    }
+                    return route;
+                } catch (RuntimeException | Error e) {
+                    route = null;
+                    initialized = false;
+                    if (lifecycleStartAttempted) {
+                        run(e, current::afterStop);
+                    }
+                    throw e;
+                }
             } finally {
                 lock.unlock();
             }
@@ -315,9 +321,26 @@ class ServiceLocatorRoute extends HttpRouteBase implements HttpRoute {
         }
 
         private void ifCreated(Consumer<ServiceRoute> consumer) {
-            ServiceRoute current = route;
-            if (current != null) {
-                consumer.accept(current);
+            lock.lock();
+            try {
+                ServiceRoute current = route;
+                if (initialized && current != null) {
+                    consumer.accept(current);
+                }
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        private Throwable afterStop(Throwable failure) {
+            lock.lock();
+            try {
+                ServiceRoute current = route;
+                route = null;
+                initialized = false;
+                return current == null ? failure : run(failure, current::afterStop);
+            } finally {
+                lock.unlock();
             }
         }
     }
