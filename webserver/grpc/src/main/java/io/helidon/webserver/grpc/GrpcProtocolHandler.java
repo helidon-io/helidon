@@ -105,7 +105,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
     private static final LazyValue<Map<String, MethodMetrics>> METHOD_METRICS = LazyValue.create(ConcurrentHashMap::new);
 
-    private static final int GRPC_HEADER_SIZE = 5;
+    static final int GRPC_HEADER_SIZE = 5;
     private static final int INITIAL_BUFFER_SIZE = 16 * 1024;
 
     private final ConnectionContext connectionContext;
@@ -132,6 +132,11 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private long startMillis;
 
     private volatile boolean callCancelled;
+    // set once close() has sent the call's trailers; written by stream or application
+    // threads, read by the connection thread in rstStream()
+    private volatile boolean callClosed;
+    // only accessed by the stream thread in data()
+    private boolean drainingInbound;
     private final AtomicReference<Http2StreamState> currentStreamState = new AtomicReference<>();
 
     GrpcProtocolHandler(ConnectionContext connectionContext,
@@ -204,8 +209,14 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
      */
     @Override
     public void rstStream(Http2RstStream rstStream) {
-        callCancelled = (rstStream.errorCode() == Http2ErrorCode.CANCEL);
-        listener.onCancel();
+        // After close() has sent the call's trailers, no further listener callbacks may be
+        // delivered (io.grpc.ServerCall.Listener contract). A late RST_STREAM, e.g. the client
+        // cancelling the remainder of a request the server already rejected, must not surface
+        // as a cancellation to the application.
+        if (!callClosed) {
+            callCancelled = (rstStream.errorCode() == Http2ErrorCode.CANCEL);
+            listener.onCancel();
+        }
         currentStreamState.updateAndGet(
                 current -> nextStreamState(current, Http2StreamState.HALF_CLOSED_REMOTE));
     }
@@ -223,6 +234,15 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
      */
     @Override
     public void data(Http2FrameHeader header, BufferData data) {
+        if (drainingInbound) {
+            // The call is already closed with a status, but the client is still sending request
+            // data. Discard it without delivering anything to the listener. Reading it is
+            // required: the Http2ServerStream read loop stops once this handler reports
+            // HALF_CLOSED_LOCAL or CLOSED, while the connection thread keeps queueing this
+            // stream's DATA frames into a bounded queue, eventually blocking the connection.
+            closeStreamIfEndOfStream(header);
+            return;
+        }
         try {
             boolean isCompressed = false;
 
@@ -293,8 +313,27 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
             // This sends status trailers back to the client rather than abruptly cancelling.
             // See: MessageDeframer.processHeader() in
             // https://github.com/grpc/grpc-java/blob/v1.73.0/core/src/main/java/io/grpc/internal/MessageDeframer.java#L388-L393
-            LOGGER.log(System.Logger.Level.DEBUG, "gRPC call closed with status: {0}", e.getStatus());
-            serverCall.close(e.getStatus(), new Metadata());
+            if (!callClosed) {
+                LOGGER.log(System.Logger.Level.DEBUG, "gRPC call closed with status: {0}", e.getStatus());
+                // propagate trailers carried by the exception, the same way
+                // io.helidon.grpc.core.GrpcHelper.ensureStatusRuntimeException() preserves them
+                Metadata trailers = e.getTrailers() == null ? new Metadata() : e.getTrailers();
+                serverCall.close(e.getStatus(), trailers);
+            }
+            if (!header.flags(Http2FrameTypes.DATA).endOfStream()) {
+                // close() above reported HALF_CLOSED_LOCAL, which would stop the
+                // Http2ServerStream read loop with request data still arriving; report OPEN
+                // again and discard the rest of the request, see the drainingInbound block above.
+                // updateAndGet (not a plain set) so a concurrent rstStream() that already moved
+                // the stream to CLOSED is not resurrected.
+                drainingInbound = true;
+                currentStreamState.updateAndGet(
+                        current -> current == Http2StreamState.HALF_CLOSED_LOCAL
+                                ? Http2StreamState.OPEN
+                                : current);
+            }
+            // EOS: the client has finished sending, nothing is left to read on this stream.
+            closeStreamIfEndOfStream(header);
         } catch (Exception e) {
             if (isPeerCancellation(e)) {
                 throw new ServerConnectionException("gRPC call cancelled by remote peer", e);
@@ -426,6 +465,13 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         };
     }
 
+    private void closeStreamIfEndOfStream(Http2FrameHeader header) {
+        if (header.flags(Http2FrameTypes.DATA).endOfStream()) {
+            currentStreamState.updateAndGet(
+                    current -> nextStreamState(current, Http2StreamState.CLOSED));
+        }
+    }
+
     ServerCall<REQ, RES> createServerCall() {
         return new ServerCall<REQ, RES>() {
 
@@ -507,6 +553,8 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
             @Override
             public void close(Status status, Metadata trailers) {
+                callClosed = true;
+
                 // prepare trailers, may override status code to CANCELLED
                 WritableHeaders<?> writable = WritableHeaders.create();
                 if (!headersSent) {

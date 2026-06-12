@@ -77,7 +77,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class GrpcProtocolHandlerTest {
 
     private static final HeaderName GRPC_ACCEPT_ENCODING = HeaderNames.create("grpc-accept-encoding");
-    private static final int GRPC_PREFIX_LENGTH = 5;
 
     @Test
     @SuppressWarnings("unchecked")
@@ -539,8 +538,6 @@ class GrpcProtocolHandlerTest {
         private static final Metadata.Key<String> DEBUG_KEY =
                 Metadata.Key.of("x-test-debug", Metadata.ASCII_STRING_MARSHALLER);
 
-        // allocateReadBuffer() checks the limit only for messages larger than its initial
-        // 16 KB buffer, so the limit must be at least that for the rejection to trigger
         private static final int LIMIT = 16 * 1024;
 
         private final RecordingWriter writer = new RecordingWriter();
@@ -657,23 +654,25 @@ class GrpcProtocolHandlerTest {
         }
 
         /**
-         * A gRPC length-prefixed frame header declaring {@code length} bytes, without the payload.
-         * The declared size alone is enough for the server to reject the message.
+         * A gRPC length-prefixed frame declaring {@code declaredLength} bytes followed by
+         * {@code payload}. The two can differ: declaring more than is sent is enough for the
+         * server to reject an oversized message on the prefix alone.
          */
-        private BufferData messagePrefix(int length) {
-            BufferData buffer = BufferData.create(GRPC_PREFIX_LENGTH);
-            buffer.write(0);
-            buffer.writeUnsignedInt32(length);
+        private BufferData frame(int declaredLength, byte[] payload) {
+            BufferData buffer = BufferData.create(GrpcProtocolHandler.GRPC_HEADER_SIZE + payload.length);
+            buffer.write(0);        // 0 for identity compressor
+            buffer.writeUnsignedInt32(declaredLength);
+            buffer.write(payload);
             return buffer;
+        }
+
+        private BufferData messagePrefix(int length) {
+            return frame(length, new byte[0]);
         }
 
         private BufferData message(String content) {
             byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
-            BufferData buffer = BufferData.create(GRPC_PREFIX_LENGTH + bytes.length);
-            buffer.write(0);
-            buffer.writeUnsignedInt32(bytes.length);
-            buffer.write(bytes);
-            return buffer;
+            return frame(bytes.length, bytes);
         }
     }
 

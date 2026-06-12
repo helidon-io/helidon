@@ -89,32 +89,13 @@ class GrpcMaxMessageSizeErrorTest extends BaseServiceTest {
     void oversizedMessageReturnsResourceExhausted() throws Throwable {
         CountDownLatch latch = new CountDownLatch(1);
         AtomicReference<Throwable> errorRef = new AtomicReference<>();
+        StreamObserver<Data> request = stub.upload(errorCapturing(latch, errorRef));
 
-        StreamObserver<Data> request = stub.upload(new StreamObserver<>() {
-            @Override
-            public void onNext(Ack value) {
-            }
-
-            @Override
-            public void onError(Throwable t) {
-                errorRef.set(t);
-                latch.countDown();
-            }
-
-            @Override
-            public void onCompleted() {
-            }
-        });
-
-        request.onNext(Data.newBuilder()
-                .setPayload(ByteString.copyFrom(DATA_OVER_LIMIT))
-                .build());
+        request.onNext(message(DATA_OVER_LIMIT));
 
         assertThat("Server did not respond within timeout", latch.await(10, TimeUnit.SECONDS), is(true));
         assertThat("Expected an error response", errorRef.get(), is(notNullValue()));
-
-        Status status = Status.fromThrowable(errorRef.get());
-        assertThat(status.getCode(), is(Status.Code.RESOURCE_EXHAUSTED));
+        assertThat(Status.fromThrowable(errorRef.get()).getCode(), is(Status.Code.RESOURCE_EXHAUSTED));
     }
 
     /**
@@ -127,26 +108,9 @@ class GrpcMaxMessageSizeErrorTest extends BaseServiceTest {
     void connectionRemainsUsableAfterOversizedMessage() throws Exception {
         CountDownLatch errorLatch = new CountDownLatch(1);
         AtomicReference<Throwable> errorRef = new AtomicReference<>();
+        StreamObserver<Data> oversized = stub.upload(errorCapturing(errorLatch, errorRef));
 
-        StreamObserver<Data> oversized = stub.upload(new StreamObserver<>() {
-            @Override
-            public void onNext(Ack value) {
-            }
-
-            @Override
-            public void onError(Throwable t) {
-                errorRef.set(t);
-                errorLatch.countDown();
-            }
-
-            @Override
-            public void onCompleted() {
-            }
-        });
-
-        oversized.onNext(Data.newBuilder()
-                .setPayload(ByteString.copyFrom(new byte[2 * 1024 * 1024]))
-                .build());
+        oversized.onNext(message(new byte[2 * 1024 * 1024]));
 
         assertThat("Server did not respond within timeout", errorLatch.await(10, TimeUnit.SECONDS), is(true));
         assertThat(Status.fromThrowable(errorRef.get()).getCode(), is(Status.Code.RESOURCE_EXHAUSTED));
@@ -168,12 +132,32 @@ class GrpcMaxMessageSizeErrorTest extends BaseServiceTest {
             }
         });
 
-        small.onNext(Data.newBuilder()
-                .setPayload(ByteString.copyFromUtf8("hello"))
-                .build());
+        small.onNext(message("hello".getBytes(java.nio.charset.StandardCharsets.UTF_8)));
         small.onCompleted();
 
         assertThat("Connection unusable after oversized message was rejected",
                    ackLatch.await(10, TimeUnit.SECONDS), is(true));
+    }
+
+    private static Data message(byte[] payload) {
+        return Data.newBuilder().setPayload(ByteString.copyFrom(payload)).build();
+    }
+
+    private static StreamObserver<Ack> errorCapturing(CountDownLatch latch, AtomicReference<Throwable> errorRef) {
+        return new StreamObserver<>() {
+            @Override
+            public void onNext(Ack value) {
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                errorRef.set(t);
+                latch.countDown();
+            }
+
+            @Override
+            public void onCompleted() {
+            }
+        };
     }
 }
