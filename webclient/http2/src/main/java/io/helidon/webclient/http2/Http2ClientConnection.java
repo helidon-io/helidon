@@ -719,7 +719,7 @@ public class Http2ClientConnection {
         recvListener.frameHeader(ctx, streamId, frameHeader);
         recvListener.frame(ctx, streamId, windowUpdate);
         if (streamId == 0) {
-            updateConnectionWindow(windowUpdate);
+            return updateConnectionWindow(windowUpdate);
         } else {
             Http2ClientStream stream = stream(streamId);
             if (stream == null) {
@@ -732,17 +732,18 @@ public class Http2ClientConnection {
         return true;
     }
 
-    private void updateConnectionWindow(Http2WindowUpdate windowUpdate) {
+    private boolean updateConnectionWindow(Http2WindowUpdate windowUpdate) {
         int increment = windowUpdate.windowSizeIncrement();
         if (increment == 0) {
-            Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.PROTOCOL, "Window size 0");
-            writer.write(frame.toFrameData(serverSettings, 0, Http2Flag.NoFlags.create()));
+            goAway(0, Http2ErrorCode.PROTOCOL, "Window size 0");
+            return false;
         }
         boolean overflow = connectionFlowControl.incrementOutboundConnectionWindowSize(increment) > WindowSize.MAX_WIN_SIZE;
         if (overflow) {
-            Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.FLOW_CONTROL, "Window size too big. Max: ");
-            writer.write(frame.toFrameData(serverSettings, 0, Http2Flag.NoFlags.create()));
+            goAway(0, Http2ErrorCode.FLOW_CONTROL, "Window size too big. Max: ");
+            return false;
         }
+        return true;
     }
 
     private boolean handlePingFrame(int streamId, Http2FrameHeader frameHeader, BufferData data) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,9 +102,14 @@ public class ConnectionFlowControl {
      * Increment outbound connection flow control window, called when WINDOW_UPDATE is received.
      *
      * @param increment number of bytes other side has requested on top of actual demand
-     * @return outbound window size after increment
+     * @return outbound window size after applying the increment; if this value is greater than
+     *         {@link WindowSize#MAX_WIN_SIZE}, the increment was rejected and the outbound window was not updated
      */
     public long incrementOutboundConnectionWindowSize(int increment) {
+        long updatedWindowSize = (long) outboundConnectionWindowSize.getRemainingWindowSize() + increment;
+        if (updatedWindowSize > WindowSize.MAX_WIN_SIZE) {
+            return updatedWindowSize;
+        }
         return outboundConnectionWindowSize.incrementWindowSize(increment);
     }
 

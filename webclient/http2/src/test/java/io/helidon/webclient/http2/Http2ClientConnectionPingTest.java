@@ -27,8 +27,15 @@ import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.buffers.DataWriter;
 import io.helidon.common.socket.HelidonSocket;
+import io.helidon.http.WritableHeaders;
+import io.helidon.http.http2.Http2ErrorCode;
 import io.helidon.http.http2.Http2FrameHeader;
+import io.helidon.http.http2.Http2FrameType;
+import io.helidon.http.http2.Http2Headers;
+import io.helidon.http.http2.Http2RstStream;
 import io.helidon.http.http2.Http2Settings;
+import io.helidon.http.http2.Http2WindowUpdate;
+import io.helidon.http.http2.WindowSize;
 import io.helidon.webclient.api.ClientConnection;
 
 import org.junit.jupiter.api.Test;
@@ -100,6 +107,38 @@ class Http2ClientConnectionPingTest {
         assertThat(pingFuture.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS), is(false));
     }
 
+    @Test
+    void streamWindowUpdateIncrementsOutboundWindowOnce() {
+        MockedConnectionTestContext test = new MockedConnectionTestContext(Duration.ofMillis(100));
+        Http2ClientStream stream = test.newStream();
+        stream.writeHeaders(Http2Headers.create(WritableHeaders.create()), false);
+        test.clearWrites();
+        test.connection().flowControl().incrementOutboundConnectionWindowSize(2);
+
+        int remainingBeforeUpdate = stream.flowControl().outbound().getRemainingWindowSize();
+        stream.windowUpdate(new Http2WindowUpdate(1));
+
+        assertThat(stream.flowControl().outbound().getRemainingWindowSize(), is(remainingBeforeUpdate + 1));
+        assertThat(test.writes(), hasSize(0));
+    }
+
+    @Test
+    void streamWindowOverflowWritesFlowControlRstStream() {
+        MockedConnectionTestContext test = new MockedConnectionTestContext(Duration.ofMillis(100));
+        Http2ClientStream stream = test.newStream();
+        stream.writeHeaders(Http2Headers.create(WritableHeaders.create()), false);
+        test.clearWrites();
+
+        stream.windowUpdate(new Http2WindowUpdate(WindowSize.MAX_WIN_SIZE));
+
+        assertThat(test.writes(), hasSize(1));
+        BufferData write = test.writes().get(0);
+        Http2FrameHeader header = readFrameHeader(write);
+        assertThat(header.type(), is(Http2FrameType.RST_STREAM));
+        assertThat(header.streamId(), is(1));
+        assertThat(Http2RstStream.create(write).errorCode(), is(Http2ErrorCode.FLOW_CONTROL));
+    }
+
     private static CompletableFuture<Boolean> startPing(MockedConnectionTestContext test) {
         CompletableFuture<Boolean> pingFuture = new CompletableFuture<>();
         Thread.ofPlatform().start(() -> {
@@ -110,6 +149,11 @@ class Http2ClientConnectionPingTest {
             }
         });
         return pingFuture;
+    }
+
+    private static Http2FrameHeader readFrameHeader(BufferData frame) {
+        frame.rewind();
+        return Http2FrameHeader.create(frame);
     }
 
     private static long readPingPayloadId(BufferData frame) {
@@ -160,6 +204,10 @@ class Http2ClientConnectionPingTest {
             return dataWriter.writes;
         }
 
+        private void clearWrites() {
+            dataWriter.clear();
+        }
+
         private BufferData awaitWrite() throws InterruptedException {
             BufferData write = dataWriter.asyncWrites.poll(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
             if (write == null) {
@@ -181,6 +229,11 @@ class Http2ClientConnectionPingTest {
     private static final class CaptureWriter implements DataWriter {
         private final List<BufferData> writes = new CopyOnWriteArrayList<>();
         private final LinkedBlockingQueue<BufferData> asyncWrites = new LinkedBlockingQueue<>();
+
+        private void clear() {
+            writes.clear();
+            asyncWrites.clear();
+        }
 
         @Override
         public void write(BufferData... buffers) {
