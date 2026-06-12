@@ -2,11 +2,16 @@
 
 ## Overview
 
-The mock chat model enables deterministic testing of LangChain4j features such as agents, tools, and chat memory without invoking an external AI service. By configuring rule patterns, fixed responses, and templated replies, tests remain reproducible and stable across runs, allowing developers to verify interaction logic, component chaining, and error handling in isolation.
+The mock chat model enables deterministic testing of LangChain4j features such
+as agents, tools, and chat memory without invoking an external AI service. By
+configuring rule patterns, fixed responses, and templated replies, tests remain
+reproducible and stable across runs, allowing developers to verify interaction
+logic, component chaining, and error handling in isolation.
 
 ## Maven Coordinates
 
-In addition to the [Helidon integration with LangChain4J core dependencies](langchain4j.md#maven-coordinates), you must add the following:
+In addition to the [Helidon integration with LangChain4J core
+dependencies][helidon-integrat], you must add the following:
 
 ```xml [pom.xml]
 <dependency>
@@ -17,7 +22,8 @@ In addition to the [Helidon integration with LangChain4J core dependencies](lang
 
 ## MockChatModel
 
-To automatically create and add `MockChatModel` to the service registry add the following lines to `application.yaml`:
+To automatically create and add `MockChatModel` to the service registry add the
+following lines to `application.yaml`:
 
 ```java
 @Ai.Service("food-service") 
@@ -29,10 +35,13 @@ public interface FoodExpertAiService {
 }
 ```
 
-- Naming your AI service makes its configuration easily overridable from Helidon config.
+- Naming your AI service makes its configuration easily overridable from Helidon
+  config.
 - Chat model name annotation configuration is overridable by Helidon config
 
-To configure `MockChatModel` to be used, for example, in a test scenario you define your model in `application.yaml` and override a chat model name configured by `@Ai.ChatModel` annotation in FoodExpertAiService:
+To configure `MockChatModel` to be used, for example, in a test scenario you
+define your model in `application.yaml` and override a chat model name
+configured by `@Ai.ChatModel` annotation in FoodExpertAiService:
 
 ```yaml [application.yaml]
 langchain4j:
@@ -53,7 +62,8 @@ langchain4j:
           template: "The message is: $1"
 ```
 
-- Override `production-chatgpt-model` chat model in `food-service` named AI service with `test-mock-model`.
+- Override `production-chatgpt-model` chat model in `food-service` named AI
+  service with `test-mock-model`.
 
 The final unit test would look like the following snippet.
 
@@ -98,10 +108,13 @@ class FoodExpertTest {
 ### Configuration options
 
 <!--@include ../../../config/io.helidon.integrations.langchain4j.providers.mock.MockChatModel.md#configuration-options delim=--- offset=1 collapseTables=10 -->
-See [Configuration options](../../../config/io.helidon.integrations.langchain4j.providers.mock.MockChatModel.md#configuration-options).
+See [Configuration options][io-helidon-integ].
 <!--/include-->
 
 
 ## Additional Information
 
 - [LangChain4J Integration](langchain4j.md)
+
+[helidon-integrat]: langchain4j.md#maven-coordinates
+[io-helidon-integ]: ../../../config/io.helidon.integrations.langchain4j.providers.mock.MockChatModel.md#configuration-options

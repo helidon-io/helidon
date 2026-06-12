@@ -2,7 +2,8 @@
 
 ## Overview
 
-Helidon MP comes with deep integration for three specification-defined, broadly persistence-related technologies that can be used together or separately:
+Helidon MP comes with deep integration for three specification-defined, broadly
+persistence-related technologies that can be used together or separately:
 
 - [Named data sources](#named-data-source-integration)
 - [Jakarta Transactions (JTA)][jakarta-transact]
@@ -14,13 +15,22 @@ Each integration’s setup, configuration, and usage are described below.
 
 ### Overview
 
-Helidon MP’s named data source integration allows you to safely inject managed [`javax.sql.DataSource`][javax-sql-dataso] instances that are annotated with [`jakarta.inject.Named` annotations][jakarta-inject-n] into your Helidon MP application. [`java.sql.Connection` objects][java-sql-connect] [acquired][acquired] from these data sources will be pooled by your choice of one of two possible connection pool implementations.
+Helidon MP’s named data source integration allows you to safely inject managed
+[`javax.sql.DataSource`][javax-sql-dataso] instances that are annotated with
+[`jakarta.inject.Named` annotations][jakarta-inject-n] into your Helidon MP
+application. [`java.sql.Connection` objects][java-sql-connect]
+[acquired][acquired] from these data sources will be pooled by your choice of
+one of two possible connection pool implementations.
 
-The connections managed by the connection pool will be supplied by your relational database vendor’s JDBC driver.
+The connections managed by the connection pool will be supplied by your
+relational database vendor’s JDBC driver.
 
-How you set up Helidon MP’s named data source integration differs depending on which of these two connection pools, which JDBC driver, and which relational database product you use.
+How you set up Helidon MP’s named data source integration differs depending on
+which of these two connection pools, which JDBC driver, and which relational
+database product you use.
 
-Representative setups are described below. This list of setups is not exhaustive.
+Representative setups are described below. This list of setups is not
+exhaustive.
 
 ### Project Setup
 
@@ -28,7 +38,8 @@ Representative setups are described below. This list of setups is not exhaustive
 
 ##### Overview
 
-Helidon MP’s named data source integration requires a connection pool implementation.
+Helidon MP’s named data source integration requires a connection pool
+implementation.
 
 Helidon MP comes with support for two connection pools:
 
@@ -43,10 +54,12 @@ Details concerning each connection pool’s setup are described below.
 
 ###### Maven Coordinates (HikariCP)
 
-To include the [HikariCP connection pool][hikaricp] in your Helidon MP application:
+To include the [HikariCP connection pool][hikaricp] in your Helidon MP
+application:
 
 - [Ensure your dependencies are managed](../managing-dependencies.md)
-- Ensure the following `<dependency>` element is present as a child element of your project’s `pom.xml` file’s `<dependencies>` element:
+- Ensure the following `<dependency>` element is present as a child element of
+  your project’s `pom.xml` file’s `<dependencies>` element:
 
   ```xml [pom.xml]
   <dependency>
@@ -56,16 +69,19 @@ To include the [HikariCP connection pool][hikaricp] in your Helidon MP applicati
   </dependency>
   ```
 
-  - The `scope` is `runtime`, indicating that the HikariCP integration will be available on the runtime classpath.
+  - The `scope` is `runtime`, indicating that the HikariCP integration will be
+    available on the runtime classpath.
 
 ##### Setting up the Oracle Universal Connection Pool
 
 ###### Maven Coordinates (Oracle Universal Connection Pool)
 
-To include the [Oracle Universal Connection Pool][oracle-universal] in your Helidon MP application:
+To include the [Oracle Universal Connection Pool][oracle-universal] in your
+Helidon MP application:
 
 - [Ensure your dependencies are managed](../managing-dependencies.md)
-- Ensure the following `<dependency>` element is present as a child element of your project’s `pom.xml` file’s `<dependencies>` element:
+- Ensure the following `<dependency>` element is present as a child element of
+  your project’s `pom.xml` file’s `<dependencies>` element:
 
   ```xml [pom.xml]
   <dependency>
@@ -75,28 +91,41 @@ To include the [Oracle Universal Connection Pool][oracle-universal] in your Heli
   </dependency>
   ```
 
-  - The `scope` is `runtime`, indicating that the Oracle Universal Connection Pool integration will be available on the runtime classpath.
+  - The `scope` is `runtime`, indicating that the Oracle Universal Connection
+    Pool integration will be available on the runtime classpath.
 
 #### Setting Up a Database Driver
 
 ##### Overview
 
-Regardless of which connection pool you use, at the lowest level, JDBC database driver classes are what is ultimately responsible for making any connections to a relational database. JDBC database driver classes are database-product-specific.
+Regardless of which connection pool you use, at the lowest level, JDBC database
+driver classes are what is ultimately responsible for making any connections to
+a relational database. JDBC database driver classes are
+database-product-specific.
 
-Once you have decided upon a relational database product to use, and JDBC driver classes to use to connect to it, [ensure your dependencies are managed](../managing-dependencies.md), and then ensure that a `runtime`-scoped `<dependency>` element describing your JDBC driver classes is present as a child element of your project’s `pom.xml` file’s `<dependencies>` element.
+Once you have decided upon a relational database product to use, and JDBC driver
+classes to use to connect to it, [ensure your dependencies are
+managed](../managing-dependencies.md), and then ensure that a `runtime`-scoped
+`<dependency>` element describing your JDBC driver classes is present as a child
+element of your project’s `pom.xml` file’s `<dependencies>` element.
 
-See the [JDBC 4.3 Specification][jdbc-4-3-specifi] for more information about JDBC.
+See the [JDBC 4.3 Specification][jdbc-4-3-specifi] for more information about
+JDBC.
 
-Representative setups are described below. This list of setups is not exhaustive.
+Representative setups are described below. This list of setups is not
+exhaustive.
 
 ##### Setting Up H2
 
 ###### Maven Coordinates (H2)
 
-To include the [H2 JDBC driver][h2-jdbc-driver] classes in your Helidon MP application so your application can [connect to an H2 database][connect-to-an-h2] (whether in-memory or persistent):
+To include the [H2 JDBC driver][h2-jdbc-driver] classes in your Helidon MP
+application so your application can [connect to an H2
+database][connect-to-an-h2] (whether in-memory or persistent):
 
 - [Ensure your dependencies are managed](../managing-dependencies.md)
-- Ensure the following `<dependency>` element is present as a child element of your project’s `pom.xml` file’s `<dependencies>` element:
+- Ensure the following `<dependency>` element is present as a child element of
+  your project’s `pom.xml` file’s `<dependencies>` element:
 
   ```xml [pom.xml]
   <dependency>
@@ -106,17 +135,22 @@ To include the [H2 JDBC driver][h2-jdbc-driver] classes in your Helidon MP appli
   </dependency>
   ```
 
-  - The `scope` is `runtime`, indicating that the H2 JDBC driver classes will be available on the runtime classpath.
+  - The `scope` is `runtime`, indicating that the H2 JDBC driver classes will be
+    available on the runtime classpath.
 
 ##### Setting Up Oracle JDBC
 
 ###### Maven Coordinates (Oracle JDBC)
 
-To include the [Oracle JDBC driver classes][oracle-jdbc-driv] in your Helidon MP application so your application can [connect to an Oracle database][connect-to-an-or]:
+To include the [Oracle JDBC driver classes][oracle-jdbc-driv] in your Helidon MP
+application so your application can [connect to an Oracle
+database][connect-to-an-or]:
 
 - [Ensure your dependencies are managed](../managing-dependencies.md)
-- Read and understand [Developer’s Guide For Oracle JDBC 21c on Maven Central][developer-s-guid]
-- For a basic setup, ensure the following `<dependency>` element is present as a child element of your project’s `pom.xml` file’s `<dependencies>` element:
+- Read and understand [Developer’s Guide For Oracle JDBC 21c on Maven
+  Central][developer-s-guid]
+- For a basic setup, ensure the following `<dependency>` element is present as a
+  child element of your project’s `pom.xml` file’s `<dependencies>` element:
 
   ```xml [pom.xml]
   <dependency>
@@ -126,32 +160,51 @@ To include the [Oracle JDBC driver classes][oracle-jdbc-driv] in your Helidon MP
   </dependency>
   ```
 
-  - The `scope` is `runtime`, indicating that the Oracle JDBC driver classes will be available on the runtime classpath.
+  - The `scope` is `runtime`, indicating that the Oracle JDBC driver classes
+    will be available on the runtime classpath.
 
 ### Configuration
 
 #### Overview
 
-Each connection pool supported by Helidon’s named data source integration support is, itself, a `DataSource` that wraps a *vendor-supplied* `DataSource` present in the JDBC driver classes you added to your project. You must configure both the pool and the vendor-supplied `DataSource`.
+Each connection pool supported by Helidon’s named data source integration
+support is, itself, a `DataSource` that wraps a *vendor-supplied* `DataSource`
+present in the JDBC driver classes you added to your project. You must configure
+both the pool and the vendor-supplied `DataSource`.
 
 To configure Helidon MP’s named data source integration:
 
-1.  Decide where each property of the configuration will reside, as permitted by [Helidon MP’s MicroProfile Config implementation](config/introduction.md)
-2.  Create configuration suitable for the combination of your selected connection pool and your selected vendor-supplied `DataSource` implementation in those locations
+1.  Decide where each property of the configuration will reside, as permitted by
+    [Helidon MP’s MicroProfile Config implementation][helidon-mp-s-mic]
+2.  Create configuration suitable for the combination of your selected
+    connection pool and your selected vendor-supplied `DataSource`
+    implementation in those locations
 
-Helidon MP’s named data source integration relies on [Helidon MP’s usage of MicroProfile Config](config/introduction.md), so you have many choices for each configuration property when deciding on your configuration’s location in (1) above.
+Helidon MP’s named data source integration relies on [Helidon MP’s usage of
+MicroProfile Config](config/introduction.md), so you have many choices for each
+configuration property when deciding on your configuration’s location in (1)
+above.
 
-The configuration property values themselves are necessarily specific to the connection pool you selected, and to the vendor-supplied `DataSource` responsible for actually connecting to your relational database. In general, at a minimum, in your configuration you typically supply:
+The configuration property values themselves are necessarily specific to the
+connection pool you selected, and to the vendor-supplied `DataSource`
+responsible for actually connecting to your relational database. In general, at
+a minimum, in your configuration you typically supply:
 
-- Information so the connection pool knows which vendor-supplied `DataSource` implementation to manage
-- A JDBC URL specific to the vendor-supplied `DataSource` describing where the database is located, so the managed vendor-supplied `DataSource` knows how to connect to it
-- Information required for the vendor-supplied `DataSource` to authenticate to the database and otherwise tailor itself to it
+- Information so the connection pool knows which vendor-supplied `DataSource`
+  implementation to manage
+- A JDBC URL specific to the vendor-supplied `DataSource` describing where the
+  database is located, so the managed vendor-supplied `DataSource` knows how to
+  connect to it
+- Information required for the vendor-supplied `DataSource` to authenticate to
+  the database and otherwise tailor itself to it
 
-Some examples for representative configurations follow. This list of configurations is not exhaustive.
+Some examples for representative configurations follow. This list of
+configurations is not exhaustive.
 
 #### Configuration Prefixes
 
-All MicroProfile Config-compatible property names for Helidon MP’s named data source integration follow a common pattern:
+All MicroProfile Config-compatible property names for Helidon MP’s named data
+source integration follow a common pattern:
 
 <div class="informalexample">
 
@@ -159,29 +212,47 @@ All MicroProfile Config-compatible property names for Helidon MP’s named data 
 
 </div>
 
-- The name of a given configuration property always begins with the ***objecttype*** portion: a fully-qualified Java class name of the object being configured. Configuration for Helidon MP’s named data source integration concerns the behavior of `javax.sql.DataSource` objects, so Helidon MP’s named data source integration configuration property names begin with `javax.sql.DataSource`.
-  - A period (`.`) separates the *objecttype* portion from the rest of the property name.
-- The ***datasourcename*** portion, the name of the data source being configured, comes next. It cannot contain a period (`.`).
-  - A period (`.`) separates the *datasourcename* portion from the rest of the property name.
-- The ***propertyname*** portion, identifying the connection-pool- or vendor-supplied-`DataSource`-specific configuration property name, comes last. It may contain periods (`.`).
+- The name of a given configuration property always begins with the
+  ***objecttype*** portion: a fully-qualified Java class name of the object
+  being configured. Configuration for Helidon MP’s named data source integration
+  concerns the behavior of `javax.sql.DataSource` objects, so Helidon MP’s named
+  data source integration configuration property names begin with
+  `javax.sql.DataSource`.
+  - A period (`.`) separates the *objecttype* portion from the rest of the
+    property name.
+- The ***datasourcename*** portion, the name of the data source being
+  configured, comes next. It cannot contain a period (`.`).
+  - A period (`.`) separates the *datasourcename* portion from the rest of the
+    property name.
+- The ***propertyname*** portion, identifying the connection-pool- or
+  vendor-supplied-`DataSource`-specific configuration property name, comes last.
+  It may contain periods (`.`).
 
-As an example, configuration to set an imaginary `foo.bar` property on the `test` data source’s associated connection pool or vendor-specific `DataSource` to `baz` looks like this in Java `.properties` format:
+As an example, configuration to set an imaginary `foo.bar` property on the
+`test` data source’s associated connection pool or vendor-specific `DataSource`
+to `baz` looks like this in Java `.properties` format:
 
 ```properties [microprofile-config.properties]
 javax.sql.DataSource.test.foo.bar=baz
 ```
 
-- The ***objecttype*** portion of the configuration property name is `javax.sql.DataSource`.
+- The ***objecttype*** portion of the configuration property name is
+  `javax.sql.DataSource`.
 - The ***datasourcename*** portion of the configuration property name is `test`.
-- The ***propertyname*** portion of the configuration property name is `foo.bar`.
+- The ***propertyname*** portion of the configuration property name is
+  `foo.bar`.
 
 #### Examples
 
-Here are some examples illustrating general named data source configuration patterns in various [common MicroProfile Config-compatible locations](config/advanced-configuration.md).
+Here are some examples illustrating general named data source configuration
+patterns in various [common MicroProfile Config-compatible
+locations][common-microprof].
 
 ##### Example: `META-INF/microprofile-config.properties` Classpath Resource
 
-Here is an example of some named data source configuration as might be found in a `src/main/resources/META-INF/microprofile-config.properties` configuration source:
+Here is an example of some named data source configuration as might be found in
+a `src/main/resources/META-INF/microprofile-config.properties` configuration
+source:
 
 ```properties [microprofile-config.properties]
 javax.sql.DataSource.yourDataSourceName.somePropertyOfYourConnectionPoolAndDataSource = itsValue
@@ -190,7 +261,8 @@ javax.sql.DataSource.yourDataSourceName.someOtherPropertyOfYourConnectionPoolAnd
 
 ##### Example: System Properties Set on the Command Line
 
-Here is an example of some named data source configuration using system properties on the command line instead:
+Here is an example of some named data source configuration using system
+properties on the command line instead:
 
 ```shell [Terminal]
 java \
@@ -201,7 +273,10 @@ java \
 
 ##### Example: Environment Variables Set on the Command Line
 
-Here is an example of some named data source configuration using environment variables as typed directly into a command line shell, relying on [MicroProfile Config’s mapping rules][microprofile-con], since many shells will not understand environment variable names with periods (.) in them:
+Here is an example of some named data source configuration using environment
+variables as typed directly into a command line shell, relying on [MicroProfile
+Config’s mapping rules][microprofile-con], since many shells will not understand
+environment variable names with periods (.) in them:
 
 ```shell [Terminal]
 JAVAX_SQL_DATASOURCE_YOURDATASOURCENAME_SOMEPROPERTYOFYOURCONNECTIONPOOLANDDATASOURCE=itsValue \
@@ -211,7 +286,9 @@ java # ...
 
 ##### Example: Environment Variables Set By the `env` Command
 
-Here is an example of some named data source configuration using environment variables as supplied via the [`env` shell command][env-shell-comman], thus removing the need for [MicroProfile Config’s mapping rules][microprofile-con]:
+Here is an example of some named data source configuration using environment
+variables as supplied via the [`env` shell command][env-shell-comman], thus
+removing the need for [MicroProfile Config’s mapping rules][microprofile-con]:
 
 ```shell [Terminal]
 env 'javax.sql.DataSource.yourDataSourceName.somePropertyOfYourConnectionPoolAndDataSource=itsValue' \
@@ -221,7 +298,8 @@ env 'javax.sql.DataSource.yourDataSourceName.somePropertyOfYourConnectionPoolAnd
 
 ##### Example: `application.yaml` Classpath Resource
 
-Here is an example of some named data source configuration as might be found in a `src/main/resources/application.yaml` classpath resource:
+Here is an example of some named data source configuration as might be found in
+a `src/main/resources/application.yaml` classpath resource:
 
 ```yaml
 javax:
@@ -239,7 +317,11 @@ This example presumes you have:
 - [set up the Oracle Universal Connection Pool][set-up-the-oracl]
 - [set up Oracle JDBC](#setting-up-oracle-jdbc)
 
-This example, in Java properties file format, configures an Oracle Universal Connection Pool-managed data source named `main` to [connect to an Oracle Database][connect-to-an-or-2] on `localhost` port `1521`, using the `oracle.jdbc.poolOracleDataSource` vendor-supplied `DataSource`, with a service name of `XE`, a `user` of `scott`, and a `password` of `tiger`:
+This example, in Java properties file format, configures an Oracle Universal
+Connection Pool-managed data source named `main` to [connect to an Oracle
+Database][connect-to-an-or-2] on `localhost` port `1521`, using the
+`oracle.jdbc.poolOracleDataSource` vendor-supplied `DataSource`, with a service
+name of `XE`, a `user` of `scott`, and a `password` of `tiger`:
 
 ```properties [microprofile-config.properties]
 javax.sql.DataSource.main.connectionFactoryClassName = oracle.jdbc.pool.OracleDataSource
@@ -248,15 +330,31 @@ javax.sql.DataSource.main.user = scott
 javax.sql.DataSource.main.password = tiger
 ```
 
-- Why `connectionFactoryClassName`? See [`PoolDataSourceImpl#setConnectionFactoryClassName(String)`][pooldatasourceim]).
+- Why `connectionFactoryClassName`? See
+  [`PoolDataSourceImpl#setConnectionFactoryClassName(String)`][pooldatasourceim]).
 - See [Thin-style Service Name Syntax][connect-to-an-or].
 
-In general, the properties that can be set on the Oracle Universal Connection Pool can be inferred from the "setter" methods found in [the javadoc for the `PoolDataSourceImpl` class][the-javadoc-for].
+In general, the properties that can be set on the Oracle Universal Connection
+Pool can be inferred from the "setter" methods found in [the javadoc for the
+`PoolDataSourceImpl` class][the-javadoc-for].
 
-In general, the properties that can be set on the [`oracle.jdbc.pool.OracleDataSource`][oracle-jdbc-pool] `DataSource` implementation can be inferred from the "setter" methods found in [its javadoc][oracle-jdbc-pool].
+In general, the properties that can be set on the
+[`oracle.jdbc.pool.OracleDataSource`][oracle-jdbc-pool] `DataSource`
+implementation can be inferred from the "setter" methods found in [its
+javadoc][oracle-jdbc-pool].
 
 > [!NOTE]
-> [Unlike HikariCP][unlike-hikaricp], the Oracle Universal Connection Pool does not distinguish cleanly between configuration properties that affect *its* behavior and those that affect the behavior of the vendor-supplied `DataSource` implementation whose connections it pools. For example, in the example above it is not possible to tell that [`connectionFactoryClassName` is a property of the Oracle Universal Connection Pool][pooldatasourceim], and [`user` is a property of the `oracle.jdbc.pool.OracleDataSource` `DataSource` implementation][user-is-a-proper]. In some cases, the Oracle Universal Connection Pool will [set the given property on *both* the connection pool itself *and* on the vendor-supplied `DataSource` it manages][set-the-given-pr].
+> [Unlike HikariCP][unlike-hikaricp], the Oracle Universal Connection Pool does
+> not distinguish cleanly between configuration properties that affect *its*
+> behavior and those that affect the behavior of the vendor-supplied
+> `DataSource` implementation whose connections it pools. For example, in the
+> example above it is not possible to tell that [`connectionFactoryClassName` is
+> a property of the Oracle Universal Connection Pool][pooldatasourceim], and
+> [`user` is a property of the `oracle.jdbc.pool.OracleDataSource` `DataSource`
+> implementation][user-is-a-proper]. In some cases, the Oracle Universal
+> Connection Pool will [set the given property on *both* the connection pool
+> itself *and* on the vendor-supplied `DataSource` it
+> manages][set-the-given-pr].
 
 ##### Example: Configuring the HikariCP Connection Pool and H2
 
@@ -265,7 +363,9 @@ This example presumes you have:
 - [set up the HikariCP connection pool][set-up-the-hikar]
 - [set up H2](#setting-up-h2)
 
-This example, in Java properties file format, configures a HikariCP-managed data source named `test` to connect to an in-memory H2 database named `unit-testing` with a `user` of `sa` and an empty password:
+This example, in Java properties file format, configures a HikariCP-managed data
+source named `test` to connect to an in-memory H2 database named `unit-testing`
+with a `user` of `sa` and an empty password:
 
 ```properties [microprofile-config.properties]
 javax.sql.DataSource.test.dataSourceClassName = org.h2.jdbcx.JdbcDataSource
@@ -274,19 +374,33 @@ javax.sql.DataSource.test.dataSource.user = sa
 javax.sql.DataSource.test.dataSource.password =
 ```
 
-- Why `dataSourceClassName`? See [HikariCP’s configuration documentation][hikaricp-s-confi] for information about how HikariCP separates configuration of the connection pool itself from configuration of the vendor-supplied `DataSource`.
+- Why `dataSourceClassName`? See [HikariCP’s configuration
+  documentation][hikaricp-s-confi] for information about how HikariCP separates
+  configuration of the connection pool itself from configuration of the
+  vendor-supplied `DataSource`.
 - Why `dataSource.`? See [`PropertyElf.java`, lines 47–49][propertyelf-java].
 - See [the H2 database’s documentation about its URL format][connect-to-an-h2].
 
-HikariCP’s configuration properties are described [on its GitHub repository][on-its-github-re]. Properties that should be forwarded on to the vendor-supplied `DataSource` [are prefixed with `dataSource.`][unlike-hikaricp] as seen in the example above.
+HikariCP’s configuration properties are described [on its GitHub
+repository][on-its-github-re]. Properties that should be forwarded on to the
+vendor-supplied `DataSource` [are prefixed with `dataSource.`][unlike-hikaricp]
+as seen in the example above.
 
-In general, the properties that can be set on the [`org.h2.jdbcx.JdbcDataSource`][org-h2-jdbcx-jdb] vendor-supplied `DataSource` can be inferred from the "setter" methods found in [its javadoc][org-h2-jdbcx-jdb].
+In general, the properties that can be set on the
+[`org.h2.jdbcx.JdbcDataSource`][org-h2-jdbcx-jdb] vendor-supplied `DataSource`
+can be inferred from the "setter" methods found in [its
+javadoc][org-h2-jdbcx-jdb].
 
 #### Usage
 
-You use Helidon MP’s named data source integration in the same way, regardless of your choices of vendor-supplied `DataSource` and connection pool.
+You use Helidon MP’s named data source integration in the same way, regardless
+of your choices of vendor-supplied `DataSource` and connection pool.
 
-To use Helidon MP’s named data source integration in your application, once it has been [set up](#project-setup) and [configured](#configuration), create an ordinary [`DataSource`][javax-sql-dataso]-typed injection point in a [Java class representing a CDI bean][java-class-repre] somewhere in your application, [annotated with the name][jakarta-inject-n] of the data source you wish to use.
+To use Helidon MP’s named data source integration in your application, once it
+has been [set up](#project-setup) and [configured](#configuration), create an
+ordinary [`DataSource`][javax-sql-dataso]-typed injection point in a [Java class
+representing a CDI bean][java-class-repre] somewhere in your application,
+[annotated with the name][jakarta-inject-n] of the data source you wish to use.
 
 Here is how to define such a field-backed injection point:
 
@@ -296,9 +410,14 @@ Here is how to define such a field-backed injection point:
 private DataSource ds;
 ```
 
-- [`@Inject`][inject] marks the field as an injection point. Its behavior is defined by the [Jakarta Dependency Injection specification][jakarta-dependen].
-- [`@Named("test")`][jakarta-inject-n] says to use the data source named `test` (as declared by the [*datasourcename* portion](#configuration-prefixes) of a named data source configuration property).
-- The field injection point has a type of [`javax.sql.DataSource`][javax-sql-dataso], and the field itselfmay be named anything you like.
+- [`@Inject`][inject] marks the field as an injection point. Its behavior is
+  defined by the [Jakarta Dependency Injection specification][jakarta-dependen].
+- [`@Named("test")`][jakarta-inject-n] says to use the data source named `test`
+  (as declared by the [*datasourcename* portion](#configuration-prefixes) of a
+  named data source configuration property).
+- The field injection point has a type of
+  [`javax.sql.DataSource`][javax-sql-dataso], and the field itselfmay be named
+  anything you like.
 
 Here is how to define such a constructor parameter injection point:
 
@@ -312,22 +431,33 @@ public SomeObject(@Named("test") DataSource ds) {
 ```
 
 - This is the field whose value will be set in the constructor.
-- [`@Inject`][inject] marks the constructor as one containing parameter injection points. Its behavior is defined by the [Jakarta Dependency Injection specification][jakarta-dependen].
-- [`@Named("test")`][jakarta-inject-n] says to use the data source named `test` (as declared by the [*datasourcename* portion](#configuration-prefixes) of a named data source configuration property). The parameter injection point has a type of [`javax.sql.DataSource`][javax-sql-dataso], and the parameter itself may be named anything you like.
+- [`@Inject`][inject] marks the constructor as one containing parameter
+  injection points. Its behavior is defined by the [Jakarta Dependency Injection
+  specification][jakarta-dependen].
+- [`@Named("test")`][jakarta-inject-n] says to use the data source named `test`
+  (as declared by the [*datasourcename* portion](#configuration-prefixes) of a
+  named data source configuration property). The parameter injection point has a
+  type of [`javax.sql.DataSource`][javax-sql-dataso], and the parameter itself
+  may be named anything you like.
 - The injected argument will never be `null`.
 
 ## Jakarta Transactions (JTA) Integration
 
 ### Overview
 
-Helidon MP’s Jakarta Transactions integration integrates the [Naryana transaction engine](https://www.narayana.io/), an implementation of the [Jakarta Transactions Specification][jakarta-transact-2], into Helidon MP. It lets you use [`@jakarta.transaction.Transactional`][jakarta-transact-3] to declare JTA transactions in your Java code.
+Helidon MP’s Jakarta Transactions integration integrates the [Naryana
+transaction engine](https://www.narayana.io/), an implementation of the [Jakarta
+Transactions Specification][jakarta-transact-2], into Helidon MP. It lets you
+use [`@jakarta.transaction.Transactional`][jakarta-transact-3] to declare JTA
+transactions in your Java code.
 
 ### Maven Coordinates (JTA)
 
 To include Helidon’s JTA integration in your application:
 
 - [Ensure your dependencies are managed](../managing-dependencies.md)
-- Ensure the following `<dependency>` elements are present as child elements of your project’s `pom.xml` file’s `<dependencies>` element:
+- Ensure the following `<dependency>` elements are present as child elements of
+  your project’s `pom.xml` file’s `<dependencies>` element:
 
   ```xml [pom.xml]
   <dependencies>
@@ -344,42 +474,56 @@ To include Helidon’s JTA integration in your application:
   </dependencies>
   ```
 
-  - The `scope` is `provided`, which ensures that the [JTA classes required for compilation][jakarta-transact-3] are available at compile time.
-  - The implementation of these API classes (provided by [Narayana](https://narayana.io/)) will be available at runtime.
+  - The `scope` is `provided`, which ensures that the [JTA classes required for
+    compilation][jakarta-transact-3] are available at compile time.
+  - The implementation of these API classes (provided by
+    [Narayana](https://narayana.io/)) will be available at runtime.
 
 ### Configuration
 
 #### Overview
 
-Helidon MP’s Jakarta Transactions integration does not require configuration, but configuration is possible. Because configuration is of the [underlying Narayana transaction engine](https://narayana.io/), any restrictions are those of the engine, not of Helidon itself.
+Helidon MP’s Jakarta Transactions integration does not require configuration,
+but configuration is possible. Because configuration is of the [underlying
+Narayana transaction engine](https://narayana.io/), any restrictions are those
+of the engine, not of Helidon itself.
 
-Narayana, unlike Helidon MP, does not use MicroProfile Config, so its configuration options are less flexible.
+Narayana, unlike Helidon MP, does not use MicroProfile Config, so its
+configuration options are less flexible.
 
 Some common examples of Narayana configuration follow.
 
 #### Configuring the Object Store Directory
 
-Narayana features an object store directory which it uses to store information about transaction outcomes. To set its location, you may set the [`ObjectStoreEnvironmentBean.objectStoreDir`][objectstoreenvir] system property to the full path of a writeable directory:
+Narayana features an object store directory which it uses to store information
+about transaction outcomes. To set its location, you may set the
+[`ObjectStoreEnvironmentBean.objectStoreDir`][objectstoreenvir] system property
+to the full path of a writeable directory:
 
 ```shell [Terminal]
 java -DObjectStoreEnvironmentBean.objectStoreDir=/var/tmp # ...
 ```
 
-See [Specifying the object store location][specifying-the-o] for more information.
+See [Specifying the object store location][specifying-the-o] for more
+information.
 
 #### Configuring the Default Transaction Manager Timeout
 
-To configure Narayana’s [default transaction manager timeout][default-transact], set the `com.arjuna.ats.arjuna.coordinator.defaultTimeout` system property to an integral value in seconds:
+To configure Narayana’s [default transaction manager timeout][default-transact],
+set the `com.arjuna.ats.arjuna.coordinator.defaultTimeout` system property to an
+integral value in seconds:
 
 ```shell [Terminal]
 java -Dcom.arjuna.ats.arjuna.coordinator.defaultTimeout=60 # ...
 ```
 
-For more on configuring Narayana, see [Setting Properties][setting-properti] in the Naryana documentation.
+For more on configuring Narayana, see [Setting Properties][setting-properti] in
+the Naryana documentation.
 
 ### Usage
 
-To use Helidon MP’s Jakarta Transactions integration, annotate a method with the [`jakarta.transaction.Transactional`][jakarta-transact-3] annotation:
+To use Helidon MP’s Jakarta Transactions integration, annotate a method with the
+[`jakarta.transaction.Transactional`][jakarta-transact-3] annotation:
 
 ```java
 @Transactional
@@ -389,40 +533,64 @@ public void setGreeting(Integer id) {
 }
 ```
 
-- The [`@Transactional` annotation][jakarta-transact-3] indicates that this method should be invoked in the scope of a JTA transaction. **The object on which the method is invoked must be one that Helidon MP’s CDI container has created**, i.e. it must be managed. ([CDI beans are managed][cdi-beans-are-ma], as are [Jakarta RESTful Web Services resource classes][jakarta-restful].)
-- For [`@Transactional`][jakarta-transact-3] to have any effect, whatever is used inside the method must be JTA-aware (such as a [Jakarta Persistence][jakarta-persiste] object like a managed [`EntityManager`][entitymanager]).
+- The [`@Transactional` annotation][jakarta-transact-3] indicates that this
+  method should be invoked in the scope of a JTA transaction. **The object on
+  which the method is invoked must be one that Helidon MP’s CDI container has
+  created**, i.e. it must be managed. ([CDI beans are
+  managed][cdi-beans-are-ma], as are [Jakarta RESTful Web Services resource
+  classes][jakarta-restful].)
+- For [`@Transactional`][jakarta-transact-3] to have any effect, whatever is
+  used inside the method must be JTA-aware (such as a [Jakarta
+  Persistence][jakarta-persiste] object like a managed
+  [`EntityManager`][entitymanager]).
 
 ## Jakarta Persistence (JPA)
 
 ### Overview
 
-Helidon MP’s [Jakarta Persistence][jakarta-persiste] integration allows you to interact with Jakarta Persistence (JPA) objects as if your code were running in an application server, handling automatic creation and management of objects such as `EntityManager` and `EntityManagerFactory` instances.
+Helidon MP’s [Jakarta Persistence][jakarta-persiste] integration allows you to
+interact with Jakarta Persistence (JPA) objects as if your code were running in
+an application server, handling automatic creation and management of objects
+such as `EntityManager` and `EntityManagerFactory` instances.
 
-More pragmatically, it allows you to inject managed [`EntityManager`][entitymanager] instances using the [`@PersistenceContext`][persistenceconte] annotation.
+More pragmatically, it allows you to inject managed
+[`EntityManager`][entitymanager] instances using the
+[`@PersistenceContext`][persistenceconte] annotation.
 
-Jakarta Persistence is a Jakarta EE specification that describes, among other things, how its implementations:
+Jakarta Persistence is a Jakarta EE specification that describes, among other
+things, how its implementations:
 
 1.  Map Java objects to relational database tables
 2.  Manage such persistent Java objects
 3.  Interact with [Jakarta Transactions][jakarta-transact]
 4.  Interact with [named data sources](#named-data-source-integration)
 
-Jakarta Persistence may be used in an entirely application-managed manner, which requires no integration at all. This application-managed mode places the burden of error handling, thread safety, transaction management, and other concerns on the user. **This documentation does *not* cover application-managed mode JPA.**
+Jakarta Persistence may be used in an entirely application-managed manner, which
+requires no integration at all. This application-managed mode places the burden
+of error handling, thread safety, transaction management, and other concerns on
+the user. **This documentation does *not* cover application-managed mode JPA.**
 
-Jakarta Persistence may also (preferably) be used in a fully container-managed manner, which requires that a container, like Helidon MP, handle error management, thread safety and transaction management on behalf of the user. **This documentation covers this container-managed mode of JPA exclusively.**
+Jakarta Persistence may also (preferably) be used in a fully container-managed
+manner, which requires that a container, like Helidon MP, handle error
+management, thread safety and transaction management on behalf of the user.
+**This documentation covers this container-managed mode of JPA exclusively.**
 
-Helidon MP’s Jakarta Persistence integration comes with support for two JPA implementations, known as *JPA providers*:
+Helidon MP’s Jakarta Persistence integration comes with support for two JPA
+implementations, known as *JPA providers*:
 
 1.  [Hibernate ORM][hibernate-orm]
 2.  [EclipseLink][eclipselink]
 
 In any given project, you use one or the other, but not both.
 
-How you set up Helidon MP’s Jakarta Persistence integration differs depending on which of these JPA providers you choose to use.
+How you set up Helidon MP’s Jakarta Persistence integration differs depending on
+which of these JPA providers you choose to use.
 
-Jakarta Persistence requires [Jakarta Transactions][jakarta-transact] and makes use of [named data sources](#named-data-source-integration), so as you set up your project you will need to understand:
+Jakarta Persistence requires [Jakarta Transactions][jakarta-transact] and makes
+use of [named data sources](#named-data-source-integration), so as you set up
+your project you will need to understand:
 
-- [Helidon MP’s named data source integration](#named-data-source-integration)
+- [Helidon MP’s named data source integration][helidon-mp-s-nam]
 - [Helidon MP’s Jakarta Transactions integration][jakarta-transact]
 
 ### Project Setup
@@ -431,26 +599,36 @@ Jakarta Persistence requires [Jakarta Transactions][jakarta-transact] and makes 
 
 ##### Overview
 
-While the Jakarta Persistence specification standardizes many aspects around programming and usage, it deliberately leaves many required setup and configuration aspects up to the JPA provider. You will need to set up your project differently depending on which JPA provider you choose.
+While the Jakarta Persistence specification standardizes many aspects around
+programming and usage, it deliberately leaves many required setup and
+configuration aspects up to the JPA provider. You will need to set up your
+project differently depending on which JPA provider you choose.
 
-To set up Helidon MP’s Jakarta Persistence integration in your application to work with your chosen JPA provider, you must:
+To set up Helidon MP’s Jakarta Persistence integration in your application to
+work with your chosen JPA provider, you must:
 
-1.  [Set up and configure named data sources as appropriate](#named-data-source-integration)
-2.  [Set up and configure Helidon MP’s Jakarta Transactions support][jakarta-transact]
+1.  [Set up and configure named data sources as appropriate][helidon-mp-s-nam]
+2.  [Set up and configure Helidon MP’s Jakarta Transactions
+    support][jakarta-transact]
 3.  Include the proper Jakarta Persistence-related dependencies
-4.  Set up your project to generate and compile the [static metamodel][static-metamodel]
+4.  Set up your project to generate and compile the [static
+    metamodel][static-metamodel]
 5.  Set up your project for *static weaving*
 
 Details and examples for each supported JPA provider are below.
 
 ##### Maven Coordinates (Common)
 
-To include the Jakarta Persistence APIs that you will need and to include the core of Helidon’s Jakarta Persistence integration:
+To include the Jakarta Persistence APIs that you will need and to include the
+core of Helidon’s Jakarta Persistence integration:
 
 - [Ensure your dependencies are managed](../managing-dependencies.md)
-- [Ensure you have set up and configured named data sources as appropriate](#named-data-source-integration)
-- [Ensure you have set up and configured Helidon MP’s Jakarta Transactions support][jakarta-transact]
-- Ensure the following `<dependency>` elements are present as child elements of your project’s `pom.xml` file’s `<dependencies>` element:
+- [Ensure you have set up and configured named data sources as
+  appropriate][helidon-mp-s-nam]
+- [Ensure you have set up and configured Helidon MP’s Jakarta Transactions
+  support][jakarta-transact]
+- Ensure the following `<dependency>` elements are present as child elements of
+  your project’s `pom.xml` file’s `<dependencies>` element:
 
   ```xml [pom.xml]
   <dependencies>
@@ -467,14 +645,23 @@ To include the Jakarta Persistence APIs that you will need and to include the co
   </dependencies>
   ```
 
-  - The `scope` is `provided`, which ensures that the [JPA classes required for compilation][jpa-classes-requ] are available at compile time.
-  - The `scope` is `runtime`, which ensures that Helidon’s core, provider-independent Jakarta Persistence integration is available at runtime.
+  - The `scope` is `provided`, which ensures that the [JPA classes required for
+    compilation][jpa-classes-requ] are available at compile time.
+  - The `scope` is `runtime`, which ensures that Helidon’s core,
+    provider-independent Jakarta Persistence integration is available at
+    runtime.
 
-These `<dependency>` elements do not set up a JPA provider. See details below for the JPA provider you have chosen to use.
+These `<dependency>` elements do not set up a JPA provider. See details below
+for the JPA provider you have chosen to use.
 
 ##### Setting Up Static Metamodel Generation
 
-To generate and compile the Jakarta Persistence static metamodel for your application, regardless of whether you are using Hibernate ORM or EclipseLink, [ensure your dependencies are managed](../managing-dependencies.md), and then make sure the `<plugin>` element in the following code snippet is present as a child element of the `<pluginManagement><plugins>` element sequence as shown below:
+To generate and compile the Jakarta Persistence static metamodel for your
+application, regardless of whether you are using Hibernate ORM or EclipseLink,
+[ensure your dependencies are managed](../managing-dependencies.md), and then
+make sure the `<plugin>` element in the following code snippet is present as a
+child element of the `<pluginManagement><plugins>` element sequence as shown
+below:
 
 ```xml [pom.xml]
 <pluginManagement>
@@ -506,10 +693,16 @@ To generate and compile the Jakarta Persistence static metamodel for your applic
 </pluginManagement>
 ```
 
-- This adds the `hibernate-jpamodelgen` jar, which contains a [Java annotation processor that generates the static metamodel source code][java-annotation], to the Java compiler’s annotation processor path so that it is active at compile time.
-- Because your [dependencies are managed](../managing-dependencies.md), this will resolve to the currently supported version of Hibernate ORM.
+- This adds the `hibernate-jpamodelgen` jar, which contains a [Java annotation
+  processor that generates the static metamodel source code][java-annotation],
+  to the Java compiler’s annotation processor path so that it is active at
+  compile time.
+- Because your [dependencies are managed](../managing-dependencies.md), this
+  will resolve to the currently supported version of Hibernate ORM.
 
-For more on the Hibernate ORM `hibernate-jpamodelgen` annotation processor, see [Hibernate Metamodel Generator][hibernate-metamo] in Hibernate ORM’s documentation.
+For more on the Hibernate ORM `hibernate-jpamodelgen` annotation processor, see
+[Hibernate Metamodel Generator][hibernate-metamo] in Hibernate ORM’s
+documentation.
 
 > [!NOTE]
 > Many parts of Hibernate ORM’s documentation of this feature are outdated.
@@ -519,8 +712,9 @@ For more on the Hibernate ORM `hibernate-jpamodelgen` annotation processor, see 
 To include Helidon’s Jakarta Persistence-related integration for Hibernate ORM:
 
 - [Ensure your dependencies are managed](../managing-dependencies.md)
-- [Ensure the basics of your JPA project are set up properly](#maven-coordinates-common)
-- Ensure the following `<dependency>` elements are present as child elements of your project’s `pom.xml` file’s `<dependencies>` element:
+- [Ensure the basics of your JPA project are set up properly][ensure-the-basic]
+- Ensure the following `<dependency>` elements are present as child elements of
+  your project’s `pom.xml` file’s `<dependencies>` element:
 
   ```xml [pom.xml]
   <dependency>
@@ -530,13 +724,17 @@ To include Helidon’s Jakarta Persistence-related integration for Hibernate ORM
   </dependency>
   ```
 
-  - The `scope` is `runtime`, which ensures that Helidon MP’s Hibernate ORM integration is available at runtime.
+  - The `scope` is `runtime`, which ensures that Helidon MP’s Hibernate ORM
+    integration is available at runtime.
 
 ##### Setting Up Static Weaving (Hibernate ORM)
 
-Hibernate ORM can alter your classes' bytecode at build time to keep track of changes made to objects participating in Jakarta Persistence workflows.
+Hibernate ORM can alter your classes' bytecode at build time to keep track of
+changes made to objects participating in Jakarta Persistence workflows.
 
-To set up this required static weaving for Hibernate ORM, ensure that the following `<plugin>` element is present as a child element of your project’s `pom.xml` file’s `<plugins>` element:
+To set up this required static weaving for Hibernate ORM, ensure that the
+following `<plugin>` element is present as a child element of your project’s
+`pom.xml` file’s `<plugins>` element:
 
 ```xml [pom.xml]
 <plugin>
@@ -569,19 +767,23 @@ To set up this required static weaving for Hibernate ORM, ensure that the follow
 </plugin>
 ```
 
-For more on the `hibernate-enhance-maven-plugin` in particular, see [its documentation][its-documentatio].
+For more on the `hibernate-enhance-maven-plugin` in particular, see [its
+documentation][its-documentatio].
 
-For more on Hibernate ORM’s bytecode enhancement (weaving) in general, see [Bytecode Enhancement][bytecode-enhance] in Hibernate ORM’s documentation.
+For more on Hibernate ORM’s bytecode enhancement (weaving) in general, see
+[Bytecode Enhancement][bytecode-enhance] in Hibernate ORM’s documentation.
 
-For more on bytecode enhancement properties, see [Bytecode Enhancement Properties][bytecode-enhance-2] in Hibernate ORM’s documentation.
+For more on bytecode enhancement properties, see [Bytecode Enhancement
+Properties][bytecode-enhance-2] in Hibernate ORM’s documentation.
 
 ##### Maven Coordinates (EclipseLink)
 
 To include Helidon’s Jakarta Persistence-related integration for EclipseLink:
 
 - [Ensure your dependencies are managed](../managing-dependencies.md)
-- [Ensure the basics of your JPA project are set up properly](#maven-coordinates-common)
-- Ensure the following `<dependency>` elements are present as child elements of your project’s `pom.xml` file’s `<dependencies>` element:
+- [Ensure the basics of your JPA project are set up properly][ensure-the-basic]
+- Ensure the following `<dependency>` elements are present as child elements of
+  your project’s `pom.xml` file’s `<dependencies>` element:
 
   ```xml [pom.xml]
   <dependency>
@@ -591,13 +793,17 @@ To include Helidon’s Jakarta Persistence-related integration for EclipseLink:
   </dependency>
   ```
 
-  - The `scope` is `runtime`, which ensures that Helidon MP’s EclipseLink integration is available at runtime.
+  - The `scope` is `runtime`, which ensures that Helidon MP’s EclipseLink
+    integration is available at runtime.
 
 ##### Setting Up Static Weaving (EclipseLink)
 
-EclipseLink can alter your classes' bytecode at build time to keep track of changes made to objects participating in Jakarta Persistence workflows.
+EclipseLink can alter your classes' bytecode at build time to keep track of
+changes made to objects participating in Jakarta Persistence workflows.
 
-To set up this required static weaving for EclipseLink, ensure that the following `<plugin>` element is present as a child element of your project’s `pom.xml` file’s `<plugins>` element:
+To set up this required static weaving for EclipseLink, ensure that the
+following `<plugin>` element is present as a child element of your project’s
+`pom.xml` file’s `<plugins>` element:
 
 ```xml [pom.xml]
 <plugin>
@@ -630,29 +836,62 @@ To set up this required static weaving for EclipseLink, ensure that the followin
 
 - Always check [Maven Central][maven-central] for up-to-date versions.
 
-For more on the EclipseLink static weaving command-line utility, see [Static Weaving][static-weaving] in the EclipseLink documentation.
+For more on the EclipseLink static weaving command-line utility, see [Static
+Weaving][static-weaving] in the EclipseLink documentation.
 
 ### Configuration
 
-To configure Helidon MP’s Jakarta Persistence integration, you author a [`META-INF/persistence.xml` file][meta-inf-persist]. It contains a mix of standardized elements and JPA provider-specific properties.
+To configure Helidon MP’s Jakarta Persistence integration, you author a
+[`META-INF/persistence.xml` file][meta-inf-persist]. It contains a mix of
+standardized elements and JPA provider-specific properties.
 
-If you are writing a component or a library, then you place this in your Maven project’s `src/test/resources` directory (because a library or component is not itself an application, and by definition can be included in many applications, so it is inappropriate to put application-level configuration in your component). If you are working on a project that contains the `main` method (or similar) that starts your application, then and only then do you place a `META-INF/persistence.xml` in your persistence-oriented Maven project’s `src/main/resources` directory.
+If you are writing a component or a library, then you place this in your Maven
+project’s `src/test/resources` directory (because a library or component is not
+itself an application, and by definition can be included in many applications,
+so it is inappropriate to put application-level configuration in your
+component). If you are working on a project that contains the `main` method (or
+similar) that starts your application, then and only then do you place a
+`META-INF/persistence.xml` in your persistence-oriented Maven project’s
+`src/main/resources` directory.
 
-For details about the structure and syntax of the `META-INF/persistence.xml` file, see [persistence.xml file][meta-inf-persist] in the Jakarta Persistence specification.
+For details about the structure and syntax of the `META-INF/persistence.xml`
+file, see [persistence.xml file][meta-inf-persist] in the Jakarta Persistence
+specification.
 
 #### Use Only One `META-INF/persistence.xml` Per Application
 
-Like any configuration, a `META-INF/persistence.xml` file is normally an *application-level* concern, not a *component-level* concern. In other words, your Java application, made up of various components, or libraries, some of which you may have written, and many of which you have not, should normally have exactly one `META-INF/persistence.xml` on its classpath, describing the persistence-related aspects of the application in its particular environment. There are very few use cases where multiple `META-INF/persistence.xml` classpath resources are called for.
+Like any configuration, a `META-INF/persistence.xml` file is normally an
+*application-level* concern, not a *component-level* concern. In other words,
+your Java application, made up of various components, or libraries, some of
+which you may have written, and many of which you have not, should normally have
+exactly one `META-INF/persistence.xml` on its classpath, describing the
+persistence-related aspects of the application in its particular environment.
+There are very few use cases where multiple `META-INF/persistence.xml` classpath
+resources are called for.
 
-A common mistake is to write a component or library—by definition intended for use in possibly more than one application—and include a `src/main/resources/META-INF/persistence.xml` in its Maven project. If two components or libraries containing `META-INF/persistence.xml` classpath resources like this are deployed as part of an application, it can make for a confusing state of affairs at application runtime, and may lead to exceptions indicating more *persistence units* are present than are expected.
+A common mistake is to write a component or library—by definition intended for
+use in possibly more than one application—and include a
+`src/main/resources/META-INF/persistence.xml` in its Maven project. If two
+components or libraries containing `META-INF/persistence.xml` classpath
+resources like this are deployed as part of an application, it can make for a
+confusing state of affairs at application runtime, and may lead to exceptions
+indicating more *persistence units* are present than are expected.
 
-Most library projects that work with JPA artifacts should probably have a `src/test/resources/META-INF/persistence.xml` in their Maven projects instead. This allows you to test your JPA-centric work against a test configuration, rather than a "main" or production one, which is almost certainly what you want in nearly all cases.
+Most library projects that work with JPA artifacts should probably have a
+`src/test/resources/META-INF/persistence.xml` in their Maven projects instead.
+This allows you to test your JPA-centric work against a test configuration,
+rather than a "main" or production one, which is almost certainly what you want
+in nearly all cases.
 
 #### Persistence Units
 
-Fundamentally, a `META-INF/persistence.xml` file contains a collection of *persistence units*. A persistence unit represents a collection of entities in a relational database loosely coupled to a [named data source](#named-data-source-integration) that knows how to connect to it.
+Fundamentally, a `META-INF/persistence.xml` file contains a collection of
+*persistence units*. A persistence unit represents a collection of entities in a
+relational database loosely coupled to a [named data
+source](#named-data-source-integration) that knows how to connect to it.
 
-Your `META-INF/persistence.xml` file must begin (and end) with the following XML:
+Your `META-INF/persistence.xml` file must begin (and end) with the following
+XML:
 
 ```xml [META-INF/persistence.xml]
 <persistence xmlns="https://jakarta.ee/xml/ns/persistence"
@@ -666,16 +905,22 @@ Your `META-INF/persistence.xml` file must begin (and end) with the following XML
 </persistence>
 ```
 
-- Helidon MP’s Jakarta Persistence integration supports [Jakarta Persistence version 3.1][jakarta-persiste].
+- Helidon MP’s Jakarta Persistence integration supports [Jakarta Persistence
+  version 3.1][jakarta-persiste].
 - `<persistence-unit>` elements are listed here.
 
 #### Persistence Unit
 
-You list your application’s persistence units as `<persistence-unit>` child elements of the enclosing `<persistence>` element. Each `<persistence-unit>` element identifies a named persistence unit that will correspond to an `EntityManager` in your code, and represents a collection of entities in a relational database.
+You list your application’s persistence units as `<persistence-unit>` child
+elements of the enclosing `<persistence>` element. Each `<persistence-unit>`
+element identifies a named persistence unit that will correspond to an
+`EntityManager` in your code, and represents a collection of entities in a
+relational database.
 
 ##### Example: Persistence Unit Skeleton
 
-Here is a partial example of a persistence unit named `test` with a helpful description:
+Here is a partial example of a persistence unit named `test` with a helpful
+description:
 
 ```xml [META-INF/persistence.xml]
 <!-- ... -->
@@ -690,24 +935,37 @@ Here is a partial example of a persistence unit named `test` with a helpful desc
 <!-- ... -->
 ```
 
-- Because Helidon MP’s JPA integration is for container-managed JPA, the [`transaction-type` attribute][transaction-type] must in practice always be set to `JTA`.
-- The order of subsequent child elements is significant and governed by the [XML schema][xml-schema].
+- Because Helidon MP’s JPA integration is for container-managed JPA, the
+  [`transaction-type` attribute][transaction-type] must in practice always be
+  set to `JTA`.
+- The order of subsequent child elements is significant and governed by the [XML
+  schema][xml-schema].
 
 > [!NOTE]
 > In most microservices, there will be only one persistence unit.
 
 > [!TIP]
-> A `<persistence-unit>` is represented in Jakarta Persistence as an instance of the [`PersistenceUnitInfo`][persistenceuniti] class.
+> A `<persistence-unit>` is represented in Jakarta Persistence as an instance of
+> the [`PersistenceUnitInfo`][persistenceuniti] class.
 
 ##### JTA Data Source
 
-A persistence unit is always associated with exactly one [named data source](#named-data-source-integration).
+A persistence unit is always associated with exactly one [named data
+source](#named-data-source-integration).
 
-Because Helidon MP’s Jakarta Persistence integration provides support for container-managed JPA, and because container-managed JPA requires Jakarta Transactions (JTA), the kind of named data source a persistence unit is associated with is always a [JTA][jakarta-transact] data source. The `<jta-data-source>` element, a child of the `<persistence-unit>` element, is how you link a persistence unit to a [named data source](#named-data-source-integration) you previously [configured](#configuration).
+Because Helidon MP’s Jakarta Persistence integration provides support for
+container-managed JPA, and because container-managed JPA requires Jakarta
+Transactions (JTA), the kind of named data source a persistence unit is
+associated with is always a [JTA][jakarta-transact] data source. The
+`<jta-data-source>` element, a child of the `<persistence-unit>` element, is how
+you link a persistence unit to a [named data
+source](#named-data-source-integration) you previously
+[configured](#configuration).
 
 ###### Example: Persistence Unit with JTA Data Source
 
-Here is a partial example of a persistence unit named `test`, with a helpful description, linked with a JTA data source named `main`:
+Here is a partial example of a persistence unit named `test`, with a helpful
+description, linked with a JTA data source named `main`:
 
 ```xml [META-INF/persistence.xml]
 <!-- ... -->
@@ -723,26 +981,37 @@ Here is a partial example of a persistence unit named `test`, with a helpful des
 <!-- ... -->
 ```
 
-- This links this persistence unit to a [data source](#named-data-source-integration) named `main`, whose [connectivity information](#configuration) can be found in a MicroProfile-Config-compatible location, as detailed in the [data source configuration](#configuration) section above.
+- This links this persistence unit to a [data
+  source](#named-data-source-integration) named `main`, whose [connectivity
+  information](#configuration) can be found in a MicroProfile-Config-compatible
+  location, as detailed in the [data source configuration](#configuration)
+  section above.
 - Other persistence unit characteristics go here.
 
 ##### Classes
 
-A persistence unit lists the classes that should be managed and that will take part in Jakarta Persistence workflows. You must list:
+A persistence unit lists the classes that should be managed and that will take
+part in Jakarta Persistence workflows. You must list:
 
 1.  [Entity classes][entity-classes]
 2.  [Embeddable classes][embeddable-class]
 3.  [Mapped superclasses][mapped-superclas]
 4.  [Converter classes][converter-classe]
 
-You use a [sequence of `<class>` elements][sequence-of-clas] to do this. Each `<class>` element contains the fully-qualified class name of one of the types of managed classes listed above.
+You use a [sequence of `<class>` elements][sequence-of-clas] to do this. Each
+`<class>` element contains the fully-qualified class name of one of the types of
+managed classes listed above.
 
 > [!NOTE]
-> There are [other mechanisms that can be used in a `META-INF/persistence.xml` file to describe managed classes][other-mechanisms], but they may or may not be honored by a given JPA provider.
+> There are [other mechanisms that can be used in a `META-INF/persistence.xml`
+> file to describe managed classes][other-mechanisms], but they may or may not
+> be honored by a given JPA provider.
 
 ###### Example: Persistence Unit with Class Elements
 
-Here is a partial example of a persistence unit named `test`, with a helpful description, linked with a JTA data source named `main`, containing two entity classes:
+Here is a partial example of a persistence unit named `test`, with a helpful
+description, linked with a JTA data source named `main`, containing two entity
+classes:
 
 ```xml [META-INF/persistence.xml]
 <!-- ... -->
@@ -760,19 +1029,30 @@ Here is a partial example of a persistence unit named `test`, with a helpful des
 <!-- ... -->
 ```
 
-- Each entity class is listed with a separate `<class>` element, and there is no containing `<classes>` element or similar.
+- Each entity class is listed with a separate `<class>` element, and there is no
+  containing `<classes>` element or similar.
 - Other persistence unit characteristics go here.
 
 ##### Properties
 
-Persistence units can have simple properties attached to them to further configure the backing JPA provider. You use the [`<properties>` element][properties-eleme] to specify them.
+Persistence units can have simple properties attached to them to further
+configure the backing JPA provider. You use the [`<properties>`
+element][properties-eleme] to specify them.
 
 > [!NOTE]
-> Helidon MP’s Jakarta Persistence integration is for container-managed JPA, so the vendor-independent properties [described in the specification][properties-eleme] directly concerned with database connectivity information, such as `jakarta.persistence.jdbc.url`, **do not apply** and will be ignored if present. See [the JTA Data Source](#jta-data-source) section above for how a persistence unit is linked to a [named data source](#named-data-source-integration).
+> Helidon MP’s Jakarta Persistence integration is for container-managed JPA, so
+> the vendor-independent properties [described in the
+> specification][properties-eleme] directly concerned with database connectivity
+> information, such as `jakarta.persistence.jdbc.url`, **do not apply** and will
+> be ignored if present. See [the JTA Data Source](#jta-data-source) section
+> above for how a persistence unit is linked to a [named data
+> source](#named-data-source-integration).
 
 ###### Example: Persistence Unit with Properties
 
-Here is a partial exmaple of a persistence unit named `test`, with a helpful description, linked with a JTA data source named `sample`, containing two entity classes, configuring a Hibernate ORM-specific property:
+Here is a partial exmaple of a persistence unit named `test`, with a helpful
+description, linked with a JTA data source named `sample`, containing two entity
+classes, configuring a Hibernate ORM-specific property:
 
 ```xml [META-INF/persistence.xml]
 <!-- ... -->
@@ -791,29 +1071,51 @@ Here is a partial exmaple of a persistence unit named `test`, with a helpful des
 <!-- ... -->
 ```
 
-- The name identifies a name present in the [*datasourcename* portion of a named datasource configuration](#configuration-prefixes). There is no need for any kind of reserved prefix (like `java:comp/env`).
-- This is a Hibernate ORM-specific property and will be properly ignored if the JPA provider you have [set up](#project-setup-1) is EclipseLink. See [Statement logging and statistics][statement-loggin] in the Hibernate ORM documentation for more details about the `hibernate.show_sql` property.
-- This is an EclipseLink-specific property (and (a) is required and (b) must be set to `false` if you are using EclipseLink), and will be properly ignored if the JPA provider you have [set up](#project-setup-1) is Hibernate ORM. See [weaving][weaving] in the EclipseLink documentation for more details about the `eclipselink.weaving` property.
+- The name identifies a name present in the [*datasourcename* portion of a named
+  datasource configuration][datasourcename-p]. There is no need for any kind of
+  reserved prefix (like `java:comp/env`).
+- This is a Hibernate ORM-specific property and will be properly ignored if the
+  JPA provider you have [set up](#project-setup-1) is EclipseLink. See
+  [Statement logging and statistics][statement-loggin] in the Hibernate ORM
+  documentation for more details about the `hibernate.show_sql` property.
+- This is an EclipseLink-specific property (and (a) is required and (b) must be
+  set to `false` if you are using EclipseLink), and will be properly ignored if
+  the JPA provider you have [set up](#project-setup-1) is Hibernate ORM. See
+  [weaving][weaving] in the EclipseLink documentation for more details about the
+  `eclipselink.weaving` property.
 
 > [!TIP]
-> For an exhaustive list of Hibernate ORM-specific properties, see [Configurations][configurations] in the Hibernate ORM documentation.
+> For an exhaustive list of Hibernate ORM-specific properties, see
+> [Configurations][configurations] in the Hibernate ORM documentation.
 
 > [!TIP]
-> For an exhaustive list of EclipseLink-specific properties, see [Persistence Property Extensions Reference][persistence-prop] in the EclipseLink documentation.
+> For an exhaustive list of EclipseLink-specific properties, see [Persistence
+> Property Extensions Reference][persistence-prop] in the EclipseLink
+> documentation.
 
 ### Usage
 
-To use Helidon MP’s Jakarta Persistence integration, once you have [set up](#project-setup-1) and [configured](#configuration-2) your project, you use the Jakarta Persistence APIs in almost the same manner as if your project were deployed to a Jakarta EE application server.
+To use Helidon MP’s Jakarta Persistence integration, once you have [set
+up](#project-setup-1) and [configured](#configuration-2) your project, you use
+the Jakarta Persistence APIs in almost the same manner as if your project were
+deployed to a Jakarta EE application server.
 
 Specifically, you:
 
-1.  Annotate your managed classes (entities, mapped superclasses, etc.) appropriately (using [`@Entity`][entity] and similar annotations)
-2.  Inject [`EntityManager`][entitymanager] instances appropriately with the [`@PersistenceContext` annotation][persistenceconte]
-3.  Use an injected [`EntityManager`][entitymanager] to work with your managed objects
+1.  Annotate your managed classes (entities, mapped superclasses, etc.)
+    appropriately (using [`@Entity`][entity] and similar annotations)
+2.  Inject [`EntityManager`][entitymanager] instances appropriately with the
+    [`@PersistenceContext` annotation][persistenceconte]
+3.  Use an injected [`EntityManager`][entitymanager] to work with your managed
+    objects
 
-In addition, you [use Helidon MP’s JTA integration](#usage-1) to declare transactional boundaries where appropriate.
+In addition, you [use Helidon MP’s JTA integration](#usage-1) to declare
+transactional boundaries where appropriate.
 
-A full tutorial of Jakarta Persistence is *well* beyond the scope of this documentation. Consult [the specification][the-specificatio] for details on how to map your entity classes to relational database tables, and how to perform other related tasks.
+A full tutorial of Jakarta Persistence is *well* beyond the scope of this
+documentation. Consult [the specification][the-specificatio] for details on how
+to map your entity classes to relational database tables, and how to perform
+other related tasks.
 
 ### Examples
 
@@ -826,9 +1128,12 @@ A full tutorial of Jakarta Persistence is *well* beyond the scope of this docume
 - [JDBC 4.3 Specification][jdbc-4-3-specifi]
 - [HikariCP 5.0.1 documentation][hikaricp-5-0-1-d]
 - [Developers Guide For Oracle JDBC 21c on Maven Central][developer-s-guid]
-- [Oracle® Universal Connection Pool Developer’s Guide, Release 21c][oracle-universal]
-- [Oracle® Universal Connection Pool Java API Reference, Release 21c][oracle-universal-2]
-- [Oracle® Database JDBC Developer’s Guide and Reference, Release 21c][oracle-database]
+- [Oracle® Universal Connection Pool Developer’s Guide, Release
+  21c][oracle-universal]
+- [Oracle® Universal Connection Pool Java API Reference, Release
+  21c][oracle-universal-2]
+- [Oracle® Database JDBC Developer’s Guide and Reference, Release
+  21c][oracle-database]
 - [Oracle® Database JDBC Java API Reference, Release 21c][oracle-jdbc-driv]
 - [H2 Database Engine documentation][h2-jdbc-driver]
 - [Jakarta Transactions 2.0 Specification][jakarta-transact-4]
@@ -921,3 +1226,8 @@ A full tutorial of Jakarta Persistence is *well* beyond the scope of this docume
 [jakarta-persiste-2]: https://jakarta.ee/specifications/persistence/3.1/jakarta-persistence-spec-3.1.html
 [jakarta-persiste-3]: https://jakarta.ee/specifications/persistence/3.1/apidocs/
 [hibernate-orm-us]: https://docs.jboss.org/hibernate/orm/6.1/userguide/html_single/Hibernate_User_Guide.html
+[helidon-mp-s-mic]: config/introduction.md
+[common-microprof]: config/advanced-configuration.md
+[helidon-mp-s-nam]: #named-data-source-integration
+[ensure-the-basic]: #maven-coordinates-common
+[datasourcename-p]: #configuration-prefixes

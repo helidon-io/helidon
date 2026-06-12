@@ -2,11 +2,17 @@
 
 ## Overview
 
-Helidon implements [MicroProfile Reactive Streams Operators][microprofile-rea] specification which defines reactive operators and provides a standardized tool for manipulation with [Reactive Streams][reactive-streams]. You can use MicroProfile Reactive Streams Operators when you want to maintain source-level portability between different implementations.
+Helidon implements [MicroProfile Reactive Streams Operators][microprofile-rea]
+specification which defines reactive operators and provides a standardized tool
+for manipulation with [Reactive Streams][reactive-streams]. You can use
+MicroProfile Reactive Streams Operators when you want to maintain source-level
+portability between different implementations.
 
 ## Maven Coordinates
 
-To enable {feature-name}, either add a dependency on the [helidon-microprofile bundle](../introduction.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable {feature-name}, either add a dependency on the [helidon-microprofile
+bundle](../introduction.md) or add the following dependency to your project’s
+`pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -17,7 +23,9 @@ To enable {feature-name}, either add a dependency on the [helidon-microprofile b
 
 ## Usage
 
-The MicroProfile Reactive Streams Operators specification provides a set of operators within stages, as well as the builders used to prepare graphs of stages from which streams can be built.
+The MicroProfile Reactive Streams Operators specification provides a set of
+operators within stages, as well as the builders used to prepare graphs of
+stages from which streams can be built.
 
 Example of simple closed graph usage:
 
@@ -78,7 +86,8 @@ ReactiveStreams.of("1", "2", "3", "4", "5")
 
 ### Graphs
 
-[Graphs][graphs] are pre-prepared stream builders with [stages][stages], which can be combined to closed graph with methods `via` and `to`.
+[Graphs][graphs] are pre-prepared stream builders with [stages][stages], which
+can be combined to closed graph with methods `via` and `to`.
 
 Combining the graphs and running the stream:
 

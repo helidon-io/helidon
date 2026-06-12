@@ -2,11 +2,13 @@
 
 ## Overview
 
-Scheduling is an essential feature for the Enterprise. Helidon has its own implementation of Scheduling functionality based on [Cron-utils][cron-utils].
+Scheduling is an essential feature for the Enterprise. Helidon has its own
+implementation of Scheduling functionality based on [Cron-utils][cron-utils].
 
 ## Maven Coordinates
 
-To enable Scheduling, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+To enable Scheduling, add the following dependency to your project’s `pom.xml`
+(see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -17,21 +19,27 @@ To enable Scheduling, add the following dependency to your project’s `pom.xml`
 
 ## Usage
 
-For scheduling tasks in Helidon you can choose from `@Scheduling.Cron` or `@Scheduling.FixedRate` annotations by required complexity of invocation interval. All you need is to define a method with one of the annotations in an application scoped bean.
+For scheduling tasks in Helidon you can choose from `@Scheduling.Cron` or
+`@Scheduling.FixedRate` annotations by required complexity of invocation
+interval. All you need is to define a method with one of the annotations in an
+application scoped bean.
 
 ### Fixed rate
 
-For simple fixed rate invocation interval, the `@Scheduling.FixedRate` is the easiest way to schedule task invocation.
+For simple fixed rate invocation interval, the `@Scheduling.FixedRate` is the
+easiest way to schedule task invocation.
 
 ```java
 @Scheduling.FixedRate(delayBy = "PT5M", value = "PT10M")
 ```
 
-Metadata like human-readable interval description or configured values are available through *FixedRateInvocation* injected as method parameter.
+Metadata like human-readable interval description or configured values are
+available through *FixedRateInvocation* injected as method parameter.
 
 ### Cron
 
-For more complicated interval definition, cron expression can be leveraged with `@Scheduling.Cron` annotation.
+For more complicated interval definition, cron expression can be leveraged with
+`@Scheduling.Cron` annotation.
 
 ```java
 @Scheduling.Cron(value = "0 15 8 ? * *", concurrent = false)
@@ -83,7 +91,8 @@ Field formats
 
 Examples
 
-Metadata like human-readable interval description or configured values are available through *CronInvocation* injected as method parameter.
+Metadata like human-readable interval description or configured values are
+available through *CronInvocation* injected as method parameter.
 
 ```java
 @Scheduling.Cron("0 15 8 ? * *")
@@ -94,7 +103,8 @@ public void methodName(CronInvocation inv) {
 
 ## Configuration
 
-`Scheduling` annotation properties can be overridden using `application.yaml` properties, if configured in the source code.
+`Scheduling` annotation properties can be overridden using `application.yaml`
+properties, if configured in the source code.
 
 The following annotation options can use configuration "expression":
 
@@ -102,13 +112,15 @@ The following annotation options can use configuration "expression":
 - `Scheduling.FixedRate#value()`
 - `Scheduling.Cron#value()`
 
-Configuration expressions is a reference to a configuration key, with optional default value:
+Configuration expressions is a reference to a configuration key, with optional
+default value:
 
 `${config.key:default-value}`
 
 ### Fixed Rate
 
-The Fixed rate annotation can have the delay by and value overridden using config.
+The Fixed rate annotation can have the delay by and value overridden using
+config.
 
 Annotation that allows config overrides:
 
@@ -116,7 +128,8 @@ Annotation that allows config overrides:
 @Scheduling.FixedRate(delayBy = "${app.schedule.cache.delay-by:PT5M}", value = "${app.schedule.cache.interval:PT10M}")
 ```
 
-The default values are 5 minutes for delay-by, and 10 minutes for interval, and could be overridden:
+The default values are 5 minutes for delay-by, and 10 minutes for interval, and
+could be overridden:
 
 Overriding annotated values from config:
 

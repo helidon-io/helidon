@@ -1,14 +1,19 @@
 # Configuration Secrets
 
-When security requires a configuration with repeating complex elements, use Helidon Config.
+When security requires a configuration with repeating complex elements, use
+Helidon Config.
 
-This example configures a basic authentication provider and protects static content on the web server. It also includes annotations in Jersey.
+This example configures a basic authentication provider and protects static
+content on the web server. It also includes annotations in Jersey.
 
 ## Protecting Configuration Secrets
 
-In Helidon MP, the config encryption filter is **enabled by default**. However, if you don’t configure it, the filter only supports a template for aliasing that checks that no clear text passwords are present (template \${CLEAR=…​}.
+In Helidon MP, the config encryption filter is **enabled by default**. However,
+if you don’t configure it, the filter only supports a template for aliasing that
+checks that no clear text passwords are present (template \${CLEAR=…​}.
 
-In Helidon SE, you may add support for this filter with dependency (loaded through a java service mechanism):
+In Helidon SE, you may add support for this filter with dependency (loaded
+through a java service mechanism):
 
 Maven Dependency:
 
@@ -19,7 +24,9 @@ Maven Dependency:
 </dependency>
 ```
 
-Put encrypted values into your configuration file so that it can be stored in a public repository with no danger of exposing the secret values. Be sure to use a strong and secret password.
+Put encrypted values into your configuration file so that it can be stored in a
+public repository with no danger of exposing the secret values. Be sure to use a
+strong and secret password.
 
 The supported templates are:
 
@@ -33,18 +40,23 @@ Templates
 
 ### Requiring encryption
 
-The config encryption filter has an option that defines whether encryption is required or not. If it’s set to true, which is the default, then:
+The config encryption filter has an option that defines whether encryption is
+required or not. If it’s set to true, which is the default, then:
 
-- Configuration values with \${CLEAR=…​} template will cause an exception when requested.
-- The filter fails during bootstrap if `security.config.aes.insecure-passphrase` is configured.
+- Configuration values with \${CLEAR=…​} template will cause an exception when
+  requested.
+- The filter fails during bootstrap if `security.config.aes.insecure-passphrase`
+  is configured.
 
 ### Using symmetric encryption (AES)
 
-Symmetric encryption is based on a shared secret that is known by the person encrypting the value and is also provided to the application.
+Symmetric encryption is based on a shared secret that is known by the person
+encrypting the value and is also provided to the application.
 
 #### Encrypting values (AES)
 
-The config encryption filter provides a Main class `io.helidon.config.encryption.Main` that can be used to encrypt values.
+The config encryption filter provides a Main class
+`io.helidon.config.encryption.Main` that can be used to encrypt values.
 
 Encrypt secret secretToEncrypt using shared secret masterPassword:
 
@@ -52,26 +64,33 @@ Encrypt secret secretToEncrypt using shared secret masterPassword:
 java -jar <path-to-app-libs-dir>/helidon-config-encryption-{helidon-version}.jar aes masterPassword secretToEncrypt
 ```
 
-The tool returns the string to be entered into configuration as the value of a property.
+The tool returns the string to be entered into configuration as the value of a
+property.
 
 #### Shared Secret (AES)
 
 You can provide a shared secret in a couple of ways:
 
-- in configuration - for testing/demo purposes only - key is `security.config.aes.insecure-passphrase`
+- in configuration - for testing/demo purposes only - key is
+  `security.config.aes.insecure-passphrase`
 - as an environment variable - `SECURE_CONFIG_AES_MASTER_PWD`
 
 ### Using asymmetric encryption (RSA)
 
-This approach is based on a pair of keys: a public key which is known to anybody, and a private key which is known to a limited set of parties (usually a single person or process). For asymmetric encryption, the following is true:
+This approach is based on a pair of keys: a public key which is known to
+anybody, and a private key which is known to a limited set of parties (usually a
+single person or process). For asymmetric encryption, the following is true:
 
 - a value encrypted by a public key can only be decrypted by the private key
 
-When using the config encryption filter, you should encrypt the configuration values using the public key, and give the application process access to the private key to decrypt the values.
+When using the config encryption filter, you should encrypt the configuration
+values using the public key, and give the application process access to the
+private key to decrypt the values.
 
 #### Encrypting values (RSA)
 
-The config encryption filter provides a Main class `io.helidon.config.encryption.Main` that can be used to encrypt values.
+The config encryption filter provides a Main class
+`io.helidon.config.encryption.Main` that can be used to encrypt values.
 
 Encrypt secret secretToEncrypt using public certificate in a keystore:
 
@@ -79,11 +98,13 @@ Encrypt secret secretToEncrypt using public certificate in a keystore:
 java -jar <path-to-app-libs-dir>/helidon-config-encryption-{helidon-version}.jar rsa /path/to/keystore.p12 keystorePassword publicCertAlias secretToEncrypt
 ```
 
-The tool returns the string to be entered into configuration as the value of a property.
+The tool returns the string to be entered into configuration as the value of a
+property.
 
 #### Configure config encryption filter (RSA)
 
-You can configure the properties of a private key in a keystore. These keys are prefixed with `security.config.rsa.keystore`
+You can configure the properties of a private key in a keystore. These keys are
+prefixed with `security.config.rsa.keystore`
 
 | What | Configuration Key | Environment Variable | Description |
 |----|----|----|----|

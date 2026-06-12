@@ -1,6 +1,7 @@
 # Helidon SE 3.x Upgrade Guide
 
-In Helidon 3 we have made some changes to APIs and runtime behavior. This guide will help you upgrade a Helidon SE 2.x application to 3.x.
+In Helidon 3 we have made some changes to APIs and runtime behavior. This guide
+will help you upgrade a Helidon SE 2.x application to 3.x.
 
 ## Java 17 Runtime
 
@@ -8,9 +9,11 @@ Java 11 is no longer supported in Helidon 3. Java 17 or newer is required.
 
 ## New Routing
 
-Handling routes based on the protocol version is now possible by registering specific routes on routing builder.
+Handling routes based on the protocol version is now possible by registering
+specific routes on routing builder.
 
-For further information check [WebServer Documentation](../webserver/webserver.md)
+For further information check [WebServer
+Documentation](../webserver/webserver.md)
 
 ## Http/2 Support
 
@@ -29,7 +32,8 @@ server:
     http2-max-content-length: 16384
 ```
 
-In Helidon 3 Http/2 is automatically enabled when artifact with Http/2 support is available on the classpath.
+In Helidon 3 Http/2 is automatically enabled when artifact with Http/2 support
+is available on the classpath.
 
 Enabling Http/2 support in Helidon 3 by adding dependency:
 
@@ -40,9 +44,13 @@ Enabling Http/2 support in Helidon 3 by adding dependency:
 </dependency>
 ```
 
-With above dependency Helidon 3 supports Http/2 upgrade from Http/1, cleartext Http/2 without prior knowledge and Http/2 with ALPN over TLS.
+With above dependency Helidon 3 supports Http/2 upgrade from Http/1, cleartext
+Http/2 without prior knowledge and Http/2 with ALPN over TLS.
 
-In Helidon 2, max content length was configurable with `server.experimental.http2-max-content-length`, in Helidon 3 can be configured with `server.max-upgrade-content-length` globally or per socket with the same `max-upgrade-content-length` key.
+In Helidon 2, max content length was configurable with
+`server.experimental.http2-max-content-length`, in Helidon 3 can be configured
+with `server.max-upgrade-content-length` globally or per socket with the same
+`max-upgrade-content-length` key.
 
 Max upgrade content length in Helidon 3:
 
@@ -53,11 +61,15 @@ server:
   max-upgrade-content-length: 16384
 ```
 
-For further information check [WebServer Documentation](../webserver/webserver.md)
+For further information check [WebServer
+Documentation](../webserver/webserver.md)
 
 ## WebSocket
 
-Helidon SE support is now based on the `WebSocketRouting` class which enables Helidon application to configure routing for both annotated and programmatic WebSocket endpoints. `TyrusSupport` is now deprecated. Websocket support in now placed in different artifact.
+Helidon SE support is now based on the `WebSocketRouting` class which enables
+Helidon application to configure routing for both annotated and programmatic
+WebSocket endpoints. `TyrusSupport` is now deprecated. Websocket support in now
+placed in different artifact.
 
 Helidon 2 WebSocket support dependency:
 
@@ -77,7 +89,8 @@ Helidon 3 WebSocket support dependency:
 </dependency>
 ```
 
-In Helidon 2, WebSocket routing is defined by registering `TyrusSupport` as additional service:
+In Helidon 2, WebSocket routing is defined by registering `TyrusSupport` as
+additional service:
 
 Helidon 2 WebSocket route registering:
 
@@ -123,9 +136,14 @@ WebServer.builder()
 
 - The custom Helidon OCI clients have been deprecated ([See PR][see-pr]).
 
-Use the OCI Java SDK instead. For Helidon MP, use `io.helidon.integrations.oci:helidon-integrations-oci` only for OCI authentication, region, and configuration support; the legacy `io.helidon.integrations.oci.sdk:helidon-integrations-oci-sdk-cdi` module is deprecated.
+Use the OCI Java SDK instead. For Helidon MP, use
+`io.helidon.integrations.oci:helidon-integrations-oci` only for OCI
+authentication, region, and configuration support; the legacy
+`io.helidon.integrations.oci.sdk:helidon-integrations-oci-sdk-cdi` module is
+deprecated.
 
-- The MultiPart buffered readers have been deprecated ([See PR][see-pr-2]). Use the MultiPart stream readers instead.
+- The MultiPart buffered readers have been deprecated ([See PR][see-pr-2]). Use
+  the MultiPart stream readers instead.
 
 ### Helidon Common
 
@@ -154,7 +172,8 @@ More information in the following [Task][task-2].
 Deprecations in the following classes:
 
 - `MetricsSupport` - 3 methods, replacing Config with metrics settings
-- `KeyPerformanceIndicatorMetricsSettings` - New class in metrics API, for backward compatibility only
+- `KeyPerformanceIndicatorMetricsSettings` - New class in metrics API, for
+  backward compatibility only
 - `RegistryFactory` - New class in metrics API, for backward compatibility only
 
 More information in the following [Task][task-3].
@@ -175,7 +194,8 @@ Deprecations:
 
 More information in the following [Task][task-5].
 
-gRPC scope is temporarily smaller in Helidon, please follow issue <https://github.com/helidon-io/helidon/issues/5418>
+gRPC scope is temporarily smaller in Helidon, please follow issue
+<https://github.com/helidon-io/helidon/issues/5418>
 
 ### LRA
 
@@ -227,7 +247,8 @@ More information in the following [Task][task-9].
 
 ### WebServer
 
-- `Static content support` in `WebServer` - moved to a separate module. Fully removed from `WebServer` module.
+- `Static content support` in `WebServer` - moved to a separate module. Fully
+  removed from `WebServer` module.
 
 More information in the following [Task][task-11].
 

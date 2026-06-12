@@ -1,44 +1,73 @@
 # Why `@OPTIONS`?
 
-There are some good reasons why it is `@OPTIONS` methods that you decorate with the Helidon `@Cors.*` annotations. Take an informal look at the rationale for this choice.
+There are some good reasons why it is `@OPTIONS` methods that you decorate with
+the Helidon `@Cors.*` annotations. Take an informal look at the rationale for
+this choice.
 
 Table of Contents
 
 - [The Resource](#the-resource)
-- [Methods, Resources, and Subresources in JAX-RS Resource Classes][methods-resource]
-- [`OPTIONS` in CORS, `@OPTIONS` in JAX-RS, and Technical Reality][options-in-cors]
+- [Methods, Resources, and Subresources in JAX-RS Resource
+  Classes][methods-resource]
+- [`OPTIONS` in CORS, `@OPTIONS` in JAX-RS, and Technical
+  Reality][options-in-cors]
 - [The Bottom Line](#the-bottom-line)
 
 ## The Resource
 
-At the heart of cross-origin resource sharing is the *resource* itself. CORS lets you control how a given resource should be shared among various origins. All the attributes of CORS — whether authentication should be used, what headers can be passed through on CORS-controlled requests, and so on — pertain to a given resource.
+At the heart of cross-origin resource sharing is the *resource* itself. CORS
+lets you control how a given resource should be shared among various origins.
+All the attributes of CORS — whether authentication should be used, what headers
+can be passed through on CORS-controlled requests, and so on — pertain to a
+given resource.
 
 In Helidon, the
 
 @Cors\.
 
-annotations map directly to those CORS sharing attributes. It would be natural, then, to use `@Cors.` to annotate the single Java element in the application that represents a resource.
+annotations map directly to those CORS sharing attributes. It would be natural,
+then, to use `@Cors.` to annotate the single Java element in the application
+that represents a resource.
 
 ## Methods, Resources, and Subresources in JAX-RS Resource Classes
 
-Unfortunately, there is no single Java element that is sure to correspond one-to-one with a JAX-RS resource, for two reasons.
+Unfortunately, there is no single Java element that is sure to correspond
+one-to-one with a JAX-RS resource, for two reasons.
 
-1.  JAX-RS allows a resource class to define one or more subresources, denoted by the `@Path` annotation on methods. So a resource class does not necessarily represent only a single resource.
-2.  A JAX-RS resource class can contain multiple endpoints for the same resource. A common example is two methods, annotated with `@GET` and `@PUT` respectively, that have the same path.
+1.  JAX-RS allows a resource class to define one or more subresources, denoted
+    by the `@Path` annotation on methods. So a resource class does not
+    necessarily represent only a single resource.
+2.  A JAX-RS resource class can contain multiple endpoints for the same
+    resource. A common example is two methods, annotated with `@GET` and `@PUT`
+    respectively, that have the same path.
 
-Although no single endpoint method by itself fully represents the resource, at least each endpoint method maps to exactly one resource. So we could annotate any one of those endpoint methods with `@Cors.*` and unambiguously link the CORS behavior that the annotation defines to the resource.
+Although no single endpoint method by itself fully represents the resource, at
+least each endpoint method maps to exactly one resource. So we could annotate
+any one of those endpoint methods with `@Cors.*` and unambiguously link the CORS
+behavior that the annotation defines to the resource.
 
 But which endpoint method, and why?
 
 ## `OPTIONS` in CORS, `@OPTIONS` in JAX-RS, and Technical Reality
 
-The `OPTIONS` HTTP method plays an important role in CORS. While the CORS protocol *applies* to all HTTP methods, it *relies on* `OPTIONS` — with suitable headers — to represent CORS pre-flight requests. From that point of view, the `OPTIONS` HTTP method has a more prominent place in CORS than the other methods.
+The `OPTIONS` HTTP method plays an important role in CORS. While the CORS
+protocol *applies* to all HTTP methods, it *relies on* `OPTIONS` — with suitable
+headers — to represent CORS pre-flight requests. From that point of view, the
+`OPTIONS` HTTP method has a more prominent place in CORS than the other methods.
 
-In a JAX-RS resource class, the `@OPTIONS` annotation denotes which endpoint method should receive incoming `OPTIONS` HTTP requests for a resource. Therefore, we could view a Java method annotated with `@OPTIONS` as somewhat distinguished in the same way that we think of the `OPTIONS` HTTP method as distinguished within the CORS protocol.
+In a JAX-RS resource class, the `@OPTIONS` annotation denotes which endpoint
+method should receive incoming `OPTIONS` HTTP requests for a resource.
+Therefore, we could view a Java method annotated with `@OPTIONS` as somewhat
+distinguished in the same way that we think of the `OPTIONS` HTTP method as
+distinguished within the CORS protocol.
 
 ## The Bottom Line
 
-If you want a resource to participate in CORS, Helidon MP needs you to implement the `@OPTIONS` endpoint method for the resource, even if the method does nothing. Given that you have to write that method, and given that any endpoint method uniquely identifies its resource, the `@OPTIONS` method is a reasonable place to ask you to annotate with `@Cors.*` annotations.
+If you want a resource to participate in CORS, Helidon MP needs you to implement
+the `@OPTIONS` endpoint method for the resource, even if the method does
+nothing. Given that you have to write that method, and given that any endpoint
+method uniquely identifies its resource, the `@OPTIONS` method is a reasonable
+place to ask you to annotate with `@Cors.*` annotations.
 
 [methods-resource]: #methods-resources-and-subresources-in-jax-rs-resource-classes
 [options-in-cors]: #options-in-cors-options-in-jax-rs-and-technical-reality

@@ -2,9 +2,14 @@
 
 ## Overview
 
-A meter typically reflects the usage of a *single* point in your service which processes *multiple* requests over time. A value such as the total time consumed by a given REST endpoint which can be invoked multiple times underscores the aggregate nature of meter values; Helidon accumulates the time from all requests in the total duration.
+A meter typically reflects the usage of a *single* point in your service which
+processes *multiple* requests over time. A value such as the total time consumed
+by a given REST endpoint which can be invoked multiple times underscores the
+aggregate nature of meter values; Helidon accumulates the time from all requests
+in the total duration.
 
-Tracing, on the other hand, captures the usage of *multiple* parts of your code as your service responds to a *single* request.
+Tracing, on the other hand, captures the usage of *multiple* parts of your code
+as your service responds to a *single* request.
 
 Metrics and tracing come together in Helidon’s support for exemplars.
 
@@ -13,13 +18,23 @@ Metrics and tracing come together in Helidon’s support for exemplars.
 > <br/>
 > —Merriam-Webster Dictionary
 
-In the context of metrics, an *exemplar* for a given meter is a specific sample which, in some sense, made a typical contribution to the meter’s value. For example, an exemplar for a `Counter` might be the most recent sample which updated the counter. The metrics output identifies the exemplar sample using the span and trace IDs of the span and trace which triggered that sample.
+In the context of metrics, an *exemplar* for a given meter is a specific sample
+which, in some sense, made a typical contribution to the meter’s value. For
+example, an exemplar for a `Counter` might be the most recent sample which
+updated the counter. The metrics output identifies the exemplar sample using the
+span and trace IDs of the span and trace which triggered that sample.
 
-Exemplar support in Helidon relies on the exemplar support provided by the underlying metrics implementation. Currently, Helidon’s Micrometer implementation supports exemplars as recorded by Micrometer’s Prometheus meter registry and exposed by the OpenMetrics output (media type `application/openmetrics-text`).
+Exemplar support in Helidon relies on the exemplar support provided by the
+underlying metrics implementation. Currently, Helidon’s Micrometer
+implementation supports exemplars as recorded by Micrometer’s Prometheus meter
+registry and exposed by the OpenMetrics output (media type
+`application/openmetrics-text`).
 
 ## Maven Coordinates
 
-To enable OpenMetrics exemplar support, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable OpenMetrics exemplar support, add the following dependency to your
+project’s `pom.xml` (see [Managing
+Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -29,7 +44,8 @@ To enable OpenMetrics exemplar support, add the following dependency to your pro
 </dependency>
 ```
 
-Also, include the Helidon integration module for a tracing implementation (such as [Helidon Zipkin][helidon-zipkin])
+Also, include the Helidon integration module for a tracing implementation (such
+as [Helidon Zipkin][helidon-zipkin])
 
 ```xml [pom.xml]
 <dependency>
@@ -56,7 +72,8 @@ Add the Helidon tracing component itself:
 - Helidon tracing dependency.
 - Observability dependencies for tracing.
 
-To transmit tracing data from your service to a backend, you need to add a tracing provider to your project.
+To transmit tracing data from your service to a backend, you need to add a
+tracing provider to your project.
 
 For Jaeger:
 
@@ -99,31 +116,45 @@ For OpenTracing (deprecated):
 
 ## Usage
 
-Once you add the appropriate dependencies to your project, exemplar support runs automatically as part of the Helidon metrics implementation using Micrometer. You do not need to change your application or configuration.
+Once you add the appropriate dependencies to your project, exemplar support runs
+automatically as part of the Helidon metrics implementation using Micrometer.
+You do not need to change your application or configuration.
 
 ### Interpreting Exemplars
 
-Each exemplar reflects a sample described by a label, a value, and a timestamp. When a client accesses the `/observe/metrics` endpoint and specifies that it accepts the `application/openmetrics-text` media type, the label, value, and timestamp appear in the OpenMetrics response for meters that support exemplars.
+Each exemplar reflects a sample described by a label, a value, and a timestamp.
+When a client accesses the `/observe/metrics` endpoint and specifies that it
+accepts the `application/openmetrics-text` media type, the label, value, and
+timestamp appear in the OpenMetrics response for meters that support exemplars.
 
-The exemplar information in the output describes a single, actual sample that is representative of the statistical value as recorded by the underlying Micrometer Prometheus meter registry.
+The exemplar information in the output describes a single, actual sample that is
+representative of the statistical value as recorded by the underlying Micrometer
+Prometheus meter registry.
 
 ### Output Format
 
-In the OpenMetrics output, an exemplar actually appears as a comment appended to the normal OpenMetrics output.
+In the OpenMetrics output, an exemplar actually appears as a comment appended to
+the normal OpenMetrics output.
 
 *OpenMetrics format with exemplars*
 
 meter-identifier meter-value # exemplar-label sample-timestamp
 
-Even downstream consumers of OpenMetrics output that do not recognize the exemplar format should continue to work correctly (as long as they *do* recognize comments).
+Even downstream consumers of OpenMetrics output that do not recognize the
+exemplar format should continue to work correctly (as long as they *do*
+recognize comments).
 
-But some consumers, such as trace collectors and their UIs, understand the exemplar format, and they allow you to browse meters and then navigate directly to the trace for the meter’s exemplar.
+But some consumers, such as trace collectors and their UIs, understand the
+exemplar format, and they allow you to browse meters and then navigate directly
+to the trace for the meter’s exemplar.
 
 ## Examples
 
-Helidon includes an [example application][example-applicat], based on the QuickStart application, which illustrates exemplar support.
+Helidon includes an [example application][example-applicat], based on the
+QuickStart application, which illustrates exemplar support.
 
-Once you enable exemplar support you can see the exemplars in the metrics output.
+Once you enable exemplar support you can see the exemplars in the metrics
+output.
 
 ```log [Output]
 ## TYPE counterForPersonalizedGreetings counter
@@ -131,7 +162,10 @@ Once you enable exemplar support you can see the exemplars in the metrics output
 counterForPersonalizedGreetings_total{scope="application"} 4.0 # {span_id="6b1fc9f9fd42fb0c",trace_id="6b1fc9f9fd42fb0c"} 1.0 1696889651.779
 ```
 
-The exemplar (the portion following the `#`) is a sample corresponding to an update to the counter, showing the span and trace identifiers, the amount by which the counter was updated (`1.0`), and the timestamp recording when the update occurred expressed as seconds in the UNIX epoch (`1696889651.779`).
+The exemplar (the portion following the `#`) is a sample corresponding to an
+update to the counter, showing the span and trace identifiers, the amount by
+which the counter was updated (`1.0`), and the timestamp recording when the
+update occurred expressed as seconds in the UNIX epoch (`1696889651.779`).
 
 ## Additional Information
 

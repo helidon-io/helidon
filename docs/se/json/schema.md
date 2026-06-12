@@ -2,18 +2,25 @@
 
 ## Overview
 
-JSON Schema is a specification for describing the structure and validation rules of JSON data. It lets you define what properties are required, their types, allowed values, and more. By using JSON Schema, you can validate that incoming or outgoing JSON matches the expected contract, provide clear documentation for APIs, and enable tooling support such as code generation and auto-completion.
+JSON Schema is a specification for describing the structure and validation rules
+of JSON data. It lets you define what properties are required, their types,
+allowed values, and more. By using JSON Schema, you can validate that incoming
+or outgoing JSON matches the expected contract, provide clear documentation for
+APIs, and enable tooling support such as code generation and auto-completion.
 
 Helidon provides two complementary ways to work with JSON Schema.
 
-- In the declarative approach, you describe the schema using annotations in a [`JsonSchema`][jsonschema] class.
-- In the imperative approach, you build the schema programmatically with the fluent [`Schema`][schema] builder API.
+- In the declarative approach, you describe the schema using annotations in a
+  [`JsonSchema`][jsonschema] class.
+- In the imperative approach, you build the schema programmatically with the
+  fluent [`Schema`][schema] builder API.
 
 Helidon currently supports only schema generation.
 
 ## Maven Coordinates
 
-To enable JSON Schema, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable JSON Schema, add the following dependency to your project’s `pom.xml`
+(see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -26,7 +33,12 @@ To enable JSON Schema, add the following dependency to your project’s `pom.xml
 
 ### Imperative Schema Creation
 
-The entry point for each runtime JSON schema creation is a [`Schema`][schema] class. The imperative approach gives you full programmatic control over JSON Schema creation. Using the fluent Schema builder API, you can construct schemas step by step, configure properties, and apply constraints directly in code. This is useful when schemas need to be generated dynamically or when fine-grained customization is required.
+The entry point for each runtime JSON schema creation is a [`Schema`][schema]
+class. The imperative approach gives you full programmatic control over JSON
+Schema creation. Using the fluent Schema builder API, you can construct schemas
+step by step, configure properties, and apply constraints directly in code. This
+is useful when schemas need to be generated dynamically or when fine-grained
+customization is required.
 
 ```java
 Schema.builder()
@@ -35,7 +47,8 @@ Schema.builder()
         .build();
 ```
 
-Once the [`Schema`][schema] object is created, you can generate the JSON Schema as a String. The result looks like this:
+Once the [`Schema`][schema] object is created, you can generate the JSON Schema
+as a String. The result looks like this:
 
 ```json
 {
@@ -53,7 +66,12 @@ Once the [`Schema`][schema] object is created, you can generate the JSON Schema 
 
 ### Declarative Schema Creation
 
-The declarative approach lets you define JSON Schema through annotations in a [`JsonSchema`][jsonschema] class. At compile time, the `helidon-json-schema-codegen` generator processes these annotations and produces a class containing the schema definition. This approach keeps your schema definitions close to your data model and ensures schemas are generated automatically without manual coding.
+The declarative approach lets you define JSON Schema through annotations in a
+[`JsonSchema`][jsonschema] class. At compile time, the
+`helidon-json-schema-codegen` generator processes these annotations and produces
+a class containing the schema definition. This approach keeps your schema
+definitions close to your data model and ensures schemas are generated
+automatically without manual coding.
 
 ```java
 @JsonSchema.Schema 
@@ -62,9 +80,11 @@ public record ExampleSchema(@JsonSchema.Integer.Minimum(0) int exampleProperty) 
 }
 ```
 
-- Schema defining annotation. Without this annotation the class/record will not be processed as a JSON schema
+- Schema defining annotation. Without this annotation the class/record will not
+  be processed as a JSON schema
 
-In addition, the following section must be added to the `build` of the Maven `pom.xml` to enable annotation processors that generate the necessary code:
+In addition, the following section must be added to the `build` of the Maven
+`pom.xml` to enable annotation processors that generate the necessary code:
 
 ```xml [pom.xml]
 <plugins>
@@ -84,7 +104,12 @@ In addition, the following section must be added to the `build` of the Maven `po
 </plugins>
 ```
 
-Once compiled, the class with the following name will be generated `ExampleSchema__JsonSchema`. This class contains the String format of the schema and is automatically discovered via ServiceRegistry. Because of that, it is possible to inject the [`Schema`][schema] with the [`@Service.Named`][service-named] and desired class (such as `ExampleSchema.class`) as a value.
+Once compiled, the class with the following name will be generated
+`ExampleSchema__JsonSchema`. This class contains the String format of the schema
+and is automatically discovered via ServiceRegistry. Because of that, it is
+possible to inject the [`Schema`][schema] with the
+[`@Service.Named`][service-named] and desired class (such as
+`ExampleSchema.class`) as a value.
 
 ```java
 public void myMethod(@Service.Named(ExampleSchema.class) Schema schema) {
@@ -92,7 +117,9 @@ public void myMethod(@Service.Named(ExampleSchema.class) Schema schema) {
 }
 ```
 
-Or obtain it over the static `find` method on the [`Schema`][schema] class. This methods searches the ServiceRegistry for a Schema bound to the provided class over the parameter.
+Or obtain it over the static `find` method on the [`Schema`][schema] class. This
+methods searches the ServiceRegistry for a Schema bound to the provided class
+over the parameter.
 
 ```java
 Schema.find(MyClass.class);

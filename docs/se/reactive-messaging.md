@@ -2,11 +2,16 @@
 
 ## Overview
 
-Asynchronous messaging is a commonly used form of communication in the world of microservices. While it is possible to start building your reactive streams directly by combining operators and connecting them to reactive APIs, with Helidon SE Reactive Messaging, you can now use prepared tools for repetitive use case scenarios .
+Asynchronous messaging is a commonly used form of communication in the world of
+microservices. While it is possible to start building your reactive streams
+directly by combining operators and connecting them to reactive APIs, with
+Helidon SE Reactive Messaging, you can now use prepared tools for repetitive use
+case scenarios .
 
 ## Maven Coordinates
 
-To enable Reactive Messaging, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+To enable Reactive Messaging, add the following dependency to your project’s
+`pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -17,15 +22,31 @@ To enable Reactive Messaging, add the following dependency to your project’s `
 
 ## Usage
 
-Connecting your streams to external services usually requires a lot of boilerplate code for configuration handling, backpressure propagation, acknowledgement and more.
+Connecting your streams to external services usually requires a lot of
+boilerplate code for configuration handling, backpressure propagation,
+acknowledgement and more.
 
-In Helidon there is a system of connectors, emitters and means to orchestrate these tasks called **Reactive Messaging**. It’s basically an API for connecting and configuring connectors and emitters with your reactive streams through [Channels](#channel).
+In Helidon there is a system of connectors, emitters and means to orchestrate
+these tasks called **Reactive Messaging**. It’s basically an API for connecting
+and configuring connectors and emitters with your reactive streams through
+[Channels](#channel).
 
-Reactive Messaging relates to [MicroProfile Reactive Messaging][microprofile-rea] as the making of connectors and configuring them can be a repetitive task that ultimately leads to the same results. Helidon SE Reactive Messaging supports the very same configuration format for connectors as its MicroProfile counterpart does. Also, MP Connectors are reusable in Helidon SE Messaging with some limitations such as there is no CDI in Helidon SE. All [Messaging connectors](#messaging-connector) in Helidon are made to be universally usable by Helidon MP and SE.
+Reactive Messaging relates to [MicroProfile Reactive
+Messaging][microprofile-rea] as the making of connectors and configuring them
+can be a repetitive task that ultimately leads to the same results. Helidon SE
+Reactive Messaging supports the very same configuration format for connectors as
+its MicroProfile counterpart does. Also, MP Connectors are reusable in Helidon
+SE Messaging with some limitations such as there is no CDI in Helidon SE. All
+[Messaging connectors](#messaging-connector) in Helidon are made to be
+universally usable by Helidon MP and SE.
 
 ### Channel
 
-A channel is a named pair of `Publisher` and `Subscriber`. Channels can be connected together by [processors](#processor). Registering a `Publisher` or `Subscriber` for a channel can be done by Messaging API, or configured implicitly using registered [connectors](#connectors) to generate the `Publisher` or `Subscriber`.
+A channel is a named pair of `Publisher` and `Subscriber`. Channels can be
+connected together by [processors](#processor). Registering a `Publisher` or
+`Subscriber` for a channel can be done by Messaging API, or configured
+implicitly using registered [connectors](#connectors) to generate the
+`Publisher` or `Subscriber`.
 
 Example of simple channel:
 
@@ -41,7 +62,9 @@ Messaging.builder()
 
 ### Processor
 
-Processor is a typical reactive processor acting as a `Subscriber` to upstream and as a `Publisher` to downstream. In terms of reactive messaging, it is able to connect two [channels](#channel) to one reactive stream.
+Processor is a typical reactive processor acting as a `Subscriber` to upstream
+and as a `Publisher` to downstream. In terms of reactive messaging, it is able
+to connect two [channels](#channel) to one reactive stream.
 
 Example of processor usage:
 
@@ -69,13 +92,26 @@ Messaging.builder()
 
 ### Message
 
-Reactive Messaging in Helidon SE uses the same concept of message wrapping as MicroProfile messaging. The only notable difference is that SE Messaging does almost no implicit or automatic acknowledgement due to *no magic* philosophy of Helidon SE.
+Reactive Messaging in Helidon SE uses the same concept of message wrapping as
+MicroProfile messaging. The only notable difference is that SE Messaging does
+almost no implicit or automatic acknowledgement due to *no magic* philosophy of
+Helidon SE.
 
-The only exception to this are the variants of the methods `Messaging.Builder#listener` and `Messaging.Builder#processor` configured with consumer or function parameters which will conveniently unwrap the payload for you. Once the payload is automatically unwrapped, it is not possible to do a manual acknowledgement, therefore an implicit acknowledgement is executed before the callback.
+The only exception to this are the variants of the methods
+`Messaging.Builder#listener` and `Messaging.Builder#processor` configured with
+consumer or function parameters which will conveniently unwrap the payload for
+you. Once the payload is automatically unwrapped, it is not possible to do a
+manual acknowledgement, therefore an implicit acknowledgement is executed before
+the callback.
 
 ### Connectors
 
-Connectors are used to connect [channels](#channel) to external sources. To make the [creation and usage of connectors](#messaging-connector) as easy and versatile as possible, Helidon SE Messaging uses the same API for connectors that [MicroProfile Reactive Messaging][microprofile-rea] does. This allows connectors to be used in both flavors of Helidon with one limitation which is that the connector has to be able to work without CDI.
+Connectors are used to connect [channels](#channel) to external sources. To make
+the [creation and usage of connectors](#messaging-connector) as easy and
+versatile as possible, Helidon SE Messaging uses the same API for connectors
+that [MicroProfile Reactive Messaging][microprofile-rea] does. This allows
+connectors to be used in both flavors of Helidon with one limitation which is
+that the connector has to be able to work without CDI.
 
 Examples of versatile connectors in Helidon include the following:
 
@@ -85,7 +121,10 @@ Examples of versatile connectors in Helidon include the following:
 
 #### Messaging Connector
 
-A connector for Reactive Messaging is a factory that produces Publishers and Subscribers for Channels in Reactive Messaging. Messaging connector is just an implementation of `IncomingConnectorFactory`, `OutgoingConnectorFactory` or both.
+A connector for Reactive Messaging is a factory that produces Publishers and
+Subscribers for Channels in Reactive Messaging. Messaging connector is just an
+implementation of `IncomingConnectorFactory`, `OutgoingConnectorFactory` or
+both.
 
 Example connector example-connector:
 
@@ -151,11 +190,18 @@ Messaging.builder()
 
 ##### Configuration for Messaging Connector
 
-A messaging connector in Helidon SE can be configured explicitly by API or implicitly by config following the notation of [MicroProfile Reactive Messaging][microprofile-rea-2].
+A messaging connector in Helidon SE can be configured explicitly by API or
+implicitly by config following the notation of [MicroProfile Reactive
+Messaging][microprofile-rea-2].
 
-Configuration that is supplied to connector by the Messaging implementation must include two mandatory attributes:
+Configuration that is supplied to connector by the Messaging implementation must
+include two mandatory attributes:
 
-- `channel-name` which is the name of the channel that has the connector configured as Publisher or Subscriber, or `Channel.create('name-of-channel')` in case of explicit configuration or `mp.messaging.incoming.name-of-channel.connector: connector-name` in case of implicit config
+- `channel-name` which is the name of the channel that has the connector
+  configured as Publisher or Subscriber, or `Channel.create('name-of-channel')`
+  in case of explicit configuration or
+  `mp.messaging.incoming.name-of-channel.connector: connector-name` in case of
+  implicit config
 - `connector` name of the connector `@Connector("connector-name")`
 
 Example connector accessing configuration:
@@ -180,7 +226,12 @@ public class ExampleConnector implements IncomingConnectorFactory {
 
 ###### Explicit Config for Messaging Connector
 
-An explicit config for channel’s publisher is possible with `Channel.Builder#publisherConfig(Config config)` and for a subscriber with the `Channel.Builder#subscriberConfig(Config config)`. The supplied [Helidon Config](config/introduction.md) is merged with the mandatory attributes and any implicit configuration found. The resulting configuration is then served to the Connector.
+An explicit config for channel’s publisher is possible with
+`Channel.Builder#publisherConfig(Config config)` and for a subscriber with the
+`Channel.Builder#subscriberConfig(Config config)`. The supplied [Helidon
+Config](config/introduction.md) is merged with the mandatory attributes and any
+implicit configuration found. The resulting configuration is then served to the
+Connector.
 
 Example consuming from Kafka connector with explicit config:
 
@@ -212,13 +263,17 @@ Messaging messaging = Messaging.builder()
         .start();
 ```
 
-- Prepare channel for connecting kafka connector with specific publisher configuration → listener,
-- Channel → connector mapping is automatic when using `KafkaConnector.configBuilder()`
+- Prepare channel for connecting kafka connector with specific publisher
+  configuration → listener,
+- Channel → connector mapping is automatic when using
+  `KafkaConnector.configBuilder()`
 - Prepare Kafka connector, can be used by any channel
 
 ###### Implicit Config for Messaging Connector
 
-Implicit config without any hard-coding is possible with [Helidon Config](config/introduction.md) following notation of [MicroProfile Reactive Messaging][microprofile-rea-2].
+Implicit config without any hard-coding is possible with [Helidon
+Config](config/introduction.md) following notation of [MicroProfile Reactive
+Messaging][microprofile-rea-2].
 
 Example of channel to connector mapping config with custom properties:
 
@@ -249,9 +304,12 @@ Messaging.builder()
 
 #### Re-usability in MP Messaging
 
-As the API is the same for [MicroProfile Reactive Messaging][microprofile-rea] connectors, all that is needed to make connector work in both ways is annotating it with `@ApplicationScoped`. Such connector is treated as a bean in Helidon MP.
+As the API is the same for [MicroProfile Reactive Messaging][microprofile-rea]
+connectors, all that is needed to make connector work in both ways is annotating
+it with `@ApplicationScoped`. Such connector is treated as a bean in Helidon MP.
 
-For specific information about creating messaging connectors for Helidon MP visit [MicroProfile Reactive Messaging][microprofile-rea].
+For specific information about creating messaging connectors for Helidon MP
+visit [MicroProfile Reactive Messaging][microprofile-rea].
 
 #### Kafka Connector
 
@@ -299,8 +357,10 @@ Messaging messaging = Messaging.builder()
         .start();
 ```
 
-- Prepare a channel for connecting kafka connector with specific publisher configuration → listener
-- Channel → connector mapping is automatic when using KafkaConnector.configBuilder()
+- Prepare a channel for connecting kafka connector with specific publisher
+  configuration → listener
+- Channel → connector mapping is automatic when using
+  KafkaConnector.configBuilder()
 - Prepare Kafka connector, can be used by any channel
 
 Example of producing to Kafka:
@@ -327,8 +387,10 @@ Messaging messaging = Messaging.builder()
         .start();
 ```
 
-- Prepare a channel for connecting kafka connector with specific publisher configuration → listener
-- Channel → connector mapping is automatic when using KafkaConnector.configBuilder()
+- Prepare a channel for connecting kafka connector with specific publisher
+  configuration → listener
+- Channel → connector mapping is automatic when using
+  KafkaConnector.configBuilder()
 - Prepare Kafka connector, can be used by any channel
 
 ##### Implicit Helidon Config for Kafka Connector
@@ -358,8 +420,10 @@ mp.messaging:
       value.deserializer: org.apache.kafka.common.serialization.StringDeserializer
 ```
 
-- Kafka client consumer’s property auto.offset.reset configuration for `from-kafka` channel only
-- Kafka client’s property [bootstrap.servers][bootstrap-server] configuration for all channels using the connector
+- Kafka client consumer’s property auto.offset.reset configuration for
+  `from-kafka` channel only
+- Kafka client’s property [bootstrap.servers][bootstrap-server] configuration
+  for all channels using the connector
 
 Example of consuming from Kafka:
 
@@ -397,7 +461,8 @@ Messaging messaging = Messaging.builder()
 
 - Prepare Kafka connector, can be used by any channel
 
-Don’t forget to check out the examples with pre-configured Kafka docker image, for easy testing:
+Don’t forget to check out the examples with pre-configured Kafka docker image,
+for easy testing:
 
 - <https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/messaging>
 
@@ -442,8 +507,10 @@ Messaging messaging = Messaging.builder()
         .start();
 ```
 
-- Prepare a channel for connecting jms connector with specific publisher configuration → listener
-- Channel → connector mapping is automatic when using JmsConnector.configBuilder()
+- Prepare a channel for connecting jms connector with specific publisher
+  configuration → listener
+- Channel → connector mapping is automatic when using
+  JmsConnector.configBuilder()
 - Prepare JMS connector, can be used by any channel
 
 Example of producing to JMS:
@@ -467,8 +534,10 @@ Messaging messaging = Messaging.builder()
         .start();
 ```
 
-- Prepare a channel for connecting jms connector with specific publisher configuration → listener
-- Channel → connector mapping is automatic when using JmsConnector.configBuilder()
+- Prepare a channel for connecting jms connector with specific publisher
+  configuration → listener
+- Channel → connector mapping is automatic when using
+  JmsConnector.configBuilder()
 - Prepare JMS connector, can be used by any channel
 
 ##### Implicit Helidon Config for JMS Connector
@@ -534,7 +603,8 @@ Messaging messaging = Messaging.builder()
 
 - Prepare JMS connector, can be used by any channel
 
-Don’t forget to check out the examples with pre-configured ActiveMQ docker image, for easy testing:
+Don’t forget to check out the examples with pre-configured ActiveMQ docker
+image, for easy testing:
 
 - [Helidon Messaging Examples][helidon-messagin]
 
@@ -594,18 +664,23 @@ Messaging.builder()
 
 - Prepare Oracle UCP
 - Setup AQ connector and provide datasource with an identifier `test-ds`
-- Setup channel for sending messages to queue `example_queue_1` with datasource `test-ds`
-- Setup channel for receiving messages from queue `example_queue_1` with datasource `test-ds`
+- Setup channel for sending messages to queue `example_queue_1` with datasource
+  `test-ds`
+- Setup channel for receiving messages from queue `example_queue_1` with
+  datasource `test-ds`
 - Register connector and channels
-- Add a publisher for several test messages to publish them to `example_queue_1` immediately
+- Add a publisher for several test messages to publish them to `example_queue_1`
+  immediately
 - Subscribe callback for any message coming from `example_queue_1`
 
 ## Configuration
 
 - [Configuration for Messaging Connector][configuration-fo]
-- [Explicit Configuration with Config Builder for Kafka Connector][explicit-configu]
+- [Explicit Configuration with Config Builder for Kafka
+  Connector][explicit-configu]
 - [Implicit Helidon Configuration for Kafka Connector][implicit-helidon]
-- [Explicit Configuration with Config Builder for JMS Connector][explicit-configu-2]
+- [Explicit Configuration with Config Builder for JMS
+  Connector][explicit-configu-2]
 - [Implicit Helidon Configuration for JMS Connector][implicit-helidon-2]
 
 ## Reference

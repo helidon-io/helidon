@@ -1,6 +1,8 @@
 # Helidon MP Config Guide
 
-This guide describes how to create a sample MicroProfile (MP) project that can be used to run some basic examples using both default and custom configuration with Helidon MP.
+This guide describes how to create a sample MicroProfile (MP) project that can
+be used to run some basic examples using both default and custom configuration
+with Helidon MP.
 
 ## What You Need
 
@@ -37,11 +39,19 @@ export JAVA_HOME=/usr/lib/jvm/jdk-21
 
 ## Getting Started with Configuration
 
-Helidon provides a very flexible and comprehensive configuration system, offering you many application configuration choices. You can include configuration data from a variety of sources using different formats, like JSON and YAML. Furthermore, you can customize the precedence of sources and make them optional or mandatory. This guide introduces Helidon MP configuration and demonstrates the fundamental concepts using several examples. Refer to [Helidon Config](../../mp/config/introduction.md) for the full configuration concepts documentation.
+Helidon provides a very flexible and comprehensive configuration system,
+offering you many application configuration choices. You can include
+configuration data from a variety of sources using different formats, like JSON
+and YAML. Furthermore, you can customize the precedence of sources and make them
+optional or mandatory. This guide introduces Helidon MP configuration and
+demonstrates the fundamental concepts using several examples. Refer to [Helidon
+Config](../../mp/config/introduction.md) for the full configuration concepts
+documentation.
 
 ### Create a Sample Helidon MP Project
 
-Use the Helidon MP Maven archetype to create a simple project that can be used for the examples in this guide.
+Use the Helidon MP Maven archetype to create a simple project that can be used
+for the examples in this guide.
 
 Run the Maven archetype:
 
@@ -63,9 +73,18 @@ cd helidon-quickstart-mp
 
 ### Default Configuration
 
-Helidon has an internal configuration, so you are not required to provide any configuration data for your application, though in practice you most likely would. By default, that configuration can be overridden from three sources: system properties, environment variables, and the contents of `META-INF/microprofile-config.properties`. For example, if you specify a custom server port in `META-INF/microprofile-config.properties` then your server will listen on that port.
+Helidon has an internal configuration, so you are not required to provide any
+configuration data for your application, though in practice you most likely
+would. By default, that configuration can be overridden from three sources:
+system properties, environment variables, and the contents of
+`META-INF/microprofile-config.properties`. For example, if you specify a custom
+server port in `META-INF/microprofile-config.properties` then your server will
+listen on that port.
 
-A main class is also required to start up the server and run the application. By default, the Quickstart sample project uses the built-in Helidon main class. In this guide you want to use your own main class, so you have more control over the server initialization. First define your own `Main`:
+A main class is also required to start up the server and run the application. By
+default, the Quickstart sample project uses the built-in Helidon main class. In
+this guide you want to use your own main class, so you have more control over
+the server initialization. First define your own `Main`:
 
 ```java [Main.java]
 public final class Main {
@@ -85,9 +104,11 @@ public final class Main {
 }
 ```
 
-In this class, a `main` method is defined which starts the Helidon MP server and prints out a message with the listen address.
+In this class, a `main` method is defined which starts the Helidon MP server and
+prints out a message with the listen address.
 
-- Notice that this class has an empty no-args constructor to make sure this class cannot be instantiated.
+- Notice that this class has an empty no-args constructor to make sure this
+  class cannot be instantiated.
 - The MicroProfile server is started with the default configuration.
 
 Next change the project’s `pom.xml` to use your main class:
@@ -98,9 +119,12 @@ Next change the project’s `pom.xml` to use your main class:
 </properties>
 ```
 
-This property will be used to set the `Main-Class` attribute in the application jar’s MANIFEST.
+This property will be used to set the `Main-Class` attribute in the application
+jar’s MANIFEST.
 
-In your application code, Helidon uses the default configuration when you create a `Server` object without a custom `Config` object. See the following code from the project you created.
+In your application code, Helidon uses the default configuration when you create
+a `Server` object without a custom `Config` object. See the following code from
+the project you created.
 
 View Main#startServer:
 
@@ -110,29 +134,44 @@ static Server startServer() {
 }
 ```
 
-- There is no `Config` object being used during server creation, so the default configuration is used.
+- There is no `Config` object being used during server creation, so the default
+  configuration is used.
 
 ### Source Precedence for Default Configuration
 
-In order to properly configure your application using configuration sources, you need to understand the precedence rules that Helidon uses to merge your configuration data. By default, Helidon will use the following sources in precedence order:
+In order to properly configure your application using configuration sources, you
+need to understand the precedence rules that Helidon uses to merge your
+configuration data. By default, Helidon will use the following sources in
+precedence order:
 
 1.  Java system properties
 2.  Environment variables
 3.  Properties specified in `META-INF/microprofile-config.properties`
 
-Each of these sources specify configuration properties in Java Property format (key/value), like `color=red`. If any of the Helidon required properties are not specified in one of these source, like `server.port`, then Helidon will use a default value.
+Each of these sources specify configuration properties in Java Property format
+(key/value), like `color=red`. If any of the Helidon required properties are not
+specified in one of these source, like `server.port`, then Helidon will use a
+default value.
 
 > [!NOTE]
-> Because environment variable names are restricted to alphanumeric characters and underscores, Helidon adds aliases to the environment configuration source, allowing entries with dotted and/or hyphenated keys to be overridden. For example, this mapping allows an environment variable named "APP_GREETING" to override an entry key named "app.greeting". In the same way, an environment variable named "APP_dash_GREETING" will map to "app-greeting". See [MicroProfile Config Specifications][microprofile-con] for more information.
+> Because environment variable names are restricted to alphanumeric characters
+> and underscores, Helidon adds aliases to the environment configuration source,
+> allowing entries with dotted and/or hyphenated keys to be overridden. For
+> example, this mapping allows an environment variable named "APP_GREETING" to
+> override an entry key named "app.greeting". In the same way, an environment
+> variable named "APP_dash_GREETING" will map to "app-greeting". See
+> [MicroProfile Config Specifications][microprofile-con] for more information.
 
 The following examples will demonstrate the default precedence order.
 
 #### Default Configuration Resource
 
-Change a configuration parameter in the default configuration resource file, `META-INF/microprofile-config.properties`. There are no environment variable or system property overrides defined.
+Change a configuration parameter in the default configuration resource file,
+`META-INF/microprofile-config.properties`. There are no environment variable or
+system property overrides defined.
 
-Change app.greeting in the `META-INF/microprofile-config.properties` from
-Hello to HelloFromMPConfig:
+Change app.greeting in the `META-INF/microprofile-config.properties` from Hello
+to HelloFromMPConfig:
 
 ```properties [microprofile-config.properties]
 app.greeting=HelloFromMPConfig
@@ -157,11 +196,13 @@ curl http://localhost:8080/greet
 }
 ```
 
-- The new `app.greeting` value in `META-INF/microprofile-config.properties` is used.
+- The new `app.greeting` value in `META-INF/microprofile-config.properties` is
+  used.
 
 ##### Environment Variable Override
 
-An environment variable has a higher precedence than the configuration properties file.
+An environment variable has a higher precedence than the configuration
+properties file.
 
 Set the environment variable and restart the application:
 
@@ -182,13 +223,15 @@ curl http://localhost:8080/greet
 }
 ```
 
-- The environment variable took precedence over the value in `META-INF/microprofile-config.properties`.
+- The environment variable took precedence over the value in
+  `META-INF/microprofile-config.properties`.
 
 ##### System Property Override
 
 A system property has a higher precedence than environment variables.
 
-Restart the application with a system property. The app.greeting environment variable is still set:
+Restart the application with a system property. The app.greeting environment
+variable is still set:
 
 ```shell [Terminal]
 java -Dapp.greeting="HelloFromSystemProperty"  -jar target/helidon-quickstart-mp.jar
@@ -206,13 +249,17 @@ curl http://localhost:8080/greet
 }
 ```
 
-- The system property took precedence over both the environment variable and `META-INF/microprofile-config.properties`.
+- The system property took precedence over both the environment variable and
+  `META-INF/microprofile-config.properties`.
 
 ## Accessing Config within an Application
 
-The examples in this section will demonstrate how to access that config data at runtime. Your application uses the `Config` object to access the in-memory tree, retrieving config data.
+The examples in this section will demonstrate how to access that config data at
+runtime. Your application uses the `Config` object to access the in-memory tree,
+retrieving config data.
 
-The generated project already accesses configuration data in the `GreetingProvider` class as follows:
+The generated project already accesses configuration data in the
+`GreetingProvider` class as follows:
 
 View the following code from `GreetingProvider.java`:
 
@@ -236,13 +283,17 @@ public class GreetingProvider {
 }
 ```
 
-- This class is application scoped so a single instance of `GreetingProvider` will be shared across the entire application.
+- This class is application scoped so a single instance of `GreetingProvider`
+  will be shared across the entire application.
 - Define a thread-safe reference that will refer to the message member variable.
-- The value of the configuration property `app.greeting` is injected into the `GreetingProvider`. constructor as a `String` parameter named `message`.
+- The value of the configuration property `app.greeting` is injected into the
+  `GreetingProvider`. constructor as a `String` parameter named `message`.
 
 ### Injecting at Field Level
 
-You can inject configuration at the field level as shown below. Use the `volatile` keyword since you cannot use `AtomicReference` with field level injection.
+You can inject configuration at the field level as shown below. Use the
+`volatile` keyword since you cannot use `AtomicReference` with field level
+injection.
 
 Update the meta configuration with the following content:
 ```yaml [meta-config.yaml]
@@ -291,7 +342,8 @@ curl http://localhost:8080/greet
 
 ### Injecting the Config Object
 
-You can inject the `Config` object into the class and access it directly as shown below.
+You can inject the `Config` object into the class and access it directly as
+shown below.
 
 Replace the GreetingProvider class:
 
@@ -317,7 +369,8 @@ public class GreetingProvider {
 ```
 
 - Inject the `Config` object into the `GreetingProvider` object.
-- Get the `app.greeting` value from the `Config` object and set the member variable.
+- Get the `app.greeting` value from the `Config` object and set the member
+  variable.
 
 Build and run the application, then invoke the endpoint:
 
@@ -333,9 +386,13 @@ curl http://localhost:8080/greet
 
 ### Navigating the Config Tree
 
-Helidon offers a variety of methods to access in-memory configuration. These can be categorized as *key access* or *tree navigation*. You have been using *key access* for all the examples to this point. For example `app.greeting` is accessing the `greeting` child node of the `app` parent node.
+Helidon offers a variety of methods to access in-memory configuration. These can
+be categorized as *key access* or *tree navigation*. You have been using *key
+access* for all the examples to this point. For example `app.greeting` is
+accessing the `greeting` child node of the `app` parent node.
 
-This simple example below demonstrates how to access a child node as a detached configuration subtree.
+This simple example below demonstrates how to access a child node as a detached
+configuration subtree.
 
 Create the following file:
 ```yaml [config-file.yaml]
@@ -400,7 +457,11 @@ curl http://localhost:8080/greet
 
 ## Integration with Kubernetes
 
-The following example uses a Kubernetes ConfigMap to pass the configuration data to your Helidon application deployed to Kubernetes. When the pod is created, Kubernetes will automatically create a local file within the container that has the contents of the configuration file used for the ConfigMap. This example will create the file at `/etc/config/config-file.properties`.
+The following example uses a Kubernetes ConfigMap to pass the configuration data
+to your Helidon application deployed to Kubernetes. When the pod is created,
+Kubernetes will automatically create a local file within the container that has
+the contents of the configuration file used for the ConfigMap. This example will
+create the file at `/etc/config/config-file.properties`.
 
 Update the Main class and replace the buildConfig method:
 ```java [Main.java]
@@ -413,8 +474,10 @@ private static Config buildConfig() {
 }
 ```
 
-- The `app.greeting` value will be fetched from `/etc/config/config-file.properties` within the container.
-- The server port is specified in `META-INF/microprofile-config.properties` within the `helidon-quickstart-mp.jar`.
+- The `app.greeting` value will be fetched from
+  `/etc/config/config-file.properties` within the container.
+- The server port is specified in `META-INF/microprofile-config.properties`
+  within the `helidon-quickstart-mp.jar`.
 
 Update the following code from `GreetingProvider.java`:
 ```java [GreetingProvider.java]
@@ -473,7 +536,8 @@ data:
 kind: ConfigMap
 ```
 
-- The file `config-file.properties` will be created within the Kubernetes container.
+- The file `config-file.properties` will be created within the Kubernetes
+  container.
 - The `config-file.properties` file will have this single property defined.
 
 Create the Kubernetes YAML specification:
@@ -529,7 +593,8 @@ spec:
 
 - A service of type `NodePort` that serves the default routes on port `8080`.
 - A deployment with one replica of a pod.
-- Mount the ConfigMap as a volume at `/etc/config`. This is where Kubernetes will create `config-file.properties`.
+- Mount the ConfigMap as a volume at `/etc/config`. This is where Kubernetes
+  will create `config-file.properties`.
 - Specify the ConfigMap which contains the configuration data.
 
 Create and deploy the application into Kubernetes:
@@ -551,7 +616,8 @@ helidon-config   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s
 
 - A service of type `NodePort` that serves the default routes on port `31143`.
 
-Verify the configuration endpoint using port 31143, your port will likely be different:
+Verify the configuration endpoint using port 31143, your port will likely be
+different:
 
 ```shell [Terminal]
 curl http://localhost:31143/greet
@@ -563,9 +629,11 @@ curl http://localhost:31143/greet
 }
 ```
 
-- The greeting value from `/etc/config/config-file.properties` within the container was used.
+- The greeting value from `/etc/config/config-file.properties` within the
+  container was used.
 
-You can now delete the Kubernetes resources that were just created during this example.
+You can now delete the Kubernetes resources that were just created during this
+example.
 
 Delete the Kubernetes resources:
 
@@ -576,7 +644,10 @@ kubectl delete configmap  helidon-configmap
 
 ## Summary
 
-This guide has demonstrated how to use basic Helidon configuration features. For more information about using the advanced Helidon configuration features, including mutability support and extensions, see [Helidon Configuration](../../mp/config/introduction.md).
+This guide has demonstrated how to use basic Helidon configuration features. For
+more information about using the advanced Helidon configuration features,
+including mutability support and extensions, see [Helidon
+Configuration](../../mp/config/introduction.md).
 
 ## References
 

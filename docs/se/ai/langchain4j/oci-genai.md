@@ -6,7 +6,8 @@ This module adds support for selected Oracle Cloud Infrastructure GenAI models.
 
 ## Maven Coordinates
 
-In addition to the [Helidon integration with LangChain4j core dependencies](langchain4j.md#maven-coordinates), you must add the following:
+In addition to the [Helidon integration with LangChain4j core
+dependencies][helidon-integrat], you must add the following:
 
 ```xml [pom.xml]
 <dependency>
@@ -17,7 +18,9 @@ In addition to the [Helidon integration with LangChain4j core dependencies](lang
 
 ## Authentication
 
-Integration uses OCI SDK authentication provider bean from the service registry. The simplest way to configure it is by adding [Helidon OCI integration][helidon-oci-inte]:
+Integration uses OCI SDK authentication provider bean from the service registry.
+The simplest way to configure it is by adding [Helidon OCI
+integration][helidon-oci-inte]:
 
 ```xml [pom.xml]
 <dependency>
@@ -32,7 +35,8 @@ Integration uses OCI SDK authentication provider bean from the service registry.
 </dependency>
 ```
 
-Helidon OCI integration makes OCI Authentication provider available as a Helidon service registry bean so LangChain4j OCI GenAI can automatically discover it.
+Helidon OCI integration makes OCI Authentication provider available as a Helidon
+service registry bean so LangChain4j OCI GenAI can automatically discover it.
 
 Example of OCI specific configuration file `oci-config.yaml`:
 
@@ -51,20 +55,25 @@ helidon.oci:
         path: "/secrets/oci_ai_api_key.pem"
 ```
 
-More authentication methods are available like `oke-workload-identity` or `resource-principal`, for example, authentication method `config-file` can instruct integration to use `~/.oci/config` file:
+More authentication methods are available like `oke-workload-identity` or
+`resource-principal`, for example, authentication method `config-file` can
+instruct integration to use `~/.oci/config` file:
 
 ```yaml
 helidon.oci:
   authentication-method: "config-file"
 ```
 
-All possible OCI configuration properties are documented at [OCI Configuration][oci-configuratio].
+All possible OCI configuration properties are documented at [OCI
+Configuration][oci-configuratio].
 
-More general information about Helidon OCI authentication integration can be found in [Helidon OCI integration][helidon-oci-inte]
+More general information about Helidon OCI authentication integration can be
+found in [Helidon OCI integration][helidon-oci-inte]
 
 ## OciGenAiChatModel
 
-To automatically create and add `OciGenAiChatModel` to the service registry add the following lines to `application.yaml`:
+To automatically create and add `OciGenAiChatModel` to the service registry add
+the following lines to `application.yaml`:
 
 ```yaml [application.yaml]
 langchain4j:
@@ -79,7 +88,8 @@ langchain4j:
       model-name: meta.llama-3.3-70b-instruct
 ```
 
-If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+If `enabled` is set to `false`, the configuration is ignored, and the component
+is not created.
 
 ### Configuration options
 
@@ -110,7 +120,8 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 ## OciGenAiStreamingChatModel
 
-To automatically create and add `OciGenAiStreamingChatModel` to the service registry add the following lines to `application.yaml`:
+To automatically create and add `OciGenAiStreamingChatModel` to the service
+registry add the following lines to `application.yaml`:
 
 ```yaml [application.yaml]
 langchain4j:
@@ -125,7 +136,8 @@ langchain4j:
       model-name: meta.llama-3.3-70b-instruct
 ```
 
-If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+If `enabled` is set to `false`, the configuration is ignored, and the component
+is not created.
 
 ### Configuration options
 
@@ -242,7 +254,8 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 ## OciGenAiCohereChatModel
 
-To automatically create and add `OciGenAiChatModel` to the service registry add the following lines to `application.yaml`:
+To automatically create and add `OciGenAiChatModel` to the service registry add
+the following lines to `application.yaml`:
 
 ```yaml [application.yaml]
 langchain4j:
@@ -257,7 +270,8 @@ langchain4j:
       model-name: meta.llama-3.3-70b-instruct
 ```
 
-If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+If `enabled` is set to `false`, the configuration is ignored, and the component
+is not created.
 
 ### Configuration options
 
@@ -388,7 +402,8 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 ## OciGenAiCohereStreamingChatModel
 
-To automatically create and add `OciGenAiStreamingChatModel` to the service registry add the following lines to `application.yaml`:
+To automatically create and add `OciGenAiStreamingChatModel` to the service
+registry add the following lines to `application.yaml`:
 
 ```yaml [application.yaml]
 langchain4j:
@@ -403,7 +418,8 @@ langchain4j:
       model-name: meta.llama-3.3-70b-instruct
 ```
 
-If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+If `enabled` is set to `false`, the configuration is ignored, and the component
+is not created.
 
 ### Configuration options
 
@@ -542,3 +558,4 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 [oci-configuratio]: ../../../config/io.helidon.integrations.oci.OciConfig.md
 [langchain4j-ocig]: https://docs.langchain4j.dev/integrations/language-models/oci-genai
 [oracle-cloud-inf]: https://www.oracle.com/artificial-intelligence/generative-ai/generative-ai-service/
+[helidon-integrat]: langchain4j.md#maven-coordinates

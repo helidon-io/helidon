@@ -6,7 +6,8 @@ This module adds support for the Coherence embedding store.
 
 ## Maven Coordinates
 
-In addition to the [Helidon integration with LangChain4J core dependencies](langchain4j.md#maven-coordinates), you must add the following:
+In addition to the [Helidon integration with LangChain4J core
+dependencies][helidon-integrat], you must add the following:
 
 ```xml [pom.xml]
 <dependency>
@@ -17,7 +18,8 @@ In addition to the [Helidon integration with LangChain4J core dependencies](lang
 
 ## CoherenceEmbeddingStore
 
-To automatically create and add `CoherenceEmbeddingStore` to the service registry add the following lines to `application.yaml`:
+To automatically create and add `CoherenceEmbeddingStore` to the service
+registry add the following lines to `application.yaml`:
 
 ```yaml [application.yaml]
 langchain4j:
@@ -35,7 +37,8 @@ langchain4j:
       embedding-model: beanName
 ```
 
-If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+If `enabled` is set to `false`, the configuration is ignored, and the component
+is not created.
 
 ### Configuration options
 
@@ -55,3 +58,4 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 - [langChain4J Coherence Embedding Store Documentation][langchain4j-cohe]
 
 [langchain4j-cohe]: https://docs.langchain4j.dev/integrations/embedding-stores/coherence
+[helidon-integrat]: langchain4j.md#maven-coordinates

@@ -2,13 +2,21 @@
 
 ## Overview
 
-In Helidon 4 all observability features were moved to one logical module: `observe`. Observability features specified by MicroProfile—​such as metrics and health—​keep their familiar endpoints. The endpoints for other observability features are grouped together under a single context root which defaults to `/observe`.
+In Helidon 4 all observability features were moved to one logical module:
+`observe`. Observability features specified by MicroProfile—​such as metrics and
+health—​keep their familiar endpoints. The endpoints for other observability
+features are grouped together under a single context root which defaults to
+`/observe`.
 
 ## Maven Coordinates
 
-You do not need to explicitly add any observability dependency in your Helidon MP project `pom.xml` file for MicroProfile technologies. Adding a dependency on Helidon’s MP metrics or health component, for example, brings along the necessary observability components automatically.
+You do not need to explicitly add any observability dependency in your Helidon
+MP project `pom.xml` file for MicroProfile technologies. Adding a dependency on
+Helidon’s MP metrics or health component, for example, brings along the
+necessary observability components automatically.
 
-To include other observability features in your Helidon MP application, add one or more of the following dependencies.
+To include other observability features in your Helidon MP application, add one
+or more of the following dependencies.
 
 For Info Observability features:
 
@@ -39,19 +47,32 @@ For Configuration Observability features:
 
 ## Usage
 
-The MicroProfile observability features use top-level endpoints (such as `/health` and `/metrics`) which you can customize if you wish. See the [configuration](#configuration) section below for more information.
+The MicroProfile observability features use top-level endpoints (such as
+`/health` and `/metrics`) which you can customize if you wish. See the
+[configuration](#configuration) section below for more information.
 
 Other observability features add endpoints under the `/observe` path
 
 ### Feature Weight and Endpoint Conflicts
 
-In some ways Helidon treats all types of observers as a single observability *feature*. In particular, you can use configuration to control the *weight* of the various Helidon features, and the weight prescribes the order in which Helidon handles routing for those features.
+In some ways Helidon treats all types of observers as a single observability
+*feature*. In particular, you can use configuration to control the *weight* of
+the various Helidon features, and the weight prescribes the order in which
+Helidon handles routing for those features.
 
-The Helidon-provided feature for processing your application endpoints has weight 100 by default, and the observability feature has default weight 80. This means that Helidon normally prioritizes routing for your application endpoints over the endpoints for the observers such as metrics and health.
+The Helidon-provided feature for processing your application endpoints has
+weight 100 by default, and the observability feature has default weight 80. This
+means that Helidon normally prioritizes routing for your application endpoints
+over the endpoints for the observers such as metrics and health.
 
-This can have unexpected results if your application declares a resource path `/{name}`. Because Helidon normally prioritizes the routing of *your* endpoints, Helidon routes requests for `/metrics` and `/health` to *your* `/{name}` endpoint instead of to the actual metrics and health endpoints.
+This can have unexpected results if your application declares a resource path
+`/{name}`. Because Helidon normally prioritizes the routing of *your* endpoints,
+Helidon routes requests for `/metrics` and `/health` to *your* `/{name}`
+endpoint instead of to the actual metrics and health endpoints.
 
-One way to avoid this is to assign a weight from 101 to 200 to the observe feature in your configuration. Then Helidon prioritizes the routing of the observe feature ahead of routing your application endpoints.
+One way to avoid this is to assign a weight from 101 to 200 to the observe
+feature in your configuration. Then Helidon prioritizes the routing of the
+observe feature ahead of routing your application endpoints.
 
 Assign feature weight to control routing in
 `META-INF/microprofile-config.properties`:
@@ -60,17 +81,25 @@ Assign feature weight to control routing in
 server.features.observe.weight = 120
 ```
 
-Helidon does not enforce the weight range 101-200 for observability, but you should use a value in this range for the observe weight to avoid problems with other features such as security, CORS, and others; their relative ordering is important.
+Helidon does not enforce the weight range 101-200 for observability, but you
+should use a value in this range for the observe weight to avoid problems with
+other features such as security, CORS, and others; their relative ordering is
+important.
 
 ### Endpoints
 
-Some observer endpoints—​metrics and health—​were present in earlier releases of Helidon MP. By default those continue to use their customary paths (`/metrics`, `/health`). You can customize the endpoint for each of those observers are described in the documentation for each observer.
+Some observer endpoints—​metrics and health—​were present in earlier releases of
+Helidon MP. By default those continue to use their customary paths (`/metrics`,
+`/health`). You can customize the endpoint for each of those observers are
+described in the documentation for each observer.
 
-Other observers have no counterpart in the MicroProfile spec and they respond by default at subpaths of `/observe` as described below.
+Other observers have no counterpart in the MicroProfile spec and they respond by
+default at subpaths of `/observe` as described below.
 
 #### Configuration Observability
 
-Configuration observability allows reading the current application configuration values. Configuration observability defines the following endpoints:
+Configuration observability allows reading the current application configuration
+values. Configuration observability defines the following endpoints:
 
 | Endpoint | Method | Action |
 |----|----|----|
@@ -83,7 +112,9 @@ Configuration observability allows reading the current application configuration
 
 #### Health Observability
 
-Health observability allows reading application readiness to serve requests, whether the services are alive. Health observability defines the following endpoints:
+Health observability allows reading application readiness to serve requests,
+whether the services are alive. Health observability defines the following
+endpoints:
 
 <!--@mdc ::table-collapse -->
 | Endpoint | Method | Action |
@@ -108,7 +139,8 @@ For more information, please, check [Health](../se/health.md) documentation.
 
 #### Information Observability
 
-Info observability allows configuration of custom properties to be available to users. Information observability defines the following endpoints:
+Info observability allows configuration of custom properties to be available to
+users. Information observability defines the following endpoints:
 
 | Endpoint | Method | Action |
 |----|----|----|
@@ -117,7 +149,9 @@ Info observability allows configuration of custom properties to be available to 
 
 #### Logger Observability
 
-Log observability allows reading and configuring of log levels of various loggers and reading log messages. Logger Observability defines the following endpoints:
+Log observability allows reading and configuring of log levels of various
+loggers and reading log messages. Logger Observability defines the following
+endpoints:
 
 | Endpoint                    | Method   | Action                              |
 |-----------------------------|----------|-------------------------------------|
@@ -139,7 +173,9 @@ Helidon distinguishes among three general *types*, or scopes, of metrics.
 
 Types (scopes) of metrics
 
-When you add the metrics dependency to your project, Helidon automatically provides a built-in REST endpoint `/observe/metrics` which responds with a report of the registered metrics and their values.
+When you add the metrics dependency to your project, Helidon automatically
+provides a built-in REST endpoint `/observe/metrics` which responds with a
+report of the registered metrics and their values.
 
 Clients can request a particular output format.
 
@@ -162,28 +198,38 @@ For more information see [Metrics](../se/metrics/metrics.md) documentation.
 
 To customize the endpoint of an observer:
 
-1.  For MicroProfile technologies (metrics, health) refer to the Helidon MP documentation for them:
+1.  For MicroProfile technologies (metrics, health) refer to the Helidon MP
+    documentation for them:
     - [metrics config][metrics-config] documentation
     - [health config](../mp/health.md#configuration) documentation
-2.  For other observers, assign a custom endpoint using a config setting such as `server.features.observe.info.endpoint`.
+2.  For other observers, assign a custom endpoint using a config setting such as
+    `server.features.observe.info.endpoint`.
 
-To control the observability features as a whole, add config settings under `server.features.observe`.
+To control the observability features as a whole, add config settings under
+`server.features.observe`.
 
 ### Configuration options
 
 <!--@include ../config/io.helidon.webserver.observe.ObserveFeature.md#configuration-options delim=--- offset=1 collapseTables=10 -->
-See [Configuration options](../config/io.helidon.webserver.observe.ObserveFeature.md#configuration-options).
+See [Configuration options][io-helidon-webse].
 <!--/include-->
 
 
 ## Additional Information
 
-The Observability features are now implemented with `HttpFeature` and can be registered with `HttpRouting.Builder#addFeature(java.util.function.Supplier)`. Such a feature encapsulates a set of endpoints, services and/or filters.
+The Observability features are now implemented with `HttpFeature` and can be
+registered with `HttpRouting.Builder#addFeature(java.util.function.Supplier)`.
+Such a feature encapsulates a set of endpoints, services and/or filters.
 
-Feature is similar to `HttpService` but gives more freedom in setup. Main difference is that a feature can add `Filter` filters and it cannot be registered on a path (that is left to the discretion of the feature developer).
+Feature is similar to `HttpService` but gives more freedom in setup. Main
+difference is that a feature can add `Filter` filters and it cannot be
+registered on a path (that is left to the discretion of the feature developer).
 
-- Features are not registered immediately - each feature can define a `Weight` or implement `Weighted` to order features according to their weight. Higher weighted features are registered first.
-- This is to allow ordering of features in a meaningful way (e.g. Context should be first, Tracing second, Security third etc).
+- Features are not registered immediately - each feature can define a `Weight`
+  or implement `Weighted` to order features according to their weight. Higher
+  weighted features are registered first.
+- This is to allow ordering of features in a meaningful way (e.g. Context should
+  be first, Tracing second, Security third etc).
 
 ## Reference
 
@@ -193,3 +239,4 @@ Feature is similar to `HttpService` but gives more freedom in setup. Main differ
 
 [metrics-config]: ../mp/metrics/metrics.md#configuration-options
 [microprofile-met]: https://download.eclipse.org/microprofile/microprofile-metrics-5.0.0/microprofile-metrics-spec-5.0.0.pdf
+[io-helidon-webse]: ../config/io.helidon.webserver.observe.ObserveFeature.md#configuration-options

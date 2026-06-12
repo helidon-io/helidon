@@ -6,7 +6,8 @@ This module adds support for selected [Ollama](https://ollama.ai/) models.
 
 ## Maven Coordinates
 
-In addition to the [Helidon integration with LangChain4j core dependencies](langchain4j.md#maven-coordinates), you must add the following:
+In addition to the [Helidon integration with LangChain4j core
+dependencies][helidon-integrat], you must add the following:
 
 ```xml [pom.xml]
 <dependency>
@@ -17,7 +18,8 @@ In addition to the [Helidon integration with LangChain4j core dependencies](lang
 
 ## OllamaChatModel
 
-To automatically create and add `OllamaChatModel` to the service registry add the following lines to `application.yaml`:
+To automatically create and add `OllamaChatModel` to the service registry add
+the following lines to `application.yaml`:
 
 ```yaml [application.yaml]
 langchain4j:
@@ -31,7 +33,8 @@ langchain4j:
       model-name: "llama3.1"
 ```
 
-If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+If `enabled` is set to `false`, the configuration is ignored, and the component
+is not created.
 
 ### Configuration options
 
@@ -57,7 +60,8 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 ## OllamaEmbeddingModel
 
-To automatically create and add `OllamaEmbeddingModel` to the service registry add the following lines to `application.yaml`:
+To automatically create and add `OllamaEmbeddingModel` to the service registry
+add the following lines to `application.yaml`:
 
 ```yaml [application.yaml]
 langchain4j:
@@ -71,7 +75,8 @@ langchain4j:
       model-name: "nomic-embed-text"
 ```
 
-If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+If `enabled` is set to `false`, the configuration is ignored, and the component
+is not created.
 
 ### Configuration options
 
@@ -87,7 +92,8 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 ## OllamaLanguageModel
 
-To automatically create and add `OllamaLanguageModel` to the service registry add the following lines to `application.yaml`:
+To automatically create and add `OllamaLanguageModel` to the service registry
+add the following lines to `application.yaml`:
 
 ```yaml [application.yaml]
 langchain4j:
@@ -101,7 +107,8 @@ langchain4j:
       model-name: "llama3.1"
 ```
 
-If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+If `enabled` is set to `false`, the configuration is ignored, and the component
+is not created.
 
 ### Configuration options
 
@@ -127,7 +134,8 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 ## OllamaStreamingChatModel
 
-To automatically create and add `OllamaStreamingChatModel` to the service registry add the following lines to `application.yaml`:
+To automatically create and add `OllamaStreamingChatModel` to the service
+registry add the following lines to `application.yaml`:
 
 ```yaml [application.yaml]
 langchain4j:
@@ -141,7 +149,8 @@ langchain4j:
       model-name: "llama3.1"
 ```
 
-If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+If `enabled` is set to `false`, the configuration is ignored, and the component
+is not created.
 
 ### Configuration options
 
@@ -173,3 +182,4 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 [here]: https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-
 [langchain4j-olla]: https://docs.langchain4j.dev/integrations/language-models/ollama/
+[helidon-integrat]: langchain4j.md#maven-coordinates

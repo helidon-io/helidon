@@ -2,13 +2,16 @@
 
 ## Overview
 
-Helidon provides a TestNG listener that integrates CDI to support testing with Helidon MP.
+Helidon provides a TestNG listener that integrates CDI to support testing with
+Helidon MP.
 
-The test class is added as a CDI bean to support injection and the CDI container is started lazily during test execution.
+The test class is added as a CDI bean to support injection and the CDI container
+is started lazily during test execution.
 
 ## Maven Coordinates
 
-To enable Testing with TestNG, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable Testing with TestNG, add the following dependency to your project’s
+`pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -49,14 +52,17 @@ By default, CDI discovery is enabled:
 - If disabled, the CDI beans and extensions must be added manually
 
 > [!NOTE]
-> Customization of the CDI container on a test method changes the CDI container affinity.
+> Customization of the CDI container on a test method changes the CDI container
+> affinity.
 >
 > I.e. The test method will use a dedicated CDI container.
 
 > [!NOTE]
-> It is not recommended to provide a `beans.xml` along the test classes, as it would combine beans from all tests.
+> It is not recommended to provide a `beans.xml` along the test classes, as it
+> would combine beans from all tests.
 >
-> Instead, you should use [`@AddBean`][addbean] to specify the beans per test or method.
+> Instead, you should use [`@AddBean`][addbean] to specify the beans per test or
+> method.
 
 CDI discovery can be disabled using [`@DisableDiscovery`][disablediscovery].
 
@@ -73,7 +79,8 @@ class MyTest {
 - Disable CDI discovery
 - Add a bean class
 
-When disabling discovery, it can be difficult to identify the CDI extensions needed to activate the desired features.
+When disabling discovery, it can be difficult to identify the CDI extensions
+needed to activate the desired features.
 
 JAXRS (Jersey) support can be added easily using [`@AddJaxRs`][addjaxrs].
 
@@ -101,7 +108,8 @@ Note the following Helidon CDI extensions:
 
 ### CDI Container Afinity
 
-By default, one CDI container is created per test class and is shared by all test methods.
+By default, one CDI container is created per test class and is shared by all
+test methods.
 
 However, test methods can also require a dedicated CDI container:
 
@@ -167,7 +175,8 @@ class MyTest {
 ```
 
 > [!NOTE]
-> Customization of the test configuration on a test method changes the CDI container affinity.
+> Customization of the test configuration on a test method changes the CDI
+> container affinity.
 >
 > I.e. The test method will use a dedicated CDI container.
 
@@ -245,7 +254,8 @@ class MyTest {
 
 #### Configuration Ordering
 
-The ordering of the test configuration can be controlled using the mechanism defined by the [MicroProfile Config specification][microprofile-con].
+The ordering of the test configuration can be controlled using the mechanism
+defined by the [MicroProfile Config specification][microprofile-con].
 
 Add a properties text block with ordinal:
 
@@ -270,7 +280,8 @@ The default ordering is the following
 
 ### Injectable Types
 
-Helidon provides injection support for types that reflect the current server. E.g. JAXRS client.
+Helidon provides injection support for types that reflect the current server.
+E.g. JAXRS client.
 
 Here are all the built-in types that can be injected:
 
@@ -281,7 +292,8 @@ Here are all the built-in types that can be injected:
 | `String` | A raw URI representing the current server |
 
 > [!NOTE]
-> Types that reflect the current server require [`ServerCdiExtension`][servercdiextensi]
+> Types that reflect the current server require
+> [`ServerCdiExtension`][servercdiextensi]
 
 Inject a JAX-RS client for the default socket:
 
@@ -309,7 +321,8 @@ class MyTest {
 ```
 
 > [!NOTE]
-> Except [`WebTarget`][webtarget], all types require the [`@Socket`][socket] annotation
+> Except [`WebTarget`][webtarget], all types require the [`@Socket`][socket]
+> annotation
 
 Inject a URI for the default socket:
 
@@ -325,16 +338,19 @@ class MyTest {
 
 ### Test Instance Lifecyle
 
-The test instance lifecycle is a pseudo singleton that follows the lifecycle of the CDI container.
+The test instance lifecycle is a pseudo singleton that follows the lifecycle of
+the CDI container.
 
 I.e. By default, the test instance is re-used between test methods.
 
 > [!NOTE]
-> The test instance is not re-used between CDI container, using a dedicated CDI container implies a new test instance
+> The test instance is not re-used between CDI container, using a dedicated CDI
+> container implies a new test instance
 
 ### Using meta-annotations
 
-Meta-annotations are supported on both test classes and test methods and can be used as a composition mechanism.
+Meta-annotations are supported on both test classes and test methods and can be
+used as a composition mechanism.
 
 Class-level meta-annotation:
 
@@ -379,7 +395,8 @@ class AnnotationOnMethod {
 }
 ```
 
-1.  `org.testng.annotations.Test` is not inheritable and should be placed on methods
+1.  `org.testng.annotations.Test` is not inheritable and should be placed on
+    methods
 
 ## API
 
@@ -404,7 +421,8 @@ Here is a brief overview of the MicroProfile testing annotations:
 
 ### Config Injection Example
 
-The following example demonstrates how to enable the use of [`@ConfigProperty`][configproperty] without CDI discovery.
+The following example demonstrates how to enable the use of
+[`@ConfigProperty`][configproperty] without CDI discovery.
 
 Config Injection Example:
 
@@ -445,7 +463,8 @@ class MyBean {
 
 ### Request Scope Example
 
-The following example demonstrates how to use [`@RequestScoped`][requestscoped] with JAXRS without CDI discovery.
+The following example demonstrates how to use [`@RequestScoped`][requestscoped]
+with JAXRS without CDI discovery.
 
 Request Scope Example:
 
@@ -483,9 +502,11 @@ class MyResource {
 
 ## Mock Support
 
-Mocking in Helidon MP is all about replacing CDI beans with instrumented mock classes.
+Mocking in Helidon MP is all about replacing CDI beans with instrumented mock
+classes.
 
-This can be done using CDI alternatives, however Helidon provides an annotation to make it easy.
+This can be done using CDI alternatives, however Helidon provides an annotation
+to make it easy.
 
 ### Maven Coordinates
 
@@ -501,7 +522,8 @@ To enable mock mupport add the following dependency to your project’s pom.xml.
 
 ### Usage
 
-Use the [`@MockBean`][mockbean] annotation to inject an instrumented CDI bean in your test, and customize it in the test method.
+Use the [`@MockBean`][mockbean] annotation to inject an instrumented CDI bean in
+your test, and customize it in the test method.
 
 #### Example
 
@@ -555,7 +577,8 @@ class MyService {
 
 ### Using CDI Alternative
 
-[`@Alternative`][alternative] can be used to replace a CDI bean with an instrumented instance.
+[`@Alternative`][alternative] can be used to replace a CDI bean with an
+instrumented instance.
 
 Mocking using CDI Alternative:
 
@@ -620,9 +643,11 @@ class MyService {
 
 Virtual Threads pinning can be detected during tests.
 
-A virtual thread is "pinning" when it blocks its carrier thread in a way that prevents the virtual thread scheduler from scheduling other virtual threads.
+A virtual thread is "pinning" when it blocks its carrier thread in a way that
+prevents the virtual thread scheduler from scheduling other virtual threads.
 
-This can happen when blocking in native code, or prior to JDK24 when a blocking IO operation happens in a synchronized block.
+This can happen when blocking in native code, or prior to JDK24 when a blocking
+IO operation happens in a synchronized block.
 
 Pinning can in some cases negatively affect application performance.
 
@@ -634,7 +659,8 @@ class MyTest {
 }
 ```
 
-Pinning is considered harmful when it takes longer than 20 milliseconds, that is also the default when detecting it within tests.
+Pinning is considered harmful when it takes longer than 20 milliseconds, that is
+also the default when detecting it within tests.
 
 Pinning threshold can be changed with:
 
@@ -648,7 +674,8 @@ class MyTest {
 
 - Change pinning threshold from default(20) to 50 milliseconds.
 
-When pinning is detected, the test fails with a stacktrace pointing at the culprit.
+When pinning is detected, the test fails with a stacktrace pointing at the
+culprit.
 
 ## Reference
 

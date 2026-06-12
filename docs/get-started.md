@@ -35,16 +35,18 @@ curl http://localhost:8080/greet
 
 ----------
 
-Congratulations! 🎉
-You now have a simple service up and running using Helidon.
+Congratulations! 🎉 You now have a simple service up and running using Helidon.
 
-- If you prefer to use MicroProfile APIs replace `se` with `mp` in the commands above.
-- If you prefer not to install the Helidon CLI you can use the [Helidon Starter](https://helidon.io/starter).
+- If you prefer to use MicroProfile APIs replace `se` with `mp` in the commands
+  above.
+- If you prefer not to install the Helidon CLI you can use the [Helidon
+  Starter](https://helidon.io/starter).
 
 ## In More Detail
 
-Helidon is a framework for developing microservices in Java. As such, you don’t install Helidon itself.
-Instead, you install the tools necessary to create an environment suitable for developing Helidon projects and applications.
+Helidon is a framework for developing microservices in Java. As such, you don’t
+install Helidon itself. Instead, you install the tools necessary to create an
+environment suitable for developing Helidon projects and applications.
 
 ## System Requirements
 
@@ -56,7 +58,8 @@ You must have Java and Maven installed on your system to use Helidon.
 | [Maven 3.8+][maven-3-8]                         | Helidon requires Maven 3.8+.                 |
 
 > [!NOTE]
-> Most of Helidon's examples use Maven, but Helidon can also be used with [Gradle](se/guides/gradle-build.md).
+> Most of Helidon's examples use Maven, but Helidon can also be used with
+> [Gradle](se/guides/gradle-build.md).
 
 Verify System Requirements:
 
@@ -64,7 +67,8 @@ Verify System Requirements:
 java -version
 mvn --version
 ```
-### Set the `JAVA_HOME` Environment Variable
+
+## Setting `JAVA_HOME`
 
 Make sure you set the `JAVA_HOME` environment variable.
 
@@ -89,16 +93,16 @@ setx JAVA_HOME=C:\\PROGRA~1\\Java\\jdk-25
 
 ## Next Steps
 
-Now that your environment is set up, you can get started with Helidon.
-Try out the Helidon MP and Helidon SE Quick Start tutorials to build your first Helidon project and application.
+Now that your environment is set up, you can get started with Helidon. Try out
+the Helidon MP and Helidon SE Quick Start tutorials to build your first Helidon
+project and application.
 
 - [Helidon MP Quick Start](mp/guides/quickstart.md)
 - [Helidon SE Quick Start](se/guides/quickstart.md)
 
 > [!TIP]
-> Compare [Helidon MP](mp/introduction.md) and
-> [Helidon SE](se/introduction.md) to understand the differences between
-> Helidon MP and Helidon SE.
+> Compare [Helidon MP](mp/introduction.md) and [Helidon SE](se/introduction.md)
+> to understand the differences between Helidon MP and Helidon SE.
 
 [java-21]: https://www.oracle.com/technetwork/java/javase/downloads
 [open-jdk-21]: http://jdk.java.net

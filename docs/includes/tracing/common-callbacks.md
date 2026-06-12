@@ -2,7 +2,8 @@
 
 ## Events
 
-Applications and libraries can register listeners to be notified at several moments during the lifecycle of every Helidon span:
+Applications and libraries can register listeners to be notified at several
+moments during the lifecycle of every Helidon span:
 
 - Before a new span starts
 - After a new span has started
@@ -10,13 +11,23 @@ Applications and libraries can register listeners to be notified at several mome
 - After a span is activated (creating a new scope)
 - After a scope is closed
 
-The next sections explain how you can write and add a listener and what it can do. See the [`SpanListener`][spanlistener] Javadoc for more information.
+The next sections explain how you can write and add a listener and what it can
+do. See the [`SpanListener`][spanlistener] Javadoc for more information.
 
 ## Listeners
 
-A listener cannot affect the lifecycle of a span or scope it is notified about, but it can add tags and events and update the baggage associated with a span. Often a listener does additional work that does not change the span or scope such as logging a message.
+A listener cannot affect the lifecycle of a span or scope it is notified about,
+but it can add tags and events and update the baggage associated with a span.
+Often a listener does additional work that does not change the span or scope
+such as logging a message.
 
-When Helidon invokes the listener’s methods it passes proxies for the `Span.Builder`, `Span`, and `Scope` arguments. These proxies limit the access the listener has to the span builder, span, or scope, as summarized in the following table. If a listener method tries to invoke a forbidden operation, the proxy throws a [`SpanListener.ForbiddenOperationException`][spanlistener-for] and Helidon then logs a `WARNING` message describing the invalid operation invocation.
+When Helidon invokes the listener’s methods it passes proxies for the
+`Span.Builder`, `Span`, and `Scope` arguments. These proxies limit the access
+the listener has to the span builder, span, or scope, as summarized in the
+following table. If a listener method tries to invoke a forbidden operation, the
+proxy throws a [`SpanListener.ForbiddenOperationException`][spanlistener-for]
+and Helidon then logs a `WARNING` message describing the invalid operation
+invocation.
 
 | Tracing type                   | Changes allowed                                   |
 |--------------------------------|---------------------------------------------------|
@@ -82,22 +93,29 @@ The following tables list specifically what operations the proxies permit.
 
 ### Explicitly Registering a Listener on a [`Tracer`][tracer]
 
-Create a `SpanListener` instance and invoke the `Tracer#register(SpanListener)` method to make the listener known to that tracer.
+Create a `SpanListener` instance and invoke the `Tracer#register(SpanListener)`
+method to make the listener known to that tracer.
 
 ### Automatically Registering a Listener on all `Tracer` Instances
 
-Helidon also uses Java service loading to locate listeners and register them automatically on all `Tracer` objects. Follow these steps to add a listener service provider.
+Helidon also uses Java service loading to locate listeners and register them
+automatically on all `Tracer` objects. Follow these steps to add a listener
+service provider.
 
 1.  Implement the [`SpanListener`][spanlistener] interface.
 2.  Declare your implementation as a service provider:
-    1.  Create the file `META-INF/services/io.helidon.tracing.SpanListener` containing a line with the fully-qualified name of your class which implements `SpanListener`.
-    2.  If your service has a `module-info.java` file add the following line to it:
+    1.  Create the file `META-INF/services/io.helidon.tracing.SpanListener`
+        containing a line with the fully-qualified name of your class which
+        implements `SpanListener`.
+    2.  If your service has a `module-info.java` file add the following line to
+        it:
 
-        ``` java
+        ```java
         provides io.helidon.tracing.SpanListener with <your-implementation-class>;
         ```
 
-The `SpanListener` interface declares default no-op implementations for all the methods, so your listener can implement only the methods it needs to.
+The `SpanListener` interface declares default no-op implementations for all the
+methods, so your listener can implement only the methods it needs to.
 
 Helidon invokes each listener’s methods in the following order:
 

@@ -1,15 +1,23 @@
 # Helidon SE LangChain4j Guide
 
-This guide describes how to create a sample AI powered Helidon SE project with LangChain4j integration.
+This guide describes how to create a sample AI powered Helidon SE project with
+LangChain4j integration.
 
 ## Introduction
 
-[LangChain4j][langchain4j] is a Java framework for building AI-powered applications using Large Language Models (LLMs). It provides seamless integration with multiple LLM providers, including OpenAI, Cohere, Hugging Face, and others. Key features include AI Services and Agents for model interaction, support for Retrieval-Augmented Generation (RAG) to enhance responses with external data, and tools for working with embeddings and knowledge retrieval.
+[LangChain4j][langchain4j] is a Java framework for building AI-powered
+applications using Large Language Models (LLMs). It provides seamless
+integration with multiple LLM providers, including OpenAI, Cohere, Hugging Face,
+and others. Key features include AI Services and Agents for model interaction,
+support for Retrieval-Augmented Generation (RAG) to enhance responses with
+external data, and tools for working with embeddings and knowledge retrieval.
 
-Helidon provides a LangChain4j integration module that simplifies the use of LangChain4j in Helidon applications.
+Helidon provides a LangChain4j integration module that simplifies the use of
+LangChain4j in Helidon applications.
 
 > [!NOTE]
-> LangChain4j integration is a preview feature. The APIs shown here are subject to change. These APIs will be finalized in a future release of Helidon.
+> LangChain4j integration is a preview feature. The APIs shown here are subject
+> to change. These APIs will be finalized in a future release of Helidon.
 
 ## What you need
 
@@ -60,7 +68,8 @@ mvn -U archetype:generate -DinteractiveMode=false \
     -Dpackage=io.helidon.examples.quickstart.lc4j
 ```
 
-The archetype generates a Maven project in your current directory, (for example, `helidon-quickstart-lc4j-se`). Change into this directory and build.
+The archetype generates a Maven project in your current directory, (for example,
+`helidon-quickstart-lc4j-se`). Change into this directory and build.
 
 ```shell [Terminal]
 cd helidon-quickstart-lc4j-se
@@ -68,7 +77,8 @@ cd helidon-quickstart-lc4j-se
 
 ## Dependencies
 
-Add necessary dependencies for LangChain4j integration and OpenAI provider in the project POM.
+Add necessary dependencies for LangChain4j integration and OpenAI provider in
+the project POM.
 
 ```xml [pom.xml]
 <dependency>
@@ -81,9 +91,11 @@ Add necessary dependencies for LangChain4j integration and OpenAI provider in th
 </dependency>
 ```
 
-You will also need extra annotation processors as LangChain4j AI services are handled as superfast build time beans.
+You will also need extra annotation processors as LangChain4j AI services are
+handled as superfast build time beans.
 
-Include the following annotation processor in the `<build><plugins>` section of `pom.xml`:
+Include the following annotation processor in the `<build><plugins>` section of
+`pom.xml`:
 
 ```xml [pom.xml]
 <plugin>
@@ -103,9 +115,14 @@ Include the following annotation processor in the `<build><plugins>` section of 
 
 ## Configuration
 
-Add to the configuration file `./src/main/resources/application.yaml` following LangChain4j configuration for OpenAI provider.
+Add to the configuration file `./src/main/resources/application.yaml` following
+LangChain4j configuration for OpenAI provider.
 
-Model configured under `langchain4j.models` has arbitrary name `pirate-chat-model`, it uses `open-ai` provider defined under `langchain4j.providers`. With a single configured chat model, default auto-discovery resolves it automatically. If you configure multiple chat models, use `@Ai.ChatModel("pirate-chat-model")` to select one explicitly.
+Model configured under `langchain4j.models` has arbitrary name
+`pirate-chat-model`, it uses `open-ai` provider defined under
+`langchain4j.providers`. With a single configured chat model, default
+auto-discovery resolves it automatically. If you configure multiple chat models,
+use `@Ai.ChatModel("pirate-chat-model")` to select one explicitly.
 
 ```yaml
 langchain4j:
@@ -122,7 +139,8 @@ langchain4j:
 
 ## Ai Service
 
-Next we need to create LangChain4j [Ai service][ai-service] and annotate it with `@Ai.Service` so Helidon can make a superfast build time bean from it.
+Next we need to create LangChain4j [Ai service][ai-service] and annotate it with
+`@Ai.Service` so Helidon can make a superfast build time bean from it.
 
 ```java
 @Ai.Service
@@ -135,7 +153,10 @@ public interface PirateService {
 }
 ```
 
-Next step is to add new Http POST handler to the webserver, you can do it by changing method `routing` in `src/main/java/io/helidon/examples/quickstart/lc4j/Main.java` like following example shows.
+Next step is to add new Http POST handler to the webserver, you can do it by
+changing method `routing` in
+`src/main/java/io/helidon/examples/quickstart/lc4j/Main.java` like following
+example shows.
 
 ```java
 static void routing(HttpRouting.Builder routing) {
@@ -150,7 +171,8 @@ static void routing(HttpRouting.Builder routing) {
 }
 ```
 
-- Notice how we can look up the LangChain4j Ai service as Helidon declarative superfast build time bean.
+- Notice how we can look up the LangChain4j Ai service as Helidon declarative
+  superfast build time bean.
 
 When we build and run our Helidon AI-powered quickstart:
 
@@ -162,7 +184,8 @@ We can test our pirate service with curl:
 
 ## Prompt Template Arguments
 
-Ofcourse all the features from LangChain4j Ai services are going to work, let’s try to expand the example with [template arguments][template-argumen].
+Ofcourse all the features from LangChain4j Ai services are going to work, let’s
+try to expand the example with [template arguments][template-argumen].
 
 ```java
 @Ai.Service
@@ -201,7 +224,9 @@ We can test our pirate service with curl:
 
 ## Custom Memory Provider
 
-We can also extend the pirate example with [conversation memory][conversation-mem]. First, we need to create a memory provider so our memory works per conversation ID.
+We can also extend the pirate example with [conversation
+memory][conversation-mem]. First, we need to create a memory provider so our
+memory works per conversation ID.
 
 ```java
 @Service.Singleton
@@ -220,7 +245,8 @@ public class PirateMemoryProvider implements Supplier<ChatMemoryProvider> {
 }
 ```
 
-Now we can extend Ai service with an extra argument so we can supply identifier of our conversation with the pirate.
+Now we can extend Ai service with an extra argument so we can supply identifier
+of our conversation with the pirate.
 
 ```java
 @Ai.Service

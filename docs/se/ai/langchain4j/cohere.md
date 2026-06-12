@@ -6,7 +6,8 @@ This module adds support for selected Cohere models.
 
 ## Maven Coordinates
 
-In addition to the [Helidon integration with LangChain4j core dependencies](langchain4j.md#maven-coordinates), you must add the following:
+In addition to the [Helidon integration with LangChain4j core
+dependencies][helidon-integrat], you must add the following:
 
 ```xml [pom.xml]
 <dependency>
@@ -17,7 +18,8 @@ In addition to the [Helidon integration with LangChain4j core dependencies](lang
 
 ## CohereEmbeddingModel
 
-To automatically create and add `CohereEmbeddingModel` to the service registry add the following lines to `application.yaml`:
+To automatically create and add `CohereEmbeddingModel` to the service registry
+add the following lines to `application.yaml`:
 
 ```yaml [application.yaml]
 langchain4j:
@@ -31,7 +33,8 @@ langchain4j:
       model-name: "embed-english-v3.0"
 ```
 
-If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+If `enabled` is set to `false`, the configuration is ignored, and the component
+is not created.
 
 ### Configuration options
 
@@ -52,7 +55,8 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 ## CohereScoringModel
 
-To automatically create and add `CohereScoringModel` to the service registry add the following lines to `application.yaml`:
+To automatically create and add `CohereScoringModel` to the service registry add
+the following lines to `application.yaml`:
 
 ```yaml [application.yaml]
 langchain4j:
@@ -66,7 +70,8 @@ langchain4j:
       model-name: "rerank-english-v3.0"
 ```
 
-If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+If `enabled` is set to `false`, the configuration is ignored, and the component
+is not created.
 
 ### Configuration options
 
@@ -91,3 +96,4 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 [here]: https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-
 [langchain4j-cohe]: https://docs.langchain4j.dev/integrations/embedding-models/cohere
+[helidon-integrat]: langchain4j.md#maven-coordinates

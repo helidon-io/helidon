@@ -2,11 +2,14 @@
 
 ## Overview
 
-Helidon has its own set of reactive operators that have no dependencies outside the Helidon ecosystem. These operators can be used with `java.util.concurrent.Flow` based reactive streams.
+Helidon has its own set of reactive operators that have no dependencies outside
+the Helidon ecosystem. These operators can be used with
+`java.util.concurrent.Flow` based reactive streams.
 
 ## Maven Coordinates
 
-To enable Reactive Engine, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable Reactive Engine, add the following dependency to your project’s
+`pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -17,7 +20,9 @@ To enable Reactive Engine, add the following dependency to your project’s `pom
 
 ## Usage
 
-The stream processing operator chain can be easily constructed by `io.helidon.common.reactive.Multi`, or `io.helidon.common.reactive.Single` for streams with single value.
+The stream processing operator chain can be easily constructed by
+`io.helidon.common.reactive.Multi`, or `io.helidon.common.reactive.Single` for
+streams with single value.
 
 Example of Multi usage:
 
@@ -112,7 +117,8 @@ Operators:
 
 ### Operator Chains Composition
 
-In the situations when part of the operator chain needs to be prepared in advance, `compose` and `to` operators are at hand.
+In the situations when part of the operator chain needs to be prepared in
+advance, `compose` and `to` operators are at hand.
 
 Combining operator chains:
 

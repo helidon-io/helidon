@@ -6,7 +6,8 @@ The Helidon SE DB Client provides a unified API for working with databases.
 
 ## Maven Coordinates
 
-To enable DB Client, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+To enable DB Client, add the following dependency to your project’s `pom.xml`
+(see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -35,21 +36,30 @@ Or to use with MongoDB client add the following dependency:
 
 ## Usage
 
-The DB Client simplifies how you work with databases by abstracting the type of the database. The API can be used both for relational and non-relational databases.
+The DB Client simplifies how you work with databases by abstracting the type of
+the database. The API can be used both for relational and non-relational
+databases.
 
 ## API
 
 - Database configuration abstraction
 
-  Using Helidon configuration allows database implementation specific configuration options without the need to use database implementation specific APIs. This allows for seamless switching between databases based on configuration.
+  Using Helidon configuration allows database implementation specific
+  configuration options without the need to use database implementation specific
+  APIs. This allows for seamless switching between databases based on
+  configuration.
 
 - Statement configuration abstraction
 
-  Using Helidon configuration allows use of database specific statements. This allows usage of different databases on different environments without changing code.
+  Using Helidon configuration allows use of database specific statements. This
+  allows usage of different databases on different environments without changing
+  code.
 
 - Unified API for data access and query
 
-  Thanks to the statement configuration abstraction, we can invoke a statement against a relational or non-relations databases (such as MySQL and MongoDB) without modifying source code
+  Thanks to the statement configuration abstraction, we can invoke a statement
+  against a relational or non-relations databases (such as MySQL and MongoDB)
+  without modifying source code
 
 - Observability  
 
@@ -57,11 +67,13 @@ The DB Client simplifies how you work with databases by abstracting the type of 
 
 ## Configuration
 
-Before you begin you must add the DB Client dependencies and configure the client.
+Before you begin you must add the DB Client dependencies and configure the
+client.
 
 ### Add the DB Client dependencies to the Maven `pom.xml` file.
 
-For the DB Client using JDBC implementation and H2 database, you must include the following dependencies in your project:
+For the DB Client using JDBC implementation and H2 database, you must include
+the following dependencies in your project:
 
 ```xml [pom.xml]
 <dependencies>
@@ -86,7 +98,8 @@ For the DB Client using JDBC implementation and H2 database, you must include th
 
 ### Use Helidon Config to configure the client.
 
-The DB Client must be configured before you begin. In the example below we’ll use Helidon Config to set up JDBC-based client:
+The DB Client must be configured before you begin. In the example below we’ll
+use Helidon Config to set up JDBC-based client:
 
 ```yaml
 db:
@@ -107,11 +120,14 @@ db:
 
 ## Using DB Client API Methods
 
-The Helidon DB Client API contains many methods to run various statements with parameters and to retrieve statement execution results. The following sections describe the options you can use to build and execute your statements.
+The Helidon DB Client API contains many methods to run various statements with
+parameters and to retrieve statement execution results. The following sections
+describe the options you can use to build and execute your statements.
 
 ### Executor Selection
 
-`DBClient` class has two methods to select whether statements will be executed in transaction or not:
+`DBClient` class has two methods to select whether statements will be executed
+in transaction or not:
 
 - `execute()`
 - `transaction()`
@@ -129,9 +145,13 @@ DbExecute class offers many methods for various statements builders:
 - query statements: `createQuery`, `createNamedQuery`
 - get statements: `createGet`, `createNamedGet`
 
-Methods with "Named" in their name (`createNamedDmlStatement`) expect statement name from statements section of Config, or a named statement configured when the `DbClient` was created using a `Builder`.
+Methods with "Named" in their name (`createNamedDmlStatement`) expect statement
+name from statements section of Config, or a named statement configured when the
+`DbClient` was created using a `Builder`.
 
-All statement builders offer methods to set statement parameters. Those parameters can be ordered parameters or named parameters. Ordered and named parameters can’t be mixed in a single statement.
+All statement builders offer methods to set statement parameters. Those
+parameters can be ordered parameters or named parameters. Ordered and named
+parameters can’t be mixed in a single statement.
 
 Note that `get` statements are query statements that allow zero to one results.
 
@@ -179,13 +199,17 @@ Methods to set named parameters are:
 
 - `params(Map<String, ?> parameters)` with all parameters as Map
 - `namedParam(Object parameters)` POJO used with registered mapper
-- `addParam(String name, Object parameter)` with single parameter, can be called repeatedly
+- `addParam(String name, Object parameter)` with single parameter, can be called
+  repeatedly
 
 ### Statement Execution
 
-Statements are executed by calling execute() method after statement parameters are set. This method returns either a `Single` or `Multi` depending on statement type. The type returned also depends on statement type.
+Statements are executed by calling execute() method after statement parameters
+are set. This method returns either a `Single` or `Multi` depending on statement
+type. The type returned also depends on statement type.
 
-JDBC query with ordered parameters and query that does not run in the transaction:
+JDBC query with ordered parameters and query that does not run in the
+transaction:
 
 ```java
 dbClient.execute()
@@ -205,7 +229,8 @@ dbClient.transaction()
 
 Both examples will return `Multi<DbRow>` with rows returned by the query.
 
-This example shows a MongoDB update statement with named parameters and the query does not run in transaction:
+This example shows a MongoDB update statement with named parameters and the
+query does not run in transaction:
 
 ```java
 dbClient.execute()
@@ -221,13 +246,16 @@ dbClient.execute()
         .execute();
 ```
 
-This update statement will return a `long` with the number of modified records in the database.
+This update statement will return a `long` with the number of modified records
+in the database.
 
 #### DML Statement Result
 
-Execution of DML statements will always return a `long` with the number of modified records in the database.
+Execution of DML statements will always return a `long` with the number of
+modified records in the database.
 
-In following example, the number of modified records is printed to standard output:
+In following example, the number of modified records is printed to standard
+output:
 
 ```java
 long count = dbClient.execute()
@@ -246,6 +274,7 @@ Execution of a query statement will always return `Stream<DbRow>>`.
 
 ## Additional Information
 
-Now that you understand how to build and execute statements, try it for yourself. [DB Client Examples][db-client-exampl].
+Now that you understand how to build and execute statements, try it for
+yourself. [DB Client Examples][db-client-exampl].
 
 [db-client-exampl]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/dbclient

@@ -2,22 +2,32 @@
 
 ## Maven Coordinates
 
-No additional dependencies are required beyond the [LangChain4j integration core dependencies](langchain4j.md#maven-coordinates).
+No additional dependencies are required beyond the [LangChain4j integration core
+dependencies][langchain4j-inte].
 
 ## Content Retriever
 
 Provider key: `lc4j-content-retriever`.
 
-In LangChain4j [RAG][rag], `ContentRetriever` is the component that takes a user query, retrieves relevant content from an underlying data source, and returns ranked content used to augment the prompt.
+In LangChain4j [RAG][rag], `ContentRetriever` is the component that takes a user
+query, retrieves relevant content from an underlying data source, and returns
+ranked content used to augment the prompt.
 
-In Helidon, this provider creates LangChain4j content retrievers from configuration. If `type` is not set, Helidon uses the default `embedding-store-content-retriever` (`ContentRetrieverType.EMBEDDING_STORE_CONTENT_RETRIEVER`) and wires it using the configured embedding model and embedding store.
+In Helidon, this provider creates LangChain4j content retrievers from
+configuration. If `type` is not set, Helidon uses the default
+`embedding-store-content-retriever`
+(`ContentRetrieverType.EMBEDDING_STORE_CONTENT_RETRIEVER`) and wires it using
+the configured embedding model and embedding store.
 
 In a typical RAG setup (see [RAG](rag.md)), a named retriever references:
 
 - an `EmbeddingModel` (`embedding-model`)
 - an `EmbeddingStore<TextSegment>` (`embedding-store`)
 
-Each entry under `langchain4j.content-retrievers` becomes a named singleton declarative service bean in the Helidon service registry. You can attach it to AI services or agents using `@Ai.ContentRetriever("name")`, or inject it directly by name.
+Each entry under `langchain4j.content-retrievers` becomes a named singleton
+declarative service bean in the Helidon service registry. You can attach it to
+AI services or agents using `@Ai.ContentRetriever("name")`, or inject it
+directly by name.
 
 ```yaml [application.yaml]
 langchain4j:
@@ -32,7 +42,8 @@ langchain4j:
 ```
 
 - Selects the built-in content retriever provider.
-- Explicitly selects the default LangChain4j embedding-store-backed retriever type.
+- Explicitly selects the default LangChain4j embedding-store-backed retriever
+  type.
 - Names the embedding store bean used for similarity search.
 - Sets the embedding model used to convert incoming query text to vectors.
 
@@ -55,14 +66,15 @@ public class RetrieverConsumer {
 }
 ```
 
-- Injects the same named content retriever bean directly into another Helidon declarative service.
+- Injects the same named content retriever bean directly into another Helidon
+  declarative service.
 
 Configuration properties:
 
 ### Configuration options
 
 <!--@include ../../../config/io.helidon.integrations.langchain4j.ContentRetrieverConfig.md#configuration-options delim=--- offset=1 collapseTables=10 -->
-See [Configuration options](../../../config/io.helidon.integrations.langchain4j.ContentRetrieverConfig.md#configuration-options).
+See [Configuration options][io-helidon-integ].
 <!--/include-->
 
 
@@ -70,13 +82,21 @@ See [Configuration options](../../../config/io.helidon.integrations.langchain4j.
 
 Provider key: `lc4j-in-memory`.
 
-In LangChain4j [in-memory embedding store integration][in-memory-embedd], `InMemoryEmbeddingStore` is an in-process vector store implementation suitable for local or lightweight use cases.
+In LangChain4j [in-memory embedding store integration][in-memory-embedd],
+`InMemoryEmbeddingStore` is an in-process vector store implementation suitable
+for local or lightweight use cases.
 
-In Helidon, this provider creates `InMemoryEmbeddingStore<TextSegment>` instances from `langchain4j.embedding-stores.<name>` configuration entries.
+In Helidon, this provider creates `InMemoryEmbeddingStore<TextSegment>`
+instances from `langchain4j.embedding-stores.<name>` configuration entries.
 
-Each entry becomes a named singleton declarative service bean in the Helidon service registry. That named embedding store can be referenced by configured content retrievers and can also be injected by name into other service beans.
+Each entry becomes a named singleton declarative service bean in the Helidon
+service registry. That named embedding store can be referenced by configured
+content retrievers and can also be injected by name into other service beans.
 
-If `from-file` is configured, Helidon initializes the store by loading previously persisted embeddings and segments using LangChain4j `InMemoryEmbeddingStore.fromFile(…​)`. If `from-file` is not configured, the store starts empty.
+If `from-file` is configured, Helidon initializes the store by loading
+previously persisted embeddings and segments using LangChain4j
+`InMemoryEmbeddingStore.fromFile(…​)`. If `from-file` is not configured, the
+store starts empty.
 
 ```yaml [application.yaml]
 langchain4j:
@@ -115,14 +135,15 @@ public class EmbeddingStoreLifecycle {
 ```
 
 - Invoked by Helidon when the singleton service bean is being shut down.
-- Persists current in-memory embeddings and segments to JSON file; the same file can be loaded on next startup using `from-file`.
+- Persists current in-memory embeddings and segments to JSON file; the same file
+  can be loaded on next startup using `from-file`.
 
 Configuration properties:
 
 ### Configuration options
 
 <!--@include ../../../config/io.helidon.integrations.langchain4j.InMemoryEmbeddingStoreConfig.md#configuration-options delim=--- offset=1 collapseTables=10 -->
-See [Configuration options](../../../config/io.helidon.integrations.langchain4j.InMemoryEmbeddingStoreConfig.md#configuration-options).
+See [Configuration options][io-helidon-integ-2].
 <!--/include-->
 
 
@@ -132,3 +153,6 @@ See [Configuration options](../../../config/io.helidon.integrations.langchain4j.
 
 [rag]: https://docs.langchain4j.dev/tutorials/rag
 [in-memory-embedd]: https://docs.langchain4j.dev/integrations/embedding-stores/in-memory
+[langchain4j-inte]: langchain4j.md#maven-coordinates
+[io-helidon-integ]: ../../../config/io.helidon.integrations.langchain4j.ContentRetrieverConfig.md#configuration-options
+[io-helidon-integ-2]: ../../../config/io.helidon.integrations.langchain4j.InMemoryEmbeddingStoreConfig.md#configuration-options

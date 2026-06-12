@@ -2,11 +2,13 @@
 
 ## Overview
 
-HashiCorp Vault is a commonly used Vault in many microservices. The APIs are REST-based and Helidon implements them using [WebClient](../../se/webclient.md).
+HashiCorp Vault is a commonly used Vault in many microservices. The APIs are
+REST-based and Helidon implements them using [WebClient](../../se/webclient.md).
 
 ## Maven Coordinates
 
-To enable HashiCorp Vault, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable HashiCorp Vault, add the following dependency to your project’s
+`pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -64,11 +66,13 @@ The following is a list of maven coordinates of all Vault modules available:
 
 Vault integration supports the following:
 
-- **Secret Engines**: Key/Value version 2, Key/Value version 1, Cubbyhole, PKI, Transit, Database
+- **Secret Engines**: Key/Value version 2, Key/Value version 1, Cubbyhole, PKI,
+  Transit, Database
 - **Authentication Methods**: Token, Kubernetes (k8s), AppRole
 - **Other Sys Operations and Configurations**
 
-Each of these features is implemented as a separate module, with the Vault class binding them together. Code to set up Vault and obtain a specific secret engine:
+Each of these features is implemented as a separate module, with the Vault class
+binding them together. Code to set up Vault and obtain a specific secret engine:
 
 ```java
 Vault vault = Vault.builder()
@@ -96,7 +100,8 @@ In addition to these features, Vault itself can be authenticated as follows:
        address: "http://localhost:8200"
        token: "my-token"
 
-- AppRole authentication - AppRole ID and secret ID are configured, integration exchanges these for a temporary token that is used to connect to Vault
+- AppRole authentication - AppRole ID and secret ID are configured, integration
+  exchanges these for a temporary token that is used to connect to Vault
 
 <!-- -->
 
@@ -106,7 +111,8 @@ In addition to these features, Vault itself can be authenticated as follows:
           role-id: "app-role-id"
           secret-id: app-role-secret-id
 
-- K8s authentication - the k8s JWT token is discovered on current node and used to obtain a temporary token that is used to connect to Vault
+- K8s authentication - the k8s JWT token is discovered on current node and used
+  to obtain a temporary token that is used to connect to Vault
 
 <!-- -->
 
@@ -115,7 +121,8 @@ In addition to these features, Vault itself can be authenticated as follows:
         k8s:
           token-role: "my-role" 
 
-- The token role must be configured in Vault Minimal configuration to connect to Vault:
+- The token role must be configured in Vault Minimal configuration to connect to
+  Vault:
 
 Code to get the Sys operations of Vault:
 
@@ -125,7 +132,10 @@ Sys sys = vault.sys(Sys.API);
 
 ### Extensibility
 
-New secret engines and authentication methods can be implemented quite easily, as the integration is based on service providers (using ServiceLoader). This gives us (or you, as the users) the option to add new secret engines and/or authentication methods without adding a plethora of methods to the Vault class.
+New secret engines and authentication methods can be implemented quite easily,
+as the integration is based on service providers (using ServiceLoader). This
+gives us (or you, as the users) the option to add new secret engines and/or
+authentication methods without adding a plethora of methods to the Vault class.
 
 See the following SPIs:
 
@@ -520,7 +530,10 @@ Vault is available as a docker image, so to test locally, you can simply:
 docker run -e VAULT_DEV_ROOT_TOKEN_ID=my-token -d --name=vault -p8200:8200 vault
 ```
 
-This will create a Vault docker image, run it in background and open it on `localhost:8200` with a custom root token my-token, using name vault. This is of course only suitable for local testing, as the root token has too many rights, but it can be easily used with the examples below.
+This will create a Vault docker image, run it in background and open it on
+`localhost:8200` with a custom root token my-token, using name vault. This is of
+course only suitable for local testing, as the root token has too many rights,
+but it can be easily used with the examples below.
 
 ## References
 

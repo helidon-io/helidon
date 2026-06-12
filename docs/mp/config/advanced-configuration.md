@@ -2,7 +2,10 @@
 
 ## Creating MicroProfile Config Sources for Manual Setup of Config
 
-You can use the following methods to create MicroProfile Config Sources to manually set up the Config from `org.eclipse.microprofile.config.spi.ConfigProviderResolver#getBuilder()` on `io.helidon.config.mp.MpConfigSources` class:
+You can use the following methods to create MicroProfile Config Sources to
+manually set up the Config from
+`org.eclipse.microprofile.config.spi.ConfigProviderResolver#getBuilder()` on
+`io.helidon.config.mp.MpConfigSources` class:
 
 <table>
 <colgroup>
@@ -67,7 +70,9 @@ resolver.registerConfig(config, null);
 
 ### Create YAML MicroProfile Config Source
 
-You can create YAML MicroProfile Config Source from a path or a URL. When you create a MicroProfile instance from the builder, the `YamlMpConfigSource` allows you to create a custom Config Source and register it with the builder.
+You can create YAML MicroProfile Config Source from a path or a URL. When you
+create a MicroProfile instance from the builder, the `YamlMpConfigSource` allows
+you to create a custom Config Source and register it with the builder.
 
 Create YamlMPConfigSource from a path:
 
@@ -79,9 +84,15 @@ ConfigProviderResolver.instance().getBuilder()
 
 ## Creating Custom Config Sources
 
-Custom Config Sources are loaded using the Java Service Loader pattern, by implementing either `org.eclipse.microprofile.config.spi.ConfigSource`, or `org.eclipse.microprofile.config.spi.ConfigSourceProvider` SPI and registering it as a service (Using `META-INF/services/${class-name}` file when using classpath, or using the `provides` statement in `module-info.java` when using module path).
+Custom Config Sources are loaded using the Java Service Loader pattern, by
+implementing either `org.eclipse.microprofile.config.spi.ConfigSource`, or
+`org.eclipse.microprofile.config.spi.ConfigSourceProvider` SPI and registering
+it as a service (Using `META-INF/services/${class-name}` file when using
+classpath, or using the `provides` statement in `module-info.java` when using
+module path).
 
-The interface `org.eclipse.microprofile.config.spi.ConfigSource` requires implementation of the following methods:
+The interface `org.eclipse.microprofile.config.spi.ConfigSource` requires
+implementation of the following methods:
 
 - `String getName()`
 - `Map<String, String> getProperties()`
@@ -125,21 +136,31 @@ public class CustomConfigSource implements ConfigSource {
 ```
 <!--@mdc :: -->
 
-- Returns the name of the Config Source to use for logging or analysis of configured values.
+- Returns the name of the Config Source to use for logging or analysis of
+  configured values.
 - Returns the properties in this Config Source as a map.
 - Returns the value of the requested key, or `null` if the key is not available
 - Returns the ordinal of this Config Source.
 
 ## Creating MicroProfile Config Sources from meta-config
 
-Instead of directly specifying the configuration sources in your code, you can use meta-configuration in a file that declares the configuration sources, and their attributes as mentioned in [MicroProfile Config](introduction.md).
+Instead of directly specifying the configuration sources in your code, you can
+use meta-configuration in a file that declares the configuration sources, and
+their attributes as mentioned in [MicroProfile Config](introduction.md).
 
-When used, the MicroProfile Config uses configuration sources and flags configured in the meta configuration file.
+When used, the MicroProfile Config uses configuration sources and flags
+configured in the meta configuration file.
 
-If a file named `mp-meta-config.yaml`, or `mp-meta-config.properties` is in the current directory or on the classpath, and there is no explicit setup of configuration in the code, the configuration will be loaded from the `meta-config` file. The location of the file can be overridden using system property `io.helidon.config.mp.meta-config`, or environment variable `HELIDON_MP_META_CONFIG`.
+If a file named `mp-meta-config.yaml`, or `mp-meta-config.properties` is in the
+current directory or on the classpath, and there is no explicit setup of
+configuration in the code, the configuration will be loaded from the
+`meta-config` file. The location of the file can be overridden using system
+property `io.helidon.config.mp.meta-config`, or environment variable
+`HELIDON_MP_META_CONFIG`.
 
 > [!IMPORTANT]
-> Do not use custom files named `meta-config.*`, to avoid conflicting with Helidon SE Meta Configuration.
+> Do not use custom files named `meta-config.*`, to avoid conflicting with
+> Helidon SE Meta Configuration.
 
 Example of a YAML meta configuration file:
 
@@ -163,23 +184,32 @@ sources:
     path: "path: conf/custom-application.json" 
 ```
 
-- If configured to `true`, config sources discovered through service loader will be added
-- If configured to `true`, converters discovered through service loader will be added
-- If configured to `true`, default config sources (system properties, environment variables, and `META-INF/microprofile-config.properties`) will be added
+- If configured to `true`, config sources discovered through service loader will
+  be added
+- If configured to `true`, converters discovered through service loader will be
+  added
+- If configured to `true`, default config sources (system properties,
+  environment variables, and `META-INF/microprofile-config.properties`) will be
+  added
 - Loads the environment variables config source.
 - Loads the system properties config source.
 - Loads a properties file
 - Location of the file: `/conf/prod.properties` on the file system
-- Custom ordinal, if not defined, the value defined in the file, or default value is used. The source precedence order is the order of appearance in the file. The default is 100.
-- The file is optional (if not optional and no file is found, the bootstrap fails)
+- Custom ordinal, if not defined, the value defined in the file, or default
+  value is used. The source precedence order is the order of appearance in the
+  file. The default is 100.
+- The file is optional (if not optional and no file is found, the bootstrap
+  fails)
 - Loads a YAML file
 - Location of the file: `META-INF/database.yaml` on the classpath
 - Loads a HOCON file
 - Location of the file: `custom-application.conf` on the classpath
 - Loads a JSON file
-- Location of the file: `conf/custom-application.json` relative to the directory of where the app was executed on the file system.
+- Location of the file: `conf/custom-application.json` relative to the directory
+  of where the app was executed on the file system.
 
-**Important Note:** To enable support for `HOCON` and `JSON` types, add the following dependency to your project’s pom.xml.
+**Important Note:** To enable support for `HOCON` and `JSON` types, add the
+following dependency to your project’s pom.xml.
 
 ```xml [pom.xml]
 <dependency>
@@ -190,12 +220,21 @@ sources:
 
 ## Extending Meta-Config to Create a Custom Config Source Type
 
-Helidon meta-config by default supports the following types: environment-variables, system-properties, properties, yaml, hocon and json. Users can also extend meta-config to create a custom config source type by loading it using the Java Service Loader pattern. This is achieved by implementing `io.helidon.config.mp.spi.MpMetaConfigProvider` SPI and registering it as a service (Using `META-INF/services/${class-name}` file when using classpath, or using the `provides` statement in `module-info.java` when using module path).
+Helidon meta-config by default supports the following types:
+environment-variables, system-properties, properties, yaml, hocon and json.
+Users can also extend meta-config to create a custom config source type by
+loading it using the Java Service Loader pattern. This is achieved by
+implementing `io.helidon.config.mp.spi.MpMetaConfigProvider` SPI and registering
+it as a service (Using `META-INF/services/${class-name}` file when using
+classpath, or using the `provides` statement in `module-info.java` when using
+module path).
 
-The interface `io.helidon.config.mp.spi.MpMetaConfigProvider` requires implementation of the following methods:
+The interface `io.helidon.config.mp.spi.MpMetaConfigProvider` requires
+implementation of the following methods:
 
 - `Set<String> supportedTypes()`
-- `List<? extends ConfigSource> create(String type, Config metaConfig, String profile);`
+- `List<? extends ConfigSource> create(String type, Config metaConfig, String
+  profile);`
 
 ### Example of a Meta-Config Custom Type
 
@@ -259,11 +298,14 @@ public class CustomMpMetaConfigProvider implements MpMetaConfigProvider {
 - Processes config source from URL location if `location` is provided.
 - Method to parse config source from a specified `url`
 - Returns an empty result if set to `optional` and config source is not found.
-- Throws a ConfigException if not set to `optional` and config source is not found.
+- Throws a ConfigException if not set to `optional` and config source is not
+  found.
 
 ## Creating MicroProfile Config Source from Helidon SE Config Source
 
-To use the Helidon SE features in Helidon MP, create MicroProfile Config Source from Helidon SE Config Source. The Config Source is immutable regardless of configured polling strategy or change watchers.
+To use the Helidon SE features in Helidon MP, create MicroProfile Config Source
+from Helidon SE Config Source. The Config Source is immutable regardless of
+configured polling strategy or change watchers.
 
 ```java
 Config config = ConfigProviderResolver.instance()
@@ -276,7 +318,11 @@ Config config = ConfigProviderResolver.instance()
 
 ## Creating MicroProfile Config Source from Helidon SE Config Instance
 
-To use advanced Helidon SE features in Helidon MP, create MicroProfile Config Source from Helidon SE Config. The Config Source is mutable if the config uses either polling strategy and change watchers, or polling strategy or change watchers. The latest config version is queried each time `org.eclipse.microprofile.config.spi.ConfigSource#getValue(String)` is called.
+To use advanced Helidon SE features in Helidon MP, create MicroProfile Config
+Source from Helidon SE Config. The Config Source is mutable if the config uses
+either polling strategy and change watchers, or polling strategy or change
+watchers. The latest config version is queried each time
+`org.eclipse.microprofile.config.spi.ConfigSource#getValue(String)` is called.
 
 ```java
 io.helidon.config.Config helidonConfig = io.helidon.config.Config.builder()

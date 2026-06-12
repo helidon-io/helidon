@@ -1,18 +1,27 @@
 # Tracing
 
 > [!WARNING]
-> This feature is marked as `@Deprecated` in Helidon. Please use the [Telemetry](../mp/telemetry.md) feature instead.
-> The OpenTracing Specification that MP OpenTracing is based on is no longer maintained.
-> The MP OpenTracing specification is no longer required by MicroProfile. The specification is superseded by the
-> [MicroProfile Telemetry specification][microprofile-tel].
+> This feature is marked as `@Deprecated` in Helidon. Please use the
+> [Telemetry](../mp/telemetry.md) feature instead. The OpenTracing Specification
+> that MP OpenTracing is based on is no longer maintained. The MP OpenTracing
+> specification is no longer required by MicroProfile. The specification is
+> superseded by the [MicroProfile Telemetry specification][microprofile-tel].
 
 ## Overview
 
-Distributed tracing is a critical feature of microservice based applications, since it traces workflow both within a service and across multiple services. This provides insight to sequence and timing data for specific blocks of work, which helps you identify performance and operational issues. Helidon MP includes support for distributed tracing through the [OpenTracing API](https://opentracing.io). Tracing is integrated with WebServer and Security.
+Distributed tracing is a critical feature of microservice based applications,
+since it traces workflow both within a service and across multiple services.
+This provides insight to sequence and timing data for specific blocks of work,
+which helps you identify performance and operational issues. Helidon MP includes
+support for distributed tracing through the [OpenTracing
+API](https://opentracing.io). Tracing is integrated with WebServer and Security.
 
 ## Maven Coordinates
 
-To enable MicroProfile Tracing, either add a dependency on the [helidon-microprofile bundle](introduction.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+To enable MicroProfile Tracing, either add a dependency on the
+[helidon-microprofile bundle](introduction.md) or add the following dependency
+to your project’s `pom.xml` (see [Managing
+Dependencies](../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -23,11 +32,24 @@ To enable MicroProfile Tracing, either add a dependency on the [helidon-micropro
 
 ## Usage
 
-This section explains a few concepts that you need to understand before you get started with tracing.
+This section explains a few concepts that you need to understand before you get
+started with tracing.
 
-- In the context of this document, a *service* is synonymous with an application.
-- A *span* is the basic unit of work done within a single service, on a single host. Every span has a name, starting timestamp, and duration. For example, the work done by a REST endpoint is a span. A span is associated to a single service, but its descendants can belong to different services and hosts.
-- A *trace* contains a collection of spans from one or more services, running on one or more hosts. For example, if you trace a service endpoint that calls another service, then the trace would contain spans from both services. Within a trace, spans are organized as a directed acyclic graph (DAG) and can belong to multiple services, running on multiple hosts. The *OpenTracing Data Model* describes the details at [The OpenTracing Semantic Specification][the-opentracing]. Spans are automatically created by Helidon as needed during execution of the REST request. Additional spans can be added through MP annotation `@Traced` or through OpenTracing APIs.
+- In the context of this document, a *service* is synonymous with an
+  application.
+- A *span* is the basic unit of work done within a single service, on a single
+  host. Every span has a name, starting timestamp, and duration. For example,
+  the work done by a REST endpoint is a span. A span is associated to a single
+  service, but its descendants can belong to different services and hosts.
+- A *trace* contains a collection of spans from one or more services, running on
+  one or more hosts. For example, if you trace a service endpoint that calls
+  another service, then the trace would contain spans from both services. Within
+  a trace, spans are organized as a directed acyclic graph (DAG) and can belong
+  to multiple services, running on multiple hosts. The *OpenTracing Data Model*
+  describes the details at [The OpenTracing Semantic
+  Specification][the-opentracing]. Spans are automatically created by Helidon as
+  needed during execution of the REST request. Additional spans can be added
+  through MP annotation `@Traced` or through OpenTracing APIs.
 
 ## Traced spans
 
@@ -48,7 +70,8 @@ The following table lists all spans traced by Helidon components:
 | `jax-rs`     | `jersey-client-call` | Span for outbound client call                                                                                                                                             |
 <!--@mdc :: -->
 
-Some of these spans `log` to the span. These log events can be (in most cases) configured:
+Some of these spans `log` to the span. These log events can be (in most cases)
+configured:
 
 | span name           | log name           | configurable | enabled by default | description                                              |
 |---------------------|--------------------|--------------|--------------------|----------------------------------------------------------|
@@ -60,7 +83,8 @@ Some of these spans `log` to the span. These log events can be (in most cases) c
 | `security:atz`      | `status`           | YES          | YES                | Logs the status of security response (such as `SUCCESS`) |
 | `security:outbound` | `status`           | YES          | YES                | Logs the status of security response (such as `SUCCESS`) |
 
-There are also tags that are set by Helidon components. These are not configurable.
+There are also tags that are set by Helidon components. These are not
+configurable.
 
 <!--@mdc ::table-collapse -->
 | span name            | tag name           | description                                                                                       |
@@ -80,12 +104,14 @@ There are also tags that are set by Helidon components. These are not configurab
 
 ### Enabling and Disabling Tracing
 
-You can configure a custom service name using the `tracing.service` configuration property. If this property is undefined, name is created from JAX-RS Application name, or `Helidon MP` is used if no application is defined.
+You can configure a custom service name using the `tracing.service`
+configuration property. If this property is undefined, name is created from
+JAX-RS Application name, or `Helidon MP` is used if no application is defined.
 
 ### Configuration options
 
 <!--@include ../config/io.helidon.tracing.Tracer.md#configuration-options delim=--- offset=2 collapseTables=10 -->
-See [Configuration options](../config/io.helidon.tracing.Tracer.md#configuration-options).
+See [Configuration options][io-helidon-traci].
 <!--/include-->
 
 
@@ -124,13 +150,18 @@ tracing:
 
 ### Controlling Tracing Output
 
-For Web Server we have a path based support for configuring tracing, in addition to the configuration described above.
+For Web Server we have a path based support for configuring tracing, in addition
+to the configuration described above.
 
-Configuration of path can use any path string supported by the Web Server. The configuration itself has the same possibilities as traced configuration described above. The path specific configuration will be merged with global configuration (path is the "newer" configuration, global is the "older")
+Configuration of path can use any path string supported by the Web Server. The
+configuration itself has the same possibilities as traced configuration
+described above. The path specific configuration will be merged with global
+configuration (path is the "newer" configuration, global is the "older")
 
 #### Renaming top level span using request properties
 
-To have a nicer overview in search pane of a tracer, you can customize the top-level span name using configuration.
+To have a nicer overview in search pane of a tracer, you can customize the
+top-level span name using configuration.
 
 Example:
 
@@ -141,7 +172,8 @@ tracing.components.web-server.spans.0.name="HTTP Request"
 tracing.components.web-server.spans.0.new-name: "HTTP %1$s %2$s"
 ```
 
-This is supported ONLY for the span named "HTTP Request" on component "web-server".
+This is supported ONLY for the span named "HTTP Request" on component
+"web-server".
 
 Parameters provided:
 
@@ -151,11 +183,15 @@ Parameters provided:
 
 ## Examples
 
-The examples in this guide demonstrate how to integrate tracing with Helidon, how to view traces, how to trace across multiple services, and how to integrate tracing with Kubernetes. All examples use Jaeger and traces will be viewed using both the Jaeger UI.
+The examples in this guide demonstrate how to integrate tracing with Helidon,
+how to view traces, how to trace across multiple services, and how to integrate
+tracing with Kubernetes. All examples use Jaeger and traces will be viewed using
+both the Jaeger UI.
 
 ### Set up Jaeger
 
-First, you need to run the Jaeger tracer. Helidon will communicate with this tracer at runtime.
+First, you need to run the Jaeger tracer. Helidon will communicate with this
+tracer at runtime.
 
 Run Jaeger within a docker container, then check the Jaeger server working:
 
@@ -181,9 +217,18 @@ Check the Jaeger server by opening http://localhost:16686/search in a browser.
 
 ### Trace Across Services
 
-Helidon automatically traces across services as long as the services use the same tracer, for example, the same instance of Jaeger. This means a single trace can include spans from multiple services and hosts. OpenTracing uses a `SpanContext` to propagate tracing information across process boundaries. When you make client API calls, Helidon will internally call OpenTracing APIs to propagate the `SpanContext`. There is nothing you need to do in your application to make this work.
+Helidon automatically traces across services as long as the services use the
+same tracer, for example, the same instance of Jaeger. This means a single trace
+can include spans from multiple services and hosts. OpenTracing uses a
+`SpanContext` to propagate tracing information across process boundaries. When
+you make client API calls, Helidon will internally call OpenTracing APIs to
+propagate the `SpanContext`. There is nothing you need to do in your application
+to make this work.
 
-To demonstrate distributed tracing, you will need to create a second project, where the server listens on port 8081. Create a new root directory to hold this new project, then do the following steps, similar to what you did at the start of this guide:
+To demonstrate distributed tracing, you will need to create a second project,
+where the server listens on port 8081. Create a new root directory to hold this
+new project, then do the following steps, similar to what you did at the start
+of this guide:
 
 #### Create a second service
 
@@ -231,7 +276,8 @@ mvn package -DskipTests=true
 java -jar target/helidon-quickstart-mp-2.jar
 ```
 
-Run the curl command in a new terminal window and check the response (**notice the port is 8081**):
+Run the curl command in a new terminal window and check the response (**notice
+the port is 8081**):
 
 ```shell [Terminal]
 curl http://localhost:8081/greet
@@ -247,7 +293,8 @@ Response body:
 
 #### Modify the first service
 
-Once you have validated that the second service is running correctly, you need to modify the original application to call it.
+Once you have validated that the second service is running correctly, you need
+to modify the original application to call it.
 
 Replace the GreetResource class with the following code:
 
@@ -289,7 +336,8 @@ public class GreetResource {
 ```
 <!--@mdc :: -->
 
-- This is the `WebTarget` needed to send a request to the second service at port `8081`.
+- This is the `WebTarget` needed to send a request to the second service at port
+  `8081`.
 - This is the new endpoint that will call the second service.
 
 Build and run the application, then invoke the endpoint and check the response:
@@ -298,7 +346,8 @@ Build and run the application, then invoke the endpoint and check the response:
 curl -i http://localhost:8080/greet/outbound 
 ```
 
-- The request went to the service on `8080`, which then invoked the service at `8081` to get the greeting.
+- The request went to the service on `8080`, which then invoked the service at
+  `8081` to get the greeting.
 
 Response body:
 
@@ -310,20 +359,26 @@ Response body:
 
 - Notice the greeting came from the second service.
 
-Refresh the Jaeger UI trace listing page and notice that there is a trace across two services.
+Refresh the Jaeger UI trace listing page and notice that there is a trace across
+two services.
 
 <figure>
 <img src="../images/guides/12_tracing_detail_2_services.png" alt="Traces" />
 <figcaption>Tracing across multiple services detail view</figcaption>
 </figure>
 
-In the image above, you can see that the trace includes spans from two services. You will notice there is a gap before the sixth span, which is a `get` operation. This is a one-time client initialization delay. Run the `/outbound` curl command again and look at the new trace to see that the delay no longer exists.
+In the image above, you can see that the trace includes spans from two services.
+You will notice there is a gap before the sixth span, which is a `get`
+operation. This is a one-time client initialization delay. Run the `/outbound`
+curl command again and look at the new trace to see that the delay no longer
+exists.
 
 You can now stop your second service, it is no longer used in this guide.
 
 ## Kubernetes Integration
 
-The following example demonstrates how to use Jaeger from a Helidon application running in Kubernetes.
+The following example demonstrates how to use Jaeger from a Helidon application
+running in Kubernetes.
 
 Update application.yaml:
 
@@ -384,8 +439,8 @@ kubectl expose pod jaeger --name=jaeger-external --port=16687 --target-port=1668
 
 - Create a service so that you can access the Jaeger UI.
 
-Navigate to http://localhost:16687/search to validate that you can access Jaeger running in Kubernetes.
-It may take a few seconds before it is ready.
+Navigate to http://localhost:16687/search to validate that you can access Jaeger
+running in Kubernetes. It may take a few seconds before it is ready.
 
 ### Deploy Your Helidon Application into Kubernetes
 
@@ -457,7 +512,8 @@ helidon-tracing   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s
 
 - A service of type `NodePort` that serves the default routes on port `31143`.
 
-Verify the tracing endpoint using port 31143, your port will likely be different:
+Verify the tracing endpoint using port 31143, your port will likely be
+different:
 
 ```shell [Terminal]
 curl http://localhost:31143/greet
@@ -469,11 +525,13 @@ curl http://localhost:31143/greet
 }
 ```
 
-Access the Jaeger UI at http://localhost:16687/search and click on the refresh icon to see the trace that was just created.
+Access the Jaeger UI at http://localhost:16687/search and click on the refresh
+icon to see the trace that was just created.
 
 ### Cleanup
 
-You can now delete the Kubernetes resources that were just created during this example.
+You can now delete the Kubernetes resources that were just created during this
+example.
 
 Delete the Kubernetes resources:
 
@@ -486,21 +544,28 @@ docker rm -f jaeger
 
 ## Creating custom spans
 
-Helidon MP fully supports MicroProfile OpenTracing. You can add custom spans using `@Traced` annotation on methods of CDI beans.
+Helidon MP fully supports MicroProfile OpenTracing. You can add custom spans
+using `@Traced` annotation on methods of CDI beans.
 
-**Note for invoking methods on same class:** *If you invoke a method on the same class, `@Traced` annotation would be ignored, as it is not invoked through a CDI proxy and as such cannot be intercepted. To make sure `@Traced` is honored, use it on JAX-RS resource methods and on CDI bean methods used from other beans.*
+**Note for invoking methods on same class:** *If you invoke a method on the same
+class, `@Traced` annotation would be ignored, as it is not invoked through a CDI
+proxy and as such cannot be intercepted. To make sure `@Traced` is honored, use
+it on JAX-RS resource methods and on CDI bean methods used from other beans.*
 
 ## Trace propagation across services
 
 Automated trace propagation is supported currently only with Jersey client.
 
-Tracing propagation works automatically as long as you run within the scope of Helidon MP and use Helidon components to invoke external services.
+Tracing propagation works automatically as long as you run within the scope of
+Helidon MP and use Helidon components to invoke external services.
 
 ### Manual handling of traces in Jersey Client
 
-There is an option to provide `SpanContext` programmatically (such as when writing a command line application that starts the span manually).
+There is an option to provide `SpanContext` programmatically (such as when
+writing a command line application that starts the span manually).
 
-You can either configure the span context as the active span, or explicitly define it as client property.
+You can either configure the span context as the active span, or explicitly
+define it as client property.
 
 Tracing propagation with Jersey client:
 
@@ -525,12 +590,13 @@ Response response = client.target(serviceEndpoint)
 ### Configuration options
 
 <!--@include ../config/io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.md#configuration-options delim=--- offset=1 collapseTables=10 -->
-See [Configuration options](../config/io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.md#configuration-options).
+See [Configuration options][io-helidon-traci-2].
 <!--/include-->
 
 ### Configuration Example
 
-The following is an example of a Jaeger configuration, specified in the YAML format.
+The following is an example of a Jaeger configuration, specified in the YAML
+format.
 
 ```yaml [application.yaml]
 tracing:
@@ -542,7 +608,8 @@ tracing:
 
 ### Jaeger Tracing Metrics
 
-As the [Jaeger Tracing](#jaeger-tracing) section describes, you can use Jaeger tracing in your Helidon application.
+As the [Jaeger Tracing](#jaeger-tracing) section describes, you can use Jaeger
+tracing in your Helidon application.
 
 ## Zipkin Tracing
 
@@ -556,12 +623,13 @@ As the [Jaeger Tracing](#jaeger-tracing) section describes, you can use Jaeger t
 ### Configuration options
 
 <!--@include ../config/io.helidon.tracing.providers.zipkin.ZipkinTracerBuilder.md#configuration-options delim=--- offset=1 collapseTables=10 -->
-See [Configuration options](../config/io.helidon.tracing.providers.zipkin.ZipkinTracerBuilder.md#configuration-options).
+See [Configuration options][io-helidon-traci-3].
 <!--/include-->
 
 ### Configuration Example
 
-The following is an example of a Zipkin configuration, specified in the YAML format.
+The following is an example of a Zipkin configuration, specified in the YAML
+format.
 
 ```yaml [application.yaml]
 tracing:
@@ -592,12 +660,18 @@ Example of Zipkin trace:
 
 ## OpenTelemetry Tracing
 
-Helidon supports configuration of OpenTelemetry and OpenTelemetry tracing in two primary ways: using tracing or using telemetry. The [Helidon MP Telemetry doc page](../mp/telemetry.md) describes how to use Helidon’s support for MicroProfile Telemetry to control OpenTelemetry.
+Helidon supports configuration of OpenTelemetry and OpenTelemetry tracing in two
+primary ways: using tracing or using telemetry. The [Helidon MP Telemetry doc
+page](../mp/telemetry.md) describes how to use Helidon’s support for
+MicroProfile Telemetry to control OpenTelemetry.
 
-Avoid using both the OpenTelemetry tracing support described here and support for MicroProfile Telemetry as the results are unpredictable.
+Avoid using both the OpenTelemetry tracing support described here and support
+for MicroProfile Telemetry as the results are unpredictable.
 
 > [!NOTE]
-> If you provide settings under both `telemetry` and `tracing`, Helidon uses the `telemetry` settings. Specifying both does not confuse Helidon but it might confuse users.
+> If you provide settings under both `telemetry` and `tracing`, Helidon uses the
+> `telemetry` settings. Specifying both does not confuse Helidon but it might
+> confuse users.
 
 Dependency for OpenTelemetry support using tracing:
 
@@ -611,7 +685,7 @@ Dependency for OpenTelemetry support using tracing:
 ### Configuration options
 
 <!--@include ../config/io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracer.md#configuration-options delim=--- offset=1 collapseTables=10 -->
-See [Configuration options](../config/io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracer.md#configuration-options).
+See [Configuration options][io-helidon-traci-4].
 <!--/include-->
 
 ### Configuration Example
@@ -624,16 +698,21 @@ tracing.tags.0.direction=north
 ```
 
 - Specifies the OpenTelemetry service name.
-- Indicates the configured tracer *should not* be made the global tracer (defaults to `true`).
+- Indicates the configured tracer *should not* be made the global tracer
+  (defaults to `true`).
 - Assigns an integer-valued tag `example` the value `1`.
 - Assigns a string-valued tag `direction` the value `north`.
 
-By default, Helidon tracing support for OpenTelemetry uses OpenTelemetry’s OTLP gRPC exporter. Alternatively, you can choose to use OpenTelemetry’s HTTP exporter using protobuf by setting `exporter-type` to `http/proto`. To use other exporters OpenTelemetry offers, use the Helidon `telemetry` configuration instead of `tracing`.
+By default, Helidon tracing support for OpenTelemetry uses OpenTelemetry’s OTLP
+gRPC exporter. Alternatively, you can choose to use OpenTelemetry’s HTTP
+exporter using protobuf by setting `exporter-type` to `http/proto`. To use other
+exporters OpenTelemetry offers, use the Helidon `telemetry` configuration
+instead of `tracing`.
 
 ## Span Lifecycle
 
 <!--@include ../includes/tracing/common-callbacks.md#span-lifecycle offset=2 -->
-See [Span Lifecycle Callbacks](../includes/tracing/common-callbacks.md#span-lifecycle).
+See [Span Lifecycle Callbacks][span-lifecycle-c].
 <!--/include-->
 
 ## Reference
@@ -644,3 +723,8 @@ See [Span Lifecycle Callbacks](../includes/tracing/common-callbacks.md#span-life
 [microprofile-tel]: https://github.com/eclipse/microprofile-telemetry
 [the-opentracing]: https://opentracing.io/specification
 [microprofile-ope]: https://download.eclipse.org/microprofile/microprofile-opentracing-3.0/microprofile-opentracing-spec-3.0.html
+[io-helidon-traci]: ../config/io.helidon.tracing.Tracer.md#configuration-options
+[io-helidon-traci-2]: ../config/io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.md#configuration-options
+[io-helidon-traci-3]: ../config/io.helidon.tracing.providers.zipkin.ZipkinTracerBuilder.md#configuration-options
+[io-helidon-traci-4]: ../config/io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracer.md#configuration-options
+[span-lifecycle-c]: ../includes/tracing/common-callbacks.md#span-lifecycle

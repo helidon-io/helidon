@@ -6,7 +6,7 @@ Index of SE documentation.
 |-----------------------------------------------------------------------------------|----------------------------------------|
 | [Introduction](introduction.md) <!--@icon i-lucide-lightbulb -->                  | About Helidon SE                       |
 | [AI](ai/README.md) <!--@icon i-lucide-sparkles -->                                | Index of AI documentation              |
-| [Builder](builder.md) <!--@icon i-lucide-hammer -->                               | Helidon Builder                        |
+| [Builder](builder.md) <!--@icon i-lucide-hammer -->                               | Helidon Builder Support                |
 | [Config](config/README.md) <!--@icon i-lucide-settings -->                        | Index of Config documentation          |
 | [CORS](cors.md) <!--@icon i-lucide-share -->                                      | Helidon CORS Support                   |
 | [Data Repository](data.md) <!--@icon i-lucide-database -->                        | Helidon Data Repository                |

@@ -2,13 +2,19 @@
 
 ## Overview
 
-Helidon supports Bean Validation via its integration with JAX-RS/Jersey. The [Jakarta Bean Validation specification][jakarta-bean-val] defines an API to validate Java beans. Bean Validation is supported in REST resource classes as well as in regular application beans.
+Helidon supports Bean Validation via its integration with JAX-RS/Jersey. The
+[Jakarta Bean Validation specification][jakarta-bean-val] defines an API to
+validate Java beans. Bean Validation is supported in REST resource classes as
+well as in regular application beans.
 
-If bean validation is required outside JAX-RS/Jersey use cases, it is also available in Helidon. It follows the standard [Jakarta Bean Validation specification][jakarta-bean-val] which defines an API to validate Java beans.
+If bean validation is required outside JAX-RS/Jersey use cases, it is also
+available in Helidon. It follows the standard [Jakarta Bean Validation
+specification][jakarta-bean-val] which defines an API to validate Java beans.
 
 ## Maven Coordinates
 
-To enable Bean Validation, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+To enable Bean Validation, add the following dependency to your project’s
+`pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -28,11 +34,24 @@ For general validation, please add to your `pom.xml`:
 
 ## API
 
-The specification defines a small set of built-in constraints. Their usage is encouraged both in regular constraint declarations and as composing constraints. Using this set of constraints will enhance portability of your constraints across constraint-consuming frameworks relying on the metadata API (such as client side validation frameworks or database schema generation frameworks).
+The specification defines a small set of built-in constraints. Their usage is
+encouraged both in regular constraint declarations and as composing constraints.
+Using this set of constraints will enhance portability of your constraints
+across constraint-consuming frameworks relying on the metadata API (such as
+client side validation frameworks or database schema generation frameworks).
 
-Built-in annotations are annotated with an empty `@Constraint` annotation to avoid any dependency between the specification API and a specific implementation. Each Jakarta Bean Validation provider must recognize built-in constraint annotations as valid constraint definitions and provide compliant constraint implementations for each. The built-in constraint validation implementation is having a lower priority than an XML mapping definition. In other words ConstraintValidator implementations for built-in constraints can be overridden by using the XML mapping (see Overriding constraint definitions in XML).
+Built-in annotations are annotated with an empty `@Constraint` annotation to
+avoid any dependency between the specification API and a specific
+implementation. Each Jakarta Bean Validation provider must recognize built-in
+constraint annotations as valid constraint definitions and provide compliant
+constraint implementations for each. The built-in constraint validation
+implementation is having a lower priority than an XML mapping definition. In
+other words ConstraintValidator implementations for built-in constraints can be
+overridden by using the XML mapping (see Overriding constraint definitions in
+XML).
 
-All built-in constraints are in the `jakarta.validation.constraints` package. Here is the list of constraints and their declaration.
+All built-in constraints are in the `jakarta.validation.constraints` package.
+Here is the list of constraints and their declaration.
 
 <table>
 <colgroup>
@@ -296,13 +315,18 @@ All built-in constraints are in the `jakarta.validation.constraints` package. He
 
 Bean Validation can be configured using `META-INF/validation.xml`.
 
-For more information about configuring the validator factory in validation.xml, see [Hibernate Validator Documentation][hibernate-valida].
+For more information about configuring the validator factory in validation.xml,
+see [Hibernate Validator Documentation][hibernate-valida].
 
 ## Examples
 
-1.  The following example shows a simple resource method annotated with `@POST` whose parameter must be *not null* and *valid*. Validating a parameter in this case implies making sure that any constraint annotations in the `Greeting` class are satisfied. The resource method shall never be called if the validation fails, with a 400 (Bad Request) status code returned instead.
+1.  The following example shows a simple resource method annotated with `@POST`
+    whose parameter must be *not null* and *valid*. Validating a parameter in
+    this case implies making sure that any constraint annotations in the
+    `Greeting` class are satisfied. The resource method shall never be called if
+    the validation fails, with a 400 (Bad Request) status code returned instead.
 
-    ``` java
+    ```java
     @Path("helloworld")
     public class HelloWorld {
 
@@ -314,18 +338,21 @@ For more information about configuring the validator factory in validation.xml, 
     }
     ```
 
-2.  The following example shows a simple application with one field declared as *not null* using `@NotNull` annotation:
+2.  The following example shows a simple application with one field declared as
+    *not null* using `@NotNull` annotation:
 
-    ``` java
+    ```java
     public class GreetingHolder {
     @NotNull
     private String greeting;
     }
     ```
 
-    If the bean contains a method parameter annotated with @Valid, and GreetingHolder with *null_greeting is passed, then a \_ValidationException* will be thrown:
+    If the bean contains a method parameter annotated with @Valid, and
+    GreetingHolder with *null_greeting is passed, then a \_ValidationException*
+    will be thrown:
 
-    ``` java
+    ```java
     @ApplicationScoped
     public class GreetingProvider {
     private GreetingHolder greetingHolder;
@@ -337,13 +364,15 @@ For more information about configuring the validator factory in validation.xml, 
     ```
 
     > [!NOTE]
-    > `beans.xml` is required to identify beans and for bean validation to work properly.
+    > `beans.xml` is required to identify beans and for bean validation to work
+    > properly.
 
 Examples are available in [our official GitHub repository][our-official-git].
 
 ## Additional Information
 
-Helidon uses [Hibernate Bean Validator](https://hibernate.org/validator/) for general bean validation.
+Helidon uses [Hibernate Bean Validator](https://hibernate.org/validator/) for
+general bean validation.
 
 ## Reference
 

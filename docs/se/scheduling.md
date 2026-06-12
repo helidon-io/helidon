@@ -2,11 +2,13 @@
 
 ## Overview
 
-Scheduling is an essential feature for the Enterprise. Helidon has its own implementation of Scheduling functionality based on [Cron-utils][cron-utils].
+Scheduling is an essential feature for the Enterprise. Helidon has its own
+implementation of Scheduling functionality based on [Cron-utils][cron-utils].
 
 ## Maven Coordinates
 
-To enable Scheduling, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+To enable Scheduling, add the following dependency to your project’s `pom.xml`
+(see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -17,7 +19,8 @@ To enable Scheduling, add the following dependency to your project’s `pom.xml`
 
 ## Usage
 
-For scheduling periodic tasks, it is possible to choose a fixed rate or a Cron expression.
+For scheduling periodic tasks, it is possible to choose a fixed rate or a Cron
+expression.
 
 ### Fixed rate
 
@@ -32,7 +35,8 @@ FixedRate.builder()
     .build();
 ```
 
-Metadata like human-readable interval description or configured values are available through FixedRateInvocation provided as task parameter.
+Metadata like human-readable interval description or configured values are
+available through FixedRateInvocation provided as task parameter.
 
 Invocation metadata:
 
@@ -46,13 +50,14 @@ FixedRate.builder()
 #### Configuration options
 
 <!--@include ../config/io.helidon.scheduling.FixedRate.md#configuration-options delim=--- offset=2 collapseTables=10 -->
-See [Configuration options](../config/io.helidon.scheduling.FixedRate.md#configuration-options).
+See [Configuration options][io-helidon-sched].
 <!--/include-->
 
 
 ### Cron
 
-For more complicated interval definition, Cron expression can be leveraged with `Scheduling.cron()` builder.
+For more complicated interval definition, Cron expression can be leveraged with
+`Scheduling.cron()` builder.
 
 Scheduling with Cron expression:
 
@@ -65,7 +70,9 @@ Cron.builder()
 
 #### Timezone Configuration
 
-By default, Cron expressions are evaluated using the system’s default timezone. You can specify a custom timezone to control when the cron expression triggers, regardless of the system’s timezone.
+By default, Cron expressions are evaluated using the system’s default timezone.
+You can specify a custom timezone to control when the cron expression triggers,
+regardless of the system’s timezone.
 
 Scheduling with custom timezone:
 
@@ -77,12 +84,15 @@ Cron.builder()
     .build();
 ```
 
-The timezone determines when the cron expression triggers. For example, a cron expression `0 0 9 * * ?` (every day at 9:00 AM) with zone `America/New_York` will trigger at 9:00 AM Eastern Time, regardless of the server’s timezone setting.
+The timezone determines when the cron expression triggers. For example, a cron
+expression `0 0 9 * * ?` (every day at 9:00 AM) with zone `America/New_York`
+will trigger at 9:00 AM Eastern Time, regardless of the server’s timezone
+setting.
 
 #### Configuration options
 
 <!--@include ../config/io.helidon.scheduling.Cron.md#configuration-options delim=--- offset=2 collapseTables=10 -->
-See [Configuration options](../config/io.helidon.scheduling.Cron.md#configuration-options).
+See [Configuration options][io-helidon-sched-2].
 <!--/include-->
 
 ### Cron expression
@@ -130,7 +140,8 @@ Field formats
 
 Examples
 
-Metadata like human-readable interval description or configured values are available through CronInvocation provided as task parameter.
+Metadata like human-readable interval description or configured values are
+available through CronInvocation provided as task parameter.
 
 ## Configuration
 
@@ -153,9 +164,17 @@ FixedRate.builder()
 
 ## Task Management
 
-A `io.helidon.scheduling.TaskManager` can be used to manage tasks that are started within Helidon. When using imperative programming model, you can either provide a custom implementation of this interface to task builder (method `taskManager`), or you can use the "default" one that can be obtained by invoking `io.helidon.service.registry.Services.get(TaskManager.class)`. When using the default `TaskManager` from `io.helidon.service.registry.Services`, there is no need to explicitly register it with the task builders.
+A `io.helidon.scheduling.TaskManager` can be used to manage tasks that are
+started within Helidon. When using imperative programming model, you can either
+provide a custom implementation of this interface to task builder (method
+`taskManager`), or you can use the "default" one that can be obtained by
+invoking `io.helidon.service.registry.Services.get(TaskManager.class)`. When
+using the default `TaskManager` from `io.helidon.service.registry.Services`,
+there is no need to explicitly register it with the task builders.
 
-When using declarative programming model, the `TaskManager` can be injected. It is a `Singleton` service that will be used by all scheduled tasks in the current application.
+When using declarative programming model, the `TaskManager` can be injected. It
+is a `Singleton` service that will be used by all scheduled tasks in the current
+application.
 
 ## Examples
 
@@ -174,7 +193,8 @@ FixedRate.builder()
     .build();
 ```
 
-Metadata like human-readable interval description or configured values are available through `FixedRateInvocation` provided as task parameter.
+Metadata like human-readable interval description or configured values are
+available through `FixedRateInvocation` provided as task parameter.
 
 Example with invocation metadata:
 
@@ -192,3 +212,5 @@ FixedRate.builder()
 
 [cron-utils]: https://github.com/jmrozanec/cron-utils
 [helidon-scheduli]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.scheduling/io/helidon/microprofile/scheduling/package-summary.html
+[io-helidon-sched]: ../config/io.helidon.scheduling.FixedRate.md#configuration-options
+[io-helidon-sched-2]: ../config/io.helidon.scheduling.Cron.md#configuration-options

@@ -2,13 +2,26 @@
 
 ## Overview
 
-Reactive messaging offers a new way of processing messages that is different from the older method of using message-driven beans. One significant difference is that blocking is no longer the only way to apply backpressure to the message source.
+Reactive messaging offers a new way of processing messages that is different
+from the older method of using message-driven beans. One significant difference
+is that blocking is no longer the only way to apply backpressure to the message
+source.
 
-Reactive messaging uses reactive streams as message channels so you can construct very effective pipelines for working with the messages or, if you prefer, you can continue to use older messaging methods. Like the message-driven beans, [MicroProfile Reactive Messaging][microprofile-rea] uses CDI beans to produce, consume or process messages over Reactive Streams. These messaging beans are expected to be either `ApplicationScoped` or `Dependent` scoped. Messages are managed by methods annotated by `@Incoming` and `@Outgoing` and the invocation is always driven by message core - either at assembly time, or for every message coming from the stream.
+Reactive messaging uses reactive streams as message channels so you can
+construct very effective pipelines for working with the messages or, if you
+prefer, you can continue to use older messaging methods. Like the message-driven
+beans, [MicroProfile Reactive Messaging][microprofile-rea] uses CDI beans to
+produce, consume or process messages over Reactive Streams. These messaging
+beans are expected to be either `ApplicationScoped` or `Dependent` scoped.
+Messages are managed by methods annotated by `@Incoming` and `@Outgoing` and the
+invocation is always driven by message core - either at assembly time, or for
+every message coming from the stream.
 
 ## Maven Coordinates
 
-To enable MicroProfile Reactive Messaging, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable MicroProfile Reactive Messaging, add the following dependency to your
+project’s `pom.xml` (see [Managing
+Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -37,22 +50,31 @@ To include health checks for Messaging add the following dependency:
 
 ### Channels
 
-Reactive messaging uses named channels to connect one source (upstream) with one consumer (downstream). Each channel needs to have both ends connected otherwise the container cannot successfully start.
+Reactive messaging uses named channels to connect one source (upstream) with one
+consumer (downstream). Each channel needs to have both ends connected otherwise
+the container cannot successfully start.
 
 <figure>
 <img src="../../images/msg/channel.svg" alt="Messaging Channel" />
 </figure>
 
-Channels can be connected either to [emitter](#emitter) (1), [producing method](#producing-method) (2) or [connector](#connector) (3) on the upstream side. And [injected publisher](#injected-publisher) (4), [consuming method](#consuming-method) (5) or [connector](#connector) (6) on the downstream.
+Channels can be connected either to [emitter](#emitter) (1), [producing
+method](#producing-method) (2) or [connector](#connector) (3) on the upstream
+side. And [injected publisher](#injected-publisher) (4), [consuming
+method](#consuming-method) (5) or [connector](#connector) (6) on the downstream.
 
 #### Consuming Method
 
-Consuming methods can be connected to the channel’s downstream to consume the message coming through the channel. The incoming annotation has one required attribute `value` that defines the channel name.
+Consuming methods can be connected to the channel’s downstream to consume the
+message coming through the channel. The incoming annotation has one required
+attribute `value` that defines the channel name.
 
 Consuming method can function in two ways:
 
-- consume every message coming from the stream connected to the [channels](#channels) - invoked per each message
-- prepare reactive stream’s subscriber and connect it to the channel - invoked only once during the channel construction
+- consume every message coming from the stream connected to the
+  [channels](#channels) - invoked per each message
+- prepare reactive stream’s subscriber and connect it to the channel - invoked
+  only once during the channel construction
 
 Example consuming every message from channel example-channel-2:
 
@@ -76,14 +98,17 @@ public Subscriber<String> printMessage() {
 
 #### Injected Publisher
 
-Directly injected publisher can be connected as a channel downstream, you can consume the data from the channel by subscribing to it.
+Directly injected publisher can be connected as a channel downstream, you can
+consume the data from the channel by subscribing to it.
 
 Helidon can inject following types of publishers:
 
 - `Publisher<PAYLOAD>` - Reactive streams publisher with unwrapped payload
 - `Publisher<Message<PAYLOAD>>` - Reactive streams publisher with whole message
-- `PublisherBuilder<PAYLOAD>` - MP Reactive streams operators publisher builder with unwrapped payload
-- `PublisherBuilder<Message<PAYLOAD>>` - MP Reactive streams operators publisher builder with whole message
+- `PublisherBuilder<PAYLOAD>` - MP Reactive streams operators publisher builder
+  with unwrapped payload
+- `PublisherBuilder<Message<PAYLOAD>>` - MP Reactive streams operators publisher
+  builder with whole message
 - `Flow.Publisher<PAYLOAD>` - JDK’s flow publisher with unwrapped payload
 - `Flow.Publisher<Message<PAYLOAD>>` - JDK’s flow publisher with whole message
 - `Multi<PAYLOAD>` - Helidon flow reactive operators with unwrapped payload
@@ -103,7 +128,8 @@ public MyBean(@Channel("example-channel-1") Multi<String> multiChannel) {
 
 #### Producing Method
 
-The annotation has one required attribute `value` that defines the [channel][channel] name.
+The annotation has one required attribute `value` that defines the
+[channel][channel] name.
 
 The annotated messaging method can function in two ways:
 
@@ -134,7 +160,9 @@ public Publisher<String> printMessage() {
 
 ### Emitter
 
-To send messages from imperative code, you can inject a special channel source called an emitter. Emitter can serve only as an upstream, source of the messages, for messaging channel.
+To send messages from imperative code, you can inject a special channel source
+called an emitter. Emitter can serve only as an upstream, source of the
+messages, for messaging channel.
 
 Example of sending message from JAX-RS method to channel example-channel-1:
 
@@ -152,7 +180,11 @@ public Response sendMessage(final String payload) {
 }
 ```
 
-Emitters, as a source of messages for reactive channels, need to address possible backpressure from the downstream side of the channel. In case there is not enough demand from the downstream, you can configure a buffer size strategy using the `@OnOverflow` annotation. Additional overflow strategies are described below.
+Emitters, as a source of messages for reactive channels, need to address
+possible backpressure from the downstream side of the channel. In case there is
+not enough demand from the downstream, you can configure a buffer size strategy
+using the `@OnOverflow` annotation. Additional overflow strategies are described
+below.
 
 | Strategy         | Description                                                                                                                                                                                                                                                                  |
 |------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -168,13 +200,16 @@ Overflow strategies
 
 #### Processing Method
 
-Such [methods][methods] acts as processors, consuming messages from one channel and producing to another.
+Such [methods][methods] acts as processors, consuming messages from one channel
+and producing to another.
 
 <figure>
 <img src="../../images/msg/processor.svg" alt="Processor method connecting two channels together" />
 </figure>
 
-Diagram shows how processing method (2) serves as a downstream to the `my-channel` (1) and an upstream to the `other-channel` (3), connecting them together.
+Diagram shows how processing method (2) serves as a downstream to the
+`my-channel` (1) and an upstream to the `other-channel` (3), connecting them
+together.
 
 Processing method can function in multiple ways:
 
@@ -219,10 +254,13 @@ public Publisher<String> processMessage(String msg) {
 
 ### Connector
 
-Messaging connector is an application-scoped bean that implements one or both of following interfaces:
+Messaging connector is an application-scoped bean that implements one or both of
+following interfaces:
 
-- `IncomingConnectorFactory` - connector can create an upstream publisher to produce messages to a channel
-- `OutgoingConnectorFactory` - connector can create a downstream subscriber to consume messages from a channel
+- `IncomingConnectorFactory` - connector can create an upstream publisher to
+  produce messages to a channel
+- `OutgoingConnectorFactory` - connector can create a downstream subscriber to
+  consume messages from a channel
 
 Example connector example-connector:
 
@@ -248,7 +286,11 @@ public class ExampleConnector implements IncomingConnectorFactory, OutgoingConne
 
 ### Message
 
-The Reactive Messaging [Message][message] class can be used to wrap or unwrap data items between methods and connectors. The message wrapping and unwrapping can be performed explicitly by using `org.eclipse.microprofile.reactive.messaging.Message#of(T)` or implicitly through the messaging core.
+The Reactive Messaging [Message][message] class can be used to wrap or unwrap
+data items between methods and connectors. The message wrapping and unwrapping
+can be performed explicitly by using
+`org.eclipse.microprofile.reactive.messaging.Message#of(T)` or implicitly
+through the messaging core.
 
 Example of explicit and implicit wrapping and unwrapping:
 
@@ -272,7 +314,16 @@ public void consumeImplicitlyUnwrappedMessage(String value) {
 
 ### Acknowledgement
 
-Messages carry a callback for reception acknowledgement (ack) and negative acknowledgement (nack). An acknowledgement in messaging methods is possible manually by `org.eclipse.microprofile.reactive.messaging.Message#ack` or automatically according explicit or implicit acknowledgement strategy by the messaging core. Explicit strategy configuration is possible with `@Acknowledgment` annotation which has one required attribute `value` that expects the strategy type from enum `org.eclipse.microprofile.reactive.messaging.Acknowledgment.Strategy`. More information about supported signatures and implicit automatic acknowledgement can be found in specification [Message acknowledgement][message-acknowle].
+Messages carry a callback for reception acknowledgement (ack) and negative
+acknowledgement (nack). An acknowledgement in messaging methods is possible
+manually by `org.eclipse.microprofile.reactive.messaging.Message#ack` or
+automatically according explicit or implicit acknowledgement strategy by the
+messaging core. Explicit strategy configuration is possible with
+`@Acknowledgment` annotation which has one required attribute `value` that
+expects the strategy type from enum
+`org.eclipse.microprofile.reactive.messaging.Acknowledgment.Strategy`. More
+information about supported signatures and implicit automatic acknowledgement
+can be found in specification [Message acknowledgement][message-acknowle].
 
 | Acknowledgment                                             | Description                                              |
 |------------------------------------------------------------|----------------------------------------------------------|
@@ -372,12 +423,16 @@ public CompletionStage<Void> receiveAndAckMessage(Message<String> msg) {
 
 ### Health Check
 
-Messaging in Helidon has built in health probes for liveness and readiness. To activate it add the [health check dependency](#maven-coordinates).
+Messaging in Helidon has built in health probes for liveness and readiness. To
+activate it add the [health check dependency](#maven-coordinates).
 
-- Liveness - channel is considered UP until `cancel` or `onError` signal is intercepted on it.
-- Readiness - channel is considered DOWN until `onSubscribe` signal is intercepted on it.
+- Liveness - channel is considered UP until `cancel` or `onError` signal is
+  intercepted on it.
+- Readiness - channel is considered DOWN until `onSubscribe` signal is
+  intercepted on it.
 
-If you check your health endpoints `/health/live` and `/health/ready` you will discover every messaging channel to have its own probe.
+If you check your health endpoints `/health/live` and `/health/ready` you will
+discover every messaging channel to have its own probe.
 
 ```json
 {
@@ -392,7 +447,8 @@ If you check your health endpoints `/health/live` and `/health/ready` you will d
 ```
 
 > [!CAUTION]
-> Due to the nack support are exceptions thrown in messaging methods NOT translated to error and cancel signals implicitly anymore
+> Due to the nack support are exceptions thrown in messaging methods NOT
+> translated to error and cancel signals implicitly anymore
 
 ## Configuration
 
@@ -405,8 +461,10 @@ mp.messaging.outgoing.to-connector-channel.connector: example-connector
 mp.messaging.incoming.from-connector-channel.connector: example-connector
 ```
 
-- Use connector `example-connector` as a downstream for channel `to-connector-channel` to consume the messages from the channel
-- Use connector `example-connector` as an upstream for channel `to-connector-channel` to produce messages to the channel
+- Use connector `example-connector` as a downstream for channel
+  `to-connector-channel` to consume the messages from the channel
+- Use connector `example-connector` as an upstream for channel
+  `to-connector-channel` to produce messages to the channel
 
 Example producing to connector:
 
@@ -432,7 +490,9 @@ public void consume(String value) {
 // >Consuming:bar
 ```
 
-When the connector constructs a publisher or subscriber for a given channel, it can access general connector configuration and channel-specific properties merged together with special synthetic property `channel-name`.
+When the connector constructs a publisher or subscriber for a given channel, it
+can access general connector configuration and channel-specific properties
+merged together with special synthetic property `channel-name`.
 
 <figure>
 <img src="../../images/msg/connector-config.svg" alt="Connector config" />

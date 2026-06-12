@@ -6,7 +6,8 @@ This module adds support for selected Open AI models.
 
 ## Maven Coordinates
 
-In addition to the [Helidon integration with LangChain4j core dependencies](langchain4j.md#maven-coordinates), you must add the following:
+In addition to the [Helidon integration with LangChain4j core
+dependencies][helidon-integrat], you must add the following:
 
 ```xml [pom.xml]
 <dependency>
@@ -17,7 +18,8 @@ In addition to the [Helidon integration with LangChain4j core dependencies](lang
 
 ## OpenAiChatModel
 
-To automatically create and add `OpenAiChatModel` to the service registry add the following lines to `application.yaml`:
+To automatically create and add `OpenAiChatModel` to the service registry add
+the following lines to `application.yaml`:
 
 ```yaml [application.yaml]
 langchain4j:
@@ -31,7 +33,8 @@ langchain4j:
       model-name: "gpt-4o-mini"
 ```
 
-If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+If `enabled` is set to `false`, the configuration is ignored, and the component
+is not created.
 
 ### Configuration options
 
@@ -68,21 +71,29 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 The framework attempts to resolve a proxy using the following strategy:
 
-1.  **Check for a named service**: Look in the service registry for a service of type `java.net.Proxy` with the name `open-ai.chat-model`.
-2.  **Fallback to another named service**: If the first service is not found, search for a `java.net.Proxy` service with the name `open-ai`.
-3.  **No proxy**: If neither service is found, the framework will not use a proxy.
+1.  **Check for a named service**: Look in the service registry for a service of
+    type `java.net.Proxy` with the name `open-ai.chat-model`.
+2.  **Fallback to another named service**: If the first service is not found,
+    search for a `java.net.Proxy` service with the name `open-ai`.
+3.  **No proxy**: If neither service is found, the framework will not use a
+    proxy.
 
 #### Tokenizer
 
 The framework attempts to resolve a tokenizer using the following strategy:
 
-1.  **Check for a named service**: Look in the service registry for a service of type `dev.langchain4j.model.Tokenizer` with the name `open-ai.chat-model`.
-2.  **Fallback to another named service**: If the first service is not found, search for a `dev.langchain4j.model.Tokenizer` service with the name `open-ai`.
-3.  **Default Tokenizer**: If neither service is found, the framework will use the default tokenizer provided by LangChain4j.
+1.  **Check for a named service**: Look in the service registry for a service of
+    type `dev.langchain4j.model.Tokenizer` with the name `open-ai.chat-model`.
+2.  **Fallback to another named service**: If the first service is not found,
+    search for a `dev.langchain4j.model.Tokenizer` service with the name
+    `open-ai`.
+3.  **Default Tokenizer**: If neither service is found, the framework will use
+    the default tokenizer provided by LangChain4j.
 
 ## OpenAiEmbeddingModel
 
-To automatically create and add `OpenAiEmbeddingModel` to the service registry add the following lines to `application.yaml`:
+To automatically create and add `OpenAiEmbeddingModel` to the service registry
+add the following lines to `application.yaml`:
 
 ```yaml [application.yaml]
 langchain4j:
@@ -96,7 +107,8 @@ langchain4j:
       model-name: "text-embedding-3-small"
 ```
 
-If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+If `enabled` is set to `false`, the configuration is ignored, and the component
+is not created.
 
 ### Configuration options
 
@@ -121,21 +133,30 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 The framework attempts to resolve a proxy using the following strategy:
 
-1.  **Check for a named service**: Look in the service registry for a service of type `java.net.Proxy` with the name `open-ai.embedding-model`.
-2.  **Fallback to another named service**: If the first service is not found, search for a `java.net.Proxy` service with the name `open-ai`.
-3.  **No proxy**: If neither service is found, the framework will not use a proxy.
+1.  **Check for a named service**: Look in the service registry for a service of
+    type `java.net.Proxy` with the name `open-ai.embedding-model`.
+2.  **Fallback to another named service**: If the first service is not found,
+    search for a `java.net.Proxy` service with the name `open-ai`.
+3.  **No proxy**: If neither service is found, the framework will not use a
+    proxy.
 
 ### Tokenizer
 
 The framework attempts to resolve a tokenizer using the following strategy:
 
-1.  **Check for a named service**: Look in the service registry for a service of type `dev.langchain4j.model.Tokenizer` with the name `open-ai.embedding-model`.
-2.  **Fallback to another named service**: If the first service is not found, search for a `dev.langchain4j.model.Tokenizer` service with the name `open-ai`.
-3.  **Default Tokenizer**: If neither service is found, the framework will use the default tokenizer provided by LangChain4j.
+1.  **Check for a named service**: Look in the service registry for a service of
+    type `dev.langchain4j.model.Tokenizer` with the name
+    `open-ai.embedding-model`.
+2.  **Fallback to another named service**: If the first service is not found,
+    search for a `dev.langchain4j.model.Tokenizer` service with the name
+    `open-ai`.
+3.  **Default Tokenizer**: If neither service is found, the framework will use
+    the default tokenizer provided by LangChain4j.
 
 ## OpenAiImageModel
 
-To automatically create and add `OpenAiImageModel` to the service registry add the following lines to `application.yaml`:
+To automatically create and add `OpenAiImageModel` to the service registry add
+the following lines to `application.yaml`:
 
 ```yaml [application.yaml]
 langchain4j:
@@ -149,7 +170,8 @@ langchain4j:
       model-name: "gpt-image-1"
 ```
 
-If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+If `enabled` is set to `false`, the configuration is ignored, and the component
+is not created.
 
 ### Configuration options
 
@@ -179,13 +201,17 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 The framework attempts to resolve a proxy using the following strategy:
 
-1.  **Check for a named service**: Look in the service registry for a service of type `java.net.Proxy` with the name `open-ai.image-model`.
-2.  **Fallback to another named service**: If the first service is not found, search for a `java.net.Proxy` service with the name `open-ai`.
-3.  **No proxy**: If neither service is found, the framework will not use a proxy.
+1.  **Check for a named service**: Look in the service registry for a service of
+    type `java.net.Proxy` with the name `open-ai.image-model`.
+2.  **Fallback to another named service**: If the first service is not found,
+    search for a `java.net.Proxy` service with the name `open-ai`.
+3.  **No proxy**: If neither service is found, the framework will not use a
+    proxy.
 
 ## OpenAiLanguageModel
 
-To automatically create and add `OpenAiLanguageModel` to the service registry add the following lines to `application.yaml`:
+To automatically create and add `OpenAiLanguageModel` to the service registry
+add the following lines to `application.yaml`:
 
 ```yaml [application.yaml]
 langchain4j:
@@ -199,7 +225,8 @@ langchain4j:
       model-name: "gpt-4o-mini"
 ```
 
-If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+If `enabled` is set to `false`, the configuration is ignored, and the component
+is not created.
 
 ### Configuration options
 
@@ -223,21 +250,30 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 The framework attempts to resolve a proxy using the following strategy:
 
-1.  **Check for a named service**: Look in the service registry for a service of type `java.net.Proxy` with the name `open-ai.language-model`.
-2.  **Fallback to another named service**: If the first service is not found, search for a `java.net.Proxy` service with the name `open-ai`.
-3.  **No proxy**: If neither service is found, the framework will not use a proxy.
+1.  **Check for a named service**: Look in the service registry for a service of
+    type `java.net.Proxy` with the name `open-ai.language-model`.
+2.  **Fallback to another named service**: If the first service is not found,
+    search for a `java.net.Proxy` service with the name `open-ai`.
+3.  **No proxy**: If neither service is found, the framework will not use a
+    proxy.
 
 ### Tokenizer
 
 The framework attempts to resolve a tokenizer using the following strategy:
 
-1.  **Check for a named service**: Look in the service registry for a service of type `dev.langchain4j.model.Tokenizer` with the name `open-ai.language-model`.
-2.  **Fallback to another named service**: If the first service is not found, search for a `dev.langchain4j.model.Tokenizer` service with the name `open-ai`.
-3.  **Default Tokenizer**: If neither service is found, the framework will use the default tokenizer provided by LangChain4j.
+1.  **Check for a named service**: Look in the service registry for a service of
+    type `dev.langchain4j.model.Tokenizer` with the name
+    `open-ai.language-model`.
+2.  **Fallback to another named service**: If the first service is not found,
+    search for a `dev.langchain4j.model.Tokenizer` service with the name
+    `open-ai`.
+3.  **Default Tokenizer**: If neither service is found, the framework will use
+    the default tokenizer provided by LangChain4j.
 
 ## OpenAiModerationModel
 
-To automatically create and add `OpenAiModerationModel` to the service registry add the following lines to `application.yaml`:
+To automatically create and add `OpenAiModerationModel` to the service registry
+add the following lines to `application.yaml`:
 
 ```yaml [application.yaml]
 langchain4j:
@@ -251,7 +287,8 @@ langchain4j:
       model-name: "omni-moderation-latest"
 ```
 
-If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+If `enabled` is set to `false`, the configuration is ignored, and the component
+is not created.
 
 ### Configuration options
 
@@ -274,13 +311,17 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 The framework attempts to resolve a proxy using the following strategy:
 
-1.  **Check for a named service**: Look in the service registry for a service of type `java.net.Proxy` with the name `open-ai.moderation-model`.
-2.  **Fallback to another named service**: If the first service is not found, search for a `java.net.Proxy` service with the name `open-ai`.
-3.  **No proxy**: If neither service is found, the framework will not use a proxy.
+1.  **Check for a named service**: Look in the service registry for a service of
+    type `java.net.Proxy` with the name `open-ai.moderation-model`.
+2.  **Fallback to another named service**: If the first service is not found,
+    search for a `java.net.Proxy` service with the name `open-ai`.
+3.  **No proxy**: If neither service is found, the framework will not use a
+    proxy.
 
 ## OpenAiStreamingChatModel
 
-To automatically create and add `OpenAiStreamingChatModel` to the service registry add the following lines to `application.yaml`:
+To automatically create and add `OpenAiStreamingChatModel` to the service
+registry add the following lines to `application.yaml`:
 
 ```yaml [application.yaml]
 langchain4j:
@@ -294,7 +335,8 @@ langchain4j:
       model-name: "gpt-4o-mini"
 ```
 
-If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+If `enabled` is set to `false`, the configuration is ignored, and the component
+is not created.
 
 ### Configuration options
 
@@ -329,17 +371,25 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 The framework attempts to resolve a proxy using the following strategy:
 
-1.  **Check for a named service**: Look in the service registry for a service of type `java.net.Proxy` with the name `open-ai.streaming-chat-model`.
-2.  **Fallback to another named service**: If the first service is not found, search for a `java.net.Proxy` service with the name `open-ai`.
-3.  **No proxy**: If neither service is found, the framework will not use a proxy.
+1.  **Check for a named service**: Look in the service registry for a service of
+    type `java.net.Proxy` with the name `open-ai.streaming-chat-model`.
+2.  **Fallback to another named service**: If the first service is not found,
+    search for a `java.net.Proxy` service with the name `open-ai`.
+3.  **No proxy**: If neither service is found, the framework will not use a
+    proxy.
 
 ### Tokenizer
 
 The framework attempts to resolve a tokenizer using the following strategy:
 
-1.  **Check for a named service**: Look in the service registry for a service of type `dev.langchain4j.model.Tokenizer` with the name `open-ai.streaming-chat-model`.
-2.  **Fallback to another named service**: If the first service is not found, search for a `dev.langchain4j.model.Tokenizer` service with the name `open-ai`.
-3.  **Default Tokenizer**: If neither service is found, the framework will use the default tokenizer provided by LangChain4j.
+1.  **Check for a named service**: Look in the service registry for a service of
+    type `dev.langchain4j.model.Tokenizer` with the name
+    `open-ai.streaming-chat-model`.
+2.  **Fallback to another named service**: If the first service is not found,
+    search for a `dev.langchain4j.model.Tokenizer` service with the name
+    `open-ai`.
+3.  **Default Tokenizer**: If neither service is found, the framework will use
+    the default tokenizer provided by LangChain4j.
 
 ## Additional Information
 
@@ -352,3 +402,4 @@ The framework attempts to resolve a tokenizer using the following strategy:
 [langchain4j-open]: https://docs.langchain4j.dev/integrations/language-models/open-ai
 [openai-api-docum]: https://platform.openai.com/docs/introduction
 [openai-api-refer]: https://platform.openai.com/docs/api-reference
+[helidon-integrat]: langchain4j.md#maven-coordinates

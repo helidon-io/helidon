@@ -1,10 +1,12 @@
 # Introduction
 
-Helidon SE is Helidon’s foundational set of APIs and, as of Helidon 4, it uses virtual threads to enable these APIs to change from asynchronous to blocking.
+Helidon SE is Helidon’s foundational set of APIs and, as of Helidon 4, it uses
+virtual threads to enable these APIs to change from asynchronous to blocking.
 
 ## Components
 
-The REST framework for Helidon SE is the Helidon WebServer. It was built from the ground up to take full advantage of Java 21’s virtual threads.
+The REST framework for Helidon SE is the Helidon WebServer. It was built from
+the ground up to take full advantage of Java 21’s virtual threads.
 
 Helidon SE supports a number of additional Helidon features:
 
@@ -42,7 +44,8 @@ In case you need to upgrade the version of Helidon, follow the upgrade guides:
 
 ## Next Steps
 
-Try the Helidon SE quickstart guides to get your first Helidon SE application up and running in minutes.
+Try the Helidon SE quickstart guides to get your first Helidon SE application up
+and running in minutes.
 
 | Name | Description |
 | --- | --- |

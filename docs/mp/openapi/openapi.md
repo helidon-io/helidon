@@ -2,9 +2,12 @@
 
 ## Overview
 
-The [OpenAPI specification][openapi-specific] defines a standard way to express the interface exposed by a REST service.
+The [OpenAPI specification][openapi-specific] defines a standard way to express
+the interface exposed by a REST service.
 
-The [MicroProfile OpenAPI spec][microprofile-ope] explains how MicroProfile embraces OpenAPI, adding annotations, configuration, and a service provider interface (SPI).
+The [MicroProfile OpenAPI spec][microprofile-ope] explains how MicroProfile
+embraces OpenAPI, adding annotations, configuration, and a service provider
+interface (SPI).
 
 Helidon MP implements the MicroProfile OpenAPI specification.
 
@@ -13,21 +16,27 @@ The OpenAPI support in Helidon MP performs two main tasks:
 - Build an in-memory model of the REST API your service implements.
 - Expose the model in text format (YAML or JSON) via the `/openapi` endpoint.
 
-To construct the model, Helidon gathers information about the service API from whichever of these sources are present in the application:
+To construct the model, Helidon gathers information about the service API from
+whichever of these sources are present in the application:
 
 - a static OpenAPI document file packaged as part of your service;
 - a *model reader*
 
-  The SPI defines an interface you can implement in your application for programmatically providing part or all of the model;
+  The SPI defines an interface you can implement in your application for
+  programmatically providing part or all of the model;
 
 - OpenAPI annotations;
 - a *filter* class
 
-  The SPI defines an interface you can implement in your application which can mask parts of the model.
+  The SPI defines an interface you can implement in your application which can
+  mask parts of the model.
 
 ## Maven Coordinates
 
-To enable MicroProfile OpenAPI, either add a dependency on the [helidon-microprofile bundle](../introduction.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable MicroProfile OpenAPI, either add a dependency on the
+[helidon-microprofile bundle](../introduction.md) or add the following
+dependency to your project’s `pom.xml` (see [Managing
+Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -37,7 +46,9 @@ To enable MicroProfile OpenAPI, either add a dependency on the [helidon-micropro
 </dependency>
 ```
 
-If you do not use the `helidon-microprofile-bundle` also add the following dependency which defines the MicroProfile OpenAPI annotations so you can use them in your code:
+If you do not use the `helidon-microprofile-bundle` also add the following
+dependency which defines the MicroProfile OpenAPI annotations so you can use
+them in your code:
 
 ```xml [pom.xml]
 <dependency>
@@ -50,24 +61,33 @@ If you do not use the `helidon-microprofile-bundle` also add the following depen
 
 ### OpenAPI support in Helidon MP
 
-You can very simply add support for OpenAPI to your Helidon MP application. This document shows what changes you need to make to your application and how to access the OpenAPI document for your application at runtime.
+You can very simply add support for OpenAPI to your Helidon MP application. This
+document shows what changes you need to make to your application and how to
+access the OpenAPI document for your application at runtime.
 
 ### Changing your application
 
-To use OpenAPI from your Helidon MP app, in addition to adding dependencies as described above:
+To use OpenAPI from your Helidon MP app, in addition to adding dependencies as
+described above:
 
 1.  Furnish OpenAPI information about your application’s endpoints.
 2.  Update your application’s configuration (optional).
 
 #### Furnish OpenAPI information about your endpoints
 
-Helidon MP OpenAPI combines information from all of the following sources as it builds its in-memory model of your application’s API. It constructs the OpenAPI document from this internal model. Your application can use one or more of these techniques.
+Helidon MP OpenAPI combines information from all of the following sources as it
+builds its in-memory model of your application’s API. It constructs the OpenAPI
+document from this internal model. Your application can use one or more of these
+techniques.
 
 ##### Annotations on the endpoints in your app
 
-You can add MicroProfile OpenAPI annotations to the endpoints in your source code. These annotations allow the Helidon MP OpenAPI runtime to discover the endpoints and information about them via CDI at app start-up.
+You can add MicroProfile OpenAPI annotations to the endpoints in your source
+code. These annotations allow the Helidon MP OpenAPI runtime to discover the
+endpoints and information about them via CDI at app start-up.
 
-Here is one of the endpoints, annotated for OpenAPI, from the example mentioned earlier:
+Here is one of the endpoints, annotated for OpenAPI, from the example mentioned
+earlier:
 
 ```java
 @GET
@@ -85,45 +105,75 @@ public JsonObject getDefaultMessage() {
 ```
 
 - `@Operation` gives information about this endpoint.
-- `@APIResponse` describes the HTTP response and declares its media type and contents.
+- `@APIResponse` describes the HTTP response and declares its media type and
+  contents.
 
-You can also define any request parameters the endpoint expects, although this endpoint uses none.
+You can also define any request parameters the endpoint expects, although this
+endpoint uses none.
 
-This excerpt shows only a few annotations for illustration. The [Helidon MP OpenAPI basic example][helidon-mp-opena] illustrates more, and the [MicroProfile OpenAPI spec][microprofile-ope] describes them all.
+This excerpt shows only a few annotations for illustration. The [Helidon MP
+OpenAPI basic example][helidon-mp-opena] illustrates more, and the [MicroProfile
+OpenAPI spec][microprofile-ope] describes them all.
 
 ##### A static OpenAPI file
 
-Add a static file at `META-INF/openapi.yml`, `META-INF/openapi.yaml`, or `META-INF/openapi.json`. Tools such as Swagger let you describe your app’s API and they then generate an OpenAPI document file which you can include in your application so OpenAPI can use it.
+Add a static file at `META-INF/openapi.yml`, `META-INF/openapi.yaml`, or
+`META-INF/openapi.json`. Tools such as Swagger let you describe your app’s API
+and they then generate an OpenAPI document file which you can include in your
+application so OpenAPI can use it.
 
 ##### A model reader class your application provides
 
-Write a Java class that implements the OpenAPI [`org.eclipse.microprofile.openapi.OASModelReader`][org-eclipse-micr] interface. Your model reader code programmatically adds elements to the internal model that OpenAPI builds.
+Write a Java class that implements the OpenAPI
+[`org.eclipse.microprofile.openapi.OASModelReader`][org-eclipse-micr] interface.
+Your model reader code programmatically adds elements to the internal model that
+OpenAPI builds.
 
-Then set the `mp.openapi.model.reader` configuration property to the fully-qualified name of your model reader class.
+Then set the `mp.openapi.model.reader` configuration property to the
+fully-qualified name of your model reader class.
 
 ##### A filter class your application provides
 
-Write a Java class that implements the OpenAPI [`org.eclipse.microprofile.openapi.OASFilter`][org-eclipse-micr-2] interface. Helidon invokes your filter methods for each element of the in-memory model, allowing your code to modify an element or completely remove it from the model.
+Write a Java class that implements the OpenAPI
+[`org.eclipse.microprofile.openapi.OASFilter`][org-eclipse-micr-2] interface.
+Helidon invokes your filter methods for each element of the in-memory model,
+allowing your code to modify an element or completely remove it from the model.
 
-Then set the `mp.openapi.filter` configuration property to the fully-qualified name of your filter class.
+Then set the `mp.openapi.filter` configuration property to the fully-qualified
+name of your filter class.
 
 ### Update your application configuration
 
-Beyond the two config properties that denote the model reader and filter, Helidon MP OpenAPI supports a number of other mandated settings. These are described in the [configuration section][configuration-se] of the MicroProfile OpenAPI spec.
+Beyond the two config properties that denote the model reader and filter,
+Helidon MP OpenAPI supports a number of other mandated settings. These are
+described in the [configuration section][configuration-se] of the MicroProfile
+OpenAPI spec.
 
 ### Accessing the REST Endpoint
 
-Once you have added the MP OpenAPI dependency to your project, then your application responds to the built-in endpoint — `/openapi` — and returns the OpenAPI document describing the endpoints in your application.
+Once you have added the MP OpenAPI dependency to your project, then your
+application responds to the built-in endpoint — `/openapi` — and returns the
+OpenAPI document describing the endpoints in your application.
 
-Per the MicroProfile OpenAPI spec, the default format of the OpenAPI document is YAML. There is not yet an adopted IANA YAML media type, but a proposed one specifically for OpenAPI documents that has some support is `application/vnd.oai.openapi`. That is what Helidon returns by default.
+Per the MicroProfile OpenAPI spec, the default format of the OpenAPI document is
+YAML. There is not yet an adopted IANA YAML media type, but a proposed one
+specifically for OpenAPI documents that has some support is
+`application/vnd.oai.openapi`. That is what Helidon returns by default.
 
-In addition, a client can specify the HTTP header `Accept` as either `application/vnd.oai.openapi+json` or `application/json` to request JSON. Alternatively, the client can pass the query parameter `format` as either `JSON` or `YAML` to receive `application/json` or `application/vnd.oai.openapi` (YAML) output, respectively.
+In addition, a client can specify the HTTP header `Accept` as either
+`application/vnd.oai.openapi+json` or `application/json` to request JSON.
+Alternatively, the client can pass the query parameter `format` as either `JSON`
+or `YAML` to receive `application/json` or `application/vnd.oai.openapi` (YAML)
+output, respectively.
 
 ## API
 
-The [MicroProfile OpenAPI specification][microprofile-ope] gives a listing and brief examples of the annotations you can add to your code to convey OpenAPI information.
+The [MicroProfile OpenAPI specification][microprofile-ope] gives a listing and
+brief examples of the annotations you can add to your code to convey OpenAPI
+information.
 
-The [MicroProfile OpenAPI Javadocs][microprofile-ope-2] give full details of the annotations and the other classes and interfaces you can use in your code.
+The [MicroProfile OpenAPI Javadocs][microprofile-ope-2] give full details of the
+annotations and the other classes and interfaces you can use in your code.
 
 ## Configuration
 
@@ -132,11 +182,12 @@ Helidon OpenAPI configuration supports the following settings:
 ### Configuration options
 
 <!--@include ../../config/io.helidon.openapi.OpenApiFeature.md#configuration-options delim=--- offset=1 collapseTables=10 -->
-See [Configuration options](../../config/io.helidon.openapi.OpenApiFeature.md#configuration-options).
+See [Configuration options][io-helidon-opena].
 <!--/include-->
 
 
-Further, Helidon OpenAPI supports the MicroProfile OpenAPI settings described in [the MicroProfile OpenAPI specification][the-microprofile].
+Further, Helidon OpenAPI supports the MicroProfile OpenAPI settings described in
+[the MicroProfile OpenAPI specification][the-microprofile].
 
 ### MicroProfile OpenAPI configuration options
 
@@ -146,11 +197,14 @@ Further, Helidon OpenAPI supports the MicroProfile OpenAPI settings described in
 
 ## Examples
 
-Helidon MP includes a [complete OpenAPI example][complete-openapi] based on the MP quick-start sample app. The rest of this section shows, step-by-step, how one might change the original QuickStart service to adopt OpenAPI.
+Helidon MP includes a [complete OpenAPI example][complete-openapi] based on the
+MP quick-start sample app. The rest of this section shows, step-by-step, how one
+might change the original QuickStart service to adopt OpenAPI.
 
 ### Helidon MP OpenAPI Example
 
-This example shows a simple greeting application, similar to the one from the Helidon MP QuickStart, enhanced with OpenAPI support.
+This example shows a simple greeting application, similar to the one from the
+Helidon MP QuickStart, enhanced with OpenAPI support.
 
 ```java
 @Path("/greeting")
@@ -175,13 +229,21 @@ public Response updateGreeting(JsonObject jsonObject) {
 ```
 
 - With `@Operation` annotation we document the current method.
-- With `@RequestBody` annotation we document the content produced. Internal annotations `@Content`, `@Schema` and `@ExampleObjects` are used to give more details about the returned data.
+- With `@RequestBody` annotation we document the content produced. Internal
+  annotations `@Content`, `@Schema` and `@ExampleObjects` are used to give more
+  details about the returned data.
 
 If we want to hide a specific path an `OASFilter` is used.
 
-The OASFilter interface allows application developers to receive callbacks for various key OpenAPI elements. The interface has a default implementation for every method, which allows application developers to only override the methods they care about. To use it, simply create an implementation of this interface and register it using the `mp.openapi.filter configuration` key, where the value is the fully qualified name of the filter class.
+The OASFilter interface allows application developers to receive callbacks for
+various key OpenAPI elements. The interface has a default implementation for
+every method, which allows application developers to only override the methods
+they care about. To use it, simply create an implementation of this interface
+and register it using the `mp.openapi.filter configuration` key, where the value
+is the fully qualified name of the filter class.
 
-The following example filter prevents information about a given path from appearing in the OpenAPI document.
+The following example filter prevents information about a given path from
+appearing in the OpenAPI document.
 
 ```java
 public class SimpleAPIFilter implements OASFilter {
@@ -199,9 +261,13 @@ public class SimpleAPIFilter implements OASFilter {
 }
 ```
 
-You can implement a model reader to provide all or part of the in-memory `OpenAPI` model programmatically. Helidon `OpenAPI` merges the model from the model reader with models from the other sources (a static file and annotations).
+You can implement a model reader to provide all or part of the in-memory
+`OpenAPI` model programmatically. Helidon `OpenAPI` merges the model from the
+model reader with models from the other sources (a static file and annotations).
 
-The example model reader below creates an `OpenAPI` object describing two paths. It turns out that the filter described earlier will suppress one of the paths, but the model reader does not know or care.
+The example model reader below creates an `OpenAPI` object describing two paths.
+It turns out that the filter described earlier will suppress one of the paths,
+but the model reader does not know or care.
 
 <!--@mdc ::code-collapse -->
 ```java
@@ -259,7 +325,9 @@ public class SimpleAPIModelReader implements OASModelReader {
 ```
 <!--@mdc :: -->
 
-Having written the filter and model reader classes, identify them by adding configuration to `META-INF/microprofile-config.properties` as the following example shows.
+Having written the filter and model reader classes, identify them by adding
+configuration to `META-INF/microprofile-config.properties` as the following
+example shows.
 
 ```properties [microprofile-config.properties]
 mp.openapi.filter=io.helidon.microprofile.examples.openapi.internal.SimpleAPIFilter
@@ -283,7 +351,8 @@ curl -X GET http://localhost:8080/openapi
 [lengthy OpenAPI document]
 ```
 
-The output describes not only then endpoints from `GreetResource` but also one contributed by the `SimpleAPIModelReader`.
+The output describes not only then endpoints from `GreetResource` but also one
+contributed by the `SimpleAPIModelReader`.
 
 Full example is available [in our official repository][complete-openapi]
 
@@ -291,11 +360,15 @@ Full example is available [in our official repository][complete-openapi]
 
 ### Building the Jandex index
 
-A Jandex index stores information about the classes and methods in your app and what annotations they have. It allows CDI to process annotations faster during your application’s start-up, and OpenAPI uses the Jandex index to discover details about the types in your resource method signatures.
+A Jandex index stores information about the classes and methods in your app and
+what annotations they have. It allows CDI to process annotations faster during
+your application’s start-up, and OpenAPI uses the Jandex index to discover
+details about the types in your resource method signatures.
 
 #### Indexing your project
 
-Add an invocation of the [Jandex maven plug-in][jandex-maven-plu] to the `<build><plugins>` section of your `pom.xml` if it is not already there:
+Add an invocation of the [Jandex maven plug-in][jandex-maven-plu] to the
+`<build><plugins>` section of your `pom.xml` if it is not already there:
 
 ```xml [pom.xml]
 <plugin>
@@ -309,15 +382,21 @@ Add an invocation of the [Jandex maven plug-in][jandex-maven-plu] to the `<build
 </plugin>
 ```
 
-When you build your app the plug-in generates the Jandex index `META-INF/jandex.idx` and `maven` adds it to the application JAR.
+When you build your app the plug-in generates the Jandex index
+`META-INF/jandex.idx` and `maven` adds it to the application JAR.
 
 #### Indexing dependencies
 
-Invoking the Jandex plug-in as described above indexes only the types in your project. Some dependencies might include their own Jandex index and, in that case, OpenAPI finds information about the types in the dependency as well.
+Invoking the Jandex plug-in as described above indexes only the types in your
+project. Some dependencies might include their own Jandex index and, in that
+case, OpenAPI finds information about the types in the dependency as well.
 
-But if the signatures of your resource methods refer to types from dependencies that do not have their own indexes then you should customize how you use the plug-in.
+But if the signatures of your resource methods refer to types from dependencies
+that do not have their own indexes then you should customize how you use the
+plug-in.
 
-The example below tailors the Jandex plug-in configuration to scan not only the current project but another dependency and to index a specific type from it.
+The example below tailors the Jandex plug-in configuration to scan not only the
+current project but another dependency and to index a specific type from it.
 
 ```xml [pom.xml]
 <execution>
@@ -339,17 +418,31 @@ The example below tailors the Jandex plug-in configuration to scan not only the 
 ```
 
 - Augments the default configuration.
-- Adds a `fileSet` in the form of a `dependency` that is already declared in your project.
-- Selects the type or types from the `fileSet` you want to include in the generated index.
+- Adds a `fileSet` in the form of a `dependency` that is already declared in
+  your project.
+- Selects the type or types from the `fileSet` you want to include in the
+  generated index.
 
-You can add more than one dependency and scan for more than a single type. See the [Helidon MP OpenAPI expanded Jandex example][helidon-mp-opena-2] for more information and a complete project that indexes a dependency.
+You can add more than one dependency and scan for more than a single type. See
+the [Helidon MP OpenAPI expanded Jandex example][helidon-mp-opena-2] for more
+information and a complete project that indexes a dependency.
 
 > [!NOTE]
-> If your `pom.xml` *does not* create the Jandex index then the Helidon MP OpenAPI runtime automatically creates one in memory during app start-up. This slows down your app start-up and, depending on how CDI is configured, might inadvertently miss information.
+> If your `pom.xml` *does not* create the Jandex index then the Helidon MP
+> OpenAPI runtime automatically creates one in memory during app start-up. This
+> slows down your app start-up and, depending on how CDI is configured, might
+> inadvertently miss information.
 >
-> We *strongly recommend* using the Jandex plug-in to build the index into your app.
+> We *strongly recommend* using the Jandex plug-in to build the index into your
+> app.
 >
-> Further, if your resource method signatures refer to types from outside your project we *strongly recommend* that you augment the Jandex plug-in invocation to include the dependencies and types your API uses. If you do not do so the resulting generated OpenAPI document is correct, but types that cannot be found are declared as `object` in the resulting OpenAPI model. This means your OpenAPI document contains less information about the types in your API than it otherwise could.
+> Further, if your resource method signatures refer to types from outside your
+> project we *strongly recommend* that you augment the Jandex plug-in invocation
+> to include the dependencies and types your API uses. If you do not do so the
+> resulting generated OpenAPI document is correct, but types that cannot be
+> found are declared as `object` in the resulting OpenAPI model. This means your
+> OpenAPI document contains less information about the types in your API than it
+> otherwise could.
 
 ## Reference
 
@@ -368,3 +461,4 @@ You can add more than one dependency and scan for more than a single type. See t
 [jandex-maven-plu]: https://github.com/smallrye/jandex/tree/main/maven-plugin
 [helidon-mp-opena-2]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/microprofile/openapi/expanded-jandex
 [microprofile-ope-3]: https://github.com/eclipse/microprofile-open-api
+[io-helidon-opena]: ../../config/io.helidon.openapi.OpenApiFeature.md#configuration-options

@@ -2,18 +2,25 @@
 
 ## Maven Coordinates
 
-No additional dependencies are required beyond the [LangChain4j integration core dependencies](langchain4j.md#maven-coordinates).
+No additional dependencies are required beyond the [LangChain4j integration core
+dependencies][langchain4j-inte].
 
 ## Retrieval-Augmented Generation
 
-To use RAG with LangChai4j in Helidon, we are going to work with several components.
+To use RAG with LangChai4j in Helidon, we are going to work with several
+components.
 
 - **ChatModel** – LLM model for which are going to augment the prompts
-- **EmbeddingModel** – Special model trained to create embeddings and execute similarity search with the original prompt
-- **EmbeddingStore** – A storage for embeddings we are going to search embeddings similar to the original prompt
-- **ContentRetriever** - LangChain4j utility actually using embedding model for content retrieval from the embedding store
+- **EmbeddingModel** – Special model trained to create embeddings and execute
+  similarity search with the original prompt
+- **EmbeddingStore** – A storage for embeddings we are going to search
+  embeddings similar to the original prompt
+- **ContentRetriever** - LangChain4j utility actually using embedding model for
+  content retrieval from the embedding store
 
-RAG-capable AI Service or Agent needs to have content retriever configured, `@Ai.ContentRetriever` annotation can be used for that like in the following example:
+RAG-capable AI Service or Agent needs to have content retriever configured,
+`@Ai.ContentRetriever` annotation can be used for that like in the following
+example:
 
 ```java
 @Ai.Service
@@ -24,9 +31,12 @@ public interface FooBarExpert {
 }
 ```
 
-To use the `foo-bar-content-retriever` content retriever from the preceding example, you must provide configuration that specifies the embedding model and embedding store to use.
+To use the `foo-bar-content-retriever` content retriever from the preceding
+example, you must provide configuration that specifies the embedding model and
+embedding store to use.
 
-See the complete configuration example below, which uses OpenAI models and the in-memory embedding store:
+See the complete configuration example below, which uses OpenAI models and the
+in-memory embedding store:
 
 ```yaml [application.yaml]
 langchain4j:
@@ -78,3 +88,5 @@ langchain4j:
 ## Additional Information
 
 - [LangChain4j Integration](langchain4j.md)
+
+[langchain4j-inte]: langchain4j.md#maven-coordinates

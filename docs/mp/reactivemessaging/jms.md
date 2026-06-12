@@ -6,7 +6,8 @@ Connecting streams to JMS with Reactive Messaging couldn’t be easier.
 
 ## Maven Coordinates
 
-To enable JMS Connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable JMS Connector, add the following dependency to your project’s
+`pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -22,12 +23,13 @@ Connector name: `helidon-jms`
 ### Configuration options
 
 <!--@include ../../config/io.helidon.messaging.connectors.jms.JmsConfigBuilder.md#configuration-options delim=--- offset=1 collapseTables=10 -->
-See [Configuration options](../../config/io.helidon.messaging.connectors.jms.JmsConfigBuilder.md#configuration-options).
+See [Configuration options][io-helidon-messa].
 <!--/include-->
 
 
 > [!TIP]
-> Besides the configuration options above, custom attributes can be passed over configuration.
+> Besides the configuration options above, custom attributes can be passed over
+> configuration.
 
 | Attribute               | Description                                                                                                                                                                                 |
 |-------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -39,7 +41,8 @@ Custom Attributes Examples
 
 ### Configured JMS factory
 
-The simplest possible usage is looking up JMS ConnectionFactory in the naming context.
+The simplest possible usage is looking up JMS ConnectionFactory in the naming
+context.
 
 Example of connector config:
 
@@ -70,7 +73,8 @@ mp.messaging:
 
 ### Injected JMS factory
 
-In case you need more advanced setup, connector can work with injected factory instance.
+In case you need more advanced setup, connector can work with injected factory
+instance.
 
 ```java [Inject]
 @Produces
@@ -172,3 +176,5 @@ public PublisherBuilder<Message<String>> produceToJms() {
             );
 }
 ```
+
+[io-helidon-messa]: ../../config/io.helidon.messaging.connectors.jms.JmsConfigBuilder.md#configuration-options

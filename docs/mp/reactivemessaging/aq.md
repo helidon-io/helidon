@@ -2,11 +2,13 @@
 
 ## Overview
 
-Connecting streams to Oracle AQ with Reactive Messaging couldn’t be easier. This connector extends Helidon’s JMS connector with Oracle’s AQ-specific API.
+Connecting streams to Oracle AQ with Reactive Messaging couldn’t be easier. This
+connector extends Helidon’s JMS connector with Oracle’s AQ-specific API.
 
 ## Maven Coordinates
 
-To enable AQ Connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable AQ Connector, add the following dependency to your project’s `pom.xml`
+(see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -22,13 +24,14 @@ Connector name: `helidon-aq`
 ### Configuration options
 
 <!--@include ../../config/io.helidon.messaging.connectors.aq.AqConfigBuilder.md#configuration-options delim=--- offset=1 collapseTables=10 -->
-See [Configuration options](../../config/io.helidon.messaging.connectors.aq.AqConfigBuilder.md#configuration-options).
+See [Configuration options][io-helidon-messa].
 <!--/include-->
 
 
 ### Configured JMS Factory
 
-The simplest possible usage is leaving construction of `AQjmsConnectionFactory` to the connector.
+The simplest possible usage is leaving construction of `AQjmsConnectionFactory`
+to the connector.
 
 Example of connector config:
 
@@ -55,7 +58,9 @@ mp:
       type: queue
 ```
 
-Its also possible and preferable to refer to [configured datasource](../persistence.md), in our example [Oracle UCP datasource](../persistence.md):
+Its also possible and preferable to refer to [configured
+datasource](../persistence.md), in our example [Oracle UCP
+datasource](../persistence.md):
 
 Example of connector config with Oracle UCP datasource:
 
@@ -88,7 +93,8 @@ mp:
 
 ### Injected JMS factory
 
-If you need more advanced configurations, connector can work with injected `AQjmsConnectionFactory`:
+If you need more advanced configurations, connector can work with injected
+`AQjmsConnectionFactory`:
 
 ```java [Inject]
 @Produces
@@ -165,3 +171,5 @@ public PublisherBuilder<String> produceToAq() {
     return ReactiveStreams.of("test1", "test2");
 }
 ```
+
+[io-helidon-messa]: ../../config/io.helidon.messaging.connectors.aq.AqConfigBuilder.md#configuration-options

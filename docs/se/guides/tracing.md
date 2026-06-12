@@ -1,6 +1,7 @@
 # Helidon SE Tracing Guide
 
-This guide describes how to create a sample Helidon SE project that can be used to run some basic examples using tracing with a Helidon SE application.
+This guide describes how to create a sample Helidon SE project that can be used
+to run some basic examples using tracing with a Helidon SE application.
 
 ## What You Need
 
@@ -37,19 +38,40 @@ export JAVA_HOME=/usr/lib/jvm/jdk-21
 
 ## Introduction
 
-Distributed tracing is a critical feature of microservice-based applications, since it traces workflow both within a service and across multiple services. This provides insight to sequence and timing data for specific blocks of work, which helps you identify performance and operational issues. Helidon includes support for distributed tracing through its own API, backed by either through the [OpenTelemetry API][opentelemetry-ap], or by [OpenTracing API](https://opentracing.io).
+Distributed tracing is a critical feature of microservice-based applications,
+since it traces workflow both within a service and across multiple services.
+This provides insight to sequence and timing data for specific blocks of work,
+which helps you identify performance and operational issues. Helidon includes
+support for distributed tracing through its own API, backed by either through
+the [OpenTelemetry API][opentelemetry-ap], or by [OpenTracing
+API](https://opentracing.io).
 
 ### Tracing Concepts
 
-This section explains a few concepts that you need to understand before you get started with tracing. In the context of this document, a service is synonymous with an application. A *span* is the basic unit of work done within a single service, on a single host. Every span has a name, starting timestamp, and duration. For example, the work done by a REST endpoint is a span. A span is associated to a single service, but its descendants can belong to different services and hosts. A *trace* contains a collection of spans from one or more services, running on one or more hosts. For example, if you trace a service endpoint that calls another service, then the trace would contain spans from both services. Within a trace, spans are organized as a directed acyclic graph (DAG) and can belong to multiple services, running on multiple hosts. Spans are automatically created by Helidon as needed during execution of the REST request.
+This section explains a few concepts that you need to understand before you get
+started with tracing. In the context of this document, a service is synonymous
+with an application. A *span* is the basic unit of work done within a single
+service, on a single host. Every span has a name, starting timestamp, and
+duration. For example, the work done by a REST endpoint is a span. A span is
+associated to a single service, but its descendants can belong to different
+services and hosts. A *trace* contains a collection of spans from one or more
+services, running on one or more hosts. For example, if you trace a service
+endpoint that calls another service, then the trace would contain spans from
+both services. Within a trace, spans are organized as a directed acyclic graph
+(DAG) and can belong to multiple services, running on multiple hosts. Spans are
+automatically created by Helidon as needed during execution of the REST request.
 
 ## Getting Started with Tracing
 
-The examples in this guide demonstrate how to integrate tracing with Helidon, how to view traces, how to trace across multiple services, and how to integrate tracing with Kubernetes. All examples use the Jaeger backend and traces will be viewed using the Jaeger UI.
+The examples in this guide demonstrate how to integrate tracing with Helidon,
+how to view traces, how to trace across multiple services, and how to integrate
+tracing with Kubernetes. All examples use the Jaeger backend and traces will be
+viewed using the Jaeger UI.
 
 ### Create a Sample Helidon SE Project
 
-Use the Helidon SE Maven archetype to create a simple project that can be used for the examples in this guide.
+Use the Helidon SE Maven archetype to create a simple project that can be used
+for the examples in this guide.
 
 Run the Maven archetype:
 
@@ -71,7 +93,8 @@ cd helidon-quickstart-se
 
 ### Set up Jaeger
 
-First, run the Jaeger backend. Helidon communicates with this backend at runtime.
+First, run the Jaeger backend. Helidon communicates with this backend at
+runtime.
 
 Run Jaeger within a docker container:
 
@@ -95,7 +118,9 @@ docker run -d --name jaeger \
 
 ### Enable Tracing in the Helidon Application
 
-Update the `pom.xml` file and add the following OpenTelemetry dependency to the `<dependencies>` section (**not** `<dependencyManagement>`). This will enable Helidon to use OpenTelemetry at the default host and port, `localhost:4317`.
+Update the `pom.xml` file and add the following OpenTelemetry dependency to the
+`<dependencies>` section (**not** `<dependencyManagement>`). This will enable
+Helidon to use OpenTelemetry at the default host and port, `localhost:4317`.
 
 Add the following dependencies to pom.xml:
 
@@ -122,7 +147,9 @@ Add the following dependencies to pom.xml:
 - Observability features for tracing.
 - OpenTelemetry tracing provider.
 
-Helidon offers several tracing providers: OpenTelemetry, Zipkin, and Jaeger (deprecated). All spans sent by Helidon to the backend need to be associated with a service, assigned by the `tracing.service` setting in the example below.
+Helidon offers several tracing providers: OpenTelemetry, Zipkin, and Jaeger
+(deprecated). All spans sent by Helidon to the backend need to be associated
+with a service, assigned by the `tracing.service` setting in the example below.
 
 Add the following lines to src/main/resources/application.yaml:
 
@@ -140,7 +167,12 @@ tracing:
 
 ### View Automatic Tracing of REST Endpoints
 
-Tracing is part of Helidon’s observability support. By default, Helidon discovers any observability feature on the classpath and activates it automatically. In particular for tracing, Helidon adds a trace each time a client accesses a service endpoint. You can see these traces using the Jaeger UI once you build, run, and access your application without changing your application’s Java code.
+Tracing is part of Helidon’s observability support. By default, Helidon
+discovers any observability feature on the classpath and activates it
+automatically. In particular for tracing, Helidon adds a trace each time a
+client accesses a service endpoint. You can see these traces using the Jaeger UI
+once you build, run, and access your application without changing your
+application’s Java code.
 
 #### Build and Access QuickStart
 
@@ -159,24 +191,34 @@ curl http://localhost:8080/greet
 
 ### Viewing Traces Using the Jaeger UI
 
-The Jaeger backend provides a web-based UI at <http://localhost:16686> where you can see a visual representation of the traces and spans within them.
+The Jaeger backend provides a web-based UI at <http://localhost:16686> where you
+can see a visual representation of the traces and spans within them.
 
-1.  From the `Service` drop list select `helidon-se-1`. This name corresponds to the `tracing.service` setting you assigned in the `application.yaml` config file.
-2.  Click on the UI Find Traces button. Notice that you can change the look-back time to restrict the trace list. You will see a trace for each `curl` command you ran to access the application.
+1.  From the `Service` drop list select `helidon-se-1`. This name corresponds to
+    the `tracing.service` setting you assigned in the `application.yaml` config
+    file.
+2.  Click on the UI Find Traces button. Notice that you can change the look-back
+    time to restrict the trace list. You will see a trace for each `curl`
+    command you ran to access the application.
 
 <figure>
 <img src="../../images/guides/tracing_se_trace_list.png" alt="Trace List" />
 <figcaption>List of traces</figcaption>
 </figure>
 
-Click on a trace to see the trace detail page (shown below) which shows the spans within the trace. You can clearly see the root span (`HTTP Request`) and the single child span (`content-write`) along with the time over which each span was active.
+Click on a trace to see the trace detail page (shown below) which shows the
+spans within the trace. You can clearly see the root span (`HTTP Request`) and
+the single child span (`content-write`) along with the time over which each span
+was active.
 
 <figure>
 <img src="../../images/guides/tracing_se_first_trace.png" alt="Trace Detail" />
 <figcaption>Trace detail page</figcaption>
 </figure>
 
-You can examine span details by clicking on the span row. Refer to the image below which shows the span details including timing information. You can see times for each space relative to the root span.
+You can examine span details by clicking on the span row. Refer to the image
+below which shows the span details including timing information. You can see
+times for each space relative to the root span.
 
 <figure>
 <img src="../../images/guides/tracing_se_span_detail.png" alt="Span Details" />
@@ -185,7 +227,11 @@ You can examine span details by clicking on the span row. Refer to the image bel
 
 ### Adding a Custom Span
 
-Your application can use the Helidon tracing API to create custom spans. The following code replaces the generated `getDefaultMessageHandler` method to add a custom span around the code which prepares the default greeting response. The new custom span’s parent span is set to the one which Helidon automatically creates for the REST endpoint.
+Your application can use the Helidon tracing API to create custom spans. The
+following code replaces the generated `getDefaultMessageHandler` method to add a
+custom span around the code which prepares the default greeting response. The
+new custom span’s parent span is set to the one which Helidon automatically
+creates for the REST endpoint.
 
 Update the GreetService class, replacing the getDefaultMessageHandler method:
 
@@ -231,14 +277,17 @@ curl http://localhost:8080/greet
 }
 ```
 
-Return to the main Jaeger UI screen and click Find Traces again. The new display contains an additional trace, displayed first, for the most recent `curl` you ran.
+Return to the main Jaeger UI screen and click Find Traces again. The new display
+contains an additional trace, displayed first, for the most recent `curl` you
+ran.
 
 <figure>
 <img src="../../images/guides/tracing_se_second_trace_list.png" alt="Expanded trace list" />
 <figcaption aria-hidden="true">Expanded trace list</figcaption>
 </figure>
 
-Notice that the top trace has three spans, not two as with the earlier trace. Click on the trace to see the trace details.
+Notice that the top trace has three spans, not two as with the earlier trace.
+Click on the trace to see the trace details.
 
 <figure>
 <img src="../../images/guides/tracing_se_expanded_trace.png" alt="Trace details with custom span" />
@@ -249,9 +298,16 @@ Note the row for `mychildSpan`--the custom span created by the added code.
 
 ### Using Tracing Across Services
 
-Helidon automatically traces across services if the services propagate span information. This means a single trace can include spans from multiple services and hosts. Helidon uses a `SpanContext` to propagate tracing information across process boundaries. When you make client API calls, Helidon will internally call OpenTelemetry APIs or OpenTracing APIs to propagate the `SpanContext`. There is nothing you need to do in your application to make this work.
+Helidon automatically traces across services if the services propagate span
+information. This means a single trace can include spans from multiple services
+and hosts. Helidon uses a `SpanContext` to propagate tracing information across
+process boundaries. When you make client API calls, Helidon will internally call
+OpenTelemetry APIs or OpenTracing APIs to propagate the `SpanContext`. There is
+nothing you need to do in your application to make this work.
 
-To demonstrate distributed tracing, create a second project where the server listens to on port 8081. Create a new directory to hold this new project, then do the following steps, similar to what you did at the start of this guide:
+To demonstrate distributed tracing, create a second project where the server
+listens to on port 8081. Create a new directory to hold this new project, then
+do the following steps, similar to what you did at the start of this guide:
 
 ### Create the Second Service
 
@@ -320,7 +376,9 @@ server:
 ```
 
 > [!NOTE]
-> The settings above are for development and experimental purposes only. For production environment, please see the [Tracing documentation](../../se/tracing.md).
+> The settings above are for development and experimental purposes only. For
+> production environment, please see the [Tracing
+> documentation](../../se/tracing.md).
 
 Update the GreetService class. Replace the getDefaultMessageHandler method:
 
@@ -341,7 +399,9 @@ private void getDefaultMessageHandler(ServerRequest request,
 }
 ```
 
-Build the application, skipping unit tests; the unit tests check for the default greeting response which is now different in the updated config. Then run the application.
+Build the application, skipping unit tests; the unit tests check for the default
+greeting response which is now different in the updated config. Then run the
+application.
 
 Build and run:
 
@@ -364,7 +424,8 @@ curl http://localhost:8081/greet
 
 ### Modify the First Service
 
-Once you have validated that the second service is running correctly, you need to modify the original application to call it.
+Once you have validated that the second service is running correctly, you need
+to modify the original application to call it.
 
 Add the following dependencies to pom.xml:
 
@@ -446,7 +507,8 @@ Make the following changes to the `GreetFeature` class.
     }
     ```
 
-Stop the application if it is still running, rebuild and run it, then invoke the endpoint and check the response.
+Stop the application if it is still running, rebuild and run it, then invoke the
+endpoint and check the response.
 
 Build, run, and access the application:
 
@@ -456,7 +518,8 @@ java -jar target/helidon-quickstart-se.jar
 curl -i http://localhost:8080/greet/outbound 
 ```
 
-- The request goes to the service on `8080`, which then invokes the service at `8081` to get the greeting.
+- The request goes to the service on `8080`, which then invokes the service at
+  `8081` to get the greeting.
 
 ```json [Response]
 {
@@ -466,7 +529,8 @@ curl -i http://localhost:8080/greet/outbound
 
 - Notice the greeting came from the second service.
 
-Refresh the Jaeger UI trace listing page and notice that there is a trace across two services. Click on that trace to see its details.
+Refresh the Jaeger UI trace listing page and notice that there is a trace across
+two services. Click on that trace to see its details.
 
 <figure>
 <img src="../../images/guides/tracing_se_second_expanded_trace.png" alt="Traces" />
@@ -475,17 +539,24 @@ Refresh the Jaeger UI trace listing page and notice that there is a trace across
 
 Note several things about the display:
 
-1.  The top-level span `helidon-se-1 HTTP Request` includes all the work across *both* services.
-2.  `helidon-se-1 outboundMessageHandler` is the custom span you added to the first service `/outbound` endpoint code.
-3.  `helidon-se-1 GET-http://localhost:8080/greet` captures the work the `WebClient` is doing in sending a request to the second service. Helidon adds these spans automatically to each outbound `WebClient` request.
-4.  `helidon-se-2 HTTP Request` represents the arrival of the request sent by the first service’s `WebClient` at the second service’s `/greet` endpoint.
-5.  `helidon-se-2 getDefaultMessageHandler` is the custom span you added to the second service `/greet` endpoint code.
+1.  The top-level span `helidon-se-1 HTTP Request` includes all the work across
+    *both* services.
+2.  `helidon-se-1 outboundMessageHandler` is the custom span you added to the
+    first service `/outbound` endpoint code.
+3.  `helidon-se-1 GET-http://localhost:8080/greet` captures the work the
+    `WebClient` is doing in sending a request to the second service. Helidon
+    adds these spans automatically to each outbound `WebClient` request.
+4.  `helidon-se-2 HTTP Request` represents the arrival of the request sent by
+    the first service’s `WebClient` at the second service’s `/greet` endpoint.
+5.  `helidon-se-2 getDefaultMessageHandler` is the custom span you added to the
+    second service `/greet` endpoint code.
 
 You can now stop your second service, it is no longer used in this guide.
 
 ## Integration with Kubernetes
 
-The following example demonstrates how to use Jaeger from a Helidon application running in Kubernetes.
+The following example demonstrates how to use Jaeger from a Helidon application
+running in Kubernetes.
 
 Replace the tracing configuration in resources/`application.yaml` with the
 following:
@@ -496,7 +567,8 @@ tracing:
   host: jaeger
 ```
 
-- Helidon service `helidon-se-1` will connect to the Jaeger server at host name `jaeger`.
+- Helidon service `helidon-se-1` will connect to the Jaeger server at host name
+  `jaeger`.
 
 Stop the application and build the docker image for your application:
 
@@ -548,7 +620,8 @@ Create a Jaeger external server to view the UI and expose it on port 9142:
 kubectl expose pod  jaeger --name=jaeger-external --port=16687 --target-port=16686 --type=LoadBalancer
 ```
 
-Navigate to <http://localhost:16687/jaeger> to validate that you can access Jaeger running in Kubernetes. It may take a few seconds before it is ready.
+Navigate to <http://localhost:16687/jaeger> to validate that you can access
+Jaeger running in Kubernetes. It may take a few seconds before it is ready.
 
 ### Deploy Your Helidon Application into Kubernetes
 
@@ -620,7 +693,8 @@ helidon-tracing   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s
 
 - A service of type `NodePort` that serves the default routes on port `31143`.
 
-Verify the tracing endpoint using port 31143, your port will likely be different:
+Verify the tracing endpoint using port 31143, your port will likely be
+different:
 
 ```shell [Terminal]
 curl http://localhost:31143/greet
@@ -632,7 +706,8 @@ curl http://localhost:31143/greet
 }
 ```
 
-Access the Jaeger UI at <http://localhost:9412/jaeger> and click on the refresh icon to see the trace that was just created.
+Access the Jaeger UI at <http://localhost:9412/jaeger> and click on the refresh
+icon to see the trace that was just created.
 
 ### Cleanup
 
@@ -649,7 +724,8 @@ docker rm -f jaeger
 
 ## Responding to Span Lifecycle Events
 
-Applications and libraries can register listeners to be notified at several moments during the lifecycle of every Helidon span:
+Applications and libraries can register listeners to be notified at several
+moments during the lifecycle of every Helidon span:
 
 - Before a new span starts
 - After a new span has started
@@ -657,13 +733,23 @@ Applications and libraries can register listeners to be notified at several mome
 - After a span is activated (creating a new scope)
 - After a scope is closed
 
-The next sections explain how you can write and add a listener and what it can do. See the [`SpanListener`][spanlistener] Javadoc for more information.
+The next sections explain how you can write and add a listener and what it can
+do. See the [`SpanListener`][spanlistener] Javadoc for more information.
 
 ### Understanding What Listeners Do
 
-A listener cannot affect the lifecycle of a span or scope it is notified about, but it can add tags and events and update the baggage associated with a span. Often a listener does additional work that does not change the span or scope such as logging a message.
+A listener cannot affect the lifecycle of a span or scope it is notified about,
+but it can add tags and events and update the baggage associated with a span.
+Often a listener does additional work that does not change the span or scope
+such as logging a message.
 
-When Helidon invokes the listener’s methods it passes proxies for the `Span.Builder`, `Span`, and `Scope` arguments. These proxies limit the access the listener has to the span builder, span, or scope, as summarized in the following table. If a listener method tries to invoke a forbidden operation, the proxy throws a [`SpanListener.ForbiddenOperationException`][spanlistener-for] and Helidon then logs a `WARNING` message describing the invalid operation invocation.
+When Helidon invokes the listener’s methods it passes proxies for the
+`Span.Builder`, `Span`, and `Scope` arguments. These proxies limit the access
+the listener has to the span builder, span, or scope, as summarized in the
+following table. If a listener method tries to invoke a forbidden operation, the
+proxy throws a [`SpanListener.ForbiddenOperationException`][spanlistener-for]
+and Helidon then logs a `WARNING` message describing the invalid operation
+invocation.
 
 | Tracing type | Changes allowed |
 |----|----|
@@ -729,22 +815,29 @@ The following tables list specifically what operations the proxies permit.
 
 #### Explicitly Registering a Listener on a [`Tracer`][tracer]
 
-Create a `SpanListener` instance and invoke the `Tracer#register(SpanListener)` method to make the listener known to that tracer.
+Create a `SpanListener` instance and invoke the `Tracer#register(SpanListener)`
+method to make the listener known to that tracer.
 
 #### Automatically Registering a Listener on all `Tracer` Instances
 
-Helidon also uses Java service loading to locate listeners and register them automatically on all `Tracer` objects. Follow these steps to add a listener service provider.
+Helidon also uses Java service loading to locate listeners and register them
+automatically on all `Tracer` objects. Follow these steps to add a listener
+service provider.
 
 1.  Implement the [`SpanListener`][spanlistener] interface.
 2.  Declare your implementation as a service provider:
-    1.  Create the file `META-INF/services/io.helidon.tracing.SpanListener` containing a line with the fully-qualified name of your class which implements `SpanListener`.
-    2.  If your service has a `module-info.java` file add the following line to it:
+    1.  Create the file `META-INF/services/io.helidon.tracing.SpanListener`
+        containing a line with the fully-qualified name of your class which
+        implements `SpanListener`.
+    2.  If your service has a `module-info.java` file add the following line to
+        it:
 
-        ``` java
+        ```java
         provides io.helidon.tracing.SpanListener with <your-implementation-class>;
         ```
 
-The `SpanListener` interface declares default no-op implementations for all the methods, so your listener can implement only the methods it needs to.
+The `SpanListener` interface declares default no-op implementations for all the
+methods, so your listener can implement only the methods it needs to.
 
 Helidon invokes each listener’s methods in the following order:
 
@@ -761,7 +854,8 @@ Order in which Helidon Invokes Listener Methods
 
 ## Summary
 
-This guide has demonstrated how to use the Helidon SE tracing feature with Jaeger. You have learned to do the following:
+This guide has demonstrated how to use the Helidon SE tracing feature with
+Jaeger. You have learned to do the following:
 
 - Enable tracing within a service
 - Use tracing with JAX-RS

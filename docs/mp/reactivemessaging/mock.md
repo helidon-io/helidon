@@ -2,11 +2,14 @@
 
 ## Overview
 
-Mock connector is a simple application scoped bean that can be used for emitting to a channel or asserting received data in a test environment. All data received are kept in memory only.
+Mock connector is a simple application scoped bean that can be used for emitting
+to a channel or asserting received data in a test environment. All data received
+are kept in memory only.
 
 ## Maven Coordinates
 
-To enable Mock Connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable Mock Connector, add the following dependency to your project’s
+`pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -50,7 +53,8 @@ mockConnector
 ```
 
 - Get outgoing channel of given name and payload type
-- Request number of expected items and block the thread until items arrive then assert the payloads
+- Request number of expected items and block the thread until items arrive then
+  assert the payloads
 
 ## Configuration
 
@@ -61,9 +65,11 @@ mockConnector
 
 ## Helidon Test with Mock Connector
 
-Mock connector works great with built-in Helidon test support for [JUnit 5][junit-5] or [TestNG][testng].
+Mock connector works great with built-in Helidon test support for [JUnit
+5][junit-5] or [TestNG][testng].
 
-As Helidon test support makes a bean out of your test, you can inject MockConnector directly into it.
+As Helidon test support makes a bean out of your test, you can inject
+MockConnector directly into it.
 
 ```java
 @HelidonTest
@@ -97,15 +103,22 @@ public class MessagingTest {
 ```
 
 - If you want to add all the beans manually
-- Manually add MockConnector bean, so it is accessible by messaging for constructing the channels
+- Manually add MockConnector bean, so it is accessible by messaging for
+  constructing the channels
 - Messaging support in Helidon MP is provided by this CDI extension
-- Instruct messaging to use `mock-connector` as an upstream for channel `test-channel-in`
+- Instruct messaging to use `mock-connector` as an upstream for channel
+  `test-channel-in`
 - Generate mock data of `java.lang.Integer`, String is default
 - Generate mock data
-- Instruct messaging to use `mock-connector` as a downstream for channel `test-channel-out`
-- Inject mock connector so we can access publishers and subscribers registered within the mock connector
-- Messaging processing method connecting together channels `test-channel-in` and `test-channel-out`
-- Actual JUnit 5 test method which is going to block the thread until 3 items are intercepted on `test-channel-out` channel’s downstream and assert those with expected values.
+- Instruct messaging to use `mock-connector` as a downstream for channel
+  `test-channel-out`
+- Inject mock connector so we can access publishers and subscribers registered
+  within the mock connector
+- Messaging processing method connecting together channels `test-channel-in` and
+  `test-channel-out`
+- Actual JUnit 5 test method which is going to block the thread until 3 items
+  are intercepted on `test-channel-out` channel’s downstream and assert those
+  with expected values.
 
 [junit-5]: /../../mp/reactivemessaging/../../testing/testing.adoc
 [testng]: /../../mp/reactivemessaging/../../testing/testing-ng.adoc

@@ -2,11 +2,13 @@
 
 ## Overview
 
-HashiCorp Vault is a commonly used Vault in many microservices. The APIs are REST-based and Helidon implements them using [WebClient](../../se/webclient.md).
+HashiCorp Vault is a commonly used Vault in many microservices. The APIs are
+REST-based and Helidon implements them using [WebClient](../../se/webclient.md).
 
 ## Maven Coordinates
 
-To enable HashiCorp Vault, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable HashiCorp Vault, add the following dependency to your project’s
+`pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -64,13 +66,17 @@ The following is a list of maven coordinates of all Vault modules available:
 
 Vault integration supports the following:
 
-- **Secret Engines**: Key/Value version 2, Key/Value version 1, Cubbyhole, PKI, Transit, Database
+- **Secret Engines**: Key/Value version 2, Key/Value version 1, Cubbyhole, PKI,
+  Transit, Database
 - **Authentication Methods**: Token, Kubernetes (k8s), AppRole
 - **Other Sys Operations and Configurations**
 
-Each of these features is implemented as a separate module, with the Vault class binding them together. In Helidon MP, with injection, this binding is done automatically, and you can simply inject your favorite secret engine.
+Each of these features is implemented as a separate module, with the Vault class
+binding them together. In Helidon MP, with injection, this binding is done
+automatically, and you can simply inject your favorite secret engine.
 
-The following classes can be injected into any CDI bean (if appropriate module is on the classpath):
+The following classes can be injected into any CDI bean (if appropriate module
+is on the classpath):
 
 - Kv2Secrets - Key/Value Version 2 Secrets (versioned secrets, default)
 - Kv1Secrets - Key/Value Version 1 Secrets (un-versioned secrets, legacy)
@@ -81,7 +87,8 @@ The following classes can be injected into any CDI bean (if appropriate module i
 - AppRoleAuth - AppRole authentication method (management operations)
 - K8sAuth - Kubernetes authentication method (management operations)
 - TokenAuth - Token authentication method (management operations)
-- Sys - System operations (management of Vault - enabling/disabling secret engines and authentication methods)
+- Sys - System operations (management of Vault - enabling/disabling secret
+  engines and authentication methods)
 
 In addition to these features, Vault itself can be authenticated as follows:
 
@@ -92,14 +99,16 @@ In addition to these features, Vault itself can be authenticated as follows:
     vault.address=http://localhost:8200
     vault.token=my-token
 
-- AppRole authentication - AppRole ID and secret ID are configured, integration exchanges these for a temporary token that is used to connect to Vault
+- AppRole authentication - AppRole ID and secret ID are configured, integration
+  exchanges these for a temporary token that is used to connect to Vault
 
 <!-- -->
 
     vault.auth.app-role.role-id=app-role-id
     vault.auth.app-role.secret-id=app-role-secret-id
 
-- K8s authentication - the k8s JWT token is discovered on current node and used to obtain a temporary token that is used to connect to Vault
+- K8s authentication - the k8s JWT token is discovered on current node and used
+  to obtain a temporary token that is used to connect to Vault
 
 <!-- -->
 
@@ -109,7 +118,10 @@ In addition to these features, Vault itself can be authenticated as follows:
 
 ### Extensibility
 
-New secret engines and authentication methods can be implemented quite easily, as the integration is based on service providers (using ServiceLoader). This gives us (or you, as the users) the option to add new secret engines and/or authentication methods without adding a plethora of methods to the Vault class.
+New secret engines and authentication methods can be implemented quite easily,
+as the integration is based on service providers (using ServiceLoader). This
+gives us (or you, as the users) the option to add new secret engines and/or
+authentication methods without adding a plethora of methods to the Vault class.
 
 See the following SPIs:
 
@@ -123,7 +135,8 @@ io.helidon.integrations.vault.spi.InjectionProvider
 
 ## Examples
 
-The following example shows usage of Vault to encrypt a secret using the default Vault configuration (in a JAX-RS resource):
+The following example shows usage of Vault to encrypt a secret using the default
+Vault configuration (in a JAX-RS resource):
 
 ```java
 @Path("/transit")
@@ -526,7 +539,10 @@ Vault is available as a docker image, so to test locally, you can simply:
 docker run -e VAULT_DEV_ROOT_TOKEN_ID=my-token -d --name=vault -p8200:8200 vault
 ```
 
-This will create a Vault docker image, run it in background and open it on `localhost:8200` with a custom root token my-token, using name vault. This is of course only suitable for local testing, as the root token has too many rights, but it can be easily used with the examples below.
+This will create a Vault docker image, run it in background and open it on
+`localhost:8200` with a custom root token my-token, using name vault. This is of
+course only suitable for local testing, as the root token has too many rights,
+but it can be easily used with the examples below.
 
 ## References
 

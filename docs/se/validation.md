@@ -6,14 +6,17 @@ Validation checks values against constraints.
 
 There are two ways to use validation features in Helidon SE:
 
-1.  Have a `@Validation.Validated` annotated type and use a `TypeValidator` service to validate it
+1.  Have a `@Validation.Validated` annotated type and use a `TypeValidator`
+    service to validate it
 2.  Invoke the constraint checks directly using `Validators` static methods
 
-The feature fit with our [Helidon Declarative][helidon-declarat], which is a preview feature.
+The feature fit with our [Helidon Declarative][helidon-declarat], which is a
+preview feature.
 
 ## Maven Coordinates
 
-To enable Validation, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+To enable Validation, add the following dependency to your project’s `pom.xml`
+(see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependencies>
@@ -29,13 +32,15 @@ To enable Validation, add the following dependency to your project’s `pom.xml`
 ```
 
 - Helidon validation dependency.
-- WebServer integration with validation, to provide correct HTTP status on validation failures
+- WebServer integration with validation, to provide correct HTTP status on
+  validation failures
 
 ## Usage
 
 ### Validated type
 
-A type annotated with `@Validation.Validated` will have validation code generated.
+A type annotated with `@Validation.Validated` will have validation code
+generated.
 
 Example of a validated type:
 
@@ -87,7 +92,8 @@ The following annotation processing setup must be done to generate the code:
 
 ### Validate Object
 
-An object can be validated using one of the built-in constraints through methods on
+An object can be validated using one of the built-in constraints through methods
+on
 
 - [`io.helidon.validation.Validators`][io-helidon-valid]
 
@@ -105,7 +111,10 @@ exception:
 Validators.checkNotNull(anInstance);
 ```
 
-The low-level approach allows use of any constraint (including custom constraints) through programmatic API. Note that an instance of the validator can be cached as long as it is used for the same type and constraint configuration.
+The low-level approach allows use of any constraint (including custom
+constraints) through programmatic API. Note that an instance of the validator
+can be cached as long as it is used for the same type and constraint
+configuration.
 
 The first approach gives as a validation response:
 
@@ -119,10 +128,12 @@ context.check(validator, anInstance);
 var response = context.response(); 
 ```
 
-- Get the constraint validation provider from the registry, named by the annotation it handles
+- Get the constraint validation provider from the registry, named by the
+  annotation it handles
 - Create a new validation context (can be used to validate multiple constraints)
 - Create a new validator for a specific type and annotation
-- Check the constraint using the validator and the provided instance (instance must match the type provided in previous step)
+- Check the constraint using the validator and the provided instance (instance
+  must match the type provided in previous step)
 - Get a validation response from the context
 
 And the second throws an exception if validation failed:
@@ -137,10 +148,12 @@ context.check(validator, anInstance);
 context.throwOnFailure(); 
 ```
 
-- Get the constraint validation provider from the registry, named by the annotation it handles
+- Get the constraint validation provider from the registry, named by the
+  annotation it handles
 - Create a new validation context (can be used to validate multiple constraints)
 - Create a new validator for a specific type and annotation
-- Check the constraint using the validator and the provided instance (instance must match the type provided in previous step)
+- Check the constraint using the validator and the provided instance (instance
+  must match the type provided in previous step)
 - Throw and exception in case any of the checks failed
 
 [helidon-declarat]: ../se/injection/declarative.md#validation

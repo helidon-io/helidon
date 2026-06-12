@@ -7,7 +7,8 @@ This guide describes how to create a CRaC snapshot for a Helidon MP application.
 CRaC - Coordinated Restore at Checkpoint
 
 > [!NOTE]
-> CRaC support is a preview feature. The feature shown here is subject to change, and will be finalized in a future release of Helidon.
+> CRaC support is a preview feature. The feature shown here is subject to
+> change, and will be finalized in a future release of Helidon.
 
 ## What You Need
 
@@ -26,7 +27,9 @@ There are two JDK builds with CRaC support as of now to choose from.
 - [Azul Zulu][azul-zulu-jdk-cr]
 - [BellSoft Liberica JDK][bellsoft-liberic]
 
-In this example we will use Azul implementation with Warp CRaC engine. Warp CRaC engine allows creating snapshots without elevated privileges. That not only simplifies the example, but it is very practical for K8s usage.
+In this example we will use Azul implementation with Warp CRaC engine. Warp CRaC
+engine allows creating snapshots without elevated privileges. That not only
+simplifies the example, but it is very practical for K8s usage.
 
 Use [SDKMAN!](https://sdkman.io) to install Azul JDK with Warp CRaC engine:
 
@@ -48,13 +51,16 @@ mvn -U archetype:generate -DinteractiveMode=false \
     -Dpackage=io.helidon.examples.quickstart.mp
 ```
 
-The archetype generates a Maven project in your current directory (for example, `helidon-quickstart-mp`). Change into this directory and build.
+The archetype generates a Maven project in your current directory (for example,
+`helidon-quickstart-mp`). Change into this directory and build.
 
 ```shell [Terminal]
 cd helidon-quickstart-mp
 ```
 
-Add dependency for Helidon CRaC support to `pom.xml`. This allows Helidon to properly close and reopen resources which would normally break snapshot creation.
+Add dependency for Helidon CRaC support to `pom.xml`. This allows Helidon to
+properly close and reopen resources which would normally break snapshot
+creation.
 
 ```xml [pom.xml]
 <dependency>
@@ -85,9 +91,11 @@ java -XX:CRaCEngine=warp -XX:CRaCCheckpointTo=./target/cr -jar target/helidon-qu
 ```
 
 > [!TIP]
-> If you hit `Unrecognized VM option` at this point, check if you are using correct JVM with CRaC support.
+> If you hit `Unrecognized VM option` at this point, check if you are using
+> correct JVM with CRaC support.
 
-You should see in the output that Helidon MP has started with CRaC feature enabled.
+You should see in the output that Helidon MP has started with CRaC feature
+enabled.
 
 ```shell [Terminal]
 Started all channels in 10 milliseconds. 1937 milliseconds since JVM startup. Java 23.0.1
@@ -103,11 +111,13 @@ curl -X GET http://localhost:8080/greet
 
 The application should respond with `{"message":"Hello World!"}`
 
-For more information about the Quickstart application and other endpoints it supports see the [Helidon MP Quickstart Guide](../../mp/guides/quickstart.md).
+For more information about the Quickstart application and other endpoints it
+supports see the [Helidon MP Quickstart Guide](../../mp/guides/quickstart.md).
 
 ## Creating snapshot
 
-In another shell trigger the snapshot creation with [jcmd][jcmd] command `JDK.checkpoint`:
+In another shell trigger the snapshot creation with [jcmd][jcmd] command
+`JDK.checkpoint`:
 
 ```shell [Terminal]
 jcmd $(jcmd | grep helidon-quickstart-mp.jar | awk '{print $2}') JDK.checkpoint
@@ -134,9 +144,11 @@ java -XX:CRaCEngine=warp -XX:CRaCRestoreFrom=./target/cr
 ```
 
 > [!TIP]
-> If you hit `Unrecognized VM option` at this point, check if you are using correct JDK with CRaC support.
+> If you hit `Unrecognized VM option` at this point, check if you are using
+> correct JDK with CRaC support.
 
-Expected output shows that application restore from snapshot is drastically faster than previous start.
+Expected output shows that application restore from snapshot is drastically
+faster than previous start.
 
 ```shell [Terminal]
 ➜  helidon-quickstart-mp java -XX:CRaCEngine=warp -XX:CRaCRestoreFrom=./target/cr
@@ -218,9 +230,17 @@ CMD [ "java", "-XX:CRaCEngine=warp", "-XX:CRaCRestoreFrom=/helidon/cr" ]
 <!--@mdc :: -->
 
 > [!TIP]
-> This does a full build inside the Docker container. The first time you run it, it will take a while because it is downloading all of the Maven dependencies and caching them in a Docker layer. Subsequent builds will be much faster as long as you don’t change the `pom.xml` file. If the pom is modified then the dependencies will be re-downloaded.
+> This does a full build inside the Docker container. The first time you run it,
+> it will take a while because it is downloading all of the Maven dependencies
+> and caching them in a Docker layer. Subsequent builds will be much faster as
+> long as you don’t change the `pom.xml` file. If the pom is modified then the
+> dependencies will be re-downloaded.
 
-Build the application, notice that warmup and snapshot of the application is created during build time in the 2nd stage. For warming up the [siege](https://github.com/JoeDog/siege) load testing utility is used. Dockerfile is based on Radim Vansa’s [article][article] introducing Warp CRaC engine.
+Build the application, notice that warmup and snapshot of the application is
+created during build time in the 2nd stage. For warming up the
+[siege](https://github.com/JoeDog/siege) load testing utility is used.
+Dockerfile is based on Radim Vansa’s [article][article] introducing Warp CRaC
+engine.
 
 ```shell [Terminal]
 docker build -t helidon-quickstart-mp-crac -f Dockerfile.crac .

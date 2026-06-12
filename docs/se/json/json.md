@@ -2,11 +2,14 @@
 
 ## Overview
 
-Helidon provides comprehensive JSON processing capabilities through two core modules that work together to offer efficient, streaming JSON processing optimized for virtual threads and modern Java applications.
+Helidon provides comprehensive JSON processing capabilities through two core
+modules that work together to offer efficient, streaming JSON processing
+optimized for virtual threads and modern Java applications.
 
 ## JSON Binding
 
-The JSON Binding module (`helidon-json-binding`) provides high-level object serialization and deserialization.
+The JSON Binding module (`helidon-json-binding`) provides high-level object
+serialization and deserialization.
 
 ### Maven Coordinates
 
@@ -28,17 +31,29 @@ The JSON Binding module (`helidon-json-binding`) provides high-level object seri
 
 #### What Code Generation Does and When to Use It
 
-Code generation is how Helidon automatically supports your POJOs annotated with JSON binding annotations. At compile time, the processor generates efficient serializers/deserializers for classes annotated with [`@Json.Entity`][json-entity].
+Code generation is how Helidon automatically supports your POJOs annotated with
+JSON binding annotations. At compile time, the processor generates efficient
+serializers/deserializers for classes annotated with
+[`@Json.Entity`][json-entity].
 
-Use code generation if you want an automatic, annotation-driven mapping for your POJOs. If you do not enable code generation, you can still use JSON binding by implementing the conversion yourself (implement [`JsonSerializer`][jsonserializer], [`JsonDeserializer`][jsondeserializer], [`JsonConverter`][jsonconverter], or a [`JsonBindingFactory`][jsonbindingfacto]).
+Use code generation if you want an automatic, annotation-driven mapping for your
+POJOs. If you do not enable code generation, you can still use JSON binding by
+implementing the conversion yourself (implement
+[`JsonSerializer`][jsonserializer], [`JsonDeserializer`][jsondeserializer],
+[`JsonConverter`][jsonconverter], or a
+[`JsonBindingFactory`][jsonbindingfacto]).
 
 #### Enabling Code Generation
 
-For automatic code generation, you can either add individual annotation processors or use the Helidon bundles APT dependency that includes all necessary processors.
+For automatic code generation, you can either add individual annotation
+processors or use the Helidon bundles APT dependency that includes all necessary
+processors.
 
 #### Option 1: Using Helidon Bundles APT
 
-Alternatively, you can use the `helidon-bundles-apt` dependency which includes the JSON code generation processor along with other Helidon annotation processors:
+Alternatively, you can use the `helidon-bundles-apt` dependency which includes
+the JSON code generation processor along with other Helidon annotation
+processors:
 
 Annotation processor configuration with bundles:
 
@@ -103,7 +118,8 @@ Annotation processor configuration:
 
 The main entry point for JSON binding is the [`JsonBinding`][jsonbinding] class.
 
-The [`JsonBinding`][jsonbinding] API provides common serialization and deserialization methods:
+The [`JsonBinding`][jsonbinding] API provides common serialization and
+deserialization methods:
 
 JsonBinding usage:
 
@@ -119,13 +135,16 @@ String json = binding.serialize(person);
 
 ### Annotations
 
-Helidon JSON binding provides annotations to control serialization and deserialization behavior.
+Helidon JSON binding provides annotations to control serialization and
+deserialization behavior.
 
 #### @Json.Entity
 
 Marks a class/record as a JSON entity that can be serialized/deserialized.
 
-This annotation also lets you control how the binder discovers properties using the `accessorStyle` attribute. This is useful if your code uses fluent methods, record-style accessors, or non-standard naming.
+This annotation also lets you control how the binder discovers properties using
+the `accessorStyle` attribute. This is useful if your code uses fluent methods,
+record-style accessors, or non-standard naming.
 
 Using @Json.Entity:
 
@@ -139,11 +158,14 @@ class Person {
 }
 ```
 
-Why use it: Required for classes to participate in JSON binding. Without this annotation, automatic converter generation will not trigger.
+Why use it: Required for classes to participate in JSON binding. Without this
+annotation, automatic converter generation will not trigger.
 
 #### @Json.Property
 
-Customizes the JSON property name for a field or method. This affects how fields are named in JSON output and input, providing control over JSON structure and API compatibility.
+Customizes the JSON property name for a field or method. This affects how fields
+are named in JSON output and input, providing control over JSON structure and
+API compatibility.
 
 Basic property name customization:
 
@@ -188,11 +210,16 @@ This produces the following JSON output:
 {"firstName":"John","lastName":"Doe","fullName":"John Doe"}
 ```
 
-Why use it: Allows mapping between Java field names and JSON property names, enabling better JSON structure control and compatibility with existing APIs. Essential for maintaining API contracts when Java field names don’t match desired JSON structure.
+Why use it: Allows mapping between Java field names and JSON property names,
+enabling better JSON structure control and compatibility with existing APIs.
+Essential for maintaining API contracts when Java field names don’t match
+desired JSON structure.
 
 #### @Json.Ignore
 
-Excludes fields or methods from serialization/deserialization. Fields marked as `transient` are ignored automatically, or you can explicitly use this annotation. This affects field visibility in JSON output and input processing.
+Excludes fields or methods from serialization/deserialization. Fields marked as
+`transient` are ignored automatically, or you can explicitly use this
+annotation. This affects field visibility in JSON output and input processing.
 
 Basic field exclusion:
 
@@ -257,7 +284,9 @@ This produces the following JSON output:
 {"lastName":"Doe"}
 ```
 
-Why use it: Prevents sensitive data, computed fields, or internal state from being included in JSON output. Critical for security (excluding passwords, tokens) and performance (excluding large internal data structures).
+Why use it: Prevents sensitive data, computed fields, or internal state from
+being included in JSON output. Critical for security (excluding passwords,
+tokens) and performance (excluding large internal data structures).
 
 #### @Json.Required
 
@@ -277,11 +306,14 @@ class Person {
 }
 ```
 
-Why use it: Ensures critical properties are present in JSON input, failing deserialization if they’re missing.
+Why use it: Ensures critical properties are present in JSON input, failing
+deserialization if they’re missing.
 
 #### @Json.SerializeNulls
 
-Controls whether null values are included in JSON output. Null values are omitted from JSON output, unless this annotation is used. This affects the visibility and size of generated JSON.
+Controls whether null values are included in JSON output. Null values are
+omitted from JSON output, unless this annotation is used. This affects the
+visibility and size of generated JSON.
 
 Default behavior - nulls omitted:
 
@@ -365,7 +397,8 @@ Why use it: Provides control over JSON size and API contract.
 
 #### @Json.Creator
 
-Marks constructors or factory methods for object creation during deserialization.
+Marks constructors or factory methods for object creation during
+deserialization.
 
 Using @Json.Creator constructor:
 
@@ -403,11 +436,13 @@ static class PersonWithCreator {
 }
 ```
 
-Why use it: Enables deserialization of immutable objects or objects requiring specific construction logic.
+Why use it: Enables deserialization of immutable objects or objects requiring
+specific construction logic.
 
 #### @Json.PropertyOrder
 
-Controls the order of properties in JSON output. By default, the order is undefined, so the properties can appear in any order.
+Controls the order of properties in JSON output. By default, the order is
+undefined, so the properties can appear in any order.
 
 Undefined/Any declaration order (default):
 
@@ -462,11 +497,13 @@ This produces the following JSON output:
 {"zebra":"value","beta":"value","alpha":"value"}
 ```
 
-Why use it: Ensures consistent JSON structure for APIs, when order matters for processing.
+Why use it: Ensures consistent JSON structure for APIs, when order matters for
+processing.
 
 #### @Json.Deserializer, @Json.Serializer, @Json.Converter
 
-Specify custom serialization/deserialization logic using `JsonSerializer` and `JsonDeserializer` implementations.
+Specify custom serialization/deserialization logic using `JsonSerializer` and
+`JsonDeserializer` implementations.
 
 Using @Json.Deserializer:
 
@@ -496,7 +533,8 @@ class CustomType {
 }
 ```
 
-Why use it: Enables handling of complex types, legacy formats, or types requiring special conversion logic.
+Why use it: Enables handling of complex types, legacy formats, or types
+requiring special conversion logic.
 
 #### @Json.BuilderInfo
 
@@ -541,11 +579,13 @@ class PersonWithBuilder {
 ```
 <!--@mdc :: -->
 
-Why use it: Specifies custom builder classes for object construction during deserialization, enabling more complex instantiation patterns.
+Why use it: Specifies custom builder classes for object construction during
+deserialization, enabling more complex instantiation patterns.
 
 #### @Json.FailOnUnknown
 
-Controls behavior when unknown properties are encountered during deserialization.
+Controls behavior when unknown properties are encountered during
+deserialization.
 
 Using @Json.FailOnUnknown:
 
@@ -559,15 +599,20 @@ class StrictPerson {
 }
 ```
 
-Why use it: Provides strict validation of JSON input, failing if unexpected properties are present.
+Why use it: Provides strict validation of JSON input, failing if unexpected
+properties are present.
 
 ### Optional Handling
 
-Helidon provides special handling for Java Optional types (`Optional<T>`, `OptionalInt`, `OptionalLong`, `OptionalDouble`) in JSON serialization and deserialization.
+Helidon provides special handling for Java Optional types (`Optional<T>`,
+`OptionalInt`, `OptionalLong`, `OptionalDouble`) in JSON serialization and
+deserialization.
 
 #### Empty Optional Behavior
 
-By default, empty Optional fields are omitted from JSON output. When `@Json.SerializeNulls` is applied (either at class or field level), empty Optional fields are included in JSON output as `null` values.
+By default, empty Optional fields are omitted from JSON output. When
+`@Json.SerializeNulls` is applied (either at class or field level), empty
+Optional fields are included in JSON output as `null` values.
 
 Default behavior - empty optionals omitted:
 
@@ -606,7 +651,8 @@ This produces the following JSON output:
 {"name":"John","middleName":null}
 ```
 
-During the deserialization process, null values are always converted into the empty instance of the deserialized Optional type.
+During the deserialization process, null values are always converted into the
+empty instance of the deserialized Optional type.
 
 **Supported Optional Types:**
 
@@ -617,35 +663,60 @@ During the deserialization process, null values are always converted into the em
 
 ### Automatic Custom Converter Registration
 
-In addition to using annotations directly on classes, custom serializers, deserializers, and converters can be automatically registered with the JSON binding system through Helidon’s Service Registry. So they get automatically discovered and one does not need to register them manually at runtime.
+In addition to using annotations directly on classes, custom serializers,
+deserializers, and converters can be automatically registered with the JSON
+binding system through Helidon’s Service Registry. So they get automatically
+discovered and one does not need to register them manually at runtime.
 
 See [Helidon Declarative][helidon-declarat]
 
 ### Binding Factories
 
-For more complex scenarios where you need to create serializers and deserializers for entire type families or generic types, you can implement custom [`JsonBindingFactory`][jsonbindingfacto] instances. Binding factories are particularly useful for handling parameterized types, collections, or types that require special instantiation logic.
+For more complex scenarios where you need to create serializers and
+deserializers for entire type families or generic types, you can implement
+custom [`JsonBindingFactory`][jsonbindingfacto] instances. Binding factories are
+particularly useful for handling parameterized types, collections, or types that
+require special instantiation logic.
 
 #### What is a Binding Factory?
 
-A [`JsonBindingFactory`][jsonbindingfacto] is responsible for creating type-specific serializers and deserializers for a family of related types. Unlike individual converters that handle specific types, binding factories can create converters dynamically for various subtypes or parameterized versions of a base type.
+A [`JsonBindingFactory`][jsonbindingfacto] is responsible for creating
+type-specific serializers and deserializers for a family of related types.
+Unlike individual converters that handle specific types, binding factories can
+create converters dynamically for various subtypes or parameterized versions of
+a base type.
 
 #### How Binding Factories Work
 
-Binding factories implement the `JsonBindingFactory<T>` interface, which requires:
+Binding factories implement the `JsonBindingFactory<T>` interface, which
+requires:
 
-- `createDeserializer(Class<? extends T> type)` - Creates a deserializer for a specific class type
-- `createDeserializer(GenericType<? extends T> type)` - Creates a deserializer for a generic type
-- `createSerializer(Class<? extends T> type)` - Creates a serializer for a specific class type
-- `createSerializer(GenericType<? extends T> type)` - Creates a serializer for a generic type
+- `createDeserializer(Class<? extends T> type)` - Creates a deserializer for a
+  specific class type
+- `createDeserializer(GenericType<? extends T> type)` - Creates a deserializer
+  for a generic type
+- `createSerializer(Class<? extends T> type)` - Creates a serializer for a
+  specific class type
+- `createSerializer(GenericType<? extends T> type)` - Creates a serializer for a
+  generic type
 - `supportedTypes()` - Returns the set of types this factory can handle
 
-Typical example for the binding factory would be a handling of the Collection. We would have a converter, which has some common logic for this Collection, but we cant hardcode any specific type this common logic should handle, because Collection has a generic parameter and it could be more or less anything. Because of that, this common logic serves as a template and waits till runtime to have some specific type converter assigned based on the runtime type it received.
+Typical example for the binding factory would be a handling of the Collection.
+We would have a converter, which has some common logic for this Collection, but
+we cant hardcode any specific type this common logic should handle, because
+Collection has a generic parameter and it could be more or less anything.
+Because of that, this common logic serves as a template and waits till runtime
+to have some specific type converter assigned based on the runtime type it
+received.
 
-New instance of the converter must be created for each runtime type. JSON Binding implementation handles the caching of these converters, so they are also getting reused.
+New instance of the converter must be created for each runtime type. JSON
+Binding implementation handles the caching of these converters, so they are also
+getting reused.
 
 ## JSON Processor
 
-The JSON module (`helidon-json`) provides fundamental JSON parsing and generation capabilities.
+The JSON module (`helidon-json`) provides fundamental JSON parsing and
+generation capabilities.
 
 ### Maven Coordinates
 
@@ -665,7 +736,9 @@ The JSON module (`helidon-json`) provides fundamental JSON parsing and generatio
 
 ### JsonParser
 
-[`JsonParser`][jsonparser] is a streaming JSON parser that provides efficient, low-level access to JSON data without loading the entire document into memory. It’s designed for processing large JSON documents or streaming data sources.
+[`JsonParser`][jsonparser] is a streaming JSON parser that provides efficient,
+low-level access to JSON data without loading the entire document into memory.
+It’s designed for processing large JSON documents or streaming data sources.
 
 #### What it’s used for
 
@@ -747,11 +820,14 @@ while (true) {
 ```
 <!--@mdc :: -->
 
-This approach provides fine-grained control over parsing, allowing you to handle different field types and skip unknown fields efficiently.
+This approach provides fine-grained control over parsing, allowing you to handle
+different field types and skip unknown fields efficiently.
 
 ### JsonGenerator
 
-[`JsonGenerator`][jsongenerator] is a streaming JSON generator that builds JSON output efficiently. It provides a fluent API for constructing JSON documents without building intermediate representations.
+[`JsonGenerator`][jsongenerator] is a streaming JSON generator that builds JSON
+output efficiently. It provides a fluent API for constructing JSON documents
+without building intermediate representations.
 
 #### What it’s used for
 
@@ -813,11 +889,14 @@ This generates the following JSON output:
 
 ### JsonValue Types
 
-[`JsonValue`][jsonvalue] is the base class for all JSON value types in Helidon. It provides a type-safe representation of JSON data with specific implementations for different JSON data types.
+[`JsonValue`][jsonvalue] is the base class for all JSON value types in Helidon.
+It provides a type-safe representation of JSON data with specific
+implementations for different JSON data types.
 
 #### JsonObject
 
-[`JsonObject`][jsonobject] represents a JSON object (key-value pairs enclosed in `{}`). It’s used for structured data with named properties.
+[`JsonObject`][jsonobject] represents a JSON object (key-value pairs enclosed in
+`{}`). It’s used for structured data with named properties.
 
 Using JsonObject:
 
@@ -846,7 +925,8 @@ JsonObject personWithAddress = JsonObject.builder()
 
 #### JsonArray
 
-[`JsonArray`][jsonarray] represents a JSON array (ordered list of values enclosed in `[]`). It’s used for collections of values.
+[`JsonArray`][jsonarray] represents a JSON array (ordered list of values
+enclosed in `[]`). It’s used for collections of values.
 
 Using JsonArray:
 
@@ -863,7 +943,8 @@ List<JsonValue> numberValues = numbers.values();
 
 #### JsonString
 
-[`JsonString`][jsonstring] represents a JSON string value (text enclosed in `"`). It’s used for textual data.
+[`JsonString`][jsonstring] represents a JSON string value (text enclosed in
+`"`). It’s used for textual data.
 
 Using JsonString:
 
@@ -878,7 +959,8 @@ JsonString greeting = parser.readJsonString();
 
 #### JsonNumber
 
-[`JsonNumber`][jsonnumber] represents a JSON number value. It’s used for numeric data and provides access to different numeric types.
+[`JsonNumber`][jsonnumber] represents a JSON number value. It’s used for numeric
+data and provides access to different numeric types.
 
 Using JsonNumber:
 
@@ -895,7 +977,8 @@ JsonNumber number = parser.readJsonNumber();
 
 #### JsonBoolean
 
-[`JsonBoolean`][jsonboolean] represents a JSON boolean value (`true` or `false`). It’s used for logical values.
+[`JsonBoolean`][jsonboolean] represents a JSON boolean value (`true` or
+`false`). It’s used for logical values.
 
 Using JsonBoolean:
 
@@ -908,7 +991,8 @@ JsonBoolean inactive = JsonBoolean.FALSE; // Predefined constants
 
 #### JsonNull
 
-[`JsonNull`][jsonnull] represents a JSON null value. It’s used when a value is absent or undefined.
+[`JsonNull`][jsonnull] represents a JSON null value. It’s used when a value is
+absent or undefined.
 
 Using JsonNull:
 

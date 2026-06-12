@@ -2,21 +2,37 @@
 
 ## Overview
 
-WebLogic JMS Connector extends Helidon JMS connector with special handling for legacy WebLogic T3 thin clients. Legacy versions of thin client can be found in server/lib directory(`WL_HOME/server/lib/wlthint3client.jar`) of any WebLogic Server installation.
+WebLogic JMS Connector extends Helidon JMS connector with special handling for
+legacy WebLogic T3 thin clients. Legacy versions of thin client can be found in
+server/lib directory(`WL_HOME/server/lib/wlthint3client.jar`) of any WebLogic
+Server installation.
 
-Helidon supports Jakarta EE 10. Legacy versions of `javax` based thin T3 client will not work correctly when added to the classpath. Legacy thin T3 clients must be loaded from a filesystem location specified by the `thin-jar` property.
+Helidon supports Jakarta EE 10. Legacy versions of `javax` based thin T3 client
+will not work correctly when added to the classpath. Legacy thin T3 clients must
+be loaded from a filesystem location specified by the `thin-jar` property.
 
 > [!WARNING]
-> Do not place legacy `wlthint3client.jar` on the Helidon classpath. The client library location needs to be configured and loaded by the Helidon messaging connector.
+> Do not place legacy `wlthint3client.jar` on the Helidon classpath. The client
+> library location needs to be configured and loaded by the Helidon messaging
+> connector.
 
 > [!WARNING]
-> When using the legacy WebLogic T3 thin clients, make sure to start the Helidon application with `--add-opens=java.base/java.io=ALL-UNNAMED` to allow reflection with the legacy wlthint3client.
+> When using the legacy WebLogic T3 thin clients, make sure to start the Helidon
+> application with `--add-opens=java.base/java.io=ALL-UNNAMED` to allow
+> reflection with the legacy wlthint3client.
 
-Updated versions of thin T3 clients that are compatible with modern Jakarta runtimes can be downloaded from [Oracle Software Delivery Cloud][oracle-software] as `wlthint3client.jakarta`. However, Jakarta based thin clients can be placed on the Helidon classpath and used with this specialized connector or the [JMS connector][jms-connector] After the download, the thin T3 client artefact needs to be installed in the Maven repository accessible from the application build.
+Updated versions of thin T3 clients that are compatible with modern Jakarta
+runtimes can be downloaded from [Oracle Software Delivery
+Cloud][oracle-software] as `wlthint3client.jakarta`. However, Jakarta based thin
+clients can be placed on the Helidon classpath and used with this specialized
+connector or the [JMS connector][jms-connector] After the download, the thin T3
+client artefact needs to be installed in the Maven repository accessible from
+the application build.
 
 ## Maven Coordinates
 
-To enable WebLogic JMS connector, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable WebLogic JMS connector, add the following dependency to your project’s
+`pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -54,7 +70,9 @@ Connector name: `helidon-weblogic-jms`
 | `producer.unit-of-order` | All messages from the same unit of order will be processed sequentially in the order they were created.                                                                                                                                                                                                                                    |
 <!--@mdc :: -->
 
-Configuration is straight forward. Use JNDI for localizing and configuring of JMS ConnectionFactory from WebLogic. Notice the destination property which is used to define the queue with [WebLogic CDI Syntax][weblogic-cdi-syn].
+Configuration is straight forward. Use JNDI for localizing and configuring of
+JMS ConnectionFactory from WebLogic. Notice the destination property which is
+used to define the queue with [WebLogic CDI Syntax][weblogic-cdi-syn].
 
 Example config:
 
@@ -86,13 +104,15 @@ When configuring destination with WebLogic CDI, apply the following syntax:
 
 `jms-server-name/jms-module-name!destination-name`
 
-In our example, we are replacing jms-server-name with `.` as we don’t have to look up the server we are connected to.
+In our example, we are replacing jms-server-name with `.` as we don’t have to
+look up the server we are connected to.
 
 *Uniform Distributed Destinations (UDDs)*
 
 `jms-server-name/jms-module-name!jms-server-name@udd-name`
 
-Destination for UDD doesn’t have `./` prefix, because distributed destinations can be served by multiple servers within a cluster.
+Destination for UDD doesn’t have `./` prefix, because distributed destinations
+can be served by multiple servers within a cluster.
 
 ## Usage
 
@@ -165,7 +185,10 @@ public PublisherBuilder<Message<String>> produceToJms() {
 
 ### Secured t3 over SSL(t3s)
 
-For initiating SSL secured t3 connection, trust keystore with WLS public certificate is needed. Standard WLS installation has pre-configured Demo trust store: `WL_HOME/server/lib/DemoTrust.jks`, we can store it locally for connecting WLS over t3s.
+For initiating SSL secured t3 connection, trust keystore with WLS public
+certificate is needed. Standard WLS installation has pre-configured Demo trust
+store: `WL_HOME/server/lib/DemoTrust.jks`, we can store it locally for
+connecting WLS over t3s.
 
 Example config:
 

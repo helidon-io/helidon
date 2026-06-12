@@ -17,7 +17,8 @@ Maven Dependency:
 
 ### Key and certificate configuration
 
-Configuration support for accessing private keys, public keys, certificates and certificate chains including runtime access to instances of such.
+Configuration support for accessing private keys, public keys, certificates and
+certificate chains including runtime access to instances of such.
 
 Maven Dependency:
 

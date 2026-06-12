@@ -2,9 +2,14 @@
 
 ## Overview
 
-It’s a good practice to monitor your microservice’s health to ensure that it is available and performs correctly. Applications implement health checks to expose health status that is collected at regular intervals by external tooling, such as orchestrators like Kubernetes. The orchestrator may then take action, such as restarting your application if the health check fails.
+It’s a good practice to monitor your microservice’s health to ensure that it is
+available and performs correctly. Applications implement health checks to expose
+health status that is collected at regular intervals by external tooling, such
+as orchestrators like Kubernetes. The orchestrator may then take action, such as
+restarting your application if the health check fails.
 
-A typical health check combines the statuses of all the dependencies that affect availability and the ability to perform correctly:
+A typical health check combines the statuses of all the dependencies that affect
+availability and the ability to perform correctly:
 
 - Network Latency
 - Storage
@@ -13,7 +18,8 @@ A typical health check combines the statuses of all the dependencies that affect
 
 ## Maven Coordinates
 
-To enable Health Checks, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+To enable Health Checks, add the following dependency to your project’s
+`pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -35,31 +41,57 @@ Optional dependency to use built-in health checks:
 
 ### Enabling Health Support (and Built-in Health Checks) in Your Application
 
-The health subsystem is part of the observability support. As a result, your application includes health support by default provided your project meets several conditions:
+The health subsystem is part of the observability support. As a result, your
+application includes health support by default provided your project meets
+several conditions:
 
-- Your project depends on the `helidon-webserver-observe-health` component as described above.
-- (Optional) Your project depends on the `helidon-health-checks` component (if you want the built-in health checks).
-- Your code allows the webserver’s automatic feature discovery (enabled by default).
-- Your code allows the observe feature’s automatic observer discovery (also enabled by default).
+- Your project depends on the `helidon-webserver-observe-health` component as
+  described above.
+- (Optional) Your project depends on the `helidon-health-checks` component (if
+  you want the built-in health checks).
+- Your code allows the webserver’s automatic feature discovery (enabled by
+  default).
+- Your code allows the observe feature’s automatic observer discovery (also
+  enabled by default).
 
-If you disable either type of automatic discovery you can add the observe feature to the webserver explicitly, and you can add the health observer to the observe feature explicitly, customizing the behavior of each programmatically if you wish. You can also use configuration to tailor some of the behavior of the health component (such as changing the URI path from `/observe/health` to something else).
+If you disable either type of automatic discovery you can add the observe
+feature to the webserver explicitly, and you can add the health observer to the
+observe feature explicitly, customizing the behavior of each programmatically if
+you wish. You can also use configuration to tailor some of the behavior of the
+health component (such as changing the URI path from `/observe/health` to
+something else).
 
 ### Writing Custom Health Checks
 
-In many cases, the ability of your application to do its job depends on conditions known only to your application: for example, whether certain external resources such as databases are available. You can create custom health checks which reflect those conditions and add them to the overall health assessment of your application.
+In many cases, the ability of your application to do its job depends on
+conditions known only to your application: for example, whether certain external
+resources such as databases are available. You can create custom health checks
+which reflect those conditions and add them to the overall health assessment of
+your application.
 
-A health check is a Java functional interface that returns a new `HealthCheckResponse` instance each time Helidon queries the health check. Each health check also has a fixed name and a fixed health check type (start-up, liveness, or readiness).
+A health check is a Java functional interface that returns a new
+`HealthCheckResponse` instance each time Helidon queries the health check. Each
+health check also has a fixed name and a fixed health check type (start-up,
+liveness, or readiness).
 
-Your code registers a custom health check by invoking a method on Helidon-provided types in one of the following ways:
+Your code registers a custom health check by invoking a method on
+Helidon-provided types in one of the following ways:
 
-- Pass the name and type of the health check and a `Supplier` of a `HealthCheckResponse` such as a method reference or a lambda expression.
+- Pass the name and type of the health check and a `Supplier` of a
+  `HealthCheckResponse` such as a method reference or a lambda expression.
 - Pass an instance of a class which implements the `HealthCheck` interface.
 
-Within an application different techniques might make sense for different custom health checks, depending on the complexity of the logic for computing the status for each check. The various styles are functionally equivalent; for a given custom health check choose the style which enhances the readability and clarity of your code. The examples below, in no particular order, implement the same custom health check functionality in different ways to illustrate.
+Within an application different techniques might make sense for different custom
+health checks, depending on the complexity of the logic for computing the status
+for each check. The various styles are functionally equivalent; for a given
+custom health check choose the style which enhances the readability and clarity
+of your code. The examples below, in no particular order, implement the same
+custom health check functionality in different ways to illustrate.
 
 #### Option 1: Using a `HealthCheckResponse` supplier method
 
-If you gather the logic for computing the health check response into a method, then you can use a method reference to register the health check.
+If you gather the logic for computing the health check response into a method,
+then you can use a method reference to register the health check.
 
 Declaring a health check response supplier method:
 
@@ -89,15 +121,18 @@ ObserveFeature observe = ObserveFeature.builder()
 ```
 
 - Apply configuration to auto-discovered observers (e.g., health, metrics).
-- Augment the web server by adding the `ObserveFeature` containing the `HealthObserver`. This replaces the auto-discovered health observer.
+- Augment the web server by adding the `ObserveFeature` containing the
+  `HealthObserver`. This replaces the auto-discovered health observer.
 - Include the Helidon-supplied health checks.
-- Add the custom health check, passing a reference to the method which returns the health check responses.
+- Add the custom health check, passing a reference to the method which returns
+  the health check responses.
 - Set the type of the custom health check.
 - Set the name of the custom health check.
 
 #### Option 2: Using an in-line lambda expression
 
-If the logic for computing the health check response is fairly simple, express it as an in-line lambda when you register the health check.
+If the logic for computing the health check response is fairly simple, express
+it as an in-line lambda when you register the health check.
 
 Registering a health check using an in-line lambda expression:
 
@@ -116,21 +151,30 @@ ObserveFeature observe = ObserveFeature.builder()
     .build();
 ```
 
-- Augment the web server by adding the `ObserveFeature` containing the `HealthObserver`.
-- Add the custom health check passing a lambda expression supplying the health check response.
+- Augment the web server by adding the `ObserveFeature` containing the
+  `HealthObserver`.
+- Add the custom health check passing a lambda expression supplying the health
+  check response.
 - In the lambda, set the health check response status.
 - Still in the lambda, set a detail associated with the health check response.
 - Still in the lambda, build the health check response.
 - Set the type of the custom health check.
 - Set the name of the custom health check.
 
-Note that the logic in the lambda expression runs every time Helidon probes the added health check, so the values passed to `status` and `detail` are recomputed every time.
+Note that the logic in the lambda expression runs every time Helidon probes the
+added health check, so the values passed to `status` and `detail` are recomputed
+every time.
 
 #### Option 3: Using a `HealthCheck` Instance
 
-If a custom health check requires a lot of information to compute its health check response, it might be clearest to implement it as a class that implements the `HealthCheck` interface. Your code instantiates the class with all the information, including references to other data, it might need to compute the response each time Helidon probes it.
+If a custom health check requires a lot of information to compute its health
+check response, it might be clearest to implement it as a class that implements
+the `HealthCheck` interface. Your code instantiates the class with all the
+information, including references to other data, it might need to compute the
+response each time Helidon probes it.
 
-This example *is not* complicated in that way, but it’s useful to illustrate this technique of writing a custom health check.
+This example *is not* complicated in that way, but it’s useful to illustrate
+this technique of writing a custom health check.
 
 Declaring a concrete `HealthCheck` implementation:
 
@@ -156,10 +200,15 @@ class SlowStartHealthCheck implements HealthCheck {
 }
 ```
 
-- Implement the `io.helidon.health.HealthCheck` interface. The default health check name is the simple class name of the implementing class. Your code can override the `name()` method to return a different name. (Not shown in this example)
-- The default health check type is `LIVENESS` so this implementation overrides `type()` to declare a `READINESS` check.
+- Implement the `io.helidon.health.HealthCheck` interface. The default health
+  check name is the simple class name of the implementing class. Your code can
+  override the `name()` method to return a different name. (Not shown in this
+  example)
+- The default health check type is `LIVENESS` so this implementation overrides
+  `type()` to declare a `READINESS` check.
 - Sets a detail value `time` associated with the response to the current time.
-- Reports `DOWN` until at least eight seconds have passed since the server start-up, then reports `UP` thereafter.
+- Reports `DOWN` until at least eight seconds have passed since the server
+  start-up, then reports `UP` thereafter.
 
 Registering a `HealthCheck` instance:
 
@@ -172,12 +221,17 @@ ObserveFeature observe = ObserveFeature.builder()
     .build();
 ```
 
-- Augment the web server by adding the `ObserveFeature` containing the `HealthObserver`.
-- Instantiate the custom health check class and add the instance to the `HealthObserver`.
+- Augment the web server by adding the `ObserveFeature` containing the
+  `HealthObserver`.
+- Instantiate the custom health check class and add the instance to the
+  `HealthObserver`.
 
 #### Adding Observability (including the Custom Health Checks) to Helidon
 
-The code examples above prepare the `observe` feature instance using the built-in and custom health checks. To activate the health subsystem and other auto-discovered observability subsystems, add that `observe` instance as a feature to the webserver and start the server.
+The code examples above prepare the `observe` feature instance using the
+built-in and custom health checks. To activate the health subsystem and other
+auto-discovered observability subsystems, add that `observe` instance as a
+feature to the webserver and start the server.
 
 Register the observe feature with the server and start it:
 
@@ -194,7 +248,11 @@ WebServer server = WebServer.builder()
 
 #### Triggering and Interpreting Health Check Output
 
-Health support in Helidon is part of the observability feature. `HealthObserver` is a Helidon-provided observability implementation that contains a collection of registered `HealthCheck` instances and, when queried, invokes the registered health checks and returns a response with a status code representing the overall status of the application.
+Health support in Helidon is part of the observability feature. `HealthObserver`
+is a Helidon-provided observability implementation that contains a collection of
+registered `HealthCheck` instances and, when queried, invokes the registered
+health checks and returns a response with a status code representing the overall
+status of the application.
 
 | Status | Description                                                                  |
 |--------|------------------------------------------------------------------------------|
@@ -205,11 +263,25 @@ Health support in Helidon is part of the observability feature. `HealthObserver`
 
 Health status codes
 
-You control, either using configuration or adding code to your application, whether the HTTP responses to `GET` requests contain detailed information about each health check. With details enabled, HTTP `GET` responses include JSON content showing the detailed results of all the health checks which the server executed after receiving the request. With details disabled, HTTP `GET` responses have no payload. HTTP `HEAD` requests always return only the status with no payload.
+You control, either using configuration or adding code to your application,
+whether the HTTP responses to `GET` requests contain detailed information about
+each health check. With details enabled, HTTP `GET` responses include JSON
+content showing the detailed results of all the health checks which the server
+executed after receiving the request. With details disabled, HTTP `GET`
+responses have no payload. HTTP `HEAD` requests always return only the status
+with no payload.
 
-If you add the Helidon health dependency to your `pom.xml` file, Helidon automatically registers the `HelidonObserver` service and responds to the default `/observe/health` endpoint. Further, if you add the built-in health checks dependency, Helidon automatically finds them and adds those checks to the `HealthObserver`.
+If you add the Helidon health dependency to your `pom.xml` file, Helidon
+automatically registers the `HelidonObserver` service and responds to the
+default `/observe/health` endpoint. Further, if you add the built-in health
+checks dependency, Helidon automatically finds them and adds those checks to the
+`HealthObserver`.
 
-Below are parts of health responses which include the custom health check added in the earlier example code. This first response shows the health output within the first eight seconds after start-up. Recall that the custom health check will report `DOWN` during that time, so the overall health is `DOWN` and the HTTP response status is `503 Service Unavailable`.
+Below are parts of health responses which include the custom health check added
+in the earlier example code. This first response shows the health output within
+the first eight seconds after start-up. Recall that the custom health check will
+report `DOWN` during that time, so the overall health is `DOWN` and the HTTP
+response status is `503 Service Unavailable`.
 
 Response within 8 seconds: HTTP status 503 (not healthy):
 
@@ -228,7 +300,9 @@ Response within 8 seconds: HTTP status 503 (not healthy):
 }
 ```
 
-The next response shows the health output once the server has been running for at least eight seconds. The custom health check now reports `UP` so the overall health status is also `UP` now and the HTTP status is `200`.
+The next response shows the health output once the server has been running for
+at least eight seconds. The custom health check now reports `UP` so the overall
+health status is also `UP` now and the HTTP status is `200`.
 
 Response after 8 seconds: HTTP status 200:
 
@@ -248,7 +322,8 @@ Response after 8 seconds: HTTP status 200:
 ```
 
 > [!TIP]
-> Balance collecting a lot of information with the need to avoid overloading the application and overwhelming users.
+> Balance collecting a lot of information with the need to avoid overloading the
+> application and overwhelming users.
 
 The following table provides a summary of the Health Check API classes.
 
@@ -262,7 +337,8 @@ Health check API classes
 
 ### Built-In Health Checks
 
-You can use Helidon-provided health checks to report various common health check statuses:
+You can use Helidon-provided health checks to report various common health check
+statuses:
 
 <table style="width:100%;">
 <colgroup>
@@ -311,12 +387,17 @@ You can use Helidon-provided health checks to report various common health check
 </table>
 
 > [!NOTE]
-> Helidon cannot support the indicated health checks in the GraalVM native image environment,
-> so with native image those health checks do not appear in the health output.
+> Helidon cannot support the indicated health checks in the GraalVM native image
+> environment, so with native image those health checks do not appear in the
+> health output.
 
-Simply adding the built-in health check dependency is sufficient to register all the built-in health checks automatically. If you want to use only some of the built-in checks in your application, you can disable automatic discovery of the built-in health checks and register only the ones you want.
+Simply adding the built-in health check dependency is sufficient to register all
+the built-in health checks automatically. If you want to use only some of the
+built-in checks in your application, you can disable automatic discovery of the
+built-in health checks and register only the ones you want.
 
-The following code adds only selected built-in health checks to your application:
+The following code adds only selected built-in health checks to your
+application:
 
 Adding selected built-in health checks:
 
@@ -340,8 +421,9 @@ WebServer server = WebServer.builder()
 
 You can control the thresholds for built-in health checks in either of two ways:
 
-- Create the health checks individually using their builders instead of using the `HealthChecks` convenience class.
-  See the [table](#built-in-health-checks) above.
+- Create the health checks individually using their builders instead of using
+  the `HealthChecks` convenience class. See the [table](#built-in-health-checks)
+  above.
 - Using configuration as explained in [Configuration](#configuration).
 
 ### Kubernetes Probes
@@ -350,7 +432,8 @@ You can control the thresholds for built-in health checks in either of two ways:
 - [Readiness Probe](#readiness-probe)
 - [Startup Probe](#startup-probe)
 
-Probes is the term used by Kubernetes to describe health checks for containers ([Kubernetes documentation][kubernetes-docum]).
+Probes is the term used by Kubernetes to describe health checks for containers
+([Kubernetes documentation][kubernetes-docum]).
 
 There are three types of probes:
 
@@ -364,9 +447,14 @@ You can implement probes using the following mechanisms:
 2.  Sending an `HTTP` request to a container
 3.  Opening a `TCP` socket to a container
 
-A microservice exposed to HTTP traffic will typically implement both the liveness probe and the readiness probe using HTTP requests. If the microservice takes a significant time to initialize itself, you can also define a startup probe, in which case Kubernetes does not check liveness or readiness probes until the startup probe returns success.
+A microservice exposed to HTTP traffic will typically implement both the
+liveness probe and the readiness probe using HTTP requests. If the microservice
+takes a significant time to initialize itself, you can also define a startup
+probe, in which case Kubernetes does not check liveness or readiness probes
+until the startup probe returns success.
 
-You can configure several parameters for probes. The following are the most relevant parameters:
+You can configure several parameters for probes. The following are the most
+relevant parameters:
 
 | Parameter             | Description                                                                                          |
 |-----------------------|------------------------------------------------------------------------------------------------------|
@@ -377,10 +465,15 @@ You can configure several parameters for probes. The following are the most rele
 
 #### Liveness Probe
 
-The liveness probe is used to verify the container has become unresponsive. For example, it can be used to detect deadlocks or analyze heap usage. When Kubernetes gives up on a liveness probe, the corresponding pod is restarted.
+The liveness probe is used to verify the container has become unresponsive. For
+example, it can be used to detect deadlocks or analyze heap usage. When
+Kubernetes gives up on a liveness probe, the corresponding pod is restarted.
 
 > [!NOTE]
-> The liveness probe can result in repeated restarts in certain cases. For example, if the probe is implemented to check all the dependencies strictly, then it can fail repeatedly for temporary issues. Repeated restarts can also occur if `timeoutSeconds` or `periodSeconds` is too low.
+> The liveness probe can result in repeated restarts in certain cases. For
+> example, if the probe is implemented to check all the dependencies strictly,
+> then it can fail repeatedly for temporary issues. Repeated restarts can also
+> occur if `timeoutSeconds` or `periodSeconds` is too low.
 
 We recommend the following:
 
@@ -390,24 +483,34 @@ We recommend the following:
 
 #### Readiness Probe
 
-The readiness probe is used to avoid routing requests to the pod until it is ready to accept traffic. When Kubernetes gives up on a readiness probe, the pod is not restarted, traffic is not routed to the pod anymore.
+The readiness probe is used to avoid routing requests to the pod until it is
+ready to accept traffic. When Kubernetes gives up on a readiness probe, the pod
+is not restarted, traffic is not routed to the pod anymore.
 
 > [!NOTE]
-> In certain cases, the readiness probe can cause all the pods to be removed from service routing. For example, if the probe is implemented to check all the dependencies strictly, then it can fail repeatedly for temporary issues. This issue can also occur if `timeoutSeconds` or `periodSeconds` is too low.
+> In certain cases, the readiness probe can cause all the pods to be removed
+> from service routing. For example, if the probe is implemented to check all
+> the dependencies strictly, then it can fail repeatedly for temporary issues.
+> This issue can also occur if `timeoutSeconds` or `periodSeconds` is too low.
 
 We recommend the following:
 
 - Be conservative when checking shared dependencies.
 - Be aggressive when checking local dependencies.
-- Set `failureThreshold` according to `periodSeconds` in order to accommodate temporary errors.
+- Set `failureThreshold` according to `periodSeconds` in order to accommodate
+  temporary errors.
 
 #### Startup Probe
 
-The startup probe prevents Kubernetes from prematurely checking the other probes if the application takes a long time to start. Otherwise, Kubernetes might misinterpret a failed liveness or readiness probe and shut down the container when, in fact, the application is still coming up.
+The startup probe prevents Kubernetes from prematurely checking the other probes
+if the application takes a long time to start. Otherwise, Kubernetes might
+misinterpret a failed liveness or readiness probe and shut down the container
+when, in fact, the application is still coming up.
 
 ### Troubleshooting Probes
 
-Failed probes are recorded as events associated with their corresponding pods. The event message contains only the status code.
+Failed probes are recorded as events associated with their corresponding pods.
+The event message contains only the status code.
 
 Get the events of a single pod:
 
@@ -420,19 +523,25 @@ kubectl get event --field-selector involvedObject.name=${POD_NAME}
 - Filter the events for the pod.
 
 > [!TIP]
-> Create log messages in your health check implementation when setting a `DOWN` status. This will allow you to correlate the cause of a failed probe.
+> Create log messages in your health check implementation when setting a `DOWN`
+> status. This will allow you to correlate the cause of a failed probe.
 
 ## Configuration
 
-Built-in health checks can be configured using the config property keys described in this [table](#built-in-health-checks).
+Built-in health checks can be configured using the config property keys
+described in this [table](#built-in-health-checks).
 
-Further, you can suppress one or more health checks by setting the configuration item `server.features.observe.observers.health.exclude` to a comma-separated list of the health check names you want to exclude. The same table lists the name names for the built-in health checks.
+Further, you can suppress one or more health checks by setting the configuration
+item `server.features.observe.observers.health.exclude` to a comma-separated
+list of the health check names you want to exclude. The same table lists the
+name names for the built-in health checks.
 
 ## Examples
 
 ### JSON Response Example
 
-Accessing the Helidon-provided `/observe/health` endpoint reports the health of your application as shown below:
+Accessing the Helidon-provided `/observe/health` endpoint reports the health of
+your application as shown below:
 
 <!--@mdc ::code-collapse -->
 
@@ -475,7 +584,11 @@ Accessing the Helidon-provided `/observe/health` endpoint reports the health of 
 
 ### Kubernetes Example
 
-This example shows the usage of the Helidon health API in an application that implements health endpoints for the liveness and readiness probes. Note that the application code dissociates the health endpoints from the default routes, so that the health endpoints are not exposed by the service. An example YAML specification is also provided for the Kubernetes service and deployment.
+This example shows the usage of the Helidon health API in an application that
+implements health endpoints for the liveness and readiness probes. Note that the
+application code dissociates the health endpoints from the default routes, so
+that the health endpoints are not exposed by the service. An example YAML
+specification is also provided for the Kubernetes service and deployment.
 
 Application code:
 

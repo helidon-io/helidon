@@ -2,11 +2,18 @@
 
 ## Overview
 
-Fault Tolerance is part of the MicroProfile set of specifications. This API defines mostly annotations that improve application robustness by providing support to conveniently handle error conditions (faults) that may occur in real-world applications. Examples include service restarts, network delays, temporal infrastructure instabilities, etc.
+Fault Tolerance is part of the MicroProfile set of specifications. This API
+defines mostly annotations that improve application robustness by providing
+support to conveniently handle error conditions (faults) that may occur in
+real-world applications. Examples include service restarts, network delays,
+temporal infrastructure instabilities, etc.
 
 ## Maven Coordinates
 
-To enable MicroProfile Fault Tolerance, either add a dependency on the [helidon-microprofile bundle](introduction.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+To enable MicroProfile Fault Tolerance, either add a dependency on the
+[helidon-microprofile bundle](introduction.md) or add the following dependency
+to your project’s `pom.xml` (see [Managing
+Dependencies](../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -17,9 +24,15 @@ To enable MicroProfile Fault Tolerance, either add a dependency on the [helidon-
 
 ## API
 
-The MicroProfile Fault Tolerance specification defines a set of annotations to decorate classes and methods in your application for the purpose of improving its robustness. Many of these annotations can be applied at the class or method level: if applied at the class level, they will impact all methods in the class; if applied both at the class and method level, the latter will take precedence over the former.
+The MicroProfile Fault Tolerance specification defines a set of annotations to
+decorate classes and methods in your application for the purpose of improving
+its robustness. Many of these annotations can be applied at the class or method
+level: if applied at the class level, they will impact all methods in the class;
+if applied both at the class and method level, the latter will take precedence
+over the former.
 
-The following table provides a brief description of each of these annotations, including its parameters and default values.
+The following table provides a brief description of each of these annotations,
+including its parameters and default values.
 
 <table>
 <colgroup>
@@ -91,7 +104,9 @@ The following table provides a brief description of each of these annotations, i
 
 ## Configuration
 
-Helidon’s implementation uses two types of thread pools: normal and scheduled. The default core size of these executors is 20; however, that can be configured using an `application.yaml` file as follows:
+Helidon’s implementation uses two types of thread pools: normal and scheduled.
+The default core size of these executors is 20; however, that can be configured
+using an `application.yaml` file as follows:
 
 ```yaml
 executor:
@@ -102,15 +117,21 @@ scheduled-executor:
 ```
 
 > [!NOTE]
-> There is currently *no support* to configure these executor properties via a `microprofile-config.properties` file.
+> There is currently *no support* to configure these executor properties via a
+> `microprofile-config.properties` file.
 
-For a complete set of properties available to configure these executors, see [ThreadPoolConfig][threadpoolconfig]. [ScheduledThreadPoolConfig][scheduledthreadp].
+For a complete set of properties available to configure these executors, see
+[ThreadPoolConfig][threadpoolconfig].
+[ScheduledThreadPoolConfig][scheduledthreadp].
 
 ## Examples
 
-1.  The method `retryWithFallback` shall be called at most 3 times, first call plus 2 retries, with a delay of 400 milliseconds between calls. If none of the calls is successful, the `onFailure` method shall be called as a fallback mechanism.
+1.  The method `retryWithFallback` shall be called at most 3 times, first call
+    plus 2 retries, with a delay of 400 milliseconds between calls. If none of
+    the calls is successful, the `onFailure` method shall be called as a
+    fallback mechanism.
 
-    ``` java
+    ```java
     @Retry(maxRetries = 2, delay = 400L)
     @Fallback(fallbackMethod = "onFailure")
     String retryWithFallback() {
@@ -118,9 +139,13 @@ For a complete set of properties available to configure these executors, see [Th
     }
     ```
 
-2.  The method `timedCircuitBreaker` defines a *rolling window* of size 10 and a policy to open the circuit breaker after 4 or more failures occur in that window, and to transition back to half-open state after 3 consecutive and successful runs. Additionally, it sets an overall timeout for the invocation of 1.5 seconds.
+2.  The method `timedCircuitBreaker` defines a *rolling window* of size 10 and a
+    policy to open the circuit breaker after 4 or more failures occur in that
+    window, and to transition back to half-open state after 3 consecutive and
+    successful runs. Additionally, it sets an overall timeout for the invocation
+    of 1.5 seconds.
 
-    ``` java
+    ```java
     @Timeout(1500)
     @CircuitBreaker(requestVolumeThreshold = 10,
                 failureRatio = .4,
@@ -130,9 +155,13 @@ For a complete set of properties available to configure these executors, see [Th
     }
     ```
 
-3.  The method `executeWithQueueAndFallback` defines a bulkhead that will limit the number of concurrent calls to a maximum of 2; any additional tasks shall be queued up to a maximum of 10. Finally, if an error occurs the `onFailure` method shall be called as a fallback mechanism. The `@Asynchronous` annotation is needed to enable queueing of bulkhead tasks.
+3.  The method `executeWithQueueAndFallback` defines a bulkhead that will limit
+    the number of concurrent calls to a maximum of 2; any additional tasks shall
+    be queued up to a maximum of 10. Finally, if an error occurs the `onFailure`
+    method shall be called as a fallback mechanism. The `@Asynchronous`
+    annotation is needed to enable queueing of bulkhead tasks.
 
-    ``` java
+    ```java
     @Asynchronous
     @Fallback(fallbackMethod = "onFailure")
     @Bulkhead(value = 2, waitingTaskQueue = 10)
@@ -143,7 +172,8 @@ For a complete set of properties available to configure these executors, see [Th
 
 ## Additional Information
 
-For additional information about this API, see the [MicroProfile Fault Tolerance Javadocs][microprofile-fau].
+For additional information about this API, see the [MicroProfile Fault Tolerance
+Javadocs][microprofile-fau].
 
 ## Reference
 

@@ -2,11 +2,18 @@
 
 ## Overview
 
-Helidon MicroProfile Config is an implementation of [Eclipse MicroProfile Config][eclipse-micropro]. You can configure your applications using MicroProfile’s config configuration sources and APIs. You can also extend the configuration using MicroProfile SPI to add custom `ConfigSource` and `Converter`.
+Helidon MicroProfile Config is an implementation of [Eclipse MicroProfile
+Config][eclipse-micropro]. You can configure your applications using
+MicroProfile’s config configuration sources and APIs. You can also extend the
+configuration using MicroProfile SPI to add custom `ConfigSource` and
+`Converter`.
 
 ## Maven Coordinates
 
-To enable MicroProfile Config, either add a dependency on the [helidon-microprofile bundle](../introduction.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable MicroProfile Config, either add a dependency on the
+[helidon-microprofile bundle](../introduction.md) or add the following
+dependency to your project’s `pom.xml` (see [Managing
+Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -21,9 +28,11 @@ To enable MicroProfile Config, either add a dependency on the [helidon-microprof
 
 #### MicroProfile Config Sources
 
-A Config Source provides configuration values from different sources such as property files and user classes that are registered by the application.
+A Config Source provides configuration values from different sources such as
+property files and user classes that are registered by the application.
 
-By default, the following configuration sources are used to retrieve the configuration:
+By default, the following configuration sources are used to retrieve the
+configuration:
 
 | Source | Description |
 |----|----|
@@ -31,11 +40,15 @@ By default, the following configuration sources are used to retrieve the configu
 | Environment variables | An immutable source that uses `System.env()` to obtain configuration values and resolves aliases as defined by the MicroProfile Config specification. |
 | `META-INF/microprofile-config.properties` | The properties config source as defined by MicroProfile Config specification. |
 
-MicroProfile Config uses `ConfigSource` SPI to load configuration data, either from default configuration sources or from custom `ConfigSource` located by Java Service Loader.
+MicroProfile Config uses `ConfigSource` SPI to load configuration data, either
+from default configuration sources or from custom `ConfigSource` located by Java
+Service Loader.
 
 #### Using MicroProfile Config API
 
-You can use MicroProfile Config API to get configuration properties by using a `Config` instance programmatically or injecting configuration values with `@ConfigProperty`.
+You can use MicroProfile Config API to get configuration properties by using a
+`Config` instance programmatically or injecting configuration values with
+`@ConfigProperty`.
 
 Using Config:
 
@@ -55,24 +68,36 @@ public GreetingProvider(
 }
 ```
 
-MicroProfile Config provides typed access to configuration values, using built-in converters, and `Converter` implementations located by Java Service Loader.
+MicroProfile Config provides typed access to configuration values, using
+built-in converters, and `Converter` implementations located by Java Service
+Loader.
 
 #### Ordering of Default Config Sources
 
-In order to properly configure your application using configuration sources, you need to understand the precedence rules used to merge your configuration data. The default MicroProfile Config Sources ordering is:
+In order to properly configure your application using configuration sources, you
+need to understand the precedence rules used to merge your configuration data.
+The default MicroProfile Config Sources ordering is:
 
 - System properties (ordinal=400)
 - Environment variables (ordinal=300)
 - /META-INF/microprofile-config.properties (ordinal=100)
 
-Each Config Source has an ordinal that determines the priority of the Config Source. A Config Source with higher ordinal has higher priority as compared to the Config Source with lower ordinal. The values taken from the high-priority Config Source overrides the values from low-priority Config Source. The default value is 100.
+Each Config Source has an ordinal that determines the priority of the Config
+Source. A Config Source with higher ordinal has higher priority as compared to
+the Config Source with lower ordinal. The values taken from the high-priority
+Config Source overrides the values from low-priority Config Source. The default
+value is 100.
 
 > [!NOTE]
 > In MP, the ordering is not defined for sources that have the same ordinal.
 
-This helps to customize the configuration of Config Sources using external Config Source if an external Config Source has higher ordinal values than the built-in Config Sources of the application.
+This helps to customize the configuration of Config Sources using external
+Config Source if an external Config Source has higher ordinal values than the
+built-in Config Sources of the application.
 
-The example below shows how the MicroProfile configuration file `microprofile-config.properties` can be used to modify the server listen port property.
+The example below shows how the MicroProfile configuration file
+`microprofile-config.properties` can be used to modify the server listen port
+property.
 
 ```properties [microprofile-config.properties]
 # Application properties. This is the default greeting
@@ -85,17 +110,30 @@ server.host=0.0.0.0
 
 #### MicroProfile Config Profiles
 
-MicroProfile Config supports a concept of configuration profiles. You can define a profile using the configuration property `mp.config.profile` This can be defined as a system property, environment variable or as a property in `microprofile-config.properties` (when default configuration is used). When a profile is defined, an additional config source is loaded: `microprofile-config-<profile_name>.properties` and properties in the profile specific config source will override properties set in the default config source.
+MicroProfile Config supports a concept of configuration profiles. You can define
+a profile using the configuration property `mp.config.profile` This can be
+defined as a system property, environment variable or as a property in
+`microprofile-config.properties` (when default configuration is used). When a
+profile is defined, an additional config source is loaded:
+`microprofile-config-<profile_name>.properties` and properties in the profile
+specific config source will override properties set in the default config
+source.
 
-You can also use profiles on a per property level. Profile specific properties are defined using `%<profile_name>` prefix, such as `%dev.server.port`. This will override the plain property `server.port`. For more details see [How Config Profiles work][how-config-profi]
+You can also use profiles on a per property level. Profile specific properties
+are defined using `%<profile_name>` prefix, such as `%dev.server.port`. This
+will override the plain property `server.port`. For more details see [How Config
+Profiles work][how-config-profi]
 
 ### Helidon MicroProfile Config Features
 
-Helidon MicroProfile Config offers the following features on top of the specification:
+Helidon MicroProfile Config offers the following features on top of the
+specification:
 
 ### Helidon MicroProfile Config Sources
 
-Helidon configuration sources can use different formats for the configuration data. You can specify the format on a per source bases, mixing and matching formats as required.
+Helidon configuration sources can use different formats for the configuration
+data. You can specify the format on a per source bases, mixing and matching
+formats as required.
 
 The following configuration sources can be used to retrieve the configuration:
 
@@ -112,7 +150,9 @@ See [manual setup of config][manual-setup-of] section for more information.
 
 #### References
 
-You can use `${reference}` to reference another configuration key in a key value. This allows to configure a single key to be reused in multiple other keys.
+You can use `${reference}` to reference another configuration key in a key
+value. This allows to configure a single key to be reused in multiple other
+keys.
 
 ```yaml [application.yaml]
 uri: "http://localhost:8080"
@@ -122,9 +162,12 @@ service-2: "${uri}/service2"
 
 #### Change support
 
-Polling (or change watching) for file based config sources (not classpath based).
+Polling (or change watching) for file based config sources (not classpath
+based).
 
-To enable polling for a config source created using meta configuration (see below), or using `MpConfigSources.create(Path)`, or `YamlMpConfigSource.create(Path)`, use the following properties:
+To enable polling for a config source created using meta configuration (see
+below), or using `MpConfigSources.create(Path)`, or
+`YamlMpConfigSource.create(Path)`, use the following properties:
 
 <table>
 <colgroup>
@@ -157,7 +200,10 @@ See link:https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/nio/f
 
 #### Encryption
 
-You can encrypt secrets using a master password and store them in a configuration file. The config encryption filter in MicroProfile Config is enabled by default. For more information, see [Configuration Secrets][configuration-se].
+You can encrypt secrets using a master password and store them in a
+configuration file. The config encryption filter in MicroProfile Config is
+enabled by default. For more information, see [Configuration
+Secrets][configuration-se].
 
 Example of encrypted secrets:
 
@@ -173,12 +219,16 @@ client_secret_clear=${CLEAR=known_password}
 
 #### Meta Configuration
 
-You can configure the Config using Helidon MP Config meta configuration feature. The meta-config allows configuration of config sources and other configuration options, including addition of discovered sources and converters.
+You can configure the Config using Helidon MP Config meta configuration feature.
+The meta-config allows configuration of config sources and other configuration
+options, including addition of discovered sources and converters.
 
 See [MicroProfile Config Sources][microprofile-con] for detailed information.
 
 > [!NOTE]
-> For backward compatibility, we will support usage of Helidon SE meta-configuration until version 3.0.0. Using this approach causes behavior that is not compatible with MicroProfile Config specification.
+> For backward compatibility, we will support usage of Helidon SE
+> meta-configuration until version 3.0.0. Using this approach causes behavior
+> that is not compatible with MicroProfile Config specification.
 
 ## Configuration
 
@@ -192,7 +242,8 @@ The class responsible for configuration is:
 |----|----|----|----|
 | <span id="a2c415-profile"></span> `profile` | `VALUE` | `String` | Configure an explicit profile name |
 
-Current properties may be set in `application.yaml` or in `microprofile-config.properties` with `mp.config` prefix.
+Current properties may be set in `application.yaml` or in
+`microprofile-config.properties` with `mp.config` prefix.
 
 See [Config Profiles](#microprofile-config-profiles) for more information.
 

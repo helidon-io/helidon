@@ -2,12 +2,15 @@
 
 ## Overview
 
-Helidon Builder is an API designed for generating immutable objects using the builder pattern, with optional integration with Helidon Config for initialization at runtime.
+Helidon Builder is an API designed for generating immutable objects using the
+builder pattern, with optional integration with Helidon Config for
+initialization at runtime.
 
 
 ## Maven Coordinates
 
-To enable Builder, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+To enable Builder, add the following dependency to your project’s `pom.xml` (see
+[Managing Dependencies](../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -45,19 +48,25 @@ You also need to add the annotation processor configuration:
 
 ## Terminology
 
-- **Blueprint**: A package-private interface that serves as the source for code generation.
-- **Prototyped**: The generated code extending the blueprint. It is part of the public API and includes the fluent builder implementation and static factory methods.
-- **Runtime Type**: An optional, user-defined type created using the prototype. It is useful for constructing custom objects beyond the generated prototype.
+- **Blueprint**: A package-private interface that serves as the source for code
+  generation.
+- **Prototyped**: The generated code extending the blueprint. It is part of the
+  public API and includes the fluent builder implementation and static factory
+  methods.
+- **Runtime Type**: An optional, user-defined type created using the prototype.
+  It is useful for constructing custom objects beyond the generated prototype.
 
 ## Features
 
 - Reflection-free implementation; no bytecode manipulation.
 - Support for inheritance in prototypes and blueprints.
 - Automatic Javadoc generation.
-- Seamless integration with Helidon Config for property initialization, default values, and advanced customization.
+- Seamless integration with Helidon Config for property initialization, default
+  values, and advanced customization.
 - Optional generation of factory, prototype, and builder methods.
 - Supports `List`, `Set`, and `Map` collections.
-- Explicit default value support for common types (`String`, `int`, `long`, `boolean`, etc.).
+- Explicit default value support for common types (`String`, `int`, `long`,
+  `boolean`, etc.).
 - Enumeration support.
 
 ## Limitations
@@ -66,20 +75,25 @@ You also need to add the annotation processor configuration:
 - Blueprints must be package-private interfaces.
 - Classes are not supported as blueprints.
 - `null` values are not allowed; use `Optional` instead.
-- Collection types are fixed to `ArrayList`, `LinkedHashSet`, and `LinkedHashMap`.
+- Collection types are fixed to `ArrayList`, `LinkedHashSet`, and
+  `LinkedHashMap`.
 
 ## Generate a class with builder
 
-This use case demonstrates generating an immutable class with a builder from a blueprint interface. The blueprint serves as the input for code generation, and the resulting prototype provides a fluent API for constructing instances.
+This use case demonstrates generating an immutable class with a builder from a
+blueprint interface. The blueprint serves as the input for code generation, and
+the resulting prototype provides a fluent API for constructing instances.
 
 1.  Blueprint Requirements:
     - Must be a package-private interface.
-    - Its name must end with `Blueprint`. The prototype’s name will be the blueprint’s name without this suffix.
+    - Its name must end with `Blueprint`. The prototype’s name will be the
+      blueprint’s name without this suffix.
     - Options are defined as getter methods.
 2.  Generated Output:
     - Prototype is a part of your module public API.
     - The prototype class is placed in the same package as the blueprint.
-    - Generated files can be found in the `./target/generated-sources/annotations` directory.
+    - Generated files can be found in the
+      `./target/generated-sources/annotations` directory.
 
 ### Example
 
@@ -94,7 +108,8 @@ interface ServiceConfigBlueprint {
 ```
 
 - Marks the interface as a blueprint for code generation.
-- Must be package-private and named with a `Blueprint` suffix. The prototype’s name will be `ServiceConfig`.
+- Must be package-private and named with a `Blueprint` suffix. The prototype’s
+  name will be `ServiceConfig`.
 - Getter method for field `name`.
 
 After building the project, a prototype `ServiceConfig` will be generated.
@@ -121,9 +136,11 @@ public interface ServiceConfig extends ServiceConfigBlueprint, Prototype.Api {
 ```
 
 - Marker annotation specifying that this interface was generated.
-- Generated interface extending the given blueprint. The interface name is a blueprint name with "Blueprint" suffix removed.
+- Generated interface extending the given blueprint. The interface name is a
+  blueprint name with "Blueprint" suffix removed.
 - Static method returning a generated builder.
-- Static method returning a generated builder initialized with the field value from given instance.
+- Static method returning a generated builder initialized with the field value
+  from given instance.
 - Factory method creating an instance with default values.
 - Generated builder.
 
@@ -136,22 +153,31 @@ ServiceConfig serviceConfig = ServiceConfig.builder()
     .build();
 ```
 
-This ensures type safety, immutability, and a fluent API for constructing objects.
+This ensures type safety, immutability, and a fluent API for constructing
+objects.
 
 ### Add support for reading data from configuration
 
-This scenario extends the basic builder functionality by enabling the generated prototype to initialize its fields using values from Helidon Config.
+This scenario extends the basic builder functionality by enabling the generated
+prototype to initialize its fields using values from Helidon Config.
 
-1.  The blueprint must be annotated with `@Prototype.Configured` to enable configuration-based initialization.
-2.  Each field initialized from the configuration must be annotated with `@Option.Configured`.
-3.  Default values can be set using `@Option.Default`. If a configuration value is missing, the default is used.
+1.  The blueprint must be annotated with `@Prototype.Configured` to enable
+    configuration-based initialization.
+2.  Each field initialized from the configuration must be annotated with
+    `@Option.Configured`.
+3.  Default values can be set using `@Option.Default`. If a configuration value
+    is missing, the default is used.
 4.  `null` values are not supported; use `Optional` for optional fields.
 5.  Lists, Sets, and Maps are supported and initialized from configuration.
-6.  You can customize and validate fields using the @Option API. Advanced programmatic customization is possible by implementing a custom `BuilderDecorator` via `@Prototype.Blueprint(decorator = MyDecorator.class)`.
+6.  You can customize and validate fields using the @Option API. Advanced
+    programmatic customization is possible by implementing a custom
+    `BuilderDecorator` via `@Prototype.Blueprint(decorator =
+    MyDecorator.class)`.
 
 #### Example
 
-The following example demonstrates how to configure a `ServiceConfig` object using Helidon Config.
+The following example demonstrates how to configure a `ServiceConfig` object
+using Helidon Config.
 
 Blueprint Definition:
 
@@ -168,11 +194,14 @@ interface ServiceConfigBlueprint {
 }
 ```
 
-- Specifies that this blueprint can be configured with the root key `service` in the configuration.
-- Marks the field `name` as configurable. By default, the configuration key is derived from the method name in dash-separated format.
+- Specifies that this blueprint can be configured with the root key `service` in
+  the configuration.
+- Marks the field `name` as configurable. By default, the configuration key is
+  derived from the method name in dash-separated format.
 - Sets a default value for `pageSize` if it is not defined in the configuration.
 
-The generated prototype includes a `create` method that accepts a `Config` instance:
+The generated prototype includes a `create` method that accepts a `Config`
+instance:
 
 ```java
 static ServiceConfig create(Config config);
@@ -194,26 +223,36 @@ service.page-size=10
 
 Helidon Builder supports a range of customization options:
 
-- **Field Validation:** Add constraints or validations using annotations like `@Option.AllowedValues` or `@Option.Required`.
-- **Field Transformation:** Use a custom `BuilderDecorator` to modify field values during the build process.
+- **Field Validation:** Add constraints or validations using annotations like
+  `@Option.AllowedValues` or `@Option.Required`.
+- **Field Transformation:** Use a custom `BuilderDecorator` to modify field
+  values during the build process.
 
 For additional customization details, see the [API](#api) section.
 
 ## Creating a runtime type
 
-This scenario extends the basic functionality of Helidon Builder to create a user-defined runtime type based on a prototype. This approach is particularly useful when the generated prototype needs to be transformed into a domain-specific runtime type.
+This scenario extends the basic functionality of Helidon Builder to create a
+user-defined runtime type based on a prototype. This approach is particularly
+useful when the generated prototype needs to be transformed into a
+domain-specific runtime type.
 
 To enable runtime object creation, follow these guidelines:
 
 1.  **Prototype Factory:**  
-    The blueprint must extend `Prototype.Factory<RuntimeType>`, where `RuntimeType` is the desired runtime type.
+    The blueprint must extend `Prototype.Factory<RuntimeType>`, where
+    `RuntimeType` is the desired runtime type.
 
-2.  This option has been removed, as it is redundant (`@PrototypedBy`), this annotation is deprecated and will be eventually removed; it has no function now
+2.  This option has been removed, as it is redundant (`@PrototypedBy`), this
+    annotation is deprecated and will be eventually removed; it has no function
+    now
 3.  **Runtime Type Interface:**  
-    The runtime type must implement `RuntimeType.Api<Prototype>` to indicate the prototype it is based on.
+    The runtime type must implement `RuntimeType.Api<Prototype>` to indicate the
+    prototype it is based on.
 
 4.  **Required Methods in Runtime Type:**  
-    The runtime type must include the following methods, implemented by the user:
+    The runtime type must include the following methods, implemented by the
+    user:
 
     - `public static Prototype.Builder builder()`  
       Provides a builder for the runtime type.
@@ -225,18 +264,26 @@ To enable runtime object creation, follow these guidelines:
       Creates a runtime type from a consumer to configure the prototype builder.
 
 5.  **Prototype Integration:**  
-    The blueprint must include the `@Prototype.Blueprint` annotation and extend `Prototype.Factory<RuntimeType>`.
+    The blueprint must include the `@Prototype.Blueprint` annotation and extend
+    `Prototype.Factory<RuntimeType>`.
 
-Note that requirements 3 - 5 can be omitted when using a third party runtime type (i.e. `PrivateKey`), in such a case the setup should be:
+Note that requirements 3 - 5 can be omitted when using a third party runtime
+type (i.e. `PrivateKey`), in such a case the setup should be:
 
-1.  Create a blueprint that extends `Prototype.Factory<RuntimeType>` (same as above)
-2.  Add a custom method annotated with `@Prototype.RuntimeTypeFactoryMethod` (custom methods can be configured on blueprint using `@Prototype.CustomMethods`, the custom method is a static method with signature `RuntimeType create(Prototype)`), method name is arbitrary
+1.  Create a blueprint that extends `Prototype.Factory<RuntimeType>` (same as
+    above)
+2.  Add a custom method annotated with `@Prototype.RuntimeTypeFactoryMethod`
+    (custom methods can be configured on blueprint using
+    `@Prototype.CustomMethods`, the custom method is a static method with
+    signature `RuntimeType create(Prototype)`), method name is arbitrary
 
-This will generate a prototype that has a method `build()` that builds the `RuntimeType`.
+This will generate a prototype that has a method `build()` that builds the
+`RuntimeType`.
 
 ### Example
 
-The following example demonstrates creating a `Service` runtime type from a `ServiceConfigBlueprint`.
+The following example demonstrates creating a `Service` runtime type from a
+`ServiceConfigBlueprint`.
 
 Runtime type implementation:
 
@@ -276,26 +323,27 @@ interface ServiceConfigBlueprint extends Prototype.Factory<Service> {
 }
 ```
 
-- Extending `Prototype.Factory<Service>` enables creating `Service` runtime objects.
+- Extending `Prototype.Factory<Service>` enables creating `Service` runtime
+  objects.
 
 Usage:
 
 - Using a fluent builder:
 
-  ``` java
+  ```java
   Service service = Service.builder().build();
   ```
 
 - Using intermediate prototype object:
 
-  ``` java
+  ```java
   ServiceConfig serviceConfig = ServiceConfig.builder().buildPrototype();
   Service service = serviceConfig.build();
   ```
 
 - Using a consumer to configure the builder:
 
-  ``` java
+  ```java
   Service service = Service.create(builder -> builder.name("My Service")
                                                    .pageSize(10));
   ```
@@ -358,7 +406,9 @@ Interfaces:
 | `Option.ProtypedBy`    | When using a third party runtime type and we have a prototype that builds it, we can specify the prototype class name (or fully qualified class name if in a different package) to add prototype methods and to read from configuration using that prototype                         |
 <!--@mdc :: -->
 
-To configure default value(s) of an option, one of the following annotations can be used (mutually exclusive!). Most defaults support an array, to provide default values for collections.
+To configure default value(s) of an option, one of the following annotations can
+be used (mutually exclusive!). Most defaults support an array, to provide
+default values for collections.
 
 | Annotation              | Description                                                                                        |
 |-------------------------|----------------------------------------------------------------------------------------------------|

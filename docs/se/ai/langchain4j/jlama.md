@@ -2,11 +2,13 @@
 
 ## Overview
 
-This module adds support for selected [Jlama](https://github.com/tjake/Jlama) models.
+This module adds support for selected [Jlama](https://github.com/tjake/Jlama)
+models.
 
 ## Maven Coordinates
 
-In addition to the [Helidon integration with LangChain4J core dependencies](langchain4j.md#maven-coordinates), you must add the following:
+In addition to the [Helidon integration with LangChain4J core
+dependencies][helidon-integrat], you must add the following:
 
 ```xml [pom.xml]
 <dependency>
@@ -17,7 +19,8 @@ In addition to the [Helidon integration with LangChain4J core dependencies](lang
 
 ## JlamaChatModel
 
-To automatically create and add `JlamaChatModel` to the service registry add the following lines to `application.yaml`:
+To automatically create and add `JlamaChatModel` to the service registry add the
+following lines to `application.yaml`:
 
 ```yaml [application.yaml]
 langchain4j:
@@ -31,7 +34,8 @@ langchain4j:
       model-name: "tjake/Qwen2.5-0.5B-Instruct-JQ4"
 ```
 
-If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+If `enabled` is set to `false`, the configuration is ignored, and the component
+is not created.
 
 ### Configuration options
 
@@ -52,7 +56,8 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 ## JlamaEmbeddingModel
 
-To automatically create and add `JlamaEmbeddingModel` to the service registry add the following lines to `application.yaml`:
+To automatically create and add `JlamaEmbeddingModel` to the service registry
+add the following lines to `application.yaml`:
 
 ```yaml [application.yaml]
 langchain4j:
@@ -66,7 +71,8 @@ langchain4j:
       model-name: "tjake/Qwen2.5-0.5B-Instruct-JQ4"
 ```
 
-If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+If `enabled` is set to `false`, the configuration is ignored, and the component
+is not created.
 
 ### Configuration options
 
@@ -82,7 +88,8 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 ## JlamaLanguageModel
 
-To automatically create and add `JlamaLanguageModel` to the service registry add the following lines to `application.yaml`:
+To automatically create and add `JlamaLanguageModel` to the service registry add
+the following lines to `application.yaml`:
 
 ```yaml [application.yaml]
 langchain4j:
@@ -96,7 +103,8 @@ langchain4j:
       model-name: "tjake/Qwen2.5-0.5B-Instruct-JQ4"
 ```
 
-If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+If `enabled` is set to `false`, the configuration is ignored, and the component
+is not created.
 
 ### Configuration options
 
@@ -117,7 +125,8 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 ## JlamaStreamingChatModel
 
-To automatically create and add `JlamaStreamingChatModel` to the service registry add the following lines to `application.yaml`:
+To automatically create and add `JlamaStreamingChatModel` to the service
+registry add the following lines to `application.yaml`:
 
 ```yaml [application.yaml]
 langchain4j:
@@ -131,7 +140,8 @@ langchain4j:
       model-name: "tjake/Qwen2.5-0.5B-Instruct-JQ4"
 ```
 
-If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+If `enabled` is set to `false`, the configuration is ignored, and the component
+is not created.
 
 ### Configuration options
 
@@ -158,3 +168,4 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 [hugging-face]: https://huggingface.co/
 [langchain4j-jlam]: https://docs.langchain4j.dev/integrations/language-models/jlama/
+[helidon-integrat]: langchain4j.md#maven-coordinates

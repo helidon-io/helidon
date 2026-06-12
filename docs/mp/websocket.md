@@ -2,11 +2,13 @@
 
 ## Overview
 
-Helidon integrates with [Tyrus][tyrus] to provide support for the [Jakarta WebSocket API][jakarta-websocke].
+Helidon integrates with [Tyrus][tyrus] to provide support for the [Jakarta
+WebSocket API][jakarta-websocke].
 
 ## Maven Coordinates
 
-To enable Jakarta Websocket, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+To enable Jakarta Websocket, add the following dependency to your project’s
+`pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -17,11 +19,21 @@ To enable Jakarta Websocket, add the following dependency to your project’s `p
 
 ## Usage
 
-The WebSocket API enables Java applications to participate in WebSocket interactions as both servers and clients. The server API supports two flavors: annotated and programmatic endpoints.
+The WebSocket API enables Java applications to participate in WebSocket
+interactions as both servers and clients. The server API supports two flavors:
+annotated and programmatic endpoints.
 
-Annotated endpoints, as suggested by their name, use Java annotations to provide the necessary meta-data to define WebSocket handlers; programmatic endpoints implement API interfaces and are annotation free. Annotated endpoints tend to be more flexible since they allow different method signatures depending on the application needs, whereas programmatic endpoints must implement an interface and are, therefore, bounded to its definition.
+Annotated endpoints, as suggested by their name, use Java annotations to provide
+the necessary meta-data to define WebSocket handlers; programmatic endpoints
+implement API interfaces and are annotation free. Annotated endpoints tend to be
+more flexible since they allow different method signatures depending on the
+application needs, whereas programmatic endpoints must implement an interface
+and are, therefore, bounded to its definition.
 
-Helidon MP support is centered around annotations and bean discovery using CDI. Developers can choose between annotated and programmatic endpoints or use any combination of them. Using annotated endpoints is recommended in MP as they usually result in more succinct and easier-to-read code.
+Helidon MP support is centered around annotations and bean discovery using CDI.
+Developers can choose between annotated and programmatic endpoints or use any
+combination of them. Using annotated endpoints is recommended in MP as they
+usually result in more succinct and easier-to-read code.
 
 ## API
 
@@ -36,11 +48,18 @@ Helidon MP support is centered around annotations and bean discovery using CDI. 
 
 ## Examples
 
-This section describes the implementation of a simple application that uses a REST resource to push messages into a shared queue and a WebSocket endpoint to download messages from the queue, one at a time, over a connection. The example will show how REST and WebSocket connections can be seamlessly combined into a Helidon application.
+This section describes the implementation of a simple application that uses a
+REST resource to push messages into a shared queue and a WebSocket endpoint to
+download messages from the queue, one at a time, over a connection. The example
+will show how REST and WebSocket connections can be seamlessly combined into a
+Helidon application.
 
-The Helidon MP application shown here takes full advantage of CDI and class scanning and does not require any additional code given that the necessary information is available from the code annotations.
+The Helidon MP application shown here takes full advantage of CDI and class
+scanning and does not require any additional code given that the necessary
+information is available from the code annotations.
 
-The REST endpoint is implemented as a JAX-RS resource, and the shared queue (in application scope) is directly injected:
+The REST endpoint is implemented as a JAX-RS resource, and the shared queue (in
+application scope) is directly injected:
 
 ```java
 @Path("rest")
@@ -57,7 +76,9 @@ public class MessageQueueResource {
 }
 ```
 
-Here we opt for the use of an annotated WebSocket endpoint decorated by `@ServerEndpoint` that provides all the meta-data necessary for Helidon to create the endpoint.
+Here we opt for the use of an annotated WebSocket endpoint decorated by
+`@ServerEndpoint` that provides all the meta-data necessary for Helidon to
+create the endpoint.
 
 ```java
 @ServerEndpoint(
@@ -84,11 +105,25 @@ public class MessageBoardEndpoint {
 }
 ```
 
-Since `MessageBoardEndpoint` is just a POJO, it uses additional annotations for event handlers such as `@OnMessage`. One advantage of this approach, much like in the JAX-RS API, is that method signatures are not fixed. In the snipped above, the parameters (which could be specified in any order!) include the WebSocket session and the message received that triggered the call.
+Since `MessageBoardEndpoint` is just a POJO, it uses additional annotations for
+event handlers such as `@OnMessage`. One advantage of this approach, much like
+in the JAX-RS API, is that method signatures are not fixed. In the snipped
+above, the parameters (which could be specified in any order!) include the
+WebSocket session and the message received that triggered the call.
 
-So what else is needed to run this Helidon MP app? Nothing else other than the supporting classes `MessageQueue` and `UppercaseEncoder`. Helidon MP declares both `@Path` and `@ServerEndpoint` as bean defining annotation, so all that is needed is for CDI discovery to be enabled --typically in your `beans.xml` file.
+So what else is needed to run this Helidon MP app? Nothing else other than the
+supporting classes `MessageQueue` and `UppercaseEncoder`. Helidon MP declares
+both `@Path` and `@ServerEndpoint` as bean defining annotation, so all that is
+needed is for CDI discovery to be enabled --typically in your `beans.xml` file.
 
-By default, both JAX-RS resources and WebSocket endpoints will be available under the *root path* `"/"`. This default value can be overridden by providing subclasses/implementations for `jakarta.ws.rs.Application` and `jakarta.websocket.server.ServerApplicationConfig`, respectively. JAX-RS uses `@ApplicationPath` on application subclasses to provide this root path, but since there is no equivalent in the WebSocket API, Helidon MP uses its own annotation `@RoutingPath` on `jakarta.websocket.server.ServerApplicationConfig` implementations.
+By default, both JAX-RS resources and WebSocket endpoints will be available
+under the *root path* `"/"`. This default value can be overridden by providing
+subclasses/implementations for `jakarta.ws.rs.Application` and
+`jakarta.websocket.server.ServerApplicationConfig`, respectively. JAX-RS uses
+`@ApplicationPath` on application subclasses to provide this root path, but
+since there is no equivalent in the WebSocket API, Helidon MP uses its own
+annotation `@RoutingPath` on `jakarta.websocket.server.ServerApplicationConfig`
+implementations.
 
 For instance, if in our example we include the following class:
 
@@ -109,20 +144,40 @@ public class MessageBoardApplication implements ServerApplicationConfig {
 }
 ```
 
-the root path for WebSocket endpoints will be `"/web"` instead of the default `"/"`. Note that `@RoutingPath` is *not* a bean defining annotation, thus the need to use `@ApplicationScoped` --which, as before, requires CDI bean discovery mode to be `annotated`. In addition to `@RoutingPath`, these classes can be annotated with `@RoutingName` to associate an endpoint with a Helidon named socket. Please refer to the Javadoc of that annotation for additional information.
+the root path for WebSocket endpoints will be `"/web"` instead of the default
+`"/"`. Note that `@RoutingPath` is *not* a bean defining annotation, thus the
+need to use `@ApplicationScoped` --which, as before, requires CDI bean discovery
+mode to be `annotated`. In addition to `@RoutingPath`, these classes can be
+annotated with `@RoutingName` to associate an endpoint with a Helidon named
+socket. Please refer to the Javadoc of that annotation for additional
+information.
 
-All endpoint methods in Helidon MP are executed in a separate thread pool, independently of Netty. Therefore, there is no need to create additional threads for blocking or long-running operations as these will not affect Netty’s ability to process networking data.
+All endpoint methods in Helidon MP are executed in a separate thread pool,
+independently of Netty. Therefore, there is no need to create additional threads
+for blocking or long-running operations as these will not affect Netty’s ability
+to process networking data.
 
 For more information see the [example][example].
 
 ### WebSocket Endpoints on Different Ports
 
-The Helidon WebServer can listen on multiple ports or sockets. This can be useful when APIs for different type of users need to be exposed (such as admin vs. non-admin users). Just like for REST resources, it is possible to expose WebSocket applications on different ports *provided that the routing paths are different* --this is due to a constraint in Tyrus, given that it is simply unaware that the endpoints are bound to different ports in the Helidon WebServer.
+The Helidon WebServer can listen on multiple ports or sockets. This can be
+useful when APIs for different type of users need to be exposed (such as admin
+vs. non-admin users). Just like for REST resources, it is possible to expose
+WebSocket applications on different ports *provided that the routing paths are
+different* --this is due to a constraint in Tyrus, given that it is simply
+unaware that the endpoints are bound to different ports in the Helidon
+WebServer.
 
 > [!NOTE]
-> In practice, this implies that the value of `@RoutingPath`, or the equivalent entry in config, must be different across sockets to satisfy the restriction in Tyrus. An attempt to register two or more endpoints on the same path, even if they belong to applications registered on different ports, shall result in a `jakarta.websocket.DeploymentException` being thrown.
+> In practice, this implies that the value of `@RoutingPath`, or the equivalent
+> entry in config, must be different across sockets to satisfy the restriction
+> in Tyrus. An attempt to register two or more endpoints on the same path, even
+> if they belong to applications registered on different ports, shall result in
+> a `jakarta.websocket.DeploymentException` being thrown.
 
-We can modify the `MessageBoardApplication` above and bind it to a non-default socket as follows:
+We can modify the `MessageBoardApplication` above and bind it to a non-default
+socket as follows:
 
 ```java
 @ApplicationScoped
@@ -142,7 +197,8 @@ public class MessageBoardApplication implements ServerApplicationConfig {
 }
 ```
 
-The value of the `@RoutingName` annotation must match that of a configured application socket as shown in the following `application.yaml` file:
+The value of the `@RoutingName` annotation must match that of a configured
+application socket as shown in the following `application.yaml` file:
 
 ```yaml [application.yaml]
 server:
@@ -153,7 +209,8 @@ server:
       port: 8888
 ```
 
-This example assumes that port 8888 is reserved for admin users and binds the `MessageBoardApplication` to it.
+This example assumes that port 8888 is reserved for admin users and binds the
+`MessageBoardApplication` to it.
 
 ## Reference
 

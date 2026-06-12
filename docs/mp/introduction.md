@@ -2,9 +2,15 @@
 
 ## Introduction
 
-Helidon MP is an Eclipse MicroProfile 6.1 runtime that allows the Jakarta EE community to run microservices in a portable way. It is designed for ease of use and provides Spring Boot like development experience with heavy usage of dependency injection and annotations.
+Helidon MP is an Eclipse MicroProfile 6.1 runtime that allows the Jakarta EE
+community to run microservices in a portable way. It is designed for ease of use
+and provides Spring Boot like development experience with heavy usage of
+dependency injection and annotations.
 
-Even though Helidon MP supports Jakarta EE APIs it does not require an application server. Helidon MP applications are stand-alone Java applications running in their own JVM powered by Helidon WebServer. So you get all the benefits of a low overhead server built on Java virtual threads.
+Even though Helidon MP supports Jakarta EE APIs it does not require an
+application server. Helidon MP applications are stand-alone Java applications
+running in their own JVM powered by Helidon WebServer. So you get all the
+benefits of a low overhead server built on Java virtual threads.
 
 ## Supported Jakarta EE Specifications
 
@@ -66,7 +72,8 @@ For upgrade from Helidon 3.x to 4.x:
 
 ## Next Steps
 
-- Try the [Helidon MP quickstart guides](../mp/guides/overview.md) to get your first Helidon MP application up and running in minutes.
+- Try the [Helidon MP quickstart guides](../mp/guides/overview.md) to get your
+  first Helidon MP application up and running in minutes.
 - Browse the [Helidon Javadocs][helidon-javadocs]
 
 [jakarta-bean-val]: ../mp/beanvalidation.md

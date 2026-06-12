@@ -2,11 +2,17 @@
 
 ## Overview
 
-Distributed transactions for microservices are known as SAGA design patterns and are defined by the [MicroProfile Long Running Actions specification][microprofile-lon]. Unlike well known XA protocol, LRA is asynchronous and therefore much more scalable. Every LRA JAX-RS resource ([participant](#participant)) defines endpoints to be invoked when transaction needs to be *completed* or *compensated*.
+Distributed transactions for microservices are known as SAGA design patterns and
+are defined by the [MicroProfile Long Running Actions
+specification][microprofile-lon]. Unlike well known XA protocol, LRA is
+asynchronous and therefore much more scalable. Every LRA JAX-RS resource
+([participant](#participant)) defines endpoints to be invoked when transaction
+needs to be *completed* or *compensated*.
 
 ## Maven Coordinates
 
-To enable Long Running Actions, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+To enable Long Running Actions, add the following dependency to your project’s
+`pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependencies>
@@ -24,19 +30,32 @@ To enable Long Running Actions, add the following dependency to your project’s
 
 ## Usage
 
-The LRA transactions need to be coordinated over REST API by the LRA coordinator. [Coordinator](#coordinator) keeps track of all transactions and calls the `@Compensate` or `@Complete` endpoints for all participants involved in the particular transaction. LRA transaction is first started, then joined by [participant](#participant). The participant reports the successful finish of the transaction by calling it complete. The coordinator then calls the JAX-RS *complete* endpoint that was registered during the join of each [participant](#participant). As the completed or compensated participants don’t have to be on same instance, the whole architecture is highly scalable.
+The LRA transactions need to be coordinated over REST API by the LRA
+coordinator. [Coordinator](#coordinator) keeps track of all transactions and
+calls the `@Compensate` or `@Complete` endpoints for all participants involved
+in the particular transaction. LRA transaction is first started, then joined by
+[participant](#participant). The participant reports the successful finish of
+the transaction by calling it complete. The coordinator then calls the JAX-RS
+*complete* endpoint that was registered during the join of each
+[participant](#participant). As the completed or compensated participants don’t
+have to be on same instance, the whole architecture is highly scalable.
 
 <figure>
 <img src="../images/lra/lra-complete-lb.svg" alt="Complete" />
 </figure>
 
-If an error occurs during the LRA transaction, the participant reports a cancellation of LRA to the coordinator. [Coordinator](#coordinator) calls compensate on all the joined participants.
+If an error occurs during the LRA transaction, the participant reports a
+cancellation of LRA to the coordinator. [Coordinator](#coordinator) calls
+compensate on all the joined participants.
 
 <figure>
 <img src="../images/lra/lra-compensate-lb-error.svg" alt="Cancel" />
 </figure>
 
-When a participant joins the LRA with timeout defined `@LRA(value = LRA.Type.REQUIRES_NEW, timeLimit = 5, timeUnit = ChronoUnit.MINUTES)`, the coordinator compensates if the timeout occurred before the close is reported by the participants.
+When a participant joins the LRA with timeout defined `@LRA(value =
+LRA.Type.REQUIRES_NEW, timeLimit = 5, timeUnit = ChronoUnit.MINUTES)`, the
+coordinator compensates if the timeout occurred before the close is reported by
+the participants.
 
 <figure>
 <img src="../images/lra/lra-compensate-lb-timeout.svg" alt="Timeout" />
@@ -46,13 +65,17 @@ When a participant joins the LRA with timeout defined `@LRA(value = LRA.Type.REQ
 
 ### Participant
 
-The Participant, or Compensator, is an LRA resource with at least one of the JAX-RS(or non-JAX-RS) methods annotated with [@Compensate][compensate] or [@AfterLRA][afterlra].
+The Participant, or Compensator, is an LRA resource with at least one of the
+JAX-RS(or non-JAX-RS) methods annotated with [@Compensate][compensate] or
+[@AfterLRA][afterlra].
 
 ### @LRA
 
 [<sub>javadoc</sub>][sub-javadoc-sub]
 
-Marks JAX-RS method which should run in LRA context and needs to be accompanied by at least minimal set of mandatory participant methods([Compensate](#compensate) or [AfterLRA](#afterlra)).
+Marks JAX-RS method which should run in LRA context and needs to be accompanied
+by at least minimal set of mandatory participant
+methods([Compensate](#compensate) or [AfterLRA](#afterlra)).
 
 LRA options:
 
@@ -64,11 +87,14 @@ LRA options:
   - [NOT_SUPPORTED][not-supported] always continue outside LRA context
   - [NEVER][never] Fail with 412 if executed in LRA context
   - [NESTED][nested] create and join new LRA nested in the incoming LRA context
-- [timeLimit][timelimit] max time limit before LRA gets cancelled automatically by [coordinator](#coordinator)
+- [timeLimit][timelimit] max time limit before LRA gets cancelled automatically
+  by [coordinator](#coordinator)
 - [timeUnit][timeunit] time unit if the timeLimit value
 - [end][end] when false LRA is not closed after successful method execution
-- [cancelOn][cancelon] which HTTP response codes of the method causes LRA to cancel
-- [cancelOnFamily][cancelonfamily] which family of HTTP response codes causes LRA to cancel
+- [cancelOn][cancelon] which HTTP response codes of the method causes LRA to
+  cancel
+- [cancelOnFamily][cancelonfamily] which family of HTTP response codes causes
+  LRA to cancel
 
 Method parameters:
 
@@ -93,12 +119,18 @@ public Response startLra(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId,
 > [!CAUTION]
 > Expected to be called by LRA [coordinator](#coordinator) only!
 
-Compensate method is called by a [coordinator](#coordinator) when LRA is cancelled, usually by error during execution of method body of [@LRA annotated method](#lra). If the method responds with 500 or 202, coordinator will eventually try the call again. If participant has [@Status annotated method](#status), [coordinator](#coordinator) retrieves the status to find out if retry should be done.
+Compensate method is called by a [coordinator](#coordinator) when LRA is
+cancelled, usually by error during execution of method body of [@LRA annotated
+method](#lra). If the method responds with 500 or 202, coordinator will
+eventually try the call again. If participant has [@Status annotated
+method](#status), [coordinator](#coordinator) retrieves the status to find out
+if retry should be done.
 
 #### JAX-RS variant with supported LRA context values:
 
 - Header [LRA_HTTP_CONTEXT_HEADER][lra-http-context] - ID of the LRA transaction
-- Header [LRA_HTTP_PARENT_CONTEXT_HEADER][lra-http-parent] - parent LRA ID in case of nested LRA
+- Header [LRA_HTTP_PARENT_CONTEXT_HEADER][lra-http-parent] - parent LRA ID in
+  case of nested LRA
 
 ```java
 @PUT
@@ -127,12 +159,17 @@ public void compensate(URI lraId) {
 > [!CAUTION]
 > Expected to be called by LRA [coordinator](#coordinator) only!
 
-Complete method is called by [coordinator](#coordinator) when LRA is successfully closed. If the method responds with 500 or 202, coordinator will eventually try the call again. If participant has [@Status annotated method](#status), [coordinator](#coordinator) retrieves the status to find out if retry should be done.
+Complete method is called by [coordinator](#coordinator) when LRA is
+successfully closed. If the method responds with 500 or 202, coordinator will
+eventually try the call again. If participant has [@Status annotated
+method](#status), [coordinator](#coordinator) retrieves the status to find out
+if retry should be done.
 
 #### JAX-RS variant with supported LRA context values:
 
 - Header [LRA_HTTP_CONTEXT_HEADER][lra-http-context] - ID of the LRA transaction
-- Header [LRA_HTTP_PARENT_CONTEXT_HEADER][lra-http-parent] - parent LRA ID in case of nested LRA
+- Header [LRA_HTTP_PARENT_CONTEXT_HEADER][lra-http-parent] - parent LRA ID in
+  case of nested LRA
 
 ```java
 @PUT
@@ -161,12 +198,18 @@ public void complete(URI lraId) {
 > [!CAUTION]
 > Expected to be called by LRA [coordinator](#coordinator) only!
 
-[Complete](#complete) and [compensate](#compensate) methods can fail(500) or report that compensation/completion is in progress(202). In such case participant needs to be prepared to report its status over [@Status annotated method](#status) to [coordinator](#coordinator). When [coordinator](#coordinator) decides all the participants have finished, method annotated with @Forget is called.
+[Complete](#complete) and [compensate](#compensate) methods can fail(500) or
+report that compensation/completion is in progress(202). In such case
+participant needs to be prepared to report its status over [@Status annotated
+method](#status) to [coordinator](#coordinator). When
+[coordinator](#coordinator) decides all the participants have finished, method
+annotated with @Forget is called.
 
 #### JAX-RS variant with supported LRA context values:
 
 - Header [LRA_HTTP_CONTEXT_HEADER][lra-http-context] - ID of the LRA transaction
-- Header [LRA_HTTP_PARENT_CONTEXT_HEADER][lra-http-parent] - parent LRA ID in case of nested LRA
+- Header [LRA_HTTP_PARENT_CONTEXT_HEADER][lra-http-parent] - parent LRA ID in
+  case of nested LRA
 
 ```java
 @DELETE
@@ -192,7 +235,11 @@ public void forget(URI lraId) {
 
 [<sub>javadoc</sub>][sub-javadoc-sub-4]
 
-Method annotated with @Leave called with LRA context(with header [LRA_HTTP_CONTEXT_HEADER][lra-http-context]) informs [coordinator](#coordinator) that current participant is leaving the LRA. Method body is executed after leave signal is sent. As a result, participant methods complete and compensate won’t be called when the particular LRA ends.
+Method annotated with @Leave called with LRA context(with header
+[LRA_HTTP_CONTEXT_HEADER][lra-http-context]) informs [coordinator](#coordinator)
+that current participant is leaving the LRA. Method body is executed after leave
+signal is sent. As a result, participant methods complete and compensate won’t
+be called when the particular LRA ends.
 
 - Header [LRA_HTTP_CONTEXT_HEADER][lra-http-context] - ID of the LRA transaction
 
@@ -212,12 +259,17 @@ public Response leaveLRA(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraIdtoLeave)
 > [!CAUTION]
 > Expected to be called by LRA [coordinator](#coordinator) only!
 
-If the coordinator’s call to the participant’s method fails, then it will retry the call. If the participant is not idempotent, then it may need to report its state to coordinator by declaring method annotated with @Status for reporting if previous call did change participant status. [Coordinator](#coordinator) can call it and decide if compensate or complete retry is needed.
+If the coordinator’s call to the participant’s method fails, then it will retry
+the call. If the participant is not idempotent, then it may need to report its
+state to coordinator by declaring method annotated with @Status for reporting if
+previous call did change participant status. [Coordinator](#coordinator) can
+call it and decide if compensate or complete retry is needed.
 
 #### JAX-RS variant with supported LRA context values:
 
 - Header [LRA_HTTP_CONTEXT_HEADER][lra-http-context] - ID of the LRA transaction
-- [ParticipantStatus][participantstatu] - Status of the participant reported to [coordinator](#coordinator)
+- [ParticipantStatus][participantstatu] - Status of the participant reported to
+  [coordinator](#coordinator)
 
 ```java
 @GET
@@ -231,7 +283,8 @@ public Response reportStatus(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId) {
 #### Non JAX-RS variant with supported LRA context values:
 
 - URI with LRA ID
-- [ParticipantStatus][participantstatu] - Status of the participant reported to [coordinator](#coordinator)
+- [ParticipantStatus][participantstatu] - Status of the participant reported to
+  [coordinator](#coordinator)
 
 ```java
 @Status
@@ -248,13 +301,18 @@ public Response reportStatus(URI lraId) {
 > [!CAUTION]
 > Expected to be called by LRA [coordinator](#coordinator) only!
 
-Method annotated with [@AfterLRA][afterlra] in the same class as the one with @LRA annotation gets invoked after particular LRA finishes.
+Method annotated with [@AfterLRA][afterlra] in the same class as the one with
+@LRA annotation gets invoked after particular LRA finishes.
 
 #### JAX-RS variant with supported LRA context values:
 
-- Header [LRA_HTTP_ENDED_CONTEXT_HEADER][lra-http-ended-c] - ID of the finished LRA transaction
-- Header [LRA_HTTP_PARENT_CONTEXT_HEADER][lra-http-parent] - parent LRA ID in case of nested LRA
-- [LRAStatus][lrastatus] - Final status of the LRA ([Cancelled][cancelled], [Closed][closed], [FailedToCancel][failedtocancel], [FailedToClose][failedtoclose])
+- Header [LRA_HTTP_ENDED_CONTEXT_HEADER][lra-http-ended-c] - ID of the finished
+  LRA transaction
+- Header [LRA_HTTP_PARENT_CONTEXT_HEADER][lra-http-parent] - parent LRA ID in
+  case of nested LRA
+- [LRAStatus][lrastatus] - Final status of the LRA ([Cancelled][cancelled],
+  [Closed][closed], [FailedToCancel][failedtocancel],
+  [FailedToClose][failedtoclose])
 
 ```java
 @PUT
@@ -270,7 +328,9 @@ public Response whenLRAFinishes(@HeaderParam(LRA_HTTP_ENDED_CONTEXT_HEADER) URI 
 #### Non JAX-RS variant with supported LRA context values:
 
 - URI with finished LRA ID
-- [LRAStatus][lrastatus] - Final status of the LRA ([Cancelled][cancelled], [Closed][closed], [FailedToCancel][failedtocancel], [FailedToClose][failedtoclose])
+- [LRAStatus][lrastatus] - Final status of the LRA ([Cancelled][cancelled],
+  [Closed][closed], [FailedToCancel][failedtocancel],
+  [FailedToClose][failedtoclose])
 
 ```java
 public void whenLRAFinishes(URI lraId, LRAStatus status) {
@@ -303,16 +363,25 @@ mp.lra:
 ```
 
 - Url of coordinator
-- Propagate LRA headers LRA_HTTP_CONTEXT_HEADER and LRA_HTTP_PARENT_CONTEXT_HEADER through non-LRA endpoints
-- Url of the LRA enabled service overrides standard base uri, so coordinator can call load-balancer instead of the service
+- Propagate LRA headers LRA_HTTP_CONTEXT_HEADER and
+  LRA_HTTP_PARENT_CONTEXT_HEADER through non-LRA endpoints
+- Url of the LRA enabled service overrides standard base uri, so coordinator can
+  call load-balancer instead of the service
 
-For more information continue to [MicroProfile Long Running Actions specification][microprofile-lon].
+For more information continue to [MicroProfile Long Running Actions
+specification][microprofile-lon].
 
 ## Examples
 
-The following example shows how a simple LRA participant starts and joins a transaction after calling the '/start-example' resource. When startExample method finishes successfully, close is reported to [coordinator](#coordinator) and `/complete-example` endpoint is called by coordinator to confirm successful closure of the LRA.
+The following example shows how a simple LRA participant starts and joins a
+transaction after calling the '/start-example' resource. When startExample
+method finishes successfully, close is reported to [coordinator](#coordinator)
+and `/complete-example` endpoint is called by coordinator to confirm successful
+closure of the LRA.
 
-If an exception occurs during startExample method execution, coordinator receives cancel call and `/compensate-example` is called by coordinator to compensate for cancelled LRA transaction.
+If an exception occurs during startExample method execution, coordinator
+receives cancel call and `/compensate-example` is called by coordinator to
+compensate for cancelled LRA transaction.
 
 Example of simple LRA participant:
 
@@ -347,18 +416,25 @@ public Response compensateExample(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraI
 }
 ```
 
-- This JAX-RS PUT method will start new LRA transactions and join it before method body gets executed
+- This JAX-RS PUT method will start new LRA transactions and join it before
+  method body gets executed
 - LRA ID assigned by coordinator to this LRA transaction
-- When method execution finishes exceptionally, cancel signal for this particular LRA is sent to coordinator
-- When method execution finishes successfully, complete signal for this particular LRA is sent to coordinator
+- When method execution finishes exceptionally, cancel signal for this
+  particular LRA is sent to coordinator
+- When method execution finishes successfully, complete signal for this
+  particular LRA is sent to coordinator
 - Method which will be called by coordinator when LRA is completed
 - Method which will be called by coordinator when LRA is canceled
 
 ## Testing
 
-Testing of JAX-RS resources with LRA can be challenging as LRA participant running in parallel with the test is needed.
+Testing of JAX-RS resources with LRA can be challenging as LRA participant
+running in parallel with the test is needed.
 
-Helidon provides test coordinator which can be started automatically with additional socket on a random port within your own Helidon application. You only need one extra test dependency to enable test coordinator in your [@HelidonTest](testing/testing.md).
+Helidon provides test coordinator which can be started automatically with
+additional socket on a random port within your own Helidon application. You only
+need one extra test dependency to enable test coordinator in your
+[@HelidonTest](testing/testing.md).
 
 Dependency:
 
@@ -447,18 +523,25 @@ public class LraTest {
 
 - Resource is discovered automatically
 - Test coordinator needs to be added manually
-- Injecting test coordinator to access state of LRA managed by coordinator mid-test
+- Injecting test coordinator to access state of LRA managed by coordinator
+  mid-test
 - Retrieving LRA managed by coordinator by LraId
 - Asserting LRA state in coordinator
 
 LRA testing feature has the following default configuration:
 
-- port: `0` - coordinator is started on random port(Helidon LRA participant is capable to discover test coordinator automatically)
+- port: `0` - coordinator is started on random port(Helidon LRA participant is
+  capable to discover test coordinator automatically)
 - bind-address: `localhost` - bind address of the coordinator
-- helidon.lra.coordinator.persistence: `false` - LRAs managed by test coordinator are not persisted
-- helidon.lra.participant.use-build-time-index: `false` - Participant annotation inspection ignores Jandex index files created in build time, it helps to avoid issues with additional test resources
+- helidon.lra.coordinator.persistence: `false` - LRAs managed by test
+  coordinator are not persisted
+- helidon.lra.participant.use-build-time-index: `false` - Participant annotation
+  inspection ignores Jandex index files created in build time, it helps to avoid
+  issues with additional test resources
 
-Testing LRA coordinator is started on additional named socket `test-lra-coordinator` configured with default index `500`. Default index can be changed with system property `helidon.lra.coordinator.test-socket.index`.
+Testing LRA coordinator is started on additional named socket
+`test-lra-coordinator` configured with default index `500`. Default index can be
+changed with system property `helidon.lra.coordinator.test-socket.index`.
 
 Example: `-Dhelidon.lra.coordinator.test-socket.index=20`.
 
@@ -475,12 +558,14 @@ public class LraCustomConfigTest {
 }
 ```
 
-- Start test LRA coordinator always on the same port 8070(default is random port)
+- Start test LRA coordinator always on the same port 8070(default is random
+  port)
 - Test LRA coordinator socket bind address (default is localhost)
 - Persist LRA managed by coordinator(default is false)
 - Use build time Jandex index(default is false)
 
-When CDI bean auto-discovery is not desired, LRA and Config CDI extensions needs to be added manually.
+When CDI bean auto-discovery is not desired, LRA and Config CDI extensions needs
+to be added manually.
 
 HelidonTest setup with disabled discovery:
 
@@ -500,7 +585,10 @@ public class LraNoDiscoveryTest {
 
 ### Coordinator
 
-Coordinator is a service that tracks all LRA transactions and calls the compensate REST endpoints of the participants when the LRA transaction gets cancelled or completes (in case it gets closed). In addition, participant also keeps track of timeouts, retries participant calls, and assigns LRA ids.
+Coordinator is a service that tracks all LRA transactions and calls the
+compensate REST endpoints of the participants when the LRA transaction gets
+cancelled or completes (in case it gets closed). In addition, participant also
+keeps track of timeouts, retries participant calls, and assigns LRA ids.
 
 <div>
 
@@ -518,9 +606,13 @@ Helidon LRA supports following coordinators
 
 ### MicroTx LRA Coordinator
 
-Oracle Transaction Manager for Microservices - [MicroTx][microtx-lra-coor] is an enterprise grade transaction manager for microservices, among other it manages LRA transactions and is compatible with Narayana LRA clients.
+Oracle Transaction Manager for Microservices - [MicroTx][microtx-lra-coor] is an
+enterprise grade transaction manager for microservices, among other it manages
+LRA transactions and is compatible with Narayana LRA clients.
 
-MicroTx LRA coordinator is compatible with Narayana clients when `narayanaLraCompatibilityMode` is on, you need to add another dependency to enable Narayana client:
+MicroTx LRA coordinator is compatible with Narayana clients when
+`narayanaLraCompatibilityMode` is on, you need to add another dependency to
+enable Narayana client:
 
 Dependency needed for using Helidon LRA with Narayana compatible coordinator:
 
@@ -539,7 +631,8 @@ docker container run --name otmm -v "$(pwd)":/app/config \
 --add-host host.docker.internal:host-gateway -d tmm:<version>
 ```
 
-To use MicroTx with Helidon LRA participant, `narayanaLraCompatibilityMode` needs to be enabled.
+To use MicroTx with Helidon LRA participant, `narayanaLraCompatibilityMode`
+needs to be enabled.
 
 Configure MicroTx for development:
 
@@ -581,7 +674,8 @@ docker build -t helidon/lra-coordinator https://github.com/helidon-io/helidon.gi
 docker run --name lra-coordinator --network="host" helidon/lra-coordinator
 ```
 
-Helidon LRA coordinator is compatible with Narayana clients, you need to add a dependency for Narayana client:
+Helidon LRA coordinator is compatible with Narayana clients, you need to add a
+dependency for Narayana client:
 
 Dependency needed for using Helidon LRA with Narayana compatible coordinator:
 
@@ -594,7 +688,9 @@ Dependency needed for using Helidon LRA with Narayana compatible coordinator:
 
 ### Narayana
 
-[Narayana](https://narayana.io) is a transaction manager supporting LRA. To use Narayana LRA coordinator with Helidon LRA client you need to add a dependency for Narayana client:
+[Narayana](https://narayana.io) is a transaction manager supporting LRA. To use
+Narayana LRA coordinator with Helidon LRA client you need to add a dependency
+for Narayana client:
 
 Dependency needed for using Helidon LRA with Narayana coordinator:
 
@@ -615,7 +711,10 @@ curl https://repo1.maven.org/maven2/org/jboss/narayana/rts/lra-coordinator-quark
 java -Dquarkus.http.port=8070 -jar narayana-coordinator.jar
 ```
 
-Narayana LRA coordinator is running by default under `lra-coordinator` context, with port `8070` defined in the snippet above you need to configure your Helidon LRA app as follows: `mp.lra.coordinator.url=http://localhost:8070/lra-coordinator`
+Narayana LRA coordinator is running by default under `lra-coordinator` context,
+with port `8070` defined in the snippet above you need to configure your Helidon
+LRA app as follows:
+`mp.lra.coordinator.url=http://localhost:8070/lra-coordinator`
 
 ## Reference
 

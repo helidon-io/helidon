@@ -2,7 +2,11 @@
 
 ## Overview
 
-Helidon’s Eureka Server Service Instance Registration Integration provides a [`ServerFeature`][serverfeature] that offers support for automatically and unobtrusively attempting to register a running Helidon microservice with an available Netflix Eureka Server of at least version 2.0.5 in the microservice’s runtime environment.
+Helidon’s Eureka Server Service Instance Registration Integration provides a
+[`ServerFeature`][serverfeature] that offers support for automatically and
+unobtrusively attempting to register a running Helidon microservice with an
+available Netflix Eureka Server of at least version 2.0.5 in the microservice’s
+runtime environment.
 
 ## Usage
 
@@ -10,7 +14,9 @@ Helidon’s Eureka Server Service Instance Registration Integration provides a [
 
 ## Maven Coordinates
 
-To enable Eureka Server Service Instance Registration Integration, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable Eureka Server Service Instance Registration Integration, add the
+following dependency to your project’s `pom.xml` (see [Managing
+Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -20,13 +26,20 @@ To enable Eureka Server Service Instance Registration Integration, add the follo
 </dependency>
 ```
 
-- Most users do not need to interact programmatically with this feature; the scope is therefore usually `runtime`, indicating that the feature will be available on the runtime classpath.
+- Most users do not need to interact programmatically with this feature; the
+  scope is therefore usually `runtime`, indicating that the feature will be
+  available on the runtime classpath.
 
-This feature is fundamentally a [`ServerFeature`][serverfeature], and is automatically installed by its [associated `ServerFeatureProvider`][associated-serve] when the provider is found in configuration (see below).
+This feature is fundamentally a [`ServerFeature`][serverfeature], and is
+automatically installed by its [associated
+`ServerFeatureProvider`][associated-serve] when the provider is found in
+configuration (see below).
 
 ### Configuration
 
-You need to specify at an absolute minimum the URI to the available Netflix Eureka Server of at least version 2.0.5 in the microservice’s runtime environment:
+You need to specify at an absolute minimum the URI to the available Netflix
+Eureka Server of at least version 2.0.5 in the microservice’s runtime
+environment:
 
 ```yaml [application.yaml]
 server:
@@ -36,12 +49,19 @@ server:
         base-uri: "http://localhost:8761/eureka"  
 ```
 
-- The feature’s configuration is a child of the `server.features.eureka` node, which lists available `ServerFeature` implementations. This feature is one such implementation.
-- Information about the HTTP client the feature uses to communicate with Eureka is a child of this node.
-- The `base-uri` needs to identify an available Netflix Eureka Server of at least version 2.0.5. Netflix Eureka Server is commonly made available on port `8761`.
-- Configuration under the `client` node is wholly defined by the [`HttpClientConfig`][httpclientconfig] interface.
+- The feature’s configuration is a child of the `server.features.eureka` node,
+  which lists available `ServerFeature` implementations. This feature is one
+  such implementation.
+- Information about the HTTP client the feature uses to communicate with Eureka
+  is a child of this node.
+- The `base-uri` needs to identify an available Netflix Eureka Server of at
+  least version 2.0.5. Netflix Eureka Server is commonly made available on port
+  `8761`.
+- Configuration under the `client` node is wholly defined by the
+  [`HttpClientConfig`][httpclientconfig] interface.
 
-All other configuration values can be (and ordinarily are) defaulted, but some are best set explicitly:
+All other configuration values can be (and ordinarily are) defaulted, but some
+are best set explicitly:
 
 ```yaml [application.yaml]
 server:
@@ -52,23 +72,42 @@ server:
         hostName: example.com 
 ```
 
-- The feature’s configuration pertaining to the registration itself is a child of the `server.features.eureka.instance` node. Configuration is designed to be familiar to current users of other Netflix Eureka libraries. See the [Helidon Config Reference][helidon-config-r] for a full description of what configuration is allowed.
-- The `name` describes the microservice application, not any given instance of it. Its default value is `unknown`, following Netflix Eureka client convention, so it is best to set it explicitly here instead.
-- The `hostName` node identifies the host. It defaults to the current host, which may or may not be suitable in your environment. Most of the time you can simply omit this node and use the defaulted value.
+- The feature’s configuration pertaining to the registration itself is a child
+  of the `server.features.eureka.instance` node. Configuration is designed to be
+  familiar to current users of other Netflix Eureka libraries. See the [Helidon
+  Config Reference][helidon-config-r] for a full description of what
+  configuration is allowed.
+- The `name` describes the microservice application, not any given instance of
+  it. Its default value is `unknown`, following Netflix Eureka client
+  convention, so it is best to set it explicitly here instead.
+- The `hostName` node identifies the host. It defaults to the current host,
+  which may or may not be suitable in your environment. Most of the time you can
+  simply omit this node and use the defaulted value.
 
-Please consult the [Helidon Config Reference][helidon-config-r-2] for a full description of the permitted configuration.
+Please consult the [Helidon Config Reference][helidon-config-r-2] for a full
+description of the permitted configuration.
 
 ## Logging
 
-This feature is deliberately designed to be *unobtrusive*. Unobtrusive means that if everything is working properly Eureka Server service instance registration will simply happen, quietly, behind the scenes, automatically. If something goes wrong, service instance registration will not interrupt the running microservice. Therefore, the information this feature logs can be important.
+This feature is deliberately designed to be *unobtrusive*. Unobtrusive means
+that if everything is working properly Eureka Server service instance
+registration will simply happen, quietly, behind the scenes, automatically. If
+something goes wrong, service instance registration will not interrupt the
+running microservice. Therefore, the information this feature logs can be
+important.
 
-Like all other Helidon components, this feature uses Java logging. Its loggers begin with the `io.helidon.integrations.eureka` prefix, and log debug, warning and error-level information.
+Like all other Helidon components, this feature uses Java logging. Its loggers
+begin with the `io.helidon.integrations.eureka` prefix, and log debug, warning
+and error-level information.
 
-Information about how this feature is communicating with the Eureka Server is logged by loggers under the `io.helidon.webclient` prefix.
+Information about how this feature is communicating with the Eureka Server is
+logged by loggers under the `io.helidon.webclient` prefix.
 
 ## Related Documentation
 
-Users of this feature may also be interested in the (related) [Discovery feature](../discovery.md), particularly its [Eureka provider](../discovery.md#eureka).
+Users of this feature may also be interested in the (related) [Discovery
+feature](../discovery.md), particularly its [Eureka
+provider](../discovery.md#eureka).
 
 [serverfeature]: https://helidon.io/docs/v4/apidocs/io.helidon.webserver/io/helidon/webserver/spi/ServerFeature.html
 [associated-serve]: https://helidon.io/docs/v4/apidocs/io.helidon.integrations.eureka/io/helidon/integrations/eureka/EurekaRegistrationServerFeatureProvider

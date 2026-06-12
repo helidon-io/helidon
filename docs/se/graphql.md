@@ -2,11 +2,16 @@
 
 ## Overview
 
-The Helidon GraphQL Server provides a framework for creating [GraphQL][graphql] applications that integrate with the Helidon WebServer. GraphQL is a query language to access server data. The Helidon GraphQL integration enables HTTP clients to issue queries over the network and retrieve data; it is an alternative to other protocols such as REST or GRPC.
+The Helidon GraphQL Server provides a framework for creating [GraphQL][graphql]
+applications that integrate with the Helidon WebServer. GraphQL is a query
+language to access server data. The Helidon GraphQL integration enables HTTP
+clients to issue queries over the network and retrieve data; it is an
+alternative to other protocols such as REST or GRPC.
 
 ## Maven Coordinates
 
-To enable GraphQL, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+To enable GraphQL, add the following dependency to your project’s `pom.xml` (see
+[Managing Dependencies](../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -17,9 +22,12 @@ To enable GraphQL, add the following dependency to your project’s `pom.xml` (s
 
 ## API
 
-An instance of `GraphQlSupport` must be registered in the Helidon WebServer routes to enable GraphQL support in your application. In addition, a GraphQL schema needs to be specified to verify and execute queries.
+An instance of `GraphQlSupport` must be registered in the Helidon WebServer
+routes to enable GraphQL support in your application. In addition, a GraphQL
+schema needs to be specified to verify and execute queries.
 
-The following code fragment creates an instance of `GraphQlSupport` and registers it in the Helidon WebServer.
+The following code fragment creates an instance of `GraphQlSupport` and
+registers it in the Helidon WebServer.
 
 ```java
 WebServer server = WebServer.builder()
@@ -27,7 +35,9 @@ WebServer server = WebServer.builder()
         .build();
 ```
 
-By default, `GraphQlSupport` will reserve `/graphql` as the URI path to process queries. The `buildSchema` method creates the schema and defines 2 types of queries for this application:
+By default, `GraphQlSupport` will reserve `/graphql` as the URI path to process
+queries. The `buildSchema` method creates the schema and defines 2 types of
+queries for this application:
 
 <!--@mdc ::code-collapse -->
 ```java
@@ -75,7 +85,8 @@ The following is a description of each of these steps:
 
 ## Configuration
 
-The following configuration keys can be used to set up integration with WebServer:
+The following configuration keys can be used to set up integration with
+WebServer:
 
 | key                        | default value     | description                                                                 |
 |----------------------------|-------------------|-----------------------------------------------------------------------------|
@@ -93,7 +104,8 @@ The following configuration keys can be used to set up GraphQL invocation:
 
 ## Examples
 
-Using the schema defined in Section [API](#api), you can probe the following endpoints:
+Using the schema defined in Section [API](#api), you can probe the following
+endpoints:
 
 1.  Hello world endpoint
 

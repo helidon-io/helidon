@@ -2,7 +2,8 @@
 
 ## Maven Coordinates
 
-To integrate [web server](../webserver/webserver.md), add the following dependency to your project’s pom.xml file:
+To integrate [web server](../webserver/webserver.md), add the following
+dependency to your project’s pom.xml file:
 
 Maven Dependency:
 
@@ -33,7 +34,8 @@ WebServer.builder()
     .build();
 ```
 
-- Register the security feature in the web server, enforce authentication by default
+- Register the security feature in the web server, enforce authentication by
+  default
 - Protect this route with authentication (from defaults) and role "user"
 
 Example using configuration:
@@ -69,7 +71,9 @@ security:
 
 - Configuration of integration with web server
 
-Note: `defaults` section in configuration is related to paths on WebServer configured below in `paths` section, it will not apply to any other path on the webserver.
+Note: `defaults` section in configuration is related to paths on WebServer
+configured below in `paths` section, it will not apply to any other path on the
+webserver.
 
 ## Protecting Endpoints
 
@@ -80,13 +84,17 @@ There are several endpoints provided by Helidon services, such as:
 - OpenAPI endpoint (`/openapi`)
 - Configured static content (can use any path configured)
 
-These endpoints are all implemented using Helidon WebServer and as such can be protected only through Security integration with WebServer.
+These endpoints are all implemented using Helidon WebServer and as such can be
+protected only through Security integration with WebServer.
 
-The following section describes configuration of such protection using configuration files, in this case using a `yaml` file, as it provides a tree structure.
+The following section describes configuration of such protection using
+configuration files, in this case using a `yaml` file, as it provides a tree
+structure.
 
 ### Configuring Endpoint Protection
 
-The configuration is usually placed under `security.web-server` (this can be customized in Helidon SE).
+The configuration is usually placed under `security.web-server` (this can be
+customized in Helidon SE).
 
 The following shows an example we will explain in detail:
 
@@ -116,9 +124,11 @@ security:
 - Protection of `/metrics` and all nested paths with `admin` role required
 - Protection of `/health` and all nested paths with `monitor` role required
 - Protection of `/openapi` and all nested paths with `openapi` scope required
-- Protection of static content configured on `/static` path with either `user` or `monitor` role required
+- Protection of static content configured on `/static` path with either `user`
+  or `monitor` role required
 
-If you need to use a properties file, such as `microprofile-config.properties`, you can convert the file by using index based numbers for arrays, such as:
+If you need to use a properties file, such as `microprofile-config.properties`,
+you can convert the file by using index based numbers for arrays, such as:
 
 ```properties [microprofile-config.properties]
 security.providers.0.abac=

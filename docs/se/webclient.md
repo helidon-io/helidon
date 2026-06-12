@@ -2,25 +2,31 @@
 
 ## Overview
 
-WebClient is an HTTP client for Helidon SE. It can be used to send requests and retrieve corresponding responses in a programmatic way.
+WebClient is an HTTP client for Helidon SE. It can be used to send requests and
+retrieve corresponding responses in a programmatic way.
 
 Helidon WebClient provides the following features:
 
-- **Blocking approach**
-  The WebClient uses the blocking approach to synchronously process a request and its corresponding response. Both `HTTP/1.1` and `HTTP/2` request and response will run in the thread of the user. Additionally, for `HTTP/2`, virtual thread is employed to manage the connection.
+- **Blocking approach** The WebClient uses the blocking approach to
+  synchronously process a request and its corresponding response. Both
+  `HTTP/1.1` and `HTTP/2` request and response will run in the thread of the
+  user. Additionally, for `HTTP/2`, virtual thread is employed to manage the
+  connection.
 
-- **Builder-like setup and execution**
-  Creates every client and request as a builder pattern. This improves readability and code maintenance.
+- **Builder-like setup and execution** Creates every client and request as a
+  builder pattern. This improves readability and code maintenance.
 
-- **Redirect chain**
-  Follows the redirect chain and perform requests on the correct endpoint by itself.
+- **Redirect chain** Follows the redirect chain and perform requests on the
+  correct endpoint by itself.
 
-- **Tracing and security propagation**
-  Automatically propagates the configured tracing and security settings of the Helidon WebServer to the WebClient and uses them during request and response.
+- **Tracing and security propagation** Automatically propagates the configured
+  tracing and security settings of the Helidon WebServer to the WebClient and
+  uses them during request and response.
 
 ## Maven Coordinates
 
-To enable WebClient, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+To enable WebClient, add the following dependency to your project’s `pom.xml`
+(see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -44,9 +50,11 @@ If support for `HTTP/2` is a requirement, below dependency needs to be added:
 
 ### Instantiating the WebClient
 
-You can create an instance of a WebClient by executing `WebClient.create()` which will have default settings and without a base uri set.
+You can create an instance of a WebClient by executing `WebClient.create()`
+which will have default settings and without a base uri set.
 
-To change the default settings and register additional services, you can use simple builder that allows you to customize the client behavior.
+To change the default settings and register additional services, you can use
+simple builder that allows you to customize the client behavior.
 
 Create a WebClient with simple builder:
 
@@ -58,14 +66,19 @@ WebClient client = WebClient.builder()
 
 ### Creating the Request
 
-WebClient offers a set of request methods that are used to specify the type of action to be performed on a given resource. Below are some examples of request methods:
+WebClient offers a set of request methods that are used to specify the type of
+action to be performed on a given resource. Below are some examples of request
+methods:
 
 - `get()`
 - `post()`
 - `put()`
 - `method(Method method)`
 
-Check out [HttpClient][httpclient] API to learn more about request methods. These methods will create a new instance of [HttpClientRequest][httpclientreques] which can then be configured to add optional settings that will customize the behavior of the request.
+Check out [HttpClient][httpclient] API to learn more about request methods.
+These methods will create a new instance of
+[HttpClientRequest][httpclientreques] which can then be configured to add
+optional settings that will customize the behavior of the request.
 
 ### Customizing the Request
 
@@ -88,18 +101,25 @@ client.get()
 - Adds fragment to the request
 - Adds header to the request
 
-For more information about these optional parameters, check out [ClientRequestBase][clientrequestbas] API, which is a parent class of [HttpClientRequest][httpclientreques].
+For more information about these optional parameters, check out
+[ClientRequestBase][clientrequestbas] API, which is a parent class of
+[HttpClientRequest][httpclientreques].
 
-[HttpClientRequest][httpclientreques] class also provides specific header methods that help the user to set a particular header. Some examples of these are:
+[HttpClientRequest][httpclientreques] class also provides specific header
+methods that help the user to set a particular header. Some examples of these
+are:
 
 - `contentType` (MediaType contentType)
 - `accept` (MediaType…​ mediaTypes)
 
-For more information about these methods, check out [ClientRequest][clientrequest] API, which is a parent class of [HttpClientRequest][httpclientreques].
+For more information about these methods, check out
+[ClientRequest][clientrequest] API, which is a parent class of
+[HttpClientRequest][httpclientreques].
 
 ### Sending the Request
 
-Once the request setup is completed, the following methods can be used to send it:
+Once the request setup is completed, the following methods can be used to send
+it:
 
 - `HttpClientResponse request()`
 - `<E> ClientResponseTyped<E> request(Class<E> type)`
@@ -107,9 +127,12 @@ Once the request setup is completed, the following methods can be used to send i
 - `HttpClientResponse submit(Object entity)`
 - `<T> ClientResponseTyped<T> submit(Object entity, Class<T> requestedType)`
 - `HttpClientResponse outputStream(OutputStreamHandler outputStreamConsumer)`
-- `<T> ClientResponseTyped<T> outputStream(OutputStreamHandler outputStreamConsumer, Class<T> requestedType)`
+- `<T> ClientResponseTyped<T> outputStream(OutputStreamHandler
+  outputStreamConsumer, Class<T> requestedType)`
 
-Each of the methods will provide a way to allow response to be retrieved in a particular response type. Refer to [ClientRequest API][clientrequest] for more details about these methods.
+Each of the methods will provide a way to allow response to be retrieved in a
+particular response type. Refer to [ClientRequest API][clientrequest] for more
+details about these methods.
 
 Execute a simple GET request to endpoint and receive a String response:
 
@@ -122,18 +145,27 @@ String entityString = response.entity();
 
 ### Protocol Used
 
-WebClient currently supports `HTTP/1.1` and `HTTP/2` protocols. Below are the rules on which specific protocol will be used:
+WebClient currently supports `HTTP/1.1` and `HTTP/2` protocols. Below are the
+rules on which specific protocol will be used:
 
 - Using plain socket triggers WebClient to process a request using `HTTP/1.1`.
-- When using TLS, the client will use ALPN (protocol negotiation) to use appropriate HTTP version (either 1.1, or 2). `HTTP/2` has a higher weight, so it is chosen if supported by both sides.
-- A specific protocol can be explicitly selected by calling `HttpClientRequest#protocolId(String)`.
+- When using TLS, the client will use ALPN (protocol negotiation) to use
+  appropriate HTTP version (either 1.1, or 2). `HTTP/2` has a higher weight, so
+  it is chosen if supported by both sides.
+- A specific protocol can be explicitly selected by calling
+  `HttpClientRequest#protocolId(String)`.
    ```java
   String result = client.get()
       .protocolId("http/1.1")
       .requestEntity(String.class);
   ```
-- If `HTTP/2` is used, an upgrade attempt will be performed. If it fails, the client falls-back to `HTTP/1.1`.
-- The parameter `prior-knowledge` can be defined using `HTTP/2` protocol configuration. Please refer to [Setting Protocol configuration](#setting-protocol-configuration) on how to customize `HTTP/2`. In such a case, `prior-knowledge` will be used and fail if it is unable to switch to `HTTP/2`.
+- If `HTTP/2` is used, an upgrade attempt will be performed. If it fails, the
+  client falls-back to `HTTP/1.1`.
+- The parameter `prior-knowledge` can be defined using `HTTP/2` protocol
+  configuration. Please refer to [Setting Protocol
+  configuration](#setting-protocol-configuration) on how to customize `HTTP/2`.
+  In such a case, `prior-knowledge` will be used and fail if it is unable to
+  switch to `HTTP/2`.
 
 ### Adding Media Support
 
@@ -143,7 +175,8 @@ WebClient supports the following built-in Helidon Media Support libraries:
 2.  JSON Binding (JSON-B)
 3.  Jackson
 
-They can be activated by adding their corresponding libraries into the classpath. This can simply be done by adding their corresponding dependencies.
+They can be activated by adding their corresponding libraries into the
+classpath. This can simply be done by adding their corresponding dependencies.
 
 Add JSON-P support:
 
@@ -172,9 +205,11 @@ Add Jackson support:
 </dependency>
 ```
 
-Users can also create their own Custom Media Support library and make them work by following either of the approaches:
+Users can also create their own Custom Media Support library and make them work
+by following either of the approaches:
 
-- Create a Provider of the Custom Media Support and expose it via Service Loader followed by adding the Media Support library to the classpath.
+- Create a Provider of the Custom Media Support and expose it via Service Loader
+  followed by adding the Media Support library to the classpath.
 - Explicitly register the Custom Media Support from WebClient.
 
 ```java
@@ -191,7 +226,8 @@ WebClient.builder()
 WebClient provides three DNS resolver implementations out of the box:
 
 - `Java DNS resolution` is the default.
-- `First DNS resolution` uses the first IP address from a DNS lookup. To enable this option, add below dependency:
+- `First DNS resolution` uses the first IP address from a DNS lookup. To enable
+  this option, add below dependency:
 
 ```xml [pom.xml]
 <dependency>
@@ -200,7 +236,8 @@ WebClient provides three DNS resolver implementations out of the box:
 </dependency>
 ```
 
-- `Round-Robin DNS resolution` cycles through IP addresses from a DNS lookup. To enable this option, add this dependency:
+- `Round-Robin DNS resolution` cycles through IP addresses from a DNS lookup. To
+  enable this option, add this dependency:
 
 ```xml [pom.xml]
 <dependency>
@@ -212,25 +249,25 @@ WebClient provides three DNS resolver implementations out of the box:
 ## Configuration options
 
 <!--@include ../config/io.helidon.webclient.api.WebClient.md#configuration-options delim=--- offset=1 collapseTables=10 -->
-See [Configuration options](../config/io.helidon.webclient.api.WebClient.md#configuration-options).
+See [Configuration options][io-helidon-webcl].
 <!--/include-->
 
 
 ## Protocol Configuration
 
-Protocol specific configuration can be set using the `protocol-configs` parameter.
-WebClient currently supports `HTTP/1.1.` and `HTTP/2`.
+Protocol specific configuration can be set using the `protocol-configs`
+parameter. WebClient currently supports `HTTP/1.1.` and `HTTP/2`.
 
 ### HTTP1 Configuration options
 
 <!--@include ../config/io.helidon.webclient.http1.Http1ClientProtocolConfig.md#configuration-options delim=--- offset=2 collapseTables=10 -->
-See [Configuration options](../config/io.helidon.webclient.http1.Http1ClientProtocolConfig.md#configuration-options).
+See [Configuration options][io-helidon-webcl-2].
 <!--/include-->
 
 ### HTTP2 Configuration options
 
 <!--@include ../config/io.helidon.webclient.http2.Http2ClientProtocolConfig.md#configuration-options delim=--- offset=2 collapseTables=10 -->
-See [Configuration options](../config/io.helidon.webclient.http2.Http2ClientProtocolConfig.md#configuration-options).
+See [Configuration options][io-helidon-webcl-3].
 <!--/include-->
 
 
@@ -331,10 +368,12 @@ var response = client.get("/proxiedresource")
         .request();
 ```
 
-- Proxy instance configured using system settings (environment variables and system properties)
+- Proxy instance configured using system settings (environment variables and
+  system properties)
 - Configure the proxy per client request
 
-Proxy can also be configured in WebClient through the `application.yaml` configuration file.
+Proxy can also be configured in WebClient through the `application.yaml`
+configuration file.
 
 ```yaml [application.yaml]
 client:
@@ -356,7 +395,8 @@ WebClient.builder()
     .build();
 ```
 
-- `application.yaml` is a default configuration source loaded when YAML support is on classpath, so we can just use `Config.create()`
+- `application.yaml` is a default configuration source loaded when YAML support
+  is on classpath, so we can just use `Config.create()`
 - Passing the client configuration node
 
 ### WebClient TLS Setup
@@ -365,7 +405,8 @@ Configure TLS either programmatically or by the Helidon configuration framework.
 
 #### Configuring TLS in your code
 
-One way to configure TLS in WebClient is in your application code as shown below.
+One way to configure TLS in WebClient is in your application code as shown
+below.
 
 ```java
 WebClient.builder()
@@ -378,7 +419,8 @@ WebClient.builder()
 
 #### Configuring TLS in the config file
 
-Another way to configure TLS in WebClient is through the `application.yaml` configuration file.
+Another way to configure TLS in WebClient is through the `application.yaml`
+configuration file.
 
 WebClient TLS configuration in `application.yaml`:
 
@@ -394,7 +436,10 @@ client:
 ```
 
 > [!NOTE]
-> The `passphrase` value on the config file can be encrypted if stronger security is required. For more information on how secrets can be encrypted using a master password and store them in a configuration file, please see [Configuration Secrets][configuration-se].
+> The `passphrase` value on the config file can be encrypted if stronger
+> security is required. For more information on how secrets can be encrypted
+> using a master password and store them in a configuration file, please see
+> [Configuration Secrets][configuration-se].
 
 In the application code, load the settings from the configuration file.
 
@@ -408,7 +453,8 @@ WebClient.builder()
         .build();
 ```
 
-- `application.yaml` is a default configuration source loaded when YAML support is on classpath, so we can just use `Config.create()`
+- `application.yaml` is a default configuration source loaded when YAML support
+  is on classpath, so we can just use `Config.create()`
 - Passing the client configuration node
 
 ### Adding Service to WebClient
@@ -425,7 +471,9 @@ WebClient currently supports several built-in services, namely
 
 #### Enabling the service
 
-In order for a service to function, its dependencies need to be added in the application’s `pom.xml`. Below are examples on how to enable the built-in services:
+In order for a service to function, its dependencies need to be added in the
+application’s `pom.xml`. Below are examples on how to enable the built-in
+services:
 
 - `discovery` (see [its documentation][discovery])
 
@@ -442,7 +490,8 @@ In order for a service to function, its dependencies need to be added in the app
   </dependency>
   ```
 
-  - Backs the `discovery` service with a [Discovery provider based on Netflix’s Eureka](discovery.md#eureka)
+  - Backs the `discovery` service with a [Discovery provider based on Netflix’s
+    Eureka](discovery.md#eureka)
 
 - `metrics`
 
@@ -495,13 +544,15 @@ WebClient.builder()
         .build();
 ```
 
-- Creates new metric which will count all GET requests and has format of `example.metric.GET.<host-name>`
+- Creates new metric which will count all GET requests and has format of
+  `example.metric.GET.<host-name>`
 
 - Register the service in the client instance
 
 ### Adding service in the config file
 
-Adding service in WebClient can also be done through the `application.yaml` configuration file.
+Adding service in WebClient can also be done through the `application.yaml`
+configuration file.
 
 WebClient Service configuration in `application.yaml`:
 
@@ -534,7 +585,8 @@ WebClient.builder()
         .build();
 ```
 
-- `application.yaml` is a default configuration source loaded when YAML support is on classpath, so we can just use `Config.create()`
+- `application.yaml` is a default configuration source loaded when YAML support
+  is on classpath, so we can just use `Config.create()`
 - Passing the client configuration node
 
 <a id="setting-protocol-configuration"></a>
@@ -558,7 +610,8 @@ WebClient.builder()
 
 ### Setting up protocol configuration in the config file
 
-Protocol configuration can also be set in the `application.yaml` configuration file.
+Protocol configuration can also be set in the `application.yaml` configuration
+file.
 
 Setting up HTTP/1.1 and HTTP/2 protocol using `application.yaml` file:
 
@@ -584,20 +637,25 @@ WebClient.builder()
         .build();
 ```
 
-- `application.yaml` is a default configuration source loaded when YAML support is on classpath, so we can just use `Config.create()`
+- `application.yaml` is a default configuration source loaded when YAML support
+  is on classpath, so we can just use `Config.create()`
 
 - Passing the client configuration node
 
 ## Configuring Telemetry
 
-The telemetry webclient services provide metrics and tracing spans which follow the OpenTelemetry semantic conventions for clients. These are separate from the `services.metrics` and `services.tracing` services described elsewhere on this page.
+The telemetry webclient services provide metrics and tracing spans which follow
+the OpenTelemetry semantic conventions for clients. These are separate from the
+`services.metrics` and `services.tracing` services described elsewhere on this
+page.
 
 To enable the telemetry webclient services, take the following two steps:
 
 - Add the appropriate dependency.
 - Add configuration or code to activate the telemetry services.
 
-To set up metrics and tracing, add the following single dependency to your project:
+To set up metrics and tracing, add the following single dependency to your
+project:
 
 Dependency for webclient telemetry metrics and tracing:
 
@@ -609,7 +667,9 @@ Dependency for webclient telemetry metrics and tracing:
 </dependency>
 ```
 
-To transmit the metrics semantic conventions to a backend, add a dependency on an OpenTelemetry exporter and in the `telemetry` configuration set up an exporter under `signals.metrics`.
+To transmit the metrics semantic conventions to a backend, add a dependency on
+an OpenTelemetry exporter and in the `telemetry` configuration set up an
+exporter under `signals.metrics`.
 
 Dependency for exporting metrics semantic conventions data using OTLP:
 
@@ -632,7 +692,9 @@ telemetry:
         type: otlp
 ```
 
-To activate webclient telemetry collection using configuration, add the `telemetry` config section under `client.services` and, below it, add `metrics`, `tracing`, or both.
+To activate webclient telemetry collection using configuration, add the
+`telemetry` config section under `client.services` and, below it, add `metrics`,
+`tracing`, or both.
 
 Enabling metrics and tracing telemetry using configuration:
 
@@ -646,7 +708,9 @@ client:
 
 The `metrics` and `tracing` subsections have no explicit settings.
 
-Alternatively, trigger webclient telemetry collection by modifying your client code to add one or more webclient telemetry services to the webclient builder. This example shows adding only telemetry metrics.
+Alternatively, trigger webclient telemetry collection by modifying your client
+code to add one or more webclient telemetry services to the webclient builder.
+This example shows adding only telemetry metrics.
 
 Enabling telemetry using code:
 
@@ -658,9 +722,11 @@ WebClient.builder()
 
 ## Context Propagation
 
-WebClient supports the capability to propagate values from `io.helidon.common.context.Context` over HTTP headers.
+WebClient supports the capability to propagate values from
+`io.helidon.common.context.Context` over HTTP headers.
 
-To enable this feature (implemented as a WebClient service), add the following dependency to your pom file:
+To enable this feature (implemented as a WebClient service), add the following
+dependency to your pom file:
 
 ```xml [pom.xml]
 <dependency>
@@ -698,7 +764,7 @@ Configuration of WebClient transport level propagation of context values.
 #### Configuration options
 
 <!--@include ../config/io.helidon.webclient.context.WebClientContextService.md#configuration-options delim=--- offset=1 collapseTables=10 -->
-See [Configuration options](../config/io.helidon.webclient.context.WebClientContextService.md#configuration-options).
+See [Configuration options][io-helidon-webcl-4].
 <!--/include-->
 
 
@@ -731,3 +797,7 @@ See the [manifest](../config/manifest.md) for all available types.
 [helidon-webclien-7]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.metrics/module-summary.html
 [helidon-webclien-8]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.security/module-summary.html
 [helidon-webclien-9]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.tracing/module-summary.html
+[io-helidon-webcl]: ../config/io.helidon.webclient.api.WebClient.md#configuration-options
+[io-helidon-webcl-2]: ../config/io.helidon.webclient.http1.Http1ClientProtocolConfig.md#configuration-options
+[io-helidon-webcl-3]: ../config/io.helidon.webclient.http2.Http2ClientProtocolConfig.md#configuration-options
+[io-helidon-webcl-4]: ../config/io.helidon.webclient.context.WebClientContextService.md#configuration-options

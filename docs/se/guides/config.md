@@ -1,6 +1,7 @@
 # Helidon SE Config Guide
 
-This guide describes how to create a sample Helidon SE project that can be used to run some basic examples using both default and custom configuration.
+This guide describes how to create a sample Helidon SE project that can be used
+to run some basic examples using both default and custom configuration.
 
 ## What you need
 
@@ -37,11 +38,19 @@ export JAVA_HOME=/usr/lib/jvm/jdk-21
 
 ## Getting Started with Configuration
 
-Helidon provides a very flexible and comprehensive configuration system, offering you many application configuration choices. You can include configuration data from a variety of sources using different formats, like JSON and YAML. Furthermore, you can customize the precedence of sources and make them optional or mandatory. This guide introduces Helidon SE configuration and demonstrates the fundamental concepts using several examples. Refer to [Helidon Config](../config/introduction.md) for the full configuration concepts documentation.
+Helidon provides a very flexible and comprehensive configuration system,
+offering you many application configuration choices. You can include
+configuration data from a variety of sources using different formats, like JSON
+and YAML. Furthermore, you can customize the precedence of sources and make them
+optional or mandatory. This guide introduces Helidon SE configuration and
+demonstrates the fundamental concepts using several examples. Refer to [Helidon
+Config](../config/introduction.md) for the full configuration concepts
+documentation.
 
 ### Create a Sample Helidon SE Project
 
-Use the Helidon SE Maven archetype to create a simple project that can be used for the examples in this guide.
+Use the Helidon SE Maven archetype to create a simple project that can be used
+for the examples in this guide.
 
 Run the Maven archetype:
 
@@ -63,20 +72,31 @@ cd helidon-quickstart-se
 
 ### Configuration Formats
 
-Helidon configuration sources can use different formats for the configuration data. You can specify the format on a per-source basis, mixing and matching formats as required. Here are the supported formats, each with the extension name you should use. By default, Helidon will determine the media type based on the extension name.
+Helidon configuration sources can use different formats for the configuration
+data. You can specify the format on a per-source basis, mixing and matching
+formats as required. Here are the supported formats, each with the extension
+name you should use. By default, Helidon will determine the media type based on
+the extension name.
 
 - Java Property (.properties)
 - JSON (.json)
 - YAML (.yaml)
 - HOCON (.conf)
 
-The remainder of this document will use these formats in examples and show you how to configure Helidon to parse them.
+The remainder of this document will use these formats in examples and show you
+how to configure Helidon to parse them.
 
 ### Default Configuration
 
-Helidon has an internal configuration, so you are not required to provide any configuration data for your application, though in practice you most likely would. By default, that configuration can be overridden from three sources: system properties, environment variables, and the contents of `application.yaml` in the classpath. For example, if you specify a custom server port in `application.yaml` then your server will listen on that port.
+Helidon has an internal configuration, so you are not required to provide any
+configuration data for your application, though in practice you most likely
+would. By default, that configuration can be overridden from three sources:
+system properties, environment variables, and the contents of `application.yaml`
+in the classpath. For example, if you specify a custom server port in
+`application.yaml` then your server will listen on that port.
 
-In your application code, Helidon uses the default configuration when you create a default `Config` object. See the following code from the project you created.
+In your application code, Helidon uses the default configuration when you create
+a default `Config` object. See the following code from the project you created.
 
 View Main#main:
 
@@ -88,22 +108,34 @@ Config config = Config.create();
 
 ### Source Precedence for Default Configuration
 
-In order to properly configure your application using configuration sources, you need to understand the precedence rules that Helidon uses to merge your configuration data. By default, Helidon will use the following sources in precedence order:
+In order to properly configure your application using configuration sources, you
+need to understand the precedence rules that Helidon uses to merge your
+configuration data. By default, Helidon will use the following sources in
+precedence order:
 
 1.  Java system properties
 2.  Environment variables
 3.  Configuration specified in `application.yaml`
 
-If any of the Helidon required properties are not specified in one of these source, like `server.port`, then Helidon will use a default value.
+If any of the Helidon required properties are not specified in one of these
+source, like `server.port`, then Helidon will use a default value.
 
 > [!NOTE]
-> Because environment variable names are restricted to alphanumeric characters and underscore, Helidon adds aliases to the environment configuration source, allowing entries with dotted and/or hyphenated keys to be overridden. For example, this mapping allows an environment variable named "APP_GREETING" to override an entry key named "app.greeting". In the same way, an environment variable named "APP_dash_GREETING" will map to "app-greeting". See [Advanced Config][advanced-config] for more information.
+> Because environment variable names are restricted to alphanumeric characters
+> and underscore, Helidon adds aliases to the environment configuration source,
+> allowing entries with dotted and/or hyphenated keys to be overridden. For
+> example, this mapping allows an environment variable named "APP_GREETING" to
+> override an entry key named "app.greeting". In the same way, an environment
+> variable named "APP_dash_GREETING" will map to "app-greeting". See [Advanced
+> Config][advanced-config] for more information.
 
 The following examples will demonstrate the default precedence order.
 
 #### Default Configuration Resource
 
-Change a configuration parameter in the default configuration resource file, `application.yaml`. There are no environment variable or system property overrides defined.
+Change a configuration parameter in the default configuration resource file,
+`application.yaml`. There are no environment variable or system property
+overrides defined.
 
 Change app.greeting in resources/application.yaml as follows:
 
@@ -162,7 +194,8 @@ The environment property took precedence over `application.yaml`.
 
 A system variable has a higher precedence than the environment property.
 
-Restart the application with a system property. The APP_GREETING environment variable is still set:
+Restart the application with a system property. The APP_GREETING environment
+variable is still set:
 
 ```shell [Terminal]
 export APP_GREETING=HelloFromEnvironment
@@ -186,26 +219,43 @@ and the value in `application.yaml`.
 
 ## Custom Configuration Sources
 
-To use custom configuration sources, your application needs to specify the sources when it creates `Config` object. By doing this, you are in full control of all configuration sources and precedence. By default, the environment variable and system property sources are enabled, but you can disable them using the `disableEnvironmentVariablesSource` and `disableSystemPropertiesSource` methods.
+To use custom configuration sources, your application needs to specify the
+sources when it creates `Config` object. By doing this, you are in full control
+of all configuration sources and precedence. By default, the environment
+variable and system property sources are enabled, but you can disable them using
+the `disableEnvironmentVariablesSource` and `disableSystemPropertiesSource`
+methods.
 
-This section will show you how to use a custom configuration with various sources, formats, and precedence rules.
+This section will show you how to use a custom configuration with various
+sources, formats, and precedence rules.
 
 ### Full List of Configuration Sources
 
-Here is the full list of external config sources that you can use programmatically.
+Here is the full list of external config sources that you can use
+programmatically.
 
 1.  Environment variables - the property is a name/value pair.
 2.  Java system properties - the property is a name/value pair.
-3.  Resources in the classpath - the contents of the resource is parsed according to its inferred format.
+3.  Resources in the classpath - the contents of the resource is parsed
+    according to its inferred format.
 4.  File - the contents of the file is parsed according to its inferred format.
-5.  Directory - each non-directory file in the directory becomes a config entry: the file name is the key. and the contents of that file are used as the corresponding config String value.
+5.  Directory - each non-directory file in the directory becomes a config entry:
+    the file name is the key. and the contents of that file are used as the
+    corresponding config String value.
 6.  A URL resource - contents is parsed according to its inferred format.
 
-You can also define custom sources, such as Git, and use them in your Helidon application. See [Advanced Config][advanced-config] for more information.
+You can also define custom sources, such as Git, and use them in your Helidon
+application. See [Advanced Config][advanced-config] for more information.
 
 ### Classpath Sources
 
-The first custom resource example demonstrates how to add a second internal configuration resource that is discovered in the `classpath`. The code needs to build a `Config` object, which in turn is used to build the `Server` object. The `Config` object can be built using a `Config.Builder`, which lets you inject any number of sources into the builder. Furthermore, you can set the order of precedence for the sources. The first source has the highest importance, then the next has second highest, and so forth.
+The first custom resource example demonstrates how to add a second internal
+configuration resource that is discovered in the `classpath`. The code needs to
+build a `Config` object, which in turn is used to build the `Server` object. The
+`Config` object can be built using a `Config.Builder`, which lets you inject any
+number of sources into the builder. Furthermore, you can set the order of
+precedence for the sources. The first source has the highest importance, then
+the next has second highest, and so forth.
 
 Add a resource file, named `config.properties` to the resources directory with
 the following contents:
@@ -230,9 +280,11 @@ private static Config buildConfig() {
 
 - Disable the environment variables as a source.
 - Specify the new config.properties resource that is in the `classpath`.
-- You must specify the existing `application.yaml` or Helidon will not use it as a configuration source even though it is considered a default source.
+- You must specify the existing `application.yaml` or Helidon will not use it as
+  a configuration source even though it is considered a default source.
 
-Build and run the application (without the system property). Invoke the endpoint:
+Build and run the application (without the system property). Invoke the
+endpoint:
 
 ```shell [Terminal]
 curl http://localhost:8080/greet
@@ -244,10 +296,15 @@ curl http://localhost:8080/greet
 }
 ```
 
-- The greeting was picked up from `config.properties`, overriding the value in `application.yaml`.
+- The greeting was picked up from `config.properties`, overriding the value in
+  `application.yaml`.
 
 > [!NOTE]
-> It is important to remember that configuration from all sources is merged internally. If you have the same configuration property in multiple sources, then only the one with the highest order of precedence will be used at runtime. This is true even the same property comes from sources with different formats.
+> It is important to remember that configuration from all sources is merged
+> internally. If you have the same configuration property in multiple sources,
+> then only the one with the highest order of precedence will be used at
+> runtime. This is true even the same property comes from sources with different
+> formats.
 
 Swap the source order and run the test again.
 
@@ -276,19 +333,26 @@ curl http://localhost:8080/greet
 }
 ```
 
-- The file `application.yaml` was used to get the greeting since it now has precedence over `config.properties`.
+- The file `application.yaml` was used to get the greeting since it now has
+  precedence over `config.properties`.
 
 ### External File Sources
 
-You can move all or part of your configuration to external files, making them optional or mandatory. The obvious advantage to this approach is that you do not need to rebuild your application to change configuration. In the following example, the `app.greeting` configuration property will be added to `config-file.properties`.
+You can move all or part of your configuration to external files, making them
+optional or mandatory. The obvious advantage to this approach is that you do not
+need to rebuild your application to change configuration. In the following
+example, the `app.greeting` configuration property will be added to
+`config-file.properties`.
 
-Unset the environment variable so that disableEnvironmentVariablesSource doesn’t need to be called:
+Unset the environment variable so that disableEnvironmentVariablesSource doesn’t
+need to be called:
 
 ```shell [Terminal]
 unset APP_GREETING
 ```
 
-Create a file named config-file.properties in the helidon-quickstart-se directory with the following contents:
+Create a file named config-file.properties in the helidon-quickstart-se
+directory with the following contents:
 
 ```shell [Terminal]
 app.greeting=HelloFrom-config-file.properties
@@ -318,10 +382,14 @@ curl http://localhost:8080/greet
 }
 ```
 
-- The configuration property from the file `config-file.properties` takes precedence.
+- The configuration property from the file `config-file.properties` takes
+  precedence.
 
 > [!NOTE]
-> If you want the configuration file to be optional, you must use the `optional` method with `sources`, otherwise Helidon will generate an error during startup as shown below. This is true for both `file` and `classpath` sources. By default, these sources are mandatory.
+> If you want the configuration file to be optional, you must use the `optional`
+> method with `sources`, otherwise Helidon will generate an error during startup
+> as shown below. This is true for both `file` and `classpath` sources. By
+> default, these sources are mandatory.
 
 Update the Main class and replace the buildConfig method:
 
@@ -349,9 +417,12 @@ To fix this, use the `optional` method as shown below, then rerun the test.
 
 ### Directory Source
 
-A directory source treats every file in the directory as a key, and the file contents as the value. The following example includes a directory source as highest precedence.
+A directory source treats every file in the directory as a key, and the file
+contents as the value. The following example includes a directory source as
+highest precedence.
 
-Create a new directory helidon-quickstart-se/conf then create a file named app.greeting in that directory with the following contents:
+Create a new directory helidon-quickstart-se/conf then create a file named
+app.greeting in that directory with the following contents:
 
 ```shell [Terminal]
 HelloFromFileInDirectoryConf
@@ -386,7 +457,8 @@ curl http://localhost:8080/greet
 
 #### Exceeding Three Sources
 
-If you have more than three sources, you can use the `addSource` method as shown below.
+If you have more than three sources, you can use the `addSource` method as shown
+below.
 
 Update the Main class and replace the buildConfig method:
 
@@ -415,9 +487,14 @@ curl http://localhost:8080/greet
 
 ### Configuration Profiles
 
-Instead of directly specifying the configuration sources in your code, you can use a profile file that declares the configuration sources and their attributes.
+Instead of directly specifying the configuration sources in your code, you can
+use a profile file that declares the configuration sources and their attributes.
 
-Simplest way to use a profile is to define a `config-profile.yaml` (and possible other files, such as `config-profile-dev.yaml` for `dev` profile) on classpath or on file system, and create config using `Config.create()`. The profile can be changed by a system property `config.profile`, or using an environment variable `HELIDON_CONFIG_PROFILE`.
+Simplest way to use a profile is to define a `config-profile.yaml` (and possible
+other files, such as `config-profile-dev.yaml` for `dev` profile) on classpath
+or on file system, and create config using `Config.create()`. The profile can be
+changed by a system property `config.profile`, or using an environment variable
+`HELIDON_CONFIG_PROFILE`.
 
 Profile file can use any supported format, following example is using `YAML`.
 
@@ -456,7 +533,9 @@ curl http://localhost:8080/greet
 
 - The `application.yaml` resource file was used to get the greeting.
 
-The source precedence order in a profile file is the order of appearance in the file. This is demonstrated below where the `config-file.properties` has the highest order of precedence.
+The source precedence order in a profile file is the order of appearance in the
+file. This is demonstrated below where the `config-file.properties` has the
+highest order of precedence.
 
 Replace the contents of the `config-profile.yaml` file:
 
@@ -492,7 +571,8 @@ curl http://localhost:8080/greet
 
 - The `config-file.properties` source now takes precedence.
 
-When using a profile file, you need to explicitly include both environment variables and system properties as a source if you want to use them.
+When using a profile file, you need to explicitly include both environment
+variables and system properties as a source if you want to use them.
 
 Replace the contents of the `config-profile.yaml` file:
 
@@ -511,15 +591,28 @@ sources:
 - Environment variables are now used as a source.
 - System properties are now used as a source.
 
-You can re-run the previous tests that exercised environment variables and system properties. Swap the two types to see the precedence change. Be sure to unset APP_GREETING after you finish testing.
+You can re-run the previous tests that exercised environment variables and
+system properties. Swap the two types to see the precedence change. Be sure to
+unset APP_GREETING after you finish testing.
 
 ## Accessing Config within an Application
 
-You have used Helidon to customize configuration behavior from your code using the `Config` and `Config.Builder` classes. As discussed previously, Helidon reads configuration from a config source, which uses a config parser to translate the source into an in-memory tree which represents the configuration’s structure and values. Helidon offers a variety of methods to access in-memory configuration. These can be categorized as *key access* or *tree navigation*. You have been using *key access* for all the examples to this point. For example `app.greeting` is accessing the `greeting` child node of the `app` parent node. There are many options for accessing this data using navigation methods as described in [Hierarchical Config][hierarchical-con] and [Advanced Config\>][advanced-config].
+You have used Helidon to customize configuration behavior from your code using
+the `Config` and `Config.Builder` classes. As discussed previously, Helidon
+reads configuration from a config source, which uses a config parser to
+translate the source into an in-memory tree which represents the configuration’s
+structure and values. Helidon offers a variety of methods to access in-memory
+configuration. These can be categorized as *key access* or *tree navigation*.
+You have been using *key access* for all the examples to this point. For example
+`app.greeting` is accessing the `greeting` child node of the `app` parent node.
+There are many options for accessing this data using navigation methods as
+described in [Hierarchical Config][hierarchical-con] and [Advanced
+Config\>][advanced-config].
 
 ### Accessing Config Using Keys or Navigation
 
-The simplest way to access configuration data is using a key, as shown below in the `GreetFeature` class. The key can be composite as shown below:
+The simplest way to access configuration data is using a key, as shown below in
+the `GreetFeature` class. The key can be composite as shown below:
 
 View the GreetService constructor:
 
@@ -553,7 +646,10 @@ curl http://localhost:8080/greet
 
 ### Using Filters and Collections
 
-The Helidon `Config` class provides several methods that allow you to filter and customize the traversal of the configuration tree. The example below shows how to get the `greeting` node when you only know it is somewhere in the `app` subtree.
+The Helidon `Config` class provides several methods that allow you to filter and
+customize the traversal of the configuration tree. The example below shows how
+to get the `greeting` node when you only know it is somewhere in the `app`
+subtree.
 
 Replace the contents of the config-profile.yaml file:
 
@@ -606,7 +702,13 @@ curl http://localhost:8080/greet
 
 ### Reacting to Configuration Updates
 
-Even though in-memory config trees are immutable, the config system internally records configuration source metadata that allows it to watch sources for changes. Your application listens for updates to the underlying config sources and reacts to the changes. See [Config Mutability Support](../config/mutability-support.md) for a full discussion on this topic. The following example demonstrates how to listen and react to configuration changes.
+Even though in-memory config trees are immutable, the config system internally
+records configuration source metadata that allows it to watch sources for
+changes. Your application listens for updates to the underlying config sources
+and reacts to the changes. See [Config Mutability
+Support](../config/mutability-support.md) for a full discussion on this topic.
+The following example demonstrates how to listen and react to configuration
+changes.
 
 Replace the contents of the `config-profile.yaml` file:
 
@@ -631,7 +733,8 @@ greetingConfig.onChange(cfg -> greeting.set(cfg.asString().orElse("Ciao")));
 ```
 
 - Get the greeting `Config` node.
-- Register a listener that will get called by Helidon when the configuration changes. The listener will update the greeting with the new value.
+- Register a listener that will get called by Helidon when the configuration
+  changes. The listener will update the greeting with the new value.
 
 Build and run the application, then invoke the endpoint:
 
@@ -667,7 +770,11 @@ curl http://localhost:8080/greet
 
 ## Integration with Kubernetes
 
-The following example uses a Kubernetes ConfigMap to pass the configuration data to your Helidon application deployed to Kubernetes. When the pod is created, Kubernetes will automatically create a local file within the container that has the contents of the configuration file used for the ConfigMap. This example will create the file at `/etc/config/config-file.properties`.
+The following example uses a Kubernetes ConfigMap to pass the configuration data
+to your Helidon application deployed to Kubernetes. When the pod is created,
+Kubernetes will automatically create a local file within the container that has
+the contents of the configuration file used for the ConfigMap. This example will
+create the file at `/etc/config/config-file.properties`.
 
 Replace the app section of the application.yaml resource file:
 
@@ -686,8 +793,10 @@ return Config.builder()
         .build();
 ```
 
-- The `app.greeting` value will be fetched from `/etc/config/config-file.properties` within the container.
-- The server port is specified in `application.yaml` within the `helidon-quickstart-se.jar`.
+- The `app.greeting` value will be fetched from
+  `/etc/config/config-file.properties` within the container.
+- The server port is specified in `application.yaml` within the
+  `helidon-quickstart-se.jar`.
 
 Replace the GreetService constructor with the following code:
 
@@ -707,7 +816,8 @@ curl http://localhost:8080/greet
 }
 ```
 
-- The greeting came from `application.yaml` since `/etc/config/config-file.properties` doesn’t exist.
+- The greeting came from `application.yaml` since
+  `/etc/config/config-file.properties` doesn’t exist.
 
 Stop the application and build the docker image:
 
@@ -738,7 +848,8 @@ kind: ConfigMap
 # ...
 ```
 
-- The file `config-file.properties` will be created within the Kubernetes container.
+- The file `config-file.properties` will be created within the Kubernetes
+  container.
 - The `config-file.properties` file will have this single property defined.
 
 Create the Kubernetes YAML specification, named `k8s-config.yaml`, with the
@@ -796,7 +907,8 @@ spec:
 
 - A service of type `NodePort` that serves the default routes on port `8080`.
 - A deployment with one replica of a pod.
-- Mount the ConfigMap as a volume at `/etc/config`. This is where Kubernetes will create `config-file.properties`.
+- Mount the ConfigMap as a volume at `/etc/config`. This is where Kubernetes
+  will create `config-file.properties`.
 - Specify the ConfigMap which contains the configuration data.
 
 Create and deploy the application into Kubernetes:
@@ -818,7 +930,8 @@ helidon-config   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s
 
 - A service of type `NodePort` that serves the default routes on port `31143`.
 
-Verify the configuration endpoint using port 31143, your port will likely be different:
+Verify the configuration endpoint using port 31143, your port will likely be
+different:
 
 ```shell [Terminal]
 curl http://localhost:31143/greet
@@ -830,9 +943,11 @@ curl http://localhost:31143/greet
 }
 ```
 
-- The greeting value from `/etc/config/config-file.properties` within the container was used.
+- The greeting value from `/etc/config/config-file.properties` within the
+  container was used.
 
-You can now delete the Kubernetes resources that were just created during this example.
+You can now delete the Kubernetes resources that were just created during this
+example.
 
 Delete the Kubernetes resources:
 
@@ -843,7 +958,10 @@ kubectl delete configmap  helidon-configmap
 
 ## Summary
 
-This guide has demonstrated how to use basic Helidon configuration features. The full configuration documentation, starting with the introduction section at [Helidon Config](../config/introduction.md) has much more information including the following:
+This guide has demonstrated how to use basic Helidon configuration features. The
+full configuration documentation, starting with the introduction section at
+[Helidon Config](../config/introduction.md) has much more information including
+the following:
 
 - Architecture
 - Parsers

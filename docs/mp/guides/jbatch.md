@@ -1,6 +1,7 @@
 # Helidon with JBatch Guide
 
-This guide describes how Helidon and Jakarta Batch (JBatch) can be used together to execute batch jobs in environments that do not fully support EE environments.
+This guide describes how Helidon and Jakarta Batch (JBatch) can be used together
+to execute batch jobs in environments that do not fully support EE environments.
 
 ## What You Need
 
@@ -36,11 +37,14 @@ export JAVA_HOME=/usr/lib/jvm/jdk-21
 ```
 
 > [!NOTE]
-> This guide assumes you are familiar with the [Jakarta Batch project specification][jakarta-batch-pr] from the Eclipse Foundation project site.
+> This guide assumes you are familiar with the [Jakarta Batch project
+> specification][jakarta-batch-pr] from the Eclipse Foundation project site.
 
 ## Dependencies
 
-For this example, add the IBM JBatch implementation and the `derby` embedded DB (since JPA and JPA are not available by default) dependencies to the testing module:
+For this example, add the IBM JBatch implementation and the `derby` embedded DB
+(since JPA and JPA are not available by default) dependencies to the testing
+module:
 
 Maven dependencies:
 
@@ -59,13 +63,15 @@ Maven dependencies:
 
 ## Add Sample Jobs
 
-In this demonstration you will first create sample input and output records and then the following jobs:
+In this demonstration you will first create sample input and output records and
+then the following jobs:
 
 - `MyItemReader`
 - `MyItemProcessor`
 - `MyItemWriter`
 
-Finally, you will create `MyBatchlet` to demonstrate all possible usages of JBatch.
+Finally, you will create `MyBatchlet` to demonstrate all possible usages of
+JBatch.
 
 ### 1. Create a unit of input information
 
@@ -215,11 +221,13 @@ Add this code to your job descriptor.xml file:
 </job>
 ```
 
-- The first step of the job includes `MyItemReader`, `MyItemProcessor` and `MyItemWriter`.
+- The first step of the job includes `MyItemReader`, `MyItemProcessor` and
+  `MyItemWriter`.
 - The second step of the job includes `MyBatchlet`.
 
 > [!NOTE]
-> You must specify the fully qualified names in the `ref` properties, like “jobs.io.helidon.examples.jbatch.MyItemReader”, otherwise it will not work.
+> You must specify the fully qualified names in the `ref` properties, like
+> “jobs.io.helidon.examples.jbatch.MyItemReader”, otherwise it will not work.
 
 ## Create an Endpoint
 
@@ -272,7 +280,11 @@ public class BatchResource {
 ```
 <!--@mdc :: -->
 
-Helidon specifies to JBatch that it should run in Standalone (SE) mode. It will also register the `HelidonExecutorServiceProvider` which is actually relatively small. For our example we need something quite small, like a `FixedTheadPool` with 2 threads. This provider is used to tell our JBatch engine exactly which ExecutorService to use.
+Helidon specifies to JBatch that it should run in Standalone (SE) mode. It will
+also register the `HelidonExecutorServiceProvider` which is actually relatively
+small. For our example we need something quite small, like a `FixedTheadPool`
+with 2 threads. This provider is used to tell our JBatch engine exactly which
+ExecutorService to use.
 
 ```java [HelidonExecutorServiceProvider]
 public class HelidonExecutorServiceProvider implements ExecutorServiceProvider {
@@ -330,7 +342,8 @@ curl -X GET http://localhost:8080/batch/status/1
 ```
 
 > [!NOTE]
-> In this example the job ID is 1, but make sure that you enter your specific job ID in the string.
+> In this example the job ID is 1, but make sure that you enter your specific
+> job ID in the string.
 
 The results should look something like this:
 
@@ -340,7 +353,8 @@ The results should look something like this:
 
 ## Summary
 
-This guide demonstrated how to use Helidon with JBatch even though Helidon is not a full EE container.
+This guide demonstrated how to use Helidon with JBatch even though Helidon is
+not a full EE container.
 
 [java-21]: https://www.oracle.com/technetwork/java/javase/downloads
 [open-jdk-21]: http://jdk.java.net

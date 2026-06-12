@@ -2,7 +2,7 @@
 
 Index of AI documentation.
 
-| Topic | Description |
-| --- | --- |
+| Topic                                | Description                        |
+|--------------------------------------|------------------------------------|
 | [LangChain4j](langchain4j/README.md) | Index of LangChain4j documentation |
-| [MCP](mcp.md) | MCP |
+| [MCP](mcp.md)                        | Model Context Protocol Support     |

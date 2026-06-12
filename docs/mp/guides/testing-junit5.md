@@ -1,6 +1,7 @@
 # Helidon MP Testing with JUnit 5 Guide
 
-This guide describes how to write and execute tests for your MicroProfile applications in a JUnit 5 environment using optimized customizations.
+This guide describes how to write and execute tests for your MicroProfile
+applications in a JUnit 5 environment using optimized customizations.
 
 ## What You Need
 
@@ -37,7 +38,8 @@ export JAVA_HOME=/usr/lib/jvm/jdk-21
 
 ## Dependencies
 
-To start using this feature, add the following dependencies to the testing module:
+To start using this feature, add the following dependencies to the testing
+module:
 
 Maven dependencies:
 
@@ -57,13 +59,16 @@ Maven dependencies:
 
 ## Create a Sample Helidon MP Project
 
-In this guide we will use the [Helidon MP Quickstart](../guides/quickstart.md) project in our examples.
+In this guide we will use the [Helidon MP Quickstart](../guides/quickstart.md)
+project in our examples.
 
-This application provides an endpoint `/greet`, and we want to make sure this endpoint is available and returns expected value.
+This application provides an endpoint `/greet`, and we want to make sure this
+endpoint is available and returns expected value.
 
 ### Create a Test Class
 
-First you’ll need to create a test class with an empty test method, and annotate it with `@HelidonTest`:
+First you’ll need to create a test class with an empty test method, and annotate
+it with `@HelidonTest`:
 
 Test Class:
 
@@ -76,7 +81,10 @@ class GreetTest {
 }
 ```
 
-The `@HelidonTest` annotation will cause the test extension to start a Helidon MicroProfile server so that you do not need to manage the server lifecycle in your test. The container is initialized once before the test class is instantiated, and shut down after the last test runs.
+The `@HelidonTest` annotation will cause the test extension to start a Helidon
+MicroProfile server so that you do not need to manage the server lifecycle in
+your test. The container is initialized once before the test class is
+instantiated, and shut down after the last test runs.
 
 You can see this in the test output:
 
@@ -85,11 +93,15 @@ INFO io.helidon.microprofile.server.ServerCdiExtension: Server started on http:/
 ```
 
 > [!NOTE]
-> The `@HelidonTest` annotation uses a random port regardless of the port configured in the application.yaml.
+> The `@HelidonTest` annotation uses a random port regardless of the port
+> configured in the application.yaml.
 
 ### Inject a WebTarget
 
-The test is only useful if it invokes the server and verifies the result. To support testing, you can inject a `WebTarget` that is configured for the currently running server (it can also be a parameter to a test method). We can use the target to invoke our endpoint and validate the result.
+The test is only useful if it invokes the server and verifies the result. To
+support testing, you can inject a `WebTarget` that is configured for the
+currently running server (it can also be a parameter to a test method). We can
+use the target to invoke our endpoint and validate the result.
 
 Updated Class with webTarget:
 
@@ -114,7 +126,8 @@ The test is now complete and verifies the message.
 
 ### Customize the Testing Extension
 
-The testing extension supports a few additional annotations that allow for finer control of the test execution.
+The testing extension supports a few additional annotations that allow for finer
+control of the test execution.
 
 | Annotation | Description |
 |----|----|
@@ -125,7 +138,8 @@ The testing extension supports a few additional annotations that allow for finer
 
 Optional Extension Annotations
 
-Here’s an example showing how these approaches are used to execute the same endpoint with different configuration:
+Here’s an example showing how these approaches are used to execute the same
+endpoint with different configuration:
 
 <!--@mdc ::code-collapse -->
 ```java
@@ -181,7 +195,10 @@ class AddConfigBlockTest {
 
 ### Use Beans for Testing
 
-If you prefer to use only beans for testing, and want to add a different bean for each test, then you must use the `@AddBean` annotation. This cannot be achieved by CDI discovery because if we place `META-INF/beans.xml` on the classpath, then all of our beans would be added.
+If you prefer to use only beans for testing, and want to add a different bean
+for each test, then you must use the `@AddBean` annotation. This cannot be
+achieved by CDI discovery because if we place `META-INF/beans.xml` on the
+classpath, then all of our beans would be added.
 
 ```java
 @AddBean(TestBean.class)
@@ -189,7 +206,9 @@ class GreetTest {
 }
 ```
 
-By default, the bean is added to the container with scope set to `ApplicationScoped`. You can customize scope either by annotating the bean class with another scope or through the annotation:
+By default, the bean is added to the container with scope set to
+`ApplicationScoped`. You can customize scope either by annotating the bean class
+with another scope or through the annotation:
 
 ```java
 @AddBean(value = TestBean.class, scope = Dependent.class)
@@ -198,13 +217,19 @@ class GreetTest {
 ```
 
 > [!NOTE]
-> This annotation can also be placed on a method when running in `resetPerTest` mode.
+> This annotation can also be placed on a method when running in `resetPerTest`
+> mode.
 
 ### Add Test Extension
 
-When a custom bean is not enough, you may want to extend the CDI with a test-only `Extension`. Once again, if we use the standard way of doing this, we would need to create a `META-INF/services` record that would be picked up by every test class.
+When a custom bean is not enough, you may want to extend the CDI with a
+test-only `Extension`. Once again, if we use the standard way of doing this, we
+would need to create a `META-INF/services` record that would be picked up by
+every test class.
 
-For this purpose, we provide the following annotation which adds the extension to the container and allows you to modify its behavior as a usual CDI Portable Extension:
+For this purpose, we provide the following annotation which adds the extension
+to the container and allows you to modify its behavior as a usual CDI Portable
+Extension:
 
 ```java
 @AddExtension(TestExtension.class)
@@ -214,7 +239,8 @@ class GreetTest {
 
 ### Disable Discovery
 
-If you want to disable discovery and only add custom extensions and beans, then use the following annotation:
+If you want to disable discovery and only add custom extensions and beans, then
+use the following annotation:
 
 ```java
 @DisableDiscovery
@@ -223,11 +249,16 @@ class GreetTest {
 ```
 
 > [!NOTE]
-> This annotation is typically used in conjunction with `@AddBeans` and/or `@AddExtension`. As you have seen in standard test output, by default Helidon starts with the dependencies defined in pom.xml.
+> This annotation is typically used in conjunction with `@AddBeans` and/or
+> `@AddExtension`. As you have seen in standard test output, by default Helidon
+> starts with the dependencies defined in pom.xml.
 
 ## Write a Basic Test
 
-If you want just the basic test features enabled, then you only have to add a few required extensions and classes to your test. The following example uses only those extensions and classes required to run a bean that injects configuration value:
+If you want just the basic test features enabled, then you only have to add a
+few required extensions and classes to your test. The following example uses
+only those extensions and classes required to run a bean that injects
+configuration value:
 
 ```java
 @HelidonTest
@@ -258,7 +289,10 @@ class GreetTest {
 
 ## Summary
 
-This guide demonstrated how to create tests for MicroProfile applications in a JUnit 5 environment. It described some useful customizations that can be added to your testing extension and allow you to configure test outcomes for your Helidon MP applications.
+This guide demonstrated how to create tests for MicroProfile applications in a
+JUnit 5 environment. It described some useful customizations that can be added
+to your testing extension and allow you to configure test outcomes for your
+Helidon MP applications.
 
 Refer to the following references for additional information:
 

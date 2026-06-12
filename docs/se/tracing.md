@@ -2,14 +2,23 @@
 
 ## Overview
 
-Distributed tracing is a critical feature of microservice based applications, since it traces workflow both within a service and across multiple services. This provides insight to sequence and timing data for specific blocks of work, which helps you identify performance and operational issues. Helidon includes support for distributed tracing through its own API, backed by either [OpenTelemetry][opentelemetry], [Jaeger](https://www.jaegertracing.io/), or [Zipkin](https://zipkin.io/). Tracing is integrated with WebServer and Security.
+Distributed tracing is a critical feature of microservice based applications,
+since it traces workflow both within a service and across multiple services.
+This provides insight to sequence and timing data for specific blocks of work,
+which helps you identify performance and operational issues. Helidon includes
+support for distributed tracing through its own API, backed by either
+[OpenTelemetry][opentelemetry], [Jaeger](https://www.jaegertracing.io/), or
+[Zipkin](https://zipkin.io/). Tracing is integrated with WebServer and Security.
 
 > [!NOTE]
-> As OpenTelemetry has subsumed [OpenTracing](https://opentracing.io), Helidon support for OpenTracing is deprecated and will likely be removed in a future release.
+> As OpenTelemetry has subsumed [OpenTracing](https://opentracing.io), Helidon
+> support for OpenTracing is deprecated and will likely be removed in a future
+> release.
 
 ## Maven Coordinates
 
-To enable Helidon Tracing, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+To enable Helidon Tracing, add the following dependency to your project’s
+`pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependencies>
@@ -27,7 +36,8 @@ To enable Helidon Tracing, add the following dependency to your project’s `pom
 - Helidon tracing dependency.
 - Observability dependencies for tracing.
 
-To transmit tracing data from your service to a backend, you need to add a tracing provider to your project.
+To transmit tracing data from your service to a backend, you need to add a
+tracing provider to your project.
 
 For Jaeger:
 
@@ -70,18 +80,32 @@ For OpenTracing (deprecated):
 
 ## Usage
 
-This section explains a few concepts that you need to understand before you get started with tracing.
+This section explains a few concepts that you need to understand before you get
+started with tracing.
 
-- In the context of this document, a *service* is synonymous with an application.
-- A *span* is the basic unit of work done within a single service, on a single host. Every span has a name, starting timestamp, and duration. For example, the work done by a REST endpoint is a span. A span is associated to a single service, but its descendants can belong to different services and hosts.
-- A *trace* contains a collection of spans from one or more services, running on one or more hosts. For example, if you trace a service endpoint that calls another service, then the trace would contain spans from both services. Within a trace, spans are organized as a directed acyclic graph (DAG) and can belong to multiple services, running on multiple hosts.
+- In the context of this document, a *service* is synonymous with an
+  application.
+- A *span* is the basic unit of work done within a single service, on a single
+  host. Every span has a name, starting timestamp, and duration. For example,
+  the work done by a REST endpoint is a span. A span is associated to a single
+  service, but its descendants can belong to different services and hosts.
+- A *trace* contains a collection of spans from one or more services, running on
+  one or more hosts. For example, if you trace a service endpoint that calls
+  another service, then the trace would contain spans from both services. Within
+  a trace, spans are organized as a directed acyclic graph (DAG) and can belong
+  to multiple services, running on multiple hosts.
 - *Baggage* is a collection of key-value pairs associated with a span.
-- *Span context* captures data about a span not related to its duration, such as the tracer ID, the span ID, and baggage.
+- *Span context* captures data about a span not related to its duration, such as
+  the tracer ID, the span ID, and baggage.
 
-Support for specific tracers is abstracted. Your application can depend on the Helidon abstraction layer and provide a specific tracer implementation as a Java `ServiceLoader` service. Helidon provides such an implementation for:
+Support for specific tracers is abstracted. Your application can depend on the
+Helidon abstraction layer and provide a specific tracer implementation as a Java
+`ServiceLoader` service. Helidon provides such an implementation for:
 
-- OpenTracing tracers, either using the `GlobalTracer`, provider resolver approach, or explicitly using Zipkin tracer
-- OpenTelemetry tracers, either using the global OpenTelemetry instance, or explicitly using Jaeger tracer
+- OpenTracing tracers, either using the `GlobalTracer`, provider resolver
+  approach, or explicitly using Zipkin tracer
+- OpenTelemetry tracers, either using the global OpenTelemetry instance, or
+  explicitly using Jaeger tracer
 
 ### WebServer Setup
 
@@ -125,25 +149,39 @@ try {
 
 ## Handling Baggage
 
-Your application can set and read baggage associated with a [`Span`][span]. The `Span.baggage()` method returns a [`WritableBaggage`][writablebaggage] instance.
+Your application can set and read baggage associated with a [`Span`][span]. The
+`Span.baggage()` method returns a [`WritableBaggage`][writablebaggage] instance.
 
-Further, Helidon also provides read-only access to baggage linked to a [`SpanContext`][spancontext]. For example, HTTP headers can convey trace ID, span ID, and baggage information and Helidon puts such information into a `SpanContext`. Your code can create a `SpanContext` from other sources as well. The `SpanContext.baggage()` method returns a read-only [`Baggage`][baggage] instance.
+Further, Helidon also provides read-only access to baggage linked to a
+[`SpanContext`][spancontext]. For example, HTTP headers can convey trace ID,
+span ID, and baggage information and Helidon puts such information into a
+`SpanContext`. Your code can create a `SpanContext` from other sources as well.
+The `SpanContext.baggage()` method returns a read-only [`Baggage`][baggage]
+instance.
 
-The Javadoc for the types describes how to get and set baggage entries, get all the baggage keys, and check whether a baggage key exists in the baggage.
+The Javadoc for the types describes how to get and set baggage entries, get all
+the baggage keys, and check whether a baggage key exists in the baggage.
 
 ## Span Lifecycle
 
 <!--@include ../includes/tracing/common-callbacks.md#span-lifecycle offset=1 -->
-See [Span Lifecycle Callbacks](../includes/tracing/common-callbacks.md#span-lifecycle).
+See [Span Lifecycle Callbacks][span-lifecycle-c].
 <!--/include-->
 
 ### OpenTelemetry Callbacks
 
-To use lifecycle callbacks, applications should normally work with the Helidon `Tracer`, `Span.Builder`, `Span`, and `Scope` types which automatically call back to each registered `SpanListener`.
+To use lifecycle callbacks, applications should normally work with the Helidon
+`Tracer`, `Span.Builder`, `Span`, and `Scope` types which automatically call
+back to each registered `SpanListener`.
 
-In some cases application code might want to use a reference to an OpenTelemetry `Tracer` or `Span` *rather than* a reference to the Helidon counterpart but still want to respond to lifecycle events as the OpenTelemetry object goes through its lifecycle.
+In some cases application code might want to use a reference to an OpenTelemetry
+`Tracer` or `Span` *rather than* a reference to the Helidon counterpart but
+still want to respond to lifecycle events as the OpenTelemetry object goes
+through its lifecycle.
 
-The [`HelidonOpenTelemetry`][helidonopentelem] type provides several methods which enable callbacks for OpenTelemetry objects, as summarized in the following table.
+The [`HelidonOpenTelemetry`][helidonopentelem] type provides several methods
+which enable callbacks for OpenTelemetry objects, as summarized in the following
+table.
 
 | Method                                                          | Return value                                                                             |
 |-----------------------------------------------------------------|------------------------------------------------------------------------------------------|
@@ -154,13 +192,19 @@ The [`HelidonOpenTelemetry`][helidonopentelem] type provides several methods whi
 
 Enabling OpenTelemetry Objects for `SpanListener` Support
 
-An OpenTelemetry object returned from a method on a callback-enabled object is itself callback-enabled automatically. Specifically:
+An OpenTelemetry object returned from a method on a callback-enabled object is
+itself callback-enabled automatically. Specifically:
 
 - `SpanBuilder` returned from `Tracer#spanBuilder(String)`.
 - `Span` returned from `SpanBuilder#startSpan`.
 - `Scope` returned from `Span#makeCurrent`.
 
-Each callback-enabled object is a new instance of a *Helidon* object which implements both the indicated OpenTelemetry interface and the Helidon [`Wrapper`][wrapper] interface. These Helidon objects *do not* themselves implement other OpenTelemetry interfaces. To do type checks and casts on callback-enabled objects, invoke the `unwrap(Class<?>)` on a callback-enabled object as shown in the following example.
+Each callback-enabled object is a new instance of a *Helidon* object which
+implements both the indicated OpenTelemetry interface and the Helidon
+[`Wrapper`][wrapper] interface. These Helidon objects *do not* themselves
+implement other OpenTelemetry interfaces. To do type checks and casts on
+callback-enabled objects, invoke the `unwrap(Class<?>)` on a callback-enabled
+object as shown in the following example.
 
 ```java
 // Note that callbackEnabledSpan implements OpenTelemetry Span.
@@ -170,12 +214,13 @@ if (nativeOtelSpan instanceof io.opentelemetry.sdk.trace.ReadableSpan readableSp
 }
 ```
 
-Remember that operations on the `nativeOtelSpan` variable *do not* notify span listeners of lifecycle changes.
+Remember that operations on the `nativeOtelSpan` variable *do not* notify span
+listeners of lifecycle changes.
 
 ## Configuration options
 
 <!--@include ../config/io.helidon.tracing.Tracer.md#configuration-options delim=--- offset=1 collapseTables=10 -->
-See [Configuration options](../config/io.helidon.tracing.Tracer.md#configuration-options).
+See [Configuration options][io-helidon-traci].
 <!--/include-->
 
 ## Helidon Spans
@@ -197,7 +242,8 @@ The following table lists all spans traced by Helidon components:
 | `jax-rs`     | `jersey-client-call` | Span for outbound client call                                                                                                                                             |
 <!--@mdc :: -->
 
-Some of these spans `log` to the span. These log events can be (in most cases) configured:
+Some of these spans `log` to the span. These log events can be (in most cases)
+configured:
 
 | span name           | log name           | configurable | enabled by default | description                                              |
 |---------------------|--------------------|--------------|--------------------|----------------------------------------------------------|
@@ -209,7 +255,8 @@ Some of these spans `log` to the span. These log events can be (in most cases) c
 | `security:atz`      | `status`           | YES          | YES                | Logs the status of security response (such as `SUCCESS`) |
 | `security:outbound` | `status`           | YES          | YES                | Logs the status of security response (such as `SUCCESS`) |
 
-There are also tags that are set by Helidon components. These are not configurable.
+There are also tags that are set by Helidon components. These are not
+configurable.
 
 <!--@mdc ::table-collapse -->
 | span name            | tag name           | description                                                                                       |
@@ -227,14 +274,19 @@ There are also tags that are set by Helidon components. These are not configurab
 
 ### Configuration
 
-Each component and its spans can be configured using Config. The traced configuration has the following layers:
+Each component and its spans can be configured using Config. The traced
+configuration has the following layers:
 
 - `TracingConfig` - the overall configuration of traced components of Helidon
-- `ComponentTracingConfig` - a component of Helidon that traces spans (such as `web-server`, `security`, `jax-rs`)
-- `SpanTracingConfig` - a single traced span within a component (such as `security:atn`)
-- `SpanLogTracingConfig` - a single log event on a span (such as `security.user` in span `security:atn`)
+- `ComponentTracingConfig` - a component of Helidon that traces spans (such as
+  `web-server`, `security`, `jax-rs`)
+- `SpanTracingConfig` - a single traced span within a component (such as
+  `security:atn`)
+- `SpanLogTracingConfig` - a single log event on a span (such as `security.user`
+  in span `security:atn`)
 
-The components using tracing configuration use the `TracingConfigUtil`. This uses the `io.helidon.common.Context` to retrieve current configuration.
+The components using tracing configuration use the `TracingConfigUtil`. This
+uses the `io.helidon.common.Context` to retrieve current configuration.
 
 #### Configuration Using Builder
 
@@ -285,9 +337,13 @@ server.addFeature(ObserveFeature.builder()
 
 #### Path-based Configuration in Helidon WebServer
 
-For Web Server we have path-based support for configuring tracing, in addition to the configuration described above.
+For Web Server we have path-based support for configuring tracing, in addition
+to the configuration described above.
 
-Configuration of path can use any path string supported by the WebServer. The configuration itself has the same possibilities as traced configuration described above. The path-specific configuration will be merged with global configuration (path is the "newer" configuration, global is the "older")
+Configuration of path can use any path string supported by the WebServer. The
+configuration itself has the same possibilities as traced configuration
+described above. The path-specific configuration will be merged with global
+configuration (path is the "newer" configuration, global is the "older")
 
 Configuration in YAML:
 
@@ -311,7 +367,8 @@ tracing:
 
 #### Renaming top level span using request properties
 
-To have a nicer overview in search pane of a tracer, you can customize the top-level span name using configuration.
+To have a nicer overview in search pane of a tracer, you can customize the
+top-level span name using configuration.
 
 Example:
 
@@ -326,7 +383,8 @@ tracing:
         new-name: "HTTP %1$s %2$s"
 ```
 
-This is supported ONLY for the span named "HTTP Request" on component "web-server".
+This is supported ONLY for the span named "HTTP Request" on component
+"web-server".
 
 Parameters provided:
 
@@ -336,7 +394,9 @@ Parameters provided:
 
 ## WebClient Propagation
 
-Span propagation is supported with Helidon WebClient. Tracing propagation is automatic as long as the current span context is available in Helidon Context (which is automatic when running within a WebServer request).
+Span propagation is supported with Helidon WebClient. Tracing propagation is
+automatic as long as the current span context is available in Helidon Context
+(which is automatic when running within a WebServer request).
 
 ```xml [pom.xml]
 <dependencies>
@@ -375,11 +435,12 @@ String response = client.get()
 ### Configuration options
 
 <!--@include ../config/io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.md#configuration-options delim=--- offset=1 collapseTables=10 -->
-See [Configuration options](../config/io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.md#configuration-options).
+See [Configuration options][io-helidon-traci-2].
 <!--/include-->
 
 
-The following is an example of a Jaeger configuration, specified in the YAML format.
+The following is an example of a Jaeger configuration, specified in the YAML
+format.
 
 ```yaml
 tracing:
@@ -391,7 +452,8 @@ tracing:
 
 ### Jaeger Tracing Metrics
 
-As the [Jaeger Tracing](#jaeger-tracing) section describes, you can use Jaeger tracing in your Helidon application.
+As the [Jaeger Tracing](#jaeger-tracing) section describes, you can use Jaeger
+tracing in your Helidon application.
 
 ## Zipkin Tracing
 
@@ -405,10 +467,11 @@ As the [Jaeger Tracing](#jaeger-tracing) section describes, you can use Jaeger t
 ### Configuration options
 
 <!--@include ../config/io.helidon.tracing.providers.zipkin.ZipkinTracerBuilder.md#configuration-options delim=--- offset=1 collapseTables=10 -->
-See [Configuration options](../config/io.helidon.tracing.providers.zipkin.ZipkinTracerBuilder.md#configuration-options).
+See [Configuration options][io-helidon-traci-3].
 <!--/include-->
 
-The following is an example of a Zipkin configuration, specified in the YAML format.
+The following is an example of a Zipkin configuration, specified in the YAML
+format.
 
 ```yaml [application.yaml]
 tracing:
@@ -439,14 +502,28 @@ Example of Zipkin trace:
 
 ## OpenTelemetry Tracing
 
-Helidon supports configuration of OpenTelemetry and OpenTelemetry tracing in two primary ways: using tracing or using telemetry. This page describes support for controlling OpenTelemetry tracing using the `tracing` config section and [`OpenTelemetryConfig` builder][opentelemetrycon]. Users typically adopt this approach to ease migration from other tracing providers (such as Jaeger) to OpenTelemetry because the tracing settings supported for OpenTelemetry are very similar to those for Jaeger.
+Helidon supports configuration of OpenTelemetry and OpenTelemetry tracing in two
+primary ways: using tracing or using telemetry. This page describes support for
+controlling OpenTelemetry tracing using the `tracing` config section and
+[`OpenTelemetryConfig` builder][opentelemetrycon]. Users typically adopt this
+approach to ease migration from other tracing providers (such as Jaeger) to
+OpenTelemetry because the tracing settings supported for OpenTelemetry are very
+similar to those for Jaeger.
 
-That said, Helidon’s support for OpenTelemetry using *tracing* does not afford as much control as do the Helidon *telemetry* settings. For example, using OpenTelemetry `tracing` config you can choose either the OTLP gRPC span exporter or the OTLP HTTP one; additional span exporters are available only using the `telemetry` settings.
+That said, Helidon’s support for OpenTelemetry using *tracing* does not afford
+as much control as do the Helidon *telemetry* settings. For example, using
+OpenTelemetry `tracing` config you can choose either the OTLP gRPC span exporter
+or the OTLP HTTP one; additional span exporters are available only using the
+`telemetry` settings.
 
-The [telemetry doc page][telemetry-doc-pa] describes how to use the Helidon `telemetry` config section and the related builder to exert more control over OpenTelemetry and OpenTelemetry tracing behavior.
+The [telemetry doc page][telemetry-doc-pa] describes how to use the Helidon
+`telemetry` config section and the related builder to exert more control over
+OpenTelemetry and OpenTelemetry tracing behavior.
 
 > [!NOTE]
-> If you provide settings under both `telemetry` and `tracing`, Helidon uses the `telemetry` settings. Specifying both does not confuse Helidon but it might confuse users.
+> If you provide settings under both `telemetry` and `tracing`, Helidon uses the
+> `telemetry` settings. Specifying both does not confuse Helidon but it might
+> confuse users.
 
 Dependency for OpenTelemetry support using tracing:
 
@@ -460,7 +537,7 @@ Dependency for OpenTelemetry support using tracing:
 ### Configuration options
 
 <!--@include ../config/io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracer.md#configuration-options delim=--- offset=1 collapseTables=10 -->
-See [Configuration options](../config/io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracer.md#configuration-options).
+See [Configuration options][io-helidon-traci-4].
 <!--/include-->
 
 Example Helidon configuration for OpenTelemetry tracing:
@@ -476,16 +553,21 @@ tracing:
 ```
 
 - Specifies the OpenTelemetry service name.
-- Indicates the configured tracer *should not* be made the global tracer (defaults to `true`).
+- Indicates the configured tracer *should not* be made the global tracer
+  (defaults to `true`).
 - Assigns an integer-valued tag `example` the value `1`.
 - Assigns a string-valued tag `direction` the value `north`.
 
-By default, Helidon tracing support for OpenTelemetry uses OpenTelemetry’s OTLP gRPC exporter. Alternatively, you can choose to use OpenTelemetry’s HTTP exporter using protobuf by setting `exporter-type` to `http/proto`. To use other exporters OpenTelemetry offers, use the Helidon `telemetry` configuration instead of `tracing`.
+By default, Helidon tracing support for OpenTelemetry uses OpenTelemetry’s OTLP
+gRPC exporter. Alternatively, you can choose to use OpenTelemetry’s HTTP
+exporter using protobuf by setting `exporter-type` to `http/proto`. To use other
+exporters OpenTelemetry offers, use the Helidon `telemetry` configuration
+instead of `tracing`.
 
 ## Reference
 
 - [OpenTelemetry API][opentelemetry]
-- [OpenTracing Project (now part of OpenTelemetry)](https://opentracing.io/)
+- [OpenTracing Project (now part of OpenTelemetry)][opentracing-proj]
 
 [opentelemetry]: https://opentelemetry.io/docs/instrumentation/js/api/tracing/
 [span]: https://helidon.io/docs/v4/apidocs/io.helidon.tracing/io/helidon/tracing/Span.html
@@ -500,3 +582,9 @@ By default, Helidon tracing support for OpenTelemetry uses OpenTelemetry’s OTL
 [wrapper]: https://helidon.io/docs/v4/apidocs/io.helidon.tracing/io/helidon/tracing/Wrapper.html
 [opentelemetrycon]: https://helidon.io/docs/v4/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/OpenTelemetryTracerConfig.html
 [telemetry-doc-pa]: ../se/telemetry/open-telemetry.md
+[span-lifecycle-c]: ../includes/tracing/common-callbacks.md#span-lifecycle
+[io-helidon-traci]: ../config/io.helidon.tracing.Tracer.md#configuration-options
+[io-helidon-traci-2]: ../config/io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.md#configuration-options
+[io-helidon-traci-3]: ../config/io.helidon.tracing.providers.zipkin.ZipkinTracerBuilder.md#configuration-options
+[io-helidon-traci-4]: ../config/io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracer.md#configuration-options
+[opentracing-proj]: https://opentracing.io/

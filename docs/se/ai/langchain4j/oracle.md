@@ -6,7 +6,8 @@ This module adds support for the Oracle embedding store.
 
 ## Maven Coordinates
 
-In addition to the [Helidon integration with LangChain4j core dependencies](langchain4j.md#maven-coordinates), you must add the following:
+In addition to the [Helidon integration with LangChain4j core
+dependencies][helidon-integrat], you must add the following:
 
 ```xml [pom.xml]
 <dependency>
@@ -17,7 +18,8 @@ In addition to the [Helidon integration with LangChain4j core dependencies](lang
 
 ## OracleEmbeddingStore
 
-To automatically create and add `OracleEmbeddingStore` to the service registry add the following lines to `application.yaml`:
+To automatically create and add `OracleEmbeddingStore` to the service registry
+add the following lines to `application.yaml`:
 
 ```yaml [application.yaml]
 # Oracle UCP datasource
@@ -44,9 +46,12 @@ langchain4j:
         name: "foo-bar-embeddings"
 ```
 
-- Configured with `io.helidon.data.sql.datasource:helidon-data-sql-datasource-ucp` see [Helidon Data Repository](../../../se/data.md) for more info
+- Configured with
+  `io.helidon.data.sql.datasource:helidon-data-sql-datasource-ucp` see [Helidon
+  Data Repository](../../../se/data.md) for more info
 
-If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
+If `enabled` is set to `false`, the configuration is ignored, and the component
+is not created.
 
 ### Configuration options
 
@@ -78,3 +83,4 @@ If `enabled` is set to `false`, the configuration is ignored, and the component 
 
 [oracleembeddingt]: #oracleembeddingtable
 [langchain4j-orac]: https://docs.langchain4j.dev/integrations/embedding-stores/oracle
+[helidon-integrat]: langchain4j.md#maven-coordinates

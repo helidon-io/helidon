@@ -2,17 +2,25 @@
 
 ## Overview
 
-MicroProfile Rest Client adds the capability to invoke remote services by defining a Java interface with Jakarta REST (JAX-RS) annotations that resembles a server-side resource class.
+MicroProfile Rest Client adds the capability to invoke remote services by
+defining a Java interface with Jakarta REST (JAX-RS) annotations that resembles
+a server-side resource class.
 
-Helidon will automatically create a *proxy* class for the interface and map local proxy calls to remote REST calls.
+Helidon will automatically create a *proxy* class for the interface and map
+local proxy calls to remote REST calls.
 
-For more information, see [Rest Client For MicroProfile Specification][rest-client-for].
+For more information, see [Rest Client For MicroProfile
+Specification][rest-client-for].
 
-You can also use metrics annotations on your Rest Client methods as described in [this related page.](restclientmetrics.md)
+You can also use metrics annotations on your Rest Client methods as described in
+[this related page.](restclientmetrics.md)
 
 ## Maven Coordinates
 
-To enable MicroProfile Rest Client, either add a dependency on the [helidon-microprofile bundle](../introduction.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable MicroProfile Rest Client, either add a dependency on the
+[helidon-microprofile bundle](../introduction.md) or add the following
+dependency to your project’s `pom.xml` (see [Managing
+Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -34,9 +42,14 @@ To enable MicroProfile Rest Client, either add a dependency on the [helidon-micr
 
 ### Creating a New Client Using a Builder
 
-MicroProfile Rest Client can be created using a builder obtained from `RestClientBuilder.newBuilder()`.
+MicroProfile Rest Client can be created using a builder obtained from
+`RestClientBuilder.newBuilder()`.
 
-The builder provides methods to specify the client interface to be proxied as well as to configure additional details such as server URI, SSL context, connection timeouts, etc. Any method call on the resulting proxy object will be automatically translated into a remote call to the service using the provided configuration.
+The builder provides methods to specify the client interface to be proxied as
+well as to configure additional details such as server URI, SSL context,
+connection timeouts, etc. Any method call on the resulting proxy object will be
+automatically translated into a remote call to the service using the provided
+configuration.
 
 ```java [Example]
 GreetRestClient greetResource = RestClientBuilder.newBuilder()
@@ -45,7 +58,9 @@ GreetRestClient greetResource = RestClientBuilder.newBuilder()
 greetResource.getDefaultMessage();
 ```
 
-The `RestClientBuilder` interface extends the `Configurable` interface from Jakarta REST (JAX-RS), enabling direct registration of *providers* such as filters, param converters, exception mappers, etc.
+The `RestClientBuilder` interface extends the `Configurable` interface from
+Jakarta REST (JAX-RS), enabling direct registration of *providers* such as
+filters, param converters, exception mappers, etc.
 
 ```java [Example]
 GreetRestClient greetResource = RestClientBuilder.newBuilder()
@@ -58,7 +73,10 @@ greetResource.getDefaultMessage();
 
 ### Creating a New Client Using CDI
 
-A client interface can be annotated with `@RegisterRestClient` to automatically register it with CDI. This annotation has a property called `baseUri` that can be used to define the base endpoint to be used by the client to access the service.
+A client interface can be annotated with `@RegisterRestClient` to automatically
+register it with CDI. This annotation has a property called `baseUri` that can
+be used to define the base endpoint to be used by the client to access the
+service.
 
 ```java [Example]
 @Path("/greet")
@@ -68,7 +86,8 @@ public interface GreetRestClient {
 }
 ```
 
-Any Jakarta REST (JAX-RS) providers for a client can be registered using the (repeatable) `@RegisterProvider` annotation on the interface as shown below.
+Any Jakarta REST (JAX-RS) providers for a client can be registered using the
+(repeatable) `@RegisterProvider` annotation on the interface as shown below.
 
 ```java [Example]
 @Path("/greet")
@@ -82,7 +101,8 @@ public interface GreetRestClient {
 
 Once a client interface is annotated, it can be injected into any CDI bean.
 
-All properties in annotation `RegisterRestClient` can be overridden via configuration as described in [Configuration options](#configuration-options)
+All properties in annotation `RegisterRestClient` can be overridden via
+configuration as described in [Configuration options](#configuration-options)
 
 ```java [Example]
 public class MyBean {
@@ -98,11 +118,15 @@ public class MyBean {
 
 ## Configuration
 
-Configuration is only available for CDI managed client instances, it is not supported for client created programmatically using `RestClientBuilder`.
+Configuration is only available for CDI managed client instances, it is not
+supported for client created programmatically using `RestClientBuilder`.
 
-Most of the configuration properties mentioned below have to be prepended with the fully qualified classname of the client interface to be configured.
+Most of the configuration properties mentioned below have to be prepended with
+the fully qualified classname of the client interface to be configured.
 
-It is possible to avoid fully qualified classname by using `@RegisterRestClient(configKey="clientAlias")`, the prefix `$restClient` is used below to indicate an alias or a class name.
+It is possible to avoid fully qualified classname by using
+`@RegisterRestClient(configKey="clientAlias")`, the prefix `$restClient` is used
+below to indicate an alias or a class name.
 
 ### Configuration options
 
@@ -144,7 +168,9 @@ Configuration options affecting CDI and programmatically created clients:
 
 ## Examples
 
-To be able to run and test this example, use the [Helidon MP examples/quickstarts](../guides/quickstart.md). Add a dependency on the Helidon Rest Client implementation and create the following client interface:
+To be able to run and test this example, use the [Helidon MP
+examples/quickstarts](../guides/quickstart.md). Add a dependency on the Helidon
+Rest Client implementation and create the following client interface:
 
 client interface:
 
@@ -162,9 +188,12 @@ interface GreetRestClient {
 }
 ```
 
-Then create a runnable method as described in [Creating new client][creating-new-cli], but with baseUri `http://localhost:8080/greet` and the above interface.
+Then create a runnable method as described in [Creating new
+client][creating-new-cli], but with baseUri `http://localhost:8080/greet` and
+the above interface.
 
-By calling `GreetRestClient.getDefaultMessage()` you reach the endpoint of Helidon quickstart.
+By calling `GreetRestClient.getDefaultMessage()` you reach the endpoint of
+Helidon quickstart.
 
 ## Reference
 

@@ -2,11 +2,14 @@
 
 ## Introduction
 
-In this guide you will find basic advice for performance tuning of your Helidon application. Most of this concerns tuning Helidon WebServer, but you should also consider configuring/tuning Java heap size as per any Java application.
+In this guide you will find basic advice for performance tuning of your Helidon
+application. Most of this concerns tuning Helidon WebServer, but you should also
+consider configuring/tuning Java heap size as per any Java application.
 
 ## Use `io.helidon.microprofile.bundles:helidon-microprofile-core`
 
-Use `helidon-microprofile-core` dependency (and not the `helidon-microprofile` dependency) and add only what you use. For example:
+Use `helidon-microprofile-core` dependency (and not the `helidon-microprofile`
+dependency) and add only what you use. For example:
 
 ```xml [pom.xml]
 <dependency>
@@ -25,7 +28,10 @@ Use `helidon-microprofile-core` dependency (and not the `helidon-microprofile` d
 
 ## WebServer Tuning
 
-Helidon WebServer is in large part self tuning. It uses default values that will satisfy most use cases, and with the adoption of Java virtual threads there is no longer a need to tune pools of platform threads. Still, there might be cases where you wish to change configuration options from their default values.
+Helidon WebServer is in large part self tuning. It uses default values that will
+satisfy most use cases, and with the adoption of Java virtual threads there is
+no longer a need to tune pools of platform threads. Still, there might be cases
+where you wish to change configuration options from their default values.
 
 For details on the following options please see:
 
@@ -34,7 +40,10 @@ For details on the following options please see:
 
 ## Summary of Tuning Options
 
-The following `application.yaml` snippet shows some configuration options that can be used to tune your application. It is intended to show configuration options in context. Please make sure you understand these options before using them. See the documentation referenced above.
+The following `application.yaml` snippet shows some configuration options that
+can be used to tune your application. It is intended to show configuration
+options in context. Please make sure you understand these options before using
+them. See the documentation referenced above.
 
 `application.yaml` snippet:
 

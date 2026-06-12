@@ -2,11 +2,15 @@
 
 ## Overview
 
-The Helidon JSON-RPC client API is part of the WebClient API, and can be used to create [JSON-RPC 2.0][json-rpc-2-0] client applications. It offers built-in support to invoke JSON-RPC server methods with minimal effort, including handling of JSON parameters and processing of JSON responses.
+The Helidon JSON-RPC client API is part of the WebClient API, and can be used to
+create [JSON-RPC 2.0][json-rpc-2-0] client applications. It offers built-in
+support to invoke JSON-RPC server methods with minimal effort, including
+handling of JSON parameters and processing of JSON responses.
 
 ## Maven Coordinates
 
-To enable WebClient/JSON-RPC, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable WebClient/JSON-RPC, add the following dependency to your project’s
+`pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -19,7 +23,8 @@ To enable WebClient/JSON-RPC, add the following dependency to your project’s `
 
 ### Simple Requests
 
-An instance of `JsonRpcClient` can be obtained from a configured `WebClient` instance as shown next:
+An instance of `JsonRpcClient` can be obtained from a configured `WebClient`
+instance as shown next:
 
 ```java
 WebClient webClient = WebClient.builder()
@@ -29,9 +34,13 @@ WebClient webClient = WebClient.builder()
 JsonRpcClient client = webClient.client(JsonRpcClient.PROTOCOL);
 ```
 
-The `WebClient` instance is configured with a base URI and the `JsonRpcClient` instance is created from it passing the `JsonRpcClient.PROTOCOL` selector.
+The `WebClient` instance is configured with a base URI and the `JsonRpcClient`
+instance is created from it passing the `JsonRpcClient.PROTOCOL` selector.
 
-To create a request, simply pass the method name, the ID and some parameters using the fluent API provided. Parameters must be JSON values, but simple Java types such as `String` and `int` are supported and mapped to the corresponding JSON types automatically.
+To create a request, simply pass the method name, the ID and some parameters
+using the fluent API provided. Parameters must be JSON values, but simple Java
+types such as `String` and `int` are supported and mapped to the corresponding
+JSON types automatically.
 
 ```java
 JsonRpcClientResponse res = client.rpcMethod("start")
@@ -42,7 +51,9 @@ JsonRpcClientResponse res = client.rpcMethod("start")
         .submit();
 ```
 
-A `JsonRpcClientResponse` is a subtype of `HttpClientResponse`, so any methods available in the latter apply to the former. Thus, we can easily verify the HTTP status and then inspect if any JSON-RPC result has been returned as follows:
+A `JsonRpcClientResponse` is a subtype of `HttpClientResponse`, so any methods
+available in the latter apply to the former. Thus, we can easily verify the HTTP
+status and then inspect if any JSON-RPC result has been returned as follows:
 
 ```java
 if (res.status() == Status.OK_200 && res.result().isPresent()) {
@@ -54,18 +65,31 @@ if (res.status() == Status.OK_200 && res.result().isPresent()) {
 ```
 
 > [!NOTE]
-> The HTTP status code is independent of any other error code in a JSON-RPC error response.
+> The HTTP status code is independent of any other error code in a JSON-RPC
+> error response.
 
-Every JSON-RPC response contains either a result or an error, and that is the reason why `res.result()` returns an optional value. The last step shows how the result is mapped to a `StartStopResult` instance using Helidon JSON binding. See [JSON-RPC Server](../../se/jsonrpc/server.md) for more information on these types.
+Every JSON-RPC response contains either a result or an error, and that is the
+reason why `res.result()` returns an optional value. The last step shows how the
+result is mapped to a `StartStopResult` instance using Helidon JSON binding. See
+[JSON-RPC Server](../../se/jsonrpc/server.md) for more information on these
+types.
 
 > [!NOTE]
-> Custom types used with Helidon JSON binding must be annotated with `@Json.Entity` and compiled with the Helidon JSON annotation processor. See [Enabling Code Generation][enabling-code-ge] for the Maven annotation processor setup.
+> Custom types used with Helidon JSON binding must be annotated with
+> `@Json.Entity` and compiled with the Helidon JSON annotation processor. See
+> [Enabling Code Generation][enabling-code-ge] for the Maven annotation
+> processor setup.
 
 ### Batch Requests
 
-The JSON-RPC client API also supports batching, whereby multiple method invocations can be aggregated and sent as a single unit for processing. The response to a batch request includes an entry for each of the invocations in the request; invocations are executed in order and can independently succeed or fail.
+The JSON-RPC client API also supports batching, whereby multiple method
+invocations can be aggregated and sent as a single unit for processing. The
+response to a batch request includes an entry for each of the invocations in the
+request; invocations are executed in order and can independently succeed or
+fail.
 
-Here is an example that constructs a batch request to start and then stop a machine:
+Here is an example that constructs a batch request to start and then stop a
+machine:
 
 ```java
 JsonRpcClientBatchRequest batch = client.batch("/machine");
@@ -83,7 +107,11 @@ batch.rpcMethod("start")
 JsonRpcClientBatchResponse batchRes = batch.submit();
 ```
 
-The response of type `JsonClientBatchResponse` shall include an entry for each of the invocations in the request. In this example, we can test that the response returned HTTP status 200 and has a size of 2, and then verify the results by binding them to `StartStopResult` instances using Helidon JSON binding.
+The response of type `JsonClientBatchResponse` shall include an entry for each
+of the invocations in the request. In this example, we can test that the
+response returned HTTP status 200 and has a size of 2, and then verify the
+results by binding them to `StartStopResult` instances using Helidon JSON
+binding.
 
 ```java
 if (batchRes.status() == Status.OK_200 && batchRes.size() == 2) {
@@ -98,15 +126,21 @@ if (batchRes.status() == Status.OK_200 && batchRes.size() == 2) {
 }
 ```
 
-As explained above, optional values are returned when trying to get a result since every individual batch response may include a result or an error.
+As explained above, optional values are returned when trying to get a result
+since every individual batch response may include a result or an error.
 
 ## Configuration
 
-At the time of writing, there is no configuration that is specific to the JSON-RPC client API other than what is already provided by the WebClient API itself. Note that the type `JsonRpcClientConfig` —that can be used to create a `JsonRpcClient` instance— extends `HttpClientConfig`, so HTTP configuration applies to JSON-RPC clients as well.
+At the time of writing, there is no configuration that is specific to the
+JSON-RPC client API other than what is already provided by the WebClient API
+itself. Note that the type `JsonRpcClientConfig` —that can be used to create a
+`JsonRpcClient` instance— extends `HttpClientConfig`, so HTTP configuration
+applies to JSON-RPC clients as well.
 
 ## Examples
 
-The code snippets in this document are part of the JSON-RPC example available here:
+The code snippets in this document are part of the JSON-RPC example available
+here:
 
 - [JSON-RPC Machine Example][json-rpc-machine]
 

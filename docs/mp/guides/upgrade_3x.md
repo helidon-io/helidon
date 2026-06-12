@@ -1,6 +1,7 @@
 # Helidon MP 3.x Upgrade Guide
 
-In Helidon 3.x we have made some changes to APIs and runtime behavior. This guide will help you upgrade a Helidon MP 2.x application to 3.x.
+In Helidon 3.x we have made some changes to APIs and runtime behavior. This
+guide will help you upgrade a Helidon MP 2.x application to 3.x.
 
 ## Java 17 Runtime
 
@@ -8,19 +9,29 @@ Java 11 is no longer supported in Helidon 3. Java 17 or newer is required.
 
 ## javax.\* namespace to jakarta.\* namespace
 
-Helidon 3 supports MicroProfile 5.0 and *selected* Jakarta EE 9.1 APIs. In Jakarta EE 9.1 the Java package namespace was changed from `javax` to `jakarta`. Therefore, you must change your application to use `jakarta` instead of corresponding `javax` for Jakarta EE packages.
+Helidon 3 supports MicroProfile 5.0 and *selected* Jakarta EE 9.1 APIs. In
+Jakarta EE 9.1 the Java package namespace was changed from `javax` to `jakarta`.
+Therefore, you must change your application to use `jakarta` instead of
+corresponding `javax` for Jakarta EE packages.
 
-In version 3.x Helidon supports MicroProfile 5.0 specification, which now is fully migrated to `jakarta` namespace.
+In version 3.x Helidon supports MicroProfile 5.0 specification, which now is
+fully migrated to `jakarta` namespace.
 
-As a result, `javax` module is no longer in dependency management of Helidon parent pom files.
+As a result, `javax` module is no longer in dependency management of Helidon
+parent pom files.
 
 ## MicroProfile 5.0 support
 
-MicroProfile 5.0 enables MicroProfile APIs to be used together with Jakarta EE 9.1 (Jakarta EE namespace). This release was mainly focused on updating dependencies from `javax` to `jakarta`, as well as overall stability and usability improvements.
+MicroProfile 5.0 enables MicroProfile APIs to be used together with Jakarta EE
+9.1 (Jakarta EE namespace). This release was mainly focused on updating
+dependencies from `javax` to `jakarta`, as well as overall stability and
+usability improvements.
 
-MicroProfile 5.0 lays the foundation for the rapid innovation of MicroProfile APIs for its 2022 releases.
+MicroProfile 5.0 lays the foundation for the rapid innovation of MicroProfile
+APIs for its 2022 releases.
 
-MicroProfile 5.0 is an umbrella for the following specifications and their corresponding versions:
+MicroProfile 5.0 is an umbrella for the following specifications and their
+corresponding versions:
 
 - MicroProfile Config 3.1
 - MicroProfile Fault Tolerance 4.0.2
@@ -43,59 +54,73 @@ Helidon 3.x supports the following Jakarta EE specifications:
 - Jakarta WebSocket API 2.1
 - Jakarta Bean Validation 3.0
 
-Corresponding changes to Helidon code were made to support the corresponding specifications' versions.
+Corresponding changes to Helidon code were made to support the corresponding
+specifications' versions.
 
 ### Incompatible changes for each specification
 
-Migration from `javax` to `jakarta` namespace is making this release backward incompatible with previous version of MicroProfile. For each specification there are also API and functional changes, described below.
+Migration from `javax` to `jakarta` namespace is making this release backward
+incompatible with previous version of MicroProfile. For each specification there
+are also API and functional changes, described below.
 
 #### MicroProfile specifications
 
 - **MicroProfile Config 3.1**:
 
-  Incompatible changes described in [MicroProfile Config 3.1 Specification][microprofile-con]
+  Incompatible changes described in [MicroProfile Config 3.1
+  Specification][microprofile-con]
 
 - **MicroProfile Fault Tolerance 4.0.2**:
 
-  Incompatible changes described in [MicroProfile Fault Tolerance 4.0.2 Specification][microprofile-fau]
+  Incompatible changes described in [MicroProfile Fault Tolerance 4.0.2
+  Specification][microprofile-fau]
 
 - **MicroProfile Health 4.0**:
 
-  Incompatible changes described in [MicroProfile Health 4.0 Specification][microprofile-hea]
+  Incompatible changes described in [MicroProfile Health 4.0
+  Specification][microprofile-hea]
 
 - **MicroProfile JWT Authentication 2.1**:
 
-  Incompatible changes described in [MicroProfile JWT Authentication 2.1 Specification][microprofile-jwt]
+  Incompatible changes described in [MicroProfile JWT Authentication 2.1
+  Specification][microprofile-jwt]
 
 - **MicroProfile Metrics 5.1.1**:
 
-  Incompatible changes described in [MicroProfile Metrics 5.1.1 Specification][microprofile-met]
+  Incompatible changes described in [MicroProfile Metrics 5.1.1
+  Specification][microprofile-met]
 
 - **MicroProfile OpenAPI 3.1.1**:
 
-  Incompatible changes described in [MicroProfile OpenAPI 3.1.1 Specification][microprofile-ope]
+  Incompatible changes described in [MicroProfile OpenAPI 3.1.1
+  Specification][microprofile-ope]
 
 - **MicroProfile OpenTracing 3.0**:
 
-  Incompatible changes described in [MicroProfile OpenTracing 3.0 Specification][microprofile-ope-2]
+  Incompatible changes described in [MicroProfile OpenTracing 3.0
+  Specification][microprofile-ope-2]
 
 - **MicroProfile Rest Client 3.0**:
 
-  Incompatible changes described in [MicroProfile Rest Client 3.0 Specification][microprofile-res]
+  Incompatible changes described in [MicroProfile Rest Client 3.0
+  Specification][microprofile-res]
 
 ### Supported Jakarta EE specifications
 
 - **CDI (Jakarta Contexts and Dependency Injection) 4.0**:
 
-  Changes described in [CDI (Jakarta Contexts and Dependency Injection) 4.0 Specification][cdi-jakarta-cont]
+  Changes described in [CDI (Jakarta Contexts and Dependency Injection) 4.0
+  Specification][cdi-jakarta-cont]
 
 - **JAX-RS (Jakarta RESTful Web Services) 3.1**:
 
-  Moved to `jakarta` namespace. Changes described in [JAX-RS (Jakarta RESTful Web Services) 3.1Specification][microprofile-res]
+  Moved to `jakarta` namespace. Changes described in [JAX-RS (Jakarta RESTful
+  Web Services) 3.1Specification][microprofile-res]
 
 - **JSON-B (Jakarta JSON Binding) 3.0**:
 
-  Moved to `jakarta` namespace. Changes described in [JSON-B (Jakarta JSON Binding) 3.0 Specification][json-b-jakarta-j]
+  Moved to `jakarta` namespace. Changes described in [JSON-B (Jakarta JSON
+  Binding) 3.0 Specification][json-b-jakarta-j]
 
 - **JSON-P (Jakarta JSON Processing) 2.1**:
 
@@ -103,31 +128,42 @@ Migration from `javax` to `jakarta` namespace is making this release backward in
 
 - **Jakarta Annotations 2.1.1**:
 
-  Moved to `jakarta` namespace. Moved to `jakarta` namespace. Full information in [Jakarta Annotations 2.1.1 Specification][jakarta-annotati]
+  Moved to `jakarta` namespace. Moved to `jakarta` namespace. Full information
+  in [Jakarta Annotations 2.1.1 Specification][jakarta-annotati]
 
 - **Jakarta Persistence API 3.1**:
 
-  Moved to `jakarta` namespace. Changes described in [Jakarta Persistence API 3.1 Specification][jakarta-persiste]
+  Moved to `jakarta` namespace. Changes described in [Jakarta Persistence API
+  3.1 Specification][jakarta-persiste]
 
 - **Jakarta Transactions API 2.0**:
 
-  Moved to `jakarta` namespace. Changes described in [Jakarta Transactions API 2.0 Specification][jakarta-transact]
+  Moved to `jakarta` namespace. Changes described in [Jakarta Transactions API
+  2.0 Specification][jakarta-transact]
 
 - **Jakarta WebSocket API 2.1**:
 
-  Moved to `jakarta` namespace. Changes described in [Jakarta WebSocket API 2.1 Specification][jakarta-websocke]
+  Moved to `jakarta` namespace. Changes described in [Jakarta WebSocket API 2.1
+  Specification][jakarta-websocke]
 
 - **Jakarta Bean Validation 3.0**:
 
-  Moved to `jakarta` namespace. Changes described in [Jakarta Bean Validation 3.0 Specification][jakarta-bean-val]
+  Moved to `jakarta` namespace. Changes described in [Jakarta Bean Validation
+  3.0 Specification][jakarta-bean-val]
 
 > [!NOTE]
 > Please, read each specification carefully for incompatible changes!
 
 ## Deprecations
 
-- The custom Helidon OCI clients have been deprecated. Use the OCI Java SDK instead. For Helidon MP, use `io.helidon.integrations.oci:helidon-integrations-oci` only for OCI authentication, region, and configuration support; the legacy `io.helidon.integrations.oci.sdk:helidon-integrations-oci-sdk-cdi` module is deprecated.
-- The `MultiPart buffered readers` have been deprecated. Use the `MultiPart stream readers` instead.
+- The custom Helidon OCI clients have been deprecated. Use the OCI Java SDK
+  instead. For Helidon MP, use
+  `io.helidon.integrations.oci:helidon-integrations-oci` only for OCI
+  authentication, region, and configuration support; the legacy
+  `io.helidon.integrations.oci.sdk:helidon-integrations-oci-sdk-cdi` module is
+  deprecated.
+- The `MultiPart buffered readers` have been deprecated. Use the `MultiPart
+  stream readers` instead.
 
 ### Helidon Common
 
@@ -156,7 +192,8 @@ More information in the following [Task][task-2].
 Deprecations in the following classes:
 
 - `MetricsSupport` - 3 methods, replacing Config with metrics settings
-- `KeyPerformanceIndicatorMetricsSettings` - New class in metrics API, for backward compatibility only
+- `KeyPerformanceIndicatorMetricsSettings` - New class in metrics API, for
+  backward compatibility only
 - `RegistryFactory` - New class in metrics API, for backward compatibility only
 
 More information in the following [Task][task-3].
@@ -227,7 +264,8 @@ More information in the following [Task][task-9].
 
 ### WebServer
 
-- `Static content support` in `WebServer` - moved to a separate module. Fully removed from `WebServer` module.
+- `Static content support` in `WebServer` - moved to a separate module. Fully
+  removed from `WebServer` module.
 
 More information in the following [Task][task-11].
 

@@ -2,15 +2,30 @@
 
 ## Overview
 
-Server-sent events (SSE) enable servers to push data to clients (e.g. Web browsers) using standard HTTP or HTTPS through a unidirectional server-to-client connection. In the server-sent events communication model, the client establishes the initial connection, and the server provides the data in the form of *event streams*. For more information about server-sent events, see the [`Server-sent events`][server-sent-even] specification.
+Server-sent events (SSE) enable servers to push data to clients (e.g. Web
+browsers) using standard HTTP or HTTPS through a unidirectional server-to-client
+connection. In the server-sent events communication model, the client
+establishes the initial connection, and the server provides the data in the form
+of *event streams*. For more information about server-sent events, see the
+[`Server-sent events`][server-sent-even] specification.
 
-SSE is an alternative technology to WebSockets when only server-to-client messaging is required and can be accomplished without the need to switch protocols (upgrades) and without using imperfect solutions such as long polling. A server-sent connection is typically a long-lived connection in which messages are sent to the client over a longer period of time compared to a normal request-response connection. It is useful for updating *live data* such as stock tickers, results of live events, etc.
+SSE is an alternative technology to WebSockets when only server-to-client
+messaging is required and can be accomplished without the need to switch
+protocols (upgrades) and without using imperfect solutions such as long polling.
+A server-sent connection is typically a long-lived connection in which messages
+are sent to the client over a longer period of time compared to a normal
+request-response connection. It is useful for updating *live data* such as stock
+tickers, results of live events, etc.
 
-Helidon provides support for server and client APIs, although Web browsers are popular client alternatives. The following sections describe these APIs in more detail.
+Helidon provides support for server and client APIs, although Web browsers are
+popular client alternatives. The following sections describe these APIs in more
+detail.
 
 ## Server API
 
-The Server API is available as a loadable service in the Helidon WebServer. The following additional dependency is required to find and load the SSE service in the WebServer.
+The Server API is available as a loadable service in the Helidon WebServer. The
+following additional dependency is required to find and load the SSE service in
+the WebServer.
 
 ### Maven Coordinates
 
@@ -23,7 +38,10 @@ The Server API is available as a loadable service in the Helidon WebServer. The 
 
 ### Usage
 
-Sending events is accomplished by obtaining an `SseSink` instance from a `ServerResponse` using the `SseSink.TYPE` constant. The following example converts the response into an `SseSink`, emits two string messages and then closes the connection.
+Sending events is accomplished by obtaining an `SseSink` instance from a
+`ServerResponse` using the `SseSink.TYPE` constant. The following example
+converts the response into an `SseSink`, emits two string messages and then
+closes the connection.
 
 ```java
 try (SseSink sseSink = res.sink(SseSink.TYPE)) {
@@ -32,13 +50,25 @@ try (SseSink sseSink = res.sink(SseSink.TYPE)) {
 }
 ```
 
-Once an `SseSink` is obtained from a `ServerResponse`, the latter is no longer usable to send additional data to the client given that response `Content-Type` will be automatically set to `text/event-stream`. Note that an `SseSink` is auto closeable, so it can be part of a try-with-resources block as shown above.
+Once an `SseSink` is obtained from a `ServerResponse`, the latter is no longer
+usable to send additional data to the client given that response `Content-Type`
+will be automatically set to `text/event-stream`. Note that an `SseSink` is auto
+closeable, so it can be part of a try-with-resources block as shown above.
 
-Events can be created using any of the static `create` methods in `SseEvent` as well as via a builder obtained by calling `SseEvent.builder()`. For more information see the Javadocs for those classes. In the example above, a simple create method with a string param is used to showcase a very common use case. The API supports integration with media type providers, so the event data may actually be of any type as long as it is possible to convert it to a string value.
+Events can be created using any of the static `create` methods in `SseEvent` as
+well as via a builder obtained by calling `SseEvent.builder()`. For more
+information see the Javadocs for those classes. In the example above, a simple
+create method with a string param is used to showcase a very common use case.
+The API supports integration with media type providers, so the event data may
+actually be of any type as long as it is possible to convert it to a string
+value.
 
 ### Integration with Media Types
 
-It is possible to serialize event data using the media support. For example, if JSON-P is available in your class path, you can create an SSE event from a `JsonObject` and Helidon will find the appropriate media converter and serialize the event data on your behalf.
+It is possible to serialize event data using the media support. For example, if
+JSON-P is available in your class path, you can create an SSE event from a
+`JsonObject` and Helidon will find the appropriate media converter and serialize
+the event data on your behalf.
 
 ```java
 JsonObject json = Json.createObjectBuilder()
@@ -49,7 +79,8 @@ try (SseSink sseSink = res.sink(SseSink.TYPE)) {
 }
 ```
 
-Similarly, if JSON-B support is available in your class path, an event can be created from an arbitrary Java class and serialized as shown next:
+Similarly, if JSON-B support is available in your class path, an event can be
+created from an arbitrary Java class and serialized as shown next:
 
 ```java
 class HelloWorld {
@@ -74,11 +105,17 @@ void handle(ServerRequest req, ServerResponse res) {
 }
 ```
 
-An optional media type can be specified alongside the event’s data, in case a different type of serialization is required or when multiple media converters are available in the class path. For example, when passing a Java instance, you may request XML instead of JSON serialization by using `application/xml` as the event’s media type.
+An optional media type can be specified alongside the event’s data, in case a
+different type of serialization is required or when multiple media converters
+are available in the class path. For example, when passing a Java instance, you
+may request XML instead of JSON serialization by using `application/xml` as the
+event’s media type.
 
 ## Client API
 
-The Client API is available as a loadable service in the Helidon WebClient. The following additional dependency is required to find and load the service in the WebClient.
+The Client API is available as a loadable service in the Helidon WebClient. The
+following additional dependency is required to find and load the service in the
+WebClient.
 
 ### Maven Coordinates
 
@@ -91,7 +128,11 @@ The Client API is available as a loadable service in the Helidon WebClient. The 
 
 ### Usage
 
-Receiving events is accomplished by providing an `SseSource` handler using the source type `SseSource.TYPE`. An `SseSource` is a functional interface defined for the purpose of processing events. The following example, obtains an `Http1ClientResponse` from a request and registers an `SseSource` to process a single event.
+Receiving events is accomplished by providing an `SseSource` handler using the
+source type `SseSource.TYPE`. An `SseSource` is a functional interface defined
+for the purpose of processing events. The following example, obtains an
+`Http1ClientResponse` from a request and registers an `SseSource` to process a
+single event.
 
 ```java
 try (Http1ClientResponse r = client.get("/sseJson")
@@ -105,7 +146,10 @@ try (Http1ClientResponse r = client.get("/sseJson")
 }
 ```
 
-The `SseSource` type defines other methods such as `onOpen`, `onClose` and `onError`. The following example waits for zero or more string events until the connection is closed. A `CountDownLatch` is a convenient way to asynchronously wait until all the events are received.
+The `SseSource` type defines other methods such as `onOpen`, `onClose` and
+`onError`. The following example waits for zero or more string events until the
+connection is closed. A `CountDownLatch` is a convenient way to asynchronously
+wait until all the events are received.
 
 ```java
 try (Http1ClientResponse r = client.get("/sseString")
@@ -128,9 +172,19 @@ try (Http1ClientResponse r = client.get("/sseString")
 
 ### Integration with Media Types
 
-The Client API is also integrated with media type support. The data received as part of an event can be deserialized using any of the media converters available in your class path. There are special methods in `SseEvent` for this purpose. Without a parameter, the method `data()` in `SseEvent` will always return a string. Other types can be requested using `data(Class<T>)` and `data(Class<T>, MediaType)`. The latter is necessary to select the correct media converter given that there is no (standard) content type available as part of each event --but only a single `text/event-stream` content type for the whole response.
+The Client API is also integrated with media type support. The data received as
+part of an event can be deserialized using any of the media converters available
+in your class path. There are special methods in `SseEvent` for this purpose.
+Without a parameter, the method `data()` in `SseEvent` will always return a
+string. Other types can be requested using `data(Class<T>)` and `data(Class<T>,
+MediaType)`. The latter is necessary to select the correct media converter given
+that there is no (standard) content type available as part of each event --but
+only a single `text/event-stream` content type for the whole response.
 
-For example, to convert an event into a Java instance using JSON-B, the `application/json` media type is required as a second parameter --the first parameter `HelloWorld.class` simply does not convey sufficient information to select the appropriate converter for the event’s data in this case.
+For example, to convert an event into a Java instance using JSON-B, the
+`application/json` media type is required as a second parameter --the first
+parameter `HelloWorld.class` simply does not convey sufficient information to
+select the appropriate converter for the event’s data in this case.
 
 ```java
 try (Http1ClientResponse r = client.get("/sseJson")

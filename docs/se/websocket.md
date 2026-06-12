@@ -2,7 +2,8 @@
 
 ## Maven Coordinates
 
-To enable WebSocket, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+To enable WebSocket, add the following dependency to your project’s `pom.xml`
+(see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -13,9 +14,14 @@ To enable WebSocket, add the following dependency to your project’s `pom.xml` 
 
 ## Example
 
-This section describes the implementation of a simple application that uses a REST resource to push messages into a shared queue and a programmatic WebSocket endpoint to download messages from the queue, one at a time, over a connection. The example will show how REST and WebSocket connections can be seamlessly combined into a Helidon application.
+This section describes the implementation of a simple application that uses a
+REST resource to push messages into a shared queue and a programmatic WebSocket
+endpoint to download messages from the queue, one at a time, over a connection.
+The example will show how REST and WebSocket connections can be seamlessly
+combined into a Helidon application.
 
-The complete Helidon SE example is available [here][here]. Let us start by looking at `MessageQueueService`:
+The complete Helidon SE example is available [here][here]. Let us start by
+looking at `MessageQueueService`:
 
 ```java
 record MessageQueueService(Queue<String> messageQueue) implements HttpService {
@@ -29,9 +35,11 @@ record MessageQueueService(Queue<String> messageQueue) implements HttpService {
 }
 ```
 
-This class exposes a REST resource where messages can be posted. Upon receiving a message, it simply pushes it into a shared queue and returns 204 (No Content).
+This class exposes a REST resource where messages can be posted. Upon receiving
+a message, it simply pushes it into a shared queue and returns 204 (No Content).
 
-Messages pushed into the queue can be obtained by opening a WebSocket connection served by `MessageBoardEndpoint`:
+Messages pushed into the queue can be obtained by opening a WebSocket connection
+served by `MessageBoardEndpoint`:
 
 ```java
 record MessageBoardEndpoint(Queue<String> messageQueue) implements WsListener {
@@ -47,9 +55,13 @@ record MessageBoardEndpoint(Queue<String> messageQueue) implements WsListener {
 }
 ```
 
-This is an example of a programmatic endpoint that extends `WsListener`. The method `onMessage` will be invoked for every message. In this example, when the special `send` message is received, it empties the shared queue sending messages one at a time over the WebSocket connection.
+This is an example of a programmatic endpoint that extends `WsListener`. The
+method `onMessage` will be invoked for every message. In this example, when the
+special `send` message is received, it empties the shared queue sending messages
+one at a time over the WebSocket connection.
 
-In Helidon SE, REST and WebSocket classes need to be manually registered into the web server. This is accomplished via a `Routing` builder:
+In Helidon SE, REST and WebSocket classes need to be manually registered into
+the web server. This is accomplished via a `Routing` builder:
 
 ```java
 StaticContentService staticContent = StaticContentService.builder("/WEB")
@@ -63,7 +75,8 @@ server.routing(it -> it
                             .endpoint("/websocket/board", new MessageBoardEndpoint(messageQueue)));
 ```
 
-This code snippet registers `MessageBoardEndpoint` at `/websocket/board` and associates.
+This code snippet registers `MessageBoardEndpoint` at `/websocket/board` and
+associates.
 
 ## Reference
 

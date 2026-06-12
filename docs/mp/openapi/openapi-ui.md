@@ -2,16 +2,23 @@
 
 ## Overview
 
-SmallRye offers an [OpenAPI user interface component][openapi-user-int] which displays a web page based on your application’s OpenAPI document. Through that UI, users can invoke the operations declared in the document.
+SmallRye offers an [OpenAPI user interface component][openapi-user-int] which
+displays a web page based on your application’s OpenAPI document. Through that
+UI, users can invoke the operations declared in the document.
 
 > [!NOTE]
-> The Helidon team discourages including the OpenAPI UI in production applications. The OpenAPI UI *can* be useful for demonstrating and testing your service’s endpoints prior to deployment.
+> The Helidon team discourages including the OpenAPI UI in production
+> applications. The OpenAPI UI *can* be useful for demonstrating and testing
+> your service’s endpoints prior to deployment.
 
-The Helidon OpenAPI component allows you to integrate the SmallRye UI into your application, adding the UI web page to your application very simply.
+The Helidon OpenAPI component allows you to integrate the SmallRye UI into your
+application, adding the UI web page to your application very simply.
 
 ## Maven Coordinates
 
-To enable Helidon OpenAPI UI support, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+To enable Helidon OpenAPI UI support, add the following dependency to your
+project’s `pom.xml` (see [Managing
+Dependencies](../../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -31,7 +38,8 @@ And add a runtime dependency on the SmallRye UI.
 </dependency>
 ```
 
-Also make sure your project has the following dependency to include OpenAPI support in your Helidon MP application.
+Also make sure your project has the following dependency to include OpenAPI
+support in your Helidon MP application.
 
 ```xml [pom.xml]
 <dependency>
@@ -43,22 +51,32 @@ Also make sure your project has the following dependency to include OpenAPI supp
 
 ## Usage
 
-After you modify, build, and start your Helidon MP service, you can access the OpenAPI UI by default at `http://your-host:your-port/openapi/ui`. Helidon also uses conventional content negotiation at `http://your-host:your-port/openapi` returning the UI to browsers (or any client that accepts HTML) and the OpenAPI document otherwise.
+After you modify, build, and start your Helidon MP service, you can access the
+OpenAPI UI by default at `http://your-host:your-port/openapi/ui`. Helidon also
+uses conventional content negotiation at `http://your-host:your-port/openapi`
+returning the UI to browsers (or any client that accepts HTML) and the OpenAPI
+document otherwise.
 
 You can customize the path using [configuration](#configuration).
 
-The example below shows the UI for the Helidon MP QuickStart greeting application.
+The example below shows the UI for the Helidon MP QuickStart greeting
+application.
 
 <figure>
 <img src="../../images/openapi-ui-screen-capture-greeting-mp-start.png" alt="openapi ui screen capture greeting mp start" />
 <figcaption>Example OpenAPI UI Screen</figcaption>
 </figure>
 
-With the OpenAPI UI displayed, follow these steps to access one of your service’s operations.
+With the OpenAPI UI displayed, follow these steps to access one of your
+service’s operations.
 
 1.  Find the operation you want to run and click on its row in the list.
-2.  The UI expands the operation, showing any input parameters and the possible responses. Click the "Try it out" button in the operation’s row.
-3.  The UI now allows you to type into the input parameter field(s) to the right of each parameter name. Enter any required parameter values (first highlighted rectangle) and any non-required values you wish, then click "Execute" (highlighted arrow).
+2.  The UI expands the operation, showing any input parameters and the possible
+    responses. Click the "Try it out" button in the operation’s row.
+3.  The UI now allows you to type into the input parameter field(s) to the right
+    of each parameter name. Enter any required parameter values (first
+    highlighted rectangle) and any non-required values you wish, then click
+    "Execute" (highlighted arrow).
 4.  Just below the "Execute" button the UI shows several sections:  
     - the equivalent `curl` command for submitting the request with your inputs,
     - the URL used for the request, and
@@ -67,9 +85,13 @@ With the OpenAPI UI displayed, follow these steps to access one of your service�
       - body
       - headers
 
-The next image shows the screen after you submit the "Returns a personalized greeting" operation.
+The next image shows the screen after you submit the "Returns a personalized
+greeting" operation.
 
-Note that the UI shows the actual response from invoking the operation in the "Server response" section. The "Responses" section farther below describes the possible responses from the operation as declared in the OpenAPI document for the application.
+Note that the UI shows the actual response from invoking the operation in the
+"Server response" section. The "Responses" section farther below describes the
+possible responses from the operation as declared in the OpenAPI document for
+the application.
 
 <figure>
 <img src="../../images/openapi-ui-screen-capture-greeting-mp-expanded.png" alt="openapi ui screen capture greeting mp expanded" />
@@ -78,34 +100,45 @@ Note that the UI shows the actual response from invoking the operation in the "S
 
 ## API
 
-Your Helidon MP application does not use any API to enable or control Helidon OpenAPI UI support. Adding the dependency as described earlier is sufficient, and you can control the UI behavior using [configuration](#configuration).
+Your Helidon MP application does not use any API to enable or control Helidon
+OpenAPI UI support. Adding the dependency as described earlier is sufficient,
+and you can control the UI behavior using [configuration](#configuration).
 
 ## Configuration
 
-To use configuration to control how the Helidon OpenAPI UI service behaves, add `mp.openapi.services.ui` settings to your `META-INF/microprofile-config.properties` file.
+To use configuration to control how the Helidon OpenAPI UI service behaves, add
+`mp.openapi.services.ui` settings to your
+`META-INF/microprofile-config.properties` file.
 
 ### Configuration options
 
 <!--@include ../../config/io.helidon.integrations.openapi.ui.OpenApiUi.md#configuration-options delim=--- offset=1 collapseTables=10 -->
-See [Configuration options](../../config/io.helidon.integrations.openapi.ui.OpenApiUi.md#configuration-options).
+See [Configuration options][io-helidon-integ].
 <!--/include-->
 
 
-The default UI `web-context` value is the web context for your `OpenApiFeature` service with the added suffix `/ui`. If you use the default web context for both `OpenApiFeature` and the UI, the UI responds at `/openapi/ui`.
+The default UI `web-context` value is the web context for your `OpenApiFeature`
+service with the added suffix `/ui`. If you use the default web context for both
+`OpenApiFeature` and the UI, the UI responds at `/openapi/ui`.
 
 You can use configuration to affect the UI path in these ways:
 
 - Configure the OpenAPI endpoint path (the `/openapi` part).
 
-  Recall that you can [configure the Helidon OpenAPI component][configure-the-he] to change where it serves the OpenAPI document.
+  Recall that you can [configure the Helidon OpenAPI
+  component][configure-the-he] to change where it serves the OpenAPI document.
 
-  ``` properties
+  ```properties
   mp.openapi.web-context=/my-openapi
   ```
 
-  In this case, the path for the UI component is your customized OpenAPI path with `/ui` as a suffix. With the example above, the UI responds at `/myopenapi/ui` and Helidon uses standard content negotiation at `/myopenapi` to return either the OpenAPI document or the UI.
+  In this case, the path for the UI component is your customized OpenAPI path
+  with `/ui` as a suffix. With the example above, the UI responds at
+  `/myopenapi/ui` and Helidon uses standard content negotiation at `/myopenapi`
+  to return either the OpenAPI document or the UI.
 
-- Separately, configure the entire web context path for the UI independently from the web context for OpenAPI.
+- Separately, configure the entire web context path for the UI independently
+  from the web context for OpenAPI.
 
   Configuring the OpenAPI UI web context:
 
@@ -114,14 +147,25 @@ You can use configuration to affect the UI path in these ways:
   ```
 
   > [!NOTE]
-  > The `mp.openapi.services.ui.web-context` setting assigns the *entire* web-context for the UI, not the suffix appended to the `OpenApiFeature` endpoint.
+  > The `mp.openapi.services.ui.web-context` setting assigns the *entire*
+  > web-context for the UI, not the suffix appended to the `OpenApiFeature`
+  > endpoint.
 
-  With this configuration, the UI responds at `/my-ui` regardless of the path for OpenAPI itself.
+With this configuration, the UI responds at `/my-ui` regardless of the path for
+OpenAPI itself.
 
-The SmallRye OpenAPI UI component accepts several options, but they are of minimal use to application developers and they must be passed to the SmallRye UI code programmatically. Helidon allows you to specify these values using configuration in the `mp.openapi.services.ui.options` section. Helidon then passes the corresponding options to SmallRye for you. To configure any of these settings, use the enum values—​they are all lower case—​declared in the SmallRye [`Option.java`][option-java] class as the keys in your Helidon configuration.
+The SmallRye OpenAPI UI component accepts several options, but they are of
+minimal use to application developers and they must be passed to the SmallRye UI
+code programmatically. Helidon allows you to specify these values using
+configuration in the `mp.openapi.services.ui.options` section. Helidon then
+passes the corresponding options to SmallRye for you. To configure any of these
+settings, use the enum values—​they are all lower case—​declared in the SmallRye
+[`Option.java`][option-java] class as the keys in your Helidon configuration.
 
 > [!NOTE]
-> Helidon prepares several of the SmallRye options automatically based on other settings. Any options you configure override the values Helidon assigns, possibly interfering with the proper operation of the UI.
+> Helidon prepares several of the SmallRye options automatically based on other
+> settings. Any options you configure override the values Helidon assigns,
+> possibly interfering with the proper operation of the UI.
 
 # Additional Information
 
@@ -132,3 +176,4 @@ The SmallRye OpenAPI UI component accepts several options, but they are of minim
 [openapi-user-int]: https://github.com/smallrye/smallrye-open-api/tree/3.3.4/ui/open-api-ui
 [configure-the-he]: ../../mp/openapi/openapi.md#configuration
 [option-java]: https://github.com/smallrye/smallrye-open-api/tree/3.3.4/ui/open-api-ui/src/main/java/io/smallrye/openapi/ui/Option.java
+[io-helidon-integ]: ../../config/io.helidon.integrations.openapi.ui.OpenApiUi.md#configuration-options

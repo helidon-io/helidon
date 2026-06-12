@@ -2,11 +2,17 @@
 
 ## Overview
 
-Helidon MP implements the [MicroProfile GraphQL specification][microprofile-gra]. This specification describes how applications can be built to expose an endpoint for GraphQL. GraphQL is an open-source data query and manipulation language for APIs, and a runtime for fulfilling data queries. It provides an alternative to, though not necessarily a replacement for, REST.
+Helidon MP implements the [MicroProfile GraphQL
+specification][microprofile-gra]. This specification describes how applications
+can be built to expose an endpoint for GraphQL. GraphQL is an open-source data
+query and manipulation language for APIs, and a runtime for fulfilling data
+queries. It provides an alternative to, though not necessarily a replacement
+for, REST.
 
 ## Maven Coordinates
 
-To enable MicroProfile GraphQL, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+To enable MicroProfile GraphQL, add the following dependency to your project’s
+`pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -17,13 +23,16 @@ To enable MicroProfile GraphQL, add the following dependency to your project’s
 
 ## API
 
-The MicroProfile GraphQL specification defines a number of key annotations to be used when writing a GraphQL endpoint:
+The MicroProfile GraphQL specification defines a number of key annotations to be
+used when writing a GraphQL endpoint:
 
 - `@GraphQLApi` - identifies a CDI Bean as a GraphQL endpoint
 - `@Query` - identifies a method as returning one or more entities
 - `@Mutation` - identifies a method which creates, deletes or updates entities
 
-For example, the following defines a GraphQL endpoint with a number of queries and mutations that work against a fictional `CustomerService` service and `Customer` class.
+For example, the following defines a GraphQL endpoint with a number of queries
+and mutations that work against a fictional `CustomerService` service and
+`Customer` class.
 
 Simple ContactGraphQLApi:
 
@@ -97,11 +106,14 @@ type Customer {
 }
 ```
 
-After application startup, a GraphQL schema will be generated from your annotated API classes and POJO’s and you will be able to access these via the URLs described below.
+After application startup, a GraphQL schema will be generated from your
+annotated API classes and POJO’s and you will be able to access these via the
+URLs described below.
 
 ### Building your application
 
-As part of building your application, you must create a Jandex index using the `jandex-maven-plugin` for all API and POJO classes.
+As part of building your application, you must create a Jandex index using the
+`jandex-maven-plugin` for all API and POJO classes.
 
 Generate Jandex index:
 
@@ -118,14 +130,25 @@ Generate Jandex index:
 ```
 
 > [!NOTE]
-> As per the instructions [here](introduction.md) ensure you have added a `src/main/resources/META-INF/beans.xml` file, so the CDI implementation can pick up your classes.
+> As per the instructions [here](introduction.md) ensure you have added a
+> `src/main/resources/META-INF/beans.xml` file, so the CDI implementation can
+> pick up your classes.
 
 ### Accessing the GraphQL endpoints
 
-After starting your application you should see a log message indicating that GraphQL is in the list of features. You can access the GraphQL endpoint at `http://host:port/graphql`, and the corresponding schema at `http://host:port/graphql/schema.graphql`. See [Configuration](#configuration) for additional information on how to change the location of these resources.
-After starting your application you should see a log message indicating that GraphQL is in the list of features. You can access the GraphQL endpoint at `http://host:port/graphql`, and the corresponding schema at `http://host:port/graphql/schema.graphql`. See [Configuration](#configuration) for additional information on how to change the location of these resources.
+After starting your application you should see a log message indicating that
+GraphQL is in the list of features. You can access the GraphQL endpoint at
+`http://host:port/graphql`, and the corresponding schema at
+`http://host:port/graphql/schema.graphql`. See [Configuration](#configuration)
+for additional information on how to change the location of these resources.
+After starting your application you should see a log message indicating that
+GraphQL is in the list of features. You can access the GraphQL endpoint at
+`http://host:port/graphql`, and the corresponding schema at
+`http://host:port/graphql/schema.graphql`. See [Configuration](#configuration)
+for additional information on how to change the location of these resources.
 
-If you wish to use the [GraphQL UI][graphql-ui] then please see the [GraphQL MP Example][graphql-mp-examp].
+If you wish to use the [GraphQL UI][graphql-ui] then please see the [GraphQL MP
+Example][graphql-mp-examp].
 
 ## Configuration
 
@@ -137,7 +160,8 @@ The specification defines the following configuration options:
 | `mp.graphql.exceptionsBlackList` |   | Array of checked exception classes that should return default error message |
 | `mp.graphql.exceptionsWhiteList` |   | Array of unchecked exception classes that should return message to caller (instead of default error message) |
 
-The following configuration keys can be used to set up integration with WebServer:
+The following configuration keys can be used to set up integration with
+WebServer:
 
 | key | default value | description |
 |----|----|----|

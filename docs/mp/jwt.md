@@ -2,13 +2,20 @@
 
 ## Overview
 
-JSON Web Tokens (JWT) are an open, industry standard [(RFC 7519)][rfc-7519] method for representing claims securely between two parties.
+JSON Web Tokens (JWT) are an open, industry standard [(RFC 7519)][rfc-7519]
+method for representing claims securely between two parties.
 
-JSON Web Token defines a compact and self-contained way for securely transmitting information between parties as a JSON object. With JWT Auth you can integrate security features such as single sign on into your Helidon MP applications.
+JSON Web Token defines a compact and self-contained way for securely
+transmitting information between parties as a JSON object. With JWT Auth you can
+integrate security features such as single sign on into your Helidon MP
+applications.
 
 ## Maven Coordinates
 
-To enable JWT Authentication, either add a dependency on the [helidon-microprofile bundle](introduction.md) or add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+To enable JWT Authentication, either add a dependency on the
+[helidon-microprofile bundle](introduction.md) or add the following dependency
+to your project’s `pom.xml` (see [Managing
+Dependencies](../managing-dependencies.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -19,7 +26,8 @@ To enable JWT Authentication, either add a dependency on the [helidon-microprofi
 
 ## Usage
 
-The main configuration point for JWT Auth is a JAX-RS Application class. As this class is discovered using CDI, it must have a bean defining annotation.
+The main configuration point for JWT Auth is a JAX-RS Application class. As this
+class is discovered using CDI, it must have a bean defining annotation.
 
 Minimal required setup is done using `@LoginConfig(authMethod = "MP-JWT")`:
 
@@ -32,11 +40,15 @@ public class ProtectedApplication extends Application {
 
 ## API
 
-The following interfaces and annotations are used to work with JWT in Helidon MP:
+The following interfaces and annotations are used to work with JWT in Helidon
+MP:
 
-- `JsonWebToken` - an interface used in CDI beans *(@RequestScoped)* dependency injection to obtain the JWT of the currently executing caller.
-- `@Claim` - an annotation used by CDI bean *(@RequestScoped)* dependency injection to obtain individual claims from the caller’s JWT.
-- `ClaimValue` - a proxy interface used with `@Claim` annotation to оbtain the value of a claim by calling `getValue()`.
+- `JsonWebToken` - an interface used in CDI beans *(@RequestScoped)* dependency
+  injection to obtain the JWT of the currently executing caller.
+- `@Claim` - an annotation used by CDI bean *(@RequestScoped)* dependency
+  injection to obtain individual claims from the caller’s JWT.
+- `ClaimValue` - a proxy interface used with `@Claim` annotation to оbtain the
+  value of a claim by calling `getValue()`.
 
 ## Configuration
 
