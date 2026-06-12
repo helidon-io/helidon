@@ -53,7 +53,7 @@ WebServer.builder()
 
 #### Configuration options
 
-<!--@include ../../config/io.helidon.security.providers.oidc.OidcProvider.md#configuration-options offset=2 collapseTables=10 -->
+<!--@include ../../config/io.helidon.security.providers.oidc.OidcProvider.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.security.providers.oidc.OidcProvider.md#configuration-options).
 <!--/include-->
 
@@ -177,7 +177,7 @@ and the custom tenant configuration discovery can be provided by implementing SP
 
 ##### Configuration options
 
-<!--@include ../../config/io.helidon.security.providers.oidc.common.TenantConfig.md#configuration-options offset=3 collapseTables=10 -->
+<!--@include ../../config/io.helidon.security.providers.oidc.common.TenantConfig.md#configuration-options delim=--- offset=3 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.security.providers.oidc.common.TenantConfig.md#configuration-options).
 <!--/include-->
 
@@ -213,7 +213,7 @@ Maven dependency
 
 #### Configuration options
 
-<!--@include ../../config/io.helidon.security.providers.httpauth.HttpBasicAuthProvider.md#configuration-options offset=2 collapseTables=10 -->
+<!--@include ../../config/io.helidon.security.providers.httpauth.HttpBasicAuthProvider.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.security.providers.httpauth.HttpBasicAuthProvider.md#configuration-options).
 <!--/include-->
 
@@ -303,7 +303,7 @@ Maven dependency
 
 #### Configuration options
 
-<!--@include ../../config/io.helidon.security.providers.httpauth.HttpDigestAuthProvider.md#configuration-options offset=2 collapseTables=10 -->
+<!--@include ../../config/io.helidon.security.providers.httpauth.HttpDigestAuthProvider.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.security.providers.httpauth.HttpDigestAuthProvider.md#configuration-options).
 <!--/include-->
 
@@ -366,7 +366,7 @@ Maven dependency
 
 #### Configuration options
 
-<!--@include ../../config/io.helidon.security.providers.header.HeaderAtnProvider.md#configuration-options offset=2 collapseTables=10 -->
+<!--@include ../../config/io.helidon.security.providers.header.HeaderAtnProvider.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.security.providers.header.HeaderAtnProvider.md#configuration-options).
 <!--/include-->
 
@@ -428,7 +428,7 @@ Maven dependency
 
 #### Configuration options
 
-<!--@include ../../config/io.helidon.security.providers.httpsign.HttpSignProvider.md#configuration-options offset=2 collapseTables=10 -->
+<!--@include ../../config/io.helidon.security.providers.httpsign.HttpSignProvider.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.security.providers.httpsign.HttpSignProvider.md#configuration-options).
 <!--/include-->
 
@@ -506,7 +506,7 @@ Maven dependency
 
 #### Configuration options
 
-<!--@include ../../config/io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProvider.md#configuration-options offset=2 collapseTables=10 -->
+<!--@include ../../config/io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProvider.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProvider.md#configuration-options).
 <!--/include-->
 
@@ -515,7 +515,7 @@ See [Configuration options](../../config/io.helidon.security.providers.idcs.mapp
 
 #### Configuration options
 
-<!--@include ../../config/io.helidon.security.providers.idcs.mapper.IdcsMtRoleMapperProvider.md#configuration-options offset=2 collapseTables=10 -->
+<!--@include ../../config/io.helidon.security.providers.idcs.mapper.IdcsMtRoleMapperProvider.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.security.providers.idcs.mapper.IdcsMtRoleMapperProvider.md#configuration-options).
 <!--/include-->
 
@@ -560,7 +560,7 @@ Maven dependency
 
 #### Configuration options
 
-<!--@include ../../config/io.helidon.security.providers.abac.AbacProvider.md#configuration-options offset=2 collapseTables=10 -->
+<!--@include ../../config/io.helidon.security.providers.abac.AbacProvider.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.security.providers.abac.AbacProvider.md#configuration-options).
 <!--/include-->
 
@@ -769,7 +769,7 @@ Maven dependency
 
 #### Configuration options
 
-<!--@include ../../config/io.helidon.security.providers.google.login.GoogleTokenProvider.md#configuration-options offset=2 collapseTables=10 -->
+<!--@include ../../config/io.helidon.security.providers.google.login.GoogleTokenProvider.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.security.providers.google.login.GoogleTokenProvider.md#configuration-options).
 <!--/include-->
 
@@ -829,7 +829,7 @@ Maven dependency
 
 #### Configuration options
 
-<!--@include ../../config/io.helidon.security.providers.jwt.JwtProvider.md#configuration-options offset=2 collapseTables=10 -->
+<!--@include ../../config/io.helidon.security.providers.jwt.JwtProvider.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.security.providers.jwt.JwtProvider.md#configuration-options).
 <!--/include-->
 

@@ -21,7 +21,7 @@ Connector name: `helidon-aq`
 
 ### Configuration options
 
-<!--@include ../../config/io.helidon.messaging.connectors.aq.AqConfigBuilder.md#configuration-options offset=1 collapseTables=10 -->
+<!--@include ../../config/io.helidon.messaging.connectors.aq.AqConfigBuilder.md#configuration-options delim=--- offset=1 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.messaging.connectors.aq.AqConfigBuilder.md#configuration-options).
 <!--/include-->
 

@@ -126,7 +126,7 @@ CORS configuration is done through [`CorsFeature`][corsfeature], a `WebServer` f
 
 ### Configuration options
 
-<!--@include ../config/io.helidon.webserver.cors.CorsFeature.md#configuration-options offset=1 collapseTables=10 -->
+<!--@include ../config/io.helidon.webserver.cors.CorsFeature.md#configuration-options delim=--- offset=1 collapseTables=10 -->
 See [Configuration options](../config/io.helidon.webserver.cors.CorsFeature.md#configuration-options).
 <!--/include-->
 

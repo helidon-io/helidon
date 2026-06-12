@@ -45,7 +45,7 @@ FixedRate.builder()
 
 #### Configuration options
 
-<!--@include ../config/io.helidon.scheduling.FixedRate.md#configuration-options offset=2 collapseTables=10 -->
+<!--@include ../config/io.helidon.scheduling.FixedRate.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../config/io.helidon.scheduling.FixedRate.md#configuration-options).
 <!--/include-->
 
@@ -81,7 +81,7 @@ The timezone determines when the cron expression triggers. For example, a cron e
 
 #### Configuration options
 
-<!--@include ../config/io.helidon.scheduling.Cron.md#configuration-options offset=2 collapseTables=10 -->
+<!--@include ../config/io.helidon.scheduling.Cron.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../config/io.helidon.scheduling.Cron.md#configuration-options).
 <!--/include-->
 

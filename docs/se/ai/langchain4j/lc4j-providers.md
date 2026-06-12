@@ -61,7 +61,7 @@ Configuration properties:
 
 ### Configuration options
 
-<!--@include ../../../config/io.helidon.integrations.langchain4j.ContentRetrieverConfig.md#configuration-options offset=1 collapseTables=10 -->
+<!--@include ../../../config/io.helidon.integrations.langchain4j.ContentRetrieverConfig.md#configuration-options delim=--- offset=1 collapseTables=10 -->
 See [Configuration options](../../../config/io.helidon.integrations.langchain4j.ContentRetrieverConfig.md#configuration-options).
 <!--/include-->
 
@@ -121,7 +121,7 @@ Configuration properties:
 
 ### Configuration options
 
-<!--@include ../../../config/io.helidon.integrations.langchain4j.InMemoryEmbeddingStoreConfig.md#configuration-options offset=1 collapseTables=10 -->
+<!--@include ../../../config/io.helidon.integrations.langchain4j.InMemoryEmbeddingStoreConfig.md#configuration-options delim=--- offset=1 collapseTables=10 -->
 See [Configuration options](../../../config/io.helidon.integrations.langchain4j.InMemoryEmbeddingStoreConfig.md#configuration-options).
 <!--/include-->
 

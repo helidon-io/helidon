@@ -196,7 +196,7 @@ To control the observability features as a whole, add config settings under `ser
 
 ### Configuration options
 
-<!--@include ../config/io.helidon.webserver.observe.ObserveFeature.md#configuration-options offset=1 collapseTables=10 -->
+<!--@include ../config/io.helidon.webserver.observe.ObserveFeature.md#configuration-options delim=--- offset=1 collapseTables=10 -->
 See [Configuration options](../config/io.helidon.webserver.observe.ObserveFeature.md#configuration-options).
 <!--/include-->
 

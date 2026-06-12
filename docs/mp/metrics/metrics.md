@@ -113,7 +113,7 @@ If you configure an OTLP publisher, Helidon exports metrics data periodically to
 
 #### Configuration options
 
-<!--@include ../../config/io.helidon.metrics.providers.micrometer.OtlpPublisher.md#configuration-options offset=2 collapseTables=10 -->
+<!--@include ../../config/io.helidon.metrics.providers.micrometer.OtlpPublisher.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.metrics.providers.micrometer.OtlpPublisher.md#configuration-options).
 <!--/include-->
 
@@ -141,7 +141,7 @@ If you configure a Prometheus publisher or rely on the inferred one, Helidon can
 
 #### Configuration options
 
-<!--@include ../../config/io.helidon.metrics.providers.micrometer.PrometheusPublisher.md#configuration-options offset=2 collapseTables=10 -->
+<!--@include ../../config/io.helidon.metrics.providers.micrometer.PrometheusPublisher.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.metrics.providers.micrometer.PrometheusPublisher.md#configuration-options).
 <!--/include-->
 
@@ -589,7 +589,7 @@ Certain default configuration values depend on the fact that you are using Helid
 
 ### Configuration options
 
-<!--@include ../../config/io.helidon.metrics.api.MetricsConfig.md#configuration-options offset=1 collapseTables=10 -->
+<!--@include ../../config/io.helidon.metrics.api.MetricsConfig.md#configuration-options delim=--- offset=1 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.metrics.api.MetricsConfig.md#configuration-options).
 <!--/include-->
 
@@ -632,7 +632,7 @@ You can choose which endpoints to include in Helidon’s automatic measurements 
 
 #### Configuration options
 
-<!--@include ../../config/io.helidon.webserver.observe.metrics.AutoHttpMetricsConfig.md#configuration-options offset=2 collapseTables=10 -->
+<!--@include ../../config/io.helidon.webserver.observe.metrics.AutoHttpMetricsConfig.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.webserver.observe.metrics.AutoHttpMetricsConfig.md#configuration-options).
 <!--/include-->
 

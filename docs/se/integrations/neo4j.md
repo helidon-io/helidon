@@ -47,7 +47,7 @@ The driver can be used according to the [Neo4j documentation][neo4j-documentat].
 
 ### Configuration options
 
-<!--@include ../../config/io.helidon.integrations.neo4j.Neo4j.md#configuration-options offset=1 collapseTables=10 -->
+<!--@include ../../config/io.helidon.integrations.neo4j.Neo4j.md#configuration-options delim=--- offset=1 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.integrations.neo4j.Neo4j.md#configuration-options).
 <!--/include-->
 

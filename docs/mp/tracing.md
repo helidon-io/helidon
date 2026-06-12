@@ -81,7 +81,7 @@ You can configure a custom service name using the `tracing.service` configuratio
 
 ## Configuration options
 
-<!--@include ../config/io.helidon.tracing.Tracer.md#configuration-options offset=2 collapseTables=10 -->
+<!--@include ../config/io.helidon.tracing.Tracer.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../config/io.helidon.tracing.Tracer.md#configuration-options).
 <!--/include-->
 
@@ -527,7 +527,7 @@ Response response = client.target(serviceEndpoint)
 
 ## Configuration options
 
-<!--@include ../config/io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.md#configuration-options offset=1 collapseTables=10 -->
+<!--@include ../config/io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.md#configuration-options delim=--- offset=1 collapseTables=10 -->
 See [Configuration options](../config/io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.md#configuration-options).
 <!--/include-->
 
@@ -559,7 +559,7 @@ As the [Jaeger Tracing](#jaeger-tracing) section describes, you can use Jaeger t
 
 ## Configuration options
 
-<!--@include ../config/io.helidon.tracing.providers.zipkin.ZipkinTracerBuilder.md#configuration-options offset=1 collapseTables=10 -->
+<!--@include ../config/io.helidon.tracing.providers.zipkin.ZipkinTracerBuilder.md#configuration-options delim=--- offset=1 collapseTables=10 -->
 See [Configuration options](../config/io.helidon.tracing.providers.zipkin.ZipkinTracerBuilder.md#configuration-options).
 <!--/include-->
 
@@ -615,7 +615,7 @@ Dependency for OpenTelemetry support using tracing:
 
 ## Configuration options
 
-<!--@include ../config/io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracer.md#configuration-options offset=1 collapseTables=10 -->
+<!--@include ../config/io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracer.md#configuration-options delim=--- offset=1 collapseTables=10 -->
 See [Configuration options](../config/io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracer.md#configuration-options).
 <!--/include-->
 

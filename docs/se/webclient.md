@@ -215,7 +215,7 @@ The class responsible for WebClient configuration is:
 
 ### Configuration options
 
-<!--@include ../config/io.helidon.webclient.api.WebClient.md#configuration-options offset=1 collapseTables=10 -->
+<!--@include ../config/io.helidon.webclient.api.WebClient.md#configuration-options delim=--- offset=1 collapseTables=10 -->
 See [Configuration options](../config/io.helidon.webclient.api.WebClient.md#configuration-options).
 <!--/include-->
 
@@ -228,7 +228,7 @@ Protocol specific configuration can be set using the `protocol-configs` paramete
 
 #### Configuration options
 
-<!--@include ../config/io.helidon.webclient.http1.Http1ClientProtocolConfig.md#configuration-options offset=2 collapseTables=10 -->
+<!--@include ../config/io.helidon.webclient.http1.Http1ClientProtocolConfig.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../config/io.helidon.webclient.http1.Http1ClientProtocolConfig.md#configuration-options).
 <!--/include-->
 
@@ -237,7 +237,7 @@ See [Configuration options](../config/io.helidon.webclient.http1.Http1ClientProt
 
 #### Configuration options
 
-<!--@include ../config/io.helidon.webclient.http2.Http2ClientProtocolConfig.md#configuration-options offset=2 collapseTables=10 -->
+<!--@include ../config/io.helidon.webclient.http2.Http2ClientProtocolConfig.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../config/io.helidon.webclient.http2.Http2ClientProtocolConfig.md#configuration-options).
 <!--/include-->
 
@@ -715,7 +715,7 @@ Configuration of WebClient transport level propagation of context values.
 
 #### Configuration options
 
-<!--@include ../config/io.helidon.webclient.context.WebClientContextService.md#configuration-options offset=1 collapseTables=10 -->
+<!--@include ../config/io.helidon.webclient.context.WebClientContextService.md#configuration-options delim=--- offset=1 collapseTables=10 -->
 See [Configuration options](../config/io.helidon.webclient.context.WebClientContextService.md#configuration-options).
 <!--/include-->
 

@@ -66,7 +66,7 @@ Helidon SE OpenAPI configuration supports the settings described below in the `s
 
 ### Configuration options
 
-<!--@include ../../config/io.helidon.openapi.OpenApiFeature.md#configuration-options offset=1 collapseTables=10 -->
+<!--@include ../../config/io.helidon.openapi.OpenApiFeature.md#configuration-options delim=--- offset=1 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.openapi.OpenApiFeature.md#configuration-options).
 <!--/include-->
 

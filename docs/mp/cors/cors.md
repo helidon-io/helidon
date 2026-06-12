@@ -98,7 +98,7 @@ Each annotation in `Cors` class (except for `Defaults`) is mapped to one of the 
 
 ### Configuration options
 
-<!--@include ../../config/io.helidon.webserver.cors.CorsPathConfig.md#configuration-options offset=1 collapseTables=10 -->
+<!--@include ../../config/io.helidon.webserver.cors.CorsPathConfig.md#configuration-options delim=--- offset=1 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.webserver.cors.CorsPathConfig.md#configuration-options).
 <!--/include-->
 

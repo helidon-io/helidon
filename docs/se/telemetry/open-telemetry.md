@@ -208,7 +208,7 @@ Several settings control the operation of OpenTelemetry as a whole, as shown in 
 
 #### Configuration options
 
-<!--@include ../../config/io.helidon.telemetry.otelconfig.HelidonOpenTelemetry.md#configuration-options offset=2 collapseTables=10 -->
+<!--@include ../../config/io.helidon.telemetry.otelconfig.HelidonOpenTelemetry.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.telemetry.otelconfig.HelidonOpenTelemetry.md#configuration-options).
 <!--/include-->
 
@@ -232,7 +232,7 @@ You can add attributes to the configuration for any of the signals under the sig
 
 ##### Configuration options
 
-<!--@include ../../config/io.helidon.telemetry.otelconfig.TypedAttributes.md#configuration-options offset=3 collapseTables=10 -->
+<!--@include ../../config/io.helidon.telemetry.otelconfig.TypedAttributes.md#configuration-options delim=--- offset=3 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.telemetry.otelconfig.TypedAttributes.md#configuration-options).
 <!--/include-->
 
@@ -280,7 +280,7 @@ In the table below only the `type` and `exporters` setting apply to `simple` pro
 
 ##### Configuration options
 
-<!--@include ../../config/io.helidon.telemetry.otelconfig.BatchProcessorConfig.md#configuration-options offset=3 collapseTables=10 -->
+<!--@include ../../config/io.helidon.telemetry.otelconfig.BatchProcessorConfig.md#configuration-options delim=--- offset=3 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.telemetry.otelconfig.BatchProcessorConfig.md#configuration-options).
 <!--/include-->
 
@@ -297,7 +297,7 @@ Most users choose an `Otlp` exporter which has two variations—​one using gRP
 
 ##### Configuration options
 
-<!--@include ../../config/io.helidon.telemetry.otelconfig.OtlpExporterConfig.md#configuration-options offset=3 collapseTables=10 -->
+<!--@include ../../config/io.helidon.telemetry.otelconfig.OtlpExporterConfig.md#configuration-options delim=--- offset=3 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.telemetry.otelconfig.OtlpExporterConfig.md#configuration-options).
 <!--/include-->
 
@@ -347,7 +347,7 @@ You can control how each exporter retries if a transmission to a backend fails.
 
 ###### Configuration options
 
-<!--@include ../../config/io.helidon.telemetry.otelconfig.RetryPolicyConfig.md#configuration-options offset=4 collapseTables=10 -->
+<!--@include ../../config/io.helidon.telemetry.otelconfig.RetryPolicyConfig.md#configuration-options delim=--- offset=4 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.telemetry.otelconfig.RetryPolicyConfig.md#configuration-options).
 <!--/include-->
 
@@ -358,7 +358,7 @@ OpenTelemetry also supports a Zipkin exporter which it has recently deprecated.
 
 ##### Configuration options
 
-<!--@include ../../config/io.helidon.telemetry.otelconfig.ZipkinExporterConfig.md#configuration-options offset=3 collapseTables=10 -->
+<!--@include ../../config/io.helidon.telemetry.otelconfig.ZipkinExporterConfig.md#configuration-options delim=--- offset=3 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.telemetry.otelconfig.ZipkinExporterConfig.md#configuration-options).
 <!--/include-->
 
@@ -526,7 +526,7 @@ The next table describes the OpenTelemetry tracing settings.
 
 #### Configuration options
 
-<!--@include ../../config/io.helidon.telemetry.otelconfig.OpenTelemetryTracingConfig.md#configuration-options offset=2 collapseTables=10 -->
+<!--@include ../../config/io.helidon.telemetry.otelconfig.OpenTelemetryTracingConfig.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.telemetry.otelconfig.OpenTelemetryTracingConfig.md#configuration-options).
 <!--/include-->
 
@@ -562,7 +562,7 @@ Helidon configuration supports the sampler implementations that reside in the `o
 
 #### Configuration options
 
-<!--@include ../../config/io.helidon.telemetry.otelconfig.SamplerConfig.md#configuration-options offset=2 collapseTables=10 -->
+<!--@include ../../config/io.helidon.telemetry.otelconfig.SamplerConfig.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.telemetry.otelconfig.SamplerConfig.md#configuration-options).
 <!--/include-->
 
@@ -574,7 +574,7 @@ OpenTelemetry allows you to constrain certain aspects of the data it gathers in 
 
 #### Configuration options
 
-<!--@include ../../config/io.helidon.telemetry.otelconfig.SpanLimitsConfig.md#configuration-options offset=2 collapseTables=10 -->
+<!--@include ../../config/io.helidon.telemetry.otelconfig.SpanLimitsConfig.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.telemetry.otelconfig.SpanLimitsConfig.md#configuration-options).
 <!--/include-->
 
@@ -604,7 +604,7 @@ The next table describes the OpenTelemetry metrics settings.
 
 #### Configuration options
 
-<!--@include ../../config/io.helidon.telemetry.otelconfig.OpenTelemetryMetricsConfig.md#configuration-options offset=2 collapseTables=10 -->
+<!--@include ../../config/io.helidon.telemetry.otelconfig.OpenTelemetryMetricsConfig.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.telemetry.otelconfig.OpenTelemetryMetricsConfig.md#configuration-options).
 <!--/include-->
 
@@ -683,7 +683,7 @@ The configuration for metrics exporters has several additional settings beyond t
 
 #### Configuration options
 
-<!--@include ../../config/io.helidon.telemetry.otelconfig.MetricExporterConfig.md#configuration-options offset=2 collapseTables=10 -->
+<!--@include ../../config/io.helidon.telemetry.otelconfig.MetricExporterConfig.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.telemetry.otelconfig.MetricExporterConfig.md#configuration-options).
 <!--/include-->
 
@@ -694,7 +694,7 @@ OpenTelemetry allows control over how each exporter aggregates histogram data pr
 
 #### Configuration options
 
-<!--@include ../../config/io.helidon.telemetry.otelconfig.MetricDefaultHistogramAggregationConfig.md#configuration-options offset=2 collapseTables=10 -->
+<!--@include ../../config/io.helidon.telemetry.otelconfig.MetricDefaultHistogramAggregationConfig.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.telemetry.otelconfig.MetricDefaultHistogramAggregationConfig.md#configuration-options).
 <!--/include-->
 
@@ -703,7 +703,7 @@ You can configure the explicit bucket boundaries for `EXPLICIT_BUCKET_HISTOGRAM`
 
 #### Configuration options
 
-<!--@include ../../config/io.helidon.telemetry.otelconfig.ExplicitBucketHistogramAggregationConfig.md#configuration-options offset=2 collapseTables=10 -->
+<!--@include ../../config/io.helidon.telemetry.otelconfig.ExplicitBucketHistogramAggregationConfig.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.telemetry.otelconfig.ExplicitBucketHistogramAggregationConfig.md#configuration-options).
 <!--/include-->
 
@@ -712,7 +712,7 @@ You can configure the exponential histogram aggregation behavior.
 
 #### Configuration options
 
-<!--@include ../../config/io.helidon.telemetry.otelconfig.Base2ExponentialHistogramAggregationConfig.md#configuration-options offset=2 collapseTables=10 -->
+<!--@include ../../config/io.helidon.telemetry.otelconfig.Base2ExponentialHistogramAggregationConfig.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.telemetry.otelconfig.Base2ExponentialHistogramAggregationConfig.md#configuration-options).
 <!--/include-->
 
@@ -724,7 +724,7 @@ An OpenTelemetry metric reader collects metric data in the server and then uses 
 
 #### Configuration options
 
-<!--@include ../../config/io.helidon.telemetry.otelconfig.MetricReaderConfig.md#configuration-options offset=2 collapseTables=10 -->
+<!--@include ../../config/io.helidon.telemetry.otelconfig.MetricReaderConfig.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.telemetry.otelconfig.MetricReaderConfig.md#configuration-options).
 <!--/include-->
 
@@ -733,7 +733,7 @@ The periodic reader supports the following settings.
 
 #### Configuration options
 
-<!--@include ../../config/io.helidon.telemetry.otelconfig.PeriodicMetricReaderConfig.md#configuration-options offset=2 collapseTables=10 -->
+<!--@include ../../config/io.helidon.telemetry.otelconfig.PeriodicMetricReaderConfig.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.telemetry.otelconfig.PeriodicMetricReaderConfig.md#configuration-options).
 <!--/include-->
 
@@ -745,7 +745,7 @@ OpenTelemetry metric views allow you to influence how meters are aggregated for 
 
 #### Configuration options
 
-<!--@include ../../config/io.helidon.telemetry.otelconfig.ViewRegistrationConfig.md#configuration-options offset=2 collapseTables=10 -->
+<!--@include ../../config/io.helidon.telemetry.otelconfig.ViewRegistrationConfig.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.telemetry.otelconfig.ViewRegistrationConfig.md#configuration-options).
 <!--/include-->
 
@@ -754,7 +754,7 @@ The instrument selector controls which meters this view reflects.
 
 #### Configuration options
 
-<!--@include ../../config/io.helidon.telemetry.otelconfig.InstrumentSelectorConfig.md#configuration-options offset=2 collapseTables=10 -->
+<!--@include ../../config/io.helidon.telemetry.otelconfig.InstrumentSelectorConfig.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.telemetry.otelconfig.InstrumentSelectorConfig.md#configuration-options).
 <!--/include-->
 
@@ -770,7 +770,7 @@ The next table describes the OpenTelemetry logging settings.
 
 #### Configuration options
 
-<!--@include ../../config/io.helidon.telemetry.otelconfig.OpenTelemetryLoggingConfig.md#configuration-options offset=2 collapseTables=10 -->
+<!--@include ../../config/io.helidon.telemetry.otelconfig.OpenTelemetryLoggingConfig.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.telemetry.otelconfig.OpenTelemetryLoggingConfig.md#configuration-options).
 <!--/include-->
 
@@ -798,7 +798,7 @@ For defaults, Helidon defers to the OpenTelemetry defaults, listed below.
 
 ##### Configuration options
 
-<!--@include ../../config/io.helidon.telemetry.otelconfig.LogLimitsConfig.md#configuration-options offset=3 collapseTables=10 -->
+<!--@include ../../config/io.helidon.telemetry.otelconfig.LogLimitsConfig.md#configuration-options delim=--- offset=3 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.telemetry.otelconfig.LogLimitsConfig.md#configuration-options).
 <!--/include-->
 
