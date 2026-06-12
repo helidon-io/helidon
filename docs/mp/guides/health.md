@@ -83,10 +83,8 @@ Verify the health endpoint in a new terminal window:
 curl http://localhost:8080/health
 ```
 
-JSON response:
-
 <!--@mdc ::code-collapse -->
-```json
+```json [Response]
 {
   "status": "UP",
   "checks": [
@@ -154,9 +152,7 @@ Build and run the application, then verify the custom liveness health endpoint:
 curl http://localhost:8080/health/live
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "status": "UP",
   "checks": [
@@ -388,10 +384,8 @@ Get all the health check data, including custom data:
 curl http://localhost:8080/health
 ```
 
-JSON response:
-
 <!--@mdc ::code-collapse -->
-```json
+```json [Response]
 {
   "status": "UP",
   "checks": [

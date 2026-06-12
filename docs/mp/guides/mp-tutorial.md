@@ -232,9 +232,7 @@ Try the Application:
 curl -X GET http://localhost:7001/greet
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {"message":"Hello World!"}
 ```
 

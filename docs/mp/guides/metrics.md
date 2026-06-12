@@ -88,9 +88,7 @@ Verify the metrics endpoint in a new terminal window:
 curl http://localhost:8080/metrics
 ```
 
-Text response (partial):
-
-```text
+```log [Response (partial)]
 # HELP classloader_loadedClasses_count Displays the number of classes that are currently loaded in the Java virtual machine.
 # TYPE classloader_loadedClasses_count gauge
 classloader_loadedClasses_count{mp_scope="base",} 4878.0
@@ -116,9 +114,7 @@ Verify the metrics endpoint with an HTTP accept header:
 curl -H "Accept: application/json"  http://localhost:8080/metrics
 ```
 
-JSON response (partial):
-
-```json
+```json [Response (partial)]
 {
   "application": {
     "personalizedGets": 0,
@@ -153,9 +149,7 @@ Get the Helidon requests.count metric:
 curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=vendor&name=requests.count'
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "requests.count": 6
 }
@@ -274,9 +268,7 @@ Get the metrics metadata using HTTP OPTIONS method:
 curl -X OPTIONS -H "Accept: application/json"  'http://localhost:8080/metrics?scope=base'
 ```
 
-JSON response (truncated):
-
-```json
+```json [Response (partial)]
 {
    "classloader.loadedClasses.count": {
       "type": "gauge",
@@ -344,9 +336,7 @@ curl http://localhost:8080/cards
 curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=application'
 ```
 
-JSON response (partial):
-
-```json
+```json [Response (partial)]
 {
   "io.helidon.examples.quickstart.mp.GreetingCards.any-card":2 
 }
@@ -397,9 +387,7 @@ curl http://localhost:8080/cards
 curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=application'
 ```
 
-JSON response (partial):
-
-```json
+```json [Response (partial)]
 {
   "cardTimer": {
     "count": 2,
@@ -473,9 +461,7 @@ curl  http://localhost:8080/cards
 curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=application'
 ```
 
-JSON response (partial):
-
-```json
+```json [Response (partial)]
 {
   "anyCard": 1,
   "specialEventCard": 2 
@@ -531,9 +517,7 @@ curl http://localhost:8080/cards/birthday
 curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=application'
 ```
 
-JSON response (partial):
-
-```json
+```json [Response (partial)]
 {
   "anyCard": 1,
   "birthdayCard": 1,
@@ -610,9 +594,7 @@ curl http://localhost:8080/cards/birthday
 curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=application'
 ```
 
-JSON response (partial):
-
-```json
+```json [Response (partial)]
 {
   "anyCard": 2,
   "birthdayCard": 3,
@@ -682,9 +664,7 @@ Build and run the application, then invoke the application metrics endpoint:
 curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 ```
 
-JSON response from /metrics/application:
-
-```json
+```json [Response]
 {
   "cardCount": 0,
   "io.helidon.examples.quickstart.mp.GreetingCardsAppMetrics.appUpTimeSeconds": 6 

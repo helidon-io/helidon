@@ -67,7 +67,7 @@ Helidon has an internal configuration, so you are not required to provide any co
 
 A main class is also required to start up the server and run the application. By default, the Quickstart sample project uses the built-in Helidon main class. In this guide you want to use your own main class, so you have more control over the server initialization. First define your own `Main`:
 
-```java [src/main/java/io/helidon/examples/quickstart/mp/Main.java]
+```java [Main.java]
 public final class Main {
 
     private Main() {
@@ -176,9 +176,7 @@ Invoke the endpoint:
 curl http://localhost:8080/greet
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "message": "HelloFromEnvironment World!" 
 }
@@ -202,9 +200,7 @@ Invoke the endpoint:
 curl http://localhost:8080/greet
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "message": "HelloFromSystemProperty World!" 
 }
@@ -287,9 +283,7 @@ Build and run the application, then invoke the endpoint:
 curl http://localhost:8080/greet
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "message": "HelloFromMPConfig World!"
 }
@@ -331,9 +325,7 @@ Build and run the application, then invoke the endpoint:
 curl http://localhost:8080/greet
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "message": "HelloFromMPConfig World!"
 }
@@ -400,9 +392,7 @@ Build and run the application, then invoke the endpoint:
 curl http://localhost:8080/greet
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "message": "Joe says Hello-from-config-file.yaml World!"
 }
@@ -451,9 +441,7 @@ Build and run the application, then invoke the endpoint:
 curl http://localhost:8080/greet
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "message": "HelloFromConfigFile World!"
 }
@@ -569,9 +557,7 @@ Verify the configuration endpoint using port 31143, your port will likely be dif
 curl http://localhost:31143/greet
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "message": "HelloFromConfigFile World!" 
 }

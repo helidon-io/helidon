@@ -225,9 +225,7 @@ Run the curl command in a new terminal window and check the response:
 curl http://localhost:8080/greet
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "message": "Hello World!"
 }
@@ -358,9 +356,7 @@ Run the curl command in a new terminal window (**notice the port is 8081**):
 curl http://localhost:8081/greet
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "message": "Hello From SE-2 World!"
 }
@@ -462,9 +458,7 @@ curl -i http://localhost:8080/greet/outbound
 
 - The request goes to the service on `8080`, which then invokes the service at `8081` to get the greeting.
 
-JSON response:
-
-```json
+```json [Response]
 {
   "message": "Hello From SE-2 World!" 
 }
@@ -632,9 +626,7 @@ Verify the tracing endpoint using port 31143, your port will likely be different
 curl http://localhost:31143/greet
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "message": "Hello World!"
 }

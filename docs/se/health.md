@@ -67,9 +67,9 @@ Declaring a health check response supplier method:
 static HealthCheckResponse slowStartLivenessResponse() {
     long now = System.currentTimeMillis();
     return HealthCheckResponse.builder()
-            .detail("time", now)
-            .status(now - serverStartTime >= 8000)
-            .build();
+        .detail("time", now)
+        .status(now - serverStartTime >= 8000)
+        .build();
 }
 ```
 
@@ -77,14 +77,15 @@ Registering a health check using a method reference:
 
 ```java
 ObserveFeature observe = ObserveFeature.builder()
-        .config(config.get("server.features.observe")) 
-        .addObserver(HealthObserver.builder() 
-                             .useSystemServices(true) 
-                             .addCheck(Main::slowStartLivenessResponse, 
-                                       HealthCheckType.LIVENESS, 
-                                       "live-after-8-seconds") 
-                             .build())
-        .build();
+    .config(config.get("server.features.observe")) 
+    .addObserver(HealthObserver.builder() 
+        .useSystemServices(true) 
+        .addCheck(
+            Main::slowStartLivenessResponse, 
+            HealthCheckType.LIVENESS, 
+            "live-after-8-seconds") 
+        .build())
+    .build();
 ```
 
 - Apply configuration to auto-discovered observers (e.g., health, metrics).
@@ -102,17 +103,17 @@ Registering a health check using an in-line lambda expression:
 
 ```java
 ObserveFeature observe = ObserveFeature.builder()
-        .config(config.get("server.features.observe"))
-        .addObserver(HealthObserver.builder() 
-                             .useSystemServices(true) // Include Helidon-provided health checks.
-                             .addCheck(() -> HealthCheckResponse.builder() 
-                                               .status(System.currentTimeMillis() - serverStartTime >= 8000) 
-                                               .detail("time", System.currentTimeMillis()) 
-                                               .build(), 
-                                       HealthCheckType.READINESS, 
-                                       "live-after-8-seconds") 
-                             .build())
-        .build();
+    .config(config.get("server.features.observe"))
+    .addObserver(HealthObserver.builder() 
+        .useSystemServices(true) // Include Helidon-provided health checks.
+        .addCheck(() -> HealthCheckResponse.builder() 
+                .status(System.currentTimeMillis() - serverStartTime >= 8000) 
+                .detail("time", System.currentTimeMillis()) 
+                .build(), 
+            HealthCheckType.READINESS, 
+            "live-after-8-seconds") 
+        .build())
+    .build();
 ```
 
 - Augment the web server by adding the `ObserveFeature` containing the `HealthObserver`.
@@ -131,7 +132,7 @@ If a custom health check requires a lot of information to compute its health che
 
 This example *is not* complicated in that way, but it’s useful to illustrate this technique of writing a custom health check.
 
-Declaring a concrete HealthCheck implementation:
+Declaring a concrete `HealthCheck` implementation:
 
 ```java
 /**
@@ -160,15 +161,15 @@ class SlowStartHealthCheck implements HealthCheck {
 - Sets a detail value `time` associated with the response to the current time.
 - Reports `DOWN` until at least eight seconds have passed since the server start-up, then reports `UP` thereafter.
 
-Registering a HealthCheck instance:
+Registering a `HealthCheck` instance:
 
 ```java
 ObserveFeature observe = ObserveFeature.builder()
-        .config(config.get("server.features.observe"))
-        .addObserver(HealthObserver.builder() 
-                             .addCheck(new SlowStartHealthCheck()) 
-                             .build())
-        .build();
+    .config(config.get("server.features.observe"))
+    .addObserver(HealthObserver.builder() 
+        .addCheck(new SlowStartHealthCheck()) 
+        .build())
+    .build();
 ```
 
 - Augment the web server by adding the `ObserveFeature` containing the `HealthObserver`.
@@ -321,16 +322,16 @@ Adding selected built-in health checks:
 
 ```java
 WebServer server = WebServer.builder()
-        .config(config.get("server"))
-        .addFeature(ObserveFeature.create(HealthObserver.builder()
-                                                  .useSystemServices(false) 
-                                                  .addCheck(HealthChecks.deadlockCheck()) 
-                                                  .addCheck(hc) 
-                                                  .details(true)
-                                                  .build()))
-        .routing(Main::routing)
-        .build()
-        .start();
+    .config(config.get("server"))
+    .addFeature(ObserveFeature.create(HealthObserver.builder()
+        .useSystemServices(false) 
+        .addCheck(HealthChecks.deadlockCheck()) 
+        .addCheck(hc) 
+        .details(true)
+        .build()))
+    .routing(Main::routing)
+    .build()
+    .start();
 ```
 
 - Disables automatic registration of the built-in health checks.
@@ -433,10 +434,9 @@ Further, you can suppress one or more health checks by setting the configuration
 
 Accessing the Helidon-provided `/observe/health` endpoint reports the health of your application as shown below:
 
-JSON response:
-
 <!--@mdc ::code-collapse -->
-```json
+
+```json [Response]
 {
     "status": "UP",
     "checks": [

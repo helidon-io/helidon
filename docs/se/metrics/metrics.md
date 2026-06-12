@@ -604,7 +604,7 @@ The ability to choose the meter type for `gc.time` is deprecated and is planned 
 
 ## Metrics Observer
 
-Helidon can make the registered meters and their current values available externally at an endpoint (/observe/metrics by default). You can control aspects of how Helidon furnishes this information under the `server.features.observe.observers.metrics` configuration section.
+Helidon can make the registered meters and their current values available externally at an endpoint (`/observe/metrics` by default). You can control aspects of how Helidon furnishes this information under the `server.features.observe.observers.metrics` configuration section.
 
 | key        | type                                      | default value      | description                                             |
 |------------|-------------------------------------------|--------------------|---------------------------------------------------------|

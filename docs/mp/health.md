@@ -189,10 +189,8 @@ Verify the health endpoint in a new terminal window:
 curl http://localhost:8080/health
 ```
 
-JSON response:
-
 <!--@mdc ::code-collapse -->
-```json
+```json [Response]
 {
   "status": "UP",
   "checks": [
@@ -260,9 +258,7 @@ Build and run the application, then verify the custom liveness health endpoint:
 curl http://localhost:8080/health/live
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "status": "UP",
   "checks": [
@@ -325,9 +321,7 @@ curl -v  http://localhost:8080/health/ready
 
 - The HTTP status is `503` since the application is not ready.
 
-JSON response:
-
-```json
+```json [Response]
 {
   "status": "DOWN",
   "checks": [
@@ -354,9 +348,7 @@ curl -v http://localhost:8080/health/ready
 
 - The HTTP status is `200` indicating that the application is ready.
 
-JSON response:
-
-```json
+```json [Response]
 {
   "status": "UP",
   "checks": [
@@ -421,9 +413,7 @@ curl -v  http://localhost:8080/health/started
 
 - The HTTP status is `503` since the application has not started.
 
-JSON response:
-
-```json
+```json [Response]
 {
   "status": "DOWN",
   "checks": [
@@ -450,9 +440,7 @@ curl -v http://localhost:8080/health/started
 
 - The HTTP status is `200` indicating that the application is started.
 
-JSON response:
-
-```json
+```json [Response]
 {
   "status": "UP",
   "checks": [
@@ -480,9 +468,7 @@ Get all the health check data, including custom data:
 curl http://localhost:8080/health
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "status": "UP",
   "checks": [

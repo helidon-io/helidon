@@ -2,7 +2,6 @@
 
 Index of LangChain4j documentation.
 
-<!--@mdc ::table-collapse -->
 | Topic | Description |
 | --- | --- |
 | [LangChain4j](langchain4j.md) | Helidon LangChain4j Integration |
@@ -19,4 +18,3 @@ Index of LangChain4j documentation.
 | [In-Process Embedding Models](lc4j-in-process.md) | Helidon LangChain4j in-process embedding models provider |
 | [Mock ChatModel](mock.md) | LangChain4J Mock ChatModel |
 | [Model Provider Generator](codegen-provider.md) | LangChain4J Model Provider Generator |
-<!--@mdc :: -->

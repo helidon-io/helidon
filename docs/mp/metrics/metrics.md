@@ -586,7 +586,7 @@ The ability to choose the metric type for `gc.time` is deprecated and is planned
 
 ## Metrics Observer
 
-Helidon can make the registered metrics and their current values available externally at an endpoint (/metrics by default). You can control aspects of how Helidon furnishes this information under the `server.features.observe.observers.metrics` configuration section.
+Helidon can make the registered metrics and their current values available externally at an endpoint (`/metrics` by default). You can control aspects of how Helidon furnishes this information under the `server.features.observe.observers.metrics` configuration section.
 
 | key        | type                                      | default value | description                                             |
 |------------|-------------------------------------------|---------------|---------------------------------------------------------|

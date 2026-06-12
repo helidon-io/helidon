@@ -10,8 +10,8 @@ Metrics and tracing come together in Helidon’s support for exemplars.
 
 > [!NOTE]
 > [*exemplar*][exemplar] - one that serves as a model or example
->
->  — Merriam-Webster Dictionary
+> <br/>
+> —Merriam-Webster Dictionary
 
 In the context of metrics, an *exemplar* for a given meter is a specific sample which, in some sense, made a typical contribution to the meter’s value. For example, an exemplar for a `Counter` might be the most recent sample which updated the counter. The metrics output identifies the exemplar sample using the span and trace IDs of the span and trace which triggered that sample.
 
@@ -73,11 +73,11 @@ But some consumers, such as trace collectors and their UIs, understand the exemp
 
 Once you enable exemplar support you can see the exemplars in the metrics output.
 
-*Exemplar output - `Counter`*
-
+```log [Output]
 ## TYPE counterForPersonalizedGreetings counter
-    # HELP counterForPersonalizedGreetings
-    counterForPersonalizedGreetings_total{scope="application"} 4.0 # {span_id="6b1fc9f9fd42fb0c",trace_id="6b1fc9f9fd42fb0c"} 1.0 1696889651.779
+# HELP counterForPersonalizedGreetings
+counterForPersonalizedGreetings_total{scope="application"} 4.0 # {span_id="6b1fc9f9fd42fb0c",trace_id="6b1fc9f9fd42fb0c"} 1.0 1696889651.779
+```
 
 The exemplar (the portion following the `#`) is a sample corresponding to an update to the counter, showing the span and trace identifiers, the amount by which the counter was updated (`1.0`), and the timestamp recording when the update occurred expressed as seconds in the UNIX epoch (`1696889651.779`).
 

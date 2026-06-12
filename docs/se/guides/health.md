@@ -332,9 +332,7 @@ Get only start-up health checks:
 curl http://localhost:8080/observe/started
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "status": "UP",
   "checks": [

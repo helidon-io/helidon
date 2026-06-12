@@ -1,11 +1,11 @@
 # Injection
 
+> [!NOTE]
+> Injection is a preview feature. The APIs shown here are subject to change. These APIs will be finalized in a future release of Helidon.
+
 ## Overview
 
 Injection is the basic building stone for inversion of control. Dependency injection provides a mechanism to get an instance of a service at runtime, from the service registry, rather than constructing service instances through a constructor or a factory method.
-
-> [!NOTE]
-> Injection is a preview feature. The APIs shown here are subject to change. These APIs will be finalized in a future release of Helidon.
 
 ## Maven Coordinates
 

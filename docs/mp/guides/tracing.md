@@ -143,9 +143,7 @@ Run the curl command in a new terminal window and check the response:
 curl http://localhost:8080/greet
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "message": "Hello World!"
 }
@@ -340,9 +338,7 @@ Run the curl command in a new terminal window and check the response (**notice t
 curl http://localhost:8081/greet
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "message": "Hello From MP-2 World!"
 }
@@ -562,9 +558,7 @@ Verify the tracing endpoint using port 31143, your port will likely be different
 curl http://localhost:31143/greet
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "message": "Hello World!"
 }

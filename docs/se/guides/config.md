@@ -238,9 +238,7 @@ Build and run the application (without the system property). Invoke the endpoint
 curl http://localhost:8080/greet
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "message": "HelloFrom-config.properties World!" 
 }
@@ -272,9 +270,7 @@ Build and run the application, then invoke the endpoint:
 curl http://localhost:8080/greet
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "message": "HelloFrom-application.yaml World!" 
 }
@@ -316,9 +312,7 @@ Build and run the application, then invoke the endpoint:
 curl http://localhost:8080/greet
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "message": "HelloFrom-config-file.properties World!" 
 }
@@ -382,9 +376,7 @@ Build and run the application, then invoke the endpoint and check the response:
 curl http://localhost:8080/greet
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "message": "HelloFromFileInDirectoryConf World!" 
 }
@@ -415,9 +407,7 @@ Build and run the application, then invoke the endpoint:
 curl http://localhost:8080/greet
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "message": "HelloFromFileInDirectoryConf World!"
 }
@@ -458,9 +448,7 @@ Build and run the application, then invoke the endpoint:
 curl http://localhost:8080/greet
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "message": "HelloFrom-application.yaml World!" 
 }
@@ -496,9 +484,7 @@ Restart the application, then invoke the endpoint:
 curl http://localhost:8080/greet
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "message": "HelloFrom-config-file.properties World!" 
 }
@@ -559,9 +545,7 @@ Build and run the application, then invoke the endpoint:
 curl http://localhost:8080/greet
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "message": "HelloFrom-application.yaml World!"
 }
@@ -614,9 +598,7 @@ Build and run the application, then invoke the endpoint:
 curl http://localhost:8080/greet
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "message": "HelloFrom-application.yaml under child2a World!"
 }
@@ -657,9 +639,7 @@ Build and run the application, then invoke the endpoint:
 curl http://localhost:8080/greet
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "message": "HelloFrom-config-file.properties World!"
 }
@@ -677,9 +657,7 @@ After a few seconds, check the response:
 curl http://localhost:8080/greet
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "message": "Updated HelloFrom-config-file.properties World!" 
 }
@@ -723,9 +701,7 @@ Build and run the application, then invoke the endpoint:
 curl http://localhost:8080/greet
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "message": "Hello World!" 
 }
@@ -848,9 +824,7 @@ Verify the configuration endpoint using port 31143, your port will likely be dif
 curl http://localhost:31143/greet
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "message": "Updated HelloFrom-config-file.properties World!" 
 }

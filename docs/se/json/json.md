@@ -1,4 +1,4 @@
-# JSON Processing in Helidon SE
+# JSON Processing
 
 ## Overview
 

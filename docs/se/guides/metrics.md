@@ -112,9 +112,7 @@ Verify the metrics endpoint in a new terminal window:
 curl http://localhost:8080/observe/metrics
 ```
 
-Text response (partial):
-
-```text
+```log [Response (partial)]
 # HELP classloader_loadedClasses_count Displays the number of classes that are currently loaded in the Java virtual machine.
 # TYPE classloader_loadedClasses_count gauge
 classloader_loadedClasses_count{scope="base",} 4878.0
@@ -140,10 +138,8 @@ Verify the metrics endpoint with an HTTP accept header:
 curl -H "Accept: application/json"  http://localhost:8080/observe/metrics
 ```
 
-JSON response:
-
 <!--@mdc ::code-collapse -->
-```json
+```json [Response]
 {
   "base": {
     "gc.total;name=G1 Young Generation": 2,
@@ -192,9 +188,7 @@ Get the Helidon `requests.count` meter:
 curl -H "Accept: application/json"  'http://localhost:8080/observe/metrics?scope=vendor&name=requests.count'
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "requests.count": 6
 }
@@ -386,9 +380,7 @@ Get the metrics metadata using HTTP OPTIONS method:
 curl -X OPTIONS -H "Accept: application/json"  'http://localhost:8080/observe/metrics?scope=base'
 ```
 
-JSON response (truncated):
-
-```json
+```json [Response (partial)]
 {
    "classloader.loadedClasses.count": {
       "type": "gauge",
@@ -475,9 +467,7 @@ curl http://localhost:8080/cards
 curl -H "Accept: application/json" 'http://localhost:8080/observe/metrics?scope=application'
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "cardCount": 1 // (1)
 }
@@ -536,9 +526,7 @@ curl http://localhost:8080/cards
 curl -H "Accept: application/json"  'http://localhost:8080/observe/metrics?scope=application'
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "cardTimer": {
     "count": 2,
@@ -606,9 +594,7 @@ curl http://localhost:8080/cards
 curl -H "Accept: application/json"  'http://localhost:8080/observe/metrics?scope=application'
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "cardDist": {
     "count": 1000,
@@ -670,9 +656,7 @@ Build and run the application, then invoke the endpoint below:
 curl -H "Accept: application/json"  'http://localhost:8080/observe/metrics?scope=application
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {
   "temperature": 46.582132737739066 // (1)
 }

@@ -1,4 +1,8 @@
-# Helidon DB Client
+# DBClient
+
+## Overview
+
+The Helidon SE DB Client provides a unified API for working with databases.
 
 ## Maven Coordinates
 

@@ -160,9 +160,7 @@ Run the client application:
 java -cp target/helidon-quickstart-se.jar io.helidon.examples.quickstart.se.ClientExample
 ```
 
-JSON response:
-
-```json
+```json [Response]
 {"message":"Hello World!"}
 ```
 
