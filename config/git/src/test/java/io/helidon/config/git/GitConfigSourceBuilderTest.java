@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package io.helidon.config.git;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -47,9 +46,7 @@ import org.eclipse.jgit.junit.RepositoryTestCase;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.api.extension.RegisterExtension;
-import org.junit.rules.TestName;
 
 import static io.helidon.config.PollingStrategies.regular;
 import static io.helidon.config.testing.ValueNodeMatcher.valueNode;
@@ -72,17 +69,7 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
     static TemporaryFolderExt folder = TemporaryFolderExt.build();
 
     @BeforeEach
-    public void setUp(TestInfo testInfo) throws Exception {
-        String testMethodName = testInfo.getTestMethod()
-                .map(Method::getName)
-                .orElse(this.getClass().getName());
-        /* Hack to let us re-use setup from jgit 6's LocalDiskRepositoryTestCase */
-        super.currentTest = new TestName() {
-            @Override
-            public String getMethodName() {
-                return testMethodName;
-            }
-        };
+    public void setUp() throws Exception {
         super.setUp();
 
         git = new Git(db);
@@ -92,7 +79,7 @@ public class GitConfigSourceBuilderTest extends RepositoryTestCase {
     }
 
     @AfterEach
-    public void tearDown(TestInfo testInfo) throws Exception {
+    public void tearDown() throws Exception {
         if (git != null) {
             git.close();
         }

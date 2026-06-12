@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -49,6 +50,8 @@ public class WebServerTlsTest {
     private static final Config CONFIG = Config.builder().sources(ConfigSources.classpath("config-with-ssl2.conf")).build();
 
     private static final Logger LOGGER = Logger.getLogger(WebServerTlsTest.class.getName());
+    private static final String CERTIFICATE_SIGNATURE_CHECK_FAILED = "PKIX path validation failed: "
+            + "java.security.cert.CertPathValidatorException: signature check failed";
 
     private static WebServer webServer;
     private static Client clientFirst;
@@ -152,8 +155,7 @@ public class WebServerTlsTest {
                                               () -> clientSecond.target("https://localhost:" + webServer.port("secured"))
                                                       .request().header(Http.Header.CONNECTION, "close").get());
         assertThat(ex.getCause(), instanceOf(SSLHandshakeException.class));
-        assertThat(ex.getCause().getMessage(), is("PKIX path validation failed: java.security.cert.CertPathValidatorException: "
-                                                          + "signature check failed"));
+        assertThat(ex.getCause().getMessage(), containsString(CERTIFICATE_SIGNATURE_CHECK_FAILED));
 
         target = clientFirst.target("http://localhost:" + webServer.port() + "/reload");
         assertThat(addHeader(target).get().readEntity(String.class), is("SslContext reloaded. Affected named socket: secured"));
@@ -164,8 +166,7 @@ public class WebServerTlsTest {
                                               () -> clientFirst.target("https://localhost:" + webServer.port("secured"))
                                                       .request().header(Http.Header.CONNECTION, "close").get());
         assertThat(ex.getCause(), instanceOf(SSLHandshakeException.class));
-        assertThat(ex.getCause().getMessage(), is("PKIX path validation failed: java.security.cert.CertPathValidatorException: "
-                                                          + "signature check failed"));
+        assertThat(ex.getCause().getMessage(), containsString(CERTIFICATE_SIGNATURE_CHECK_FAILED));
 
         target = clientFirst.target("http://localhost:" + webServer.port() + "/reload");
         assertThat(addHeader(target).get().readEntity(String.class), is("SslContext reloaded. Affected named socket: secured"));
@@ -176,8 +177,7 @@ public class WebServerTlsTest {
                           () -> clientSecond.target("https://localhost:" + webServer.port("secured"))
                                   .request().header(Http.Header.CONNECTION, "close").get());
         assertThat(ex.getCause(), instanceOf(SSLHandshakeException.class));
-        assertThat(ex.getCause().getMessage(), is("PKIX path validation failed: java.security.cert.CertPathValidatorException: "
-                                                          + "signature check failed"));
+        assertThat(ex.getCause().getMessage(), containsString(CERTIFICATE_SIGNATURE_CHECK_FAILED));
     }
 
     private Invocation.Builder addHeader(WebTarget webTarget) {
