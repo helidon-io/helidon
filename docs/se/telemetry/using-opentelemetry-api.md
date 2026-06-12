@@ -177,12 +177,12 @@ The following short list of system property settings is enough to get your
 service sending metrics and span data to a backend system such as Signoz running
 on the same system.
 
-| System property | Value | Description |
-|----|----|----|
-| `otel.sdk.disabled` | `false` | Enables the OpenTelemetry SDK |
-| `otel.service.name` | `my-helidon-service` | Name associated with telemetry sent from this service |
-| `otel.exporter.otlp.endpoint` | `http://localhost:4318` | URL to which to transmit data |
-| `otel.exporter.otlp.protocol` | `http/protobuf` | Export protocol (other choice for `otlp` is `grpc`) |
+| System property               | Value                   | Description                                           |
+| ----------------------------- | ----------------------- | ----------------------------------------------------- |
+| `otel.sdk.disabled`           | `false`                 | Enables the OpenTelemetry SDK                         |
+| `otel.service.name`           | `my-helidon-service`    | Name associated with telemetry sent from this service |
+| `otel.exporter.otlp.endpoint` | `http://localhost:4318` | URL to which to transmit data                         |
+| `otel.exporter.otlp.protocol` | `http/protobuf`         | Export protocol (other choice for `otlp` is `grpc`)   |
 
 ### Use the OpenTelemetry API from Your Code
 

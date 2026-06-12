@@ -8,13 +8,13 @@ Helidon.
 
 For this 30 minute tutorial, you will need the following:
 
-| Requirement | Description |
-|-------------|-------------|
-| [Java 21][java-21] ([Open JDK 21][open-jdk-21]) | Helidon requires Java 21+ (25+ recommended). |
-| [Maven 3.8+][maven-3-8] | Helidon requires Maven 3.8+. |
-| [Docker 18.09+][docker-18-09] | If you want to build and run Docker containers. |
-| [Kubectl 1.16.5+][kubectl-1-16-5] | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
-| [Helm][helm] | To manage Kubernetes applications. |
+| Requirement                                     | Description                                                                       |
+| ----------------------------------------------- | --------------------------------------------------------------------------------- |
+| [Java 21][java-21] ([Open JDK 21][open-jdk-21]) | Helidon requires Java 21+ (25+ recommended).                                      |
+| [Maven 3.8+][maven-3-8]                         | Helidon requires Maven 3.8+.                                                      |
+| [Docker 18.09+][docker-18-09]                   | If you want to build and run Docker containers.                                   |
+| [Kubectl 1.16.5+][kubectl-1-16-5]               | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
+| [Helm][helm]                                    | To manage Kubernetes applications.                                                |
 
 Verify Prerequisites
 
@@ -360,13 +360,13 @@ Helidon.
 For performance reasons Helidon does not report virtual thread meters unless you
 enable them using configuration.
 
-| Meter name | Usage | Source |
-|----|----|----|
-| `vthreads.count` | Current number of active virtual threads. | JFR `jdk.virtualThreadStart` and `jdk.virtualThreadEnd` events |
-| `vthreads.pinned` | Number of times virtual threads have been pinned. | JFR `jdk.virtualThreadPinned` event |
-| `vthreads.recentPinned` | Distribution of the duration of thread pinning. <sup>1</sup> | JFR `jdk.virtualThreadPinned` event |
-| `vthreads.started` | Number of virtual threads started. | JFR `jdk.virtualThreadStart` event |
-| `vthreads.submitFailed` | Number of times submissions of a virtual thread to a platform carrier thread failed. | JFR `jdk.virtualThreadSubmitFailed` event |
+| Meter name              | Usage                                                                                | Source                                                         |
+| ----------------------- | ------------------------------------------------------------------------------------ | -------------------------------------------------------------- |
+| `vthreads.count`        | Current number of active virtual threads.                                            | JFR `jdk.virtualThreadStart` and `jdk.virtualThreadEnd` events |
+| `vthreads.pinned`       | Number of times virtual threads have been pinned.                                    | JFR `jdk.virtualThreadPinned` event                            |
+| `vthreads.recentPinned` | Distribution of the duration of thread pinning. <sup>1</sup>                         | JFR `jdk.virtualThreadPinned` event                            |
+| `vthreads.started`      | Number of virtual threads started.                                                   | JFR `jdk.virtualThreadStart` event                             |
+| `vthreads.submitFailed` | Number of times submissions of a virtual thread to a platform carrier thread failed. | JFR `jdk.virtualThreadSubmitFailed` event                      |
 
 Table 1. Meters for Virtual Threads {.tableblock .frame-all .grid-all .stretch}
 

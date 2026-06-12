@@ -12,13 +12,13 @@ Java 8 is no longer supported in Helidon 2. Java 11 or newer is required.
 We have upgraded to OpenTracing version 0.33.0 that is not backward compatible.
 OpenTracing introduced the following breaking changes:
 
-| Removed | Replacement |
-|----|----|
-| `ScopeManager.active()` | `Tracer.activeSpan()` |
-| `ScopeManager.activate(Span, boolean)` | `ScopeManager.activate(Span)` - second parameter is now always `false` |
-| `SpanBuilder.startActive()` | `Tracer.activateSpan(Span)` |
-| `TextMapExtractAdapter` and `TextMapInjectAdapter` | `TextMapAdapter` |
-| Module name changed `opentracing.api` | `io.opentracing.api` (same for `noop` and `util`) |
+| Removed                                            | Replacement                                                            |
+| -------------------------------------------------- | ---------------------------------------------------------------------- |
+| `ScopeManager.active()`                            | `Tracer.activeSpan()`                                                  |
+| `ScopeManager.activate(Span, boolean)`             | `ScopeManager.activate(Span)` - second parameter is now always `false` |
+| `SpanBuilder.startActive()`                        | `Tracer.activateSpan(Span)`                                            |
+| `TextMapExtractAdapter` and `TextMapInjectAdapter` | `TextMapAdapter`                                                       |
+| Module name changed `opentracing.api`              | `io.opentracing.api` (same for `noop` and `util`)                      |
 
 If you use the `TracerBuilder` abstraction in Helidon and have no custom Spans,
 there is no change required

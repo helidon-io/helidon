@@ -5,21 +5,21 @@
 Helidon provides the following security providers for endpoint protection:
 
 | Provider                                       | Type           | Outbound supported | Description                                                       |
-|------------------------------------------------|----------------|--------------------|-------------------------------------------------------------------|
-| [OIDC Provider][oidc-provider]                 | Authentication | ✅                  | Open ID Connect supporting JWT, Scopes, Groups and OIDC code flow |
-| [HTTP Basic Authentication][http-basic-authe]  | Authentication | ✅                  | HTTP Basic Authentication support                                 |
+| ---------------------------------------------- | -------------- | ------------------ | ----------------------------------------------------------------- |
+| [OIDC Provider][oidc-provider]                 | Authentication | ✅                 | Open ID Connect supporting JWT, Scopes, Groups and OIDC code flow |
+| [HTTP Basic Authentication][http-basic-authe]  | Authentication | ✅                 | HTTP Basic Authentication support                                 |
 | [HTTP Digest Authentication][http-digest-auth] | Authentication | 🚫                 | **Deprecated!** HTTP Digest Authentication support                |
-| [Header Assertion][header-assertion]           | Authentication | ✅                  | Asserting a user based on a header value                          |
-| [HTTP Signatures][http-signatures]             | Authentication | ✅                  | Protecting service to service communication through signatures    |
+| [Header Assertion][header-assertion]           | Authentication | ✅                 | Asserting a user based on a header value                          |
+| [HTTP Signatures][http-signatures]             | Authentication | ✅                 | Protecting service to service communication through signatures    |
 | [IDCS Roles][idcs-roles]                       | Role Mapping   | 🚫                 | Retrieves roles from IDCS provider for authenticated user         |
 | [ABAC Authorization][abac-authorizati]         | Authorization  | 🚫                 | Attribute based access control authorization policies             |
 
 The following providers are no longer evolved:
 
 | Provider                     | Type           | Outbound supported | Description                                                               |
-|------------------------------|----------------|--------------------|---------------------------------------------------------------------------|
-| [Google Login][google-login] | Authentication | ✅                  | **Deprecated!** Authenticates a token from request against Google servers |
-| [JWT Provider][jwt-provider] | Authentication | ✅                  | JWT tokens passed from frontend                                           |
+| ---------------------------- | -------------- | ------------------ | ------------------------------------------------------------------------- |
+| [Google Login][google-login] | Authentication | ✅                 | **Deprecated!** Authenticates a token from request against Google servers |
+| [JWT Provider][jwt-provider] | Authentication | ✅                 | JWT tokens passed from frontend                                           |
 
 ## OIDC Provider
 

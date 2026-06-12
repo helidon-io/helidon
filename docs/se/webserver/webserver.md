@@ -198,18 +198,18 @@ WebServer.builder()
 example:
 
 <!--@mdc ::table-collapse -->
-| HTTP Method | HttpRouting.Builder example |
-|----|----|
-| **GET** | `.get(handler)` |
-| **PUT** | `.put(handler)` |
-| **POST** | `.post(handler)` |
-| **HEAD** | `.head(handler)` |
-| **DELETE** | `.delete(handler)` |
-| **TRACE** | `.trace(handler)` |
-| **OPTIONS** | `.options(handler)` |
-| *any method* | `.any(handler)` |
+| HTTP Method        | HttpRouting.Builder example                                        |
+| ------------------ | ------------------------------------------------------------------ |
+| **GET**            | `.get(handler)`                                                    |
+| **PUT**            | `.put(handler)`                                                    |
+| **POST**           | `.post(handler)`                                                   |
+| **HEAD**           | `.head(handler)`                                                   |
+| **DELETE**         | `.delete(handler)`                                                 |
+| **TRACE**          | `.trace(handler)`                                                  |
+| **OPTIONS**        | `.options(handler)`                                                |
+| *any method*       | `.any(handler)`                                                    |
 | *multiple methods* | `.route(Method.predicate(Method.GET, Method.POST), path, handler)` |
-| *custom method* | `.route(Method.create("CUSTOM"), handler)` |
+| *custom method*    | `.route(Method.create("CUSTOM"), handler)`                         |
 <!--@mdc :: -->
 
 ### Path Matcher Routing
@@ -731,16 +731,16 @@ implementing `Weighted` interface) when registering routes, `HttpService`, or
 The following table shows available server features and their weight. The
 highest weight is always registered (and invoked) first.
 
-| Feature | Weight |
-|----|----|
-| [Context][context] | 1100 |
-| [Access Log][access-log] | 1000 |
-| [Tracing][tracing] | 900 |
-| [CORS][cors] | 850 |
-| [Security][security] | 800 |
-| Routing (all handlers and filters) | 100 |
-| [OpenAPI][openapi] | 90 |
-| [Observability][observability] | 80 |
+| Feature                            | Weight |
+| ---------------------------------- | ------ |
+| [Context][context]                 | 1100   |
+| [Access Log][access-log]           | 1000   |
+| [Tracing][tracing]                 | 900    |
+| [CORS][cors]                       | 850    |
+| [Security][security]               | 800    |
+| Routing (all handlers and filters) | 100    |
+| [OpenAPI][openapi]                 | 90     |
+| [Observability][observability]     | 80     |
 
 ### Context
 
@@ -947,12 +947,12 @@ reading entities of a specific type.
 
 The following table lists JSON media supports:
 
-| Media type | TypeName | Maven groupId:artifactId | Supported Java type(s) |
-|----|----|----|----|
-| **[JSON-P][json-p]** | JsonpSupport | `io.helidon.http.media:helidon-http-media-jsonp` | `JsonObject, JsonArray` |
-| **[JSON-B][json-b]** | JsonbSupport | `io.helidon.http.media:helidon-http-media-jsonb` | Any \* |
-| **[Jackson][jackson]** | JacksonSupport | `io.helidon.http.media:helidon-http-media-jackson` | Any \* |
-| **[Gson][gson]** | GsonSupport | `io.helidon.http.media:helidon-http-media-gson` | Any \* |
+| Media type             | TypeName       | Maven groupId:artifactId                           | Supported Java type(s)  |
+| ---------------------- | -------------- | -------------------------------------------------- | ----------------------- |
+| **[JSON-P][json-p]**   | JsonpSupport   | `io.helidon.http.media:helidon-http-media-jsonp`   | `JsonObject, JsonArray` |
+| **[JSON-B][json-b]**   | JsonbSupport   | `io.helidon.http.media:helidon-http-media-jsonb`   | Any \*                  |
+| **[Jackson][jackson]** | JacksonSupport | `io.helidon.http.media:helidon-http-media-jackson` | Any \*                  |
+| **[Gson][gson]**       | GsonSupport    | `io.helidon.http.media:helidon-http-media-gson`    | Any \*                  |
 
 - JSON-B and Jackson have lower weight, so they are used only when no other
   media type matched the object being written or read
@@ -1341,10 +1341,10 @@ See [Configuration options][io-helidon-http--4].
 The following providers are currently available (simply add the library on the
 classpath):
 
-| Encoding type | TypeName | Maven groupId:artifactId |
-|----|----|----|
-| **gzip** | GzipEncoding | `io.helidon.http.encoding:helidon-http-encoding-gzip` |
-| **deflate** | DeflateSupport | `io.helidon.http.encoding:helidon-http-encoding-deflate` |
+| Encoding type | TypeName       | Maven groupId:artifactId                                 |
+| ------------- | -------------- | -------------------------------------------------------- |
+| **gzip**      | GzipEncoding   | `io.helidon.http.encoding:helidon-http-encoding-gzip`    |
+| **deflate**   | DeflateSupport | `io.helidon.http.encoding:helidon-http-encoding-deflate` |
 
 #### HTTP Compression Negotiation
 

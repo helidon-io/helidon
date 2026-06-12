@@ -83,18 +83,18 @@ The complete list of properties supported by the Helidon connector is listed
 below:
 
 <!--@mdc ::table-collapse -->
-| Property Name | Type | Scope | Default |
-|----|----|----|----|
-| jersey.config.client.connectTimeout | `Integer` | client | 10000 (millis) |
-| jersey.config.client.readTimeout | `Integer` | client, invocation | 10000 (millis) |
-| jersey.config.client.followRedirects | `Boolean` | client, invocation | true |
-| jersey.config.client.request.expect.100.continue.processing | `Boolean` | client | true |
-| jersey.connector.helidon.config | `io.helidon.config.Config` | client | (none) |
-| jersey.connector.helidon.tls | `io.helidon.common.tls.Tls` | client | (none) |
-| jersey.connector.helidon.protocolConfigs | `List<? extends ProtocolConfig>` | client | (none) |
-| jersey.connector.helidon.defaultHeaders | `Map<String, String>` | client | (none) |
-| jersey.connector.helidon.protocolId | `String` | invocation | (none) |
-| jersey.connector.helidon.shareConnectionCache | `Boolean` | client | false |
+| Property Name                                               | Type                             | Scope              | Default        |
+| ----------------------------------------------------------- | -------------------------------- | ------------------ | -------------- |
+| jersey.config.client.connectTimeout                         | `Integer`                        | client             | 10000 (millis) |
+| jersey.config.client.readTimeout                            | `Integer`                        | client, invocation | 10000 (millis) |
+| jersey.config.client.followRedirects                        | `Boolean`                        | client, invocation | true           |
+| jersey.config.client.request.expect.100.continue.processing | `Boolean`                        | client             | true           |
+| jersey.connector.helidon.config                             | `io.helidon.config.Config`       | client             | (none)         |
+| jersey.connector.helidon.tls                                | `io.helidon.common.tls.Tls`      | client             | (none)         |
+| jersey.connector.helidon.protocolConfigs                    | `List<? extends ProtocolConfig>` | client             | (none)         |
+| jersey.connector.helidon.defaultHeaders                     | `Map<String, String>`            | client             | (none)         |
+| jersey.connector.helidon.protocolId                         | `String`                         | invocation         | (none)         |
+| jersey.connector.helidon.shareConnectionCache               | `Boolean`                        | client             | false          |
 <!--@mdc :: -->
 
 > [!NOTE]

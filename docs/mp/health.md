@@ -93,11 +93,11 @@ showing the detailed results of all the health checks which the server executed
 after receiving the request. HTTP `HEAD` requests return only the status with no
 payload.
 
-| Type | Meaning | REST endpoint | Kubernetes response on failure |
-|----|----|----|----|
-| liveness | whether the runtime environment is suitable | `/health/live` | Restarts container. |
-| readiness | whether the microservice is currently capable of doing its work | `/health/ready` | Diverts requests away from the instance; periodically rechecks readiness and resumes traffic once the microservice reports itself as ready. |
-| startup | whether the microservice has initialized to the point where liveness and readiness checks might pass | `/health/started` | Treats the instance as still starting up; does not check liveness or readiness until the startup probe reports success or times out according to its configuration. |
+| Type      | Meaning                                                                                              | REST endpoint     | Kubernetes response on failure                                                                                                                                      |
+| --------- | ---------------------------------------------------------------------------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| liveness  | whether the runtime environment is suitable                                                          | `/health/live`    | Restarts container.                                                                                                                                                 |
+| readiness | whether the microservice is currently capable of doing its work                                      | `/health/ready`   | Diverts requests away from the instance; periodically rechecks readiness and resumes traffic once the microservice reports itself as ready.                         |
+| startup   | whether the microservice has initialized to the point where liveness and readiness checks might pass | `/health/started` | Treats the instance as still starting up; does not check liveness or readiness until the startup probe reports success or times out according to its configuration. |
 
 Types of Health Checks
 

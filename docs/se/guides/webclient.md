@@ -7,12 +7,12 @@ to run some basic examples using WebClient.
 
 For this 15 minute tutorial, you will need the following:
 
-| Requirement | Description |
-|-------------|-------------|
-| [Java 21][java-21] ([Open JDK 21][open-jdk-21]) | Helidon requires Java 21+ (25+ recommended). |
-| [Maven 3.8+][maven-3-8] | Helidon requires Maven 3.8+. |
-| [Docker 18.09+][docker-18-09] | If you want to build and run Docker containers. |
-| [Kubectl 1.16.5+][kubectl-1-16-5] | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
+| Requirement                                     | Description                                                                       |
+| ----------------------------------------------- | --------------------------------------------------------------------------------- |
+| [Java 21][java-21] ([Open JDK 21][open-jdk-21]) | Helidon requires Java 21+ (25+ recommended).                                      |
+| [Maven 3.8+][maven-3-8]                         | Helidon requires Maven 3.8+.                                                      |
+| [Docker 18.09+][docker-18-09]                   | If you want to build and run Docker containers.                                   |
+| [Kubectl 1.16.5+][kubectl-1-16-5]               | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
 
 Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 

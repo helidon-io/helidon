@@ -14,45 +14,45 @@ benefits of a low overhead server built on Java virtual threads.
 
 ## Supported Jakarta EE Specifications
 
-| Specification | Version | Description |
-|----|----|----|
-| [Jakarta Bean Validation][jakarta-bean-val] | [3.0][3-0] | Object level constraint declaration and validation facility |
-| Jakarta Context and Dependency Injection (CDI) | [4.0][4-0] | Declarative dependency injection and supporting services |
-| Jakarta JSON Processing (JSON-P) | [2.1][2-1] | API to parse, generate, transform, and query JSON docs |
-| Jakarta JSON Binding (JSON-B) | [3.0][3-0-2] | Binding framework for converting POJOs to/from JSON docs |
-| [Jakarta RESTful Web Services (JAX-RS)][jakarta-restful] | [3.1][3-1] | API to develop web services following the REST pattern |
-| [Jakarta Persistence (JPA)][jakarta-persiste] | [3.1][3-1-2] | Management of persistence and object/relational mapping |
-| [Jakarta Transactions (JTA)][jakarta-transact] | [2.0][2-0] | Allows handling transactions consistent with X/Open XA-spec |
-| [Jakarta WebSocket][jakarta-websocke] | [2.1][2-1-2] | API for Server and Client Endpoints for WebSocket protocol |
+| Specification                                            | Version      | Description                                                 |
+| -------------------------------------------------------- | ------------ | ----------------------------------------------------------- |
+| [Jakarta Bean Validation][jakarta-bean-val]              | [3.0][3-0]   | Object level constraint declaration and validation facility |
+| Jakarta Context and Dependency Injection (CDI)           | [4.0][4-0]   | Declarative dependency injection and supporting services    |
+| Jakarta JSON Processing (JSON-P)                         | [2.1][2-1]   | API to parse, generate, transform, and query JSON docs      |
+| Jakarta JSON Binding (JSON-B)                            | [3.0][3-0-2] | Binding framework for converting POJOs to/from JSON docs    |
+| [Jakarta RESTful Web Services (JAX-RS)][jakarta-restful] | [3.1][3-1]   | API to develop web services following the REST pattern      |
+| [Jakarta Persistence (JPA)][jakarta-persiste]            | [3.1][3-1-2] | Management of persistence and object/relational mapping     |
+| [Jakarta Transactions (JTA)][jakarta-transact]           | [2.0][2-0]   | Allows handling transactions consistent with X/Open XA-spec |
+| [Jakarta WebSocket][jakarta-websocke]                    | [2.1][2-1-2] | API for Server and Client Endpoints for WebSocket protocol  |
 
 ## Supported MicroProfile Specifications
 
 <!--@mdc ::table-collapse -->
-| Specification | Version | Description |
-|----|----|----|
-| [MicroProfile Config][microprofile-con] | [3.1][3-1-3] | A flexible configuration framework with support for multiple sources and formats |
-| [MicroProfile Fault Tolerance][microprofile-fau] | [4.0.2][4-0-2] | Common strategies for various system problems such as time-outs, retries, Circuit Breaker, etc. |
-| [MicroProfile GraphQL][microprofile-gra] | [2.0][2-0-2] | API for working with GraphQL |
-| [MicroProfile Health][microprofile-hea] | [4.0][4-0-3] | Health checks for automatic service restart/shutdown |
-| [MicroProfile JWT Auth][microprofile-jwt] | [2.1][2-1-3] | Defines a compact and self-contained way for securely transmitting information between parties as a JSON object |
-| [MicroProfile Long-Running Actions (LRA)][microprofile-lon] | [2.0][2-0-3] | Distributed transactions for microservices following SAGA pattern |
-| [MicroProfile Metrics][microprofile-met] | [5.1.1][5-1-1] | Defining and exposing telemetry data in Prometheus and JSON formats |
-| [MicroProfile Open API][microprofile-ope] | [3.1.1][3-1-1] | Annotations for documenting your application endpoints |
-| [MicroProfile OpenTracing][microprofile-ope-2] | [3.0][3-0-3] | Profile and monitor your applications across multiple services |
-| [MicroProfile Reactive Messaging][microprofile-rea] | [3.0][3-0-4] | Standard API for sending and receiving messages/events using streams |
-| [MicroProfile Reactive Streams Operators][microprofile-rea-2] | [3.0][3-0-5] | Control flow and error processing for event streams |
-| [MicroProfile REST Client][microprofile-res] | [3.0][3-0-6] | Type-safe API for RESTful Web Services |
+| Specification                                                 | Version        | Description                                                                                                     |
+| ------------------------------------------------------------- | -------------- | --------------------------------------------------------------------------------------------------------------- |
+| [MicroProfile Config][microprofile-con]                       | [3.1][3-1-3]   | A flexible configuration framework with support for multiple sources and formats                                |
+| [MicroProfile Fault Tolerance][microprofile-fau]              | [4.0.2][4-0-2] | Common strategies for various system problems such as time-outs, retries, Circuit Breaker, etc.                 |
+| [MicroProfile GraphQL][microprofile-gra]                      | [2.0][2-0-2]   | API for working with GraphQL                                                                                    |
+| [MicroProfile Health][microprofile-hea]                       | [4.0][4-0-3]   | Health checks for automatic service restart/shutdown                                                            |
+| [MicroProfile JWT Auth][microprofile-jwt]                     | [2.1][2-1-3]   | Defines a compact and self-contained way for securely transmitting information between parties as a JSON object |
+| [MicroProfile Long-Running Actions (LRA)][microprofile-lon]   | [2.0][2-0-3]   | Distributed transactions for microservices following SAGA pattern                                               |
+| [MicroProfile Metrics][microprofile-met]                      | [5.1.1][5-1-1] | Defining and exposing telemetry data in Prometheus and JSON formats                                             |
+| [MicroProfile Open API][microprofile-ope]                     | [3.1.1][3-1-1] | Annotations for documenting your application endpoints                                                          |
+| [MicroProfile OpenTracing][microprofile-ope-2]                | [3.0][3-0-3]   | Profile and monitor your applications across multiple services                                                  |
+| [MicroProfile Reactive Messaging][microprofile-rea]           | [3.0][3-0-4]   | Standard API for sending and receiving messages/events using streams                                            |
+| [MicroProfile Reactive Streams Operators][microprofile-rea-2] | [3.0][3-0-5]   | Control flow and error processing for event streams                                                             |
+| [MicroProfile REST Client][microprofile-res]                  | [3.0][3-0-6]   | Type-safe API for RESTful Web Services                                                                          |
 <!--@mdc :: -->
 
 ## Other Components
 
-| Component | Description |
-|----|----|
-| [CORS][cors] | Cross Origin Resource Sharing – API to control if and how REST resources served by their applications can be shared across origins |
-| [gRPC][grpc] | gRPC server and client |
-| [OCI SDK][oci-sdk] | Full set of APIs for working with OCI services |
-| [Scheduling][scheduling] | Scheduling functionality based on [Cron-utils][cron-utils] |
-| [Security][security] | A tool-chain to handle authentication, authorization and context propagation |
+| Component                | Description                                                                                                                        |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| [CORS][cors]             | Cross Origin Resource Sharing – API to control if and how REST resources served by their applications can be shared across origins |
+| [gRPC][grpc]             | gRPC server and client                                                                                                             |
+| [OCI SDK][oci-sdk]       | Full set of APIs for working with OCI services                                                                                     |
+| [Scheduling][scheduling] | Scheduling functionality based on [Cron-utils][cron-utils]                                                                         |
+| [Security][security]     | A tool-chain to handle authentication, authorization and context propagation                                                       |
 
 ## Upgrade
 

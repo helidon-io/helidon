@@ -307,10 +307,10 @@ reporting a failure back to your application.
 
 The config system includes two predefined retry policies:
 
-| Policy | Summary |
-|----|----|
-| "just call" (default) | asks the config source to load the data with no retry |
-| "repeat" | performs a settable number of time-based retries, reporting failure only after all available retries have failed |
+| Policy                | Summary                                                                                                          |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| "just call" (default) | asks the config source to load the data with no retry                                                            |
+| "repeat"              | performs a settable number of time-based retries, reporting failure only after all available retries have failed |
 
 Predefined Retry Policies
 
@@ -367,12 +367,12 @@ default configuration will search for other `application` file types in the
 following order. Note that the default configuration *stops* once it finds one
 of the files below; it *does not* merge all such files it can find.
 
-| Source | Helidon maven artifact ID (group ID: `io.helidon.config`) | Notes |
-|----|----|----|
-| `application.yaml` | `helidon-config-yaml` | YAML format <http://yaml.org> |
-| `application.conf` | `helidon-config-hocon` | HOCON format <https://github.com/lightbend/config#using-hocon-the-json-superset> |
-| `application.json` | `helidon-config-hocon` | JSON format <https://json.org/> |
-| `application.properties` | `helidon-config` | Java properties format |
+| Source                   | Helidon maven artifact ID (group ID: `io.helidon.config`) | Notes                                                                            |
+| ------------------------ | --------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `application.yaml`       | `helidon-config-yaml`                                     | YAML format <http://yaml.org>                                                    |
+| `application.conf`       | `helidon-config-hocon`                                    | HOCON format <https://github.com/lightbend/config#using-hocon-the-json-superset> |
+| `application.json`       | `helidon-config-hocon`                                    | JSON format <https://json.org/>                                                  |
+| `application.properties` | `helidon-config`                                          | Java properties format                                                           |
 
 Default Config Files (most to the least important)
 
@@ -382,8 +382,8 @@ implementing the [`ConfigSource`][configsource] interface. See the
 
 ## Reference
 
-| Name | Description |
-| --- | --- |
+| Name                               | Description                                                           |
+| ---------------------------------- | --------------------------------------------------------------------- |
 | [SE Config Guide][se-config-guide] | Step-by-step guide about using Config in your Helidon SE application. |
 
 ## Additional Information
@@ -391,25 +391,25 @@ implementing the [`ConfigSource`][configsource] interface. See the
 The links in the following tables lead you to more information about various
 other config topics.
 
-| Topic | Documentation |
-|----|----|
-| Where config comes from | [Config sources][config-sources],[Config Profiles][config-profiles] |
-| What format config data is expressed in | [Config parsers][config-parsers], [supported formats][supported-format] |
-| How to filter, override, and dereference values | [Filters and overrides][filter-overrides] |
-| What happens when config data changes | [Mutability Support][mutability-suppo] |
-| How to deal with loading errors | [Config retry policies][config-retry-pol] |
+| Topic                                           | Documentation                                                           |
+| ----------------------------------------------- | ----------------------------------------------------------------------- |
+| Where config comes from                         | [Config sources][config-sources],[Config Profiles][config-profiles]     |
+| What format config data is expressed in         | [Config parsers][config-parsers], [supported formats][supported-format] |
+| How to filter, override, and dereference values | [Filters and overrides][filter-overrides]                               |
+| What happens when config data changes           | [Mutability Support][mutability-suppo]                                  |
+| How to deal with loading errors                 | [Config retry policies][config-retry-pol]                               |
 
 Controlling How Config is Loaded
 
-| Topic | Documentation |
-|----|----|
+| Topic                                         | Documentation                    |
+| --------------------------------------------- | -------------------------------- |
 | How config data is translated into Java types | [Config mappers][config-mappers] |
-| How to navigate config trees | [Navigation][navigation] |
+| How to navigate config trees                  | [Navigation][navigation]         |
 
 Accessing Configuration Data
 
-| Topic              | Documentation                |
-|--------------------|------------------------------|
+| Topic              | Documentation            |
+| ------------------ | ------------------------ |
 | Writing extensions | [Extensions][extensions] |
 
 Extending and Fine-tuning the Config System

@@ -207,12 +207,12 @@ shortly.
 
 Here is the list of gRPC server metrics available in Helidon:
 
-| Metric | Type | Labels | Description |
-|----|----|----|----|
-| grpc.server.call.started | Counter | grpc.method | The total number of calls started, including not completed ones, for a certain method. |
-| grpc.server.call.duration | Timer | grpc.method, grpc.status | Timer that tracks call durations for a certain method. |
-| grpc.server.call.sent_total_compressed_message_size | Distribution Summary | grpc.method, grpc.status | Summary of message sizes sent to clients for a certain method. |
-| grpc.server.call.rcvd_total_compressed_message_size | Distribution Summary | grpc.method, grpc.status | Summary of message sizes received from clients for a certain method. |
+| Metric                                              | Type                 | Labels                   | Description                                                                            |
+| --------------------------------------------------- | -------------------- | ------------------------ | -------------------------------------------------------------------------------------- |
+| grpc.server.call.started                            | Counter              | grpc.method              | The total number of calls started, including not completed ones, for a certain method. |
+| grpc.server.call.duration                           | Timer                | grpc.method, grpc.status | Timer that tracks call durations for a certain method.                                 |
+| grpc.server.call.sent_total_compressed_message_size | Distribution Summary | grpc.method, grpc.status | Summary of message sizes sent to clients for a certain method.                         |
+| grpc.server.call.rcvd_total_compressed_message_size | Distribution Summary | grpc.method, grpc.status | Summary of message sizes received from clients for a certain method.                   |
 
 At the time of writing, Helidon only tracks successful method calls, so the
 value of the `grpc.status` label is always set to the string "OK". Support for

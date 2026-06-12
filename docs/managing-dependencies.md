@@ -6,7 +6,7 @@ special Maven POM file that provides dependency management.
 Using the Helidon BOM allows you to use Helidon component dependencies with a
 single version: the Helidon version.
 
-## The Helidon Application POMs
+## Application POMs
 
 If you created your application using the [Helidon CLI](cli.md) or Maven
 archetypes, then your project will have a Helidon Application POM as its parent
@@ -15,7 +15,7 @@ POM. In this case, you get Helidon's dependency management automatically.
 If your project does not use a Helidon Application POM as its parent, then you
 must import the Helidon BOM POM.
 
-## The Helidon BOM POM
+## BOM POM
 
 To import the Helidon BOM POM, add the following snippet to your `pom.xml` file.
 
@@ -35,7 +35,7 @@ Import the Helidon BOM:
 </dependencyManagement>
 ```
 
-## Using Helidon Component Dependencies
+## Helidon Components
 
 After you import the BOM, you can declare dependencies on Helidon components
 without specifying a version.
@@ -49,7 +49,7 @@ Component dependency:
 </dependency>
 ```
 
-## For More Information
+## Guides
 
 - Maven Build Guide for [SE](se/guides/maven-build.md) and
   [MP](mp/guides/maven-build.md)

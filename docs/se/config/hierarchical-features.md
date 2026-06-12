@@ -14,11 +14,11 @@ The config system represents configuration in memory using three types of nodes,
 each a different interface defined within the [`ConfigNode`][confignode]
 interface.
 
-| Type | Java Interface | Usage |
-|----|----|----|
+| Type   | Java Interface          | Usage                                                                         |
+| ------ | ----------------------- | ----------------------------------------------------------------------------- |
 | object | `ConfigNode.ObjectNode` | Represents complex structure (a subtree). Its child nodes can be of any type. |
-| list | `ConfigNode.ListNode` | Represents a list of nodes. Its components can be of any type. |
-| value | `ConfigNode.ValueNode` | Represents a leaf node. |
+| list   | `ConfigNode.ListNode`   | Represents a list of nodes. Its components can be of any type.                |
+| value  | `ConfigNode.ValueNode`  | Represents a leaf node.                                                       |
 
 `ConfigNode` Types
 
@@ -170,12 +170,12 @@ an exception. If the specified key does not exist the method returns a `Config`
 node of type `MISSING`. There are several ways your application can tell whether
 a given config value exists.
 
-| Method | Usage |
-|----|----|
-| `exists` | Returns `true` or `false` |
-| `ifExists` | Execute functional operations for present nodes |
-| `type` | Returns enum value for the `Config.Type`; `Config.Type.MISSING` if the node represents a config value that *does not* exist |
-| `as` | Returns the `ConfigValue` with the correct type that has all methods of `Optional` and a few additional ones - see [`ConfigValue`][configvalue] interface. |
+| Method     | Usage                                                                                                                                                      |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `exists`   | Returns `true` or `false`                                                                                                                                  |
+| `ifExists` | Execute functional operations for present nodes                                                                                                            |
+| `type`     | Returns enum value for the `Config.Type`; `Config.Type.MISSING` if the node represents a config value that *does not* exist                                |
+| `as`       | Returns the `ConfigValue` with the correct type that has all methods of `Optional` and a few additional ones - see [`ConfigValue`][configvalue] interface. |
 
 The config system throws a `MissingValueException` if the application tries to
 access the value of a missing node by invoking the `ConfigValue.get()` method.

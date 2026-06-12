@@ -7,12 +7,12 @@ applications in a JUnit 5 environment using optimized customizations.
 
 For this 20 minute tutorial, you will need the following:
 
-| Requirement | Description |
-|-------------|-------------|
-| [Java 21][java-21] ([Open JDK 21][open-jdk-21]) | Helidon requires Java 21+ (25+ recommended). |
-| [Maven 3.8+][maven-3-8] | Helidon requires Maven 3.8+. |
-| [Docker 18.09+][docker-18-09] | If you want to build and run Docker containers. |
-| [Kubectl 1.16.5+][kubectl-1-16-5] | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
+| Requirement                                     | Description                                                                       |
+| ----------------------------------------------- | --------------------------------------------------------------------------------- |
+| [Java 21][java-21] ([Open JDK 21][open-jdk-21]) | Helidon requires Java 21+ (25+ recommended).                                      |
+| [Maven 3.8+][maven-3-8]                         | Helidon requires Maven 3.8+.                                                      |
+| [Docker 18.09+][docker-18-09]                   | If you want to build and run Docker containers.                                   |
+| [Kubectl 1.16.5+][kubectl-1-16-5]               | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
 
 Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
@@ -129,12 +129,12 @@ The test is now complete and verifies the message.
 The testing extension supports a few additional annotations that allow for finer
 control of the test execution.
 
-| Annotation | Description |
-|----|----|
-| `@HelidonTest(resetPerTest = true)` | Resets the container for each method. This is useful when we want to modify configuration or beans between executions. In such a case, injection into fields is not possible, as we would need a different instance for each test. |
-| `@AddConfig(key = "app.greeting", value = "Unite")` | Define additional configuration (either on class level, or method level) by adding a single configuration key/value. |
-| `@AddConfigBlock(type = "properties", value = """ some.key1=some.value1 some.key2=some.value2 """)` | Define additional configuration (either on class level, or method level) by adding one or more configuration key/value pairs. |
-| `@Configuration(configSources = "test-config.properties")` | Adds a whole config source from classpath. |
+| Annotation                                                                                          | Description                                                                                                                                                                                                                        |
+| --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@HelidonTest(resetPerTest = true)`                                                                 | Resets the container for each method. This is useful when we want to modify configuration or beans between executions. In such a case, injection into fields is not possible, as we would need a different instance for each test. |
+| `@AddConfig(key = "app.greeting", value = "Unite")`                                                 | Define additional configuration (either on class level, or method level) by adding a single configuration key/value.                                                                                                               |
+| `@AddConfigBlock(type = "properties", value = """ some.key1=some.value1 some.key2=some.value2 """)` | Define additional configuration (either on class level, or method level) by adding one or more configuration key/value pairs.                                                                                                      |
+| `@Configuration(configSources = "test-config.properties")`                                          | Adds a whole config source from classpath.                                                                                                                                                                                         |
 
 Optional Extension Annotations
 

@@ -213,12 +213,12 @@ disabled by default, but can be easily enabled as we shall discuss shortly.
 
 Here is the list of gRPC client metrics available in Helidon:
 
-| Metric | Type | Labels | Description |
-|----|----|----|----|
-| grpc.client.attempt.started | Counter | grpc.method, grpc.target | The total number of calls started, including not completed ones, for a certain method and target. |
-| grpc.client.attempt.duration | Timer | grpc.method, grpc.target, grpc.status | Timer that tracks call durations for a certain method and target. |
-| grpc.client.attempt.sent_total_compressed_message_size | Distribution Summary | grpc.method, grpc.target, grpc.status | Summary of message sizes sent to clients for a certain method and target. |
-| grpc.client.attempt.rcvd_total_compressed_message_size | Distribution Summary | grpc.method, grpc.target, grpc.status | Summary of message sizes received from clients for a certain method and target. |
+| Metric                                                 | Type                 | Labels                                | Description                                                                                       |
+| ------------------------------------------------------ | -------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| grpc.client.attempt.started                            | Counter              | grpc.method, grpc.target              | The total number of calls started, including not completed ones, for a certain method and target. |
+| grpc.client.attempt.duration                           | Timer                | grpc.method, grpc.target, grpc.status | Timer that tracks call durations for a certain method and target.                                 |
+| grpc.client.attempt.sent_total_compressed_message_size | Distribution Summary | grpc.method, grpc.target, grpc.status | Summary of message sizes sent to clients for a certain method and target.                         |
+| grpc.client.attempt.rcvd_total_compressed_message_size | Distribution Summary | grpc.method, grpc.target, grpc.status | Summary of message sizes received from clients for a certain method and target.                   |
 
 The value of the label `grpc.method` is the fully-qualified method name; the
 value of the label `grpc.target` is the base URI of the gRPC service. At the

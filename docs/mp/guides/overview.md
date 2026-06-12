@@ -9,8 +9,8 @@
   ::
 ::
 -->
-| Guide | Description |
-| --- | --- |
+| Guide                          | Description                                                  |
+| ------------------------------ | ------------------------------------------------------------ |
 | [Quickstart MP][quickstart-mp] | Create your first Helidon MP application in under 5 minutes. |
 <!--/mdc -->
 
@@ -56,20 +56,20 @@
   ::
 ::
 -->
-| Guide | Description |
-| --- | --- |
-| [MP Config Guide][mp-config-guide] | Learn how to configure a Helidon MP application. |
-| [MP LangChain4j Guide][mp-langchain4j-g] | Learn how to create AI powered Helidon MP applications. |
-| [MP Health Check Guide][mp-health-check] | Learn how to use Helidon MP built-in and custom health checks. |
-| [MP Metrics Guide][mp-metrics-guide] | Learn how to use Helidon MP built-in and application metrics. |
-| [MP Tracing Guide][mp-tracing-guide] | Learn how to trace a Helidon MP application. |
-| [Helidon MP Tutorial][helidon-mp-tutor] | Learn how to build a Helidon MicroProfile (MP) application from scratch. |
-| [Helidon MP Upgrade guide][helidon-mp-upgra] | Learn how to upgrade your Helidon MP application from 1.x to 2.x. |
-| [OIDC Tutorial][oidc-tutorial] | Learn how to set up OIDC security in your Helidon MP application. |
-| [Helidon MP Tracing][mp-tracing-guide] | Learn how to use tracing in your Helidon MP application. |
-| [Testing with JUnit 5][testing-with-jun] | Learn how to use JUnit5 for testing your applications. |
-| [Helidon MP and JBatch][helidon-mp-and-j] | Learn how to use JBatch with Helidon MP. |
-| [Performance tuning in Helidon MP][performance-tuni] | Learn how to improve performance of your application. |
+| Guide                                                | Description                                                              |
+| ---------------------------------------------------- | ------------------------------------------------------------------------ |
+| [MP Config Guide][mp-config-guide]                   | Learn how to configure a Helidon MP application.                         |
+| [MP LangChain4j Guide][mp-langchain4j-g]             | Learn how to create AI powered Helidon MP applications.                  |
+| [MP Health Check Guide][mp-health-check]             | Learn how to use Helidon MP built-in and custom health checks.           |
+| [MP Metrics Guide][mp-metrics-guide]                 | Learn how to use Helidon MP built-in and application metrics.            |
+| [MP Tracing Guide][mp-tracing-guide]                 | Learn how to trace a Helidon MP application.                             |
+| [Helidon MP Tutorial][helidon-mp-tutor]              | Learn how to build a Helidon MicroProfile (MP) application from scratch. |
+| [Helidon MP Upgrade guide][helidon-mp-upgra]         | Learn how to upgrade your Helidon MP application from 1.x to 2.x.        |
+| [OIDC Tutorial][oidc-tutorial]                       | Learn how to set up OIDC security in your Helidon MP application.        |
+| [Helidon MP Tracing][mp-tracing-guide]               | Learn how to use tracing in your Helidon MP application.                 |
+| [Testing with JUnit 5][testing-with-jun]             | Learn how to use JUnit5 for testing your applications.                   |
+| [Helidon MP and JBatch][helidon-mp-and-j]            | Learn how to use JBatch with Helidon MP.                                 |
+| [Performance tuning in Helidon MP][performance-tuni] | Learn how to improve performance of your application.                    |
 <!--/mdc -->
 
 ## Build and Deploy
@@ -93,13 +93,13 @@
   ::
 ::
 -->
-| Guide | Description |
-| --- | --- |
-| [Maven Guide][maven-guide] | Using Helidon in your Maven project. |
-| [Gradle Guide][gradle-guide] | Using Helidon in your Gradle project. |
-| [GraalVM Native Images][graalvm-native-i] | Learn how to build a GraalVM native image for your Helidon application both on your desktop and as part of a Docker image. |
+| Guide                                                 | Description                                                                                                                     |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| [Maven Guide][maven-guide]                            | Using Helidon in your Maven project.                                                                                            |
+| [Gradle Guide][gradle-guide]                          | Using Helidon in your Gradle project.                                                                                           |
+| [GraalVM Native Images][graalvm-native-i]             | Learn how to build a GraalVM native image for your Helidon application both on your desktop and as part of a Docker image.      |
 | [Custom Runtime Images using jlink][custom-runtime-i] | Learn how to build a custom runtime Java image for your Helidon application both on your desktop and as part of a Docker image. |
-| [Deploying to OCI][deploying-to-oci] | Learn how to deploy your application to Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE). |
+| [Deploying to OCI][deploying-to-oci]                  | Learn how to deploy your application to Oracle Cloud Infrastructure Container Engine for Kubernetes (OKE).                      |
 <!--/mdc -->
 
 [quickstart-mp]: quickstart.md

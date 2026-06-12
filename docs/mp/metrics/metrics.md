@@ -744,8 +744,8 @@ See [Configuration options][io-helidon-webse].
 The `paths` section contains zero or more entries, each entry having the
 following settings:
 
-| Key       | Required | 	Default Value   | Usage                                                                                                                                                                                                     |
-|-----------|----------|------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Key       | Required | Default Value    | Usage                                                                                                                                                                                                     |
+| --------- | -------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `path`    | yes      |                  | Path-matching expression: <ul><li><p>an exact match (<code>/greet</code>)</p></li><li><p>a prefix match (<code>/greet/*</code>)</p></li><li><p>a pattern match (<code>/greet/{name}</code>)</p></li></ul> |
 | `methods` |          | all HTTP methods | Which HTTP methods match this entry                                                                                                                                                                       |
 | `enabled` |          | `true`           | Whether requests that match this entry should be measured                                                                                                                                                 |

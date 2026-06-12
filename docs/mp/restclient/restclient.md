@@ -31,14 +31,14 @@ Dependencies](../../managing-dependencies.md)).
 
 ## API
 
-| Class | Description |
-|----|----|
+| Class                                                  | Description                                                                                                         |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- |
 | org.eclipse.microprofile.rest.client.RestClientBuilder | Base builder instance. Contains configuration options and a `build` method that creates the actual client instance. |
 
-| Annotation | Description |
-|----|----|
+| Annotation          | Description                                                                                                  |
+| ------------------- | ------------------------------------------------------------------------------------------------------------ |
 | @RegisterRestClient | A marker annotation to register a client at runtime. This marker must be applied to any CDI managed clients. |
-| @RestClient | RestClient qualifier which should be used on an CDI injection points. |
+| @RestClient         | RestClient qualifier which should be used on an CDI injection points.                                        |
 
 ### Creating a New Client Using a Builder
 
@@ -132,39 +132,39 @@ below to indicate an alias or a class name.
 
 Required configuration options:
 
-| key | type | default value | description |
-|----|----|----|----|
-| `$restClient/mp-rest/url` | string |   | Sets the base URL to use for this service. This option or `/mp-rest/uri` need to be set if the value is not present in `RegisterRestClient#baseUri`. |
-| `$restClient/mp-rest/uri` | string |   | Sets the base URI to use for this service. This option or `/mp-rest/url` need to be set if the value is not present in `RegisterRestClient#baseUri`. |
+| key                       | type   | default value | description                                                                                                                                          |
+| ------------------------- | ------ | ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `$restClient/mp-rest/url` | string |               | Sets the base URL to use for this service. This option or `/mp-rest/uri` need to be set if the value is not present in `RegisterRestClient#baseUri`. |
+| `$restClient/mp-rest/uri` | string |               | Sets the base URI to use for this service. This option or `/mp-rest/url` need to be set if the value is not present in `RegisterRestClient#baseUri`. |
 
 Optional configuration options:
 
 <!--@mdc ::table-collapse -->
-| key | type | default value | description |
-|----|----|----|----|
-| `$restClient/mp-rest/scope` | string | `jakarta.enterprise.context.Dependent` | The fully qualified classname to a CDI scope to use for injection. |
-| `$restClient/mp-rest/connectTimeout` | long |   | Sets timeout in milliseconds to wait to connect to the remote endpoint. |
-| `$restClient/mp-rest/readTimeout` | long |   | Sets timeout in milliseconds to wait for a response from the remote endpoint. |
-| `$restClient/mp-rest/followRedirects` | boolean | `false` | Sets value used to determine whether the client should follow HTTP redirect responses. |
-| `$restClient/mp-rest/proxyAddress` | string |   | Sets a string value in the form of \<proxyHost\>:\<proxyPort\> that specifies the HTTP proxy server hostname (or IP address) and port for requests of this client to use. |
-| `$restClient/mp-rest/queryParamStyle` | string (MULTI_PAIRS, COMMA_SEPARATED, ARRAY_PAIRS) | `MULTI_PAIRS` | Sets enumerated type string value that specifies the format in which multiple values for the same query parameter is used. |
-| `$restClient/mp-rest/trustStore` | string |   | Sets the trust store location. Can point to either a classpath resource (e.g. classpath:/client-truststore.jks) or a file (e.g. file:/home/user/client-truststore.jks). |
-| `$restClient/mp-rest/trustStorePassword` | string |   | Sets the password for the trust store. |
-| `$restClient/mp-rest/trustStoreType` | string | `JKS` | Sets the type of the trust store. |
-| `$restClient/mp-rest/keyStore` | string |   | Sets the key store location. Can point to either a classpath resource (e.g. classpath:/client-keystore.jks) or a file (e.g. file:/home/user/client-keystore.jks). |
-| `$restClient/mp-rest/keyStorePassword` | string |   | Sets the password for the keystore. |
-| `$restClient/mp-rest/keyStoreType` | string | `JKS` | Sets the type of the keystore. |
-| `$restClient/mp-rest/hostnameVerifier` | string |   | Sets the hostname verifier class. This class must have a public no-argument constructor. |
+| key                                      | type                                               | default value                          | description                                                                                                                                                               |
+| ---------------------------------------- | -------------------------------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `$restClient/mp-rest/scope`              | string                                             | `jakarta.enterprise.context.Dependent` | The fully qualified classname to a CDI scope to use for injection.                                                                                                        |
+| `$restClient/mp-rest/connectTimeout`     | long                                               |                                        | Sets timeout in milliseconds to wait to connect to the remote endpoint.                                                                                                   |
+| `$restClient/mp-rest/readTimeout`        | long                                               |                                        | Sets timeout in milliseconds to wait for a response from the remote endpoint.                                                                                             |
+| `$restClient/mp-rest/followRedirects`    | boolean                                            | `false`                                | Sets value used to determine whether the client should follow HTTP redirect responses.                                                                                    |
+| `$restClient/mp-rest/proxyAddress`       | string                                             |                                        | Sets a string value in the form of \<proxyHost\>:\<proxyPort\> that specifies the HTTP proxy server hostname (or IP address) and port for requests of this client to use. |
+| `$restClient/mp-rest/queryParamStyle`    | string (MULTI_PAIRS, COMMA_SEPARATED, ARRAY_PAIRS) | `MULTI_PAIRS`                          | Sets enumerated type string value that specifies the format in which multiple values for the same query parameter is used.                                                |
+| `$restClient/mp-rest/trustStore`         | string                                             |                                        | Sets the trust store location. Can point to either a classpath resource (e.g. classpath:/client-truststore.jks) or a file (e.g. file:/home/user/client-truststore.jks).   |
+| `$restClient/mp-rest/trustStorePassword` | string                                             |                                        | Sets the password for the trust store.                                                                                                                                    |
+| `$restClient/mp-rest/trustStoreType`     | string                                             | `JKS`                                  | Sets the type of the trust store.                                                                                                                                         |
+| `$restClient/mp-rest/keyStore`           | string                                             |                                        | Sets the key store location. Can point to either a classpath resource (e.g. classpath:/client-keystore.jks) or a file (e.g. file:/home/user/client-keystore.jks).         |
+| `$restClient/mp-rest/keyStorePassword`   | string                                             |                                        | Sets the password for the keystore.                                                                                                                                       |
+| `$restClient/mp-rest/keyStoreType`       | string                                             | `JKS`                                  | Sets the type of the keystore.                                                                                                                                            |
+| `$restClient/mp-rest/hostnameVerifier`   | string                                             |                                        | Sets the hostname verifier class. This class must have a public no-argument constructor.                                                                                  |
 <!--@mdc :: -->
 
 Configuration options affecting CDI and programmatically created clients:
 
-| key | type | default value | description |
-|----|----|----|----|
-| `$restClient/mp-rest/providers` | string |   | A comma separated list of fully-qualified provider classnames to include in the client. |
-| `$restClient/mp-rest/providers/<fully-qualified-provider-classname>/priority` | string |   | Sets the priority of the provider for this interface. |
-| `org.eclipse.microprofile.rest.client.propagateHeaders` | string |   | To specify which headers to propagate from the inbound JAX-RS request to the outbound MP Rest Client request. Should not be prefixed with the rest client class or alias. |
-| `microprofile.rest.client.disable.default.mapper` | boolean | `false` | Whether to disable default exception mapper. Should not be prefixed with the rest client class or alias. |
+| key                                                                           | type    | default value | description                                                                                                                                                               |
+| ----------------------------------------------------------------------------- | ------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `$restClient/mp-rest/providers`                                               | string  |               | A comma separated list of fully-qualified provider classnames to include in the client.                                                                                   |
+| `$restClient/mp-rest/providers/<fully-qualified-provider-classname>/priority` | string  |               | Sets the priority of the provider for this interface.                                                                                                                     |
+| `org.eclipse.microprofile.rest.client.propagateHeaders`                       | string  |               | To specify which headers to propagate from the inbound JAX-RS request to the outbound MP Rest Client request. Should not be prefixed with the rest client class or alias. |
+| `microprofile.rest.client.disable.default.mapper`                             | boolean | `false`       | Whether to disable default exception mapper. Should not be prefixed with the rest client class or alias.                                                                  |
 
 ## Examples
 

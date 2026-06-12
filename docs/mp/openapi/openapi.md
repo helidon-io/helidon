@@ -191,8 +191,8 @@ Further, Helidon OpenAPI supports the MicroProfile OpenAPI settings described in
 
 ### MicroProfile OpenAPI configuration options
 
-| Key | Type | Description |
-|----|----|----|
+| Key                                                 | Type      | Description                                                                                                                                                     |
+| --------------------------------------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `mp.openapi.extensions.helidon.use-jaxrs-semantics` | `Boolean` | If `true` and the `jakarta.ws.rs.core.Application` class returns a non-empty set, endpoints defined by other resources are not included in the OpenAPI document |
 
 ## Examples

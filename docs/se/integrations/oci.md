@@ -81,14 +81,14 @@ services. Available methods depend on where your application runs. The Helidon
 OCI SDK Integration provides following authentication integrations
 out-of-the-box:
 
-| Provider | Weight | Description |
-|----|----|----|
-| Config | 90 | Uses the user authentication specified in the Helidon `oci-config.yaml` file. |
-| Session Token | 85 | Uses config or config file, if it contains session token. |
-| Config File | 80 | Uses the user authentication specified in `~/.oci/config`. |
-| Resource Principal | 70 | Uses OCI resources and services as the authentication and authorization principal, such as serverless functions. See [About Using Resource Principal to Access Oracle Cloud Infrastructure Resources][about-using-reso]. |
-| Instance Principal | 60 | Uses the OCI Compute instance as the authentication and authorization principal. See [Calling Services from an Instance][calling-services]. |
-| OKE Workload Identity | 50 | Identity of the OKE Workload |
+| Provider              | Weight | Description                                                                                                                                                                                                              |
+| --------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Config                | 90     | Uses the user authentication specified in the Helidon `oci-config.yaml` file.                                                                                                                                            |
+| Session Token         | 85     | Uses config or config file, if it contains session token.                                                                                                                                                                |
+| Config File           | 80     | Uses the user authentication specified in `~/.oci/config`.                                                                                                                                                               |
+| Resource Principal    | 70     | Uses OCI resources and services as the authentication and authorization principal, such as serverless functions. See [About Using Resource Principal to Access Oracle Cloud Infrastructure Resources][about-using-reso]. |
+| Instance Principal    | 60     | Uses the OCI Compute instance as the authentication and authorization principal. See [Calling Services from an Instance][calling-services].                                                                              |
+| OKE Workload Identity | 50     | Identity of the OKE Workload                                                                                                                                                                                             |
 
 These providers configure authentication with OCI by picking up OCI credentials
 from your environment variables, system properties, and a configuration file

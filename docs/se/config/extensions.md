@@ -443,12 +443,12 @@ policies in [`RetryPolicies`][retrypolicies], such as `RetryPolicies.justCall`
 which simply invokes the function without any retry. That class also exposes a
 builder for constructing a time-based retry policy, with several parameters:
 
-| Parameter | Usage | Default |
-|----|----|----|
-| `delay` | Initial delay between calls to the function | 200 ms |
-| `delayFactor` | Multiplier applied to `delay` on each successive call | 2 |
-| `callTimeout` | Time limit for each individual call of the function | 500 ms |
-| `overallTimeout` | Limit for the total elapsed time attempting to call the function successfully, including delays between calls | 2 s |
+| Parameter        | Usage                                                                                                         | Default |
+| ---------------- | ------------------------------------------------------------------------------------------------------------- | ------- |
+| `delay`          | Initial delay between calls to the function                                                                   | 200 ms  |
+| `delayFactor`    | Multiplier applied to `delay` on each successive call                                                         | 2       |
+| `callTimeout`    | Time limit for each individual call of the function                                                           | 500 ms  |
+| `overallTimeout` | Limit for the total elapsed time attempting to call the function successfully, including delays between calls | 2 s     |
 
 Table 2. Parameters Controlling Built-in `RetryPolicy` {.tableblock .frame-all
 .grid-all .stretch}

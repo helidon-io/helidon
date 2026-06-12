@@ -101,11 +101,11 @@ class MyTest {
 
 Note the following Helidon CDI extensions:
 
-| Extension | Note |
-|----|----|
+| Extension                                | Note                                      |
+| ---------------------------------------- | ----------------------------------------- |
 | [`ConfigCdiExtension`][configcdiextensi] | Add MicroProfile Config injection support |
 | [`ServerCdiExtension`][servercdiextensi] | Optional if using [`@AddJaxRs`][addjaxrs] |
-| [`JaxRsCdiExtension`][jaxrscdiextensio] | Optional if using [`@AddJaxRs`][addjaxrs] |
+| [`JaxRsCdiExtension`][jaxrscdiextensio]  | Optional if using [`@AddJaxRs`][addjaxrs] |
 
 ### CDI Container Afinity
 
@@ -185,12 +185,12 @@ class MyTest {
 
 The "synthetic" configuration can be expressed using the following annotations:
 
-| Type | Usage |
-|----|----|
-| [`@AddConfig`][addconfig] | Key value pair |
-| [`@AddConfigBlock`][addconfigblock] | Formatted text block |
+| Type                                  | Usage                      |
+| ------------------------------------- | -------------------------- |
+| [`@AddConfig`][addconfig]             | Key value pair             |
+| [`@AddConfigBlock`][addconfigblock]   | Formatted text block       |
 | [`@AddConfigSource`][addconfigsource] | Programmatic config source |
-| [`@Configuration`][configuration] | Classpath resources using |
+| [`@Configuration`][configuration]     | Classpath resources using  |
 
 Add a key value pair:
 
@@ -272,12 +272,12 @@ class MyTest {
 
 The default ordering is the following
 
-| Annotation | Ordinal |
-|----|----|
-| [`@AddConfig`][addconfig] | 1000 |
-| [`@AddConfigBlock`][addconfigblock] | 900 |
-| [`@AddConfigSource`][addconfigsource] | 800 |
-| [`@Configuration`][configuration] | 700 |
+| Annotation                            | Ordinal |
+| ------------------------------------- | ------- |
+| [`@AddConfig`][addconfig]             | 1000    |
+| [`@AddConfigBlock`][addconfigblock]   | 900     |
+| [`@AddConfigSource`][addconfigsource] | 800     |
+| [`@Configuration`][configuration]     | 700     |
 
 ### Injectable Types
 
@@ -286,11 +286,11 @@ E.g. JAXRS client.
 
 Here are all the built-in types that can be injected:
 
-| Type | Usage |
-|----|----|
+| Type                     | Usage                                              |
+| ------------------------ | -------------------------------------------------- |
 | [`WebTarget`][webtarget] | A JAX-RS client configured for the current server. |
-| `URI` | A URI representing the current server |
-| `String` | A raw URI representing the current server |
+| `URI`                    | A URI representing the current server              |
+| `String`                 | A raw URI representing the current server          |
 
 > [!NOTE]
 > Types that reflect the current server require
@@ -467,18 +467,18 @@ class AnnotationOnMethod {
 Here is a brief overview of the MicroProfile testing annotations:
 
 <!--@mdc ::table-collapse -->
-| Annotation | Usage |
-|----|----|
-| [`@AddBean`][addbean] | Add a CDI bean class to the CDI container |
-| [`@AddExtension`][addextension] | Add a CDI extension to the CDI container |
-| [`@DisableDiscovery`][disablediscovery] | Disable automated discovery of beans and extensions |
-| [`@AddJaxRs`][addjaxrs] | Shorthand to add JAX-RS (Jersey) support |
-| [`@AddConfig`][addconfig] | Define a key value pair in the "synthetic" configuration |
-| [`@AddConfigBlock`][addconfigblock] | Define a formatted text block in the "synthetic" configuration |
-| [`@AddConfigSource`][addconfigsource] | Add a programmatic config source to the "synthetic" configuration |
-| [`@Configuration`][configuration] | Switch between "synthetic" and "existing" ; Add classpath resources to the "synthetic" configuration |
-| [`@Socket`][socket] | CDI qualifier to inject a JAX-RS client or URI for a named socket |
-| [`@AfterStop`][afterstop] | Mark a static method to be executed after the container is stopped |
+| Annotation                              | Usage                                                                                                |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| [`@AddBean`][addbean]                   | Add a CDI bean class to the CDI container                                                            |
+| [`@AddExtension`][addextension]         | Add a CDI extension to the CDI container                                                             |
+| [`@DisableDiscovery`][disablediscovery] | Disable automated discovery of beans and extensions                                                  |
+| [`@AddJaxRs`][addjaxrs]                 | Shorthand to add JAX-RS (Jersey) support                                                             |
+| [`@AddConfig`][addconfig]               | Define a key value pair in the "synthetic" configuration                                             |
+| [`@AddConfigBlock`][addconfigblock]     | Define a formatted text block in the "synthetic" configuration                                       |
+| [`@AddConfigSource`][addconfigsource]   | Add a programmatic config source to the "synthetic" configuration                                    |
+| [`@Configuration`][configuration]       | Switch between "synthetic" and "existing" ; Add classpath resources to the "synthetic" configuration |
+| [`@Socket`][socket]                     | CDI qualifier to inject a JAX-RS client or URI for a named socket                                    |
+| [`@AfterStop`][afterstop]               | Mark a static method to be executed after the container is stopped                                   |
 <!--@mdc :: -->
 
 ## Examples

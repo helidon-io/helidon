@@ -9,8 +9,8 @@
   ::
 ::
 -->
-| Guide | Description |
-| --- | --- |
+| Guide                          | Description                                                  |
+| ------------------------------ | ------------------------------------------------------------ |
 | [Quickstart SE][quickstart-se] | Create your first Helidon SE application in under 5 minutes. |
 <!--/mdc -->
 
@@ -50,18 +50,18 @@
   ::
 ::
 -->
-| Guide | Description |
-| --- | --- |
-| [Config Guide][config-guide] | Learn how to configure a Helidon SE application. |
-| [LangChain4j Guide][langchain4j-guid] | Learn how to create AI powered Helidon SE applications. |
-| [Health Check Guide][health-check-gui] | Learn how to use Helidon SE built-in and custom health checks. |
-| [Metrics Guide][metrics-guide] | Learn how to use Helidon SE built-in and application metrics. |
-| [Tracing Guide][tracing-guide] | Learn how to trace a Helidon SE application. |
-| [OIDC Guide][oidc-guide] | Learn how to set up an OIDC Helidon SE application |
-| [Helidon SE Upgrade Guide][helidon-se-upgra] | Learn how to Upgrade your Helidon SE application |
-| [Helidon SE WebClient Guide][helidon-se-webcl] | Learn how to use the Helidon SE WebClient |
-| [Helidon SE DB Client Guide][helidon-se-db-cl] | Learn how to use the Helidon SE DB Client |
-| [Helidon SE Performance Tuning Guide][helidon-se-perfo] | Learn how to tune your Helidon SE application |
+| Guide                                                   | Description                                                    |
+| ------------------------------------------------------- | -------------------------------------------------------------- |
+| [Config Guide][config-guide]                            | Learn how to configure a Helidon SE application.               |
+| [LangChain4j Guide][langchain4j-guid]                   | Learn how to create AI powered Helidon SE applications.        |
+| [Health Check Guide][health-check-gui]                  | Learn how to use Helidon SE built-in and custom health checks. |
+| [Metrics Guide][metrics-guide]                          | Learn how to use Helidon SE built-in and application metrics.  |
+| [Tracing Guide][tracing-guide]                          | Learn how to trace a Helidon SE application.                   |
+| [OIDC Guide][oidc-guide]                                | Learn how to set up an OIDC Helidon SE application             |
+| [Helidon SE Upgrade Guide][helidon-se-upgra]            | Learn how to Upgrade your Helidon SE application               |
+| [Helidon SE WebClient Guide][helidon-se-webcl]          | Learn how to use the Helidon SE WebClient                      |
+| [Helidon SE DB Client Guide][helidon-se-db-cl]          | Learn how to use the Helidon SE DB Client                      |
+| [Helidon SE Performance Tuning Guide][helidon-se-perfo] | Learn how to tune your Helidon SE application                  |
 <!--/mdc -->
 
 ## Build and Deploy
@@ -82,11 +82,11 @@
   ::
 ::
 -->
-| Guide | Description |
-| --- | --- |
-| [Maven Guide][maven-guide] | Using Helidon in your Maven project. |
-| [Gradle Guide][gradle-guide] | Using Helidon in your Gradle project. |
-| [GraalVM Native Images][graalvm-native-i] | Learn how to build a GraalVM native image for your Helidon application both on your desktop and as part of a Docker image. |
+| Guide                                                 | Description                                                                                                                     |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| [Maven Guide][maven-guide]                            | Using Helidon in your Maven project.                                                                                            |
+| [Gradle Guide][gradle-guide]                          | Using Helidon in your Gradle project.                                                                                           |
+| [GraalVM Native Images][graalvm-native-i]             | Learn how to build a GraalVM native image for your Helidon application both on your desktop and as part of a Docker image.      |
 | [Custom Runtime Images using jlink][custom-runtime-i] | Learn how to build a custom runtime Java image for your Helidon application both on your desktop and as part of a Docker image. |
 <!--/mdc -->
 

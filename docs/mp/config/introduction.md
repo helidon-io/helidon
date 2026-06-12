@@ -34,11 +34,11 @@ property files and user classes that are registered by the application.
 By default, the following configuration sources are used to retrieve the
 configuration:
 
-| Source | Description |
-|----|----|
-| System properties | A mutable source that uses `System.getProperties()` to obtain configuration values. |
-| Environment variables | An immutable source that uses `System.env()` to obtain configuration values and resolves aliases as defined by the MicroProfile Config specification. |
-| `META-INF/microprofile-config.properties` | The properties config source as defined by MicroProfile Config specification. |
+| Source                                    | Description                                                                                                                                           |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| System properties                         | A mutable source that uses `System.getProperties()` to obtain configuration values.                                                                   |
+| Environment variables                     | An immutable source that uses `System.env()` to obtain configuration values and resolves aliases as defined by the MicroProfile Config specification. |
+| `META-INF/microprofile-config.properties` | The properties config source as defined by MicroProfile Config specification.                                                                         |
 
 MicroProfile Config uses `ConfigSource` SPI to load configuration data, either
 from default configuration sources or from custom `ConfigSource` located by Java
@@ -238,8 +238,8 @@ The class responsible for configuration is:
 
 ### Configuration options
 
-| Key | Kind | Type | Description |
-|----|----|----|----|
+| Key                                         | Kind    | Type     | Description                        |
+| ------------------------------------------- | ------- | -------- | ---------------------------------- |
 | <span id="a2c415-profile"></span> `profile` | `VALUE` | `String` | Configure an explicit profile name |
 
 Current properties may be set in `application.yaml` or in
@@ -249,8 +249,8 @@ See [Config Profiles](#microprofile-config-profiles) for more information.
 
 ## Additional Information
 
-| Name | Description |
-| --- | --- |
+| Name                               | Description                                                                        |
+| ---------------------------------- | ---------------------------------------------------------------------------------- |
 | [MP Config Guide][mp-config-guide] | Step-by-step guide about using MicroProfile Config in your Helidon MP application. |
 
 ## Reference
