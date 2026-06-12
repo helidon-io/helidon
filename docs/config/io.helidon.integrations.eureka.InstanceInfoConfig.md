@@ -224,7 +224,7 @@ A <code>Prototype.<wbr>Api prototype</code> describing initial Eureka Server ser
 <code>String</code>
 </td>
 <td>
-<code>/Status</code>
+<code>&#8288;/&#8288;Status</code>
 </td>
 <td>The status page URL path (used if status page URL is not explicitly set)</td>
 </tr>

@@ -109,7 +109,7 @@
 <code>Long</code>
 </td>
 <td>
-<code>-1</code>
+<code>&#8288;-&#8288;1</code>
 </td>
 <td>Configure initial MAX_HEADER_LIST_SIZE setting for new HTTP/2 connections</td>
 </tr>

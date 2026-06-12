@@ -67,7 +67,12 @@ class CodeBreaksTest {
 
     @Test
     void testEdgeSeparatorsDoNotBreak() {
-        assertThat(CodeBreaks.code("-1"), is("-1"));
+        assertThat(CodeBreaks.code("/"), is("/"));
+        assertThat(CodeBreaks.code("-"), is("-"));
+        assertThat(CodeBreaks.code("/openapi"), is("&#8288;/&#8288;openapi"));
+        assertThat(CodeBreaks.code("/oidc/redirect"), is("&#8288;/&#8288;oidc/<wbr>redirect"));
+        assertThat(CodeBreaks.code("-1"), is("&#8288;-&#8288;1"));
+        assertThat(CodeBreaks.code("-1.0"), is("&#8288;-&#8288;1.<wbr>0"));
         assertThat(CodeBreaks.code("value-"), is("value-"));
     }
 
@@ -86,6 +91,12 @@ class CodeBreaksTest {
     void testHtmlRewritesOnlyCodeContents() {
         assertThat(CodeBreaks.html("<p><span>AcmeListenerConfig</span> <code>AcmeListenerConfig</code></p>"),
                    is("<p><span>AcmeListenerConfig</span> <code>Acme<wbr>Listener<wbr>Config</code></p>"));
+        assertThat(CodeBreaks.html("<p><code>/</code></p>"),
+                   is("<p><code>/</code></p>"));
+        assertThat(CodeBreaks.html("<p><code>-</code></p>"),
+                   is("<p><code>-</code></p>"));
+        assertThat(CodeBreaks.html("<p><code>/openapi</code></p>"),
+                   is("<p><code>&#8288;/&#8288;openapi</code></p>"));
     }
 
     @Test

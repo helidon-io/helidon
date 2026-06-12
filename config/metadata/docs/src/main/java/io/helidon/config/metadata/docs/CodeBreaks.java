@@ -29,6 +29,7 @@ final class CodeBreaks {
     static final int MIN_CHARS_BETWEEN_BREAKS = 4;
 
     private static final String WBR = "<wbr>";
+    private static final String WORD_JOINER = "&#8288;";
     private static final Pattern CODE = Pattern.compile("(?is)<code\\b([^>]*)>(.*?)</code>");
 
     private CodeBreaks() {
@@ -80,19 +81,29 @@ final class CodeBreaks {
                 result.append(WBR);
             }
             String str = code.get(index);
-            if (str.length() == 1) {
-                char ch = str.charAt(0);
-                switch (ch) {
-                    case '&' -> result.append("&amp;");
-                    case '<' -> result.append("&lt;");
-                    case '>' -> result.append("&gt;");
-                    case '"' -> result.append("&quot;");
-                    case '\'' -> result.append("&#39;");
-                    default -> result.append(ch);
-                }
+            if (leadingSeparator(code, index, str)) {
+                result.append(WORD_JOINER);
+                appendCodeChar(result, str);
+                result.append(WORD_JOINER);
             } else {
-                result.append(str);
+                appendCodeChar(result, str);
             }
+        }
+    }
+
+    private static void appendCodeChar(StringBuilder result, String str) {
+        if (str.length() == 1) {
+            char ch = str.charAt(0);
+            switch (ch) {
+                case '&' -> result.append("&amp;");
+                case '<' -> result.append("&lt;");
+                case '>' -> result.append("&gt;");
+                case '"' -> result.append("&quot;");
+                case '\'' -> result.append("&#39;");
+                default -> result.append(ch);
+            }
+        } else {
+            result.append(str);
         }
     }
 
@@ -201,6 +212,14 @@ final class CodeBreaks {
                     default -> false;
                 };
             }
+        }
+        return false;
+    }
+
+    private static boolean leadingSeparator(List<String> code, int index, String str) {
+        if (index == 0 && code.size() > 1 && str.length() == 1) {
+            char ch = str.charAt(0);
+            return ch == '-' || ch == '/';
         }
         return false;
     }

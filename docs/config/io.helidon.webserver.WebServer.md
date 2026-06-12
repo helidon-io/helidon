@@ -79,7 +79,7 @@ WebServer configuration bean
 <code>Long</code>
 </td>
 <td>
-<code>-1</code>
+<code>&#8288;-&#8288;1</code>
 </td>
 <td>Maximal number of bytes an entity may have</td>
 </tr>
@@ -193,7 +193,7 @@ WebServer configuration bean
 <code>Integer</code>
 </td>
 <td>
-<code>-1</code>
+<code>&#8288;-&#8288;1</code>
 </td>
 <td>Limits the number of connections that can be opened at a single point in time</td>
 </tr>
@@ -240,7 +240,7 @@ WebServer configuration bean
 <code>Integer</code>
 </td>
 <td>
-<code>-1</code>
+<code>&#8288;-&#8288;1</code>
 </td>
 <td>Limits the number of requests that can be executed at the same time (the number of active virtual threads of requests)</td>
 </tr>

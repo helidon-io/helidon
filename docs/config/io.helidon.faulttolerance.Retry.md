@@ -73,7 +73,7 @@
 <code>Double</code>
 </td>
 <td>
-<code>-1.<wbr>0</code>
+<code>&#8288;-&#8288;1.<wbr>0</code>
 </td>
 <td>Delay retry policy factor</td>
 </tr>

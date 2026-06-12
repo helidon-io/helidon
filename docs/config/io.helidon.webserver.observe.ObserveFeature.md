@@ -25,7 +25,7 @@ Configuration for observability feature itself
 <code>String</code>
 </td>
 <td>
-<code>/observe</code>
+<code>&#8288;/&#8288;observe</code>
 </td>
 <td>Root endpoint to use for observe providers</td>
 </tr>
