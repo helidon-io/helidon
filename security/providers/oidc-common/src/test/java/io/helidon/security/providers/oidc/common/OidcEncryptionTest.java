@@ -194,8 +194,57 @@ class OidcEncryptionTest {
         assertThat(Files.exists(tempDir.resolve(SECRET_FILE)), is(false));
     }
 
+    @Test
+    void usesConfiguredNameWithLegacyCookieFlagsWithoutReadingFallbackSecret() throws Exception {
+        Files.createDirectory(tempDir.resolve(SECRET_FILE));
+
+        ProcessResult result = runFallbackSecret(tempDir, "name-with-flags");
+
+        assertThat(result.output(), result.exitCode(), is(0));
+    }
+
+    @Test
+    void namedEncryptionDoesNotAddOidcVersionEnvelope() {
+        EncryptionProvider<ProviderConfig> provider = new EncryptionProvider<>() {
+            @Override
+            public EncryptionSupport encryption(Config config) {
+                return namedEncryptionSupport();
+            }
+
+            @Override
+            public EncryptionSupport encryption(ProviderConfig providerConfig) {
+                return namedEncryptionSupport();
+            }
+        };
+        Security security = Security.builder()
+                .addEncryption("test-name", provider, new ProviderConfig() {
+                })
+                .build();
+        Context context = Context.create();
+        context.register(security);
+
+        Contexts.runInContext(context, () -> {
+            assertNamedEncryptionDoesNotAddOidcVersionEnvelope(OidcEncryption.create("test", "test-name", null));
+            assertNamedEncryptionDoesNotAddOidcVersionEnvelope(OidcEncryption.create("test", "test-name", null, true, false));
+            assertNamedEncryptionDoesNotAddOidcVersionEnvelope(OidcEncryption.create("test", "test-name", null, false, true));
+            assertNamedEncryptionDoesNotAddOidcVersionEnvelope(OidcEncryption.create("test", "test-name", null, true, true));
+        });
+    }
+
     private static boolean posixSupported(Path path) {
         return Files.getFileAttributeView(path, PosixFileAttributeView.class) != null;
+    }
+
+    private static EncryptionSupport namedEncryptionSupport() {
+        return EncryptionSupport.create(bytes -> Single.just(Base64.getEncoder().encodeToString(bytes)),
+                                        encrypted -> Single.just(Base64.getDecoder().decode(encrypted)));
+    }
+
+    private static void assertNamedEncryptionDoesNotAddOidcVersionEnvelope(EncryptionSupport encryption) {
+        String encrypted = encryption.encrypt("test".getBytes(StandardCharsets.UTF_8)).await();
+
+        assertThat(encrypted, is(Base64.getEncoder().encodeToString("test".getBytes(StandardCharsets.UTF_8))));
+        assertThat(new String(encryption.decrypt(encrypted).await(), StandardCharsets.UTF_8), is("test"));
     }
 
     private static ProcessResult runFallbackSecret(Path directory) throws Exception {
@@ -244,6 +293,7 @@ class OidcEncryptionTest {
                 switch (args[0]) {
                 case "name" -> useNamedEncryption();
                 case "no-cookie-config" -> noCookieConfig();
+                case "name-with-flags" -> useNamedEncryptionWithLegacyCookieFlags();
                 case "password" -> use(OidcEncryption.create("test", null, "changeit".toCharArray()));
                 case "encrypt" -> encrypt();
                 case "decrypt" -> decrypt(args[1]);
@@ -266,6 +316,14 @@ class OidcEncryptionTest {
         }
 
         private static void useNamedEncryption() {
+            useNamedEncryption(false, false);
+        }
+
+        private static void useNamedEncryptionWithLegacyCookieFlags() {
+            useNamedEncryption(true, true);
+        }
+
+        private static void useNamedEncryption(boolean legacyCookieEncryption, boolean legacyCookieFallback) {
             EncryptionProvider<ProviderConfig> provider = new EncryptionProvider<>() {
                 @Override
                 public EncryptionSupport encryption(Config config) {
@@ -283,7 +341,13 @@ class OidcEncryptionTest {
                     .build();
             Context context = Context.create();
             context.register(security);
-            Contexts.runInContext(context, () -> use(OidcEncryption.create("test", "test-name", null)));
+            Contexts.runInContext(context, () -> use(legacyCookieEncryption || legacyCookieFallback
+                    ? OidcEncryption.create("test",
+                                            "test-name",
+                                            null,
+                                            legacyCookieEncryption,
+                                            legacyCookieFallback)
+                    : OidcEncryption.create("test", "test-name", null)));
         }
 
         private static EncryptionSupport support() {

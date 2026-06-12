@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 Oracle and/or its affiliates.
+ * Copyright (c) 2021, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,13 +16,17 @@
 
 package io.helidon.security.providers.config.vault;
 
+import java.lang.System.Logger.Level;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.helidon.common.Base64Value;
+import io.helidon.common.crypto.CryptoException;
 import io.helidon.common.crypto.SymmetricCipher;
 import io.helidon.common.reactive.Single;
 import io.helidon.config.Config;
@@ -41,11 +45,22 @@ import io.helidon.security.spi.SecurityProvider;
  */
 public class ConfigVaultProvider implements SecretsProvider<ConfigVaultProvider.SecretConfig>,
                                             EncryptionProvider<ConfigVaultProvider.EncryptionConfig> {
+    private static final System.Logger LOGGER = System.getLogger(ConfigVaultProvider.class.getName());
+    private static final int LEGACY_NUMBER_OF_ITERATIONS = 10_000;
+    private static final byte CURRENT_VERSION = 1;
+    private static final byte[] CURRENT_VERSION_HEADER = {CURRENT_VERSION};
+    private static final AtomicBoolean LEGACY_DECRYPTION_LOGGED = new AtomicBoolean();
 
-    private final Optional<EncryptionSupport> aesEncryption;
+    private final Optional<SymmetricCipher> symmetricCipher;
+    private final Optional<SymmetricCipher> legacySymmetricCipher;
+    private final boolean legacyEncryption;
+    private final boolean legacyFallback;
 
     private ConfigVaultProvider(Builder builder) {
-        this.aesEncryption = builder.aesEncryption();
+        this.symmetricCipher = builder.symmetricCipher;
+        this.legacySymmetricCipher = builder.legacySymmetricCipher;
+        this.legacyEncryption = builder.resolvedLegacyEncryption;
+        this.legacyFallback = builder.resolvedLegacyFallback;
     }
 
     /**
@@ -95,19 +110,40 @@ public class ConfigVaultProvider implements SecretsProvider<ConfigVaultProvider.
 
     @Override
     public EncryptionSupport encryption(EncryptionConfig providerConfig) {
-        return providerConfig.aesEncryption()
-                .or(() -> aesEncryption)
+        SymmetricCipher symmetricCipher = providerConfig.symmetricCipher()
+                .or(() -> this.symmetricCipher)
                 .orElseThrow(() -> new SecurityException("Encryption is not configured"));
+        SymmetricCipher legacySymmetricCipher = providerConfig.legacySymmetricCipher()
+                .or(() -> this.legacySymmetricCipher)
+                .orElseThrow(() -> new SecurityException("Encryption is not configured"));
+        boolean legacyEncryption = providerConfig.legacyEncryption().orElse(this.legacyEncryption);
+        boolean legacyFallback = providerConfig.legacyFallback().orElse(this.legacyFallback);
+
+        return EncryptionConfig.encryptionSupport(symmetricCipher,
+                                                  legacySymmetricCipher,
+                                                  legacyEncryption,
+                                                  legacyFallback);
     }
 
     /**
-     * Configuration of encryption. Currently has no additional configuration options.
+     * Configuration of encryption.
+     * Legacy flags configured on a named encryption entry override the provider-level defaults while still inheriting
+     * the provider master password unless a password is configured on this entry.
      */
     public static class EncryptionConfig implements ProviderConfig {
-        private final Optional<char[]> password;
+        private final Optional<SymmetricCipher> symmetricCipher;
+        private final Optional<SymmetricCipher> legacySymmetricCipher;
+        private final Optional<Boolean> legacyEncryption;
+        private final Optional<Boolean> legacyFallback;
 
-        private EncryptionConfig(Optional<char[]> password) {
-            this.password = password;
+        private EncryptionConfig(Optional<SymmetricCipher> symmetricCipher,
+                                 Optional<SymmetricCipher> legacySymmetricCipher,
+                                 Optional<Boolean> legacyEncryption,
+                                 Optional<Boolean> legacyFallback) {
+            this.symmetricCipher = symmetricCipher;
+            this.legacySymmetricCipher = legacySymmetricCipher;
+            this.legacyEncryption = legacyEncryption;
+            this.legacyFallback = legacyFallback;
         }
 
         /**
@@ -116,7 +152,7 @@ public class ConfigVaultProvider implements SecretsProvider<ConfigVaultProvider.
          * @return new instance with default configuration
          */
         public static EncryptionConfig create() {
-            return new EncryptionConfig(Optional.empty());
+            return new EncryptionConfig(Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
         }
 
         /**
@@ -125,32 +161,150 @@ public class ConfigVaultProvider implements SecretsProvider<ConfigVaultProvider.
          * @return a new instance using the custom password
          */
         public static EncryptionConfig create(char[] password) {
-            return new EncryptionConfig(Optional.ofNullable(password));
+            return create(password, Optional.empty(), Optional.empty());
+        }
+
+        /**
+         * Create a new instance with custom password and legacy encryption flags.
+         * These flags are temporary compatibility controls for rolling upgrades, not steady-state security settings.
+         *
+         * @param password password to use
+         * @param legacyEncryption whether data should be written using the legacy encrypted value format
+         * @param legacyFallback whether decryption should retry with the alternate encrypted value format
+         * @return a new instance using the custom password and legacy flags
+         */
+        public static EncryptionConfig create(char[] password, boolean legacyEncryption, boolean legacyFallback) {
+            return create(password, Optional.of(legacyEncryption), Optional.of(legacyFallback));
         }
 
         /**
          * Create a new instance from config.
          *
-         * @param config config to read password from (if any)
+         * @param config config to read password and legacy flags from (if any)
          * @return a new instance configured from config
          */
         public static EncryptionConfig create(Config config) {
-            return new EncryptionConfig(config.get("password").asString().map(String::toCharArray));
+            Optional<char[]> password = config.get("password").asString().map(String::toCharArray);
+            return new EncryptionConfig(password.map(EncryptionConfig::symmetricCipher),
+                                        password.map(EncryptionConfig::legacySymmetricCipher),
+                                        config.get("legacy-encryption").asBoolean().asOptional(),
+                                        config.get("legacy-fallback").asBoolean().asOptional());
         }
 
-        private static EncryptionSupport encryptionSupport(char[] password) {
-            SymmetricCipher symmetricCipher = SymmetricCipher.create(password);
-            Function<byte[], Single<String>> encrypt = bytes -> {
-                return Single.just(symmetricCipher.encryptToString(Base64Value.create(bytes)));
-            };
-            Function<String, Single<byte[]>> decrypt = cipherText -> {
-                return Single.just(symmetricCipher.decryptFromString(cipherText).toBytes());
-            };
+        private static EncryptionConfig create(char[] password,
+                                               Optional<Boolean> legacyEncryption,
+                                               Optional<Boolean> legacyFallback) {
+            return new EncryptionConfig(Optional.ofNullable(password).map(EncryptionConfig::symmetricCipher),
+                                        Optional.ofNullable(password).map(EncryptionConfig::legacySymmetricCipher),
+                                        legacyEncryption,
+                                        legacyFallback);
+        }
+
+        private static EncryptionSupport encryptionSupport(SymmetricCipher symmetricCipher,
+                                                           SymmetricCipher legacySymmetricCipher,
+                                                           boolean legacyEncryption,
+                                                           boolean legacyFallback) {
+            SymmetricCipher primaryCipher = legacyEncryption ? legacySymmetricCipher : symmetricCipher;
+            SymmetricCipher fallbackCipher = legacyEncryption ? symmetricCipher : legacySymmetricCipher;
+            Function<byte[], Single<String>> encrypt = bytes -> Single.create(() -> encrypt(primaryCipher,
+                                                                                             !legacyEncryption,
+                                                                                             bytes));
+            Function<String, Single<byte[]>> decrypt = cipherText -> Single.create(() -> decrypt(primaryCipher,
+                                                                                                  fallbackCipher,
+                                                                                                  legacyFallback,
+                                                                                                  !legacyEncryption,
+                                                                                                  legacyEncryption,
+                                                                                                  cipherText).toBytes());
             return EncryptionSupport.create(encrypt, decrypt);
         }
 
-        Optional<EncryptionSupport> aesEncryption() {
-            return password.map(EncryptionConfig::encryptionSupport);
+        private static SymmetricCipher symmetricCipher(char[] password) {
+            return SymmetricCipher.builder()
+                    .password(password)
+                    .additionalAuthenticatedData(CURRENT_VERSION_HEADER)
+                    .build();
+        }
+
+        private static SymmetricCipher legacySymmetricCipher(char[] password) {
+            return SymmetricCipher.builder()
+                    .password(password)
+                    .numberOfIterations(LEGACY_NUMBER_OF_ITERATIONS)
+                    .build();
+        }
+
+        private static String encrypt(SymmetricCipher cipher, boolean current, byte[] bytes) {
+            if (!current) {
+                return cipher.encryptToString(Base64Value.create(bytes));
+            }
+
+            byte[] encrypted = cipher.encrypt(Base64Value.create(bytes)).toBytes();
+            byte[] versioned = new byte[encrypted.length + 1];
+            versioned[0] = CURRENT_VERSION;
+            System.arraycopy(encrypted, 0, versioned, 1, encrypted.length);
+            return Base64Value.create(versioned).toBase64();
+        }
+
+        private static Base64Value decrypt(SymmetricCipher primaryCipher,
+                                           SymmetricCipher fallbackCipher,
+                                           boolean legacyFallback,
+                                           boolean primaryIsCurrent,
+                                           boolean fallbackIsCurrent,
+                                           String cipherText) {
+            CryptoException currentFailure;
+            try {
+                return decrypt(primaryCipher, primaryIsCurrent, cipherText);
+            } catch (CryptoException e) {
+                currentFailure = e;
+            }
+            if (!legacyFallback) {
+                throw currentFailure;
+            }
+            try {
+                Base64Value decrypted = decrypt(fallbackCipher, fallbackIsCurrent, cipherText);
+                if (!fallbackIsCurrent && LEGACY_DECRYPTION_LOGGED.compareAndSet(false, true)
+                        && LOGGER.isLoggable(Level.WARNING)) {
+                    LOGGER.log(Level.WARNING,
+                               "Config vault decrypted data using the legacy PBKDF2 iteration count. "
+                                       + "New encrypted data will use the current default.");
+                }
+                return decrypted;
+            } catch (CryptoException e) {
+                currentFailure.addSuppressed(e);
+                throw currentFailure;
+            }
+        }
+
+        private static Base64Value decrypt(SymmetricCipher cipher, boolean current, String cipherText) {
+            if (!current) {
+                return cipher.decryptFromString(cipherText);
+            }
+
+            byte[] versioned;
+            try {
+                versioned = Base64Value.createFromEncoded(cipherText).toBytes();
+            } catch (RuntimeException e) {
+                throw new CryptoException("Config vault encrypted value does not use the current format", e);
+            }
+            if (versioned.length == 0 || versioned[0] != CURRENT_VERSION) {
+                throw new CryptoException("Config vault encrypted value does not use the current format");
+            }
+            return cipher.decrypt(Base64Value.create(Arrays.copyOfRange(versioned, 1, versioned.length)));
+        }
+
+        Optional<SymmetricCipher> symmetricCipher() {
+            return symmetricCipher;
+        }
+
+        Optional<SymmetricCipher> legacySymmetricCipher() {
+            return legacySymmetricCipher;
+        }
+
+        Optional<Boolean> legacyEncryption() {
+            return legacyEncryption;
+        }
+
+        Optional<Boolean> legacyFallback() {
+            return legacyFallback;
         }
     }
 
@@ -227,6 +381,12 @@ public class ConfigVaultProvider implements SecretsProvider<ConfigVaultProvider.
     public static class Builder implements io.helidon.common.Builder<Builder, ConfigVaultProvider> {
         private Config config = Config.empty();
         private Optional<char[]> masterPassword = Optional.empty();
+        private Optional<SymmetricCipher> symmetricCipher = Optional.empty();
+        private Optional<SymmetricCipher> legacySymmetricCipher = Optional.empty();
+        private Optional<Boolean> legacyEncryption = Optional.empty();
+        private Optional<Boolean> legacyFallback = Optional.empty();
+        private boolean resolvedLegacyEncryption;
+        private boolean resolvedLegacyFallback;
 
         private Builder() {
         }
@@ -245,9 +405,17 @@ public class ConfigVaultProvider implements SecretsProvider<ConfigVaultProvider.
 
         @Override
         public ConfigVaultProvider build() {
-            this.masterPassword = masterPassword
+            Optional<char[]> masterPassword = this.masterPassword
                     .or(() -> config.get("master-password").asString().map(String::toCharArray))
                     .or(Builder::resolveMasterPassword);
+            this.symmetricCipher = masterPassword.map(EncryptionConfig::symmetricCipher);
+            this.legacySymmetricCipher = masterPassword.map(EncryptionConfig::legacySymmetricCipher);
+            this.resolvedLegacyEncryption = legacyEncryption
+                    .or(() -> config.get("legacy-encryption").asBoolean().asOptional())
+                    .orElse(false);
+            this.resolvedLegacyFallback = legacyFallback
+                    .or(() -> config.get("legacy-fallback").asBoolean().asOptional())
+                    .orElse(false);
 
             return new ConfigVaultProvider(this);
         }
@@ -277,8 +445,30 @@ public class ConfigVaultProvider implements SecretsProvider<ConfigVaultProvider.
             return this;
         }
 
-        Optional<EncryptionSupport> aesEncryption() {
-            return masterPassword.map(EncryptionConfig::encryptionSupport);
+        /**
+         * Temporary rolling-upgrade option to write encrypted data using the legacy encrypted value format.
+         * Leave disabled for steady-state deployments.
+         *
+         * @param legacyEncryption whether to write data using legacy encryption
+         * @return updated builder
+         */
+        @ConfiguredOption("false")
+        public Builder legacyEncryption(boolean legacyEncryption) {
+            this.legacyEncryption = Optional.of(legacyEncryption);
+            return this;
+        }
+
+        /**
+         * Temporary rolling-upgrade option to retry decryption with the alternate encrypted value format after
+         * primary decryption fails. Disable after legacy encrypted values are replaced.
+         *
+         * @param legacyFallback whether decryption fallback should be enabled
+         * @return updated builder
+         */
+        @ConfiguredOption("false")
+        public Builder legacyFallback(boolean legacyFallback) {
+            this.legacyFallback = Optional.of(legacyFallback);
+            return this;
         }
     }
 }

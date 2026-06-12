@@ -28,13 +28,16 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.PosixFileAttributeView;
 import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import io.helidon.common.Base64Value;
 import io.helidon.common.context.Contexts;
+import io.helidon.common.crypto.CryptoException;
 import io.helidon.common.crypto.SymmetricCipher;
 import io.helidon.common.reactive.Single;
 import io.helidon.security.Security;
@@ -42,6 +45,10 @@ import io.helidon.security.spi.EncryptionProvider.EncryptionSupport;
 
 final class OidcEncryption {
     private static final Logger LOGGER = Logger.getLogger(OidcEncryption.class.getName());
+    private static final int LEGACY_NUMBER_OF_ITERATIONS = 10_000;
+    private static final byte CURRENT_VERSION = 1;
+    private static final byte[] CURRENT_VERSION_HEADER = {CURRENT_VERSION};
+    private static final AtomicBoolean LEGACY_DECRYPTION_LOGGED = new AtomicBoolean();
     private static final Set<PosixFilePermission> OWNER_READ = Set.of(PosixFilePermission.OWNER_READ);
     private static final Set<PosixFilePermission> OWNER_READ_WRITE = Set.of(PosixFilePermission.OWNER_READ,
                                                                             PosixFilePermission.OWNER_WRITE);
@@ -52,6 +59,14 @@ final class OidcEncryption {
     static EncryptionSupport create(String type,
                                     String encryptionConfigurationName,
                                     char[] encryptionPassword) {
+        return create(type, encryptionConfigurationName, encryptionPassword, false, false);
+    }
+
+    static EncryptionSupport create(String type,
+                                    String encryptionConfigurationName,
+                                    char[] encryptionPassword,
+                                    boolean legacyCookieEncryption,
+                                    boolean legacyCookieFallback) {
         EncryptionSupport found = null;
 
         if (encryptionConfigurationName != null) {
@@ -70,15 +85,124 @@ final class OidcEncryption {
             return found;
         }
 
-        return symmetricCipher(masterPassword);
+        return symmetricCipher(type, masterPassword, legacyCookieEncryption, legacyCookieFallback);
     }
 
-    private static EncryptionSupport symmetricCipher(char[] masterPassword) {
-        SymmetricCipher cipher = SymmetricCipher.create(masterPassword);
+    private static EncryptionSupport symmetricCipher(String type,
+                                                     char[] masterPassword,
+                                                     boolean legacyCookieEncryption,
+                                                     boolean legacyCookieFallback) {
+        SymmetricCipher currentCipher = SymmetricCipher.builder()
+                .password(masterPassword)
+                .additionalAuthenticatedData(CURRENT_VERSION_HEADER)
+                .build();
+        SymmetricCipher legacyCipher = SymmetricCipher.builder()
+                .password(masterPassword)
+                .numberOfIterations(LEGACY_NUMBER_OF_ITERATIONS)
+                .build();
         return EncryptionSupport.create(
-                bytes -> Single.create(() -> cipher.encrypt(Base64Value.create(bytes)).toBase64()),
-                cipherText -> Single.create(() -> cipher.decrypt(Base64Value.createFromEncoded(cipherText)).toBytes())
+                bytes -> Single.create(() -> encrypt(currentCipher, legacyCipher, legacyCookieEncryption, bytes)),
+                cipherText -> Single.create(() -> decrypt(type,
+                                                          currentCipher,
+                                                          legacyCipher,
+                                                          legacyCookieEncryption,
+                                                          legacyCookieFallback,
+                                                          cipherText).toBytes())
         );
+    }
+
+    private static String encrypt(SymmetricCipher currentCipher,
+                                  SymmetricCipher legacyCipher,
+                                  boolean legacyCookieEncryption,
+                                  byte[] bytes) {
+        Base64Value encrypted = legacyCookieEncryption
+                ? legacyCipher.encrypt(Base64Value.create(bytes))
+                : currentCipher.encrypt(Base64Value.create(bytes));
+        if (legacyCookieEncryption) {
+            return encrypted.toBase64();
+        }
+
+        byte[] encryptedBytes = encrypted.toBytes();
+        byte[] versioned = new byte[encryptedBytes.length + 1];
+        versioned[0] = CURRENT_VERSION;
+        System.arraycopy(encryptedBytes, 0, versioned, 1, encryptedBytes.length);
+        return Base64Value.create(versioned).toBase64();
+    }
+
+    private static Base64Value decrypt(String type,
+                                       SymmetricCipher currentCipher,
+                                       SymmetricCipher legacyCipher,
+                                       boolean legacyCookieEncryption,
+                                       boolean legacyCookieFallback,
+                                       String cipherText) {
+        byte[] encrypted = Base64Value.createFromEncoded(cipherText).toBytes();
+        return legacyCookieEncryption
+                ? decryptLegacyFirst(currentCipher, legacyCipher, legacyCookieFallback, encrypted)
+                : decryptCurrentFirst(type, currentCipher, legacyCipher, legacyCookieFallback, encrypted);
+    }
+
+    private static Base64Value decryptCurrentFirst(String type,
+                                                   SymmetricCipher currentCipher,
+                                                   SymmetricCipher legacyCipher,
+                                                   boolean legacyCookieFallback,
+                                                   byte[] encrypted) {
+        CryptoException currentFailure = new CryptoException("OIDC encrypted cookie does not use the current format");
+        if (encrypted.length != 0 && encrypted[0] == CURRENT_VERSION) {
+            try {
+                return decrypt(currentCipher, Arrays.copyOfRange(encrypted, 1, encrypted.length));
+            } catch (CryptoException e) {
+                currentFailure = e;
+            }
+        }
+        if (!legacyCookieFallback) {
+            throw currentFailure;
+        }
+        try {
+            Base64Value decrypted = decrypt(legacyCipher, encrypted);
+            if (LEGACY_DECRYPTION_LOGGED.compareAndSet(false, true)) {
+                LOGGER.log(Level.WARNING,
+                           "OIDC " + type + " decrypted data using the legacy PBKDF2 iteration count. "
+                                   + "New encrypted data will use the current default.");
+            }
+            return decrypted;
+        } catch (CryptoException e) {
+            currentFailure.addSuppressed(e);
+            throw currentFailure;
+        }
+    }
+
+    private static Base64Value decryptLegacyFirst(SymmetricCipher currentCipher,
+                                                  SymmetricCipher legacyCipher,
+                                                  boolean legacyCookieFallback,
+                                                  byte[] encrypted) {
+        CryptoException legacyFailure;
+        try {
+            return decrypt(legacyCipher, encrypted);
+        } catch (CryptoException e) {
+            legacyFailure = e;
+        }
+        if (!legacyCookieFallback) {
+            throw legacyFailure;
+        }
+        if (encrypted.length == 0 || encrypted[0] != CURRENT_VERSION) {
+            throw legacyFailure;
+        }
+        try {
+            return decrypt(currentCipher, Arrays.copyOfRange(encrypted, 1, encrypted.length));
+        } catch (CryptoException e) {
+            legacyFailure.addSuppressed(e);
+            throw legacyFailure;
+        }
+    }
+
+    private static Base64Value decrypt(SymmetricCipher cipher, byte[] encrypted) {
+        try {
+            return cipher.decrypt(Base64Value.create(encrypted));
+        } catch (CryptoException e) {
+            throw e;
+        } catch (RuntimeException e) {
+            throw new CryptoException("Failed to decrypt the message", e);
+        }
     }
 
     private static EncryptionSupport nameBasedCipher(String encryptionConfigurationName) {

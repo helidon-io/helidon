@@ -91,7 +91,9 @@ public class OidcCookieHandler {
         if (allowEncryption && builder.encryptionEnabled) {
             var cookieEncryption = OidcEncryption.create("Cookie(" + cookieName + ")",
                                                          builder.encryptionName,
-                                                         builder.encryptionPassword);
+                                                         builder.encryptionPassword,
+                                                         builder.legacyCookieEncryption,
+                                                         builder.legacyCookieFallback);
             this.encryptFunction = it -> cookieEncryption.encrypt(it.getBytes(StandardCharsets.UTF_8));
             this.decryptFunction = it -> cookieEncryption.decrypt(it).map(String::new);
         } else {
@@ -211,6 +213,8 @@ public class OidcCookieHandler {
         private String encryptionName;
         private char[] encryptionPassword;
         private boolean encryptionEnabled;
+        private boolean legacyCookieEncryption;
+        private boolean legacyCookieFallback;
 
         private Builder() {
         }
@@ -271,6 +275,16 @@ public class OidcCookieHandler {
 
         public Builder encryptionEnabled(Boolean encryptionEnabled) {
             this.encryptionEnabled = encryptionEnabled;
+            return this;
+        }
+
+        Builder legacyCookieEncryption(boolean legacyCookieEncryption) {
+            this.legacyCookieEncryption = legacyCookieEncryption;
+            return this;
+        }
+
+        Builder legacyCookieFallback(boolean legacyCookieFallback) {
+            this.legacyCookieFallback = legacyCookieFallback;
             return this;
         }
     }

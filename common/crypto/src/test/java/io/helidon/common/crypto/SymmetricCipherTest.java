@@ -42,6 +42,9 @@ public class SymmetricCipherTest {
     private static final String TEST_VALUE = "some value";
     private static final char[] DEFAULT_PASSWORD = "test".toCharArray();
     private static final char[] INCORRECT_PASSWORD = "incorrect".toCharArray();
+    private static final int TEST_NUMBER_OF_ITERATIONS = 100;
+    private static final int DEFAULT_NUMBER_OF_ITERATIONS = 600_000;
+    private static final int PREVIOUS_DEFAULT_NUMBER_OF_ITERATIONS = 10_000;
 
     private static Stream<ParameterWrapper> initParams() throws IllegalAccessException {
         List<ParameterWrapper> symmetricCiphers = new ArrayList<>();
@@ -61,11 +64,13 @@ public class SymmetricCipherTest {
                 SymmetricCipher correct = SymmetricCipher.builder()
                         .algorithm(algorithm)
                         .keySize(keySize)
+                        .numberOfIterations(TEST_NUMBER_OF_ITERATIONS)
                         .password(DEFAULT_PASSWORD)
                         .build();
                 SymmetricCipher incorrect = SymmetricCipher.builder()
                         .algorithm(algorithm)
                         .keySize(keySize)
+                        .numberOfIterations(TEST_NUMBER_OF_ITERATIONS)
                         .password(INCORRECT_PASSWORD)
                         .build();
                 symmetricCiphers.add(new ParameterWrapper(algorithm, keySize, correct, incorrect));
@@ -154,6 +159,25 @@ public class SymmetricCipherTest {
         CryptoException exception = assertThrows(CryptoException.class, () -> decryptingCipher.decrypt(encrypted));
 
         assertThat(exception.getMessage(), is("Failed to decrypt the message"));
+    }
+
+    @Test
+    public void testDefaultNumberOfIterations() {
+        SymmetricCipher symmetricCipher = SymmetricCipher.create(DEFAULT_PASSWORD);
+        Base64Value encrypted = symmetricCipher.encrypt(Base64Value.create(TEST_VALUE));
+
+        SymmetricCipher explicitDefault = SymmetricCipher.builder()
+                .password(DEFAULT_PASSWORD)
+                .numberOfIterations(DEFAULT_NUMBER_OF_ITERATIONS)
+                .build();
+        assertThat(explicitDefault.decrypt(encrypted).toDecodedString(), is(TEST_VALUE));
+
+        SymmetricCipher previousDefault = SymmetricCipher.builder()
+                .password(DEFAULT_PASSWORD)
+                .numberOfIterations(PREVIOUS_DEFAULT_NUMBER_OF_ITERATIONS)
+                .build();
+        CryptoException ex = assertThrows(CryptoException.class, () -> previousDefault.decrypt(encrypted));
+        assertThat(ex.getMessage(), is("Failed to decrypt the message"));
     }
 
     private static class ParameterWrapper {

@@ -296,6 +296,18 @@ import jakarta.ws.rs.client.WebTarget;
  *     in curent context or in global context (this is done automatically in Helidon MP).</td>
  * </tr>
  * <tr>
+ *     <td>{@code legacy-cookie-encryption}</td>
+ *     <td>{@code false}</td>
+ *     <td>Temporary rolling-upgrade option to write unversioned password-based encrypted OIDC cookies with the legacy
+ *     PBKDF2 iteration count. Leave disabled for steady-state deployments.</td>
+ * </tr>
+ * <tr>
+ *     <td>{@code legacy-cookie-fallback}</td>
+ *     <td>{@code false}</td>
+ *     <td>Temporary rolling-upgrade option to retry password-based encrypted OIDC cookie decryption with the alternate
+ *     cookie format after primary decryption fails. Disable after legacy cookies expire.</td>
+ * </tr>
+ * <tr>
  *     <td>{@code logout-endpoint-uri}</td>
  *     <td>From well known metadata endpoint</td>
  *     <td>Endpoint to redirect user to log out from OIDC server.</td>
@@ -1139,6 +1151,8 @@ public final class OidcConfig extends TenantConfigImpl {
                     .map(String::toCharArray)
                     .ifPresent(this::cookieEncryptionPassword);
             config.get("cookie-encryption-name").asString().ifPresent(this::cookieEncryptionName);
+            config.get("legacy-cookie-encryption").asBoolean().ifPresent(this::legacyCookieEncryption);
+            config.get("legacy-cookie-fallback").asBoolean().ifPresent(this::legacyCookieFallback);
 
             // our application
             config.get("redirect-uri").asString().ifPresent(this::redirectUri);
@@ -1498,6 +1512,46 @@ public final class OidcConfig extends TenantConfigImpl {
             this.tokenCookieBuilder.encryptionPassword(cookieEncryptionPassword);
             this.idTokenCookieBuilder.encryptionPassword(cookieEncryptionPassword);
             this.tenantCookieBuilder.encryptionPassword(cookieEncryptionPassword);
+            return this;
+        }
+
+        /**
+         * Whether password-based encrypted OIDC cookies should be written without a version byte and with the legacy
+         * PBKDF2 iteration count.
+         * This can be enabled during rolling upgrades so upgraded nodes continue creating cookies that older nodes can
+         * decrypt. Leave disabled for steady-state deployments and reset to {@code false} after all nodes run the new
+         * version. This setting does not affect named Security encryption configured with
+         * {@link #cookieEncryptionName(String)}.
+         * Defaults to {@code false}.
+         *
+         * @param legacyCookieEncryption whether cookies should be written with legacy password-based encryption
+         * @return updated builder instance
+         */
+        @ConfiguredOption("false")
+        public Builder legacyCookieEncryption(boolean legacyCookieEncryption) {
+            this.tokenCookieBuilder.legacyCookieEncryption(legacyCookieEncryption);
+            this.idTokenCookieBuilder.legacyCookieEncryption(legacyCookieEncryption);
+            this.tenantCookieBuilder.legacyCookieEncryption(legacyCookieEncryption);
+            return this;
+        }
+
+        /**
+         * Whether password-based encrypted OIDC cookies should retry decryption with the alternate cookie format after
+         * primary decryption fails. This can be enabled after a rolling upgrade to accept older unversioned legacy
+         * cookies until they expire, or while legacy writes must read versioned current cookies. Leave disabled for
+         * steady-state deployments and reset to {@code false} after legacy cookies expire. This setting does not affect
+         * named Security encryption configured with
+         * {@link #cookieEncryptionName(String)}.
+         * Defaults to {@code false}.
+         *
+         * @param legacyCookieFallback whether legacy cookie decryption fallback should be enabled
+         * @return updated builder instance
+         */
+        @ConfiguredOption("false")
+        public Builder legacyCookieFallback(boolean legacyCookieFallback) {
+            this.tokenCookieBuilder.legacyCookieFallback(legacyCookieFallback);
+            this.idTokenCookieBuilder.legacyCookieFallback(legacyCookieFallback);
+            this.tenantCookieBuilder.legacyCookieFallback(legacyCookieFallback);
             return this;
         }
 
