@@ -70,11 +70,6 @@
         <version.lib.restito>0.9.1</version.lib.restito>
         <version.lib.rxjava2-jdk9-interop>0.1.0</version.lib.rxjava2-jdk9-interop>
         <version.lib.rxjava>2.2.10</version.lib.rxjava>
-        <version.lib.scala>2.12.10</version.lib.scala>
-        <!-- This is to force upgrade of transitive dep from arquillian -->
-        <!-- 2.x versions used http (not https) to access maven central -->
-        <version.lib.shrinkwrap-resolver>3.0.1</version.lib.shrinkwrap-resolver>
-        <version.lib.spotbugs-annotations>3.1.12</version.lib.spotbugs-annotations>
         <version.lib.testng>7.8.0</version.lib.testng>
         <version.lib.bedrock>7.0.1</version.lib.bedrock>
         <version.lib.awaitility>3.1.6</version.lib.awaitility>
@@ -913,17 +908,6 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>org.apache.zookeeper</groupId>
-                <artifactId>zookeeper</artifactId>
-                <version>${version.lib.zookeeper}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.scala-lang</groupId>
-                <artifactId>scala-library</artifactId>
-                <scope>test</scope>
-                <version>${version.lib.scala}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.github.akarnokd</groupId>
                 <artifactId>rxjava2-jdk9-interop</artifactId>
                 <version>${version.lib.rxjava2-jdk9-interop}</version>
@@ -952,11 +936,6 @@
                 <groupId>com.oracle.bedrock</groupId>
                 <artifactId>bedrock-testing-support</artifactId>
                 <version>${version.lib.bedrock}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.github.spotbugs</groupId>
-                <artifactId>spotbugs-annotations</artifactId>
-                <version>${version.lib.spotbugs-annotations}</version>
             </dependency>
             <dependency>
                 <groupId>org.reactivestreams</groupId>
@@ -1001,17 +980,6 @@
                     </exclusion>
                 </exclusions>
             </dependency>
-            <!-- Force update of shrinkwrap version used by arquillian -->
-            <dependency>
-                <groupId>org.jboss.shrinkwrap.resolver</groupId>
-                <artifactId>shrinkwrap-resolver-impl-maven</artifactId>
-                <version>${version.lib.shrinkwrap-resolver}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.shrinkwrap.resolver</groupId>
-                <artifactId>shrinkwrap-resolver-api-maven</artifactId>
-                <version>${version.lib.shrinkwrap-resolver}</version>
-            </dependency>
             <dependency>
                 <groupId>org.awaitility</groupId>
                 <artifactId>awaitility</artifactId>
@@ -1032,12 +1000,6 @@
                 <groupId>io.github.classgraph</groupId>
                 <artifactId>classgraph</artifactId>
                 <version>${version.lib.classgraph}</version>
-            </dependency>
-            <!-- Injection TCK tests -->
-            <dependency>
-                <groupId>jakarta.inject</groupId>
-                <artifactId>jakarta.inject-tck</artifactId>
-                <version>${version.lib.jakarta.inject}</version>
             </dependency>
             <!-- Maven plugin -->
             <dependency>
