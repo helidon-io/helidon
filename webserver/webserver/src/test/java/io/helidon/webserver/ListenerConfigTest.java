@@ -23,6 +23,7 @@ import java.util.Map;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.webserver.spi.TransportBindingConfig;
 
 import org.junit.jupiter.api.Test;
 
@@ -54,6 +55,27 @@ public class ListenerConfigTest {
         assertThat(listenerConfig2.writeBufferSize(), is(1024));
     }
 
+    @Test
+    void testBindingDiscoveryEnabledByDefault() {
+        ListenerConfig listenerConfig = ListenerConfig.builder().buildPrototype();
+
+        assertThat(listenerConfig.bindings()
+                           .stream()
+                           .anyMatch(ListenerConfigTest::isDiscoveredTestTransportBinding),
+                   is(true));
+    }
+
+    @Test
+    void testBindingDiscoveryCanBeDisabled() {
+        ListenerConfig listenerConfig = ListenerConfig.builder()
+                .bindingsDiscoverServices(false)
+                .buildPrototype();
+
+        assertThat(listenerConfig.bindings()
+                           .stream()
+                           .anyMatch(ListenerConfigTest::isDiscoveredTestTransportBinding),
+                   is(false));
+    }
 
     // Verify that value of server2.shutdown-grace-period is present in ListenerConfiguration instance
     // of the default socket.
@@ -111,5 +133,11 @@ public class ListenerConfigTest {
         assertThat(virtualHost.tls().enabled(), is(true));
         assertThat(virtualHost.tls().prototype().enabledCipherSuites(),
                    is(List.of("TLS_AES_128_GCM_SHA256")));
+    }
+
+    private static boolean isDiscoveredTestTransportBinding(TransportBindingConfig binding) {
+        return TestTransportBindingConfig.TYPE.equals(binding.type())
+                && TestTransportBindingConfig.TYPE.equals(binding.name())
+                && !binding.enabled();
     }
 }

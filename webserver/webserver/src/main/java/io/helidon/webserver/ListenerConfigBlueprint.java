@@ -85,7 +85,7 @@ interface ListenerConfigBlueprint {
      */
     @Option.Configured
     @Option.Singular
-    @Option.Provider(value = TransportBindingProvider.class, discoverServices = false)
+    @Option.Provider(value = TransportBindingProvider.class, discoverServices = true)
     List<TransportBindingConfig> bindings();
 
     /**
