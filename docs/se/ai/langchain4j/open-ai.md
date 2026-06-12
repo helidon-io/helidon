@@ -15,9 +15,7 @@ In addition to the [Helidon integration with LangChain4j core dependencies](lang
 </dependency>
 ```
 
-## Components
-
-### OpenAiChatModel
+## OpenAiChatModel
 
 To automatically create and add `OpenAiChatModel` to the service registry add the following lines to `application.yaml`:
 
@@ -35,7 +33,7 @@ langchain4j:
 
 If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
 
-Full list of configuration properties:
+### Configuration options
 
 <!--@mdc ::table-collapse -->
 | Key                     | Type                  | Description                                                                                                                                                                                                                                                                          |
@@ -61,7 +59,7 @@ Full list of configuration properties:
 | `strict-json-schema`    | boolean               | Whether to enforce a strict JSON schema for the model’s output.                                                                                                                                                                                                                      |
 | `strict-tools`          | boolean               | Whether to enforce strict validation of tools used by the model.                                                                                                                                                                                                                     |
 | `temperature`           | double                | The sampling temperature to use, between 0 and 2. Higher values make the output more random, while lower values make it more focused and deterministic.                                                                                                                              |
-| `timeout`               | duration              | The timeout setting for API requests. See [here][here] for the format.                                                                                                                    |
+| `timeout`               | duration              | The timeout setting for API requests. See [here][here] for the format.                                                                                                                                                                                                               |
 | `top-p`                 | double                | The nucleus sampling value, where the model considers the results of the tokens with top_p probability mass.                                                                                                                                                                         |
 | `user`                  | string                | The user ID associated with the API requests.                                                                                                                                                                                                                                        |
 <!--@mdc :: -->
@@ -82,7 +80,7 @@ The framework attempts to resolve a tokenizer using the following strategy:
 2.  **Fallback to another named service**: If the first service is not found, search for a `dev.langchain4j.model.Tokenizer` service with the name `open-ai`.
 3.  **Default Tokenizer**: If neither service is found, the framework will use the default tokenizer provided by LangChain4j.
 
-### OpenAiEmbeddingModel
+## OpenAiEmbeddingModel
 
 To automatically create and add `OpenAiEmbeddingModel` to the service registry add the following lines to `application.yaml`:
 
@@ -100,26 +98,26 @@ langchain4j:
 
 If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
 
-Full list of configuration properties:
+### Configuration options
 
 <!--@mdc ::table-collapse -->
-| Key               | Type                  | Description                                                                                                                                                       |
-|-------------------|-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `api-key`         | string                | Required. The API key used to authenticate requests to the OpenAI API.                                                                                            |
-| `base-url`        | string                | The base URL for the OpenAI API. If not present, the default value supplied from LangChain4j is used.                                                             |
-| `custom-headers`  | Map\<string, string\> | A map containing custom headers.                                                                                                                                  |
-| `dimensions`      | int                   | The dimensionality of the embeddings generated by the model.                                                                                                      |
-| `enabled`         | boolean               | If set to false, OpenAI model will not be available even if configured.                                                                                           |
-| `log-requests`    | boolean               | Whether to log API requests.                                                                                                                                      |
-| `log-responses`   | boolean               | Whether to log API responses.                                                                                                                                     |
-| `max-retries`     | integer               | The maximum number of retries for failed API requests.                                                                                                            |
-| `model-name`      | string                | The model name to use.                                                                                                                                            |
-| `organization-id` | string                | The ID of the organization for API requests.                                                                                                                      |
-| `timeout`         | duration              | The timeout setting for API requests. See [here][here] for the format. |
-| `user`            | string                | The user ID associated with the API requests.                                                                                                                     |
+| Key               | Type                  | Description                                                                                           |
+|-------------------|-----------------------|-------------------------------------------------------------------------------------------------------|
+| `api-key`         | string                | Required. The API key used to authenticate requests to the OpenAI API.                                |
+| `base-url`        | string                | The base URL for the OpenAI API. If not present, the default value supplied from LangChain4j is used. |
+| `custom-headers`  | Map\<string, string\> | A map containing custom headers.                                                                      |
+| `dimensions`      | int                   | The dimensionality of the embeddings generated by the model.                                          |
+| `enabled`         | boolean               | If set to false, OpenAI model will not be available even if configured.                               |
+| `log-requests`    | boolean               | Whether to log API requests.                                                                          |
+| `log-responses`   | boolean               | Whether to log API responses.                                                                         |
+| `max-retries`     | integer               | The maximum number of retries for failed API requests.                                                |
+| `model-name`      | string                | The model name to use.                                                                                |
+| `organization-id` | string                | The ID of the organization for API requests.                                                          |
+| `timeout`         | duration              | The timeout setting for API requests. See [here][here] for the format.                                |
+| `user`            | string                | The user ID associated with the API requests.                                                         |
 <!--@mdc :: -->
 
-#### Proxy
+### Proxy
 
 The framework attempts to resolve a proxy using the following strategy:
 
@@ -127,7 +125,7 @@ The framework attempts to resolve a proxy using the following strategy:
 2.  **Fallback to another named service**: If the first service is not found, search for a `java.net.Proxy` service with the name `open-ai`.
 3.  **No proxy**: If neither service is found, the framework will not use a proxy.
 
-#### Tokenizer
+### Tokenizer
 
 The framework attempts to resolve a tokenizer using the following strategy:
 
@@ -135,7 +133,7 @@ The framework attempts to resolve a tokenizer using the following strategy:
 2.  **Fallback to another named service**: If the first service is not found, search for a `dev.langchain4j.model.Tokenizer` service with the name `open-ai`.
 3.  **Default Tokenizer**: If neither service is found, the framework will use the default tokenizer provided by LangChain4j.
 
-### OpenAiImageModel
+## OpenAiImageModel
 
 To automatically create and add `OpenAiImageModel` to the service registry add the following lines to `application.yaml`:
 
@@ -153,31 +151,31 @@ langchain4j:
 
 If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
 
-Full list of configuration properties:
+### Configuration options
 
 <!--@mdc ::table-collapse -->
-| Key               | Type                  | Description                                                                                                                                                       |
-|-------------------|-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `api-key`         | string                | Required. The API key used to authenticate requests to the OpenAI API.                                                                                            |
-| `base-url`        | string                | The base URL for the OpenAI API. If not present, the default value supplied from LangChain4j is used.                                                             |
-| `custom-headers`  | Map\<string, string\> | A map containing custom headers.                                                                                                                                  |
-| `enabled`         | boolean               | If set to false, the OpenAI model will not be available even if configured.                                                                                       |
-| `log-requests`    | boolean               | Whether to log API requests.                                                                                                                                      |
-| `log-responses`   | boolean               | Whether to log API responses.                                                                                                                                     |
-| `max-retries`     | integer               | The maximum number of retries for failed API requests.                                                                                                            |
-| `model-name`      | string                | The model name to use.                                                                                                                                            |
-| `organization-id` | string                | The ID of the organization for API requests.                                                                                                                      |
-| `persist-to`      | Path                  | The path or location where the generated images should be persisted.                                                                                              |
-| `quality`         | string                | The quality of the generated images.                                                                                                                              |
-| `response-format` | string                | The format of the response.                                                                                                                                       |
-| `size`            | string                | The desired size of the generated images.                                                                                                                         |
-| `style`           | string                | The style of the generated images.                                                                                                                                |
-| `timeout`         | duration              | The timeout setting for API requests. See [here][here] for the format. |
-| `user`            | string                | The unique identifier for the user making the request.                                                                                                            |
-| `with-persisting` | boolean               | The flag to indicate whether to persist the generated images.                                                                                                     |
+| Key               | Type                  | Description                                                                                           |
+|-------------------|-----------------------|-------------------------------------------------------------------------------------------------------|
+| `api-key`         | string                | Required. The API key used to authenticate requests to the OpenAI API.                                |
+| `base-url`        | string                | The base URL for the OpenAI API. If not present, the default value supplied from LangChain4j is used. |
+| `custom-headers`  | Map\<string, string\> | A map containing custom headers.                                                                      |
+| `enabled`         | boolean               | If set to false, the OpenAI model will not be available even if configured.                           |
+| `log-requests`    | boolean               | Whether to log API requests.                                                                          |
+| `log-responses`   | boolean               | Whether to log API responses.                                                                         |
+| `max-retries`     | integer               | The maximum number of retries for failed API requests.                                                |
+| `model-name`      | string                | The model name to use.                                                                                |
+| `organization-id` | string                | The ID of the organization for API requests.                                                          |
+| `persist-to`      | Path                  | The path or location where the generated images should be persisted.                                  |
+| `quality`         | string                | The quality of the generated images.                                                                  |
+| `response-format` | string                | The format of the response.                                                                           |
+| `size`            | string                | The desired size of the generated images.                                                             |
+| `style`           | string                | The style of the generated images.                                                                    |
+| `timeout`         | duration              | The timeout setting for API requests. See [here][here] for the format.                                |
+| `user`            | string                | The unique identifier for the user making the request.                                                |
+| `with-persisting` | boolean               | The flag to indicate whether to persist the generated images.                                         |
 <!--@mdc :: -->
 
-#### Proxy
+### Proxy
 
 The framework attempts to resolve a proxy using the following strategy:
 
@@ -185,7 +183,7 @@ The framework attempts to resolve a proxy using the following strategy:
 2.  **Fallback to another named service**: If the first service is not found, search for a `java.net.Proxy` service with the name `open-ai`.
 3.  **No proxy**: If neither service is found, the framework will not use a proxy.
 
-### OpenAiLanguageModel
+## OpenAiLanguageModel
 
 To automatically create and add `OpenAiLanguageModel` to the service registry add the following lines to `application.yaml`:
 
@@ -203,25 +201,25 @@ langchain4j:
 
 If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
 
-Full list of configuration properties:
+### Configuration options
 
 <!--@mdc ::table-collapse -->
-| Key               | Type                  | Description                                                                                                                                                       |
-|-------------------|-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `api-key`         | string                | Required. The API key used to authenticate requests to the OpenAI API.                                                                                            |
-| `base-url`        | string                | The base URL for the OpenAI API. If not present, the default value supplied from LangChain4j is used.                                                             |
-| `custom-headers`  | Map\<string, string\> | A map containing custom headers.                                                                                                                                  |
-| `enabled`         | boolean               | If set to false, the OpenAI model will not be available even if configured.                                                                                       |
-| `log-requests`    | boolean               | Whether to log API requests.                                                                                                                                      |
-| `log-responses`   | boolean               | Whether to log API responses.                                                                                                                                     |
-| `max-retries`     | integer               | The maximum number of retries for failed API requests.                                                                                                            |
-| `model-name`      | string                | The model name to use.                                                                                                                                            |
-| `organization-id` | string                | The ID of the organization for API requests.                                                                                                                      |
-| `temperature`     | double                | The sampling temperature to use, between 0 and 2. Higher values make the output more random, while lower values make it more focused and deterministic.           |
-| `timeout`         | duration              | The timeout setting for API requests. See [here][here] for the format. |
+| Key               | Type                  | Description                                                                                                                                             |
+|-------------------|-----------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `api-key`         | string                | Required. The API key used to authenticate requests to the OpenAI API.                                                                                  |
+| `base-url`        | string                | The base URL for the OpenAI API. If not present, the default value supplied from LangChain4j is used.                                                   |
+| `custom-headers`  | Map\<string, string\> | A map containing custom headers.                                                                                                                        |
+| `enabled`         | boolean               | If set to false, the OpenAI model will not be available even if configured.                                                                             |
+| `log-requests`    | boolean               | Whether to log API requests.                                                                                                                            |
+| `log-responses`   | boolean               | Whether to log API responses.                                                                                                                           |
+| `max-retries`     | integer               | The maximum number of retries for failed API requests.                                                                                                  |
+| `model-name`      | string                | The model name to use.                                                                                                                                  |
+| `organization-id` | string                | The ID of the organization for API requests.                                                                                                            |
+| `temperature`     | double                | The sampling temperature to use, between 0 and 2. Higher values make the output more random, while lower values make it more focused and deterministic. |
+| `timeout`         | duration              | The timeout setting for API requests. See [here][here] for the format.                                                                                  |
 <!--@mdc :: -->
 
-#### Proxy
+### Proxy
 
 The framework attempts to resolve a proxy using the following strategy:
 
@@ -229,7 +227,7 @@ The framework attempts to resolve a proxy using the following strategy:
 2.  **Fallback to another named service**: If the first service is not found, search for a `java.net.Proxy` service with the name `open-ai`.
 3.  **No proxy**: If neither service is found, the framework will not use a proxy.
 
-#### Tokenizer
+### Tokenizer
 
 The framework attempts to resolve a tokenizer using the following strategy:
 
@@ -237,7 +235,7 @@ The framework attempts to resolve a tokenizer using the following strategy:
 2.  **Fallback to another named service**: If the first service is not found, search for a `dev.langchain4j.model.Tokenizer` service with the name `open-ai`.
 3.  **Default Tokenizer**: If neither service is found, the framework will use the default tokenizer provided by LangChain4j.
 
-### OpenAiModerationModel
+## OpenAiModerationModel
 
 To automatically create and add `OpenAiModerationModel` to the service registry add the following lines to `application.yaml`:
 
@@ -255,21 +253,21 @@ langchain4j:
 
 If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
 
-Full list of configuration properties:
+### Configuration options
 
 <!--@mdc ::table-collapse -->
-| Key               | Type                  | Description                                                                                                                                                       |
-|-------------------|-----------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `api-key`         | string                | Required. The API key used to authenticate requests to the OpenAI API.                                                                                            |
-| `base-url`        | string                | The base URL for the OpenAI API. If not present, the default value supplied from LangChain4j is used.                                                             |
-| `custom-headers`  | Map\<string, string\> | A map containing custom headers.                                                                                                                                  |
-| `enabled`         | boolean               | If set to false, the OpenAI model will not be available even if configured.                                                                                       |
-| `log-requests`    | boolean               | Whether to log API requests.                                                                                                                                      |
-| `log-responses`   | boolean               | Whether to log API responses.                                                                                                                                     |
-| `max-retries`     | integer               | The maximum number of retries for failed API requests.                                                                                                            |
-| `model-name`      | string                | The model name to use.                                                                                                                                            |
-| `organization-id` | string                | The ID of the organization for API requests.                                                                                                                      |
-| `timeout`         | duration              | The timeout setting for API requests. See [here][here] for the format. |
+| Key               | Type                  | Description                                                                                           |
+|-------------------|-----------------------|-------------------------------------------------------------------------------------------------------|
+| `api-key`         | string                | Required. The API key used to authenticate requests to the OpenAI API.                                |
+| `base-url`        | string                | The base URL for the OpenAI API. If not present, the default value supplied from LangChain4j is used. |
+| `custom-headers`  | Map\<string, string\> | A map containing custom headers.                                                                      |
+| `enabled`         | boolean               | If set to false, the OpenAI model will not be available even if configured.                           |
+| `log-requests`    | boolean               | Whether to log API requests.                                                                          |
+| `log-responses`   | boolean               | Whether to log API responses.                                                                         |
+| `max-retries`     | integer               | The maximum number of retries for failed API requests.                                                |
+| `model-name`      | string                | The model name to use.                                                                                |
+| `organization-id` | string                | The ID of the organization for API requests.                                                          |
+| `timeout`         | duration              | The timeout setting for API requests. See [here][here] for the format.                                |
 <!--@mdc :: -->
 
 #### Proxy
@@ -280,7 +278,7 @@ The framework attempts to resolve a proxy using the following strategy:
 2.  **Fallback to another named service**: If the first service is not found, search for a `java.net.Proxy` service with the name `open-ai`.
 3.  **No proxy**: If neither service is found, the framework will not use a proxy.
 
-### OpenAiStreamingChatModel
+## OpenAiStreamingChatModel
 
 To automatically create and add `OpenAiStreamingChatModel` to the service registry add the following lines to `application.yaml`:
 
@@ -298,7 +296,7 @@ langchain4j:
 
 If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
 
-Full list of configuration properties:
+### Configuration options
 
 <!--@mdc ::table-collapse -->
 | Key                     | Type                  | Description                                                                                                                                                                                                                                                                          |
@@ -322,12 +320,12 @@ Full list of configuration properties:
 | `stop`                  | string\[\]            | The list of sequences where the API will stop generating further tokens.                                                                                                                                                                                                             |
 | `strict-tools`          | boolean               | Whether to enforce strict validation of tools used by the model.                                                                                                                                                                                                                     |
 | `temperature`           | double                | The sampling temperature to use, between 0 and 2. Higher values make the output more random, while lower values make it more focused and deterministic.                                                                                                                              |
-| `timeout`               | duration              | The timeout setting for API requests. See [here][here] for the format.                                                                                                                    |
+| `timeout`               | duration              | The timeout setting for API requests. See [here][here] for the format.                                                                                                                                                                                                               |
 | `top-p`                 | double                | The nucleus sampling value, where the model considers the results of the tokens with top_p probability mass.                                                                                                                                                                         |
 | `user`                  | string                | The user ID associated with the API requests.                                                                                                                                                                                                                                        |
 <!--@mdc :: -->
 
-#### Proxy
+### Proxy
 
 The framework attempts to resolve a proxy using the following strategy:
 
@@ -335,7 +333,7 @@ The framework attempts to resolve a proxy using the following strategy:
 2.  **Fallback to another named service**: If the first service is not found, search for a `java.net.Proxy` service with the name `open-ai`.
 3.  **No proxy**: If neither service is found, the framework will not use a proxy.
 
-#### Tokenizer
+### Tokenizer
 
 The framework attempts to resolve a tokenizer using the following strategy:
 

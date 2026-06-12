@@ -1,13 +1,5 @@
 # WebSocket Introduction
 
-## Overview
-
-Helidon integrates with [Tyrus][tyrus] to provide support for the [Jakarta WebSocket API][jakarta-websocke]. The WebSocket API enables Java applications to participate in WebSocket interactions as both servers and clients. The server API supports two flavors: annotated and programmatic endpoints.
-
-Annotated endpoints, as suggested by their name, use Java annotations to provide the necessary meta-data to define WebSocket handlers; programmatic endpoints implement API interfaces and are annotation free. Annotated endpoints tend to be more flexible since they allow different method signatures depending on the application needs, whereas programmatic endpoints must implement an interface and are, therefore, bounded to its definition.
-
-Helidon SE support is based on the `WebSocketRouting` class which enables Helidon application to configure routing for both annotated and programmatic WebSocket endpoints.
-
 ## Maven Coordinates
 
 To enable WebSocket, add the following dependency to your project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).

@@ -64,7 +64,7 @@ langchain4j:
 <img src="../../../images/lc4j/content-retriever-relationships.svg" alt="Content retriever relationships with Lc4j components" />
 </figure>
 
-Full list of configuration properties:
+### Configuration options
 
 | Key               | Type    | Description                                                                                                                |
 |-------------------|---------|----------------------------------------------------------------------------------------------------------------------------|

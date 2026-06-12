@@ -1,11 +1,14 @@
 # Tracing
 
+> [!WARNING]
+> This feature is marked as `@Deprecated` in Helidon. Please use the [Telemetry](../mp/telemetry.md) feature instead.
+> The OpenTracing Specification that MP OpenTracing is based on is no longer maintained.
+> The MP OpenTracing specification is no longer required by MicroProfile. The specification is superseded by the
+> [MicroProfile Telemetry specification][microprofile-tel].
+
 ## Overview
 
-> [!WARNING]
-> This feature is marked as `@Deprecated` in Helidon. Please use the [Telemetry](../mp/telemetry.md) feature instead. The OpenTracing Specification that MP OpenTracing is based on is no longer maintained. The MP OpenTracing specification is no longer required by MicroProfile. The specification is superseded by the [MicroProfile Telemetry specification][microprofile-tel].
-
-Distributed tracing is a critical feature of micro-service based applications, since it traces workflow both within a service and across multiple services. This provides insight to sequence and timing data for specific blocks of work, which helps you identify performance and operational issues. Helidon MP includes support for distributed tracing through the [OpenTracing API](https://opentracing.io). Tracing is integrated with WebServer and Security.
+Distributed tracing is a critical feature of microservice based applications, since it traces workflow both within a service and across multiple services. This provides insight to sequence and timing data for specific blocks of work, which helps you identify performance and operational issues. Helidon MP includes support for distributed tracing through the [OpenTracing API](https://opentracing.io). Tracing is integrated with WebServer and Security.
 
 ## Maven Coordinates
 
@@ -79,7 +82,7 @@ There are also tags that are set by Helidon components. These are not configurab
 
 You can configure a custom service name using the `tracing.service` configuration property. If this property is undefined, name is created from JAX-RS Application name, or `Helidon MP` is used if no application is defined.
 
-## Configuration options
+### Configuration options
 
 <!--@include ../config/io.helidon.tracing.Tracer.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../config/io.helidon.tracing.Tracer.md#configuration-options).
@@ -100,8 +103,6 @@ mp.opentracing.server.skip-pattern=.*
 ```
 
 Tracing configuration can be defined in `application.yaml` file.
-
-Tracing configuration example:
 
 ```yaml [application.yaml]
 tracing:
@@ -301,7 +302,7 @@ curl -i http://localhost:8080/greet/outbound
 
 Response body:
 
-```json
+```json [Response]
 {
   "message": "Hello From MP-2 World!" 
 }
@@ -320,7 +321,7 @@ In the image above, you can see that the trace includes spans from two services.
 
 You can now stop your second service, it is no longer used in this guide.
 
-## Integration with Kubernetes
+## Kubernetes Integration
 
 The following example demonstrates how to use Jaeger from a Helidon application running in Kubernetes.
 
@@ -449,7 +450,7 @@ Get the application service information:
 kubectl get service/helidon-tracing
 ```
 
-```shell [Terminal]
+```log [Output]
 NAME             TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
 helidon-tracing   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s 
 ```
@@ -462,7 +463,7 @@ Verify the tracing endpoint using port 31143, your port will likely be different
 curl http://localhost:31143/greet
 ```
 
-```json
+```json [Response]
 {
   "message": "Hello World!"
 }
@@ -512,9 +513,7 @@ Response response = client.target(serviceEndpoint)
         .get();
 ```
 
-## Additional Information
-
-### Jaeger Tracing
+## Jaeger Tracing
 
 ```xml [pom.xml]
 <dependency>
@@ -523,14 +522,13 @@ Response response = client.target(serviceEndpoint)
 </dependency>
 ```
 
-## Configuring Jaeger
-
-## Configuration options
+### Configuration options
 
 <!--@include ../config/io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.md#configuration-options delim=--- offset=1 collapseTables=10 -->
 See [Configuration options](../config/io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.md#configuration-options).
 <!--/include-->
 
+### Configuration Example
 
 The following is an example of a Jaeger configuration, specified in the YAML format.
 
@@ -546,7 +544,7 @@ tracing:
 
 As the [Jaeger Tracing](#jaeger-tracing) section describes, you can use Jaeger tracing in your Helidon application.
 
-### Zipkin Tracing
+## Zipkin Tracing
 
 ```xml [pom.xml]
 <dependency>
@@ -555,14 +553,13 @@ As the [Jaeger Tracing](#jaeger-tracing) section describes, you can use Jaeger t
 </dependency>
 ```
 
-## Configuring Zipkin
-
-## Configuration options
+### Configuration options
 
 <!--@include ../config/io.helidon.tracing.providers.zipkin.ZipkinTracerBuilder.md#configuration-options delim=--- offset=1 collapseTables=10 -->
 See [Configuration options](../config/io.helidon.tracing.providers.zipkin.ZipkinTracerBuilder.md#configuration-options).
 <!--/include-->
 
+### Configuration Example
 
 The following is an example of a Zipkin configuration, specified in the YAML format.
 
@@ -593,7 +590,7 @@ Example of Zipkin trace:
 <img src="../images/webserver/zipkin.png" alt="Zipkin example" />
 </figure>
 
-### OpenTelemetry Tracing
+## OpenTelemetry Tracing
 
 Helidon supports configuration of OpenTelemetry and OpenTelemetry tracing in two primary ways: using tracing or using telemetry. The [Helidon MP Telemetry doc page](../mp/telemetry.md) describes how to use Helidon’s support for MicroProfile Telemetry to control OpenTelemetry.
 
@@ -611,16 +608,13 @@ Dependency for OpenTelemetry support using tracing:
 </dependency>
 ```
 
-## Configuring OpenTelemetry Tracing
-
-## Configuration options
+### Configuration options
 
 <!--@include ../config/io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracer.md#configuration-options delim=--- offset=1 collapseTables=10 -->
 See [Configuration options](../config/io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracer.md#configuration-options).
 <!--/include-->
 
-
-*Example Helidon configuration for OpenTelemetry tracing*
+### Configuration Example
 
 ```properties [microprofile-config.properties]
 tracing.service=helidon-otel-tracing-example
@@ -636,14 +630,16 @@ tracing.tags.0.direction=north
 
 By default, Helidon tracing support for OpenTelemetry uses OpenTelemetry’s OTLP gRPC exporter. Alternatively, you can choose to use OpenTelemetry’s HTTP exporter using protobuf by setting `exporter-type` to `http/proto`. To use other exporters OpenTelemetry offers, use the Helidon `telemetry` configuration instead of `tracing`.
 
-<!--@include ../includes/tracing/common-callbacks.md#span-lifecycle-callbacks -->
-See [Span Lifecycle Callbacks](../includes/tracing/common-callbacks.md#span-lifecycle-callbacks).
+## Span Lifecycle
+
+<!--@include ../includes/tracing/common-callbacks.md#span-lifecycle offset=2 -->
+See [Span Lifecycle Callbacks](../includes/tracing/common-callbacks.md#span-lifecycle).
 <!--/include-->
 
 ## Reference
 
-- [MicroProfile Opentracing Specification][microprofile-ope]
-- [Opentracing Project](https://opentracing.io/)
+- [MicroProfile OpenTracing Specification][microprofile-ope]
+- [OpenTracing Project](https://opentracing.io/)
 
 [microprofile-tel]: https://github.com/eclipse/microprofile-telemetry
 [the-opentracing]: https://opentracing.io/specification

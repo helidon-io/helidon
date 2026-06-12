@@ -1,6 +1,6 @@
-# WebServer Integration
+# WebServer Security
 
-## WebServer
+## Maven Coordinates
 
 To integrate [web server](../webserver/webserver.md), add the following dependency to your project’s pom.xml file:
 
@@ -13,7 +13,7 @@ Maven Dependency:
 </dependency>
 ```
 
-### Configure Security with WebServer
+## Usage
 
 There are two steps to configure security with WebServer:
 
@@ -24,13 +24,13 @@ Example using builders:
 
 ```java
 WebServer.builder()
-        .addFeature(SecurityFeature.builder() 
-                            .security(security)
-                            .defaults(SecurityFeature.authenticate())
-                            .build())
-        .routing(r -> r
-                .get("/service1", SecurityFeature.rolesAllowed("user"), this::processService1Request)) 
-        .build();
+    .addFeature(SecurityFeature.builder()
+        .security(security)
+        .defaults(SecurityFeature.authenticate())
+        .build())
+    .routing(r -> r
+        .get("/service1", SecurityFeature.rolesAllowed("user"), this::processService1Request))
+    .build();
 ```
 
 - Register the security feature in the web server, enforce authentication by default
@@ -71,7 +71,7 @@ security:
 
 Note: `defaults` section in configuration is related to paths on WebServer configured below in `paths` section, it will not apply to any other path on the webserver.
 
-### Protecting Helidon endpoints
+## Protecting Endpoints
 
 There are several endpoints provided by Helidon services, such as:
 
@@ -84,7 +84,7 @@ These endpoints are all implemented using Helidon WebServer and as such can be p
 
 The following section describes configuration of such protection using configuration files, in this case using a `yaml` file, as it provides a tree structure.
 
-#### Configuring endpoint protection
+### Configuring Endpoint Protection
 
 The configuration is usually placed under `security.web-server` (this can be customized in Helidon SE).
 

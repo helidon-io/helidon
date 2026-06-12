@@ -83,18 +83,18 @@ Support for specific tracers is abstracted. Your application can depend on the H
 - OpenTracing tracers, either using the `GlobalTracer`, provider resolver approach, or explicitly using Zipkin tracer
 - OpenTelemetry tracers, either using the global OpenTelemetry instance, or explicitly using Jaeger tracer
 
-### Setup WebServer
+### WebServer Setup
 
 Configuring Tracer:
 
 ```java
-Tracer tracer = TracerBuilder.create("helidon") 
+Tracer tracer = TracerBuilder.create("helidon")
         .build();
 
 WebServer.builder()
         .addFeature(ObserveFeature.builder()
-                            .addObserver(TracingObserver.create(tracer)) 
-                            .build())
+            .addObserver(TracingObserver.create(tracer))
+            .build())
         .build()
         .start();
 ```
@@ -102,7 +102,7 @@ WebServer.builder()
 - Create a `Tracer`.
 - Add an observability feature using the created `Tracer`.
 
-### Creating Custom Spans
+### Custom Spans
 
 To create a custom span from tracer:
 
@@ -123,7 +123,7 @@ try {
 - Do some work and end span.
 - End span with exception.
 
-### Handling Baggage
+## Handling Baggage
 
 Your application can set and read baggage associated with a [`Span`][span]. The `Span.baggage()` method returns a [`WritableBaggage`][writablebaggage] instance.
 
@@ -131,11 +131,13 @@ Further, Helidon also provides read-only access to baggage linked to a [`SpanCon
 
 The Javadoc for the types describes how to get and set baggage entries, get all the baggage keys, and check whether a baggage key exists in the baggage.
 
-<!--@include ../includes/tracing/common-callbacks.md#span-lifecycle-callbacks -->
-See [Span Lifecycle Callbacks](../includes/tracing/common-callbacks.md#span-lifecycle-callbacks).
+## Span Lifecycle
+
+<!--@include ../includes/tracing/common-callbacks.md#span-lifecycle offset=1 -->
+See [Span Lifecycle Callbacks](../includes/tracing/common-callbacks.md#span-lifecycle).
 <!--/include-->
 
-#### Lifecycle Callbacks with OpenTelemetry Types
+### OpenTelemetry Callbacks
 
 To use lifecycle callbacks, applications should normally work with the Helidon `Tracer`, `Span.Builder`, `Span`, and `Scope` types which automatically call back to each registered `SpanListener`.
 
@@ -143,12 +145,12 @@ In some cases application code might want to use a reference to an OpenTelemetry
 
 The [`HelidonOpenTelemetry`][helidonopentelem] type provides several methods which enable callbacks for OpenTelemetry objects, as summarized in the following table.
 
-| `HelidonOpenTelemetry` method                                                                                                                                                                                                | Return value                                                                             |
-|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------|
-| [`Tracer callbackEnabledFrom(helidonTracer)`][tracer-callbacke]       | Callback-enabled OpenTelemetry `Tracer` corresponding to the specified Helidon `Tracer`. |
+| Method                                                          | Return value                                                                             |
+|-----------------------------------------------------------------|------------------------------------------------------------------------------------------|
+| [`Tracer callbackEnabledFrom(helidonTracer)`][tracer-callbacke] | Callback-enabled OpenTelemetry `Tracer` corresponding to the specified Helidon `Tracer`. |
 | [ `Tracer callbackEnabledFrom(otelTracer)`][tracer-callbacke-2] | Callback-enabled OpenTelemetry `Tracer` for the specified OpenTelemetry `Tracer`.        |
-| [ `Span callbackEnabledFrom(helidonSpan)`][span-callbackena]            | Callback-enabled OpenTelemetry `Span` corresponding to the specified Helidon `Span`.     |
-| [ `Span callbackEnabledFrom(otelSpan)`][span-callbackena-2]       | Callback-enabled OpenTelemetry `Span` for the specified OpenTelemetry `Span`.            |
+| [ `Span callbackEnabledFrom(helidonSpan)`][span-callbackena]    | Callback-enabled OpenTelemetry `Span` corresponding to the specified Helidon `Span`.     |
+| [ `Span callbackEnabledFrom(otelSpan)`][span-callbackena-2]     | Callback-enabled OpenTelemetry `Span` for the specified OpenTelemetry `Span`.            |
 
 Enabling OpenTelemetry Objects for `SpanListener` Support
 
@@ -170,9 +172,13 @@ if (nativeOtelSpan instanceof io.opentelemetry.sdk.trace.ReadableSpan readableSp
 
 Remember that operations on the `nativeOtelSpan` variable *do not* notify span listeners of lifecycle changes.
 
-## Helidon Spans
+## Configuration options
 
-## Traced spans
+<!--@include ../config/io.helidon.tracing.Tracer.md#configuration-options delim=--- offset=1 collapseTables=10 -->
+See [Configuration options](../config/io.helidon.tracing.Tracer.md#configuration-options).
+<!--/include-->
+
+## Helidon Spans
 
 The following table lists all spans traced by Helidon components:
 
@@ -219,18 +225,7 @@ There are also tags that are set by Helidon components. These are not configurab
 | `jersey-client-call` | `http.url`         | Full URL of the request (such as `http://localhost:8080/greet`)                                   |
 <!--@mdc :: -->
 
-## Configuration
-
-The following configuration should be supported by all tracer implementations (if feasible)
-
-## Configuration options
-
-<!--@include ../config/io.helidon.tracing.Tracer.md#configuration-options delim=--- offset=1 collapseTables=10 -->
-See [Configuration options](../config/io.helidon.tracing.Tracer.md#configuration-options).
-<!--/include-->
-
-
-### Traced Spans Configuration
+### Configuration
 
 Each component and its spans can be configured using Config. The traced configuration has the following layers:
 
@@ -249,14 +244,14 @@ Configure tracing using a builder:
 
 ```java
 TracingConfig.builder()
-        .addComponent(ComponentTracingConfig.builder("web-server")
-                              .addSpan(SpanTracingConfig.builder("HTTP Request")
-                                               .addSpanLog(SpanLogTracingConfig.builder("content-write")
-                                                                   .enabled(false)
-                                                                   .build())
-                                               .build())
-                              .build())
-        .build();
+    .addComponent(ComponentTracingConfig.builder("web-server")
+        .addSpan(SpanTracingConfig.builder("HTTP Request")
+            .addSpanLog(SpanLogTracingConfig.builder("content-write")
+                 .enabled(false)
+                 .build())
+            .build())
+        .build())
+    .build();
 ```
 
 #### Configuration using Helidon Config
@@ -279,10 +274,10 @@ tracing:
 Use the configuration in web server:
 
 ```java
-Tracer tracer = TracerBuilder.create(config.get("tracing")).build(); 
+Tracer tracer = TracerBuilder.create(config.get("tracing")).build();
 server.addFeature(ObserveFeature.builder()
-                          .addObserver(TracingObserver.create(tracer)) 
-                          .build());
+    .addObserver(TracingObserver.create(tracer))
+    .build());
 ```
 
 - Create `Tracer` using `TracerBuilder` from configuration.
@@ -336,12 +331,10 @@ This is supported ONLY for the span named "HTTP Request" on component "web-serve
 Parameters provided:
 
 1.  Method - HTTP method
-2.  Path - path of the request (such as '/greet')
-3.  Query - query of the request (may be null)
+2.  Path - path of the request (such as `/greet`)
+3.  Query - query of the request (maybe null)
 
-## Additional Information
-
-### WebClient Span Propagation
+## WebClient Propagation
 
 Span propagation is supported with Helidon WebClient. Tracing propagation is automatic as long as the current span context is available in Helidon Context (which is automatic when running within a WebServer request).
 
@@ -370,7 +363,7 @@ String response = client.get()
         .requestEntity(String.class);
 ```
 
-### Jaeger Tracing
+## Jaeger Tracing
 
 ```xml [pom.xml]
 <dependency>
@@ -379,9 +372,7 @@ String response = client.get()
 </dependency>
 ```
 
-## Configuring Jaeger
-
-## Configuration options
+### Configuration options
 
 <!--@include ../config/io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.md#configuration-options delim=--- offset=1 collapseTables=10 -->
 See [Configuration options](../config/io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.md#configuration-options).
@@ -402,7 +393,7 @@ tracing:
 
 As the [Jaeger Tracing](#jaeger-tracing) section describes, you can use Jaeger tracing in your Helidon application.
 
-### Zipkin Tracing
+## Zipkin Tracing
 
 ```xml [pom.xml]
 <dependency>
@@ -411,14 +402,11 @@ As the [Jaeger Tracing](#jaeger-tracing) section describes, you can use Jaeger t
 </dependency>
 ```
 
-## Configuring Zipkin
-
-## Configuration options
+### Configuration options
 
 <!--@include ../config/io.helidon.tracing.providers.zipkin.ZipkinTracerBuilder.md#configuration-options delim=--- offset=1 collapseTables=10 -->
 See [Configuration options](../config/io.helidon.tracing.providers.zipkin.ZipkinTracerBuilder.md#configuration-options).
 <!--/include-->
-
 
 The following is an example of a Zipkin configuration, specified in the YAML format.
 
@@ -449,7 +437,7 @@ Example of Zipkin trace:
 <img src="../images/webserver/zipkin.png" alt="Zipkin example" />
 </figure>
 
-### OpenTelemetry Tracing
+## OpenTelemetry Tracing
 
 Helidon supports configuration of OpenTelemetry and OpenTelemetry tracing in two primary ways: using tracing or using telemetry. This page describes support for controlling OpenTelemetry tracing using the `tracing` config section and [`OpenTelemetryConfig` builder][opentelemetrycon]. Users typically adopt this approach to ease migration from other tracing providers (such as Jaeger) to OpenTelemetry because the tracing settings supported for OpenTelemetry are very similar to those for Jaeger.
 
@@ -469,14 +457,11 @@ Dependency for OpenTelemetry support using tracing:
 </dependency>
 ```
 
-## Configuring OpenTelemetry Tracing
-
-## Configuration options
+### Configuration options
 
 <!--@include ../config/io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracer.md#configuration-options delim=--- offset=1 collapseTables=10 -->
 See [Configuration options](../config/io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracer.md#configuration-options).
 <!--/include-->
-
 
 Example Helidon configuration for OpenTelemetry tracing:
 
@@ -500,7 +485,7 @@ By default, Helidon tracing support for OpenTelemetry uses OpenTelemetry’s OTL
 ## Reference
 
 - [OpenTelemetry API][opentelemetry]
-- [Opentracing Project (now part of OpenTelemetry)](https://opentracing.io/)
+- [OpenTracing Project (now part of OpenTelemetry)](https://opentracing.io/)
 
 [opentelemetry]: https://opentelemetry.io/docs/instrumentation/js/api/tracing/
 [span]: https://helidon.io/docs/v4/apidocs/io.helidon.tracing/io/helidon/tracing/Span.html

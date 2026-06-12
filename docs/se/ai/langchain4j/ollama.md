@@ -15,9 +15,7 @@ In addition to the [Helidon integration with LangChain4j core dependencies](lang
 </dependency>
 ```
 
-## Components
-
-### OllamaChatModel
+## OllamaChatModel
 
 To automatically create and add `OllamaChatModel` to the service registry add the following lines to `application.yaml`:
 
@@ -35,7 +33,7 @@ langchain4j:
 
 If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
 
-Full list of configuration properties:
+### Configuration options
 
 <!--@mdc ::table-collapse -->
 | Key              | Type       | Description                                                                                                                                                                                                                                                                                                                                                                                                       |
@@ -52,12 +50,12 @@ Full list of configuration properties:
 | `seed`           | int        | The seed for the random number generator used by the model.                                                                                                                                                                                                                                                                                                                                                       |
 | `stop`           | string\[\] | List of sequences where the API will stop generating further tokens.                                                                                                                                                                                                                                                                                                                                              |
 | `temperature`    | double     | Sampling temperature to use, between 0 and 2. Higher values make the output more random, while lower values make it more focused and deterministic.                                                                                                                                                                                                                                                               |
-| `timeout`        | duration   | The timeout setting for API requests. See [here][here] for the format.                                                                                                                                                                                                                                                 |
+| `timeout`        | duration   | The timeout setting for API requests. See [here][here] for the format.                                                                                                                                                                                                                                                                                                                                            |
 | `top-k`          | int        | Limits the token pool to the `topK` highest-probability tokens, controlling the balance between deterministic and diverse outputs. A smaller `topK` (e.g., 1) results in deterministic output, while a larger value (e.g., 50) allows for more variability and creativity.                                                                                                                                        |
 | `top-p`          | double     | Nucleus sampling value, where the model considers the results of the tokens with top_p probability mass.                                                                                                                                                                                                                                                                                                          |
 <!--@mdc :: -->
 
-### OllamaEmbeddingModel
+## OllamaEmbeddingModel
 
 To automatically create and add `OllamaEmbeddingModel` to the service registry add the following lines to `application.yaml`:
 
@@ -75,19 +73,19 @@ langchain4j:
 
 If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
 
-Full list of configuration properties:
+### Configuration options
 
-| Key             | Type     | Description                                                                                                                                                       |
-|-----------------|----------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `base-url`      | string   | The base URL for the Ollama API. If not present, the default value supplied from LangChain4j is used.                                                             |
-| `enabled`       | boolean  | If set to false, the component will not be available even if configured.                                                                                          |
-| `log-requests`  | boolean  | Whether to log API requests.                                                                                                                                      |
-| `log-responses` | boolean  | Whether to log API responses.                                                                                                                                     |
-| `max-retries`   | integer  | The maximum number of retries for failed API requests.                                                                                                            |
-| `model-name`    | string   | The model name to use.                                                                                                                                            |
-| `timeout`       | duration | The timeout setting for API requests. See [here][here] for the format. |
+| Key             | Type     | Description                                                                                           |
+|-----------------|----------|-------------------------------------------------------------------------------------------------------|
+| `base-url`      | string   | The base URL for the Ollama API. If not present, the default value supplied from LangChain4j is used. |
+| `enabled`       | boolean  | If set to false, the component will not be available even if configured.                              |
+| `log-requests`  | boolean  | Whether to log API requests.                                                                          |
+| `log-responses` | boolean  | Whether to log API responses.                                                                         |
+| `max-retries`   | integer  | The maximum number of retries for failed API requests.                                                |
+| `model-name`    | string   | The model name to use.                                                                                |
+| `timeout`       | duration | The timeout setting for API requests. See [here][here] for the format.                                |
 
-### OllamaLanguageModel
+## OllamaLanguageModel
 
 To automatically create and add `OllamaLanguageModel` to the service registry add the following lines to `application.yaml`:
 
@@ -105,7 +103,7 @@ langchain4j:
 
 If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
 
-Full list of configuration properties:
+### Configuration options
 
 <!--@mdc ::table-collapse -->
 | Key              | Type       | Description                                                                                                                                                                                                                                                                                                                                                                                                       |
@@ -122,12 +120,12 @@ Full list of configuration properties:
 | `seed`           | int        | The seed for the random number generator used by the model.                                                                                                                                                                                                                                                                                                                                                       |
 | `stop`           | string\[\] | List of sequences where the API will stop generating further tokens.                                                                                                                                                                                                                                                                                                                                              |
 | `temperature`    | double     | Sampling temperature to use, between 0 and 2. Higher values make the output more random, while lower values make it more focused and deterministic.                                                                                                                                                                                                                                                               |
-| `timeout`        | duration   | The timeout setting for API requests. See [here][here] for the format.                                                                                                                                                                                                                                                 |
+| `timeout`        | duration   | The timeout setting for API requests. See [here][here] for the format.                                                                                                                                                                                                                                                                                                                                            |
 | `top-k`          | int        | Limits the token pool to the `topK` highest-probability tokens, controlling the balance between deterministic and diverse outputs. A smaller `topK` (e.g., 1) results in deterministic output, while a larger value (e.g., 50) allows for more variability and creativity.                                                                                                                                        |
 | `top-p`          | double     | Nucleus sampling value, where the model considers the results of the tokens with top_p probability mass.                                                                                                                                                                                                                                                                                                          |
 <!--@mdc :: -->
 
-### OllamaStreamingChatModel
+## OllamaStreamingChatModel
 
 To automatically create and add `OllamaStreamingChatModel` to the service registry add the following lines to `application.yaml`:
 
@@ -145,7 +143,7 @@ langchain4j:
 
 If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
 
-Full list of configuration properties:
+### Configuration options
 
 <!--@mdc ::table-collapse -->
 | Key              | Type       | Description                                                                                                                                                                                                                                                                                                                                                                                                       |
@@ -162,7 +160,7 @@ Full list of configuration properties:
 | `seed`           | int        | The seed for the random number generator used by the model.                                                                                                                                                                                                                                                                                                                                                       |
 | `stop`           | string\[\] | List of sequences where the API will stop generating further tokens.                                                                                                                                                                                                                                                                                                                                              |
 | `temperature`    | double     | Sampling temperature to use, between 0 and 2. Higher values make the output more random, while lower values make it more focused and deterministic.                                                                                                                                                                                                                                                               |
-| `timeout`        | duration   | The timeout setting for API requests. See [here][here] for the format.                                                                                                                                                                                                                                                 |
+| `timeout`        | duration   | The timeout setting for API requests. See [here][here] for the format.                                                                                                                                                                                                                                                                                                                                            |
 | `top-k`          | int        | Limits the token pool to the `topK` highest-probability tokens, controlling the balance between deterministic and diverse outputs. A smaller `topK` (e.g., 1) results in deterministic output, while a larger value (e.g., 50) allows for more variability and creativity.                                                                                                                                        |
 | `top-p`          | double     | Nucleus sampling value, where the model considers the results of the tokens with top_p probability mass.                                                                                                                                                                                                                                                                                                          |
 <!--@mdc :: -->

@@ -15,9 +15,7 @@ In addition to the [Helidon integration with LangChain4J core dependencies](lang
 </dependency>
 ```
 
-## Components
-
-### CoherenceEmbeddingStore
+## CoherenceEmbeddingStore
 
 To automatically create and add `CoherenceEmbeddingStore` to the service registry add the following lines to `application.yaml`:
 
@@ -39,7 +37,7 @@ langchain4j:
 
 If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
 
-Full list of configuration properties:
+### Configuration options
 
 | Key                    | Type    | Description                                                                                                           |
 |------------------------|---------|-----------------------------------------------------------------------------------------------------------------------|

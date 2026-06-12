@@ -1,6 +1,6 @@
-# Span Lifecycle Callbacks
+# Span Lifecycle
 
-### Responding to Span Lifecycle Events
+## Events
 
 Applications and libraries can register listeners to be notified at several moments during the lifecycle of every Helidon span:
 
@@ -12,14 +12,14 @@ Applications and libraries can register listeners to be notified at several mome
 
 The next sections explain how you can write and add a listener and what it can do. See the [`SpanListener`][spanlistener] Javadoc for more information.
 
-#### Understanding What Listeners Do
+## Listeners
 
 A listener cannot affect the lifecycle of a span or scope it is notified about, but it can add tags and events and update the baggage associated with a span. Often a listener does additional work that does not change the span or scope such as logging a message.
 
 When Helidon invokes the listener’s methods it passes proxies for the `Span.Builder`, `Span`, and `Scope` arguments. These proxies limit the access the listener has to the span builder, span, or scope, as summarized in the following table. If a listener method tries to invoke a forbidden operation, the proxy throws a [`SpanListener.ForbiddenOperationException`][spanlistener-for] and Helidon then logs a `WARNING` message describing the invalid operation invocation.
 
-| Tracing type                                                                       | Changes allowed                                   |
-|------------------------------------------------------------------------------------|---------------------------------------------------|
+| Tracing type                   | Changes allowed                                   |
+|--------------------------------|---------------------------------------------------|
 | [`Span.Builder`][span-builder] | Add tags                                          |
 | [`Span`][span]                 | Retrieve and update baggage, add events, add tags |
 | [`Scope`][scope]               | none                                              |
@@ -78,13 +78,13 @@ The following tables list specifically what operations the proxies permit.
 
 [`io.helidon.tracing.SpanContext`][io-helidon-traci] Operations
 
-#### Adding a Listener
+## Adding a Listener
 
-##### Explicitly Registering a Listener on a [`Tracer`][tracer]
+### Explicitly Registering a Listener on a [`Tracer`][tracer]
 
 Create a `SpanListener` instance and invoke the `Tracer#register(SpanListener)` method to make the listener known to that tracer.
 
-##### Automatically Registering a Listener on all `Tracer` Instances
+### Automatically Registering a Listener on all `Tracer` Instances
 
 Helidon also uses Java service loading to locate listeners and register them automatically on all `Tracer` objects. Follow these steps to add a listener service provider.
 

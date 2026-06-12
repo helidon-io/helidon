@@ -15,9 +15,7 @@ In addition to the [Helidon integration with LangChain4J core dependencies](lang
 </dependency>
 ```
 
-## Components
-
-### MockChatModel
+## MockChatModel
 
 To automatically create and add `MockChatModel` to the service registry add the following lines to `application.yaml`:
 

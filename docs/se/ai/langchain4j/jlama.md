@@ -15,9 +15,7 @@ In addition to the [Helidon integration with LangChain4J core dependencies](lang
 </dependency>
 ```
 
-## Components
-
-### JlamaChatModel
+## JlamaChatModel
 
 To automatically create and add `JlamaChatModel` to the service registry add the following lines to `application.yaml`:
 
@@ -35,7 +33,7 @@ langchain4j:
 
 If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
 
-Full list of configuration properties:
+### Configuration options
 
 <!--@mdc ::table-collapse -->
 | Key                         | Type    | Description                                                                                                                                         |
@@ -46,13 +44,13 @@ Full list of configuration properties:
 | `working-quantized-type`    | enum    | Quantize the model at runtime. Default quantization is Q4.                                                                                          |
 | `model-cache-path`          | Path    | Path to a directory where the model will be cached once downloaded.                                                                                 |
 | `working-directory`         | Path    | Path to a directory where persistent ChatMemory can be stored on disk for a given model instance.                                                   |
-| `auth-token`                | string  | Token to use when fetching private models from [Hugging Face][hugging-face]                                                              |
+| `auth-token`                | string  | Token to use when fetching private models from [Hugging Face][hugging-face]                                                                         |
 | `max-tokens`                | integer | Maximum number of tokens to generate.                                                                                                               |
 | `thread-count`              | integer | Number of threads to use.                                                                                                                           |
 | `quantize-model-at-runtime` | boolean | Whether quantize the model at runtime.                                                                                                              |
 <!--@mdc :: -->
 
-### JlamaEmbeddingModel
+## JlamaEmbeddingModel
 
 To automatically create and add `JlamaEmbeddingModel` to the service registry add the following lines to `application.yaml`:
 
@@ -70,7 +68,7 @@ langchain4j:
 
 If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
 
-Full list of configuration properties:
+### Configuration options
 
 | Key                 | Type    | Description                                                                                       |
 |---------------------|---------|---------------------------------------------------------------------------------------------------|
@@ -78,11 +76,11 @@ Full list of configuration properties:
 | `model-name`        | string  | The model name to use.                                                                            |
 | `model-cache-path`  | Path    | Path to a directory where the model will be cached once downloaded.                               |
 | `working-directory` | Path    | Path to a directory where persistent ChatMemory can be stored on disk for a given model instance. |
-| `auth-token`        | string  | Token to use when fetching private models from [Hugging Face][hugging-face]            |
+| `auth-token`        | string  | Token to use when fetching private models from [Hugging Face][hugging-face]                       |
 | `thread-count`      | integer | Number of threads to use.                                                                         |
 | `pooling-type`      | enum    | Method of embedding pooling.                                                                      |
 
-### JlamaLanguageModel
+## JlamaLanguageModel
 
 To automatically create and add `JlamaLanguageModel` to the service registry add the following lines to `application.yaml`:
 
@@ -100,7 +98,7 @@ langchain4j:
 
 If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
 
-Full list of configuration properties:
+### Configuration options
 
 <!--@mdc ::table-collapse -->
 | Key                         | Type    | Description                                                                                                                                         |
@@ -111,13 +109,13 @@ Full list of configuration properties:
 | `working-quantized-type`    | enum    | Quantize the model at runtime. Default quantization is Q4.                                                                                          |
 | `model-cache-path`          | Path    | Path to a directory where the model will be cached once downloaded.                                                                                 |
 | `working-directory`         | Path    | Path to a directory where persistent ChatMemory can be stored on disk for a given model instance.                                                   |
-| `auth-token`                | string  | Token to use when fetching private models from [Hugging Face][hugging-face]                                                              |
+| `auth-token`                | string  | Token to use when fetching private models from [Hugging Face][hugging-face]                                                                         |
 | `max-tokens`                | integer | Maximum number of tokens to generate.                                                                                                               |
 | `thread-count`              | integer | Number of threads to use.                                                                                                                           |
 | `quantize-model-at-runtime` | boolean | Whether quantize the model at runtime.                                                                                                              |
 <!--@mdc :: -->
 
-### JlamaStreamingChatModel
+## JlamaStreamingChatModel
 
 To automatically create and add `JlamaStreamingChatModel` to the service registry add the following lines to `application.yaml`:
 
@@ -135,7 +133,7 @@ langchain4j:
 
 If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
 
-Full list of configuration properties:
+### Configuration options
 
 <!--@mdc ::table-collapse -->
 | Key                         | Type    | Description                                                                                                                                         |
@@ -146,7 +144,7 @@ Full list of configuration properties:
 | `working-quantized-type`    | enum    | Quantize the model at runtime. Default quantization is Q4.                                                                                          |
 | `model-cache-path`          | Path    | Path to a directory where the model will be cached once downloaded.                                                                                 |
 | `working-directory`         | Path    | Path to a directory where persistent ChatMemory can be stored on disk for a given model instance.                                                   |
-| `auth-token`                | string  | Token to use when fetching private models from [Hugging Face][hugging-face]                                                              |
+| `auth-token`                | string  | Token to use when fetching private models from [Hugging Face][hugging-face]                                                                         |
 | `max-tokens`                | integer | Maximum number of tokens to generate.                                                                                                               |
 | `thread-count`              | integer | Number of threads to use.                                                                                                                           |
 | `quantize-model-at-runtime` | boolean | Whether quantize the model at runtime.                                                                                                              |

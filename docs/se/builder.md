@@ -4,51 +4,6 @@
 
 Helidon Builder is an API designed for generating immutable objects using the builder pattern, with optional integration with Helidon Config for initialization at runtime.
 
-### Terminology
-
-- **Blueprint**: A package-private interface that serves as the source for code generation.
-- **Prototyped**: The generated code extending the blueprint. It is part of the public API and includes the fluent builder implementation and static factory methods.
-- **Runtime Type**: An optional, user-defined type created using the prototype. It is useful for constructing custom objects beyond the generated prototype.
-
-### High Level Example
-
-Here’s a simple example of a blueprint:
-
-```java
-@Prototype.Blueprint
-interface ServiceConfigBlueprint {
-    String name();
-    int pageSize();
-}
-```
-
-The generated prototype can be used as follows:
-
-```java
-ServiceConfig serviceConfig = ServiceConfig.builder()
-    .name("My Service")
-    .pageSize(10)
-    .build();
-```
-
-### Features
-
-- Reflection-free implementation; no bytecode manipulation.
-- Support for inheritance in prototypes and blueprints.
-- Automatic Javadoc generation.
-- Seamless integration with Helidon Config for property initialization, default values, and advanced customization.
-- Optional generation of factory, prototype, and builder methods.
-- Supports `List`, `Set`, and `Map` collections.
-- Explicit default value support for common types (`String`, `int`, `long`, `boolean`, etc.).
-- Enumeration support.
-
-### Limitations
-
-- Prototypes are generated in the same package as their blueprints.
-- Blueprints must be package-private interfaces.
-- Classes are not supported as blueprints.
-- `null` values are not allowed; use `Optional` instead.
-- Collection types are fixed to `ArrayList`, `LinkedHashSet`, and `LinkedHashMap`.
 
 ## Maven Coordinates
 
@@ -88,13 +43,34 @@ You also need to add the annotation processor configuration:
 </build>
 ```
 
-## Use Cases
+## Terminology
 
-### Generate a class with a builder
+- **Blueprint**: A package-private interface that serves as the source for code generation.
+- **Prototyped**: The generated code extending the blueprint. It is part of the public API and includes the fluent builder implementation and static factory methods.
+- **Runtime Type**: An optional, user-defined type created using the prototype. It is useful for constructing custom objects beyond the generated prototype.
+
+## Features
+
+- Reflection-free implementation; no bytecode manipulation.
+- Support for inheritance in prototypes and blueprints.
+- Automatic Javadoc generation.
+- Seamless integration with Helidon Config for property initialization, default values, and advanced customization.
+- Optional generation of factory, prototype, and builder methods.
+- Supports `List`, `Set`, and `Map` collections.
+- Explicit default value support for common types (`String`, `int`, `long`, `boolean`, etc.).
+- Enumeration support.
+
+## Limitations
+
+- Prototypes are generated in the same package as their blueprints.
+- Blueprints must be package-private interfaces.
+- Classes are not supported as blueprints.
+- `null` values are not allowed; use `Optional` instead.
+- Collection types are fixed to `ArrayList`, `LinkedHashSet`, and `LinkedHashMap`.
+
+## Generate a class with builder
 
 This use case demonstrates generating an immutable class with a builder from a blueprint interface. The blueprint serves as the input for code generation, and the resulting prototype provides a fluent API for constructing instances.
-
-### Specification
 
 1.  Blueprint Requirements:
     - Must be a package-private interface.
@@ -166,8 +142,6 @@ This ensures type safety, immutability, and a fluent API for constructing object
 
 This scenario extends the basic builder functionality by enabling the generated prototype to initialize its fields using values from Helidon Config.
 
-### Specification
-
 1.  The blueprint must be annotated with `@Prototype.Configured` to enable configuration-based initialization.
 2.  Each field initialized from the configuration must be annotated with `@Option.Configured`.
 3.  Default values can be set using `@Option.Default`. If a configuration value is missing, the default is used.
@@ -175,7 +149,7 @@ This scenario extends the basic builder functionality by enabling the generated 
 5.  Lists, Sets, and Maps are supported and initialized from configuration.
 6.  You can customize and validate fields using the @Option API. Advanced programmatic customization is possible by implementing a custom `BuilderDecorator` via `@Prototype.Blueprint(decorator = MyDecorator.class)`.
 
-### Example
+#### Example
 
 The following example demonstrates how to configure a `ServiceConfig` object using Helidon Config.
 
@@ -225,11 +199,9 @@ Helidon Builder supports a range of customization options:
 
 For additional customization details, see the [API](#api) section.
 
-### Creating a runtime type
+## Creating a runtime type
 
 This scenario extends the basic functionality of Helidon Builder to create a user-defined runtime type based on a prototype. This approach is particularly useful when the generated prototype needs to be transformed into a domain-specific runtime type.
-
-### Specification
 
 To enable runtime object creation, follow these guidelines:
 

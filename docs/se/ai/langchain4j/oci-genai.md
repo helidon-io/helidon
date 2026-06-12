@@ -24,7 +24,7 @@ Integration uses OCI SDK authentication provider bean from the service registry.
   <groupId>io.helidon.integrations.oci</groupId>
   <artifactId>helidon-integrations-oci</artifactId>
 </dependency>
-<!-- Jakartified OCI SDK HTTP client -->
+<!-- Jakarta compatible OCI SDK HTTP client -->
 <dependency>
   <groupId>com.oracle.oci.sdk</groupId>
   <artifactId>oci-java-sdk-common-httpclient-jersey3</artifactId>
@@ -62,9 +62,7 @@ All possible OCI configuration properties are documented at [OCI Configuration][
 
 More general information about Helidon OCI authentication integration can be found in [Helidon OCI integration][helidon-oci-inte]
 
-## Components
-
-### OciGenAiChatModel
+## OciGenAiChatModel
 
 To automatically create and add `OciGenAiChatModel` to the service registry add the following lines to `application.yaml`:
 
@@ -83,7 +81,7 @@ langchain4j:
 
 If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
 
-Full list of configuration properties:
+### Configuration options
 
 <https://docs.oracle.com/en-us/iaas/api/#/EN/generative-ai-inference/20231130/datatypes/GenericChatRequest>
 
@@ -110,7 +108,7 @@ Full list of configuration properties:
 | `logit-bias`        | json                    | Modifies the likelihood of specified tokens that appear in the completion. Example: `{"6395": 2, "8134": 1, "21943": 0.5, "5923": -100}`                                                                                                                                                                                                                                                                                                                                                                        |
 <!--@mdc :: -->
 
-### OciGenAiStreamingChatModel
+## OciGenAiStreamingChatModel
 
 To automatically create and add `OciGenAiStreamingChatModel` to the service registry add the following lines to `application.yaml`:
 
@@ -129,7 +127,7 @@ langchain4j:
 
 If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
 
-Full list of configuration properties:
+### Configuration options
 
 <table>
 <colgroup>
@@ -242,7 +240,7 @@ Full list of configuration properties:
 </tbody>
 </table>
 
-### OciGenAiCohereChatModel
+## OciGenAiCohereChatModel
 
 To automatically create and add `OciGenAiChatModel` to the service registry add the following lines to `application.yaml`:
 
@@ -261,7 +259,7 @@ langchain4j:
 
 If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
 
-Full list of configuration properties:
+### Configuration options
 
 <table>
 <colgroup>
@@ -388,7 +386,7 @@ Full list of configuration properties:
 </tbody>
 </table>
 
-### OciGenAiCohereStreamingChatModel
+## OciGenAiCohereStreamingChatModel
 
 To automatically create and add `OciGenAiStreamingChatModel` to the service registry add the following lines to `application.yaml`:
 
@@ -407,7 +405,7 @@ langchain4j:
 
 If `enabled` is set to `false`, the configuration is ignored, and the component is not created.
 
-Full list of configuration properties:
+### Configuration options
 
 <table>
 <colgroup>

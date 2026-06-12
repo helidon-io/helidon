@@ -25,11 +25,11 @@ Scheduling with fixed rate using Scheduling.fixedRate() builder:
 
 ```java
 FixedRate.builder()
-        .delay(10)
-        .initialDelay(5)
-        .timeUnit(TimeUnit.MINUTES)
-        .task(inv -> System.out.println("Every 10 minutes, first invocation 5 minutes after start"))
-        .build();
+    .delay(10)
+    .initialDelay(5)
+    .timeUnit(TimeUnit.MINUTES)
+    .task(inv -> System.out.println("Every 10 minutes, first invocation 5 minutes after start"))
+    .build();
 ```
 
 Metadata like human-readable interval description or configured values are available through FixedRateInvocation provided as task parameter.
@@ -38,9 +38,9 @@ Invocation metadata:
 
 ```java
 FixedRate.builder()
-        .delay(10)
-        .task(inv -> System.out.println("Method invoked " + inv.description()))
-        .build();
+    .delay(10)
+    .task(inv -> System.out.println("Method invoked " + inv.description()))
+    .build();
 ```
 
 #### Configuration options
@@ -58,9 +58,9 @@ Scheduling with Cron expression:
 
 ```java
 Cron.builder()
-        .expression("0 15 8 ? * *")
-        .task(inv -> System.out.println("Executer every day at 8:15"))
-        .build();
+    .expression("0 15 8 ? * *")
+    .task(inv -> System.out.println("Executer every day at 8:15"))
+    .build();
 ```
 
 #### Timezone Configuration
@@ -71,10 +71,10 @@ Scheduling with custom timezone:
 
 ```java
 Cron.builder()
-        .expression("0 0 9 * * ?")
-        .zone(ZoneId.of("America/New_York"))
-        .task(inv -> System.out.println("Executes every day at 9:00 AM Eastern Time"))
-        .build();
+    .expression("0 0 9 * * ?")
+    .zone(ZoneId.of("America/New_York"))
+    .task(inv -> System.out.println("Executes every day at 9:00 AM Eastern Time"))
+    .build();
 ```
 
 The timezone determines when the cron expression triggers. For example, a cron expression `0 0 9 * * ?` (every day at 9:00 AM) with zone `America/New_York` will trigger at 9:00 AM Eastern Time, regardless of the server’s timezone setting.
@@ -84,11 +84,6 @@ The timezone determines when the cron expression triggers. For example, a cron e
 <!--@include ../config/io.helidon.scheduling.Cron.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../config/io.helidon.scheduling.Cron.md#configuration-options).
 <!--/include-->
-
-
-### Cron expression syntax
-
-Cron expressions should be configured as follows.
 
 ### Cron expression
 
@@ -145,16 +140,15 @@ Example of configuring:
 
 ```java
 FixedRate.builder()
-        .config(Config.create(() -> ConfigSources.create(
-                """
-                        delay: 4
-                        delay-type: SINCE_PREVIOUS_END
-                        initial-delay: 1
-                        time-unit: SECONDS
-                        """,
-                MediaTypes.APPLICATION_X_YAML)))
-        .task(inv -> System.out.println("Every 4 minutes, first invocation 1 minutes after start"))
-        .build();
+    .config(Config.create(() -> ConfigSources.create("""
+        delay: 4
+        delay-type: SINCE_PREVIOUS_END
+        initial-delay: 1
+        time-unit: SECONDS
+        """,
+        MediaTypes.APPLICATION_X_YAML)))
+    .task(inv -> System.out.println("Every 4 minutes, first invocation 1 minutes after start"))
+    .build();
 ```
 
 ## Task Management
@@ -173,11 +167,11 @@ Example of scheduling with fixed rate using FixedRate.builder() builder:
 
 ```java
 FixedRate.builder()
-        .delay(10)
-        .initialDelay(5)
-        .timeUnit(TimeUnit.MINUTES)
-        .task(inv -> System.out.println("Every 10 minutes, first invocation 5 minutes after start"))
-        .build();
+    .delay(10)
+    .initialDelay(5)
+    .timeUnit(TimeUnit.MINUTES)
+    .task(inv -> System.out.println("Every 10 minutes, first invocation 5 minutes after start"))
+    .build();
 ```
 
 Metadata like human-readable interval description or configured values are available through `FixedRateInvocation` provided as task parameter.
@@ -186,9 +180,9 @@ Example with invocation metadata:
 
 ```java
 FixedRate.builder()
-        .delay(10)
-        .task(inv -> System.out.println("Method invoked " + inv.description()))
-        .build();
+    .delay(10)
+    .task(inv -> System.out.println("Method invoked " + inv.description()))
+    .build();
 ```
 
 ## Reference

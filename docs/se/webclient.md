@@ -209,33 +209,25 @@ WebClient provides three DNS resolver implementations out of the box:
 </dependency>
 ```
 
-## Configuring the WebClient
-
-The class responsible for WebClient configuration is:
-
-### Configuration options
+## Configuration options
 
 <!--@include ../config/io.helidon.webclient.api.WebClient.md#configuration-options delim=--- offset=1 collapseTables=10 -->
 See [Configuration options](../config/io.helidon.webclient.api.WebClient.md#configuration-options).
 <!--/include-->
 
 
-### Protocol Specific Configuration
+## Protocol Configuration
 
-Protocol specific configuration can be set using the `protocol-configs` parameter. WebClient currently supports `HTTP/1.1.` and `HTTP/2`. Below are the options for each of the protocol type:
+Protocol specific configuration can be set using the `protocol-configs` parameter.
+WebClient currently supports `HTTP/1.1.` and `HTTP/2`.
 
-- `HTTP/1.1`
-
-#### Configuration options
+### HTTP1 Configuration options
 
 <!--@include ../config/io.helidon.webclient.http1.Http1ClientProtocolConfig.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../config/io.helidon.webclient.http1.Http1ClientProtocolConfig.md#configuration-options).
 <!--/include-->
 
-
-- `HTTP/2`
-
-#### Configuration options
+### HTTP2 Configuration options
 
 <!--@include ../config/io.helidon.webclient.http2.Http2ClientProtocolConfig.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../config/io.helidon.webclient.http2.Http2ClientProtocolConfig.md#configuration-options).
@@ -252,7 +244,7 @@ WebClient client = WebClient.builder()
         .build();
 ```
 
-### Example of a WebClient YAML Configuration
+## Configuration Example
 
 <!--@mdc ::code-collapse -->
 ```yaml [application.yaml]
@@ -319,40 +311,30 @@ client:
 
 ### WebClient with Proxy
 
-Configure Proxy setup either programmatically or via the Helidon configuration framework.
-
-#### Configuring Proxy in your code
-
 Proxy can be set directly from WebClient builder.
 
 ```java
-Proxy proxy = Proxy.builder()
-        .type(Proxy.ProxyType.HTTP)
-        .host(PROXY_HOST)
-        .port(PROXY_PORT)
-        .build();
 WebClient.builder()
-        .proxy(proxy)
-        .build();
+    .proxy(Proxy.builder()
+      .type(Proxy.ProxyType.HTTP)
+      .host(PROXY_HOST)
+      .port(PROXY_PORT)
+      .build())
+    .build();
 ```
 
 Alternative is to set proxy directly from the request via `HttpClientRequest`.
 
 ```java
-Proxy proxy = Proxy.create();
-HttpClientResponse response = client.get("/proxiedresource")
-        .proxy(proxy)
+var response = client.get("/proxiedresource")
+        .proxy(Proxy.create())
         .request();
 ```
 
 - Proxy instance configured using system settings (environment variables and system properties)
 - Configure the proxy per client request
 
-#### Configuring Proxy in the config file
-
 Proxy can also be configured in WebClient through the `application.yaml` configuration file.
-
-WebClient Proxy configuration in `application.yaml`:
 
 ```yaml [application.yaml]
 client:
@@ -368,10 +350,10 @@ WebClient initialization using the `application.yaml` file located on the
 classpath:
 
 ```java [application.yaml]
-Config config = Config.create();
+var config = Config.create();
 WebClient.builder()
-        .config(config.get("client"))
-        .build();
+    .config(config.get("client"))
+    .build();
 ```
 
 - `application.yaml` is a default configuration source loaded when YAML support is on classpath, so we can just use `Config.create()`
@@ -387,11 +369,11 @@ One way to configure TLS in WebClient is in your application code as shown below
 
 ```java
 WebClient.builder()
-        .tls(it -> it.trust(t -> t
-                .keystore(k -> k.passphrase("password")
-                        .trustStore(true)
-                        .keystore(r -> r.resourcePath("client.p12")))))
-        .build();
+    .tls(it -> it.trust(t -> t
+        .keystore(k -> k.passphrase("password")
+            .trustStore(true)
+            .keystore(r -> r.resourcePath("client.p12")))))
+    .build();
 ```
 
 #### Configuring TLS in the config file

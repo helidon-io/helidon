@@ -1,13 +1,14 @@
 # LangChain4j
 
+> [!NOTE]
+> LangChain4j integration is a preview feature. The APIs shown here are subject to change.
+> These APIs will be finalized in a future release of Helidon.
+
 ## Overview
 
 [LangChain4j][langchain4j] is a Java framework for building AI-powered applications using Large Language Models (LLMs). It provides seamless integration with multiple LLM providers, including OpenAI, Cohere, Hugging Face, and others. Key features include AI Services and Agents for model interaction, support for Retrieval-Augmented Generation (RAG) to enhance responses with external data, and tools for working with embeddings and knowledge retrieval.
 
 Helidon provides a LangChain4j integration module that simplifies the use of LangChain4j in Helidon applications.
-
-> [!NOTE]
-> LangChain4j integration is a preview feature. The APIs shown here are subject to change. These APIs will be finalized in a future release of Helidon.
 
 ## Features
 
@@ -83,20 +84,20 @@ public interface ChefAiService {
 Providers available out of the box:
 
 <!--@mdc ::table-collapse -->
-| Provider                                                                                 | Provider Key                      | Description                                                                                      |
-|------------------------------------------------------------------------------------------|-----------------------------------|--------------------------------------------------------------------------------------------------|
-| [**LangChain4j content retriever**][langchain4j-cont]                 | `lc4j-content-retriever`          | Built-in content-retriever for RAG                                                               |
-| [**LangChain4j in-memory embedding store**][langchain4j-in-m] | `lc4j-in-memory`                  | Built-in in-memory embedding store                                                               |
-| [**LangChain4j in-process models**][langchain4j-in-p]                                  | `lc4j-in-process`                 | Local [in-process models][in-process-model] |
-| [**Open AI**][open-ai]                                                                | `open-ai`                         | OpenAI and OpenAI compatible models providers                                                    |
-| [**OCI GenAI**][oci-genai]                                                            | `oci-gen-ai`, `oci-gen-ai-cohere` | Oracle Cloud Infrastructure GenAI models                                                         |
-| [**Jlama**][jlama]                                                                    | `jlama`                           | Local inference with selected [Jlama][jlama-2] models                     |
-| [**Google Gemini**][google-gemini]                                                           | `google-gemini`                   | Google Gemini hosted models                                                                      |
-| [**Ollama**][ollama]                                                                  | `ollama`                          | Ollama hosted models support                                                                     |
-| [**Cohere**][cohere]                                                                  | `cohere`                          | Cohere hosted models                                                                             |
-| [**Oracle Embedding Store**][oracle-embedding]                                                  | `oracle`                          | Oracle Database as an embedding store                                                            |
-| [**Coherence Embedding Store**][coherence-embedd]                                            | `coherence`                       | Coherence as embedding and chat memory store                                                     |
-| [**Mock**][mock]                                                                      | `helidon-mock`                    | Mockable chat model for deterministic testing                                                    |
+| Provider                                                      | Provider Key                      | Description                                           |
+|---------------------------------------------------------------|-----------------------------------|-------------------------------------------------------|
+| [**LangChain4j content retriever**][langchain4j-cont]         | `lc4j-content-retriever`          | Built-in content-retriever for RAG                    |
+| [**LangChain4j in-memory embedding store**][langchain4j-in-m] | `lc4j-in-memory`                  | Built-in in-memory embedding store                    |
+| [**LangChain4j in-process models**][langchain4j-in-p]         | `lc4j-in-process`                 | Local [in-process models][in-process-model]           |
+| [**Open AI**][open-ai]                                        | `open-ai`                         | OpenAI and OpenAI compatible models providers         |
+| [**OCI GenAI**][oci-genai]                                    | `oci-gen-ai`, `oci-gen-ai-cohere` | Oracle Cloud Infrastructure GenAI models              |
+| [**Jlama**][jlama]                                            | `jlama`                           | Local inference with selected [Jlama][jlama-2] models |
+| [**Google Gemini**][google-gemini]                            | `google-gemini`                   | Google Gemini hosted models                           |
+| [**Ollama**][ollama]                                          | `ollama`                          | Ollama hosted models support                          |
+| [**Cohere**][cohere]                                          | `cohere`                          | Cohere hosted models                                  |
+| [**Oracle Embedding Store**][oracle-embedding]                | `oracle`                          | Oracle Database as an embedding store                 |
+| [**Coherence Embedding Store**][coherence-embedd]             | `coherence`                       | Coherence as embedding and chat memory store          |
+| [**Mock**][mock]                                              | `helidon-mock`                    | Mockable chat model for deterministic testing         |
 <!--@mdc :: -->
 
 > [!NOTE]

@@ -15,9 +15,7 @@ In addition to the [Helidon integration with LangChain4j core dependencies](lang
 </dependency>
 ```
 
-## Components
-
-### GoogleAiGeminiChatModel
+## GoogleAiGeminiChatModel
 
 To automatically create and add `GoogleAiGeminiChatModel` to the service registry add the following lines to `application.yaml`:
 
@@ -42,7 +40,7 @@ See [Configuration options](../../../config/io.helidon.integrations.langchain4j.
 <!--/include-->
 
 
-### GoogleAiGeminiStreamingChatModel
+## GoogleAiGeminiStreamingChatModel
 
 To automatically create and add `GoogleAiGeminiStreamingChatModel` to the service registry add the following lines to `application.yaml`:
 

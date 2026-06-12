@@ -36,10 +36,10 @@ curl http://localhost:8080/greet
 ----------
 
 Congratulations! 🎉
-
 You now have a simple service up and running using Helidon.
-If you prefer to use MicroProfile APIs replace `se` with `mp` in the commands above.
-If you prefer not to install the Helidon CLI you can use the [Helidon Starter](https://helidon.io/starter).
+
+- If you prefer to use MicroProfile APIs replace `se` with `mp` in the commands above.
+- If you prefer not to install the Helidon CLI you can use the [Helidon Starter](https://helidon.io/starter).
 
 ## In More Detail
 
@@ -50,10 +50,10 @@ Instead, you install the tools necessary to create an environment suitable for d
 
 You must have Java and Maven installed on your system to use Helidon.
 
-| Requirement                                                                                              | Description                                  |
-|----------------------------------------------------------------------------------------------------------|----------------------------------------------|
+| Requirement                                     | Description                                  |
+|-------------------------------------------------|----------------------------------------------|
 | [Java 21][java-21] ([Open JDK 21][open-jdk-21]) | Helidon requires Java 21+ (25+ recommended). |
-| [Maven 3.8+][maven-3-8]                                                      | Helidon requires Maven 3.8+.                 |
+| [Maven 3.8+][maven-3-8]                         | Helidon requires Maven 3.8+.                 |
 
 > [!NOTE]
 > Most of Helidon's examples use Maven, but Helidon can also be used with [Gradle](se/guides/gradle-build.md).

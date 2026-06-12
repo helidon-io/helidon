@@ -4,30 +4,28 @@
 
 Helidon provides the following security providers for endpoint protection:
 
-| Provider | Type | Outbound supported | Description |
-|----|----|----|----|
-| [OIDC Provider][oidc-provider] | Authentication | ✅ | Open ID Connect supporting JWT, Scopes, Groups and OIDC code flow |
-| [HTTP Basic Authentication][http-basic-authe] | Authentication | ✅ | HTTP Basic Authentication support |
-| [HTTP Digest Authentication][http-digest-auth] | Authentication | 🚫 | **Deprecated!** HTTP Digest Authentication support |
-| [Header Assertion][header-assertion] | Authentication | ✅ | Asserting a user based on a header value |
-| [HTTP Signatures][http-signatures] | Authentication | ✅ | Protecting service to service communication through signatures |
-| [IDCS Roles][idcs-roles] | Role Mapping | 🚫 | Retrieves roles from IDCS provider for authenticated user |
-| [ABAC Authorization][abac-authorizati] | Authorization | 🚫 | Attribute based access control authorization policies |
+| Provider                                       | Type           | Outbound supported | Description                                                       |
+|------------------------------------------------|----------------|--------------------|-------------------------------------------------------------------|
+| [OIDC Provider][oidc-provider]                 | Authentication | ✅                  | Open ID Connect supporting JWT, Scopes, Groups and OIDC code flow |
+| [HTTP Basic Authentication][http-basic-authe]  | Authentication | ✅                  | HTTP Basic Authentication support                                 |
+| [HTTP Digest Authentication][http-digest-auth] | Authentication | 🚫                 | **Deprecated!** HTTP Digest Authentication support                |
+| [Header Assertion][header-assertion]           | Authentication | ✅                  | Asserting a user based on a header value                          |
+| [HTTP Signatures][http-signatures]             | Authentication | ✅                  | Protecting service to service communication through signatures    |
+| [IDCS Roles][idcs-roles]                       | Role Mapping   | 🚫                 | Retrieves roles from IDCS provider for authenticated user         |
+| [ABAC Authorization][abac-authorizati]         | Authorization  | 🚫                 | Attribute based access control authorization policies             |
 
 The following providers are no longer evolved:
 
-| Provider | Type | Outbound supported | Description |
-|----|----|----|----|
-| [Google Login][google-login] | Authentication | ✅ | **Deprecated!** Authenticates a token from request against Google servers |
-| [JWT Provider][jwt-provider] | Authentication | ✅ | JWT tokens passed from frontend |
+| Provider                     | Type           | Outbound supported | Description                                                               |
+|------------------------------|----------------|--------------------|---------------------------------------------------------------------------|
+| [Google Login][google-login] | Authentication | ✅                  | **Deprecated!** Authenticates a token from request against Google servers |
+| [JWT Provider][jwt-provider] | Authentication | ✅                  | JWT tokens passed from frontend                                           |
 
-### OIDC Provider
+## OIDC Provider
 
 Open ID Connect security provider.
 
-#### Setup
-
-Maven dependency
+### Maven Coordinates
 
 ```xml [pom.xml]
 <dependency>
@@ -36,20 +34,15 @@ Maven dependency
 </dependency>
 ```
 
-#### Configuration options
+### Configuration options
 
 <!--@include ../../config/io.helidon.security.providers.oidc.OidcProvider.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.security.providers.oidc.OidcProvider.md#configuration-options).
 <!--/include-->
 
+### Configuration Example
 
-### Example code
-
-See the [example][example] on GitHub.
-
-Configuration example
-
-```yaml
+```yaml [application.yaml]
 security:
   providers:
   - oidc:
@@ -64,6 +57,10 @@ security:
           outbound-token:
             header: "X-Internal-Auth"
 ```
+
+### Example
+
+See the [example][example] on GitHub.
 
 ### How does it work?
 
@@ -94,15 +91,15 @@ Helidon obtains a token from request (from cookie, header, or query parameter):
 5.  We validate that we have sufficient scopes to proceed, and return `403` if not
 6.  Handling is returned to security to process other security providers
 
-### Multiple tenants
+### Multi Tenancy
 
-The OIDC provider also supports multiple tenants. To enable this feature, it is required to do several steps.
+The OIDC provider also supports multi tenancy. To enable this feature, it is required to do several steps.
 
 1.  To enable the default multi-tenant support, add the `multi-tenant: true` option to the OIDC provider configuration
 2.  Specify the desired way to provide the tenant name. This step is done over adding the `tenant-id-style` configuration option. For more information, see the table below
 3.  Add the tenants section to the OIDC provider configuration
 
-```yaml
+```yaml [application.yaml]
 tenants:
    - name: "example-tenant"
      # ... tenant configuration options
@@ -158,34 +155,29 @@ and the custom tenant configuration discovery can be provided by implementing SP
 
 `io.helidon.security.providers.oidc.common.spi.TenantConfigProvider`
 
-#### Available tenant config options
-
-##### Configuration options
+#### Configuration options
 
 <!--@include ../../config/io.helidon.security.providers.oidc.common.TenantConfig.md#configuration-options delim=--- offset=3 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.security.providers.oidc.common.TenantConfig.md#configuration-options).
 <!--/include-->
 
-
 #### How does that work?
 
-Multi-tenant support requires to obtain tenant name from the incoming request. OIDC configuration is selected based on the received tenant name. The way this tenant name has to be provided is configured via `tenant-id-style` configuration. See [How to enable tenants](#multiple-tenants) for more information. After matching tenant configuration with the received name, the rest of the OIDC flow if exactly the same as in [How does OIDC work](#how-does-it-work).
+Multi-tenant support requires to obtain tenant name from the incoming request. OIDC configuration is selected based on the received tenant name. The way this tenant name has to be provided is configured via `tenant-id-style` configuration. See [How to enable tenants](#multi-tenancy) for more information. After matching tenant configuration with the received name, the rest of the OIDC flow if exactly the same as in [How does OIDC work](#how-does-it-work).
 
 Base OIDC configuration is treated as a default tenant, which is used, if no tenant name is provided. This default tenant is having `@default` name specified.
 
 It is also important to note, that each tenant configuration is based on the default tenant configuration (base OIDC configuration), and therefore its configuration do not need to change all the properties, if they do not differ from the base OIDC configuration.
 
-## CORS Settings
+### CORS Settings
 
 CORS is (now) a single component configured either through config (key `cors`), or programmatically via `io.helidon.webserver.cors.CorsFeature`. To add proper CORS setup for the OIDC endpoint, use one of these. Component specific CORS setup will be removed from Helidon.
 
-### HTTP Basic Authentication Provider
+## HTTP Basic Authentication Provider
 
 HTTP Basic authentication support
 
-#### Setup
-
-Maven dependency
+### Maven Coordinates
 
 ```xml [pom.xml]
 <dependency>
@@ -194,22 +186,15 @@ Maven dependency
 </dependency>
 ```
 
-#### Overview
-
-#### Configuration options
+### Configuration options
 
 <!--@include ../../config/io.helidon.security.providers.httpauth.HttpBasicAuthProvider.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.security.providers.httpauth.HttpBasicAuthProvider.md#configuration-options).
 <!--/include-->
 
+### Configuration Example
 
-#### Example code
-
-See the [example][example-2] on GitHub.
-
-Configuration example
-
-```yaml
+```yaml [application.yaml]
 security:
   providers:
   - http-basic-auth:
@@ -234,7 +219,11 @@ security:
           password: "${CLEAR=changeit}"
 ```
 
-#### How does it work?
+### Example
+
+See the [example][example-2] on GitHub.
+
+### How does it work?
 
 See <a href="https://tools.ietf.org/html/rfc7617" class="bare">https://tools.ietf.org/html/rfc7617</a>.
 
@@ -267,15 +256,13 @@ Java service loader service `io.helidon.security.providers.httpauth.spi.UserStor
 
 Basic authentication uses base64 encoded username and password and passes it over the network. Base64 is only encoding, not encryption - so anybody that gets hold of the header value can learn the actual username and password of the user. This is a security risk and an attack vector that everybody should be aware of before using HTTP Basic Authentication. We recommend using this approach only for testing and demo purposes.
 
-### HTTP Digest Authentication Provider
+## HTTP Digest Authentication Provider
 
-~~HTTP Digest authentication support~~
+> [!WARNING]
+> This provider is deprecated and will be removed in a future version of Helidon without replacement.
+> It is kept in Helidon 4 for backward compatibility only, relies on obsolete MD5 hash, and should not be used in production.
 
-This provider is deprecated and will be removed in a future version of Helidon without replacement. It is kept in Helidon 4 for backward compatibility only, relies on obsolete MD5 hash, and should not be used in production.
-
-#### Setup
-
-Maven dependency
+### Maven Coordinates
 
 ```xml [pom.xml]
 <dependency>
@@ -284,20 +271,15 @@ Maven dependency
 </dependency>
 ```
 
-#### Overview
-
-#### Configuration options
+### Configuration options
 
 <!--@include ../../config/io.helidon.security.providers.httpauth.HttpDigestAuthProvider.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.security.providers.httpauth.HttpDigestAuthProvider.md#configuration-options).
 <!--/include-->
 
+### Configuration Example
 
-#### Example code
-
-Configuration example
-
-```yaml
+```yaml [application.yaml]
 security:
   providers:
   - http-digest-auth:
@@ -312,9 +294,9 @@ security:
         roles: ["user", "admin"]
 ```
 
-#### How does it work?
+### How does it work?
 
-See <a href="https://tools.ietf.org/html/rfc7616" class="bare">https://tools.ietf.org/html/rfc7616</a>.
+See https://tools.ietf.org/html/rfc7616.
 
 **Authentication of request**
 
@@ -332,13 +314,11 @@ Java service loader service `io.helidon.security.providers.httpauth.spi.UserStor
 
 This authentication scheme is obsolete and should only be used for local testing or short-lived compatibility work.
 
-### Header Authentication Provider
+## Header Authentication Provider
 
 Asserts user or service identity based on a value of a header.
 
-#### Setup
-
-Maven dependency
+### Maven Coordinates
 
 ```xml [pom.xml]
 <dependency>
@@ -347,20 +327,15 @@ Maven dependency
 </dependency>
 ```
 
-#### Overview
-
-#### Configuration options
+### Configuration options
 
 <!--@include ../../config/io.helidon.security.providers.header.HeaderAtnProvider.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.security.providers.header.HeaderAtnProvider.md#configuration-options).
 <!--/include-->
 
+### Configuration Example
 
-#### Example code
-
-Configuration example
-
-```yaml
+```yaml [application.yaml]
 security:
   providers:
     header-atn:
@@ -378,7 +353,7 @@ security:
             header: "X-Service-Auth"
 ```
 
-#### How does it work?
+### How does it work?
 
 This provider inspects a specified request header and extracts the username/service name from it and asserts it as current subject’s principal.
 
@@ -394,13 +369,11 @@ The following options exist when propagating identity: 1. We propagate the curre
 
 When using this provider, you must be sure the header cannot be explicitly configured by a user or another service. All requests should go through a gateway that removes this header from inbound traffic, and only configures it for authenticated users/services. Another option is to use this with fully trusted parties (such as services within a single company, on a single protected network not accessible to any users), and of course for testing and demo purposes.
 
-### HTTP Signatures Provider
+## HTTP Signatures Provider
 
 Support for HTTP Signatures.
 
-#### Setup
-
-Maven dependency
+### Maven Coordinates
 
 ```xml [pom.xml]
 <dependency>
@@ -409,23 +382,16 @@ Maven dependency
 </dependency>
 ```
 
-#### Overview
-
-#### Configuration options
+### Configuration options
 
 <!--@include ../../config/io.helidon.security.providers.httpsign.HttpSignProvider.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.security.providers.httpsign.HttpSignProvider.md#configuration-options).
 <!--/include-->
 
-
-#### Example code
-
-See the [example][example-3] on GitHub.
-
-Configuration example
+### Configuration Example
 
 <!--@mdc ::code-collapse -->
-```yaml
+```yaml [application.yaml]
 security:
   providers:
     - http-signatures:
@@ -461,24 +427,26 @@ security:
 ```
 <!--@mdc :: -->
 
-#### Signature basics
+### Example
 
-- standard: based on <a href="https://tools.ietf.org/html/draft-cavage-http-signatures-03" class="bare">https://tools.ietf.org/html/draft-cavage-http-signatures-03</a>
+See the [example][example-3] on GitHub.
+
+### Signature basics
+
+- standard: based on https://tools.ietf.org/html/draft-cavage-http-signatures-03
 - key-id: an arbitrary string used to locate signature configuration - when a request is received the provider locates validation configuration based on this id (e.g. HMAC shared secret or RSA public key). Commonly used meanings are: key fingerprint (RSA); API Key
 
-#### How does it work?
+### How does it work?
 
 **Inbound Signatures** We act as a server and another party is calling us with a signed HTTP request. We validate the signature and assume identity of the caller.
 
 **Outbound Signatures** We act as a client and we sign our outgoing requests. If there is a matching `outbound` target specified in configuration, its configuration will be applied for signing the outgoing request, otherwise there is no signature added
 
-### IDCS Role Mapper
+## IDCS Role Mapper
 
 A role mapper to retrieve roles from Oracle IDCS.
 
-#### Setup
-
-Maven dependency
+### Maven Coordinates
 
 ```xml [pom.xml]
 <dependency>
@@ -487,7 +455,7 @@ Maven dependency
 </dependency>
 ```
 
-#### Single-tenant IDCS Role Mapper
+### Single-tenant
 
 #### Configuration options
 
@@ -495,8 +463,7 @@ Maven dependency
 See [Configuration options](../../config/io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProvider.md#configuration-options).
 <!--/include-->
 
-
-#### Multi-tenant IDCS Role Mapper
+### Multi-tenant
 
 #### Configuration options
 
@@ -504,14 +471,9 @@ See [Configuration options](../../config/io.helidon.security.providers.idcs.mapp
 See [Configuration options](../../config/io.helidon.security.providers.idcs.mapper.IdcsMtRoleMapperProvider.md#configuration-options).
 <!--/include-->
 
+### Configuration Example
 
-#### Example code
-
-See the [example][example-4] on GitHub.
-
-Configuration example
-
-```yaml
+```yaml [application.yaml]
 security:
   providers:
     - idcs-role-mapper:
@@ -521,18 +483,19 @@ security:
             client-secret: "changeit"
             identity-uri: "IDCS identity server address"
 ```
+### Example
 
-#### How does it work?
+See the [example][example-4] on GitHub.
+
+### How does it work?
 
 The provider asks the IDCS server to provide list of roles for the currently authenticated user. The result is cached for a certain period of time (see `cache-config` above).
 
-### ABAC Provider
+## ABAC Provider
 
 Attribute based access control authorization provider.
 
-#### Setup
-
-Maven dependency
+### Maven Coordinates
 
 ```xml [pom.xml]
 <dependency>
@@ -541,37 +504,27 @@ Maven dependency
 </dependency>
 ```
 
-#### Overview
-
-#### Configuration options
+### Configuration options
 
 <!--@include ../../config/io.helidon.security.providers.abac.AbacProvider.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.security.providers.abac.AbacProvider.md#configuration-options).
 <!--/include-->
 
-
-#### Example code
+### Configuration Example
 
 See the [example][example-5] on GitHub.
 
-Configuration example
-
-```yaml
+```yaml [application.yaml]
 security:
   providers:
     - abac:
 ```
 
-#### Configuration options
+### Example
 
-The following table shows all configuration options of the provider and their default values
+See the [example][example-5] on GitHub.
 
-| key | default value | description |
-|----|----|----|
-| `fail-on-unvalidated` | `true` | "Unvalidated" means: an attribute is defined, but there is no validator available for it |
-| `fail-if-none-validated` | `true` | "None validated" means: there was not a single attribute that was validated |
-
-#### How does it work?
+### How does it work?
 
 ABAC uses available validators and validates them against attributes of the authenticated user.
 
@@ -624,7 +577,7 @@ public class AbacResource {
 - [Scopes](#scope-validator)
 - [EL Policy][el-policy]
 
-#### Role Validator
+### Role Validator
 
 Checks whether user/service is in either of the required role(s).
 
@@ -634,7 +587,7 @@ Annotations: `@RolesAllowed`, `@RoleValidator.Roles`
 
 Configuration example for `WebServer`
 
-```yaml
+```yaml [application.yaml]
 security:
   web-server.paths:
     - path: "/user/*"
@@ -652,7 +605,7 @@ public class AbacResource {
 }
 ```
 
-##### Interaction with JAX-RS sub-resource locators
+##### JAX-RS sub-resource locators
 
 When using sub-resource locators in JAX-RS, the roles allowed are collected from each "level" of execution: - Application class annotations - Resource class annotations + resource method annotations - Sub-resource class annotations + sub-resource method annotations - Sub-resource class annotations + sub-resource method annotations (for every sub-resource on the path)
 
@@ -662,7 +615,7 @@ The `RolesAllowed` or `Roles` annotation to be used is the last one in the path 
 
 *Example 2:* There is a `RolesAllowed("admin")` defined on a sub-resource locator resource class and a `RolesAllowed("user")` defined on the method of the sub-resource that provides the response. In this case the required role is `user`.
 
-#### Scope Validator
+### Scope Validator
 
 Checks whether user has all the required scopes.
 
@@ -672,7 +625,7 @@ Annotations: `@Scope`
 
 Configuration example for `WebServer`
 
-```yaml
+```yaml [application.yaml]
 security:
   web-server.paths:
     - path: "/user/*"
@@ -691,7 +644,7 @@ public class AbacResource {
 }
 ```
 
-#### Expression Language Policy Validator
+### Expression Language Policy Validator
 
 Policy executor using Java EE policy expression language (EL)
 
@@ -703,7 +656,7 @@ Example of a policy statement: `${env.time.year >= 2017}`
 
 Configuration example for `WebServer`
 
-```yaml
+```yaml [application.yaml]
 security:
   web-server.paths:
     - path: "/user/*"
@@ -723,7 +676,7 @@ public class AbacResource {
 
 Configuration example for `JAX-RS` over the configuration
 
-```yaml
+```yaml [application.yaml]
 server:
   features:
     security:
@@ -733,15 +686,15 @@ server:
             abac.policy-validator.statement: "\\${env.time.year >= 2017}"
 ```
 
-### Google Login Provider
+## Google Login Provider
 
 Authenticates a token from request against Google identity provider
 
-This provider is deprecated and will be removed in a future version of Helidon. Please use our OpenID Connect security provider instead.
+> [!WARNING]
+> This provider is deprecated and will be removed in a future version of Helidon.
+> Please use our OpenID Connect security provider instead.
 
-#### Setup
-
-Maven dependency
+### Maven Coordinates
 
 ```xml [pom.xml]
 <dependency>
@@ -750,37 +703,34 @@ Maven dependency
 </dependency>
 ```
 
-#### Overview
-
-#### Configuration options
+### Configuration options
 
 <!--@include ../../config/io.helidon.security.providers.google.login.GoogleTokenProvider.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.security.providers.google.login.GoogleTokenProvider.md#configuration-options).
 <!--/include-->
 
-
-#### Example code
+### Example
 
 See the [example][example-6] on GitHub.
 
 Configuration example
 
-```yaml
+```yaml [application.yaml]
 security:
   providers:
     - provider:
         client-id: "Google client id"
 ```
 
-#### How does it work?
+### How does it work?
 
-We expect to receive a token (with sufficient scopes) from the inbound request, such as when using the Google login button on a page. The page has access to the token in javascript and can send it to backend with every request in a header field (`Authorization` with `bearer ` prefix is assumed by default).
+We expect to receive a token (with sufficient scopes) from the inbound request, such as when using the Google login button on a page. The page has access to the token in JavaScript and can send it to backend with every request in a header field (`Authorization` with `bearer ` prefix is assumed by default).
 
 Once we receive the token in Helidon, we parse it and:
 
 1.  Validate if it timed out locally
 2.  Return a cached response (see `EvictableCache` with default values)
-3.  Otherwise verify using Google API - `GoogleIdTokenVerifier`
+3.  Otherwise, verify using Google API - `GoogleIdTokenVerifier`
 
 We build a subject from the Google token with the following attributes filled (if in token):
 
@@ -795,13 +745,11 @@ We build a subject from the Google token with the following attributes filled (i
 
 **Outbound security** The token will be propagated to outbound calls if an outbound target exists that matches the invoked endpoint (see `outbound` configuration above).
 
-### JWT Provider
+## JWT Provider
 
 JWT token authentication and outbound security provider.
 
-#### Setup
-
-Maven dependency
+### Maven Coordinates
 
 ```xml [pom.xml]
 <dependency>
@@ -810,22 +758,15 @@ Maven dependency
 </dependency>
 ```
 
-#### Overview
-
-#### Configuration options
+### Configuration options
 
 <!--@include ../../config/io.helidon.security.providers.jwt.JwtProvider.md#configuration-options delim=--- offset=2 collapseTables=10 -->
 See [Configuration options](../../config/io.helidon.security.providers.jwt.JwtProvider.md#configuration-options).
 <!--/include-->
 
+### Configuration Example
 
-#### Example code
-
-See the [example][example-2] on GitHub.
-
-Configuration example
-
-```yaml
+```yaml [application.yaml]
 security:
   providers:
     - provider:
@@ -846,7 +787,11 @@ security:
             jwt-audience: "http://1.partner-service"
 ```
 
-#### How does it work?
+### Example
+
+See the [example][example-2] on GitHub.
+
+### How does it work?
 
 JSON Web Token (JWT) provider has support for authentication and outbound security.
 
