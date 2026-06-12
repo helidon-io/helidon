@@ -75,7 +75,6 @@
         <version.lib.awaitility>3.1.6</version.lib.awaitility>
         <version.lib.jmh>1.23</version.lib.jmh>
         <version.lib.vertx-core>4.3.8</version.lib.vertx-core>
-        <version.lib.commons-text>1.15.0</version.lib.commons-text>
         <version.lib.classgraph>4.8.165</version.lib.classgraph>
         <version.lib.maven.plugin.annotations>3.15.1</version.lib.maven.plugin.annotations>
         <version.lib.maven.plugin.api>3.9.15</version.lib.maven.plugin.api>
@@ -951,23 +950,6 @@
                 <groupId>io.vertx</groupId>
                 <artifactId>vertx-web-client</artifactId>
                 <version>${version.lib.vertx-core}</version>
-            </dependency>
-            <dependency>
-                <!-- for dependency convergence with handlebars and force upgrade -->
-                <groupId>org.apache.commons</groupId>
-                <artifactId>commons-text</artifactId>
-                <version>${version.lib.commons-text}</version>
-            </dependency>
-            <dependency>
-                <!--
-                Required for dependency convergence
-                Used by both
-                io.rest-assured:rest-assured (from metrics rest TCK)
-                hamcrest-integration (from metrics API TCK)
-                -->
-                <groupId>org.hamcrest</groupId>
-                <artifactId>hamcrest-library</artifactId>
-                <version>${version.lib.hamcrest}</version>
             </dependency>
             <dependency>
                 <groupId>org.testng</groupId>
