@@ -124,11 +124,22 @@ class OpenApi30DocumentMapperTest {
                                         "responses", Map.of(
                                                 "200", Map.of(
                                                         "description", "OK",
+                                                        "headers", Map.of(
+                                                                "X-Trace", Map.of(
+                                                                        "description", "Trace header",
+                                                                        "x-header", true)),
+                                                        "content", Map.of(
+                                                                "application/json", Map.of(
+                                                                        "schema", Map.of("type", "object"),
+                                                                        "x-media", true)),
                                                         "x-static-response", "preserved")))))));
         Map<String, Object> rendered = OpenApi30DocumentMapper.render(document, "3.0.3");
         Map<String, Object> response = map(map(map(map(rendered, "paths"), "/static"), "get"), "responses");
+        Map<String, Object> okResponse = map(response, "200");
 
-        assertThat(map(response, "200").get("x-static-response"), is("preserved"));
+        assertThat(okResponse.get("x-static-response"), is("preserved"));
+        assertThat(map(map(okResponse, "headers"), "X-Trace").get("x-header"), is(true));
+        assertThat(map(map(okResponse, "content"), "application/json").get("x-media"), is(true));
     }
 
     @Test

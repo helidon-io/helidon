@@ -610,12 +610,13 @@ final class OpenApiSourceGenerator {
                                                             OPENAPI_EXTENSION_ANNOTATION);
         validator.validateExtensions(restMethodDescription(restMethod), extensions);
         extensions.forEach(extension -> writeExtension(method, ".extension", false, extension));
-        if (hasEmptySecurityRequirements(annotations)) {
+        Set<Annotation> securityAnnotations = operationSecurityAnnotations(restMethod);
+        if (hasEmptySecurityRequirements(securityAnnotations)) {
             method.addContentLine(".security(java.util.List.of())");
             return;
         }
         List<OpenApiSecurityRequirement> securityRequirements = securityRequirements(restMethodDescription(restMethod),
-                                                                                    annotations);
+                                                                                    securityAnnotations);
         if (!securityRequirements.isEmpty()) {
             validator.validateSecurityRequirements(restMethodDescription(restMethod), securityRequirements);
             securityRequirements.forEach(requirement -> writeSecurityRequirement(method,
@@ -632,6 +633,20 @@ final class OpenApiSourceGenerator {
                                                                                     ".securityRequirement",
                                                                                     false,
                                                                                     requirement));
+    }
+
+    private Set<Annotation> operationSecurityAnnotations(RestMethod restMethod) {
+        Set<Annotation> directAnnotations = new HashSet<>(restMethod.method().annotations());
+        if (hasSecurityRequirementAnnotations(directAnnotations)) {
+            return directAnnotations;
+        }
+        return restMethod.annotations();
+    }
+
+    private boolean hasSecurityRequirementAnnotations(Set<Annotation> annotations) {
+        return hasAnnotation(annotations, OPENAPI_SECURITY_SCHEME_REQUIREMENT_ANNOTATION)
+                || hasAnnotation(annotations, OPENAPI_SECURITY_REQUIREMENT_ANNOTATION)
+                || hasAnnotation(annotations, OPENAPI_SECURITY_REQUIREMENTS_ANNOTATION);
     }
 
     private void addInferredOperation(Method.Builder method, RestMethod restMethod, String endpointTag) {
