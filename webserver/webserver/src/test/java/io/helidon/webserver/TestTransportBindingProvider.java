@@ -16,19 +16,18 @@
 
 package io.helidon.webserver;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.ServerSocket;
+import java.net.SocketException;
 import java.net.SocketAddress;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.helidon.common.tls.Tls;
 import io.helidon.common.tls.TlsMaterial;
 import io.helidon.config.Config;
 import io.helidon.webserver.spi.PortTransportBinding;
@@ -43,12 +42,12 @@ public class TestTransportBindingProvider implements TransportBindingProvider<Te
     private static final Map<String, Integer> PORT_AT_CREATE = new ConcurrentHashMap<>();
     private static final Map<String, Integer> PORT_AT_START = new ConcurrentHashMap<>();
     private static final Map<String, Integer> BOUND_PORTS = new ConcurrentHashMap<>();
+    private static final Map<String, DatagramSocket> BOUND_SOCKETS = new ConcurrentHashMap<>();
     private static final Map<String, AtomicInteger> STARTS = new ConcurrentHashMap<>();
     private static final Map<String, AtomicInteger> STOPS = new ConcurrentHashMap<>();
     private static final Map<String, AtomicInteger> RELOADS = new ConcurrentHashMap<>();
     private static final Map<String, AtomicInteger> VIRTUAL_HOST_RELOADS = new ConcurrentHashMap<>();
-    private static final Map<String, CompletableFuture<TransportBinding.ShutdownResult>> PENDING_STOPS =
-            new ConcurrentHashMap<>();
+    private static final Map<String, CountDownLatch> PENDING_STOPS = new ConcurrentHashMap<>();
 
     static void reset() {
         BIND_ADDRESS_AT_PLAN.clear();
@@ -57,6 +56,8 @@ public class TestTransportBindingProvider implements TransportBindingProvider<Te
         PORT_AT_CREATE.clear();
         PORT_AT_START.clear();
         BOUND_PORTS.clear();
+        BOUND_SOCKETS.values().forEach(DatagramSocket::close);
+        BOUND_SOCKETS.clear();
         STARTS.clear();
         STOPS.clear();
         RELOADS.clear();
@@ -105,9 +106,9 @@ public class TestTransportBindingProvider implements TransportBindingProvider<Te
     }
 
     static void completeStop(String name) {
-        CompletableFuture<TransportBinding.ShutdownResult> future = PENDING_STOPS.remove(name);
-        if (future != null) {
-            future.complete(TransportBinding.ShutdownResult.GRACEFUL);
+        CountDownLatch latch = PENDING_STOPS.remove(name);
+        if (latch != null) {
+            latch.countDown();
         }
     }
 
@@ -170,24 +171,38 @@ public class TestTransportBindingProvider implements TransportBindingProvider<Te
             int portAtStart = context.boundPort().orElse(-1);
             PORT_AT_START.put(config.name(), portAtStart);
             if (config.portCapable()) {
-                BOUND_PORTS.put(config.name(), portAtStart > 0 ? portAtStart : availablePort());
+                BOUND_PORTS.put(config.name(), portAtStart > 0 ? portAtStart : bindDatagramSocket(config.name()));
             }
         }
 
         @Override
-        public CompletionStage<ShutdownResult> stop(Duration gracefulPeriod) {
+        public ShutdownResult stop(Duration gracefulPeriod) {
             counter(STOPS, config.name()).incrementAndGet();
+            closeBoundSocket(config.name());
             if (config.hangStop()) {
-                CompletableFuture<ShutdownResult> future = new CompletableFuture<>();
-                PENDING_STOPS.put(config.name(), future);
-                return future;
+                CountDownLatch latch = new CountDownLatch(1);
+                PENDING_STOPS.put(config.name(), latch);
+                while (true) {
+                    try {
+                        latch.await();
+                        break;
+                    } catch (InterruptedException e) {
+                        if (!config.ignoreStopInterrupt()) {
+                            Thread.currentThread().interrupt();
+                            return ShutdownResult.FORCED;
+                        }
+                    }
+                }
             }
-            return CompletableFuture.completedFuture(ShutdownResult.GRACEFUL);
+            return ShutdownResult.GRACEFUL;
         }
 
         @Override
         public boolean hasTls() {
-            return config.tlsEnabled();
+            if (config.reportTlsWithoutListenerTls()) {
+                return true;
+            }
+            return config.tlsEnabled() && context.config().tls().map(Tls::enabled).orElse(false);
         }
 
         @Override
@@ -220,11 +235,21 @@ public class TestTransportBindingProvider implements TransportBindingProvider<Te
         }
     }
 
-    private static int availablePort() {
-        try (ServerSocket socket = new ServerSocket(0, 50, InetAddress.getLoopbackAddress())) {
+    private static int bindDatagramSocket(String name) {
+        try {
+            DatagramSocket socket = new DatagramSocket(0, InetAddress.getLoopbackAddress());
+            closeBoundSocket(name);
+            BOUND_SOCKETS.put(name, socket);
             return socket.getLocalPort();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+        } catch (SocketException e) {
+            throw new IllegalStateException("Failed to bind test transport socket", e);
+        }
+    }
+
+    private static void closeBoundSocket(String name) {
+        DatagramSocket socket = BOUND_SOCKETS.remove(name);
+        if (socket != null) {
+            socket.close();
         }
     }
 }

@@ -26,6 +26,9 @@ import io.helidon.common.tls.TlsMaterial;
 public interface TlsTransportBinding extends TransportBinding {
     /**
      * Whether this binding is secured with listener TLS.
+     * <p>
+     * This returns whether the binding is actively applying the listener TLS configuration, not whether the binding is
+     * capable of TLS. Implementations must return {@code false} when listener TLS is disabled.
      *
      * @return whether listener TLS is enabled
      */
