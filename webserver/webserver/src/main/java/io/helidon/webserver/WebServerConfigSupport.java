@@ -38,9 +38,14 @@ import io.helidon.config.ConfigException;
 import io.helidon.http.RequestedUriDiscoveryContext;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.spi.ServerFeature;
+import io.helidon.webserver.spi.TransportBindingConfig;
 
 class WebServerConfigSupport {
     private static final String UNIX_DOMAIN_SOCKET_PREFIX = "unix:";
+    private static final String KEY_BINDINGS = "bindings";
+    private static final String KEY_SERVICE_ENABLED = "enabled";
+    private static final String KEY_SERVICE_NAME = "name";
+    private static final String KEY_SERVICE_TYPE = "type";
 
     static class CustomMethods {
 
@@ -146,6 +151,8 @@ class WebServerConfigSupport {
                 target.name(WebServer.DEFAULT_SOCKET_NAME);
             }
 
+            preserveBindingConfigSemantics(target);
+
             if (target.connectionOptions().isEmpty()) {
                 target.connectionOptions(SocketOptions.create());
             }
@@ -167,6 +174,106 @@ class WebServerConfigSupport {
                                                             .socketId(target.name())
                                                             .build());
             }
+        }
+
+        private static void preserveBindingConfigSemantics(ListenerConfig.BuilderBase<?, ?> target) {
+            Optional<Config> listenerConfig = target.config();
+            if (listenerConfig.isEmpty()) {
+                return;
+            }
+
+            Config bindingsConfig = listenerConfig.get().get(KEY_BINDINGS);
+            if (!bindingsConfig.exists()) {
+                return;
+            }
+
+            List<ConfiguredBinding> configuredBindings = configuredBindings(bindingsConfig);
+            validateNoDuplicateEnabledBindings(bindingsConfig, configuredBindings);
+            preserveDisabledTcpBindings(target, configuredBindings);
+        }
+
+        private static List<ConfiguredBinding> configuredBindings(Config bindingsConfig) {
+            List<Config> bindingConfigs = bindingsConfig.asNodeList()
+                    .orElseGet(List::of);
+            List<ConfiguredBinding> result = new ArrayList<>(bindingConfigs.size());
+            boolean isList = bindingsConfig.isList();
+            for (Config bindingConfig : bindingConfigs) {
+                result.add(configuredBinding(bindingConfig, isList));
+            }
+            return result;
+        }
+
+        private static ConfiguredBinding configuredBinding(Config bindingConfig, boolean isList) {
+            if (isList) {
+                String type = bindingConfig.get(KEY_SERVICE_TYPE).asString().orElse(null);
+                String name = bindingConfig.get(KEY_SERVICE_NAME).asString().orElse(type);
+                boolean enabled = bindingConfig.get(KEY_SERVICE_ENABLED).asBoolean().orElse(true);
+
+                if (type == null) {
+                    List<Config> nestedConfigs = bindingConfig.asNodeList().orElseGet(List::of);
+                    if (nestedConfigs.size() != 1) {
+                        throw new ConfigException(
+                                "Transport binding configuration defined as a list must have a single node that is the "
+                                        + "type, with children containing the binding configuration. Failed on: "
+                                        + bindingConfig.key());
+                    }
+                    Config usedConfig = nestedConfigs.getFirst();
+                    name = usedConfig.name();
+                    type = usedConfig.get(KEY_SERVICE_TYPE).asString().orElse(name);
+                    enabled = usedConfig.get(KEY_SERVICE_ENABLED).asBoolean().orElse(enabled);
+                }
+                return new ConfiguredBinding(type, name, enabled);
+            }
+
+            String name = bindingConfig.name();
+            String type = bindingConfig.get(KEY_SERVICE_TYPE).asString().orElse(name);
+            boolean enabled = bindingConfig.get(KEY_SERVICE_ENABLED).asBoolean().orElse(true);
+
+            return new ConfiguredBinding(type, name, enabled);
+        }
+
+        private static void validateNoDuplicateEnabledBindings(Config bindingsConfig,
+                                                               List<ConfiguredBinding> configuredBindings) {
+            Set<ConfiguredBindingId> bindingIds = new HashSet<>();
+            for (ConfiguredBinding configuredBinding : configuredBindings) {
+                if (configuredBinding.enabled()
+                        && !bindingIds.add(new ConfiguredBindingId(configuredBinding.type(),
+                                                                    configuredBinding.name()))) {
+                    throw new ConfigException("Duplicate transport binding config \"" + configuredBinding.name()
+                                                      + "\" of type \"" + configuredBinding.type()
+                                                      + "\" in " + bindingsConfig.key());
+                }
+            }
+        }
+
+        private static void preserveDisabledTcpBindings(ListenerConfig.BuilderBase<?, ?> target,
+                                                        List<ConfiguredBinding> configuredBindings) {
+            for (ConfiguredBinding configuredBinding : configuredBindings) {
+                if (!configuredBinding.enabled()
+                        && TcpTransportBinding.TYPE.equals(configuredBinding.type())
+                        && !hasBinding(target.bindings(), configuredBinding)) {
+                    target.addBinding(TcpTransportConfig.builder()
+                                              .name(configuredBinding.name())
+                                              .enabled(false)
+                                              .buildPrototype());
+                }
+            }
+        }
+
+        private static boolean hasBinding(List<TransportBindingConfig> bindings, ConfiguredBinding configuredBinding) {
+            for (TransportBindingConfig binding : bindings) {
+                if (binding.type().equals(configuredBinding.type())
+                        && binding.name().equals(configuredBinding.name())) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private record ConfiguredBinding(String type, String name, boolean enabled) {
+        }
+
+        private record ConfiguredBindingId(String type, String name) {
         }
     }
 

@@ -462,18 +462,20 @@ class ServerListener implements ListenerContext {
         List<TransportBinding> activeBindings = new ArrayList<>();
         Set<BindingConfigId> bindingConfigs = new LinkedHashSet<>();
         Set<String> bindingNames = new LinkedHashSet<>();
-        boolean hasNamedTcpBinding = hasNamedTcpBinding(listenerConfig.bindings());
+        boolean hasExplicitTcpBinding = hasExplicitTcpBinding(listenerConfig.bindings());
         boolean tcpBindingPlanned = false;
 
         for (TransportBindingConfig config : orderedBindingConfigs(listenerConfig.bindings())) {
             if (!config.enabled()) {
                 continue;
             }
-            if (hasNamedTcpBinding && isDefaultTcpBinding(config)) {
+            if (isDiscoveredDefaultTcpBinding(config) && (hasExplicitTcpBinding || tcpBindingPlanned)) {
                 continue;
             }
             if (!bindingConfigs.add(new BindingConfigId(config.type(), config.name()))) {
-                continue;
+                throw new IllegalArgumentException("Duplicate transport binding config \"" + config.name()
+                                                           + "\" of type \"" + config.type()
+                                                           + "\" on listener " + socketName);
             }
             if (TcpTransportBinding.TYPE.equals(config.type())) {
                 if (tcpBindingPlanned) {
@@ -527,11 +529,11 @@ class ServerListener implements ListenerContext {
         return List.copyOf(activeBindings);
     }
 
-    private static boolean hasNamedTcpBinding(List<TransportBindingConfig> configs) {
+    private static boolean hasExplicitTcpBinding(List<TransportBindingConfig> configs) {
         for (TransportBindingConfig config : configs) {
             if (config.enabled()
                     && TcpTransportBinding.TYPE.equals(config.type())
-                    && !TcpTransportBinding.TYPE.equals(config.name())) {
+                    && !isDiscoveredDefaultTcpBinding(config)) {
                 return true;
             }
         }
@@ -543,39 +545,42 @@ class ServerListener implements ListenerContext {
     }
 
     private static List<TransportBindingConfig> orderedBindingConfigs(List<TransportBindingConfig> configs) {
-        configs = withDefaultTcpBinding(configs);
-        if (hasNamedTcpBinding(configs)) {
-            return configs;
-        }
-
-        TransportBindingConfig defaultTcpConfig = null;
+        TransportBindingConfig discoveredDefaultTcpConfig = null;
         List<TransportBindingConfig> orderedConfigs = new ArrayList<>(configs.size());
         for (TransportBindingConfig config : configs) {
-            if (defaultTcpConfig == null && isDefaultTcpBinding(config)) {
-                defaultTcpConfig = config;
+            if (discoveredDefaultTcpConfig == null && isDiscoveredDefaultTcpBinding(config)) {
+                discoveredDefaultTcpConfig = config;
             } else {
                 orderedConfigs.add(config);
             }
         }
-        if (defaultTcpConfig == null) {
-            return configs;
+
+        if (discoveredDefaultTcpConfig != null) {
+            orderedConfigs.add(0, discoveredDefaultTcpConfig);
+            return orderedConfigs;
         }
 
-        orderedConfigs.add(0, defaultTcpConfig);
-        return orderedConfigs;
-    }
-
-    private static List<TransportBindingConfig> withDefaultTcpBinding(List<TransportBindingConfig> configs) {
-        for (TransportBindingConfig config : configs) {
-            if (TcpTransportBinding.TYPE.equals(config.type())) {
-                return configs;
-            }
+        if (hasTcpBinding(configs)) {
+            return configs;
         }
 
         List<TransportBindingConfig> result = new ArrayList<>(configs.size() + 1);
         result.add(TcpTransportConfig.create());
         result.addAll(configs);
         return result;
+    }
+
+    private static boolean isDiscoveredDefaultTcpBinding(TransportBindingConfig config) {
+        return config instanceof TcpTransportConfig tcpConfig && TcpTransportBindingProvider.isDiscoveredDefault(tcpConfig);
+    }
+
+    private static boolean hasTcpBinding(List<TransportBindingConfig> configs) {
+        for (TransportBindingConfig config : configs) {
+            if (TcpTransportBinding.TYPE.equals(config.type())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static boolean supportsTcpTransportBinding(ProtocolConfig config) {
@@ -658,6 +663,7 @@ class ServerListener implements ListenerContext {
     private Throwable stopResources(List<TransportBinding> bindings) {
         Throwable failure = null;
         List<BindingStop> bindingStops = new ArrayList<>();
+        long stopAtNanos = stopAtNanos(gracePeriod);
 
         // Stop listening for connections
         for (TransportBinding binding : bindings) {
@@ -680,7 +686,7 @@ class ServerListener implements ListenerContext {
             failure = LifecycleFailures.add(failure, e);
         }
 
-        BindingStopResult bindingStopResult = awaitBindingStops(bindingStops, gracePeriod);
+        BindingStopResult bindingStopResult = awaitBindingStops(bindingStops, gracePeriod, stopAtNanos);
         failure = LifecycleFailures.add(failure, bindingStopResult.failure());
 
         if (bindingStopResult.forceSharedExecutorShutdown()) {
@@ -693,7 +699,7 @@ class ServerListener implements ListenerContext {
 
         try {
             // Shutdown reader executor
-            shutdownReaderExecutor();
+            shutdownReaderExecutor(remainingNanos(stopAtNanos));
         } catch (RuntimeException | Error e) {
             failure = LifecycleFailures.add(failure, e);
         }
@@ -701,7 +707,7 @@ class ServerListener implements ListenerContext {
         if (!bindingStopResult.forceSharedExecutorShutdown()) {
             try {
                 // Shutdown shared executor
-                shutdownSharedExecutor();
+                shutdownSharedExecutor(remainingNanos(stopAtNanos));
             } catch (RuntimeException | Error e) {
                 failure = LifecycleFailures.add(failure, e);
             }
@@ -797,9 +803,9 @@ class ServerListener implements ListenerContext {
         }
     }
 
-    private void shutdownReaderExecutor() {
+    private void shutdownReaderExecutor(long timeoutNanos) {
         Throwable failure = null;
-        readerExecutor.terminate(gracePeriod.toMillis(), TimeUnit.MILLISECONDS);
+        readerExecutor.terminate(timeoutNanos, TimeUnit.NANOSECONDS);
         if (Thread.currentThread().isInterrupted()) {
             failure = LifecycleFailures.add(failure,
                                             new IllegalStateException("Interrupted while shutting down listener reader executor "
@@ -816,11 +822,11 @@ class ServerListener implements ListenerContext {
         LifecycleFailures.throwIfFailed(failure, "Failed to shut down listener reader executor for " + socketName);
     }
 
-    private void shutdownSharedExecutor() {
+    private void shutdownSharedExecutor(long timeoutNanos) {
         Throwable failure = null;
         sharedExecutor.shutdown();
         try {
-            boolean done = sharedExecutor.awaitTermination(gracePeriod.toMillis(), TimeUnit.MILLISECONDS);
+            boolean done = sharedExecutor.awaitTermination(timeoutNanos, TimeUnit.NANOSECONDS);
             if (!done) {
                 forceShutdownSharedExecutor();
             }
@@ -958,21 +964,22 @@ class ServerListener implements ListenerContext {
         return Math.max(listenerConfig.port(), 0);
     }
 
-    private static BindingStopResult awaitBindingStops(List<BindingStop> bindingStops, Duration gracefulPeriod) {
+    private static BindingStopResult awaitBindingStops(List<BindingStop> bindingStops,
+                                                       Duration gracefulPeriod,
+                                                       long stopAtNanos) {
         if (bindingStops.isEmpty()) {
             return new BindingStopResult(null, false);
         }
         Throwable failure = null;
         boolean forceSharedExecutorShutdown = false;
         boolean interrupted = false;
-        long stopAtNanos = stopAtNanos(gracefulPeriod);
 
         for (BindingStop bindingStop : bindingStops) {
             boolean done = false;
             while (!done) {
                 try {
                     if (bindingStop.future().isDone()) {
-                        bindingStop.future().get();
+                        forceSharedExecutorShutdown |= forceSharedExecutorShutdown(bindingStop.future().get());
                         done = true;
                         continue;
                     }
@@ -988,7 +995,8 @@ class ServerListener implements ListenerContext {
                         done = true;
                         continue;
                     }
-                    bindingStop.future().get(remainingNanos, TimeUnit.NANOSECONDS);
+                    forceSharedExecutorShutdown |= forceSharedExecutorShutdown(
+                            bindingStop.future().get(remainingNanos, TimeUnit.NANOSECONDS));
                     done = true;
                 } catch (InterruptedException e) {
                     interrupted = true;
@@ -1021,6 +1029,17 @@ class ServerListener implements ListenerContext {
             Thread.currentThread().interrupt();
         }
         return new BindingStopResult(failure, forceSharedExecutorShutdown);
+    }
+
+    private static boolean forceSharedExecutorShutdown(TransportBinding.ShutdownResult shutdownResult) {
+        return shutdownResult == TransportBinding.ShutdownResult.FORCED;
+    }
+
+    private static long remainingNanos(long stopAtNanos) {
+        if (stopAtNanos == Long.MAX_VALUE) {
+            return Long.MAX_VALUE;
+        }
+        return Math.max(0, stopAtNanos - System.nanoTime());
     }
 
     private static Throwable bindingFailure(String action, TransportBinding binding, Throwable cause) {

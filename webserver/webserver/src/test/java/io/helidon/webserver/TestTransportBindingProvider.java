@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.tls.Tls;
@@ -48,6 +49,8 @@ public class TestTransportBindingProvider implements TransportBindingProvider<Te
     private static final Map<String, AtomicInteger> RELOADS = new ConcurrentHashMap<>();
     private static final Map<String, AtomicInteger> VIRTUAL_HOST_RELOADS = new ConcurrentHashMap<>();
     private static final Map<String, CountDownLatch> PENDING_STOPS = new ConcurrentHashMap<>();
+    private static final Map<String, CountDownLatch> PENDING_EXECUTOR_TASKS = new ConcurrentHashMap<>();
+    private static final Map<String, CountDownLatch> EXECUTOR_TASKS_STARTED = new ConcurrentHashMap<>();
 
     static void reset() {
         BIND_ADDRESS_AT_PLAN.clear();
@@ -63,6 +66,9 @@ public class TestTransportBindingProvider implements TransportBindingProvider<Te
         RELOADS.clear();
         VIRTUAL_HOST_RELOADS.clear();
         PENDING_STOPS.clear();
+        PENDING_EXECUTOR_TASKS.values().forEach(CountDownLatch::countDown);
+        PENDING_EXECUTOR_TASKS.clear();
+        EXECUTOR_TASKS_STARTED.clear();
     }
 
     static Optional<SocketAddress> bindAddressAtPlan(String name) {
@@ -107,6 +113,18 @@ public class TestTransportBindingProvider implements TransportBindingProvider<Te
 
     static void completeStop(String name) {
         CountDownLatch latch = PENDING_STOPS.remove(name);
+        if (latch != null) {
+            latch.countDown();
+        }
+    }
+
+    static boolean awaitExecutorTask(String name) throws InterruptedException {
+        CountDownLatch latch = EXECUTOR_TASKS_STARTED.get(name);
+        return latch != null && latch.await(5, TimeUnit.SECONDS);
+    }
+
+    static void completeExecutorTask(String name) {
+        CountDownLatch latch = PENDING_EXECUTOR_TASKS.remove(name);
         if (latch != null) {
             latch.countDown();
         }
@@ -173,6 +191,22 @@ public class TestTransportBindingProvider implements TransportBindingProvider<Te
             if (config.portCapable()) {
                 BOUND_PORTS.put(config.name(), portAtStart > 0 ? portAtStart : bindDatagramSocket(config.name()));
             }
+            if (config.blockSharedExecutor()) {
+                CountDownLatch release = new CountDownLatch(1);
+                CountDownLatch started = new CountDownLatch(1);
+                PENDING_EXECUTOR_TASKS.put(config.name(), release);
+                EXECUTOR_TASKS_STARTED.put(config.name(), started);
+                context.executor().execute(() -> {
+                    started.countDown();
+                    while (release.getCount() != 0) {
+                        try {
+                            release.await(1, TimeUnit.SECONDS);
+                        } catch (InterruptedException _) {
+                            // Deliberately ignore interrupts to keep the shared executor occupied.
+                        }
+                    }
+                });
+            }
         }
 
         @Override
@@ -193,6 +227,9 @@ public class TestTransportBindingProvider implements TransportBindingProvider<Te
                         }
                     }
                 }
+            }
+            if (config.forceStop()) {
+                return ShutdownResult.FORCED;
             }
             return ShutdownResult.GRACEFUL;
         }

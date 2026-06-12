@@ -41,10 +41,14 @@ public class TcpTransportBindingProvider implements TransportBindingProvider<Tcp
 
     @Override
     public TcpTransportConfig create(Config config, String name) {
-        return TcpTransportConfig.builder()
+        TcpTransportConfig tcpConfig = TcpTransportConfig.builder()
                 .config(config)
                 .name(name)
                 .build();
+        if (!config.exists() && TcpTransportBinding.TYPE.equals(name)) {
+            return new DiscoveredDefaultTcpTransportConfig(tcpConfig);
+        }
+        return tcpConfig;
     }
 
     @Override
@@ -67,5 +71,26 @@ public class TcpTransportBindingProvider implements TransportBindingProvider<Tcp
             return tcpContext.createTcpTransportBinding(config);
         }
         throw new IllegalArgumentException("TCP transport binding requires a Helidon WebServer listener context");
+    }
+
+    static boolean isDiscoveredDefault(TcpTransportConfig config) {
+        return config instanceof DiscoveredDefaultTcpTransportConfig;
+    }
+
+    private record DiscoveredDefaultTcpTransportConfig(TcpTransportConfig delegate) implements TcpTransportConfig {
+        @Override
+        public String name() {
+            return delegate.name();
+        }
+
+        @Override
+        public boolean enabled() {
+            return delegate.enabled();
+        }
+
+        @Override
+        public boolean required() {
+            return delegate.required();
+        }
     }
 }
