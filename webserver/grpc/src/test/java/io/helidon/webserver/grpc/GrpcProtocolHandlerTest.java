@@ -22,7 +22,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -35,6 +37,7 @@ import io.helidon.common.socket.PeerInfo;
 import io.helidon.grpc.core.WeightedBag;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.Headers;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.FlowControl;
 import io.helidon.http.http2.Http2Flag;
@@ -59,12 +62,14 @@ import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerMethodDefinition;
 import io.grpc.Status;
+import io.grpc.StatusRuntimeException;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -224,6 +229,63 @@ class GrpcProtocolHandlerTest {
 
             assertThat(result, is(content));
         }
+    }
+
+    @Test
+    void defaultMaxReadBufferSizeMatchesGrpcEcosystemStandard() {
+        // Matches GrpcUtil.DEFAULT_MAX_MESSAGE_SIZE in grpc-java:
+        // https://github.com/grpc/grpc-java/blob/v1.73.0/core/src/main/java/io/grpc/internal/GrpcUtil.java#L212
+        assertThat(GrpcConfig.create().maxReadBufferSize(), is(4 * 1024 * 1024));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void oversizedMessageThrowsResourceExhausted() {
+        // grpc-java throws RESOURCE_EXHAUSTED (not a plain Java exception) for oversized messages.
+        // See: MessageDeframer.processHeader() in
+        // https://github.com/grpc/grpc-java/blob/v1.73.0/core/src/main/java/io/grpc/internal/MessageDeframer.java#L388-L393
+        int limit = 100 * 1024;
+        GrpcProtocolHandler<?, ?> handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
+                                                                       Http2Headers.create(WritableHeaders.create()),
+                                                                       null, 1, null,
+                                                                       Http2StreamState.OPEN, null,
+                                                                       GrpcConfig.builder().maxReadBufferSize(limit).build());
+        StatusRuntimeException ex = assertThrows(StatusRuntimeException.class,
+                                                  () -> handler.allocateReadBuffer(limit + 1));
+        assertThat(ex.getStatus().getCode(), is(Status.Code.RESOURCE_EXHAUSTED));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void oversizedMessageBelowInitialBufferThrowsResourceExhausted() {
+        // A limit below the initial 16 KB read buffer must still be enforced. The gRPC length
+        // prefix carries the full message size, so the limit can be checked before any buffer
+        // is grown.
+        int limit = 8 * 1024;
+        GrpcProtocolHandler<?, ?> handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
+                                                                       Http2Headers.create(WritableHeaders.create()),
+                                                                       null, 1, null,
+                                                                       Http2StreamState.OPEN, null,
+                                                                       GrpcConfig.builder().maxReadBufferSize(limit).build());
+        StatusRuntimeException ex = assertThrows(StatusRuntimeException.class,
+                                                  () -> handler.allocateReadBuffer(limit + 1));
+        assertThat(ex.getStatus().getCode(), is(Status.Code.RESOURCE_EXHAUSTED));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void oversizedMessageExceedingIntRangeThrowsResourceExhausted() {
+        // The gRPC length prefix is an unsigned 32-bit value (up to 4_294_967_295), which does
+        // not fit in a signed int. The limit check must run on the full value, before any cast,
+        // so a declared length above Integer.MAX_VALUE cannot wrap negative and slip past it.
+        GrpcProtocolHandler<?, ?> handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
+                                                                       Http2Headers.create(WritableHeaders.create()),
+                                                                       null, 1, null,
+                                                                       Http2StreamState.OPEN, null,
+                                                                       GrpcConfig.create());
+        StatusRuntimeException ex = assertThrows(StatusRuntimeException.class,
+                                                  () -> handler.allocateReadBuffer(3_000_000_000L));
+        assertThat(ex.getStatus().getCode(), is(Status.Code.RESOURCE_EXHAUSTED));
     }
 
     @Test
@@ -460,6 +522,216 @@ class GrpcProtocolHandlerTest {
                 return 0;
             }
         };
+    }
+
+    /**
+     * When message processing throws a {@link StatusRuntimeException} (e.g. {@code RESOURCE_EXHAUSTED}
+     * for an oversized message), the call is closed with that status, but the client may still be
+     * sending request data. The handler must keep consuming those frames: if its stream state left
+     * the set accepted by {@code Http2ServerStream.DATA_RECEIVABLE_STATES}, the stream's read loop
+     * would stop while the connection thread keeps queueing DATA frames into the stream's bounded
+     * queue, eventually blocking the connection thread.
+     */
+    @Nested
+    class EarlyCloseOnStatusException {
+
+        private static final Metadata.Key<String> DEBUG_KEY =
+                Metadata.Key.of("x-test-debug", Metadata.ASCII_STRING_MARSHALLER);
+
+        private static final int LIMIT = 16 * 1024;
+
+        private final RecordingWriter writer = new RecordingWriter();
+        private final RecordingListener listener = new RecordingListener();
+        private final AtomicReference<ServerCall<String, String>> callRef = new AtomicReference<>();
+
+        @Test
+        void oversizedMessageKeepsConsumingInboundData() {
+            GrpcProtocolHandler<String, String> handler = handler(listener);
+
+            handler.data(dataHeader(false), messagePrefix(LIMIT + 1));
+
+            assertAll(
+                    () -> assertThat(trailerStatus(), is(Status.Code.RESOURCE_EXHAUSTED.value())),
+                    () -> assertThat("read loop must keep running to drain the request",
+                                     handler.streamState(), is(Http2StreamState.OPEN)),
+                    () -> assertThat(listener.completes, is(1))
+            );
+
+            // remaining request data is discarded without reaching the listener
+            handler.data(dataHeader(false), message("hi"));
+            assertAll(
+                    () -> assertThat(listener.messages, is(List.of())),
+                    () -> assertThat(writer.headersWritten, hasSize(1)),
+                    () -> assertThat(handler.streamState(), is(Http2StreamState.OPEN))
+            );
+
+            // end of stream completes the drain and lets the stream close
+            handler.data(dataHeader(true), BufferData.empty());
+            assertAll(
+                    () -> assertThat(handler.streamState(), is(Http2StreamState.CLOSED)),
+                    () -> assertThat(listener.halfCloses, is(0))
+            );
+        }
+
+        @Test
+        void oversizedMessageOnLastFrameClosesStream() {
+            GrpcProtocolHandler<String, String> handler = handler(listener);
+
+            handler.data(dataHeader(true), messagePrefix(LIMIT + 1));
+
+            assertAll(
+                    () -> assertThat(trailerStatus(), is(Status.Code.RESOURCE_EXHAUSTED.value())),
+                    () -> assertThat("no more inbound data, nothing left to drain",
+                                     handler.streamState(), is(Http2StreamState.CLOSED))
+            );
+        }
+
+        @Test
+        void statusExceptionTrailersArePropagated() {
+            Metadata trailers = new Metadata();
+            trailers.put(DEBUG_KEY, "details");
+            GrpcProtocolHandler<String, String> handler = handler(new RecordingListener() {
+                @Override
+                public void onMessage(String message) {
+                    throw Status.FAILED_PRECONDITION.asRuntimeException(trailers);
+                }
+            });
+
+            handler.data(dataHeader(false), message("hi"));
+
+            Headers written = writer.headersWritten.getFirst().httpHeaders();
+            assertAll(
+                    () -> assertThat(trailerStatus(), is(Status.Code.FAILED_PRECONDITION.value())),
+                    () -> assertThat(written.get(HeaderNames.create("x-test-debug")).get(), is("details"))
+            );
+        }
+
+        @Test
+        void rstStreamAfterCloseDoesNotCancelListener() {
+            GrpcProtocolHandler<String, String> handler = handler(listener);
+            callRef.get().close(Status.OK, new Metadata());
+
+            // a late RST_STREAM, e.g. the client cancelling the remainder of a rejected request,
+            // must not surface as a cancellation after the call has already completed
+            handler.rstStream(new Http2RstStream(io.helidon.http.http2.Http2ErrorCode.CANCEL));
+
+            assertAll(
+                    () -> assertThat(listener.cancels, is(0)),
+                    () -> assertThat(listener.completes, is(1))
+            );
+        }
+
+        private GrpcProtocolHandler<String, String> handler(ServerCall.Listener<String> callListener) {
+            GrpcProtocolHandler<String, String> handler = new GrpcProtocolHandler<>(
+                    new UnimplementedGrpcConnectionContext(),
+                    Http2Headers.create(WritableHeaders.create()),
+                    writer,
+                    1,
+                    null,
+                    Http2StreamState.OPEN,
+                    route(new ServerCallHandler<>() {
+                        @Override
+                        public ServerCall.Listener<String> startCall(ServerCall<String, String> call, Metadata headers) {
+                            callRef.set(call);
+                            call.request(2);
+                            return callListener;
+                        }
+                    }),
+                    GrpcConfig.builder().maxReadBufferSize(LIMIT).build());
+            handler.init();
+            return handler;
+        }
+
+        private int trailerStatus() {
+            return writer.headersWritten.getFirst().httpHeaders().get(GrpcStatus.STATUS_NAME).get(int.class);
+        }
+
+        private Http2FrameHeader dataHeader(boolean endOfStream) {
+            return Http2FrameHeader.create(0,
+                                           Http2FrameTypes.DATA,
+                                           Http2Flag.DataFlags.create(endOfStream ? Http2Flag.END_OF_STREAM : 0),
+                                           1);
+        }
+
+        /**
+         * A gRPC length-prefixed frame declaring {@code declaredLength} bytes followed by
+         * {@code payload}. The two can differ: declaring more than is sent is enough for the
+         * server to reject an oversized message on the prefix alone.
+         */
+        private BufferData frame(int declaredLength, byte[] payload) {
+            BufferData buffer = BufferData.create(GrpcProtocolHandler.GRPC_HEADER_SIZE + payload.length);
+            buffer.write(0);        // 0 for identity compressor
+            buffer.writeUnsignedInt32(declaredLength);
+            buffer.write(payload);
+            return buffer;
+        }
+
+        private BufferData messagePrefix(int length) {
+            return frame(length, new byte[0]);
+        }
+
+        private BufferData message(String content) {
+            byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
+            return frame(bytes.length, bytes);
+        }
+    }
+
+    private static class RecordingListener extends ServerCall.Listener<String> {
+        private final List<String> messages = new ArrayList<>();
+        private int halfCloses;
+        private int cancels;
+        private int completes;
+
+        @Override
+        public void onMessage(String message) {
+            messages.add(message);
+        }
+
+        @Override
+        public void onHalfClose() {
+            halfCloses++;
+        }
+
+        @Override
+        public void onCancel() {
+            cancels++;
+        }
+
+        @Override
+        public void onComplete() {
+            completes++;
+        }
+    }
+
+    private static final class RecordingWriter implements Http2StreamWriter {
+        private final List<Http2Headers> headersWritten = new ArrayList<>();
+
+        @Override
+        public void write(Http2FrameData frame) {
+        }
+
+        @Override
+        public void writeData(Http2FrameData frame, FlowControl.Outbound flowControl) {
+        }
+
+        @Override
+        public int writeHeaders(Http2Headers headers,
+                                int streamId,
+                                Http2Flag.HeaderFlags flags,
+                                FlowControl.Outbound flowControl) {
+            headersWritten.add(headers);
+            return 0;
+        }
+
+        @Override
+        public int writeHeaders(Http2Headers headers,
+                                int streamId,
+                                Http2Flag.HeaderFlags flags,
+                                Http2FrameData dataFrame,
+                                FlowControl.Outbound flowControl) {
+            headersWritten.add(headers);
+            return 0;
+        }
     }
 
     @Nested

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import com.google.protobuf.ByteString;
+import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -49,7 +50,8 @@ class UploadServiceTest extends BaseServiceTest {
     private static final byte[] DATA_250K = new byte[250 * 1024];
     private static final byte[] DATA_500K = new byte[500 * 1024];
 
-    private static final byte[] DATA_2100K = new byte[2100 * 1024];     // over default limit
+    // 5 MB: over the default 4 MB limit
+    private static final byte[] DATA_5000K = new byte[5000 * 1024];
 
     static {
         Arrays.fill(DATA_50K,  (byte) 'A');
@@ -116,6 +118,7 @@ class UploadServiceTest extends BaseServiceTest {
     void testFailedLargeUpload() throws Throwable {
         // setup bad upload call
         CountDownLatch latch = new CountDownLatch(1);
+        AtomicReference<Throwable> errorRef = new AtomicReference<>();
         AtomicReference<StreamObserver<Data>> requestRef = new AtomicReference<>();
         StreamObserver<Data> request = stub.upload(new StreamObserver<>() {
             @Override
@@ -124,6 +127,7 @@ class UploadServiceTest extends BaseServiceTest {
 
             @Override
             public void onError(Throwable t) {
+                errorRef.set(t);
                 latch.countDown();
                 Objects.requireNonNull(requestRef.get());
                 requestRef.get().onError(t);
@@ -136,13 +140,14 @@ class UploadServiceTest extends BaseServiceTest {
         requestRef.set(request);
 
         // upload data with size over default limit in GrpcConfig
-        Stream.of(DATA_2100K)
+        Stream.of(DATA_5000K)
                 .map(b -> Uploads.Data.newBuilder()
                         .setPayload(ByteString.copyFrom(b))
                         .build())
                 .forEach(request::onNext);
 
-        // verify upload failed
+        // verify upload failed with the default-limit path returning RESOURCE_EXHAUSTED
         assertThat(latch.await(10, TimeUnit.SECONDS), is(true));
+        assertThat(Status.fromThrowable(errorRef.get()).getCode(), is(Status.Code.RESOURCE_EXHAUSTED));
     }
 }
