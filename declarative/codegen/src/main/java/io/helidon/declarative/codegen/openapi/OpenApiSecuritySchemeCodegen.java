@@ -99,6 +99,52 @@ final class OpenApiSecuritySchemeCodegen {
         String type = scheme.stringValue("type")
                 .filter(not(String::isBlank))
                 .orElseThrow(() -> new CodegenException(scheme.annotationName() + " type is required"));
+        Optional<String> securityScheme = scheme.stringValue("scheme")
+                .filter(not(String::isBlank));
+        Optional<String> bearerFormat = scheme.stringValue("bearerFormat")
+                .filter(not(String::isBlank));
+        if ("http".equals(type)
+                && securityScheme.filter(value -> value.startsWith("${")).isPresent()
+                && bearerFormat.isPresent()) {
+            method.addContent("document.components(components -> components.securityScheme(")
+                    .addContent(expressions.validatedStringExpression(name))
+                    .addContentLine(",")
+                    .increaseContentPadding()
+                    .increaseContentPadding()
+                    .addContentLine("security -> {")
+                    .increaseContentPadding()
+                    .increaseContentPadding()
+                    .addContent("String resolvedScheme = ")
+                    .addContent(expressions.stringExpression(securityScheme.get()))
+                    .addContentLine(";")
+                    .addContent("security.type(")
+                    .addContent(expressions.validatedStringExpression(type))
+                    .addContentLine(");");
+            scheme.stringValue("description")
+                    .filter(not(String::isBlank))
+                    .ifPresent(description -> method.addContent("security.description(")
+                            .addContent(expressions.stringExpression(description))
+                            .addContentLine(");"));
+            method.addContentLine("security.scheme(resolvedScheme);")
+                    .addContentLine("if (\"bearer\".equalsIgnoreCase(resolvedScheme)) {")
+                    .increaseContentPadding()
+                    .increaseContentPadding()
+                    .addContent("security.bearerFormat(")
+                    .addContent(expressions.stringExpression(bearerFormat.get()))
+                    .addContentLine(");")
+                    .decreaseContentPadding()
+                    .decreaseContentPadding()
+                    .addContentLine("}");
+            scheme.booleanValue("deprecated")
+                    .filter(Boolean::booleanValue)
+                    .ifPresent(_ -> method.addContentLine("security.deprecated(true);"));
+            method.decreaseContentPadding()
+                    .decreaseContentPadding()
+                    .addContentLine("}));")
+                    .decreaseContentPadding()
+                    .decreaseContentPadding();
+            return;
+        }
         method.addContent("document.components(components -> components.securityScheme(")
                 .addContent(expressions.validatedStringExpression(name))
                 .addContentLine(",")
@@ -119,14 +165,10 @@ final class OpenApiSecuritySchemeCodegen {
                 .ifPresent(apiKeyName -> method.addContent(".name(")
                         .addContent(expressions.stringExpression(apiKeyName))
                         .addContentLine(")"));
-        scheme.stringValue("scheme")
-                .filter(not(String::isBlank))
-                .ifPresent(securityScheme -> method.addContent(".scheme(")
-                        .addContent(expressions.stringExpression(securityScheme))
+        securityScheme.ifPresent(value -> method.addContent(".scheme(")
+                        .addContent(expressions.stringExpression(value))
                         .addContentLine(")"));
-        scheme.stringValue("bearerFormat")
-                .filter(not(String::isBlank))
-                .ifPresent(format -> method.addContent(".bearerFormat(")
+        bearerFormat.ifPresent(format -> method.addContent(".bearerFormat(")
                         .addContent(expressions.stringExpression(format))
                         .addContentLine(")"));
         scheme.stringValue("in")

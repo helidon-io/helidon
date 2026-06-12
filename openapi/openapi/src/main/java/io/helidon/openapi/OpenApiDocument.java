@@ -2445,6 +2445,20 @@ public final class OpenApiDocument {
             return this;
         }
 
+        /**
+         * Add an extension.
+         * <p>
+         * Extension names must start with {@code x-}.
+         *
+         * @param name extension name
+         * @param value extension value
+         * @return updated builder
+         */
+        public HeaderBuilder extension(String name, JsonValue value) {
+            OpenApiDocument.extension(delegate.toNode(), name, value);
+            return this;
+        }
+
         @Override
         public Header build() {
             Map<String, Object> node = new LinkedHashMap<>(delegate.toNode());
@@ -2927,6 +2941,20 @@ public final class OpenApiDocument {
          */
         public MediaTypeObjectBuilder itemEncoding(Encoding itemEncoding) {
             node.put("itemEncoding", Objects.requireNonNull(itemEncoding).toNode());
+            return this;
+        }
+
+        /**
+         * Add an extension.
+         * <p>
+         * Extension names must start with {@code x-}.
+         *
+         * @param name extension name
+         * @param value extension value
+         * @return updated builder
+         */
+        public MediaTypeObjectBuilder extension(String name, JsonValue value) {
+            OpenApiDocument.extension(node, name, value);
             return this;
         }
 
