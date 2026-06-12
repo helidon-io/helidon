@@ -85,6 +85,38 @@ class HttpServiceLocatorTest {
     }
 
     @Test
+    void testLocatorSeesOwnMatchingPattern() throws Exception {
+        var locatedPattern = new AtomicReference<String>();
+        HttpService located = rules -> rules.get("/{id}", (req, res) -> res.send(req.matchingPattern().orElse("")));
+
+        HttpRouting routing = HttpRouting.builder()
+                .registerLocator("/{item}", request -> {
+                    locatedPattern.set(request.matchingPattern().orElse(""));
+                    return Optional.of(located);
+                })
+                .build();
+
+        var invocation = RoutingInvocation.create("/pipe/123");
+        invocation.route(routing);
+        assertThat(locatedPattern.get(), is("/{item}"));
+        assertThat(invocation.entity(), is("/{item}/{id}"));
+
+        locatedPattern.set(null);
+        routing = HttpRouting.builder()
+                .get("/{previous}/{id}", (req, res) -> res.next())
+                .registerLocator("/{item}", request -> {
+                    locatedPattern.set(request.matchingPattern().orElse(""));
+                    return Optional.of(located);
+                })
+                .build();
+
+        invocation = RoutingInvocation.create("/pipe/123");
+        invocation.route(routing);
+        assertThat(locatedPattern.get(), is("/{item}"));
+        assertThat(invocation.entity(), is("/{item}/{id}"));
+    }
+
+    @Test
     void testServiceLambdaRegisterRemainsService() throws Exception {
         HttpRouting routing = HttpRouting.builder()
                 .register(rules -> rules.get("/hello", (req, res) -> res.send("ok")))
@@ -338,6 +370,52 @@ class HttpServiceLocatorTest {
         assertThat(service.routingCount.get(), is(2));
         assertThat(service.beforeStartCount.get(), is(2));
         assertThat(service.afterStartCount.get(), is(2));
+        assertThat(service.afterStopCount.get(), is(1));
+    }
+
+    @Test
+    void testLocatedServiceCanStopServerFromAfterStart() throws Exception {
+        var routeRef = new AtomicReference<ServiceLocatorRoute>();
+        var stopCount = new AtomicInteger();
+        LifecycleService service = new LifecycleService() {
+            @Override
+            public void afterStart(WebServer webServer) {
+                super.afterStart(webServer);
+                webServer.stop();
+            }
+        };
+        var locator = new LifecycleLocator(service);
+        var route = locatorRoute(locator);
+        WebServer webServer = mock(WebServer.class);
+
+        routeRef.set(route);
+        when(webServer.stop()).thenAnswer(inv -> {
+            stopCount.incrementAndGet();
+            routeRef.get().afterStop();
+            return webServer;
+        });
+
+        route.beforeStart();
+        route.afterStart(webServer);
+
+        ExecutorService executor = Executors.newSingleThreadExecutor(task -> {
+            Thread thread = new Thread(task, "service-locator-stop-test");
+            thread.setDaemon(true);
+            return thread;
+        });
+        try {
+            CompletableFuture<Void> firstRequest = CompletableFuture.runAsync(() -> locate(route), executor);
+            firstRequest.get(5, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            fail("Located service afterStart should be able to stop the server without hanging", e);
+        } finally {
+            executor.shutdownNow();
+        }
+
+        assertThat(stopCount.get(), is(1));
+        assertThat(service.routingCount.get(), is(1));
+        assertThat(service.beforeStartCount.get(), is(1));
+        assertThat(service.afterStartCount.get(), is(1));
         assertThat(service.afterStopCount.get(), is(1));
     }
 
@@ -659,7 +737,7 @@ class HttpServiceLocatorTest {
                 return request;
             });
             when(request.matchingPattern()).thenAnswer(inv -> Optional.ofNullable(matchingPattern.get()));
-            when(request.matchingPattern(anyString())).thenAnswer(inv -> {
+            when(request.matchingPattern(nullable(String.class))).thenAnswer(inv -> {
                 matchingPattern.set(inv.getArgument(0));
                 return request;
             });
