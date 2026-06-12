@@ -62,7 +62,7 @@ abstract class WindowSizeImpl implements WindowSize {
                         ? increment + r
                         : MAX_WIN_SIZE);
 
-        return remaining + increment;
+        return (long) remaining + increment;
     }
 
     @Override
