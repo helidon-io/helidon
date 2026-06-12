@@ -29,7 +29,8 @@ record TestTransportBindingConfig(String name,
                                   boolean reportTlsWithoutListenerTls,
                                   boolean ignoreStopInterrupt,
                                   boolean forceStop,
-                                  boolean blockSharedExecutor) implements TransportBindingConfig {
+                                  boolean blockSharedExecutor,
+                                  boolean fatalAfterStart) implements TransportBindingConfig {
     static final String TYPE = "test-transport";
 
     TestTransportBindingConfig(String name, boolean enabled) {
@@ -41,7 +42,7 @@ record TestTransportBindingConfig(String name,
     }
 
     TestTransportBindingConfig(String name, boolean enabled, boolean failStart, boolean tlsEnabled) {
-        this(name, enabled, failStart, tlsEnabled, false, false, false, false, false, false, false, false);
+        this(name, enabled, failStart, tlsEnabled, false, false, false, false, false, false, false, false, false);
     }
 
     TestTransportBindingConfig(String name,
@@ -52,7 +53,7 @@ record TestTransportBindingConfig(String name,
                                boolean hangStop,
                                boolean supportsVirtualHosts) {
         this(name, enabled, failStart, tlsEnabled, failReload, hangStop, supportsVirtualHosts,
-             false, false, false, false, false);
+             false, false, false, false, false, false);
     }
 
     TestTransportBindingConfig(String name,
@@ -64,22 +65,27 @@ record TestTransportBindingConfig(String name,
                                boolean supportsVirtualHosts,
                                boolean portCapable) {
         this(name, enabled, failStart, tlsEnabled, failReload, hangStop, supportsVirtualHosts,
-             portCapable, false, false, false, false);
+             portCapable, false, false, false, false, false);
     }
 
     static TestTransportBindingConfig reportTlsWithoutListenerTls(String name) {
         return new TestTransportBindingConfig(name, true, false, false, false, false, false,
-                                              false, true, false, false, false);
+                                              false, true, false, false, false, false);
     }
 
     static TestTransportBindingConfig ignoreStopInterrupt(String name) {
         return new TestTransportBindingConfig(name, true, false, false, false, true, false,
-                                              false, false, true, false, false);
+                                              false, false, true, false, false, false);
     }
 
     static TestTransportBindingConfig forceStopWithBlockedExecutor(String name) {
         return new TestTransportBindingConfig(name, true, false, false, false, false, false,
-                                              false, false, false, true, true);
+                                              false, false, false, true, true, false);
+    }
+
+    static TestTransportBindingConfig fatalAfterStart(String name) {
+        return new TestTransportBindingConfig(name, true, false, false, false, false, false,
+                                              false, false, false, false, false, true);
     }
 
     @Override

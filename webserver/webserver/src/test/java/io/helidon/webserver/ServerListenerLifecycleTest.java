@@ -1154,6 +1154,25 @@ class ServerListenerLifecycleTest {
     }
 
     @Test
+    void fatalTransportBindingFailureStopsServer() throws Exception {
+        TestTransportBindingProvider.reset();
+        WebServer server = WebServer.builder()
+                .shutdownHook(false)
+                .bindingsDiscoverServices(false)
+                .addBinding(TestTransportBindingConfig.fatalAfterStart("fatal"))
+                .build()
+                .start();
+
+        try {
+            waitFor(Duration.ofSeconds(5), () -> !server.isRunning(), "server did not stop after fatal binding failure");
+
+            assertThat(TestTransportBindingProvider.stops("fatal"), is(1));
+        } finally {
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
     void transportBindingStopsShareListenerGracePeriod() {
         TestTransportBindingProvider.reset();
         WebServer server = WebServer.builder()

@@ -207,6 +207,12 @@ public class TestTransportBindingProvider implements TransportBindingProvider<Te
                     }
                 });
             }
+            if (config.fatalAfterStart()) {
+                context.executor()
+                        .execute(() -> context.fatalBindingFailure(this,
+                                                                   new IllegalStateException("test transport fatal failure "
+                                                                                                     + config.name())));
+            }
         }
 
         @Override
