@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+    Copyright (c) 2020, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -40,7 +40,13 @@ The following configuration keys can be used to set up GraphQL invocation:
 |key |default value |description
 
 |`graphql.default-error-message` |`Server Error` |Error message to send to caller in case of error
+|`graphql.max-query-depth` |`100` |Maximum GraphQL query depth. Must not be negative. Set to `0` to disable the limit.
+|`graphql.max-query-complexity` |`1000` |Maximum GraphQL query complexity. Must not be negative. Set to `0` to disable the limit.
 |`graphql.exception-white-list` |{nbsp} |Array of checked exception classes that should return default error message
 |`graphql.exception-black-list` |{nbsp} |Array of unchecked exception classes that should return message to caller (instead of default error message)
 
 |===
+
+By default, GraphQL invocation rejects queries deeper than `graphql.max-query-depth` or more complex than
+`graphql.max-query-complexity`. Applications that intentionally serve deeper or more complex queries should tune these
+limits for their schemas. Setting a limit to `0` restores the previous unlimited behavior for that limit.
