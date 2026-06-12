@@ -128,7 +128,7 @@ You can use configuration to affect the UI path in these ways:
   Recall that you can [configure the Helidon OpenAPI
   component][configure-the-he] to change where it serves the OpenAPI document.
 
-  ```properties
+  ```properties [microprofile-config.properties]
   mp.openapi.web-context=/my-openapi
   ```
 
@@ -138,11 +138,11 @@ You can use configuration to affect the UI path in these ways:
   to return either the OpenAPI document or the UI.
 
 - Separately, configure the entire web context path for the UI independently
-  from the web context for OpenAPI.
+  of the web context for OpenAPI.
 
   Configuring the OpenAPI UI web context:
 
-  ```properties
+  ```properties [microprofile-config.properties]
   mp.openapi.services.ui.web-context=/my-ui
   ```
 
@@ -155,7 +155,7 @@ With this configuration, the UI responds at `/my-ui` regardless of the path for
 OpenAPI itself.
 
 The SmallRye OpenAPI UI component accepts several options, but they are of
-minimal use to application developers and they must be passed to the SmallRye UI
+minimal use to application developers, and they must be passed to the SmallRye UI
 code programmatically. Helidon allows you to specify these values using
 configuration in the `mp.openapi.services.ui.options` section. Helidon then
 passes the corresponding options to SmallRye for you. To configure any of these

@@ -28,7 +28,9 @@ Use the Helidon *client* generator and its `mp` library to create a [Helidon
 MicroProfile REST client][helidon-micropro]. The resulting client library works
 with any server that implements the API declared in the OpenAPI document you
 specified when you ran the generator. The client library provides an abstraction
-similar to remote procedure calls (RPC). To access a remote service that
+similar to remote procedure calls (RPC).
+
+To access a remote service that
 implements the endpoints declared in the OpenAPI document, your code uses the
 generated client library first to establish a connection to the remote service
 and then to call remote service endpoints by invoking local methods passing POJO
@@ -87,7 +89,7 @@ build.
 
 ## Configuration
 
-The OpenAPI generators support a substantial, powerful, and sometimes bewildering group of configuration settings. <a id="links-to-settings"></a>
+The OpenAPI generators support a substantial, powerful, and sometimes bewildering group of configuration settings.
 For complete lists see these pages:
 
 - [generic options][generic-options]
@@ -177,7 +179,7 @@ The OpenAPI generator loosely divides its settings into three types:
 
 Keep this distinction among global options, config options, and additional
 properties in mind so you know how to express the configuration you want. The
-[earlier links](#links-to-settings) to the lists of configuration options for
+[earlier links](#configuration) to the lists of configuration options for
 the Helidon generators groups options and additional properties in separate
 tables.
 
@@ -335,7 +337,7 @@ command line and using the Maven plug-in.
 
 Among the many configuration settings available to you, some you should
 particularly consider are summarized in the table below. Refer to the [earlier
-links](#links-to-settings) for complete lists.
+links](#configuration) for complete lists.
 
 <table>
 <caption>Common OpenAPI Generator Additional Properties</caption>

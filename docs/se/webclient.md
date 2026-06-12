@@ -589,7 +589,6 @@ WebClient.builder()
   is on classpath, so we can just use `Config.create()`
 - Passing the client configuration node
 
-<a id="setting-protocol-configuration"></a>
 ## Setting Protocol configuration
 
 Individual protocols can be customized using the `protocol-config` parameter.

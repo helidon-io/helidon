@@ -446,7 +446,7 @@ JSON metrics output structured by scope (partial):
 
 - Note the `application`, `vendor`, and `base` sections.
 
-If an HTTP request [selects by scope](#scope-specific-retrieval), the output
+If an HTTP request [selects by scope](#metrics-endpoint), the output
 omits the extra level of structure that identifies the scope as shown in the
 following example.
 
@@ -668,7 +668,7 @@ register new metrics, look up previously-registered metrics, and remove metrics.
 
 You can work with metrics inside your own CDI extensions, but be careful to do
 so at the correct point in the CDI lifecycle. Configuration can influence how
-the metrics system behaves, as the [configuration](#configuration) section below
+the metrics system behaves, as the [configuration](#configuration-options) section below
 explains. Your code should work with metrics only after the Helidon metrics
 system has initialized itself using configuration. One way to accomplish this is
 to deal with metrics in a method that observes the Helidon `RuntimeStart` CDI
@@ -1474,7 +1474,7 @@ kubectl delete -f ./metrics.yaml
 - [Prometheus exposition format][prometheus-expos]
 
 [microprofile-met]: https://github.com/eclipse/microprofile-metrics/releases/tag/5.1.1
-[longer-discussio]: #controlling-the-metric-type-for-gctime
+[longer-discussio]: #metric-type-for-gctime
 [microprofile-met-2]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/microprofile-metrics-spec-5.1.1.html
 [counter]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/apidocs/org/eclipse/microprofile/metrics/Counter.html
 [counted]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/apidocs/org/eclipse/microprofile/metrics/annotation/Counted.html
@@ -1486,7 +1486,7 @@ kubectl delete -f ./metrics.yaml
 [number]: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java.lang.Number.html
 [gauge]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/apidocs/org/eclipse/microprofile/metrics/annotation/Gauge.html
 [preview-feature]: https://helidon.io/docs/v4/apidocs/io.helidon.common.features.api/io/helidon/common/features/api/Preview.html
-[this-later-secti]: #understanding-the-inferred-prometheus-publisher
+[this-later-secti]: #inferred-publisher
 [datadogmeterregi]: https://github.com/micrometer-metrics/micrometer/tree/main/implementations/micrometer-registry-datadog
 [settable-propert]: https://github.com/micrometer-metrics/micrometer/blob/main/implementations/micrometer-registry-datadog/src/main/java/io/micrometer/datadog/DatadogConfig.java
 [otlp-publisher-b]: {https://github.com/helidon-io/helidon/tree/main/metrics/providers/micrometer/src/main/java/io/helidon/metrics/providers/micrometer/OtlpPublisherConfigBlueprint.java
