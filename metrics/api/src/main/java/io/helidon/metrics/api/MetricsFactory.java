@@ -15,12 +15,14 @@
  */
 package io.helidon.metrics.api;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
 import io.helidon.config.Config;
+import io.helidon.service.registry.Services;
 
 /**
  * The basic contract for implementations of the Helidon metrics API, mostly acting as a factory for
@@ -28,11 +30,10 @@ import io.helidon.config.Config;
  * <p>
  * This is not intended to be the interface which developers use to work with Helidon metrics. Instead use
  *     <ul>
- *         <li>the {@link io.helidon.metrics.api.Metrics} interface and its static convenience methods,</li>
  *         <li>the static methods on the various meter interfaces in the API (such as {@link io.helidon.metrics.api.Timer},
  *         or</li>
- *         <li>{@link io.helidon.metrics.api.Metrics#globalRegistry()} and use the returned
- *      {@link io.helidon.metrics.api.MeterRegistry} directly</li>
+ *         <li>{@link io.helidon.service.registry.Services#get(java.lang.Class)} to look up the global
+ *      {@link io.helidon.metrics.api.MeterRegistry}</li>
  *     </ul>
  * <p>
  * An implementation of this interface provides instance methods for each
@@ -51,37 +52,48 @@ public interface MetricsFactory {
     String PULL_PUBLISHERS_PRESENT = "io.helidon.metrics.pull-publishers";
 
     /**
-     * Returns the most-recently created implementation or, if none, a new one from a highest-weight provider available at
-     * runtime and using the {@value MetricsConfigBlueprint#METRICS_CONFIG_KEY} section from the
-     * current config.
+     * Returns the shared metrics factory from
+     * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MetricsFactory.class)}.
      *
-     * @return current or new metrics factory
+     * @return shared metrics factory
+     * @deprecated since 27.0.0, for removal. Use
+     * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MetricsFactory.class)} for the
+     * shared metrics factory, or create non-global metrics objects using the programmatic API.
      */
+    @Deprecated(since = "27.0.0", forRemoval = true)
     static MetricsFactory getInstance() {
-        return MetricsFactoryManager.getMetricsFactory();
+        return Services.get(MetricsFactory.class);
     }
 
     /**
-     * Returns a new metrics factory instance from a highest-weight provider using the provided
-     * config node to set up the metrics factory and saving the resulting metrics factory
-     * as the current one, returned by {@link #getInstance()}.
+     * Returns the shared metrics factory from
+     * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MetricsFactory.class)}.
      *
-     * @param metricsConfigNode metrics config node
-     * @return new instance configured as directed
+     * @param ignoredConfig ignored config; must not be {@code null}
+     * @return shared metrics factory
+     * @deprecated since 27.0.0, for removal. Static config-based access is no longer supported. Use
+     * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MetricsFactory.class)} for the
+     * shared metrics factory, or create non-global metrics objects using the programmatic API.
      */
-    static MetricsFactory getInstance(Config metricsConfigNode) {
-        return MetricsFactoryManager.getMetricsFactory(metricsConfigNode);
+    @Deprecated(since = "27.0.0", forRemoval = true)
+    static MetricsFactory getInstance(Config ignoredConfig) {
+        Objects.requireNonNull(ignoredConfig);
+        return Services.get(MetricsFactory.class);
     }
 
     /**
-     * Closes all {@link io.helidon.metrics.api.MetricsFactory} instances.
+     * No-op.
      *
      * <p>
-     *     Applications do not normally need to invoke this method.
+     *     Metrics instances obtained from the service registry are closed by the service registry lifecycle.
      * </p>
+     *
+     * @deprecated since 27.0.0, for removal. Metrics instances obtained from the service registry are closed by the
+     * service registry lifecycle.
      */
+    @Deprecated(since = "27.0.0", forRemoval = true)
     static void closeAll() {
-        MetricsFactoryManager.closeAll();
+        // No-op; service-registry-owned metrics instances are closed by service registry lifecycle.
     }
 
     /**
@@ -98,10 +110,9 @@ public interface MetricsFactory {
      *
      * <p>
      * The metric factory creates its global registry on-demand using
-     * {@link #getInstance()}.{@link #createMeterRegistry(MetricsConfig)} with a
+     * {@link #createMeterRegistry(MetricsConfig)} with a
      * {@link MetricsConfig} instance derived from the root {@link io.helidon.config.Config} most recently passed to
-     * {@link #getInstance(io.helidon.config.Config)}, or if none then the config from
-     * current {@link io.helidon.config.Config}.
+     * the service registry, or if none then the config from current {@link io.helidon.config.Config}.
      *
      * @return the global meter registry
      */
@@ -329,7 +340,7 @@ public interface MetricsFactory {
         } else {
             throw new IllegalArgumentException("Unrecognized meter builder type " + builder.getClass().getName());
         }
-        SystemTagsManager.instance()
+        Services.get(SystemTagsManager.class)
                 .effectiveScope(builder.scope())
                 .ifPresent(noOpBuilder::scope);
         return noOpBuilder.build();

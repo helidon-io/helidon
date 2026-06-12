@@ -41,7 +41,7 @@ import io.helidon.metrics.spi.MetersProvider;
 /**
  * Provider for the built-in system meters.
  */
-public class SystemMetersProvider implements MetersProvider {
+public class SystemMetersProvider implements MetersProvider, AutoCloseable {
 
     private static final String BYTES = "bytes";
     private static final String SECONDS = "seconds";
@@ -187,6 +187,11 @@ public class SystemMetersProvider implements MetersProvider {
         return prepareMeterBuilders();
     }
 
+    @Override
+    public void close() {
+        metricsFactory = null;
+    }
+
     /**
      * Returns a function to invoke a function on a main bean to get a sub-bean, then invoke a function on
      * the sub-bean to retrieve a value.
@@ -263,13 +268,13 @@ public class SystemMetersProvider implements MetersProvider {
                           metadata(GC_COUNT),
                           gcBean,
                           GarbageCollectorMXBean::getCollectionCount,
-                          Tag.create("name", poolName));
+                          metricsFactory.tagCreate("name", poolName));
             // Express the GC time in seconds.
             registerGauge(result,
                           metadata(GC_TIME),
                           gcBean,
                           bean -> (long) (bean.getCollectionTime() / 1000.0D),
-                          Tag.create("name", poolName));
+                          metricsFactory.tagCreate("name", poolName));
         }
         return result;
     }

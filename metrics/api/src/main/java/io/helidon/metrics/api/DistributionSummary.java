@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ package io.helidon.metrics.api;
 
 import java.util.Optional;
 
+import io.helidon.service.registry.Services;
+
 /**
  * Records a distribution of samples (e.g., sizes of responses returned by a server), each with a {@code long} value, and
  * reports statistics over all samples (count, total, mean, max) as well as grouping samples using percentiles or bucket
@@ -30,10 +32,15 @@ public interface DistributionSummary extends Meter {
      * @param name          name for the summary
      * @param configBuilder distribution stats config for the summary
      * @return new builder
+     * @deprecated this method uses service registry to get a {@code MetricsFactory} instance, which may be inefficient,
+     *         use
+     *         {@link io.helidon.metrics.api.MetricsFactory#distributionSummaryBuilder(String,
+     *         io.helidon.metrics.api.DistributionStatisticsConfig.Builder)} instead
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     static Builder builder(String name,
                            DistributionStatisticsConfig.Builder configBuilder) {
-        return MetricsFactory.getInstance()
+        return Services.get(MetricsFactory.class)
                 .distributionSummaryBuilder(name, configBuilder);
     }
 
@@ -42,11 +49,15 @@ public interface DistributionSummary extends Meter {
      *
      * @param name name for the summary
      * @return new builder
+     * @deprecated this method uses service registry to get a {@code MetricsFactory} instance, which may be inefficient,
+     *         use
+     *         {@link io.helidon.metrics.api.MetricsFactory#distributionSummaryBuilder(String,
+     *         io.helidon.metrics.api.DistributionStatisticsConfig.Builder)} instead
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     static Builder builder(String name) {
-        return MetricsFactory.getInstance()
-                .distributionSummaryBuilder(name,
-                                            DistributionStatisticsConfig.builder());
+        var mf = Services.get(MetricsFactory.class);
+        return mf.distributionSummaryBuilder(name, mf.distributionStatisticsConfigBuilder());
     }
 
     /**

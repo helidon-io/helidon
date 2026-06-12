@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,11 +24,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.StringJoiner;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -83,10 +80,6 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     private static final System.Logger LOGGER = System.getLogger(MMeterRegistry.class.getName());
 
-    private static StackTraceElement[] originalCreationStackTrace;
-    private static boolean hasLoggedFirstMultiInstantiationWarning = false;
-    private static final Lock WARNING_INFO_LOCK = new ReentrantLock();
-
     private final io.micrometer.core.instrument.MeterRegistry delegate;
 
     /*
@@ -103,6 +96,8 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     private final Clock clock;
     private final MicrometerMetricsFactory metricsFactory;
     private final MetricsConfig metricsConfig;
+    private final SystemTagsManager systemTagsManager;
+    private boolean closed;
 
     /**
      * Once a Micrometer meter is registered, this map records the corresponding Helidon meter wrapper for it. This allows us,
@@ -126,7 +121,8 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         this.clock = clock;
         this.metricsFactory = metricsFactory;
         this.metricsConfig = metricsConfig;
-        checkMultipleInstantiations(metricsConfig);
+        this.systemTagsManager = SystemTagsManager.create(metricsConfig);
+        metricsFactory.onMeterRegistryCreated(metricsConfig);
     }
 
     static Builder builder(
@@ -230,8 +226,14 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     @Override
     public void close() {
+        boolean notifyClosed = false;
         lock.writeLock().lock();
         try {
+            if (closed) {
+                return;
+            }
+            closed = true;
+            notifyClosed = true;
             onAddListeners.clear();
             onRemoveListeners.clear();
             List.copyOf(meters.values()).forEach(this::remove);
@@ -241,6 +243,9 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             metersById.clear();
         } finally {
             lock.writeLock().unlock();
+            if (notifyClosed) {
+                metricsFactory.onMeterRegistryClosed(this);
+            }
         }
     }
 
@@ -289,7 +294,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         /*
         This method uses only config, not any mutable data structures, so no need to lock.
          */
-        String effectiveScope = scope.orElse(SystemTagsManager.instance().effectiveScope(scope)
+        String effectiveScope = scope.orElse(systemTagsManager.effectiveScope(scope)
                                                      .orElse(io.helidon.metrics.api.Meter.Scope.DEFAULT));
         return metricsConfig.enabled()
                 && metricsConfig.isMeterEnabled(name, effectiveScope);
@@ -321,8 +326,9 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
         lock.readLock().lock();
         try {
+            Iterable<io.helidon.metrics.api.Tag> tagsToUse = systemTagsManager.withScopeTag(tags, Optional.empty());
             Search search = delegate().find(name)
-                    .tags(MTag.tags(tags));
+                    .tags(MTag.tags(tagsToUse));
             Meter match = search.meter();
 
             if (match == null) {
@@ -417,6 +423,11 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         return this;
     }
 
+    @Override
+    public MetricsFactory metricsFactory() {
+        return metricsFactory;
+    }
+
     void erase() {
         lock.writeLock().lock();
 
@@ -493,7 +504,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             /*
              We do not have an explicit scope so get the scope from the tags of the new meter if we can.
              */
-            Optional<String> scope = SystemTagsManager.instance()
+            Optional<String> scope = systemTagsManager
                     .effectiveScope(Optional.empty(), neutralIdForAddedMeter.tags());
 
             /*
@@ -565,56 +576,6 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         }
     }
 
-    // For testing.
-    static void clearMultipleInstantiationInfo() {
-        WARNING_INFO_LOCK.lock();
-        try {
-            hasLoggedFirstMultiInstantiationWarning = false;
-            originalCreationStackTrace = null;
-        } finally {
-            WARNING_INFO_LOCK.unlock();
-        }
-    }
-
-    private static void checkMultipleInstantiations(MetricsConfig metricsConfig) {
-        /*
-        We have not seen cases where multiple instantiations occur concurrently, but it's possible. Locking guards against the
-        very rare but probably very confusing possibility of our attempt at clarifying where multiple instantiations are occurring
-        actually getting corrupted by concurrent access to the static fields.
-         */
-        WARNING_INFO_LOCK.lock();
-        try {
-            if (originalCreationStackTrace == null) {
-                originalCreationStackTrace = Thread.currentThread().getStackTrace();
-            } else if (metricsConfig.warnOnMultipleRegistries()) {
-                if (!hasLoggedFirstMultiInstantiationWarning) {
-                    hasLoggedFirstMultiInstantiationWarning = true;
-                    LOGGER.log(Level.WARNING,
-                               "Unexpected duplicate instantiation\n"
-                                       + "Original instantiation from:\n{0}\n\n"
-                                       + "Additional instantiation from:\n{1}\n",
-
-                               stackTraceToString(originalCreationStackTrace),
-                               stackTraceToString(Thread.currentThread().getStackTrace()));
-                } else {
-                    LOGGER.log(Level.WARNING,
-                               "Unexpected additional instantiation from:\n{0}\n",
-                               stackTraceToString(Thread.currentThread().getStackTrace()));
-                }
-            }
-        } finally {
-            WARNING_INFO_LOCK.unlock();
-        }
-    }
-
-    private static String stackTraceToString(StackTraceElement[] stackTraceElements) {
-        StringJoiner joiner = new StringJoiner("\n");
-        for (StackTraceElement element : stackTraceElements) {
-            joiner.add(element.toString());
-        }
-        return joiner.toString();
-    }
-
     private io.helidon.metrics.api.Meter noopMeterIfDisabled(io.helidon.metrics.api.Meter.Builder<?, ?> builder) {
         if (!isMeterEnabled(builder.name(), builder.tags(), builder.scope())) {
 
@@ -671,11 +632,11 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                                                                                    M> registration) {
 
         // Select the actual scope value from the builder (if any) or a default scope value known to the system tags manager.
-        Optional<String> effectiveScope = SystemTagsManager.instance()
+        Optional<String> effectiveScope = systemTagsManager
                 .effectiveScope(mBuilder.scope());
 
         // If there is a usable scope value, add a tag to the builder if configuration has a scope tag name.
-        effectiveScope.ifPresent(realScope -> SystemTagsManager.instance()
+        effectiveScope.ifPresent(realScope -> systemTagsManager
                 .assignScope(realScope, builderTagSetter));
 
         io.helidon.metrics.api.Meter.Id id = mBuilder.id();
@@ -715,7 +676,8 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                            + " during creation of new meter " + mBuilder);
             }
 
-            M meter = registration.apply(delegate());
+            M meter = MicrometerMetricsFactoryProvider.withSystemTags(systemTagsManager.displayTagPairs(),
+                                                                      () -> registration.apply(delegate()));
 
             /*
              Normally, the on-add listener will have removed the pending builder in scope, but do so here again if the listener
@@ -826,7 +788,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         // Create an ID to use for searching. It will need to have the scope tag if one was specified in the original ID's tags
         // or if the system tags manager says that a scope tag is enabled.
 
-        Iterable<io.helidon.metrics.api.Tag> tags = SystemTagsManager.instance().withScopeTag(id.tags(), scope);
+        Iterable<io.helidon.metrics.api.Tag> tags = systemTagsManager.withScopeTag(id.tags(), scope);
 
         lock.writeLock().lock();
 
@@ -857,7 +819,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
     private io.helidon.metrics.api.Meter.Id neutralIdWithoutSystemTags(Meter.Id micrometerId) {
         return MMeter.PlainId.create(micrometerId.getName(),
-                                     SystemTagsManager.instance().withoutSystemTags(MTag.neutralTags(micrometerId.getTags())));
+                                     systemTagsManager.withoutSystemTags(MTag.neutralTags(micrometerId.getTags())));
     }
 
     private void recordNewMeter(io.helidon.metrics.api.Meter.Id id,

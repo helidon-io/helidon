@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
-import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.Services;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -30,11 +30,13 @@ import static org.hamcrest.Matchers.is;
 
 class TestGauge {
 
+    private static MetricsFactory metricsFactory;
     private static MeterRegistry meterRegistry;
 
     @BeforeAll
     static void prep() {
-        meterRegistry = Metrics.globalRegistry();
+        metricsFactory = Services.get(MetricsFactory.class);
+        meterRegistry = metricsFactory.globalRegistry();
     }
 
     @Test
@@ -42,7 +44,7 @@ class TestGauge {
         long initialValue = 4L;
         long incr = 2L;
         AtomicLong value = new AtomicLong(initialValue);
-        Gauge.Builder<Double> builder = Gauge.builder("a", value, v -> (double) v.get());
+        Gauge.Builder<Double> builder = metricsFactory.gaugeBuilder("a", value, v -> (double) v.get());
         builder.unwrap(io.micrometer.core.instrument.Gauge.Builder.class).strongReference(true);
         Gauge<Double> g = meterRegistry.getOrCreate(builder);
 

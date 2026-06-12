@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import java.util.Optional;
 
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.DistributionSummary;
+import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
@@ -50,27 +51,66 @@ class GrpcEnabledMetricsTest extends GrpcBaseMetricsTest {
     }
 
     @AfterAll
-    static void checkMetrics() {
-        MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry();
+    static void checkMetrics(MetricsFactory metricsFactory) {
+        MeterRegistry meterRegistry = metricsFactory.globalRegistry();
+        Tag okTag = okStatusTag(metricsFactory);
 
-        for (Tag tag : METHOD_TAGS) {
-            Optional<Counter> counter = meterRegistry.counter(CALL_STARTED, List.of(tag));
+        for (Tag tag : grpcMethodTags(metricsFactory)) {
+            Optional<Counter> counter = meter(meterRegistry,
+                                              Counter.class,
+                                              Meter.Type.COUNTER,
+                                              CALL_STARTED,
+                                              List.of(tag));
             assertThat(counter.isPresent(), is(true));
             assertThat(counter.get().count(), is(20L));
 
-            Optional<Timer> timer = meterRegistry.timer(CALL_DURATION, List.of(tag, OK_TAG));
+            Optional<Timer> timer = meter(meterRegistry,
+                                          Timer.class,
+                                          Meter.Type.TIMER,
+                                          CALL_DURATION,
+                                          List.of(tag, okTag));
             assertThat(timer.isPresent(), is(true));
             assertThat(timer.get().count(), is(20L));
 
-            Optional<DistributionSummary> summary = meterRegistry.summary(SENT_MESSAGE_SIZE, List.of(tag, OK_TAG));
+            Optional<DistributionSummary> summary;
+            summary = meter(meterRegistry,
+                            DistributionSummary.class,
+                            Meter.Type.DISTRIBUTION_SUMMARY,
+                            SENT_MESSAGE_SIZE,
+                            List.of(tag, okTag));
             assertThat(summary.isPresent(), is(true));
             assertThat(summary.get().count(), is(20L));
             assertThat(summary.get().max(), greaterThan(0.0));
 
-            summary = meterRegistry.summary(RCVD_MESSAGE_SIZE, List.of(tag, OK_TAG));
+            summary = meter(meterRegistry,
+                            DistributionSummary.class,
+                            Meter.Type.DISTRIBUTION_SUMMARY,
+                            RCVD_MESSAGE_SIZE,
+                            List.of(tag, okTag));
             assertThat(summary.isPresent(), is(true));
             assertThat(summary.get().count(), is(20L));
             assertThat(summary.get().max(), greaterThan(0.0));
         }
+    }
+
+    private static <M extends Meter> Optional<M> meter(MeterRegistry meterRegistry,
+                                                       Class<M> meterClass,
+                                                       Meter.Type meterType,
+                                                       String name,
+                                                       List<Tag> tags) {
+        for (Meter meter : meterRegistry.meters(List.of(Meter.Scope.VENDOR))) {
+            if (meterClass.isInstance(meter)
+                    && meter.type() == meterType
+                    && meter.id().name().equals(name)
+                    && containsTags(meter, tags)) {
+                return Optional.of(meterClass.cast(meter));
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static boolean containsTags(Meter meter, List<Tag> tags) {
+        return tags.stream()
+                .allMatch(tag -> tag.value().equals(meter.id().tagsMap().get(tag.key())));
     }
 }

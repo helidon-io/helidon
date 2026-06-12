@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import java.util.function.ToDoubleFunction;
  */
 class NoOpMetricsFactory implements MetricsFactory {
 
-    private static final Clock SYSTEM_CLOCK = new Clock() {
+    static final Clock SYSTEM_CLOCK = new Clock() {
         @Override
         public <R> R unwrap(Class<? extends R> c) {
             return c.cast(this);
@@ -41,8 +41,13 @@ class NoOpMetricsFactory implements MetricsFactory {
             return System.nanoTime();
         }
     };
-    private final MeterRegistry meterRegistry = new NoOpMeterRegistry();
+
+    private final MeterRegistry meterRegistry;
     private final MetricsConfig metricsConfig = MetricsConfig.create();
+
+    NoOpMetricsFactory() {
+         this.meterRegistry = new NoOpMeterRegistry(this);
+    }
 
     static NoOpMetricsFactory create() {
         return new NoOpMetricsFactory();
@@ -74,12 +79,12 @@ class NoOpMetricsFactory implements MetricsFactory {
 
     @Override
     public NoOpMeterRegistry.Builder meterRegistryBuilder() {
-        return NoOpMeterRegistry.builder();
+        return NoOpMeterRegistry.builder(this);
     }
 
     @Override
     public MeterRegistry createMeterRegistry(MetricsConfig metricsConfig) {
-        return new NoOpMeterRegistry();
+        return new NoOpMeterRegistry(this);
     }
 
     @Override

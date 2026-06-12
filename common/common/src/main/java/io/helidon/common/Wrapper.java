@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,22 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package io.helidon.metrics.api;
+package io.helidon.common;
 
 /**
- * Choices for the meter type for the {@code gc.time} meter.
+ * Behavior of a type that wraps a related type, typically through delegation.
  */
-@Deprecated(since = "4.1", forRemoval = true)
-public enum GcTimeType {
-    /**
-     * Implement the meter as a gauge. This is backward-incompatible with Helidon 4.0.x releases but complies with
-     * MicroProfile 5.1.
-     */
-    GAUGE,
+@Api.Stable
+public interface Wrapper {
 
     /**
-     * Implement the meter as a counter. This is backward-compatible with Helidon 4.0.x releases but does not comply with
-     * MicroProfile 5.1.
+     * Unwraps the delegate as the specified type.
+     *
+     * @param type {@link Class} to which to cast the delegate
+     * @param <T>  type to cast to
+     * @return the delegate cast as the requested type
+     * @throws ClassCastException if the delegate is not compatible with the requested type
      */
-    COUNTER
+    <T> T unwrap(Class<? extends T> type);
 }

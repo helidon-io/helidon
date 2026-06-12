@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package io.helidon.webclient.grpc.tests;
 
 import java.util.Iterator;
 
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.webclient.grpc.GrpcClient;
 
@@ -28,11 +29,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 abstract class GrpcBaseMetricsTest extends GrpcBaseTest {
 
-    static final Tag OK_TAG = Tag.create("grpc.status", "OK");
-    static final Tag[] METHOD_TAGS = {
-            Tag.create("grpc.method", "StringService/Upper"),
-            Tag.create("grpc.method", "StringService/Split")
-    };
     static final String ATTEMPT_STARTED = "grpc.client.attempt.started";
     static final String ATTEMPT_DURATION = "grpc.client.attempt.duration";
     static final String SENT_MESSAGE_SIZE = "grpc.client.attempt.sent_total_compressed_message_size";
@@ -54,5 +50,16 @@ abstract class GrpcBaseMetricsTest extends GrpcBaseTest {
         assertThat(res.next().getText(), is("hello"));
         assertThat(res.next().getText(), is("world"));
         assertThat(res.hasNext(), is(false));
+    }
+
+    static Tag okStatusTag(MetricsFactory metricsFactory) {
+        return metricsFactory.tagCreate("grpc.status", "OK");
+    }
+
+    static Tag[] grpcMethodTags(MetricsFactory metricsFactory) {
+        return new Tag[] {
+                metricsFactory.tagCreate("grpc.method", "StringService/Upper"),
+                metricsFactory.tagCreate("grpc.method", "StringService/Split")
+        };
     }
 }

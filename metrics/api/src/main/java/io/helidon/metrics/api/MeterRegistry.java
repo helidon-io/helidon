@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,16 +22,22 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import io.helidon.service.registry.Services;
+
 /**
  * Manages the look-up and registration of meters.
  */
 public interface MeterRegistry extends Wrapper {
     /**
-     * Creates a meter registry, not saved as the global registry, using default metrics config information based on global
-     * config.
+     * Creates a new meter registry.
+     * For general case where you just need a {@link io.helidon.metrics.api.MeterRegistry}, use
+     * {@link MetricsFactory#globalRegistry()}.
      *
      * @return new meter registry
+     * @deprecated either use {@link io.helidon.service.registry.ServiceRegistry#get(Class)} to get the global meter registry,
+     * or get the {@link MetricsFactory#createMeterRegistry(MetricsConfig)} to get a custom instance
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     static MeterRegistry create() {
         return create(MetricsConfig.create());
     }
@@ -41,9 +47,12 @@ public interface MeterRegistry extends Wrapper {
      *
      * @param metricsConfig metrics config
      * @return new meter registry
+     * @deprecated either use {@link io.helidon.service.registry.ServiceRegistry#get(Class)} to get the global meter registry,
+     * or get the {@link MetricsFactory#createMeterRegistry(MetricsConfig)} to get a custom instance
      */
+    @Deprecated(forRemoval = true, since = "27.0.0")
     static MeterRegistry create(MetricsConfig metricsConfig) {
-        return MetricsFactory.getInstance().createMeterRegistry(metricsConfig);
+        return Services.get(MetricsFactory.class).createMeterRegistry(metricsConfig);
     }
 
     /**
@@ -236,6 +245,15 @@ public interface MeterRegistry extends Wrapper {
      * @return the meter registry
      */
     MeterRegistry onMeterRemoved(Consumer<Meter> onRemoveListener);
+
+    /**
+     * Metrics factory that created this registry.
+     *
+     * @return metrics factory
+     */
+    default MetricsFactory metricsFactory() {
+        return Services.get(MetricsFactory.class);
+    }
 
     /**
      * Builder for creating a new meter registry.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,9 +22,15 @@ import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
-import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.ServiceRegistryManager;
+import io.helidon.service.registry.Services;
+import io.helidon.testing.junit5.Testing;
+
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -35,9 +41,11 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 
+@Testing.Test(perMethod = true)
 class TestMultipleRegistryLogging {
 
     private static final Logger mmeterRegisteryLogger = Logger.getLogger(MMeterRegistry.class.getName());
@@ -51,13 +59,12 @@ class TestMultipleRegistryLogging {
 
     @AfterAll
     static void afterAll() {
-        MMeterRegistry.clearMultipleInstantiationInfo();
         mmeterRegisteryLogger.removeHandler(testHandler);
     }
 
     @BeforeEach
     void setUp() {
-        MetricsFactory.closeAll();
+        MicrometerMetricsTestsJunitExtension.clear();
     }
 
     @AfterEach
@@ -67,14 +74,15 @@ class TestMultipleRegistryLogging {
 
     @Test
     void testSingleRegistry() {
-        Metrics.globalRegistry();
+        Services.get(MetricsFactory.class).createMeterRegistry(MetricsConfig.create());
         assertThat("Single meter registry", testHandler.messages(), hasSize(0));
     }
 
     @Test
     void testTwoRegistries() {
-        Metrics.globalRegistry();
-        Metrics.createMeterRegistry();
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        metricsFactory.createMeterRegistry(MetricsConfig.create());
+        metricsFactory.createMeterRegistry(MetricsConfig.create());
 
         assertThat("Two meter registries", testHandler.messages(),
                    hasItem(allOf(
@@ -85,9 +93,10 @@ class TestMultipleRegistryLogging {
 
     @Test
     void testThreeRegistries() {
-        Metrics.globalRegistry();
-        Metrics.createMeterRegistry();
-        Metrics.createMeterRegistry();
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        metricsFactory.createMeterRegistry(MetricsConfig.create());
+        metricsFactory.createMeterRegistry(MetricsConfig.create());
+        metricsFactory.createMeterRegistry(MetricsConfig.create());
 
         assertThat("Three meter registries",
                    testHandler.messages(),
@@ -103,11 +112,74 @@ class TestMultipleRegistryLogging {
     @Test
     void testTwoRegistriesWithWarningDisabled() {
         MetricsConfig configWithWarningsSuppressed = MetricsConfig.builder().warnOnMultipleRegistries(false).build();
-        Metrics.createMeterRegistry(configWithWarningsSuppressed);
-        Metrics.createMeterRegistry(configWithWarningsSuppressed);
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        metricsFactory.createMeterRegistry(configWithWarningsSuppressed);
+        metricsFactory.createMeterRegistry(configWithWarningsSuppressed);
 
         assertThat("Two meter registrations with warnings suppressed", testHandler.messages, hasSize(0));
 
+    }
+
+    @Test
+    void testProgrammaticRegistriesUseOwnSystemTags() {
+        String counterName = "firstRegistryCounter";
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        MetricsConfig firstConfig = MetricsConfig.builder()
+                .tags(List.of(metricsFactory.tagCreate("registry", "first")))
+                .warnOnMultipleRegistries(false)
+                .build();
+        MetricsConfig secondConfig = MetricsConfig.builder()
+                .tags(List.of(metricsFactory.tagCreate("registry", "second")))
+                .warnOnMultipleRegistries(false)
+                .build();
+
+        MeterRegistry firstRegistry = metricsFactory.createMeterRegistry(firstConfig);
+        metricsFactory.createMeterRegistry(secondConfig);
+
+        Counter counter = firstRegistry.getOrCreate(metricsFactory.counterBuilder(counterName));
+        counter.increment();
+        io.micrometer.core.instrument.Counter micrometerCounter =
+                counter.unwrap(io.micrometer.core.instrument.Counter.class);
+
+        assertThat("System tag from the first registry",
+                   micrometerCounter.getId().getTag("registry"),
+                   equalTo("first"));
+    }
+
+    @Test
+    void testServiceRegistryShutdownReleasesMetricsFactoryState() {
+        ServiceRegistryManager manager = ServiceRegistryManager.create();
+        try {
+            manager.registry()
+                    .get(MetricsFactory.class)
+                    .globalRegistry(MetricsConfig.create());
+            assertThat("One publisher registry is registered",
+                       micrometerGlobalRegistry().getRegistries(),
+                       hasSize(1));
+        } finally {
+            manager.shutdown();
+        }
+
+        assertThat("No publisher registries remain after service registry shutdown",
+                   micrometerGlobalRegistry().getRegistries(),
+                   hasSize(0));
+
+        manager = ServiceRegistryManager.create();
+        try {
+            manager.registry()
+                    .get(MetricsFactory.class)
+                    .globalRegistry(MetricsConfig.create());
+        } finally {
+            manager.shutdown();
+        }
+
+        assertThat("Sequential service registry-owned factories do not warn",
+                   testHandler.messages(),
+                   hasSize(0));
+    }
+
+    private static CompositeMeterRegistry micrometerGlobalRegistry() {
+        return io.micrometer.core.instrument.Metrics.globalRegistry;
     }
 
     private static class TestHandler extends Handler {

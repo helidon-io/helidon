@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 package io.helidon.webclient.metrics;
 
 import io.helidon.http.Method;
-import io.helidon.metrics.api.Counter;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 
@@ -48,7 +47,7 @@ public class WebClientMeter extends WebClientMetric {
     }
 
     private void updateMeter(Metadata metadata) {
-        meterRegistry().getOrCreate(Counter.builder(metadata.name())
+        meterRegistry().getOrCreate(metricsFactory().counterBuilder(metadata.name())
                                             .description(metadata.description()))
                 .increment();
     }

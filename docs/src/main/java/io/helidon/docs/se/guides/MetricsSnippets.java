@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,9 +25,11 @@ import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.Gauge;
 import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsConfig;
-import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Timer;
+import io.helidon.service.registry.Services;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.HttpRules;
@@ -105,8 +107,9 @@ class MetricsSnippets {
             private final Counter cardCounter; // <1>
 
             GreetingCards() {
-                cardCounter = Metrics.globalRegistry()
-                        .getOrCreate(Counter.builder("cardCount")
+                MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+                cardCounter = Services.get(MeterRegistry.class)
+                        .getOrCreate(metricsFactory.counterBuilder("cardCount")
                                              .description("Counts card retrievals")); // <2>
             }
 
@@ -162,8 +165,9 @@ class MetricsSnippets {
             private final Timer cardTimer; // <1>
 
             GreetingCards() {
-                cardTimer = Metrics.globalRegistry()
-                        .getOrCreate(Timer.builder("cardTimer") // <2>
+                MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+                cardTimer = Services.get(MeterRegistry.class)
+                        .getOrCreate(metricsFactory.timerBuilder("cardTimer") // <2>
                                              .description("Times card retrievals"));
             }
 
@@ -173,7 +177,7 @@ class MetricsSnippets {
             }
 
             private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) {
-                Timer.Sample timerSample = Timer.start(); // <3>
+                Timer.Sample timerSample = Services.get(MetricsFactory.class).timerStart(); // <3>
                 response.whenSent(() -> timerSample.stop(cardTimer)); // <4>
                 sendResponse(response, "Here are some cards ...");
             }
@@ -195,8 +199,10 @@ class MetricsSnippets {
             private final DistributionSummary cardSummary; // <1>
 
             GreetingCards() {
-                cardSummary = Metrics.globalRegistry()
-                        .getOrCreate(DistributionSummary.builder("cardDist")
+                MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+                cardSummary = Services.get(MeterRegistry.class)
+                        .getOrCreate(metricsFactory.distributionSummaryBuilder("cardDist",
+                                                                               metricsFactory.distributionStatisticsConfigBuilder())
                                              .description("random card distribution")); // <2>
             }
 
@@ -230,9 +236,10 @@ class MetricsSnippets {
 
             GreetingCards() {
                 Random r = new Random();
-                Metrics.globalRegistry()
-                        .getOrCreate(Gauge.builder("temperature",
-                                                   () -> r.nextDouble(100.0))
+                MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+                Services.get(MeterRegistry.class)
+                        .getOrCreate(metricsFactory.gaugeBuilder("temperature",
+                                                                 () -> r.nextDouble(100.0))
                                              .description("Ambient temperature")); // <1>
             }
 

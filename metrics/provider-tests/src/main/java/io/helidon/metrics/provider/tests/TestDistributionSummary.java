@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,9 @@ import io.helidon.metrics.api.DistributionStatisticsConfig;
 import io.helidon.metrics.api.DistributionSummary;
 import io.helidon.metrics.api.HistogramSnapshot;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.ValueAtPercentile;
+import io.helidon.service.registry.Services;
 
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -41,17 +42,19 @@ import static org.hamcrest.Matchers.is;
 
 class TestDistributionSummary {
 
+    private static MetricsFactory metricsFactory;
     private static MeterRegistry meterRegistry;
 
     @BeforeAll
     static void prep() {
-        meterRegistry = Metrics.globalRegistry();
+        metricsFactory = Services.get(MetricsFactory.class);
+        meterRegistry = metricsFactory.globalRegistry();
     }
 
     @Test
     void testBasicStats() {
         DistributionSummary summary = commonPrep("a",
-                                                 DistributionStatisticsConfig.builder());
+                                                 metricsFactory.distributionStatisticsConfigBuilder());
         assertThat("Mean", summary.mean(), is(4D));
         assertThat("Min", summary.max(), is(7D));
         assertThat("Count", summary.count(), is(4L));
@@ -61,7 +64,7 @@ class TestDistributionSummary {
     @Test
     void testBasicSnapshot() {
         DistributionSummary summary = commonPrep("c",
-                                                 DistributionStatisticsConfig.builder());
+                                                 metricsFactory.distributionStatisticsConfigBuilder());
         HistogramSnapshot snapshot = summary.snapshot();
         assertThat("Snapshot count", snapshot.count(), is(4L));
         assertThat("Snapshot total", snapshot.total(), is(16D));
@@ -71,7 +74,7 @@ class TestDistributionSummary {
     @Test
     void testPercentiles() {
         DistributionSummary summary = commonPrep("d",
-                                                 DistributionStatisticsConfig.builder()
+                                                 metricsFactory.distributionStatisticsConfigBuilder()
                                                          .percentiles(0.5, 0.9, 0.99, 0.999));
         HistogramSnapshot snapshot = summary.snapshot();
 
@@ -91,7 +94,7 @@ class TestDistributionSummary {
     @Test
     void testBuckets() {
         DistributionSummary summary = commonPrep("e",
-                                                 DistributionStatisticsConfig.builder()
+                                                 metricsFactory.distributionStatisticsConfigBuilder()
                                                          .buckets(5.0D, 10.0D, 15.0D));
 
         HistogramSnapshot snapshot = summary.snapshot();
@@ -108,7 +111,8 @@ class TestDistributionSummary {
     }
 
     private static DistributionSummary commonPrep(String name, DistributionStatisticsConfig.Builder statsConfigBuilder) {
-        DistributionSummary summary = meterRegistry.getOrCreate(DistributionSummary.builder(name, statsConfigBuilder));
+        DistributionSummary summary = meterRegistry.getOrCreate(metricsFactory.distributionSummaryBuilder(name,
+                                                                                                          statsConfigBuilder));
         List.of(1D, 3D, 5D, 7D)
                 .forEach(summary::record);
         return summary;

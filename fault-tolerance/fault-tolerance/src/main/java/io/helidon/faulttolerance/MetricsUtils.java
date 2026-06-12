@@ -16,14 +16,13 @@
 package io.helidon.faulttolerance;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.function.Supplier;
 
-import io.helidon.common.LazyValue;
 import io.helidon.config.Config;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.Gauge;
-import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
@@ -34,9 +33,6 @@ import static io.helidon.metrics.api.Meter.Scope.VENDOR;
 
 @SuppressWarnings("unchecked")
 class MetricsUtils {
-
-    private static final LazyValue<MetricsFactory> METRICS_FACTORY = LazyValue.create(MetricsFactory::getInstance);
-    private static final LazyValue<MeterRegistry> METRICS_REGISTRY = LazyValue.create(Metrics::globalRegistry);
 
     private MetricsUtils() {
     }
@@ -54,39 +50,62 @@ class MetricsUtils {
                 .orElse(false);
     }
 
-    static <T extends Number> void gaugeBuilder(String name, Supplier<T> supplier, Tag... tags) {
-        Gauge.Builder<T> builder = METRICS_FACTORY.get().gaugeBuilder(name, supplier).scope(VENDOR);
+    static Tag tag(MetricsFactory metricsFactory, String name, String value) {
+        return metricsFactory.tagCreate(name, value);
+    }
+
+    static <T extends Number> void gaugeBuilder(MetricsFactory metricsFactory, String name, Supplier<T> supplier, Tag... tags) {
+        Gauge.Builder<T> builder = metricsFactory.gaugeBuilder(name, supplier).scope(VENDOR);
         List<Tag> tagList = List.of(tags);
         builder.tags(tagList);
-        METRICS_REGISTRY.get().getOrCreate(builder);
-        METRICS_REGISTRY.get().gauge(name, tagList).orElseThrow();
+        metricsFactory.globalRegistry().getOrCreate(builder);
     }
 
-    static Counter counterBuilder(String name, Tag... tags) {
-        Counter.Builder builder = METRICS_FACTORY.get().counterBuilder(name).scope(VENDOR);
+    static Counter counterBuilder(MetricsFactory metricsFactory, String name, Tag... tags) {
+        Counter.Builder builder = metricsFactory.counterBuilder(name).scope(VENDOR);
         List<Tag> tagList = List.of(tags);
         builder.tags(tagList);
-        METRICS_REGISTRY.get().getOrCreate(builder);
-        return METRICS_REGISTRY.get().counter(name, tagList).orElseThrow();
+        return metricsFactory.globalRegistry().getOrCreate(builder);
     }
 
-    static Timer timerBuilder(String name, Tag... tags) {
-        Timer.Builder builder = METRICS_FACTORY.get().timerBuilder(name).scope(VENDOR);
+    static Timer timerBuilder(MetricsFactory metricsFactory, String name, Tag... tags) {
+        Timer.Builder builder = metricsFactory.timerBuilder(name).scope(VENDOR);
         List<Tag> tagList = List.of(tags);
         builder.tags(tagList);
-        METRICS_REGISTRY.get().getOrCreate(builder);
-        return METRICS_REGISTRY.get().timer(name, tagList).orElseThrow();
+        return metricsFactory.globalRegistry().getOrCreate(builder);
     }
 
-    static <T extends Number> Gauge<T> gauge(String name, Tag... tags) {
-        return METRICS_REGISTRY.get().gauge(name, List.of(tags)).orElseThrow();
+    static <T extends Number> Gauge<T> gauge(MetricsFactory metricsFactory, String name, Tag... tags) {
+        return meter(metricsFactory, Gauge.class, Meter.Type.GAUGE, name, List.of(tags));
     }
 
-    static Counter counter(String name, Tag... tags) {
-        return METRICS_REGISTRY.get().counter(name, List.of(tags)).orElseThrow();
+    static Counter counter(MetricsFactory metricsFactory, String name, Tag... tags) {
+        return meter(metricsFactory, Counter.class, Meter.Type.COUNTER, name, List.of(tags));
     }
 
-    static Timer timer(String name, Tag... tags) {
-        return METRICS_REGISTRY.get().timer(name, List.of(tags)).orElseThrow();
+    static Timer timer(MetricsFactory metricsFactory, String name, Tag... tags) {
+        return meter(metricsFactory, Timer.class, Meter.Type.TIMER, name, List.of(tags));
+    }
+
+    private static <M extends Meter> M meter(MetricsFactory metricsFactory,
+                                             Class<M> meterClass,
+                                             Meter.Type meterType,
+                                             String name,
+                                             List<Tag> tags) {
+        var registry = metricsFactory.globalRegistry();
+        for (Meter meter : registry.meters(List.of(VENDOR))) {
+            if (meterClass.isInstance(meter)
+                    && meter.type() == meterType
+                    && meter.id().name().equals(name)
+                    && containsTags(meter, tags)) {
+                return meterClass.cast(meter);
+            }
+        }
+        throw new NoSuchElementException("No " + meterType + " meter found for " + name + " and tags " + tags);
+    }
+
+    private static boolean containsTags(Meter meter, List<Tag> tags) {
+        return tags.stream()
+                .allMatch(tag -> tag.value().equals(meter.id().tagsMap().get(tag.key())));
     }
 }

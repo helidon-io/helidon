@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,10 +26,10 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.metrics.api.Clock;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Timer;
+import io.helidon.service.registry.Services;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -43,16 +43,18 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 class TestTimer {
 
+    private static MetricsFactory metricsFactory;
     private static MeterRegistry meterRegistry;
 
     @BeforeAll
     static void prep() {
-        meterRegistry = Metrics.globalRegistry();
+        metricsFactory = Services.get(MetricsFactory.class);
+        meterRegistry = metricsFactory.globalRegistry();
     }
 
     @Test
     void testSimpleRecord() {
-        Timer t = meterRegistry.getOrCreate(Timer.builder("a"));
+        Timer t = meterRegistry.getOrCreate(metricsFactory.timerBuilder("a"));
 
         long initialValue = 0L;
 
@@ -85,7 +87,7 @@ class TestTimer {
 
     @Test
     void testCallable() throws Exception {
-        Timer t = meterRegistry.getOrCreate(Timer.builder("b"));
+        Timer t = meterRegistry.getOrCreate(metricsFactory.timerBuilder("b"));
 
         long initialValue = 0L;
         long update = 12L;
@@ -105,7 +107,7 @@ class TestTimer {
 
     @Test
     void testSupplier() {
-        Timer t = meterRegistry.getOrCreate(Timer.builder("c"));
+        Timer t = meterRegistry.getOrCreate(metricsFactory.timerBuilder("c"));
         long initialValue = 0L;
         long update = 8L;
 
@@ -128,7 +130,7 @@ class TestTimer {
 
     @Test
     void testWrapCallable() throws Exception {
-        Timer t = meterRegistry.getOrCreate(Timer.builder("d"));
+        Timer t = meterRegistry.getOrCreate(metricsFactory.timerBuilder("d"));
         long initialValue = 0L;
         long update = 18L;
 
@@ -160,11 +162,11 @@ class TestTimer {
 
     @Test
     void testSample() throws InterruptedException {
-        Timer t = meterRegistry.getOrCreate(Timer.builder("e"));
+        Timer t = meterRegistry.getOrCreate(metricsFactory.timerBuilder("e"));
         long initialValue = 0L;
         long update = 18L;
 
-        Timer.Sample sample = Timer.start();
+        Timer.Sample sample = metricsFactory.timerStart();
 
         long waitTime = 110L;
         TimeUnit.MILLISECONDS.sleep(waitTime);
@@ -182,10 +184,10 @@ class TestTimer {
 
     @Test
     void testSampleWithExplicitClock() {
-        Timer t = meterRegistry.getOrCreate(Timer.builder("f"));
+        Timer t = meterRegistry.getOrCreate(metricsFactory.timerBuilder("f"));
         AdjustableClock clock = new AdjustableClock();
 
-        Timer.Sample sample = Timer.start(clock);
+        Timer.Sample sample = metricsFactory.timerStart(clock);
 
         long waitTime = 55L;
         clock.advance(waitTime);
@@ -203,12 +205,11 @@ class TestTimer {
     @Test
     void testSampleWithImplicitClock() {
 
-        MeterRegistry registry = MetricsFactory.getInstance()
-                .createMeterRegistry(MetricsConfig.builder().build());
+        MeterRegistry registry = metricsFactory.createMeterRegistry(MetricsConfig.builder().build());
 
-        Timer t = registry.getOrCreate(Timer.builder("g"));
+        Timer t = registry.getOrCreate(metricsFactory.timerBuilder("g"));
 
-        Timer.Sample sample = Timer.start(registry);
+        Timer.Sample sample = metricsFactory.timerStart(registry);
 
         long waitTime = 35L;
 
@@ -236,9 +237,10 @@ class TestTimer {
                     base-units-default: nanoseconds""";
 
         Config config = Config.just(ConfigSources.create(metricsConfig, MediaTypes.APPLICATION_YAML));
-        MeterRegistry localMeterRegistry = Metrics.createMeterRegistry(MetricsConfig.builder().config(config.get("metrics"))
-                                                                               .build());
-        Timer defaultUnitsTimer = localMeterRegistry.getOrCreate(Timer.builder("defaultUnitsTimer"));
+        MeterRegistry localMeterRegistry = metricsFactory.createMeterRegistry(MetricsConfig.builder()
+                                                                             .config(config.get("metrics"))
+                                                                             .build());
+        Timer defaultUnitsTimer = localMeterRegistry.getOrCreate(metricsFactory.timerBuilder("defaultUnitsTimer"));
 
         defaultUnitsTimer.record(Duration.ofMillis(150));
 
@@ -259,15 +261,16 @@ class TestTimer {
                     base-units-default: milliseconds""";
 
         Config config = Config.just(ConfigSources.create(metricsConfig, MediaTypes.APPLICATION_YAML));
-        MeterRegistry localMeterRegistry = Metrics.createMeterRegistry(MetricsConfig.builder().config(config.get("metrics"))
-                                                                               .build());
-        Timer timer = localMeterRegistry.getOrCreate(Timer.builder("forToStringTest")
+        MeterRegistry localMeterRegistry = metricsFactory.createMeterRegistry(MetricsConfig.builder()
+                                                                             .config(config.get("metrics"))
+                                                                             .build());
+        Timer timer = localMeterRegistry.getOrCreate(metricsFactory.timerBuilder("forToStringTest")
                                                         .baseUnit("milliseconds"));
 
-        Timer otherTimer = localMeterRegistry.getOrCreate(Timer.builder("otherToStringTest")
+        Timer otherTimer = localMeterRegistry.getOrCreate(metricsFactory.timerBuilder("otherToStringTest")
                                                              .baseUnit("seconds"));
-        Timer defaultUnitsTimer = localMeterRegistry.getOrCreate(Timer.builder("defaultUnitsTimer"));
-        Timer secondsUnitsTimer = localMeterRegistry.getOrCreate(Timer.builder("secondsUnitsTimer")
+        Timer defaultUnitsTimer = localMeterRegistry.getOrCreate(metricsFactory.timerBuilder("defaultUnitsTimer"));
+        Timer secondsUnitsTimer = localMeterRegistry.getOrCreate(metricsFactory.timerBuilder("secondsUnitsTimer")
                         .baseUnit("SECONDS"));
 
         timer.record(Duration.ofMillis(125));
@@ -295,7 +298,7 @@ class TestTimer {
     @Test
     void checkBaseUnitValidation() {
         assertThrows(IllegalArgumentException.class,
-                     () -> Timer.builder("withIllegalUnits")
+                     () -> metricsFactory.timerBuilder("withIllegalUnits")
                              .baseUnit("fortnights"),
                              "Illegal unit 'fortnights'");
 

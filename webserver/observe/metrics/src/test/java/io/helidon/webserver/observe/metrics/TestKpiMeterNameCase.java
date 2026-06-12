@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,9 @@ package io.helidon.webserver.observe.metrics;
 import io.helidon.metrics.api.BuiltInMeterNameFormat;
 import io.helidon.metrics.api.KeyPerformanceIndicatorMetricsConfig;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsConfig;
+import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.Services;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -41,7 +42,7 @@ class TestKpiMeterNameCase {
                         .extended(true)
                         .build())
                 .build();
-        MeterRegistry meterRegistry = Metrics.createMeterRegistry(metricsConfig);
+        MeterRegistry meterRegistry = Services.get(MetricsFactory.class).createMeterRegistry(metricsConfig);
 
         // As a side-effect, the following line registers the KPI metrics in the meter registry.
         KeyPerformanceIndicatorMetricsImpls.get(meterRegistry,
@@ -64,7 +65,7 @@ class TestKpiMeterNameCase {
                         .build())
                 .builtInMeterNameFormat(BuiltInMeterNameFormat.SNAKE)
                 .build();
-        MeterRegistry meterRegistry = Metrics.createMeterRegistry(metricsConfig);
+        MeterRegistry meterRegistry = Services.get(MetricsFactory.class).createMeterRegistry(metricsConfig);
 
         // As a side-effect, the following line registers the KPI metrics in the meter registry.
         KeyPerformanceIndicatorMetricsImpls.get(meterRegistry,

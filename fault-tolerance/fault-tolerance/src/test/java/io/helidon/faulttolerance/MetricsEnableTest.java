@@ -20,6 +20,7 @@ import java.util.NoSuchElementException;
 
 import io.helidon.config.Config;
 import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.service.registry.Services;
 import io.helidon.testing.junit5.Testing;
@@ -40,6 +41,12 @@ class MetricsEnableTest extends CircuitBreakerBaseTest {
 
     private static final long WAIT_TIMEOUT_MILLIS = 5000;
 
+    private final MetricsFactory metricsFactory;
+
+    MetricsEnableTest(MetricsFactory metricsFactory) {
+        this.metricsFactory = metricsFactory;
+    }
+
     @BeforeAll
     static void setupTest() {
         Services.set(Config.class, Config.empty());      // empty config
@@ -57,8 +64,8 @@ class MetricsEnableTest extends CircuitBreakerBaseTest {
             fail("Task inProgress not started");
         }
 
-        Tag nameTag = Tag.create("name", bulkhead.name());
-        Counter callsTotal = MetricsUtils.counter(FT_BULKHEAD_CALLS_TOTAL, nameTag);
+        Tag nameTag = MetricsUtils.tag(metricsFactory, "name", bulkhead.name());
+        Counter callsTotal = MetricsUtils.counter(metricsFactory, FT_BULKHEAD_CALLS_TOTAL, nameTag);
         assertThat(callsTotal.count(), is(1L));
     }
 
@@ -74,9 +81,9 @@ class MetricsEnableTest extends CircuitBreakerBaseTest {
             fail("Task inProgress not started");
         }
 
-        Tag nameTag = Tag.create("name", bulkhead.name());
+        Tag nameTag = MetricsUtils.tag(metricsFactory, "name", bulkhead.name());
         assertThrows(NoSuchElementException.class,
-                     () -> MetricsUtils.counter(FT_BULKHEAD_CALLS_TOTAL, nameTag));
+                     () -> MetricsUtils.counter(metricsFactory, FT_BULKHEAD_CALLS_TOTAL, nameTag));
     }
 
     @Test
@@ -89,7 +96,9 @@ class MetricsEnableTest extends CircuitBreakerBaseTest {
         good(breaker);
         good(breaker);
 
-        Counter callsCounter = MetricsUtils.counter(FT_CIRCUITBREAKER_CALLS_TOTAL, Tag.create("name", breaker.name()));
+        Counter callsCounter = MetricsUtils.counter(metricsFactory,
+                                                    FT_CIRCUITBREAKER_CALLS_TOTAL,
+                                                    MetricsUtils.tag(metricsFactory, "name", breaker.name()));
         assertThat(callsCounter.count(), Matchers.is(2L));
     }
 
@@ -104,7 +113,9 @@ class MetricsEnableTest extends CircuitBreakerBaseTest {
         good(breaker);
 
         assertThrows(NoSuchElementException.class,
-                     () -> MetricsUtils.counter(FT_CIRCUITBREAKER_CALLS_TOTAL, Tag.create("name", breaker.name())));
+                     () -> MetricsUtils.counter(metricsFactory,
+                                                FT_CIRCUITBREAKER_CALLS_TOTAL,
+                                                MetricsUtils.tag(metricsFactory, "name", breaker.name())));
     }
 
     @Test
@@ -115,8 +126,8 @@ class MetricsEnableTest extends CircuitBreakerBaseTest {
 
         retry.invoke(() -> 0);
 
-        Tag nameTag = Tag.create("name", retry.name());
-        Counter callsCounter = MetricsUtils.counter(Retry.FT_RETRY_CALLS_TOTAL, nameTag);
+        Tag nameTag = MetricsUtils.tag(metricsFactory, "name", retry.name());
+        Counter callsCounter = MetricsUtils.counter(metricsFactory, Retry.FT_RETRY_CALLS_TOTAL, nameTag);
         assertThat(callsCounter.count(), is(1L));
     }
 
@@ -128,9 +139,9 @@ class MetricsEnableTest extends CircuitBreakerBaseTest {
 
         retry.invoke(() -> 0);
 
-        Tag nameTag = Tag.create("name", retry.name());
+        Tag nameTag = MetricsUtils.tag(metricsFactory, "name", retry.name());
         assertThrows(NoSuchElementException.class,
-                     () -> MetricsUtils.counter(Retry.FT_RETRY_CALLS_TOTAL, nameTag));
+                     () -> MetricsUtils.counter(metricsFactory, Retry.FT_RETRY_CALLS_TOTAL, nameTag));
     }
 
     @Test
@@ -141,8 +152,8 @@ class MetricsEnableTest extends CircuitBreakerBaseTest {
 
         timeout.invoke(() -> 0);
 
-        Tag nameTag = Tag.create("name", timeout.name());
-        Counter callsCounter = MetricsUtils.counter(Timeout.FT_TIMEOUT_CALLS_TOTAL, nameTag);
+        Tag nameTag = MetricsUtils.tag(metricsFactory, "name", timeout.name());
+        Counter callsCounter = MetricsUtils.counter(metricsFactory, Timeout.FT_TIMEOUT_CALLS_TOTAL, nameTag);
         assertThat(callsCounter.count(), is(1L));
     }
 
@@ -154,8 +165,8 @@ class MetricsEnableTest extends CircuitBreakerBaseTest {
 
         timeout.invoke(() -> 0);
 
-        Tag nameTag = Tag.create("name", timeout.name());
+        Tag nameTag = MetricsUtils.tag(metricsFactory, "name", timeout.name());
         assertThrows(NoSuchElementException.class,
-                     () -> MetricsUtils.counter(Timeout.FT_TIMEOUT_CALLS_TOTAL, nameTag));
+                     () -> MetricsUtils.counter(metricsFactory, Timeout.FT_TIMEOUT_CALLS_TOTAL, nameTag));
     }
 }

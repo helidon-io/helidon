@@ -21,7 +21,10 @@ import java.util.Map;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.metrics.api.Meter;
+import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.Services;
+import io.helidon.testing.junit5.Testing;
 
 import org.junit.jupiter.api.Test;
 
@@ -31,12 +34,13 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.not;
 
+@Testing.Test(perMethod = true)
 class TestBuiltInMeterCaseSelection {
-
     @Test
     void testDefaults() {
         SystemMetersProvider provider = new SystemMetersProvider();
-        MetricsFactory metricsFactory = MetricsFactory.getInstance(Config.empty());
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        metricsFactory.globalRegistry(MetricsConfig.create(Config.empty()));
         Collection<Meter.Builder<?, ?>> meterBuilders = provider.meterBuilders(metricsFactory);
 
         assertThat("Default used heap name", meterBuilders, allOf(
@@ -48,7 +52,8 @@ class TestBuiltInMeterCaseSelection {
     void testWithSnakeConfigured() {
         SystemMetersProvider provider = new SystemMetersProvider();
         Config config = io.helidon.config.Config.just(ConfigSources.create(Map.of("metrics.built-in-meter-name-format", "SNAKE")));
-        MetricsFactory metricsFactory = MetricsFactory.getInstance(config.get("metrics"));
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        metricsFactory.globalRegistry(MetricsConfig.create(config.get("metrics")));
         Collection<Meter.Builder<?, ?>> meterBuilders = provider.meterBuilders(metricsFactory);
 
         assertThat("Configured used heap name", meterBuilders, allOf(

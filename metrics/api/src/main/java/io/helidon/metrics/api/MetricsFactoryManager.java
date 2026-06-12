@@ -17,13 +17,9 @@ package io.helidon.metrics.api;
 
 import java.lang.System.Logger.Level;
 import java.util.Collection;
-import java.util.Objects;
 import java.util.ServiceLoader;
-import java.util.concurrent.Callable;
-import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.HelidonServiceLoader;
-import io.helidon.common.LazyValue;
 import io.helidon.common.Weighted;
 import io.helidon.config.Config;
 import io.helidon.metrics.spi.MetersProvider;
@@ -35,175 +31,95 @@ import io.helidon.service.registry.Services;
  * Provides {@link io.helidon.metrics.api.MetricsFactory} instances using a highest-weight implementation of
  * {@link io.helidon.metrics.spi.MetricsFactoryProvider}, defaulting to a no-op implementation if no other is available.
  * <p>
- * The {@link #getMetricsFactory()} returns the metrics factory most recently created by invoking
- * {@link #getMetricsFactory(Config)}, which creates a new metrics factory using the provided config and also saves the
- * resulting metrics factory as the most recent.
- * <p>
- * Invoking {@code getMetricsFactory()} (no argument) <em>before</em> invoking the variant with the
- * {@link io.helidon.config.Config} parameter creates and saves a metrics factory using the current
- * {@link io.helidon.config.Config}.
- * <p>
  * The {@link #create(Config)} method neither reads nor updates the most-recently used config and factory.
  */
 class MetricsFactoryManager {
 
     private static final System.Logger LOGGER = System.getLogger(MetricsFactoryManager.class.getName());
-    /**
-     * Instance of the highest-weight implementation of {@link io.helidon.metrics.spi.MetricsFactoryProvider}
-     * for obtaining new {@link io.helidon.metrics.api.MetricsFactory} instances; this module contains a no-op implementation
-     * as a last resort.
-     */
-    private static final LazyValue<MetricsFactoryProvider> METRICS_FACTORY_PROVIDER =
-            io.helidon.common.LazyValue.create(() -> {
-                MetricsFactoryProvider result = HelidonServiceLoader.builder(ServiceLoader.load(MetricsFactoryProvider.class))
-                        .addService(NoOpMetricsFactoryProvider.create(), Double.MIN_VALUE)
-                        .build()
-                        .iterator()
-                        .next();
-                LOGGER.log(Level.DEBUG, "Loaded metrics factory provider: {0}",
-                           result.getClass().getName());
-                return result;
-            });
-    /**
-     * Config overrides that can change the {@link io.helidon.metrics.api.MetricsConfig} that is read from config sources
-     * if there are specific requirements in a given runtime (e.g., MP) for certain settings. For example, the tag name used
-     * for recording scope, the app name, etc. We apply all overriding config implementations, so reverse the list after the
-     * Helidon service loader computes it so we apply lower-weight implementations first so higher-weight ones can override.
-     */
-    private static final LazyValue<Collection<MetricsProgrammaticConfig>> METRICS_CONFIG_OVERRIDES =
-            io.helidon.common.LazyValue.create(() ->
-                       HelidonServiceLoader.builder(ServiceLoader.load(MetricsProgrammaticConfig.class))
-                               .addService(new SeMetricsProgrammaticConfig(),
-                                           Weighted.DEFAULT_WEIGHT - 50)
-                               .build()
-                               .asList()
-                               .reversed());
-    private static final ReentrantLock LOCK = new ReentrantLock();
-    /**
-     * Providers of meter builders (such as the built-in "base" meters for system performance information). All providers are
-     * furnished to all {@link io.helidon.metrics.api.MeterRegistry} instances that are created by any
-     * {@link io.helidon.metrics.api.MetricsFactory}.
-     */
-    private static final LazyValue<Collection<MetersProvider>> METER_PROVIDERS =
-            LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(MetersProvider.class))
-                    .asList());
-    /**
-     * The metrics {@link io.helidon.config.Config} node used to initialize the current metrics factory.
-     */
-    private static Config metricsConfigNode;
-    /**
-     * The {@link io.helidon.metrics.api.MetricsFactory} most recently created via either {@link #getMetricsFactory} method.
-     */
-    private static MetricsFactory metricsFactory;
 
     private MetricsFactoryManager() {
     }
 
     /**
-     * Creates a new {@link io.helidon.metrics.api.MetricsFactory} according to the {@value MetricsConfig#METRICS_CONFIG_KEY}
-     * section in the specified config node, deriving and saving the metrics config as the current metrics config, saving the new
-     * factory as the current factory, and registering meters via meter providers to the global meter registry of the new factory.
+     * This method now simply calls {@link io.helidon.service.registry.Services#get(Class)}.
      *
-     * @param metricsConfigNode metrics config node
-     * @return new metrics factory
+     * @param ignoredConfig ignored config
+     * @return shared metrics factory
+     * @deprecated either use {@link io.helidon.service.registry.Services} directly; if the intention is to use a different
+     *      shared instance than the default one, create a service factory with a higher than default
+     *      {@link io.helidon.common.Weight}, or call {@link io.helidon.service.registry.Services#set(Class, Object[])}
+     *      before the application starts
      */
-    static MetricsFactory getMetricsFactory(Config metricsConfigNode) {
-        return access(() -> createCurrentMetricsFactory(metricsConfigNode));
+    @Deprecated(since = "27.0.0", forRemoval = true)
+    static MetricsFactory getMetricsFactory(Config ignoredConfig) {
+        LOGGER.log(Level.WARNING, "Method MetricsFactoryManager.getMetricsFactory(Config) does not work as in "
+                + "previous major versions of Helidon, and simply returns the instance from ServiceRegistry. "
+                + "This method is now deprecated and will be removed.");
+
+        return Services.get(MetricsFactory.class);
     }
 
     /**
-     * Returns the current {@link io.helidon.metrics.api.MetricsFactory}, creating one if needed using the global configuration
-     * and saving the {@link io.helidon.metrics.api.MetricsConfig} from the global config as the current config and the new
-     * factory as the current factory.
+     * Returns the shared metrics factory from
+     * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MetricsFactory.class)}.
      *
-     * @return current metrics factory
+     * @return shared metrics factory
+     * @deprecated since 27.0.0, for removal. Use
+     * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MetricsFactory.class)}.
      */
+    @Deprecated(since = "27.0.0", forRemoval = true)
     static MetricsFactory getMetricsFactory() {
-        return access(() -> {
-            return Objects.requireNonNullElseGet(metricsFactory,
-                                                () -> createCurrentMetricsFactory(
-                                                        Objects.requireNonNullElseGet(
-                                                                metricsConfigNode,
-                                                                MetricsFactoryManager::externalMetricsConfig)));
-        });
+        LOGGER.log(Level.WARNING, "Method MetricsFactoryManager.getMetricsFactory() does not work as in "
+                + "previous major versions of Helidon, and simply returns the instance from ServiceRegistry. "
+                + "This method is now deprecated and will be removed.");
+
+        return Services.get(MetricsFactory.class);
     }
 
     /**
-     * Returns the current {@link MetricsFactory}, creating and saving one from the provided root config only if the current
-     * factory is absent.
+     * Returns the shared metrics factory from
+     * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MetricsFactory.class)}.
      *
-     * @param rootConfig root configuration for resolving the metrics config node when needed
-     * @return current or newly created metrics factory
+     * @param ignoredConfig ignored config
+     * @return shared metrics factory
      */
-    static MetricsFactory getOrCreateMetricsFactory(Config rootConfig) {
-        return access(() -> Objects.requireNonNullElseGet(metricsFactory,
-                                                          () -> createCurrentMetricsFactory(
-                                                                  selectMetricsConfigNode(rootConfig))));
+    @Deprecated(since = "27.0.0", forRemoval = true)
+    static MetricsFactory getOrCreateMetricsFactory(Config ignoredConfig) {
+        LOGGER.log(Level.WARNING, "Method MetricsFactoryManager.getOrCreateMetricsFactory(Config) does not work as in "
+                + "previous major versions of Helidon, and simply returns the instance from ServiceRegistry. "
+                + "This method is now deprecated and will be removed.");
+
+        return Services.get(MetricsFactory.class);
     }
 
     /**
-     * Creates a new {@link io.helidon.metrics.api.MetricsFactory} using the specified
-     * {@link io.helidon.metrics.api.MetricsConfig} with no side effects: neither the config nor the new factory replace
-     * the current values stored in this manager.
+     * Creates a new {@link io.helidon.metrics.api.MetricsFactory} using the specified root config.
      *
-     * @param metricsConfigNode the metrics config node to use in creating the metrics factory
+     * @param rootConfig the root config node to use in creating the metrics factory
      * @return new metrics factory
      */
-    static MetricsFactory create(Config metricsConfigNode) {
-        return METRICS_FACTORY_PROVIDER.get().create(metricsConfigNode,
-                                                     MetricsConfig.create(
-                                                             metricsConfigNode.get(MetricsConfig.METRICS_CONFIG_KEY)),
-                                                     METER_PROVIDERS.get());
-    }
-
-    static void closeAll() {
-        METRICS_FACTORY_PROVIDER.get().close();
-        metricsFactory = null;
-    }
-
-    private static Config externalMetricsConfig() {
-        return selectMetricsConfigNode(Services.get(Config.class));
-    }
-
-    private static MetricsFactory createCurrentMetricsFactory(Config metricsConfigNode) {
-        MetricsFactoryManager.metricsConfigNode = metricsConfigNode;
-        MetricsConfig metricsConfig = MetricsConfig.create(metricsConfigNode);
-        metricsFactory = completeGetInstance(metricsConfig, metricsConfigNode);
-        return metricsFactory;
-    }
-
-    private static Config selectMetricsConfigNode(Config rootConfig) {
-        Config serverFeaturesMetricsConfig = rootConfig.get("server.features.observe.observers.metrics");
-        if (!serverFeaturesMetricsConfig.exists()) {
-            serverFeaturesMetricsConfig = rootConfig.get(MetricsConfig.METRICS_CONFIG_KEY);
+    static MetricsFactory create(Config rootConfig) {
+        MetricsConfig metricsConfig = MetricsConfig.create(rootConfig.get(MetricsConfig.METRICS_CONFIG_KEY));
+        Collection<MetricsProgrammaticConfig> metricsConfigOverrides =
+                HelidonServiceLoader.builder(ServiceLoader.load(MetricsProgrammaticConfig.class))
+                        .addService(new SeMetricsProgrammaticConfig(), Weighted.DEFAULT_WEIGHT - 50)
+                        .build()
+                        .asList()
+                        .reversed();
+        for (MetricsProgrammaticConfig programmaticConfig : metricsConfigOverrides) {
+            metricsConfig = programmaticConfig.apply(metricsConfig);
         }
-        return serverFeaturesMetricsConfig;
-    }
 
-    private static MetricsFactory completeGetInstance(MetricsConfig metricsConfig, Config metricsConfigNode) {
+        MetricsFactoryProvider metricsFactoryProvider =
+                HelidonServiceLoader.builder(ServiceLoader.load(MetricsFactoryProvider.class))
+                        .addService(NoOpMetricsFactoryProvider.create(), Double.MIN_VALUE)
+                        .build()
+                        .iterator()
+                        .next();
+        LOGGER.log(Level.DEBUG, "Loaded metrics factory provider: {0}", metricsFactoryProvider.getClass().getName());
 
-        metricsConfig = applyOverrides(metricsConfig);
-
-        SystemTagsManager.instance(metricsConfig);
-        metricsFactory = METRICS_FACTORY_PROVIDER.get().create(metricsConfigNode, metricsConfig, METER_PROVIDERS.get());
-
-        return metricsFactory;
-    }
-
-    private static MetricsConfig applyOverrides(MetricsConfig metricsConfig) {
-        MetricsConfig.Builder metricsConfigBuilder = MetricsConfig.builder(metricsConfig);
-        METRICS_CONFIG_OVERRIDES.get().forEach(override -> override.apply(metricsConfigBuilder));
-        return metricsConfigBuilder.build();
-    }
-
-    private static <T> T access(Callable<T> c) {
-        LOCK.lock();
-        try {
-            return c.call();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        } finally {
-            LOCK.unlock();
-        }
+        Collection<MetersProvider> meterProviders = HelidonServiceLoader.create(ServiceLoader.load(MetersProvider.class))
+                .asList();
+        return metricsFactoryProvider.create(rootConfig, metricsConfig, meterProviders);
     }
 }

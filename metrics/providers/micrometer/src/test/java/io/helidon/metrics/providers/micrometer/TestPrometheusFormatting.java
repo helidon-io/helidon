@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@ import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.ScopingConfig;
 import io.helidon.metrics.api.SystemTagsManager;
 import io.helidon.metrics.api.Timer;
+import io.helidon.service.registry.Services;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.BeforeAll;
@@ -52,6 +53,7 @@ class TestPrometheusFormatting {
     media type.
      */
     private static final String OPENMETRICS_EOF = "# EOF\n";
+    private static MetricsFactory metricsFactory;
     private static MeterRegistry meterRegistry;
 
     private static MetricsConfig metricsConfig;
@@ -64,35 +66,40 @@ class TestPrometheusFormatting {
                                  .defaultValue("app"));
 
         metricsConfig = metricsConfigBuilder.build();
-        meterRegistry = MetricsFactory.getInstance().globalRegistry(metricsConfig);
+        metricsFactory = Services.get(MetricsFactory.class);
+        meterRegistry = metricsFactory.globalRegistry(metricsConfig);
     }
 
     /**
      * Sets the system tags according to what this test expects.
      * <p>
-     *     When a metrics factory is obtained via MetricsFactory.getInstance(metricsConfig), that config object initializes
-     *     the system tags manager. This happens after the @BeforeAll method runs. So re-assert the values we want for the
-     *     test here. We would only need to do it once, not before each test, but it's low cost esp. in a test environment.
+     *     When the global registry is initialized from the metrics config, that config object initializes the system tags
+     *     manager. This happens after the @BeforeAll method runs. So re-assert the values we want for the test here. We
+     *     would only need to do it once, not before each test, but it's low cost esp. in a test environment.
      *
      * </p>
      */
     @BeforeEach
     void setUpSystemTags() {
-        SystemTagsManager.instance(metricsConfig);
+        configureSystemTags(metricsConfig);
+    }
+
+    private static void configureSystemTags(MetricsConfig metricsConfig) {
+        SystemTagsManager.create(metricsConfig);
     }
 
     @Test
     void testRetrievingAll() {
-        Counter c = meterRegistry.getOrCreate(Counter.builder("c1"));
+        Counter c = meterRegistry.getOrCreate(metricsFactory.counterBuilder("c1"));
         assertThat("Initial counter value", c.count(), Matchers.is(0L));
         c.increment();
         assertThat("After increment", c.count(), Matchers.is(1L));
 
-        Timer d = meterRegistry.getOrCreate(Timer.builder("t1")
+        Timer d = meterRegistry.getOrCreate(metricsFactory.timerBuilder("t1")
                                                     .scope("other"));
         d.record(3, TimeUnit.SECONDS);
 
-        Timer e = meterRegistry.getOrCreate(Timer.builder("t1-1"));
+        Timer e = meterRegistry.getOrCreate(metricsFactory.timerBuilder("t1-1"));
         e.record(2, TimeUnit.SECONDS);
 
         MicrometerPrometheusFormatter formatter = MicrometerPrometheusFormatter.builder(meterRegistry)
@@ -126,12 +133,12 @@ class TestPrometheusFormatting {
 
     @Test
     void testRetrievingByName() {
-        Counter c = meterRegistry.getOrCreate(Counter.builder("c2"));
+        Counter c = meterRegistry.getOrCreate(metricsFactory.counterBuilder("c2"));
         assertThat("Initial counter value", c.count(), Matchers.is(0L));
         c.increment();
         assertThat("After increment", c.count(), Matchers.is(1L));
 
-        Timer d = meterRegistry.getOrCreate(Timer.builder("t2"));
+        Timer d = meterRegistry.getOrCreate(metricsFactory.timerBuilder("t2"));
         d.record(7, TimeUnit.SECONDS);
 
         MicrometerPrometheusFormatter formatter = MicrometerPrometheusFormatter.builder(meterRegistry)
@@ -161,16 +168,16 @@ class TestPrometheusFormatting {
     @Test
     void testRetrievingByScope() {
 
-        Counter c = meterRegistry.getOrCreate(Counter.builder("c3"));
+        Counter c = meterRegistry.getOrCreate(metricsFactory.counterBuilder("c3"));
         assertThat("Initial counter value", c.count(), is(0L));
         c.increment();
         assertThat("After increment", c.count(), is(1L));
 
-        Timer d = meterRegistry.getOrCreate(Timer.builder("t3")
+        Timer d = meterRegistry.getOrCreate(metricsFactory.timerBuilder("t3")
                                                     .scope("other-scope"));
         d.record(7, TimeUnit.SECONDS);
 
-        Timer e = meterRegistry.getOrCreate(Timer.builder("t3-1"));
+        Timer e = meterRegistry.getOrCreate(metricsFactory.timerBuilder("t3-1"));
         e.record(2, TimeUnit.SECONDS);
 
         MicrometerPrometheusFormatter formatter = MicrometerPrometheusFormatter.builder(meterRegistry)
@@ -204,13 +211,13 @@ class TestPrometheusFormatting {
 
     @Test
     void testMeterNameWithColon() {
-        Counter withColon = meterRegistry.getOrCreate(Counter.builder("c:withColon"));
+        Counter withColon = meterRegistry.getOrCreate(metricsFactory.counterBuilder("c:withColon"));
         withColon.increment();
 
-        Counter withoutColon = meterRegistry.getOrCreate(Counter.builder("cWithoutColon"));
+        Counter withoutColon = meterRegistry.getOrCreate(metricsFactory.counterBuilder("cWithoutColon"));
         withoutColon.increment(2L);
 
-        Counter withQuestionMark = meterRegistry.getOrCreate(Counter.builder("c?withQuestionMark"));
+        Counter withQuestionMark = meterRegistry.getOrCreate(metricsFactory.counterBuilder("c?withQuestionMark"));
         withQuestionMark.increment();
 
         MicrometerPrometheusFormatter formatter = MicrometerPrometheusFormatter.builder(meterRegistry)
@@ -240,10 +247,10 @@ class TestPrometheusFormatting {
 
     @Test
     void testMeterNameWithSpecialChars() {
-        Counter counterWithDashes = meterRegistry.getOrCreate(Counter.builder("counter-with-dashes"));
+        Counter counterWithDashes = meterRegistry.getOrCreate(metricsFactory.counterBuilder("counter-with-dashes"));
         counterWithDashes.increment(3L);
 
-        Counter counterWithUmlauts = meterRegistry.getOrCreate(Counter.builder("counter-with-umlaut-äöü"));
+        Counter counterWithUmlauts = meterRegistry.getOrCreate(metricsFactory.counterBuilder("counter-with-umlaut-äöü"));
         counterWithUmlauts.increment(4L);
         var formatter =  MicrometerPrometheusFormatter.builder(meterRegistry)
                 .resultMediaType(MediaTypes.APPLICATION_OPENMETRICS_TEXT)
@@ -268,7 +275,7 @@ class TestPrometheusFormatting {
 
     @Test
     void testSelectiveByName() {
-        Counter counter = meterRegistry.getOrCreate(Counter.builder("counterByName"));
+        Counter counter = meterRegistry.getOrCreate(metricsFactory.counterBuilder("counterByName"));
         counter.increment();
 
         var formatter =  MicrometerPrometheusFormatter.builder(meterRegistry)
@@ -288,7 +295,7 @@ class TestPrometheusFormatting {
 
     @Test
     void testSelectiveByNameAndScope() {
-        Counter counter = meterRegistry.getOrCreate(Counter.builder("counterByNameAndScope"));
+        Counter counter = meterRegistry.getOrCreate(metricsFactory.counterBuilder("counterByNameAndScope"));
         counter.increment(6L);
 
         var formatter =  MicrometerPrometheusFormatter.builder(meterRegistry)
@@ -309,7 +316,7 @@ class TestPrometheusFormatting {
 
     @Test
     void testSelectNonExistentScope() {
-        Counter counter = meterRegistry.getOrCreate(Counter.builder("counterByBadScope"));
+        Counter counter = meterRegistry.getOrCreate(metricsFactory.counterBuilder("counterByBadScope"));
         counter.increment(7L);
 
         var formatter =  MicrometerPrometheusFormatter.builder(meterRegistry)

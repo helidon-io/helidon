@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,24 +15,29 @@
  */
 package io.helidon.metrics.providers.micrometer;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.testing.junit5.TestJunitExtension;
 
-import org.junit.jupiter.api.extension.BeforeAllCallback;
-import org.junit.jupiter.api.extension.Extension;
+import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
+
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-public class MicrometerMetricsTestsJunitExtension implements Extension,
-                                                             BeforeAllCallback {
+public class MicrometerMetricsTestsJunitExtension extends TestJunitExtension {
 
     static void clear() {
-
-        MetricsFactory.closeAll();
 
         // And clear out Micrometer's global registry explicitly to be extra sure.
         io.micrometer.core.instrument.MeterRegistry mmGlobal = io.micrometer.core.instrument.Metrics.globalRegistry;
         mmGlobal.clear();
+        if (mmGlobal instanceof CompositeMeterRegistry compositeMeterRegistry) {
+            List.copyOf(compositeMeterRegistry.getRegistries())
+                    .forEach(registry -> {
+                        compositeMeterRegistry.remove(registry);
+                        registry.close();
+                    });
+        }
 
         int delayMS = 250;
         int maxSecondsToWait = 5;
@@ -49,7 +54,8 @@ public class MicrometerMetricsTestsJunitExtension implements Extension,
     }
 
     @Override
-    public void beforeAll(ExtensionContext extensionContext) throws Exception {
+    public void beforeAll(ExtensionContext extensionContext) {
+        super.beforeAll(extensionContext);
         clear();
     }
 }

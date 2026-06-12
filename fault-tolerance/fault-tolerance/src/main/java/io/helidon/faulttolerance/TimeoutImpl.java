@@ -25,6 +25,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 import io.helidon.metrics.api.Counter;
+import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 import io.helidon.service.registry.Service;
@@ -44,7 +45,7 @@ class TimeoutImpl implements Timeout {
     private Timer executionDurationMetric;
 
     @Service.Inject
-    TimeoutImpl(TimeoutConfig config) {
+    TimeoutImpl(TimeoutConfig config, Supplier<MetricsFactory> metricsFactory) {
         this.timeoutMillis = config.timeout().toMillis();
         this.executor = config.executor().orElseGet(FaultTolerance.executor());
         this.currentThread = config.currentThread();
@@ -53,9 +54,10 @@ class TimeoutImpl implements Timeout {
 
         this.metricsEnabled = config.enableMetrics() || MetricsUtils.defaultEnabled();
         if (metricsEnabled) {
-            Tag nameTag = Tag.create("name", name);
-            callsCounterMetric = MetricsUtils.counterBuilder(FT_TIMEOUT_CALLS_TOTAL, nameTag);
-            executionDurationMetric = MetricsUtils.timerBuilder(FT_TIMEOUT_EXECUTIONDURATION, nameTag);
+            var mf = metricsFactory.get();
+            Tag nameTag = MetricsUtils.tag(mf, "name", name);
+            callsCounterMetric = MetricsUtils.counterBuilder(mf, FT_TIMEOUT_CALLS_TOTAL, nameTag);
+            executionDurationMetric = MetricsUtils.timerBuilder(mf, FT_TIMEOUT_EXECUTIONDURATION, nameTag);
         }
     }
 

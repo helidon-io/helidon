@@ -16,51 +16,115 @@
 package io.helidon.metrics.api;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import io.helidon.service.registry.Services;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
+import io.helidon.testing.junit5.Testing;
 
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
+@Testing.Test(perMethod = true)
 class MetricsFactoryFactoryTest {
     private static final Config ROOT_CONFIG = Config.just(ConfigSources.create(Map.of(
             "metrics.app-name", "metrics-app",
             "server.features.observe.observers.metrics.app-name", "observe-app")));
 
-    @BeforeEach
-    void setUp() {
-        MetricsFactory.closeAll();
-    }
-
-    @AfterEach
-    void tearDown() {
-        MetricsFactory.closeAll();
-    }
-
     @Test
     void reusesCurrentMetricsFactory() {
-        MetricsFactory currentFactory =
-                MetricsFactory.getInstance(ROOT_CONFIG.get("server.features.observe.observers.metrics"));
-        MetricsFactoryFactory serviceFactory = new MetricsFactoryFactory(ROOT_CONFIG);
-
-        MetricsFactory serviceResolvedFactory = serviceFactory.get();
+        MetricsFactory currentFactory = Services.get(MetricsFactory.class);
+        MetricsFactory serviceResolvedFactory = Services.get(MetricsFactory.class);
 
         assertThat(serviceResolvedFactory, sameInstance(currentFactory));
-        assertThat(MetricsFactory.getInstance(), sameInstance(currentFactory));
+        assertThat(Services.get(MetricsFactory.class), sameInstance(currentFactory));
     }
 
     @Test
-    void createsCurrentMetricsFactoryOnceWhenAbsent() {
+    void directFactoryCreatesIndependentInstances() {
         MetricsFactoryFactory serviceFactory = new MetricsFactoryFactory(ROOT_CONFIG);
 
         MetricsFactory firstFactory = serviceFactory.get();
         MetricsFactory secondFactory = serviceFactory.get();
 
+        assertThat(secondFactory, not(sameInstance(firstFactory)));
+    }
+
+    @Test
+    void factoryReceivesRootConfig() {
+        MetricsFactoryFactory serviceFactory = new MetricsFactoryFactory(ROOT_CONFIG) {
+            @Override
+            MetricsFactory createMetricsFactory(Config rootConfig) {
+                assertThat(rootConfig.get("metrics.app-name").asString().get(), is("metrics-app"));
+                assertThat(rootConfig.get("server.features.observe.observers.metrics.app-name").asString().get(),
+                           is("observe-app"));
+                return new CloseTrackingMetricsFactory();
+            }
+        };
+
+        serviceFactory.get();
+    }
+
+    @Test
+    void deprecatedConfigInstanceRejectsNullConfig() {
+        assertThrows(NullPointerException.class, () -> MetricsFactory.getInstance((Config) null));
+    }
+
+    @Test
+    void preDestroyClosesCreatedFactories() {
+        AtomicInteger nextFactory = new AtomicInteger();
+        CloseTrackingMetricsFactory firstFactory = new CloseTrackingMetricsFactory();
+        CloseTrackingMetricsFactory secondFactory = new CloseTrackingMetricsFactory();
+        CloseTrackingMetricsFactory[] factories = {firstFactory, secondFactory};
+        MetricsFactoryFactory serviceFactory = new MetricsFactoryFactory(ROOT_CONFIG) {
+            @Override
+            MetricsFactory createMetricsFactory(Config rootConfig) {
+                return factories[nextFactory.getAndIncrement()];
+            }
+        };
+
+        serviceFactory.get();
+        serviceFactory.get();
+
+        serviceFactory.preDestroy();
+
+        assertThat(firstFactory.closeCount(), is(1));
+        assertThat(secondFactory.closeCount(), is(1));
+
+        serviceFactory.preDestroy();
+
+        assertThat(firstFactory.closeCount(), is(1));
+        assertThat(secondFactory.closeCount(), is(1));
+    }
+
+    @Test
+    @SuppressWarnings("removal")
+    void closeAllDoesNotAffectServicesLookup() {
+        MetricsFactory firstFactory = Services.get(MetricsFactory.class);
+
+        MetricsFactory.closeAll();
+        MetricsFactory secondFactory = Services.get(MetricsFactory.class);
+
         assertThat(secondFactory, sameInstance(firstFactory));
+    }
+
+    private static class CloseTrackingMetricsFactory extends NoOpMetricsFactory {
+        private int closeCount;
+
+        @Override
+        public void close() {
+            closeCount++;
+        }
+
+        private int closeCount() {
+            return closeCount;
+        }
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@ import io.helidon.common.media.type.MediaType;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MeterRegistryFormatter;
+import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.Services;
 
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.composite.CompositeMeterRegistry;
@@ -79,7 +81,7 @@ public class MicrometerPrometheusFormatter implements MeterRegistryFormatter {
                 };
         resultMediaType = builder.resultMediaType;
         meterRegistry = Objects.requireNonNullElseGet(builder.meterRegistry,
-                                                      io.helidon.metrics.api.Metrics::globalRegistry);
+                                                      () -> Services.get(MetricsFactory.class).globalRegistry());
     }
 
     /**

@@ -16,7 +16,11 @@
 
 package io.helidon.webserver.tests.resourcelimit;
 
+import java.util.List;
+import java.util.Optional;
+
 import io.helidon.common.concurrency.limits.FixedLimit;
+import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Timer;
@@ -29,10 +33,8 @@ import io.helidon.webserver.observe.metrics.MetricsObserver;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 import io.helidon.webserver.testing.junit5.SetUpServer;
-import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
-import java.util.Optional;
+import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -53,9 +55,11 @@ class ThroughputLimitMetricsTest {
     };
 
     private final WebClient webClient;
+    private final MetricsFactory metricsFactory;
 
-    ThroughputLimitMetricsTest(WebClient webClient) {
+    ThroughputLimitMetricsTest(WebClient webClient, MetricsFactory metricsFactory) {
         this.webClient = webClient;
+        this.metricsFactory = metricsFactory;
     }
 
     @SetUpServer
@@ -91,9 +95,19 @@ class ThroughputLimitMetricsTest {
             assertThat(res.status().code(), is(200));
         }
 
-        MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry();
-        Optional<Timer> rtt = meterRegistry.timer("fixed_rtt", Collections.emptyList());
+        MeterRegistry meterRegistry = metricsFactory.globalRegistry();
+        Optional<Timer> rtt = timer(meterRegistry);
         assertThat(rtt.isPresent(), is(true));
         assertThat(rtt.get().count(), is(greaterThan(0L)));
+    }
+
+    private static Optional<Timer> timer(MeterRegistry meterRegistry) {
+        for (Meter meter : meterRegistry.meters(List.of(Meter.Scope.VENDOR))) {
+            if (meter instanceof Timer timer
+                    && meter.id().name().equals("fixed_rtt")) {
+                return Optional.of(timer);
+            }
+        }
+        return Optional.empty();
     }
 }

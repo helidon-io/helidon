@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,10 +22,10 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
 import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
+import io.helidon.service.registry.Services;
 
 import org.junit.jupiter.api.Test;
 
@@ -38,22 +38,23 @@ class TestGlobalTags {
 
     @Test
     void testWithoutConfig() {
-        Tag g1 = Tag.create("g1", "v1");
-        Tag g2 = Tag.create("g2", "v2");
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        Tag g1 = metricsFactory.tagCreate("g1", "v1");
+        Tag g2 = metricsFactory.tagCreate("g2", "v2");
 
         List<Tag> globalTags = List.of(g1, g2);
         MetricsConfig metricsConfig = MetricsConfig.builder()
                 .tags(globalTags)
                 .build();
 
-        MeterRegistry meterRegistry = Metrics.globalRegistry();
+        MeterRegistry meterRegistry = metricsFactory.globalRegistry();
 
         assertThat("Global tags from the config used to init the meter registry",
                    metricsConfig.tags(),
                    hasItems(g2, g1));
 
-        Counter counter1 = meterRegistry.getOrCreate(Counter.builder("a")
-                                                             .tags(List.of(Tag.create("local1", "a"))));
+        Counter counter1 = meterRegistry.getOrCreate(metricsFactory.counterBuilder("a")
+                                                             .tags(List.of(metricsFactory.tagCreate("local1", "a"))));
 
         // Global tags should appear only on output, not in the actual tags in the meter's ID.
         assertThat("New counter's tags",
@@ -61,7 +62,7 @@ class TestGlobalTags {
                    not(hasItems(globalTags.toArray(new Tag[0]))));
         assertThat("New counter's tags",
                    counter1.id().tags(),
-                   hasItem(Tag.create("local1", "a")));
+                   hasItem(metricsFactory.tagCreate("local1", "a")));
     }
 
     @Test
@@ -69,15 +70,16 @@ class TestGlobalTags {
         var settings = Map.of("metrics.tags", "g1=v1,g2=v2");
 
         Config config = Config.just(ConfigSources.create(settings));
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
 
-        MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry(
+        MeterRegistry meterRegistry = metricsFactory.globalRegistry(
                 MetricsConfig.create(config.get("metrics")));
 
-        Counter counter1 = meterRegistry.getOrCreate(Counter.builder("a")
-                                                             .tags(List.of(Tag.create("local1", "a"))));
+        Counter counter1 = meterRegistry.getOrCreate(metricsFactory.counterBuilder("a")
+                                                             .tags(List.of(metricsFactory.tagCreate("local1", "a"))));
 
-        Tag g1 = Tag.create("g1", "v1");
-        Tag g2 = Tag.create("g2", "v2");
+        Tag g1 = metricsFactory.tagCreate("g1", "v1");
+        Tag g2 = metricsFactory.tagCreate("g2", "v2");
 
         // Global tags should appear only in output, not in the meter's ID itself.
         assertThat("New counter's tags",
@@ -86,7 +88,7 @@ class TestGlobalTags {
 
         assertThat("New counter's explicit tags",
                    counter1.id().tags(),
-                   hasItem(Tag.create("local1", "a")));
+                   hasItem(metricsFactory.tagCreate("local1", "a")));
 
     }
 
@@ -95,6 +97,6 @@ class TestGlobalTags {
         String appNameTag = "se-app";
         String appNameValue = "test-app";
         Config metricsConfig = Config.just(ConfigSources.create(Map.of("app-tag-name", appNameTag, "app-name", appNameValue)));
-        MetricsFactory.getInstance(metricsConfig);
+        Services.get(MetricsFactory.class).globalRegistry(MetricsConfig.create(metricsConfig));
     }
 }

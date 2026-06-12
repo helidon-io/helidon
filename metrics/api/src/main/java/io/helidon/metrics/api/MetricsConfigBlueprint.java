@@ -65,30 +65,6 @@ interface MetricsConfigBlueprint {
     TimeUnit DEFAULT_JSON_UNITS_DEFAULT = TimeUnit.SECONDS;
 
     /**
-     * This method is internal and will be removed without replacement.
-     *
-     * @param globalTagExpression config node
-     * @return list of tags
-     * @deprecated this is an internal method used from the builder, will be removed without replacement
-     */
-    @Deprecated(forRemoval = true, since = "4.3.0")
-    static List<Tag> createTags(Config globalTagExpression) {
-        return createTags(globalTagExpression.asString().get());
-    }
-
-    /**
-     * This method is internal and will be removed without replacement.
-     *
-     * @param pairs tag pairs
-     * @return list of tags
-     * @deprecated this is an internal method used from the builder, will be removed without replacement
-     */
-    @Deprecated(forRemoval = true, since = "4.3.0")
-    static List<Tag> createTags(String pairs) {
-        return MetricsConfigSupport.createTags(pairs);
-    }
-
-    /**
      * Whether metrics functionality is enabled.
      *
      * @return if metrics are configured to be enabled
@@ -167,19 +143,6 @@ interface MetricsConfigBlueprint {
     boolean restRequestEnabled();
 
     /**
-     * Whether automatic REST request metrics should be measured (as indicated by the deprecated config
-     * key {@code rest-request-enabled}, the config key using a hyphen instead of a dot separator).
-     *
-     * @return true/false
-     * @deprecated Use {@code rest-request.enabled} instead.
-     */
-    @Deprecated(since = "4.2.3", forRemoval = true)
-    @Option.Configured("rest-request-enabled")
-    @Option.Access("")
-    @Option.Decorator(MetricsConfigSupport.RestRequestEnabledDecorator.class)
-    Optional<Boolean> restRequestEnabledShadow();
-
-    /**
      * Whether Helidon should expose meters related to virtual threads.
      *
      * @return true to include meters related to virtual threads
@@ -206,20 +169,6 @@ interface MetricsConfigBlueprint {
     Config config();
 
     /**
-     * Whether the {@code gc.time} meter should be registered as a gauge (vs. a counter).
-     * The {@code gc.time} meter is inspired by the MicroProfile Metrics spec, in which the meter was originally checked to
-     * be a counter but starting in 5.1 was checked be a gauge. For the duration of Helidon 4.x users can choose which
-     * type of meter Helidon registers for {@code gc.time}.
-     *
-     * @return the type of meter to use for registering {@code gc.time}
-     * @deprecated Provided for backward compatibility only; no replacement
-     */
-    @Deprecated(since = "4.1", forRemoval = true)
-    @Option.Configured
-    @Option.Default("COUNTER")
-    GcTimeType gcTimeType();
-
-    /**
      * Output format for built-in meter names.
      * <p>
      * {@link BuiltInMeterNameFormat#SNAKE} selects "snake_case" which does not conform to the MicroProfile
@@ -228,7 +177,7 @@ interface MetricsConfigBlueprint {
      * @return the output format for built-in meter names
      */
     @Option.Configured
-    @Option.Default(BuiltInMeterNameFormat.DEFAULT)
+    @Option.Default("CAMEL")
     BuiltInMeterNameFormat builtInMeterNameFormat();
 
     /**

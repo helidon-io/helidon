@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,16 +17,9 @@ package io.helidon.metrics.api;
 
 /**
  * Behavior of a type that wraps a related type, typically through delegation.
+ *
+ * @deprecated use {@link io.helidon.common.Wrapper} instead
  */
-public interface Wrapper {
-
-    /**
-     * Unwraps the delegate as the specified type.
-     *
-     * @param c   {@link Class} to which to cast the delegate
-     * @param <R> type to cast to
-     * @return the delegate cast as the requested type
-     * @throws java.lang.ClassCastException if the delegate is not compatible with the requested type
-     */
-    <R> R unwrap(Class<? extends R> c);
+@Deprecated(forRemoval = true, since = "27.0.0")
+public interface Wrapper extends io.helidon.common.Wrapper {
 }
