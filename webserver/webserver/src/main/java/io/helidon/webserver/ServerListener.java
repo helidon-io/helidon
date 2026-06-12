@@ -38,6 +38,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BooleanSupplier;
@@ -105,8 +106,9 @@ class ServerListener implements ListenerContext {
     private final Context context;
     private final Limit requestLimit;
 
+    private final AtomicBoolean lifecycleStarted = new AtomicBoolean();
+
     private volatile IdleTimeoutHandler idleTimeoutHandler;
-    private volatile boolean lifecycleStarted;
 
     ServerListener(String socketName,
                    ListenerConfig listenerConfig,
@@ -275,7 +277,7 @@ class ServerListener implements ListenerContext {
     }
 
     void stop() {
-        if (!lifecycleStarted) {
+        if (!lifecycleStarted.compareAndSet(true, false)) {
             return;
         }
         Throwable failure = stopResources();
@@ -283,8 +285,6 @@ class ServerListener implements ListenerContext {
             router.afterStop();
         } catch (RuntimeException | Error e) {
             failure = LifecycleFailures.add(failure, e);
-        } finally {
-            lifecycleStarted = false;
         }
         LifecycleFailures.throwIfFailed(failure, "Failed to stop listener " + socketName);
     }
@@ -300,7 +300,7 @@ class ServerListener implements ListenerContext {
             checkCancelledStartup(cancelled);
             router.beforeStart();
             beforeStartSucceeded = true;
-            lifecycleStarted = true;
+            lifecycleStarted.set(true);
             checkCancelledStartup(cancelled);
             startIt(cancelled, startAttemptedBindings);
         } catch (RuntimeException | Error e) {
@@ -813,20 +813,14 @@ class ServerListener implements ListenerContext {
     }
 
     private void rollbackFailedStart(Throwable startupFailure,
-                                     boolean lifecycleStarted,
+                                     boolean beforeStartSucceeded,
                                      List<TransportBinding> startAttemptedBindings) {
         suppressCleanupFailure(startupFailure, () ->
                 LifecycleFailures.throwIfFailed(stopResources(true, startAttemptedBindings),
                                                 "Failed to roll back listener " + socketName));
         suppressCleanupFailure(startupFailure, this::cancelAndAwaitIdleTimeoutHandler);
-        if (lifecycleStarted) {
-            suppressCleanupFailure(startupFailure, () -> {
-                try {
-                    router.afterStop();
-                } finally {
-                    this.lifecycleStarted = false;
-                }
-            });
+        if (beforeStartSucceeded && lifecycleStarted.compareAndSet(true, false)) {
+            suppressCleanupFailure(startupFailure, router::afterStop);
         }
     }
 
