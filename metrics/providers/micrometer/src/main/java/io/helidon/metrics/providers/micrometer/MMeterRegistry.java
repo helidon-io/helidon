@@ -676,7 +676,8 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                            + " during creation of new meter " + mBuilder);
             }
 
-            M meter = registration.apply(delegate());
+            M meter = MicrometerMetricsFactoryProvider.withSystemTags(systemTagsManager.displayTagPairs(),
+                                                                      () -> registration.apply(delegate()));
 
             /*
              Normally, the on-add listener will have removed the pending builder in scope, but do so here again if the listener

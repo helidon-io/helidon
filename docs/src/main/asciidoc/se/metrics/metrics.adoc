@@ -142,9 +142,10 @@ Helidon 27 removes the former static convenience methods from `Metrics`.
 Use these replacements instead:
 
 * Replace `Metrics.globalRegistry()` with injection of `MeterRegistry` or `Services.get(MeterRegistry.class)`.
-* Replace `Metrics.createMeterRegistry()` and `Metrics.createMeterRegistry(metricsConfig)` with
-  `Services.get(MetricsFactory.class).globalRegistry()` for the shared registry, or
-  `Services.get(MetricsFactory.class).createMeterRegistry(metricsConfig)` for a custom registry.
+* Replace `Metrics.createMeterRegistry()` with
+  `Services.get(MetricsFactory.class).createMeterRegistry(MetricsConfig.create())`.
+* Replace `Metrics.createMeterRegistry(metricsConfig)` with
+  `Services.get(MetricsFactory.class).createMeterRegistry(metricsConfig)`.
 * Replace `Metrics.getOrCreate(builder)` with `meterRegistry.getOrCreate(builder)`.
 * Replace the `Metrics.getCounter`, `Metrics.getSummary`, `Metrics.getGauge`, `Metrics.getTimer`, and `Metrics.get`
   lookup helpers with the corresponding `MeterRegistry` lookup methods.
