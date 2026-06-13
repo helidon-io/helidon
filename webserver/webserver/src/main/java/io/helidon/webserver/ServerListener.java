@@ -769,11 +769,7 @@ class ServerListener implements ListenerContext {
         for (TransportBinding binding : transportBindings) {
             checkCancelledStartup(cancelled);
             startAttemptedBindings.add(binding);
-            if (binding instanceof TcpTransportBinding tcpBinding) {
-                tcpBinding.start(cancelled);
-            } else {
-                binding.start();
-            }
+            binding.start();
         }
     }
 
