@@ -10,7 +10,7 @@ portability between different implementations.
 
 ## Maven Coordinates
 
-To enable {feature-name}, either add a dependency on the [helidon-microprofile
+To enable MicroProfile Reactive Stream, either add a dependency on the [helidon-microprofile
 bundle](../introduction.md) or add the following dependency to your project’s
 `pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
 

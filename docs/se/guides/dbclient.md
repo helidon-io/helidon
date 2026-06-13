@@ -115,15 +115,15 @@ few steps to quickly download and set it up:
     <https://www.h2database.com/html/main.html>
     - Note: Windows operating system users can download the Windows Installer.
 2.  Unzip the downloaded file into your directory.
-    - Only the h2-{latest-version}.jar, located in the h2/bin folder, will be
+    - Only the h2-<version>.jar, located in the h2/bin folder, will be
       needed.
 3.  Open a terminal window and run the following command to start H2:.
 
-Replace {latest-version} with your current H2 version:
+Replace <version> with your current H2 version:
 
 ```shell [Terminal]
-java -cp h2-{latest-version}.jar org.h2.tools.Shell -url dbc:h2:~/test -user sa -password "" -sql "" 
-java -jar h2-{latest-version}.jar -webAllowOthers -tcpAllowOthers -web -tcp 
+java -cp h2-<version>.jar org.h2.tools.Shell -url dbc:h2:~/test -user sa -password "" -sql ""
+java -jar h2-<version>.jar -webAllowOthers -tcpAllowOthers -web -tcp
 ```
 
 - Pre-create the database (optional if the file `~/test` already exists)

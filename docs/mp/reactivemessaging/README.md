@@ -4,7 +4,7 @@ Index of Reactivemessaging documentation.
 
 | Topic                                    | Description                                               |
 |------------------------------------------|-----------------------------------------------------------|
-| [Reactive Messaging MP](introduction.md) | {spec-name} support in Helidon MP                         |
+| [Reactive Messaging MP](introduction.md) | Reactive Messaging support in Helidon MP                  |
 | [Kafka Connector](kafka.md)              | Reactive Messaging support for Kafka in Helidon MP        |
 | [JMS Connector](jms.md)                  | Reactive Messaging support for JMS in Helidon MP          |
 | [Oracle AQ Connector](aq.md)             | Reactive Messaging support for Oracle AQ in Helidon MP    |

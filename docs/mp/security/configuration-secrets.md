@@ -61,7 +61,7 @@ The config encryption filter provides a Main class
 Encrypt secret secretToEncrypt using shared secret masterPassword:
 
 ```shell [Terminal]
-java -jar <path-to-app-libs-dir>/helidon-config-encryption-{helidon-version}.jar aes masterPassword secretToEncrypt
+java -jar <path-to-app-libs-dir>/helidon-config-encryption-4.4.0-SNAPSHOT.jar aes masterPassword secretToEncrypt
 ```
 
 The tool returns the string to be entered into configuration as the value of a
@@ -95,7 +95,7 @@ The config encryption filter provides a Main class
 Encrypt secret secretToEncrypt using public certificate in a keystore:
 
 ```shell [Terminal]
-java -jar <path-to-app-libs-dir>/helidon-config-encryption-{helidon-version}.jar rsa /path/to/keystore.p12 keystorePassword publicCertAlias secretToEncrypt
+java -jar <path-to-app-libs-dir>/helidon-config-encryption-4.4.0-SNAPSHOT.jar rsa /path/to/keystore.p12 keystorePassword publicCertAlias secretToEncrypt
 ```
 
 The tool returns the string to be entered into configuration as the value of a
@@ -123,9 +123,7 @@ RSA Configuration Options: Keystore
 
 RSA Configuration Options: PEM (PKCS#8) private key
 
-Example yaml configuration:
-
-```yaml
+```yaml [application.yaml]
 security.config:
   # Set to true for production - if set to true, clear text passwords will cause failure
   require-encryption: false
