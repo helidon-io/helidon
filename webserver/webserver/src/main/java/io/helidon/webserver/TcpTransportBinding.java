@@ -136,11 +136,6 @@ final class TcpTransportBinding implements PortTransportBinding, TlsTransportBin
     }
 
     @Override
-    public boolean hasTls() {
-        return tls.enabled();
-    }
-
-    @Override
     public Security security() {
         return tls.enabled() ? Security.TLS : Security.UNPROTECTED;
     }

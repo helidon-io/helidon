@@ -292,7 +292,7 @@ class ServerListener implements ListenerContext {
 
     boolean hasTls() {
         for (TransportBinding binding : transportBindings) {
-            if (binding instanceof TlsTransportBinding tlsBinding && tlsBinding.hasTls()) {
+            if (binding.security() == TransportBinding.Security.TLS) {
                 return true;
             }
         }
@@ -327,7 +327,8 @@ class ServerListener implements ListenerContext {
         boolean handled = false;
         Throwable failure = null;
         for (TransportBinding binding : transportBindings) {
-            if (binding instanceof TlsTransportBinding tlsBinding && tlsBinding.hasTls()) {
+            if (binding.security() == TransportBinding.Security.TLS
+                    && binding instanceof TlsTransportBinding tlsBinding) {
                 handled = true;
                 try {
                     tlsBinding.reloadTls(material);
@@ -349,7 +350,8 @@ class ServerListener implements ListenerContext {
         boolean handled = false;
         Throwable failure = null;
         for (TransportBinding binding : transportBindings) {
-            if (binding instanceof TlsTransportBinding tlsBinding && tlsBinding.hasTls()) {
+            if (binding.security() == TransportBinding.Security.TLS
+                    && binding instanceof TlsTransportBinding tlsBinding) {
                 handled = true;
                 try {
                     tlsBinding.reloadVirtualHostTls(material, host);
@@ -607,7 +609,6 @@ class ServerListener implements ListenerContext {
         for (TransportBinding binding : bindings) {
             TransportBinding.Security security = Objects.requireNonNull(binding.security(),
                                                                         "Transport binding returned null security");
-            boolean appliesListenerTls = binding instanceof TlsTransportBinding tlsBinding && tlsBinding.hasTls();
             if (tls.enabled() && security == TransportBinding.Security.UNPROTECTED) {
                 throw new IllegalArgumentException("Listener " + socketName
                                                            + " has TLS enabled, but transport binding " + binding.name()
@@ -621,20 +622,15 @@ class ServerListener implements ListenerContext {
                                                            + " of type \"" + binding.type()
                                                            + "\" requires listener TLS");
             }
-            if (security == TransportBinding.Security.TLS && !appliesListenerTls) {
+            if (security == TransportBinding.Security.TLS && !(binding instanceof TlsTransportBinding)) {
                 throw new IllegalArgumentException("Transport binding " + binding.name()
                                                            + " of type \"" + binding.type()
-                                                           + "\" declares listener TLS protection but does not apply "
-                                                           + "listener TLS");
-            }
-            if (security != TransportBinding.Security.TLS && appliesListenerTls) {
-                throw new IllegalArgumentException("Transport binding " + binding.name()
-                                                           + " of type \"" + binding.type()
-                                                           + "\" applies listener TLS but declares " + security
-                                                           + " security");
+                                                           + "\" declares listener TLS protection but does not support "
+                                                           + "listener TLS operations");
             }
             if (virtualHosts.enabled()
-                    && (!(binding instanceof TlsTransportBinding tlsBinding)
+                    && (security != TransportBinding.Security.TLS
+                    || !(binding instanceof TlsTransportBinding tlsBinding)
                     || !tlsBinding.supportsListenerVirtualHosts())) {
                 throw new IllegalArgumentException("Listener " + socketName
                                                            + " has TLS virtual hosts configured, but transport binding "

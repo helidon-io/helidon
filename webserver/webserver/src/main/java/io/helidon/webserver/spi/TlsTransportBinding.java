@@ -21,24 +21,14 @@ import java.util.Objects;
 import io.helidon.common.tls.TlsMaterial;
 
 /**
- * Optional transport binding capability for bindings that apply listener TLS state.
+ * Optional transport binding capability for bindings that can apply listener TLS state.
  * <p>
- * This interface is for bindings that use listener TLS configuration and participate in TLS reload. A binding that
- * provides provider-defined security without listener TLS should report {@link Security#TLS_EQUIVALENT} from
- * {@link #security()} instead of implementing listener TLS behavior through this interface.
- * Bindings implementing this interface should report {@link Security#TLS} when {@link #hasTls()} returns {@code true}.
+ * A binding is actively using listener TLS when it returns {@link Security#TLS} from {@link #security()}. WebServer
+ * dispatches listener TLS reload operations only to active listener TLS bindings that implement this interface.
+ * A binding that provides provider-defined security without listener TLS should report {@link Security#TLS_EQUIVALENT}
+ * from {@link #security()}.
  */
 public interface TlsTransportBinding extends TransportBinding {
-    /**
-     * Whether this binding is secured with listener TLS.
-     * <p>
-     * This returns whether the binding is actively applying the listener TLS configuration, not whether the binding is
-     * capable of TLS. Implementations must return {@code false} when listener TLS is disabled.
-     *
-     * @return whether listener TLS is enabled
-     */
-    boolean hasTls();
-
     /**
      * Reload listener default TLS material for this binding.
      *
