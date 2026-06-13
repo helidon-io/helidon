@@ -642,6 +642,16 @@
                 <artifactId>helidon-openapi</artifactId>
                 <version>${helidon.version}</version>
             </dependency>
+            <dependency>
+                <groupId>io.helidon.openapi</groupId>
+                <artifactId>helidon-openapi-31</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.helidon.openapi</groupId>
+                <artifactId>helidon-openapi-32</artifactId>
+                <version>${helidon.version}</version>
+            </dependency>
             <!-- CORS support -->
             <!-- Testing -->
             <dependency>

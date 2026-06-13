@@ -42,7 +42,7 @@ public class RestServerExtensionProvider implements RegistryCodegenExtensionProv
 
     @Override
     public Set<TypeName> supportedAnnotations() {
-        return Set.of(WebServerCodegenTypes.REST_SERVER_ENDPOINT);
+        return Set.of(ServerEndpointAnalyzer.endpointAnnotation());
     }
 
     @Override

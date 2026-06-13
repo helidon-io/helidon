@@ -16,9 +16,12 @@
 
 package io.helidon.openapi;
 
+import java.util.Objects;
+
 import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.config.Config;
+import io.helidon.service.registry.GlobalServiceRegistry;
 import io.helidon.webserver.spi.ServerFeatureProvider;
 
 /**
@@ -40,9 +43,10 @@ public class OpenApiFeatureProvider implements ServerFeatureProvider<OpenApiFeat
 
     @Override
     public OpenApiFeature create(Config config, String name) {
-        return OpenApiFeature.builder()
-                .config(config)
-                .name(name)
-                .build();
+        Config resolvedConfig = Objects.requireNonNull(config);
+        OpenApiFeatureConfig.Builder builder = OpenApiFeature.configureFeatureBuilder(OpenApiFeature.builder(), resolvedConfig);
+        builder.name(Objects.requireNonNull(name));
+        OpenApiFeatureConfig featureConfig = builder.buildPrototype();
+        return new OpenApiFeature(GlobalServiceRegistry.registry(), resolvedConfig.root(), featureConfig);
     }
 }

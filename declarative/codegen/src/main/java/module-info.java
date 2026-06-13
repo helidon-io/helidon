@@ -50,6 +50,7 @@ module io.helidon.declarative.codegen {
     provides io.helidon.service.codegen.spi.RegistryCodegenExtensionProvider
             with io.helidon.declarative.codegen.faulttolerance.FtExtensionProvider,
                     io.helidon.declarative.codegen.scheduling.SchedulingExtensionProvider,
+                    io.helidon.declarative.codegen.openapi.OpenApiExtensionProvider,
                     io.helidon.declarative.codegen.http.restclient.RestClientExtensionProvider,
                     io.helidon.declarative.codegen.http.webserver.RestServerExtensionProvider,
                     io.helidon.declarative.codegen.validation.ValidationExtensionProvider,

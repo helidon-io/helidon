@@ -16,6 +16,7 @@
 
 package io.helidon.openapi;
 
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -51,13 +52,19 @@ class OpenApiHttpFeature implements HttpFeature {
     private final OpenApiFeatureConfig config;
     private final OpenApiManager<?> manager;
     private final LazyValue<Object> model;
+    private final Optional<String> exactStaticContent;
+    private final OpenApiFormat exactStaticFormat;
 
     OpenApiHttpFeature(OpenApiFeatureConfig config,
                        OpenApiManager<?> manager,
-                       LazyValue<Object> model) {
+                       LazyValue<Object> model,
+                       Optional<String> exactStaticContent,
+                       OpenApiFormat exactStaticFormat) {
         this.config = config;
         this.manager = manager;
         this.model = model;
+        this.exactStaticContent = exactStaticContent;
+        this.exactStaticFormat = exactStaticFormat;
     }
 
     @Override
@@ -119,9 +126,16 @@ class OpenApiHttpFeature implements HttpFeature {
 
     private String content(MediaType mediaType) {
         OpenApiFormat format = OpenApiFormat.valueOf(mediaType);
+        if (format == exactStaticFormat) {
+            return exactStaticContent.orElseGet(() -> formattedContent(format));
+        }
+        return formattedContent(format);
+    }
+
+    private String formattedContent(OpenApiFormat format) {
         if (format == OpenApiFormat.UNSUPPORTED) {
             if (LOGGER.isLoggable(System.Logger.Level.TRACE)) {
-                LOGGER.log(System.Logger.Level.TRACE, "Requested format {0} not supported", mediaType);
+                LOGGER.log(System.Logger.Level.TRACE, "Requested format {0} not supported", format);
             }
         }
         return cachedDocuments.computeIfAbsent(format, fmt -> format(manager, fmt, model.get()));

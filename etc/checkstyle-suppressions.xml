@@ -68,6 +68,10 @@ record here.
     <suppress files="common/types/src/main/java/io/helidon/common/types/TypeInfo\.java"
             checks="FileLength"/>
 
+    <!-- Typed canonical OpenAPI document model. -->
+    <suppress files="openapi/openapi/src/main/java/io/helidon/openapi/OpenApiDocument\.java"
+            checks="FileLength"/>
+
     <!--
     - Module exclusions
     -->
