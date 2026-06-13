@@ -1398,7 +1398,7 @@ class ServerListenerLifecycleTest {
         RuntimeException failure = assertThrows(RuntimeException.class, () -> WebServer.builder()
                 .shutdownHook(false)
                 .bindingsDiscoverServices(false)
-                .addBinding(TestTransportBindingConfig.reportTlsWithoutListenerTls("test"))
+                .addBinding(TestTransportBindingConfig.listenerTls("test"))
                 .build()
                 .start());
 

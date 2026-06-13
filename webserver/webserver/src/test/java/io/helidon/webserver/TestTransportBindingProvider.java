@@ -28,7 +28,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.common.tls.Tls;
 import io.helidon.common.tls.TlsMaterial;
 import io.helidon.config.Config;
 import io.helidon.webserver.spi.PortTransportBinding;
@@ -238,14 +237,6 @@ public class TestTransportBindingProvider implements TransportBindingProvider<Te
                 return ShutdownResult.FORCED;
             }
             return ShutdownResult.GRACEFUL;
-        }
-
-        @Override
-        public boolean hasTls() {
-            if (config.reportTlsWithoutListenerTls()) {
-                return true;
-            }
-            return config.tlsEnabled() && context.config().tls().map(Tls::enabled).orElse(false);
         }
 
         @Override
