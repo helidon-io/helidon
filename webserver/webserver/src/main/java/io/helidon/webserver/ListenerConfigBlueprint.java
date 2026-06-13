@@ -52,6 +52,7 @@ import io.helidon.webserver.spi.TransportBindingProvider;
 @Prototype.Configured
 @Prototype.Blueprint(decorator = WebServerConfigSupport.ListenerConfigDecorator.class)
 @Prototype.CustomMethods(WebServerConfigSupport.ListenerCustomMethods.class)
+@Prototype.IncludeDefaultMethods("bindings")
 interface ListenerConfigBlueprint {
     /**
      * Configuration of protocols. This may be either protocol selectors, or protocol upgraders from HTTP/1.1.
@@ -86,7 +87,9 @@ interface ListenerConfigBlueprint {
     @Option.Configured
     @Option.Singular
     @Option.Provider(value = TransportBindingProvider.class, discoverServices = true)
-    List<TransportBindingConfig> bindings();
+    default List<TransportBindingConfig> bindings() {
+        return List.of();
+    }
 
     /**
      * Http routing. This will always be added to the resulting {@link io.helidon.webserver.Router}, if defined,
