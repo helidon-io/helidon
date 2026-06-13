@@ -605,21 +605,33 @@ class ServerListener implements ListenerContext {
 
     private void validateBindingCapabilities(List<TransportBinding> bindings) {
         for (TransportBinding binding : bindings) {
-            if (tls.enabled()
-                    && (!(binding instanceof TlsTransportBinding tlsBinding) || !tlsBinding.hasTls())) {
+            TransportBinding.Security security = Objects.requireNonNull(binding.security(),
+                                                                        "Transport binding returned null security");
+            boolean appliesListenerTls = binding instanceof TlsTransportBinding tlsBinding && tlsBinding.hasTls();
+            if (tls.enabled() && security == TransportBinding.Security.UNPROTECTED) {
                 throw new IllegalArgumentException("Listener " + socketName
                                                            + " has TLS enabled, but transport binding " + binding.name()
                                                            + " of type \"" + binding.type()
-                                                           + "\" does not apply listener TLS");
+                                                           + "\" is unprotected");
             }
-            if (!tls.enabled()
-                    && binding instanceof TlsTransportBinding tlsBinding
-                    && tlsBinding.hasTls()) {
+            if (!tls.enabled() && security == TransportBinding.Security.TLS) {
                 throw new IllegalArgumentException("Listener " + socketName
                                                            + " does not have TLS enabled, but transport binding "
                                                            + binding.name()
                                                            + " of type \"" + binding.type()
-                                                           + "\" applies listener TLS");
+                                                           + "\" requires listener TLS");
+            }
+            if (security == TransportBinding.Security.TLS && !appliesListenerTls) {
+                throw new IllegalArgumentException("Transport binding " + binding.name()
+                                                           + " of type \"" + binding.type()
+                                                           + "\" declares listener TLS protection but does not apply "
+                                                           + "listener TLS");
+            }
+            if (security != TransportBinding.Security.TLS && appliesListenerTls) {
+                throw new IllegalArgumentException("Transport binding " + binding.name()
+                                                           + " of type \"" + binding.type()
+                                                           + "\" applies listener TLS but declares " + security
+                                                           + " security");
             }
             if (virtualHosts.enabled()
                     && (!(binding instanceof TlsTransportBinding tlsBinding)

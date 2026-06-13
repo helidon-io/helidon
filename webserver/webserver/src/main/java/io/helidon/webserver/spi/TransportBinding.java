@@ -55,6 +55,18 @@ public interface TransportBinding {
     String configuredEndpoint();
 
     /**
+     * Transport security applied by this binding.
+     * <p>
+     * Bindings that return {@link Security#TLS} must apply listener TLS configuration and must also implement
+     * {@link TlsTransportBinding}. Bindings that are protected without listener TLS should return
+     * {@link Security#TLS_EQUIVALENT}. Bindings that do not provide transport security should return
+     * {@link Security#UNPROTECTED}.
+     *
+     * @return transport security
+     */
+    Security security();
+
+    /**
      * Start the binding.
      * <p>
      * If startup fails after opening transport resources, the binding must still allow {@link #stop(Duration)} to clean up
@@ -98,5 +110,26 @@ public interface TransportBinding {
          * Binding had to force-stop active work after the graceful shutdown period elapsed.
          */
         FORCED
+    }
+
+    /**
+     * Transport binding security.
+     */
+    enum Security {
+        /**
+         * Binding protects the endpoint with listener TLS configuration.
+         */
+        TLS,
+
+        /**
+         * Binding protects the endpoint by provider-defined means that are equivalent to TLS from the listener security
+         * policy perspective, but does not use listener TLS configuration.
+         */
+        TLS_EQUIVALENT,
+
+        /**
+         * Binding does not protect the endpoint.
+         */
+        UNPROTECTED
     }
 }
