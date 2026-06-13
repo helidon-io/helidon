@@ -1332,7 +1332,7 @@ class ServerListenerLifecycleTest {
     }
 
     @Test
-    void listenerTlsRequiresTlsCapableTransportBindings() {
+    void listenerTlsRejectsUnprotectedTransportBindings() {
         RuntimeException failure = assertThrows(RuntimeException.class, () -> WebServer.builder()
                 .shutdownHook(false)
                 .tls(Tls.builder()
@@ -1344,11 +1344,55 @@ class ServerListenerLifecycleTest {
                 .start());
 
         assertThat(containsMessage(failure, "has TLS enabled"), is(true));
-        assertThat(containsMessage(failure, "does not apply listener TLS"), is(true));
+        assertThat(containsMessage(failure, "is unprotected"), is(true));
     }
 
     @Test
-    void listenerWithoutTlsRejectsTransportBindingThatReportsTls() {
+    void listenerTlsRejectsTransportBindingWithNullSecurity() {
+        TestTransportBindingProvider.reset();
+        RuntimeException failure = assertThrows(RuntimeException.class, () -> WebServer.builder()
+                .shutdownHook(false)
+                .tls(Tls.builder()
+                             .trustAll(true)
+                             .build())
+                .bindingsDiscoverServices(false)
+                .addBinding(TcpTransportConfig.builder()
+                                    .enabled(false)
+                                    .buildPrototype())
+                .addBinding(TestTransportBindingConfig.nullSecurity("test"))
+                .build()
+                .start());
+
+        assertThat(containsMessage(failure, "Transport binding returned null security"), is(true));
+        assertThat(TestTransportBindingProvider.starts("test"), is(0));
+    }
+
+    @Test
+    void listenerTlsAllowsTlsEquivalentTransportBindings() {
+        TestTransportBindingProvider.reset();
+        WebServer server = WebServer.builder()
+                .shutdownHook(false)
+                .tls(Tls.builder()
+                             .trustAll(true)
+                             .build())
+                .bindingsDiscoverServices(false)
+                .addBinding(TcpTransportConfig.builder()
+                                    .enabled(false)
+                                    .buildPrototype())
+                .addBinding(TestTransportBindingConfig.tlsEquivalent("test"))
+                .build()
+                .start();
+
+        try {
+            assertThat(TestTransportBindingProvider.starts("test"), is(1));
+            assertThat(server.hasTls(), is(false));
+        } finally {
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
+    void listenerWithoutTlsRejectsTlsProtectedTransportBinding() {
         RuntimeException failure = assertThrows(RuntimeException.class, () -> WebServer.builder()
                 .shutdownHook(false)
                 .bindingsDiscoverServices(false)
@@ -1357,7 +1401,7 @@ class ServerListenerLifecycleTest {
                 .start());
 
         assertThat(containsMessage(failure, "does not have TLS enabled"), is(true));
-        assertThat(containsMessage(failure, "applies listener TLS"), is(true));
+        assertThat(containsMessage(failure, "requires listener TLS"), is(true));
     }
 
     @Test

@@ -22,6 +22,11 @@ import io.helidon.common.tls.TlsMaterial;
 
 /**
  * Optional transport binding capability for bindings that apply listener TLS state.
+ * <p>
+ * This interface is for bindings that use listener TLS configuration and participate in TLS reload. A binding that
+ * provides provider-defined security without listener TLS should report {@link Security#TLS_EQUIVALENT} from
+ * {@link #security()} instead of implementing listener TLS behavior through this interface.
+ * Bindings implementing this interface should report {@link Security#TLS} when {@link #hasTls()} returns {@code true}.
  */
 public interface TlsTransportBinding extends TransportBinding {
     /**

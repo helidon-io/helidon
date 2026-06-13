@@ -141,6 +141,11 @@ final class TcpTransportBinding implements PortTransportBinding, TlsTransportBin
     }
 
     @Override
+    public Security security() {
+        return tls.enabled() ? Security.TLS : Security.UNPROTECTED;
+    }
+
+    @Override
     public void reloadTls(TlsMaterial material) {
         Objects.requireNonNull(material, "material");
         if (!tls.enabled()) {

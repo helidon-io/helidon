@@ -17,6 +17,7 @@
 package io.helidon.webserver;
 
 import io.helidon.webserver.spi.TransportBindingConfig;
+import io.helidon.webserver.spi.TransportBinding.Security;
 
 record TestTransportBindingConfig(String name,
                                   boolean enabled,
@@ -30,7 +31,8 @@ record TestTransportBindingConfig(String name,
                                   boolean ignoreStopInterrupt,
                                   boolean forceStop,
                                   boolean blockSharedExecutor,
-                                  boolean fatalAfterStart) implements TransportBindingConfig {
+                                  boolean fatalAfterStart,
+                                  Security security) implements TransportBindingConfig {
     static final String TYPE = "test-transport";
 
     TestTransportBindingConfig(String name, boolean enabled) {
@@ -42,7 +44,8 @@ record TestTransportBindingConfig(String name,
     }
 
     TestTransportBindingConfig(String name, boolean enabled, boolean failStart, boolean tlsEnabled) {
-        this(name, enabled, failStart, tlsEnabled, false, false, false, false, false, false, false, false, false);
+        this(name, enabled, failStart, tlsEnabled, false, false, false, false, false, false, false, false, false,
+             security(tlsEnabled, false));
     }
 
     TestTransportBindingConfig(String name,
@@ -53,7 +56,7 @@ record TestTransportBindingConfig(String name,
                                boolean hangStop,
                                boolean supportsVirtualHosts) {
         this(name, enabled, failStart, tlsEnabled, failReload, hangStop, supportsVirtualHosts,
-             false, false, false, false, false, false);
+             false, false, false, false, false, false, security(tlsEnabled, false));
     }
 
     TestTransportBindingConfig(String name,
@@ -65,31 +68,45 @@ record TestTransportBindingConfig(String name,
                                boolean supportsVirtualHosts,
                                boolean portCapable) {
         this(name, enabled, failStart, tlsEnabled, failReload, hangStop, supportsVirtualHosts,
-             portCapable, false, false, false, false, false);
+             portCapable, false, false, false, false, false, security(tlsEnabled, false));
     }
 
     static TestTransportBindingConfig reportTlsWithoutListenerTls(String name) {
         return new TestTransportBindingConfig(name, true, false, false, false, false, false,
-                                              false, true, false, false, false, false);
+                                              false, true, false, false, false, false, Security.TLS);
+    }
+
+    static TestTransportBindingConfig tlsEquivalent(String name) {
+        return new TestTransportBindingConfig(name, true, false, false, false, false, false,
+                                              false, false, false, false, false, false, Security.TLS_EQUIVALENT);
+    }
+
+    static TestTransportBindingConfig nullSecurity(String name) {
+        return new TestTransportBindingConfig(name, true, false, false, false, false, false,
+                                              false, false, false, false, false, false, null);
     }
 
     static TestTransportBindingConfig ignoreStopInterrupt(String name) {
         return new TestTransportBindingConfig(name, true, false, false, false, true, false,
-                                              false, false, true, false, false, false);
+                                              false, false, true, false, false, false, Security.UNPROTECTED);
     }
 
     static TestTransportBindingConfig forceStopWithBlockedExecutor(String name) {
         return new TestTransportBindingConfig(name, true, false, false, false, false, false,
-                                              false, false, false, true, true, false);
+                                              false, false, false, true, true, false, Security.UNPROTECTED);
     }
 
     static TestTransportBindingConfig fatalAfterStart(String name) {
         return new TestTransportBindingConfig(name, true, false, false, false, false, false,
-                                              false, false, false, false, false, true);
+                                              false, false, false, false, false, true, Security.UNPROTECTED);
     }
 
     @Override
     public String type() {
         return TYPE;
+    }
+
+    private static Security security(boolean tlsEnabled, boolean reportTlsWithoutListenerTls) {
+        return tlsEnabled || reportTlsWithoutListenerTls ? Security.TLS : Security.UNPROTECTED;
     }
 }

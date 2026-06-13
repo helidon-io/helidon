@@ -249,6 +249,11 @@ public class TestTransportBindingProvider implements TransportBindingProvider<Te
         }
 
         @Override
+        public Security security() {
+            return config.security();
+        }
+
+        @Override
         public void reloadTls(TlsMaterial material) {
             counter(RELOADS, config.name()).incrementAndGet();
             if (config.failReload()) {
