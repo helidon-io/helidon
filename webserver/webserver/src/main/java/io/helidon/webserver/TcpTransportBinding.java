@@ -39,7 +39,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BooleanSupplier;
 
 import javax.net.ssl.SSLParameters;
 
@@ -165,11 +164,6 @@ final class TcpTransportBinding implements PortTransportBinding, TlsTransportBin
 
     @Override
     public void start() {
-        start(() -> false);
-    }
-
-    void start(BooleanSupplier cancelled) {
-        checkCancelledStartup(cancelled);
         SocketAddress bindAddress = bindAddress();
         try {
             if (bindAddress instanceof UnixDomainSocketAddress) {
@@ -185,7 +179,6 @@ final class TcpTransportBinding implements PortTransportBinding, TlsTransportBin
             listenerConfig.configureSocket(serverSocket);
 
             serverSocket.bind(bindAddress, listenerConfig.backlog());
-            checkCancelledStartup(cancelled);
             this.connectedPort = serverSocket.getLocalAddress() instanceof InetSocketAddress ias ? ias.getPort() : -1;
 
             String serverChannelId = "0x" + HexFormat.of().toHexDigits(System.identityHashCode(serverSocket));
@@ -441,12 +434,6 @@ final class TcpTransportBinding implements PortTransportBinding, TlsTransportBin
             } catch (IOException e) {
                 LOGGER.log(WARNING, "Failed to delete UNIX socket file " + udsa.getPath().toAbsolutePath(), e);
             }
-        }
-    }
-
-    private void checkCancelledStartup(BooleanSupplier cancelled) {
-        if (cancelled.getAsBoolean()) {
-            throw new IllegalStateException("Listener startup cancelled " + socketName);
         }
     }
 
