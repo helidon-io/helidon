@@ -157,6 +157,7 @@ final class ProvidedUtil {
         for (Config serviceConfig : serviceConfigList) {
             configuredServices.add(configuredService(serviceConfig, isList));
         }
+        validateNoDuplicateConfiguredServices(String.valueOf(providersConfig.key()), configuredServices);
 
         // now we have all service configurations, we can start building up instances
         if (providersConfig.isList()) {
@@ -206,6 +207,7 @@ final class ProvidedUtil {
         for (Config serviceConfig : serviceConfigList) {
             configuredServices.add(configuredService(serviceConfig, isList));
         }
+        validateNoDuplicateConfiguredServices(String.valueOf(providersConfig.key()), configuredServices);
         RegistryWrap wrap = serviceRegistry.isPresent()
                 ? new RealRegistry(serviceRegistry.get())
                 : StaticAccessRegistry.INSTANCE;
@@ -414,6 +416,19 @@ final class ProvidedUtil {
         boolean enabled = serviceConfig.get(KEY_SERVICE_ENABLED).asBoolean().orElse(true);
 
         return new ConfiguredService(new TypeAndName(type, name), serviceConfig, enabled);
+    }
+
+    private static void validateNoDuplicateConfiguredServices(String configKey,
+                                                              List<ConfiguredService> configuredServices) {
+        Set<TypeAndName> configured = new HashSet<>();
+        for (ConfiguredService configuredService : configuredServices) {
+            TypeAndName typeAndName = configuredService.typeAndName();
+            if (!configured.add(typeAndName)) {
+                throw new ConfigException("Duplicate provider configuration for type \"" + typeAndName.type()
+                                                  + "\" and name \"" + typeAndName.name()
+                                                  + "\" in " + configKey);
+            }
+        }
     }
 
     private static <S extends NamedService,

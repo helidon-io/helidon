@@ -188,7 +188,16 @@ class WebServerConfigSupport {
             }
 
             List<ConfiguredBinding> configuredBindings = configuredBindings(bindingsConfig);
-            validateNoDuplicateEnabledBindings(bindingsConfig, configuredBindings);
+            Set<String> bindingTypes = new HashSet<>();
+            for (ConfiguredBinding configuredBinding : configuredBindings) {
+                String type = configuredBinding.type();
+                if (!bindingTypes.add(type)) {
+                    throw new ConfigException("Multiple transport bindings of type \"" + type
+                                                      + "\" are configured in " + bindingsConfig.key()
+                                                      + ". Only one binding can be configured for each type.");
+                }
+            }
+
             preserveDisabledTcpBindings(target, configuredBindings);
         }
 
@@ -232,20 +241,6 @@ class WebServerConfigSupport {
             return new ConfiguredBinding(type, name, enabled);
         }
 
-        private static void validateNoDuplicateEnabledBindings(Config bindingsConfig,
-                                                               List<ConfiguredBinding> configuredBindings) {
-            Set<ConfiguredBindingId> bindingIds = new HashSet<>();
-            for (ConfiguredBinding configuredBinding : configuredBindings) {
-                if (configuredBinding.enabled()
-                        && !bindingIds.add(new ConfiguredBindingId(configuredBinding.type(),
-                                                                    configuredBinding.name()))) {
-                    throw new ConfigException("Duplicate transport binding config \"" + configuredBinding.name()
-                                                      + "\" of type \"" + configuredBinding.type()
-                                                      + "\" in " + bindingsConfig.key());
-                }
-            }
-        }
-
         private static void preserveDisabledTcpBindings(ListenerConfig.BuilderBase<?, ?> target,
                                                         List<ConfiguredBinding> configuredBindings) {
             for (ConfiguredBinding configuredBinding : configuredBindings) {
@@ -273,8 +268,6 @@ class WebServerConfigSupport {
         private record ConfiguredBinding(String type, String name, boolean enabled) {
         }
 
-        private record ConfiguredBindingId(String type, String name) {
-        }
     }
 
     static class ListenerCustomMethods {
