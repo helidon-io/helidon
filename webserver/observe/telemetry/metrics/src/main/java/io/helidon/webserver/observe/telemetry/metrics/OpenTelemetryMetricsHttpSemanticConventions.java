@@ -63,6 +63,7 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
     // Helidon
     static final String SOCKET_NAME = "socket.name";
     static final String TIMER_NAME = "http.server.request.duration";
+    static final String HELIDON_REQUEST_ROUTE = "helidon.request.route";
     /*
     Bucket boundaries as recommended by the OpenTelemetry spec.
     https://opentelemetry.io/docs/specs/semconv/http/http-metrics/#metric-httpserverrequestduration
@@ -156,7 +157,7 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
                     .put(AttributeKey.stringKey(URL_SCHEME), req.prologue().protocol())
                     .put(AttributeKey.stringKey(ERROR_TYPE), errorType(resp, exception))
                     .put(AttributeKey.longKey(STATUS_CODE), statusCode(resp, exception))
-                    .put(AttributeKey.stringKey(HTTP_ROUTE), req.matchingPattern().orElse(""))
+                    .put(AttributeKey.stringKey(HTTP_ROUTE), route(req))
                     .put(AttributeKey.stringKey(SOCKET_NAME), req.listenerContext().config().name());
 
             if (isOptedIn(config, SERVER_ADDRESS)) {
@@ -173,6 +174,16 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
              */
 
             httpRequestDuration.record((endTime - startTime) / 1_000_000.0, attrBuilder.build());
+        }
+
+        private String route(RoutingRequest req) {
+            /*
+            The JaxRsService (if present) might have added the route information from the Jakarta REST request to the context.
+             */
+            return req.context()
+                    .get(HELIDON_REQUEST_ROUTE, String.class)
+                    .filter(it -> !it.isBlank())
+                    .orElseGet(() -> req.matchingPattern().orElse(""));
         }
 
         private String errorType(RoutingResponse resp, Exception exception) {

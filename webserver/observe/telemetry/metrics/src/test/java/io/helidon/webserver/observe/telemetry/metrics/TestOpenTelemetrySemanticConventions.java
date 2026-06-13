@@ -45,6 +45,7 @@ import static io.helidon.webserver.observe.telemetry.metrics.JsonTestUtil.hasArr
 import static io.helidon.webserver.observe.telemetry.metrics.JsonTestUtil.hasAttributes;
 import static io.helidon.webserver.observe.telemetry.metrics.JsonTestUtil.hasDouble;
 import static io.helidon.webserver.observe.telemetry.metrics.JsonTestUtil.hasString;
+import static io.helidon.webserver.observe.telemetry.metrics.OpenTelemetryMetricsHttpSemanticConventions.HELIDON_REQUEST_ROUTE;
 import static io.helidon.webserver.observe.telemetry.metrics.OpenTelemetryMetricsHttpSemanticConventions.HTTP_ROUTE;
 import static io.helidon.webserver.observe.telemetry.metrics.OpenTelemetryMetricsHttpSemanticConventions.SERVER_PORT;
 import static io.helidon.webserver.observe.telemetry.metrics.OpenTelemetryMetricsHttpSemanticConventions.SOCKET_NAME;
@@ -115,7 +116,15 @@ class TestOpenTelemetrySemanticConventions {
                 .config(config.get("server"))
                 .routing(r -> r.get("/greet/{name}",
                                     (req, resp) ->
-                                            resp.send("Hello, " + req.path().segments().get(1).value() + "!")))
+                                            resp.send("Hello, " + req.path().segments().get(1).value() + "!"))
+                        .get("/useContext",
+                             /*
+                             Mimics what the JaxRsServer does in adding the route to the request context.
+                              */
+                             (req, resp) -> {
+                                 req.context().register(HELIDON_REQUEST_ROUTE, "/useContextRoute");
+                                 resp.send("Hello, World!");
+                             }))
                 .routing("private", r -> r.any("/greet",
                                                (req, resp) -> {
                                                    switch (req.prologue().method().text()) {
@@ -146,6 +155,9 @@ class TestOpenTelemetrySemanticConventions {
                 Http1ClientResponse greetOptionsResponse = privateClient.options("/greet")
                         .accept(MediaTypes.TEXT_PLAIN)
                         .request();
+                Http1ClientResponse useContextResponse = defaultClient.get("/useContext")
+                        .accept(MediaTypes.TEXT_PLAIN)
+                        .request();
                 TestLogHandler testLogHandler = TestLogHandler.create(
                         Logger.getLogger(OtlpJsonLoggingMetricExporter.class.getName()))) {
 
@@ -154,6 +166,7 @@ class TestOpenTelemetrySemanticConventions {
             assertThat("Admin endpoint", adminResponse.status().code(), is(200));
             assertThat("Metrics endpoint via default socket", metricsOnDefaultResponse.status().code(), is(404));
             assertThat("Private endpoint HEAD", greetOptionsResponse.status().code(), is(200));
+            assertThat("Use context endpoint", useContextResponse.status().code(), is(200));
 
             List<String> socketNamesInTimers = new ArrayList<>();
 
@@ -271,7 +284,9 @@ class TestOpenTelemetrySemanticConventions {
 
             assertThat("Routes seen", routesSeen, allOf(hasItem("/greet"),
                                                         hasItem("/greet/{name}"),
-                                                        not(hasItem("/observe/metrics"))));
+                                                        not(hasItem("/observe/metrics")),
+                                                        not(hasItem("/useContext")),
+                                                        hasItem("/useContextRoute")));
 
             Set<String> unexpectedlyUntimedSockets = new HashSet<>(Set.of("@default", "private"));
             socketNamesInTimers.forEach(unexpectedlyUntimedSockets::remove);

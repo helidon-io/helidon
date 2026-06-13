@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2022, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -59,6 +59,17 @@ include::{rootdir}/includes/dependencies.adoc[]
 
 Adding this dependency packages the full-featured metrics implementation with your service.
 
+
+For your project to also emit the OpenTelemetry HTTP server semantic conventions, add the following dependency:
+[source,xml]
+----
+<dependency>
+    <groupId>io.helidon.webserver.observe</groupId>
+    <artifactId>helidon-webserver-observe-telemetry-metrics</artifactId>
+    <scope>runtime</scope>
+</dependency>
+----
+
 == Usage
 
 include::{rootdir}/includes/metrics/metrics-shared.adoc[tag=usage-body]
@@ -69,6 +80,38 @@ A _{metric} registry_ collects registered {metrics} of a given scope. Helidon su
 When you add code to your service to create a metric programmatically, the code first locates the appropriate registry and then registers the metric with that registry.
 
 include::{rootdir}/includes/metrics/metrics-shared.adoc[tag=usage-retrieving]
+
+=== OpenTelemetry Metrics HTTP Server Semantic Conventions
+Your project can export OpenTelemetry metrics that comply with the OpenTelemetry metrics semantic conventions.
+
+First, include the additional dependency on `helidon-webserver-observe-telemetry-metrics` described above.
+
+Next, configure OpenTelemetry to transmit the metrics data from your service to a backend using Helidon configuration. This step is necessary because for the semantic conventions metrics Helidon must use the OpenTelemetry metrics API, not the Microprofile Metrics API; the semantic conventions use the dot "." character in metric and tag names, an illegal character in MP Metrics.
+
+The following example sends the OTLP metrics data once a second to a Jaeger backend server running locally at the configured endpoint.
+
+NOTE: Although these settings might be suitable for a test or demonstration, you should use different settings--certainly a longer interval--for a production deployment. See the xref:../../se/telemetry/open-telemetry.adoc[Helidon Telemetry documentation] for more information.
+
+[source,yaml]
+.Example configuration for a test of demo of OpenTelemetry metrics semantic conventions
+----
+telemetry:                              # <1>
+  service: mp-with-otel-sem-conv        # <2>
+  signals:
+    metrics:                            # <3>
+      exporters:
+        - type: otlp                    # <4>
+          protocol: http/proto
+          endpoint: http://localhost:9090/api/v1/otlp/v1/metrics
+      readers:                          # <5>
+        - type: periodic
+          interval: PT1S
+----
+<1> Introduces telemetry-related settings.
+<2> Provides the required OTLP service name.
+<3> Introduces the OpenTelemetry metrics settings.
+<4> Configures an OTLP metrics exporter to transmit metrics data to a local Jaeger backend.
+<5> Configures a metrics reader which gathers data periodically, once per the configured interval, and uses the configured exporter to transmit that gathered metrics data.
 
 == API
 
