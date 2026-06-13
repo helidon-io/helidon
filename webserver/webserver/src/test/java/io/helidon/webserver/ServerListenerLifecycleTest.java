@@ -17,11 +17,13 @@
 package io.helidon.webserver;
 
 import java.io.UncheckedIOException;
+import java.net.BindException;
 import java.net.ConnectException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketOption;
 import java.net.SocketTimeoutException;
@@ -30,9 +32,11 @@ import java.nio.channels.SocketChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Timer;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -43,7 +47,14 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.context.Context;
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.socket.SocketOptions;
+import io.helidon.common.tls.Tls;
+import io.helidon.config.Config;
+import io.helidon.http.encoding.ContentEncodingContext;
+import io.helidon.http.media.MediaContext;
+import io.helidon.webserver.http.DirectHandlers;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.spi.ServerConnection;
@@ -350,6 +361,32 @@ class ServerListenerLifecycleTest {
         } finally {
             first.release();
             second.release();
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
+    void tcpForcedShutdownDoesNotWaitSecondReaderExecutorGracePeriod() throws Exception {
+        BlockingConnection connection = new BlockingConnection();
+        QueueingConnectionSelector selector = new QueueingConnectionSelector(connection);
+        Duration gracePeriod = Duration.ofSeconds(2);
+        LoomServer server = startServer(selector, gracePeriod);
+
+        try (Socket socket = new Socket(InetAddress.getLoopbackAddress(), server.port())) {
+            socket.getOutputStream().write('x');
+            waitFor(Duration.ofSeconds(5), connection::handlingStarted, "connection handling did not start");
+
+            long started = System.nanoTime();
+            server.stop();
+            long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
+
+            assertThat(connection.gracefulCloses(), is(1));
+            assertThat(connection.forcedCloses(), is(1));
+            assertThat("stop should not wait a second reader-executor grace period",
+                       elapsedMillis < 3_500,
+                       is(true));
+        } finally {
+            connection.release();
             stopUntilStopped(server);
         }
     }
@@ -799,6 +836,565 @@ class ServerListenerLifecycleTest {
     }
 
     @Test
+    void webServerReportsListenerPortAfterBindingExtraction() {
+        WebServer server = WebServer.builder()
+                .shutdownHook(false)
+                .port(0)
+                .putSocket("admin", listener -> listener.port(0))
+                .build()
+                .start();
+
+        try {
+            assertThat(server.port(WebServer.DEFAULT_SOCKET_NAME), is(server.port()));
+            assertThat(server.port("admin") > 0, is(true));
+            assertThat(server.port("missing"), is(-1));
+        } finally {
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
+    void explicitTcpTransportBindingStartsServer() {
+        WebServer server = WebServer.builder()
+                .shutdownHook(false)
+                .address(InetAddress.getLoopbackAddress())
+                .port(0)
+                .bindingsDiscoverServices(false)
+                .addBinding(TcpTransportConfig.builder()
+                                    .name("primary")
+                                    .required(true)
+                                    .buildPrototype())
+                .build()
+                .start();
+
+        try {
+            assertThat(server.port() > 0, is(true));
+        } finally {
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
+    void defaultTcpTransportBindingStartsWhenBindingDiscoveryIsDisabled() {
+        WebServer server = WebServer.builder()
+                .shutdownHook(false)
+                .address(InetAddress.getLoopbackAddress())
+                .port(0)
+                .bindingsDiscoverServices(false)
+                .build()
+                .start();
+
+        try {
+            assertThat(server.port() > 0, is(true));
+        } finally {
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
+    void webServerBuilderCanBuildAfterPrototypeAccessWithDiscoveredDefaultTcpBinding() {
+        WebServerConfig.Builder builder = WebServer.builder()
+                .shutdownHook(false)
+                .address(InetAddress.getLoopbackAddress())
+                .port(0);
+        builder.buildPrototype();
+
+        WebServer server = builder.build()
+                .start();
+
+        try {
+            assertThat(server.port() > 0, is(true));
+        } finally {
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
+    void explicitNamedTcpBindingCanUseRandomPortWithoutDefaultDuplicate() {
+        WebServer server = WebServer.builder()
+                .shutdownHook(false)
+                .address(InetAddress.getLoopbackAddress())
+                .port(0)
+                .addBinding(TcpTransportConfig.builder()
+                                    .name("primary")
+                                    .required(true)
+                                    .buildPrototype())
+                .build()
+                .start();
+
+        try {
+            assertThat(server.port() > 0, is(true));
+        } finally {
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
+    void discoveredDefaultTcpTransportBindingStartsBeforeExplicitTransportBinding() {
+        TestTransportBindingProvider.reset();
+        WebServer server = WebServer.builder()
+                .shutdownHook(false)
+                .address(InetAddress.getLoopbackAddress())
+                .port(0)
+                .addBinding(new TestTransportBindingConfig("test", true))
+                .build()
+                .start();
+
+        try {
+            assertThat(TestTransportBindingProvider.portAtStart("test") > 0, is(true));
+        } finally {
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
+    void transportBindingContextCanQueryBoundPortDuringPlanning() {
+        TestTransportBindingProvider.reset();
+        WebServer.builder()
+                .shutdownHook(false)
+                .addBinding(new TestTransportBindingConfig("test", true))
+                .build();
+
+        assertThat(TestTransportBindingProvider.portAtCreate("test"), is(-1));
+    }
+
+    @Test
+    void bindingPlanContextUsesResolvedListenerAddress() {
+        TestTransportBindingProvider.reset();
+        InetAddress address = InetAddress.getLoopbackAddress();
+        WebServer server = WebServer.builder()
+                .shutdownHook(false)
+                .address(address)
+                .port(0)
+                .addBinding(new TestTransportBindingConfig("test", true))
+                .build()
+                .start();
+
+        try {
+            Optional<SocketAddress> bindAddress = TestTransportBindingProvider.bindAddressAtPlan("test");
+
+            assertThat(bindAddress.isPresent(), is(true));
+            assertThat(bindAddress.get(), instanceOf(InetSocketAddress.class));
+            assertThat(((InetSocketAddress) bindAddress.get()).getAddress(), is(address));
+            assertThat(TestTransportBindingProvider.hostAtPlan("test"), is(address.getHostAddress()));
+            assertThat(TestTransportBindingProvider.portAtPlan("test"), is(0));
+        } finally {
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
+    void explicitTcpTransportBindingOrderControlsPortOwner() {
+        TestTransportBindingProvider.reset();
+        WebServer server = WebServer.builder()
+                .shutdownHook(false)
+                .address(InetAddress.getLoopbackAddress())
+                .port(0)
+                .addBinding(new TestTransportBindingConfig("test", true))
+                .addBinding(TcpTransportConfig.builder()
+                                    .name("primary")
+                                    .required(true)
+                                    .buildPrototype())
+                .build()
+                .start();
+
+        try {
+            assertThat(TestTransportBindingProvider.portAtStart("test"), is(-1));
+            assertThat(server.port() > 0, is(true));
+        } finally {
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
+    void explicitDefaultNamedTcpTransportBindingOrderControlsPortOwner() {
+        TestTransportBindingProvider.reset();
+        WebServer server = WebServer.builder()
+                .shutdownHook(false)
+                .address(InetAddress.getLoopbackAddress())
+                .port(0)
+                .addBinding(new TestTransportBindingConfig("test", true))
+                .addBinding(TcpTransportConfig.create())
+                .build()
+                .start();
+
+        try {
+            assertThat(TestTransportBindingProvider.portAtStart("test"), is(-1));
+            assertThat(server.port() > 0, is(true));
+        } finally {
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
+    void explicitDefaultNamedTcpTransportBindingDoesNotSuppressNamedTcpTransportBinding() {
+        RuntimeException failure = assertThrows(RuntimeException.class, () -> WebServer.builder()
+                .shutdownHook(false)
+                .bindingsDiscoverServices(false)
+                .addBinding(TcpTransportConfig.create())
+                .addBinding(TcpTransportConfig.builder()
+                                    .name("primary")
+                                    .required(true)
+                                    .buildPrototype())
+                .build()
+                .start());
+
+        assertThat(containsMessage(failure, "can only plan one TCP transport binding"), is(true));
+    }
+
+    @Test
+    void tcpTransportReusesEarlierPortBindingRandomPort() throws Exception {
+        InetAddress address = InetAddress.getLoopbackAddress();
+        WebServer server = startTcpPortReuseServerWithRetry(address);
+
+        try {
+            assertThat(server.port(), is(TestTransportBindingProvider.boundPort("test")));
+            try (Socket socket = new Socket()) {
+                socket.connect(new InetSocketAddress(address, server.port()), 500);
+            }
+        } finally {
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
+    void failedTransportBindingStartStopsOnlyStartAttemptedBindings() {
+        TestTransportBindingProvider.reset();
+
+        RuntimeException failure = assertThrows(RuntimeException.class, () -> WebServer.builder()
+                .shutdownHook(false)
+                .bindingsDiscoverServices(false)
+                .addBinding(new TestTransportBindingConfig("failing", true, true))
+                .addBinding(new TestTransportBindingConfig("not-started", true))
+                .build()
+                .start());
+
+        assertThat(containsMessage(failure, "test transport start failed failing"), is(true));
+        assertThat(TestTransportBindingProvider.starts("failing"), is(1));
+        assertThat(TestTransportBindingProvider.stops("failing"), is(1));
+        assertThat(TestTransportBindingProvider.starts("not-started"), is(0));
+        assertThat(TestTransportBindingProvider.stops("not-started"), is(0));
+    }
+
+    @Test
+    void transportBindingStopIsBoundByGracePeriod() {
+        TestTransportBindingProvider.reset();
+        WebServer server = WebServer.builder()
+                .shutdownHook(false)
+                .bindingsDiscoverServices(false)
+                .shutdownGracePeriod(Duration.ofMillis(1))
+                .addBinding(new TestTransportBindingConfig("hanging", true, false, false, false, true, false))
+                .build()
+                .start();
+
+        try {
+            RuntimeException failure = assertThrows(RuntimeException.class, server::stop);
+
+            assertThat(containsMessage(failure, "Timed out waiting for transport binding hanging to stop"), is(true));
+        } finally {
+            TestTransportBindingProvider.completeStop("hanging");
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
+    void timedOutTransportBindingStopDoesNotWaitSecondSharedExecutorGrace() {
+        TestTransportBindingProvider.reset();
+        Duration gracePeriod = Duration.ofSeconds(2);
+        WebServer server = WebServer.builder()
+                .shutdownHook(false)
+                .bindingsDiscoverServices(false)
+                .shutdownGracePeriod(gracePeriod)
+                .addBinding(TestTransportBindingConfig.ignoreStopInterrupt("hanging"))
+                .build()
+                .start();
+
+        long started = System.nanoTime();
+        try {
+            RuntimeException failure = assertThrows(RuntimeException.class, server::stop);
+            long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
+
+            assertThat(containsMessage(failure, "Timed out waiting for transport binding hanging to stop"), is(true));
+            assertThat("stop should not wait a second binding-stop grace period",
+                       elapsedMillis < 3_500,
+                       is(true));
+        } finally {
+            TestTransportBindingProvider.completeStop("hanging");
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
+    void forcedTransportBindingStopDoesNotWaitSharedExecutorGrace() throws Exception {
+        TestTransportBindingProvider.reset();
+        Duration gracePeriod = Duration.ofSeconds(2);
+        WebServer server = WebServer.builder()
+                .shutdownHook(false)
+                .bindingsDiscoverServices(false)
+                .shutdownGracePeriod(gracePeriod)
+                .addBinding(TestTransportBindingConfig.forceStopWithBlockedExecutor("forced"))
+                .build()
+                .start();
+
+        assertThat(TestTransportBindingProvider.awaitExecutorTask("forced"), is(true));
+
+        long started = System.nanoTime();
+        try {
+            server.stop();
+            long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
+
+            assertThat(TestTransportBindingProvider.stops("forced"), is(1));
+            assertThat("forced binding stop should not wait shared executor grace period",
+                       elapsedMillis < 1_500,
+                       is(true));
+        } finally {
+            TestTransportBindingProvider.completeExecutorTask("forced");
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
+    void fatalTransportBindingFailureStopsServer() throws Exception {
+        TestTransportBindingProvider.reset();
+        WebServer server = WebServer.builder()
+                .shutdownHook(false)
+                .bindingsDiscoverServices(false)
+                .addBinding(TestTransportBindingConfig.fatalAfterStart("fatal"))
+                .build()
+                .start();
+
+        try {
+            waitFor(Duration.ofSeconds(5), () -> !server.isRunning(), "server did not stop after fatal binding failure");
+
+            assertThat(TestTransportBindingProvider.stops("fatal"), is(1));
+        } finally {
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
+    void transportBindingStopsShareListenerGracePeriod() {
+        TestTransportBindingProvider.reset();
+        WebServer server = WebServer.builder()
+                .shutdownHook(false)
+                .bindingsDiscoverServices(false)
+                .shutdownGracePeriod(Duration.ofMillis(1))
+                .addBinding(new TestTransportBindingConfig("first", true, false, false, false, true, false, false))
+                .addBinding(new TestTransportBindingConfig("second", true, false, false, false, true, false, false))
+                .build()
+                .start();
+
+        try {
+            RuntimeException failure = assertThrows(RuntimeException.class, server::stop);
+
+            assertThat(containsMessage(failure, "Timed out waiting for transport binding first to stop"), is(true));
+            assertThat(containsMessage(failure, "Timed out waiting for transport binding second to stop"), is(true));
+        } finally {
+            TestTransportBindingProvider.completeStop("first");
+            TestTransportBindingProvider.completeStop("second");
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
+    void concurrentListenerStopsRunCleanupOnlyOnce() throws Exception {
+        TestTransportBindingProvider.reset();
+        BlockingAfterStopRouter router = new BlockingAfterStopRouter();
+        Timer timer = new Timer("test-listener-concurrent-stop", true);
+        ServerListener listener = new ServerListener(WebServer.DEFAULT_SOCKET_NAME,
+                                                     listenerConfigWithoutTcp(),
+                                                     router,
+                                                     Context.builder()
+                                                             .id("listener-concurrent-stop-test")
+                                                             .build(),
+                                                     timer,
+                                                     MediaContext.create(),
+                                                     ContentEncodingContext.create(),
+                                                     DirectHandlers.create());
+        AtomicReference<Throwable> firstStopFailure = new AtomicReference<>();
+        AtomicReference<Throwable> secondStopFailure = new AtomicReference<>();
+        Thread firstStop = null;
+        Thread secondStop = null;
+
+        try {
+            listener.start();
+
+            firstStop = Thread.ofPlatform()
+                    .name("test-listener-stop-first")
+                    .start(() -> stopListener(listener, firstStopFailure));
+            assertThat(router.awaitAfterStop(), is(true));
+
+            secondStop = Thread.ofPlatform()
+                    .name("test-listener-stop-second")
+                    .start(() -> stopListener(listener, secondStopFailure));
+            secondStop.join(TimeUnit.SECONDS.toMillis(5));
+
+            assertThat(secondStop.isAlive(), is(false));
+            assertThat(secondStopFailure.get(), nullValue());
+            assertThat(TestTransportBindingProvider.stops("test"), is(1));
+            assertThat(router.afterStops(), is(1));
+        } finally {
+            router.releaseAfterStop();
+            if (firstStop != null) {
+                firstStop.join(TimeUnit.SECONDS.toMillis(5));
+                if (firstStop.isAlive()) {
+                    firstStop.interrupt();
+                }
+            }
+            if (secondStop != null && secondStop.isAlive()) {
+                secondStop.interrupt();
+            }
+            listener.stop();
+            timer.cancel();
+        }
+
+        assertThat(firstStopFailure.get(), nullValue());
+    }
+
+    @Test
+    void listenerPlanningFailsWhenDefaultTcpTransportBindingIsDisabled() {
+        RuntimeException failure = assertThrows(RuntimeException.class, () -> WebServer.builder()
+                .shutdownHook(false)
+                .bindingsDiscoverServices(false)
+                .addBinding(TcpTransportConfig.builder()
+                                    .enabled(false)
+                                    .buildPrototype())
+                .build()
+                .start());
+
+        assertThat(containsMessage(failure, "has no active transport bindings"), is(true));
+    }
+
+    @Test
+    void listenerPlanningFailsWhenExplicitNamedTcpTransportBindingIsDisabled() {
+        RuntimeException failure = assertThrows(RuntimeException.class, () -> WebServer.builder()
+                .shutdownHook(false)
+                .bindingsDiscoverServices(false)
+                .addBinding(TcpTransportConfig.builder()
+                                    .name("primary")
+                                    .enabled(false)
+                                    .buildPrototype())
+                .build()
+                .start());
+
+        assertThat(containsMessage(failure, "has no active transport bindings"), is(true));
+    }
+
+    @Test
+    void listenerPlanningFailsWhenConfigDisablesTcpTransportBinding() {
+        Config config = Config.just("""
+                server:
+                  bindings:
+                    tcp:
+                      enabled: false
+                """, MediaTypes.APPLICATION_YAML);
+
+        RuntimeException failure = assertThrows(RuntimeException.class, () -> WebServer.builder()
+                .shutdownHook(false)
+                .config(config.get("server"))
+                .build()
+                .start());
+
+        assertThat(containsMessage(failure, "has no active transport bindings"), is(true));
+    }
+
+    @Test
+    void listenerPlanningFailsForDuplicateEnabledTransportBindingConfig() {
+        RuntimeException failure = assertThrows(RuntimeException.class, () -> WebServer.builder()
+                .shutdownHook(false)
+                .bindingsDiscoverServices(false)
+                .addBinding(new TestTransportBindingConfig("test", true))
+                .addBinding(new TestTransportBindingConfig("test", true))
+                .build()
+                .start());
+
+        assertThat(containsMessage(failure, "Duplicate transport binding config \"test\""), is(true));
+        assertThat(containsMessage(failure, "of type \"test-transport\""), is(true));
+    }
+
+    @Test
+    void listenerPlanningFailsForDuplicateEnabledConfigTransportBinding() {
+        Config config = Config.just("""
+                server:
+                  bindings:
+                    - type: tcp
+                    - type: tcp
+                """, MediaTypes.APPLICATION_YAML);
+
+        RuntimeException failure = assertThrows(RuntimeException.class, () -> WebServer.builder()
+                .shutdownHook(false)
+                .config(config.get("server"))
+                .build()
+                .start());
+
+        assertThat(containsMessage(failure, "Duplicate transport binding config \"tcp\""), is(true));
+        assertThat(containsMessage(failure, "of type \"tcp\""), is(true));
+    }
+
+    @Test
+    void listenerTlsRequiresTlsCapableTransportBindings() {
+        RuntimeException failure = assertThrows(RuntimeException.class, () -> WebServer.builder()
+                .shutdownHook(false)
+                .tls(Tls.builder()
+                             .trustAll(true)
+                             .build())
+                .bindingsDiscoverServices(false)
+                .addBinding(new TestTransportBindingConfig("test", true))
+                .build()
+                .start());
+
+        assertThat(containsMessage(failure, "has TLS enabled"), is(true));
+        assertThat(containsMessage(failure, "does not apply listener TLS"), is(true));
+    }
+
+    @Test
+    void listenerWithoutTlsRejectsTransportBindingThatReportsTls() {
+        RuntimeException failure = assertThrows(RuntimeException.class, () -> WebServer.builder()
+                .shutdownHook(false)
+                .bindingsDiscoverServices(false)
+                .addBinding(TestTransportBindingConfig.reportTlsWithoutListenerTls("test"))
+                .build()
+                .start());
+
+        assertThat(containsMessage(failure, "does not have TLS enabled"), is(true));
+        assertThat(containsMessage(failure, "applies listener TLS"), is(true));
+    }
+
+    @Test
+    void protocolTransportBindingRequirementMustBeActive() {
+        RuntimeException failure = assertThrows(RuntimeException.class, () -> WebServer.builder()
+                .shutdownHook(false)
+                .port(0)
+                .addProtocol(new TestRequiredTransportProtocolConfig("test-protocol",
+                                                                     Set.of(TestTransportBindingConfig.TYPE)))
+                .build()
+                .start());
+
+        assertThat(containsMessage(failure, "requires transport binding type(s) [test-transport]"), is(true));
+        assertThat(containsMessage(failure, "active binding type(s) [tcp]"), is(true));
+    }
+
+    @Test
+    void tcpTransportSkipsProtocolsForOtherTransports() {
+        TestRequiredTransportConnectionSelectorProvider.reset();
+        WebServer server = WebServer.builder()
+                .shutdownHook(false)
+                .address(InetAddress.getLoopbackAddress())
+                .port(0)
+                .addBinding(new TestTransportBindingConfig(TestTransportBindingConfig.TYPE, true))
+                .addProtocol(new TestRequiredTransportProtocolConfig("test-protocol",
+                                                                     Set.of(TestTransportBindingConfig.TYPE)))
+                .build()
+                .start();
+
+        try {
+            assertThat(TestRequiredTransportConnectionSelectorProvider.creates(), is(0));
+        } finally {
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
     void webServerSuspendFailureStopsAllListenersAndPreservesCleanupFailure() throws Exception {
         ThrowingBlockingConnection connection = new ThrowingBlockingConnection(new AtomicInteger(), "suspend close failed");
         QueueingConnectionSelector selector = new QueueingConnectionSelector(connection);
@@ -918,6 +1514,19 @@ class ServerListenerLifecycleTest {
         return false;
     }
 
+    private static boolean containsType(Throwable failure, Class<? extends Throwable> type) {
+        if (type.isInstance(failure)) {
+            return true;
+        }
+        for (Throwable suppressed : failure.getSuppressed()) {
+            if (containsType(suppressed, type)) {
+                return true;
+            }
+        }
+        Throwable cause = failure.getCause();
+        return cause != null && containsType(cause, type);
+    }
+
     private static void stopUntilStopped(WebServer server) {
         for (int i = 0; i < 3 && server.isRunning(); i++) {
             try {
@@ -925,6 +1534,52 @@ class ServerListenerLifecycleTest {
             } catch (RuntimeException _) {
             }
         }
+    }
+
+    private static void stopListener(ServerListener listener, AtomicReference<Throwable> failure) {
+        try {
+            listener.stop();
+        } catch (RuntimeException | Error e) {
+            failure.set(e);
+        }
+    }
+
+    private static WebServer startTcpPortReuseServerWithRetry(InetAddress address) {
+        RuntimeException lastBindFailure = null;
+        for (int i = 0; i < 10; i++) {
+            TestTransportBindingProvider.reset();
+            try {
+                return WebServer.builder()
+                        .shutdownHook(false)
+                        .address(address)
+                        .port(0)
+                        .bindingsDiscoverServices(false)
+                        .addBinding(new TestTransportBindingConfig("test", true, false, false, false, false, false, true))
+                        .addBinding(TcpTransportConfig.builder()
+                                            .name("primary")
+                                            .required(true)
+                                            .buildPrototype())
+                        .build()
+                        .start();
+            } catch (RuntimeException e) {
+                if (!containsType(e, BindException.class)) {
+                    throw e;
+                }
+                lastBindFailure = e;
+            }
+        }
+        throw lastBindFailure;
+    }
+
+    private static WebServerConfig listenerConfigWithoutTcp() {
+        return WebServer.builder()
+                .shutdownHook(false)
+                .bindingsDiscoverServices(false)
+                .addBinding(TcpTransportConfig.builder()
+                                    .enabled(false)
+                                    .buildPrototype())
+                .addBinding(new TestTransportBindingConfig("test", true))
+                .buildPrototype();
     }
 
     private static void assertPortCanBind(int port) throws Exception {
@@ -1065,6 +1720,50 @@ class ServerListenerLifecycleTest {
 
         private void release() {
             release.countDown();
+        }
+    }
+
+    private static final class BlockingAfterStopRouter implements Router {
+        private final CountDownLatch afterStopEntered = new CountDownLatch(1);
+        private final CountDownLatch releaseAfterStop = new CountDownLatch(1);
+        private final AtomicInteger afterStops = new AtomicInteger();
+
+        @Override
+        public <T extends Routing> T routing(Class<T> routingType, T defaultValue) {
+            return defaultValue;
+        }
+
+        @Override
+        public void afterStop() {
+            afterStops.incrementAndGet();
+            afterStopEntered.countDown();
+            try {
+                releaseAfterStop.await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("Interrupted while waiting in router afterStop", e);
+            }
+        }
+
+        @Override
+        public void beforeStart() {
+        }
+
+        @Override
+        public List<? extends Routing> routings() {
+            return List.of();
+        }
+
+        private boolean awaitAfterStop() throws InterruptedException {
+            return afterStopEntered.await(5, TimeUnit.SECONDS);
+        }
+
+        private void releaseAfterStop() {
+            releaseAfterStop.countDown();
+        }
+
+        private int afterStops() {
+            return afterStops.get();
         }
     }
 

@@ -43,6 +43,8 @@ import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.spi.ProtocolConfig;
 import io.helidon.webserver.spi.ProtocolConfigProvider;
 import io.helidon.webserver.spi.ServerConnectionSelector;
+import io.helidon.webserver.spi.TransportBindingConfig;
+import io.helidon.webserver.spi.TransportBindingProvider;
 
 /**
  * Configuration of a server listener (server socket).
@@ -72,6 +74,19 @@ interface ListenerConfigBlueprint {
     @Option.Singular
     @Option.Provider(ProtocolConfigProvider.class)
     List<ProtocolConfig> protocols();
+
+    /**
+     * Transport bindings that serve this listener.
+     * <p>
+     * When no binding is configured, the listener plans the built-in TCP binding by default. Configured bindings overlay
+     * the built-in defaults and add provider-defined transport bindings.
+     *
+     * @return configured transport bindings
+     */
+    @Option.Configured
+    @Option.Singular
+    @Option.Provider(value = TransportBindingProvider.class, discoverServices = true)
+    List<TransportBindingConfig> bindings();
 
     /**
      * Http routing. This will always be added to the resulting {@link io.helidon.webserver.Router}, if defined,
