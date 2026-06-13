@@ -18,8 +18,10 @@ package io.helidon.config;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.Set;
 
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.config.spi.ConfigNode;
 import io.helidon.service.registry.ExistingInstanceDescriptor;
 import io.helidon.service.registry.Service;
@@ -33,22 +35,40 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Testing.Test
 public class ProvidedUtilTest {
 
     private static Config config;
+    private static Config duplicateConfig;
 
     @BeforeAll
     static void init() {
         /*
         Create config that has a list under "services" to trigger the buggy path. It doesn't matter
-        that both are of type "weighted." We cannot use Properties text because that creates a
-        ConfigObject, not a list.
+        that both are of type "weighted", as long as the configured names differ. We cannot use Properties text because
+        that creates a ConfigObject, not a list.
          */
         ConfigNode.ObjectNode root = ConfigNode.ObjectNode.builder()
+                .addList("services", ConfigNode.ListNode.builder()
+                        .addObject(ConfigNode.ObjectNode.builder()
+                                           .addValue("type", "weighted")
+                                           .addValue("name", "first")
+                                           .build())
+                        .addObject(ConfigNode.ObjectNode.builder()
+                                           .addValue("type", "weighted")
+                                           .addValue("name", "second")
+                                           .build())
+                        .build())
+                .build();
+
+        config = Config.just(ConfigSources.create(root));
+
+        ConfigNode.ObjectNode duplicateRoot = ConfigNode.ObjectNode.builder()
                 .addList("services", ConfigNode.ListNode.builder()
                         .addObject(ConfigNode.ObjectNode.builder()
                                            .addValue("type", "weighted")
@@ -59,7 +79,7 @@ public class ProvidedUtilTest {
                         .build())
                 .build();
 
-        config = Config.just(ConfigSources.create(root));
+        duplicateConfig = Config.just(ConfigSources.create(duplicateRoot));
     }
 
     @Test
@@ -91,6 +111,28 @@ public class ProvidedUtilTest {
                                               List.of());
 
         assertThat("Matched services", matchedServices.getFirst().nickname(), is(equalTo("higher")));
+    }
+
+    @Test
+    void testServiceLoaderDuplicateConfiguredServicesFail() {
+        HelidonServiceLoader<WeightedServiceProvider> serviceLoader =
+                HelidonServiceLoader.builder(ServiceLoader.load(WeightedServiceProvider.class))
+                        .useSystemServiceLoader(false)
+                        .addService(new WeightedServiceProviderImpl("higher"), 2.0)
+                        .build();
+
+        ConfigException failure = assertThrows(ConfigException.class,
+                                               () -> ProvidedUtil.discoverServices(duplicateConfig,
+                                                                                   "services",
+                                                                                   serviceLoader,
+                                                                                   WeightedServiceProvider.class,
+                                                                                   WeightedServiceImpl.class,
+                                                                                   false,
+                                                                                   List.of()));
+
+        assertThat(failure.getMessage(), containsString("Duplicate provider configuration"));
+        assertThat(failure.getMessage(), containsString("type \"weighted\""));
+        assertThat(failure.getMessage(), containsString("name \"weighted\""));
     }
 
     @Service.Contract

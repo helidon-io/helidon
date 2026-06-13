@@ -1318,7 +1318,9 @@ class ServerListenerLifecycleTest {
                 server:
                   bindings:
                     - type: tcp
+                      name: primary
                     - type: tcp
+                      name: secondary
                 """, MediaTypes.APPLICATION_YAML);
 
         RuntimeException failure = assertThrows(RuntimeException.class, () -> WebServer.builder()
@@ -1327,8 +1329,8 @@ class ServerListenerLifecycleTest {
                 .build()
                 .start());
 
-        assertThat(containsMessage(failure, "Duplicate transport binding config \"tcp\""), is(true));
-        assertThat(containsMessage(failure, "of type \"tcp\""), is(true));
+        assertThat(containsMessage(failure, "Multiple transport bindings of type \"tcp\""), is(true));
+        assertThat(containsMessage(failure, "Only one binding can be configured for each type"), is(true));
     }
 
     @Test
