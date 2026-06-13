@@ -60,8 +60,8 @@ Create a WebClient with simple builder:
 
 ```java
 WebClient client = WebClient.builder()
-        .baseUri("http://localhost")
-        .build();
+    .baseUri("http://localhost")
+    .build();
 ```
 
 ### Creating the Request
@@ -88,11 +88,11 @@ Customizing a request:
 
 ```java
 client.get()
-        .uri("http://example.com")
-        .path("/path")
-        .queryParam("query", "parameter")
-        .fragment("someFragment")
-        .headers(headers -> headers.accept(MediaTypes.APPLICATION_JSON));
+    .uri("http://example.com")
+    .path("/path")
+    .queryParam("query", "parameter")
+    .fragment("someFragment")
+    .headers(headers -> headers.accept(MediaTypes.APPLICATION_JSON));
 ```
 
 - Overrides `baseUri` from WebClient
@@ -138,8 +138,8 @@ Execute a simple GET request to endpoint and receive a String response:
 
 ```java
 ClientResponseTyped<String> response = client.get()
-        .path("/endpoint")
-        .request(String.class);
+    .path("/endpoint")
+    .request(String.class);
 String entityString = response.entity();
 ```
 
@@ -154,7 +154,7 @@ rules on which specific protocol will be used:
   it is chosen if supported by both sides.
 - A specific protocol can be explicitly selected by calling
   `HttpClientRequest#protocolId(String)`.
-   ```java
+  ```java
   String result = client.get()
       .protocolId("http/1.1")
       .requestEntity(String.class);
@@ -214,9 +214,9 @@ by following either of the approaches:
 
 ```java
 WebClient.builder()
-        .mediaContext(it -> it
-                .addMediaSupport(CustomMediaSupport.create()))
-        .build();
+    .mediaContext(it -> it
+        .addMediaSupport(CustomMediaSupport.create()))
+    .build();
 ```
 
 - Register CustomMedia support from the WebClient.
@@ -276,9 +276,9 @@ See [Configuration options][io-helidon-webcl-3].
 ```java
 Config config = Config.create();
 WebClient client = WebClient.builder()
-        .baseUri("http://localhost")
-        .config(config.get("client"))
-        .build();
+    .baseUri("http://localhost")
+    .config(config.get("client"))
+    .build();
 ```
 
 ## Configuration Example
@@ -364,8 +364,8 @@ Alternative is to set proxy directly from the request via `HttpClientRequest`.
 
 ```java
 var response = client.get("/proxiedresource")
-        .proxy(Proxy.create())
-        .request();
+    .proxy(Proxy.create())
+    .request();
 ```
 
 - Proxy instance configured using system settings (environment variables and
@@ -581,8 +581,8 @@ classpath:
 ```java [application.yaml]
 Config config = Config.create();
 WebClient.builder()
-        .config(config.get("client"))
-        .build();
+    .config(config.get("client"))
+    .build();
 ```
 
 - `application.yaml` is a default configuration source loaded when YAML support
@@ -599,12 +599,12 @@ Below is an example of customizing `HTTP/1.1` protocol in the application code.
 
 ```java
 WebClient.builder()
-        .addProtocolConfig(Http1ClientProtocolConfig.builder()
-                                   .defaultKeepAlive(false)
-                                   .validateRequestHeaders(true)
-                                   .validateResponseHeaders(false)
-                                   .build())
-        .build();
+    .addProtocolConfig(Http1ClientProtocolConfig.builder()
+        .defaultKeepAlive(false)
+        .validateRequestHeaders(true)
+        .validateResponseHeaders(false)
+        .build())
+    .build();
 ```
 
 ### Setting up protocol configuration in the config file
@@ -632,8 +632,8 @@ classpath:
 ```java [application.yaml]
 Config config = Config.create();
 WebClient.builder()
-        .config(config.get("client"))
-        .build();
+    .config(config.get("client"))
+    .build();
 ```
 
 - `application.yaml` is a default configuration source loaded when YAML support
@@ -715,8 +715,8 @@ Enabling telemetry using code:
 
 ```java
 WebClient.builder()
-        .addService(WebClientTelemetryMetrics.create())
-        .build();
+    .addService(WebClientTelemetryMetrics.create())
+    .build();
 ```
 
 ## Context Propagation

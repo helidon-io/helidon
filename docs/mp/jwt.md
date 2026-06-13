@@ -47,7 +47,7 @@ MP:
   injection to obtain the JWT of the currently executing caller.
 - `@Claim` - an annotation used by CDI bean *(@RequestScoped)* dependency
   injection to obtain individual claims from the caller’s JWT.
-- `ClaimValue` - a proxy interface used with `@Claim` annotation to оbtain the
+- `ClaimValue` - a proxy interface used with `@Claim` annotation to obtain the
   value of a claim by calling `getValue()`.
 
 ## Configuration

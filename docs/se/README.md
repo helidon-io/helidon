@@ -28,9 +28,9 @@ Components:
 | [Metrics](metrics/README.md) <!--@icon i-lucide-gauge -->                         | Index of Metrics documentation         |
 | [Observability](observability.md) <!--@icon i-lucide-search -->                   | Helidon Observability Support          |
 | [OpenAPI](openapi/README.md) <!--@icon i-simple-icons-openapiinitiative -->       | Index of OpenAPI documentation         |
-| [Scheduling](scheduling.md) <!--@icon i-lucide-alarm-clock -->                    | Scheduling in Helidon SE               |
 | [Reactive Messaging](reactive-messaging.md) <!--@icon i-lucide-message-square --> | Helidon Reactive Messaging Support     |
 | [Reactivestreams](reactivestreams/README.md) <!--@icon i-lucide-waves -->         | Index of Reactivestreams documentation |
+| [Scheduling](scheduling.md) <!--@icon i-lucide-alarm-clock -->                    | Scheduling in Helidon SE               |
 | [Security](security/README.md) <!--@icon i-lucide-shield -->                      | Index of Security documentation        |
 | [Server-Sent Events](sse.md) <!--@icon i-lucide-send -->                          | Helidon SSE Support                    |
 | [Telemetry](telemetry/README.md) <!--@icon i-lucide-chart-line -->                | Index of Telemetry documentation       |
@@ -45,6 +45,4 @@ Misc:
 
 | Topic                                                                             | Description                            |
 |-----------------------------------------------------------------------------------|----------------------------------------|
-| [Introduction](introduction.md) <!--@icon i-lucide-lightbulb -->                  | About Helidon SE                       |
-| [Guides](guides/README.md) <!--@icon i-lucide-compass -->                         | Index of Guides documentation          |
 | [Integrations](integrations/README.md) <!--@icon i-lucide-cloud -->               | Index of Integrations documentation    |

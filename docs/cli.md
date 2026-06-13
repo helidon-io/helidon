@@ -107,7 +107,7 @@ application as you make them. When the development loop is active, the Helidon
 CLI will automatically recompile and restart your application so you can see the
 effects of your changes immediately.
 
-1.  Navigate to the Helidon project’s home directory.
+1.  Navigate to the Helidon project's home directory.
 2.  Run `helidon dev` to enable the development loop.
 3.  In another terminal window or an IDE, make and save changes to your
     application’s source code.

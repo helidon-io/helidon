@@ -531,7 +531,7 @@ mp.messaging.incoming.from-connector-channel.channel-specific-prop: foo
 mp.messaging.connector.example-connector.connector-specific-prop: bar
 ```
 
-- Channel → Connector mapping
+- Channel / Connector mapping
 - Channel configuration properties
 - Connector configuration properties
 

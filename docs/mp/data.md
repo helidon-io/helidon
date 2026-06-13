@@ -5,7 +5,7 @@
 The Helidon MP Data Repository provides a unified API for working with database
 queries.
 
-Data repository queries are an abstraction over Object–Relational Mapping, or
+Data repository queries are an abstraction over Object-Relational Mapping, or
 ORM. This enables interfaces with query definitions to be translated into
 implementation classes at compile time.
 
@@ -236,7 +236,7 @@ The query return type depends on the return type keyword:
 | count   | Numeric type           | Number of rows matching the query criteria                                   |
 | exists  | `boolean` or `Boolean` | Whether at least one matching row exists                                     |
 | get     | Query row type         | Single result that throws an exception if there are zero or multiple results |
-| find    | `Optional<…>`          | Zero or single result that throws an exception if there are multiple results |
+| find    | `Optional<...>`        | Zero or single result that throws an exception if there are multiple results |
 | list    | `Collection` or `List` | All matching rows                                                            |
 | list    | `Slice` or `Page`      | Pageable result set                                                          |
 | stream  | `Stream`               | Stream of matching rows                                                      |

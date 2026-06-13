@@ -381,7 +381,7 @@ oci:
 ```
 
 - The name of the OCI tenancy.
-- The OCI account user name.
+- The OCI account username.
 - The OCI authentication token. See [Getting an Auth Token][getting-an-auth] in
   OCI documentation.
 - The details of the stream which you saved earlier. The `port` should be the

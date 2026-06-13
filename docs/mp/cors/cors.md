@@ -20,7 +20,7 @@ unrestricted sharing for GET, HEAD, and POST requests (what CORS refers to as
 sharing: more relaxed for the simple requests and stricter for others.
 
 Once you know the type of sharing you want to allow for each of your
-resources—​including any from built-in services—​you can change your application
+resources, including any from built-in services, you can change your application
 accordingly.
 
 ## Maven Coordinates

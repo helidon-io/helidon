@@ -78,7 +78,10 @@ mvn package
 Check if you are using Java build with CRaC support.
 
 ```shell [Terminal]
-➜  helidon-quickstart-mp java -version
+java --version
+```
+
+```log [Output]
 openjdk version "23.0.1" 2024-10-15
 OpenJDK Runtime Environment Zulu23.30+13-CRaC-CA (build 23.0.1)
 OpenJDK 64-Bit Server VM Zulu23.30+13-CRaC-CA (build 23.0.1, mixed mode, sharing)
@@ -97,13 +100,13 @@ java -XX:CRaCEngine=warp -XX:CRaCCheckpointTo=./target/cr -jar target/helidon-qu
 You should see in the output that Helidon MP has started with CRaC feature
 enabled.
 
-```shell [Terminal]
+```log [Output]
 Started all channels in 10 milliseconds. 1937 milliseconds since JVM startup. Java 23.0.1
 Server started on http://localhost:8080 in 1941 milliseconds (since JVM startup).
 Helidon MP 4.4.0-SNAPSHOT features: [CDI, CRaC, Config, Health, Metrics, Open API, Server]
 ```
 
-In another shell test an endpoint:
+In another terminal, test an endpoint:
 
 ```shell [Terminal]
 curl -X GET http://localhost:8080/greet
@@ -116,21 +119,24 @@ supports see the [Helidon MP Quickstart Guide](../../mp/guides/quickstart.md).
 
 ## Creating snapshot
 
-In another shell trigger the snapshot creation with [jcmd][jcmd] command
+In another terminal, trigger the snapshot creation with [jcmd][jcmd] command
 `JDK.checkpoint`:
 
 ```shell [Terminal]
 jcmd $(jcmd | grep helidon-quickstart-mp.jar | awk '{print $2}') JDK.checkpoint
 ```
 
-```shell [Terminal]
+```log [Output]
 warp: Checkpoint 138991 to ./target/cr
 warp: Checkpoint successful!
 [1]    138991 killed     java -XX:CRaCEngine=warp -XX:CRaCCheckpointTo=./target/cr -jar
 ```
 
 ```shell [Terminal]
-➜  helidon-quickstart-mp ls -la ./target/cr
+ls -la ./target/cr
+```
+
+```log [Output]
 total 124M
 -rw------- 1 frank frank 124M Feb  1 19:12 core.img
 ```
@@ -151,7 +157,10 @@ Expected output shows that application restore from snapshot is drastically
 faster than previous start.
 
 ```shell [Terminal]
-➜  helidon-quickstart-mp java -XX:CRaCEngine=warp -XX:CRaCRestoreFrom=./target/cr
+java -XX:CRaCEngine=warp -XX:CRaCRestoreFrom=./target/cr
+```
+
+```log [Output]
 warp: Restore successful!
 [0x501ce1b2] http://0.0.0.0:8080 bound for socket '@default'
 Restored all channels in 3 milliseconds. 43 milliseconds since JVM snapshot restore. Java 23.0.1

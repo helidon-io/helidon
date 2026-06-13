@@ -5,6 +5,12 @@ Index of MP documentation.
 | Topic                                                                                  | Description                              |
 |----------------------------------------------------------------------------------------|------------------------------------------|
 | [Introduction](introduction.md) <!--@icon i-lucide-lightbulb -->                       | About Helidon MP                         |
+| [Guides](guides/README.md) <!--@icon i-lucide-compass -->                              | Index of Guides documentation            |
+
+Components:
+
+| Topic                                                                                  | Description                              |
+|----------------------------------------------------------------------------------------|------------------------------------------|
 | [LangChain4j](langchain4j.md) <!--@icon i-lucide-sparkles -->                          | Helidon LangChain4j Support              |
 | [Bean Validation](beanvalidation.md) <!--@icon i-lucide-receipt -->                    | Helidon Bean Validation Support          |
 | [Config](config/README.md) <!--@icon i-lucide-settings -->                             | Index of Config documentation            |
@@ -32,5 +38,9 @@ Index of MP documentation.
 | [Threading](threading.md) <!--@icon i-lucide-computer -->                              | Helidon MP Threading                     |
 | [Tracing](tracing.md) <!--@icon i-lucide-activity -->                                  | Helidon MP Tracing Support               |
 | [WebSocket](websocket.md) <!--@icon i-lucide-repeat-2 -->                              | Helidon MP WebSocket Support             |
+
+Misc:
+
+| Topic                                                                                  | Description                              |
+|----------------------------------------------------------------------------------------|------------------------------------------|
 | [Integrations](integrations/README.md) <!--@icon i-lucide-cloud -->                    | Index of Integrations documentation      |
-| [Guides](guides/README.md) <!--@icon i-lucide-compass -->                              | Index of Guides documentation            |

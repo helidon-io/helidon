@@ -28,9 +28,9 @@ The easiest way to configure the WebServer is in your application code.
 
 ```java
 WebServer.builder()
-        .port(8080)
-        .build()
-        .start();
+    .port(8080)
+    .build()
+    .start();
 ```
 
 ### Configuring the WebServer in a Configuration File
