@@ -53,6 +53,8 @@ import io.helidon.webclient.api.UnixDomainSocketClientConnection;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http2.Http2Client;
+import io.helidon.webserver.TcpTransportConfig;
+import io.helidon.webserver.UdsTransportConfig;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRules;
@@ -89,7 +91,7 @@ public class UnixDomainSocketTest {
     public static void setUpServer(WebServerConfig.Builder builder) {
         socketPath = socketPath("helidon-socket");
 
-        builder.bindAddress(UnixDomainSocketAddress.of(socketPath));
+        configureUdsBinding(builder, UnixDomainSocketAddress.of(socketPath));
     }
 
     @SetUpRoute
@@ -630,8 +632,9 @@ public class UnixDomainSocketTest {
     }
 
     private static WebServer startTlsServer(UnixDomainSocketAddress address, String http1Response, String http2Response) {
-        return WebServer.builder()
-                .bindAddress(address)
+        WebServerConfig.Builder builder = WebServer.builder();
+        configureUdsBinding(builder, address);
+        return builder
                 .tls(serverTls())
                 .routing(rules -> {
                     rules.get("/test", (req, res) -> res.send(http1Response));
@@ -755,8 +758,9 @@ public class UnixDomainSocketTest {
     }
 
     private static WebServer startTlsAuthorityServer(UnixDomainSocketAddress address) {
-        return WebServer.builder()
-                .bindAddress(address)
+        WebServerConfig.Builder builder = WebServer.builder();
+        configureUdsBinding(builder, address);
+        return builder
                 .tls(serverTls())
                 .routing(rules -> {
                     rules.get("/test", (req, res) -> res.send(req.authority()));
@@ -764,6 +768,18 @@ public class UnixDomainSocketTest {
                 })
                 .build()
                 .start();
+    }
+
+    private static void configureUdsBinding(WebServerConfig.Builder builder, UnixDomainSocketAddress address) {
+        UdsTransportConfig udsConfig = UdsTransportConfig.builder()
+                .socket(address)
+                .required(true)
+                .buildPrototype();
+        builder.clearBindings()
+                .addBinding(TcpTransportConfig.builder()
+                                    .enabled(false)
+                                    .buildPrototype());
+        builder.addBinding(udsConfig);
     }
 
     private static Path socketPath(String name) {

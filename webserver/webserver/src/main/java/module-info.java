@@ -73,6 +73,7 @@ module io.helidon.webserver {
     provides io.helidon.webserver.spi.ServerFeatureProvider
             with io.helidon.webserver.StuckThreadDetectionFeatureProvider;
     provides io.helidon.webserver.spi.TransportBindingFactoryProvider
-            with io.helidon.webserver.TcpTransportBindingFactoryProvider;
+            with io.helidon.webserver.TcpTransportBindingFactoryProvider,
+                    io.helidon.webserver.UdsTransportBindingFactoryProvider;
 
 }

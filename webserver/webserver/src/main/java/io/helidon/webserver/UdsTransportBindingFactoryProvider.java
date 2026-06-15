@@ -22,27 +22,27 @@ import io.helidon.webserver.spi.TransportBindingFactory;
 import io.helidon.webserver.spi.TransportBindingFactoryProvider;
 
 /**
- * Transport binding factory provider for the built-in TCP listener binding.
+ * Transport binding factory provider for the built-in Unix domain socket listener binding.
  */
-public class TcpTransportBindingFactoryProvider implements TransportBindingFactoryProvider {
+public class UdsTransportBindingFactoryProvider implements TransportBindingFactoryProvider {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.
      */
     @Api.Internal
-    public TcpTransportBindingFactoryProvider() {
+    public UdsTransportBindingFactoryProvider() {
     }
 
     @Override
     public String configKey() {
-        return TcpTransportBinding.TYPE;
+        return UdsTransportBinding.TYPE;
     }
 
     @Override
     public TransportBindingFactory create(Config config, String name) {
-        TcpTransportConfig tcpConfig = TcpTransportConfig.builder()
+        UdsTransportConfig udsConfig = UdsTransportConfig.builder()
                 .config(config)
                 .name(name)
                 .build();
-        return TcpTransportBindingFactory.create(tcpConfig);
+        return UdsTransportBindingFactory.create(udsConfig);
     }
 }

@@ -16,23 +16,27 @@
 
 package io.helidon.webserver;
 
+import java.net.UnixDomainSocketAddress;
+import java.util.Optional;
+
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.webserver.spi.TransportBindingFactoryProvider;
 
 /**
- * Configuration of the built-in TCP listener transport binding.
+ * Configuration of the built-in Unix domain socket listener transport binding.
  */
 @Prototype.Blueprint
-@Prototype.Configured(root = false, value = TcpTransportBinding.TYPE)
+@Prototype.Configured(root = false, value = UdsTransportBinding.TYPE)
 @Prototype.Provides(TransportBindingFactoryProvider.class)
-interface TcpTransportConfigBlueprint {
+@Prototype.CustomMethods(UdsTransportConfigSupport.CustomMethods.class)
+interface UdsTransportConfigBlueprint {
     /**
      * Name of this binding.
      *
      * @return binding name
      */
-    @Option.Default(TcpTransportBinding.TYPE)
+    @Option.Default(UdsTransportBinding.TYPE)
     String name();
 
     /**
@@ -54,11 +58,19 @@ interface TcpTransportConfigBlueprint {
     boolean required();
 
     /**
+     * Unix domain socket address to bind.
+     *
+     * @return Unix domain socket address
+     */
+    @Option.Configured
+    Optional<UnixDomainSocketAddress> socket();
+
+    /**
      * Binding type.
      *
      * @return binding type
      */
     default String type() {
-        return TcpTransportBinding.TYPE;
+        return UdsTransportBinding.TYPE;
     }
 }

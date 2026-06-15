@@ -126,7 +126,7 @@ class WebServerTlsReloadTest {
                              .build())
                 .bindingsDiscoverServices(false)
                 .addBinding(new TestTransportBindingConfig("failing", true, false, true, true, false, false))
-                .addBinding(new TestTransportBindingConfig("remaining", true, false, true))
+                .addBinding(TestTransportBindingConfig.alternate("remaining", true, false, true))
                 .build();
 
         RuntimeException failure = assertThrows(RuntimeException.class, () -> server.reloadTls(material));
@@ -152,7 +152,7 @@ class WebServerTlsReloadTest {
                                      .build()))
                 .bindingsDiscoverServices(false)
                 .addBinding(new TestTransportBindingConfig("failing", true, false, true, true, false, true))
-                .addBinding(new TestTransportBindingConfig("remaining", true, false, true, false, false, true))
+                .addBinding(TestTransportBindingConfig.alternate("remaining", true, false, true, false, false, true))
                 .build();
 
         RuntimeException failure = assertThrows(RuntimeException.class,
