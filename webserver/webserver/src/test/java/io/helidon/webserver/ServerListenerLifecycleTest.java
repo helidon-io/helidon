@@ -46,6 +46,7 @@ import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.context.Context;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.socket.SocketOptions;
@@ -69,6 +70,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
@@ -1023,6 +1025,23 @@ class ServerListenerLifecycleTest {
         ListenerConfig listenerConfig = TestTransportBindingProvider.listenerConfigAtPlan(TestTransportBindingConfig.TYPE);
         assertThat(listenerConfig, notNullValue());
         assertThat(listenerConfig.address(), is(address));
+    }
+
+    @Test
+    void transportBindingsShareListenerConnectionLimit() {
+        TestTransportBindingProvider.reset();
+        WebServer.builder()
+                .shutdownHook(false)
+                .maxConnections(1)
+                .addBinding(new TestTransportBindingConfig(TestTransportBindingConfig.TYPE, true))
+                .addBinding(TestTransportBindingConfig.alternate("second", true))
+                .build();
+
+        Limit first = TestTransportBindingProvider.connectionLimit(TestTransportBindingConfig.TYPE);
+        Limit second = TestTransportBindingProvider.connectionLimit("second");
+
+        assertThat(first, notNullValue());
+        assertThat(second, sameInstance(first));
     }
 
     @Test

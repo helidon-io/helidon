@@ -55,6 +55,17 @@ public interface TransportBindingContext {
     Limit requestLimit();
 
     /**
+     * Listener-wide connection admission limit.
+     * <p>
+     * Transport bindings that accept connection-oriented work must acquire a permit from this limit before accepting a new
+     * connection and must release the returned token when the accepted connection finishes or fails before handling starts.
+     * The returned limit is owned and initialized by the listener.
+     *
+     * @return listener connection admission limit
+     */
+    Limit connectionLimit();
+
+    /**
      * Listener TLS state shared by transport bindings.
      * <p>
      * Bindings that return {@link io.helidon.webserver.spi.TransportBinding.Security#TLS} must use this context for TLS
