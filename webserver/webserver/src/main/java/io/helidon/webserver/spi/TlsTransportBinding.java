@@ -49,11 +49,11 @@ public interface TlsTransportBinding extends TransportBinding {
     }
 
     /**
-     * Whether this binding supports listener virtual hosts.
+     * Whether this binding supports virtual hosts.
      *
-     * @return whether listener virtual hosts are supported
+     * @return whether virtual hosts are supported
      */
-    default boolean supportsListenerVirtualHosts() {
+    default boolean supportsVirtualHosts() {
         return false;
     }
 }
