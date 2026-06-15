@@ -18,22 +18,22 @@ package io.helidon.webserver;
 
 import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
-import io.helidon.webserver.spi.TransportBindingConfig;
-import io.helidon.webserver.spi.TransportBindingProvider;
+import io.helidon.webserver.spi.TransportBindingFactoryProvider;
 
 /**
  * Configuration of the built-in TCP listener transport binding.
  */
 @Prototype.Blueprint
 @Prototype.Configured(root = false, value = TcpTransportBinding.TYPE)
-@Prototype.Provides(TransportBindingProvider.class)
-interface TcpTransportConfigBlueprint extends TransportBindingConfig {
+@Prototype.Provides(TransportBindingFactoryProvider.class)
+@Prototype.CustomMethods(TcpTransportConfigSupport.CustomMethods.class)
+@Prototype.Implement("io.helidon.webserver.spi.TransportBindingFactory")
+interface TcpTransportConfigBlueprint {
     /**
      * Name of this binding.
      *
      * @return binding name
      */
-    @Override
     @Option.Default(TcpTransportBinding.TYPE)
     String name();
 
@@ -42,7 +42,6 @@ interface TcpTransportConfigBlueprint extends TransportBindingConfig {
      *
      * @return whether this binding is enabled
      */
-    @Override
     @Option.Configured
     @Option.DefaultBoolean(true)
     boolean enabled();
@@ -52,7 +51,6 @@ interface TcpTransportConfigBlueprint extends TransportBindingConfig {
      *
      * @return whether this binding is required
      */
-    @Override
     @Option.Configured
     @Option.DefaultBoolean(false)
     boolean required();
@@ -62,7 +60,6 @@ interface TcpTransportConfigBlueprint extends TransportBindingConfig {
      *
      * @return binding type
      */
-    @Override
     default String type() {
         return TcpTransportBinding.TYPE;
     }

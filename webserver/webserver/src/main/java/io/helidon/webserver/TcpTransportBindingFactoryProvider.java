@@ -16,22 +16,19 @@
 
 package io.helidon.webserver;
 
-import java.util.Objects;
-
 import io.helidon.common.Api;
 import io.helidon.config.Config;
-import io.helidon.webserver.spi.TransportBinding;
-import io.helidon.webserver.spi.TransportBindingProvider;
+import io.helidon.webserver.spi.TransportBindingFactoryProvider;
 
 /**
- * Transport binding provider for the built-in TCP listener binding.
+ * Transport binding factory provider for the built-in TCP listener binding.
  */
-public class TcpTransportBindingProvider implements TransportBindingProvider<TcpTransportConfig> {
+public class TcpTransportBindingFactoryProvider implements TransportBindingFactoryProvider {
     /**
      * Required public constructor for {@link java.util.ServiceLoader}.
      */
     @Api.Internal
-    public TcpTransportBindingProvider() {
+    public TcpTransportBindingFactoryProvider() {
     }
 
     @Override
@@ -49,28 +46,6 @@ public class TcpTransportBindingProvider implements TransportBindingProvider<Tcp
             return new DiscoveredDefaultTcpTransportConfig(tcpConfig);
         }
         return tcpConfig;
-    }
-
-    @Override
-    public Class<TcpTransportConfig> configType() {
-        return TcpTransportConfig.class;
-    }
-
-    @Override
-    public boolean canBind(BindingPlanContext context, TcpTransportConfig config) {
-        Objects.requireNonNull(context, "context");
-        Objects.requireNonNull(config, "config");
-        return config.enabled();
-    }
-
-    @Override
-    public TransportBinding create(TransportBindingContext context, TcpTransportConfig config) {
-        Objects.requireNonNull(context, "context");
-        Objects.requireNonNull(config, "config");
-        if (context instanceof TcpTransportBindingContext tcpContext) {
-            return tcpContext.createTcpTransportBinding(config);
-        }
-        throw new IllegalArgumentException("TCP transport binding requires a Helidon WebServer listener context");
     }
 
     static boolean isDiscoveredDefault(TcpTransportConfig config) {

@@ -109,7 +109,7 @@ class ServerListenerSuspendTest {
             queuedConnection = new Socket("127.0.0.1", server.port());
 
             waitFor(Duration.ofSeconds(5),
-                    () -> server.listenerThreadState(WebServer.DEFAULT_SOCKET_NAME) == Thread.State.TIMED_WAITING,
+                    () -> listenerThreadState(WebServer.DEFAULT_SOCKET_NAME) == Thread.State.TIMED_WAITING,
                     "listener did not block on the TCP connection limit");
 
             Future<?> suspendFuture = executor.submit(server::suspend);
@@ -153,6 +153,16 @@ class ServerListenerSuspendTest {
             throw error;
         }
         return e;
+    }
+
+    private static Thread.State listenerThreadState(String socketName) {
+        String threadName = "server-" + socketName + "-listener";
+        for (Thread thread : Thread.getAllStackTraces().keySet()) {
+            if (threadName.equals(thread.getName())) {
+                return thread.getState();
+            }
+        }
+        return null;
     }
 
     private static void waitFor(Duration timeout, BooleanSupplier condition, String message) throws InterruptedException {

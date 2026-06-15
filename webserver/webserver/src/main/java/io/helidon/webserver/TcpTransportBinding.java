@@ -34,14 +34,20 @@ import java.util.HexFormat;
 import java.util.List;
 import java.util.Objects;
 import java.util.OptionalInt;
+import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.Timer;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import javax.net.ssl.SSLParameters;
 
+import io.helidon.common.HelidonServiceLoader;
+import io.helidon.common.LazyValue;
 import io.helidon.common.concurrency.limits.FixedLimit;
 import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.concurrency.limits.Limit.InitializationContext;
@@ -52,6 +58,9 @@ import io.helidon.common.tls.Tls;
 import io.helidon.common.tls.TlsMaterial;
 import io.helidon.metrics.api.Tag;
 import io.helidon.webserver.spi.PortTransportBinding;
+import io.helidon.webserver.spi.ProtocolConfig;
+import io.helidon.webserver.spi.ServerConnectionSelector;
+import io.helidon.webserver.spi.ServerConnectionSelectorProvider;
 import io.helidon.webserver.spi.TlsTransportBinding;
 
 import static java.lang.System.Logger.Level.DEBUG;
@@ -64,22 +73,27 @@ final class TcpTransportBinding implements PortTransportBinding, TlsTransportBin
     static final String TYPE = "tcp";
 
     private static final System.Logger LOGGER = System.getLogger(TcpTransportBinding.class.getName());
+    @SuppressWarnings("rawtypes")
+    private static final LazyValue<List<ServerConnectionSelectorProvider>> SELECTOR_PROVIDERS = LazyValue.create(() ->
+            HelidonServiceLoader.create(ServiceLoader.load(ServerConnectionSelectorProvider.class)).asList());
 
     private final TransportBindingContext listenerContext;
     private final String name;
     private final String socketName;
     private final ListenerConfig listenerConfig;
+    private final Timer idleConnectionTimer;
     private final SocketAddress configuredAddress;
     private final SocketOptions connectionOptions;
     private final ConnectionProviders connectionProviders;
     private final Tls tls;
     private final VirtualHostRegistry virtualHosts;
-    private final HelidonTaskExecutor readerExecutor;
-    private final Runnable startIdleTimeoutHandler;
     private final Limit connectionLimit;
     private final Limit requestLimit;
     private final Set<ConnectionHandler> connectionHandlers = ConcurrentHashMap.newKeySet();
+    private final Lock idleTimeoutLock = new ReentrantLock();
 
+    private volatile HelidonTaskExecutor readerExecutor;
+    private volatile IdleTimeoutHandler idleTimeoutHandler;
     private volatile boolean running;
     private volatile boolean inCheckpoint;
     private volatile int connectedPort = -1;
@@ -87,32 +101,55 @@ final class TcpTransportBinding implements PortTransportBinding, TlsTransportBin
     private volatile Thread serverThread;
     private volatile CompletableFuture<Void> closeFuture;
 
-    TcpTransportBinding(TransportBindingContext listenerContext,
-                        String name,
-                        ListenerConfig listenerConfig,
-                        SocketAddress configuredAddress,
-                        SocketOptions connectionOptions,
-                        ConnectionProviders connectionProviders,
-                        Tls tls,
-                        VirtualHostRegistry virtualHosts,
-                        HelidonTaskExecutor readerExecutor,
-                        Limit requestLimit,
-                        Runnable startIdleTimeoutHandler) {
-        this.listenerContext = listenerContext;
-        this.name = Objects.requireNonNull(name, "name");
+    TcpTransportBinding(TransportBindingContext listenerContext, TcpTransportConfig config) {
+        Objects.requireNonNull(config, "config");
+        this.listenerContext = Objects.requireNonNull(listenerContext, "listenerContext");
+        this.name = config.name();
         this.socketName = listenerContext.name();
-        this.listenerConfig = listenerConfig;
-        this.configuredAddress = configuredAddress;
-        this.connectionOptions = connectionOptions;
-        this.connectionProviders = connectionProviders;
-        this.tls = tls;
-        this.virtualHosts = virtualHosts;
-        this.readerExecutor = readerExecutor;
-        this.requestLimit = requestLimit;
-        this.startIdleTimeoutHandler = startIdleTimeoutHandler;
+        this.listenerConfig = listenerContext.config();
+        this.idleConnectionTimer = listenerContext.timer();
+        this.configuredAddress = listenerConfig.bindAddress()
+                .orElseGet(() -> {
+                    int port = listenerConfig.port();
+                    if (port < 1) {
+                        port = 0;
+                    }
+                    return new InetSocketAddress(listenerConfig.address(), port);
+                });
+        this.connectionOptions = listenerConfig.connectionOptions();
+        ProtocolConfigs protocols = ProtocolConfigs.create(listenerConfig.protocols()
+                                                                   .stream()
+                                                                   .filter(TcpTransportBinding::supportsTcpTransportBinding)
+                                                                   .toList());
+        this.connectionProviders = ConnectionProviders.create(connectionSelectors(socketName, listenerConfig, protocols));
+        this.tls = listenerConfig.tls().orElseGet(() -> Tls.builder().enabled(false).build());
+        this.virtualHosts = VirtualHostRegistry.create(socketName, listenerConfig, tls);
+        this.requestLimit = listenerContext.requestLimit();
         this.connectionLimit = connectionLimit(listenerConfig);
         this.connectionLimit.init(limitContext(socketName));
-        initServerThread();
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static List<ServerConnectionSelector> connectionSelectors(String socketName,
+                                                                      ListenerConfig listenerConfig,
+                                                                      ProtocolConfigs protocols) {
+        List<ServerConnectionSelector> selectors = new ArrayList<>(listenerConfig.connectionSelectors());
+
+        // for each discovered selector provider, add a selector for each configuration of that provider
+        SELECTOR_PROVIDERS.get()
+                .forEach(provider -> {
+                    List<ProtocolConfig> configurations = protocols.config(provider.protocolType(),
+                                                                           provider.protocolConfigType());
+                    for (ProtocolConfig configuration : configurations) {
+                        selectors.add(provider.create(socketName, configuration, protocols));
+                    }
+                });
+        return selectors;
+    }
+
+    private static boolean supportsTcpTransportBinding(ProtocolConfig config) {
+        Set<String> transportBindingTypes = config.transportBindingTypes();
+        return transportBindingTypes.isEmpty() || transportBindingTypes.contains(TcpTransportBinding.TYPE);
     }
 
     @Override
@@ -164,6 +201,10 @@ final class TcpTransportBinding implements PortTransportBinding, TlsTransportBin
 
     @Override
     public void start() {
+        if (readerExecutor == null) {
+            readerExecutor = ExecutorsFactory.newServerListenerReaderExecutor();
+        }
+        initServerThread();
         SocketAddress bindAddress = bindAddress();
         try {
             if (bindAddress instanceof UnixDomainSocketAddress) {
@@ -184,7 +225,7 @@ final class TcpTransportBinding implements PortTransportBinding, TlsTransportBin
             String serverChannelId = "0x" + HexFormat.of().toHexDigits(System.identityHashCode(serverSocket));
 
             running = true;
-            startIdleTimeoutHandler.run();
+            startIdleTimeoutHandler();
             logStarted(serverChannelId);
 
             serverThread.start();
@@ -213,15 +254,24 @@ final class TcpTransportBinding implements PortTransportBinding, TlsTransportBin
     @Override
     public ShutdownResult stop(Duration gracefulPeriod) {
         Objects.requireNonNull(gracefulPeriod, "gracefulPeriod");
+        long stopAtNanos = stopAtNanos(gracefulPeriod);
         stopRequested();
         Throwable failure = null;
         ShutdownResult result = ShutdownResult.GRACEFUL;
+        IdleTimeoutHandler cancelledIdleTimeoutHandler = cancelIdleTimeoutHandler();
         failure = LifecycleFailures.add(failure, closeServerSocketForStop());
         failure = LifecycleFailures.add(failure, closeOpenConnections(false));
         failure = LifecycleFailures.add(failure, awaitClose());
-        if (!awaitConnectionHandlers(gracefulPeriod)) {
+        if (!awaitConnectionHandlers(stopAtNanos)) {
             result = ShutdownResult.FORCED;
             failure = LifecycleFailures.add(failure, closeOpenConnections(true));
+        }
+        failure = LifecycleFailures.add(failure, purgeCancelledIdleTimeoutHandler(cancelledIdleTimeoutHandler));
+        failure = LifecycleFailures.add(failure, awaitIdleTimeoutHandler(cancelledIdleTimeoutHandler));
+        try {
+            shutdownReaderExecutor(remainingNanos(stopAtNanos));
+        } catch (RuntimeException | Error e) {
+            failure = LifecycleFailures.add(failure, e);
         }
         LifecycleFailures.throwIfFailed(failure, "Failed to stop TCP transport binding " + name);
         return result;
@@ -234,40 +284,36 @@ final class TcpTransportBinding implements PortTransportBinding, TlsTransportBin
         // converts interrupts into a rejected outcome, so clear the loop condition first to avoid
         // re-entering the wait after the interrupt is consumed.
         running = false;
-        closeServerSocketForSuspend();
+        IdleTimeoutHandler cancelledIdleTimeoutHandler = cancelIdleTimeoutHandler();
+        Throwable failure = closeServerSocketForSuspend();
+        // Stop handling any new requests on all accepted and active connections.
+        failure = LifecycleFailures.add(failure, closeOpenConnections(false));
+        // Interrupt and close any accepted and active connections.
+        failure = LifecycleFailures.add(failure, closeOpenConnections(true));
+        failure = LifecycleFailures.add(failure, awaitClose());
+        failure = LifecycleFailures.add(failure, purgeCancelledIdleTimeoutHandler(cancelledIdleTimeoutHandler));
+        failure = LifecycleFailures.add(failure, awaitIdleTimeoutHandler(cancelledIdleTimeoutHandler));
+        clearAfterSuspend();
+        throwIfCheckpointSuspendFailed(failure);
     }
 
     @Override
     public void resume() {
-        initServerThread();
         start();
         inCheckpoint = false;
     }
 
-    Thread.State serverThreadState() {
-        Thread localServerThread = serverThread;
-        return localServerThread == null ? null : localServerThread.getState();
-    }
-
-    boolean running() {
-        return running;
-    }
-
-    boolean inCheckpoint() {
-        return inCheckpoint;
-    }
-
-    void stopRequested() {
+    private void stopRequested() {
         running = false;
         inCheckpoint = false;
     }
 
-    void clearAfterSuspend() {
+    private void clearAfterSuspend() {
         serverThread = null;
         closeFuture = null;
     }
 
-    Throwable closeServerSocketForStop() {
+    private Throwable closeServerSocketForStop() {
         ServerSocketChannel localServerSocket = serverSocket;
         if (localServerSocket == null) {
             return null;
@@ -288,7 +334,7 @@ final class TcpTransportBinding implements PortTransportBinding, TlsTransportBin
         return failure;
     }
 
-    Throwable closeOpenConnections(boolean interrupt) {
+    private Throwable closeOpenConnections(boolean interrupt) {
         Throwable failure = null;
         for (ConnectionHandler handler : connectionHandlers()) {
             try {
@@ -300,7 +346,7 @@ final class TcpTransportBinding implements PortTransportBinding, TlsTransportBin
         return failure;
     }
 
-    Throwable awaitClose() {
+    private Throwable awaitClose() {
         Throwable failure = null;
         Thread localServerThread = serverThread;
         CompletableFuture<Void> localCloseFuture = closeFuture;
@@ -320,10 +366,9 @@ final class TcpTransportBinding implements PortTransportBinding, TlsTransportBin
         return failure;
     }
 
-    private boolean awaitConnectionHandlers(Duration gracefulPeriod) {
-        long stopAtNanos = stopAtNanos(gracefulPeriod);
+    private boolean awaitConnectionHandlers(long stopAtNanos) {
         while (!connectionHandlers.isEmpty()) {
-            long remainingNanos = stopAtNanos - System.nanoTime();
+            long remainingNanos = remainingNanos(stopAtNanos);
             if (remainingNanos <= 0) {
                 return false;
             }
@@ -335,6 +380,97 @@ final class TcpTransportBinding implements PortTransportBinding, TlsTransportBin
             }
         }
         return true;
+    }
+
+    private void shutdownReaderExecutor(long timeoutNanos) {
+        HelidonTaskExecutor localReaderExecutor = readerExecutor;
+        if (localReaderExecutor == null) {
+            return;
+        }
+        Throwable failure = null;
+        localReaderExecutor.terminate(timeoutNanos, TimeUnit.NANOSECONDS);
+        if (Thread.currentThread().isInterrupted()) {
+            failure = LifecycleFailures.add(failure,
+                                            new IllegalStateException("Interrupted while shutting down TCP reader executor "
+                                                                              + "for " + socketName));
+        }
+        if (!localReaderExecutor.isTerminated()) {
+            LOGGER.log(DEBUG, "Some tasks in TCP reader executor did not terminate gracefully");
+            try {
+                localReaderExecutor.forceTerminate();
+            } catch (RuntimeException | Error e) {
+                failure = LifecycleFailures.add(failure, e);
+            }
+        }
+        readerExecutor = null;
+        LifecycleFailures.throwIfFailed(failure, "Failed to shut down TCP reader executor for " + socketName);
+    }
+
+    private void startIdleTimeoutHandler() {
+        idleTimeoutLock.lock();
+        try {
+            if (idleTimeoutHandler != null) {
+                return;
+            }
+            IdleTimeoutHandler handler = new IdleTimeoutHandler(idleConnectionTimer,
+                                                                listenerConfig,
+                                                                this::connectionHandlers);
+            handler.start();
+            idleTimeoutHandler = handler;
+        } finally {
+            idleTimeoutLock.unlock();
+        }
+    }
+
+    private IdleTimeoutHandler cancelIdleTimeoutHandler() {
+        idleTimeoutLock.lock();
+        try {
+            IdleTimeoutHandler handler = idleTimeoutHandler;
+            if (handler == null) {
+                return null;
+            }
+            idleTimeoutHandler = null;
+            handler.cancelOnly();
+            return handler;
+        } finally {
+            idleTimeoutLock.unlock();
+        }
+    }
+
+    private Throwable purgeCancelledIdleTimeoutHandler(IdleTimeoutHandler handler) {
+        if (handler != null) {
+            try {
+                idleConnectionTimer.purge();
+            } catch (RuntimeException | Error e) {
+                return e;
+            }
+        }
+        return null;
+    }
+
+    private static Throwable awaitIdleTimeoutHandler(IdleTimeoutHandler handler) {
+        if (handler != null) {
+            try {
+                handler.awaitFinished();
+            } catch (RuntimeException | Error e) {
+                return e;
+            }
+        }
+        return null;
+    }
+
+    private static void throwIfCheckpointSuspendFailed(Throwable failure) {
+        if (failure == null) {
+            return;
+        }
+        Throwable unwrapped = LifecycleFailures.unwrap(failure);
+        if (unwrapped instanceof RuntimeException runtimeException) {
+            throw runtimeException;
+        }
+        if (unwrapped instanceof Error error) {
+            throw error;
+        }
+        throw new IllegalStateException("Failed to suspend TCP transport binding for checkpoint", unwrapped);
     }
 
     private static long stopAtNanos(Duration gracefulPeriod) {
@@ -355,14 +491,17 @@ final class TcpTransportBinding implements PortTransportBinding, TlsTransportBin
         }
     }
 
-    List<ConnectionHandler> connectionHandlers() {
-        List<ConnectionHandler> result = new ArrayList<>();
-        addConnectionHandlersTo(result);
-        return result;
+    private static long remainingNanos(long stopAtNanos) {
+        if (stopAtNanos == Long.MAX_VALUE) {
+            return Long.MAX_VALUE;
+        }
+        return Math.max(0, stopAtNanos - System.nanoTime());
     }
 
-    void addConnectionHandlersTo(List<ConnectionHandler> result) {
+    private List<ConnectionHandler> connectionHandlers() {
+        List<ConnectionHandler> result = new ArrayList<>();
         result.addAll(connectionHandlers);
+        return result;
     }
 
     private static Limit connectionLimit(ListenerConfig listenerConfig) {
@@ -395,11 +534,12 @@ final class TcpTransportBinding implements PortTransportBinding, TlsTransportBin
                 .unstarted(this::listen);
     }
 
-    private void closeServerSocketForSuspend() {
+    private Throwable closeServerSocketForSuspend() {
         ServerSocketChannel localServerSocket = serverSocket;
         if (localServerSocket == null) {
-            return;
+            return null;
         }
+        Throwable failure = null;
         try {
             localServerSocket.close();
             if (configuredAddress instanceof UnixDomainSocketAddress udsa) {
@@ -411,11 +551,12 @@ final class TcpTransportBinding implements PortTransportBinding, TlsTransportBin
                 }
             }
         } catch (IOException e) {
-            LOGGER.log(INFO, "Exception thrown on socket close", e);
+            failure = LifecycleFailures.add(failure, new UncheckedIOException("Failed to close server socket", e));
         } finally {
             serverSocket = null;
             connectedPort = -1;
         }
+        return failure;
     }
 
     private boolean serverSocketBound(ServerSocketChannel localServerSocket, String debugMessage) {
@@ -538,7 +679,11 @@ final class TcpTransportBinding implements PortTransportBinding, TlsTransportBin
                             token.ignore();
                             continue;
                         }
-                        readerExecutor.execute(handler);
+                        HelidonTaskExecutor localReaderExecutor = readerExecutor;
+                        if (localReaderExecutor == null) {
+                            throw new RejectedExecutionException("TCP reader executor is not available");
+                        }
+                        localReaderExecutor.execute(handler);
                     } catch (RejectedExecutionException e) {
                         connectionHandlers.remove(handler);
                         LOGGER.log(ERROR, "Executor rejected handler for new connection", e);
