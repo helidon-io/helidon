@@ -85,25 +85,6 @@ class ServerListener implements TransportBindingContext, ListenerContext {
                    Timer idleConnectionTimer,
                    MediaContext defaultMediaContext,
                    ContentEncodingContext defaultContentEncodingContext,
-                   DirectHandlers defaultDirectHandlers) {
-        this(socketName,
-             listenerConfig,
-             router,
-             serverContext,
-             idleConnectionTimer,
-             defaultMediaContext,
-             defaultContentEncodingContext,
-             defaultDirectHandlers,
-             (listener, cause) -> listener.stop());
-    }
-
-    ServerListener(String socketName,
-                   ListenerConfig listenerConfig,
-                   Router router,
-                   Context serverContext,
-                   Timer idleConnectionTimer,
-                   MediaContext defaultMediaContext,
-                   ContentEncodingContext defaultContentEncodingContext,
                    DirectHandlers defaultDirectHandlers,
                    FatalListenerFailureHandler fatalListenerFailureHandler) {
 
@@ -288,7 +269,6 @@ class ServerListener implements TransportBindingContext, ListenerContext {
         return false;
     }
 
-    @Deprecated(forRemoval = true, since = "27.0.0")
     void reloadTls(Tls tls) {
         Objects.requireNonNull(tls, "tls");
         if (!this.tls.enabled()) {

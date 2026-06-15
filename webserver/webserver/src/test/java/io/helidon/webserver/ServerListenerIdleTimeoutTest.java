@@ -312,7 +312,8 @@ class ServerListenerIdleTimeoutTest {
                                   timer,
                                   MediaContext.create(),
                                   ContentEncodingContext.create(),
-                                  DirectHandlers.create());
+                                  DirectHandlers.create(),
+                                  (failedListener, _) -> failedListener.stop());
     }
 
     private static WebServerConfig listenerConfig() {
