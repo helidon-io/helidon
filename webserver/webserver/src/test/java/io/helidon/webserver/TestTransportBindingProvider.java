@@ -34,7 +34,7 @@ import io.helidon.webserver.spi.TransportBinding;
 import io.helidon.webserver.spi.TransportBindingProvider;
 
 public class TestTransportBindingProvider implements TransportBindingProvider<TestTransportBindingConfig> {
-    private static final Map<String, String> HOST_AT_PLAN = new ConcurrentHashMap<>();
+    private static final Map<String, BindingPlanContext> PLAN_CONTEXTS = new ConcurrentHashMap<>();
     private static final Map<String, Integer> PORT_AT_PLAN = new ConcurrentHashMap<>();
     private static final Map<String, Integer> PORT_AT_CREATE = new ConcurrentHashMap<>();
     private static final Map<String, Integer> PORT_AT_START = new ConcurrentHashMap<>();
@@ -49,7 +49,7 @@ public class TestTransportBindingProvider implements TransportBindingProvider<Te
     private static final Map<String, CountDownLatch> EXECUTOR_TASKS_STARTED = new ConcurrentHashMap<>();
 
     static void reset() {
-        HOST_AT_PLAN.clear();
+        PLAN_CONTEXTS.clear();
         PORT_AT_PLAN.clear();
         PORT_AT_CREATE.clear();
         PORT_AT_START.clear();
@@ -66,12 +66,13 @@ public class TestTransportBindingProvider implements TransportBindingProvider<Te
         EXECUTOR_TASKS_STARTED.clear();
     }
 
-    static String hostAtPlan(String name) {
-        return HOST_AT_PLAN.get(name);
-    }
-
     static int portAtPlan(String name) {
         return PORT_AT_PLAN.getOrDefault(name, -1);
+    }
+
+    static int currentPlanPort(String name) {
+        BindingPlanContext context = PLAN_CONTEXTS.get(name);
+        return context == null ? -1 : context.port();
     }
 
     static int portAtCreate(String name) {
@@ -138,7 +139,7 @@ public class TestTransportBindingProvider implements TransportBindingProvider<Te
 
     @Override
     public boolean canBind(BindingPlanContext context, TestTransportBindingConfig config) {
-        HOST_AT_PLAN.put(config.name(), context.host());
+        PLAN_CONTEXTS.put(config.name(), context);
         PORT_AT_PLAN.put(config.name(), context.port());
         return config.enabled();
     }

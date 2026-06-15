@@ -457,9 +457,7 @@ class ServerListener implements ListenerContext {
     @SuppressWarnings({"rawtypes", "unchecked"})
     private List<TransportBinding> planTransportBindings(List<ProtocolConfig> protocolConfigs) {
         Map<String, TransportBindingProvider> providers = transportBindingProviders();
-        BindingPlanContext planContext = new ListenerBindingPlanContext(socketName,
-                                                                        bindingPlanHost(configuredAddress, listenerConfig),
-                                                                        bindingPlanPort(configuredAddress, listenerConfig));
+        BindingPlanContext planContext = new ListenerBindingPlanContext(socketName);
         List<TransportBinding> activeBindings = new ArrayList<>();
         Set<BindingConfigId> bindingConfigs = new LinkedHashSet<>();
         Set<String> bindingNames = new LinkedHashSet<>();
@@ -949,18 +947,11 @@ class ServerListener implements ListenerContext {
         return result;
     }
 
-    private static String bindingPlanHost(SocketAddress configuredAddress, ListenerConfig listenerConfig) {
-        if (configuredAddress instanceof InetSocketAddress inetSocketAddress) {
-            var address = inetSocketAddress.getAddress();
-            if (address != null) {
-                return address.getHostAddress();
-            }
-            return inetSocketAddress.getHostString();
+    private int bindingPlanPort() {
+        OptionalInt boundPort = boundPort();
+        if (boundPort.isPresent()) {
+            return boundPort.getAsInt();
         }
-        return listenerConfig.host();
-    }
-
-    private static int bindingPlanPort(SocketAddress configuredAddress, ListenerConfig listenerConfig) {
         if (configuredAddress instanceof InetSocketAddress inetSocketAddress) {
             return inetSocketAddress.getPort();
         }
@@ -1095,9 +1086,22 @@ class ServerListener implements ListenerContext {
         }
     }
 
-    private record ListenerBindingPlanContext(String name,
-                                              String host,
-                                              int port) implements BindingPlanContext {
+    private final class ListenerBindingPlanContext implements BindingPlanContext {
+        private final String name;
+
+        private ListenerBindingPlanContext(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String name() {
+            return name;
+        }
+
+        @Override
+        public int port() {
+            return bindingPlanPort();
+        }
     }
 
     private final class ListenerTransportBindingContext implements TcpTransportBindingContext {
