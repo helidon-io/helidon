@@ -28,14 +28,10 @@ public interface BindingPlanContext {
     String name();
 
     /**
-     * Resolved listener host.
-     *
-     * @return listener host
-     */
-    String host();
-
-    /**
-     * Resolved listener port.
+     * Listener port.
+     * <p>
+     * If a port-capable binding has already bound a runtime port, this returns the bound port. Otherwise, this returns
+     * the configured listener port.
      *
      * @return listener port
      */

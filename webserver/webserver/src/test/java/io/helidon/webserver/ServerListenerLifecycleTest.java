@@ -941,6 +941,7 @@ class ServerListenerLifecycleTest {
 
         try {
             assertThat(TestTransportBindingProvider.portAtStart("test") > 0, is(true));
+            assertThat(TestTransportBindingProvider.currentPlanPort("test"), is(server.port()));
         } finally {
             stopUntilStopped(server);
         }
@@ -958,7 +959,7 @@ class ServerListenerLifecycleTest {
     }
 
     @Test
-    void bindingPlanContextUsesResolvedListenerAddress() {
+    void bindingPlanContextUsesConfiguredPortBeforeStart() {
         TestTransportBindingProvider.reset();
         InetAddress address = InetAddress.getLoopbackAddress();
         WebServer server = WebServer.builder()
@@ -970,7 +971,6 @@ class ServerListenerLifecycleTest {
                 .start();
 
         try {
-            assertThat(TestTransportBindingProvider.hostAtPlan("test"), is(address.getHostAddress()));
             assertThat(TestTransportBindingProvider.portAtPlan("test"), is(0));
         } finally {
             stopUntilStopped(server);
