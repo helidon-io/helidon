@@ -1251,7 +1251,8 @@ class ServerListenerLifecycleTest {
                                                      timer,
                                                      MediaContext.create(),
                                                      ContentEncodingContext.create(),
-                                                     DirectHandlers.create());
+                                                     DirectHandlers.create(),
+                                                     (failedListener, _) -> failedListener.stop());
         AtomicReference<Throwable> firstStopFailure = new AtomicReference<>();
         AtomicReference<Throwable> secondStopFailure = new AtomicReference<>();
         Thread firstStop = null;
