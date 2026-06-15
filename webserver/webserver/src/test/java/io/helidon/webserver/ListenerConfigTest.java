@@ -23,7 +23,7 @@ import java.util.Map;
 
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
-import io.helidon.webserver.spi.TransportBindingConfig;
+import io.helidon.webserver.spi.TransportBindingFactory;
 
 import org.junit.jupiter.api.Test;
 
@@ -135,7 +135,7 @@ public class ListenerConfigTest {
                    is(List.of("TLS_AES_128_GCM_SHA256")));
     }
 
-    private static boolean isDiscoveredTestTransportBinding(TransportBindingConfig binding) {
+    private static boolean isDiscoveredTestTransportBinding(TransportBindingFactory binding) {
         return TestTransportBindingConfig.TYPE.equals(binding.type())
                 && TestTransportBindingConfig.TYPE.equals(binding.name())
                 && !binding.enabled();

@@ -31,9 +31,9 @@ import io.helidon.config.Config;
 import io.helidon.webserver.spi.PortTransportBinding;
 import io.helidon.webserver.spi.TlsTransportBinding;
 import io.helidon.webserver.spi.TransportBinding;
-import io.helidon.webserver.spi.TransportBindingProvider;
+import io.helidon.webserver.spi.TransportBindingFactoryProvider;
 
-public class TestTransportBindingProvider implements TransportBindingProvider<TestTransportBindingConfig> {
+public class TestTransportBindingProvider implements TransportBindingFactoryProvider {
     private static final Map<String, BindingPlanContext> PLAN_CONTEXTS = new ConcurrentHashMap<>();
     private static final Map<String, Integer> PORT_AT_PLAN = new ConcurrentHashMap<>();
     private static final Map<String, Integer> PORT_AT_CREATE = new ConcurrentHashMap<>();
@@ -132,20 +132,13 @@ public class TestTransportBindingProvider implements TransportBindingProvider<Te
         return new TestTransportBindingConfig(name, config.get("enabled").asBoolean().orElse(false));
     }
 
-    @Override
-    public Class<TestTransportBindingConfig> configType() {
-        return TestTransportBindingConfig.class;
-    }
-
-    @Override
-    public boolean canBind(BindingPlanContext context, TestTransportBindingConfig config) {
+    static boolean canBind(TestTransportBindingConfig config, BindingPlanContext context) {
         PLAN_CONTEXTS.put(config.name(), context);
         PORT_AT_PLAN.put(config.name(), context.port());
         return config.enabled();
     }
 
-    @Override
-    public TransportBinding create(TransportBindingContext context, TestTransportBindingConfig config) {
+    static TransportBinding create(TestTransportBindingConfig config, TransportBindingContext context) {
         PORT_AT_CREATE.put(config.name(), context.boundPort().orElse(-1));
         return new TestTransportBinding(context, config);
     }

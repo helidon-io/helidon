@@ -16,7 +16,8 @@
 
 package io.helidon.webserver;
 
-import io.helidon.webserver.spi.TransportBindingConfig;
+import io.helidon.webserver.spi.TransportBinding;
+import io.helidon.webserver.spi.TransportBindingFactory;
 import io.helidon.webserver.spi.TransportBinding.Security;
 
 record TestTransportBindingConfig(String name,
@@ -30,7 +31,7 @@ record TestTransportBindingConfig(String name,
                                   boolean forceStop,
                                   boolean blockSharedExecutor,
                                   boolean fatalAfterStart,
-                                  Security security) implements TransportBindingConfig {
+                                  Security security) implements TransportBindingFactory {
     static final String TYPE = "test-transport";
 
     TestTransportBindingConfig(String name, boolean enabled) {
@@ -102,6 +103,16 @@ record TestTransportBindingConfig(String name,
     @Override
     public String type() {
         return TYPE;
+    }
+
+    @Override
+    public boolean canBind(BindingPlanContext context) {
+        return TestTransportBindingProvider.canBind(this, context);
+    }
+
+    @Override
+    public TransportBinding create(TransportBindingContext context) {
+        return TestTransportBindingProvider.create(this, context);
     }
 
     private static Security security(boolean tlsEnabled) {

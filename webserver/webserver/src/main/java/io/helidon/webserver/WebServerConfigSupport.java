@@ -38,7 +38,7 @@ import io.helidon.config.ConfigException;
 import io.helidon.http.RequestedUriDiscoveryContext;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.spi.ServerFeature;
-import io.helidon.webserver.spi.TransportBindingConfig;
+import io.helidon.webserver.spi.TransportBindingFactory;
 
 class WebServerConfigSupport {
     private static final String UNIX_DOMAIN_SOCKET_PREFIX = "unix:";
@@ -152,6 +152,7 @@ class WebServerConfigSupport {
             }
 
             preserveBindingConfigSemantics(target);
+            normalizeTcpBinding(target);
 
             if (target.connectionOptions().isEmpty()) {
                 target.connectionOptions(SocketOptions.create());
@@ -199,6 +200,90 @@ class WebServerConfigSupport {
             }
 
             preserveDisabledTcpBindings(target, configuredBindings);
+        }
+
+        private static void normalizeTcpBinding(ListenerConfig.BuilderBase<?, ?> target) {
+            List<TransportBindingFactory> bindings = target.bindings();
+            int tcpBindingCount = 0;
+            boolean hasExplicitTcpBinding = false;
+            TransportBindingFactory discoveredDefaultTcpBinding = null;
+
+            for (TransportBindingFactory binding : bindings) {
+                if (!TcpTransportBinding.TYPE.equals(binding.type())) {
+                    continue;
+                }
+                tcpBindingCount++;
+                if (isDiscoveredDefaultTcpBinding(binding)) {
+                    if (discoveredDefaultTcpBinding == null) {
+                        discoveredDefaultTcpBinding = binding;
+                    }
+                } else {
+                    hasExplicitTcpBinding = true;
+                }
+            }
+
+            if (hasExplicitTcpBinding) {
+                normalizeExplicitTcpBindings(target, bindings, tcpBindingCount);
+                return;
+            }
+
+            if (discoveredDefaultTcpBinding != null) {
+                moveTcpBindingFirst(target, bindings, discoveredDefaultTcpBinding);
+                return;
+            }
+
+            List<TransportBindingFactory> normalizedBindings = new ArrayList<>(bindings.size() + 1);
+            normalizedBindings.add(TcpTransportConfig.create());
+            normalizedBindings.addAll(bindings);
+            target.bindings(normalizedBindings);
+        }
+
+        private static void normalizeExplicitTcpBindings(ListenerConfig.BuilderBase<?, ?> target,
+                                                         List<TransportBindingFactory> bindings,
+                                                         int tcpBindingCount) {
+            List<TransportBindingFactory> normalizedBindings = new ArrayList<>(bindings.size());
+            int explicitTcpBindingCount = 0;
+            boolean changed = false;
+
+            for (TransportBindingFactory binding : bindings) {
+                if (TcpTransportBinding.TYPE.equals(binding.type())) {
+                    if (isDiscoveredDefaultTcpBinding(binding)) {
+                        changed = true;
+                        continue;
+                    }
+                    explicitTcpBindingCount++;
+                }
+                normalizedBindings.add(binding);
+            }
+
+            if (explicitTcpBindingCount > 1) {
+                throw new ConfigException("Only one TCP transport binding can be configured for a listener.");
+            }
+            if (changed || tcpBindingCount != explicitTcpBindingCount) {
+                target.bindings(normalizedBindings);
+            }
+        }
+
+        private static void moveTcpBindingFirst(ListenerConfig.BuilderBase<?, ?> target,
+                                                List<TransportBindingFactory> bindings,
+                                                TransportBindingFactory tcpBinding) {
+            if (bindings.getFirst() == tcpBinding) {
+                return;
+            }
+
+            List<TransportBindingFactory> normalizedBindings = new ArrayList<>(bindings.size());
+            normalizedBindings.add(tcpBinding);
+            for (TransportBindingFactory binding : bindings) {
+                if (binding != tcpBinding) {
+                    normalizedBindings.add(binding);
+                }
+            }
+            target.bindings(normalizedBindings);
+        }
+
+        private static boolean isDiscoveredDefaultTcpBinding(TransportBindingFactory binding) {
+            return binding instanceof TcpTransportConfig tcpConfig
+                    && TcpTransportBindingFactoryProvider.isDiscoveredDefault(tcpConfig);
         }
 
         private static List<ConfiguredBinding> configuredBindings(Config bindingsConfig) {
@@ -255,8 +340,8 @@ class WebServerConfigSupport {
             }
         }
 
-        private static boolean hasBinding(List<TransportBindingConfig> bindings, ConfiguredBinding configuredBinding) {
-            for (TransportBindingConfig binding : bindings) {
+        private static boolean hasBinding(List<TransportBindingFactory> bindings, ConfiguredBinding configuredBinding) {
+            for (TransportBindingFactory binding : bindings) {
                 if (binding.type().equals(configuredBinding.type())
                         && binding.name().equals(configuredBinding.name())) {
                     return true;

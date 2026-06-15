@@ -29,7 +29,7 @@ public interface TransportBinding {
     /**
      * Transport binding type.
      * <p>
-     * This is the provider key used by {@link TransportBindingProvider} and by configuration under
+     * This is the provider key used by {@link TransportBindingFactoryProvider} and by configuration under
      * {@code server.bindings}.
      *
      * @return transport binding type

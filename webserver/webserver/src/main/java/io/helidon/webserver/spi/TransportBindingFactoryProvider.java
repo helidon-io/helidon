@@ -14,17 +14,12 @@
  * limitations under the License.
  */
 
-package io.helidon.webserver;
+package io.helidon.webserver.spi;
+
+import io.helidon.config.ConfiguredProvider;
 
 /**
- * Internal transport binding context that can create the built-in TCP binding.
+ * Provider of configured transport binding factories.
  */
-interface TcpTransportBindingContext extends TransportBindingContext {
-    /**
-     * Create the built-in TCP binding.
-     *
-     * @param config TCP binding config
-     * @return TCP binding
-     */
-    TcpTransportBinding createTcpTransportBinding(TcpTransportConfig config);
+public interface TransportBindingFactoryProvider extends ConfiguredProvider<TransportBindingFactory> {
 }

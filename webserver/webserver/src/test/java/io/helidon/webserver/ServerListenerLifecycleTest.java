@@ -1033,7 +1033,7 @@ class ServerListenerLifecycleTest {
                 .build()
                 .start());
 
-        assertThat(containsMessage(failure, "can only plan one TCP transport binding"), is(true));
+        assertThat(containsMessage(failure, "Only one TCP transport binding can be configured"), is(true));
     }
 
     @Test
@@ -1302,7 +1302,7 @@ class ServerListenerLifecycleTest {
                 .build()
                 .start());
 
-        assertThat(containsMessage(failure, "Duplicate transport binding config \"test\""), is(true));
+        assertThat(containsMessage(failure, "Duplicate transport binding factory \"test\""), is(true));
         assertThat(containsMessage(failure, "of type \"test-transport\""), is(true));
     }
 

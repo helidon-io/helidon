@@ -16,31 +16,39 @@
 
 package io.helidon.webserver.spi;
 
-import io.helidon.config.ConfiguredProvider;
+import io.helidon.config.NamedService;
 import io.helidon.webserver.BindingPlanContext;
 import io.helidon.webserver.TransportBindingContext;
 
 /**
- * Provider of transport bindings.
- *
- * @param <T> transport binding configuration type
+ * Factory for a configured transport binding.
  */
-public interface TransportBindingProvider<T extends TransportBindingConfig> extends ConfiguredProvider<T> {
+public interface TransportBindingFactory extends NamedService {
     /**
-     * Supported binding config type.
+     * Whether this binding factory is enabled.
      *
-     * @return binding config class
+     * @return whether this binding factory is enabled
      */
-    Class<T> configType();
+    default boolean enabled() {
+        return true;
+    }
 
     /**
-     * Whether this binding configuration can bind with the current listener endpoint configuration.
+     * Whether this binding factory is required to become active.
+     *
+     * @return whether this binding factory is required
+     */
+    default boolean required() {
+        return false;
+    }
+
+    /**
+     * Whether this binding factory can bind with the current listener endpoint configuration.
      *
      * @param context listener binding planning view
-     * @param config binding configuration
-     * @return whether this binding configuration can bind for the listener
+     * @return whether this binding factory can bind for the listener
      */
-    boolean canBind(BindingPlanContext context, T config);
+    boolean canBind(BindingPlanContext context);
 
     /**
      * Create a binding for the transport.
@@ -51,8 +59,7 @@ public interface TransportBindingProvider<T extends TransportBindingConfig> exte
      * path to release those resources.
      *
      * @param context logical listener context
-     * @param config binding configuration
      * @return created transport binding, never {@code null}
      */
-    TransportBinding create(TransportBindingContext context, T config);
+    TransportBinding create(TransportBindingContext context);
 }
