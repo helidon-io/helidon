@@ -23,7 +23,6 @@ import java.nio.file.Path;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -33,7 +32,6 @@ import java.util.stream.Stream;
 import io.helidon.logging.common.LogConfig;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -81,12 +79,6 @@ class H2SpecClientIT {
     private static final Pattern CASE_PATTERN =
             Pattern.compile("^\\s*(?:([\\u2714\\u00D7])\\s+)?(\\d+):\\s+(.*)$");
 
-    private static final Set<KnownFailure> KNOWN_FAILURES = Set.of(
-            new KnownFailure("client/6.9.1/1",
-                             "Sends multiple WINDOW_UPDATE frames increasing the flow control window to above 2^31-1"),
-            new KnownFailure("client/6.9.1/2",
-                             "Sends multiple WINDOW_UPDATE frames increasing the flow control window to above 2^31-1 on a stream")
-    );
     private static final Logger LOGGER = LoggerFactory.getLogger(H2SpecClientIT.class);
 
     static {
@@ -373,10 +365,6 @@ class H2SpecClientIT {
         }
     }
 
-    private static boolean isKnownFailure(String id, String desc) {
-        return KNOWN_FAILURES.contains(new KnownFailure(id, desc));
-    }
-
     @ParameterizedTest(name = "{0}: {1}")
     @MethodSource("runH2Spec")
     void h2spec(String caseName, String desc, String id, String err, String skipped) {
@@ -386,16 +374,9 @@ class H2SpecClientIT {
             Assertions.fail("Unexpected h2specd skip for " + id + " (" + desc + "): " + skipped);
         }
 
-        if (err != null && isKnownFailure(id, desc)) {
-            Assumptions.abort("Known failure tracked by #11771:\n" + err);
-        }
-
         if (err != null) {
             Assertions.fail(err);
         }
-    }
-
-    private record KnownFailure(String id, String description) {
     }
 
     private record H2SpecCaseResult(String caseName,
