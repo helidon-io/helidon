@@ -27,26 +27,37 @@ import io.helidon.http.HeaderValues;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.webclient.api.ClientUri;
+import io.helidon.webclient.api.HttpClientResponse;
 import io.helidon.webclient.api.WebClientServiceRequest;
 import io.helidon.webclient.api.WebClientServiceResponse;
 
 class Http2CallEntityChain extends Http2CallChainBase {
     private final CompletableFuture<WebClientServiceRequest> whenSent;
-    private final Object entity;
+    private final RequestEntityHolder entityHolder;
+    private boolean hasRequestEntity;
+    private Object requestEntity;
 
     Http2CallEntityChain(Http2ClientImpl http2Client,
                          Http2ClientRequestImpl request,
                          CompletableFuture<WebClientServiceRequest> whenSent,
                          CompletableFuture<WebClientServiceResponse> whenComplete,
                          Object entity) {
+        this(http2Client, request, whenSent, whenComplete, new RequestEntityHolder(entity));
+    }
+
+    private Http2CallEntityChain(Http2ClientImpl http2Client,
+                                 Http2ClientRequestImpl request,
+                                 CompletableFuture<WebClientServiceRequest> whenSent,
+                                 CompletableFuture<WebClientServiceResponse> whenComplete,
+                                 RequestEntityHolder entityHolder) {
         super(http2Client,
               request,
               whenComplete,
               new Http1FallbackHandler(whenSent,
-                                       http1Request -> http1Request.submit(entity),
-                                       bodyless(entity)));
+                                       http1Request -> http1Request.submit(entityHolder.entity()),
+                                       !mayHaveEntity(entityHolder.entity())));
         this.whenSent = whenSent;
-        this.entity = entity;
+        this.entityHolder = entityHolder;
     }
 
     @Override
@@ -55,15 +66,19 @@ class Http2CallEntityChain extends Http2CallChainBase {
                                                  Http2ClientStream stream) {
 
         byte[] entityBytes;
+        Object entity = entityHolder.entity();
         if (entity == BufferData.EMPTY_BYTES) {
             entityBytes = BufferData.EMPTY_BYTES;
         } else {
             entityBytes = entityBytes(entity, headers);
         }
+        // Keep the serialized request body available for a possible 307/308 replay decision.
+        requestEntity = entityBytes;
 
         if (!clientRequest().outputStreamRedirect()) {
             headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, entityBytes.length));
         }
+        hasRequestEntity = entityBytes.length > 0;
 
         ClientUri uri = serviceRequest.uri();
 
@@ -73,13 +88,54 @@ class Http2CallEntityChain extends Http2CallChainBase {
         stream.incrementInboundWindowSize(clientRequest().requestPrefetch());
         whenSent.complete(serviceRequest);
 
-        waitFor100Continue(stream);
+        waitFor100Continue(stream, clientRequest().readContinueTimeout());
 
         if (entityBytes.length != 0) {
             stream.writeData(BufferData.create(entityBytes), true);
         }
 
-        return readResponse(serviceRequest, stream);
+        return clientRequest().outputStreamRedirect()
+                ? readResponse(serviceRequest, stream, clientRequest().readContinueTimeout())
+                : readResponse(serviceRequest, stream);
+    }
+
+    @Override
+    protected WebClientServiceResponse doProceed(WebClientServiceRequest serviceRequest, HttpClientResponse response) {
+        if (RedirectionProcessor.keepsMethodAndEntity(response.status())) {
+            // HTTP/1 fallback can receive a redirect before an HTTP/2 stream exists. Do not serialize the body here;
+            // redirect policy must be able to reject cross-origin replay before invoking media writers.
+            hasRequestEntity = mayHaveEntity(entityHolder.entity());
+        }
+        return super.doProceed(serviceRequest, response);
+    }
+
+    @Override
+    boolean hasRequestEntity() {
+        return hasRequestEntity;
+    }
+
+    @Override
+    Object requestEntity() {
+        return requestEntity;
+    }
+
+    @Override
+    void releaseRequestEntity() {
+        requestEntity = null;
+        entityHolder.clear();
+    }
+
+    private static boolean mayHaveEntity(Object entity) {
+        if (entity == null || entity == BufferData.EMPTY_BYTES) {
+            return false;
+        }
+        if (entity instanceof byte[] bytes) {
+            return bytes.length > 0;
+        }
+        if (entity instanceof CharSequence chars) {
+            return !chars.isEmpty();
+        }
+        return true;
     }
 
     private byte[] entityBytes(Object entity, ClientRequestHeaders headers) {
@@ -97,8 +153,19 @@ class Http2CallEntityChain extends Http2CallChainBase {
         return bos.toByteArray();
     }
 
-    private static boolean bodyless(Object entity) {
-        return entity == BufferData.EMPTY_BYTES
-                || entity instanceof byte[] bytes && bytes.length == 0;
+    private static final class RequestEntityHolder {
+        private Object entity;
+
+        private RequestEntityHolder(Object entity) {
+            this.entity = entity;
+        }
+
+        private Object entity() {
+            return entity;
+        }
+
+        private void clear() {
+            entity = null;
+        }
     }
 }

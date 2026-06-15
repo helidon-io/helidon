@@ -48,6 +48,8 @@ Creates every client and request as a builder pattern. This improves readability
 
 * *Redirect chain* +
 Follows the redirect chain and perform requests on the correct endpoint by itself.
+For redirects that preserve the request method and entity (`307` and `308`), WebClient does not replay a request
+entity to a different origin unless `follow-cross-origin-entity-redirects` is enabled.
 
 * *Tracing and security propagation* +
 Automatically propagates the configured tracing and security settings of the Helidon WebServer to the WebClient and uses them during request and response.
@@ -269,6 +271,7 @@ client:
   read-timeout-millis: 2000
   follow-redirects: true # <1>
   max-redirects: 5
+  follow-cross-origin-entity-redirects: false
   cookie-manager: # <2>
     automatic-store-enabled: true
     default-cookies:
@@ -321,6 +324,10 @@ client:
 <5> Protocol configuration
 <6> Proxy configuration
 <7> TLS configuration
+
+When `follow-redirects` is enabled, `307` and `308` redirects keep the original method and request entity.
+By default, WebClient rejects those redirects if the target has a different origin and the request has an entity.
+Set `follow-cross-origin-entity-redirects` to `true` only when the entity is safe to replay to the redirect target.
 
 == Examples
 

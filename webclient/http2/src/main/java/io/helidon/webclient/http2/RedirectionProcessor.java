@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,6 +35,27 @@ class RedirectionProcessor {
         return status.family() == Status.Family.REDIRECTION;
     }
 
+    static boolean keepsMethodAndEntity(Status status) {
+        return status == Status.TEMPORARY_REDIRECT_307
+                || status == Status.PERMANENT_REDIRECT_308;
+    }
+
+    static void validateEntityRedirect(Http2ClientRequestImpl request,
+                                       Status status,
+                                       ClientUri redirectUri,
+                                       boolean hasEntity) {
+        if (keepsMethodAndEntity(status)
+                && hasEntity
+                && !request.canReplayEntityTo(redirectUri)) {
+            throw new IllegalStateException("Cross-origin redirect with request entity is disabled.");
+        }
+    }
+
+    static IllegalStateException maxRedirectsReached(int maxRedirects) {
+        return new IllegalStateException("Maximum number of request redirections ("
+                                                 + maxRedirects + ") reached.");
+    }
+
     static void checkRedirectHeaders(Http2Headers headerValues) {
         if (!headerValues.httpHeaders().contains(HeaderNames.LOCATION)) {
             throw new IllegalStateException("There is no " + HeaderNames.LOCATION + " header present in the"
@@ -56,12 +77,17 @@ class RedirectionProcessor {
         Http2ClientRequestImpl clientRequest = request;
         //Entity to be sent with the request. Will be changed when redirect happens to prevent entity sending.
         Object entityToBeSent = entity;
-        for (int i = initial; i < request.maxRedirects(); i++) {
+        int followedRedirects = initial;
+        while (true) {
             Http2ClientResponseImpl clientResponse = clientRequest.invokeEntity(entityToBeSent);
             if (!redirectionStatusCode(clientResponse.status())) {
                 return clientResponse;
             }
             try (clientResponse) {
+                if (followedRedirects >= request.maxRedirects()) {
+                    throw maxRedirectsReached(request.maxRedirects());
+                }
+                followedRedirects++;
                 if (!clientResponse.headers().contains(HeaderNames.LOCATION)) {
                     throw new IllegalStateException("There is no " + HeaderNames.LOCATION
                                                             + " header present in the response! "
@@ -84,8 +110,12 @@ class RedirectionProcessor {
                 redirectUri.port(resolvedUri.port());
             }
             //Method and entity is required to be the same as with original request with 307 and 308 requests
-            if (clientResponse.status() == Status.TEMPORARY_REDIRECT_307
-                    || clientResponse.status() == Status.PERMANENT_REDIRECT_308) {
+            validateEntityRedirect(clientRequest, clientResponse.status(), redirectUri, clientResponse.hasRequestEntity());
+            if (keepsMethodAndEntity(clientResponse.status())) {
+                Object requestEntity = clientResponse.requestEntity();
+                if (requestEntity != null) {
+                    entityToBeSent = requestEntity;
+                }
                 clientRequest = new Http2ClientRequestImpl(clientRequest,
                                                            clientRequest.method(),
                                                            redirectUri,
@@ -99,8 +129,6 @@ class RedirectionProcessor {
                                                            request.properties());
             }
         }
-        throw new IllegalStateException("Maximum number of request redirections ("
-                                                + request.maxRedirects() + ") reached.");
     }
 
 }

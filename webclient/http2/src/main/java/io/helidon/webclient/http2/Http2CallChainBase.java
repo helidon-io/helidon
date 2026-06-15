@@ -17,6 +17,7 @@
 package io.helidon.webclient.http2;
 
 import java.io.InputStream;
+import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -160,6 +161,17 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
         return responseStatus;
     }
 
+    boolean hasRequestEntity() {
+        return false;
+    }
+
+    Object requestEntity() {
+        return null;
+    }
+
+    void releaseRequestEntity() {
+    }
+
     CompletableFuture<WebClientServiceResponse> whenComplete() {
         return whenComplete;
     }
@@ -200,7 +212,13 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
     }
 
     protected WebClientServiceResponse readResponse(WebClientServiceRequest serviceRequest, Http2ClientStream stream) {
-        Http2Headers headers = readHeaders(stream);
+        return readResponse(serviceRequest, stream, null);
+    }
+
+    protected WebClientServiceResponse readResponse(WebClientServiceRequest serviceRequest,
+                                                    Http2ClientStream stream,
+                                                    Duration readTimeout) {
+        Http2Headers headers = readHeaders(stream, readTimeout);
 
         ClientResponseHeaders responseHeaders = ClientResponseHeaders.create(headers.httpHeaders());
         this.responseStatus = headers.status();
@@ -233,8 +251,12 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
     }
 
     static Http2Headers readHeaders(Http2ClientStream stream) {
+        return readHeaders(stream, null);
+    }
+
+    static Http2Headers readHeaders(Http2ClientStream stream, Duration readTimeout) {
         try {
-            return stream.readHeaders();
+            return readTimeout == null ? stream.readHeaders() : stream.readHeaders(readTimeout);
         } catch (Http2Exception e) {
             resetAndClose(stream, e);
             throw e;
@@ -242,8 +264,12 @@ abstract class Http2CallChainBase implements WebClientService.Chain {
     }
 
     static Status waitFor100Continue(Http2ClientStream stream) {
+        return waitFor100Continue(stream, null);
+    }
+
+    static Status waitFor100Continue(Http2ClientStream stream, Duration readContinueTimeout) {
         try {
-            return stream.waitFor100Continue();
+            return stream.waitFor100Continue(readContinueTimeout);
         } catch (Http2Exception e) {
             resetAndClose(stream, e);
             throw e;

@@ -68,14 +68,14 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
                                    boolean crossOriginRedirect,
                                    List<String> tcpProtocolIds) {
         super(http2Client.clientConfig(),
-                http2Client.webClient().cookieManager(),
-                Http2Client.PROTOCOL_ID,
-                method,
-                clientUri,
-                null,
-                properties,
-                redirectSourceUri,
-                crossOriginRedirect);
+              http2Client.webClient().cookieManager(),
+              Http2Client.PROTOCOL_ID,
+              method,
+              clientUri,
+              delegate == null ? null : delegate.sendExpectContinue().orElse(null),
+              properties,
+              redirectSourceUri,
+              crossOriginRedirect);
 
         this.http2Client = http2Client;
         Http2ClientProtocolConfig protocolConfig = http2Client.protocolConfig();
@@ -110,6 +110,8 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         this.flowControlTimeout(request.flowControlTimeout);
         this.requestPrefetch(request.requestPrefetch);
         this.readTimeout(request.readTimeout());
+        this.readContinueTimeout(request.readContinueTimeout());
+        request.sendExpectContinue().ifPresent(this::sendExpectContinue);
         this.outputStreamRedirect(request.outputStreamRedirect);
     }
 
@@ -209,6 +211,10 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
         super.sanitizeRedirectSensitiveHeaders(requestUri, requestHeaders);
     }
 
+    boolean canReplayEntityTo(ClientUri requestUri) {
+        return clientConfig().followCrossOriginEntityRedirects() || !crossesRedirectOriginBoundary(requestUri);
+    }
+
     private static boolean sameOrigin(ClientUri sourceUri, ClientUri targetUri) {
         return sourceUri.scheme().equalsIgnoreCase(targetUri.scheme())
                 && sourceUri.host().equalsIgnoreCase(targetUri.host())
@@ -252,19 +258,28 @@ class Http2ClientRequestImpl extends ClientRequestBase<Http2ClientRequest, Http2
             this.headers().forEach(delegateHeaders::set);
         }
 
+        boolean retainRequestEntity = followRedirects()
+                && RedirectionProcessor.keepsMethodAndEntity(serviceResponse.status());
+        boolean hasRequestEntity = retainRequestEntity && callChain.hasRequestEntity();
+        Object requestEntity = retainRequestEntity ? callChain.requestEntity() : null;
+        long maxBufferedEntitySize = http2Client.protocolConfig().maxBufferedEntitySize().toBytes();
         // if this was an HTTP/1.1 response, do something different (just re-use response)
-        return new Http2ClientResponseImpl(clientConfig(),
-                                           serviceResponse.status(),
-                                           callChain.requestHeaders(),
-                                           serviceResponse.headers(),
-                                           serviceResponse.trailers(),
-                                           serviceResponse.inputStream().orElse(null),
-                                           mediaContext(),
-                                           resolvedUri,
-                                           serviceResponse.connection(),
-                                           complete,
-                                           callChain::closeResponse,
-                                           http2Client.protocolConfig().maxBufferedEntitySize().toBytes());
+        Http2ClientResponseImpl response = new Http2ClientResponseImpl(clientConfig(),
+                                                                       serviceResponse.status(),
+                                                                       callChain.requestHeaders(),
+                                                                       serviceResponse.headers(),
+                                                                       serviceResponse.trailers(),
+                                                                       serviceResponse.inputStream().orElse(null),
+                                                                       mediaContext(),
+                                                                       resolvedUri,
+                                                                       serviceResponse.connection(),
+                                                                       complete,
+                                                                       callChain::closeResponse,
+                                                                       maxBufferedEntitySize,
+                                                                       hasRequestEntity,
+                                                                       requestEntity);
+        callChain.releaseRequestEntity();
+        return response;
 
     }
 }

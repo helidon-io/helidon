@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
@@ -67,6 +68,8 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
      * Proxy connection header.
      */
     public static final Header PROXY_CONNECTION = HeaderValues.create("Proxy-Connection", "keep-alive");
+    private static final String CROSS_ORIGIN_REDIRECT_PROPERTY =
+            ClientRequestBase.class.getName() + ".redirect.cross-origin." + UUID.randomUUID();
     private static final Map<String, AtomicLong> COUNTERS = new ConcurrentHashMap<>();
     private static final Set<String> SUPPORTED_SCHEMES = Set.of("https", "http");
 
@@ -77,7 +80,6 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
     private final Method method;
     private final ClientUri clientUri;
     private final ClientUri redirectSourceUri;
-    private final boolean crossOriginRedirect;
     private final Map<String, String> properties;
     private final Set<HeaderName> redirectSensitiveHeaders;
     private final ClientRequestHeaders headers;
@@ -87,6 +89,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
 
     private SocketAddress socketAddress;
     private String uriTemplate;
+    private boolean crossOriginRedirect;
     private boolean skipUriEncoding;
     private boolean followRedirects;
     private int maxRedirects;
@@ -170,6 +173,19 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
              false);
     }
 
+    /**
+     * Create a new request.
+     *
+     * @param clientConfig client configuration
+     * @param cookieManager cookie manager
+     * @param protocolId protocol identifier
+     * @param method HTTP method
+     * @param clientUri request URI
+     * @param sendExpectContinue whether to send the {@code Expect: 100-Continue} header
+     * @param properties request properties
+     * @param redirectSourceUri original request URI for redirect handling
+     * @param crossOriginRedirect whether a previous redirect crossed an origin boundary
+     */
     protected ClientRequestBase(HttpClientConfig clientConfig,
                                 WebClientCookieManager cookieManager,
                                 String protocolId,
@@ -184,10 +200,16 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
         this.protocolId = protocolId;
         this.method = method;
         this.clientUri = clientUri;
-        this.redirectSourceUri = redirectSourceUri == null ? null : ClientUri.create(redirectSourceUri);
-        this.crossOriginRedirect = crossOriginRedirect;
         this.sendExpectContinue = sendExpectContinue;
         this.properties = new HashMap<>(properties);
+        this.redirectSourceUri = redirectSourceUri == null ? null : ClientUri.create(redirectSourceUri);
+        // Once a redirect crosses origins, later same-origin hops must still be treated as crossing a trust boundary.
+        // The private property key preserves that state across internal paths that recreate a request from copied properties.
+        this.crossOriginRedirect = crossOriginRedirect
+                || Boolean.parseBoolean(this.properties.get(CROSS_ORIGIN_REDIRECT_PROPERTY));
+        if (this.crossOriginRedirect) {
+            this.properties.put(CROSS_ORIGIN_REDIRECT_PROPERTY, Boolean.TRUE.toString());
+        }
         this.filterRedirectHeaders = clientConfig.filterRedirectHeaders();
         this.redirectSensitiveHeaders = clientConfig.redirectSensitiveHeaders();
 
@@ -319,6 +341,15 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
 
     @Override
     public T property(String propertyName, String propertyValue) {
+        // Some internal protocol-switch paths copy request properties through this method rather than a copy constructor.
+        // Keep the redirect marker synchronized so later hops continue to strip redirect-sensitive data.
+        if (CROSS_ORIGIN_REDIRECT_PROPERTY.equals(propertyName)) {
+            if (crossOriginRedirect || Boolean.parseBoolean(propertyValue)) {
+                this.crossOriginRedirect = true;
+                this.properties.put(CROSS_ORIGIN_REDIRECT_PROPERTY, "true");
+            }
+            return identity();
+        }
         this.properties.put(propertyName, propertyValue);
         return identity();
     }
@@ -543,7 +574,7 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
                                                                         requestId,
                                                                         whenComplete,
                                                                         whenSent,
-                                                                        properties);
+                                                                        serviceProperties());
 
         WebClientService.Chain last = request -> {
             ClientRequestHeaderSupport.validate(request.headers());
@@ -569,6 +600,15 @@ public abstract class ClientRequestBase<T extends ClientRequest<T>, R extends Ht
      */
     protected HttpClientConfig clientConfig() {
         return clientConfig;
+    }
+
+    private Map<String, String> serviceProperties() {
+        if (!properties.containsKey(CROSS_ORIGIN_REDIRECT_PROPERTY)) {
+            return properties;
+        }
+        Map<String, String> serviceProperties = new HashMap<>(properties);
+        serviceProperties.remove(CROSS_ORIGIN_REDIRECT_PROPERTY);
+        return serviceProperties;
     }
 
     /**

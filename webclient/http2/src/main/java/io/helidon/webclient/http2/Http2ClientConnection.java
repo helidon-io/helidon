@@ -866,9 +866,10 @@ public class Http2ClientConnection {
     private void handleDataFrame(int streamId, Http2FrameHeader frameHeader, BufferData data) {
         Http2ClientStream stream = stream(streamId);
         if (stream == null) {
-            if (LOGGER.isLoggable(DEBUG)) {
-                ctx.log(LOGGER, DEBUG, "%d: received data for stream %d, which does not exist", 0, streamId);
-            }
+            validateKnownAbandonedClientStream(streamId, Http2FrameType.DATA);
+            connectionFlowControl.decrementInboundConnectionWindowSize(frameHeader.length());
+            connectionFlowControl.incrementInboundConnectionWindowSize(frameHeader.length());
+            logDroppedFrame(Http2FrameType.DATA, streamId);
             return;
         }
         Http2FrameData frameData = new Http2FrameData(frameHeader, data);

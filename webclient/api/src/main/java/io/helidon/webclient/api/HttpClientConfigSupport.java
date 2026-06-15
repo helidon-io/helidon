@@ -239,7 +239,8 @@ class HttpClientConfigSupport {
                     .forEach(target::addHeader);
 
             if (!target.redirectSensitiveHeaders().contains(HeaderNames.AUTHORIZATION)
-                    || !target.redirectSensitiveHeaders().contains(HeaderNames.COOKIE)) {
+                    || !target.redirectSensitiveHeaders().contains(HeaderNames.COOKIE)
+                    || !target.redirectSensitiveHeaders().contains(HeaderNames.PROXY_AUTHORIZATION)) {
                 target.redirectSensitiveHeaders(withDefaultRedirectSensitiveHeaders(target.redirectSensitiveHeaders()));
             }
 
@@ -264,9 +265,10 @@ class HttpClientConfigSupport {
         }
 
         private static Set<HeaderName> withDefaultRedirectSensitiveHeaders(Set<HeaderName> headerNames) {
-            Set<HeaderName> effectiveHeaderNames = new LinkedHashSet<>(headerNames.size() + 2);
+            Set<HeaderName> effectiveHeaderNames = new LinkedHashSet<>(headerNames.size() + 3);
             effectiveHeaderNames.add(HeaderNames.AUTHORIZATION);
             effectiveHeaderNames.add(HeaderNames.COOKIE);
+            effectiveHeaderNames.add(HeaderNames.PROXY_AUTHORIZATION);
             effectiveHeaderNames.addAll(headerNames);
             return Set.copyOf(effectiveHeaderNames);
         }

@@ -152,18 +152,31 @@ interface HttpClientConfigBlueprint extends HttpConfigBaseBlueprint {
     boolean filterRedirectHeaders();
 
     /**
+     * Whether redirects that preserve request method and entity may be followed across origins.
+     * <p>
+     * When disabled, {@code 307} and {@code 308} redirects to a different origin fail instead of replaying the request
+     * entity to the redirect target.
+     *
+     * @return whether cross-origin redirects may replay request entities
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(false)
+    boolean followCrossOriginEntityRedirects();
+
+    /**
      * Request header names to strip on cross-origin redirects.
      * <p>
      * Header names are matched case-insensitively.
-     * The returned set always contains {@value io.helidon.http.HeaderNames#AUTHORIZATION_NAME} and
-     * {@value io.helidon.http.HeaderNames#COOKIE_NAME}, even if either was not explicitly configured.
+     * The returned set always contains {@value io.helidon.http.HeaderNames#AUTHORIZATION_NAME},
+     * {@value io.helidon.http.HeaderNames#COOKIE_NAME}, and
+     * {@value io.helidon.http.HeaderNames#PROXY_AUTHORIZATION_NAME}, even if any was not explicitly configured.
      *
      * @return sensitive redirect headers
      */
     @Option.Configured
     @Option.Singular
     @Option.DefaultCode("new @java.util.LinkedHashSet@<>(@java.util.Set@.of(@io.helidon.http.HeaderNames@.AUTHORIZATION, "
-            + "@io.helidon.http.HeaderNames@.COOKIE))")
+            + "@io.helidon.http.HeaderNames@.COOKIE, @io.helidon.http.HeaderNames@.PROXY_AUTHORIZATION))")
     Set<HeaderName> redirectSensitiveHeaders();
 
     /**

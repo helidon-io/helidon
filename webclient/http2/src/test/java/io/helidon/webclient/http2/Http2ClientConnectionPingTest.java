@@ -84,6 +84,8 @@ class Http2ClientConnectionPingTest {
     private static final String CLIENT_SEND_LOGGER_NAME = Http2LoggingFrameListener.class.getName() + ".cl-send";
     private static final Header VALID_REGULAR_HEADER = HeaderValues.create("Valid-Header-Name", "Valid-Header-Value");
     private static final Header INVALID_REGULAR_HEADER = HeaderValues.create("Valid-Header-Name", "Header\u001fValue");
+    private static final Header INFORMATIONAL_REGULAR_HEADER =
+            HeaderValues.create("Informational-Header-Name", "Informational-Header-Value");
     private static final Http2StreamConfig STREAM_CONFIG = new Http2StreamConfig() {
         @Override
         public boolean priorKnowledge() {
@@ -279,9 +281,9 @@ class Http2ClientConnectionPingTest {
         MockedConnectionTestContext test = new MockedConnectionTestContext(Duration.ofMillis(100));
         Http2ClientStream stream = test.newStream();
         stream.writeHeaders(requestHeaders(VALID_REGULAR_HEADER), true);
-        Http2FrameData frameData = responseHeadersFrame(responseHeaders(INVALID_REGULAR_HEADER));
+        pushResponseHeaders(test, responseHeadersFrame(responseHeaders(INVALID_REGULAR_HEADER)));
 
-        Http2Exception exception = assertThrows(Http2Exception.class, () -> handleResponseHeaders(test, frameData));
+        Http2Exception exception = assertThrows(Http2Exception.class, stream::readHeaders);
 
         assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
     }
@@ -291,9 +293,9 @@ class Http2ClientConnectionPingTest {
         MockedConnectionTestContext test = new MockedConnectionTestContext(Duration.ofMillis(100));
         Http2ClientStream stream = test.newStream();
         stream.writeHeaders(requestHeaders(VALID_REGULAR_HEADER), true);
-        Http2FrameData frameData = responseHeadersFrame(responseHeaders(INVALID_REGULAR_HEADER));
+        pushResponseHeaders(test, responseHeadersFrame(responseHeaders(INVALID_REGULAR_HEADER)));
 
-        Http2Exception exception = assertThrows(Http2Exception.class, () -> handleResponseHeaders(test, frameData));
+        Http2Exception exception = assertThrows(Http2Exception.class, () -> Http2CallChainBase.readHeaders(stream));
 
         assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
         assertThat(test.connection().stream(stream.streamId()), nullValue());
@@ -306,9 +308,30 @@ class Http2ClientConnectionPingTest {
         Http2ClientStream stream = test.newStream();
         stream.writeHeaders(requestHeaders(VALID_REGULAR_HEADER), true);
         test.dataWriter.onWrite = () -> assertThat(test.connection().stream(stream.streamId()), nullValue());
+        pushResponseHeaders(test, responseHeadersFrame(responseHeaders(INVALID_REGULAR_HEADER)));
 
-        assertThrows(Http2Exception.class,
-                     () -> handleResponseHeaders(test, responseHeadersFrame(responseHeaders(INVALID_REGULAR_HEADER))));
+        assertThrows(Http2Exception.class, () -> Http2CallChainBase.readHeaders(stream));
+    }
+
+    @Test
+    void responseHeaderValidationFailureDropsLaterDataWithoutFailingConnection() {
+        MockedConnectionTestContext test = new MockedConnectionTestContext(Duration.ofMillis(100));
+        Http2ClientStream stream = test.newStream();
+        stream.writeHeaders(requestHeaders(VALID_REGULAR_HEADER), true);
+        pushResponseHeaders(test, responseHeadersFrame(responseHeaders(INVALID_REGULAR_HEADER), false));
+        BufferData data = BufferData.create("data");
+        Http2FrameData frameData = new Http2FrameData(Http2FrameHeader.create(data.available(),
+                                                                              Http2FrameTypes.DATA,
+                                                                              Http2Flag.DataFlags.create(0),
+                                                                              stream.streamId()),
+                                                      data);
+
+        assertThat(test.connection().handle(frameData.header(), frameData.data()), is(true));
+        Http2Exception exception = assertThrows(Http2Exception.class, () -> Http2CallChainBase.readHeaders(stream));
+
+        assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
+        assertThat(test.connection().stream(stream.streamId()), nullValue());
+        assertThat(test.writes(), hasSize(3));
     }
 
     @Test
@@ -319,8 +342,9 @@ class Http2ClientConnectionPingTest {
         RacingHeader header = new RacingHeader(() -> handleRstStream(test, stream.streamId()));
         Http2FrameData frameData = responseHeadersFrame(responseHeaders(header));
         header.arm();
+        pushResponseHeaders(test, frameData);
 
-        Http2Exception exception = assertThrows(Http2Exception.class, () -> handleResponseHeaders(test, frameData));
+        Http2Exception exception = assertThrows(Http2Exception.class, () -> Http2CallChainBase.readHeaders(stream));
 
         assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
         assertThat(test.connection().stream(stream.streamId()), nullValue());
@@ -331,15 +355,95 @@ class Http2ClientConnectionPingTest {
         MockedConnectionTestContext test = new MockedConnectionTestContext(Duration.ofMillis(100));
         Http2ClientStream stream = test.newStream();
         stream.writeHeaders(requestHeaders(HeaderValues.EXPECT_100), false);
-        Http2Headers headers = Http2Headers.create(writableHeaders(INVALID_REGULAR_HEADER))
-                .status(Status.CONTINUE_100);
-        Http2FrameData frameData = responseHeadersFrame(headers, false);
+        pushResponseHeaders(test,
+                            responseHeadersFrame(Http2Headers.create(writableHeaders(INVALID_REGULAR_HEADER))
+                                                  .status(Status.CONTINUE_100),
+                                                 false));
 
-        Http2Exception exception = assertThrows(Http2Exception.class, () -> handleResponseHeaders(test, frameData));
+        Http2Exception exception = assertThrows(Http2Exception.class, () -> Http2CallChainBase.waitFor100Continue(stream));
 
         assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
         assertThat(test.connection().stream(stream.streamId()), nullValue());
         assertThat(test.writes(), hasSize(2));
+    }
+
+    @Test
+    void lateInformationalHeadersDoNotReplaceFinalResponseHeaders() {
+        assertLateInformationalHeadersDoNotReplaceFinalResponseHeaders(Status.CONTINUE_100);
+        assertLateInformationalHeadersDoNotReplaceFinalResponseHeaders(Status.create(103, "Early Hints"));
+    }
+
+    @Test
+    void continueReceivedBeforeWaitSatisfiesContinueWait() {
+        assertContinueReceivedBeforeWaitSatisfiesContinueWait(false);
+        assertContinueReceivedBeforeWaitSatisfiesContinueWait(true);
+    }
+
+    @Test
+    void resetAfterLateContinueDoesNotPublishContinueAsFinalHeaders() {
+        MockedConnectionTestContext test = new MockedConnectionTestContext(Duration.ofMillis(100));
+        Http2ClientStream stream = test.newStream();
+        stream.writeHeaders(requestHeaders(HeaderValues.EXPECT_100), false);
+
+        assertThat(stream.waitFor100Continue(Duration.ZERO), is(Status.CONTINUE_100));
+        pushResponseHeaders(test, responseHeadersFrame(responseStatusHeaders(Status.CONTINUE_100), false));
+        handleRstStream(test, stream.streamId());
+
+        assertThrows(IllegalStateException.class, stream::readHeaders);
+    }
+
+    @Test
+    void switchingProtocolsResponseIsRejected() {
+        assertInvalidInformationalHeaders(Status.SWITCHING_PROTOCOLS_101, false);
+    }
+
+    @Test
+    void informationalResponseWithEndStreamIsRejected() {
+        assertInvalidInformationalHeaders(Status.CONTINUE_100, true);
+    }
+
+    @Test
+    void switchingProtocolsResponseWakesContinueWaiterWithProtocolFailure() throws Exception {
+        MockedConnectionTestContext test = new MockedConnectionTestContext(Duration.ofMillis(100));
+        Http2ClientStream stream = test.newStream();
+        stream.writeHeaders(requestHeaders(HeaderValues.EXPECT_100), false);
+        CompletableFuture<Throwable> waitFailure = new CompletableFuture<>();
+        Thread.ofPlatform().start(() -> {
+            try {
+                Http2CallChainBase.waitFor100Continue(stream);
+                waitFailure.complete(null);
+            } catch (Throwable t) {
+                waitFailure.complete(t);
+            }
+        });
+
+        pushResponseHeaders(test, responseHeadersFrame(responseStatusHeaders(Status.SWITCHING_PROTOCOLS_101), false));
+
+        Throwable failure = waitFailure.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+        assertThat(failure instanceof Http2Exception, is(true));
+        assertThat(((Http2Exception) failure).code(), is(Http2ErrorCode.PROTOCOL));
+    }
+
+    @Test
+    void informationalEndStreamWakesContinueWaiterWithProtocolFailure() throws Exception {
+        MockedConnectionTestContext test = new MockedConnectionTestContext(Duration.ofMillis(100));
+        Http2ClientStream stream = test.newStream();
+        stream.writeHeaders(requestHeaders(HeaderValues.EXPECT_100), false);
+        CompletableFuture<Throwable> waitFailure = new CompletableFuture<>();
+        Thread.ofPlatform().start(() -> {
+            try {
+                Http2CallChainBase.waitFor100Continue(stream);
+                waitFailure.complete(null);
+            } catch (Throwable t) {
+                waitFailure.complete(t);
+            }
+        });
+
+        pushResponseHeaders(test, responseHeadersFrame(responseStatusHeaders(Status.CONTINUE_100), true));
+
+        Throwable failure = waitFailure.get(TEST_WAIT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+        assertThat(failure instanceof Http2Exception, is(true));
+        assertThat(((Http2Exception) failure).code(), is(Http2ErrorCode.PROTOCOL));
     }
 
     @Test
@@ -350,8 +454,7 @@ class Http2ClientConnectionPingTest {
                                                                           false);
         Http2ClientStream stream = test.newStream();
         stream.writeHeaders(requestHeaders(VALID_REGULAR_HEADER), true);
-        Http2FrameData frameData = responseHeadersFrame(responseHeaders(INVALID_REGULAR_HEADER));
-        assertThat(handleResponseHeaders(test, frameData), is(true));
+        pushResponseHeaders(test, responseHeadersFrame(responseHeaders(INVALID_REGULAR_HEADER)));
 
         Http2Headers responseHeaders = stream.readHeaders();
 
@@ -440,8 +543,8 @@ class Http2ClientConnectionPingTest {
         assertThat(test.connection().handle(rstStreamFrame.header(), rstStreamFrame.data()), is(true));
     }
 
-    private static boolean handleResponseHeaders(MockedConnectionTestContext test, Http2FrameData frameData) {
-        return test.connection().handle(frameData.header(), frameData.data());
+    private static void pushResponseHeaders(MockedConnectionTestContext test, Http2FrameData frameData) {
+        assertThat(test.connection().handle(frameData.header(), frameData.data()), is(true));
     }
 
     private static CompletableFuture<Boolean> startPing(MockedConnectionTestContext test) {
@@ -454,6 +557,52 @@ class Http2ClientConnectionPingTest {
             }
         });
         return pingFuture;
+    }
+
+    private static void assertLateInformationalHeadersDoNotReplaceFinalResponseHeaders(Status informationalStatus) {
+        MockedConnectionTestContext test = new MockedConnectionTestContext(Duration.ofMillis(100));
+        Http2ClientStream stream = test.newStream();
+        stream.writeHeaders(requestHeaders(HeaderValues.EXPECT_100), false);
+
+        assertThat(stream.waitFor100Continue(Duration.ZERO), is(Status.CONTINUE_100));
+        pushResponseHeaders(test,
+                            responseHeadersFrame(responseStatusHeaders(informationalStatus,
+                                                                       INFORMATIONAL_REGULAR_HEADER),
+                                                 false));
+        pushResponseHeaders(test, responseHeadersFrame(responseHeaders(VALID_REGULAR_HEADER), true));
+
+        Http2Headers responseHeaders = stream.readHeaders();
+        assertThat(responseHeaders.status(), is(Status.OK_200));
+        assertThat(responseHeaders.httpHeaders().get(VALID_REGULAR_HEADER.headerName()).get(),
+                   is(VALID_REGULAR_HEADER.get()));
+        assertThat(responseHeaders.httpHeaders().contains(INFORMATIONAL_REGULAR_HEADER.headerName()), is(false));
+    }
+
+    private static void assertContinueReceivedBeforeWaitSatisfiesContinueWait(boolean followedByEarlyHints) {
+        MockedConnectionTestContext test = new MockedConnectionTestContext(Duration.ofMillis(100));
+        Http2ClientStream stream = test.newStream();
+        stream.writeHeaders(requestHeaders(HeaderValues.EXPECT_100), false);
+
+        pushResponseHeaders(test, responseHeadersFrame(responseStatusHeaders(Status.CONTINUE_100), false));
+        if (followedByEarlyHints) {
+            pushResponseHeaders(test,
+                                responseHeadersFrame(responseStatusHeaders(Status.create(103, "Early Hints")),
+                                                     false));
+        }
+
+        assertThat(stream.waitFor100Continue(Duration.ZERO), is(Status.CONTINUE_100));
+    }
+
+    private static void assertInvalidInformationalHeaders(Status informationalStatus, boolean endOfStream) {
+        MockedConnectionTestContext test = new MockedConnectionTestContext(Duration.ofMillis(100));
+        Http2ClientStream stream = test.newStream();
+        stream.writeHeaders(requestHeaders(HeaderValues.EXPECT_100), false);
+
+        assertThat(stream.waitFor100Continue(Duration.ZERO), is(Status.CONTINUE_100));
+        pushResponseHeaders(test, responseHeadersFrame(responseStatusHeaders(informationalStatus), endOfStream));
+
+        Http2Exception exception = assertThrows(Http2Exception.class, stream::readHeaders);
+        assertThat(exception.code(), is(Http2ErrorCode.PROTOCOL));
     }
 
     private static long readPingPayloadId(BufferData frame) {
@@ -476,6 +625,15 @@ class Http2ClientConnectionPingTest {
     private static Http2Headers responseHeaders(Header header) {
         return Http2Headers.create(writableHeaders(header))
                 .status(Status.OK_200);
+    }
+
+    private static Http2Headers responseStatusHeaders(Status status, Header... headers) {
+        WritableHeaders<?> writableHeaders = WritableHeaders.create();
+        for (Header header : headers) {
+            writableHeaders.add(header);
+        }
+        return Http2Headers.create(writableHeaders)
+                .status(status);
     }
 
     private static WritableHeaders<?> writableHeaders(Header header) {

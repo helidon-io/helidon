@@ -139,7 +139,12 @@ class Http2ClientConnectionHandler {
                     : c);
             Http2ClientStream stream;
             if (conn == null) {
-                conn = createConnection(http2Client, request, initialUri, serviceRequest, http1FallbackHandler);
+                try {
+                    conn = createConnection(http2Client, request, initialUri, serviceRequest, http1FallbackHandler);
+                } catch (Http1FallbackResponse e) {
+                    http1FallbackHandler.completeSent(serviceRequest);
+                    return new Http2ConnectionAttemptResult(Result.HTTP_1, null, e.response());
+                }
                 // we must assume that a new connection can handle a new stream
                 stream = createStreamOnNewConnection(http2Client, conn, request);
             } else {
@@ -149,7 +154,12 @@ class Http2ClientConnectionHandler {
                                         http2Client.recvListener());
                 if (stream == null) {
                     // either the connection is closed, or it ran out of streams
-                    conn = createConnection(http2Client, request, initialUri, serviceRequest, http1FallbackHandler);
+                    try {
+                        conn = createConnection(http2Client, request, initialUri, serviceRequest, http1FallbackHandler);
+                    } catch (Http1FallbackResponse e) {
+                        http1FallbackHandler.completeSent(serviceRequest);
+                        return new Http2ConnectionAttemptResult(Result.HTTP_1, null, e.response());
+                    }
                     stream = createStreamOnNewConnection(http2Client, conn, request);
                 }
             }
@@ -248,8 +258,14 @@ class Http2ClientConnectionHandler {
                 activeConnection.set(conn);
                 return http2(http2Client, request, initialUri, serviceRequest, http1FallbackHandler);
             } else {
+                HttpClientResponse response = upgradeResponse.response();
+                if (request.followRedirects() && RedirectionProcessor.redirectionStatusCode(response.status())) {
+                    // Surface redirect responses instead of treating them as unexpected upgrade failures.
+                    http1FallbackHandler.completeSent(serviceRequest);
+                    return new Http2ConnectionAttemptResult(Result.UNKNOWN, null, response);
+                }
                 if (!http1FallbackHandler.upgradeFailureResponseAllowed()) {
-                    try (HttpClientResponse response = upgradeResponse.response()) {
+                    try (response) {
                         IllegalStateException failure = unsupportedUpgradeFallback(request, response);
                         http1FallbackHandler.completeSentExceptionally(failure);
                         throw failure;
@@ -257,9 +273,7 @@ class Http2ClientConnectionHandler {
                 }
                 result.set(Result.HTTP_1);
                 http1FallbackHandler.completeSent(serviceRequest);
-                return new Http2ConnectionAttemptResult(Result.HTTP_1,
-                                                        null,
-                                                        upgradeResponse.response());
+                return new Http2ConnectionAttemptResult(Result.HTTP_1, null, response);
             }
         } finally {
             lock.unlock();
@@ -293,6 +307,7 @@ class Http2ClientConnectionHandler {
             UpgradeResponse upgradeResponse = upgradeRequest.header(UPGRADE_HEADER)
                     .header(CONNECTION_UPGRADE_HEADER)
                     .header(HTTP2_SETTINGS_HEADER, settingsForUpgrade(protocolConfig))
+                    .followRedirects(false)
                     .upgrade("h2c");
             return upgradeResponse;
         } catch (RuntimeException | Error e) {
@@ -398,12 +413,17 @@ class Http2ClientConnectionHandler {
                 .skipUriEncoding(request.skipUriEncoding())
                 .tls(request.tls())
                 .readTimeout(request.readTimeout())
+                .readContinueTimeout(request.readContinueTimeout())
                 .proxy(request.proxy())
                 .maxRedirects(request.maxRedirects())
                 .followRedirects(request.followRedirects());
         request.connection().ifPresent(http1Request::connection);
         request.address().ifPresent(http1Request::address);
         request.sni().ifPresent(http1Request::sni);
+        request.sendExpectContinue().ifPresent(http1Request::sendExpectContinue);
+        // This is a manual HTTP/2-to-HTTP/1 request copy used for h2c probing/fallback. Properties carry internal
+        // redirect state, including whether a previous redirect already crossed an origin boundary.
+        request.properties().forEach(http1Request::property);
         return http1Request;
     }
 
@@ -445,7 +465,12 @@ class Http2ClientConnectionHandler {
                         connection = upgradeResponse.connection();
                         usedConnection = createHttp2Connection(http2Client, connection, false);
                     } else {
-                        try (HttpClientResponse response = upgradeResponse.response()) {
+                        HttpClientResponse response = upgradeResponse.response();
+                        if (request.followRedirects() && RedirectionProcessor.redirectionStatusCode(response.status())) {
+                            // Surface redirect responses instead of treating them as unexpected upgrade failures.
+                            throw new Http1FallbackResponse(response);
+                        }
+                        try (response) {
                             if (LOGGER.isLoggable(TRACE)) {
                                 LOGGER.log(TRACE, "Failed to upgrade to HTTP/2");
                             }
@@ -573,5 +598,17 @@ class Http2ClientConnectionHandler {
                                               }
                                           })
                 .connect();
+    }
+
+    private static class Http1FallbackResponse extends RuntimeException {
+        private final HttpClientResponse response;
+
+        private Http1FallbackResponse(HttpClientResponse response) {
+            this.response = response;
+        }
+
+        private HttpClientResponse response() {
+            return response;
+        }
     }
 }

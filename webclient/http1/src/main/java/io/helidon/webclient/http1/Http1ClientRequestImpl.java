@@ -32,6 +32,7 @@ import io.helidon.http.Status;
 import io.helidon.http.media.EntityWriter;
 import io.helidon.http.media.InstanceWriter;
 import io.helidon.http.media.MediaContext;
+import io.helidon.webclient.api.ClientConnection;
 import io.helidon.webclient.api.ClientRequestBase;
 import io.helidon.webclient.api.ClientUri;
 import io.helidon.webclient.api.FullClientRequest;
@@ -107,6 +108,9 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
         if (sameOrigin(request.resolvedUri(), clientUri)) {
             request.address().ifPresent(this::address);
         }
+        readTimeout(request.readTimeout());
+        readContinueTimeout(request.readContinueTimeout());
+        request.sendExpectContinue().ifPresent(this::sendExpectContinue);
         outputStreamRedirect(request.outputStreamRedirect());
     }
 
@@ -250,6 +254,10 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
         super.sanitizeRedirectSensitiveHeaders(requestUri, requestHeaders);
     }
 
+    boolean canReplayEntityTo(ClientUri requestUri) {
+        return clientConfig().followCrossOriginEntityRedirects() || !crossesRedirectOriginBoundary(requestUri);
+    }
+
     /**
      * Check upgrade protocols. Protocol names are case insensitive.
      *
@@ -299,13 +307,16 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
             ClientRequestHeaders delegateHeaders = delegate.headers();
             this.headers().forEach(delegateHeaders::set);
         }
+        ClientConnection responseConnection = serviceResponse.connection() instanceof ClientConnection clientConnection
+                ? clientConnection
+                : callChain.connection();
         return new Http1ClientResponseImpl(clientConfig(),
                                            http1Client().protocolConfig(),
                                            serviceResponse.status(),
                                            serviceResponse.serviceRequest().method(),
                                            serviceResponse.serviceRequest().headers(),
                                            serviceResponse.headers(),
-                                           callChain.connection(),
+                                           responseConnection,
                                            serviceResponse.inputStream().orElse(null),
                                            mediaContext(),
                                            resolvedUri,
