@@ -16,9 +16,6 @@
 
 package io.helidon.webserver;
 
-import java.net.SocketAddress;
-import java.util.Optional;
-
 /**
  * Listener configuration view used while planning transport bindings.
  */
@@ -29,13 +26,6 @@ public interface BindingPlanContext {
      * @return listener name
      */
     String name();
-
-    /**
-     * Resolved listener bind address.
-     *
-     * @return listener bind address
-     */
-    Optional<SocketAddress> bindAddress();
 
     /**
      * Resolved listener host.

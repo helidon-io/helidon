@@ -23,7 +23,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketAddress;
 import java.net.SocketException;
 import java.net.SocketOption;
 import java.net.SocketTimeoutException;
@@ -971,11 +970,6 @@ class ServerListenerLifecycleTest {
                 .start();
 
         try {
-            Optional<SocketAddress> bindAddress = TestTransportBindingProvider.bindAddressAtPlan("test");
-
-            assertThat(bindAddress.isPresent(), is(true));
-            assertThat(bindAddress.get(), instanceOf(InetSocketAddress.class));
-            assertThat(((InetSocketAddress) bindAddress.get()).getAddress(), is(address));
             assertThat(TestTransportBindingProvider.hostAtPlan("test"), is(address.getHostAddress()));
             assertThat(TestTransportBindingProvider.portAtPlan("test"), is(0));
         } finally {

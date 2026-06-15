@@ -458,7 +458,6 @@ class ServerListener implements ListenerContext {
     private List<TransportBinding> planTransportBindings(List<ProtocolConfig> protocolConfigs) {
         Map<String, TransportBindingProvider> providers = transportBindingProviders();
         BindingPlanContext planContext = new ListenerBindingPlanContext(socketName,
-                                                                        Optional.of(configuredAddress),
                                                                         bindingPlanHost(configuredAddress, listenerConfig),
                                                                         bindingPlanPort(configuredAddress, listenerConfig));
         List<TransportBinding> activeBindings = new ArrayList<>();
@@ -631,7 +630,7 @@ class ServerListener implements ListenerContext {
             if (virtualHosts.enabled()
                     && (security != TransportBinding.Security.TLS
                     || !(binding instanceof TlsTransportBinding tlsBinding)
-                    || !tlsBinding.supportsListenerVirtualHosts())) {
+                    || !tlsBinding.supportsVirtualHosts())) {
                 throw new IllegalArgumentException("Listener " + socketName
                                                            + " has TLS virtual hosts configured, but transport binding "
                                                            + binding.name()
@@ -1097,7 +1096,6 @@ class ServerListener implements ListenerContext {
     }
 
     private record ListenerBindingPlanContext(String name,
-                                              Optional<SocketAddress> bindAddress,
                                               String host,
                                               int port) implements BindingPlanContext {
     }

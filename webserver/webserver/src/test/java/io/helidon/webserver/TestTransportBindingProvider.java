@@ -19,10 +19,8 @@ package io.helidon.webserver;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketException;
-import java.net.SocketAddress;
 import java.time.Duration;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
@@ -36,7 +34,6 @@ import io.helidon.webserver.spi.TransportBinding;
 import io.helidon.webserver.spi.TransportBindingProvider;
 
 public class TestTransportBindingProvider implements TransportBindingProvider<TestTransportBindingConfig> {
-    private static final Map<String, Optional<SocketAddress>> BIND_ADDRESS_AT_PLAN = new ConcurrentHashMap<>();
     private static final Map<String, String> HOST_AT_PLAN = new ConcurrentHashMap<>();
     private static final Map<String, Integer> PORT_AT_PLAN = new ConcurrentHashMap<>();
     private static final Map<String, Integer> PORT_AT_CREATE = new ConcurrentHashMap<>();
@@ -52,7 +49,6 @@ public class TestTransportBindingProvider implements TransportBindingProvider<Te
     private static final Map<String, CountDownLatch> EXECUTOR_TASKS_STARTED = new ConcurrentHashMap<>();
 
     static void reset() {
-        BIND_ADDRESS_AT_PLAN.clear();
         HOST_AT_PLAN.clear();
         PORT_AT_PLAN.clear();
         PORT_AT_CREATE.clear();
@@ -68,10 +64,6 @@ public class TestTransportBindingProvider implements TransportBindingProvider<Te
         PENDING_EXECUTOR_TASKS.values().forEach(CountDownLatch::countDown);
         PENDING_EXECUTOR_TASKS.clear();
         EXECUTOR_TASKS_STARTED.clear();
-    }
-
-    static Optional<SocketAddress> bindAddressAtPlan(String name) {
-        return BIND_ADDRESS_AT_PLAN.getOrDefault(name, Optional.empty());
     }
 
     static String hostAtPlan(String name) {
@@ -146,7 +138,6 @@ public class TestTransportBindingProvider implements TransportBindingProvider<Te
 
     @Override
     public boolean canBind(BindingPlanContext context, TestTransportBindingConfig config) {
-        BIND_ADDRESS_AT_PLAN.put(config.name(), context.bindAddress());
         HOST_AT_PLAN.put(config.name(), context.host());
         PORT_AT_PLAN.put(config.name(), context.port());
         return config.enabled();
@@ -261,7 +252,7 @@ public class TestTransportBindingProvider implements TransportBindingProvider<Te
         }
 
         @Override
-        public boolean supportsListenerVirtualHosts() {
+        public boolean supportsVirtualHosts() {
             return config.supportsVirtualHosts();
         }
 

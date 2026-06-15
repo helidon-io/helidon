@@ -158,7 +158,7 @@ final class TcpTransportBinding implements PortTransportBinding, TlsTransportBin
     }
 
     @Override
-    public boolean supportsListenerVirtualHosts() {
+    public boolean supportsVirtualHosts() {
         return virtualHosts.enabled();
     }
 
