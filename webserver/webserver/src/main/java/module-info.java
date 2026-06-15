@@ -71,6 +71,7 @@ module io.helidon.webserver {
             with io.helidon.webserver.http1.Http1ProtocolConfigProvider;
     provides io.helidon.webserver.spi.ServerConnectionSelectorProvider with io.helidon.webserver.http1.Http1ConnectionProvider;
     provides io.helidon.webserver.spi.TransportBindingFactoryProvider
-            with io.helidon.webserver.TcpTransportBindingFactoryProvider;
+            with io.helidon.webserver.TcpTransportBindingFactoryProvider,
+                    io.helidon.webserver.UdsTransportBindingFactoryProvider;
 
 }

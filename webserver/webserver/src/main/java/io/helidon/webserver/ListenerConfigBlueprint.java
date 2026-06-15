@@ -137,8 +137,10 @@ interface ListenerConfigBlueprint {
     InetAddress address();
 
     /**
-     * The address to bind to. This is to permit both Internet Address ({@code <host>:<port>}) and Unix Domain socket
-     * ({@code unix:/path/to/socket}). If this is set it will override {@link #host()}, {@link #address()} and {@link #port()}.
+     * The TCP address to bind to ({@code <host>:<port>}). If this is set it will override {@link #host()},
+     * {@link #address()} and {@link #port()}.
+     * <p>
+     * To bind a Unix domain socket, configure an explicit {@code uds} transport binding instead.
      *
      * @return the socket address to bind on.
      */

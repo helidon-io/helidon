@@ -64,11 +64,15 @@ import org.junit.jupiter.api.condition.EnabledOnOs;
 import org.junit.jupiter.api.condition.OS;
 import org.junit.jupiter.api.io.TempDir;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.lessThan;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ServerListenerLifecycleTest {
@@ -106,7 +110,7 @@ class ServerListenerLifecycleTest {
         assertThat(server.isRunning(), is(false));
         assertThat(service.beforeStarts(), is(1));
         assertThat(service.afterStops(), is(0));
-        assertThat(containsMessage(failure, "beforeStart failed default"), is(true));
+        assertThat(failureMessages(failure), containsString("beforeStart failed default"));
     }
 
     @Test
@@ -163,7 +167,7 @@ class ServerListenerLifecycleTest {
 
             assertThat(startThread.isAlive(), is(false));
             assertThat(startFailure.get(), notNullValue());
-            assertThat(containsMessage(startFailure.get(), "Interrupted while waiting for listener"), is(true));
+            assertThat(failureMessages(startFailure.get()), containsString("Interrupted while waiting for listener"));
             assertThat(startThreadInterrupted.get(), is(true));
             assertThat(blockedStartupExitedBeforeFailure.get(), is(true));
             assertThat(server.isRunning(), is(false));
@@ -214,7 +218,7 @@ class ServerListenerLifecycleTest {
             try {
                 assertThat(adminBeforeStartEntered.await(5, TimeUnit.SECONDS), is(true));
                 int defaultPort = awaitPort(server, WebServer.DEFAULT_SOCKET_NAME);
-                assertThat(defaultPort > 0, is(true));
+                assertThat(defaultPort, greaterThan(0));
 
                 releaseAdminBeforeStart.countDown();
                 startThread.join(TimeUnit.SECONDS.toMillis(5));
@@ -222,7 +226,7 @@ class ServerListenerLifecycleTest {
                 assertThat(startThread.isAlive(), is(false));
                 assertThat(startFailure.get(), instanceOf(IllegalStateException.class));
                 assertThat(server.isRunning(), is(false));
-                assertThat(containsMessage(startFailure.get(), "Failed to start server"), is(true));
+                assertThat(failureMessages(startFailure.get()), containsString("Failed to start server"));
                 assertThat(defaultService.beforeStarts(), is(1));
                 assertThat(defaultService.afterStops(), is(1));
                 assertThat(adminAfterStopInvoked.await(5, TimeUnit.SECONDS), is(true));
@@ -245,13 +249,14 @@ class ServerListenerLifecycleTest {
 
         WebServer server = WebServer.builder()
                 .shutdownHook(false)
-                .bindAddress(UnixDomainSocketAddress.of(socketPath))
+                .addBinding(disabledTcpBinding())
+                .addBinding(udsBinding(socketPath))
                 .routing(routing -> routing.register(new LifecycleService("default")))
                 .build();
 
         IllegalStateException failure = assertThrows(IllegalStateException.class, server::start);
 
-        assertThat(containsMessage(failure, "Failed to start server"), is(true));
+        assertThat(failureMessages(failure), containsString("Failed to start server"));
         assertThat(Files.readString(socketPath), is("existing"));
     }
 
@@ -271,7 +276,7 @@ class ServerListenerLifecycleTest {
             assertThat(service.beforeStarts(), is(1));
             assertThat(service.afterStarts(), is(1));
             assertThat(service.afterStops(), is(1));
-            assertThat(containsMessage(failure, "afterStart failed default"), is(true));
+            assertThat(failureMessages(failure), containsString("afterStart failed default"));
         } finally {
             stopUntilStopped(server);
         }
@@ -304,7 +309,7 @@ class ServerListenerLifecycleTest {
             assertThat(adminService.afterStarts(), is(1));
             assertThat(defaultService.afterStops(), is(1));
             assertThat(adminService.afterStops(), is(1));
-            assertThat(containsMessage(failure, "afterStart failed admin"), is(true));
+            assertThat(failureMessages(failure), containsString("afterStart failed admin"));
             assertPortCanBind(defaultPort.get());
             assertPortCanBind(adminPort.get());
         } finally {
@@ -328,8 +333,8 @@ class ServerListenerLifecycleTest {
         assertThat(server.isRunning(), is(false));
         assertThat(service.afterStarts(), is(1));
         assertThat(service.afterStops(), is(1));
-        assertThat(containsMessage(failure, "afterStart wrapped default"), is(true));
-        assertThat(containsMessage(failure, "afterStop failed default"), is(true));
+        assertThat(failureMessages(failure), containsString("afterStart wrapped default"));
+        assertThat(failureMessages(failure), containsString("afterStop failed default"));
     }
 
     @Test
@@ -352,7 +357,7 @@ class ServerListenerLifecycleTest {
 
             RuntimeException failure = assertThrows(RuntimeException.class, server::stop);
 
-            assertThat(containsMessage(failure, "connection close failed"), is(true));
+            assertThat(failureMessages(failure), containsString("connection close failed"));
             assertThat(firstCloseCalls.get(), is(2));
             assertThat(secondCloseCalls.get(), is(2));
             assertThat(service.afterStops(), is(1));
@@ -382,8 +387,7 @@ class ServerListenerLifecycleTest {
             assertThat(connection.gracefulCloses(), is(1));
             assertThat(connection.forcedCloses(), is(1));
             assertThat("stop should not wait a second reader-executor grace period",
-                       elapsedMillis < 3_500,
-                       is(true));
+                       elapsedMillis, lessThan(3_500L));
         } finally {
             connection.release();
             stopUntilStopped(server);
@@ -410,9 +414,9 @@ class ServerListenerLifecycleTest {
 
             RuntimeException failure = assertThrows(RuntimeException.class, server::suspend);
 
-            assertThat(containsMessage(failure, "connection close failed"), is(true));
-            assertThat(firstCloseCalls.get() >= 2, is(true));
-            assertThat(secondCloseCalls.get() >= 2, is(true));
+            assertThat(failureMessages(failure), containsString("connection close failed"));
+            assertThat(firstCloseCalls.get(), greaterThanOrEqualTo(2));
+            assertThat(secondCloseCalls.get(), greaterThanOrEqualTo(2));
         } finally {
             first.release();
             second.release();
@@ -827,8 +831,8 @@ class ServerListenerLifecycleTest {
             assertThat(server.isRunning(), is(false));
             assertThat(defaultService.afterStops(), is(1));
             assertThat(adminService.afterStops(), is(1));
-            assertThat(containsMessage(failure, "afterStop failed default"), is(true));
-            assertThat(containsMessage(failure, "afterStop failed admin"), is(true));
+            assertThat(failureMessages(failure), containsString("afterStop failed default"));
+            assertThat(failureMessages(failure), containsString("afterStop failed admin"));
         } finally {
             stopUntilStopped(server);
         }
@@ -845,7 +849,7 @@ class ServerListenerLifecycleTest {
 
         try {
             assertThat(server.port(WebServer.DEFAULT_SOCKET_NAME), is(server.port()));
-            assertThat(server.port("admin") > 0, is(true));
+            assertThat(server.port("admin"), greaterThan(0));
             assertThat(server.port("missing"), is(-1));
         } finally {
             stopUntilStopped(server);
@@ -867,10 +871,57 @@ class ServerListenerLifecycleTest {
                 .start();
 
         try {
-            assertThat(server.port() > 0, is(true));
+            assertThat(server.port(), greaterThan(0));
         } finally {
             stopUntilStopped(server);
         }
+    }
+
+    @Test
+    @EnabledOnOs(OS.LINUX)
+    void explicitUdsTransportBindingStartsServer(@TempDir Path tempDir) {
+        Path socketPath = tempDir.resolve("server.sock");
+        WebServer server = WebServer.builder()
+                .shutdownHook(false)
+                .addBinding(disabledTcpBinding())
+                .addBinding(udsBinding(socketPath))
+                .routing(routing -> routing.register(new LifecycleService("default")))
+                .build()
+                .start();
+
+        try {
+            assertThat(server.port(), is(-1));
+            assertThat(Files.exists(socketPath), is(true));
+        } finally {
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
+    void udsTransportBindingWithoutSocketIsInactive() {
+        RuntimeException failure = assertThrows(RuntimeException.class, () -> WebServer.builder()
+                .shutdownHook(false)
+                .bindingsDiscoverServices(false)
+                .addBinding(disabledTcpBinding())
+                .addBinding(UdsTransportConfig.create())
+                .build()
+                .start());
+
+        assertThat(failureMessages(failure), containsString("has no active transport bindings"));
+    }
+
+    @Test
+    @EnabledOnOs(OS.LINUX)
+    void udsTransportBindingRequiresNio(@TempDir Path tempDir) {
+        RuntimeException failure = assertThrows(RuntimeException.class, () -> WebServer.builder()
+                .shutdownHook(false)
+                .useNio(false)
+                .addBinding(disabledTcpBinding())
+                .addBinding(udsBinding(tempDir.resolve("server.sock")))
+                .build()
+                .start());
+
+        assertThat(failureMessages(failure), containsString("requires use-nio=true"));
     }
 
     @Test
@@ -884,7 +935,7 @@ class ServerListenerLifecycleTest {
                 .start();
 
         try {
-            assertThat(server.port() > 0, is(true));
+            assertThat(server.port(), greaterThan(0));
         } finally {
             stopUntilStopped(server);
         }
@@ -902,15 +953,15 @@ class ServerListenerLifecycleTest {
                 .start();
 
         try {
-            assertThat(server.port() > 0, is(true));
+            assertThat(server.port(), greaterThan(0));
         } finally {
             stopUntilStopped(server);
         }
     }
 
     @Test
-    void explicitNamedTcpBindingCanUseRandomPortWithoutDefaultDuplicate() {
-        WebServer server = WebServer.builder()
+    void explicitNamedTcpBindingFailsWithDiscoveredDefaultTcpBinding() {
+        RuntimeException failure = assertThrows(RuntimeException.class, () -> WebServer.builder()
                 .shutdownHook(false)
                 .address(InetAddress.getLoopbackAddress())
                 .port(0)
@@ -919,29 +970,27 @@ class ServerListenerLifecycleTest {
                                     .required(true)
                                     .buildPrototype())
                 .build()
-                .start();
+                .start());
 
-        try {
-            assertThat(server.port() > 0, is(true));
-        } finally {
-            stopUntilStopped(server);
-        }
+        assertThat(failure.getMessage(), containsString("Multiple transport bindings of type \"tcp\""));
+        assertThat(failure.getMessage(), containsString("\"primary\" and \"tcp\""));
+        assertThat(failure.getMessage(), containsString("use the \"tcp\" name"));
     }
 
     @Test
-    void discoveredDefaultTcpTransportBindingStartsBeforeExplicitTransportBinding() {
+    void discoveredDefaultTcpTransportBindingDoesNotReorderExplicitTransportBinding() {
         TestTransportBindingProvider.reset();
         WebServer server = WebServer.builder()
                 .shutdownHook(false)
                 .address(InetAddress.getLoopbackAddress())
                 .port(0)
-                .addBinding(new TestTransportBindingConfig("test", true))
+                .addBinding(new TestTransportBindingConfig(TestTransportBindingConfig.TYPE, true))
                 .build()
                 .start();
 
         try {
-            assertThat(TestTransportBindingProvider.portAtStart("test") > 0, is(true));
-            assertThat(TestTransportBindingProvider.currentPlanPort("test"), is(server.port()));
+            assertThat(TestTransportBindingProvider.portAtStart(TestTransportBindingConfig.TYPE), is(-1));
+            assertThat(TestTransportBindingProvider.currentPlanPort(TestTransportBindingConfig.TYPE), is(server.port()));
         } finally {
             stopUntilStopped(server);
         }
@@ -952,10 +1001,10 @@ class ServerListenerLifecycleTest {
         TestTransportBindingProvider.reset();
         WebServer.builder()
                 .shutdownHook(false)
-                .addBinding(new TestTransportBindingConfig("test", true))
+                .addBinding(new TestTransportBindingConfig(TestTransportBindingConfig.TYPE, true))
                 .build();
 
-        assertThat(TestTransportBindingProvider.portAtCreate("test"), is(-1));
+        assertThat(TestTransportBindingProvider.portAtCreate(TestTransportBindingConfig.TYPE), is(-1));
     }
 
     @Test
@@ -966,12 +1015,12 @@ class ServerListenerLifecycleTest {
                 .shutdownHook(false)
                 .address(address)
                 .port(0)
-                .addBinding(new TestTransportBindingConfig("test", true))
+                .addBinding(new TestTransportBindingConfig(TestTransportBindingConfig.TYPE, true))
                 .build()
                 .start();
 
         try {
-            assertThat(TestTransportBindingProvider.portAtPlan("test"), is(0));
+            assertThat(TestTransportBindingProvider.portAtPlan(TestTransportBindingConfig.TYPE), is(0));
         } finally {
             stopUntilStopped(server);
         }
@@ -984,17 +1033,16 @@ class ServerListenerLifecycleTest {
                 .shutdownHook(false)
                 .address(InetAddress.getLoopbackAddress())
                 .port(0)
-                .addBinding(new TestTransportBindingConfig("test", true))
+                .addBinding(new TestTransportBindingConfig(TestTransportBindingConfig.TYPE, true))
                 .addBinding(TcpTransportConfig.builder()
-                                    .name("primary")
                                     .required(true)
                                     .buildPrototype())
                 .build()
                 .start();
 
         try {
-            assertThat(TestTransportBindingProvider.portAtStart("test"), is(-1));
-            assertThat(server.port() > 0, is(true));
+            assertThat(TestTransportBindingProvider.portAtStart(TestTransportBindingConfig.TYPE), is(-1));
+            assertThat(server.port(), greaterThan(0));
         } finally {
             stopUntilStopped(server);
         }
@@ -1007,14 +1055,14 @@ class ServerListenerLifecycleTest {
                 .shutdownHook(false)
                 .address(InetAddress.getLoopbackAddress())
                 .port(0)
-                .addBinding(new TestTransportBindingConfig("test", true))
+                .addBinding(new TestTransportBindingConfig(TestTransportBindingConfig.TYPE, true))
                 .addBinding(TcpTransportConfig.create())
                 .build()
                 .start();
 
         try {
-            assertThat(TestTransportBindingProvider.portAtStart("test"), is(-1));
-            assertThat(server.port() > 0, is(true));
+            assertThat(TestTransportBindingProvider.portAtStart(TestTransportBindingConfig.TYPE), is(-1));
+            assertThat(server.port(), greaterThan(0));
         } finally {
             stopUntilStopped(server);
         }
@@ -1033,7 +1081,9 @@ class ServerListenerLifecycleTest {
                 .build()
                 .start());
 
-        assertThat(containsMessage(failure, "Only one TCP transport binding can be configured"), is(true));
+        assertThat(failure.getMessage(), containsString("Multiple transport bindings of type \"tcp\""));
+        assertThat(failure.getMessage(), containsString("\"tcp\" and \"primary\""));
+        assertThat(failure.getMessage(), containsString("use the \"tcp\" name"));
     }
 
     @Test
@@ -1059,11 +1109,11 @@ class ServerListenerLifecycleTest {
                 .shutdownHook(false)
                 .bindingsDiscoverServices(false)
                 .addBinding(new TestTransportBindingConfig("failing", true, true))
-                .addBinding(new TestTransportBindingConfig("not-started", true))
+                .addBinding(TestTransportBindingConfig.alternate("not-started", true))
                 .build()
                 .start());
 
-        assertThat(containsMessage(failure, "test transport start failed failing"), is(true));
+        assertThat(failureMessages(failure), containsString("test transport start failed failing"));
         assertThat(TestTransportBindingProvider.starts("failing"), is(1));
         assertThat(TestTransportBindingProvider.stops("failing"), is(1));
         assertThat(TestTransportBindingProvider.starts("not-started"), is(0));
@@ -1084,7 +1134,7 @@ class ServerListenerLifecycleTest {
         try {
             RuntimeException failure = assertThrows(RuntimeException.class, server::stop);
 
-            assertThat(containsMessage(failure, "Timed out waiting for transport binding hanging to stop"), is(true));
+            assertThat(failureMessages(failure), containsString("Timed out waiting for transport binding hanging to stop"));
         } finally {
             TestTransportBindingProvider.completeStop("hanging");
             stopUntilStopped(server);
@@ -1108,10 +1158,9 @@ class ServerListenerLifecycleTest {
             RuntimeException failure = assertThrows(RuntimeException.class, server::stop);
             long elapsedMillis = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - started);
 
-            assertThat(containsMessage(failure, "Timed out waiting for transport binding hanging to stop"), is(true));
+            assertThat(failureMessages(failure), containsString("Timed out waiting for transport binding hanging to stop"));
             assertThat("stop should not wait a second binding-stop grace period",
-                       elapsedMillis < 3_500,
-                       is(true));
+                       elapsedMillis, lessThan(3_500L));
         } finally {
             TestTransportBindingProvider.completeStop("hanging");
             stopUntilStopped(server);
@@ -1139,8 +1188,7 @@ class ServerListenerLifecycleTest {
 
             assertThat(TestTransportBindingProvider.stops("forced"), is(1));
             assertThat("forced binding stop should not wait shared executor grace period",
-                       elapsedMillis < 1_500,
-                       is(true));
+                       elapsedMillis, lessThan(1_500L));
         } finally {
             TestTransportBindingProvider.completeExecutorTask("forced");
             stopUntilStopped(server);
@@ -1174,15 +1222,15 @@ class ServerListenerLifecycleTest {
                 .bindingsDiscoverServices(false)
                 .shutdownGracePeriod(Duration.ofMillis(1))
                 .addBinding(new TestTransportBindingConfig("first", true, false, false, false, true, false, false))
-                .addBinding(new TestTransportBindingConfig("second", true, false, false, false, true, false, false))
+                .addBinding(TestTransportBindingConfig.alternate("second", true, false, false, false, true, false, false))
                 .build()
                 .start();
 
         try {
             RuntimeException failure = assertThrows(RuntimeException.class, server::stop);
 
-            assertThat(containsMessage(failure, "Timed out waiting for transport binding first to stop"), is(true));
-            assertThat(containsMessage(failure, "Timed out waiting for transport binding second to stop"), is(true));
+            assertThat(failureMessages(failure), containsString("Timed out waiting for transport binding first to stop"));
+            assertThat(failureMessages(failure), containsString("Timed out waiting for transport binding second to stop"));
         } finally {
             TestTransportBindingProvider.completeStop("first");
             TestTransportBindingProvider.completeStop("second");
@@ -1256,7 +1304,7 @@ class ServerListenerLifecycleTest {
                 .build()
                 .start());
 
-        assertThat(containsMessage(failure, "has no active transport bindings"), is(true));
+        assertThat(failureMessages(failure), containsString("has no active transport bindings"));
     }
 
     @Test
@@ -1271,7 +1319,7 @@ class ServerListenerLifecycleTest {
                 .build()
                 .start());
 
-        assertThat(containsMessage(failure, "has no active transport bindings"), is(true));
+        assertThat(failureMessages(failure), containsString("has no active transport bindings"));
     }
 
     @Test
@@ -1289,21 +1337,50 @@ class ServerListenerLifecycleTest {
                 .build()
                 .start());
 
-        assertThat(containsMessage(failure, "has no active transport bindings"), is(true));
+        assertThat(failureMessages(failure), containsString("has no active transport bindings"));
     }
 
     @Test
-    void listenerPlanningFailsForDuplicateEnabledTransportBindingConfig() {
+    @EnabledOnOs(OS.LINUX)
+    void explicitUdsTransportBindingCanBeConfigured(@TempDir Path tempDir) {
+        Path socketPath = tempDir.resolve("server.sock");
+        Config config = Config.just("""
+                server:
+                  bindings:
+                    tcp:
+                      enabled: false
+                    uds:
+                      socket: "%s"
+                """.formatted(socketPath), MediaTypes.APPLICATION_YAML);
+
+        WebServer server = WebServer.builder()
+                .shutdownHook(false)
+                .config(config.get("server"))
+                .routing(routing -> routing.register(new LifecycleService("default")))
+                .build()
+                .start();
+
+        try {
+            assertThat(server.port(), is(-1));
+            assertThat(Files.exists(socketPath), is(true));
+        } finally {
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
+    void listenerConfigFailsForDuplicateTransportBindingType() {
         RuntimeException failure = assertThrows(RuntimeException.class, () -> WebServer.builder()
                 .shutdownHook(false)
                 .bindingsDiscoverServices(false)
                 .addBinding(new TestTransportBindingConfig("test", true))
-                .addBinding(new TestTransportBindingConfig("test", true))
+                .addBinding(new TestTransportBindingConfig("custom-test", true))
                 .build()
                 .start());
 
-        assertThat(containsMessage(failure, "Duplicate transport binding factory \"test\""), is(true));
-        assertThat(containsMessage(failure, "of type \"test-transport\""), is(true));
+        assertThat(failure.getMessage(), containsString("Multiple transport bindings of type \"test-transport\""));
+        assertThat(failure.getMessage(), containsString("\"test\" and \"custom-test\""));
+        assertThat(failure.getMessage(), containsString("use the \"test-transport\" name"));
     }
 
     @Test
@@ -1323,8 +1400,9 @@ class ServerListenerLifecycleTest {
                 .build()
                 .start());
 
-        assertThat(containsMessage(failure, "Multiple transport bindings of type \"tcp\""), is(true));
-        assertThat(containsMessage(failure, "Only one binding can be configured for each type"), is(true));
+        assertThat(failure.getMessage(), containsString("Multiple transport bindings of type \"tcp\""));
+        assertThat(failure.getMessage(), containsString("\"primary\" and \"secondary\""));
+        assertThat(failure.getMessage(), containsString("use the \"tcp\" name"));
     }
 
     @Test
@@ -1339,8 +1417,8 @@ class ServerListenerLifecycleTest {
                 .build()
                 .start());
 
-        assertThat(containsMessage(failure, "has TLS enabled"), is(true));
-        assertThat(containsMessage(failure, "is unprotected"), is(true));
+        assertThat(failureMessages(failure), containsString("has TLS enabled"));
+        assertThat(failureMessages(failure), containsString("is unprotected"));
     }
 
     @Test
@@ -1359,7 +1437,7 @@ class ServerListenerLifecycleTest {
                 .build()
                 .start());
 
-        assertThat(containsMessage(failure, "Transport binding returned null security"), is(true));
+        assertThat(failureMessages(failure), containsString("Transport binding returned null security"));
         assertThat(TestTransportBindingProvider.starts("test"), is(0));
     }
 
@@ -1396,8 +1474,8 @@ class ServerListenerLifecycleTest {
                 .build()
                 .start());
 
-        assertThat(containsMessage(failure, "does not have TLS enabled"), is(true));
-        assertThat(containsMessage(failure, "requires listener TLS"), is(true));
+        assertThat(failureMessages(failure), containsString("does not have TLS enabled"));
+        assertThat(failureMessages(failure), containsString("requires listener TLS"));
     }
 
     @Test
@@ -1410,8 +1488,8 @@ class ServerListenerLifecycleTest {
                 .build()
                 .start());
 
-        assertThat(containsMessage(failure, "requires transport binding type(s) [test-transport]"), is(true));
-        assertThat(containsMessage(failure, "active binding type(s) [tcp]"), is(true));
+        assertThat(failureMessages(failure), containsString("requires transport binding type(s) [test-transport]"));
+        assertThat(failureMessages(failure), containsString("active binding type(s) [tcp]"));
     }
 
     @Test
@@ -1462,7 +1540,7 @@ class ServerListenerLifecycleTest {
 
             assertThat(failure.getMessage(), is("suspend close failed"));
             assertThat(server.isRunning(), is(false));
-            assertThat(suppressedContainsMessage(failure, "afterStop failed admin"), is(true));
+            assertThat(suppressedFailureMessages(failure), containsString("afterStop failed admin"));
             assertThat(defaultService.afterStops(), is(1));
             assertThat(adminService.afterStops(), is(1));
             assertThat(monitorService.afterStops(), is(1));
@@ -1485,7 +1563,8 @@ class ServerListenerLifecycleTest {
                 .port(0)
                 .routing(routing -> routing.register(defaultService))
                 .putSocket("admin", listener -> listener
-                        .bindAddress(UnixDomainSocketAddress.of(socketPath))
+                        .addBinding(disabledTcpBinding())
+                        .addBinding(udsBinding(socketPath))
                         .routing(routing -> routing.register(adminService)))
                 .putSocket("monitor", listener -> listener
                         .address(InetAddress.getLoopbackAddress())
@@ -1501,9 +1580,9 @@ class ServerListenerLifecycleTest {
             RuntimeException failure = assertThrows(RuntimeException.class, server::resume);
 
             assertThat(failure, instanceOf(UncheckedIOException.class));
-            assertThat(containsMessage(failure, "Failed to start server"), is(true));
+            assertThat(failureMessages(failure), containsString("Failed to start server"));
             assertThat(server.isRunning(), is(false));
-            assertThat(suppressedContainsMessage(failure, "afterStop failed monitor"), is(true));
+            assertThat(suppressedFailureMessages(failure), containsString("afterStop failed monitor"));
             assertThat(defaultService.afterStops(), is(1));
             assertThat(adminService.afterStops(), is(1));
             assertThat(monitorService.afterStops(), is(1));
@@ -1529,29 +1608,37 @@ class ServerListenerLifecycleTest {
 
         assertThat(server.isRunning(), is(false));
         assertThat(service.afterStops(), is(2));
-        assertThat(containsMessage(failure, "cached afterStop failure"), is(true));
+        assertThat(failureMessages(failure), containsString("cached afterStop failure"));
     }
 
-    private static boolean containsMessage(Throwable failure, String message) {
-        if (failure.getMessage() != null && failure.getMessage().contains(message)) {
-            return true;
-        }
-        for (Throwable suppressed : failure.getSuppressed()) {
-            if (containsMessage(suppressed, message)) {
-                return true;
-            }
-        }
-        Throwable cause = failure.getCause();
-        return cause != null && containsMessage(cause, message);
+    private static String failureMessages(Throwable failure) {
+        StringBuilder result = new StringBuilder();
+        appendFailureMessages(result, failure);
+        return result.toString();
     }
 
-    private static boolean suppressedContainsMessage(Throwable failure, String message) {
+    private static String suppressedFailureMessages(Throwable failure) {
+        StringBuilder result = new StringBuilder();
         for (Throwable suppressed : failure.getSuppressed()) {
-            if (containsMessage(suppressed, message)) {
-                return true;
-            }
+            appendFailureMessages(result, suppressed);
         }
-        return false;
+        return result.toString();
+    }
+
+    private static void appendFailureMessages(StringBuilder result, Throwable failure) {
+        if (failure == null) {
+            return;
+        }
+        if (!result.isEmpty()) {
+            result.append(System.lineSeparator());
+        }
+        result.append(failure.getClass().getName())
+                .append(": ")
+                .append(failure.getMessage());
+        for (Throwable suppressed : failure.getSuppressed()) {
+            appendFailureMessages(result, suppressed);
+        }
+        appendFailureMessages(result, failure.getCause());
     }
 
     private static boolean containsType(Throwable failure, Class<? extends Throwable> type) {
@@ -1611,26 +1698,37 @@ class ServerListenerLifecycleTest {
         throw lastBindFailure;
     }
 
+    private static TcpTransportConfig disabledTcpBinding() {
+        return TcpTransportConfig.builder()
+                .enabled(false)
+                .buildPrototype();
+    }
+
+    private static UdsTransportConfig udsBinding(Path socketPath) {
+        return UdsTransportConfig.builder()
+                .socket(UnixDomainSocketAddress.of(socketPath))
+                .required(true)
+                .buildPrototype();
+    }
+
     private static WebServerConfig listenerConfigWithoutTcp() {
         return WebServer.builder()
                 .shutdownHook(false)
                 .bindingsDiscoverServices(false)
-                .addBinding(TcpTransportConfig.builder()
-                                    .enabled(false)
-                                    .buildPrototype())
+                .addBinding(disabledTcpBinding())
                 .addBinding(new TestTransportBindingConfig("test", true))
                 .buildPrototype();
     }
 
     private static void assertPortCanBind(int port) throws Exception {
-        assertThat(port > 0, is(true));
+        assertThat(port, greaterThan(0));
         try (ServerSocket _ = new ServerSocket(port, 50, InetAddress.getLoopbackAddress())) {
             // validates that failed startup cleanup released the socket
         }
     }
 
     private static void assertPortRefusesConnections(int port) throws Exception {
-        assertThat(port > 0, is(true));
+        assertThat(port, greaterThan(0));
         try (Socket socket = new Socket()) {
             socket.connect(new InetSocketAddress(InetAddress.getLoopbackAddress(), port), 250);
             throw new AssertionError("Listener socket still accepted connections on port " + port);

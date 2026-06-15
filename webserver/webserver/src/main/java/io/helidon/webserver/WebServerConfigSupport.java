@@ -24,6 +24,7 @@ import java.net.UnixDomainSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -41,7 +42,6 @@ import io.helidon.webserver.spi.ServerFeature;
 import io.helidon.webserver.spi.TransportBindingFactory;
 
 class WebServerConfigSupport {
-    private static final String UNIX_DOMAIN_SOCKET_PREFIX = "unix:";
     private static final String KEY_BINDINGS = "bindings";
     private static final String KEY_SERVICE_ENABLED = "enabled";
     private static final String KEY_SERVICE_NAME = "name";
@@ -150,8 +150,19 @@ class WebServerConfigSupport {
             if (name == null) {
                 target.name(WebServer.DEFAULT_SOCKET_NAME);
             }
+            if (target.bindAddress().orElse(null) instanceof UnixDomainSocketAddress) {
+                throw new ConfigException("Listener " + target.name()
+                                                  + " uses a Unix domain socket as bind-address. Listener bind-address "
+                                                  + "configures TCP endpoints only. Configure the explicit UDS transport "
+                                                  + "binding instead: use bindings.uds.socket=/path/to/server.sock; "
+                                                  + "for a UDS-only listener also set bindings.tcp.enabled=false. "
+                                                  + "With the builder, add a disabled TcpTransportConfig and a "
+                                                  + "UdsTransportConfig with "
+                                                  + "socket(UnixDomainSocketAddress.of(path)).");
+            }
 
             preserveBindingConfigSemantics(target);
+            validateSingleBindingPerType(target);
             normalizeTcpBinding(target);
 
             if (target.connectionOptions().isEmpty()) {
@@ -189,101 +200,53 @@ class WebServerConfigSupport {
             }
 
             List<ConfiguredBinding> configuredBindings = configuredBindings(bindingsConfig);
-            Set<String> bindingTypes = new HashSet<>();
+            Map<String, String> bindingNamesByType = new LinkedHashMap<>();
             for (ConfiguredBinding configuredBinding : configuredBindings) {
                 String type = configuredBinding.type();
-                if (!bindingTypes.add(type)) {
-                    throw new ConfigException("Multiple transport bindings of type \"" + type
-                                                      + "\" are configured in " + bindingsConfig.key()
-                                                      + ". Only one binding can be configured for each type.");
+                String existingName = bindingNamesByType.putIfAbsent(type, configuredBinding.name());
+                if (existingName != null) {
+                    throw duplicateBindingType(null, type, existingName, configuredBinding.name());
                 }
             }
 
             preserveDisabledTcpBindings(target, configuredBindings);
         }
 
-        private static void normalizeTcpBinding(ListenerConfig.BuilderBase<?, ?> target) {
+        private static void validateSingleBindingPerType(ListenerConfig.BuilderBase<?, ?> target) {
             List<TransportBindingFactory> bindings = target.bindings();
-            int tcpBindingCount = 0;
-            boolean hasExplicitTcpBinding = false;
-            TransportBindingFactory discoveredDefaultTcpBinding = null;
-
-            for (TransportBindingFactory binding : bindings) {
-                if (!TcpTransportBinding.TYPE.equals(binding.type())) {
-                    continue;
-                }
-                tcpBindingCount++;
-                if (isDiscoveredDefaultTcpBinding(binding)) {
-                    if (discoveredDefaultTcpBinding == null) {
-                        discoveredDefaultTcpBinding = binding;
-                    }
-                } else {
-                    hasExplicitTcpBinding = true;
-                }
-            }
-
-            if (hasExplicitTcpBinding) {
-                normalizeExplicitTcpBindings(target, bindings, tcpBindingCount);
-                return;
-            }
-
-            if (discoveredDefaultTcpBinding != null) {
-                moveTcpBindingFirst(target, bindings, discoveredDefaultTcpBinding);
-                return;
-            }
-
-            List<TransportBindingFactory> normalizedBindings = new ArrayList<>(bindings.size() + 1);
-            normalizedBindings.add(TcpTransportConfig.create());
-            normalizedBindings.addAll(bindings);
-            target.bindings(normalizedBindings);
-        }
-
-        private static void normalizeExplicitTcpBindings(ListenerConfig.BuilderBase<?, ?> target,
-                                                         List<TransportBindingFactory> bindings,
-                                                         int tcpBindingCount) {
+            Map<String, TransportBindingFactory> bindingsByType = new LinkedHashMap<>();
             List<TransportBindingFactory> normalizedBindings = new ArrayList<>(bindings.size());
-            int explicitTcpBindingCount = 0;
             boolean changed = false;
 
             for (TransportBindingFactory binding : bindings) {
-                if (TcpTransportBinding.TYPE.equals(binding.type())) {
-                    if (isDiscoveredDefaultTcpBinding(binding)) {
+                TransportBindingFactory existing = bindingsByType.putIfAbsent(binding.type(), binding);
+                if (existing != null) {
+                    if (existing.name().equals(binding.name())) {
                         changed = true;
                         continue;
                     }
-                    explicitTcpBindingCount++;
+                    throw duplicateBindingType(target.name(), binding.type(), existing.name(), binding.name());
                 }
                 normalizedBindings.add(binding);
             }
-
-            if (explicitTcpBindingCount > 1) {
-                throw new ConfigException("Only one TCP transport binding can be configured for a listener.");
-            }
-            if (changed || tcpBindingCount != explicitTcpBindingCount) {
+            if (changed) {
                 target.bindings(normalizedBindings);
             }
         }
 
-        private static void moveTcpBindingFirst(ListenerConfig.BuilderBase<?, ?> target,
-                                                List<TransportBindingFactory> bindings,
-                                                TransportBindingFactory tcpBinding) {
-            if (bindings.getFirst() == tcpBinding) {
-                return;
-            }
+        private static void normalizeTcpBinding(ListenerConfig.BuilderBase<?, ?> target) {
+            List<TransportBindingFactory> bindings = target.bindings();
 
-            List<TransportBindingFactory> normalizedBindings = new ArrayList<>(bindings.size());
-            normalizedBindings.add(tcpBinding);
             for (TransportBindingFactory binding : bindings) {
-                if (binding != tcpBinding) {
-                    normalizedBindings.add(binding);
+                if (TcpTransportBinding.TYPE.equals(binding.type())) {
+                    return;
                 }
             }
-            target.bindings(normalizedBindings);
-        }
 
-        private static boolean isDiscoveredDefaultTcpBinding(TransportBindingFactory binding) {
-            return binding instanceof TcpTransportConfig tcpConfig
-                    && TcpTransportBindingFactoryProvider.isDiscoveredDefault(tcpConfig);
+            List<TransportBindingFactory> normalizedBindings = new ArrayList<>(bindings.size() + 1);
+            normalizedBindings.add(TcpTransportBindingFactory.create(TcpTransportConfig.create()));
+            normalizedBindings.addAll(bindings);
+            target.bindings(normalizedBindings);
         }
 
         private static List<ConfiguredBinding> configuredBindings(Config bindingsConfig) {
@@ -332,10 +295,11 @@ class WebServerConfigSupport {
                 if (!configuredBinding.enabled()
                         && TcpTransportBinding.TYPE.equals(configuredBinding.type())
                         && !hasBinding(target.bindings(), configuredBinding)) {
-                    target.addBinding(TcpTransportConfig.builder()
-                                              .name(configuredBinding.name())
-                                              .enabled(false)
-                                              .buildPrototype());
+                    TcpTransportConfig tcpConfig = TcpTransportConfig.builder()
+                            .name(configuredBinding.name())
+                            .enabled(false)
+                            .buildPrototype();
+                    target.addBinding(TcpTransportBindingFactory.create(tcpConfig));
                 }
             }
         }
@@ -348,6 +312,19 @@ class WebServerConfigSupport {
                 }
             }
             return false;
+        }
+
+        private static ConfigException duplicateBindingType(String listenerName,
+                                                            String type,
+                                                            String firstName,
+                                                            String secondName) {
+            String target = listenerName == null ? "configured" : "configured for listener \"" + listenerName + "\"";
+            return new ConfigException("Multiple transport bindings of type \"" + type + "\" are " + target
+                                               + ": \"" + firstName + "\" and \"" + secondName + "\". A listener can "
+                                               + "have only one transport binding per type. The binding name is not a "
+                                               + "way to create another binding of the same type; if you want to "
+                                               + "override configuration for the \"" + type + "\" binding, use the \""
+                                               + type + "\" name.");
         }
 
         private record ConfiguredBinding(String type, String name, boolean enabled) {
@@ -369,16 +346,33 @@ class WebServerConfigSupport {
             builder.routing(routingBuilder);
         }
 
+        /**
+         * Add a TCP transport binding from configuration.
+         *
+         * @param builder listener config builder
+         * @param config TCP transport binding configuration
+         */
+        @Prototype.BuilderMethod
+        static void addBinding(ListenerConfig.BuilderBase<?, ?> builder, TcpTransportConfig config) {
+            builder.addBinding(TcpTransportBindingFactory.create(config));
+        }
+
+        /**
+         * Add a Unix domain socket transport binding from configuration.
+         *
+         * @param builder listener config builder
+         * @param config Unix domain socket transport binding configuration
+         */
+        @Prototype.BuilderMethod
+        static void addBinding(ListenerConfig.BuilderBase<?, ?> builder, UdsTransportConfig config) {
+            builder.addBinding(UdsTransportBindingFactory.create(config));
+        }
+
         @Prototype.ConfigFactoryMethod("bindAddress")
         static SocketAddress createBindAddress(Config config) {
             String address = config.asString().get();
-            // unix:/path/to/socket
-            if (address.startsWith(UNIX_DOMAIN_SOCKET_PREFIX)) {
-                String path = address.substring(UNIX_DOMAIN_SOCKET_PREFIX.length());
-                return UnixDomainSocketAddress.of(path);
-            }
-            // must be localhost:8080 or similar
             int col = address.indexOf(':');
+            // must be localhost:8080 or similar
             String host;
             int port;
             if (col == 0) {

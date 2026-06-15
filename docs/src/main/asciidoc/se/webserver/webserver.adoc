@@ -282,15 +282,20 @@ server:
 
 ==== Configuring TLS over Unix Domain Sockets
 
-TLS can be combined with a Unix domain socket listener by configuring `bind-address` with a
-`unix:/path/to/socket` address and configuring `tls` as usual. Unix domain socket listeners use the
-NIO socket-channel transport, so keep `use-nio` set to `true`, which is the default.
+TLS can be combined with a Unix domain socket listener by configuring the explicit `uds` transport binding
+with a socket path and configuring `tls` as usual. Disable the default `tcp` binding
+when the listener should only bind the Unix domain socket. Unix domain socket listeners use the NIO
+socket-channel transport, so keep `use-nio` set to `true`, which is the default.
 
 [source,yaml]
 .WebServer TLS over Unix domain socket configuration in `application.yaml`
 ----
 server:
-  bind-address: "unix:/var/run/service.sock"
+  bindings:
+    tcp:
+      enabled: false
+    uds:
+      socket: "/var/run/service.sock"
   tls:
     private-key:
       keystore:

@@ -17,30 +17,33 @@
 package io.helidon.webserver;
 
 import java.net.UnixDomainSocketAddress;
-import java.nio.file.Path;
 import java.util.List;
-import java.util.Map;
 
 import io.helidon.config.Config;
-import io.helidon.config.ConfigSources;
+import io.helidon.config.ConfigException;
 import io.helidon.webserver.spi.TransportBindingFactory;
 
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class ListenerConfigTest {
+    private static final String DISCOVERED_TEST_BINDING = TestTransportBindingConfig.TYPE
+            + "/" + TestTransportBindingConfig.TYPE + "/false";
 
     @Test
-    void testUnixBindAddressKeepsConfiguredPath() {
-        Config config = Config.just(ConfigSources.create(Map.of("bind-address", "unix:/tmp/server.sock")));
+    void testUnixBindAddressFailsWithUdsBindingGuidance() {
+        ConfigException failure = assertThrows(ConfigException.class, () -> ListenerConfig.builder()
+                .bindAddress(UnixDomainSocketAddress.of("/tmp/server.sock"))
+                .buildPrototype());
 
-        var socketAddress = (UnixDomainSocketAddress) ListenerConfig.create(config)
-                .bindAddress()
-                .orElseThrow();
-
-        assertThat(socketAddress.getPath(), is(Path.of("/tmp/server.sock")));
+        assertThat(failure.getMessage(), containsString("bindings.uds.socket"));
+        assertThat(failure.getMessage(), containsString("bindings.tcp.enabled=false"));
     }
 
     @Test
@@ -59,10 +62,7 @@ public class ListenerConfigTest {
     void testBindingDiscoveryEnabledByDefault() {
         ListenerConfig listenerConfig = ListenerConfig.builder().buildPrototype();
 
-        assertThat(listenerConfig.bindings()
-                           .stream()
-                           .anyMatch(ListenerConfigTest::isDiscoveredTestTransportBinding),
-                   is(true));
+        assertThat(bindingDescriptions(listenerConfig), hasItem(DISCOVERED_TEST_BINDING));
     }
 
     @Test
@@ -71,10 +71,7 @@ public class ListenerConfigTest {
                 .bindingsDiscoverServices(false)
                 .buildPrototype();
 
-        assertThat(listenerConfig.bindings()
-                           .stream()
-                           .anyMatch(ListenerConfigTest::isDiscoveredTestTransportBinding),
-                   is(false));
+        assertThat(bindingDescriptions(listenerConfig), not(hasItem(DISCOVERED_TEST_BINDING)));
     }
 
     // Verify that value of server2.shutdown-grace-period is present in ListenerConfiguration instance
@@ -135,9 +132,14 @@ public class ListenerConfigTest {
                    is(List.of("TLS_AES_128_GCM_SHA256")));
     }
 
-    private static boolean isDiscoveredTestTransportBinding(TransportBindingFactory binding) {
-        return TestTransportBindingConfig.TYPE.equals(binding.type())
-                && TestTransportBindingConfig.TYPE.equals(binding.name())
-                && !binding.enabled();
+    private static List<String> bindingDescriptions(ListenerConfig listenerConfig) {
+        return listenerConfig.bindings()
+                .stream()
+                .map(ListenerConfigTest::bindingDescription)
+                .toList();
+    }
+
+    private static String bindingDescription(TransportBindingFactory binding) {
+        return binding.type() + "/" + binding.name() + "/" + binding.enabled();
     }
 }
