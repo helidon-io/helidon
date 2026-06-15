@@ -55,12 +55,11 @@ import io.helidon.common.concurrency.limits.LimitAlgorithm;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.task.HelidonTaskExecutor;
 import io.helidon.common.tls.Tls;
-import io.helidon.common.tls.TlsMaterial;
 import io.helidon.metrics.api.Tag;
 import io.helidon.webserver.spi.ProtocolConfig;
 import io.helidon.webserver.spi.ServerConnectionSelector;
 import io.helidon.webserver.spi.ServerConnectionSelectorProvider;
-import io.helidon.webserver.spi.TlsTransportBinding;
+import io.helidon.webserver.spi.TransportBinding;
 
 import static java.lang.System.Logger.Level.DEBUG;
 import static java.lang.System.Logger.Level.ERROR;
@@ -68,7 +67,7 @@ import static java.lang.System.Logger.Level.INFO;
 import static java.lang.System.Logger.Level.TRACE;
 import static java.lang.System.Logger.Level.WARNING;
 
-abstract class SocketTransportBinding implements TlsTransportBinding {
+abstract class SocketTransportBinding implements TransportBinding {
     private static final System.Logger LOGGER = System.getLogger(SocketTransportBinding.class.getName());
     @SuppressWarnings("rawtypes")
     private static final LazyValue<List<ServerConnectionSelectorProvider>> SELECTOR_PROVIDERS = LazyValue.create(() ->
@@ -168,28 +167,6 @@ abstract class SocketTransportBinding implements TlsTransportBinding {
     @Override
     public Security security() {
         return tls.enabled() ? Security.TLS : Security.UNPROTECTED;
-    }
-
-    @Override
-    public void reloadTls(TlsMaterial material) {
-        Objects.requireNonNull(material, "material");
-        if (!tls.enabled()) {
-            throw new IllegalArgumentException("TLS is not enabled on the socket " + socketName
-                                                       + " and therefore cannot be reloaded");
-        }
-        tls.reload(material);
-    }
-
-    @Override
-    public void reloadVirtualHostTls(TlsMaterial material, String configuredHost) {
-        Objects.requireNonNull(material, "material");
-        Objects.requireNonNull(configuredHost, "configuredHost");
-        virtualHosts.reloadTls(material, configuredHost);
-    }
-
-    @Override
-    public boolean supportsVirtualHosts() {
-        return virtualHosts.enabled();
     }
 
     @Override
@@ -509,14 +486,14 @@ abstract class SocketTransportBinding implements TlsTransportBinding {
     private static Limit connectionLimit(ListenerConfig listenerConfig) {
         // this instance is the only one waiting on this limit, so queue of 1 is enough
         // 5 minutes is long enough not to have busy waits
-        if (listenerConfig.maxTcpConnections() == -1 || listenerConfig.maxTcpConnections() == 0) {
+        if (listenerConfig.maxConnections() == -1 || listenerConfig.maxConnections() == 0) {
             // unlimited, no need to queue, as we never block
             return FixedLimit.create();
         }
         return FixedLimit.builder()
                 .queueLength(1)
                 .queueTimeout(Duration.ofMinutes(5))
-                .permits(listenerConfig.maxTcpConnections())
+                .permits(listenerConfig.maxConnections())
                 .build();
     }
 

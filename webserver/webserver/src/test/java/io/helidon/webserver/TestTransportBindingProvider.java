@@ -26,10 +26,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import io.helidon.common.tls.TlsMaterial;
 import io.helidon.config.Config;
 import io.helidon.webserver.spi.PortTransportBinding;
-import io.helidon.webserver.spi.TlsTransportBinding;
 import io.helidon.webserver.spi.TransportBinding;
 import io.helidon.webserver.spi.TransportBindingFactoryProvider;
 
@@ -42,8 +40,6 @@ public class TestTransportBindingProvider implements TransportBindingFactoryProv
     private static final Map<String, DatagramSocket> BOUND_SOCKETS = new ConcurrentHashMap<>();
     private static final Map<String, AtomicInteger> STARTS = new ConcurrentHashMap<>();
     private static final Map<String, AtomicInteger> STOPS = new ConcurrentHashMap<>();
-    private static final Map<String, AtomicInteger> RELOADS = new ConcurrentHashMap<>();
-    private static final Map<String, AtomicInteger> VIRTUAL_HOST_RELOADS = new ConcurrentHashMap<>();
     private static final Map<String, CountDownLatch> PENDING_STOPS = new ConcurrentHashMap<>();
     private static final Map<String, CountDownLatch> PENDING_EXECUTOR_TASKS = new ConcurrentHashMap<>();
     private static final Map<String, CountDownLatch> EXECUTOR_TASKS_STARTED = new ConcurrentHashMap<>();
@@ -58,8 +54,6 @@ public class TestTransportBindingProvider implements TransportBindingFactoryProv
         BOUND_SOCKETS.clear();
         STARTS.clear();
         STOPS.clear();
-        RELOADS.clear();
-        VIRTUAL_HOST_RELOADS.clear();
         PENDING_STOPS.clear();
         PENDING_EXECUTOR_TASKS.values().forEach(CountDownLatch::countDown);
         PENDING_EXECUTOR_TASKS.clear();
@@ -93,14 +87,6 @@ public class TestTransportBindingProvider implements TransportBindingFactoryProv
 
     static int stops(String name) {
         return counter(STOPS, name).get();
-    }
-
-    static int reloads(String name) {
-        return counter(RELOADS, name).get();
-    }
-
-    static int virtualHostReloads(String name) {
-        return counter(VIRTUAL_HOST_RELOADS, name).get();
     }
 
     static void completeStop(String name) {
@@ -148,7 +134,7 @@ public class TestTransportBindingProvider implements TransportBindingFactoryProv
     }
 
     private record TestTransportBinding(TransportBindingContext context,
-                                        TestTransportBindingConfig config) implements TlsTransportBinding, PortTransportBinding {
+                                        TestTransportBindingConfig config) implements TransportBinding, PortTransportBinding {
         @Override
         public String type() {
             return config.type();
@@ -227,27 +213,6 @@ public class TestTransportBindingProvider implements TransportBindingFactoryProv
         @Override
         public Security security() {
             return config.security();
-        }
-
-        @Override
-        public void reloadTls(TlsMaterial material) {
-            counter(RELOADS, config.name()).incrementAndGet();
-            if (config.failReload()) {
-                throw new IllegalStateException("test transport TLS reload failed " + config.name());
-            }
-        }
-
-        @Override
-        public void reloadVirtualHostTls(TlsMaterial material, String configuredHost) {
-            counter(VIRTUAL_HOST_RELOADS, config.name()).incrementAndGet();
-            if (config.failReload()) {
-                throw new IllegalStateException("test transport virtual host TLS reload failed " + config.name());
-            }
-        }
-
-        @Override
-        public boolean supportsVirtualHosts() {
-            return config.supportsVirtualHosts();
         }
 
         @Override

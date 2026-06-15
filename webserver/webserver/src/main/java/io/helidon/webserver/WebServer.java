@@ -16,6 +16,7 @@
 
 package io.helidon.webserver;
 
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
@@ -170,6 +171,7 @@ public interface WebServer extends RuntimeType.Api<WebServerConfig> {
      * @param material new TLS material
      */
     default void reloadTls(TlsMaterial material) {
+        Objects.requireNonNull(material, "material");
         reloadTls(material, DEFAULT_SOCKET_NAME);
     }
 
@@ -180,6 +182,8 @@ public interface WebServer extends RuntimeType.Api<WebServerConfig> {
      * @param socketName socket name to reload TLS material on
      */
     default void reloadTls(TlsMaterial material, String socketName) {
+        Objects.requireNonNull(material, "material");
+        Objects.requireNonNull(socketName, "socketName");
         throw new UnsupportedOperationException("TLS material reload is not supported by this WebServer implementation");
     }
 
@@ -190,6 +194,8 @@ public interface WebServer extends RuntimeType.Api<WebServerConfig> {
      * @param host configured virtual host name
      */
     default void reloadVirtualHostTls(TlsMaterial material, String host) {
+        Objects.requireNonNull(material, "material");
+        Objects.requireNonNull(host, "host");
         reloadVirtualHostTls(material, DEFAULT_SOCKET_NAME, host);
     }
 
@@ -201,6 +207,9 @@ public interface WebServer extends RuntimeType.Api<WebServerConfig> {
      * @param host configured virtual host name
      */
     default void reloadVirtualHostTls(TlsMaterial material, String socketName, String host) {
+        Objects.requireNonNull(material, "material");
+        Objects.requireNonNull(socketName, "socketName");
+        Objects.requireNonNull(host, "host");
         throw new UnsupportedOperationException("Virtual host TLS material reload is not supported by this WebServer "
                                                         + "implementation");
     }

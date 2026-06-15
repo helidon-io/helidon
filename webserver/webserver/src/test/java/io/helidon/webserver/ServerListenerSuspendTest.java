@@ -95,7 +95,7 @@ class ServerListenerSuspendTest {
         LoomServer server = (LoomServer) WebServer.builder()
                 .port(0)
                 .enableProxyProtocol(true)
-                .maxTcpConnections(1)
+                .maxConnections(1)
                 .build()
                 .start();
 
@@ -110,7 +110,7 @@ class ServerListenerSuspendTest {
 
             waitFor(Duration.ofSeconds(5),
                     () -> listenerThreadState(WebServer.DEFAULT_SOCKET_NAME) == Thread.State.TIMED_WAITING,
-                    "listener did not block on the TCP connection limit");
+                    "listener did not block on the connection limit");
 
             Future<?> suspendFuture = executor.submit(server::suspend);
             try {

@@ -164,6 +164,7 @@ class WebServerConfigSupport {
             preserveBindingConfigSemantics(target);
             validateSingleBindingPerType(target);
             normalizeTcpBinding(target);
+            normalizeMaxConnections(target);
 
             if (target.connectionOptions().isEmpty()) {
                 target.connectionOptions(SocketOptions.create());
@@ -185,6 +186,13 @@ class WebServerConfigSupport {
                 target.requestedUriDiscoveryContext(RequestedUriDiscoveryContext.builder()
                                                             .socketId(target.name())
                                                             .build());
+            }
+        }
+
+        @SuppressWarnings("removal")
+        private static void normalizeMaxConnections(ListenerConfig.BuilderBase<?, ?> target) {
+            if (target.maxConnections().isEmpty()) {
+                target.maxConnections(target.maxTcpConnections());
             }
         }
 

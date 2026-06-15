@@ -47,7 +47,6 @@ import io.helidon.metrics.api.Tag;
 import io.helidon.webserver.http.DirectHandlers;
 import io.helidon.webserver.spi.PortTransportBinding;
 import io.helidon.webserver.spi.ProtocolConfig;
-import io.helidon.webserver.spi.TlsTransportBinding;
 import io.helidon.webserver.spi.TransportBinding;
 import io.helidon.webserver.spi.TransportBindingFactory;
 
@@ -296,47 +295,21 @@ class ServerListener implements TransportBindingContext {
 
     void reloadTls(TlsMaterial material) {
         Objects.requireNonNull(material, "material");
-        boolean handled = false;
-        Throwable failure = null;
-        for (TransportBinding binding : transportBindings) {
-            if (binding.security() == TransportBinding.Security.TLS
-                    && binding instanceof TlsTransportBinding tlsBinding) {
-                handled = true;
-                try {
-                    tlsBinding.reloadTls(material);
-                } catch (RuntimeException | Error e) {
-                    failure = LifecycleFailures.add(failure, bindingFailure("reload TLS for", binding, e));
-                }
-            }
-        }
-        if (!handled) {
+        if (!tls.enabled()) {
             throw new IllegalArgumentException("TLS is not enabled on the socket " + socketName
                                                        + " and therefore cannot be reloaded");
         }
-        LifecycleFailures.throwIfFailed(failure, "Failed to reload TLS on listener " + socketName);
+        tls.reload(material);
     }
 
     void reloadVirtualHostTls(TlsMaterial material, String host) {
         Objects.requireNonNull(material, "material");
         Objects.requireNonNull(host, "host");
-        boolean handled = false;
-        Throwable failure = null;
-        for (TransportBinding binding : transportBindings) {
-            if (binding.security() == TransportBinding.Security.TLS
-                    && binding instanceof TlsTransportBinding tlsBinding) {
-                handled = true;
-                try {
-                    tlsBinding.reloadVirtualHostTls(material, host);
-                } catch (RuntimeException | Error e) {
-                    failure = LifecycleFailures.add(failure, bindingFailure("reload virtual host TLS for", binding, e));
-                }
-            }
-        }
-        if (!handled) {
+        if (!tls.enabled()) {
             throw new IllegalArgumentException("TLS is not enabled on the socket " + socketName
                                                        + " and therefore cannot be reloaded");
         }
-        LifecycleFailures.throwIfFailed(failure, "Failed to reload virtual host TLS on listener " + socketName);
+        virtualHosts.reloadTls(material, host);
     }
 
     void suspend() {
@@ -455,21 +428,12 @@ class ServerListener implements TransportBindingContext {
                                                            + " of type \"" + binding.type()
                                                            + "\" requires listener TLS");
             }
-            if (security == TransportBinding.Security.TLS && !(binding instanceof TlsTransportBinding)) {
-                throw new IllegalArgumentException("Transport binding " + binding.name()
-                                                           + " of type \"" + binding.type()
-                                                           + "\" declares listener TLS protection but does not support "
-                                                           + "listener TLS operations");
-            }
-            if (virtualHosts.enabled()
-                    && (security != TransportBinding.Security.TLS
-                    || !(binding instanceof TlsTransportBinding tlsBinding)
-                    || !tlsBinding.supportsVirtualHosts())) {
+            if (virtualHosts.enabled() && security != TransportBinding.Security.TLS) {
                 throw new IllegalArgumentException("Listener " + socketName
                                                            + " has TLS virtual hosts configured, but transport binding "
                                                            + binding.name()
                                                            + " of type \"" + binding.type()
-                                                           + "\" does not support listener virtual hosts");
+                                                           + "\" does not use listener TLS");
             }
         }
     }

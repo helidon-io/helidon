@@ -22,7 +22,6 @@ import io.helidon.common.tls.TlsMaterial;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.any;
@@ -97,8 +96,7 @@ class WebServerTlsReloadTest {
 
     @Test
     @SuppressWarnings("removal")
-    void reloadDeprecatedTlsDispatchesAsMaterialToNonTcpBinding() {
-        TestTransportBindingProvider.reset();
+    void reloadDeprecatedTlsReloadsListenerTlsWithMaterial() {
         Tls listenerTls = tls();
         Tls reloadTls = Tls.builder()
                 .trustAll(true)
@@ -112,34 +110,28 @@ class WebServerTlsReloadTest {
 
         server.reloadTls(reloadTls);
 
-        assertThat(TestTransportBindingProvider.reloads("test"), is(1));
+        verify(listenerTls).reload(any(TlsMaterial.class));
     }
 
     @Test
-    void reloadTlsMaterialAttemptsRemainingTransportBindingsAfterFailure() {
-        TestTransportBindingProvider.reset();
+    void reloadTlsMaterialReloadsListenerTlsOnceWithMultipleTlsBindings() {
+        Tls listenerTls = tls();
         TlsMaterial material = material();
         WebServer server = WebServer.builder()
                 .shutdownHook(false)
-                .tls(Tls.builder()
-                             .trustAll(true)
-                             .build())
+                .tls(listenerTls)
                 .bindingsDiscoverServices(false)
-                .addBinding(new TestTransportBindingConfig("failing", true, false, true, true, false, false))
-                .addBinding(TestTransportBindingConfig.alternate("remaining", true, false, true))
+                .addBinding(new TestTransportBindingConfig("first", true, false, true))
+                .addBinding(TestTransportBindingConfig.alternate("second", true, false, true))
                 .build();
 
-        RuntimeException failure = assertThrows(RuntimeException.class, () -> server.reloadTls(material));
+        server.reloadTls(material);
 
-        assertThat(failure.getMessage(), containsString("Failed to reload TLS"));
-        assertThat(failure.getCause().getMessage(), containsString("transport binding failing"));
-        assertThat(TestTransportBindingProvider.reloads("failing"), is(1));
-        assertThat(TestTransportBindingProvider.reloads("remaining"), is(1));
+        verify(listenerTls).reload(material);
     }
 
     @Test
-    void reloadVirtualHostTlsMaterialAttemptsRemainingTransportBindingsAfterFailure() {
-        TestTransportBindingProvider.reset();
+    void reloadVirtualHostTlsMaterialRejectsUnconfiguredHost() {
         TlsMaterial material = material();
         WebServer server = WebServer.builder()
                 .shutdownHook(false)
@@ -151,17 +143,14 @@ class WebServerTlsReloadTest {
                                      .trustAll(true)
                                      .build()))
                 .bindingsDiscoverServices(false)
-                .addBinding(new TestTransportBindingConfig("failing", true, false, true, true, false, true))
-                .addBinding(TestTransportBindingConfig.alternate("remaining", true, false, true, false, false, true))
+                .addBinding(new TestTransportBindingConfig("test", true, false, true))
                 .build();
 
-        RuntimeException failure = assertThrows(RuntimeException.class,
-                                                () -> server.reloadVirtualHostTls(material, "api.example.com"));
+        IllegalArgumentException failure = assertThrows(IllegalArgumentException.class,
+                                                        () -> server.reloadVirtualHostTls(material,
+                                                                                         "missing.example.com"));
 
-        assertThat(failure.getMessage(), containsString("Failed to reload virtual host TLS"));
-        assertThat(failure.getCause().getMessage(), containsString("transport binding failing"));
-        assertThat(TestTransportBindingProvider.virtualHostReloads("failing"), is(1));
-        assertThat(TestTransportBindingProvider.virtualHostReloads("remaining"), is(1));
+        assertThat(failure.getMessage(), containsString("Virtual host missing.example.com is not configured"));
     }
 
     @Test
