@@ -55,6 +55,16 @@ public interface TransportBindingContext {
     Limit requestLimit();
 
     /**
+     * Listener TLS state shared by transport bindings.
+     * <p>
+     * Bindings that return {@link io.helidon.webserver.spi.TransportBinding.Security#TLS} must use this context for TLS
+     * handshakes, including virtual-host TLS selection.
+     *
+     * @return listener TLS context
+     */
+    ListenerTlsContext listenerTls();
+
+    /**
      * First bound listener port, if any.
      * <p>
      * Port-capable bindings should use this value when present and when their own endpoint requests a random port, so all

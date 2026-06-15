@@ -82,7 +82,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
     private final String serverChannelId;
     private final Router router;
     private final Tls tls;
-    private final VirtualHostRegistry virtualHosts;
+    private final ListenerTlsContext listenerTls;
     private final ListenerConfig listenerConfig;
     private final String channelId;
     private final Consumer<ConnectionHandler> connectionHandlerRemoveListener;
@@ -110,7 +110,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
                       String serverChannelId,
                       Router router,
                       Tls tls,
-                      VirtualHostRegistry virtualHosts,
+                      ListenerTlsContext listenerTls,
                       Consumer<ConnectionHandler> connectionHandlerRemoveListener) {
         this.listenerContext = listenerContext;
         this.limitToken = limitToken;
@@ -121,7 +121,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
         this.serverChannelId = serverChannelId;
         this.router = router;
         this.tls = tls;
-        this.virtualHosts = virtualHosts;
+        this.listenerTls = listenerTls;
         this.listenerConfig = listenerContext.config();
         this.connectionHandlerRemoveListener = connectionHandlerRemoveListener;
         this.channelId = "0x" + HexFormat.of().toHexDigits(System.identityHashCode(socket));
@@ -397,15 +397,15 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
         if (tls.enabled()) {
             ByteBuffer replayBuffer = null;
             Tls selectedTls = tls;
-            if (virtualHosts.enabled()) {
+            if (listenerTls.virtualHostsEnabled()) {
                 ClientHelloPrefaceReader.ClientHelloPreface preface =
                         ClientHelloPrefaceReader.read(channel, listenerConfig.connectionOptions().readTimeout());
-                VirtualHostRegistry.Selection selection;
+                ListenerTlsContext.Selection selection;
                 try {
                     selection = preface.sniHost()
-                            .map(virtualHosts::select)
-                            .orElseGet(virtualHosts::selectWithoutSni);
-                } catch (VirtualHostRegistry.RejectedSniException e) {
+                            .map(listenerTls::select)
+                            .orElseGet(listenerTls::selectWithoutSni);
+                } catch (ListenerTlsContext.RejectedSniException e) {
                     if (e.sendUnrecognizedNameAlert()) {
                         sendUnrecognizedNameAlert(channel, preface.replayBuffer());
                     }
@@ -471,7 +471,7 @@ class ConnectionHandler implements InterruptableTask<Void>, ConnectionContext {
 
     private HelidonSocket createByteSocket(Tls tls, SocketChannel channel, String channelId) throws IOException {
         if (tls.enabled()) {
-            if (virtualHosts.enabled()) {
+            if (listenerTls.virtualHostsEnabled()) {
                 throw new IllegalStateException("Listener virtual hosts require NIO TLS");
             }
             SSLSocket sslSocket = (SSLSocket) tls.sslContext()

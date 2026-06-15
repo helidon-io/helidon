@@ -1466,6 +1466,38 @@ class ServerListenerLifecycleTest {
     }
 
     @Test
+    void listenerTlsProtectedTransportBindingCanUseSharedTlsContext() {
+        TestTransportBindingProvider.reset();
+        Tls listenerTls = Tls.builder()
+                .trustAll(true)
+                .build();
+        Tls virtualHostTls = Tls.builder()
+                .trustAll(true)
+                .build();
+        WebServer server = WebServer.builder()
+                .shutdownHook(false)
+                .tls(listenerTls)
+                .useNio(true)
+                .addVirtualHost(virtualHost -> virtualHost.host("api.example.com")
+                        .tls(virtualHostTls))
+                .bindingsDiscoverServices(false)
+                .addBinding(TestTransportBindingConfig.listenerTls("test"))
+                .build()
+                .start();
+
+        try {
+            ListenerTlsContext listenerTlsContext = TestTransportBindingProvider.listenerTlsContext("test");
+
+            assertThat(listenerTlsContext, notNullValue());
+            assertThat(listenerTlsContext.tls(), is(listenerTls));
+            assertThat(listenerTlsContext.virtualHostsEnabled(), is(true));
+            assertThat(listenerTlsContext.select("api.example.com").tls(), is(virtualHostTls));
+        } finally {
+            stopUntilStopped(server);
+        }
+    }
+
+    @Test
     void listenerWithoutTlsRejectsTlsProtectedTransportBinding() {
         RuntimeException failure = assertThrows(RuntimeException.class, () -> WebServer.builder()
                 .shutdownHook(false)
