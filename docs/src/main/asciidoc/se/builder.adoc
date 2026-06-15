@@ -433,7 +433,7 @@ Interfaces:
 | `Option.Singular`      | For collection based options. Adds setter for a single value (for `List<String> algorithms()`, there would be the following setters: `algorithms(List<String>)`, `addAlgorithms(List<String>)`, `addAlgorithm(String)`)
 | `Option.Configured`    | For options that are configured from config (must be explicitly marked, default is not-configured), also ignored unless `@Prototype.Configured` is specified on the blueprint interface
 | `Option.Required`      | We can recognize required options through signature in most cases (any option that does not return an `Optional` and does not have a default value); this option is useful for primitive types, where we need an explicit value set, rather than using the primitive's default value
-| `Option.Provider`      | Satisfied by a provider implementation, see javadoc for details
+| `Option.Provider`      | Satisfied by a provider implementation, see javadoc for details. For configured provider lists, each configured entry must have a unique provider `type` and `name`; duplicate `(type, name)` entries fail configuration validation.
 | `Option.AllowedValues` | Allowed values for the property, not required for `enum`, where we create this automatically, though we can configure description of each value (works automatically for `enum` defined in the same module); the description is used for generated documentation
 | `Option.SameGeneric`   | Advanced configuration of a Map, where the map accepts two typed values, and we must use the same generic on setters (such as `Map<Class<Object>, Object>` - `<T> Builder put(Class<T>, T)`)
 | `Option.Redundant`     | Marks an option that is not used by equals and hashCode methods
