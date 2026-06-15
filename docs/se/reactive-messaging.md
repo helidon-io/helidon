@@ -464,7 +464,7 @@ Messaging messaging = Messaging.builder()
 Don’t forget to check out the examples with pre-configured Kafka docker image,
 for easy testing:
 
-- <https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/messaging>
+- [Helidon messaging examples][helidon-messagin]
 
 #### JMS Connector
 

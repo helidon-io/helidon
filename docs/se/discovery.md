@@ -400,9 +400,13 @@ webclient:
         TEST: "https://test.example.com:443/" # (2) (3)
 ```
 
-1.  Indicates that URIs starting with <a href="https://example.com:443/" class="bare"><code>https://example.com:443/</code></a> will be subject to discovery, using the discovery name of `EXAMPLE`
-2.  Indicates that URIs starting with <a href="https://test.example.com:443/" class="bare"><code>https://test.example.com:443/</code></a> will be subject to discovery, using the discovery name of `TEST`
-3.  URIs that begin with text other than <a href="https://example.com:443/" class="bare"><code>https://example.com:443/</code></a> or <a href="https://test.example.com:443/" class="bare"><code>https://test.example.com:443/</code></a> will not be subject to discovery
+1.  Indicates that URIs starting with [example prefix URI][example-prefix-uri]
+    will be subject to discovery, using the discovery name of `EXAMPLE`
+2.  Indicates that URIs starting with [test prefix URI][test-prefix-uri] will be
+    subject to discovery, using the discovery name of `TEST`
+3.  URIs that begin with text other than
+    [example prefix URI][example-prefix-uri] or
+    [test prefix URI][test-prefix-uri] will not be subject to discovery
 
 ## References
 
@@ -432,3 +436,5 @@ webclient:
 [discovery-javado]: https://helidon.io/docs/v4/apidocs/io.helidon.discovery/module-summary.html
 [eureka-discovery]: https://helidon.io/docs/v4/apidocs/io.helidon.discovery.providers.eureka/module-summary.html
 [web-client-disco]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.discovery/module-summary.html
+[example-prefix-uri]: https://example.com:443/
+[test-prefix-uri]: https://test.example.com:443/

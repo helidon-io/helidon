@@ -668,12 +668,12 @@ register new metrics, look up previously-registered metrics, and remove metrics.
 
 You can work with metrics inside your own CDI extensions, but be careful to do
 so at the correct point in the CDI lifecycle. Configuration can influence how
-the metrics system behaves, as the [configuration](#configuration-options) section below
-explains. Your code should work with metrics only after the Helidon metrics
-system has initialized itself using configuration. One way to accomplish this is
-to deal with metrics in a method that observes the Helidon `RuntimeStart` CDI
-event, which the [extension example
-below](#working-with-metrics-in-cdi-extensions) illustrates.
+the metrics system behaves, as the [configuration](#configuration-options)
+section below explains. Your code should work with metrics only after the
+Helidon metrics system has initialized itself using configuration. One way to
+accomplish this is to deal with metrics in a method that observes the Helidon
+`RuntimeStart` CDI event, which the
+[extension example below](#working-with-metrics-in-cdi-extensions) illustrates.
 
 ## Configuration options
 

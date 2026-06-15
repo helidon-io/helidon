@@ -1140,8 +1140,6 @@ different `CollectorRegistry` or a different path.
 [helidon-opentele]: ../../se/telemetry/open-telemetry.md#maven-coordinates
 [enabling-disabli]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/metrics/filtering/se
 [controlling-key]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/metrics/kpi
-[choose-whether-t]: #virtual-threads-meters
-[choose-whether-t-2]: #key-performance-indicator-kpi-meters
 [micrometer-metri]: https://docs.micrometer.io/micrometer/reference/concepts
 [prometheussuppor]: https://helidon.io/docs/v4/apidocs/io.helidon.metrics.prometheus/io/helidon/metrics/prometheus/PrometheusSupport.html
 [builder]: https://helidon.io/docs/v4/apidocs/io.helidon.metrics.prometheus/io/helidon/metrics/prometheus/PrometheusSupport.Builder.html

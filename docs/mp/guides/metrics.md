@@ -91,7 +91,7 @@ java -jar target/helidon-quickstart-mp.jar
 > [!NOTE]
 > Metrics output can be returned in either text format (the default), or JSON.
 > The text format uses OpenMetrics (Prometheus) Text Format, see
-> <https://prometheus.io/docs/instrumenting/exposition_formats/#text-format-details>.
+> [Prometheus text format details][prometheus-text].
 
 Verify the metrics endpoint in a new terminal window:
 
@@ -929,3 +929,4 @@ Refer to the following references for additional information:
 [microprofile-met]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/microprofile-metrics-spec-5.1.1.html#_optional_rest
 [microprofile-met-2]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/microprofile-metrics-spec-5.1.1.html
 [microprofile-met-3]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/apidocs
+[prometheus-text]: https://prometheus.io/docs/instrumenting/exposition_formats/#text-format-details

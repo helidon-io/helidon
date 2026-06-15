@@ -87,8 +87,8 @@ build.
 
 ## Configuration
 
-The OpenAPI generators support a substantial, powerful, and sometimes bewildering group of configuration settings.
-For complete lists see these pages:
+The OpenAPI generators support a substantial, powerful, and sometimes
+bewildering group of configuration settings. For complete lists see these pages:
 
 - [generic options][generic-options]
 - [Helidon client generator options][helidon-client-g] and

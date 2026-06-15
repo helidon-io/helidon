@@ -2,10 +2,10 @@
 
 Index of SE documentation.
 
-| Topic                                                                             | Description                            |
-|-----------------------------------------------------------------------------------|----------------------------------------|
-| [Introduction](introduction.md) <!--@icon i-lucide-lightbulb -->                  | About Helidon SE                       |
-| [Guides](guides/README.md) <!--@icon i-lucide-compass -->                         | Index of Guides documentation          |
+| Topic                                                            | Description                   |
+|------------------------------------------------------------------|-------------------------------|
+| [Introduction](introduction.md) <!--@icon i-lucide-lightbulb --> | About Helidon SE              |
+| [Guides](guides/README.md) <!--@icon i-lucide-compass -->        | Index of Guides documentation |
 
 Components:
 
@@ -43,6 +43,6 @@ Components:
 
 Misc:
 
-| Topic                                                                             | Description                            |
-|-----------------------------------------------------------------------------------|----------------------------------------|
-| [Integrations](integrations/README.md) <!--@icon i-lucide-cloud -->               | Index of Integrations documentation    |
+| Topic                                                               | Description                         |
+|---------------------------------------------------------------------|-------------------------------------|
+| [Integrations](integrations/README.md) <!--@icon i-lucide-cloud --> | Index of Integrations documentation |

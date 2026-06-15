@@ -153,7 +153,7 @@ mp.messaging:
 Don’t forget to check out the examples with pre-configured Kafka docker image,
 for easy testing:
 
-- <https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/messaging>
+- [Helidon messaging examples][helidon-messaging]
 
 [producer]: https://kafka.apache.org/28/documentation.html#producerconfigs
 [consumer]: https://kafka.apache.org/28/documentation.html#consumerconfigs
@@ -162,3 +162,4 @@ for easy testing:
 [producer-2]: https://kafka.apache.org/documentation/#producerconfigs
 [dlq]: https://en.wikipedia.org/wiki/Dead_letter_queue
 [io-helidon-messa]: ../../config/io.helidon.messaging.connectors.kafka.KafkaConfigBuilder.md#configuration-options
+[helidon-messaging]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/messaging

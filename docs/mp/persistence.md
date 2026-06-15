@@ -349,11 +349,13 @@ Javadoc][oracle-jdbc-pool].
 > behavior and those that affect the behavior of the vendor-supplied
 > `DataSource` implementation whose connections it pools.
 
-For example, in the example above it is not possible to tell that [`connectionFactoryClassName`][pooldatasourceim]
-is a property of the Oracle Universal Connection Pool, and
-`user` is a property of the [`oracle.jdbc.pool.OracleDataSource`][user-is-a-proper] `DataSource`
-implementation. In some cases, the Oracle Universal Connection Pool will set the given [property][set-the-given-pr]
-on *both* the connection pool itself *and* on the vendor-supplied `DataSource` it manages.
+For example, in the example above it is not possible to tell that
+[`connectionFactoryClassName`][pooldatasourceim] is a property of the Oracle
+Universal Connection Pool, and `user` is a property of the
+[`oracle.jdbc.pool.OracleDataSource`][user-is-a-proper] `DataSource`
+implementation. In some cases, the Oracle Universal Connection Pool will set the
+given [property][set-the-given-pr] on *both* the connection pool itself *and* on
+the vendor-supplied `DataSource` it manages.
 
 ##### Example: Configuring the HikariCP Connection Pool and H2
 

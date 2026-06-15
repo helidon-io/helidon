@@ -822,7 +822,6 @@ telemetry:
 [opentelemetrycon]: https://helidon.io/docs/v4/apidocs/io.helidon.telemetry.otelconfig/io/helidon/telemetry/otelconfig/OpenTelemetryConfig.html
 [builder]: https://helidon.io/docs/v4/apidocs/io.helidon.telemetry.otelconfig/io/helidon/telemetry/otelconfig/OpenTelemetryConfig.BuilderBase.html
 [opentelemetry-sd]: https://opentelemetry.io/docs/languages/java/sdk/#sdk-components
-[semantic-convent]: https://github.com/open-telemetry/semantic-conventions/blob/v1.58.0/docs/http/http-metrics.md#http-server
 [helidon-webclien]: ../../se/webclient.md#configuring-telemetry
 [this-section-bel]: #additional-dependencies
 [this-opentelemet]: https://github.com/open-telemetry/opentelemetry-java/tree/v1.58.0/exporters

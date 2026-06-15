@@ -862,7 +862,9 @@ Create a port-forward, so you can access the server URL:
 kubectl --namespace default port-forward $POD_NAME 7090:9090
 ```
 
-Now open your browser and navigate to <a href="http://localhost:7090/targets" class="bare"><code>http://localhost:7090/targets</code></a>. Search for helidon on the page, and you will see your Helidon application as one of the Prometheus targets.
+Now open your browser and navigate to
+[Prometheus targets page][prometheus-targets]. Search for helidon on the page,
+and you will see your Helidon application as one of the Prometheus targets.
 
 #### Final Cleanup
 
@@ -908,3 +910,4 @@ Refer to the following references for additional information:
 [keyperformancein]: https://helidon.io/docs/v4/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/KeyPerformanceIndicatorMetricsConfig.html
 [builder]: https://helidon.io/docs/v4/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/KeyPerformanceIndicatorMetricsConfig.Builder.html
 [helidon-javadoc]: https://helidon.io/docs/v4/apidocs/index.html?overview-summary.html
+[prometheus-targets]: http://localhost:7090/targets

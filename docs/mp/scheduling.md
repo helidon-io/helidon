@@ -75,7 +75,7 @@ Field formats:
 | LIST      | \d+,\d+(,\d+)\*     | 1,2,3,4 | list of constants                                                           |
 | RANGE     | \d+-\d+             | 15-30   | range of values from-to                                                     |
 | WILDCARD  | \\                  | \*      | all values withing the field                                                |
-| INCREMENT | \d+\\\d+            | 0/5     | initial number / increments, 2/5 means 2,7,9,11,16,...                       |
+| INCREMENT | \d+\\\d+            | 0/5     | initial number / increments, 2/5 means 2,7,9,11,16,...                      |
 | ANY       | \\                  | ?       | any day(apply only to day-of-week and day-of-month)                         |
 | NTH       | \\                  | 1#3     | nth day of the month, 2#3 means third monday of the month                   |
 | LAST      | \d\*L(+\d+\|\\\d+)? | 3L-3    | last day of the month in day-of-month or last nth day in the day-of-week    |

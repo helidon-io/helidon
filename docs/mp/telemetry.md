@@ -36,9 +36,10 @@ Example dependency for the OpenTelemetry OTLP exporter:
 Earlier releases of Helidon 4 implemented MicroProfile Telemetry 1.0 which was
 based on OpenTelemetry semantic conventions 1.22.0-alpha.
 
-MicroProfile Telemetry 1.1 is supported, however it is based on OpenTelemetry 1.58.0 which
-changed the REST span name conventions, which is not backward compatible.
-See <https://opentelemetry.io/docs/specs/semconv/http/http-spans/#name> for more details.
+MicroProfile Telemetry 1.1 is supported, however it is based on OpenTelemetry
+1.58.0 which changed the REST span name conventions, which is not backward
+compatible. See [OpenTelemetry HTTP span name][opentelemetry-http] for more
+details.
 
 Use the following configuration to use the new conventions:
 
@@ -670,3 +671,4 @@ repository][helidon-official].
 [manual-instrumen]: https://opentelemetry.io/docs/instrumentation/java/manual/
 [helidon-official]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/microprofile/telemetry
 [microprofile-tel]: https://download.eclipse.org/microprofile/microprofile-telemetry-1.1/tracing/microprofile-telemetry-tracing-spec-1.1.pdf
+[opentelemetry-http]: https://opentelemetry.io/docs/specs/semconv/http/http-spans/#name

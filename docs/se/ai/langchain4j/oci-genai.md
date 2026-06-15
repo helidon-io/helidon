@@ -93,7 +93,7 @@ is not created.
 
 ### Configuration options
 
-<https://docs.oracle.com/en-us/iaas/api/#/EN/generative-ai-inference/20231130/datatypes/GenericChatRequest>
+[GenericChatRequest API][generic-chat-request]
 
 <!--@mdc ::table-collapse -->
 | Key                 | Type                    | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
@@ -559,3 +559,4 @@ is not created.
 [langchain4j-ocig]: https://docs.langchain4j.dev/integrations/language-models/oci-genai
 [oracle-cloud-inf]: https://www.oracle.com/artificial-intelligence/generative-ai/generative-ai-service/
 [helidon-integrat]: langchain4j.md#maven-coordinates
+[generic-chat-request]: https://docs.oracle.com/en-us/iaas/api/#/EN/generative-ai-inference/20231130/datatypes/GenericChatRequest

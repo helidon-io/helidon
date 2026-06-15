@@ -268,8 +268,8 @@ You can use configuration to affect the UI path in these ways:
     With this configuration, the UI responds at `/my-ui` regardless of the path for OpenAPI itself.
 
 The SmallRye OpenAPI UI component accepts several options, but they are of
-minimal use to application developers, and they must be passed to the SmallRye UI
-code programmatically. Helidon allows you to specify these values using
+minimal use to application developers, and they must be passed to the SmallRye
+UI code programmatically. Helidon allows you to specify these values using
 configuration in the `server.features.openapi.services.ui.options` section.
 Helidon then passes the corresponding options to SmallRye for you. To configure
 any of these settings, use the enum values they are all lower case declared in

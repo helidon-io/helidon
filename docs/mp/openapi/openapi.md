@@ -364,7 +364,8 @@ your application’s start-up, and OpenAPI uses the Jandex index to discover
 details about the types in your resource method signatures.
 
 > [!NOTE]
-> It is recommended to create the index at build-time to speed up the application start-up.
+> It is recommended to create the index at build-time to speed up the
+> application start-up.
 
 Add an invocation of the [Jandex maven plug-in][jandex-maven-plu] to the
 `<build><plugins>` section of your `pom.xml` if it is not already there:
@@ -385,9 +386,9 @@ When you build your app the plug-in generates the Jandex index
 `META-INF/jandex.idx` and `maven` adds it to the application JAR.
 
 Invoking the Jandex plug-in as described above indexes only the types in your
-project. If the signatures of your resource methods refer to types from dependencies
-that do not have their own indexes then you should customize how you use the
-plug-in.
+project. If the signatures of your resource methods refer to types from
+dependencies that do not have their own indexes then you should customize how
+you use the plug-in.
 
 The example below tailors the Jandex plug-in configuration to scan not only the
 current project but another dependency and to index a specific type from it.
