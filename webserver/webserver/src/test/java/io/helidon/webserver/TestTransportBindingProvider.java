@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.config.Config;
 import io.helidon.webserver.spi.PortTransportBinding;
 import io.helidon.webserver.spi.TransportBinding;
@@ -43,6 +44,7 @@ public class TestTransportBindingProvider implements TransportBindingFactoryProv
     private static final Map<String, CountDownLatch> PENDING_EXECUTOR_TASKS = new ConcurrentHashMap<>();
     private static final Map<String, CountDownLatch> EXECUTOR_TASKS_STARTED = new ConcurrentHashMap<>();
     private static final Map<String, ListenerTlsContext> LISTENER_TLS_CONTEXTS = new ConcurrentHashMap<>();
+    private static final Map<String, Limit> CONNECTION_LIMITS = new ConcurrentHashMap<>();
 
     static void reset() {
         PLAN_CONTEXTS.clear();
@@ -58,6 +60,7 @@ public class TestTransportBindingProvider implements TransportBindingFactoryProv
         PENDING_EXECUTOR_TASKS.clear();
         EXECUTOR_TASKS_STARTED.clear();
         LISTENER_TLS_CONTEXTS.clear();
+        CONNECTION_LIMITS.clear();
     }
 
     static ListenerConfig listenerConfigAtPlan(String name) {
@@ -101,6 +104,10 @@ public class TestTransportBindingProvider implements TransportBindingFactoryProv
         return LISTENER_TLS_CONTEXTS.get(name);
     }
 
+    static Limit connectionLimit(String name) {
+        return CONNECTION_LIMITS.get(name);
+    }
+
     static void completeExecutorTask(String name) {
         CountDownLatch latch = PENDING_EXECUTOR_TASKS.remove(name);
         if (latch != null) {
@@ -126,6 +133,7 @@ public class TestTransportBindingProvider implements TransportBindingFactoryProv
     static TransportBinding create(TestTransportBindingConfig config, TransportBindingContext context) {
         PORT_AT_CREATE.put(config.name(), context.boundPort().orElse(-1));
         LISTENER_TLS_CONTEXTS.put(config.name(), context.listenerTls());
+        CONNECTION_LIMITS.put(config.name(), context.connectionLimit());
         return new TestTransportBinding(context, config);
     }
 

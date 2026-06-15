@@ -48,14 +48,11 @@ import javax.net.ssl.SSLParameters;
 
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
-import io.helidon.common.concurrency.limits.FixedLimit;
 import io.helidon.common.concurrency.limits.Limit;
-import io.helidon.common.concurrency.limits.Limit.InitializationContext;
 import io.helidon.common.concurrency.limits.LimitAlgorithm;
 import io.helidon.common.socket.SocketOptions;
 import io.helidon.common.task.HelidonTaskExecutor;
 import io.helidon.common.tls.Tls;
-import io.helidon.metrics.api.Tag;
 import io.helidon.webserver.spi.ProtocolConfig;
 import io.helidon.webserver.spi.ServerConnectionSelector;
 import io.helidon.webserver.spi.ServerConnectionSelectorProvider;
@@ -119,8 +116,7 @@ abstract class SocketTransportBinding implements TransportBinding {
         this.listenerTls = transportContext.listenerTls();
         this.tls = listenerTls.tls();
         this.requestLimit = transportContext.requestLimit();
-        this.connectionLimit = connectionLimit(listenerConfig);
-        this.connectionLimit.init(limitContext(socketName));
+        this.connectionLimit = Objects.requireNonNull(transportContext.connectionLimit(), "connectionLimit");
     }
 
     @SuppressWarnings({"rawtypes", "unchecked"})
@@ -482,27 +478,6 @@ abstract class SocketTransportBinding implements TransportBinding {
         List<ConnectionHandler> result = new ArrayList<>();
         result.addAll(connectionHandlers);
         return result;
-    }
-
-    private static Limit connectionLimit(ListenerConfig listenerConfig) {
-        // this instance is the only one waiting on this limit, so queue of 1 is enough
-        // 5 minutes is long enough not to have busy waits
-        if (listenerConfig.maxConnections() == -1 || listenerConfig.maxConnections() == 0) {
-            // unlimited, no need to queue, as we never block
-            return FixedLimit.create();
-        }
-        return FixedLimit.builder()
-                .queueLength(1)
-                .queueTimeout(Duration.ofMinutes(5))
-                .permits(listenerConfig.maxConnections())
-                .build();
-    }
-
-    private static InitializationContext limitContext(String socketName) {
-        if (WebServer.DEFAULT_SOCKET_NAME.equals(socketName)) {
-            return InitializationContext.create(socketName);
-        }
-        return InitializationContext.create(socketName, List.of(Tag.create("socketName", socketName)));
     }
 
     private void initServerThread() {

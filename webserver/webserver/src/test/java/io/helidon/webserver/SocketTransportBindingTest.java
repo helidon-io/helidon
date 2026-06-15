@@ -16,6 +16,7 @@
 
 package io.helidon.webserver;
 
+import io.helidon.common.concurrency.limits.Limit;
 import io.helidon.common.tls.Tls;
 import io.helidon.webserver.spi.TransportBinding.Security;
 
@@ -31,6 +32,8 @@ class SocketTransportBindingTest {
     @Test
     void tcpTransportBindingUsesListenerTlsContext() {
         Tls listenerTls = tls();
+        Limit requestLimit = mock(Limit.class);
+        Limit connectionLimit = mock(Limit.class);
         ListenerConfig listenerConfig = ListenerConfig.builder()
                 .tls(listenerTls)
                 .useNio(false)
@@ -44,11 +47,14 @@ class SocketTransportBindingTest {
         when(listenerTlsContext.tls()).thenReturn(listenerTls);
         when(transportContext.listenerContext()).thenReturn(listenerContext);
         when(transportContext.listenerTls()).thenReturn(listenerTlsContext);
+        when(transportContext.requestLimit()).thenReturn(requestLimit);
+        when(transportContext.connectionLimit()).thenReturn(connectionLimit);
 
         TcpTransportBinding binding = new TcpTransportBinding(transportContext, TcpTransportConfig.create());
 
         assertThat(binding.security(), is(Security.TLS));
         verify(transportContext).listenerTls();
+        verify(transportContext).connectionLimit();
         verify(listenerTlsContext).tls();
     }
 

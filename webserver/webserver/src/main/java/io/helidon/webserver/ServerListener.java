@@ -74,6 +74,7 @@ class ServerListener implements TransportBindingContext, ListenerContext {
     private final MediaContext mediaContext;
     private final ContentEncodingContext contentEncodingContext;
     private final Context context;
+    private final Limit connectionLimit;
     private final Limit requestLimit;
 
     private final AtomicBoolean lifecycleStarted = new AtomicBoolean();
@@ -99,6 +100,16 @@ class ServerListener implements TransportBindingContext, ListenerContext {
         }
 
         InitializationContext limitContext = limitContext(socketName);
+        if (listenerConfig.maxConnections() == -1 || listenerConfig.maxConnections() == 0) {
+            this.connectionLimit = FixedLimit.create();
+        } else {
+            this.connectionLimit = FixedLimit.builder()
+                    .queueLength(Math.max(1, listenerConfig.bindings().size()))
+                    .queueTimeout(Duration.ofMinutes(5))
+                    .permits(listenerConfig.maxConnections())
+                    .build();
+        }
+        this.connectionLimit.init(limitContext);
         this.requestLimit.init(limitContext);
 
         this.socketName = socketName;
@@ -184,6 +195,11 @@ class ServerListener implements TransportBindingContext, ListenerContext {
     @Override
     public Limit requestLimit() {
         return requestLimit;
+    }
+
+    @Override
+    public Limit connectionLimit() {
+        return connectionLimit;
     }
 
     @Override
