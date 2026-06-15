@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2017, 2018 Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2017, 2026 Oracle and/or its affiliates. All rights reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,6 +24,9 @@ security:
         optional: true
         # If set to false, no authentication will be attempted
         # If set to false and this is the default provider, authentication will not work
+        # Set to false for outbound-only providers that should not authenticate inbound requests
+        # For outbound-only providers without verification keys, also set
+        # atn-token.verify-signature to false
         # defaults to true
         authenticate: true
         # If set to true, identity will be propagated further using the configured header and format
@@ -42,6 +45,17 @@ security:
           jwk-url: "http://url/of/jwk"
           jwk-content-plain: "{}"
           jwk-content: "base64"
+          # Whether to verify inbound JWT signatures
+          # If set to false while authenticate is true, atn-token.jwt-issuer and
+          # atn-token.jwt-audience are both required
+          # defaults to true
+          verify-signature: true
+          # expected issuer of inbound JWTs
+          # Required when authenticate is true and verify-signature is false
+          jwt-issuer: "issuer.of.JWT"
+          # expected audience of inbound JWTs
+          # Required when authenticate is true and verify-signature is false
+          jwt-audience: "audience"
           handler:
             # name of header to extract token from (see providers-common module for all options), defaults to "Authorization"
             header: "Authorization"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,6 +80,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
     private final TokenHandler defaultTokenHandler;
     private final JwkKeys verifyKeys;
     private final String expectedAudience;
+    private final String expectedIssuer;
     private final JwkKeys signKeys;
     private final OutboundConfig outboundConfig;
     private final String issuer;
@@ -99,6 +100,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
         this.signKeys = builder.signKeys;
         this.issuer = builder.issuer;
         this.expectedAudience = builder.expectedAudience;
+        this.expectedIssuer = builder.expectedIssuer;
         this.verifySignature = builder.verifySignature;
         this.useJwtGroups = builder.useJwtGroups;
 
@@ -118,7 +120,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
         }
 
         if (!verifySignature) {
-            LOGGER.info("JWT Signature validation is disabled. Any JWT will be accepted.");
+            LOGGER.info("JWT signature validation is disabled. JWT claims will still be validated.");
         }
     }
 
@@ -179,21 +181,17 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
         }
         if (verifySignature) {
             Errors errors = signedJwt.verifySignature(verifyKeys, defaultJwk);
-            if (errors.isValid()) {
-                Jwt jwt = signedJwt.getJwt();
-                // verify the audience is correct
-                Errors validate = jwt.validate(null, expectedAudience);
-                if (validate.isValid()) {
-                    return AuthenticationResponse.success(buildSubject(jwt, signedJwt));
-                } else {
-                    return AuthenticationResponse.failed("Audience is invalid or missing: " + expectedAudience);
-                }
-            } else {
+            if (!errors.isValid()) {
                 return AuthenticationResponse.failed(errors.toString());
             }
-        } else {
-            return AuthenticationResponse.success(buildSubject(signedJwt.getJwt(), signedJwt));
         }
+
+        Jwt jwt = signedJwt.getJwt();
+        Errors validate = jwt.validate(expectedIssuer, expectedAudience);
+        if (!validate.isValid()) {
+            return AuthenticationResponse.failed(validate.toString());
+        }
+        return AuthenticationResponse.success(buildSubject(jwt, signedJwt));
     }
 
     Subject buildSubject(Jwt jwt, SignedJwt signedJwt) {
@@ -606,6 +604,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
         private JwkKeys signKeys;
         private String issuer;
         private String expectedAudience;
+        private String expectedIssuer;
         private boolean useJwtGroups = true;
 
         private Builder() {
@@ -615,6 +614,15 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
         public JwtProvider build() {
             if (verifySignature && (null == verifyKeys)) {
                 throw new JwtException("Failed to extract verify JWK from configuration");
+            }
+            if (authenticate
+                    && !verifySignature
+                    && (expectedIssuer == null
+                    || expectedIssuer.trim().isEmpty()
+                    || expectedAudience == null
+                    || expectedAudience.trim().isEmpty())) {
+                throw new JwtException("Expected issuer and audience must be configured when JWT signature validation"
+                                               + " is disabled");
             }
             return new JwtProvider(this);
         }
@@ -671,13 +679,15 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
         }
 
         /**
-         * Configure whether to verify signatures.
+         * Configure whether to verify inbound JWT signatures.
          * Signatures verification is enabled by default. You can configure the provider
          * not to verify signatures.
          * <p>
          * <b>Make sure your service is properly secured on network level and only
          * accessible from a secure endpoint that provides the JWTs when signature verification
-         * is disabled. If signature verification is disabled, this service will accept <i>ANY</i> JWT</b>
+         * is disabled. If signature verification is disabled, configured claim validation still applies,
+         * but signatures are not checked. When authentication is enabled, expected issuer and audience
+         * must be configured.</b>
          *
          * @param shouldValidate set to false to disable validation of JWT signatures
          * @return updated builder instance
@@ -793,6 +803,7 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
             config.get("atn-token.handler").as(TokenHandler.class).ifPresent(this::atnTokenHandler);
             config.get("atn-token").ifExists(this::verifyKeys);
             config.get("atn-token.jwt-audience").asString().ifPresent(this::expectedAudience);
+            config.get("atn-token.jwt-issuer").asString().ifPresent(this::expectedIssuer);
             config.get("atn-token.verify-signature").asBoolean().ifPresent(this::verifySignature);
             config.get("sign-token").ifExists(outbound -> outboundConfig(OutboundConfig.create(outbound)));
             config.get("sign-token").ifExists(this::outbound);
@@ -804,11 +815,22 @@ public final class JwtProvider extends SynchronousProvider implements Authentica
 
         /**
          * Audience expected in inbound JWTs.
+         * Required when authentication is enabled and signature verification is disabled.
          *
          * @param audience audience string
          */
         public void expectedAudience(String audience) {
             this.expectedAudience = audience;
+        }
+
+        /**
+         * Issuer expected in inbound JWTs.
+         * Required when authentication is enabled and signature verification is disabled.
+         *
+         * @param issuer issuer string
+         */
+        public void expectedIssuer(String issuer) {
+            this.expectedIssuer = issuer;
         }
 
         /**
