@@ -34,7 +34,7 @@ import io.helidon.common.uri.UriHost;
  * the TLS material for a connection before request routing, and creates the SNI context later used to enforce HTTP
  * authority policy.
  */
-final class VirtualHostRegistry {
+final class VirtualHostRegistry implements ListenerTlsContext {
     private final String socketName;
     private final Tls defaultTls;
     private final SniConfig sniConfig;
@@ -95,11 +95,18 @@ final class VirtualHostRegistry {
         return new VirtualHostRegistry(socketName, defaultTls, sniConfig, exact, wildcard);
     }
 
-    boolean enabled() {
+    @Override
+    public Tls tls() {
+        return defaultTls;
+    }
+
+    @Override
+    public boolean virtualHostsEnabled() {
         return enabled;
     }
 
-    void validateTls() {
+    @Override
+    public void validateVirtualHosts() {
         for (HostEntry entry : exactHosts.values()) {
             entry.tls().newEngine();
         }
@@ -128,30 +135,34 @@ final class VirtualHostRegistry {
         return entry;
     }
 
-    Selection select(String presentedHost) {
+    @Override
+    public ListenerTlsContext.Selection select(String presentedHost) {
         String host = Objects.requireNonNull(presentedHost);
         HostEntry entry = match(host);
         if (entry != null) {
             SniMatchType matchType = entry.wildcard() ? SniMatchType.WILDCARD : SniMatchType.EXACT;
-            return new Selection(entry.tls(),
-                                 new Context(Optional.of(host), Optional.of(entry.configuredHost()), matchType));
+            return ListenerTlsContext.Selection.create(entry.tls(),
+                                                       new Context(Optional.of(host), Optional.of(entry.configuredHost()),
+                                                                   matchType));
         }
 
         if (sniConfig.unmatched() == SniSelectionPolicy.REJECT) {
-            throw new RejectedSniException("Unmatched SNI " + host + " rejected by listener " + socketName, true);
+            throw new ListenerTlsContext.RejectedSniException("Unmatched SNI " + host + " rejected by listener "
+                                                                      + socketName, true);
         }
         return fallback(Optional.of(host), SniMatchType.FALLBACK_UNMATCHED);
     }
 
-    Selection selectWithoutSni() {
+    @Override
+    public ListenerTlsContext.Selection selectWithoutSni() {
         if (sniConfig.missing() == SniSelectionPolicy.REJECT) {
-            throw new RejectedSniException("Missing SNI rejected by listener " + socketName, false);
+            throw new ListenerTlsContext.RejectedSniException("Missing SNI rejected by listener " + socketName, false);
         }
         return fallback(Optional.empty(), SniMatchType.FALLBACK_MISSING);
     }
 
-    private Selection fallback(Optional<String> presentedHost, SniMatchType matchType) {
-        return new Selection(defaultTls, new Context(presentedHost, Optional.empty(), matchType));
+    private ListenerTlsContext.Selection fallback(Optional<String> presentedHost, SniMatchType matchType) {
+        return ListenerTlsContext.Selection.create(defaultTls, new Context(presentedHost, Optional.empty(), matchType));
     }
 
     private HostEntry match(String host) {
@@ -170,22 +181,6 @@ final class VirtualHostRegistry {
 
     private boolean matchesConfiguredHost(String host) {
         return match(host) != null;
-    }
-
-    record Selection(Tls tls, SniContext sniContext) {
-    }
-
-    static final class RejectedSniException extends IllegalArgumentException {
-        private final boolean sendUnrecognizedNameAlert;
-
-        private RejectedSniException(String message, boolean sendUnrecognizedNameAlert) {
-            super(message);
-            this.sendUnrecognizedNameAlert = sendUnrecognizedNameAlert;
-        }
-
-        boolean sendUnrecognizedNameAlert() {
-            return sendUnrecognizedNameAlert;
-        }
     }
 
     private record HostEntry(String configuredHost, String indexKey, boolean wildcard, Tls tls) {

@@ -85,7 +85,7 @@ class VirtualHostRegistryTest {
     void exactHostWinsOverWildcardAndAuthorityMustMatchPresentedSni() {
         VirtualHostRegistry registry = registry("api.example.com", "*.example.com");
 
-        VirtualHostRegistry.Selection selection = registry.select("api.example.com");
+        ListenerTlsContext.Selection selection = registry.select("api.example.com");
 
         assertThat(selection.tls(), is(TLS));
         assertThat(selection.sniContext().matchType(), is(SniMatchType.EXACT));
@@ -150,10 +150,10 @@ class VirtualHostRegistryTest {
                 .build();
         VirtualHostRegistry registry = VirtualHostRegistry.create(SOCKET_NAME, listener, TLS);
 
-        VirtualHostRegistry.RejectedSniException missing =
-                assertThrows(VirtualHostRegistry.RejectedSniException.class, registry::selectWithoutSni);
-        VirtualHostRegistry.RejectedSniException unmatched =
-                assertThrows(VirtualHostRegistry.RejectedSniException.class,
+        ListenerTlsContext.RejectedSniException missing =
+                assertThrows(ListenerTlsContext.RejectedSniException.class, registry::selectWithoutSni);
+        ListenerTlsContext.RejectedSniException unmatched =
+                assertThrows(ListenerTlsContext.RejectedSniException.class,
                              () -> registry.select("other.example.com"));
 
         assertThat(missing.sendUnrecognizedNameAlert(), is(false));

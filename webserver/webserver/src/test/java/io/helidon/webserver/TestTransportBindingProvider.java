@@ -42,6 +42,7 @@ public class TestTransportBindingProvider implements TransportBindingFactoryProv
     private static final Map<String, CountDownLatch> PENDING_STOPS = new ConcurrentHashMap<>();
     private static final Map<String, CountDownLatch> PENDING_EXECUTOR_TASKS = new ConcurrentHashMap<>();
     private static final Map<String, CountDownLatch> EXECUTOR_TASKS_STARTED = new ConcurrentHashMap<>();
+    private static final Map<String, ListenerTlsContext> LISTENER_TLS_CONTEXTS = new ConcurrentHashMap<>();
 
     static void reset() {
         PLAN_CONTEXTS.clear();
@@ -56,6 +57,7 @@ public class TestTransportBindingProvider implements TransportBindingFactoryProv
         PENDING_EXECUTOR_TASKS.values().forEach(CountDownLatch::countDown);
         PENDING_EXECUTOR_TASKS.clear();
         EXECUTOR_TASKS_STARTED.clear();
+        LISTENER_TLS_CONTEXTS.clear();
     }
 
     static ListenerConfig listenerConfigAtPlan(String name) {
@@ -95,6 +97,10 @@ public class TestTransportBindingProvider implements TransportBindingFactoryProv
         return latch != null && latch.await(5, TimeUnit.SECONDS);
     }
 
+    static ListenerTlsContext listenerTlsContext(String name) {
+        return LISTENER_TLS_CONTEXTS.get(name);
+    }
+
     static void completeExecutorTask(String name) {
         CountDownLatch latch = PENDING_EXECUTOR_TASKS.remove(name);
         if (latch != null) {
@@ -119,6 +125,7 @@ public class TestTransportBindingProvider implements TransportBindingFactoryProv
 
     static TransportBinding create(TestTransportBindingConfig config, TransportBindingContext context) {
         PORT_AT_CREATE.put(config.name(), context.boundPort().orElse(-1));
+        LISTENER_TLS_CONTEXTS.put(config.name(), context.listenerTls());
         return new TestTransportBinding(context, config);
     }
 

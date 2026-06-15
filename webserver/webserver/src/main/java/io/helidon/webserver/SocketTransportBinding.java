@@ -82,8 +82,8 @@ abstract class SocketTransportBinding implements TransportBinding {
     private final SocketAddress configuredAddress;
     private final SocketOptions connectionOptions;
     private final ConnectionProviders connectionProviders;
+    private final ListenerTlsContext listenerTls;
     private final Tls tls;
-    private final VirtualHostRegistry virtualHosts;
     private final Limit connectionLimit;
     private final Limit requestLimit;
     private final Set<ConnectionHandler> connectionHandlers = ConcurrentHashMap.newKeySet();
@@ -116,8 +116,8 @@ abstract class SocketTransportBinding implements TransportBinding {
                                                                    .filter(config -> supportsTransportBinding(type, config))
                                                                    .toList());
         this.connectionProviders = ConnectionProviders.create(connectionSelectors(socketName, listenerConfig, protocols));
-        this.tls = listenerConfig.tls().orElseGet(() -> Tls.builder().enabled(false).build());
-        this.virtualHosts = VirtualHostRegistry.create(socketName, listenerConfig, tls);
+        this.listenerTls = transportContext.listenerTls();
+        this.tls = listenerTls.tls();
         this.requestLimit = transportContext.requestLimit();
         this.connectionLimit = connectionLimit(listenerConfig);
         this.connectionLimit.init(limitContext(socketName));
@@ -191,7 +191,7 @@ abstract class SocketTransportBinding implements TransportBinding {
             if (tls.enabled()) {
                 // basic validation of the configuration
                 tls.newEngine();
-                virtualHosts.validateTls();
+                listenerTls.validateVirtualHosts();
             }
             if (!unixDomainSocket) {
                 listenerConfig.configureSocket(serverSocket);
@@ -641,7 +641,7 @@ abstract class SocketTransportBinding implements TransportBinding {
                                                                       serverChannelId,
                                                                       transportContext.router(),
                                                                       tls,
-                                                                      virtualHosts,
+                                                                      listenerTls,
                                                                       connectionHandlers::remove);
                     connectionHandlers.add(handler);
 

@@ -187,6 +187,11 @@ class ServerListener implements TransportBindingContext, ListenerContext {
     }
 
     @Override
+    public ListenerTlsContext listenerTls() {
+        return virtualHosts;
+    }
+
+    @Override
     public String toString() {
         return socketName + " (" + configuredAddress + ")";
     }
@@ -416,7 +421,7 @@ class ServerListener implements TransportBindingContext, ListenerContext {
                                                            + " of type \"" + binding.type()
                                                            + "\" requires listener TLS");
             }
-            if (virtualHosts.enabled() && security != TransportBinding.Security.TLS) {
+            if (virtualHosts.virtualHostsEnabled() && security != TransportBinding.Security.TLS) {
                 throw new IllegalArgumentException("Listener " + socketName
                                                            + " has TLS virtual hosts configured, but transport binding "
                                                            + binding.name()
