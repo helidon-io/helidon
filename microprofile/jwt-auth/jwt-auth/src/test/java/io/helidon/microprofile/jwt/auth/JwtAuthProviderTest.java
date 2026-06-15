@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,8 @@ import io.helidon.security.jwt.jwk.JwkOctet;
 import io.helidon.security.jwt.jwk.JwkRSA;
 import io.helidon.security.providers.jwt.JwtProvider;
 
+import javax.enterprise.inject.spi.DeploymentException;
+
 import org.eclipse.microprofile.auth.LoginConfig;
 import org.eclipse.microprofile.jwt.Claims;
 import org.junit.jupiter.api.BeforeAll;
@@ -55,11 +57,13 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import static io.helidon.common.CollectionsHelper.listOf;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -78,6 +82,45 @@ public class JwtAuthProviderTest {
         verifyKeys = JwkKeys.builder()
                 .resource(Resource.create("verify-jwk.json"))
                 .build();
+    }
+
+    @Test
+    public void testMissingExpectedIssuerFailsFast() {
+        DeploymentException exception = assertThrows(DeploymentException.class, () -> JwtAuthProvider.builder()
+                .verifyJwk(Resource.create("verify-jwk.json"))
+                .defaultKeyId("verify-rsa")
+                .expectedAudience("audience.application.id")
+                .build());
+
+        assertThat(exception.getMessage(), containsString(JwtAuthProvider.CONFIG_EXPECTED_ISSUER));
+    }
+
+    @Test
+    public void testBlankExpectedIssuerFailsFast() {
+        DeploymentException exception = assertThrows(DeploymentException.class, () -> JwtAuthProvider.builder()
+                .verifyJwk(Resource.create("verify-jwk.json"))
+                .defaultKeyId("verify-rsa")
+                .expectedAudience("audience.application.id")
+                .expectedIssuer(" ")
+                .build());
+
+        assertThat(exception.getMessage(), containsString(JwtAuthProvider.CONFIG_EXPECTED_ISSUER));
+    }
+
+    @Test
+    public void testMissingExpectedIssuerAllowedWhenAuthenticationDisabled() {
+        JwtAuthProvider provider = JwtAuthProvider.builder()
+                .authenticate(false)
+                .verifyJwk(Resource.create("verify-jwk.json"))
+                .defaultKeyId("verify-rsa")
+                .expectedAudience("audience.application.id")
+                .build();
+
+        AuthenticationResponse authenticationResponse = provider.syncAuthenticate(mock(ProviderRequest.class));
+
+        assertThat(authenticationResponse.service(), is(Optional.empty()));
+        assertThat(authenticationResponse.user(), is(Optional.empty()));
+        assertThat(authenticationResponse.status(), is(SecurityResponse.SecurityStatus.ABSTAIN));
     }
 
     @Test

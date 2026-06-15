@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -528,6 +528,12 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         private Builder() {
         }
 
+        /**
+         * Build the MP JWT authentication provider.
+         *
+         * @return configured provider
+         * @throws DeploymentException if authentication is enabled and expected issuer is not configured
+         */
         @Override
         public JwtAuthProvider build() {
             if (verifyKeys == null) {
@@ -549,6 +555,11 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
                 if (!keys.isEmpty()) {
                     defaultJwk = keys.get(0);
                 }
+            }
+
+            if (authenticate && (expectedIssuer == null || expectedIssuer.trim().isEmpty())) {
+                throw new DeploymentException("Expected JWT issuer (" + CONFIG_EXPECTED_ISSUER
+                                                      + ") must be configured for authentication");
             }
 
             return new JwtAuthProvider(this);
@@ -860,7 +871,9 @@ public class JwtAuthProvider extends SynchronousProvider implements Authenticati
         }
 
         /**
-         * Expected issuer in incoming requests.
+         * Expected issuer in incoming requests. This or {@value JwtAuthProvider#CONFIG_EXPECTED_ISSUER}
+         * through {@link #config(Config)} must be configured unless {@link #authenticate(boolean)}
+         * is set to {@code false}.
          *
          * @param issuer name of issuer
          * @return updated builder instance

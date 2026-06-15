@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018,2019 Oracle and/or its affiliates. All rights reserved.
+    Copyright (c) 2018, 2026 Oracle and/or its affiliates. All rights reserved.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -34,6 +34,12 @@ resource methods with authentication, to a MicroProfile application, add the Hel
   <artifactId>helidon-microprofile-security</artifactId>
 </dependency>
 ----
+
+=== MicroProfile JWT Authentication
+
+Applications using MicroProfile JWT authentication must configure
+`mp.jwt.verify.issuer` so incoming tokens are accepted only from the expected
+issuer.
 
 === Securing a Web Resource
 
