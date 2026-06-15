@@ -189,7 +189,7 @@ might even *prefer* to make these changes so they can follow their preferred
 config style.
 
 With the heuristics, Helidon allows users to adopt a common config style and
-prevents unnecessary runtime exceptions—​and user frustration—​from
+prevents unnecessary runtime exceptions and user frustration from
 inconsequential typos.
 
 Remember:
@@ -401,6 +401,8 @@ mapping.
 Continuing with the [WebConfig](#continuing-the-web-example) example introduced
 earlier:
 
+Methods Supporting Auto-mapping
+
 <!--@mdc ::table-collapse -->
 |                                        |
 |----------------------------------------|
@@ -415,14 +417,12 @@ earlier:
 | `static WebConfig fromString(String);` |
 <!--@mdc :: -->
 
-Methods Supporting Auto-mapping
+Constructors Supporting Auto-mapping:
 
 |                      |
 |----------------------|
 | `WebConfig(Config);` |
 | `WebConfig(String);` |
-
-Constructors Supporting Auto-mapping
 
 If the config system finds any of these methods or constructors when the
 application invokes
@@ -515,13 +515,13 @@ keys in the configuration.
 Use the [`Value`][value] annotation to control some of JavaBean processing for a
 given property.
 
+`Value` Annotation
+
 | Attribute             | Usage                                                                          |
 |-----------------------|--------------------------------------------------------------------------------|
 | `key`                 | Indicates which config key should match this JavaBean property                 |
 | `withDefault`         | `String` used for the bean property default value if none is set in the config |
 | `withDefaultSupplier` | `Supplier` of the default bean property value if not is set in the config      |
-
-`Value` Annotation
 
 To exclude a bean property from the config system bean processing annotate it
 with [`Transient`][transient].
@@ -717,10 +717,10 @@ public static AppConfig from(
 }
 ```
 
-- The config system invokes the factory method `from(…​)`, passing arguments it
+- The config system invokes the factory method `from(...)`, passing arguments it
   has fetched from the correspondingly-named config subtrees. The factory method
   returns the new initialized `AppConfig` instance. Note the consistent use of
-  `@Value(key = "…​")` on each parameter.
+  `@Value(key = "...")` on each parameter.
 - Because the property `greeting` does not specify a default value the property
   is **mandatory** and must appear in the configuration source. Otherwise, the
   config system throws a `ConfigMappingException`.

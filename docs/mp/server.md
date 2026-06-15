@@ -445,8 +445,8 @@ header][standard-http-fo] or the [non-standard `X-Forwarded-*` family of
 headers][non-standard-x-f] to preserve information about the original client
 request.
 
-Helidon’s requested URI discovery feature allows your application—​and Helidon
-itself—​to reconstruct information about the original request using the
+Helidon’s requested URI discovery feature allows your application and Helidon
+itself to reconstruct information about the original request using the
 `Forwarded` header and the `X-Forwarded-*` family of headers.
 
 When you prepare the connections in your server you can include the following

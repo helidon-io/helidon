@@ -186,6 +186,8 @@ to group metrics that correspond to a particular socket; for simplicity this
 metric tag is *omitted* for the default socket. All metrics provided by the
 Concurrency Limit module are in **vendor** scope.
 
+Fixed:
+
 | Name                        | Description                                                                       |
 |-----------------------------|-----------------------------------------------------------------------------------|
 | `fixed_queue_length`        | Gauge that returns the number of requests waiting on the queue at a certain time  |
@@ -194,7 +196,7 @@ Concurrency Limit module are in **vendor** scope.
 | `fixed_queue_wait_time`     | Distribution summary of queue wait times                                          |
 | `fixed_concurrent_requests` | Gauge that returns the number of requests being processed at a certain time       |
 
-Fixed
+AIMD:
 
 | Name                       | Description                                                                       |
 |----------------------------|-----------------------------------------------------------------------------------|
@@ -204,8 +206,6 @@ Fixed
 | `aimd_queue_wait_time`     | Distribution summary of queue wait times                                          |
 | `aimd_concurrent_requests` | Gauge that returns the number of requests being processed at a certain time       |
 | `aimd_limit`               | Gauge that returns the actual limit at a certain time                             |
-
-AIMD
 
 For more information regarding metrics support in Helidon and the dependencies
 that are required for metrics to work, see [Helidon

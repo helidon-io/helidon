@@ -74,8 +74,8 @@ for up to 3 times with a 100-millisecond delay between them.
 If the call to the supplier provided completes exceptionally, it will be treated
 as a failure and retried until the maximum number of attempts is reached; finer
 control is possible by creating a retry policy and using methods such as
-`applyOn(Class<? extends Throwable>…​ classes)` and `skipOn(Class<? extends
-Throwable>…​ classes)` to control the exceptions that must be retried and those
+`applyOn(Class<? extends Throwable>... classes)` and `skipOn(Class<? extends
+Throwable>... classes)` to control the exceptions that must be retried and those
 that must be ignored.
 
 ### Timeouts

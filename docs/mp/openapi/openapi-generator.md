@@ -241,13 +241,9 @@ Your project might have different needs, but in general we advise developers to
 use the following settings when using the OpenAPI generator, both from the
 command line and using the Maven plug-in.
 
+Recommended OpenAPI Generator Additional Properties:
+
 <table>
-<caption>Recommended OpenAPI Generator Additional Properties</caption>
-<colgroup>
-<col style="width: 21%" />
-<col style="width: 42%" />
-<col style="width: 35%" />
-</colgroup>
 <thead>
 <tr>
 <th style="text-align: left;">Property</th>
@@ -302,13 +298,8 @@ command line and using the Maven plug-in.
 > The next table contains recommendations only for using the OpenAPI generator
 > plug-in (not for using the CLI).
 
+Recommended OpenAPI Generator Plug-in Options:
 <table>
-<caption>Recommended OpenAPI Generator Plug-in Options</caption>
-<colgroup>
-<col style="width: 23%" />
-<col style="width: 47%" />
-<col style="width: 29%" />
-</colgroup>
 <thead>
 <tr>
 <th style="text-align: left;">Plug-in Option</th>
@@ -339,15 +330,8 @@ Among the many configuration settings available to you, some you should
 particularly consider are summarized in the table below. Refer to the [earlier
 links](#configuration) for complete lists.
 
+Common OpenAPI Generator Additional Properties:
 <table>
-<caption>Common OpenAPI Generator Additional Properties</caption>
-<colgroup>
-<col style="width: 18%" />
-<col style="width: 22%" />
-<col style="width: 13%" />
-<col style="width: 13%" />
-<col style="width: 31%" />
-</colgroup>
 <thead>
 <tr>
 <th style="text-align: left;">Property</th>
@@ -412,7 +396,7 @@ You can use the OpenAPI generator to create a new project or to generate files
 into an existing project. Some developers do both, using the generator to create
 the project at first and then to update the project as they evolve the OpenAPI
 document or change the generation options they select. Others create the project
-in some other way—​for example, using the [Helidon CLI](../../cli.md). The
+in some other way for example, using the [Helidon CLI](../../cli.md). The
 OpenAPI generator CLI and plug-in both support each type of usage.
 
 If the OpenAPI generator finds a pre-existing API or model file, it overwrites
@@ -438,11 +422,11 @@ following ways:
   > You *can* run the generator CLI again to update the generated files. Because
   > this happens outside the project’s build lifecycle, you need to remember to
   > rerun the CLI yourself when you change the OpenAPI document.
-  >
-  > You also need to identify and manually remove any previously-generated files
-  > that become obsolete. Similarly, you must understand how changes in the
-  > OpenAPI document or the generation options affect the project dependencies
-  > and update the project `pom.xml` accordingly.
+
+  You also need to identify and manually remove any previously-generated files
+  that become obsolete. Similarly, you must understand how changes in the
+  OpenAPI document or the generation options affect the project dependencies
+  and update the project `pom.xml` accordingly.
 
 - Use the generator plug-in to (re)generate files during each build.
 
@@ -510,9 +494,7 @@ The next sections describe each of these techniques in detail.
 
 > [!NOTE]
 > You need to download the CLI `.jar` file before you can run the CLI. Follow
-> these [instructions][instructions] and remember where you save the `.jar`
-> file. The examples below use the placeholder `path-to-generator` to represent
-> the directory where you store that downloaded file.
+> these [instructions][instructions].
 
 The following example uses the Helidon server generator to create a project or
 regenerate files into an existing project.
@@ -633,8 +615,8 @@ file ID in a subsequent HTTP request to retrieve your project.
 > [!NOTE]
 > The online generator stores your project on the server which you then retrieve
 > using a separate HTTP request. Before you use the online generator, consider
-> whether any of the input you provide—​the OpenAPI document, package or Maven
-> coordinates—​and therefore the generated project will reveal any sensitive
+> whether any of the input you provide the OpenAPI document, package or Maven
+> coordinates and therefore the generated project will reveal any sensitive
 > information.
 
 This document does not explore further the use of the online generator.
@@ -649,7 +631,7 @@ section describes your next steps *after* you have run the generator.
 
 Recall from earlier how the OpenAPI generator gathers operations into one or
 more APIs or services and generates either an abstract class or an
-interface—​your choice—​for each API. You need to extend each generated API
+interface your choice for each API. You need to extend each generated API
 class or implement each generated API interface by writing your own classes.
 
 Any input parameters to the operations are expressed as POJO model objects or
@@ -661,12 +643,12 @@ as indicated for that operation in the OpenAPI document.
 In some cases, you might need more control over the response sent to the client.
 In that case, specify the additional property `returnResponse=true` when you run
 the Helidon server generator. The return type for the generated methods is the
-Jakarta RESTful web services `Response` and your code has complete control—​and
-therefore responsibility—​over setting the status, writing the response entity
+Jakarta RESTful web services `Response` and your code has complete control and
+therefore responsibility over setting the status, writing the response entity
 (if any), and assigning any returned headers.
 
-Your code plus the server code from the Helidon generator—​all running on
-Helidon MP—​combine to fully implement the server API declared in the original
+Your code plus the server code from the Helidon generator all running on
+Helidon MP combine to fully implement the server API declared in the original
 OpenAPI document. Build your project to get a tailored Helidon MP server `.jar`
 file or Docker image and your server is ready to run.
 

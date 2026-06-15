@@ -10,7 +10,7 @@ content on the web server. It also includes annotations in Jersey.
 
 In Helidon MP, the config encryption filter is **enabled by default**. However,
 if you don’t configure it, the filter only supports a template for aliasing that
-checks that no clear text passwords are present (template \${CLEAR=…​}.
+checks that no clear text passwords are present (template \${CLEAR=...}.
 
 In Helidon SE, you may add support for this filter with dependency (loaded
 through a java service mechanism):
@@ -30,20 +30,20 @@ strong and secret password.
 
 The supported templates are:
 
-| Template     | Description                                                                | Example                                                                                                                                                                                                                                                                                                                                                            |
-|--------------|----------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| \${CLEAR=…​} | Secret in clear text (for testing) - `requiresEncryption` must be disabled | \${CLEAR=knownSecret}                                                                                                                                                                                                                                                                                                                                              |
-| \${RSA-P=…​} | Public/private key encryption, base64 value                                | \${RSA-P=aGr3sFCMQznixrgbIk9qNfoLnO1cdi3H86qweCNjxFvH4dYg5IQM1EuoyTjJaXcSCG5MBskpeA3bjnWYrzeAFFlZHuYSPsb+wJVzGLrfUColTn+BPJjpJ3rmEd3AVkJl1ASfBBMh3q3deC+rvUdhfoTGBO8sC0teUATklCQSxfHOnIxswxqrplnoGXToGiTIfehiN2IZNulRKeoDQ0AeoKREmq5au4L8OOmS+D9BqnlKMc0F1tULZ7+h3Cxla4lXC5WRPoPfHBU4vzRZOGzeDvLkRgrD60caw/wKn5M0Wy1A1cKR8E46ceBXCjJ2eWIcLyhZSAZWDe3ceNrawHZtCg==} |
-| \${GCM=…​}   | Shared secret ecryption, base64 value                                      | \${GCM=D/UgMzsNb265HU1NDvdzm7tACHdsW6u1PjYEcRkV/OLiWcI+ET6Q4MKCz0zHyEh9}                                                                                                                                                                                                                                                                                           |
+Templates:
 
-Templates
+| Template      | Description                                                                | Example                                                                                                                                                                                                                                                                                                                                                            |
+|---------------|----------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| \${CLEAR...}  | Secret in clear text (for testing) - `requiresEncryption` must be disabled | \${CLEAR=knownSecret}                                                                                                                                                                                                                                                                                                                                              |
+| \${RSA-P=...} | Public/private key encryption, base64 value                                | \${RSA-P=aGr3sFCMQznixrgbIk9qNfoLnO1cdi3H86qweCNjxFvH4dYg5IQM1EuoyTjJaXcSCG5MBskpeA3bjnWYrzeAFFlZHuYSPsb+wJVzGLrfUColTn+BPJjpJ3rmEd3AVkJl1ASfBBMh3q3deC+rvUdhfoTGBO8sC0teUATklCQSxfHOnIxswxqrplnoGXToGiTIfehiN2IZNulRKeoDQ0AeoKREmq5au4L8OOmS+D9BqnlKMc0F1tULZ7+h3Cxla4lXC5WRPoPfHBU4vzRZOGzeDvLkRgrD60caw/wKn5M0Wy1A1cKR8E46ceBXCjJ2eWIcLyhZSAZWDe3ceNrawHZtCg==} |
+| \${GCM=...}   | Shared secret ecryption, base64 value                                      | \${GCM=D/UgMzsNb265HU1NDvdzm7tACHdsW6u1PjYEcRkV/OLiWcI+ET6Q4MKCz0zHyEh9}                                                                                                                                                                                                                                                                                           |
 
 ### Requiring encryption
 
 The config encryption filter has an option that defines whether encryption is
 required or not. If it’s set to true, which is the default, then:
 
-- Configuration values with \${CLEAR=…​} template will cause an exception when
+- Configuration values with \${CLEAR=...} template will cause an exception when
   requested.
 - The filter fails during bootstrap if `security.config.aes.insecure-passphrase`
   is configured.
@@ -106,6 +106,8 @@ property.
 You can configure the properties of a private key in a keystore. These keys are
 prefixed with `security.config.rsa.keystore`
 
+RSA Configuration Options: Keystore
+
 | What                | Configuration Key        | Environment Variable                        | Description                                                          |
 |---------------------|--------------------------|---------------------------------------------|----------------------------------------------------------------------|
 | Keystore path       | `resource.path`          | `SECURE_CONFIG_RSA_PRIVATE_KEY`             | Keystore is located in file system                                   |
@@ -113,15 +115,13 @@ prefixed with `security.config.rsa.keystore`
 | Private key alias   | `key.alias`              | `SECURE_CONFIG_PRIVATE_KEY_ALIAS`           | Alias of the private key (such as "1", which is usually the default) |
 | Keystore passphrase | `passphrase`             | `SECURE_CONFIG_PRIVATE_KEYSTORE_PASSPHRASE` | Password for the keystore (and private key).                         |
 
-RSA Configuration Options: Keystore
+RSA Configuration Options: PEM (PKCS#8) private key
 
 | What          | Configuration Key                | Environment Variable                   | Description                         |
 |---------------|----------------------------------|----------------------------------------|-------------------------------------|
 | Path          | `pem.key.resource.path`          | `SECURE_CONFIG_RSA_PEM_KEY`            | Key is located on file system       |
 | Resource path | `pem.key.resource.resource-path` | N/A                                    | Key is located on classpath         |
 | Passphrase    | `pem.key.passphrase`             | `SECURE_CONFIG_PRIVATE_KEY_PASSPHRASE` | Password protecting the private key |
-
-RSA Configuration Options: PEM (PKCS#8) private key
 
 ```yaml [application.yaml]
 security.config:

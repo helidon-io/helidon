@@ -3,8 +3,8 @@
 ## Overview
 
 In Helidon 4 all observability features were moved to one logical module:
-`observe`. Observability features specified by MicroProfile—​such as metrics and
-health—​keep their familiar endpoints. The endpoints for other observability
+`observe`. Observability features specified by MicroProfile such as metrics and
+health keep their familiar endpoints. The endpoints for other observability
 features are grouped together under a single context root which defaults to
 `/observe`.
 
@@ -88,7 +88,7 @@ important.
 
 ### Endpoints
 
-Some observer endpoints—​metrics and health—​were present in earlier releases of
+Some observer endpoints metrics and health were present in earlier releases of
 Helidon MP. By default those continue to use their customary paths (`/metrics`,
 `/health`). You can customize the endpoint for each of those observers are
 described in the documentation for each observer.
@@ -165,13 +165,13 @@ endpoints:
 
 Helidon distinguishes among three general *types*, or scopes, of metrics.
 
+Types (scopes) of metrics:
+
 | Type/scope  | Typical Usage                                                                                                  |
 |-------------|----------------------------------------------------------------------------------------------------------------|
 | base        | OS or Java runtime measurements (available heap, disk space, etc.).                                            |
 | vendor      | Implemented by vendors, including the `REST.request` metrics and other key performance indicator measurements. |
 | application | Declared via annotations or programmatically registered by your service code.                                  |
-
-Types (scopes) of metrics
 
 When you add the metrics dependency to your project, Helidon automatically
 provides a built-in REST endpoint `/observe/metrics` which responds with a
@@ -179,12 +179,12 @@ report of the registered metrics and their values.
 
 Clients can request a particular output format.
 
+Formats for `/observe/metrics` output:
+
 | Format                   | Requested by                      |
 |--------------------------|-----------------------------------|
 | OpenMetrics (Prometheus) | default (`text/plain`)            |
 | JSON                     | Header `Accept: application/json` |
-
-Formats for `/observe/metrics` output
 
 Clients can also limit the report by appending the metric type to the path:
 

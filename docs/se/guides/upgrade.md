@@ -133,11 +133,11 @@ WebServer build:
 
 ```java
 WebServer.builder()
-        .addMediaSupport(JsonpSupport.create()) //registers reader and writer for Json-P
-        .build();
+    .addMediaSupport(JsonpSupport.create()) //registers reader and writer for Json-P
+    .build();
 ```
 
-This replaces `Routing.builder().register(JsonSupport.create())…​`
+This replaces `Routing.builder().register(JsonSupport.create())...`
 
 The new JSON MediaSupport classes are:
 
@@ -312,5 +312,5 @@ WebServer.builder()
 - `` io.helidon.webserver.SocketConfiguration.Builder.ssl(SSLContext) - use
   `WebServerTls `` instead
 - ``
-  io.helidon.webserver.SocketConfiguration.Builder.enabledSSlProtocols(String…​)
+  io.helidon.webserver.SocketConfiguration.Builder.enabledSSlProtocols(String...)
   - use `WebServerTls `` instead

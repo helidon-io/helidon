@@ -243,7 +243,7 @@ You can use **path pattern** instead of *path* with the following syntax:
 
 > [!IMPORTANT]
 > Path (matcher) routing is **exact**. For example, a `/foo/bar` request is
-> **not** routed to `.post('/foo', …​)`.
+> **not** routed to `.post('/foo', ...)`.
 
 > [!TIP]
 > Always start *path* and *path patterns* with the `/` character.
@@ -457,8 +457,8 @@ header][standard-http-fo] or the [non-standard `X-Forwarded-*` family of
 headers][non-standard-x-f] to preserve information about the original client
 request.
 
-Helidon’s requested URI discovery feature allows your application—​and Helidon
-itself—​to reconstruct information about the original request using the
+Helidon’s requested URI discovery feature allows your application and Helidon
+itself to reconstruct information about the original request using the
 `Forwarded` header and the `X-Forwarded-*` family of headers.
 
 When you prepare the connections in your server you can include the following
@@ -694,8 +694,8 @@ server:
     log-all-messages: true
 ```
 
-With these settings, the default error handler—​on the default Webserver
-port—​will log all messages and may include reflected user data in error
+With these settings, the default error handler on the default Webserver
+port will log all messages and may include reflected user data in error
 response entities.
 
 Note: Even though some request data can be reflected back in responses when
@@ -1497,8 +1497,6 @@ public static void main(String[] args) {
 [security]: ../../se/security/introduction.md
 [openapi]: ../../se/openapi/openapi.md
 [observability]: ../../se/observability.md
-[server-features]: ../../config/io.helidon.webserver.spi.ServerFeature.md#a57af2-context
-[server-features-2]: ../../config/io.helidon.webserver.spi.ServerFeature.md#a42c97-access-log
 [static-content-f]: ../../config/io.helidon.webserver.staticcontent.StaticContentFeature.md
 [json-p]: #json-p-support
 [json-b]: #json-b-support

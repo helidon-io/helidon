@@ -23,7 +23,7 @@ whichever of these sources are present in the application:
 - a *model reader*
 
   The SPI defines an interface you can implement in your application for
-  programmatically providing part or all of the model;
+  programmatically providing part or all the model;
 
 - OpenAPI annotations;
 - a *filter* class
@@ -75,7 +75,7 @@ described above:
 
 #### Furnish OpenAPI information about your endpoints
 
-Helidon MP OpenAPI combines information from all of the following sources as it
+Helidon MP OpenAPI combines information from all the following sources as it
 builds its in-memory model of your application’s API. It constructs the OpenAPI
 document from this internal model. Your application can use one or more of these
 techniques.
@@ -118,7 +118,7 @@ OpenAPI spec][microprofile-ope] describes them all.
 ##### A static OpenAPI file
 
 Add a static file at `META-INF/openapi.yml`, `META-INF/openapi.yaml`, or
-`META-INF/openapi.json`. Tools such as Swagger let you describe your app’s API
+`META-INF/openapi.json`. Tools such as Swagger let you describe your app’s API,
 and they then generate an OpenAPI document file which you can include in your
 application so OpenAPI can use it.
 
@@ -356,16 +356,15 @@ contributed by the `SimpleAPIModelReader`.
 
 Full example is available [in our official repository][complete-openapi]
 
-## Additional Information
-
-### Building the Jandex index
+## Jandex
 
 A Jandex index stores information about the classes and methods in your app and
 what annotations they have. It allows CDI to process annotations faster during
 your application’s start-up, and OpenAPI uses the Jandex index to discover
 details about the types in your resource method signatures.
 
-#### Indexing your project
+> [!NOTE]
+> It is recommended to create the index at build-time to speed up the application start-up.
 
 Add an invocation of the [Jandex maven plug-in][jandex-maven-plu] to the
 `<build><plugins>` section of your `pom.xml` if it is not already there:
@@ -385,13 +384,8 @@ Add an invocation of the [Jandex maven plug-in][jandex-maven-plu] to the
 When you build your app the plug-in generates the Jandex index
 `META-INF/jandex.idx` and `maven` adds it to the application JAR.
 
-#### Indexing dependencies
-
 Invoking the Jandex plug-in as described above indexes only the types in your
-project. Some dependencies might include their own Jandex index and, in that
-case, OpenAPI finds information about the types in the dependency as well.
-
-But if the signatures of your resource methods refer to types from dependencies
+project. If the signatures of your resource methods refer to types from dependencies
 that do not have their own indexes then you should customize how you use the
 plug-in.
 
@@ -426,23 +420,6 @@ current project but another dependency and to index a specific type from it.
 You can add more than one dependency and scan for more than a single type. See
 the [Helidon MP OpenAPI expanded Jandex example][helidon-mp-opena-2] for more
 information and a complete project that indexes a dependency.
-
-> [!NOTE]
-> If your `pom.xml` *does not* create the Jandex index then the Helidon MP
-> OpenAPI runtime automatically creates one in memory during app start-up. This
-> slows down your app start-up and, depending on how CDI is configured, might
-> inadvertently miss information.
->
-> We *strongly recommend* using the Jandex plug-in to build the index into your
-> app.
->
-> Further, if your resource method signatures refer to types from outside your
-> project we *strongly recommend* that you augment the Jandex plug-in invocation
-> to include the dependencies and types your API uses. If you do not do so the
-> resulting generated OpenAPI document is correct, but types that cannot be
-> found are declared as `object` in the resulting OpenAPI model. This means your
-> OpenAPI document contains less information about the types in your API than it
-> otherwise could.
 
 ## Reference
 

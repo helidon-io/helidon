@@ -192,13 +192,13 @@ endpoints:
 
 Helidon distinguishes among three general *types*, or scopes, of metrics.
 
+Types (scopes) of metrics:
+
 | Type/scope  | Typical Usage                                                                                                  |
 |-------------|----------------------------------------------------------------------------------------------------------------|
 | base        | OS or Java runtime measurements (available heap, disk space, etc.).                                            |
 | vendor      | Implemented by vendors, including the `REST.request` metrics and other key performance indicator measurements. |
 | application | Declared via annotations or programmatically registered by your service code.                                  |
-
-Types (scopes) of metrics
 
 When you add the metrics dependency to your project, Helidon automatically
 provides a built-in REST endpoint `/observe/metrics` which responds with a
@@ -206,12 +206,12 @@ report of the registered metrics and their values.
 
 Clients can request a particular output format.
 
+Formats for `/observe/metrics` output:
+
 | Format                   | Requested by                      |
 |--------------------------|-----------------------------------|
 | OpenMetrics (Prometheus) | default (`text/plain`)            |
 | JSON                     | Header `Accept: application/json` |
-
-Formats for `/observe/metrics` output
 
 Clients can also limit the report by appending the metric type to the path:
 

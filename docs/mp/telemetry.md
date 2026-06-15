@@ -14,7 +14,7 @@ Dependencies](../managing-dependencies.md)).
 </dependency>
 ```
 
-###  OTel Exporter Dependencies
+###  Exporter Dependencies
 
 MicroProfile Telemetry mandates that implementations such as Helidon use
 OpenTelemetry, so also add a dependency on an OpenTelemetry exporter.
@@ -28,6 +28,28 @@ Example dependency for the OpenTelemetry OTLP exporter:
 </dependency>
 ```
 
+## Compatibility
+
+> [!NOTE]
+> Helidon v4 is backward compatible with MicroProfile telemetry 1.0
+
+Earlier releases of Helidon 4 implemented MicroProfile Telemetry 1.0 which was
+based on OpenTelemetry semantic conventions 1.22.0-alpha.
+
+MicroProfile Telemetry 1.1 is supported, however it is based on OpenTelemetry 1.58.0 which
+changed the REST span name conventions, which is not backward compatible.
+See <https://opentelemetry.io/docs/specs/semconv/http/http-spans/#name> for more details.
+
+Use the following configuration to use the new conventions:
+
+```properties [microprofile-config.properties]
+telemetry.span.name-includes-method = true
+```
+
+The ability to use the older format is deprecated, and you should plan for its
+removal in a future major release of Helidon. For that reason Helidon logs a
+warning message if you use the older REST span naming convention.
+
 ## Usage
 
 [OpenTelemetry](https://opentelemetry.io/) comprises a collection of APIs, SDKs,
@@ -39,41 +61,10 @@ necessary behaviors for MicroProfile applications to participate seamlessly.
 
 MicroProfile Telemetry 1.1 allows for the export of the data it collects to
 other systems using a variety of exporters such as OTLP mentioned earlier.
-Typical applications use a single exporter but you can add dependencies on
+Typical applications use a single exporter, but you can add dependencies on
 multiple exporters and then use configuration to choose which to use in any
 given execution. See the [configuration](#configuration) section for more
 details.
-
-> [!NOTE]
-> If possible, assign the following config setting in your application’s
-> `META-INF/microprofile-config.properties` file:
->
-> ```properties
-> telemetry.span.name-includes-method = true
-> ```
->
-> Earlier releases of Helidon 4 implemented MicroProfile Telemetry 1.0 which was
-> based on OpenTelemetry semantic conventions 1.22.0-alpha.
->
-> MicroProfile Telemetry 1.1 is based on OpenTelemetry 1.58.0, and in that
-> release the semantic convention for the REST span name now includes the
-> HTTPmethod name, as shown in the format below.
->
->     {http-method-name} {http-request-route}
->
-> (see <https://opentelemetry.io/docs/specs/semconv/http/http-spans/#name>)
->
-> Although span names are often used only for display in monitoring tools, this
-> is a backward-incompatible change.
->
-> Therefore, Helidon 4.4.0-SNAPSHOT by default conforms to the *older* semantic
-> convention to preserve backward compatibility with earlier 4.x releases. Only
-> if you set the property as shown above will Helidon 4.4.0-SNAPSHOT use the new
-> span naming format.
->
-> The ability to use the older format is deprecated, and you should plan for its
-> removal in a future major release of Helidon. For that reason Helidon logs a
-> warning message if you use the older REST span naming convention.
 
 In a distributed tracing system, **traces** are used to capture a series of
 requests and are composed of multiple **spans** that represent individual

@@ -307,12 +307,12 @@ reporting a failure back to your application.
 
 The config system includes two predefined retry policies:
 
+Predefined Retry Policies:
+
 | Policy                | Summary                                                                                                          |
 |-----------------------|------------------------------------------------------------------------------------------------------------------|
 | "just call" (default) | asks the config source to load the data with no retry                                                            |
 | "repeat"              | performs a settable number of time-based retries, reporting failure only after all available retries have failed |
-
-Predefined Retry Policies
 
 See the [`RetryPolicies`][retrypolicies] Javadoc for complete details on these
 built-in retry policies.
@@ -367,14 +367,14 @@ default configuration will search for other `application` file types in the
 following order. Note that the default configuration *stops* once it finds one
 of the files below; it *does not* merge all such files it can find.
 
+Default Config Files (most to the least important)
+
 | Source                   | Helidon maven artifact ID (group ID: `io.helidon.config`) | Notes                                                                            |
 |--------------------------|-----------------------------------------------------------|----------------------------------------------------------------------------------|
 | `application.yaml`       | `helidon-config-yaml`                                     | YAML format <http://yaml.org>                                                    |
 | `application.conf`       | `helidon-config-hocon`                                    | HOCON format <https://github.com/lightbend/config#using-hocon-the-json-superset> |
 | `application.json`       | `helidon-config-hocon`                                    | JSON format <https://json.org/>                                                  |
 | `application.properties` | `helidon-config`                                          | Java properties format                                                           |
-
-Default Config Files (most to the least important)
 
 You can also extend the config system to handle other types of sources by
 implementing the [`ConfigSource`][configsource] interface. See the
@@ -391,6 +391,8 @@ implementing the [`ConfigSource`][configsource] interface. See the
 The links in the following tables lead you to more information about various
 other config topics.
 
+Controlling How Config is Loaded:
+
 | Topic                                           | Documentation                                                           |
 |-------------------------------------------------|-------------------------------------------------------------------------|
 | Where config comes from                         | [Config sources][config-sources],[Config Profiles][config-profiles]     |
@@ -399,20 +401,18 @@ other config topics.
 | What happens when config data changes           | [Mutability Support][mutability-suppo]                                  |
 | How to deal with loading errors                 | [Config retry policies][config-retry-pol]                               |
 
-Controlling How Config is Loaded
+Accessing Configuration Data:
 
 | Topic                                         | Documentation                    |
 |-----------------------------------------------|----------------------------------|
 | How config data is translated into Java types | [Config mappers][config-mappers] |
 | How to navigate config trees                  | [Navigation][navigation]         |
 
-Accessing Configuration Data
+Extending and Fine-tuning the Config System:
 
 | Topic              | Documentation            |
 |--------------------|--------------------------|
 | Writing extensions | [Extensions][extensions] |
-
-Extending and Fine-tuning the Config System
 
 [configsources]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/ConfigSources.html
 [advanced-topics]: advanced-configuration.md#advanced-config-sources
@@ -421,7 +421,7 @@ Extending and Fine-tuning the Config System
 [configparser]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/spi/ConfigParser.html
 [advanced-topics-2]: advanced-configuration.md#advanced-config-parsers
 [config-builder]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/Config.Builder.html
-[custom-configura]: ../../se/guides/config.md#_custom_configuration_sources
+[custom-configura]: ../../se/guides/config.md#custom-configuration-sources
 [config]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/Config.html
 [filter-overrides]: advanced-configuration.md#filters-overrides-and-token-substitution
 [retrypolicies]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/RetryPolicies.html

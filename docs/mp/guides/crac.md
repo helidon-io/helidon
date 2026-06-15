@@ -240,7 +240,7 @@ CMD [ "java", "-XX:CRaCEngine=warp", "-XX:CRaCRestoreFrom=/helidon/cr" ]
 
 > [!TIP]
 > This does a full build inside the Docker container. The first time you run it,
-> it will take a while because it is downloading all of the Maven dependencies
+> it will take a while because it is downloading all the Maven dependencies
 > and caching them in a Docker layer. Subsequent builds will be much faster as
 > long as you don’t change the `pom.xml` file. If the pom is modified then the
 > dependencies will be re-downloaded.

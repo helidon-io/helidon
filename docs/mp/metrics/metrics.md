@@ -5,7 +5,7 @@
 Helidon MP metrics implements the MicroProfile Metrics specification, providing:
 
 - a unified way for MicroProfile servers to export monitoring
-  data—​telemetry—​to management agents, and
+  data telemetry to management agents, and
 - a unified Java API which all application programmers can use to register and
   update metrics to expose telemetry data from their services.
 - support for metrics-related annotations.
@@ -707,8 +707,8 @@ config property to `counter` which is the default.
 Why should you care? In fact, this distinction might not make a difference for
 many users. But for others the differences between the programmatic APIs for
 `Counter` and `Gauge` would affect application code that works directly with the
-`gc-time` metric. Further, the difference in output—​particularly in the
-OpenMetrics/Prometheus format—​might affect their application or downstream
+`gc-time` metric. Further, the difference in output particularly in the
+OpenMetrics/Prometheus format might affect their application or downstream
 monitoring tools.
 
 The ability to choose the metric type for `gc.time` is deprecated and is planned
@@ -722,13 +722,13 @@ externally at an endpoint (`/metrics` by default). You can control aspects of
 how Helidon furnishes this information under the
 `server.features.observe.observers.metrics` configuration section.
 
+Optional configuration options
+
 | key        | type                                      | default value | description                                             |
 |------------|-------------------------------------------|---------------|---------------------------------------------------------|
 | `auto`     | [AutoHttpMetricsConfig][autohttpmetricsc] |               | Automatic metrics collection settings.                  |
 | `enabled`  | boolean                                   | `true`        | Whether this observer is enabled.                       |
 | `endpoint` | string                                    | `/metrics`    | Path at which clients can retrieve metrics information. |
-
-Optional configuration options
 
 #### Selecting REST Endpoints for Automatic Measurement
 

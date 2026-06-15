@@ -110,7 +110,7 @@ methods that help the user to set a particular header. Some examples of these
 are:
 
 - `contentType` (MediaType contentType)
-- `accept` (MediaType…​ mediaTypes)
+- `accept` (MediaType... mediaTypes)
 
 For more information about these methods, check out
 [ClientRequest][clientrequest] API, which is a parent class of

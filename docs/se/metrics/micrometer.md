@@ -270,7 +270,7 @@ To create additional types of registries and enroll them with
 2.  Write a `Function` which accepts a `ServerRequest` and returns an
     `Optional<Handler>`
 
-    Typically, the function examines the request—​the `Content-Type`, query
+    Typically, the function examines the request the `Content-Type`, query
     parameters, etc.--to decide whether the corresponding handler should respond
     to the request. If so, your function should instantiate your `Handler` and
     return an `Optional.of(theHandlerInstance)`; otherwise, your function should

@@ -68,7 +68,7 @@ File `secrets/password`
 
 your application can load this as configuration as follows:
 
-Using `directory` config source
+Using `directory` config source:
 
 ```java
 Config secrets = Config.builder(
@@ -90,11 +90,11 @@ assert secrets.get("password") // (4)
 1.  Loads all files from the `conf/secrets` directory.
 2.  No need to use environment variables or system properties as sources in
     building the `Config`.
-3.  The loaded config maps the key `username` to the value `jose`…​
-4.  …​and the key `password` to `^ery$ecretP&ssword`.
+3.  The loaded config maps the key `username` to the value `jose`...
+4.  ...and the key `password` to `^ery$ecretP&ssword`.
 
 Remember that your application can process the contents of a given file as
-configuration. See the [config sources](introduction.md#config_sources) section
+configuration. See the [config sources](introduction.md#config-sources) section
 and the [`ConfigSources.file`][configsources-fi] Javadoc.
 
 ### In-memory Config Sources
@@ -470,7 +470,7 @@ Example `application.json` with dot character in key
 }
 ```
 
-Working with configuration with dot character in node name
+Working with configuration with dot character in node name:
 
 ```java
 Config config = Config.create(classpath("application.json"));
@@ -491,14 +491,14 @@ assert config.get(Key.escapeName("oracle.com")).name().equals("oracle.com"); // 
 1.  Work with the first `oracle` object as usual. As always you can use the
     fully-qualified key `oracle.com` or chain `get(key)` calls to access the
     `com` property value.
-2.  Config node `"oracle"` / `"com"` is a leaf node (has type `VALUE`)…​
-3.  …​ and has the name `com` (the last token in its key).
+2.  Config node `"oracle"` / `"com"` is a leaf node (has type `VALUE`)...
+3.  ... and has the name `com` (the last token in its key).
 4.  The second object has name `oracle.com`. The code must escape the dot in the
     node’s name using `oracle~1com`.
 5.  Or, use the utility method `Config.Key.escapeName(name)` to escape dots or
     tildes that might be in the node’s name, in this example in `oracle.com`.
-6.  The config node `"oracle.com"` has type `OBJECT`…​
-7.  …​and name `"oracle.com"`.
+6.  The config node `"oracle.com"` has type `OBJECT`...
+7.  ...and name `"oracle.com"`.
 
 ## Filters, Overrides, and Token Substitution
 
@@ -712,7 +712,7 @@ Config config = Config.create(
 [configsources-ja]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/ConfigSources.html
 [configsources-pr]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/ConfigSources.html#prefixed-java.lang.String-java.util.function.Supplier-
 [hierarchical-fea]: hierarchical-features.md#access-by-key
-[filters]: extensions.md#Config-SPI-ConfigFilter
+[filters]: extensions.md#configfilter-spi
 [value-resolving]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/ConfigFilters.html#valueResolving--
 [configfilter]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/spi/ConfigFilter.html
 [simpleretrypolic]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/SimpleRetryPolicy.Builder.html

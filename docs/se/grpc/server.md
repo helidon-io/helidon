@@ -148,7 +148,7 @@ class EchoService implements GrpcService {
 ```
 
 - Specify the proto descriptor in order to provide the necessary type
-  information and enable Protobuf marshalling.
+  information and enable Protobuf marshaling.
 - Define the unary method `Echo` and map it to the `this::echo` handler.
 - Create a handler for the `Echo` method, using Protobuf message types for
   request and response.
@@ -233,7 +233,7 @@ server:
 ```
 
 The configuration above shall enable metrics on the Webserver’s default port
-8080. For more information see [Helidon Metrics](../../se/metrics/metrics.md).
+`8080`. For more information see [Helidon Metrics](../../se/metrics/metrics.md).
 
 ## Configuration
 
@@ -285,7 +285,7 @@ messages types available in the proto file, and ultimately execute the requested
 gRPC call.
 
 Helidon includes a gRPC reflection service that can be queried by tools such as
-`grpcurl` to learn about the available services—​similar to OpenAPI for REST
+`grpcurl` to learn about the available services similar to OpenAPI for REST
 services. The reflection service is implemented as a *feature* and can be
 enabled programmatically when adding the feature, or via config as follows:
 

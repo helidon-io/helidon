@@ -335,26 +335,25 @@ javax.sql.DataSource.main.password = tiger
 - See [Thin-style Service Name Syntax][connect-to-an-or].
 
 In general, the properties that can be set on the Oracle Universal Connection
-Pool can be inferred from the "setter" methods found in [the javadoc for the
+Pool can be inferred from the "setter" methods found in [the Javadoc for the
 `PoolDataSourceImpl` class][the-javadoc-for].
 
 In general, the properties that can be set on the
 [`oracle.jdbc.pool.OracleDataSource`][oracle-jdbc-pool] `DataSource`
 implementation can be inferred from the "setter" methods found in [its
-javadoc][oracle-jdbc-pool].
+Javadoc][oracle-jdbc-pool].
 
 > [!NOTE]
-> [Unlike HikariCP][unlike-hikaricp], the Oracle Universal Connection Pool does
+> Unlike [HikariCP][unlike-hikaricp], the Oracle Universal Connection Pool does
 > not distinguish cleanly between configuration properties that affect *its*
 > behavior and those that affect the behavior of the vendor-supplied
-> `DataSource` implementation whose connections it pools. For example, in the
-> example above it is not possible to tell that [`connectionFactoryClassName` is
-> a property of the Oracle Universal Connection Pool][pooldatasourceim], and
-> [`user` is a property of the `oracle.jdbc.pool.OracleDataSource` `DataSource`
-> implementation][user-is-a-proper]. In some cases, the Oracle Universal
-> Connection Pool will [set the given property on *both* the connection pool
-> itself *and* on the vendor-supplied `DataSource` it
-> manages][set-the-given-pr].
+> `DataSource` implementation whose connections it pools.
+
+For example, in the example above it is not possible to tell that [`connectionFactoryClassName`][pooldatasourceim]
+is a property of the Oracle Universal Connection Pool, and
+`user` is a property of the [`oracle.jdbc.pool.OracleDataSource`][user-is-a-proper] `DataSource`
+implementation. In some cases, the Oracle Universal Connection Pool will set the given [property][set-the-given-pr]
+on *both* the connection pool itself *and* on the vendor-supplied `DataSource` it manages.
 
 ##### Example: Configuring the HikariCP Connection Pool and H2
 
@@ -389,7 +388,7 @@ as seen in the example above.
 In general, the properties that can be set on the
 [`org.h2.jdbcx.JdbcDataSource`][org-h2-jdbcx-jdb] vendor-supplied `DataSource`
 can be inferred from the "setter" methods found in [its
-javadoc][org-h2-jdbcx-jdb].
+Javadoc][org-h2-jdbcx-jdb].
 
 #### Usage
 

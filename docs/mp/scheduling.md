@@ -54,6 +54,8 @@ Cron expression format:
 <seconds> <minutes> <hours> <day-of-month> <month> <day-of-week> <year>
 ```
 
+Cron expression fields:
+
 | Order | Name         | Supported values | Supported field format                                      | Optional |
 |-------|--------------|------------------|-------------------------------------------------------------|----------|
 | 1     | seconds      | 0-59             | CONST, LIST, RANGE, WILDCARD, INCREMENT                     | false    |
@@ -64,7 +66,7 @@ Cron expression format:
 | 6     | day-of-week  | 1-7 or SUN-SAT   | CONST, LIST, RANGE, WILDCARD, INCREMENT, ANY, NTH, LAST     | false    |
 | 7     | year         | 1970-2099        | CONST, LIST, RANGE, WILDCARD, INCREMENT                     | true     |
 
-Cron expression fields
+Field formats:
 
 <!--@mdc ::table-collapse -->
 | Name      | Regex format        | Example | Description                                                                 |
@@ -73,14 +75,14 @@ Cron expression fields
 | LIST      | \d+,\d+(,\d+)\*     | 1,2,3,4 | list of constants                                                           |
 | RANGE     | \d+-\d+             | 15-30   | range of values from-to                                                     |
 | WILDCARD  | \\                  | \*      | all values withing the field                                                |
-| INCREMENT | \d+\\\d+            | 0/5     | initial number / increments, 2/5 means 2,7,9,11,16,…​                       |
+| INCREMENT | \d+\\\d+            | 0/5     | initial number / increments, 2/5 means 2,7,9,11,16,...                       |
 | ANY       | \\                  | ?       | any day(apply only to day-of-week and day-of-month)                         |
 | NTH       | \\                  | 1#3     | nth day of the month, 2#3 means third monday of the month                   |
 | LAST      | \d\*L(+\d+\|\\\d+)? | 3L-3    | last day of the month in day-of-month or last nth day in the day-of-week    |
 | WEEKDAY   | \\                  | 1#3     | nearest weekday of the nth day of month, 1W is the first monday of the week |
 <!--@mdc :: -->
 
-Field formats
+Examples:
 
 | Cron expression      | Description           |
 |----------------------|-----------------------|
@@ -88,8 +90,6 @@ Field formats
 | 0/2 \* \* \* \* ? \* | Every 2 seconds       |
 | 0 45 9 ? \* \*       | Every day at 9:45     |
 | 0 15 8 ? \* MON-FRI  | Every workday at 8:15 |
-
-Examples
 
 Metadata like human-readable interval description or configured values are
 available through *CronInvocation* injected as method parameter.

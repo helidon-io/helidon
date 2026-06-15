@@ -137,7 +137,7 @@ Change a configuration parameter in the default configuration resource file,
 `application.yaml`. There are no environment variable or system property
 overrides defined.
 
-Change app.greeting in resources/application.yaml as follows:
+Change `app.greeting` in resources/application.yaml as follows:
 
 ```shell [Terminal]
 app:
@@ -157,7 +157,7 @@ Run the curl command in a new terminal window and check the response:
 curl http://localhost:8080/greet
 ```
 
-The new app.greeting value in `application.yaml` is used.
+The new `app.greeting` value in `application.yaml` is used.
 
 ```json [application.yaml]
 {
@@ -208,7 +208,7 @@ Invoke the endpoint below and check the response:
 curl http://localhost:8080/greet
 ```
 
-The system variable app.greeting took precedence over the environment property
+The system variable `app.greeting` took precedence over the environment property
 and the value in `application.yaml`.
 
 ```json [application.yaml]
@@ -422,7 +422,7 @@ contents as the value. The following example includes a directory source as
 highest precedence.
 
 Create a new directory helidon-quickstart-se/conf then create a file named
-app.greeting in that directory with the following contents:
+`app.greeting` in that directory with the following contents:
 
 ```shell [Terminal]
 HelloFromFileInDirectoryConf
@@ -432,11 +432,11 @@ Update the Main class and replace the buildConfig method:
 
 ```java
 return Config.builder()
-        .sources(
-                directory("conf"), 
-                classpath("config.properties").optional(),
-                classpath("application.yaml"))
-        .build();
+    .sources(
+        directory("conf"),
+        classpath("config.properties").optional(),
+        classpath("application.yaml"))
+    .build();
 ```
 
 - Add a mandatory configuration directory.
@@ -970,7 +970,7 @@ the following:
 - Hierarchical Access
 - Property Mapping
 - Mutability Support
-- and more…​
+- and more...
 
 Refer to the following references for additional information:
 

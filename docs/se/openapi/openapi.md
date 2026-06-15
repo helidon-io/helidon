@@ -62,14 +62,14 @@ file.
 
 Add a static file at `META-INF/openapi.yml`, `META-INF/openapi.yaml`, or
 `META-INF/openapi.json`. Tools such as Swagger let you describe your app’s API
-and they then generate an OpenAPI document file which you can include in your
+, and they then generate an OpenAPI document file which you can include in your
 application so OpenAPI can use it.
 
 ### Accessing the REST Endpoint
 
 Once you have added the SE OpenAPI dependency to your project, if you are using
-auto-discovery—​or if you are not using auto-discovery and you have added code
-to register the `OpenApiFeature` object with your routing—​then your application
+auto-discovery or if you are not using auto-discovery and you have added code
+to register the `OpenApiFeature` object with your routing then your application
 responds to the built-in endpoint — `/openapi` — and returns the OpenAPI
 document describing the endpoints in your application.
 

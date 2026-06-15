@@ -22,7 +22,7 @@ unrestricted sharing for GET, HEAD, and POST requests (what CORS refers to as
 sharing: more relaxed for the simple requests and stricter for others.
 
 Once you know the type of sharing you want to allow for each of your
-resources—​including any from built-in services—​you can change your application
+resources including any from built-in services you can change your application
 accordingly.
 
 #### Choosing How To Implement CORS
@@ -138,7 +138,7 @@ WebServer.builder()
 6.  Build the `CorsFeature` instance
 7.  Register the new `CorsFeature` instance with WebServer builder
 
-The ordering of `.addPath(…​)` methods when configuring the `CorsFeature` is
+The ordering of `.addPath(...)` methods when configuring the `CorsFeature` is
 significant, as they are checked in order, and the first `CorsPathConfig` that
 matches the requested path and method will be used.
 
@@ -202,7 +202,7 @@ For a complete example, see [Helidon SE CORS Example][helidon-se-cors].
 The decisions the Helidon CORS feature makes depend on accurate information
 about each incoming request, particularly the host to which the request is sent.
 Conveyed as headers in the request, this information can be changed or
-overwritten by intermediate nodes—​such as load balancers—​between the origin of
+overwritten by intermediate nodes such as load balancers between the origin of
 the request and your service.
 
 Well-behaved intermediate nodes preserve this important data in other headers,

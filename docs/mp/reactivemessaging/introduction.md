@@ -186,6 +186,8 @@ not enough demand from the downstream, you can configure a buffer size strategy
 using the `@OnOverflow` annotation. Additional overflow strategies are described
 below.
 
+Overflow strategies:
+
 | Strategy         | Description                                                                                                                                                                                                                                                                  |
 |------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | BUFFER           | Buffer unconsumed values until configured bufferSize is reached, when reached calling `Emitter.emit` throws `IllegalStateException`. Buffer size can be configured with `@OnOverflow` or with config key `mp.messaging.emitter.default-buffer-size`. Default value is `128`. |
@@ -195,8 +197,6 @@ below.
 | FAIL             | If there is not enough items requested by downstream, emitting message causes error signal being send to downstream. Whole channel is terminated. No other messages can be sent.                                                                                             |
 | LATEST           | Keeps only the latest item. Any previous unconsumed message is silently dropped.                                                                                                                                                                                             |
 | NONE             | Messages are sent to downstream even if there is no demand. Backpressure is effectively ignored.                                                                                                                                                                             |
-
-Overflow strategies
 
 #### Processing Method
 

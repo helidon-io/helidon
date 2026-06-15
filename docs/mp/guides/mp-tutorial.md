@@ -359,7 +359,7 @@ public class GreetingProvider {
 - The class contains an `AtomicReference` to a `String` where the greeting will
   be stored. The `AtomicReference` provides lock-free thread-safe access to the
   underlying `String`.
-- The `public GreetingProvider(…​)` constructor is annotated with `Inject` which
+- The `public GreetingProvider(...)` constructor is annotated with `Inject` which
   tells Helidon to use Contexts and Dependency Injection to provide the needed
   values. In this case, the `String message` is annotated with
   `ConfigProperty(name = "app.greeting")` so Helidon will inject the property

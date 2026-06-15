@@ -343,6 +343,8 @@ public void whenLRAFinishes(URI lraId, LRAStatus status) {
 io.helidon.microprofile.lra
 ```
 
+Optional configuration options:
+
 | Key                                     | Type    | Default value                           | Description                                                                                                               |
 |-----------------------------------------|---------|-----------------------------------------|---------------------------------------------------------------------------------------------------------------------------|
 | `mp.lra.coordinator.url`                | string  | `http://localhost:8070/lra-coordinator` | Url of coordinator.                                                                                                       |
@@ -350,8 +352,6 @@ io.helidon.microprofile.lra
 | `mp.lara.participant.url`               | string  |                                         | Url of the LRA enabled service overrides standard base uri, so coordinator can call load-balancer instead of the service. |
 | `mp.lra.coordinator.timeout`            | string  |                                         | Timeout for synchronous communication with coordinator.                                                                   |
 | `mp.lra.coordinator.timeout-unit`       | string  |                                         | Timeout unit for synchronous communication with coordinator.                                                              |
-
-Optional configuration options
 
 Example of LRA configuration:
 

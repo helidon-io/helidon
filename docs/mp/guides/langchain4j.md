@@ -188,7 +188,7 @@ public interface PirateService {
 
     @SystemMessage("""
     You are a pirate who like to tell stories about his time
-    at the sea with captain {​{capt-name}​}.
+    at the sea with captain {{capt-name}}.
     """)
     String chat(@V("capt-name") String captName,
                 @UserMessage String prompt);
@@ -253,7 +253,7 @@ public interface PirateService {
 
     @SystemMessage("""
     You are a pirate who like to tell stories about his time
-    at the sea with captain {​{capt-name}​}.
+    at the sea with captain {{capt-name}}.
     """)
     String chat(@MemoryId String memoryId,
                 @V("capt-name") String captName,

@@ -342,14 +342,14 @@ Configuration for Zipkin exporters
 The [OpenTelemetry documentation][opentelemetry-do] describes the defaults; see
 the "Properties for Zipkin span exporters" section there.
 
+OpenTelemetry defaults for Zipkin exporters:
+
 | Setting       | OpenTelemetry default value          |
 |---------------|--------------------------------------|
 | `compression` | `none`                               |
 | `encoder`     | `JSON_V2`                            |
 | `endpoint`    | <http://localhost:9411/api/v2/spans> |
 | `timeout`     | 10 seconds                           |
-
-OpenTelemetry defaults for Zipkin exporters
 
 OpenTelemetry provides other exporters, often used for debugging:
 
@@ -568,6 +568,8 @@ See [Configuration options][io-helidon-telem-9].
 The [OpenTelemetry documentation][opentelemetry-do-2] describes the defaults;
 see the "Properties for span limits" section there.
 
+OpenTelemetry defaults for span limits:
+
 | Setting                      | OpenTelemetry Default |
 |------------------------------|-----------------------|
 | `max-attribute-value-length` | no limit              |
@@ -575,8 +577,6 @@ see the "Properties for span limits" section there.
 | `max-attributes-per-event`   | 128                   |
 | `max-events`                 | 128                   |
 | `max-links`                  | 128                   |
-
-OpenTelemetry defaults for span limits
 
 ## Metrics Configuration
 
@@ -816,7 +816,7 @@ telemetry:
 
 [preview-feature]: https://helidon.io/docs/v4/apidocs/io.helidon.common.features.api/io/helidon/common/features/api/Preview.html
 [opentelemetry-se]: https://github.com/open-telemetry/semantic-conventions/blob/v1.58.0/docs/http/http-spans.md#http-server
-[publishing-helid]: ../../se/metrics/metrics.md#publishing-metrics-for-external-access
+[publishing-helid]: ../../se/metrics/metrics.md#publishing-metrics
 [signals]: https://opentelemetry.io/docs/concepts/signals/
 [helidon-opentele]: https://helidon.io/docs/v4/apidocs/io.helidon.telemetry.otelconfig/io/helidon/telemetry/otelconfig/package-summary.html
 [opentelemetrycon]: https://helidon.io/docs/v4/apidocs/io.helidon.telemetry.otelconfig/io/helidon/telemetry/otelconfig/OpenTelemetryConfig.html

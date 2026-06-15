@@ -66,19 +66,19 @@ Declaring the OpenAPI Generator Plug-in:
 <properties>
   <openapi-generator-version>7.6.0</openapi-generator-version>
 </properties>
-...
+<!-- ... -->
 <build>
-  ...
+  <!-- ... -->
   <plugin-management>
-    ...
+    <!-- ... -->
     <plugin>
       <groupId>org.openapitools</groupId>
       <artifactId>openapi-generator-maven-plugin</artifactId>
       <version>${openapi-generator-version}</version>
     </plugin>
-    ...
+    <!-- ... -->
   </plugin-management>
-  ...
+  <!-- ... -->
 </build>
 ```
 
@@ -87,7 +87,7 @@ build.
 
 ## Configuration
 
-The OpenAPI generators support a substantial, powerful, and sometimes bewildering group of configuration settings. <a id="links-to-settings"></a>
+The OpenAPI generators support a substantial, powerful, and sometimes bewildering group of configuration settings.
 For complete lists see these pages:
 
 - [generic options][generic-options]
@@ -136,12 +136,12 @@ The OpenAPI generator loosely divides its settings into three types:
 
   ```xml [pom.xml]
   <configuration>
-    ...
+    <!-- ... -->
     <configOptions>
       <groupId>com.mycompany.test</groupId>
       <artifactId>my-example</artifactId>
     </configOptions>
-    ...
+    <!-- ... -->
   </configuration>
   ```
 
@@ -167,7 +167,7 @@ The OpenAPI generator loosely divides its settings into three types:
 
   ```xml
   <configuration>
-    ....
+    <!-- ... -->
     <additionalProperties>
         <additionalProperty>useAbstractClasses=false</additionalProperty>
         <additionalProperty>returnResponse=true</additionalProperty>
@@ -177,7 +177,7 @@ The OpenAPI generator loosely divides its settings into three types:
 
 Keep this distinction among global options, config options, and additional
 properties in mind so you know how to express the configuration you want. The
-[earlier links](#links-to-settings) to the lists of configuration options for
+[earlier links](#configuration) to the lists of configuration options for
 the Helidon generators groups options and additional properties in separate
 tables.
 
@@ -335,7 +335,7 @@ command line and using the Maven plug-in.
 
 Among the many configuration settings available to you, some you should
 particularly consider are summarized in the table below. Refer to the [earlier
-links](#links-to-settings) for complete lists.
+links](#configuration) for complete lists.
 
 <table>
 <caption>Common OpenAPI Generator Additional Properties</caption>
@@ -410,7 +410,7 @@ You can use the OpenAPI generator to create a new project or to generate files
 into an existing project. Some developers do both, using the generator to create
 the project at first and then to update the project as they evolve the OpenAPI
 document or change the generation options they select. Others create the project
-in some other way—​for example, using the [Helidon CLI](../../cli.md). The
+in some other way for example, using the [Helidon CLI](../../cli.md). The
 OpenAPI generator CLI and plug-in both support each type of usage.
 
 If the OpenAPI generator finds a pre-existing API or model file, it overwrites
@@ -436,11 +436,11 @@ following ways:
   > You *can* run the generator CLI again to update the generated files. Because
   > this happens outside the project’s build lifecycle, you need to remember to
   > rerun the CLI yourself when you change the OpenAPI document.
-  >
-  > You also need to identify and manually remove any previously-generated files
-  > that become obsolete. Similarly, you must understand how changes in the
-  > OpenAPI document or the generation options affect the project dependencies
-  > and update the project `pom.xml` accordingly.
+
+  You also need to identify and manually remove any previously-generated files
+  that become obsolete. Similarly, you must understand how changes in the
+  OpenAPI document or the generation options affect the project dependencies
+  and update the project `pom.xml` accordingly.
 
 - Use the generator plug-in to (re)generate files during each build.
 
@@ -498,13 +498,13 @@ prefix shared among the operations that are grouped into each API.
 > If the operations in an API have no common prefix then the generated routing
 > will be inefficient at runtime. The generator logs a warning and includes a
 > `TODO` comment in the generated routing.
->
-> Review the paths and the `tags` settings in your OpenAPI document and consider
-> revising one or the other so all operations in each API share a common path
-> prefix. If you do not have control over the OpenAPI document or do not want to
-> change it, consider specifying the generator option `x-helidon-groupBy
-> first-path-segment` which groups operations into APIs not by `tags` value but
-> by the first segment of each operation’s path.
+
+Review the paths and the `tags` settings in your OpenAPI document and consider
+revising one or the other so all operations in each API share a common path
+prefix. If you do not have control over the OpenAPI document or do not want to
+change it, consider specifying the generator option `x-helidon-groupBy
+first-path-segment` which groups operations into APIs not by `tags` value but
+by the first segment of each operation’s path.
 
 When you generate a Helidon SE client, the generated code contains a separate
 API class for each distinct API your code might *invoke*.
@@ -646,8 +646,8 @@ file ID in a subsequent HTTP request to retrieve your project.
 > [!NOTE]
 > The online generator stores your project on the server which you then retrieve
 > using a separate HTTP request. Before you use the online generator, consider
-> whether any of the input you provide—​the OpenAPI document, package or Maven
-> coordinates—​and therefore the generated project will reveal any sensitive
+> whether any of the input you provide the OpenAPI document, package or Maven
+> coordinates and therefore the generated project will reveal any sensitive
 > information.
 
 This document does not explore further the use of the online generator.
@@ -662,7 +662,7 @@ section describes your next steps *after* you have run the generator.
 
 Recall from earlier how the OpenAPI generator gathers operations into one or
 more APIs or services and generates either an abstract class or an
-interface—​your choice—​for each API. You need to extend each generated API
+interface your choice for each API. You need to extend each generated API
 class or implement each generated API interface by writing your own classes.
 
 Any input parameters to the operations are expressed as POJO model objects or
@@ -672,11 +672,11 @@ operation is responsible for, possibly returning a result as a POJO or Java type
 as indicated for that operation in the OpenAPI document.
 
 If you choose to generate interfaces for the APIs, the generator creates routing
-rules for the API services it generates but you write virtually all of the logic
+rules for the API services it generates, but you write virtually all the logic
 to process incoming requests by implementing the very short methods generated in
 the implementation class.
 
-The rest of this sections focuses on your next steps if, on the other hand, you
+The rest of this section focuses on your next steps if, on the other hand, you
 decide to generate abstract classes.
 
 #### What you *must* do: implement your business logic and send the response
@@ -765,7 +765,7 @@ public class PetServiceImpl extends PetService {
 - Collects all pets with any tag that matches any of the selection tags passed
   in.
 - Uses the generated `Response200` to prepare the response.
-- Assigns the optional `response` output parameter—​the list of matching `Pet`
+- Assigns the optional `response` output parameter the list of matching `Pet`
   objects.
 - Send the response using the prepared response information.
 
@@ -829,7 +829,7 @@ the `AddPetOp` as an example.
     ```
 
     - Extracts the parameter from the request. This happens to use the same
-      logic as in the generated method but you can customize that as well if you
+      logic as in the generated method, but you can customize that as well if you
       need to.
     - Apply any relevant validations. This silly but illustrative example
       rejects any pet name that starts with a lower-case letter.
@@ -1035,7 +1035,7 @@ generator used to prepare the internal `WebClientConfig.Builder` is lost.
 The `ApiClient` represents the connection to the remote server but not the
 individual RESTful operations. Each generated `xxxApi` interface exposes a
 method for each operation declared in the OpenAPI document associated with that
-API via its `tags` value. By example, the `PetApi` interface exposes a method
+API via its `tags` value. For example, the `PetApi` interface exposes a method
 for each operation in the OpenAPI document that pertains to pets.
 
 To invoke an operation defined on the `PetApi` interface, your code instantiates

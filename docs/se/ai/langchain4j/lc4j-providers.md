@@ -95,7 +95,7 @@ content retrievers and can also be injected by name into other service beans.
 
 If `from-file` is configured, Helidon initializes the store by loading
 previously persisted embeddings and segments using LangChain4j
-`InMemoryEmbeddingStore.fromFile(…​)`. If `from-file` is not configured, the
+`InMemoryEmbeddingStore.fromFile(...)`. If `from-file` is not configured, the
 store starts empty.
 
 ```yaml [application.yaml]

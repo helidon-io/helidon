@@ -279,12 +279,12 @@ a report of the registered meters and their values.
 
 Clients can request a particular output format from the endpoint.
 
+Formats for `/observe/metrics` output:
+
 | Format                   | Requested by                      |
 |--------------------------|-----------------------------------|
 | OpenMetrics (Prometheus) | default (`text/plain`)            |
 | JSON                     | Header `Accept: application/json` |
-
-Formats for `/observe/metrics` output
 
 Clients can also limit the report by specifying the scope as a query parameter
 in the request URL:
@@ -736,8 +736,8 @@ can choose to use a gauge by setting the configuration property
 Why should you care? In fact, this distinction might not make a difference for
 many users. But for others the differences between the programmatic APIs for
 `Counter` and `Gauge` would affect application code that works directly with the
-`gc-time` meter. Further, the difference in output—​particularly in the
-OpenMetrics/Prometheus format—​might affect their application or downstream
+`gc-time` meter. Further, the difference in output particularly in the
+OpenMetrics/Prometheus format might affect their application or downstream
 monitoring tools.
 
 The ability to choose the meter type for `gc.time` is deprecated and is planned

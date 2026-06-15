@@ -302,7 +302,7 @@ Metrics to OCI Monitoring** section in `/server/README.md`.
 #### Logging
 
 The OCI Logging service is a highly scalable and fully managed single pane of
-glass for all of the logs in your tenancy. For an overview of the OCI Logging
+glass for all the logs in your tenancy. For an overview of the OCI Logging
 feature, see [Logging Overview][logging-overview] in OCI documentation.
 
 Helidon uses the [custom logs][custom-logs] feature of OCI Logging for

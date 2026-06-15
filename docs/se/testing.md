@@ -47,6 +47,8 @@ the setup for a different socket).
 - Annotation - which annotations support this parameter
 - Modules - which webserver extension modules support this signature
 
+Parameters for the `@SetUpRoute` annotated methods.
+
 | Parameter Type             | Annotation                    | Modules   | Notes                                             |
 |----------------------------|-------------------------------|-----------|---------------------------------------------------|
 | `HttpRouting.Builder`      | `@ServerTest`, `@RoutingTest` |           |                                                   |
@@ -54,8 +56,6 @@ the setup for a different socket).
 | `Router.RouterBuilder<?>`  | `@ServerTest`, `@RoutingTest` |           |                                                   |
 | `SocketListener.Builder`   | `@ServerTest`                 |           |                                                   |
 | `WebSocketRouting.Builder` | `@ServerTest`, `@RoutingTest` | websocket |                                                   |
-
-Parameters for the `@SetUpRoute` annotated methods.
 
 In addition:
 
@@ -76,6 +76,8 @@ injection).
 - Modules - which WebServer extension modules support this injection
 - Notes - additional details
 
+Injectable types.
+
 | Type               | Socket? | Annotation     | Modules   | Notes                                                                                      |
 |--------------------|---------|----------------|-----------|--------------------------------------------------------------------------------------------|
 | `WebServer`        |         | `@ServerTest`  |           | Server instance (already started)                                                          |
@@ -85,8 +87,6 @@ injection).
 | `DirectClient`     | x       | `@RoutingTest` |           | Implements `Http1Client` API                                                               |
 | `WsClient`         | x       | `@ServerTest`  | websocket |                                                                                            |
 | `DirectWsClient`   | x       | `@RoutingTest` | websocket | Implements `WsClient` API                                                                  |
-
-Injectable types.
 
 Extensions can enhance the features for the module
 `helidon-testing-junit5-webserver` to support additional protocols.

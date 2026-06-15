@@ -31,13 +31,13 @@ See [Configuration options][io-helidon-messa].
 > Besides the configuration options above, custom attributes can be passed over
 > configuration.
 
+Custom Attributes Examples
+
 | Attribute               | Description                                                                                                                                                                                 |
 |-------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `jndi.destination`      | JNDI destination identifier.                                                                                                                                                                |
-| `jndi.env-properties`   | Environment properties used for creating initial context `java.naming.factory.initial`, `java.naming.provider.url` …​                                                                       |
+| `jndi.env-properties`   | Environment properties used for creating initial context `java.naming.factory.initial`, `java.naming.provider.url` ...                                                                       |
 | `producer.someproperty` | property with producer prefix is set to producer instance (for example WLS Unit-of-Order `WLMessageProducer.setUnitOfOrder("unit-1")` can be configured as `producer.unit-of-order=unit-1`) |
-
-Custom Attributes Examples
 
 ### Configured JMS factory
 

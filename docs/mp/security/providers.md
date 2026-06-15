@@ -266,10 +266,10 @@ See <a href="https://tools.ietf.org/html/rfc7617" class="bare">https://tools.iet
 
 **Authentication of request**
 
-When a request is received without the `Authorization: basic …​.` header, a
+When a request is received without the `Authorization: basic ....` header, a
 challenge is returned to provide such authentication.
 
-When a request is received with the `Authorization: basic …​.` header, the
+When a request is received with the `Authorization: basic ....` header, the
 username and password is validated against configured users (and users obtained
 from custom service if any provided).
 
@@ -356,11 +356,11 @@ See https://tools.ietf.org/html/rfc7616.
 
 **Authentication of request**
 
-When a request is received without the `Authorization: digest …​.` header, a
+When a request is received without the `Authorization: digest ....` header, a
 challenge is returned to provide such authentication using `WWW-Authenticate`
 header.
 
-When a request is received with the `Authorization: digest …​.` header, the
+When a request is received with the `Authorization: digest ....` header, the
 request is validated against configured users (and users obtained from custom
 service if any provided).
 

@@ -31,13 +31,13 @@ The config system maintains a [`Config.Context`][config-context] for each
 `Config` node. Your application can retrieve the context by invoking the
 `Config.context()` method and then use it for these operations:
 
+Uses of `Config.Context`:
+
 | Method                | Usage                                                                                                                                        |
 |-----------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
 | `Instant timestamp()` | Returns the load time of the last loaded configuration that used the context.                                                                |
 | `Config last()`       | Returns the most recently loaded configuration that used the context.                                                                        |
 | `Config reload()`     | Reloads the entire config tree from the current contents of the same config sources used to load the tree in which the current node resides. |
-
-Uses of `Config.Context`
 
 Note that the config context describes or replaces a currently-loaded config
 tree. It by itself does not help your application decide *when* reloading the

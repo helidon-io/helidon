@@ -65,7 +65,7 @@ oci.auth-strategies=config-file,instance_principals,resource_principal
 
 OCI supports the following client authentication methods:
 
-- `auto` (default value): Cycles through all of the authentication types until
+- `auto` (default value): Cycles through all the authentication types until
   one succeeds. By default, this value is set to
   `config_file,instance_principals,resource_principal`.
 - `config_file`: Uses the user authentication specified in `~/.oci/config`.

@@ -2,8 +2,8 @@
 
 ## Overview
 
-For developers of Helidon services, OpenTelemetry’s components are—​in all
-respects—​just like any other group of libraries a developer might use from an
+For developers of Helidon services, OpenTelemetry’s components are in all
+respects just like any other group of libraries a developer might use from an
 application. That said, OpenTelemetry is very feature-rich, comprising several
 libraries and involving considerable flexibility in setting up its runtime
 behavior. As a result, developers sometimes find it challenging to get the
@@ -29,7 +29,7 @@ Helidon’s integration prepares the OpenTelemetry `GlobalOpenTelemetry` instanc
 according to the `telemetry` section in your Helidon configuration. Helidon also
 makes this instance available via Helidon declarative’s `@Service.Inject` and
 programmatically with `Services.get(OpenTelemetry.class)`. Your code then uses
-the global `OpenTelemetry` instance—​obtained in any of these ways—​as the entry
+the global `OpenTelemetry` instance obtained in any of these ways as the entry
 point to the OpenTelemetry API to work with metrics and spans.
 
 You can also optionally have Helidon provide the tracing spans and metrics
@@ -44,7 +44,7 @@ explains how to use the Helidon integration.
 
 The [OpenTelemetry auto-configure feature][opentelemetry-au] allows you to
 control many operational aspects of OpenTelemetry using environment variables,
-Java system properties, or—​with a little extra code—​config files rather than
+Java system properties, or with a little extra code config files rather than
 writing your own explicit Java code to prepare the runtime. Then your code can
 use the OpenTelemetry API as needed to manage tracing spans or metrics.
 
@@ -62,7 +62,7 @@ You can use the [OpenTelemetry API][opentelemetry-ap] exclusively (without
 auto-configure) to set up the OpenTelemetry runtime environment at start-up,
 then use the API to work with tracing spans or metrics.
 
-Your code has full control—​and therefore full responsibility—​for preparing
+Your code has full control and therefore full responsibility for preparing
 OpenTelemetry programmatically.
 
 ### Using the OpenTelemetry Java Agent with Helidon

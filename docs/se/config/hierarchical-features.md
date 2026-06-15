@@ -14,13 +14,13 @@ The config system represents configuration in memory using three types of nodes,
 each a different interface defined within the [`ConfigNode`][confignode]
 interface.
 
+`ConfigNode` Types:
+
 | Type   | Java Interface          | Usage                                                                         |
 |--------|-------------------------|-------------------------------------------------------------------------------|
 | object | `ConfigNode.ObjectNode` | Represents complex structure (a subtree). Its child nodes can be of any type. |
 | list   | `ConfigNode.ListNode`   | Represents a list of nodes. Its components can be of any type.                |
 | value  | `ConfigNode.ValueNode`  | Represents a leaf node.                                                       |
-
-`ConfigNode` Types
 
 A node of any type can have a `String` value.
 

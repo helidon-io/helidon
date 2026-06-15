@@ -55,8 +55,8 @@ steps.
 
 For each resource class in your application:
 
-1.  Identify the resources and sub-resources—​in other words, the
-    paths—​declared in the resource class which you want to support CORS.
+1.  Identify the resources and sub-resources, in other words, the
+    paths declared in the resource class which you want to support CORS.
 2.  For each of those resources and sub-resources which should support CORS:
     1.  Find or create a Java method annotated with `@OPTIONS` and with the
         correct `@Path`.
@@ -68,13 +68,13 @@ For each resource class in your application:
 > Use the `@Cors.*` annotations *only* on methods which also have the `@OPTIONS`
 > annotation. Remember that the CORS settings apply to a given path and
 > therefore to all Java resource methods which share that path.
->
-> Helidon MP aborts the server start-up if you use the `@Cors.*` annotations on
-> a resource method other than an `@OPTIONS` method.
->
-> For an informal look at the reasons for applying the `@Cors.*` annotations to
-> the `@OPTIONS` method, instead of another method, see [Why
-> `@OPTIONS`?](../../mp/cors/why-options.md).
+
+Helidon MP aborts the server start-up if you use the `@Cors.*` annotations on
+a resource method other than an `@OPTIONS` method.
+
+For an informal look at the reasons for applying the `@Cors.*` annotations to
+the `@OPTIONS` method, instead of another method, see
+[Why`@OPTIONS`?](../../mp/cors/why-options.md).
 
 The following annotations are available:
 
@@ -95,17 +95,16 @@ The following annotations are available:
 
 ## Configuration
 
-You can define CORS behavior—​and you or your users can override behavior
-declared in your code—​using configuration.
+You can define CORS behavior and you or your users can override behavior
+declared in your code using configuration.
 
 For each resource you want to configure, add a section to
 `META-INF/microprofile-config.properties` file:
 
 General form of CORS configuration:
 
-```properties
+```properties[microprofile-config.properties]
 cors.enabled= 
-
 cors.paths.i.path-pattern= 
 cors.paths.i.allow-headers=
 cors.paths.i.max-age= 
@@ -220,7 +219,7 @@ up the same CORS behavior.
 
 Using configuration to set up the same CORS behavior:
 
-```properties
+```properties[microprofile-config.properties]
 cors.paths.0.path-pattern=/greet 
 
 cors.paths.1.path-pattern=/greet/greeting 
@@ -237,7 +236,7 @@ from the `@Cors.*` annotations in the code.
 
 Using configuration to augment or override declared CORS behavior:
 
-```properties
+```properties[microprofile-config.properties]
 cors.paths.0.path-pattern=/greet 
 cors.paths.0.allow-methods=GET
 cors.paths.0.allow-origins=https://here.com,https://foo.com,https://there.com
@@ -260,7 +259,7 @@ cors.paths.1.allow-origins=https://foo.com
 The decisions the Helidon CORS feature makes depend on accurate information
 about each incoming request, particularly the host to which the request is sent.
 Conveyed as headers in the request, this information can be changed or
-overwritten by intermediate nodes—​such as load balancers—​between the origin of
+overwritten by intermediate nodes such as load balancers between the origin of
 the request and your service.
 
 Well-behaved intermediate nodes preserve this important data in other headers,
@@ -289,7 +288,7 @@ The following example restricts sharing of
 
 Configuration which restricts sharing of the health and metrics resources:
 
-```properties
+```properties[microprofile-config.properties]
 cors.paths.0.path-pattern=/health
 cors.paths.0.allow-origins=https://there.com
 cors.paths.1.path-pattern=/metrics

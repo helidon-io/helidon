@@ -159,7 +159,7 @@ minimal use to application developers, and they must be passed to the SmallRye U
 code programmatically. Helidon allows you to specify these values using
 configuration in the `mp.openapi.services.ui.options` section. Helidon then
 passes the corresponding options to SmallRye for you. To configure any of these
-settings, use the enum values—​they are all lower case—​declared in the SmallRye
+settings, use the enum values they are all lower case declared in the SmallRye
 [`Option.java`][option-java] class as the keys in your Helidon configuration.
 
 > [!NOTE]

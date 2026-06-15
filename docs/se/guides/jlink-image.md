@@ -187,7 +187,7 @@ docker build -t helidon-quickstart-se-jri -f Dockerfile.jlink .
 
 > [!TIP]
 > This does a full build inside the Docker container. The first time you run it,
-> it will take a while because it is downloading all of the Maven dependencies
+> it will take a while because it is downloading all the Maven dependencies
 > and caching them in a Docker layer. Subsequent builds will be much faster as
 > long as you don’t change the `pom.xml` file. If the pom is modified then the
 > dependencies will be re-downloaded.
@@ -202,7 +202,7 @@ You can exercise the application’s endpoints as before.
 
 ## Using Custom Runtime Images
 
-Custom runtime images are ideal for use when you want all of the runtime
+Custom runtime images are ideal for use when you want all the runtime
 performance of the JDK JVM in a reasonably compact form.
 
 For cases where absolute minimal startup time and image size are required, then

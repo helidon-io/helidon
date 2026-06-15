@@ -149,8 +149,8 @@ Access the health endpoint:
 curl -v http://localhost:8080/observe/health
 ```
 
-This time the `curl` output shows not only the HTTP status—​as 200 instead of
-204 because the response now contains data—​but also the detailed output for all
+This time the `curl` output shows not only the HTTP status as 200 instead of
+204 because the response now contains data but also the detailed output for all
 health checks.
 
 Health check details:
@@ -424,8 +424,8 @@ Earlier you added health config to the `application.yaml` config file to turn on
 detailed output. If you want to run an experiment, change that `details` setting
 in the config file to `false` and stop, rebuild, and rerun the application. Now
 access the health endpoint (at `/myhealth`, remember). The output *remains*
-detailed because your code—​which has full responsibility for determining the
-custom health observer’s behavior—​does not apply configuration to the custom
+detailed because your code which has full responsibility for determining the
+custom health observer’s behavior does not apply configuration to the custom
 observer’s builder.
 
 #### Adding configuration to a custom observer
@@ -454,11 +454,11 @@ HealthObserver healthObserver = HealthObserver.builder()
 
 Your code decides what config key to use for retrieving the configuration.
 Recall earlier, before adding custom health checks, you added a config section
-for health—​to set `details` to `true`--at
+for health to set `details` to `true`--at
 `server.features.observe.observers.health`. Helidon used that configuration to
 set up the health observer *it* created automatically. To be consistent for
 anyone preparing the configuration file, it’s a good idea for your application
-code—​as it prepares a custom `HealthObserver`--to look in the same place
+code as it prepares a custom `HealthObserver`--to look in the same place
 Helidon does for health config.
 
 Order is important. Here, the code first sets `details` to `true` explicitly and

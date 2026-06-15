@@ -118,7 +118,7 @@ mp.messaging:
       nack-dlq: dql_topic_name
 ```
 
-If a custom connection is needed, then use the 'nack-dlq' key for all of the
+If a custom connection is needed, then use the 'nack-dlq' key for all the
 producer configuration.
 
 Example of custom DLQ config:

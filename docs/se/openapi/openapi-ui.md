@@ -52,7 +52,7 @@ This dependency allows your application to create, configure, and register the
 ## Usage
 
 Make sure your application incorporates Helidon OpenAPI support as described in
-detail in [the Helidon OpenAPI documentation](../../se/openapi/openapi.md)).
+detail in [the Helidon OpenAPI documentation](../../se/openapi/openapi.md).
 Helidon automatically prepares the OpenAPI UI with default settings if you also
 declare a dependency on the Helidon OpenAPI UI integration component as
 explained above. The [API](#api) section below illustrates adding OpenAPI to
@@ -242,7 +242,7 @@ You can use configuration to affect the UI path in these ways:
     `/myopenapi` to return either the OpenAPI document or the UI.
 
 - Separately, configure the entire web context path for the UI independently
-  from the web context for OpenAPI.
+  of the web context for OpenAPI.
 
   Configuring the OpenAPI UI web context:
 
@@ -268,11 +268,11 @@ You can use configuration to affect the UI path in these ways:
     With this configuration, the UI responds at `/my-ui` regardless of the path for OpenAPI itself.
 
 The SmallRye OpenAPI UI component accepts several options, but they are of
-minimal use to application developers and they must be passed to the SmallRye UI
+minimal use to application developers, and they must be passed to the SmallRye UI
 code programmatically. Helidon allows you to specify these values using
 configuration in the `server.features.openapi.services.ui.options` section.
 Helidon then passes the corresponding options to SmallRye for you. To configure
-any of these settings, use the enum values—​they are all lower case—​declared in
+any of these settings, use the enum values they are all lower case declared in
 the SmallRye [`Option.java`][option-java] class as the keys in your Helidon
 configuration.
 

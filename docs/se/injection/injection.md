@@ -1120,17 +1120,17 @@ registry to trigger its initialization.
 
 Registry methods:
 
-- `T get(…​)` - immediately get an instance of a contract from the registry;
+- `T get(...)` - immediately get an instance of a contract from the registry;
   throws if implementation not available
-- `Optional<T> first(…​)` - immediately get an instance of a contract from the
+- `Optional<T> first(...)` - immediately get an instance of a contract from the
   registry; there may not be an implementation available
-- `List<T> all(…​)` - immediately get all instances of a contract from the
+- `List<T> all(...)` - immediately get all instances of a contract from the
   registry; result may be empty
-- `Supplier<T> supply(…​)` - get a supplier of an instance; the service may be
+- `Supplier<T> supply(...)` - get a supplier of an instance; the service may be
   instantiated only when `get` is called
-- `Supplier<Optional<T>> supplyFirst(…​)` - get a supplier of an optional
+- `Supplier<Optional<T>> supplyFirst(...)` - get a supplier of an optional
   instance
-- `Supplier<List<T>> supplyAll(…​)` - get a supplier of all instances
+- `Supplier<List<T>> supplyAll(...)` - get a supplier of all instances
 
 Lookup parameter options:
 
