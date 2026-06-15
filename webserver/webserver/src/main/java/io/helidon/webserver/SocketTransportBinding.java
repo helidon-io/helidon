@@ -73,7 +73,7 @@ abstract class SocketTransportBinding implements TransportBinding {
     private static final LazyValue<List<ServerConnectionSelectorProvider>> SELECTOR_PROVIDERS = LazyValue.create(() ->
             HelidonServiceLoader.create(ServiceLoader.load(ServerConnectionSelectorProvider.class)).asList());
 
-    private final TransportBindingContext listenerContext;
+    private final TransportBindingContext transportContext;
     private final String type;
     private final String name;
     private final String socketName;
@@ -98,16 +98,17 @@ abstract class SocketTransportBinding implements TransportBinding {
     private volatile Thread serverThread;
     private volatile CompletableFuture<Void> closeFuture;
 
-    SocketTransportBinding(TransportBindingContext listenerContext,
+    SocketTransportBinding(TransportBindingContext transportContext,
                            String type,
                            String name,
                            SocketAddress configuredAddress) {
-        this.listenerContext = Objects.requireNonNull(listenerContext, "listenerContext");
+        this.transportContext = Objects.requireNonNull(transportContext, "transportContext");
         this.type = Objects.requireNonNull(type, "type");
         this.name = Objects.requireNonNull(name, "name");
-        this.socketName = listenerContext.name();
+        ListenerContext listenerContext = Objects.requireNonNull(transportContext.listenerContext(), "listenerContext");
         this.listenerConfig = listenerContext.config();
-        this.idleConnectionTimer = listenerContext.timer();
+        this.socketName = listenerConfig.name();
+        this.idleConnectionTimer = transportContext.timer();
         this.configuredAddress = Objects.requireNonNull(configuredAddress, "configuredAddress");
         this.connectionOptions = listenerConfig.connectionOptions();
         ProtocolConfigs protocols = ProtocolConfigs.create(listenerConfig.protocols()
@@ -117,7 +118,7 @@ abstract class SocketTransportBinding implements TransportBinding {
         this.connectionProviders = ConnectionProviders.create(connectionSelectors(socketName, listenerConfig, protocols));
         this.tls = listenerConfig.tls().orElseGet(() -> Tls.builder().enabled(false).build());
         this.virtualHosts = VirtualHostRegistry.create(socketName, listenerConfig, tls);
-        this.requestLimit = listenerContext.requestLimit();
+        this.requestLimit = transportContext.requestLimit();
         this.connectionLimit = connectionLimit(listenerConfig);
         this.connectionLimit.init(limitContext(socketName));
     }
@@ -213,7 +214,7 @@ abstract class SocketTransportBinding implements TransportBinding {
 
     private SocketAddress bindAddress() {
         if (configuredAddress instanceof InetSocketAddress inetSocketAddress && inetSocketAddress.getPort() == 0) {
-            OptionalInt boundPort = listenerContext.boundPort();
+            OptionalInt boundPort = transportContext.boundPort();
             if (boundPort.isPresent() && boundPort.getAsInt() > 0) {
                 return withPort(inetSocketAddress, boundPort.getAsInt());
             }
@@ -632,13 +633,13 @@ abstract class SocketTransportBinding implements TransportBinding {
                         break;
                     }
                     SocketChannel socket = localServerSocket.accept();
-                    ConnectionHandler handler = new ConnectionHandler(listenerContext,
+                    ConnectionHandler handler = new ConnectionHandler(transportContext.listenerContext(),
                                                                       token,
                                                                       requestLimit,
                                                                       connectionProviders,
                                                                       socket,
                                                                       serverChannelId,
-                                                                      listenerContext.router(),
+                                                                      transportContext.router(),
                                                                       tls,
                                                                       virtualHosts,
                                                                       connectionHandlers::remove);
@@ -726,6 +727,6 @@ abstract class SocketTransportBinding implements TransportBinding {
 
     private void fatalBindingFailure(Throwable cause) {
         stopRequested();
-        listenerContext.fatalBindingFailure(this, cause);
+        transportContext.fatalBindingFailure(this, cause);
     }
 }

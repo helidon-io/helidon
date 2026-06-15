@@ -43,7 +43,7 @@ public interface TransportBindingFactory extends NamedService {
     }
 
     /**
-     * Whether this binding factory can bind with the current listener endpoint configuration.
+     * Whether this binding factory can bind with the current listener configuration.
      *
      * @param context listener binding planning view
      * @return whether this binding factory can bind for the listener

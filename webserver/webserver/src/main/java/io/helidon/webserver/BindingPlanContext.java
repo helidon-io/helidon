@@ -21,19 +21,9 @@ package io.helidon.webserver;
  */
 public interface BindingPlanContext {
     /**
-     * Listener name.
+     * Listener configuration.
      *
-     * @return listener name
+     * @return listener configuration
      */
-    String name();
-
-    /**
-     * Listener port.
-     * <p>
-     * If a port-capable binding has already bound a runtime port, this returns the bound port. Otherwise, this returns
-     * the configured listener port.
-     *
-     * @return listener port
-     */
-    int port();
+    ListenerConfig listenerConfig();
 }

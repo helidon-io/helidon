@@ -52,7 +52,7 @@ import io.helidon.webserver.spi.TransportBindingFactory;
 
 import static java.lang.System.Logger.Level.DEBUG;
 
-class ServerListener implements TransportBindingContext {
+class ServerListener implements TransportBindingContext, ListenerContext {
     private static final System.Logger LOGGER = System.getLogger(ServerListener.class.getName());
     private static final String EXPLICIT_SSL_CONTEXT_RELOAD_NOT_SUPPORTED =
             "TLS cannot be reloaded when an explicit instance of SSL context was used to create it";
@@ -182,6 +182,10 @@ class ServerListener implements TransportBindingContext {
     }
 
     @Override
+    public ListenerContext listenerContext() {
+        return this;
+    }
+
     public String name() {
         return socketName;
     }
@@ -367,7 +371,7 @@ class ServerListener implements TransportBindingContext {
     }
 
     private List<TransportBinding> planTransportBindings(List<ProtocolConfig> protocolConfigs) {
-        BindingPlanContext planContext = new ListenerBindingPlanContext(socketName);
+        BindingPlanContext planContext = new ListenerBindingPlanContext();
         List<TransportBinding> activeBindings = new ArrayList<>();
         Set<BindingConfigId> bindingConfigs = new LinkedHashSet<>();
         Set<String> bindingNames = new LinkedHashSet<>();
@@ -387,7 +391,7 @@ class ServerListener implements TransportBindingContext {
                                                                + " requires transport binding " + factory.name()
                                                                + " of type \"" + factory.type()
                                                                + "\", but this binding cannot bind with the listener "
-                                                               + "endpoint configuration");
+                                                               + "configuration");
                 }
                 continue;
             }
@@ -592,17 +596,6 @@ class ServerListener implements TransportBindingContext {
         throw new IllegalStateException("Failed to suspend listener for checkpoint", unwrapped);
     }
 
-    private int bindingPlanPort() {
-        OptionalInt boundPort = boundPort();
-        if (boundPort.isPresent()) {
-            return boundPort.getAsInt();
-        }
-        if (configuredAddress instanceof InetSocketAddress inetSocketAddress) {
-            return inetSocketAddress.getPort();
-        }
-        return Math.max(listenerConfig.port(), 0);
-    }
-
     private static BindingStopResult awaitBindingStops(List<BindingStop> bindingStops,
                                                        Duration gracefulPeriod,
                                                        long stopAtNanos) {
@@ -732,20 +725,9 @@ class ServerListener implements TransportBindingContext {
     }
 
     private final class ListenerBindingPlanContext implements BindingPlanContext {
-        private final String name;
-
-        private ListenerBindingPlanContext(String name) {
-            this.name = name;
-        }
-
         @Override
-        public String name() {
-            return name;
-        }
-
-        @Override
-        public int port() {
-            return bindingPlanPort();
+        public ListenerConfig listenerConfig() {
+            return listenerConfig;
         }
     }
 

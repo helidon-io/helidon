@@ -33,7 +33,6 @@ import io.helidon.webserver.spi.TransportBindingFactoryProvider;
 
 public class TestTransportBindingProvider implements TransportBindingFactoryProvider {
     private static final Map<String, BindingPlanContext> PLAN_CONTEXTS = new ConcurrentHashMap<>();
-    private static final Map<String, Integer> PORT_AT_PLAN = new ConcurrentHashMap<>();
     private static final Map<String, Integer> PORT_AT_CREATE = new ConcurrentHashMap<>();
     private static final Map<String, Integer> PORT_AT_START = new ConcurrentHashMap<>();
     private static final Map<String, Integer> BOUND_PORTS = new ConcurrentHashMap<>();
@@ -46,7 +45,6 @@ public class TestTransportBindingProvider implements TransportBindingFactoryProv
 
     static void reset() {
         PLAN_CONTEXTS.clear();
-        PORT_AT_PLAN.clear();
         PORT_AT_CREATE.clear();
         PORT_AT_START.clear();
         BOUND_PORTS.clear();
@@ -60,13 +58,9 @@ public class TestTransportBindingProvider implements TransportBindingFactoryProv
         EXECUTOR_TASKS_STARTED.clear();
     }
 
-    static int portAtPlan(String name) {
-        return PORT_AT_PLAN.getOrDefault(name, -1);
-    }
-
-    static int currentPlanPort(String name) {
+    static ListenerConfig listenerConfigAtPlan(String name) {
         BindingPlanContext context = PLAN_CONTEXTS.get(name);
-        return context == null ? -1 : context.port();
+        return context == null ? null : context.listenerConfig();
     }
 
     static int portAtCreate(String name) {
@@ -120,7 +114,6 @@ public class TestTransportBindingProvider implements TransportBindingFactoryProv
 
     static boolean canBind(TestTransportBindingConfig config, BindingPlanContext context) {
         PLAN_CONTEXTS.put(config.name(), context);
-        PORT_AT_PLAN.put(config.name(), context.port());
         return config.enabled();
     }
 
@@ -166,7 +159,7 @@ public class TestTransportBindingProvider implements TransportBindingFactoryProv
                 CountDownLatch started = new CountDownLatch(1);
                 PENDING_EXECUTOR_TASKS.put(config.name(), release);
                 EXECUTOR_TASKS_STARTED.put(config.name(), started);
-                context.executor().execute(() -> {
+                context.listenerContext().executor().execute(() -> {
                     started.countDown();
                     while (release.getCount() != 0) {
                         try {
@@ -178,7 +171,7 @@ public class TestTransportBindingProvider implements TransportBindingFactoryProv
                 });
             }
             if (config.fatalAfterStart()) {
-                context.executor()
+                context.listenerContext().executor()
                         .execute(() -> context.fatalBindingFailure(this,
                                                                    new IllegalStateException("test transport fatal failure "
                                                                                                      + config.name())));
