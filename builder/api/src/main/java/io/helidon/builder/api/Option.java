@@ -115,6 +115,10 @@ public final class Option {
      * {@link java.util.Optional} value, a list of values, or an optional list of values. A single value or optional
      * value must have at most one configured provider entry.
      * <p>
+     * Configured provider entries are validated before services are created. Each entry is uniquely identified by the
+     * configured provider {@code type} and {@code name}. Duplicate configured entries with the same {@code type} and
+     * {@code name} are invalid and result in configuration failure instead of silently ignoring a later entry.
+     * <p>
      * When using an optional list, an absent configuration node does not by itself set the optional value; the value
      * stays empty unless builder values or service discovery provide entries. An explicitly empty list or object
      * configuration node produces {@code Optional.of(List.of())}.
