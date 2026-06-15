@@ -77,10 +77,7 @@ class ServerListener implements ListenerContext {
             HelidonServiceLoader.create(ServiceLoader.load(ServerConnectionSelectorProvider.class)).asList());
     @SuppressWarnings("rawtypes")
     private static final LazyValue<List<TransportBindingProvider>> TRANSPORT_BINDING_PROVIDERS = LazyValue.create(() ->
-            HelidonServiceLoader.builder(ServiceLoader.load(TransportBindingProvider.class))
-                    .addService(new TcpTransportBindingProvider())
-                    .build()
-                    .asList());
+            HelidonServiceLoader.create(ServiceLoader.load(TransportBindingProvider.class)).asList());
 
     private final ConnectionProviders connectionProviders;
     private final String socketName;
