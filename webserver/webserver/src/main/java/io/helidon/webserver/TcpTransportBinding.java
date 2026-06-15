@@ -25,8 +25,8 @@ import io.helidon.webserver.spi.PortTransportBinding;
 final class TcpTransportBinding extends SocketTransportBinding implements PortTransportBinding {
     static final String TYPE = "tcp";
 
-    TcpTransportBinding(TransportBindingContext listenerContext, TcpTransportConfig config) {
-        super(listenerContext, TYPE, configName(config), configuredAddress(listenerContext.config()));
+    TcpTransportBinding(TransportBindingContext transportContext, TcpTransportConfig config) {
+        super(transportContext, TYPE, configName(config), configuredAddress(transportContext.listenerContext().config()));
     }
 
     private static String configName(TcpTransportConfig config) {

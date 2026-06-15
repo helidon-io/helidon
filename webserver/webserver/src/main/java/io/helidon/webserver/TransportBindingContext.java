@@ -25,13 +25,13 @@ import io.helidon.webserver.spi.TransportBinding;
 /**
  * Context shared with listener transport bindings.
  */
-public interface TransportBindingContext extends ListenerContext {
+public interface TransportBindingContext {
     /**
-     * Name of the logical listener.
+     * Logical listener context.
      *
-     * @return listener name
+     * @return listener context
      */
-    String name();
+    ListenerContext listenerContext();
 
     /**
      * Router shared by the logical listener.

@@ -990,7 +990,9 @@ class ServerListenerLifecycleTest {
 
         try {
             assertThat(TestTransportBindingProvider.portAtStart(TestTransportBindingConfig.TYPE), is(-1));
-            assertThat(TestTransportBindingProvider.currentPlanPort(TestTransportBindingConfig.TYPE), is(server.port()));
+            ListenerConfig listenerConfig = TestTransportBindingProvider.listenerConfigAtPlan(TestTransportBindingConfig.TYPE);
+            assertThat(listenerConfig, notNullValue());
+            assertThat(listenerConfig.name(), is(WebServer.DEFAULT_SOCKET_NAME));
         } finally {
             stopUntilStopped(server);
         }
@@ -1008,22 +1010,19 @@ class ServerListenerLifecycleTest {
     }
 
     @Test
-    void bindingPlanContextUsesConfiguredPortBeforeStart() {
+    void bindingPlanContextExposesListenerConfig() {
         TestTransportBindingProvider.reset();
         InetAddress address = InetAddress.getLoopbackAddress();
-        WebServer server = WebServer.builder()
+        WebServer.builder()
                 .shutdownHook(false)
                 .address(address)
                 .port(0)
                 .addBinding(new TestTransportBindingConfig(TestTransportBindingConfig.TYPE, true))
-                .build()
-                .start();
+                .build();
 
-        try {
-            assertThat(TestTransportBindingProvider.portAtPlan(TestTransportBindingConfig.TYPE), is(0));
-        } finally {
-            stopUntilStopped(server);
-        }
+        ListenerConfig listenerConfig = TestTransportBindingProvider.listenerConfigAtPlan(TestTransportBindingConfig.TYPE);
+        assertThat(listenerConfig, notNullValue());
+        assertThat(listenerConfig.address(), is(address));
     }
 
     @Test
