@@ -131,15 +131,59 @@ class OpenApi30DocumentMapperTest {
                                                         "content", Map.of(
                                                                 "application/json", Map.of(
                                                                         "schema", Map.of("type", "object"),
+                                                                        "examples", Map.of(
+                                                                                "StaticExample", Map.of(
+                                                                                        "value", Map.of("message", "ok"),
+                                                                                        "x-example", "keep")),
+                                                                        "encoding", Map.of(
+                                                                                "payload", Map.of(
+                                                                                        "contentType", "application/json",
+                                                                                        "x-encoding", "keep")),
                                                                         "x-media", true)),
-                                                        "x-static-response", "preserved")))))));
+                                                        "links", Map.of(
+                                                                "StaticLink", Map.of(
+                                                                        "operationId", "followUp",
+                                                                        "x-link", "keep")),
+                                                        "x-static-response", "preserved"))))),
+                "components", Map.of(
+                        "parameters", Map.of(
+                                "GatewayPolicy", Map.of(
+                                        "name", "policy",
+                                        "in", "query",
+                                        "schema", Map.of("type", "string"),
+                                        "x-gateway-policy", "preserved")),
+                        "requestBodies", Map.of(
+                                "CodegenRequest", Map.of(
+                                        "content", Map.of(
+                                                "application/json", Map.of(
+                                                        "schema", Map.of("type", "object"))),
+                                        "x-codegen-request", true)),
+                        "securitySchemes", Map.of(
+                                "AmazonAuth", Map.of(
+                                        "type", "http",
+                                        "scheme", "bearer",
+                                        "x-amazon-apigateway-authtype", "custom")))));
         Map<String, Object> rendered = OpenApi30DocumentMapper.render(document, "3.0.3");
         Map<String, Object> response = map(map(map(map(rendered, "paths"), "/static"), "get"), "responses");
         Map<String, Object> okResponse = map(response, "200");
+        Map<String, Object> content = map(map(okResponse, "content"), "application/json");
+        Map<String, Object> example = map(map(content, "examples"), "StaticExample");
+        Map<String, Object> encoding = map(map(content, "encoding"), "payload");
+        Map<String, Object> link = map(map(okResponse, "links"), "StaticLink");
+        Map<String, Object> components = map(rendered, "components");
+        Map<String, Object> parameter = map(map(components, "parameters"), "GatewayPolicy");
+        Map<String, Object> requestBody = map(map(components, "requestBodies"), "CodegenRequest");
+        Map<String, Object> securityScheme = map(map(components, "securitySchemes"), "AmazonAuth");
 
         assertThat(okResponse.get("x-static-response"), is("preserved"));
         assertThat(map(map(okResponse, "headers"), "X-Trace").get("x-header"), is(true));
-        assertThat(map(map(okResponse, "content"), "application/json").get("x-media"), is(true));
+        assertThat(content.get("x-media"), is(true));
+        assertThat(example.get("x-example"), is("keep"));
+        assertThat(encoding.get("x-encoding"), is("keep"));
+        assertThat(link.get("x-link"), is("keep"));
+        assertThat(parameter.get("x-gateway-policy"), is("preserved"));
+        assertThat(requestBody.get("x-codegen-request"), is(true));
+        assertThat(securityScheme.get("x-amazon-apigateway-authtype"), is("custom"));
     }
 
     @Test

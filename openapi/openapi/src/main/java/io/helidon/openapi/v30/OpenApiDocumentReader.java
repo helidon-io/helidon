@@ -223,6 +223,7 @@ public final class OpenApiDocumentReader {
         object(source, "content", content -> content.keysAsStrings()
                 .forEach(mediaType -> object(content, mediaType,
                                              value -> builder.content(mediaType, mediaType(value)))));
+        extensions(source, builder::extension);
         return builder.build();
     }
 
@@ -263,6 +264,7 @@ public final class OpenApiDocumentReader {
                 .forEach(mediaType -> object(content, mediaType,
                                              value -> builder.content(mediaType, mediaType(value)))));
         bool(source, "required", builder::required);
+        extensions(source, builder::extension);
         return builder.build();
     }
 
@@ -318,6 +320,7 @@ public final class OpenApiDocumentReader {
         string(source, "style", builder::style);
         bool(source, "explode", builder::explode);
         bool(source, "allowReserved", builder::allowReserved);
+        extensions(source, builder::extension);
         return builder.build();
     }
 
@@ -334,6 +337,7 @@ public final class OpenApiDocumentReader {
         value(source, "dataValue", builder::dataValue);
         string(source, "serializedValue", builder::serializedValue);
         string(source, "externalValue", builder::externalValue);
+        extensions(source, builder::extension);
         return builder.build();
     }
 
@@ -350,6 +354,7 @@ public final class OpenApiDocumentReader {
         value(source, "requestBody", builder::requestBody);
         string(source, "description", builder::description);
         object(source, "server", server -> builder.server(server(server)));
+        extensions(source, builder::extension);
         return builder.build();
     }
 
@@ -397,6 +402,7 @@ public final class OpenApiDocumentReader {
         string(source, "openIdConnectUrl", builder::openIdConnectUrl);
         string(source, "oauth2MetadataUrl", builder::oauth2MetadataUrl);
         bool(source, "deprecated", builder::deprecated);
+        extensions(source, builder::extension);
         return builder.build();
     }
 

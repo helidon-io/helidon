@@ -341,6 +341,39 @@ class OpenApiDuplicateValuesCodegenTest {
     }
 
     @Test
+    void genericHttpSecuritySchemeWithConfiguredTypeAndSchemeGuardsBearerFormat() throws IOException {
+        var result = compile("openapi-generic-http-security-scheme-configured-type-scheme-bearer-format", """
+                @OpenApi.SecurityScheme(name = "bearerAuth",
+                                        type = "${security.type:http}",
+                                        scheme = "${auth.scheme}",
+                                        bearerFormat = "JWT")
+                @OpenApi.Document
+                @OpenApi.Info(title = "Test", version = "1.0")
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/valid")
+                class ValidOpenApiEndpoint {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        String generated = generatedSource(result);
+        assertThat(generated, containsString("String resolvedScheme = io.helidon.openapi.OpenApiDocumentContextSupport"
+                                                     + ".resolveExpression(context, \"${auth.scheme}\");"));
+        assertThat(generated, containsString("security.type(\"http\");"));
+        assertThat(generated, containsString("security.scheme(resolvedScheme);"));
+        assertThat(generated, containsString("if (\"bearer\".equalsIgnoreCase(resolvedScheme)) {"));
+        assertThat(generated, containsString("security.bearerFormat(io.helidon.openapi.OpenApiDocumentContextSupport"
+                                                     + ".resolveExpression(context, \"JWT\"));"));
+    }
+
+    @Test
     void typedSecuritySchemesGenerateComponents() throws IOException {
         var result = compile("openapi-typed-security-schemes", """
                 @OpenApi.ApiKeySecurityScheme(name = "apiKeyAuth",

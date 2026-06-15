@@ -99,11 +99,12 @@ final class OpenApiSecuritySchemeCodegen {
         String type = scheme.stringValue("type")
                 .filter(not(String::isBlank))
                 .orElseThrow(() -> new CodegenException(scheme.annotationName() + " type is required"));
+        String resolvedType = validator.expressionDefaultValue(type);
         Optional<String> securityScheme = scheme.stringValue("scheme")
                 .filter(not(String::isBlank));
         Optional<String> bearerFormat = scheme.stringValue("bearerFormat")
                 .filter(not(String::isBlank));
-        if ("http".equals(type)
+        if ("http".equals(resolvedType)
                 && securityScheme.filter(value -> value.startsWith("${")).isPresent()
                 && bearerFormat.isPresent()) {
             method.addContent("document.components(components -> components.securityScheme(")

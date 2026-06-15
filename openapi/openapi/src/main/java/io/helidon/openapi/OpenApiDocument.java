@@ -2227,6 +2227,20 @@ public final class OpenApiDocument {
             return content(mediaType, builder.build());
         }
 
+        /**
+         * Add an extension.
+         * <p>
+         * Extension names must start with {@code x-}.
+         *
+         * @param name extension name
+         * @param value extension value
+         * @return updated builder
+         */
+        public ParameterBuilder extension(String name, JsonValue value) {
+            OpenApiDocument.extension(node, name, value);
+            return this;
+        }
+
         private Map<String, Object> toNode() {
             return node;
         }
@@ -2579,6 +2593,20 @@ public final class OpenApiDocument {
          */
         public RequestBodyBuilder required(boolean required) {
             node.put("required", required);
+            return this;
+        }
+
+        /**
+         * Add an extension.
+         * <p>
+         * Extension names must start with {@code x-}.
+         *
+         * @param name extension name
+         * @param value extension value
+         * @return updated builder
+         */
+        public RequestBodyBuilder extension(String name, JsonValue value) {
+            OpenApiDocument.extension(node, name, value);
             return this;
         }
 
@@ -3089,6 +3117,20 @@ public final class OpenApiDocument {
             return this;
         }
 
+        /**
+         * Add an extension.
+         * <p>
+         * Extension names must start with {@code x-}.
+         *
+         * @param name extension name
+         * @param value extension value
+         * @return updated builder
+         */
+        public EncodingBuilder extension(String name, JsonValue value) {
+            OpenApiDocument.extension(node, name, value);
+            return this;
+        }
+
         @Override
         public Encoding build() {
             return new Encoding(node);
@@ -3214,6 +3256,20 @@ public final class OpenApiDocument {
          */
         public ExampleBuilder externalValue(String externalValue) {
             node.put("externalValue", Objects.requireNonNull(externalValue));
+            return this;
+        }
+
+        /**
+         * Add an extension.
+         * <p>
+         * Extension names must start with {@code x-}.
+         *
+         * @param name extension name
+         * @param value extension value
+         * @return updated builder
+         */
+        public ExampleBuilder extension(String name, JsonValue value) {
+            OpenApiDocument.extension(node, name, value);
             return this;
         }
 
@@ -3353,6 +3409,20 @@ public final class OpenApiDocument {
          */
         public LinkBuilder server(Server server) {
             node.put("server", Objects.requireNonNull(server).toNode());
+            return this;
+        }
+
+        /**
+         * Add an extension.
+         * <p>
+         * Extension names must start with {@code x-}.
+         *
+         * @param name extension name
+         * @param value extension value
+         * @return updated builder
+         */
+        public LinkBuilder extension(String name, JsonValue value) {
+            OpenApiDocument.extension(node, name, value);
             return this;
         }
 
@@ -3839,6 +3909,20 @@ public final class OpenApiDocument {
          */
         public SecuritySchemeBuilder deprecated(boolean deprecated) {
             node.put("deprecated", deprecated);
+            return this;
+        }
+
+        /**
+         * Add an extension.
+         * <p>
+         * Extension names must start with {@code x-}.
+         *
+         * @param name extension name
+         * @param value extension value
+         * @return updated builder
+         */
+        public SecuritySchemeBuilder extension(String name, JsonValue value) {
+            OpenApiDocument.extension(node, name, value);
             return this;
         }
 
