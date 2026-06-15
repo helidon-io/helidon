@@ -379,6 +379,9 @@ class WebServerConfigSupport {
         @Prototype.ConfigFactoryMethod("bindAddress")
         static SocketAddress createBindAddress(Config config) {
             String address = config.asString().get();
+            if (address.startsWith("unix:/")) {
+                return UnixDomainSocketAddress.of(address.substring("unix:".length()));
+            }
             int col = address.indexOf(':');
             // must be localhost:8080 or similar
             String host;

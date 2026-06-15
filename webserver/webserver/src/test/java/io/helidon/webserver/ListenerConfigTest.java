@@ -48,6 +48,21 @@ public class ListenerConfigTest {
     }
 
     @Test
+    void testLegacyUnixBindAddressConfigFailsWithUdsBindingGuidance() {
+        Config config = Config.just("""
+                server:
+                  bind-address: "unix:/tmp/server.sock"
+                """, MediaTypes.APPLICATION_YAML);
+
+        ConfigException failure = assertThrows(ConfigException.class, () -> ListenerConfig.builder()
+                .config(config.get("server"))
+                .buildPrototype());
+
+        assertThat(failure.getMessage(), containsString("bindings.uds.socket"));
+        assertThat(failure.getMessage(), containsString("bindings.tcp.enabled=false"));
+    }
+
+    @Test
     void testListenerConfig() {
         Config config = Config.create();
         var webServerConfig = WebServer.builder().config(config.get("server")).buildPrototype();
