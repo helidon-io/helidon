@@ -52,7 +52,7 @@ import io.helidon.webserver.spi.TransportBindingFactoryProvider;
 @Prototype.Configured
 @Prototype.Blueprint(decorator = WebServerConfigSupport.ListenerConfigDecorator.class)
 @Prototype.CustomMethods(WebServerConfigSupport.ListenerCustomMethods.class)
-@Prototype.IncludeDefaultMethods("bindings")
+@Prototype.IncludeDefaultMethods({"bindings", "maxConnections"})
 interface ListenerConfigBlueprint {
     /**
      * Configuration of protocols. This may be either protocol selectors, or protocol upgraders from HTTP/1.1.
@@ -291,7 +291,9 @@ interface ListenerConfigBlueprint {
      */
     @Option.Required
     @Option.Configured
-    int maxConnections();
+    default int maxConnections() {
+        return -1;
+    }
 
     /**
      * Limits the number of connection permits that this listener may reserve before accepting sockets.
