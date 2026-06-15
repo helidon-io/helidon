@@ -54,7 +54,6 @@ import io.helidon.service.registry.Service;
 import io.helidon.spi.HelidonShutdownHandler;
 import io.helidon.webserver.http.DirectHandlers;
 import io.helidon.webserver.spi.ServerFeature;
-import io.helidon.webserver.spi.TransportBinding;
 
 @Service.Singleton
 class LoomServer implements WebServer, Resumable {
@@ -64,7 +63,7 @@ class LoomServer implements WebServer, Resumable {
 
     private final Map<String, ServerListener> listeners;
     private final AtomicBoolean running = new AtomicBoolean();
-    private final AtomicBoolean fatalBindingFailureReported = new AtomicBoolean();
+    private final AtomicBoolean fatalListenerFailureReported = new AtomicBoolean();
     private final Lock lifecycleLock = new ReentrantLock();
     private final ExecutorService executorService;
     private final Context context;
@@ -118,7 +117,7 @@ class LoomServer implements WebServer, Resumable {
                                                serverConfig.mediaContext().orElseGet(MediaContext::create),
                                                serverConfig.contentEncoding().orElseGet(ContentEncodingContext::create),
                                                serverConfig.directHandlers().orElseGet(DirectHandlers::create),
-                                               this::fatalBindingFailure));
+                                               this::fatalListenerFailure));
         });
 
         validateRoutingsHaveNamedListener(serverConfig, listenerMap.keySet());
@@ -340,34 +339,33 @@ class LoomServer implements WebServer, Resumable {
         return result;
     }
 
-    private void fatalBindingFailure(ServerListener listener, TransportBinding binding, Throwable cause) {
+    private void fatalListenerFailure(ServerListener listener, Throwable cause) {
         Objects.requireNonNull(listener, "listener");
-        Objects.requireNonNull(binding, "binding");
         Objects.requireNonNull(cause, "cause");
-        if (!fatalBindingFailureReported.compareAndSet(false, true)) {
+        if (!fatalListenerFailureReported.compareAndSet(false, true)) {
             return;
         }
         LOGGER.log(System.Logger.Level.ERROR,
-                   "Fatal failure in listener " + listener + " binding " + binding.name(),
+                   "Fatal failure in listener " + listener,
                    cause);
         try {
-            executorService.execute(() -> stopAfterFatalBindingFailure(cause));
+            executorService.execute(() -> stopAfterFatalListenerFailure(cause));
         } catch (RejectedExecutionException e) {
             cause.addSuppressed(e);
-            stopAfterFatalBindingFailure(cause);
+            stopAfterFatalListenerFailure(cause);
         }
     }
 
-    private void stopAfterFatalBindingFailure(Throwable cause) {
+    private void stopAfterFatalListenerFailure(Throwable cause) {
         Throwable failure = LifecycleFailures.add(null, cause);
         try {
             lifecycleLock.lockInterruptibly();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             failure = LifecycleFailures.add(failure,
-                                            new IllegalStateException("Interrupted while stopping after fatal transport "
-                                                                              + "binding failure", e));
-            LOGGER.log(System.Logger.Level.ERROR, "Failed to stop after fatal transport binding failure", failure);
+                                            new IllegalStateException("Interrupted while stopping after fatal listener failure",
+                                                                      e));
+            LOGGER.log(System.Logger.Level.ERROR, "Failed to stop after fatal listener failure", failure);
             return;
         }
         try {
@@ -382,7 +380,7 @@ class LoomServer implements WebServer, Resumable {
             lifecycleLock.unlock();
         }
         if (failure != null) {
-            LOGGER.log(System.Logger.Level.ERROR, "Stopped after fatal transport binding failure", failure);
+            LOGGER.log(System.Logger.Level.ERROR, "Stopped after fatal listener failure", failure);
         }
     }
 

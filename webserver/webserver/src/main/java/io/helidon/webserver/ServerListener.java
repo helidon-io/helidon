@@ -68,7 +68,7 @@ class ServerListener implements TransportBindingContext, ListenerContext {
     private final SocketAddress configuredAddress;
     private final Duration gracePeriod;
     private final Timer idleConnectionTimer;
-    private final FatalBindingFailureHandler fatalBindingFailureHandler;
+    private final FatalListenerFailureHandler fatalListenerFailureHandler;
     private final List<TransportBinding> transportBindings;
 
     private final MediaContext mediaContext;
@@ -94,7 +94,7 @@ class ServerListener implements TransportBindingContext, ListenerContext {
              defaultMediaContext,
              defaultContentEncodingContext,
              defaultDirectHandlers,
-             (listener, binding, cause) -> listener.stop());
+             (listener, cause) -> listener.stop());
     }
 
     ServerListener(String socketName,
@@ -105,7 +105,7 @@ class ServerListener implements TransportBindingContext, ListenerContext {
                    MediaContext defaultMediaContext,
                    ContentEncodingContext defaultContentEncodingContext,
                    DirectHandlers defaultDirectHandlers,
-                   FatalBindingFailureHandler fatalBindingFailureHandler) {
+                   FatalListenerFailureHandler fatalListenerFailureHandler) {
 
         List<ProtocolConfig> protocolConfigs = listenerConfig.protocols();
         if (listenerConfig.maxConcurrentRequests() == -1) {
@@ -147,7 +147,7 @@ class ServerListener implements TransportBindingContext, ListenerContext {
 
         this.router = router;
         this.idleConnectionTimer = idleConnectionTimer;
-        this.fatalBindingFailureHandler = Objects.requireNonNull(fatalBindingFailureHandler, "fatalBindingFailureHandler");
+        this.fatalListenerFailureHandler = Objects.requireNonNull(fatalListenerFailureHandler, "fatalListenerFailureHandler");
         this.transportBindings = planTransportBindings(protocolConfigs);
     }
 
@@ -239,7 +239,11 @@ class ServerListener implements TransportBindingContext, ListenerContext {
     public void fatalBindingFailure(TransportBinding binding, Throwable cause) {
         Objects.requireNonNull(binding, "binding");
         Objects.requireNonNull(cause, "cause");
-        fatalBindingFailureHandler.handle(this, binding, cause);
+        fatalListenerFailureHandler.handle(this,
+                                           new IllegalStateException("Fatal failure in transport binding " + binding.name()
+                                                                             + " of type \"" + binding.type() + "\" at "
+                                                                             + binding.configuredEndpoint(),
+                                                                     cause));
     }
 
     void stop() {
@@ -741,8 +745,8 @@ class ServerListener implements TransportBindingContext, ListenerContext {
     }
 
     @FunctionalInterface
-    interface FatalBindingFailureHandler {
-        void handle(ServerListener listener, TransportBinding binding, Throwable cause);
+    interface FatalListenerFailureHandler {
+        void handle(ServerListener listener, Throwable cause);
     }
 
 }
