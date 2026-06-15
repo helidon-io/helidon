@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2026 Oracle and/or its affiliates. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -722,7 +722,7 @@ public final class SecurityHandler implements Handler {
      * @return new handler instance with configuration of this instance updated with this method
      */
     public SecurityHandler authenticator(String explicitAuthenticator) {
-        return builder(this).authenticator(explicitAuthenticator).build();
+        return builder(this).authenticator(explicitAuthenticator).authenticate(true).build();
     }
 
     /**
