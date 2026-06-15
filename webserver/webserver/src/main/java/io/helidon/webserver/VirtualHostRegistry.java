@@ -108,8 +108,16 @@ final class VirtualHostRegistry {
         }
     }
 
+    void validateConfiguredHost(String configuredHost) {
+        hostEntry(configuredHost);
+    }
+
     void reloadTls(TlsMaterial material, String configuredHost) {
         Objects.requireNonNull(material, "material");
+        hostEntry(configuredHost).tls().reload(material);
+    }
+
+    private HostEntry hostEntry(String configuredHost) {
         HostEntry.HostKey key = HostEntry.key(configuredHost);
         Map<String, HostEntry> target = key.wildcard() ? wildcardHosts : exactHosts;
         HostEntry entry = target.get(key.indexKey());
@@ -117,7 +125,7 @@ final class VirtualHostRegistry {
             throw new IllegalArgumentException("Virtual host " + key.configuredHost()
                                                        + " is not configured on listener " + socketName);
         }
-        entry.tls().reload(material);
+        return entry;
     }
 
     Selection select(String presentedHost) {

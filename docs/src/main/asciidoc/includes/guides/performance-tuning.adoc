@@ -47,7 +47,7 @@ server:
   # For throughput limiting, use server.concurrency-limit.throughput.amount (0 is unlimited) with a matching duration.
   # Pre-accept connection admission capacity. A permit is reserved before accept and
   # released after handling, or if configuring/submitting the accepted socket fails.
-  max-tcp-connections: NNNN     # 0 or -1 is unlimited.
+  max-connections: NNNN         # 0 or -1 is unlimited.
   max-in-memory-entity: NNNNNN  # Entities smaller than this are buffered in memory vs streamed (bytes)
   max-payload-size: NNNNNNN     # Reject requests with payload sizes greater than this. -1 is unlimited (bytes)
 

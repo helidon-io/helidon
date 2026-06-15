@@ -27,7 +27,6 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -783,19 +782,15 @@ public class UnixDomainSocketTest {
     }
 
     private static Path socketPath(String name) {
-        String base = System.getProperty("java.io.tmpdir") + "/" + name;
-        String suffix = ".sock";
-
-        for (int i = 0; i < 100; i++) {
-            String tryit = base + (i == 0 ? "" : String.valueOf(i)) + suffix;
-            Path path = Paths.get(tryit);
-            if (!Files.exists(path)) {
-                return path;
-            }
+        try {
+            Path directory = Files.createTempDirectory("huds-");
+            Path path = directory.resolve("s" + Integer.toUnsignedString(name.hashCode(), 36) + ".sock");
+            directory.toFile().deleteOnExit();
+            path.toFile().deleteOnExit();
+            return path;
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
         }
-
-        fail("Failed to find a free UNIX domain socket path. Tried 100 possibilities for " + base + suffix);
-        throw new IllegalStateException("Unreachable");
     }
 
     private static Path newSocketPath(String name) {

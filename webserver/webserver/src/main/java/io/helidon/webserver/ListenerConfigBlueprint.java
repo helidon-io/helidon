@@ -287,8 +287,20 @@ interface ListenerConfigBlueprint {
      * Defaults to {@code -1}, meaning "unlimited" - what the system allows.
      * {@code 0} has the same meaning as {@code -1} - unlimited number of connections.
      *
-     * @return pre-accept TCP connection admission capacity for this listener, regardless of protocol
+     * @return pre-accept connection admission capacity for this listener, regardless of transport binding or protocol
      */
+    @Option.Required
+    @Option.Configured
+    int maxConnections();
+
+    /**
+     * Limits the number of connection permits that this listener may reserve before accepting sockets.
+     *
+     * @return pre-accept connection admission capacity for this listener
+     * @deprecated use {@link #maxConnections()}
+     */
+    @Deprecated(forRemoval = true, since = "27.0.0")
+    @Option.Deprecated("maxConnections")
     @Option.Configured
     @Option.DefaultInt(-1)
     int maxTcpConnections();

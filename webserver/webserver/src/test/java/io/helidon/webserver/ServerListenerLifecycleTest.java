@@ -1127,7 +1127,7 @@ class ServerListenerLifecycleTest {
                 .shutdownHook(false)
                 .bindingsDiscoverServices(false)
                 .shutdownGracePeriod(Duration.ofMillis(1))
-                .addBinding(new TestTransportBindingConfig("hanging", true, false, false, false, true, false))
+                .addBinding(new TestTransportBindingConfig("hanging", true, false, false, true, false))
                 .build()
                 .start();
 
@@ -1221,8 +1221,8 @@ class ServerListenerLifecycleTest {
                 .shutdownHook(false)
                 .bindingsDiscoverServices(false)
                 .shutdownGracePeriod(Duration.ofMillis(1))
-                .addBinding(new TestTransportBindingConfig("first", true, false, false, false, true, false, false))
-                .addBinding(TestTransportBindingConfig.alternate("second", true, false, false, false, true, false, false))
+                .addBinding(new TestTransportBindingConfig("first", true, false, false, true, false))
+                .addBinding(TestTransportBindingConfig.alternate("second", true, false, false, true, false))
                 .build()
                 .start();
 
@@ -1681,7 +1681,7 @@ class ServerListenerLifecycleTest {
                         .address(address)
                         .port(0)
                         .bindingsDiscoverServices(false)
-                        .addBinding(new TestTransportBindingConfig("test", true, false, false, false, false, false, true))
+                        .addBinding(new TestTransportBindingConfig("test", true, false, false, false, true))
                         .addBinding(TcpTransportConfig.builder()
                                             .name("primary")
                                             .required(true)

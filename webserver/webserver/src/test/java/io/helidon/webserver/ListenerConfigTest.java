@@ -19,6 +19,7 @@ package io.helidon.webserver;
 import java.net.UnixDomainSocketAddress;
 import java.util.List;
 
+import io.helidon.common.media.type.MediaTypes;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigException;
 import io.helidon.webserver.spi.TransportBindingFactory;
@@ -72,6 +73,71 @@ public class ListenerConfigTest {
                 .buildPrototype();
 
         assertThat(bindingDescriptions(listenerConfig), not(hasItem(DISCOVERED_TEST_BINDING)));
+    }
+
+    @Test
+    void testDeprecatedMaxTcpConnectionsConfiguresMaxConnections() {
+        Config config = Config.just("""
+                server:
+                  max-tcp-connections: 23
+                """, MediaTypes.APPLICATION_YAML);
+
+        ListenerConfig listenerConfig = ListenerConfig.builder()
+                .config(config.get("server"))
+                .buildPrototype();
+
+        assertThat(listenerConfig.maxConnections(), is(23));
+    }
+
+    @Test
+    void testMaxConnectionsOverridesDeprecatedMaxTcpConnections() {
+        Config config = Config.just("""
+                server:
+                  max-connections: 42
+                  max-tcp-connections: 23
+                """, MediaTypes.APPLICATION_YAML);
+
+        ListenerConfig listenerConfig = ListenerConfig.builder()
+                .config(config.get("server"))
+                .buildPrototype();
+
+        assertThat(listenerConfig.maxConnections(), is(42));
+    }
+
+    @Test
+    void testMaxConnectionsDefaultValueOverridesDeprecatedMaxTcpConnections() {
+        Config config = Config.just("""
+                server:
+                  max-connections: -1
+                  max-tcp-connections: 23
+                """, MediaTypes.APPLICATION_YAML);
+
+        ListenerConfig listenerConfig = ListenerConfig.builder()
+                .config(config.get("server"))
+                .buildPrototype();
+
+        assertThat(listenerConfig.maxConnections(), is(-1));
+    }
+
+    @Test
+    @SuppressWarnings("removal")
+    void testDeprecatedMaxTcpConnectionsBuilderConfiguresMaxConnections() {
+        ListenerConfig listenerConfig = ListenerConfig.builder()
+                .maxTcpConnections(23)
+                .buildPrototype();
+
+        assertThat(listenerConfig.maxConnections(), is(23));
+    }
+
+    @Test
+    @SuppressWarnings("removal")
+    void testMaxConnectionsBuilderOverridesDeprecatedMaxTcpConnections() {
+        ListenerConfig listenerConfig = ListenerConfig.builder()
+                .maxConnections(-1)
+                .maxTcpConnections(23)
+                .buildPrototype();
+
+        assertThat(listenerConfig.maxConnections(), is(-1));
     }
 
     // Verify that value of server2.shutdown-grace-period is present in ListenerConfiguration instance

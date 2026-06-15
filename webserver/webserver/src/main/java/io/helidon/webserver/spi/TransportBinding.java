@@ -57,8 +57,8 @@ public interface TransportBinding {
     /**
      * Transport security applied by this binding.
      * <p>
-     * Bindings that return {@link Security#TLS} must apply listener TLS configuration and must also implement
-     * {@link TlsTransportBinding}. Bindings that are protected without listener TLS should return
+     * Bindings that return {@link Security#TLS} must use listener TLS configuration, including listener virtual host TLS
+     * configuration when present. Bindings that are protected without listener TLS should return
      * {@link Security#TLS_EQUIVALENT}. Bindings that do not provide transport security should return
      * {@link Security#UNPROTECTED}.
      *

@@ -208,12 +208,15 @@ class LoomServer implements WebServer, Resumable {
 
     @Override
     public void reloadTls(TlsMaterial material, String socketName) {
+        Objects.requireNonNull(material, "material");
         ServerListener listener = listener(socketName);
         listener.reloadTls(material);
     }
 
     @Override
     public void reloadVirtualHostTls(TlsMaterial material, String socketName, String host) {
+        Objects.requireNonNull(material, "material");
+        Objects.requireNonNull(host, "host");
         ServerListener listener = listener(socketName);
         listener.reloadVirtualHostTls(material, host);
     }
