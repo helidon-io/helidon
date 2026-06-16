@@ -28,6 +28,7 @@ import io.helidon.common.features.api.HelidonFlavor;
 module io.helidon.logging.log4j {
 
     requires org.apache.logging.log4j;
+    requires org.apache.logging.log4j.core;
 
     requires static io.helidon.common.features.api;
 
@@ -37,6 +38,7 @@ module io.helidon.logging.log4j {
     exports io.helidon.logging.log4j;
 
     provides io.helidon.logging.common.spi.LoggingProvider with io.helidon.logging.log4j.Log4jProvider;
+    provides io.helidon.logging.common.spi.LogLevelManager with io.helidon.logging.log4j.Log4jLogLevelManager;
     provides io.helidon.logging.common.spi.MdcProvider with io.helidon.logging.log4j.Log4jMdcProvider;
     provides io.helidon.common.context.spi.DataPropagationProvider with io.helidon.logging.log4j.Log4jMdcPropagator;
 

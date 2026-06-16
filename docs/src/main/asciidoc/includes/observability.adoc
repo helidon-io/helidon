@@ -243,6 +243,8 @@ Information observability defines the following endpoints:
 ==== Logger Observability
 
 Log observability allows reading and configuring of log levels of various loggers and reading log messages.
+Logger level management uses the available logging backend provider when one is present, and falls back to Java Util
+Logging.
 Logger Observability defines the following endpoints:
 
 |===
@@ -254,9 +256,9 @@ Logger Observability defines the following endpoints:
 
 |`/log/loggers`
 |`GET`
-|Returns all logger handlers
+|Returns all loggers
 
-|`/log/log/loggers/{logger}`
+|`/log/loggers/{logger}`
 |`GET`
 |Returns the Logger by name `logger`
 
