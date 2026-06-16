@@ -15,17 +15,41 @@ This is a bugfix release of Helidon and is recommended for all users of Helidon 
 
 ### CHANGES
 
-- Config: Strengthen encrypted configuration value format and PBKDF2 defaults
+- Config: Config value encryption format strengthened [baed59a915](https://github.com/helidon-io/helidon/commit/baed59a915f0b20cfff092966db97eba14dd26dc)
 - Config: Use the context class loader to locate MicroProfile meta-configuration [11796](https://github.com/helidon-io/helidon/pull/11796)
+- CORS: Reject CORS wildcard origins with credentials [b6b982958e](https://github.com/helidon-io/helidon/commit/b6b982958ede8a661339c57e37ac9524a2e2eebc)
 - Dependencies: Upgrade Log4j to 2.25.4 [11819](https://github.com/helidon-io/helidon/pull/11819)
-- Dependencies: Upgrade Netty to 4.1.133.Final [11923](https://github.com/helidon-io/helidon/pull/11923)
+- Dependencies: Upgrade Netty to 4.1.135.Final, Jackson to 2.21.3, Snakeyaml to 2.6 [12088](https://github.com/helidon-io/helidon/pull/12088)
 - Dependencies: Upgrade PostgreSQL JDBC driver to 42.7.11 [11852](https://github.com/helidon-io/helidon/pull/11852)
-- gRPC: Apply configured gRPC security automatically when using `GrpcRouting.builder(config)`
-- LRA: Validate participant and coordinator callback URIs before use
-- Media: Add multipart parser structural limits and safer multipart filename handling
-- Security: Harden authentication, token, redirect, CORS, HTTP Signature, OIDC, and static-content handling
+- GraphQL: Send GraphQL error response on executor failure [7023c7eb9b](https://github.com/helidon-io/helidon/commit/7023c7eb9b8436ef02679145bf014185ae35c546)
+- gRPC: Apply configured gRPC security by default [8d081e90dc](https://github.com/helidon-io/helidon/commit/8d081e90dcb8b75d6268993dde1c171457cd8831)
+- JWT: JWT validation enhancements [11665](https://github.com/helidon-io/helidon/pull/11665)
+- JWT: Require MP JWT issuer validation [027804205f](https://github.com/helidon-io/helidon/commit/027804205f6bc0ba3f7ee32262ae97cbb4af54e4)
+- LRA: Tighten LRA participant callback dispatch [e2c726c59e](https://github.com/helidon-io/helidon/commit/e2c726c59edd19a90f78332b37f857a25f3d1ca1)
+- LRA: Validate LRA coordinator context URIs [5b70a0dc8a](https://github.com/helidon-io/helidon/commit/5b70a0dc8a8471b3d10438f661f36258d7457a26)
+- LRA: Validate LRA participant callback URIs [81cd7acead](https://github.com/helidon-io/helidon/commit/81cd7acead0cfd61ca40b9a721ba1a855788e4ed)
+- Media: Limit multipart parser resource use [9b0a99f0c1](https://github.com/helidon-io/helidon/commit/9b0a99f0c1ba802a5b192805f571e1a8620bbe5f)
+- Media: Sanitize multipart filenames [8509b28e78](https://github.com/helidon-io/helidon/commit/8509b28e78838b90da606863b8b6887bb21bf0ed)
+- Security: Enable named authenticator enforcement [07a95c496f](https://github.com/helidon-io/helidon/commit/07a95c496f1a8f684d5330f466ebb23db46b51b6)
+- Security: Fix IDCS mapper token request setup [eff25fe40b](https://github.com/helidon-io/helidon/commit/eff25fe40bb09c934084e7e367472dadf59e4018)
+- Security: Fix OIDC secret temp file name [a97ebc2a82](https://github.com/helidon-io/helidon/commit/a97ebc2a82ac510a44a5bb47914c04b63e6c4374)
+- Security: Harden OIDC fallback secret file [cbae9dea9a](https://github.com/helidon-io/helidon/commit/cbae9dea9a57ce8f7485b3de2d53084fa09f2b07)
+- Security: Reject RSA1_5 JWE key management [df41960f8b](https://github.com/helidon-io/helidon/commit/df41960f8bc4b2130a1f6fdbaed174c6013da2ae)
+- Security: Require JWT claim checks without signatures [698a56ba47](https://github.com/helidon-io/helidon/commit/698a56ba4746ee6d51f7e2e61dc7839591a62c82)
+- Security: Tighten HTTP signature validation [68a4474fde](https://github.com/helidon-io/helidon/commit/68a4474fdee21b7e914a0977dfd205f91c3331ce)
+- Security: Use computed digest for digest auth comparison [e7321c54de](https://github.com/helidon-io/helidon/commit/e7321c54de2e7a7d219faa5ce3884b4dd3c30b46)
+- Security: Use constant-time basic auth password comparison [bf436b52d1](https://github.com/helidon-io/helidon/commit/bf436b52d1d97c94dab7f861282512c92bfdaac5)
+- Security: Use constant-time JWT HMAC comparison [7913858d03](https://github.com/helidon-io/helidon/commit/7913858d032be1b4870e4c300d24c526b7ad24e5)
+- Security: Use secure digest server secret generation [5fefd91a25](https://github.com/helidon-io/helidon/commit/5fefd91a25856a75339f3449fad9779690710d30)
+- Security: Validate OIDC post-login redirects [ab11f34248](https://github.com/helidon-io/helidon/commit/ab11f34248437c56d40f3f24d8040f0716889675)
+- Vault: Avoid forwarding Vault token on cross-origin redirects [cb4d3a1b2b](https://github.com/helidon-io/helidon/commit/cb4d3a1b2b6aceefa50b48793aa1acce1a1d1ee8)
+- WebServer: Constrain filesystem static content to configured root [fe65d65432](https://github.com/helidon-io/helidon/commit/fe65d65432336f8b33b002ed671504f8ff4a6fc3)
 - WebServer: Fix `Content-Location` header constant [11920](https://github.com/helidon-io/helidon/pull/11920)
 - WebServer: Fix response `Connection: close` handling [11951](https://github.com/helidon-io/helidon/pull/11951)
+- WebServer: Fix route matching for normalized paths [e3235a9b62](https://github.com/helidon-io/helidon/commit/e3235a9b621c359a41f63f0dc001a3768d0bcd15)
+- WebServer: Use generic internal error response [dd7b38c025](https://github.com/helidon-io/helidon/commit/dd7b38c025268f9138837e11627632beaf212ebe)
+- WebServer: Use normalized classpath resource lookup [a83029f3ef](https://github.com/helidon-io/helidon/commit/a83029f3ef15fc4988d0f85260ae1480bdaf9aa5)
+- WebSocket: Secure WebSocket protocol upgrades [1685111685](https://github.com/helidon-io/helidon/commit/16851116851b95df3109c4e861d8ff30c4ecafc5)
 
 ## [3.2.17]
 
@@ -1087,6 +1111,7 @@ Notable changes:
 - Examples: Update bare-mp archetype to use microprofile-core [3795](https://github.com/oracle/helidon/pull/3795)
 
 
+[3.2.18]: https://github.com/helidon-io/helidon/compare/3.2.17...3.2.18
 [3.2.17]: https://github.com/helidon-io/helidon/compare/3.2.16...3.2.17
 [3.2.16]: https://github.com/helidon-io/helidon/compare/3.2.15...3.2.16
 [3.2.15]: https://github.com/helidon-io/helidon/compare/3.2.14...3.2.15
