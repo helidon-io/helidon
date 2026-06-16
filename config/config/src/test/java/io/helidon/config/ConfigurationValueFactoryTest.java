@@ -19,12 +19,16 @@ package io.helidon.config;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import io.helidon.common.Default;
 import io.helidon.common.GenericType;
 import io.helidon.common.mapper.DefaultsResolver;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
+import io.helidon.config.spi.ConfigNode;
+import io.helidon.config.spi.ConfigSource;
 import io.helidon.service.registry.Dependency;
 import io.helidon.service.registry.Lookup;
 import io.helidon.service.registry.Qualifier;
@@ -35,6 +39,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class ConfigurationValueFactoryTest {
     private static final TypeName TEST_DESCRIPTOR = TypeName.create(ConfigurationValueFactoryTest.class);
@@ -52,6 +57,149 @@ class ConfigurationValueFactoryTest {
 
         assertThat(values, hasSize(1));
         assertThat(values.getFirst().get(), is("Ahoj"));
+    }
+
+    @Test
+    void literalKeyUsesGenericTypeMapper() {
+        GenericType<Map<String, Integer>> mapType = new GenericType<Map<String, Integer>>() { };
+        Config config = configWithMapMapper(mapType, ConfigSources.create(Map.of("app.limit", "23")));
+        ConfigurationValueFactory factory = new ConfigurationValueFactory(() -> defaultsResolver(config), () -> config);
+
+        assertThat(config.get("app").as(mapType).get().get("limit"), is(23));
+
+        List<Service.QualifiedInstance<Object>> values = factory.list(Qualifier.create(Configuration.Value.class,
+                                                                                      "app"),
+                                                                      Lookup.create(Map.class),
+                                                                      asObjectType(mapType));
+
+        assertThat(values, hasSize(1));
+        Map<?, ?> value = (Map<?, ?>) values.getFirst().get();
+        assertThat(value.get("limit"), is(23));
+    }
+
+    @Test
+    void literalMapStringStringUsesClassMapperFallback() {
+        GenericType<Map<String, String>> mapType = new GenericType<Map<String, String>>() { };
+        Config config = configWithRawMapMapper(ConfigSources.create(Map.of("app.limit", "23")));
+        ConfigurationValueFactory factory = new ConfigurationValueFactory(() -> defaultsResolver(config), () -> config);
+
+        assertThat(config.get("app").as(mapType).get(), is(Map.of("raw-limit", "23")));
+
+        List<Service.QualifiedInstance<Object>> values = factory.list(Qualifier.create(Configuration.Value.class,
+                                                                                      "app"),
+                                                                      Lookup.create(Map.class),
+                                                                      asObjectType(mapType));
+
+        assertThat(values, hasSize(1));
+        assertThat(values.getFirst().get(), is(Map.of("raw-limit", "23")));
+    }
+
+    @Test
+    void literalMapStringIntegerDoesNotUseClassMapperFallback() {
+        GenericType<Map<String, Integer>> mapType = new GenericType<Map<String, Integer>>() { };
+        Config config = configWithRawMapMapper(ConfigSources.create(Map.of("app.limit", "23")));
+        ConfigurationValueFactory factory = new ConfigurationValueFactory(() -> defaultsResolver(config), () -> config);
+
+        assertThrows(ConfigMappingException.class,
+                     () -> factory.list(Qualifier.create(Configuration.Value.class,
+                                                         "app"),
+                                        Lookup.create(Map.class),
+                                        asObjectType(mapType)));
+    }
+
+    @Test
+    void listKeyUsesGenericTypeMapperForElements() {
+        GenericType<Map<String, Integer>> mapType = new GenericType<Map<String, Integer>>() { };
+        ConfigNode.ObjectNode first = ConfigNode.ObjectNode.builder()
+                .addValue("limit", "23")
+                .build();
+        ConfigNode.ObjectNode second = ConfigNode.ObjectNode.builder()
+                .addValue("limit", "42")
+                .build();
+        ConfigNode.ListNode list = ConfigNode.ListNode.builder()
+                .addObject(first)
+                .addObject(second)
+                .build();
+        ConfigNode.ObjectNode root = ConfigNode.ObjectNode.builder()
+                .addList("app", list)
+                .build();
+        Config config = configWithMapMapper(mapType, ConfigSources.create(root));
+        ConfigurationValueFactory factory = new ConfigurationValueFactory(() -> defaultsResolver(config), () -> config);
+
+        assertThat(config.get("app").isList(), is(true));
+        assertThat(config.get("app").asNodeList().get().getFirst().as(mapType).get().get("limit"), is(23));
+
+        List<Service.QualifiedInstance<Object>> values = factory.list(Qualifier.create(Configuration.Value.class,
+                                                                                      "app"),
+                                                                      Lookup.create(Map.class),
+                                                                      asObjectType(mapType));
+
+        assertThat(values, hasSize(2));
+        assertThat(values.stream()
+                           .map(Service.QualifiedInstance::get)
+                           .toList(),
+                   is(List.of(Map.of("limit", 23),
+                              Map.of("limit", 42))));
+    }
+
+    @Test
+    void listMapStringStringUsesClassMapperFallbackForElements() {
+        GenericType<Map<String, String>> mapType = new GenericType<Map<String, String>>() { };
+        ConfigNode.ObjectNode first = ConfigNode.ObjectNode.builder()
+                .addValue("limit", "23")
+                .build();
+        ConfigNode.ObjectNode second = ConfigNode.ObjectNode.builder()
+                .addValue("limit", "42")
+                .build();
+        ConfigNode.ListNode list = ConfigNode.ListNode.builder()
+                .addObject(first)
+                .addObject(second)
+                .build();
+        ConfigNode.ObjectNode root = ConfigNode.ObjectNode.builder()
+                .addList("app", list)
+                .build();
+        Config config = configWithRawMapMapper(ConfigSources.create(root));
+        ConfigurationValueFactory factory = new ConfigurationValueFactory(() -> defaultsResolver(config), () -> config);
+
+        assertThat(config.get("app").asNodeList().get().getFirst().as(mapType).get(), is(Map.of("raw-limit", "23")));
+
+        List<Service.QualifiedInstance<Object>> values = factory.list(Qualifier.create(Configuration.Value.class,
+                                                                                      "app"),
+                                                                      Lookup.create(Map.class),
+                                                                      asObjectType(mapType));
+
+        assertThat(values, hasSize(2));
+        assertThat(values.stream()
+                           .map(Service.QualifiedInstance::get)
+                           .toList(),
+                   is(List.of(Map.of("raw-limit", "23"),
+                              Map.of("raw-limit", "42"))));
+    }
+
+    @Test
+    void listMapStringIntegerDoesNotUseClassMapperFallbackForElements() {
+        GenericType<Map<String, Integer>> mapType = new GenericType<Map<String, Integer>>() { };
+        ConfigNode.ObjectNode first = ConfigNode.ObjectNode.builder()
+                .addValue("limit", "23")
+                .build();
+        ConfigNode.ObjectNode second = ConfigNode.ObjectNode.builder()
+                .addValue("limit", "42")
+                .build();
+        ConfigNode.ListNode list = ConfigNode.ListNode.builder()
+                .addObject(first)
+                .addObject(second)
+                .build();
+        ConfigNode.ObjectNode root = ConfigNode.ObjectNode.builder()
+                .addList("app", list)
+                .build();
+        Config config = configWithRawMapMapper(ConfigSources.create(root));
+        ConfigurationValueFactory factory = new ConfigurationValueFactory(() -> defaultsResolver(config), () -> config);
+
+        assertThrows(ConfigMappingException.class,
+                     () -> factory.list(Qualifier.create(Configuration.Value.class,
+                                                         "app"),
+                                        Lookup.create(Map.class),
+                                        asObjectType(mapType)));
     }
 
     @Test
@@ -156,6 +304,40 @@ class ConfigurationValueFactoryTest {
                 .build();
 
         return new ConfigurationValueFactory(() -> defaultsResolver(config), () -> config);
+    }
+
+    private static Config configWithMapMapper(GenericType<Map<String, Integer>> mapType,
+                                              Supplier<? extends ConfigSource> source) {
+        return Config.builder()
+                .sources(source)
+                .addMapper(mapType, node -> node.asMap()
+                        .orElseThrow()
+                        .entrySet()
+                        .stream()
+                        .collect(Collectors.toUnmodifiableMap(entry -> leaf(entry.getKey()),
+                                                              entry -> Integer.parseInt(entry.getValue()))))
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .disableFilterServices()
+                .build();
+    }
+
+    private static Config configWithRawMapMapper(Supplier<? extends ConfigSource> source) {
+        return Config.builder()
+                .sources(source)
+                .addMapper(Map.class, node -> ConfigMappers.toMap(node.detach())
+                        .entrySet()
+                        .stream()
+                        .collect(Collectors.toUnmodifiableMap(entry -> "raw-" + leaf(entry.getKey()),
+                                                              Map.Entry::getValue)))
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .disableFilterServices()
+                .build();
+    }
+
+    private static String leaf(String key) {
+        return key.substring(key.lastIndexOf('.') + 1);
     }
 
     private static DefaultsResolver defaultsResolver(Config config) {
