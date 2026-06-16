@@ -5,9 +5,21 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.19]
+
+Helidon 1 has reached end of service life and it is recommended that you upgrade to Helidon 4.
+
+### Fixes
+
+- Dependencies: Upgrade Netty to 4.1.135.Final, Jackson to 2.21.3, Snakeyaml to 2.6 [12086](https://github.com/helidon-io/helidon/pull/12086)
+- Security: Enable named authenticator enforcement [77b0fe6cad](https://github.com/helidon-io/helidon/commit/77b0fe6cad1bc15fb06580dbe4081333e8c243b9)
+- Security: Require JWT claim checks without signatures [327cbef0e3](https://github.com/helidon-io/helidon/commit/327cbef0e3ec4893df585538e774c82abab6abc0)
+- Security: Require MP JWT issuer validation [d211e3996d](https://github.com/helidon-io/helidon/commit/d211e3996db24c004f5d85ab114725bfbd61855a)
+- Tests: Fix Helidon Java 8 build [bb92af54e7](https://github.com/helidon-io/helidon/commit/bb92af54e74df9c3bacb13ad1f8ec1af033174b9)
+
 ## [1.4.18]
 
-This is a bug fix release of Helidon 1 that contains dependency upgrades.
+Helidon 1 has reached end of service life and it is recommended that you upgrade to Helidon 4.
 
 ### Fixes
 
@@ -15,7 +27,7 @@ This is a bug fix release of Helidon 1 that contains dependency upgrades.
 
 ## [1.4.17]
 
-This is a bug fix release of Helidon 1 that contains dependency upgrades.
+Helidon 1 has reached end of service life and it is recommended that you upgrade to Helidon 4.
 
 ### Fixes
 
@@ -26,7 +38,7 @@ This is a bug fix release of Helidon 1 that contains dependency upgrades.
 
 ## [1.4.16]
 
-This is a bug fix release of Helidon 1 that contains dependency upgrades.
+Helidon 1 has reached end of service life and it is recommended that you upgrade to Helidon 4.
 
 ### Fixes
 
@@ -854,6 +866,7 @@ for details.
 ### Notes
 - Initial source drop on Github
 
+[1.4.19]: https://github.com/oracle/helidon/compare/1.4.18..1.4.19
 [1.4.18]: https://github.com/oracle/helidon/compare/1.4.17..1.4.18
 [1.4.17]: https://github.com/oracle/helidon/compare/1.4.16..1.4.17
 [1.4.16]: https://github.com/oracle/helidon/compare/1.4.15..1.4.16
