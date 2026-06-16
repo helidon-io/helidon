@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import org.hamcrest.core.Is;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -52,6 +53,37 @@ public class UrlOverrideSourceTest {
     }
 
     @Test
+    public void testDescriptionOmitsSensitiveUrlParts() throws MalformedURLException {
+        OverrideSource overrideSource = OverrideSources
+                .url(new URL("http://user:password@config-service:8080/application.json?token=secret#fragment"))
+                .build();
+
+        assertThat(overrideSource.description(), Is.is("UrlOverride[http://config-service:8080/application.json]"));
+    }
+
+    @Test
+    public void testDescriptionOmitsSensitiveNestedUrlParts() throws MalformedURLException {
+        OverrideSource overrideSource = OverrideSources
+                .url(new URL("jar:http://user:password@config-service:8080/application.jar"
+                                     + "?token=secret!/application.json"))
+                .build();
+
+        assertThat(overrideSource.description(),
+                   Is.is("UrlOverride[jar:http://config-service:8080/application.jar!/application.json]"));
+    }
+
+    @Test
+    public void testDescriptionOmitsSensitiveNestedEntryUrlParts() throws MalformedURLException {
+        OverrideSource overrideSource = OverrideSources
+                .url(new URL("jar:http://user:password@config-service:8080/application.jar"
+                                     + "!/application.json?token=secret#fragment"))
+                .build();
+
+        assertThat(overrideSource.description(),
+                   Is.is("UrlOverride[jar:http://config-service:8080/application.jar!/application.json]"));
+    }
+
+    @Test
     public void testLoadNotExists() throws MalformedURLException {
         UrlOverrideSource overrideSource = OverrideSources
                 .url(new URL("http://config-service/application.unknown"))
@@ -60,5 +92,19 @@ public class UrlOverrideSourceTest {
         ConfigException ex = assertThrows(ConfigException.class, overrideSource::load);
         assertThat(ex.getCause(), instanceOf(UnknownHostException.class));
         assertThat(ex.getMessage(), containsString("config-service"));
+    }
+
+    @Test
+    public void testLoadNotExistsOmitsSensitiveUrlParts() throws MalformedURLException {
+        UrlOverrideSource overrideSource = OverrideSources
+                .url(new URL("http://user:password@config-service:8080/application.unknown?token=secret#fragment"))
+                .build();
+
+        ConfigException ex = assertThrows(ConfigException.class, overrideSource::load);
+        assertThat(ex.getCause(), instanceOf(UnknownHostException.class));
+        assertThat(ex.getMessage(), containsString("http://config-service:8080/application.unknown"));
+        assertThat(ex.getMessage(), not(containsString("password")));
+        assertThat(ex.getMessage(), not(containsString("token=secret")));
+        assertThat(ex.getMessage(), not(containsString("fragment")));
     }
 }
