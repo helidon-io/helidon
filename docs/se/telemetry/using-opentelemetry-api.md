@@ -273,5 +273,5 @@ recording whether the span was successful.
 [opentelemetry-au]: https://opentelemetry.io/docs/languages/java/configuration/
 [opentelemetry-ap]: https://github.com/open-telemetry/opentelemetry-java
 [automatic-instru]: https://github.com/open-telemetry/opentelemetry-java-instrumentation/tree/main/instrumentation/helidon-4.3/library
-[example-app]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/telemetry/otel-auto-configure
+[example-app]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/telemetry/otel/otel-auto-configure
 [opentelemetry-au-2]: https://opentelemetry.io/docs/languages/java/configuration/#environment-variables-and-system-properties

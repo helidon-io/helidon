@@ -95,33 +95,25 @@ The diagram below illustrates the in-memory tree for that configuration.
 <figcaption>Config Nodes structure of <code>application.conf</code> file</figcaption>
 </figure>
 
-<div class="informalexample">
-
-Notes
-
 1.  Each non-root node has a name which distinguishes it from other nodes with
     the same parent. The interpretation of the name depends on the node type.
 
     <table>
-    <colgroup>
-    <col style="width: 50%" />
-    <col style="width: 50%" />
-    </colgroup>
     <thead>
     <tr>
-    <th style="text-align: left;">Node Type</th>
-    <th style="text-align: left;">Name</th>
+    <th>Node Type</th>
+    <th>Name</th>
     </tr>
     </thead>
     <tbody>
     <tr>
-    <td style="text-align: left;"><p>object<br />
-    value</p></td>
-    <td style="text-align: left;"><p>member name of the node within its parent</p></td>
+    <td><p>object</td>
+    <td rowspan="2" style="vertical-align: middle">member name of the node within its parent</td>
     </tr>
+    <td>value</td>
     <tr>
-    <td style="text-align: left;"><p>list</p></td>
-    <td style="text-align: left;"><p>element index of the node within the containing list</p></td>
+    <td>list</td>
+    <td>element index of the node within the containing list</td>
     </tr>
     </tbody>
     </table>
@@ -129,8 +121,6 @@ Notes
 2.  Each node’s key is the fully-qualified path using dotted names from the root
     to that node.
 3.  The root has an empty key, empty name, and no value.
-
-</div>
 
 The `Config` object exposes methods to return the [`name`][name], [`key`][key],
 and [`type`][type] of the node.
@@ -186,51 +176,50 @@ Some applications might need to work with configuration without knowing its
 structure or key names ahead of time, and such applications can use various
 methods on the `Config` class to do this.
 
+General Config Node Methods:
+
 <table>
-<caption>General Config Node Methods</caption>
-<colgroup>
-<col style="width: 50%" />
-<col style="width: 50%" />
-</colgroup>
 <thead>
 <tr>
-<th style="text-align: left;">Method</th>
-<th style="text-align: left;">Usage</th>
+<th>Method</th>
+<th>Usage</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><p><code>asNodeList()</code></p></td>
-<td style="text-align: left;"><p>Returns a ConfigValue&lt;List&lt;Config&gt;&gt;. For nodes of type <code>OBJECT</code> contains child nodes as a <code>List</code>.</p></td>
+<td><code>asNodeList()</code></td>
+<td>Returns a <code>ConfigValue&lt;List&lt;Config&gt;&gt;</code>. For nodes of type <code>OBJECT</code> contains child nodes as a <code>List</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>hasValue()</code></p></td>
-<td style="text-align: left;"><p>For any node reports if the node has a value. This can be true for any node type except <code>MISSING</code>.</p></td>
+<td><code>hasValue()</code></td>
+<td>For any node reports if the node has a value. This can be true for any node type except <code>MISSING</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>isLeaf()</code></p></td>
-<td style="text-align: left;"><p>Reports whether the node has no child nodes. Leaf nodes have no children and has a single value.</p></td>
+<td><code>isLeaf()</code></td>
+<td>Reports whether the node has no child nodes. Leaf nodes have no children and has a single value</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>key()</code></p></td>
-<td style="text-align: left;"><p>Returns the fully-qualified path of the node using dotted notation.</p></td>
+<td><code>key()</code></td>
+<td><p>Returns the fully-qualified path of the node using dotted notation</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>name()</code></p></td>
-<td style="text-align: left;"><p>Returns the name of the node (the last part of the key).</p></td>
+<td><code>name()</code></td>
+<td><p>Returns the name of the node (the last part of the key)</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>asNode()</code></p></td>
-<td style="text-align: left;"><p>Returns a <code>ConfigValue&lt;Config&gt;</code> wrapped around the node</p></td>
+<td><code>asNode()</code></td>
+<td><p>Returns a <code>ConfigValue&lt;Config&gt;</code> wrapped around the node</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>traverse()</code><br />
-<code>traverse(Predicate&lt;Config&gt;)</code></p></td>
-<td style="text-align: left;"><p>Returns a <code>Stream&lt;Config&gt;</code> as an iterative deepening depth-first traversal of the subtree</p></td>
+<td><code>traverse()</code></td>
+<td rowspan="2" style="vertical-align: middle">Returns a <code>Stream&lt;Config&gt;</code> as an iterative deepening depth-first traversal of the subtree</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>type()</code></p></td>
-<td style="text-align: left;"><p>Returns the <code>Type</code> enum value for the node: <code>OBJECT</code>, <code>LIST</code>, <code>VALUE</code>, or <code>MISSING</code></p></td>
+<td><code>traverse(Predicate&lt;Config&gt;)</code></td>
+</tr>
+<tr>
+<td><code>type()</code></td>
+<td><p>Returns the <code>Type</code> enum value for the node: <code>OBJECT</code>, <code>LIST</code>, <code>VALUE</code>, or <code>MISSING</code></td>
 </tr>
 </tbody>
 </table>

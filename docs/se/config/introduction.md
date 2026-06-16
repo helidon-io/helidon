@@ -417,7 +417,7 @@ Extending and Fine-tuning the Config System:
 [configsources]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/ConfigSources.html
 [advanced-topics]: advanced-configuration.md#advanced-config-sources
 [this-section]: #built-in-support-for-config-formats
-[config-builder-s]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/Config.Builder.html#addParser-io.helidon.config.spi.ConfigParser-
+[config-builder-s]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/Config.Builder.html#addParser(io.helidon.config.spi.ConfigParser)
 [configparser]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/spi/ConfigParser.html
 [advanced-topics-2]: advanced-configuration.md#advanced-config-parsers
 [config-builder]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/Config.Builder.html

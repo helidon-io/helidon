@@ -18,6 +18,7 @@ This type is a provider contract.
 <tbody>
 <tr>
 <td>
+<a id="gson"></a>
 <a href="io.helidon.http.media.gson.GsonSupport.md">
 <code>gson</code>
 </a>
@@ -26,6 +27,7 @@ This type is a provider contract.
 </tr>
 <tr>
 <td>
+<a id="jackson"></a>
 <a href="io.helidon.http.media.jackson.JacksonSupport.md">
 <code>jackson</code>
 </a>
@@ -34,6 +36,7 @@ This type is a provider contract.
 </tr>
 <tr>
 <td>
+<a id="json"></a>
 <a href="io.helidon.http.media.json.JsonSupport.md">
 <code>json</code>
 </a>
@@ -42,6 +45,7 @@ This type is a provider contract.
 </tr>
 <tr>
 <td>
+<a id="json-binding"></a>
 <a href="io.helidon.http.media.json.binding.JsonBindingSupport.md">
 <code>json-<wbr>binding</code>
 </a>
@@ -50,6 +54,7 @@ This type is a provider contract.
 </tr>
 <tr>
 <td>
+<a id="jsonb"></a>
 <a href="io.helidon.http.media.jsonb.JsonbSupport.md">
 <code>jsonb</code>
 </a>
@@ -58,6 +63,7 @@ This type is a provider contract.
 </tr>
 <tr>
 <td>
+<a id="smile"></a>
 <a href="io.helidon.http.media.json.smile.SmileSupport.md">
 <code>smile</code>
 </a>

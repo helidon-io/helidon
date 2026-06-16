@@ -21,7 +21,7 @@ and features. Helidon integration with OCI includes support for the [OCI SDK for
 Java][oci-sdk-for-java] - allowing you to write custom code to extend features.
 
 Helidon also provides a [Helidon OCI SDK CDI portable
-extension][helidon-oci-sdk] to support injecting [Oracle Cloud Infrastructure
+extension][cdi-spec] to support injecting [Oracle Cloud Infrastructure
 SDK Clients][oci-sdk-for-java] in your Helidon application. See [OCI
 Integration](../integrations/oci.md).
 
@@ -472,7 +472,7 @@ See [Monitor Traces in Trace Explorer][monitor-traces-i] in OCI documentation.
 
 [welcome-to-oracl]: https://docs.oracle.com/en-us/iaas/Content/GSG/Concepts/baremetalintro.htm
 [oci-sdk-for-java]: https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/javasdk.htm
-[helidon-oci-sdk]: https://jakarta.ee/specifications/cdi/4.0/jakarta-cdi-spec-4.0.html#spi
+[cdi-spec]: https://jakarta.ee/specifications/cdi/4.0/jakarta-cdi-spec-4.0.html#spi_se
 [deploying-a-heli]: https://github.com/helidon-io/helidon-labs/blob/main/hols/oci-basic-setup/README.md
 [java-21]: https://www.oracle.com/technetwork/java/javase/downloads
 [open-jdk-21]: http://jdk.java.net
@@ -495,7 +495,7 @@ See [Monitor Traces in Trace Explorer][monitor-traces-i] in OCI documentation.
 [using-streaming]: https://docs.oracle.com/en-us/iaas/Content/Streaming/Tasks/kafkacompatibility.htm
 [creating-a-strea]: https://docs.oracle.com/en-us/iaas/Content/Streaming/Tasks/creatingstreamsandstreampools_create-stream.htm
 [getting-an-auth]: https://docs.oracle.com/en-us/iaas/Content/Registry/Tasks/registrygettingauthtoken.htm
-[bootstrap-server]: https://kafka.apache.org/28/documentation.html#consumerconfigs_bootstrap.servers
+[bootstrap-server]: https://kafka.apache.org/28/configuration/consumer-configs/#consumerconfigs_bootstrap.servers
 [about-apm]: https://docs.oracle.com/en-us/iaas/application-performance-monitoring/doc/application-performance-monitoring.html
 [create-an-apm-do]: https://docs.oracle.com/en-us/iaas/application-performance-monitoring/doc/create-apm-domain.html#GUID-ABC79A90-3940-4360-9E21-57D25B86F92B
 [obtain-data-uplo]: https://docs.oracle.com/en-us/iaas/application-performance-monitoring/doc/obtain-data-upload-endpoint-and-data-keys.html

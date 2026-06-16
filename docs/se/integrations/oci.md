@@ -13,7 +13,7 @@ clients][the-oracle-cloud] into your Helidon applications.
 
 > [!NOTE]
 > This Helidon module requires
-> [ServiceRegistry](../injection/injection.md#Programmatic Lookup).
+> [ServiceRegistry](../injection/injection.md#programmatic-lookup).
 > ServiceRegistry requires the use of annotation processors, see [Why are
 > annotation processors needed?][why-are-annotati]
 
@@ -268,7 +268,7 @@ helidon.oci:
 - [OCI Documentation][oci-documentatio]
 
 [the-oracle-cloud]: https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/javasdk.htm
-[project-starter]: https://helidon.io/starter/4.4.0-SNAPSHOT
+[project-starter]: https://helidon.io/starter/
 [about-using-reso]: https://docs.oracle.com/en/cloud/paas/autonomous-database/serverless/adbsb/resource-principal.html
 [calling-services]: https://docs.oracle.com/en-us/iaas/Content/Identity/Tasks/callingservicesfrominstances.htm
 [oci-service-supp]: https://docs.oracle.com/en-us/iaas/Content/API/SDKDocs/javasdk.htm#Services_Supported
@@ -276,4 +276,4 @@ helidon.oci:
 [oci-sdk-object-s]: https://docs.oracle.com/en-us/iaas/tools/java/latest/com/oracle/bmc/objectstorage/package-summary.html
 [oci-sdk-usage-ex]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/integrations/oci
 [oci-documentatio]: https://docs.oracle.com/en-us/iaas/Content/home.htm
-[why-are-annotati]: ../injection/injection.md#Build time
+[why-are-annotati]: ../injection/injection.md#build-time

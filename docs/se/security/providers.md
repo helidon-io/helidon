@@ -145,42 +145,37 @@ tenants:
 There are four ways to provide the required tenant information to Helidon by
 default.
 
-<table class="tableblock frame-all grid-all stretch">
-<caption>Table 1. Possible <code>tenant-id-style</code> configuration options</caption>
-<colgroup>
-<col style="width: 22%" />
-<col style="width: 44%" />
-<col style="width: 33%" />
-</colgroup>
+Possible <code>tenant-id-style</code> configuration options:
+<table>
 <thead>
 <tr>
-<th class="tableblock halign-left valign-top">key</th>
-<th class="tableblock halign-left valign-top">description</th>
-<th class="tableblock halign-left valign-top">additional config options</th>
+<th>key</th>
+<th>description</th>
+<th>additional config options</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p><code>host-header</code></p></td>
-<td class="tableblock halign-left valign-top"><p>Tenant configuration will be selected based on your host present in the <code>Host</code> header value.</p></td>
-<td class="tableblock halign-left valign-top"><p> </p></td>
+<td><code>host-header</code></td>
+<td>Tenant configuration will be selected based on your host present in the <code>Host</code> header value.</td>
+<td> </td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><code>domain</code></p></td>
-<td class="tableblock halign-left valign-top"><p>Similar to the <code>host-header</code> style, but now the tenant name is identified just as a part of the host name. By default, it selects the third domain level.</p>
-<p>Example: Host header value from inbound request is <code>my.helidon.com</code> → domain level 3 is <code>my</code>, domain level 2 is <code>helidon</code> and domain level 1 is <code>com</code>.</p></td>
-<td class="tableblock halign-left valign-top"><pre class="highlight"><code>tenant-id-domain-level: &lt;domain level&gt;</code></pre></td>
+<td><code>domain</code></td>
+<td>Similar to the <code>host-header</code> style, but now the tenant name is identified just as a part of the host name. By default, it selects the third domain level.</p>
+<p>Example: Host header value from inbound request is <code>my.helidon.com</code> → domain level 3 is <code>my</code>, domain level 2 is <code>helidon</code> and domain level 1 is <code>com</code>.</td>
+<td><code>tenant-id-domain-level: &lt;domain level&gt;</code></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><code>token-handler</code></p></td>
-<td class="tableblock halign-left valign-top"><p>The tenant name information is expected to be provided through the configured custom header value.</p></td>
-<td class="tableblock halign-left valign-top"><pre class="highlight"><code>tenant-id-handler:
-  header: &quot;my-custom-header&quot;</code></pre></td>
+<td><code>token-handler</code></td>
+<td>The tenant name information is expected to be provided through the configured custom header value.</td>
+<td><code>tenant-id-handler:
+  header: &quot;my-custom-header&quot;</code></td>
 </tr>
 <tr>
-<td class="tableblock halign-left valign-top"><p><code>none</code></p></td>
-<td class="tableblock halign-left valign-top"><p>No tenant name finding is used. Default tenant name <code>@default</code> is used instead.</p></td>
-<td class="tableblock halign-left valign-top"></td>
+<td><code>none</code></td>
+<td>No tenant name finding is used. Default tenant name <code>@default</code> is used instead.</td>
+<td></td>
 </tr>
 </tbody>
 </table>

@@ -436,7 +436,7 @@ information and a complete project that indexes a dependency.
 [microprofile-ope-2]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.1/apidocs
 [the-microprofile]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.1/microprofile-openapi-spec-3.1.1.html#_configuration
 [complete-openapi]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/microprofile/openapi
-[jandex-maven-plu]: https://github.com/smallrye/jandex/tree/main/maven-plugin
+[jandex-maven-plu]: https://github.com/smallrye/jandex/tree/3.3.0/maven-plugin
 [helidon-mp-opena-2]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/microprofile/openapi/expanded-jandex
 [microprofile-ope-3]: https://github.com/eclipse/microprofile-open-api
 [io-helidon-opena]: ../../config/io.helidon.openapi.OpenApiFeature.md#configuration-options

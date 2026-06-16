@@ -557,6 +557,6 @@ public void consume(String value) {
 [channel]: https://download.eclipse.org/microprofile/microprofile-reactive-messaging-3.0/microprofile-reactive-messaging-spec-3.0.html#_channel
 [methods]: https://download.eclipse.org/microprofile/microprofile-reactive-messaging-3.0/microprofile-reactive-messaging-spec-3.0.html#_method_consuming_and_producing
 [message]: https://download.eclipse.org/microprofile/microprofile-reactive-messaging-3.0/microprofile-reactive-messaging-spec-3.0.html#_message
-[message-acknowle]: https://download.eclipse.org/microprofile/microprofile-reactive-messaging-3.0/microprofile-reactive-messaging-spec-3.0.html#_message_acknowledgement
+[message-acknowle]: https://download.eclipse.org/microprofile/microprofile-reactive-messaging-3.0/microprofile-reactive-messaging-spec-3.0.html#_message_acknowledgement_and_negative_acknowledgement
 [helidon-micropro]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.messaging/module-summary.html
 [microprofile-rea-2]: https://github.com/eclipse/microprofile-reactive-messaging

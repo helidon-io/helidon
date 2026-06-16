@@ -18,6 +18,7 @@ This type is a provider contract.
 <tbody>
 <tr>
 <td>
+<a id="config"></a>
 <a href="io.helidon.webserver.observe.config.ConfigObserver.md">
 <code>config</code>
 </a>
@@ -26,6 +27,7 @@ This type is a provider contract.
 </tr>
 <tr>
 <td>
+<a id="health"></a>
 <a href="io.helidon.webserver.observe.health.HealthObserver.md">
 <code>health</code>
 </a>
@@ -34,6 +36,7 @@ This type is a provider contract.
 </tr>
 <tr>
 <td>
+<a id="info"></a>
 <a href="io.helidon.webserver.observe.info.InfoObserver.md">
 <code>info</code>
 </a>
@@ -42,6 +45,7 @@ This type is a provider contract.
 </tr>
 <tr>
 <td>
+<a id="log"></a>
 <a href="io.helidon.webserver.observe.log.LogObserver.md">
 <code>log</code>
 </a>
@@ -50,6 +54,7 @@ This type is a provider contract.
 </tr>
 <tr>
 <td>
+<a id="metrics"></a>
 <a href="io.helidon.webserver.observe.metrics.MetricsObserver.md">
 <code>metrics</code>
 </a>
@@ -58,6 +63,7 @@ This type is a provider contract.
 </tr>
 <tr>
 <td>
+<a id="tracing"></a>
 <a href="io.helidon.webserver.observe.tracing.TracingObserver.md">
 <code>tracing</code>
 </a>

@@ -1487,13 +1487,13 @@ kubectl delete -f ./metrics.yaml
 [gauge]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/apidocs/org/eclipse/microprofile/metrics/annotation/Gauge.html
 [preview-feature]: https://helidon.io/docs/v4/apidocs/io.helidon.common.features.api/io/helidon/common/features/api/Preview.html
 [this-later-secti]: #inferred-publisher
-[datadogmeterregi]: https://github.com/micrometer-metrics/micrometer/tree/main/implementations/micrometer-registry-datadog
+[datadogmeterregi]: https://github.com/micrometer-metrics/micrometer/tree/v1.15.2/implementations/micrometer-registry-datadog
 [settable-propert]: https://github.com/micrometer-metrics/micrometer/blob/main/implementations/micrometer-registry-datadog/src/main/java/io/micrometer/datadog/DatadogConfig.java
-[otlp-publisher-b]: {https://github.com/helidon-io/helidon/tree/main/metrics/providers/micrometer/src/main/java/io/helidon/metrics/providers/micrometer/OtlpPublisherConfigBlueprint.java
+[otlp-publisher-b]: https://github.com/helidon-io/helidon/tree/helidon-4.x/metrics/providers/micrometer/src/main/java/io/helidon/metrics/providers/micrometer/OtlpPublisherConfigBlueprint.java
 [openmetrics-and]: #openmetrics-and-prometheus-format
 [openmetrics-form]: https://github.com/prometheus/OpenMetrics/blob/main/specification/OpenMetrics.md
-[prometheus-expos]: https://github.com/prometheus/docs/blob/main/content/docs/instrumenting/exposition_formats.md
-[timeunit]: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/TimeUnit.html
+[prometheus-expos]: https://github.com/prometheus/docs/blob/main/docs/instrumenting/exposition_formats.md
+[timeunit]: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/TimeUnit.htmleibccbhectvlgvkvffglgtbhv
 [microprofile-met-3]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/apidocs/org/eclipse/microprofile/metrics/package-summary.html
 [metric]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/apidocs/org/eclipse/microprofile/metrics/annotation/Metric.html
 [metricregistry]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/apidocs/org/eclipse/microprofile/metrics/MetricRegistry.html

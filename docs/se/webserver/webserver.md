@@ -1324,9 +1324,9 @@ Disabling discovery and registering a Gzip encoding support:
 
 ```java
 WebServer.builder()
-        .contentEncoding(it -> it
-        .contentEncodingsDiscoverServices(false)
-        .addContentEncoding(GzipEncoding.create()));
+    .contentEncoding(it -> it
+    .contentEncodingsDiscoverServices(false)
+    .addContentEncoding(GzipEncoding.create()));
 ```
 
 Or use a config file using the following options:
@@ -1507,7 +1507,7 @@ public static void main(String[] args) {
 [json-b-specifica-2]: https://jcp.org/en/jsr/detail?id=367
 [jackson-2]: https://github.com/FasterXML/jackson#jackson-project-home-github
 [gson-2]: https://github.com/google/gson#gson
-[gson-3]: ++https://github.com/google/gson#gson
+[gson-3]: https://github.com/google/gson#gson
 [proxy-protocol]: https://www.haproxy.org/download/1.8/doc/proxy-protocol.txt
 [helidon-webserve]: https://helidon.io/docs/v4/apidocs/io.helidon.webserver/module-summary.html
 [helidon-webserve-2]: https://helidon.io/docs/v4/apidocs/io.helidon.webserver.staticcontent/module-summary.html

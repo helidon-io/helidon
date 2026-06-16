@@ -18,6 +18,7 @@ This type is a provider contract.
 <tbody>
 <tr>
 <td>
+<a id="grpc"></a>
 <a href="io.helidon.webserver.grpc.GrpcConfig.md">
 <code>grpc</code>
 </a>
@@ -26,6 +27,7 @@ This type is a provider contract.
 </tr>
 <tr>
 <td>
+<a id="http_1_1"></a>
 <a href="io.helidon.webserver.http1.Http1Config.md">
 <code>http_<wbr>1_1</code>
 </a>
@@ -34,6 +36,7 @@ This type is a provider contract.
 </tr>
 <tr>
 <td>
+<a id="http_2"></a>
 <a href="io.helidon.webserver.http2.Http2Config.md">
 <code>http_<wbr>2</code>
 </a>
@@ -42,6 +45,7 @@ This type is a provider contract.
 </tr>
 <tr>
 <td>
+<a id="websocket"></a>
 <a href="io.helidon.webserver.websocket.WsConfig.md">
 <code>websocket</code>
 </a>

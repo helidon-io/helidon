@@ -254,26 +254,22 @@ service interface described in the following table. Prevent a given builder from
 using the automatically loaded filters by invoking the
 [`disableFilterServices`][disablefilterser] method.
 
-<table class="tableblock frame-all grid-all stretch">
-<caption>Table 1. Config SPI Interfaces for Filtering</caption>
-<colgroup>
-<col style="width: 33%" />
-<col style="width: 33%" />
-<col style="width: 33%" />
-</colgroup>
+Config SPI Interfaces for filtering:
+
+<table>
 <thead>
 <tr>
-<th class="tableblock halign-left valign-top">Interface</th>
-<th class="tableblock halign-left valign-top">Method</th>
-<th class="tableblock halign-left valign-top">Usage</th>
+<th>Interface</th>
+<th>Method</th>
+<th>Usage</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td class="tableblock halign-left valign-top"><p><a href="https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/spi/ConfigFilter.html"><code>ConfigFilter</code></a></p>
+<td><p><a href="https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/spi/ConfigFilter.html"><code>ConfigFilter</code></a></p>
 <p>Accepts <a href="https://helidon.io/docs/v4/apidocs/io.helidon.common/io/helidon/common/Weight.html"><code>@Weight</code></a>. See <a href="#about-priority">About Priority</a>.</p></td>
-<td class="tableblock halign-left valign-top"><p><code>String apply(Config.Key key, String stringValue);</code></p></td>
-<td class="tableblock halign-left valign-top"><p>Accepts a key and the corresponding <code>String</code> value and returns the <code>String</code> which the config system should use for that key.</p></td>
+<td><p><code>String apply(Config.Key key, String stringValue);</code></p></td>
+<td><p>Accepts a key and the corresponding <code>String</code> value and returns the <code>String</code> which the config system should use for that key.</p></td>
 </tr>
 </tbody>
 </table>
@@ -481,7 +477,7 @@ loader SPI `RetryPolicyProvider`.
 [configsource]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/spi/ConfigSource.html
 [configparser]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/spi/ConfigParser.html
 [overridesource]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/spi/OverrideSource.html
-[overrides]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/Config.Builder.html#overrides-java.util.function.Supplier-
+[overrides]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/Config.Builder.html#overrides(java.util.function.Supplier)
 [overridesourcepr]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/spi/OverrideSourceProvider.html
 [configfilter]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/spi/ConfigFilter.html
 [addfilter-method]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/Config.Builder.html

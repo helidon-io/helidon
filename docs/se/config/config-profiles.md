@@ -111,72 +111,65 @@ sources:
 The config system supports these built-in types:
 
 <table>
-<caption>Built-in Types</caption>
-<colgroup>
-<col style="width: 25%" />
-<col style="width: 25%" />
-<col style="width: 25%" />
-<col style="width: 25%" />
-</colgroup>
 <thead>
 <tr>
-<th style="text-align: left;">Type</th>
-<th style="text-align: left;">Use</th>
-<th style="text-align: left;">Related <code>ConfigSources</code> Method</th>
-<th style="text-align: left;">Required Properties</th>
+<th>Type</th>
+<th>Use</th>
+<th>Related <code>ConfigSources</code> Method</th>
+<th>Required Properties</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><p><code>system-properties</code></p></td>
-<td style="text-align: left;"><p>System properties are a config source</p></td>
-<td style="text-align: left;"><p><code>ConfigSources.systemProperties()</code></p></td>
-<td style="text-align: left;"><p>n/a</p></td>
+<td><code>system-properties</code></td>
+<td>System properties are a config source</td>
+<td><code>ConfigSources.systemProperties()</code></td>
+<td>n/a</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>environment-variables</code></p></td>
-<td style="text-align: left;"><p>Environment variables are a config source</p></td>
-<td style="text-align: left;"><p><code>ConfigSources.environmentVariables()</code></p></td>
-<td style="text-align: left;"><p>n/a</p></td>
+<td><code>environment-variables</code></td>
+<td>Environment variables are a config source</td>
+<td><code>ConfigSources.environmentVariables()</code></td>
+<td>n/a</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>classpath</code></p></td>
-<td style="text-align: left;"><p>Specified resource is used as a config source</p></td>
-<td style="text-align: left;"><p><code>ConfigSources.classpath(String)</code></p></td>
-<td style="text-align: left;"><p><code>resource</code> - path to the resource to load</p></td>
+<td><code>classpath</code></td>
+<td>Specified resource is used as a config source</td>
+<td><code>ConfigSources.classpath(String)</code></td>
+<td><code>resource</code> - path to the resource to load</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>file</code></p></td>
-<td style="text-align: left;"><p>Specified file is used as a config source</p></td>
-<td style="text-align: left;"><p><code>ConfigSources.file(Path)</code></p></td>
-<td style="text-align: left;"><p><code>path</code> - path to the file to load</p></td>
+<td><code>file</code></td>
+<td>Specified file is used as a config source</td>
+<td><code>ConfigSources.file(Path)</code></td>
+<td><code>path</code> - path to the file to load</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>directory</code></p></td>
-<td style="text-align: left;"><p>Each file in directory used as config entry, with key = file name and value = file contents</p></td>
-<td style="text-align: left;"><p><code>ConfigSources.directory(String)</code></p></td>
-<td style="text-align: left;"><p><code>path</code> - path to the directory to use</p></td>
+<td><code>directory</code></td>
+<td>Each file in directory used as config entry, with key = file name and value = file contents</td>
+<td><code>ConfigSources.directory(String)</code></td>
+<td><code>path</code> - path to the directory to use</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>url</code></p></td>
-<td style="text-align: left;"><p>Specified URL is read as a config source</p></td>
-<td style="text-align: left;"><p><code>ConfigSources.url(URL)</code></p></td>
-<td style="text-align: left;"><p><code>url</code> - URL from which to load the config</p></td>
+<td><code>url</code></td>
+<td>Specified URL is read as a config source</td>
+<td><code>ConfigSources.url(URL)</code></td>
+<td><code>url</code> - URL from which to load the config</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>inlined</code></p></td>
-<td style="text-align: left;"><p>The whole configuration tree under <code>properties</code> is added as a configuration source (excluding the <code>properties</code> node)</p></td>
-<td style="text-align: left;"><p>n/a</p></td>
-<td style="text-align: left;"><p>n/a</p></td>
+<td><code>inlined</code></td>
+<td>The whole configuration tree under <code>properties</code> is added as a configuration source (excluding the <code>properties</code> node)</td>
+<td>n/a</td>
+<td>n/a</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>prefixed</code></p></td>
-<td style="text-align: left;"><p>Associated config source is loaded with the specified prefix</p></td>
-<td style="text-align: left;"><p><code>ConfigSources.prefixed(String,Supplier)</code></p></td>
-<td style="text-align: left;"><ul>
-<li><p><code>key</code> - key of config element in associated source to load</p></li>
-<li><p><code>type</code> - associated config source specification</p></li>
-<li><p><code>properties</code> - as needed to further qualify the associated config source</p></li>
+<td><code>prefixed</code></td>
+<td>Associated config source is loaded with the specified prefix</td>
+<td><code>ConfigSources.prefixed(String,Supplier)</code></td>
+<td><ul>
+<li><code>key</code> - key of config element in associated source to load</li>
+<li><code>type</code> - associated config source specification</li>
+<li><code>properties</code> - as needed to further qualify the associated config source</li>
 </ul></td>
 </tr>
 </tbody>
@@ -309,56 +302,47 @@ Config Profile Support for Built-in Polling Strategies:
 |---------------|-------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
 | `regular`     | Periodic polling - See [`PollingStrategies.regular`][pollingstrategie] method | `interval` (`Duration`) - indicating how often to poll; e.g., `PT15S` represents 15 seconds |
 
+
+Config Profile Support for Built-in Change Watchers:
 <table>
-<caption>Config Profile Support for Built-in Change Watchers</caption>
-<colgroup>
-<col style="width: 33%" />
-<col style="width: 33%" />
-<col style="width: 33%" />
-</colgroup>
 <thead>
 <tr>
-<th style="text-align: left;">Type</th>
-<th style="text-align: left;">Usage</th>
-<th style="text-align: left;">Properties</th>
+<th>Type</th>
+<th>Usage</th>
+<th>Properties</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><p><code>file</code></p></td>
-<td style="text-align: left;"><p>Filesystem monitoring - See <a href="https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/FileSystemWatcher.html"><code>FileSystemWatcher</code></a> class</p></td>
-<td style="text-align: left;"><p><code>initial-delay-millis</code> - delay between the start of the watcher and first check for changes</p>
-<p><code>delay-millis</code> - how often do we check the watcher service for changes</p></td>
+<td><code>file</code></td>
+<td>Filesystem monitoring - See <a href="https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/FileSystemWatcher.html"><code>FileSystemWatcher</code></a> class</td>
+<td><code>initial-delay-millis</code> - delay between the start of the watcher and first check for changes
+<code>delay-millis</code> - how often do we check the watcher service for changes</td>
 </tr>
 </tbody>
 </table>
 
+Config Profile Support for Built-in Retry Policies:
 <table>
-<caption>Config Profile Support for Built-in Retry Policies</caption>
-<colgroup>
-<col style="width: 33%" />
-<col style="width: 33%" />
-<col style="width: 33%" />
-</colgroup>
 <thead>
 <tr>
-<th style="text-align: left;">Policy Type</th>
-<th style="text-align: left;">Usage</th>
-<th style="text-align: left;">Properties</th>
+<th>Policy Type</th>
+<th>Usage</th>
+<th>Properties</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><p><code>repeat</code></p></td>
-<td style="text-align: left;"><p>Regularly-scheduled - see <a href="https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/RetryPolicies.html#repeat-int-"><code>RetryPolicies.repeat</code></a>.</p></td>
-<td style="text-align: left;"><p><code>retries</code> (<code>int</code>) - number of retries to perform<br />
-</p>
-<p>Optional:</p>
+<td><code>repeat</code></td>
+<td>Regularly-scheduled - see <a href="https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/RetryPolicies.html#repeat(int)"><code>RetryPolicies.repeat</code></a>.</td>
+<td><code>retries</code> (<code>int</code>) - number of retries to perform<br />
+
+Optional:
 <ul>
-<li><p><code>delay</code> (<code>Duration</code>) - initial delay between retries</p></li>
-<li><p><code>delay-factor</code> (<code>double</code>) - <code>delay</code> is repeatedly multiplied by this each retry to compute the delay for each successive retry</p></li>
-<li><p><code>call-timeout</code> (<code>Duration</code>) - timeout for a single invocation to load the source</p></li>
-<li><p><code>overall-timeout</code> (<code>Duration</code>) - total timeout for all retry calls and delays</p></li>
+<li><code>delay</code> (<code>Duration</code>) - initial delay between retries</li>
+<li><code>delay-factor</code> (<code>double</code>) - <code>delay</code> is repeatedly multiplied by this each retry to compute the delay for each successive retry</li>
+<li><code>call-timeout</code> (<code>Duration</code>) - timeout for a single invocation to load the source</li>
+<li><code>overall-timeout</code> (<code>Duration</code>) - total timeout for all retry calls and delays</li>
 </ul></td>
 </tr>
 </tbody>
@@ -442,7 +426,7 @@ public class MyProfiledConfigSource implements NodeConfigSource {
 ```
 
 [fileconfigsource]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/FileConfigSource.Builder.html
-[pollingstrategie]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/PollingStrategies.html#regular-java.time.Duration-
+[pollingstrategie]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/PollingStrategies.html#regular(java.time.Duration)
 [retrypolicy]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/spi/RetryPolicy.html
 [changewatcher]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/spi/ChangeWatcher.html
 [pollingstrategy]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/spi/PollingStrategy.html

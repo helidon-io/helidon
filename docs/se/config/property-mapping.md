@@ -29,47 +29,42 @@ ConfigValue<Boolean> value2 = configNode.as(Boolean.class);
 - Shorthand method
 - Generic method (for any type)
 
+Built-in conversions to simple types:
+
 <table>
-<caption>Built-in Conversions to Simple Types (e.g., boolean)</caption>
-<colgroup>
-<col style="width: 50%" />
-<col style="width: 50%" />
-</colgroup>
 <thead>
 <tr>
-<th style="text-align: left;">Java type</th>
-<th style="text-align: left;">Example usage <sup>1</sup></th>
+<th>Java type</th>
+<th>Example usage <sup>1</sup></th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><p><code>boolean</code></p></td>
-<td style="text-align: left;"><p><code>boolean b = value.get();</code> <sup>2</sup></p>
-<p><code>boolean defaultedB = value.orElse(true);</code> <sup>3</sup></p></td>
+<td rowspan="2" style="vertical-align: middle"><code>boolean</code></td>
+<td><code>boolean b = value.get();</code> <sup>2</sup></td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>Optional&lt;Boolean&gt;</code></p></td>
-<td style="text-align: left;"><p>ConfigValue already has all methods of an Optional. If actual optional is needed: <code>Optional&lt;Boolean&gt; b = value.asOptional();</code> <sup>4</sup></p></td>
+<td><code>boolean defaultedB = value.orElse(true);</code> <sup>3</sup></td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>Supplier&lt;Boolean&gt;</code></p></td>
-<td style="text-align: left;"><p><code>Boolean b = value.supplier().get();</code></p>
-<p><code>boolean defaultedB = value.supplier(true).get();</code></p></td>
+<td><code>Optional&lt;Boolean&gt;</code></td>
+<td>ConfigValue already has all methods of an Optional. If actual optional is needed: <code>Optional&lt;Boolean&gt; b = value.asOptional();</code> <sup>4</sup></td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>Supplier&lt;Optional&lt;Boolean&gt;&gt;</code></p></td>
-<td style="text-align: left;"><p><code>Boolean b = value.optionalSupplier().get().orElse(Boolean.TRUE);</code></p></td>
+<td rowspan="2" style="vertical-align: middle"><code>Supplier&lt;Boolean&gt;</code></td>
+<td><code>Boolean b = value.supplier().get();</code></td>
+</tr>
+<tr>
+<td><code>boolean defaultedB = value.supplier(true).get();</code></td>
+</tr>
+<tr>
+<td><code>Supplier&lt;Optional&lt;Boolean&gt;&gt;</code></td>
+<td><code>Boolean b = value.optionalSupplier().get().orElse(Boolean.TRUE);</code></td>
 </tr>
 </tbody>
 </table>
 
-<div class="note">
-
-<div class="title">
-
-Built-in Conversions to Simple Types
-
-</div>
+Built-in Conversions to Simple Types:
 
 1.  All conversions can throw `MissingValueException` (if no value exists at the
     requested key and no default is provided) and `ConfigMappingException` (if
@@ -81,24 +76,22 @@ Built-in Conversions to Simple Types
 4.  User code defaults the value to `Boolean.TRUE` if absent; otherwise parses
     the value using `Boolean.parseBoolean`.
 
-</div>
-
 The numerous conversions defined on the `Config` class for other types
 (integers, doubles, etc.) will satisfy many of your application’s needs. The
 [`ConfigMappers`][configmappers] class includes other related mappings from
 `String` (rather than from `Config`) to Java types (described in the Javadoc).
 
-For additional type mapping, you can use these methods defined on `Config`:
+For additional type mapping, you can use these methods defined on `Config`
+which maps the current node to a type:
 
-```java
-T as(Class<? extends T> type);
-
-T as(Function<Config, T> mapper);
-
-T as(GenericType<T> genericType);
+```java [io.helidon.config.Config.java]
+interface Config {
+    // ...
+    T as(Class<? extends T> type);
+    T as(Function<Config, T> mapper);
+    T as(GenericType<T> genericType);
+}
 ```
-
-which maps the current node to a type.
 
 The next example, and later ones below showing complex type mapping, use the
 example [`application.properties`][application-prop] configuration from the

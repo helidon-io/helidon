@@ -710,7 +710,7 @@ Config config = Config.create(
 
 [configsources-fi]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/ConfigSources.html#file-java.lang.String-
 [configsources-ja]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/ConfigSources.html
-[configsources-pr]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/ConfigSources.html#prefixed-java.lang.String-java.util.function.Supplier-
+[configsources-pr]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/ConfigSources.html#prefixed(java.lang.String,java.util.function.Supplier)
 [hierarchical-fea]: hierarchical-features.md#access-by-key
 [filters]: extensions.md#configfilter-spi
 [value-resolving]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/ConfigFilters.html#valueResolving--

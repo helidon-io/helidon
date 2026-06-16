@@ -83,9 +83,9 @@ For upgrade from Helidon 3.x to 4.x:
 [3-0-2]: https://jakarta.ee/specifications/jsonb/3.0/jakarta-jsonb-spec-3.0.html
 [jakarta-restful]: ../mp/server.md
 [3-1]: https://jakarta.ee/specifications/restful-ws/3.1/jakarta-restful-ws-spec-3.1.html
-[jakarta-persiste]: ../mp/persistence.md#JPA
+[jakarta-persiste]: ../mp/persistence.md#jakarta-persistence-jpa
 [3-1-2]: https://jakarta.ee/specifications/persistence/3.1/jakarta-persistence-spec-3.1.html
-[jakarta-transact]: ../mp/persistence.md#JTA
+[jakarta-transact]: ../mp/persistence.md#jakarta-transactions-jta-integration
 [2-0]: https://jakarta.ee/specifications/transactions/2.0/jakarta-transactions-spec-2.0.html
 [jakarta-websocke]: ../mp/websocket.md
 [2-1-2]: https://jakarta.ee/specifications/websocket/2.1/jakarta-websocket-spec-2.1.html

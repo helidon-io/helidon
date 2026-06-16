@@ -145,6 +145,6 @@ image:
 ```
 
 [standalone-quick]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/quickstarts/helidon-standalone-quickstart-mp
-[helidon-s-applic]: https://github.com/helidon-io/helidon/tree/main/docs-internal/application-pom.md
+[helidon-s-applic]: https://github.com/helidon-io/helidon/tree/helidon-4.x/docs-internal/application-pom.md
 [maven-plugin-for]: https://graalvm.github.io/native-build-tools/latest/maven-plugin.html
 [helidon-maven-pl]: https://github.com/helidon-io/helidon-build-tools/tree/master/maven-plugins/helidon-maven-plugin

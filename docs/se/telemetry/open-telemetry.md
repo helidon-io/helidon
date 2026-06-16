@@ -815,7 +815,7 @@ telemetry:
 - [Intro to OpenTelemetry Java][intro-to-opentel]
 
 [preview-feature]: https://helidon.io/docs/v4/apidocs/io.helidon.common.features.api/io/helidon/common/features/api/Preview.html
-[opentelemetry-se]: https://github.com/open-telemetry/semantic-conventions/blob/v1.58.0/docs/http/http-spans.md#http-server
+[opentelemetry-se]: https://github.com/open-telemetry/semantic-conventions/blob/v1.37.0/docs/http/http-spans.md#http-server
 [publishing-helid]: ../../se/metrics/metrics.md#publishing-metrics
 [signals]: https://opentelemetry.io/docs/concepts/signals/
 [helidon-opentele]: https://helidon.io/docs/v4/apidocs/io.helidon.telemetry.otelconfig/io/helidon/telemetry/otelconfig/package-summary.html

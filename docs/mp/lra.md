@@ -590,19 +590,10 @@ compensate REST endpoints of the participants when the LRA transaction gets
 cancelled or completes (in case it gets closed). In addition, participant also
 keeps track of timeouts, retries participant calls, and assigns LRA ids.
 
-<div>
-
-<div class="title">
-
-Helidon LRA supports following coordinators
-
-</div>
-
+Helidon LRA supports following coordinators:
 - [MicroTx LRA coordinator][microtx-lra-coor]
 - Helidon LRA coordinator
 - [Narayana coordinator](https://narayana.io/lra).
-
-</div>
 
 ### MicroTx LRA Coordinator
 

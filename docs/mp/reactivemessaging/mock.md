@@ -120,5 +120,5 @@ public class MessagingTest {
   are intercepted on `test-channel-out` channel’s downstream and assert those
   with expected values.
 
-[junit-5]: /../../mp/reactivemessaging/../../testing/testing.adoc
-[testng]: /../../mp/reactivemessaging/../../testing/testing-ng.adoc
+[junit-5]: ../testing/testing.md
+[testng]: ../testing/testing-ng.md

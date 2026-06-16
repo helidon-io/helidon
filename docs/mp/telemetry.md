@@ -661,7 +661,7 @@ repository][helidon-official].
 - [MicroProfile Telemetry Specification][microprofile-tel]
 - [OpenTelemetry Documentation](https://opentelemetry.io/docs/)
 
-[helidon-se-docum]: ../se/tracing.md#responding-to-span-lifecycle-events
+[helidon-se-docum]: ../se/tracing.md#span-lifecycle
 [callbackenabled]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.telemetry/io/helidon/microprofile/telemetry/CallbackEnabled.html
 [helidontelemetry]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.telemetry/io/helidon/microprofile/telemetry/spi/HelidonTelemetryContainerFilterHelper.html
 [jakarta-rest-con]: https://jakarta.ee/specifications/restful-ws/3.1/apidocs/jakarta.ws.rs/jakarta/ws/rs/container/containerrequestcontext

@@ -53,7 +53,7 @@ mp.messaging:
 
 > [!TIP]
 > Besides the following configuration options, any property from
-> [consumer][consumer-2] or [producer][producer-2] configuration can be passed
+> [consumer][consumer] or [producer][producer] configuration can be passed
 > to the underlying Kafka client.
 
 ### Configuration options
@@ -155,11 +155,9 @@ for easy testing:
 
 - [Helidon messaging examples][helidon-messaging]
 
-[producer]: https://kafka.apache.org/28/documentation.html#producerconfigs
-[consumer]: https://kafka.apache.org/28/documentation.html#consumerconfigs
-[bootstrap-server]: https://kafka.apache.org/28/documentation.html#consumerconfigs_bootstrap.servers
-[consumer-2]: https://kafka.apache.org/documentation/#consumerconfigs
-[producer-2]: https://kafka.apache.org/documentation/#producerconfigs
+[producer]: https://kafka.apache.org/28/configuration/producer-configs/
+[consumer]: https://kafka.apache.org/28/configuration/consumer-configs/
+[bootstrap-server]: https://kafka.apache.org/28/configuration/consumer-configs/#consumerconfigs_bootstrap.servers
 [dlq]: https://en.wikipedia.org/wiki/Dead_letter_queue
 [io-helidon-messa]: ../../config/io.helidon.messaging.connectors.kafka.KafkaConfigBuilder.md#configuration-options
 [helidon-messaging]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/messaging

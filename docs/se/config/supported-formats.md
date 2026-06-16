@@ -419,7 +419,7 @@ sources:
 [configresolveopt]: https://github.com/lightbend/config/blob/master/config/src/main/java/com/typesafe/config/ConfigResolveOptions.java
 [etcdconfigsource]: https://helidon.io/docs/v4/apidocs/io.helidon.config.etcd/io/helidon/config/etcd/EtcdConfigSourceBuilder.html
 [abstractconfigso]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/AbstractConfigSourceBuilder.html
-[javadoc]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/AbstractConfigSourceBuilder.html#init-io.helidon.config.Config-
+[javadoc]: hhttps://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/AbstractConfigSourceBuilder.html
 [gitconfigsourceb]: https://helidon.io/docs/v4/apidocs/io.helidon.config.git/io/helidon/config/git/GitConfigSourceBuilder.html
 [pollingstrategy]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/spi/PollingStrategy.html
 [polling-strategy]: extensions.md#pollingstrategy-spi

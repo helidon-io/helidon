@@ -18,6 +18,7 @@ This type is a provider contract.
 <tbody>
 <tr>
 <td>
+<a id="abac"></a>
 <a href="io.helidon.security.providers.abac.AbacProvider.md">
 <code>abac</code>
 </a>
@@ -26,6 +27,7 @@ This type is a provider contract.
 </tr>
 <tr>
 <td>
+<a id="config-vault"></a>
 <a href="io.helidon.security.providers.config.vault.ConfigVaultProvider.md">
 <code>config-<wbr>vault</code>
 </a>
@@ -34,6 +36,7 @@ This type is a provider contract.
 </tr>
 <tr>
 <td>
+<a id="google-login"></a>
 <a href="io.helidon.security.providers.google.login.GoogleTokenProvider.md">
 <code>google-<wbr>login</code>
 </a>
@@ -42,6 +45,7 @@ This type is a provider contract.
 </tr>
 <tr>
 <td>
+<a id="header-atn"></a>
 <a href="io.helidon.security.providers.header.HeaderAtnProvider.md">
 <code>header-<wbr>atn</code>
 </a>
@@ -50,6 +54,7 @@ This type is a provider contract.
 </tr>
 <tr>
 <td>
+<a id="http-basic-auth"></a>
 <a href="io.helidon.security.providers.httpauth.HttpBasicAuthProvider.md">
 <code>http-<wbr>basic-<wbr>auth</code>
 </a>
@@ -58,6 +63,7 @@ This type is a provider contract.
 </tr>
 <tr>
 <td>
+<a id="http-digest-auth"></a>
 <a href="io.helidon.security.providers.httpauth.HttpDigestAuthProvider.md">
 <code>http-<wbr>digest-<wbr>auth</code>
 </a>
@@ -66,6 +72,7 @@ This type is a provider contract.
 </tr>
 <tr>
 <td>
+<a id="idcs-role-mapper"></a>
 <a href="io.helidon.security.providers.idcs.mapper.IdcsMtRoleMapperProvider.md">
 <code>idcs-<wbr>role-<wbr>mapper</code>
 </a>
@@ -74,6 +81,7 @@ This type is a provider contract.
 </tr>
 <tr>
 <td>
+<a id="idcs-role-mapper-2"></a>
 <a href="io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProvider.md">
 <code>idcs-<wbr>role-<wbr>mapper</code>
 </a>
@@ -82,6 +90,7 @@ This type is a provider contract.
 </tr>
 <tr>
 <td>
+<a id="jwt"></a>
 <a href="io.helidon.security.providers.jwt.JwtProvider.md">
 <code>jwt</code>
 </a>
@@ -90,6 +99,7 @@ This type is a provider contract.
 </tr>
 <tr>
 <td>
+<a id="oidc"></a>
 <a href="io.helidon.security.providers.oidc.OidcProvider.md">
 <code>oidc</code>
 </a>

@@ -692,7 +692,7 @@ culprit.
 [addconfigblock]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddConfigBlock.html
 [addconfigsource]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddConfigSource.html
 [microprofile-con]: https://download.eclipse.org/microprofile/microprofile-config-3.1/microprofile-config-spec-3.1.html#_configsource_ordering
-[webtarget]: https://jakarta.ee/specifications/restful-ws/3.1/apidocs/jakarta/ws/rs/client/WebTarget.html
+[webtarget]: https://jakarta.ee/specifications/restful-ws/3.1/apidocs/jakarta.ws.rs/jakarta/ws/rs/client/webtarget
 [socket]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/Socket.html
 [addextension]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AddExtension.html
 [afterstop]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.testing/io/helidon/microprofile/testing/AfterStop.html

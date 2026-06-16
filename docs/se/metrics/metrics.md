@@ -361,7 +361,7 @@ The name for each member in the family is derived from the registered name for
 the meter plus a suffix indicating which one of the meter’s multiple values the
 line refers to.
 
-The following table summarizes the naming for each meter type.
+The following table summarizes the naming for each meter type:
 
 <table>
 <thead>
@@ -375,62 +375,62 @@ The following table summarizes the naming for each meter type.
 </thead>
 <tbody>
 <tr>
-<td><p><code>Counter</code></p></td>
-<td><p><code>requests.<wbr>count</code></p></td>
-<td><p>count</p></td>
-<td><p><code>_total</code></p></td>
-<td><p><code>requests_<wbr>count_<wbr>total</code></p></td>
+<td><code>Counter</code></td>
+<td><code>requests.<wbr>count</code></td>
+<td>count</td>
+<td><code>_total</code></td>
+<td><code>requests_<wbr>count_<wbr>total</code></td>
 </tr>
 <tr>
-<td rowspan="4"><p><code>Distribution<wbr>Summary</code></p></td>
-<td rowspan="4"><p><code>nameLengths</code></p></td>
-<td><p>count</p></td>
-<td><p><code>_count</code></p></td>
-<td><p><code>name<wbr>Lengths_<wbr>count</code></p></td>
+<td rowspan="4"><code>Distribution<wbr>Summary</code></td>
+<td rowspan="4"><code>nameLengths</code></td>
+<td>count</td>
+<td><code>_count</code></td>
+<td><code>name<wbr>Lengths_<wbr>count</code></td>
 </tr>
 <tr>
-<td><p>sum</p></td>
-<td><p><code>_sum</code></p></td>
-<td><p><code>nameLengths_<wbr>sum</code></p></td>
+<td>sum</td>
+<td><code>_sum</code></td>
+<td><code>nameLengths_<wbr>sum</code></td>
 </tr>
 <tr>
-<td><p>max</p></td>
-<td><p><code>_max</code></p></td>
-<td><p><code>nameLengths_<wbr>max</code></p></td>
+<td>max</td>
+<td><code>_max</code></td>
+<td><code>nameLengths_<wbr>max</code></td>
 </tr>
 <tr>
-<td><p>percentile</p></td>
-<td><p>none</p></td>
-<td><p><code>nameLengths{<wbr>scope="base",<wbr>quantile="0.5",<wbr>}</code></p></td>
+<td>percentile</td>
+<td>none</td>
+<td><code>nameLengths{<wbr>scope="base",<wbr>quantile="0.5",<wbr>}</code></td>
 </tr>
 <tr>
-<td><p><code>Gauge</code></p></td>
-<td><p><code>classloader.<wbr>loadedClasses.<wbr>count</code></p></td>
-<td><p>value</p></td>
-<td><p>none</p></td>
-<td><p><code>classloader_<wbr>loadedClasses_<wbr>count</code></p></td>
+<td><code>Gauge</code></td>
+<td><code>classloader.<wbr>loadedClasses.<wbr>count</code></td>
+<td>value</td>
+<td>none</td>
+<td><code>classloader_<wbr>loadedClasses_<wbr>count</code></td>
 </tr>
 <tr>
-<td rowspan="4"><p><code>Timer</code> <sup>1</sup></p></td>
-<td rowspan="4"><p><code>vthreads.<wbr>recentPinned</code></p></td>
-<td><p>count</p></td>
-<td><p><code>_count</code></p></td>
-<td><p><code>vthreads_<wbr>recentPinned_<wbr>seconds_<wbr>count</code></p></td>
+<td rowspan="4"><code>Timer</code> <sup>1</sup></td>
+<td rowspan="4"><code>vthreads.<wbr>recentPinned</code></td>
+<td>count</td>
+<td><code>_count</code></td>
+<td><code>vthreads_<wbr>recentPinned_<wbr>seconds_<wbr>count</code></td>
 </tr>
 <tr>
-<td><p>sum</p></td>
-<td><p><code>_sum</code></p></td>
-<td><p><code>vthreads_<wbr>recentPinned_<wbr>seconds_<wbr>sum</code></p></td>
+<td>sum</td>
+<td><code>_sum</code></td>
+<td><code>vthreads_<wbr>recentPinned_<wbr>seconds_<wbr>sum</code></td>
 </tr>
 <tr>
-<td><p>max</p></td>
-<td><p><code>_max</code></p></td>
-<td><p><code>vthreads_<wbr>recentPinned_<wbr>seconds_<wbr>max</code></p></td>
+<td>max</td>
+<td><code>_max</code></td>
+<td><code>vthreads_<wbr>recentPinned_<wbr>seconds_<wbr>max</code></td>
 </tr>
 <tr>
-<td><p>percentile</p></td>
-<td><p>none</p></td>
-<td><p><code>vthreads_<wbr>recentPinned_<wbr>seconds{<wbr>scope="base",<wbr>quantile="0.5",<wbr>}</code></p></td>
+<td>percentile</td>
+<td>none</td>
+<td><code>vthreads_<wbr>recentPinned_<wbr>seconds{<wbr>scope="base",<wbr>quantile="0.5",<wbr>}</code></td>
 </tr>
 </tbody>
 </table>
@@ -776,7 +776,6 @@ The `paths` section contains zero or more entries, each entry having the
 following settings:
 
 <table>
-<caption><code>path</code> entry settings</caption>
 <thead>
 <tr>
 <th>Key</th>
@@ -787,27 +786,27 @@ following settings:
 </thead>
 <tbody>
 <tr>
-<td><p><code>path</code></p></td>
-<td><p>yes</p></td>
-<td><p> </p></td>
-<td><p>Path-matching expression:</p>
+<td><code>path</code></td>
+<td>yes</td>
+<td> </td>
+<td>Path-matching expression:
 <ul>
-<li><p>an exact match (<code>/greet</code>)</p></li>
-<li><p>a prefix match (<code>/greet/*</code>)</p></li>
-<li><p>a pattern match (<code>/greet/{name}</code>)</p></li>
+<li>an exact match (<code>/greet</code>)</li>
+<li>a prefix match (<code>/greet/*</code>)</li>
+<li>a pattern match (<code>/greet/{name}</code>)</li>
 </ul></td>
 </tr>
 <tr>
-<td><p><code>methods</code></p></td>
-<td><p> </p></td>
-<td><p>all HTTP method types</p></td>
-<td><p>Which HTTP methods match this entry</p></td>
+<td><code>methods</code></td>
+<td> </td>
+<td>all HTTP method types</td>
+<td>Which HTTP methods match this entry</td>
 </tr>
 <tr>
-<td><p><code>enabled</code></p></td>
-<td><p> </p></td>
-<td><p><code>true</code></p></td>
-<td><p>Whether requests that match this entry should be measured</p></td>
+<td><code>enabled</code></td>
+<td> </td>
+<td><code>true</code></td>
+<td>Whether requests that match this entry should be measured</td>
 </tr>
 </tbody>
 </table>
@@ -1125,9 +1124,9 @@ different `CollectorRegistry` or a different path.
 [gauges]: https://docs.micrometer.io/micrometer/reference/concepts/gauges.html
 [preview-feature]: https://helidon.io/docs/v4/apidocs/io.helidon.common.features.api/io/helidon/common/features/api/Preview.html
 [this-later-secti]: #inferred-publisher
-[datadogmeterregi]: https://github.com/micrometer-metrics/micrometer/tree/main/implementations/micrometer-registry-datadog
+[datadogmeterregi]: https://github.com/micrometer-metrics/micrometer/tree/v1.15.2/implementations/micrometer-registry-datadog
 [settable-propert]: https://github.com/micrometer-metrics/micrometer/blob/main/implementations/micrometer-registry-datadog/src/main/java/io/micrometer/datadog/DatadogConfig.java
-[otlp-publisher-b]: {https://github.com/helidon-io/helidon/tree/main/metrics/providers/micrometer/src/main/java/io/helidon/metrics/providers/micrometer/OtlpPublisherConfigBlueprint.java
+[otlp-publisher-b]: https://github.com/helidon-io/helidon/tree/helidon-4.x/metrics/providers/micrometer/src/main/java/io/helidon/metrics/providers/micrometer/OtlpPublisherConfigBlueprint.java
 [openmetrics-form]: https://github.com/prometheus/OpenMetrics/blob/main/specification/OpenMetrics.md
 [prometheus-expos]: https://github.com/prometheus/docs/blob/main/content/docs/instrumenting/exposition_formats.md
 [timeunit]: https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/util/concurrent/TimeUnit.html

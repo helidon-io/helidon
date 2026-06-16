@@ -18,6 +18,7 @@ This type is a provider contract.
 <tbody>
 <tr>
 <td>
+<a id="hikari"></a>
 <a href="io.helidon.data.sql.datasource.hikari.HikariDataSourceConfig.md">
 <code>hikari</code>
 </a>
@@ -26,6 +27,7 @@ This type is a provider contract.
 </tr>
 <tr>
 <td>
+<a id="jdbc"></a>
 <a href="io.helidon.data.sql.datasource.jdbc.JdbcDataSourceConfig.md">
 <code>jdbc</code>
 </a>
@@ -34,6 +36,7 @@ This type is a provider contract.
 </tr>
 <tr>
 <td>
+<a id="ucp"></a>
 <a href="io.helidon.data.sql.datasource.ucp.UcpDataSourceConfig.md">
 <code>ucp</code>
 </a>

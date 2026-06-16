@@ -64,27 +64,20 @@ including its parameters. More information in `Configuring a WebServer route`
 section.
 
 <table>
-<colgroup>
-<col style="width: 37%" />
-<col style="width: 62%" />
-</colgroup>
 <thead>
 <tr>
-<th style="text-align: left;">Annotation</th>
-<th style="text-align: left;">Description</th>
+<th>Annotation</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><pre><code>@RoutingName(
-    value = &quot;&quot;
-    required = false
-)</code></pre></td>
-<td style="text-align: left;"><p>Binds a JAX-RS Application or Helidon Service to a specific (named) routing on <code>WebServer</code>.The routing should have a corresponding named socket configured on the WebServer to run the routing on.</p></td>
+<td><code>@RoutingName(<wbr>value = &quot;&quot;,<wbr> required = false)</code></td>
+<td><p>Binds a JAX-RS Application or Helidon Service to a specific (named) routing on <code>WebServer</code>.The routing should have a corresponding named socket configured on the WebServer to run the routing on.</p></td>
 </tr>
 <tr>
-<td style="text-align: left;"><pre><code>@RoutingPath(&quot;/path&quot;)</code></pre></td>
-<td style="text-align: left;"><p>Path of a Helidon Service to register with routing.</p></td>
+<td><pre><code>@RoutingPath(<wbr>&quot;/path&quot;)<wbr></code></pre></td>
+<td><p>Path of a Helidon Service to register with routing.</p></td>
 </tr>
 </tbody>
 </table>
@@ -515,13 +508,13 @@ See the [`UriInfo`][uriinfo] Javadoc for more information.
 - [Helidon MicroProfile Server Javadoc][helidon-micropro]
 - [Helidon MicroProfile Server on GitHub][helidon-micropro-2]
 
-[server-features]: ../config/io.helidon.webserver.spi.ServerFeature.md#a42c97-access-log
+[server-features]: ../config/io.helidon.webserver.spi.ServerFeature.md
 [static-content-f]: ../config/io.helidon.webserver.staticcontent.StaticContentFeature.md
 [setting-applicat]: jaxrs/jaxrs-applications.md#setting-application-path
 [standard-http-fo]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Forwarded
 [non-standard-x-f]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For
 [uriinfo]: https://helidon.io/docs/v4/apidocs/io.helidon.common.uri/io/helidon/common/uri/UriInfo.html
 [helidon-micropro]: https://helidon.io/docs/v4/apidocs/io.helidon.microprofile.server/module-summary.html
-[helidon-micropro-2]: https://github.com/helidon-io/helidon/tree/main/microprofile/server
+[helidon-micropro-2]: https://github.com/helidon-io/helidon/tree/helidon-4.x/microprofile/server
 [io-helidon-webse]: ../config/io.helidon.webserver.WebServer.md#configuration-options
 [io-helidon-webse-2]: ../config/io.helidon.webserver.accesslog.AccessLogFeature.md#configuration-options

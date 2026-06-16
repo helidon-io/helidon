@@ -54,259 +54,255 @@ All built-in constraints are in the `jakarta.validation.constraints` package.
 Here is the list of constraints and their declaration.
 
 <table>
-<colgroup>
-<col style="width: 28%" />
-<col style="width: 71%" />
-</colgroup>
 <thead>
 <tr>
-<th style="text-align: left;">Annotation</th>
-<th style="text-align: left;">Description</th>
+<th>Annotation</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><p><code>@Null</code></p></td>
-<td style="text-align: left;"><p>The annotated element must be <code>null</code>. Accepts any type.</p></td>
+<td><code>@Null</code></td>
+<td>The annotated element must be <code>null</code>. Accepts any type.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>@NotNull</code></p></td>
-<td style="text-align: left;"><p>The annotated element must not be <code>null</code>. Accepts any type.</p></td>
+<td><code>@NotNull</code></td>
+<td>The annotated element must not be <code>null</code>. Accepts any type.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>@AssertTrue</code></p></td>
-<td style="text-align: left;"><p>The annotated element must be true. Supported types are <code>boolean</code> and <code>Boolean</code>. <code>Null</code> elements are considered valid.</p></td>
+<td><code>@AssertTrue</code></td>
+<td>The annotated element must be true. Supported types are <code>boolean</code> and <code>Boolean</code>. <code>Null</code> elements are considered valid.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>@AssertFalse</code></p></td>
-<td style="text-align: left;"><p>The annotated element must be false. Supported types are <code>boolean</code> and <code>Boolean</code>. <code>Null</code> elements are considered valid.</p></td>
+<td><code>@AssertFalse</code></td>
+<td>The annotated element must be false. Supported types are <code>boolean</code> and <code>Boolean</code>. <code>Null</code> elements are considered valid.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>@Min</code></p></td>
-<td style="text-align: left;"><p>The annotated element must be a number whose value must be higher or equal to the specified minimum.</p>
-<p>Supported types are:</p>
+<td><code>@Min</code></td>
+<td>The annotated element must be a number whose value must be higher or equal to the specified minimum.
+Supported types are:
 <ul>
-<li><p><code>BigDecimal</code></p></li>
-<li><p><code>BigInteger</code></p></li>
-<li><p><code>byte</code>, <code>short</code>, <code>int</code>, <code>long</code>, and their respective wrappers</p></li>
+<li><code>BigDecimal</code></li>
+<li><code>BigInteger</code></li>
+<li><code>byte</code>, <code>short</code>, <code>int</code>, <code>long</code>, and their respective wrappers</li>
 </ul>
-<p>Note that <code>double</code> and <code>float</code> are not supported due to rounding errors (some providers might provide some approximative support).</p>
-<p><code>Null</code> elements are considered valid.</p></td>
+Note that <code>double</code> and <code>float</code> are not supported due to rounding errors (some providers might provide some approximative support).
+<code>Null</code> elements are considered valid.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>@Max</code></p></td>
-<td style="text-align: left;"><p>The annotated element must be a number whose value must be lower or equal to the specified maximum.</p>
-<p>Supported types are:</p>
+<td><code>@Max</code></td>
+<td>The annotated element must be a number whose value must be lower or equal to the specified maximum.
+Supported types are:
 <ul>
-<li><p><code>BigDecimal</code></p></li>
-<li><p><code>BigInteger</code></p></li>
-<li><p><code>byte</code>, <code>short</code>, <code>int</code>, <code>long</code>, and their respective wrappers</p></li>
+<li><code>BigDecimal</code></li>
+<li><code>BigInteger</code></li>
+<li><code>byte</code>, <code>short</code>, <code>int</code>, <code>long</code>, and their respective wrappers</li>
 </ul>
-<p>Note that <code>double</code> and <code>float</code> are not supported due to rounding errors (some providers might provide some approximative support).</p>
-<p><code>Null</code> elements are considered valid.</p></td>
+Note that <code>double</code> and <code>float</code> are not supported due to rounding errors (some providers might provide some approximative support).
+<code>Null</code> elements are considered valid.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>@DecimalMin</code></p></td>
-<td style="text-align: left;"><p>The annotated element must be a number whose value must be higher or equal to the specified minimum.</p>
-<p>Supported types are:</p>
+<td><code>@DecimalMin</code></td>
+<td>The annotated element must be a number whose value must be higher or equal to the specified minimum.
+Supported types are:
 <ul>
-<li><p><code>BigDecimal</code></p></li>
-<li><p><code>BigInteger</code></p></li>
-<li><p><code>CharSequence</code></p></li>
-<li><p><code>byte</code>, <code>short</code>, <code>int</code>, <code>long</code>, and their respective wrappers</p></li>
+<li><code>BigDecimal</code></li>
+<li><code>BigInteger</code></li>
+<li><code>CharSequence</code></li>
+<li><code>byte</code>, <code>short</code>, <code>int</code>, <code>long</code>, and their respective wrappers</li>
 </ul>
-<p>Note that <code>double</code> and <code>float</code> are not supported due to rounding errors (some providers might provide some approximative support).</p>
-<p><code>Null</code> elements are considered valid.</p></td>
+Note that <code>double</code> and <code>float</code> are not supported due to rounding errors (some providers might provide some approximative support).
+<code>Null</code> elements are considered valid.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>@DecimalMax</code></p></td>
-<td style="text-align: left;"><p>The annotated element must be a number whose value must be lower or equal to the specified maximum.</p>
-<p>Supported types are:</p>
+<td><code>@DecimalMax</code></td>
+<td>The annotated element must be a number whose value must be lower or equal to the specified maximum.
+Supported types are:
 <ul>
-<li><p><code>BigDecimal</code></p></li>
-<li><p><code>BigInteger</code></p></li>
-<li><p><code>CharSequence</code></p></li>
-<li><p><code>byte</code>, <code>short</code>, <code>int</code>, <code>long</code>, and their respective wrappers</p></li>
+<li><code>BigDecimal</code></li>
+<li><code>BigInteger</code></li>
+<li><code>CharSequence</code></li>
+<li><code>byte</code>, <code>short</code>, <code>int</code>, <code>long</code>, and their respective wrappers</li>
 </ul>
-<p>Note that <code>double</code> and <code>float</code> are not supported due to rounding errors (some providers might provide some approximative support).</p>
-<p><code>Null</code> elements are considered valid.</p></td>
+Note that <code>double</code> and <code>float</code> are not supported due to rounding errors (some providers might provide some approximative support).
+<code>Null</code> elements are considered valid.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>@Negative</code></p></td>
-<td style="text-align: left;"><p>The annotated element must be a strictly negative number (i.e. 0 is considered as an invalid value).</p>
-<p>Supported types are:</p>
+<td><code>@Negative</code></td>
+<td>The annotated element must be a strictly negative number (i.e. 0 is considered as an invalid value).
+Supported types are:
 <ul>
-<li><p><code>BigDecimal</code></p></li>
-<li><p><code>BigInteger</code></p></li>
-<li><p><code>byte</code>, <code>short</code>, <code>int</code>, <code>long</code>, and their respective wrappers</p></li>
+<li><code>BigDecimal</code></li>
+<li><code>BigInteger</code></li>
+<li><code>byte</code>, <code>short</code>, <code>int</code>, <code>long</code>, and their respective wrappers</li>
 </ul>
-<p><code>Null</code> elements are considered valid.</p></td>
+<code>Null</code> elements are considered valid.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>@NegativeOrZero</code></p></td>
-<td style="text-align: left;"><p>The annotated element must be a negative number or 0.</p>
-<p>Supported types are:</p>
+<td><code>@NegativeOrZero</code></td>
+<td>The annotated element must be a negative number or 0.
+Supported types are:
 <ul>
-<li><p><code>BigDecimal</code></p></li>
-<li><p><code>BigInteger</code></p></li>
-<li><p><code>byte</code>, <code>short</code>, <code>int</code>, <code>long</code>, <code>float</code>, or <code>double</code> and their respective wrappers</p></li>
+<li><code>BigDecimal</code></li>
+<li><code>BigInteger</code></li>
+<li><code>byte</code>, <code>short</code>, <code>int</code>, <code>long</code>, <code>float</code>, or <code>double</code> and their respective wrappers</li>
 </ul>
-<p><code>Null</code> elements are considered valid.</p></td>
+<code>Null</code> elements are considered valid.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>@Positive</code></p></td>
-<td style="text-align: left;"><p>The annotated element must be a strictly positive number (i.e. 0 is considered as an invalid value).</p>
-<p>Supported types are:</p>
+<td><code>@Positive</code></td>
+<td>The annotated element must be a strictly positive number (i.e. 0 is considered as an invalid value).
+Supported types are:
 <ul>
-<li><p><code>BigDecimal</code></p></li>
-<li><p><code>BigInteger</code></p></li>
-<li><p><code>byte</code>, <code>short</code>, <code>int</code>, <code>long</code>, <code>float</code>, or <code>double</code> and their respective wrappers</p></li>
+<li><code>BigDecimal</code></li>
+<li><code>BigInteger</code></li>
+<li><code>byte</code>, <code>short</code>, <code>int</code>, <code>long</code>, <code>float</code>, or <code>double</code> and their respective wrappers</li>
 </ul>
-<p><code>Null</code> elements are considered valid.</p></td>
+<code>Null</code> elements are considered valid.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>@PositiveOrZero</code></p></td>
-<td style="text-align: left;"><p>The annotated element must be a positive number or 0.</p>
-<p>Supported types are:</p>
+<td><code>@PositiveOrZero</code></td>
+<td>The annotated element must be a positive number or 0.
+Supported types are:
 <ul>
-<li><p><code>BigDecimal</code></p></li>
-<li><p><code>BigInteger</code></p></li>
-<li><p><code>byte</code>, <code>short</code>, <code>int</code>, <code>long</code>, <code>float</code>, or <code>double</code> and their respective wrappers</p></li>
+<li><code>BigDecimal</code></li>
+<li><code>BigInteger</code></li>
+<li><code>byte</code>, <code>short</code>, <code>int</code>, <code>long</code>, <code>float</code>, or <code>double</code> and their respective wrappers</li>
 </ul>
-<p><code>Null</code> elements are considered valid.</p></td>
+<code>Null</code> elements are considered valid.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>@Size</code></p></td>
-<td style="text-align: left;"><p>The annotated element size must be between the specified boundaries (included). Supported types are: * <code>CharSequence</code> - length of character sequence is evaluated * <code>Collection</code> - collection size is evaluated * <code>Map</code> - map size is evaluated * <code>Array</code> (array length is evaluated)</p>
-<p><code>Null</code> elements are considered valid.</p></td>
+<td><code>@Size</code></td>
+<td>The annotated element size must be between the specified boundaries (included). Supported types are: * <code>CharSequence</code> - length of character sequence is evaluated * <code>Collection</code> - collection size is evaluated * <code>Map</code> - map size is evaluated * <code>Array</code> (array length is evaluated)
+<code>Null</code> elements are considered valid.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>@Digits</code></p></td>
-<td style="text-align: left;"><p>The annotated element must be a number within accepted range.</p>
-<p>Supported types are:</p>
+<td><code>@Digits</code></td>
+<td>The annotated element must be a number within accepted range.
+Supported types are:
 <ul>
-<li><p><code>BigDecimal</code></p></li>
-<li><p><code>BigInteger</code></p></li>
-<li><p><code>CharSequence</code></p></li>
-<li><p><code>byte</code>, <code>short</code>, <code>int</code>, <code>long</code>, and their respective wrapper types</p></li>
+<li><code>BigDecimal</code></li>
+<li><code>BigInteger</code></li>
+<li><code>CharSequence</code></li>
+<li><code>byte</code>, <code>short</code>, <code>int</code>, <code>long</code>, and their respective wrapper types</li>
 </ul>
-<p><code>Null</code> elements are considered valid.</p></td>
+<code>Null</code> elements are considered valid.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>@Past</code></p></td>
-<td style="text-align: left;"><p>The annotated element must be an instant, date or time in the past. <code>Now</code> is defined by the <code>ClockProvider</code> attached to the <code>Validator</code> or <code>ValidatorFactory</code>. The default <code>clockProvider</code> defines the current time according to the virtual machine, applying the current default time zone if needed.</p>
-<p>Supported types are:</p>
+<td><code>@Past</code></td>
+<td>The annotated element must be an instant, date or time in the past. <code>Now</code> is defined by the <code>ClockProvider</code> attached to the <code>Validator</code> or <code>ValidatorFactory</code>. The default <code>clockProvider</code> defines the current time according to the virtual machine, applying the current default time zone if needed.
+Supported types are:
 <ul>
-<li><p><code>java.util.Date</code></p></li>
-<li><p><code>java.util.Calendar</code></p></li>
-<li><p><code>java.time.Instant</code></p></li>
-<li><p><code>java.time.LocalDate</code></p></li>
-<li><p><code>java.time.LocalDateTime</code></p></li>
-<li><p><code>java.time.LocalTime</code></p></li>
-<li><p><code>java.time.MonthDay</code></p></li>
-<li><p><code>java.time.OffsetDateTime</code></p></li>
-<li><p><code>java.time.OffsetTime</code></p></li>
-<li><p><code>java.time.Year</code></p></li>
-<li><p><code>java.time.YearMonth</code></p></li>
-<li><p><code>java.time.ZonedDateTime</code></p></li>
-<li><p><code>java.time.chrono.HijrahDate</code></p></li>
-<li><p><code>java.time.chrono.JapaneseDate</code></p></li>
-<li><p><code>java.time.chrono.MinguoDate</code></p></li>
-<li><p><code>java.time.chrono.ThaiBuddhistDate</code></p></li>
+<li><code>java.util.Date</code></li>
+<li><code>java.util.Calendar</code></li>
+<li><code>java.time.Instant</code></li>
+<li><code>java.time.LocalDate</code></li>
+<li><code>java.time.LocalDateTime</code></li>
+<li><code>java.time.LocalTime</code></li>
+<li><code>java.time.MonthDay</code></li>
+<li><code>java.time.OffsetDateTime</code></li>
+<li><code>java.time.OffsetTime</code></li>
+<li><code>java.time.Year</code></li>
+<li><code>java.time.YearMonth</code></li>
+<li><code>java.time.ZonedDateTime</code></li>
+<li><code>java.time.chrono.HijrahDate</code></li>
+<li><code>java.time.chrono.JapaneseDate</code></li>
+<li><code>java.time.chrono.MinguoDate</code></li>
+<li><code>java.time.chrono.ThaiBuddhistDate</code></li>
 </ul>
-<p><code>Null</code> elements are considered valid.</p></td>
+<code>Null</code> elements are considered valid.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>@PastOrPresent</code></p></td>
-<td style="text-align: left;"><p>The annotated element must be an instant, date or time in the past or in the present. <code>Now</code> is defined by the <code>ClockProvider</code> attached to the <code>Validator</code> or <code>ValidatorFactory</code>. The default <code>clockProvider</code> defines the current time according to the virtual machine, applying the current default time zone if needed.</p>
-<p>The notion of present is defined relatively to the type on which the constraint is used. For instance, if the constraint is on a <code>Year</code>, present would mean the whole current year.</p>
-<p>Supported types are:</p>
+<td><code>@PastOrPresent</code></td>
+<td>The annotated element must be an instant, date or time in the past or in the present. <code>Now</code> is defined by the <code>ClockProvider</code> attached to the <code>Validator</code> or <code>ValidatorFactory</code>. The default <code>clockProvider</code> defines the current time according to the virtual machine, applying the current default time zone if needed.
+The notion of present is defined relatively to the type on which the constraint is used. For instance, if the constraint is on a <code>Year</code>, present would mean the whole current year.
+Supported types are:
 <ul>
-<li><p><code>java.util.Date</code></p></li>
-<li><p><code>java.util.Calendar</code></p></li>
-<li><p><code>java.time.Instant</code></p></li>
-<li><p><code>java.time.LocalDate</code></p></li>
-<li><p><code>java.time.LocalDateTime</code></p></li>
-<li><p><code>java.time.LocalTime</code></p></li>
-<li><p><code>java.time.MonthDay</code></p></li>
-<li><p><code>java.time.OffsetDateTime</code></p></li>
-<li><p><code>java.time.OffsetTime</code></p></li>
-<li><p><code>java.time.Year</code></p></li>
-<li><p><code>java.time.YearMonth</code></p></li>
-<li><p><code>java.time.ZonedDateTime</code></p></li>
-<li><p><code>java.time.chrono.HijrahDate</code></p></li>
-<li><p><code>java.time.chrono.JapaneseDate</code></p></li>
-<li><p><code>java.time.chrono.MinguoDate</code></p></li>
-<li><p><code>java.time.chrono.ThaiBuddhistDate</code></p></li>
+<li><code>java.util.Date</code></li>
+<li><code>java.util.Calendar</code></li>
+<li><code>java.time.Instant</code></li>
+<li><code>java.time.LocalDate</code></li>
+<li><code>java.time.LocalDateTime</code></li>
+<li><code>java.time.LocalTime</code></li>
+<li><code>java.time.MonthDay</code></li>
+<li><code>java.time.OffsetDateTime</code></li>
+<li><code>java.time.OffsetTime</code></li>
+<li><code>java.time.Year</code></li>
+<li><code>java.time.YearMonth</code></li>
+<li><code>java.time.ZonedDateTime</code></li>
+<li><code>java.time.chrono.HijrahDate</code></li>
+<li><code>java.time.chrono.JapaneseDate</code></li>
+<li><code>java.time.chrono.MinguoDate</code></li>
+<li><code>java.time.chrono.ThaiBuddhistDate</code></li>
 </ul>
-<p><code>Null</code> elements are considered valid.</p></td>
+<code>Null</code> elements are considered valid.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>@Future</code></p></td>
-<td style="text-align: left;"><p>The annotated element must be an instant, date or time in the future. <code>Now</code> is defined by the <code>ClockProvider</code> attached to the <code>Validator</code> or <code>ValidatorFactory</code>. The default <code>clockProvider</code> defines the current time according to the virtual machine, applying the current default time zone if needed.</p>
-<p>Supported types are:</p>
+<td><code>@Future</code></td>
+<td>The annotated element must be an instant, date or time in the future. <code>Now</code> is defined by the <code>ClockProvider</code> attached to the <code>Validator</code> or <code>ValidatorFactory</code>. The default <code>clockProvider</code> defines the current time according to the virtual machine, applying the current default time zone if needed.
+Supported types are:
 <ul>
-<li><p><code>java.util.Date</code></p></li>
-<li><p><code>java.util.Calendar</code></p></li>
-<li><p><code>java.time.Instant</code></p></li>
-<li><p><code>java.time.LocalDate</code></p></li>
-<li><p><code>java.time.LocalDateTime</code></p></li>
-<li><p><code>java.time.LocalTime</code></p></li>
-<li><p><code>java.time.MonthDay</code></p></li>
-<li><p><code>java.time.OffsetDateTime</code></p></li>
-<li><p><code>java.time.OffsetTime</code></p></li>
-<li><p><code>java.time.Year</code></p></li>
-<li><p><code>java.time.YearMonth</code></p></li>
-<li><p><code>java.time.ZonedDateTime</code></p></li>
-<li><p><code>java.time.chrono.HijrahDate</code></p></li>
-<li><p><code>java.time.chrono.JapaneseDate</code></p></li>
-<li><p><code>java.time.chrono.MinguoDate</code></p></li>
-<li><p><code>java.time.chrono.ThaiBuddhistDate</code></p></li>
+<li><code>java.util.Date</code></li>
+<li><code>java.util.Calendar</code></li>
+<li><code>java.time.Instant</code></li>
+<li><code>java.time.LocalDate</code></li>
+<li><code>java.time.LocalDateTime</code></li>
+<li><code>java.time.LocalTime</code></li>
+<li><code>java.time.MonthDay</code></li>
+<li><code>java.time.OffsetDateTime</code></li>
+<li><code>java.time.OffsetTime</code></li>
+<li><code>java.time.Year</code></li>
+<li><code>java.time.YearMonth</code></li>
+<li><code>java.time.ZonedDateTime</code></li>
+<li><code>java.time.chrono.HijrahDate</code></li>
+<li><code>java.time.chrono.JapaneseDate</code></li>
+<li><code>java.time.chrono.MinguoDate</code></li>
+<li><code>java.time.chrono.ThaiBuddhistDate</code></li>
 </ul>
-<p><code>Null</code> elements are considered valid.</p></td>
+<code>Null</code> elements are considered valid.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>@FutureOrPresent</code></p></td>
-<td style="text-align: left;"><p>The annotated element must be an instant, date or time in the present or in the future. <code>Now</code> is defined by the <code>ClockProvider</code> attached to the <code>Validator</code> or <code>ValidatorFactory</code>. The default <code>clockProvider</code> defines the current time according to the virtual machine, applying the current default time zone if needed.</p>
-<p>The notion of present here is defined relatively to the type on which the constraint is used. For instance, if the constraint is on a <code>Year</code>, present would mean the whole current year.</p>
-<p>Supported types are:</p>
+<td><code>@FutureOrPresent</code></td>
+<td>The annotated element must be an instant, date or time in the present or in the future. <code>Now</code> is defined by the <code>ClockProvider</code> attached to the <code>Validator</code> or <code>ValidatorFactory</code>. The default <code>clockProvider</code> defines the current time according to the virtual machine, applying the current default time zone if needed.
+The notion of present here is defined relatively to the type on which the constraint is used. For instance, if the constraint is on a <code>Year</code>, present would mean the whole current year.
+Supported types are:
 <ul>
-<li><p><code>java.util.Date</code></p></li>
-<li><p><code>java.util.Calendar</code></p></li>
-<li><p><code>java.time.Instant</code></p></li>
-<li><p><code>java.time.LocalDate</code></p></li>
-<li><p><code>java.time.LocalDateTime</code></p></li>
-<li><p><code>java.time.LocalTime</code></p></li>
-<li><p><code>java.time.MonthDay</code></p></li>
-<li><p><code>java.time.OffsetDateTime</code></p></li>
-<li><p><code>java.time.OffsetTime</code></p></li>
-<li><p><code>java.time.Year</code></p></li>
-<li><p><code>java.time.YearMonth</code></p></li>
-<li><p><code>java.time.ZonedDateTime</code></p></li>
-<li><p><code>java.time.chrono.HijrahDate</code></p></li>
-<li><p><code>java.time.chrono.JapaneseDate</code></p></li>
-<li><p><code>java.time.chrono.MinguoDate</code></p></li>
-<li><p><code>java.time.chrono.ThaiBuddhistDate</code></p></li>
+<li><code>java.util.Date</code></li>
+<li><code>java.util.Calendar</code></li>
+<li><code>java.time.Instant</code></li>
+<li><code>java.time.LocalDate</code></li>
+<li><code>java.time.LocalDateTime</code></li>
+<li><code>java.time.LocalTime</code></li>
+<li><code>java.time.MonthDay</code></li>
+<li><code>java.time.OffsetDateTime</code></li>
+<li><code>java.time.OffsetTime</code></li>
+<li><code>java.time.Year</code></li>
+<li><code>java.time.YearMonth</code></li>
+<li><code>java.time.ZonedDateTime</code></li>
+<li><code>java.time.chrono.HijrahDate</code></li>
+<li><code>java.time.chrono.JapaneseDate</code></li>
+<li><code>java.time.chrono.MinguoDate</code></li>
+<li><code>java.time.chrono.ThaiBuddhistDate</code></li>
 </ul>
-<p><code>Null</code> elements are considered valid.</p></td>
+<code>Null</code> elements are considered valid.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>@Pattern</code></p></td>
-<td style="text-align: left;"><p>The annotated <code>CharSequence</code> must match the specified regular expression. The regular expression follows the Java regular expression conventions see <code>java.util.regex.Pattern</code>. Accepts <code>CharSequence</code>.</p>
-<p><code>Null</code> elements are considered valid.</p></td>
+<td><code>@Pattern</code></td>
+<td>The annotated <code>CharSequence</code> must match the specified regular expression. The regular expression follows the Java regular expression conventions see <code>java.util.regex.Pattern</code>. Accepts <code>CharSequence</code>.
+<code>Null</code> elements are considered valid.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>@NotEmpty</code></p></td>
-<td style="text-align: left;"><p>The annotated element must not be <code>null</code> nor empty. Supported types are: * <code>CharSequence</code> - length of character sequence is evaluated * <code>Collection</code> - collection size is evaluated * <code>Map</code> - map size is evaluated * <code>Array</code> (array length is evaluated)</p></td>
+<td><code>@NotEmpty</code></td>
+<td>The annotated element must not be <code>null</code> nor empty. Supported types are: * <code>CharSequence</code> - length of character sequence is evaluated * <code>Collection</code> - collection size is evaluated * <code>Map</code> - map size is evaluated * <code>Array</code> (array length is evaluated)</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>@NotBlank</code></p></td>
-<td style="text-align: left;"><p>The annotated element must not be <code>null</code> and must contain at least one non-whitespace character. Accepts <code>CharSequence</code>.</p></td>
+<td><code>@NotBlank</code></td>
+<td>The annotated element must not be <code>null</code> and must contain at least one non-whitespace character. Accepts <code>CharSequence</code>.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>@Email</code></p></td>
-<td style="text-align: left;"><p>The string has to be a well-formed email address. Exact semantics of what makes up a valid email address are left to Jakarta Bean Validation providers. Accepts <code>CharSequence</code>.</p>
-<p><code>Null</code> elements are considered valid.</p></td>
+<td><code>@Email</code></td>
+<td>The string has to be a well-formed email address. Exact semantics of what makes up a valid email address are left to Jakarta Bean Validation providers. Accepts <code>CharSequence</code>.
+<code>Null</code> elements are considered valid.</td>
 </tr>
 </tbody>
 </table>

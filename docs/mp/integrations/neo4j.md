@@ -192,8 +192,6 @@ curl -s -X GET http://localhost:8080/metrics
 curl -H 'Accept: application/json' -X GET http://localhost:8080/metrics
 ```
 
-Full example code is available in [Helidon GitHub Repository][helidon-github-r].
-
 ## Additional Information
 
 ### Neo4j Metrics propagation
@@ -250,5 +248,4 @@ Health checks for Neo4j will be included in `/health` endpoint output.
 
 [neo4j-documentat]: https://neo4j.com/developer/java/
 [play-movies]: http://localhost:7474/browser/?cmd=play&arg=movies
-[helidon-github-r]: https://github.com/helidon-io/helidon/tree/master/examples/integrations/neo4j/neo4j-mp
 [io-helidon-integ]: ../../config/io.helidon.integrations.neo4j.Neo4j.md#configuration-options

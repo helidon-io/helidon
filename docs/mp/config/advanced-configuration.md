@@ -8,39 +8,35 @@ manually set up the Config from
 `io.helidon.config.mp.MpConfigSources` class:
 
 <table>
-<colgroup>
-<col style="width: 37%" />
-<col style="width: 62%" />
-</colgroup>
 <thead>
 <tr>
-<th style="text-align: left;">Method</th>
-<th style="text-align: left;">Description</th>
+<th>Method</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><p><code>systemProperties()</code></p></td>
-<td style="text-align: left;"><p>System properties config source.</p></td>
+<td><code>systemProperties()</code></td>
+<td>System properties config source.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>environmentVariables()</code></p></td>
-<td style="text-align: left;"><p>Environment variables config source.</p></td>
+<td><code>environmentVariables()</code></td>
+<td>Environment variables config source.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>create(java.nio.file.Path)</code></p></td>
-<td style="text-align: left;"><p>Loads a properties file from file system.<br />
-To load the properties file from file system with custom name, use <code>create(String, java.nio.file.Path)</code>.</p></td>
+<td><code>create(<wbr>java.<wbr>nio.<wbr>file.<wbr>Path)</code></td>
+<td>Loads a properties file from file system.<br />
+To load the properties file from file system with custom name, use <code>create(String, java.nio.file.Path)</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>create(java.util.Map)</code></p></td>
-<td style="text-align: left;"><p>Creates an in-memory source from map.<br />
-To create an in-memory source from map with custom name, use <code>create(String, java.util.Map)</code>.</p></td>
+<td><code>create(<wbr>java.<wbr>util.<wbr>Map)</code></td>
+<td>Creates an in-memory source from map.<br />
+To create an in-memory source from map with custom name, use <code>create(String, java.util.Map)</code>.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>create(java.util.Properties)</code></p></td>
-<td style="text-align: left;"><p>Creates an in-memory source from properties.<br />
-To create an in-memory source from properties with custom name, use <code>create(String, java.util.Properties)</code>.</p></td>
+<td><code>create(<wbr>java.<wbr>util.<wbr>Properties)</code></td>
+<td>Creates an in-memory source from properties.<br />
+To create an in-memory source from properties with custom name, use <code>create(<wbr>String,<wbr> java.util.Properties)</code></td>
 </tr>
 </tbody>
 </table>

@@ -926,7 +926,7 @@ Refer to the following references for additional information:
 [key-performance]: #collecting-basic-and-extended-key-performance-indicator-kpi-metrics
 [disable-metrics]: #disabling-metrics-subsystem-entirely
 [virtual-threads]: #configuring-virtual-threads-metrics
-[microprofile-met]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/microprofile-metrics-spec-5.1.1.html#_optional_rest
+[microprofile-met]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/microprofile-metrics-spec-5.1.1.html#base-metrics
 [microprofile-met-2]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/microprofile-metrics-spec-5.1.1.html
 [microprofile-met-3]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/apidocs
-[prometheus-text]: https://prometheus.io/docs/instrumenting/exposition_formats/#text-format-details
+[prometheus-text]: https://prometheus.io/docs/instrumenting/exposition_formats/#details

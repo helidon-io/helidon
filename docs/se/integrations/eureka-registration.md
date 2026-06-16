@@ -110,7 +110,7 @@ feature](../discovery.md), particularly its [Eureka
 provider](../discovery.md#eureka).
 
 [serverfeature]: https://helidon.io/docs/v4/apidocs/io.helidon.webserver/io/helidon/webserver/spi/ServerFeature.html
-[associated-serve]: https://helidon.io/docs/v4/apidocs/io.helidon.integrations.eureka/io/helidon/integrations/eureka/EurekaRegistrationServerFeatureProvider
+[associated-serve]: https://helidon.io/docs/v4/apidocs/io.helidon.integrations.eureka/io/helidon/integrations/eureka/EurekaRegistrationServerFeatureProvider.html
 [httpclientconfig]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.api/io/helidon/webclient/api/HttpClientConfig.html
 [helidon-config-r]: ../../config/io.helidon.integrations.eureka.InstanceInfoConfig.md
 [helidon-config-r-2]: ../../config/io.helidon.integrations.eureka.EurekaRegistrationServerFeature.md

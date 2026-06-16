@@ -191,46 +191,38 @@ recommend, and other common settings most developers will want to use.
 You must specify the following options:
 
 <table>
-<caption>Required OpenAPI Generator Options</caption>
-<colgroup>
-<col style="width: 20%" />
-<col style="width: 5%" />
-<col style="width: 20%" />
-<col style="width: 30%" />
-<col style="width: 25%" />
-</colgroup>
 <thead>
 <tr>
-<th style="text-align: left;">Option</th>
-<th style="text-align: left;">Short Option</th>
-<th style="text-align: left;">Plug-in Setting</th>
-<th style="text-align: left;">Description</th>
-<th style="text-align: left;">Values</th>
+<th>Option</th>
+<th>Short Option</th>
+<th>Plug-in Setting</th>
+<th>Description</th>
+<th>Values</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><p><code>--inputSpec</code></p></td>
-<td style="text-align: left;"><p><code>-i</code></p></td>
-<td style="text-align: left;"><p><code>&lt;inputSpec&gt;</code></p></td>
-<td style="text-align: left;"><p>Path to the OpenAPI document defining the REST API</p></td>
-<td style="text-align: left;"></td>
+<td><code>--inputSpec</code></td>
+<td><code>-i</code></td>
+<td><code>&lt;inputSpec&gt;</code></td>
+<td>Path to the OpenAPI document defining the REST API</td>
+<td></td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>--generatorName</code></p></td>
-<td style="text-align: left;"><p><code>-g</code></p></td>
-<td style="text-align: left;"><p><code>&lt;generatorName&gt;</code></p></td>
-<td style="text-align: left;"><p>Generator you want to use (<code>java-helidon-server</code> or <code>java-helidon-client</code>)</p></td>
-<td style="text-align: left;"><p><code>java-helidon-server</code><br />
-<code>java-helidon-client</code></p></td>
+<td><code>--generatorName</code></td>
+<td><code>-g</code></td>
+<td><code>&lt;generatorName&gt;</code></td>
+<td>Generator you want to use (<code>java-helidon-server</code> or <code>java-helidon-client</code>)</td>
+<td><code>java-helidon-server</code><br />
+<code>java-helidon-client</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>--library</code></p></td>
-<td style="text-align: left;"><p> </p></td>
-<td style="text-align: left;"><p><code>&lt;library&gt;</code></p></td>
-<td style="text-align: left;"><p>Library you want to use</p></td>
-<td style="text-align: left;"><p><code>mp</code><br />
-<code>se</code></p></td>
+<td><code>--library</code></td>
+<td> </td>
+<td><code>&lt;library&gt;</code></td>
+<td>Library you want to use</td>
+<td><code>mp</code><br />
+<code>se</code></td>
 </tr>
 </tbody>
 </table>
@@ -246,50 +238,50 @@ Recommended OpenAPI Generator Additional Properties:
 <table>
 <thead>
 <tr>
-<th style="text-align: left;">Property</th>
-<th style="text-align: left;">Description</th>
-<th style="text-align: left;">Default</th>
+<th>Property</th>
+<th>Description</th>
+<th>Default</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><p><code>apiPackage</code></p></td>
-<td style="text-align: left;"><p>Name of the package for generated API interfaces/classes</p></td>
-<td style="text-align: left;"><p><code>org.openapitools.server.api</code> or<br />
-<code>org.openapitools.client.api</code></p></td>
+<td><code>apiPackage</code></td>
+<td>Name of the package for generated API interfaces/classes</td>
+<td><code>org.openapitools.server.api</code> or<br />
+<code>org.openapitools.client.api</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>modelPackage</code></p></td>
-<td style="text-align: left;"><p>Name of the package for generated model (POJO) classes</p></td>
-<td style="text-align: left;"><p><code>org.openapitools.server.model</code> or<br />
-<code>org.openapitools.client.model</code></p></td>
+<td><code>modelPackage</code></td>
+<td>Name of the package for generated model (POJO) classes</td>
+<td><code>org.openapitools.server.model</code> or<br />
+<code>org.openapitools.client.model</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>invokerPackage</code></p></td>
-<td style="text-align: left;"><p>Name of the package for generated driver classes</p></td>
-<td style="text-align: left;"><p><code>org.openapitools.server</code> or<br />
-<code>org.openapitools.client</code></p></td>
+<td><code>invokerPackage</code></td>
+<td>Name of the package for generated driver classes</td>
+<td><code>org.openapitools.server</code> or<br />
+<code>org.openapitools.client</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>groupId</code></p></td>
-<td style="text-align: left;"><p>Group ID in the generated <code>pom.xml</code></p></td>
-<td style="text-align: left;"><p><code>org.openapitools</code></p></td>
+<td><code>groupId</code></td>
+<td>Group ID in the generated <code>pom.xml</code></td>
+<td><code>org.openapitools</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>artifactId</code></p></td>
-<td style="text-align: left;"><p>Artifact ID in the generated <code>pom.xml</code></p></td>
-<td style="text-align: left;"><p><code>openapi-java-server</code> or<br />
-<code>openapi-java-client</code></p></td>
+<td><code>artifactId</code></td>
+<td>Artifact ID in the generated <code>pom.xml</code></td>
+<td><code>openapi-java-server</code> or<br />
+<code>openapi-java-client</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>artifactVersion</code></p></td>
-<td style="text-align: left;"><p>Artifact version in the generated <code>pom.xml</code></p></td>
-<td style="text-align: left;"><p><code>1.0.0</code></p></td>
+<td><code>artifactVersion</code></td>
+<td>Artifact version in the generated <code>pom.xml</code></td>
+<td><code>1.0.0</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>useAbstractClass</code></p></td>
-<td style="text-align: left;"><p>Generate server abstract classes instead of interfaces. Setting to <code>true</code> generates significantly more helpful code.</p></td>
-<td style="text-align: left;"><p><code>false</code></p></td>
+<td><code>useAbstractClass</code></td>
+<td>Generate server abstract classes instead of interfaces. Setting to <code>true</code> generates significantly more helpful code.</td>
+<td><code>false</code></td>
 </tr>
 </tbody>
 </table>
@@ -299,27 +291,28 @@ Recommended OpenAPI Generator Additional Properties:
 > plug-in (not for using the CLI).
 
 Recommended OpenAPI Generator Plug-in Options:
+
 <table>
 <thead>
 <tr>
-<th style="text-align: left;">Plug-in Option</th>
-<th style="text-align: left;">Description</th>
-<th style="text-align: left;">Default</th>
+<th>Plug-in Option</th>
+<th>Description</th>
+<th>Default</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><p><code>&lt;output&gt;</code></p></td>
-<td style="text-align: left;"><p>Directory where the generator should place files.<br />
-+ We strongly recommend <code>&lt;output&gt;target/generated-sources&lt;/output&gt;</code> or a subdirectory below there.</p></td>
-<td style="text-align: left;"><p><code>.</code><br />
-(current directory)</p></td>
+<td><code>&lt;output&gt;</code></td>
+<td>Directory where the generator should place files.<br />
++ We strongly recommend <code>&lt;output&gt;target/generated-sources&lt;/output&gt;</code> or a subdirectory below there.</td>
+<td><code>.</code><br />
+(current directory)</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>&lt;addCompileSourceRoot&gt;</code></p></td>
-<td style="text-align: left;"><p>Whether Maven should include the output directory as a source root (that is, include it automatically in the build).<br />
-+ We advise <code>&lt;addCompileSourceRoot&gt;true&lt;/addCompileSourceRoot&gt;</code>.</p></td>
-<td style="text-align: left;"><p><code>false</code></p></td>
+<td><code>&lt;addCompileSourceRoot&gt;</code></td>
+<td>Whether Maven should include the output directory as a source root (that is, include it automatically in the build).<br />
++ We advise <code>&lt;addCompileSourceRoot&gt;true&lt;/addCompileSourceRoot&gt;</code>.</td>
+<td><code>false</code></td>
 </tr>
 </tbody>
 </table>
@@ -331,43 +324,44 @@ particularly consider are summarized in the table below. Refer to the [earlier
 links](#configuration) for complete lists.
 
 Common OpenAPI Generator Additional Properties:
+
 <table>
 <thead>
 <tr>
-<th style="text-align: left;">Property</th>
-<th style="text-align: left;">Description</th>
-<th style="text-align: left;">Values</th>
-<th style="text-align: left;">Default</th>
-<th style="text-align: left;">Notes</th>
+<th>Property</th>
+<th>Description</th>
+<th>Values</th>
+<th>Default</th>
+<th>Notes</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><p><code>helidonVersion</code></p></td>
-<td style="text-align: left;"><p>Version of Helidon for which to generate the files</p></td>
-<td style="text-align: left;"><p> </p></td>
-<td style="text-align: left;"><p>Latest published Helidon release *</p></td>
-<td style="text-align: left;"><p>Affects:</p>
+<td><code>helidonVersion</code></td>
+<td>Version of Helidon for which to generate the files</td>
+<td> </td>
+<td>Latest published Helidon release *</td>
+<td>Affects:
 <ul>
-<li><p>Helidon version for the <code>&lt;parent&gt;</code></p></li>
-<li><p>Dependencies (<code>javax</code> vs. <code>jakarta</code>)</p></li>
-<li><p><code>java import</code> statements in generated code (<code>javax</code> vs. <code>jakarta</code>)</p></li>
-<li><p>Which Helidon APIs are used (3.x vs. 4.x, for example)</p></li>
+<li>Helidon version for the <code>&lt;parent&gt;</code></li>
+<li>Dependencies (<code>javax</code> vs. <code>jakarta</code>)</li>
+<li><code>java import</code> statements in generated code (<code>javax</code> vs. <code>jakarta</code>)</li>
+<li>Which Helidon APIs are used (3.x vs. 4.x, for example)</li>
 </ul></td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>fullProject</code></p></td>
-<td style="text-align: left;"><p>Whether to generate all the normal files or only API files</p></td>
-<td style="text-align: left;"><p><code>true</code>/<code>false</code></p></td>
-<td style="text-align: left;"><p><code>false</code></p></td>
-<td style="text-align: left;"><p>The "API files" include files developers do not normally modify after they are generated: the interfaces or classes for the declared API and the model classes.</p></td>
+<td><code>fullProject</code></td>
+<td>Whether to generate all the normal files or only API files</td>
+<td><code>true</code>/<code>false</code></td>
+<td><code>false</code></td>
+<td>The "API files" include files developers do not normally modify after they are generated: the interfaces or classes for the declared API and the model classes.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>serializationLibrary</code></p></td>
-<td style="text-align: left;"><p>which Java library to use for serializing JSON</p></td>
-<td style="text-align: left;"><p><code>jsonb</code>, <code>jackson</code></p></td>
-<td style="text-align: left;"><p><code>jackson</code></p></td>
-<td style="text-align: left;"></td>
+<td><code>serializationLibrary</code></td>
+<td>which Java library to use for serializing JSON</td>
+<td><code>jsonb</code>, <code>jackson</code></td>
+<td><code>jackson</code></td>
+<td></td>
 </tr>
 </tbody>
 </table>

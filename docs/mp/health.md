@@ -138,48 +138,41 @@ health.endpoint=/myhealth
 You can use Helidon-provided health checks to report various common health check
 statuses:
 
-<table style="width:100%;">
-<colgroup>
-<col style="width: 4%" />
-<col style="width: 4%" />
-<col style="width: 13%" />
-<col style="width: 65%" />
-<col style="width: 13%" />
-</colgroup>
+<table>
 <thead>
 <tr>
-<th style="text-align: left;">Built-in health check</th>
-<th style="text-align: left;">Health check name</th>
-<th style="text-align: left;">Javadoc</th>
-<th style="text-align: left;">Config properties (within <code>server.features.observe.observers.health</code>)</th>
-<th style="text-align: left;">Default config value</th>
+<th>Built-in health check</th>
+<th>Health check name</th>
+<th>Javadoc</th>
+<th>Config properties (within <code>server.features.observe.observers.health</code>)</th>
+<th>Default config value</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><p>deadlock detection</p></td>
-<td style="text-align: left;"><p><code>deadlock</code></p></td>
-<td style="text-align: left;"><p><a href="https://helidon.io/docs/v4/apidocs/io.helidon.health.checks/io/helidon/health/checks/DeadlockHealthCheck.html"><code>DeadlockHealthCheck</code></a></p></td>
-<td style="text-align: left;"><p>n/a</p></td>
-<td style="text-align: left;"><p>n/a</p></td>
+<td>deadlock detection</td>
+<td><code>deadlock</code></td>
+<td><a href="https://helidon.io/docs/v4/apidocs/io.helidon.health.checks/io/helidon/health/checks/DeadlockHealthCheck.html"><code>DeadlockHealthCheck</code></a></td>
+<td>n/a</td>
+<td>n/a</td>
 </tr>
 <tr>
-<td rowspan="2" style="text-align: left;"><p>available disk space</p></td>
-<td rowspan="2" style="text-align: left;"><p><code>diskSpace</code></p></td>
-<td rowspan="2" style="text-align: left;"><p><a href="https://helidon.io/docs/v4/apidocs/io.helidon.health.checks/io/helidon/health/checks/DiskSpaceHealthCheck.html"><code>DiskSpaceHealthCheck</code></a></p></td>
-<td style="text-align: left;"><p><code>helidon.health.diskSpace.thresholdPercent</code></p></td>
-<td style="text-align: left;"><p><code>99.999</code></p></td>
+<td rowspan="2">available disk space</td>
+<td rowspan="2"><code>diskSpace</code></td>
+<td rowspan="2"><a href="https://helidon.io/docs/v4/apidocs/io.helidon.health.checks/io/helidon/health/checks/DiskSpaceHealthCheck.html"><code>DiskSpaceHealthCheck</code></a></td>
+<td><code>helidon.health.diskSpace.thresholdPercent</code></td>
+<td><code>99.999</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>helidon.health.diskSpace.path</code></p></td>
-<td style="text-align: left;"><p><code>/</code></p></td>
+<td><code>helidon.health.diskSpace.path</code></td>
+<td><code>/</code></td>
 </tr>
 <tr>
-<td style="text-align: left;"><p>available heap memory</p></td>
-<td style="text-align: left;"><p><code>heapMemory</code></p></td>
-<td style="text-align: left;"><p><a href="https://helidon.io/docs/v4/apidocs/io.helidon.health.checks/io/helidon/health/checks/HeapMemoryHealthCheck.html"><code>HeapMemoryHealthCheck</code></a></p></td>
-<td style="text-align: left;"><p><code>helidon.health.heapMemory.thresholdPercent</code></p></td>
-<td style="text-align: left;"><p><code>98</code></p></td>
+<td>available heap memory</td>
+<td><code>heapMemory</code></td>
+<td><a href="https://helidon.io/docs/v4/apidocs/io.helidon.health.checks/io/helidon/health/checks/HeapMemoryHealthCheck.html"><code>HeapMemoryHealthCheck</code></a></td>
+<td><code>helidon.health.heapMemory.thresholdPercent</code></td>
+<td><code>98</code></td>
 </tr>
 </tbody>
 </table>

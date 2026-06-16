@@ -170,30 +170,26 @@ below), or using `MpConfigSources.create(Path)`, or
 `YamlMpConfigSource.create(Path)`, use the following properties:
 
 <table>
-<colgroup>
-<col style="width: 37%" />
-<col style="width: 62%" />
-</colgroup>
 <thead>
 <tr>
-<th style="text-align: left;">Property</th>
-<th style="text-align: left;">Description</th>
+<th>Property</th>
+<th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td style="text-align: left;"><p><code>helidon.config.polling.enabled</code></p></td>
-<td style="text-align: left;"><p>To enable polling file for changes, uses timestamp to identify a change.</p></td>
+<td><code>helidon.config.polling.enabled</code></td>
+<td>To enable polling file for changes, uses timestamp to identify a change.</td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>helidon.config.polling.duration</code></p></td>
-<td style="text-align: left;"><p>Polling period duration, defaults to 10 seconds ('PT10S`)<br />
-See <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/time/Duration.html#parse(java.lang.CharSequence)">Javadoc</a></p></td>
+<td><code>helidon.config.polling.duration</code></td>
+<td>Polling period duration, defaults to 10 seconds ('PT10S`).
+See the <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/time/Duration.html#parse(java.lang.CharSequence)">Javadoc</a></td>
 </tr>
 <tr>
-<td style="text-align: left;"><p><code>helidon.config.watcher.enabled</code></p></td>
-<td style="text-align: left;"><p>To enable watching file for changes using the Java <code>WatchService</code>.<br />
-See link:https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/nio/file/WatchService.html</p></td>
+<td><code>helidon.config.watcher.enabled</code></td>
+<td>To enable watching file for changes using the Java <code>WatchService</code>.
+See the <a href="https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/nio/file/WatchService.html">Javadoc</a></td>
 </tr>
 </tbody>
 </table>

@@ -18,6 +18,7 @@ This type is a provider contract.
 <tbody>
 <tr>
 <td>
+<a id="aimd"></a>
 <a href="io.helidon.common.concurrency.limits.AimdLimit.md">
 <code>aimd</code>
 </a>
@@ -26,6 +27,7 @@ This type is a provider contract.
 </tr>
 <tr>
 <td>
+<a id="fixed"></a>
 <a href="io.helidon.common.concurrency.limits.FixedLimit.md">
 <code>fixed</code>
 </a>
@@ -34,6 +36,7 @@ This type is a provider contract.
 </tr>
 <tr>
 <td>
+<a id="throughput"></a>
 <a href="io.helidon.common.concurrency.limits.ThroughputLimit.md">
 <code>throughput</code>
 </a>

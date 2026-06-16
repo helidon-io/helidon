@@ -18,6 +18,7 @@ This type is a provider contract.
 <tbody>
 <tr>
 <td>
+<a id="otlp"></a>
 <a href="io.helidon.metrics.providers.micrometer.OtlpPublisher.md">
 <code>otlp</code>
 </a>
@@ -26,6 +27,7 @@ This type is a provider contract.
 </tr>
 <tr>
 <td>
+<a id="prometheus"></a>
 <a href="io.helidon.metrics.providers.micrometer.PrometheusPublisher.md">
 <code>prometheus</code>
 </a>

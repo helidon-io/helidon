@@ -18,6 +18,7 @@ This type is a provider contract.
 <tbody>
 <tr>
 <td>
+<a id="config-vault"></a>
 <a href="io.helidon.security.providers.config.vault.ConfigVaultProvider.SecretConfig.md">
 <code>config-<wbr>vault</code>
 </a>
