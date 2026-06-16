@@ -290,6 +290,62 @@ class Http1ClientTest {
     }
 
     @Test
+    void testInterimResponseIsSkipped() {
+        String rawResponse = "HTTP/1.1 103 Early Hints\r\n"
+                + "Link: </style.css>; rel=preload\r\n"
+                + "\r\n"
+                + "HTTP/1.1 200 OK\r\n"
+                + "Content-Length: 2\r\n"
+                + "\r\n"
+                + "OK";
+
+        Http1ClientResponse response = client.get("http://localhost:" + dummyPort + "/test")
+                .connection(new FakeHttp1ClientConnection(rawResponse))
+                .request();
+
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity().as(String.class), is("OK"));
+    }
+
+    @Test
+    void testSwitchingProtocolsWithCustomReasonIsNotSkipped() {
+        String rawResponse = "HTTP/1.1 101 Custom Upgrade\r\n"
+                + "Upgrade: test\r\n"
+                + "\r\n"
+                + "upgraded-data\r\n";
+
+        Http1ClientResponse response = client.get("http://localhost:" + dummyPort + "/test")
+                .connection(new FakeHttp1ClientConnection(rawResponse))
+                .request();
+
+        assertThat(response.status().code(), is(Status.SWITCHING_PROTOCOLS_101.code()));
+        assertThat(response.status().reasonPhrase(), is("Custom Upgrade"));
+    }
+
+    @Test
+    void testInterimResponseBeforeContinueIsSkipped() {
+        String rawContinueResponse = "HTTP/1.1 103 Early Hints\r\n"
+                + "Link: </style.css>; rel=preload\r\n"
+                + "\r\n"
+                + "HTTP/1.1 100 Continue\r\n"
+                + "\r\n";
+        String rawResponse = "HTTP/1.1 200 OK\r\n"
+                + "Content-Length: 2\r\n"
+                + "\r\n"
+                + "OK";
+        Http1Client expectContinueClient = Http1Client.builder()
+                .sendExpectContinue(true)
+                .build();
+        Http1ClientRequest request = expectContinueClient.put("http://localhost:" + dummyPort + "/test");
+        request.connection(new FakeHttp1ClientConnection(rawResponse, rawContinueResponse));
+
+        Http1ClientResponse response = getHttp1ClientResponseFromOutputStream(request, new String[] {"OK"});
+
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity().as(String.class), is("OK"));
+    }
+
+    @Test
     void testChunk() {
         String[] requestEntityParts = {"First", "Second", "Third"};
 
@@ -815,6 +871,8 @@ class Http1ClientTest {
         private final DataReader serverReader;
         private final DataWriter serverWriter;
         private final boolean includeKeepAliveHeader;
+        private final String rawResponse;
+        private final String rawContinueResponse;
         private Throwable serverException;
         private ExecutorService webServerEmulator;
         private String prologue;
@@ -826,6 +884,18 @@ class Http1ClientTest {
         }
 
         FakeHttp1ClientConnection(boolean includeKeepAliveHeader) {
+            this(includeKeepAliveHeader, null, null);
+        }
+
+        FakeHttp1ClientConnection(String rawResponse) {
+            this(rawResponse, null);
+        }
+
+        FakeHttp1ClientConnection(String rawResponse, String rawContinueResponse) {
+            this(true, rawResponse, rawContinueResponse);
+        }
+
+        FakeHttp1ClientConnection(boolean includeKeepAliveHeader, String rawResponse, String rawContinueResponse) {
             ArrayBlockingQueue<byte[]> serverToClient = new ArrayBlockingQueue<>(1024);
             ArrayBlockingQueue<byte[]> clientToServer = new ArrayBlockingQueue<>(1024);
 
@@ -834,6 +904,8 @@ class Http1ClientTest {
             this.serverReader = reader(clientToServer);
             this.serverWriter = writer(serverToClient);
             this.includeKeepAliveHeader = includeKeepAliveHeader;
+            this.rawResponse = rawResponse;
+            this.rawContinueResponse = rawContinueResponse;
         }
 
         @Override
@@ -983,8 +1055,10 @@ class Http1ClientTest {
                 if (reqHeaders.contains(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
                     // Send 100-Continue if requested
                     if (reqHeaders.contains(HeaderValues.EXPECT_100)) {
-                        serverWriter.write(
-                                BufferData.create("HTTP/1.1 100 Continue\r\n\r\n".getBytes(StandardCharsets.UTF_8)));
+                        String continueResponse = rawContinueResponse == null
+                                ? "HTTP/1.1 100 Continue\r\n\r\n"
+                                : rawContinueResponse;
+                        serverWriter.write(BufferData.create(continueResponse.getBytes(StandardCharsets.UTF_8)));
                     }
 
                     // Assemble the entity from the chunks
@@ -1030,6 +1104,11 @@ class Http1ClientTest {
             if (getPrologue().contains(BAD_HEADER_PATH)) {
                 String[] header = entity.readString(entitySize, StandardCharsets.US_ASCII).split(HEADER_NAME_VALUE_DELIMETER);
                 resHeaders.add(HeaderValues.create(header[0], header[1]));
+            }
+
+            if (rawResponse != null) {
+                serverWriter.write(BufferData.create(rawResponse.getBytes(StandardCharsets.US_ASCII)));
+                return;
             }
 
             String responseMessage = !requestFailed ? "HTTP/1.1 200 OK\r\n" : "HTTP/1.1 400 Bad Request\r\n";

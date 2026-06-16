@@ -24,6 +24,7 @@ import java.net.UnixDomainSocketAddress;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import io.helidon.common.ParserHelper;
@@ -240,38 +241,56 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
     WebClientServiceResponse readResponse(WebClientServiceRequest serviceRequest,
                                           ClientConnection connection,
                                           DataReader reader) {
-
-        Status responseStatus;
-        try {
-            responseStatus = Http1StatusParser.readStatus(reader, protocolConfig.maxStatusLineLength());
-        } catch (UncheckedIOException e) {
-            // if we get a timeout or connection close, we must close the resource (as otherwise we may receive
-            // data of this request on the next use of this connection
-            try {
-                connection.closeResource();
-            } catch (Exception ex) {
-                e.addSuppressed(ex);
-            }
-            throw e;
-        }
-
-        recvListener.status(connection.helidonSocket(), responseStatus);
-
-        ClientResponseHeaders responseHeaders = readHeaders(reader);
-
-        recvListener.headers(connection.helidonSocket(), responseHeaders);
+        ResponseHead responseHead = readResponseHead(connection, reader);
 
         return createServiceResponse(http1Client,
                                      serviceRequest,
                                      connection,
                                      reader,
-                                     responseStatus,
-                                     responseHeaders,
+                                     responseHead.status(),
+                                     responseHead.headers(),
                                      whenComplete);
     }
 
     Http1ConnectionListener sendListener() {
         return sendListener;
+    }
+
+    ResponseHead readResponseHead(ClientConnection connection, DataReader reader) {
+        return readResponseHead(connection, reader, Http1CallChainBase::isInterimResponse);
+    }
+
+    ResponseHead readResponseHead(ClientConnection connection, DataReader reader, Predicate<Status> skippedResponse) {
+        while (true) {
+            Status responseStatus;
+            try {
+                responseStatus = Http1StatusParser.readStatus(reader, protocolConfig.maxStatusLineLength());
+            } catch (UncheckedIOException e) {
+                // if we get a timeout or connection close, we must close the resource (as otherwise we may receive
+                // data of this request on the next use of this connection
+                try {
+                    connection.closeResource();
+                } catch (Exception ex) {
+                    e.addSuppressed(ex);
+                }
+                throw e;
+            }
+            recvListener.status(connection.helidonSocket(), responseStatus);
+            ClientResponseHeaders responseHeaders = readHeaders(reader);
+            recvListener.headers(connection.helidonSocket(), responseHeaders);
+
+            if (!skippedResponse.test(responseStatus)) {
+                return new ResponseHead(responseStatus, responseHeaders);
+            }
+        }
+    }
+
+    private static boolean isInterimResponse(Status responseStatus) {
+        return responseStatus.family() == Status.Family.INFORMATIONAL
+                && responseStatus.code() != Status.SWITCHING_PROTOCOLS_101.code();
+    }
+
+    record ResponseHead(Status status, ClientResponseHeaders headers) {
     }
 
     Http1ConnectionListener recvListener() {
