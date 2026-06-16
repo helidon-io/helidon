@@ -419,7 +419,13 @@ final class OpenApi30DocumentMapper {
 
     private static Map<String, Object> responses(Map<String, ?> source, SchemaMode mode) {
         Map<String, Object> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> object(value, object -> result.put(key, response(object, mode))));
+        source.forEach((key, value) -> {
+            if (key.startsWith("x-")) {
+                copyField(result, key, source);
+                return;
+            }
+            object(value, object -> result.put(key, response(object, mode)));
+        });
         return result;
     }
 

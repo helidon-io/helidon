@@ -876,6 +876,20 @@ public final class OpenApiDocument {
             return this;
         }
 
+        /**
+         * Add an extension.
+         * <p>
+         * Extension names must start with {@code x-}.
+         *
+         * @param name extension name
+         * @param value extension value
+         * @return updated builder
+         */
+        public ContactBuilder extension(String name, JsonValue value) {
+            OpenApiDocument.extension(node, name, value);
+            return this;
+        }
+
         @Override
         public Contact build() {
             return new Contact(node);
@@ -950,6 +964,20 @@ public final class OpenApiDocument {
             return this;
         }
 
+        /**
+         * Add an extension.
+         * <p>
+         * Extension names must start with {@code x-}.
+         *
+         * @param name extension name
+         * @param value extension value
+         * @return updated builder
+         */
+        public LicenseBuilder extension(String name, JsonValue value) {
+            OpenApiDocument.extension(node, name, value);
+            return this;
+        }
+
         @Override
         public License build() {
             requireString(node, "name", "OpenAPI License");
@@ -1011,6 +1039,20 @@ public final class OpenApiDocument {
          */
         public ExternalDocsBuilder description(String description) {
             node.put("description", Objects.requireNonNull(description));
+            return this;
+        }
+
+        /**
+         * Add an extension.
+         * <p>
+         * Extension names must start with {@code x-}.
+         *
+         * @param name extension name
+         * @param value extension value
+         * @return updated builder
+         */
+        public ExternalDocsBuilder extension(String name, JsonValue value) {
+            OpenApiDocument.extension(node, name, value);
             return this;
         }
 
@@ -1132,6 +1174,20 @@ public final class OpenApiDocument {
             return variable(name, builder.build());
         }
 
+        /**
+         * Add an extension.
+         * <p>
+         * Extension names must start with {@code x-}.
+         *
+         * @param name extension name
+         * @param value extension value
+         * @return updated builder
+         */
+        public ServerBuilder extension(String name, JsonValue value) {
+            OpenApiDocument.extension(node, name, value);
+            return this;
+        }
+
         @Override
         public Server build() {
             requireString(node, "url", "OpenAPI Server");
@@ -1204,6 +1260,20 @@ public final class OpenApiDocument {
          */
         public ServerVariableBuilder description(String description) {
             node.put("description", Objects.requireNonNull(description));
+            return this;
+        }
+
+        /**
+         * Add an extension.
+         * <p>
+         * Extension names must start with {@code x-}.
+         *
+         * @param name extension name
+         * @param value extension value
+         * @return updated builder
+         */
+        public ServerVariableBuilder extension(String name, JsonValue value) {
+            OpenApiDocument.extension(node, name, value);
             return this;
         }
 
@@ -1346,6 +1416,20 @@ public final class OpenApiDocument {
          */
         public TagBuilder parent(String parent) {
             node.put("parent", Objects.requireNonNull(parent));
+            return this;
+        }
+
+        /**
+         * Add an extension.
+         * <p>
+         * Extension names must start with {@code x-}.
+         *
+         * @param name extension name
+         * @param value extension value
+         * @return updated builder
+         */
+        public TagBuilder extension(String name, JsonValue value) {
+            OpenApiDocument.extension(node, name, value);
             return this;
         }
 
@@ -1620,6 +1704,20 @@ public final class OpenApiDocument {
             return parameter(builder.build());
         }
 
+        /**
+         * Add an extension.
+         * <p>
+         * Extension names must start with {@code x-}.
+         *
+         * @param name extension name
+         * @param value extension value
+         * @return updated builder
+         */
+        public PathItemBuilder extension(String name, JsonValue value) {
+            OpenApiDocument.extension(node, name, value);
+            return this;
+        }
+
         @Override
         public PathItem build() {
             return new PathItem("", node);
@@ -1715,8 +1813,11 @@ public final class OpenApiDocument {
             return objectValue(value)
                     .map(responses -> {
                         Map<String, Response> result = new LinkedHashMap<>();
-                        responses.forEach((status, response) -> objectValue(response)
-                                .ifPresent(node -> result.put(status, new Response(node))));
+                        responses.forEach((status, response) -> {
+                            if (!status.startsWith("x-")) {
+                                objectValue(response).ifPresent(node -> result.put(status, new Response(node)));
+                            }
+                        });
                         return Collections.unmodifiableMap(result);
                     })
                     .orElseGet(Map::of);
@@ -1882,6 +1983,20 @@ public final class OpenApiDocument {
             ResponseBuilder builder = Response.builder();
             response.accept(builder);
             return response(status, builder.build());
+        }
+
+        /**
+         * Add an extension to the responses object.
+         * <p>
+         * Extension names must start with {@code x-}.
+         *
+         * @param name extension name
+         * @param value extension value
+         * @return updated builder
+         */
+        public OperationBuilder responseExtension(String name, JsonValue value) {
+            OpenApiDocument.extension(object(node, "responses"), name, value);
+            return this;
         }
 
         /**
@@ -3727,6 +3842,20 @@ public final class OpenApiDocument {
             MediaTypeObjectBuilder builder = MediaTypeObject.builder();
             mediaType.accept(builder);
             return mediaType(name, builder.build());
+        }
+
+        /**
+         * Add an extension.
+         * <p>
+         * Extension names must start with {@code x-}.
+         *
+         * @param name extension name
+         * @param value extension value
+         * @return updated builder
+         */
+        public ComponentsBuilder extension(String name, JsonValue value) {
+            OpenApiDocument.extension(node, name, value);
+            return this;
         }
 
         @Override

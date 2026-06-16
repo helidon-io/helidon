@@ -100,6 +100,7 @@ public final class OpenApiDocumentReader {
         string(source, "name", builder::name);
         string(source, "url", builder::url);
         string(source, "email", builder::email);
+        extensions(source, builder::extension);
         return builder.build();
     }
 
@@ -108,6 +109,7 @@ public final class OpenApiDocumentReader {
         string(source, "name", builder::name);
         string(source, "identifier", builder::identifier);
         string(source, "url", builder::url);
+        extensions(source, builder::extension);
         return builder.build();
     }
 
@@ -115,6 +117,7 @@ public final class OpenApiDocumentReader {
         OpenApiDocument.ExternalDocsBuilder builder = OpenApiDocument.ExternalDocs.builder();
         string(source, "url", builder::url);
         string(source, "description", builder::description);
+        extensions(source, builder::extension);
         return builder.build();
     }
 
@@ -125,6 +128,7 @@ public final class OpenApiDocumentReader {
         string(source, "name", builder::name);
         object(source, "variables", variables -> variables.keysAsStrings()
                 .forEach(name -> object(variables, name, variable -> builder.variable(name, serverVariable(variable)))));
+        extensions(source, builder::extension);
         return builder.build();
     }
 
@@ -133,6 +137,7 @@ public final class OpenApiDocumentReader {
         string(source, "default", builder::value);
         array(source, "enum", values -> builder.allowedValues(stringValues(values)));
         string(source, "description", builder::description);
+        extensions(source, builder::extension);
         return builder.build();
     }
 
@@ -144,6 +149,7 @@ public final class OpenApiDocumentReader {
         object(source, "externalDocs", docs -> builder.externalDocs(externalDocs(docs)));
         string(source, "parent", builder::parent);
         string(source, "kind", builder::kind);
+        extensions(source, builder::extension);
         return builder.build();
     }
 
@@ -163,6 +169,7 @@ public final class OpenApiDocumentReader {
                 .forEach(server -> object(server, value -> builder.server(server(value)))));
         array(source, "parameters", parameters -> parameters.values()
                 .forEach(parameter -> object(parameter, value -> builder.parameter(parameter(value)))));
+        extensions(source, builder::extension);
         return builder.build();
     }
 
@@ -180,8 +187,14 @@ public final class OpenApiDocumentReader {
         array(source, "parameters", parameters -> parameters.values()
                 .forEach(parameter -> object(parameter, value -> builder.parameter(parameter(value)))));
         object(source, "requestBody", requestBody -> builder.requestBody(requestBody(requestBody)));
-        object(source, "responses", responses -> responses.keysAsStrings()
-                .forEach(status -> object(responses, status, response -> builder.response(status, response(response)))));
+        object(source, "responses", responses -> {
+            responses.keysAsStrings()
+                    .stream()
+                    .filter(status -> !status.startsWith("x-"))
+                    .forEach(status -> object(responses, status,
+                                              response -> builder.response(status, response(response))));
+            extensions(responses, builder::responseExtension);
+        });
         object(source, "callbacks", callbacks -> callbacks.keysAsStrings()
                 .forEach(name -> object(callbacks, name, callback -> builder.callback(name, pathItem(callback)))));
         bool(source, "deprecated", builder::deprecated);
@@ -382,6 +395,7 @@ public final class OpenApiDocumentReader {
                 .forEach(name -> object(values, name, pathItem -> builder.pathItem(name, pathItem(pathItem)))));
         object(source, "mediaTypes", values -> values.keysAsStrings()
                 .forEach(name -> object(values, name, mediaType -> builder.mediaType(name, mediaType(mediaType)))));
+        extensions(source, builder::extension);
         return builder.build();
     }
 
