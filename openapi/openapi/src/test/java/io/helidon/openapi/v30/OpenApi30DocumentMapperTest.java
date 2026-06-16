@@ -120,8 +120,11 @@ class OpenApi30DocumentMapperTest {
                         "version", "1.0.0"),
                 "paths", Map.of(
                         "/static", Map.of(
+                                "x-path-meta", "keep",
                                 "get", Map.of(
                                         "responses", Map.of(
+                                                "x-provider-meta", true,
+                                                "x-provider-object", Map.of("enabled", true),
                                                 "200", Map.of(
                                                         "description", "OK",
                                                         "headers", Map.of(
@@ -146,6 +149,7 @@ class OpenApi30DocumentMapperTest {
                                                                         "x-link", "keep")),
                                                         "x-static-response", "preserved"))))),
                 "components", Map.of(
+                        "x-components", true,
                         "parameters", Map.of(
                                 "GatewayPolicy", Map.of(
                                         "name", "policy",
@@ -164,7 +168,8 @@ class OpenApi30DocumentMapperTest {
                                         "scheme", "bearer",
                                         "x-amazon-apigateway-authtype", "custom")))));
         Map<String, Object> rendered = OpenApi30DocumentMapper.render(document, "3.0.3");
-        Map<String, Object> response = map(map(map(map(rendered, "paths"), "/static"), "get"), "responses");
+        Map<String, Object> staticPath = map(map(rendered, "paths"), "/static");
+        Map<String, Object> response = map(map(staticPath, "get"), "responses");
         Map<String, Object> okResponse = map(response, "200");
         Map<String, Object> content = map(map(okResponse, "content"), "application/json");
         Map<String, Object> example = map(map(content, "examples"), "StaticExample");
@@ -175,15 +180,67 @@ class OpenApi30DocumentMapperTest {
         Map<String, Object> requestBody = map(map(components, "requestBodies"), "CodegenRequest");
         Map<String, Object> securityScheme = map(map(components, "securitySchemes"), "AmazonAuth");
 
+        assertThat(document.paths().get("/static").operations().get("get").responses().containsKey("x-provider-object"),
+                   is(false));
+        assertThat(staticPath.get("x-path-meta"), is("keep"));
+        assertThat(response.get("x-provider-meta"), is(true));
+        assertThat(map(response, "x-provider-object").get("enabled"), is(true));
         assertThat(okResponse.get("x-static-response"), is("preserved"));
         assertThat(map(map(okResponse, "headers"), "X-Trace").get("x-header"), is(true));
         assertThat(content.get("x-media"), is(true));
         assertThat(example.get("x-example"), is("keep"));
         assertThat(encoding.get("x-encoding"), is("keep"));
         assertThat(link.get("x-link"), is("keep"));
+        assertThat(components.get("x-components"), is(true));
         assertThat(parameter.get("x-gateway-policy"), is("preserved"));
         assertThat(requestBody.get("x-codegen-request"), is(true));
         assertThat(securityScheme.get("x-amazon-apigateway-authtype"), is("custom"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void preservesHighLevelStaticDocumentExtensions() {
+        OpenApiDocument document = OpenApi30DocumentMapper.parse(Map.of(
+                "openapi", "3.0.3",
+                "info", Map.of(
+                        "title", "Static API",
+                        "version", "1.0.0",
+                        "contact", Map.of(
+                                "name", "API Team",
+                                "x-contact", "keep"),
+                        "license", Map.of(
+                                "name", "Apache-2.0",
+                                "x-license", "keep")),
+                "externalDocs", Map.of(
+                        "url", "https://api.example.com/docs",
+                        "x-external-docs", "keep"),
+                "servers", List.of(Map.of(
+                        "url", "https://api.example.com",
+                        "variables", Map.of(
+                                "region", Map.of(
+                                        "default", "us",
+                                        "x-server-variable", "keep")),
+                        "x-server", "keep")),
+                "tags", List.of(Map.of(
+                        "name", "pets",
+                        "externalDocs", Map.of(
+                                "url", "https://api.example.com/tags/pets",
+                                "x-tag-docs", "keep"),
+                        "x-tag", "keep")),
+                "paths", Map.of()));
+        Map<String, Object> rendered = OpenApi30DocumentMapper.render(document, "3.0.3");
+        Map<String, Object> info = map(rendered, "info");
+        Map<String, Object> server = ((List<Map<String, Object>>) rendered.get("servers")).getFirst();
+        Map<String, Object> serverVariable = map(map(server, "variables"), "region");
+        Map<String, Object> tag = ((List<Map<String, Object>>) rendered.get("tags")).getFirst();
+
+        assertThat(map(info, "contact").get("x-contact"), is("keep"));
+        assertThat(map(info, "license").get("x-license"), is("keep"));
+        assertThat(map(rendered, "externalDocs").get("x-external-docs"), is("keep"));
+        assertThat(server.get("x-server"), is("keep"));
+        assertThat(serverVariable.get("x-server-variable"), is("keep"));
+        assertThat(tag.get("x-tag"), is("keep"));
+        assertThat(map(tag, "externalDocs").get("x-tag-docs"), is("keep"));
     }
 
     @Test

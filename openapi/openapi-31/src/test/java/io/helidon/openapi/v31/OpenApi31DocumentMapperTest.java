@@ -51,6 +51,41 @@ class OpenApi31DocumentMapperTest {
     }
 
     @Test
+    void openApi31PreservesResponseAndComponentPathItemExtensions() {
+        OpenApiDocument document = OpenApi31DocumentMapper.parse(Map.of(
+                "openapi", "3.1.0",
+                "info", Map.of(
+                        "title", "Static API",
+                        "version", "1.0.0"),
+                "paths", Map.of(
+                        "/pets", Map.of(
+                                "x-path-meta", "keep",
+                                "get", Map.of(
+                                        "responses", Map.of(
+                                                "x-provider-meta", true,
+                                                "x-provider-object", Map.of("enabled", true),
+                                                "200", Map.of("description", "OK"))))),
+                "components", Map.of(
+                        "pathItems", Map.of(
+                                "ReusablePath", Map.of(
+                                        "get", Map.of(
+                                                "responses", Map.of(
+                                                        "200", Map.of("description", "OK"))),
+                                        "x-component-path-item", "keep")))));
+        Map<String, Object> rendered = OpenApi31DocumentMapper.render(document, "3.1.1");
+        Map<String, Object> path = map(map(rendered, "paths"), "/pets");
+        Map<String, Object> responses = map(map(path, "get"), "responses");
+        Map<String, Object> reusablePath = map(map(map(rendered, "components"), "pathItems"), "ReusablePath");
+
+        assertThat(document.paths().get("/pets").operations().get("get").responses().containsKey("x-provider-object"),
+                   is(false));
+        assertThat(path.get("x-path-meta"), is("keep"));
+        assertThat(responses.get("x-provider-meta"), is(true));
+        assertThat(map(responses, "x-provider-object").get("enabled"), is(true));
+        assertThat(reusablePath.get("x-component-path-item"), is("keep"));
+    }
+
+    @Test
     void openApi31AllowsMutualTlsSecurityScheme() {
         OpenApiDocument document = openApiDocument(documentWithSecurityScheme(mutualTlsSecurityScheme()));
         Map<String, Object> rendered = OpenApi31DocumentMapper.render(document, "3.1.1");
