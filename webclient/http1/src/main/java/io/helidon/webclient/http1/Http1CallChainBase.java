@@ -263,17 +263,25 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
     }
 
     ResponseHead readResponseHead(ClientConnection connection, DataReader reader, Predicate<Status> skippedResponse) {
+        return readResponseHead(connection, reader, skippedResponse, true);
+    }
+
+    ResponseHead readResponseHead(ClientConnection connection,
+                                  DataReader reader,
+                                  Predicate<Status> skippedResponse,
+                                  boolean closeOnReadFailure) {
         while (true) {
             Status responseStatus;
             try {
                 responseStatus = Http1StatusParser.readStatus(reader, protocolConfig.maxStatusLineLength());
             } catch (UncheckedIOException e) {
-                // if we get a timeout or connection close, we must close the resource (as otherwise we may receive
-                // data of this request on the next use of this connection
-                try {
-                    connection.closeResource();
-                } catch (Exception ex) {
-                    e.addSuppressed(ex);
+                if (closeOnReadFailure) {
+                    // Normal response reads cannot reuse a connection after a timeout or close while reading status.
+                    try {
+                        connection.closeResource();
+                    } catch (Exception ex) {
+                        e.addSuppressed(ex);
+                    }
                 }
                 throw e;
             }

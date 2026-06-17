@@ -19,6 +19,7 @@ package io.helidon.webclient.http1;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
@@ -409,14 +410,24 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                     connection.readTimeout(originalRequest.readContinueTimeout());
                     responseHead = callChain.readResponseHead(connection,
                                                               reader,
-                                                              Http1CallChainBase::isPreContinueInterimResponse);
-                } catch (UncheckedIOException ignored) {
-                    // we assume this is a timeout exception, if the socket got closed, next read will throw appropriate exception
-                    // we treat this as receiving 100-Continue
-                    responseHead = null;
-                    connection.allowExpectContinue(false);
+                                                              Http1CallChainBase::isPreContinueInterimResponse,
+                                                              false);
+                } catch (UncheckedIOException e) {
+                    if (e.getCause() instanceof SocketTimeoutException) {
+                        responseHead = null;
+                        connection.allowExpectContinue(false);
+                    } else {
+                        try {
+                            connection.closeResource();
+                        } catch (Exception ex) {
+                            e.addSuppressed(ex);
+                        }
+                        throw e;
+                    }
                 } finally {
-                    connection.readTimeout(originalRequest.readTimeout());
+                    if (connection.isConnected()) {
+                        connection.readTimeout(originalRequest.readTimeout());
+                    }
                 }
 
                 Status responseStatus = responseHead == null ? Status.CONTINUE_100 : responseHead.status();
