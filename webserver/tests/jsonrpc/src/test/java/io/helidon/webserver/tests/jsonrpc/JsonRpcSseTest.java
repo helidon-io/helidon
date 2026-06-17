@@ -52,35 +52,19 @@ class JsonRpcSseTest extends JsonRpcBaseTest {
 
     @Test
     void testSse() throws ExecutionException, InterruptedException, TimeoutException {
-        CompletableFuture<List<String>> future = new CompletableFuture<>();
+        assertSseMethods();
+    }
 
+    @Test
+    void testSseCloseDoesNotPoisonConnectionCache() throws ExecutionException, InterruptedException, TimeoutException {
         try (var res = client().post("/rpc/sse")
                 .contentType(MediaTypes.APPLICATION_JSON)
                 .accept(MediaTypes.TEXT_EVENT_STREAM)
                 .submit(SSE_METHOD)) {
             assertThat(res.status().code(), is(200));
-
-            res.source(SseSource.TYPE, new SseSource() {
-                private final List<String> methods = new ArrayList<>();
-
-                @Override
-                public void onEvent(SseEvent value) {
-                    String jsonRpc = value.data(String.class);
-                    JsonObject json = JsonParser.create(jsonRpc).readJsonObject();
-                    methods.add(json.stringValue("method").orElseThrow());
-                }
-
-                @Override
-                public void onClose() {
-                    future.complete(methods);
-                }
-            });
-
-            List<String> methods = future.get(5, TimeUnit.SECONDS);
-            assertThat(methods.size(), is(2));
-            assertThat(methods.getFirst(), is("start"));
-            assertThat(methods.getLast(), is("stop"));
         }
+
+        assertSseMethods();
     }
 
     @Test
@@ -113,6 +97,38 @@ class JsonRpcSseTest extends JsonRpcBaseTest {
             assertThat(results.size(), is(2));
             assertThat(results.getFirst(), is("RUNNING"));
             assertThat(results.getLast(), is("RUNNING"));
+        }
+    }
+
+    private void assertSseMethods() throws ExecutionException, InterruptedException, TimeoutException {
+        CompletableFuture<List<String>> future = new CompletableFuture<>();
+
+        try (var res = client().post("/rpc/sse")
+                .contentType(MediaTypes.APPLICATION_JSON)
+                .accept(MediaTypes.TEXT_EVENT_STREAM)
+                .submit(SSE_METHOD)) {
+            assertThat(res.status().code(), is(200));
+
+            res.source(SseSource.TYPE, new SseSource() {
+                private final List<String> methods = new ArrayList<>();
+
+                @Override
+                public void onEvent(SseEvent value) {
+                    String jsonRpc = value.data(String.class);
+                    JsonObject json = JsonParser.create(jsonRpc).readJsonObject();
+                    methods.add(json.stringValue("method").orElseThrow());
+                }
+
+                @Override
+                public void onClose() {
+                    future.complete(methods);
+                }
+            });
+
+            List<String> methods = future.get(5, TimeUnit.SECONDS);
+            assertThat(methods.size(), is(2));
+            assertThat(methods.getFirst(), is("start"));
+            assertThat(methods.getLast(), is("stop"));
         }
     }
 }

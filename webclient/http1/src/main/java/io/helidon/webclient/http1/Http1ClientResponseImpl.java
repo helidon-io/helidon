@@ -207,7 +207,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
      * @return {@code true} if consumed, {@code false} otherwise
      */
     private boolean consumeUnreadEntity() {
-        if (entityLength == ENTITY_LENGTH_CHUNKED) {
+        if (entityLength == ENTITY_LENGTH_CHUNKED || entityLength == ENTITY_LENGTH_CLOSE_DELIMITED) {
             return false;
         }
         DataReader reader = connection.reader();
