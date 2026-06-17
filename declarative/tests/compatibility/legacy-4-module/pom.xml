@@ -28,7 +28,7 @@
     <description>A Helidon 4 declarative library module with no application main class</description>
 
     <properties>
-        <helidon.compatibility.version>4.4.1</helidon.compatibility.version>
+        <helidon.compatibility.version>4.5.0</helidon.compatibility.version>
         <maven.compiler.release>21</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>

@@ -17,6 +17,7 @@
 package io.helidon.service.registry;
 
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -112,16 +113,23 @@ class InterceptionMetadataImpl implements InterceptionMetadata {
                                                                   TypedElementInfo element) {
         // need to find all interceptors for the providers (ordered by weight)
         List<ServiceManager<Interception.Interceptor>> allInterceptors = registry.interceptors();
-        String elementSignature = element.enclosingType()
-                .orElse(descriptor.serviceType())
+        var enclosingType = element.enclosingType();
+        String elementSignature = enclosingType.orElse(descriptor.serviceType())
                 .fqName() + "." + element.signature().text();
+        Set<String> elementSignatures = new LinkedHashSet<>();
+        elementSignatures.add(elementSignature);
+        if (enclosingType.isEmpty()) {
+            descriptor.contracts()
+                    .forEach(contract -> elementSignatures.add(contract.type().fqName() + "."
+                                                                       + element.signature().text()));
+        }
 
         List<Supplier<Interception.Interceptor>> result = new ArrayList<>();
 
         for (ServiceManager<Interception.Interceptor> interceptor : allInterceptors) {
             if (interceptor.descriptor().contracts().contains(ELEMENT_INTERCEPTOR)) {
                 // interceptors of specific elements (methods, constructors)
-                if (applicableElement(elementSignature, interceptor.descriptor())) {
+                if (applicableElement(elementSignatures, interceptor.descriptor())) {
                     result.add(new ServiceSupply<>(Lookup.EMPTY, List.of(interceptor)));
                 }
             } else {
@@ -138,8 +146,13 @@ class InterceptionMetadataImpl implements InterceptionMetadata {
         return result;
     }
 
-    private boolean applicableElement(String signature, ServiceInfo serviceInfo) {
-        return serviceInfo.qualifiers().contains(Qualifier.createNamed(signature));
+    private boolean applicableElement(Set<String> signatures, ServiceInfo serviceInfo) {
+        for (String signature : signatures) {
+            if (serviceInfo.qualifiers().contains(Qualifier.createNamed(signature))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean applicable(List<Annotation> typeAnnotations, ServiceInfo serviceInfo) {
