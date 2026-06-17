@@ -67,6 +67,7 @@ public class UrlOverrideSourceServerMockTest {
     private static final String NEW_WILDCARDS = "*.*.url = URL2";
 
     private StubServer server;
+    private Config config;
 
     @BeforeEach
     public void before() {
@@ -75,7 +76,13 @@ public class UrlOverrideSourceServerMockTest {
 
     @AfterEach
     public void after() {
-        server.stop();
+        try {
+            if (config != null) {
+                config.context().stopChangeSupport();
+            }
+        } finally {
+            server.stop();
+        }
     }
 
     @Test
@@ -97,7 +104,7 @@ public class UrlOverrideSourceServerMockTest {
                         stringContent(WILDCARDS)
                 );
 
-        Config config = Config.builder()
+        config = Config.builder()
                 .sources(ConfigSources.create(
                         Map.of(
                                 "aaa.bbb.url", "URL0"
@@ -130,7 +137,7 @@ public class UrlOverrideSourceServerMockTest {
                         stringContent(MULTIPLE_WILDCARDS)
                 );
 
-        Config config = Config.builder()
+        config = Config.builder()
                 .sources(ConfigSources.create(
                         Map.of(
                                 "aaa.bbb.url", "URL0"
@@ -162,7 +169,7 @@ public class UrlOverrideSourceServerMockTest {
                         stringContent(MULTIPLE_WILDCARDS_ANOTHER_ORDERING)
                 );
 
-        Config config = Config.builder()
+        config = Config.builder()
                 .sources(ConfigSources.create(
                         Map.of(
                                 "aaa.bbb.url", "URL0"
@@ -194,7 +201,7 @@ public class UrlOverrideSourceServerMockTest {
                         stringContent(CONFIG)
                 );
 
-        Config config = Config.builder()
+        config = Config.builder()
                 .sources(ConfigSources.url(getUrl("/config", server.getPort())))
                 .overrides(url(getUrl("/override", server.getPort()))
                                    .pollingStrategy(PollingStrategies.regular(Duration.ofMillis(50)).build()).build())
@@ -244,7 +251,7 @@ public class UrlOverrideSourceServerMockTest {
                         stringContent(CONFIG)
                 );
 
-        Config config = Config.builder()
+        config = Config.builder()
                 .sources(ConfigSources.url(getUrl("/config", server.getPort())))
                 .overrides(url(getUrl("/override", server.getPort()))
                                    .pollingStrategy(PollingStrategies.regular(Duration.ofMillis(10)).build())
@@ -286,7 +293,7 @@ public class UrlOverrideSourceServerMockTest {
                         stringContent(CONFIG)
                 );
 
-        Config config = Config.builder()
+        config = Config.builder()
                 .sources(ConfigSources.url(getUrl("/config", server.getPort()))
                                  .pollingStrategy(PollingStrategies.regular(Duration.ofMillis(10)).build()))
                 .overrides(url(getUrl("/override", server.getPort()))
@@ -330,7 +337,7 @@ public class UrlOverrideSourceServerMockTest {
                         stringContent(CONFIG)
                 );
 
-        Config config = Config.builder()
+        config = Config.builder()
                 .sources(ConfigSources.url(getUrl("/config", server.getPort()))
                                  .pollingStrategy(PollingStrategies.regular(Duration.ofMillis(10)).build()))
                 .overrides(url(getUrl("/override", server.getPort())).build())
