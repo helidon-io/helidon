@@ -241,7 +241,9 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
     WebClientServiceResponse readResponse(WebClientServiceRequest serviceRequest,
                                           ClientConnection connection,
                                           DataReader reader) {
-        ResponseHead responseHead = readResponseHead(connection, reader);
+        ResponseHead responseHead = originalRequest.outputStreamRedirect()
+                ? readResponseHead(connection, reader, Http1CallChainBase::isPreContinueInterimResponse)
+                : readResponseHead(connection, reader);
 
         return createServiceResponse(http1Client,
                                      serviceRequest,
@@ -283,6 +285,11 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                 return new ResponseHead(responseStatus, responseHeaders);
             }
         }
+    }
+
+    static boolean isPreContinueInterimResponse(Status responseStatus) {
+        return isInterimResponse(responseStatus)
+                && responseStatus.code() != Status.CONTINUE_100.code();
     }
 
     private static boolean isInterimResponse(Status responseStatus) {

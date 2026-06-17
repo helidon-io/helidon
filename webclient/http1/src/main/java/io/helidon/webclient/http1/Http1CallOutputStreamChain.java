@@ -402,14 +402,14 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             whenSent.complete(request);
 
             if (expects100Continue) {
-                ResponseHead responseHead;
+                ResponseHead responseHead = null;
 
                 try {
                     writer.flush();     // flush before a read
                     connection.readTimeout(originalRequest.readContinueTimeout());
                     responseHead = callChain.readResponseHead(connection,
                                                               reader,
-                                                              ClientConnectionOutputStream::isPreContinueInterimResponse);
+                                                              Http1CallChainBase::isPreContinueInterimResponse);
                 } catch (UncheckedIOException ignored) {
                     // we assume this is a timeout exception, if the socket got closed, next read will throw appropriate exception
                     // we treat this as receiving 100-Continue
@@ -445,12 +445,6 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                     }
                 }
             }
-        }
-
-        private static boolean isPreContinueInterimResponse(Status responseStatus) {
-            return responseStatus.family() == Status.Family.INFORMATIONAL
-                    && responseStatus.code() != Status.CONTINUE_100.code()
-                    && responseStatus.code() != Status.SWITCHING_PROTOCOLS_101.code();
         }
 
         private void redirect(Status lastStatus, Headers headerValues) {
