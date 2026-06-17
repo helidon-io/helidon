@@ -158,7 +158,8 @@ class Http1ClientResponseImplTest {
     private static WebClientServiceResponse serviceResponse(Method method,
                                                             Status status,
                                                             ClientResponseHeaders headers) {
-        return Http1CallChainBase.createServiceResponse(HttpClientConfig.builder().build(),
+        return Http1CallChainBase.createServiceResponse(new Http1ClientImpl(null,
+                                                                            Http1ClientConfig.builder().buildPrototype()),
                                                         new TestServiceRequest(method),
                                                         new TestConnection(),
                                                         DataReader.create(() -> null),
