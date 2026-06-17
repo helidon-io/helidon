@@ -351,7 +351,7 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
 </suppress>
 <suppress>
     <notes><![CDATA[
-    file name: io.helidon.integrations.neo4j:helidon-integrations-neo4j-health:4.5.0-SNAPSHOT
+    file name: io.helidon.integrations.neo4j:helidon-integrations-neo4j-health:4.5.1-SNAPSHOT
     ]]></notes>
     <packageUrl regex="true">^pkg:maven/io\.helidon\.integrations\.neo4j/helidon-integrations-neo4j.*@.*$</packageUrl>
     <cve>CVE-2026-1497</cve>
@@ -380,14 +380,14 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
 </suppress>
 <suppress>
     <notes><![CDATA[
-    file name: io.helidon.integrations.neo4j:helidon-integrations-neo4j-health:4.5.0-M1-SNAPSHOT
+    file name: io.helidon.integrations.neo4j:helidon-integrations-neo4j-health:4.5.1-SNAPSHOT
     ]]></notes>
     <packageUrl regex="true">^pkg:maven/io\.helidon\.integrations\.neo4j/helidon-integrations-neo4j.*@.*$</packageUrl>
     <cve>CVE-2026-1471</cve>
 </suppress>
 <suppress>
     <notes><![CDATA[
-    file name: io.helidon.integrations.neo4j:helidon-integrations-neo4j-health:4.5.0-M1-SNAPSHOT
+    file name: io.helidon.integrations.neo4j:helidon-integrations-neo4j-health:4.5.1-SNAPSHOT
     ]]></notes>
     <packageUrl regex="true">^pkg:maven/io\.helidon\.integrations\.neo4j/helidon-integrations-neo4j.*@.*$</packageUrl>
     <cve>CVE-2026-1524</cve>
