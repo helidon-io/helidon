@@ -27,6 +27,7 @@ import java.util.function.Predicate;
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.ElementInfoPredicates;
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.ElementSignature;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
@@ -52,17 +53,15 @@ class TracingExtension implements RegistryCodegenExtension {
     public void process(RegistryRoundContext roundContext) {
         // collect all typeInfo + method that is traced
         Collection<TypeInfo> roundTypes = roundContext.types();
-        Map<TypeName, TypeInfo> usedTypes = new HashMap<>();
-        for (TypeInfo roundType : roundTypes) {
-            usedTypes.put(roundType.typeName(), roundType);
-        }
 
         Collection<TypeInfo> annotatedTypes = roundContext.annotatedTypes(ANNOTATION_TRACED);
-        Collection<TypedElementInfo> annotatedElements = roundContext.annotatedElements(ANNOTATION_TRACED);
 
         Map<TypeName, TracedElements> tracedElements = new HashMap<>();
 
         for (TypeInfo type : annotatedTypes) {
+            if (type.kind() == ElementKind.INTERFACE) {
+                continue;
+            }
             var tracedElementValue = tracedElements.computeIfAbsent(type.typeName(),
                                                                     k -> new TracedElements(type, new HashMap<>()));
             var map = tracedElementValue.elements();
@@ -75,11 +74,22 @@ class TracingExtension implements RegistryCodegenExtension {
                     .forEach(element -> map.put(element.signature(), element));
         }
 
-        for (TypedElementInfo element : annotatedElements) {
-            TypeInfo type = typeForElement(roundContext, usedTypes, element);
-            tracedElements.computeIfAbsent(type.typeName(), k -> new TracedElements(type, new HashMap<>()))
-                    .elements()
-                    .put(element.signature(), element);
+        for (TypeInfo type : roundTypes) {
+            if (type.kind() == ElementKind.INTERFACE) {
+                continue;
+            }
+            for (TypedElementInfo element : type.elementInfo()) {
+                if (!ElementInfoPredicates.isMethod(element)
+                        || ElementInfoPredicates.isStatic(element)
+                        || ElementInfoPredicates.isPrivate(element)
+                        || !element.hasAnnotation(ANNOTATION_TRACED)) {
+                    continue;
+                }
+
+                tracedElements.computeIfAbsent(type.typeName(), k -> new TracedElements(type, new HashMap<>()))
+                        .elements()
+                        .put(element.signature(), element);
+            }
         }
 
         TracedHandler handler = new TracedHandler(roundContext);
@@ -185,24 +195,6 @@ class TracingExtension implements RegistryCodegenExtension {
         }
 
         handler.handle(serviceType, element, index, spanName, spanKind, tags, tagParams);
-    }
-
-    private TypeInfo typeForElement(RegistryRoundContext roundContext,
-                                    Map<TypeName, TypeInfo> usedTypes,
-                                    TypedElementInfo element) {
-        var enclosing = element.enclosingType()
-                .orElseThrow(() -> new CodegenException("Annotated element does not have an enclosing type",
-                                                        element.originatingElementValue()));
-
-        var typeInfo = usedTypes.get(enclosing);
-        if (typeInfo != null) {
-            return typeInfo;
-        }
-        typeInfo = roundContext.typeInfo(enclosing)
-                .orElseThrow(() -> new CodegenException("Cannot find enclosing type " + enclosing.fqName(),
-                                                        element.originatingElementValue()));
-        usedTypes.put(enclosing, typeInfo);
-        return typeInfo;
     }
 
     private record TracedElements(TypeInfo type, Map<ElementSignature, TypedElementInfo> elements) {

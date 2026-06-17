@@ -60,6 +60,7 @@ class DeclarativeHttpTest {
     @BeforeEach
     void beforeEach() {
         SomeEntryPointInterceptor.reset();
+        InheritedFtEndpoint.reset();
     }
 
     @Test
@@ -84,6 +85,17 @@ class DeclarativeHttpTest {
         var all = typedClient.greetings();
 
         assertThat(all, hasItem(is(new GreetingDto("Hello"))));
+    }
+
+    @Test
+    void testInheritedClientRetry() {
+        InheritedFtClient typedClient = registry.get(Lookup.builder()
+                                                              .addContract(InheritedFtClient.class)
+                                                              .addQualifier(Qualifier.create(RestClient.Client.class))
+                                                              .build());
+
+        assertThat(typedClient.retry(), is("retried"));
+        assertThat(InheritedFtEndpoint.calls(), is(2));
     }
 
     @Test

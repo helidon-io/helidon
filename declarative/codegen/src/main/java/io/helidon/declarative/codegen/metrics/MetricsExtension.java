@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2025, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.ContentBuilder;
 import io.helidon.common.types.Annotated;
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
@@ -158,48 +159,50 @@ class MetricsExtension implements RegistryCodegenExtension {
     }
 
     private void generateCountedInterceptors(RegistryRoundContext roundContext, Map<TypeName, TypeInfo> types) {
-        Collection<TypedElementInfo> elements = roundContext.annotatedElements(ANNOTATION_COUNTED);
         Map<TypeName, AtomicInteger> counters = new HashMap<>();
         types.keySet()
                 .forEach(it -> counters.put(it, new AtomicInteger()));
 
         CountedHandler countedHandler = new CountedHandler(roundContext);
 
-        for (TypedElementInfo element : elements) {
-            TypeName enclosingType = enclosingType(element);
-            int counter = counters.computeIfAbsent(enclosingType, k -> new AtomicInteger())
-                    .getAndIncrement();
-
-            TypeInfo typeInfo = types.get(enclosingType);
-            if (typeInfo == null) {
-                typeInfo = ctx.typeInfo(enclosingType).orElseThrow(() -> new CodegenException("No type info found for type "
-                                                                                                      + enclosingType.fqName()));
+        for (TypeInfo typeInfo : types.values()) {
+            if (typeInfo.kind() == ElementKind.INTERFACE) {
+                continue;
             }
-            checkTypeIsService(roundContext, typeInfo);
-            countedHandler.handle(typeInfo, element, counter);
+            for (TypedElementInfo element : typeInfo.elementInfo()) {
+                if (!element.hasAnnotation(ANNOTATION_COUNTED)) {
+                    continue;
+                }
+
+                int counter = counters.computeIfAbsent(typeInfo.typeName(), k -> new AtomicInteger())
+                        .getAndIncrement();
+                checkTypeIsService(roundContext, typeInfo);
+                countedHandler.handle(typeInfo, element, counter);
+            }
         }
     }
 
     private void generateTimedInterceptors(RegistryRoundContext roundContext, Map<TypeName, TypeInfo> types) {
-        Collection<TypedElementInfo> elements = roundContext.annotatedElements(ANNOTATION_TIMED);
         Map<TypeName, AtomicInteger> counters = new HashMap<>();
         types.keySet()
                 .forEach(it -> counters.put(it, new AtomicInteger()));
 
         TimedHandler handler = new TimedHandler(roundContext);
 
-        for (TypedElementInfo element : elements) {
-            TypeName enclosingType = enclosingType(element);
-            int counter = counters.computeIfAbsent(enclosingType, k -> new AtomicInteger())
-                    .getAndIncrement();
-
-            TypeInfo typeInfo = types.get(enclosingType);
-            if (typeInfo == null) {
-                typeInfo = ctx.typeInfo(enclosingType).orElseThrow(() -> new CodegenException("No type info found for type "
-                                                                                                      + enclosingType.fqName()));
+        for (TypeInfo typeInfo : types.values()) {
+            if (typeInfo.kind() == ElementKind.INTERFACE) {
+                continue;
             }
-            checkTypeIsService(roundContext, typeInfo);
-            handler.handle(typeInfo, element, counter);
+            for (TypedElementInfo element : typeInfo.elementInfo()) {
+                if (!element.hasAnnotation(ANNOTATION_TIMED)) {
+                    continue;
+                }
+
+                int counter = counters.computeIfAbsent(typeInfo.typeName(), k -> new AtomicInteger())
+                        .getAndIncrement();
+                checkTypeIsService(roundContext, typeInfo);
+                handler.handle(typeInfo, element, counter);
+            }
         }
     }
 

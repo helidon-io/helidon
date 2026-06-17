@@ -239,6 +239,41 @@ public class DeclarativeTracingTest {
         assertAttribute(attributes, "exception.type", NotFoundException.class.getName());
     }
 
+    @Test
+    @Order(4)
+    void testInheritedMethodTraced() {
+        var response = client.get("/inherited/traced").request(String.class);
+
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity(), is("inherited traced"));
+
+        var data = exporter.spanData(3);
+        exporter.clear();
+
+        SpanData tracedMethod = null;
+        for (SpanData spanDatum : data) {
+            switch (spanDatum.getName()) {
+            case "HTTP Request":
+            case "content-write":
+                break;
+            default:
+                tracedMethod = spanDatum;
+                break;
+            }
+        }
+
+        Set<String> names = data.stream()
+                .map(SpanData::getName)
+                .collect(Collectors.toSet());
+
+        assertThat("Found names: " + names + ", missing inherited traced method", tracedMethod, notNullValue());
+        assertThat(tracedMethod.getName(), is("inherited-traced"));
+        assertThat(tracedMethod.getKind(), is(SpanKind.SERVER));
+        assertThat(tracedMethod.getStatus().getStatusCode(), is(StatusCode.UNSET));
+
+        assertAttribute(tracedMethod.getAttributes(), "source", "contract");
+    }
+
     private void assertAttribute(Attributes attributes, String key, String expectedValue) {
         var actualValue = attributes.get(AttributeKey.stringKey(key));
 

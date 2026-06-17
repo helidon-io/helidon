@@ -31,7 +31,7 @@ import io.helidon.webserver.http.RestServer;
 @Service.Singleton
 @Metrics.Tag(key = "endpoint", value = "TestEndpoint")
 @Metrics.Tag(key = "application", value = "MyNiceApp")
-class TestEndpoint {
+class TestEndpoint implements InheritedMetricsContract {
     private final MeterRegistry meterRegistry;
     private final AtomicInteger gaugeValue = new AtomicInteger();
 
@@ -45,6 +45,11 @@ class TestEndpoint {
     @Metrics.Counted(tags = @Metrics.Tag(key = "location", value = "method"))
     String counted() {
         return "counted";
+    }
+
+    @Override
+    public String inheritedCounted() {
+        return "inherited counted";
     }
 
     @Http.GET
