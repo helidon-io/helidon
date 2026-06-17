@@ -412,6 +412,15 @@ public abstract class IdcsRoleMapperProviderBase implements SubjectMappingProvid
             this(webClient, tokenEndpointUri, tokenRefreshSkew, null, null);
         }
 
+        /**
+         * Create an application token cache with client credentials.
+         *
+         * @param webClient web client to request tokens
+         * @param tokenEndpointUri token endpoint URI
+         * @param tokenRefreshSkew token refresh skew
+         * @param clientId client ID
+         * @param clientSecret client secret
+         */
         protected AppToken(WebClient webClient,
                            URI tokenEndpointUri,
                            Duration tokenRefreshSkew,

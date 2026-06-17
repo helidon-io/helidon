@@ -269,7 +269,7 @@ class WebSocketSecurityUpgradeTest {
         UPGRADE_GATE_INVOKED.set(0);
         HTTP_HANDLER_INVOKED.set(0);
 
-        String wsResponse = sendRequest(
+        String wsResponse = sendRequestAndAwaitOpen(
                 "GET /admin HTTP/1.1\r\n"
                         + "Host: localhost:" + port + "\r\n"
                         + "Upgrade: websocket\r\n"
@@ -302,7 +302,7 @@ class WebSocketSecurityUpgradeTest {
         UPGRADE_GATE_INVOKED.set(0);
         HTTP_HANDLER_INVOKED.set(0);
 
-        String wsResponse = sendRequest(
+        String wsResponse = sendRequestAndAwaitOpen(
                 "GET /admin HTTP/1.1\r\n"
                         + "Host: localhost:" + port + "\r\n"
                         + "Upgrade: websocket\r\n"
@@ -433,7 +433,7 @@ class WebSocketSecurityUpgradeTest {
         SERVICE_UPGRADE_GATE_INVOKED.set(0);
         SERVICE_HTTP_HANDLER_INVOKED.set(0);
 
-        String authenticatedWsResponse = sendRequest(
+        String authenticatedWsResponse = sendRequestAndAwaitOpen(
                 "GET /service HTTP/1.1\r\n"
                         + "Host: localhost:" + port + "\r\n"
                         + "Upgrade: websocket\r\n"
@@ -486,7 +486,7 @@ class WebSocketSecurityUpgradeTest {
         HTTP1_UPGRADE_GATE_INVOKED.set(0);
         HTTP1_HTTP_HANDLER_INVOKED.set(0);
 
-        String authenticatedWsResponse = sendRequest(
+        String authenticatedWsResponse = sendRequestAndAwaitOpen(
                 "GET /http1 HTTP/1.1\r\n"
                         + "Host: localhost:" + port + "\r\n"
                         + "Upgrade: websocket\r\n"
@@ -540,7 +540,7 @@ class WebSocketSecurityUpgradeTest {
 
     @Test
     void successfulUpgradeSendsGateResponse() throws Exception {
-        String wsResponse = sendRequest(
+        String wsResponse = sendRequestAndAwaitOpen(
                 "GET /finalization HTTP/1.1\r\n"
                         + "Host: localhost:" + port + "\r\n"
                         + "Upgrade: websocket\r\n"
@@ -691,7 +691,15 @@ class WebSocketSecurityUpgradeTest {
         assertThat(WS_OPENED.get(), is(false));
     }
 
-    private String sendRequest(String request) throws IOException {
+    private String sendRequest(String request) throws IOException, InterruptedException {
+        return sendRequest(request, false);
+    }
+
+    private String sendRequestAndAwaitOpen(String request) throws IOException, InterruptedException {
+        return sendRequest(request, true);
+    }
+
+    private String sendRequest(String request, boolean awaitOpen) throws IOException, InterruptedException {
         try (Socket socket = new Socket("127.0.0.1", port)) {
             socket.setSoTimeout(5000);
             socket.getOutputStream().write(request.getBytes(StandardCharsets.US_ASCII));
@@ -717,7 +725,11 @@ class WebSocketSecurityUpgradeTest {
                     state = next == '\r' ? 3 : 0;
                 } else {
                     if (next == '\n') {
-                        return buffer.toString(StandardCharsets.US_ASCII);
+                        String response = buffer.toString(StandardCharsets.US_ASCII);
+                        if (awaitOpen && response.contains("HTTP/1.1 101")) {
+                            WS_OPEN_LATCH.get().await(5, TimeUnit.SECONDS);
+                        }
+                        return response;
                     }
                     state = next == '\r' ? 1 : 0;
                 }

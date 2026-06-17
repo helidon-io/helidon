@@ -119,6 +119,17 @@ public class Http2ClientStream implements Http2Stream, ReleasableResource {
         this.recvListener = recvListener;
     }
 
+    /**
+     * Create a new HTTP/2 client stream.
+     *
+     * @param connection client connection
+     * @param serverSettings server settings
+     * @param ctx socket context
+     * @param http2StreamConfig stream configuration
+     * @param http2ClientConfig client configuration
+     * @param streamIdSeq stream ID sequence
+     * @param http2Client HTTP/2 client
+     */
     protected Http2ClientStream(Http2ClientConnection connection,
                                 Http2Settings serverSettings,
                                 SocketContext ctx,
