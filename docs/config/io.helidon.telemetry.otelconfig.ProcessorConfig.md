@@ -1,4 +1,4 @@
-# io.helidon.telemetry.otelconfig.ProcessorConfig
+# io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Processor<wbr>Config
 
 ## Description
 
@@ -44,7 +44,7 @@ Generic configuration for a processor such as a <code>io.<wbr>opentelemetry.<wbr
 
 ## Dependent Types
 
-- [io.helidon.telemetry.otelconfig.BatchProcessorConfig](io.helidon.telemetry.otelconfig.BatchProcessorConfig.md)
+- [io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Batch<wbr>Processor<wbr>Config](io.helidon.telemetry.otelconfig.BatchProcessorConfig.md)
 
 ---
 

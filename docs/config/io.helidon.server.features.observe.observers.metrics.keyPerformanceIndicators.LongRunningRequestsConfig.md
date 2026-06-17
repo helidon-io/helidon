@@ -1,4 +1,4 @@
-# io.helidon.server.features.observe.observers.metrics.keyPerformanceIndicators.LongRunningRequestsConfig
+# io.<wbr>helidon.<wbr>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>keyPerformance<wbr>Indicators.<wbr>Long<wbr>Running<wbr>Requests<wbr>Config
 
 ## Description
 
@@ -36,7 +36,7 @@ Configuration for server.features.observe.observers.metrics.key-performance-indi
 
 ## Usages
 
-- [`server.features.observe.observers.metrics.key-performance-indicators.long-running-requests`](io.helidon.metrics.api.KeyPerformanceIndicatorMetricsConfig.md#long-running-requests)
+- <a href="io.helidon.metrics.api.KeyPerformanceIndicatorMetricsConfig.md#long-running-requests"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>key-<wbr>performance-<wbr>indicators.<wbr>long-<wbr>running-<wbr>requests</code></a>
 
 ---
 

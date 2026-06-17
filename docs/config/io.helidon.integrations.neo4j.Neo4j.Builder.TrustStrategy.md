@@ -1,4 +1,4 @@
-# io.helidon.integrations.neo4j.Neo4j.Builder.TrustStrategy
+# io.<wbr>helidon.<wbr>integrations.<wbr>neo4j.<wbr>Neo4j.<wbr>Builder.<wbr>Trust<wbr>Strategy
 
 ## Description
 

@@ -1,4 +1,4 @@
-# com.acme.AcmeSqlDataSourceConfig
+# com.<wbr>acme.<wbr>Acme<wbr>SqlData<wbr>Source<wbr>Config
 
 ## Description
 
@@ -47,7 +47,7 @@ ACME SQL data source configuration
 
 ## Usages
 
-- [`data.sources.sql`](io.helidon.data.SourcesConfig.md#sql)
+- <a href="io.helidon.data.SourcesConfig.md#sql"><code>data.<wbr>sources.<wbr>sql</code></a>
 
 ---
 

@@ -1,4 +1,4 @@
-# io.helidon.telemetry.otelconfig.HelidonOpenTelemetry
+# io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Helidon<wbr>Open<wbr>Telemetry
 
 ## Description
 
@@ -83,7 +83,7 @@ OpenTelemetry settings
 
 ## Usages
 
-- [`telemetry`](config_reference.md#telemetry)
+- <a href="config_reference.md#telemetry"><code>telemetry</code></a>
 
 ---
 

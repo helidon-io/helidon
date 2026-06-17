@@ -1,4 +1,4 @@
-# com.acme.AcmeNestedConfig
+# com.<wbr>acme.<wbr>Acme<wbr>Nested<wbr>Config
 
 ## Description
 

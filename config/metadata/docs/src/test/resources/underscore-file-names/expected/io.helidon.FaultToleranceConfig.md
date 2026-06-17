@@ -1,4 +1,4 @@
-# io.helidon.FaultToleranceConfig
+# io.<wbr>helidon.<wbr>Fault<wbr>Tolerance<wbr>Config
 
 ## Description
 
@@ -28,7 +28,7 @@ Configuration for fault-tolerance
 
 ## Usages
 
-- [`fault-tolerance`](config_reference.md#fault-tolerance)
+- <a href="config_reference.md#fault-tolerance"><code>fault-<wbr>tolerance</code></a>
 
 ---
 

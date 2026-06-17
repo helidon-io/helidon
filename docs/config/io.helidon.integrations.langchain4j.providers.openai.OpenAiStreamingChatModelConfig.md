@@ -1,4 +1,4 @@
-# io.helidon.integrations.langchain4j.providers.openai.OpenAiStreamingChatModelConfig
+# io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>openai.<wbr>Open<wbr>AiStreaming<wbr>Chat<wbr>Model<wbr>Config
 
 ## Description
 

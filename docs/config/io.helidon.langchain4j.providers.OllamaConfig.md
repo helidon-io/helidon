@@ -1,4 +1,4 @@
-# io.helidon.langchain4j.providers.OllamaConfig
+# io.<wbr>helidon.<wbr>langchain4j.<wbr>providers.<wbr>Ollama<wbr>Config
 
 ## Description
 
@@ -383,14 +383,14 @@ Merged configuration for langchain4j.providers.ollama
 
 ## Merged Types
 
-- [io.helidon.integrations.langchain4j.providers.ollama.OllamaChatModelConfig](io.helidon.integrations.langchain4j.providers.ollama.OllamaChatModelConfig.md)
-- [io.helidon.integrations.langchain4j.providers.ollama.OllamaEmbeddingModelConfig](io.helidon.integrations.langchain4j.providers.ollama.OllamaEmbeddingModelConfig.md)
-- [io.helidon.integrations.langchain4j.providers.ollama.OllamaLanguageModelConfig](io.helidon.integrations.langchain4j.providers.ollama.OllamaLanguageModelConfig.md)
-- [io.helidon.integrations.langchain4j.providers.ollama.OllamaStreamingChatModelConfig](io.helidon.integrations.langchain4j.providers.ollama.OllamaStreamingChatModelConfig.md)
+- [io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>ollama.<wbr>Ollama<wbr>Chat<wbr>Model<wbr>Config](io.helidon.integrations.langchain4j.providers.ollama.OllamaChatModelConfig.md)
+- [io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>ollama.<wbr>Ollama<wbr>Embedding<wbr>Model<wbr>Config](io.helidon.integrations.langchain4j.providers.ollama.OllamaEmbeddingModelConfig.md)
+- [io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>ollama.<wbr>Ollama<wbr>Language<wbr>Model<wbr>Config](io.helidon.integrations.langchain4j.providers.ollama.OllamaLanguageModelConfig.md)
+- [io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>ollama.<wbr>Ollama<wbr>Streaming<wbr>Chat<wbr>Model<wbr>Config](io.helidon.integrations.langchain4j.providers.ollama.OllamaStreamingChatModelConfig.md)
 
 ## Usages
 
-- [`langchain4j.providers.ollama`](io.helidon.langchain4j.ProvidersConfig.md#ollama)
+- <a href="io.helidon.langchain4j.ProvidersConfig.md#ollama"><code>langchain4j.<wbr>providers.<wbr>ollama</code></a>
 
 ---
 

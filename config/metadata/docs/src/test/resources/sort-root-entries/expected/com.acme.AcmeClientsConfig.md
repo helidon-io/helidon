@@ -1,4 +1,4 @@
-# com.acme.AcmeClientsConfig
+# com.<wbr>acme.<wbr>Acme<wbr>Clients<wbr>Config
 
 ## Description
 

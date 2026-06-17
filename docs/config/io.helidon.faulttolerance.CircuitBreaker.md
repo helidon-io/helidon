@@ -1,4 +1,4 @@
-# io.helidon.faulttolerance.CircuitBreaker
+# io.<wbr>helidon.<wbr>faulttolerance.<wbr>Circuit<wbr>Breaker
 
 ## Description
 
@@ -84,7 +84,7 @@ Configuration of a circuit breaker
 
 ## Usages
 
-- [`fault-tolerance.circuit-breakers`](io.helidon.FaultToleranceConfig.md#circuit-breakers)
+- <a href="io.helidon.FaultToleranceConfig.md#circuit-breakers"><code>fault-<wbr>tolerance.<wbr>circuit-<wbr>breakers</code></a>
 
 ---
 

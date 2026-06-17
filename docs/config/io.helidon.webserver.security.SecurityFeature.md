@@ -1,4 +1,4 @@
-# io.helidon.webserver.security.SecurityFeature
+# io.<wbr>helidon.<wbr>webserver.<wbr>security.<wbr>Security<wbr>Feature
 
 ## Description
 
@@ -78,7 +78,7 @@ Configuration of security feature fow webserver
 
 ## Usages
 
-- [`server.features.security`](io.helidon.webserver.spi.ServerFeature.md#security)
+- <a href="io.helidon.webserver.spi.ServerFeature.md#security"><code>server.<wbr>features.<wbr>security</code></a>
 
 ---
 

@@ -1,4 +1,4 @@
-# io.helidon.telemetry.otelconfig.AggregationConfig
+# io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Aggregation<wbr>Config
 
 ## Description
 

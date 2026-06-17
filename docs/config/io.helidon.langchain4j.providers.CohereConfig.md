@@ -1,4 +1,4 @@
-# io.helidon.langchain4j.providers.CohereConfig
+# io.<wbr>helidon.<wbr>langchain4j.<wbr>providers.<wbr>Cohere<wbr>Config
 
 ## Description
 
@@ -169,12 +169,12 @@ Merged configuration for langchain4j.providers.cohere
 
 ## Merged Types
 
-- [io.helidon.integrations.langchain4j.providers.cohere.CohereEmbeddingModelConfig](io.helidon.integrations.langchain4j.providers.cohere.CohereEmbeddingModelConfig.md)
-- [io.helidon.integrations.langchain4j.providers.cohere.CohereScoringModelConfig](io.helidon.integrations.langchain4j.providers.cohere.CohereScoringModelConfig.md)
+- [io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>cohere.<wbr>Cohere<wbr>Embedding<wbr>Model<wbr>Config](io.helidon.integrations.langchain4j.providers.cohere.CohereEmbeddingModelConfig.md)
+- [io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>cohere.<wbr>Cohere<wbr>Scoring<wbr>Model<wbr>Config](io.helidon.integrations.langchain4j.providers.cohere.CohereScoringModelConfig.md)
 
 ## Usages
 
-- [`langchain4j.providers.cohere`](io.helidon.langchain4j.ProvidersConfig.md#cohere)
+- <a href="io.helidon.langchain4j.ProvidersConfig.md#cohere"><code>langchain4j.<wbr>providers.<wbr>cohere</code></a>
 
 ---
 

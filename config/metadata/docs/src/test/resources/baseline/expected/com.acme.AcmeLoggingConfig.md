@@ -1,4 +1,4 @@
-# com.acme.AcmeLoggingConfig
+# com.<wbr>acme.<wbr>Acme<wbr>Logging<wbr>Config
 
 ## Description
 
@@ -35,7 +35,7 @@ ACME Logging configuration
 
 ## Usages
 
-- [`server.features.logging`](com.acme.AcmeFeature.md#logging)
+- <a href="com.acme.AcmeFeature.md#logging"><code>server.<wbr>features.<wbr>logging</code></a>
 
 ---
 

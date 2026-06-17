@@ -1,4 +1,4 @@
-# io.helidon.integrations.langchain4j.ContentRetrieverConfig
+# io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>Content<wbr>Retriever<wbr>Config
 
 ## Description
 

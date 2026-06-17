@@ -1,4 +1,4 @@
-# io.helidon.webclient.spi.ProtocolConfig
+# io.<wbr>helidon.<wbr>webclient.<wbr>spi.<wbr>Protocol<wbr>Config
 
 ## Description
 
@@ -12,11 +12,11 @@ No implementations are currently known.
 
 ## Usages
 
-- [`clients.protocol-configs`](io.helidon.webclient.api.WebClient.md#protocol-configs)
-- [`security.providers.idcs-role-mapper.oidc-config.webclient.protocol-configs`](io.helidon.webclient.api.WebClient.md#protocol-configs)
-- [`security.providers.oidc.webclient.protocol-configs`](io.helidon.webclient.api.WebClient.md#protocol-configs)
-- [`server.features.security.security.providers.idcs-role-mapper.oidc-config.webclient.protocol-configs`](io.helidon.webclient.api.WebClient.md#protocol-configs)
-- [`server.features.security.security.providers.oidc.webclient.protocol-configs`](io.helidon.webclient.api.WebClient.md#protocol-configs)
+- <a href="io.helidon.webclient.api.WebClient.md#protocol-configs"><code>clients.<wbr>protocol-<wbr>configs</code></a>
+- <a href="io.helidon.webclient.api.WebClient.md#protocol-configs"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>protocol-<wbr>configs</code></a>
+- <a href="io.helidon.webclient.api.WebClient.md#protocol-configs"><code>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>protocol-<wbr>configs</code></a>
+- <a href="io.helidon.webclient.api.WebClient.md#protocol-configs"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>protocol-<wbr>configs</code></a>
+- <a href="io.helidon.webclient.api.WebClient.md#protocol-configs"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>protocol-<wbr>configs</code></a>
 
 ---
 

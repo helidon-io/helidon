@@ -1,4 +1,4 @@
-# io.helidon.microprofile.openapi.MpOpenApiManagerConfig
+# io.<wbr>helidon.<wbr>microprofile.<wbr>openapi.<wbr>MpOpen<wbr>ApiManager<wbr>Config
 
 ## Description
 

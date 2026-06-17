@@ -1,4 +1,4 @@
-# io.helidon.integrations.langchain4j.providers.coherence.CoherenceEmbeddingStoreConfig
+# io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>coherence.<wbr>Coherence<wbr>Embedding<wbr>Store<wbr>Config
 
 ## Description
 
@@ -114,7 +114,7 @@ Configuration for LangChain4j model CoherenceEmbeddingStore
 
 ## Usages
 
-- [`langchain4j.providers.coherence`](io.helidon.langchain4j.ProvidersConfig.md#coherence)
+- <a href="io.helidon.langchain4j.ProvidersConfig.md#coherence"><code>langchain4j.<wbr>providers.<wbr>coherence</code></a>
 
 ---
 

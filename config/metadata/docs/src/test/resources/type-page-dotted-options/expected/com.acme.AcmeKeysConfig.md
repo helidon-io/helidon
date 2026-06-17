@@ -1,4 +1,4 @@
-# com.acme.AcmeKeysConfig
+# com.<wbr>acme.<wbr>Acme<wbr>Keys<wbr>Config
 
 ## Description
 
@@ -46,7 +46,7 @@ Keys configuration.
 
 ## Usages
 
-- [`keys`](config_reference.md#keys)
+- <a href="config_reference.md#keys"><code>keys</code></a>
 
 ---
 

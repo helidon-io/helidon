@@ -1,4 +1,4 @@
-# io.helidon.security.providers.httpauth.HttpBasicAuthProvider
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>httpauth.<wbr>Http<wbr>Basic<wbr>Auth<wbr>Provider
 
 ## Description
 
@@ -91,8 +91,8 @@ HTTP Basic Authentication provider
 
 ## Usages
 
-- [`security.providers.http-basic-auth`](io.helidon.security.spi.SecurityProvider.md#http-basic-auth)
-- [`server.features.security.security.providers.http-basic-auth`](io.helidon.security.spi.SecurityProvider.md#http-basic-auth)
+- <a href="io.helidon.security.spi.SecurityProvider.md#http-basic-auth"><code>security.<wbr>providers.<wbr>http-<wbr>basic-<wbr>auth</code></a>
+- <a href="io.helidon.security.spi.SecurityProvider.md#http-basic-auth"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>http-<wbr>basic-<wbr>auth</code></a>
 
 ---
 

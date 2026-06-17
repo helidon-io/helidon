@@ -1,4 +1,4 @@
-# io.helidon.common.context.http.ContextRecordConfig
+# io.<wbr>helidon.<wbr>common.<wbr>context.<wbr>http.<wbr>Context<wbr>Record<wbr>Config
 
 ## Description
 
@@ -68,7 +68,7 @@ Configuration of a single propagation record, a mapping of a header name to its 
 
 ## Usages
 
-- [`server.features.context.records`](io.helidon.webserver.context.ContextFeature.md#records)
+- <a href="io.helidon.webserver.context.ContextFeature.md#records"><code>server.<wbr>features.<wbr>context.<wbr>records</code></a>
 
 ---
 

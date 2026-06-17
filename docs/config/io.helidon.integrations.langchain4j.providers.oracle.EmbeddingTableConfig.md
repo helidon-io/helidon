@@ -1,4 +1,4 @@
-# io.helidon.integrations.langchain4j.providers.oracle.EmbeddingTableConfig
+# io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>oracle.<wbr>Embedding<wbr>Table<wbr>Config
 
 ## Description
 
@@ -80,8 +80,8 @@
 
 ## Usages
 
-- [`langchain4j.providers.oracle.embedding-table`](io.helidon.integrations.langchain4j.providers.oracle.OracleEmbeddingStoreConfig.md#embedding-table)
-- [`langchain4j.providers.oracle.oracle`](io.helidon.integrations.langchain4j.providers.oracle.OracleEmbeddingStoreConfig.md#oracle)
+- <a href="io.helidon.integrations.langchain4j.providers.oracle.OracleEmbeddingStoreConfig.md#embedding-table"><code>langchain4j.<wbr>providers.<wbr>oracle.<wbr>embedding-<wbr>table</code></a>
+- <a href="io.helidon.integrations.langchain4j.providers.oracle.OracleEmbeddingStoreConfig.md#oracle"><code>langchain4j.<wbr>providers.<wbr>oracle.<wbr>oracle</code></a>
 
 ---
 

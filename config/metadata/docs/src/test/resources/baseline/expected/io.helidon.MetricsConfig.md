@@ -1,4 +1,4 @@
-# io.helidon.MetricsConfig
+# io.<wbr>helidon.<wbr>Metrics<wbr>Config
 
 ## Description
 
@@ -69,12 +69,12 @@ Merged configuration for metrics
 
 ## Merged Types
 
-- [com.acme.AcmeMetricsConfig](com.acme.AcmeMetricsConfig.md)
-- [com.acme.AcmeMetricsObserverConfig](com.acme.AcmeMetricsObserverConfig.md)
+- [com.<wbr>acme.<wbr>Acme<wbr>Metrics<wbr>Config](com.acme.AcmeMetricsConfig.md)
+- [com.<wbr>acme.<wbr>Acme<wbr>Metrics<wbr>Observer<wbr>Config](com.acme.AcmeMetricsObserverConfig.md)
 
 ## Usages
 
-- [`metrics`](config_reference.md#metrics)
+- <a href="config_reference.md#metrics"><code>metrics</code></a>
 
 ---
 

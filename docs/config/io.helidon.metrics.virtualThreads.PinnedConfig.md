@@ -1,4 +1,4 @@
-# io.helidon.metrics.virtualThreads.PinnedConfig
+# io.<wbr>helidon.<wbr>metrics.<wbr>virtual<wbr>Threads.<wbr>Pinned<wbr>Config
 
 ## Description
 
@@ -36,7 +36,7 @@ Configuration for metrics.virtual-threads.pinned
 
 ## Usages
 
-- [`metrics.virtual-threads.pinned`](io.helidon.metrics.VirtualThreadsConfig.md#pinned)
+- <a href="io.helidon.metrics.VirtualThreadsConfig.md#pinned"><code>metrics.<wbr>virtual-<wbr>threads.<wbr>pinned</code></a>
 
 ---
 

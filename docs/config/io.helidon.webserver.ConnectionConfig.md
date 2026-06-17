@@ -1,4 +1,4 @@
-# io.helidon.webserver.ConnectionConfig
+# io.<wbr>helidon.<wbr>webserver.<wbr>Connection<wbr>Config
 
 ## Description
 
@@ -108,8 +108,8 @@ Configuration of a server connection (for each connection created by clients)
 
 ## Usages
 
-- [`server.connection-config`](io.helidon.webserver.WebServer.md#connection-config)
-- [`server.sockets.connection-config`](io.helidon.webserver.ListenerConfig.md#connection-config)
+- <a href="io.helidon.webserver.WebServer.md#connection-config"><code>server.<wbr>connection-<wbr>config</code></a>
+- <a href="io.helidon.webserver.ListenerConfig.md#connection-config"><code>server.<wbr>sockets.<wbr>connection-<wbr>config</code></a>
 
 ---
 

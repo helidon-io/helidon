@@ -1,4 +1,4 @@
-# io.helidon.metrics.RestRequestConfig
+# io.<wbr>helidon.<wbr>metrics.<wbr>Rest<wbr>Request<wbr>Config
 
 ## Description
 
@@ -36,7 +36,7 @@ Configuration for metrics.rest-request
 
 ## Usages
 
-- [`metrics.rest-request`](io.helidon.MetricsConfig.md#rest-request)
+- <a href="io.helidon.MetricsConfig.md#rest-request"><code>metrics.<wbr>rest-<wbr>request</code></a>
 
 ---
 

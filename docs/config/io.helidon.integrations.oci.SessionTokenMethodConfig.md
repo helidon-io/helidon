@@ -1,4 +1,4 @@
-# io.helidon.integrations.oci.SessionTokenMethodConfig
+# io.<wbr>helidon.<wbr>integrations.<wbr>oci.<wbr>Session<wbr>Token<wbr>Method<wbr>Config
 
 ## Description
 
@@ -122,7 +122,7 @@ Configuration of the <code>config</code> authentication method
 
 ## Usages
 
-- [`helidon.oci.authentication.session-token`](io.helidon.helidon.oci.AuthenticationConfig.md#session-token)
+- <a href="io.helidon.helidon.oci.AuthenticationConfig.md#session-token"><code>helidon.<wbr>oci.<wbr>authentication.<wbr>session-<wbr>token</code></a>
 
 ---
 

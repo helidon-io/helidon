@@ -1,4 +1,4 @@
-# io.helidon.tracing.ExtendedTracerConfig
+# io.<wbr>helidon.<wbr>tracing.<wbr>Extended<wbr>Tracer<wbr>Config
 
 ## Description
 
@@ -83,13 +83,10 @@ Common settings for tracers including settings for span processors and secure cl
 </tr>
 <tr>
 <td>
-<a id="sampler-type"></a>
-<a href="io.helidon.tracing.SamplerType.md">
 <code>sampler-<wbr>type</code>
-</a>
 </td>
 <td>
-<code>Sampler<wbr>Type</code>
+<code>Extended<wbr>Tracer<wbr>Config<wbr>Blueprint<wbr>Support</code>
 </td>
 <td>
 <code>CONSTANT</code>
@@ -276,6 +273,10 @@ Common settings for tracers including settings for span processors and secure cl
 </table>
 
 
+
+## Dependent Types
+
+- [io.<wbr>helidon.<wbr>tracing.<wbr>providers.<wbr>opentelemetry.<wbr>Open<wbr>Telemetry<wbr>Tracer](io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracer.md)
 
 ---
 

@@ -1,4 +1,4 @@
-# io.helidon.security.providers.idcsRoleMapper.oidcConfig.webclient.tls.privateKey.pem.PublicKeyConfig
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>idcs<wbr>Role<wbr>Mapper.<wbr>oidc<wbr>Config.<wbr>webclient.<wbr>tls.<wbr>private<wbr>Key.<wbr>pem.<wbr>Public<wbr>KeyConfig
 
 ## Description
 
@@ -35,7 +35,7 @@ Configuration for security.providers.idcs-role-mapper.oidc-config.webclient.tls.
 
 ## Usages
 
-- [`security.providers.idcs-role-mapper.oidc-config.webclient.tls.private-key.pem.public-key`](io.helidon.common.pki.PemKeys.md#public-key)
+- <a href="io.helidon.common.pki.PemKeys.md#public-key"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>tls.<wbr>private-<wbr>key.<wbr>pem.<wbr>public-<wbr>key</code></a>
 
 ---
 

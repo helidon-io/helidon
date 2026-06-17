@@ -1,4 +1,4 @@
-# io.helidon.security.providers.abac.AbacProvider
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>abac.<wbr>Abac<wbr>Provider
 
 ## Description
 
@@ -48,8 +48,8 @@ Attribute Based Access Control provider
 
 ## Usages
 
-- [`security.providers.abac`](io.helidon.security.spi.SecurityProvider.md#abac)
-- [`server.features.security.security.providers.abac`](io.helidon.security.spi.SecurityProvider.md#abac)
+- <a href="io.helidon.security.spi.SecurityProvider.md#abac"><code>security.<wbr>providers.<wbr>abac</code></a>
+- <a href="io.helidon.security.spi.SecurityProvider.md#abac"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>abac</code></a>
 
 ---
 

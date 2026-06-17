@@ -1,4 +1,4 @@
-# io.helidon.integrations.oci.ConfigFileMethodConfig
+# io.<wbr>helidon.<wbr>integrations.<wbr>oci.<wbr>Config<wbr>File<wbr>Method<wbr>Config
 
 ## Description
 
@@ -47,7 +47,7 @@
 
 ## Usages
 
-- [`helidon.oci.authentication.config-file`](io.helidon.helidon.oci.AuthenticationConfig.md#config-file)
+- <a href="io.helidon.helidon.oci.AuthenticationConfig.md#config-file"><code>helidon.<wbr>oci.<wbr>authentication.<wbr>config-<wbr>file</code></a>
 
 ---
 

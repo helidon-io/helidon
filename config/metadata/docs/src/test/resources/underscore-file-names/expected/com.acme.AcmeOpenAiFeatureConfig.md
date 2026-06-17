@@ -1,4 +1,4 @@
-# com.acme.AcmeOpenAiFeatureConfig
+# com.<wbr>acme.<wbr>Acme<wbr>Open<wbr>AiFeature<wbr>Config
 
 ## Description
 

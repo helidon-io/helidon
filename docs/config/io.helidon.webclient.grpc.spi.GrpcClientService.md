@@ -1,4 +1,4 @@
-# io.helidon.webclient.grpc.spi.GrpcClientService
+# io.<wbr>helidon.<wbr>webclient.<wbr>grpc.<wbr>spi.<wbr>Grpc<wbr>Client<wbr>Service
 
 ## Description
 

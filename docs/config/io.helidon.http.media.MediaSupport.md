@@ -1,4 +1,4 @@
-# io.helidon.http.media.MediaSupport
+# io.<wbr>helidon.<wbr>http.<wbr>media.<wbr>Media<wbr>Support
 
 ## Description
 
@@ -77,8 +77,13 @@ This type is a provider contract.
 
 ## Usages
 
-- [`server.media-context.media-supports`](io.helidon.http.media.MediaContext.md#media-supports)
-- [`server.sockets.media-context.media-supports`](io.helidon.http.media.MediaContext.md#media-supports)
+- <a href="io.helidon.http.media.MediaContext.md#media-supports"><code>clients.<wbr>media-<wbr>context.<wbr>media-<wbr>supports</code></a>
+- <a href="io.helidon.http.media.MediaContext.md#media-supports"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>media-<wbr>context.<wbr>media-<wbr>supports</code></a>
+- <a href="io.helidon.http.media.MediaContext.md#media-supports"><code>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>media-<wbr>context.<wbr>media-<wbr>supports</code></a>
+- <a href="io.helidon.http.media.MediaContext.md#media-supports"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>media-<wbr>context.<wbr>media-<wbr>supports</code></a>
+- <a href="io.helidon.http.media.MediaContext.md#media-supports"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>media-<wbr>context.<wbr>media-<wbr>supports</code></a>
+- <a href="io.helidon.http.media.MediaContext.md#media-supports"><code>server.<wbr>media-<wbr>context.<wbr>media-<wbr>supports</code></a>
+- <a href="io.helidon.http.media.MediaContext.md#media-supports"><code>server.<wbr>sockets.<wbr>media-<wbr>context.<wbr>media-<wbr>supports</code></a>
 
 ---
 

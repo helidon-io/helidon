@@ -1,4 +1,4 @@
-# io.helidon.security.providers.oidc.tenants.SignJwkConfig
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>tenants.<wbr>Sign<wbr>JwkConfig
 
 ## Description
 
@@ -35,7 +35,7 @@ Configuration for security.providers.oidc.tenants.sign-jwk
 
 ## Usages
 
-- [`security.providers.oidc.tenants.sign-jwk`](io.helidon.security.providers.oidc.common.TenantConfig.md#sign-jwk)
+- <a href="io.helidon.security.providers.oidc.common.TenantConfig.md#sign-jwk"><code>security.<wbr>providers.<wbr>oidc.<wbr>tenants.<wbr>sign-<wbr>jwk</code></a>
 
 ---
 

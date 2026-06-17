@@ -1,4 +1,4 @@
-# io.opentelemetry.sdk.metrics.InstrumentType
+# io.<wbr>opentelemetry.<wbr>sdk.<wbr>metrics.<wbr>Instrument<wbr>Type
 
 ## Description
 

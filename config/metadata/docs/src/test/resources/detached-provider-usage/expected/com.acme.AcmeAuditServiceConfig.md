@@ -1,4 +1,4 @@
-# com.acme.AcmeAuditServiceConfig
+# com.<wbr>acme.<wbr>Acme<wbr>Audit<wbr>Service<wbr>Config
 
 ## Description
 

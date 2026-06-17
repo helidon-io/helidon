@@ -1,4 +1,4 @@
-# io.helidon.webserver.grpc.GrpcTracingConfig
+# io.<wbr>helidon.<wbr>webserver.<wbr>grpc.<wbr>Grpc<wbr>Tracing<wbr>Config
 
 ## Description
 

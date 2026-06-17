@@ -1,4 +1,4 @@
-# io.helidon.tracing.providers.opentelemetry.OtlpExporterProtocolType
+# io.<wbr>helidon.<wbr>tracing.<wbr>providers.<wbr>opentelemetry.<wbr>Otlp<wbr>Exporter<wbr>Protocol<wbr>Type
 
 ## Description
 
@@ -27,7 +27,7 @@ This type is an enumeration.
 
 ## Usages
 
-- [`tracing.exporter-type`](io.helidon.TracingConfig.md#exporter-type)
+- <a href="io.helidon.TracingConfig.md#exporter-type"><code>tracing.<wbr>exporter-<wbr>type</code></a>
 
 ---
 

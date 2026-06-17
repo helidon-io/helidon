@@ -1,4 +1,4 @@
-# com.acme.AcmeServerConfig
+# com.<wbr>acme.<wbr>Acme<wbr>Server<wbr>Config
 
 ## Description
 

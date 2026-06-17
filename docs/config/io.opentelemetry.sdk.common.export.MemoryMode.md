@@ -1,4 +1,4 @@
-# io.opentelemetry.sdk.common.export.MemoryMode
+# io.<wbr>opentelemetry.<wbr>sdk.<wbr>common.<wbr>export.<wbr>Memory<wbr>Mode
 
 ## Description
 

@@ -1,4 +1,4 @@
-# io.helidon.security.providers.google.login.GoogleTokenProvider
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>google.<wbr>login.<wbr>Google<wbr>Token<wbr>Provider
 
 ## Description
 
@@ -111,8 +111,8 @@ Google Authentication provider
 
 ## Usages
 
-- [`security.providers.google-login`](io.helidon.security.spi.SecurityProvider.md#google-login)
-- [`server.features.security.security.providers.google-login`](io.helidon.security.spi.SecurityProvider.md#google-login)
+- <a href="io.helidon.security.spi.SecurityProvider.md#google-login"><code>security.<wbr>providers.<wbr>google-<wbr>login</code></a>
+- <a href="io.helidon.security.spi.SecurityProvider.md#google-login"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>google-<wbr>login</code></a>
 
 ---
 

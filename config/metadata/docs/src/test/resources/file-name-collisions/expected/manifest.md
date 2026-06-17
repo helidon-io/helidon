@@ -4,11 +4,11 @@
 
 See the [root type](config_reference.md).
 
-- [com.acme.AcmeCollisionConfig](com.acme.AcmeCollisionConfig.md)
-- [com.acme.AcmeNestedCollisionConfig](com.acme.AcmeNestedCollisionConfig.md)
+- [com.<wbr>acme.<wbr>Acme<wbr>Collision<wbr>Config](com.acme.AcmeCollisionConfig.md)
+- [com.<wbr>acme.<wbr>Acme<wbr>Nested<wbr>Collision<wbr>Config](com.acme.AcmeNestedCollisionConfig.md)
 
 ## Synthetic Types
 
-- [io.helidon.ConfigConfig](io.helidon.ConfigConfig.md)
-- [io.helidon.ConfigReferenceConfig](io.helidon.ConfigReferenceConfig.md)
-- [io.helidon.config.ReferenceConfig](io.helidon.config.ReferenceConfig.md)
+- [io.<wbr>helidon.<wbr>Config<wbr>Config](io.helidon.ConfigConfig.md)
+- [io.<wbr>helidon.<wbr>Config<wbr>Reference<wbr>Config](io.helidon.ConfigReferenceConfig.md)
+- [io.<wbr>helidon.<wbr>config.<wbr>Reference<wbr>Config](io.helidon.config.ReferenceConfig.md)

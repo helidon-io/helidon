@@ -1,4 +1,4 @@
-# com.acme.AcmeFeature
+# com.<wbr>acme.<wbr>Acme<wbr>Feature
 
 ## Description
 
@@ -18,6 +18,7 @@ This type is a provider contract.
 <tbody>
 <tr>
 <td>
+<a id="audit"></a>
 <a href="com.acme.AcmeAuditConfig.md">
 <code>audit</code>
 </a>
@@ -26,6 +27,7 @@ This type is a provider contract.
 </tr>
 <tr>
 <td>
+<a id="shared"></a>
 <a href="com.acme.AcmeFileFeatureConfig.md">
 <code>shared</code>
 </a>
@@ -34,6 +36,7 @@ This type is a provider contract.
 </tr>
 <tr>
 <td>
+<a id="shared-2"></a>
 <a href="com.acme.AcmeSocketFeatureConfig.md">
 <code>shared</code>
 </a>
@@ -47,7 +50,7 @@ This type is a provider contract.
 
 ## Usages
 
-- [`server.features`](com.acme.AcmeServerConfig.md#features)
+- <a href="com.acme.AcmeServerConfig.md#features"><code>server.<wbr>features</code></a>
 
 ---
 

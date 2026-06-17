@@ -1,4 +1,4 @@
-# io.helidon.common.pki.KeystoreKeys
+# io.<wbr>helidon.<wbr>common.<wbr>pki.<wbr>Keystore<wbr>Keys
 
 ## Description
 
@@ -112,20 +112,20 @@ Resources from a java keystore (PKCS12, JKS etc.)
 
 ## Usages
 
-- [`clients.tls.private-key.keystore`](io.helidon.common.pki.Keys.md#keystore)
-- [`clients.tls.trust.keystore`](io.helidon.common.pki.Keys.md#keystore)
-- [`security.providers.idcs-role-mapper.oidc-config.webclient.tls.private-key.keystore`](io.helidon.common.pki.Keys.md#keystore)
-- [`security.providers.idcs-role-mapper.oidc-config.webclient.tls.trust.keystore`](io.helidon.common.pki.Keys.md#keystore)
-- [`security.providers.oidc.webclient.tls.private-key.keystore`](io.helidon.common.pki.Keys.md#keystore)
-- [`security.providers.oidc.webclient.tls.trust.keystore`](io.helidon.common.pki.Keys.md#keystore)
-- [`server.features.security.security.providers.idcs-role-mapper.oidc-config.webclient.tls.private-key.keystore`](io.helidon.common.pki.Keys.md#keystore)
-- [`server.features.security.security.providers.idcs-role-mapper.oidc-config.webclient.tls.trust.keystore`](io.helidon.common.pki.Keys.md#keystore)
-- [`server.features.security.security.providers.oidc.webclient.tls.private-key.keystore`](io.helidon.common.pki.Keys.md#keystore)
-- [`server.features.security.security.providers.oidc.webclient.tls.trust.keystore`](io.helidon.common.pki.Keys.md#keystore)
-- [`server.sockets.tls.private-key.keystore`](io.helidon.common.pki.Keys.md#keystore)
-- [`server.sockets.tls.trust.keystore`](io.helidon.common.pki.Keys.md#keystore)
-- [`server.tls.private-key.keystore`](io.helidon.common.pki.Keys.md#keystore)
-- [`server.tls.trust.keystore`](io.helidon.common.pki.Keys.md#keystore)
+- <a href="io.helidon.common.pki.Keys.md#keystore"><code>clients.<wbr>tls.<wbr>private-<wbr>key.<wbr>keystore</code></a>
+- <a href="io.helidon.common.pki.Keys.md#keystore"><code>clients.<wbr>tls.<wbr>trust.<wbr>keystore</code></a>
+- <a href="io.helidon.common.pki.Keys.md#keystore"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>tls.<wbr>private-<wbr>key.<wbr>keystore</code></a>
+- <a href="io.helidon.common.pki.Keys.md#keystore"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>tls.<wbr>trust.<wbr>keystore</code></a>
+- <a href="io.helidon.common.pki.Keys.md#keystore"><code>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>private-<wbr>key.<wbr>keystore</code></a>
+- <a href="io.helidon.common.pki.Keys.md#keystore"><code>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>trust.<wbr>keystore</code></a>
+- <a href="io.helidon.common.pki.Keys.md#keystore"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>tls.<wbr>private-<wbr>key.<wbr>keystore</code></a>
+- <a href="io.helidon.common.pki.Keys.md#keystore"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>tls.<wbr>trust.<wbr>keystore</code></a>
+- <a href="io.helidon.common.pki.Keys.md#keystore"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>private-<wbr>key.<wbr>keystore</code></a>
+- <a href="io.helidon.common.pki.Keys.md#keystore"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>trust.<wbr>keystore</code></a>
+- <a href="io.helidon.common.pki.Keys.md#keystore"><code>server.<wbr>sockets.<wbr>tls.<wbr>private-<wbr>key.<wbr>keystore</code></a>
+- <a href="io.helidon.common.pki.Keys.md#keystore"><code>server.<wbr>sockets.<wbr>tls.<wbr>trust.<wbr>keystore</code></a>
+- <a href="io.helidon.common.pki.Keys.md#keystore"><code>server.<wbr>tls.<wbr>private-<wbr>key.<wbr>keystore</code></a>
+- <a href="io.helidon.common.pki.Keys.md#keystore"><code>server.<wbr>tls.<wbr>trust.<wbr>keystore</code></a>
 
 ---
 

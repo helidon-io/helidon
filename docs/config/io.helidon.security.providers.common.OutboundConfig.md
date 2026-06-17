@@ -1,4 +1,4 @@
-# io.helidon.security.providers.common.OutboundConfig
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>common.<wbr>Outbound<wbr>Config
 
 ## Description
 
@@ -55,14 +55,14 @@ Outbound configuration for outbound security
 
 ## Dependent Types
 
-- [io.helidon.security.providers.oidc.OidcProvider](io.helidon.security.providers.oidc.OidcProvider.md)
+- [io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>Oidc<wbr>Provider](io.helidon.security.providers.oidc.OidcProvider.md)
 
 ## Usages
 
-- [`security.providers.google-login.outbound`](io.helidon.security.providers.google.login.GoogleTokenProvider.md#outbound)
-- [`security.providers.jwt.sign-token`](io.helidon.security.providers.jwt.JwtProvider.md#sign-token)
-- [`server.features.security.security.providers.google-login.outbound`](io.helidon.security.providers.google.login.GoogleTokenProvider.md#outbound)
-- [`server.features.security.security.providers.jwt.sign-token`](io.helidon.security.providers.jwt.JwtProvider.md#sign-token)
+- <a href="io.helidon.security.providers.google.login.GoogleTokenProvider.md#outbound"><code>security.<wbr>providers.<wbr>google-<wbr>login.<wbr>outbound</code></a>
+- <a href="io.helidon.security.providers.jwt.JwtProvider.md#sign-token"><code>security.<wbr>providers.<wbr>jwt.<wbr>sign-<wbr>token</code></a>
+- <a href="io.helidon.security.providers.google.login.GoogleTokenProvider.md#outbound"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>google-<wbr>login.<wbr>outbound</code></a>
+- <a href="io.helidon.security.providers.jwt.JwtProvider.md#sign-token"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>jwt.<wbr>sign-<wbr>token</code></a>
 
 ---
 

@@ -1,4 +1,4 @@
-# io.helidon.telemetry.otelconfig.LogRecordExporterConfig
+# io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>LogRecord<wbr>Exporter<wbr>Config
 
 ## Description
 

@@ -1,4 +1,4 @@
-# io.helidon.metrics.providers.micrometer.PrometheusPublisher
+# io.<wbr>helidon.<wbr>metrics.<wbr>providers.<wbr>micrometer.<wbr>Prometheus<wbr>Publisher
 
 ## Description
 
@@ -80,8 +80,8 @@ Settings for a Micrometer Prometheus meter registry
 
 ## Usages
 
-- [`metrics.publishers.prometheus`](io.helidon.metrics.api.MetricsPublisher.md#prometheus)
-- [`server.features.observe.observers.metrics.publishers.prometheus`](io.helidon.metrics.api.MetricsPublisher.md#prometheus)
+- <a href="io.helidon.metrics.api.MetricsPublisher.md#prometheus"><code>metrics.<wbr>publishers.<wbr>prometheus</code></a>
+- <a href="io.helidon.metrics.api.MetricsPublisher.md#prometheus"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>publishers.<wbr>prometheus</code></a>
 
 ---
 

@@ -1,4 +1,4 @@
-# io.helidon.telemetry.otelconfig.OpenTelemetryMetricsConfig
+# io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Open<wbr>Telemetry<wbr>Metrics<wbr>Config
 
 ## Description
 
@@ -59,7 +59,7 @@ OpenTelemetry metrics settings
 
 ## Usages
 
-- [`telemetry.signals.metrics`](io.helidon.telemetry.SignalsConfig.md#metrics)
+- <a href="io.helidon.telemetry.SignalsConfig.md#metrics"><code>telemetry.<wbr>signals.<wbr>metrics</code></a>
 
 ---
 

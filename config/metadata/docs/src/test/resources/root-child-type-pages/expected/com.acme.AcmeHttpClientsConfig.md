@@ -1,4 +1,4 @@
-# com.acme.AcmeHttpClientsConfig
+# com.<wbr>acme.<wbr>Acme<wbr>Http<wbr>Clients<wbr>Config
 
 ## Description
 

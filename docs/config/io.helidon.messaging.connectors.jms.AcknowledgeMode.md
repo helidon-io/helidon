@@ -1,4 +1,4 @@
-# io.helidon.messaging.connectors.jms.AcknowledgeMode
+# io.<wbr>helidon.<wbr>messaging.<wbr>connectors.<wbr>jms.<wbr>Acknowledge<wbr>Mode
 
 ## Description
 

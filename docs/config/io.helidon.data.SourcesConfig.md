@@ -1,4 +1,4 @@
-# io.helidon.data.SourcesConfig
+# io.<wbr>helidon.<wbr>data.<wbr>Sources<wbr>Config
 
 ## Description
 
@@ -31,7 +31,7 @@ Configuration for data.sources
 
 ## Usages
 
-- [`data.sources`](io.helidon.DataConfig.md#sources)
+- <a href="io.helidon.DataConfig.md#sources"><code>data.<wbr>sources</code></a>
 
 ---
 

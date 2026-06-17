@@ -1,4 +1,4 @@
-# io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProviderBase.Builder
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>idcs.<wbr>mapper.<wbr>Idcs<wbr>Role<wbr>Mapper<wbr>Provider<wbr>Base.<wbr>Builder
 
 ## Description
 
@@ -65,8 +65,8 @@ Fluent API builder for <code>Idcs<wbr>Role<wbr>Mapper<wbr>Provider<wbr>Base</cod
 
 ## Dependent Types
 
-- [io.helidon.security.providers.idcs.mapper.IdcsMtRoleMapperProvider](io.helidon.security.providers.idcs.mapper.IdcsMtRoleMapperProvider.md)
-- [io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProvider](io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProvider.md)
+- [io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>idcs.<wbr>mapper.<wbr>Idcs<wbr>MtRole<wbr>Mapper<wbr>Provider](io.helidon.security.providers.idcs.mapper.IdcsMtRoleMapperProvider.md)
+- [io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>idcs.<wbr>mapper.<wbr>Idcs<wbr>Role<wbr>Mapper<wbr>Provider](io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProvider.md)
 
 ---
 

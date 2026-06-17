@@ -1,4 +1,4 @@
-# io.helidon.webserver.observe.health.HealthObserver
+# io.<wbr>helidon.<wbr>webserver.<wbr>observe.<wbr>health.<wbr>Health<wbr>Observer
 
 ## Description
 
@@ -64,6 +64,18 @@ Configuration of Health observer
 </td>
 <td>Whether to use services discovered by <code>java.<wbr>util.<wbr>Service<wbr>Loader</code></td>
 </tr>
+<tr>
+<td>
+<code>enabled</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Whether this observer is enabled</td>
+</tr>
 </tbody>
 </table>
 
@@ -71,8 +83,8 @@ Configuration of Health observer
 
 ## Usages
 
-- [`health`](config_reference.md#health)
-- [`server.features.observe.observers.health`](io.helidon.webserver.observe.spi.Observer.md#health)
+- <a href="config_reference.md#health"><code>health</code></a>
+- <a href="io.helidon.webserver.observe.spi.Observer.md#health"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>health</code></a>
 
 ---
 

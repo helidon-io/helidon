@@ -1,4 +1,4 @@
-# io.helidon.security.providers.httpsign.SignedHeadersConfig.HeadersConfig
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>httpsign.<wbr>Signed<wbr>Headers<wbr>Config.<wbr>Headers<wbr>Config
 
 ## Description
 

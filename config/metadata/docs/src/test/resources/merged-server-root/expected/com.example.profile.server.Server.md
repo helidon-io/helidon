@@ -1,4 +1,4 @@
-# com.example.profile.server.Server
+# com.<wbr>example.<wbr>profile.<wbr>server.<wbr>Server
 
 ## Description
 

@@ -1,4 +1,4 @@
-# io.helidon.tracing.providers.jaeger.JaegerTracerBuilder
+# io.<wbr>helidon.<wbr>tracing.<wbr>providers.<wbr>jaeger.<wbr>Jaeger<wbr>Tracer<wbr>Builder
 
 ## Description
 

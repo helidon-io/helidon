@@ -1,4 +1,4 @@
-# io.helidon.faulttolerance.Bulkhead
+# io.<wbr>helidon.<wbr>faulttolerance.<wbr>Bulkhead
 
 ## Description
 
@@ -60,7 +60,7 @@
 
 ## Usages
 
-- [`fault-tolerance.bulkheads`](io.helidon.FaultToleranceConfig.md#bulkheads)
+- <a href="io.helidon.FaultToleranceConfig.md#bulkheads"><code>fault-<wbr>tolerance.<wbr>bulkheads</code></a>
 
 ---
 

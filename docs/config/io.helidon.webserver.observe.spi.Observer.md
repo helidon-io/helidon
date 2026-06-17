@@ -1,4 +1,4 @@
-# io.helidon.webserver.observe.spi.Observer
+# io.<wbr>helidon.<wbr>webserver.<wbr>observe.<wbr>spi.<wbr>Observer
 
 ## Description
 
@@ -77,7 +77,7 @@ This type is a provider contract.
 
 ## Usages
 
-- [`server.features.observe.observers`](io.helidon.webserver.observe.ObserveFeature.md#observers)
+- <a href="io.helidon.webserver.observe.ObserveFeature.md#observers"><code>server.<wbr>features.<wbr>observe.<wbr>observers</code></a>
 
 ---
 

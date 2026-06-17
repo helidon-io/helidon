@@ -1,4 +1,4 @@
-# com.acme.AcmeSocketFeatureConfig
+# com.<wbr>acme.<wbr>Acme<wbr>Socket<wbr>Feature<wbr>Config
 
 ## Description
 

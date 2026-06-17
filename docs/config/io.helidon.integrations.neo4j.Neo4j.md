@@ -1,4 +1,4 @@
-# io.helidon.integrations.neo4j.Neo4j
+# io.<wbr>helidon.<wbr>integrations.<wbr>neo4j.<wbr>Neo4j
 
 ## Description
 

@@ -1,4 +1,4 @@
-# io.helidon.telemetry.otelconfig.OpenTelemetryTracingConfig
+# io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Open<wbr>Telemetry<wbr>Tracing<wbr>Config
 
 ## Description
 
@@ -68,7 +68,7 @@ OpenTelemetry tracer settings
 
 ## Usages
 
-- [`telemetry.signals.tracing`](io.helidon.telemetry.SignalsConfig.md#tracing)
+- <a href="io.helidon.telemetry.SignalsConfig.md#tracing"><code>telemetry.<wbr>signals.<wbr>tracing</code></a>
 
 ---
 

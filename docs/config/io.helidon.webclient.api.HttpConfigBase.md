@@ -1,4 +1,4 @@
-# io.helidon.webclient.api.HttpConfigBase
+# io.<wbr>helidon.<wbr>webclient.<wbr>api.<wbr>Http<wbr>Config<wbr>Base
 
 ## Description
 
@@ -121,8 +121,8 @@ Common configuration for HTTP protocols
 
 ## Dependent Types
 
-- [io.helidon.webclient.api.HttpClientConfig](io.helidon.webclient.api.HttpClientConfig.md)
-- [io.helidon.webclient.api.WebClient](io.helidon.webclient.api.WebClient.md)
+- [io.<wbr>helidon.<wbr>webclient.<wbr>api.<wbr>Http<wbr>Client<wbr>Config](io.helidon.webclient.api.HttpClientConfig.md)
+- [io.<wbr>helidon.<wbr>webclient.<wbr>api.<wbr>WebClient](io.helidon.webclient.api.WebClient.md)
 
 ---
 

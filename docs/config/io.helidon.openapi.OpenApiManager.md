@@ -1,4 +1,4 @@
-# io.helidon.openapi.OpenApiManager
+# io.<wbr>helidon.<wbr>openapi.<wbr>Open<wbr>ApiManager
 
 ## Description
 
@@ -12,8 +12,8 @@ No implementations are currently known.
 
 ## Usages
 
-- [`openapi.manager`](io.helidon.openapi.OpenApiFeature.md#manager)
-- [`server.features.openapi.manager`](io.helidon.openapi.OpenApiFeature.md#manager)
+- <a href="io.helidon.openapi.OpenApiFeature.md#manager"><code>openapi.<wbr>manager</code></a>
+- <a href="io.helidon.openapi.OpenApiFeature.md#manager"><code>server.<wbr>features.<wbr>openapi.<wbr>manager</code></a>
 
 ---
 

@@ -1,4 +1,4 @@
-# io.helidon.telemetry.otelconfig.TypedAttributes
+# io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Typed<wbr>Attributes
 
 ## Description
 

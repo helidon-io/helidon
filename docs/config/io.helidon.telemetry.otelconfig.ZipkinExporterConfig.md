@@ -1,4 +1,4 @@
-# io.helidon.telemetry.otelconfig.ZipkinExporterConfig
+# io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Zipkin<wbr>Exporter<wbr>Config
 
 ## Description
 

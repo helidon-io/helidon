@@ -1,4 +1,4 @@
-# io.helidon.server.features.security.security.providers.oidc.webclient.tls.trust.pem.KeyConfig
+# io.<wbr>helidon.<wbr>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>trust.<wbr>pem.<wbr>KeyConfig
 
 ## Description
 
@@ -44,7 +44,7 @@ Configuration for server.features.security.security.providers.oidc.webclient.tls
 
 ## Usages
 
-- [`server.features.security.security.providers.oidc.webclient.tls.trust.pem.key`](io.helidon.common.pki.PemKeys.md#key)
+- <a href="io.helidon.common.pki.PemKeys.md#key"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>trust.<wbr>pem.<wbr>key</code></a>
 
 ---
 

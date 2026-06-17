@@ -1,4 +1,4 @@
-# io.helidon.server.features.security.security.providers.IdcsRoleMapperConfig
+# io.<wbr>helidon.<wbr>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>Idcs<wbr>Role<wbr>Mapper<wbr>Config
 
 ## Description
 
@@ -69,7 +69,7 @@ Merged configuration for server.features.security.security.providers.idcs-role-m
 </td>
 <td>
 </td>
-<td>Configure token handler for IDCS Tenant ID</td>
+<td>Token handler for an IDCS tenant ID. The extracted tenant ID must be a single DNS label: 1 to 63 alphanumeric or hyphen characters, with no leading or trailing hyphen. Invalid tenant IDs fail before endpoint resolution</td>
 </tr>
 <tr>
 <td>
@@ -107,12 +107,12 @@ Merged configuration for server.features.security.security.providers.idcs-role-m
 
 ## Merged Types
 
-- [io.helidon.security.providers.idcs.mapper.IdcsMtRoleMapperProvider](io.helidon.security.providers.idcs.mapper.IdcsMtRoleMapperProvider.md)
-- [io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProvider](io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProvider.md)
+- [io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>idcs.<wbr>mapper.<wbr>Idcs<wbr>MtRole<wbr>Mapper<wbr>Provider](io.helidon.security.providers.idcs.mapper.IdcsMtRoleMapperProvider.md)
+- [io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>idcs.<wbr>mapper.<wbr>Idcs<wbr>Role<wbr>Mapper<wbr>Provider](io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProvider.md)
 
 ## Usages
 
-- [`server.features.security.security.providers.idcs-role-mapper`](io.helidon.security.spi.SecurityProvider.md#idcs-role-mapper)
+- <a href="io.helidon.security.spi.SecurityProvider.md#idcs-role-mapper"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper</code></a>
 
 ---
 

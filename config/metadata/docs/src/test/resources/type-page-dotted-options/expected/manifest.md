@@ -4,9 +4,9 @@
 
 See the [root type](config_reference.md).
 
-- [com.acme.AcmeKeysConfig](com.acme.AcmeKeysConfig.md)
-- [com.acme.AcmeResourceConfig](com.acme.AcmeResourceConfig.md)
+- [com.<wbr>acme.<wbr>Acme<wbr>Keys<wbr>Config](com.acme.AcmeKeysConfig.md)
+- [com.<wbr>acme.<wbr>Acme<wbr>Resource<wbr>Config](com.acme.AcmeResourceConfig.md)
 
 ## Synthetic Types
 
-- [io.helidon.keys.GroupConfig](io.helidon.keys.GroupConfig.md)
+- [io.<wbr>helidon.<wbr>keys.<wbr>Group<wbr>Config](io.helidon.keys.GroupConfig.md)

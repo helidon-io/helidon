@@ -1,4 +1,4 @@
-# io.helidon.MetricsConfig
+# io.<wbr>helidon.<wbr>Metrics<wbr>Config
 
 ## Description
 
@@ -281,12 +281,12 @@ Merged configuration for metrics
 
 ## Merged Types
 
-- [io.helidon.metrics.api.MetricsConfig](io.helidon.metrics.api.MetricsConfig.md)
-- [io.helidon.webserver.observe.metrics.MetricsObserver](io.helidon.webserver.observe.metrics.MetricsObserver.md)
+- [io.<wbr>helidon.<wbr>metrics.<wbr>api.<wbr>Metrics<wbr>Config](io.helidon.metrics.api.MetricsConfig.md)
+- [io.<wbr>helidon.<wbr>webserver.<wbr>observe.<wbr>metrics.<wbr>Metrics<wbr>Observer](io.helidon.webserver.observe.metrics.MetricsObserver.md)
 
 ## Usages
 
-- [`metrics`](config_reference.md#metrics)
+- <a href="config_reference.md#metrics"><code>metrics</code></a>
 
 ---
 

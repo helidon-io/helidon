@@ -1,4 +1,4 @@
-# io.helidon.security.providers.oidc.common.TenantConfig
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>common.<wbr>Tenant<wbr>Config
 
 ## Description
 
@@ -240,7 +240,7 @@ Open ID Connect tenant configuration
 <td>
 <code>CLIENT_<wbr>SECRET_<wbr>BASIC</code>
 </td>
-<td>Type of authentication to use when invoking the token endpoint</td>
+<td>Type of authentication to use when invoking the token endpoint. With CLIENT_SECRET_BASIC, credentials are sent only to POST requests on the resolved token endpoint scheme, host, and path and, when JWT introspection is used, to POST requests on the resolved introspection endpoint scheme, host, and path</td>
 </tr>
 <tr>
 <td>
@@ -272,10 +272,10 @@ Open ID Connect tenant configuration
 
 ## Usages
 
-- [`security.providers.idcs-role-mapper.oidc-config.tenants`](io.helidon.security.providers.oidc.common.OidcConfig.md#tenants)
-- [`security.providers.oidc.tenants`](io.helidon.security.providers.oidc.OidcProvider.md#tenants)
-- [`server.features.security.security.providers.idcs-role-mapper.oidc-config.tenants`](io.helidon.security.providers.oidc.common.OidcConfig.md#tenants)
-- [`server.features.security.security.providers.oidc.tenants`](io.helidon.security.providers.oidc.OidcProvider.md#tenants)
+- <a href="io.helidon.security.providers.oidc.common.OidcConfig.md#tenants"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>tenants</code></a>
+- <a href="io.helidon.security.providers.oidc.OidcProvider.md#tenants"><code>security.<wbr>providers.<wbr>oidc.<wbr>tenants</code></a>
+- <a href="io.helidon.security.providers.oidc.common.OidcConfig.md#tenants"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>tenants</code></a>
+- <a href="io.helidon.security.providers.oidc.OidcProvider.md#tenants"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>tenants</code></a>
 
 ---
 

@@ -1,4 +1,4 @@
-# io.helidon.DataConfig
+# io.<wbr>helidon.<wbr>Data<wbr>Config
 
 ## Description
 
@@ -31,7 +31,7 @@ Configuration for data
 
 ## Usages
 
-- [`data`](config_reference.md#data)
+- <a href="config_reference.md#data"><code>data</code></a>
 
 ---
 

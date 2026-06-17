@@ -1,4 +1,4 @@
-# io.helidon.microprofile.restclientmetrics.RestClientMetricsConfig
+# io.<wbr>helidon.<wbr>microprofile.<wbr>restclientmetrics.<wbr>Rest<wbr>Client<wbr>Metrics<wbr>Config
 
 ## Description
 
@@ -36,7 +36,7 @@ Configuration settings for MP REST client metrics
 
 ## Usages
 
-- [`rest-client.metrics`](io.helidon.RestClientConfig.md#metrics)
+- <a href="io.helidon.RestClientConfig.md#metrics"><code>rest-<wbr>client.<wbr>metrics</code></a>
 
 ---
 

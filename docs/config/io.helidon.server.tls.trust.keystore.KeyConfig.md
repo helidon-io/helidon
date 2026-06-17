@@ -1,4 +1,4 @@
-# io.helidon.server.tls.trust.keystore.KeyConfig
+# io.<wbr>helidon.<wbr>server.<wbr>tls.<wbr>trust.<wbr>keystore.<wbr>KeyConfig
 
 ## Description
 
@@ -41,7 +41,7 @@ Configuration for server.tls.trust.keystore.key
 
 ## Usages
 
-- [`server.tls.trust.keystore.key`](io.helidon.common.pki.KeystoreKeys.md#key)
+- <a href="io.helidon.common.pki.KeystoreKeys.md#key"><code>server.<wbr>tls.<wbr>trust.<wbr>keystore.<wbr>key</code></a>
 
 ---
 

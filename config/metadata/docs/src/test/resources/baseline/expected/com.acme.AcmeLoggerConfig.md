@@ -1,4 +1,4 @@
-# com.acme.AcmeLoggerConfig
+# com.<wbr>acme.<wbr>Acme<wbr>Logger<wbr>Config
 
 ## Description
 
@@ -66,7 +66,7 @@ ACME Logger configuration
 
 ## Usages
 
-- [`server.features.logging.loggers`](com.acme.AcmeLoggingConfig.md#loggers)
+- <a href="com.acme.AcmeLoggingConfig.md#loggers"><code>server.<wbr>features.<wbr>logging.<wbr>loggers</code></a>
 
 ---
 

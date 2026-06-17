@@ -1,4 +1,4 @@
-# dev.langchain4j.model.chat.Capability
+# dev.<wbr>langchain4j.<wbr>model.<wbr>chat.<wbr>Capability
 
 ## Description
 
@@ -23,9 +23,9 @@ This type is an enumeration.
 
 ## Usages
 
-- [`langchain4j.providers.google-gemini.supported-capabilities`](io.helidon.langchain4j.providers.GoogleGeminiConfig.md#supported-capabilities)
-- [`langchain4j.providers.ollama.supported-capabilities`](io.helidon.langchain4j.providers.OllamaConfig.md#supported-capabilities)
-- [`langchain4j.providers.open-ai.supported-capabilities`](io.helidon.langchain4j.providers.OpenAiConfig.md#supported-capabilities)
+- <a href="io.helidon.langchain4j.providers.GoogleGeminiConfig.md#supported-capabilities"><code>langchain4j.<wbr>providers.<wbr>google-<wbr>gemini.<wbr>supported-<wbr>capabilities</code></a>
+- <a href="io.helidon.langchain4j.providers.OllamaConfig.md#supported-capabilities"><code>langchain4j.<wbr>providers.<wbr>ollama.<wbr>supported-<wbr>capabilities</code></a>
+- <a href="io.helidon.langchain4j.providers.OpenAiConfig.md#supported-capabilities"><code>langchain4j.<wbr>providers.<wbr>open-<wbr>ai.supported-<wbr>capabilities</code></a>
 
 ---
 

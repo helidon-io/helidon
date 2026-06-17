@@ -1,4 +1,4 @@
-# io.helidon.metrics.scoping.scopes.FilterConfig
+# io.<wbr>helidon.<wbr>metrics.<wbr>scoping.<wbr>scopes.<wbr>Filter<wbr>Config
 
 ## Description
 
@@ -41,7 +41,7 @@ Configuration for metrics.scoping.scopes.filter
 
 ## Usages
 
-- [`metrics.scoping.scopes.filter`](io.helidon.metrics.api.ScopeConfig.md#filter)
+- <a href="io.helidon.metrics.api.ScopeConfig.md#filter"><code>metrics.<wbr>scoping.<wbr>scopes.<wbr>filter</code></a>
 
 ---
 

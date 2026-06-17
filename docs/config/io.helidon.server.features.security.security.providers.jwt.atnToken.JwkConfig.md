@@ -1,4 +1,4 @@
-# io.helidon.server.features.security.security.providers.jwt.atnToken.JwkConfig
+# io.<wbr>helidon.<wbr>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>jwt.<wbr>atnToken.<wbr>JwkConfig
 
 ## Description
 
@@ -35,7 +35,7 @@ Configuration for server.features.security.security.providers.jwt.atn-token.jwk
 
 ## Usages
 
-- [`server.features.security.security.providers.jwt.atn-token.jwk`](io.helidon.server.features.security.security.providers.jwt.AtnTokenConfig.md#jwk)
+- <a href="io.helidon.server.features.security.security.providers.jwt.AtnTokenConfig.md#jwk"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>jwt.<wbr>atn-<wbr>token.<wbr>jwk</code></a>
 
 ---
 

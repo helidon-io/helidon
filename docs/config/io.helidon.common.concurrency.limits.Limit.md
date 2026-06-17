@@ -1,4 +1,4 @@
-# io.helidon.common.concurrency.limits.Limit
+# io.<wbr>helidon.<wbr>common.<wbr>concurrency.<wbr>limits.<wbr>Limit
 
 ## Description
 
@@ -50,9 +50,9 @@ This type is a provider contract.
 
 ## Usages
 
-- [`server.concurrency-limit`](io.helidon.webserver.WebServer.md#concurrency-limit)
-- [`server.features.limits.concurrency-limit`](io.helidon.webserver.concurrency.limits.LimitsFeature.md#concurrency-limit)
-- [`server.sockets.concurrency-limit`](io.helidon.webserver.ListenerConfig.md#concurrency-limit)
+- <a href="io.helidon.webserver.WebServer.md#concurrency-limit"><code>server.<wbr>concurrency-<wbr>limit</code></a>
+- <a href="io.helidon.webserver.concurrency.limits.LimitsFeature.md#concurrency-limit"><code>server.<wbr>features.<wbr>limits.<wbr>concurrency-<wbr>limit</code></a>
+- <a href="io.helidon.webserver.ListenerConfig.md#concurrency-limit"><code>server.<wbr>sockets.<wbr>concurrency-<wbr>limit</code></a>
 
 ---
 

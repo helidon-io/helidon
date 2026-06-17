@@ -1,4 +1,4 @@
-# io.helidon.metrics.api.MetricsPublisher
+# io.<wbr>helidon.<wbr>metrics.<wbr>api.<wbr>Metrics<wbr>Publisher
 
 ## Description
 
@@ -41,8 +41,8 @@ This type is a provider contract.
 
 ## Usages
 
-- [`metrics.publishers`](io.helidon.MetricsConfig.md#publishers)
-- [`server.features.observe.observers.metrics.publishers`](io.helidon.webserver.observe.metrics.MetricsObserver.md#publishers)
+- <a href="io.helidon.MetricsConfig.md#publishers"><code>metrics.<wbr>publishers</code></a>
+- <a href="io.helidon.webserver.observe.metrics.MetricsObserver.md#publishers"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>publishers</code></a>
 
 ---
 

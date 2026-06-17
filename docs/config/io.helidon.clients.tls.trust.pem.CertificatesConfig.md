@@ -1,4 +1,4 @@
-# io.helidon.clients.tls.trust.pem.CertificatesConfig
+# io.<wbr>helidon.<wbr>clients.<wbr>tls.<wbr>trust.<wbr>pem.<wbr>Certificates<wbr>Config
 
 ## Description
 
@@ -35,7 +35,7 @@ Configuration for clients.tls.trust.pem.certificates
 
 ## Usages
 
-- [`clients.tls.trust.pem.certificates`](io.helidon.common.pki.PemKeys.md#certificates)
+- <a href="io.helidon.common.pki.PemKeys.md#certificates"><code>clients.<wbr>tls.<wbr>trust.<wbr>pem.<wbr>certificates</code></a>
 
 ---
 

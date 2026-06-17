@@ -1,4 +1,4 @@
-# io.helidon.langchain4j.providers.OciGenAiConfig
+# io.<wbr>helidon.<wbr>langchain4j.<wbr>providers.<wbr>OciGen<wbr>AiConfig
 
 ## Description
 
@@ -305,12 +305,12 @@ Merged configuration for langchain4j.providers.oci-gen-ai
 
 ## Merged Types
 
-- [io.helidon.integrations.langchain4j.providers.oci.genai.OciGenAiChatModelConfig](io.helidon.integrations.langchain4j.providers.oci.genai.OciGenAiChatModelConfig.md)
-- [io.helidon.integrations.langchain4j.providers.oci.genai.OciGenAiStreamingChatModelConfig](io.helidon.integrations.langchain4j.providers.oci.genai.OciGenAiStreamingChatModelConfig.md)
+- [io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>oci.<wbr>genai.<wbr>OciGen<wbr>AiChat<wbr>Model<wbr>Config](io.helidon.integrations.langchain4j.providers.oci.genai.OciGenAiChatModelConfig.md)
+- [io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>oci.<wbr>genai.<wbr>OciGen<wbr>AiStreaming<wbr>Chat<wbr>Model<wbr>Config](io.helidon.integrations.langchain4j.providers.oci.genai.OciGenAiStreamingChatModelConfig.md)
 
 ## Usages
 
-- [`langchain4j.providers.oci-gen-ai`](io.helidon.langchain4j.ProvidersConfig.md#oci-gen-ai)
+- <a href="io.helidon.langchain4j.ProvidersConfig.md#oci-gen-ai"><code>langchain4j.<wbr>providers.<wbr>oci-<wbr>gen-<wbr>ai</code></a>
 
 ---
 

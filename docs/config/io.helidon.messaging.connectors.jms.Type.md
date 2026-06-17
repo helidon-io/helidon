@@ -1,4 +1,4 @@
-# io.helidon.messaging.connectors.jms.Type
+# io.<wbr>helidon.<wbr>messaging.<wbr>connectors.<wbr>jms.<wbr>Type
 
 ## Description
 

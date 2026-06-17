@@ -1,4 +1,4 @@
-# io.helidon.json.binding.JsonBinding
+# io.<wbr>helidon.<wbr>json.<wbr>binding.<wbr>Json<wbr>Binding
 
 ## Description
 

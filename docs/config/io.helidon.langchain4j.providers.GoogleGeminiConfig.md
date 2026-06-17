@@ -1,4 +1,4 @@
-# io.helidon.langchain4j.providers.GoogleGeminiConfig
+# io.<wbr>helidon.<wbr>langchain4j.<wbr>providers.<wbr>Google<wbr>Gemini<wbr>Config
 
 ## Description
 
@@ -496,12 +496,12 @@ Merged configuration for langchain4j.providers.google-gemini
 
 ## Merged Types
 
-- [io.helidon.integrations.langchain4j.providers.gemini.GoogleAiGeminiChatModelConfig](io.helidon.integrations.langchain4j.providers.gemini.GoogleAiGeminiChatModelConfig.md)
-- [io.helidon.integrations.langchain4j.providers.gemini.GoogleAiGeminiStreamingChatModelConfig](io.helidon.integrations.langchain4j.providers.gemini.GoogleAiGeminiStreamingChatModelConfig.md)
+- [io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>gemini.<wbr>Google<wbr>AiGemini<wbr>Chat<wbr>Model<wbr>Config](io.helidon.integrations.langchain4j.providers.gemini.GoogleAiGeminiChatModelConfig.md)
+- [io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>gemini.<wbr>Google<wbr>AiGemini<wbr>Streaming<wbr>Chat<wbr>Model<wbr>Config](io.helidon.integrations.langchain4j.providers.gemini.GoogleAiGeminiStreamingChatModelConfig.md)
 
 ## Usages
 
-- [`langchain4j.providers.google-gemini`](io.helidon.langchain4j.ProvidersConfig.md#google-gemini)
+- <a href="io.helidon.langchain4j.ProvidersConfig.md#google-gemini"><code>langchain4j.<wbr>providers.<wbr>google-<wbr>gemini</code></a>
 
 ---
 

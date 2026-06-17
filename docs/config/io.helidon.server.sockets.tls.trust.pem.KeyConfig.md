@@ -1,4 +1,4 @@
-# io.helidon.server.sockets.tls.trust.pem.KeyConfig
+# io.<wbr>helidon.<wbr>server.<wbr>sockets.<wbr>tls.<wbr>trust.<wbr>pem.<wbr>KeyConfig
 
 ## Description
 
@@ -44,7 +44,7 @@ Configuration for server.sockets.tls.trust.pem.key
 
 ## Usages
 
-- [`server.sockets.tls.trust.pem.key`](io.helidon.common.pki.PemKeys.md#key)
+- <a href="io.helidon.common.pki.PemKeys.md#key"><code>server.<wbr>sockets.<wbr>tls.<wbr>trust.<wbr>pem.<wbr>key</code></a>
 
 ---
 

@@ -1,4 +1,4 @@
-# io.helidon.data.sql.datasource.TransactionIsolation
+# io.<wbr>helidon.<wbr>data.<wbr>sql.<wbr>datasource.<wbr>Transaction<wbr>Isolation
 
 ## Description
 
@@ -35,8 +35,8 @@ This type is an enumeration.
 
 ## Usages
 
-- [`data.sources.sql.provider.hikari.transaction-isolation`](io.helidon.data.sql.datasource.hikari.HikariDataSourceConfig.md#transaction-isolation)
-- [`data.sources.sql.provider.jdbc.transaction-isolation`](io.helidon.data.sql.datasource.jdbc.JdbcDataSourceConfig.md#transaction-isolation)
+- <a href="io.helidon.data.sql.datasource.hikari.HikariDataSourceConfig.md#transaction-isolation"><code>data.<wbr>sources.<wbr>sql.<wbr>provider.<wbr>hikari.<wbr>transaction-<wbr>isolation</code></a>
+- <a href="io.helidon.data.sql.datasource.jdbc.JdbcDataSourceConfig.md#transaction-isolation"><code>data.<wbr>sources.<wbr>sql.<wbr>provider.<wbr>jdbc.<wbr>transaction-<wbr>isolation</code></a>
 
 ---
 

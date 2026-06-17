@@ -1,4 +1,4 @@
-# Managing Dependencies
+# Dependency Management
 
 Helidon provides a "Bill Of Materials" (BOM) to manage dependencies. This is a
 special Maven POM file that provides dependency management.

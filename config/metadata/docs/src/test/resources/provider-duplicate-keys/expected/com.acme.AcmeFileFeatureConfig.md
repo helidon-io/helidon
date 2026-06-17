@@ -1,4 +1,4 @@
-# com.acme.AcmeFileFeatureConfig
+# com.<wbr>acme.<wbr>Acme<wbr>File<wbr>Feature<wbr>Config
 
 ## Description
 

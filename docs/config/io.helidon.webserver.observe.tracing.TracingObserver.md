@@ -1,4 +1,4 @@
-# io.helidon.webserver.observe.tracing.TracingObserver
+# io.<wbr>helidon.<wbr>webserver.<wbr>observe.<wbr>tracing.<wbr>Tracing<wbr>Observer
 
 ## Description
 
@@ -52,6 +52,18 @@ Configuration of Tracing observer
 </td>
 <td>Weight of the feature registered with WebServer</td>
 </tr>
+<tr>
+<td>
+<code>enabled</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Whether this observer is enabled</td>
+</tr>
 </tbody>
 </table>
 
@@ -59,7 +71,7 @@ Configuration of Tracing observer
 
 ## Usages
 
-- [`server.features.observe.observers.tracing`](io.helidon.webserver.observe.spi.Observer.md#tracing)
+- <a href="io.helidon.webserver.observe.spi.Observer.md#tracing"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>tracing</code></a>
 
 ---
 

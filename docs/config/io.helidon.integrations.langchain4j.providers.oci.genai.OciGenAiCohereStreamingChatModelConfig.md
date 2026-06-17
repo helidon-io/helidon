@@ -1,4 +1,4 @@
-# io.helidon.integrations.langchain4j.providers.oci.genai.OciGenAiCohereStreamingChatModelConfig
+# io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>oci.<wbr>genai.<wbr>OciGen<wbr>AiCohere<wbr>Streaming<wbr>Chat<wbr>Model<wbr>Config
 
 ## Description
 

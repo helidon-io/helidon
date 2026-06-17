@@ -1,4 +1,4 @@
-# io.helidon.integrations.langchain4j.providers.openai.OpenAiEmbeddingModelConfig
+# io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>openai.<wbr>Open<wbr>AiEmbedding<wbr>Model<wbr>Config
 
 ## Description
 

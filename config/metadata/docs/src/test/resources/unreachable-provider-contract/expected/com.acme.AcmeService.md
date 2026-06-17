@@ -1,4 +1,4 @@
-# com.acme.AcmeService
+# com.<wbr>acme.<wbr>Acme<wbr>Service
 
 ## Description
 

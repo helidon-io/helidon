@@ -1,4 +1,4 @@
-# io.helidon.data.sql.datasource.ProviderConfig
+# io.<wbr>helidon.<wbr>data.<wbr>sql.<wbr>datasource.<wbr>Provider<wbr>Config
 
 ## Description
 
@@ -50,7 +50,7 @@ This type is a provider contract.
 
 ## Usages
 
-- [`data.sources.sql.provider`](io.helidon.data.sql.datasource.DataSourceConfig.md#provider)
+- <a href="io.helidon.data.sql.datasource.DataSourceConfig.md#provider"><code>data.<wbr>sources.<wbr>sql.<wbr>provider</code></a>
 
 ---
 

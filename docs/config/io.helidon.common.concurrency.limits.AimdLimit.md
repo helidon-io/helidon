@@ -1,4 +1,4 @@
-# io.helidon.common.concurrency.limits.AimdLimit
+# io.<wbr>helidon.<wbr>common.<wbr>concurrency.<wbr>limits.<wbr>Aimd<wbr>Limit
 
 ## Description
 
@@ -132,9 +132,9 @@ Configuration of <code>io.<wbr>helidon.<wbr>common.<wbr>concurrency.<wbr>limits.
 
 ## Usages
 
-- [`server.concurrency-limit.aimd`](io.helidon.common.concurrency.limits.Limit.md#aimd)
-- [`server.features.limits.concurrency-limit.aimd`](io.helidon.common.concurrency.limits.Limit.md#aimd)
-- [`server.sockets.concurrency-limit.aimd`](io.helidon.common.concurrency.limits.Limit.md#aimd)
+- <a href="io.helidon.common.concurrency.limits.Limit.md#aimd"><code>server.<wbr>concurrency-<wbr>limit.<wbr>aimd</code></a>
+- <a href="io.helidon.common.concurrency.limits.Limit.md#aimd"><code>server.<wbr>features.<wbr>limits.<wbr>concurrency-<wbr>limit.<wbr>aimd</code></a>
+- <a href="io.helidon.common.concurrency.limits.Limit.md#aimd"><code>server.<wbr>sockets.<wbr>concurrency-<wbr>limit.<wbr>aimd</code></a>
 
 ---
 

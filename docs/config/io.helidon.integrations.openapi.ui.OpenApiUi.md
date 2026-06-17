@@ -1,4 +1,4 @@
-# io.helidon.integrations.openapi.ui.OpenApiUi
+# io.<wbr>helidon.<wbr>integrations.<wbr>openapi.<wbr>ui.Open<wbr>ApiUi
 
 ## Description
 

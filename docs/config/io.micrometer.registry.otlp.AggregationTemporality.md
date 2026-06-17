@@ -1,4 +1,4 @@
-# io.micrometer.registry.otlp.AggregationTemporality
+# io.<wbr>micrometer.<wbr>registry.<wbr>otlp.<wbr>Aggregation<wbr>Temporality
 
 ## Description
 
@@ -27,8 +27,8 @@ This type is an enumeration.
 
 ## Usages
 
-- [`metrics.publishers.otlp.aggregation-temporality`](io.helidon.metrics.providers.micrometer.OtlpPublisher.md#aggregation-temporality)
-- [`server.features.observe.observers.metrics.publishers.otlp.aggregation-temporality`](io.helidon.metrics.providers.micrometer.OtlpPublisher.md#aggregation-temporality)
+- <a href="io.helidon.metrics.providers.micrometer.OtlpPublisher.md#aggregation-temporality"><code>metrics.<wbr>publishers.<wbr>otlp.<wbr>aggregation-<wbr>temporality</code></a>
+- <a href="io.helidon.metrics.providers.micrometer.OtlpPublisher.md#aggregation-temporality"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>publishers.<wbr>otlp.<wbr>aggregation-<wbr>temporality</code></a>
 
 ---
 

@@ -1,4 +1,4 @@
-# com.example.webserver.WebServer
+# com.<wbr>example.<wbr>webserver.<wbr>WebServer
 
 ## Description
 

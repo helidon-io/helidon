@@ -1,4 +1,4 @@
-# io.helidon.security.providers.header.HeaderAtnProvider
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>header.<wbr>Header<wbr>AtnProvider
 
 ## Description
 
@@ -117,8 +117,8 @@ Security provider that extracts a username (or service name) from a header
 
 ## Usages
 
-- [`security.providers.header-atn`](io.helidon.security.spi.SecurityProvider.md#header-atn)
-- [`server.features.security.security.providers.header-atn`](io.helidon.security.spi.SecurityProvider.md#header-atn)
+- <a href="io.helidon.security.spi.SecurityProvider.md#header-atn"><code>security.<wbr>providers.<wbr>header-<wbr>atn</code></a>
+- <a href="io.helidon.security.spi.SecurityProvider.md#header-atn"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>header-<wbr>atn</code></a>
 
 ---
 

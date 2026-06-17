@@ -1,4 +1,4 @@
-# io.helidon.security.providers.oidc.webclient.tls.trust.pem.CertificatesConfig
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>trust.<wbr>pem.<wbr>Certificates<wbr>Config
 
 ## Description
 
@@ -35,7 +35,7 @@ Configuration for security.providers.oidc.webclient.tls.trust.pem.certificates
 
 ## Usages
 
-- [`security.providers.oidc.webclient.tls.trust.pem.certificates`](io.helidon.common.pki.PemKeys.md#certificates)
+- <a href="io.helidon.common.pki.PemKeys.md#certificates"><code>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>trust.<wbr>pem.<wbr>certificates</code></a>
 
 ---
 

@@ -1,4 +1,4 @@
-# io.helidon.common.pki.PemKeys
+# io.<wbr>helidon.<wbr>common.<wbr>pki.<wbr>PemKeys
 
 ## Description
 
@@ -58,20 +58,20 @@ PEM files based keys - accepts private key and certificate chain
 
 ## Usages
 
-- [`clients.tls.private-key.pem`](io.helidon.common.pki.Keys.md#pem)
-- [`clients.tls.trust.pem`](io.helidon.common.pki.Keys.md#pem)
-- [`security.providers.idcs-role-mapper.oidc-config.webclient.tls.private-key.pem`](io.helidon.common.pki.Keys.md#pem)
-- [`security.providers.idcs-role-mapper.oidc-config.webclient.tls.trust.pem`](io.helidon.common.pki.Keys.md#pem)
-- [`security.providers.oidc.webclient.tls.private-key.pem`](io.helidon.common.pki.Keys.md#pem)
-- [`security.providers.oidc.webclient.tls.trust.pem`](io.helidon.common.pki.Keys.md#pem)
-- [`server.features.security.security.providers.idcs-role-mapper.oidc-config.webclient.tls.private-key.pem`](io.helidon.common.pki.Keys.md#pem)
-- [`server.features.security.security.providers.idcs-role-mapper.oidc-config.webclient.tls.trust.pem`](io.helidon.common.pki.Keys.md#pem)
-- [`server.features.security.security.providers.oidc.webclient.tls.private-key.pem`](io.helidon.common.pki.Keys.md#pem)
-- [`server.features.security.security.providers.oidc.webclient.tls.trust.pem`](io.helidon.common.pki.Keys.md#pem)
-- [`server.sockets.tls.private-key.pem`](io.helidon.common.pki.Keys.md#pem)
-- [`server.sockets.tls.trust.pem`](io.helidon.common.pki.Keys.md#pem)
-- [`server.tls.private-key.pem`](io.helidon.common.pki.Keys.md#pem)
-- [`server.tls.trust.pem`](io.helidon.common.pki.Keys.md#pem)
+- <a href="io.helidon.common.pki.Keys.md#pem"><code>clients.<wbr>tls.<wbr>private-<wbr>key.<wbr>pem</code></a>
+- <a href="io.helidon.common.pki.Keys.md#pem"><code>clients.<wbr>tls.<wbr>trust.<wbr>pem</code></a>
+- <a href="io.helidon.common.pki.Keys.md#pem"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>tls.<wbr>private-<wbr>key.<wbr>pem</code></a>
+- <a href="io.helidon.common.pki.Keys.md#pem"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>tls.<wbr>trust.<wbr>pem</code></a>
+- <a href="io.helidon.common.pki.Keys.md#pem"><code>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>private-<wbr>key.<wbr>pem</code></a>
+- <a href="io.helidon.common.pki.Keys.md#pem"><code>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>trust.<wbr>pem</code></a>
+- <a href="io.helidon.common.pki.Keys.md#pem"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>tls.<wbr>private-<wbr>key.<wbr>pem</code></a>
+- <a href="io.helidon.common.pki.Keys.md#pem"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>tls.<wbr>trust.<wbr>pem</code></a>
+- <a href="io.helidon.common.pki.Keys.md#pem"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>private-<wbr>key.<wbr>pem</code></a>
+- <a href="io.helidon.common.pki.Keys.md#pem"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>trust.<wbr>pem</code></a>
+- <a href="io.helidon.common.pki.Keys.md#pem"><code>server.<wbr>sockets.<wbr>tls.<wbr>private-<wbr>key.<wbr>pem</code></a>
+- <a href="io.helidon.common.pki.Keys.md#pem"><code>server.<wbr>sockets.<wbr>tls.<wbr>trust.<wbr>pem</code></a>
+- <a href="io.helidon.common.pki.Keys.md#pem"><code>server.<wbr>tls.<wbr>private-<wbr>key.<wbr>pem</code></a>
+- <a href="io.helidon.common.pki.Keys.md#pem"><code>server.<wbr>tls.<wbr>trust.<wbr>pem</code></a>
 
 ---
 

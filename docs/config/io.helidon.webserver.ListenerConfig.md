@@ -1,4 +1,4 @@
-# io.helidon.webserver.ListenerConfig
+# io.<wbr>helidon.<wbr>webserver.<wbr>Listener<wbr>Config
 
 ## Description
 
@@ -167,7 +167,7 @@ Configuration of a server listener (server socket)
 <td>
 <code>&#8288;-&#8288;1</code>
 </td>
-<td>Limits the number of connections that can be opened at a single point in time</td>
+<td>Limits the number of connection permits that this listener may reserve before accepting sockets</td>
 </tr>
 <tr>
 <td>
@@ -422,11 +422,11 @@ Configuration of a server listener (server socket)
 
 ## Dependent Types
 
-- [io.helidon.webserver.WebServer](io.helidon.webserver.WebServer.md)
+- [io.<wbr>helidon.<wbr>webserver.<wbr>WebServer](io.helidon.webserver.WebServer.md)
 
 ## Usages
 
-- [`server.sockets`](io.helidon.webserver.WebServer.md#sockets)
+- <a href="io.helidon.webserver.WebServer.md#sockets"><code>server.<wbr>sockets</code></a>
 
 ---
 

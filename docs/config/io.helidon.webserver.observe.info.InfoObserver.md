@@ -1,4 +1,4 @@
-# io.helidon.webserver.observe.info.InfoObserver
+# io.<wbr>helidon.<wbr>webserver.<wbr>observe.<wbr>info.<wbr>Info<wbr>Observer
 
 ## Description
 
@@ -40,6 +40,18 @@ Info Observer configuration
 </td>
 <td>Values to be exposed using this observability endpoint</td>
 </tr>
+<tr>
+<td>
+<code>enabled</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Whether this observer is enabled</td>
+</tr>
 </tbody>
 </table>
 
@@ -47,7 +59,7 @@ Info Observer configuration
 
 ## Usages
 
-- [`server.features.observe.observers.info`](io.helidon.webserver.observe.spi.Observer.md#info)
+- <a href="io.helidon.webserver.observe.spi.Observer.md#info"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>info</code></a>
 
 ---
 

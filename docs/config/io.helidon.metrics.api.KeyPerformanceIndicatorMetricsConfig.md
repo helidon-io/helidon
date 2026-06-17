@@ -1,4 +1,4 @@
-# io.helidon.metrics.api.KeyPerformanceIndicatorMetricsConfig
+# io.<wbr>helidon.<wbr>metrics.<wbr>api.<wbr>KeyPerformance<wbr>Indicator<wbr>Metrics<wbr>Config
 
 ## Description
 
@@ -49,8 +49,8 @@ Config bean for KPI metrics configuration
 
 ## Usages
 
-- [`metrics.key-performance-indicators`](io.helidon.MetricsConfig.md#key-performance-indicators)
-- [`server.features.observe.observers.metrics.key-performance-indicators`](io.helidon.webserver.observe.metrics.MetricsObserver.md#key-performance-indicators)
+- <a href="io.helidon.MetricsConfig.md#key-performance-indicators"><code>metrics.<wbr>key-<wbr>performance-<wbr>indicators</code></a>
+- <a href="io.helidon.webserver.observe.metrics.MetricsObserver.md#key-performance-indicators"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>key-<wbr>performance-<wbr>indicators</code></a>
 
 ---
 

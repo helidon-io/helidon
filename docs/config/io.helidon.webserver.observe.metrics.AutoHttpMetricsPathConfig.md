@@ -1,4 +1,4 @@
-# io.helidon.webserver.observe.metrics.AutoHttpMetricsPathConfig
+# io.<wbr>helidon.<wbr>webserver.<wbr>observe.<wbr>metrics.<wbr>Auto<wbr>Http<wbr>Metrics<wbr>Path<wbr>Config
 
 ## Description
 
@@ -58,8 +58,8 @@ Settings for path-based automatic metrics configuration
 
 ## Usages
 
-- [`metrics.auto-http-metrics.paths`](io.helidon.webserver.observe.metrics.AutoHttpMetricsConfig.md#paths)
-- [`server.features.observe.observers.metrics.auto-http-metrics.paths`](io.helidon.webserver.observe.metrics.AutoHttpMetricsConfig.md#paths)
+- <a href="io.helidon.webserver.observe.metrics.AutoHttpMetricsConfig.md#paths"><code>metrics.<wbr>auto-<wbr>http-<wbr>metrics.<wbr>paths</code></a>
+- <a href="io.helidon.webserver.observe.metrics.AutoHttpMetricsConfig.md#paths"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>auto-<wbr>http-<wbr>metrics.<wbr>paths</code></a>
 
 ---
 

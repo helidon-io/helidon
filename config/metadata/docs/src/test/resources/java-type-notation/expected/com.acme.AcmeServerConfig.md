@@ -1,4 +1,4 @@
-# com.acme.AcmeServerConfig
+# com.<wbr>acme.<wbr>Acme<wbr>Server<wbr>Config
 
 ## Description
 
@@ -131,7 +131,7 @@ ACME server configuration.
 
 ## Usages
 
-- [`server`](config_reference.md#server)
+- <a href="config_reference.md#server"><code>server</code></a>
 
 ---
 

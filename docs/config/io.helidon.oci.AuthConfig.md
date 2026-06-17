@@ -1,4 +1,4 @@
-# io.helidon.oci.AuthConfig
+# io.<wbr>helidon.<wbr>oci.<wbr>Auth<wbr>Config
 
 ## Description
 
@@ -113,7 +113,7 @@ Configuration for oci.auth
 
 ## Usages
 
-- [`oci.auth`](io.helidon.integrations.oci.sdk.runtime.OciConfig.md#auth)
+- <a href="io.helidon.integrations.oci.sdk.runtime.OciConfig.md#auth"><code>oci.<wbr>auth</code></a>
 
 ---
 

@@ -4,6 +4,6 @@
 
 See the [root type](config_reference.md).
 
-- [com.acme.AcmeIvfIndexConfig](com.acme.AcmeIvfIndexConfig.md)
-- [com.acme.AcmeJsonIndexConfig](com.acme.AcmeJsonIndexConfig.md)
-- [com.acme.AcmeStoreConfig](com.acme.AcmeStoreConfig.md)
+- [com.<wbr>acme.<wbr>Acme<wbr>IvfIndex<wbr>Config](com.acme.AcmeIvfIndexConfig.md)
+- [com.<wbr>acme.<wbr>Acme<wbr>Json<wbr>Index<wbr>Config](com.acme.AcmeJsonIndexConfig.md)
+- [com.<wbr>acme.<wbr>Acme<wbr>Store<wbr>Config](com.acme.AcmeStoreConfig.md)

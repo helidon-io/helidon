@@ -1,4 +1,4 @@
-# com.acme.AcmeClientsConfig
+# com.<wbr>acme.<wbr>Acme<wbr>Clients<wbr>Config
 
 ## Description
 
@@ -28,7 +28,7 @@ Clients configuration.
 
 ## Usages
 
-- [`clients`](config_reference.md#clients)
+- <a href="config_reference.md#clients"><code>clients</code></a>
 
 ---
 

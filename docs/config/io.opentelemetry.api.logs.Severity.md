@@ -1,4 +1,4 @@
-# io.opentelemetry.api.logs.Severity
+# io.<wbr>opentelemetry.<wbr>api.<wbr>logs.<wbr>Severity
 
 ## Description
 
@@ -119,7 +119,7 @@ This type is an enumeration.
 
 ## Usages
 
-- [`telemetry.signals.logging.minimum-severity`](io.helidon.telemetry.otelconfig.OpenTelemetryLoggingConfig.md#minimum-severity)
+- <a href="io.helidon.telemetry.otelconfig.OpenTelemetryLoggingConfig.md#minimum-severity"><code>telemetry.<wbr>signals.<wbr>logging.<wbr>minimum-<wbr>severity</code></a>
 
 ---
 

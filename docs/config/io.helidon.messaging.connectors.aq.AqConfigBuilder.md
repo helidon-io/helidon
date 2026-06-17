@@ -1,4 +1,4 @@
-# io.helidon.messaging.connectors.aq.AqConfigBuilder
+# io.<wbr>helidon.<wbr>messaging.<wbr>connectors.<wbr>aq.Aq<wbr>Config<wbr>Builder
 
 ## Description
 

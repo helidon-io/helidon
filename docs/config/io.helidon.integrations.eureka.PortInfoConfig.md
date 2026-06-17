@@ -1,4 +1,4 @@
-# io.helidon.integrations.eureka.PortInfoConfig
+# io.<wbr>helidon.<wbr>integrations.<wbr>eureka.<wbr>Port<wbr>Info<wbr>Config
 
 ## Description
 
@@ -41,8 +41,8 @@ A <code>Prototype.<wbr>Api prototype</code> describing initial Eureka Server ser
 
 ## Usages
 
-- [`server.features.eureka.instance.port`](io.helidon.integrations.eureka.InstanceInfoConfig.md#port)
-- [`server.features.eureka.instance.securePort`](io.helidon.integrations.eureka.InstanceInfoConfig.md#securePort)
+- <a href="io.helidon.integrations.eureka.InstanceInfoConfig.md#port"><code>server.<wbr>features.<wbr>eureka.<wbr>instance.<wbr>port</code></a>
+- <a href="io.helidon.integrations.eureka.InstanceInfoConfig.md#securePort"><code>server.<wbr>features.<wbr>eureka.<wbr>instance.<wbr>secure<wbr>Port</code></a>
 
 ---
 

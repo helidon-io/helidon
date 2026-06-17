@@ -1,4 +1,4 @@
-# com.acme.AcmeMetricsConfig
+# com.<wbr>acme.<wbr>Acme<wbr>Metrics<wbr>Config
 
 ## Description
 

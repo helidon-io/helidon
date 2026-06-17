@@ -43,7 +43,8 @@ including its parameters and default values.
 </thead>
 <tbody>
 <tr>
-<td><pre><code>@Retry(
+<td>
+<!-- @code java --><pre><code>@Retry(
     maxRetries=3,
     delay=0,
     delayUnit=ChronoUnit.MILLIS,
@@ -53,18 +54,27 @@ including its parameters and default values.
     jitterDelayUnit=ChronoUnit.MILLIS,
     retryOn={Exception.class},
     abortOn={}
-)</code></pre></td>
-<td>Retries the execution of a method if a failure is encountered. Annotation attributes can be used to control the number of retries, delay between retries and which exceptions to retry or abort on.</td>
+)</code></pre>
+</td>
+<td style="vertical-align: middle">
+Retries the execution of a method if a failure is encountered.
+Annotation attributes can be used to control the number of retries, delay between retries and which exceptions to retry or abort on.
+</td>
 </tr>
 <tr>
-<td><pre><code>@Timeout(
+<td>
+<!-- @code java --><pre><code>@Timeout(
     value=1000,
     unit=ChronoUnit.MILLIS
-)</code></pre></td>
-<td>Defines an upper bound on a method’s execution time. Default value is 1 second.</td>
+)</code></pre>
+</td>
+<td style="vertical-align: middle">
+Defines an upper bound on a method’s execution time. Default value is 1 second.
+</td>
 </tr>
 <tr>
-<td><pre><code>@CircuitBreaker(
+<td>
+<!-- @code java --><pre><code>@CircuitBreaker(
     failOn={Throwable.class},
     skipOn={},
     delay=5000,
@@ -72,28 +82,54 @@ including its parameters and default values.
     requestVolumeThreshold=20,
     failureRation=.50,
     successThreshold=1
-)</code></pre></td>
-<td>Defines a policy to avoid repeated execution of logic that is likely to fail. A circuit breaker can be <em>closed</em>, <em>open</em> or <em>half-open</em>. In <em>closed</em> state a circuit breaker will execute logic normally. In <em>open</em> state a circuit breaker will prevent execution of logic that has been seen to fail. Finally, in <em>half-open</em> state a circuit breaker will allow <em>trial</em> executions in an attempt to switch its internal state to <em>closed</em>. The other annotation parameters are used to control how these state transitions are triggered.</td>
+)</code></pre>
+</td>
+<td style="vertical-align: middle">
+Defines a policy to avoid repeated execution of logic that is likely to fail.
+A circuit breaker can be <em>closed</em>, <em>open</em> or <em>half-open</em>.
+<ul>
+<li>In <em>closed</em> state a circuit breaker will execute logic normally.</li>
+<li>In <em>open</em> state a circuit breaker will prevent execution of logic that has been seen to fail.</li>
+<li>In <em>half-open</em> state a circuit breaker will allow <em>trial</em> executions in an attempt to switch its internal
+state to <em>closed</em>.</li>
+</ul>
+The other annotation parameters are used to control how these state transitions are triggered.
+</td>
 </tr>
 <tr>
-<td><pre><code>@Bulkhead(
+<td><!-- @code java --><pre><code>@Bulkhead(
     value=10,
     waitingTaskQueue=10
 )</code></pre></td>
-<td>Defines a policy to limit the number of concurrent executions allowed over some application logic. A queue is used to park tasks awaiting execution after the limit has been reached. A queue is only active when invocations are <code>@Asynchronous</code>.</td>
+<td style="vertical-align: middle">
+Defines a policy to limit the number of concurrent executions allowed over some application logic.
+A queue is used to park tasks awaiting execution after the limit has been reached.
+A queue is only active when invocations are <code>@Asynchronous</code>.</td>
 </tr>
 <tr>
-<td><pre><code>@Fallback(
+<td>
+<!-- @code java --><pre><code>@Fallback(
     value=DEFAULT.class,
     fallbackMethod=&quot;&quot;,
     applyOn={Throwable.class},
     skipOn={}
-)</code></pre></td>
-<td>Establishes a handler to be executed upon encountering an invocation failure. A handler is either a class that implements <code>FallbackHandler&lt;T&gt;</code> or just a simple method in the same class. Additional properties are used to control the conditions under which these handlers are called.</td>
+)</code></pre>
+</td>
+<td style="vertical-align: middle">
+Establishes a handler to be executed upon encountering an invocation failure.
+A handler is either a class that implements <code>FallbackHandler&lt;T&gt;</code> or just a simple method in the same class.
+Additional properties are used to control the conditions under which these handlers are called.
+</td>
 </tr>
 <tr>
-<td><pre><code>@Asynchronous</code></pre></td>
-<td>Executes an invocation asynchronously without blocking the calling thread. Annotated method must return <code>Future</code> or <code>CompletionStage</code>. Typically used to avoid blocking the calling thread on I/O or on a long-running computation.</td>
+<td>
+<!-- @code java --><pre><code>@Asynchronous</code></pre>
+</td>
+<td style="vertical-align: middle">
+Executes an invocation asynchronously without blocking the calling thread.
+Annotated method must return <code>Future</code> or <code>CompletionStage</code>.
+Typically used to avoid blocking the calling thread on I/O or on a long-running computation.
+</td>
 </tr>
 </tbody>
 </table>

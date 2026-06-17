@@ -1,4 +1,4 @@
-# com.acme.AcmeJsonIndexConfig
+# com.<wbr>acme.<wbr>Acme<wbr>Json<wbr>Index<wbr>Config
 
 ## Description
 
@@ -11,7 +11,7 @@ This config type has no options.
 
 ## Usages
 
-- [`store.json-index`](com.acme.AcmeStoreConfig.md#json-index)
+- <a href="com.acme.AcmeStoreConfig.md#json-index"><code>store.<wbr>json-<wbr>index</code></a>
 
 ---
 

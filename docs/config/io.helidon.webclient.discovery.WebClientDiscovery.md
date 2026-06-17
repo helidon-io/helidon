@@ -1,4 +1,4 @@
-# io.helidon.webclient.discovery.WebClientDiscovery
+# io.<wbr>helidon.<wbr>webclient.<wbr>discovery.<wbr>WebClient<wbr>Discovery
 
 ## Description
 

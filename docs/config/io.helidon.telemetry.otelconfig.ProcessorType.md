@@ -1,4 +1,4 @@
-# io.helidon.telemetry.otelconfig.ProcessorType
+# io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Processor<wbr>Type
 
 ## Description
 

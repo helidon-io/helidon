@@ -1,4 +1,4 @@
-# io.helidon.http.RequestedUriDiscoveryContext
+# io.<wbr>helidon.<wbr>http.<wbr>Requested<wbr>UriDiscovery<wbr>Context
 
 ## Description
 
@@ -64,12 +64,12 @@ Requested URI discovery settings for a socket
 
 ## Usages
 
-- [`server.protocols.http_1_1.requested-uri-discovery`](io.helidon.webserver.http1.Http1Config.md#requested-uri-discovery)
-- [`server.protocols.http_2.requested-uri-discovery`](io.helidon.webserver.http2.Http2Config.md#requested-uri-discovery)
-- [`server.requested-uri-discovery`](io.helidon.webserver.WebServer.md#requested-uri-discovery)
-- [`server.sockets.protocols.http_1_1.requested-uri-discovery`](io.helidon.webserver.http1.Http1Config.md#requested-uri-discovery)
-- [`server.sockets.protocols.http_2.requested-uri-discovery`](io.helidon.webserver.http2.Http2Config.md#requested-uri-discovery)
-- [`server.sockets.requested-uri-discovery`](io.helidon.webserver.ListenerConfig.md#requested-uri-discovery)
+- <a href="io.helidon.webserver.http1.Http1Config.md#requested-uri-discovery"><code>server.<wbr>protocols.<wbr>http_<wbr>1_1.<wbr>requested-<wbr>uri-<wbr>discovery</code></a>
+- <a href="io.helidon.webserver.http2.Http2Config.md#requested-uri-discovery"><code>server.<wbr>protocols.<wbr>http_<wbr>2.requested-<wbr>uri-<wbr>discovery</code></a>
+- <a href="io.helidon.webserver.WebServer.md#requested-uri-discovery"><code>server.<wbr>requested-<wbr>uri-<wbr>discovery</code></a>
+- <a href="io.helidon.webserver.http1.Http1Config.md#requested-uri-discovery"><code>server.<wbr>sockets.<wbr>protocols.<wbr>http_<wbr>1_1.<wbr>requested-<wbr>uri-<wbr>discovery</code></a>
+- <a href="io.helidon.webserver.http2.Http2Config.md#requested-uri-discovery"><code>server.<wbr>sockets.<wbr>protocols.<wbr>http_<wbr>2.requested-<wbr>uri-<wbr>discovery</code></a>
+- <a href="io.helidon.webserver.ListenerConfig.md#requested-uri-discovery"><code>server.<wbr>sockets.<wbr>requested-<wbr>uri-<wbr>discovery</code></a>
 
 ---
 

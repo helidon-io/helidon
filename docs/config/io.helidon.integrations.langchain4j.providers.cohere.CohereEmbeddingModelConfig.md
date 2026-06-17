@@ -1,4 +1,4 @@
-# io.helidon.integrations.langchain4j.providers.cohere.CohereEmbeddingModelConfig
+# io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>cohere.<wbr>Cohere<wbr>Embedding<wbr>Model<wbr>Config
 
 ## Description
 

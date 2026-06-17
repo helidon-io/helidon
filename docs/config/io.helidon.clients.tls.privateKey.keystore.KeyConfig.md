@@ -1,4 +1,4 @@
-# io.helidon.clients.tls.privateKey.keystore.KeyConfig
+# io.<wbr>helidon.<wbr>clients.<wbr>tls.<wbr>private<wbr>Key.<wbr>keystore.<wbr>KeyConfig
 
 ## Description
 
@@ -41,7 +41,7 @@ Configuration for clients.tls.private-key.keystore.key
 
 ## Usages
 
-- [`clients.tls.private-key.keystore.key`](io.helidon.common.pki.KeystoreKeys.md#key)
+- <a href="io.helidon.common.pki.KeystoreKeys.md#key"><code>clients.<wbr>tls.<wbr>private-<wbr>key.<wbr>keystore.<wbr>key</code></a>
 
 ---
 

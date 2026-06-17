@@ -1,4 +1,4 @@
-# io.helidon.security.providers.httpauth.HttpDigest.Algorithm
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>httpauth.<wbr>Http<wbr>Digest.<wbr>Algorithm
 
 ## Description
 
@@ -23,8 +23,8 @@ This type is an enumeration.
 
 ## Usages
 
-- [`security.providers.http-digest-auth.algorithm`](io.helidon.security.providers.httpauth.HttpDigestAuthProvider.md#algorithm)
-- [`server.features.security.security.providers.http-digest-auth.algorithm`](io.helidon.security.providers.httpauth.HttpDigestAuthProvider.md#algorithm)
+- <a href="io.helidon.security.providers.httpauth.HttpDigestAuthProvider.md#algorithm"><code>security.<wbr>providers.<wbr>http-<wbr>digest-<wbr>auth.<wbr>algorithm</code></a>
+- <a href="io.helidon.security.providers.httpauth.HttpDigestAuthProvider.md#algorithm"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>http-<wbr>digest-<wbr>auth.<wbr>algorithm</code></a>
 
 ---
 

@@ -1,4 +1,4 @@
-# dev.langchain4j.model.googleai.GeminiMediaResolutionLevel
+# dev.<wbr>langchain4j.<wbr>model.<wbr>googleai.<wbr>Gemini<wbr>Media<wbr>Resolution<wbr>Level
 
 ## Description
 
@@ -39,7 +39,7 @@ This type is an enumeration.
 
 ## Usages
 
-- [`langchain4j.providers.google-gemini.media-resolution`](io.helidon.langchain4j.providers.GoogleGeminiConfig.md#media-resolution)
+- <a href="io.helidon.langchain4j.providers.GoogleGeminiConfig.md#media-resolution"><code>langchain4j.<wbr>providers.<wbr>google-<wbr>gemini.<wbr>media-<wbr>resolution</code></a>
 
 ---
 

@@ -1,4 +1,4 @@
-# io.helidon.oci.ConfigConfig
+# io.<wbr>helidon.<wbr>oci.<wbr>Config<wbr>Config
 
 ## Description
 
@@ -47,7 +47,7 @@ Configuration for oci.config
 
 ## Usages
 
-- [`oci.config`](io.helidon.integrations.oci.sdk.runtime.OciConfig.md#config)
+- <a href="io.helidon.integrations.oci.sdk.runtime.OciConfig.md#config"><code>oci.<wbr>config</code></a>
 
 ---
 

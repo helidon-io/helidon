@@ -1,4 +1,4 @@
-# io.helidon.metrics.providers.micrometer.OtlpPublisher
+# io.<wbr>helidon.<wbr>metrics.<wbr>providers.<wbr>micrometer.<wbr>Otlp<wbr>Publisher
 
 ## Description
 
@@ -193,8 +193,8 @@ Settings for an OTLP publisher
 
 ## Usages
 
-- [`metrics.publishers.otlp`](io.helidon.metrics.api.MetricsPublisher.md#otlp)
-- [`server.features.observe.observers.metrics.publishers.otlp`](io.helidon.metrics.api.MetricsPublisher.md#otlp)
+- <a href="io.helidon.metrics.api.MetricsPublisher.md#otlp"><code>metrics.<wbr>publishers.<wbr>otlp</code></a>
+- <a href="io.helidon.metrics.api.MetricsPublisher.md#otlp"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>publishers.<wbr>otlp</code></a>
 
 ---
 

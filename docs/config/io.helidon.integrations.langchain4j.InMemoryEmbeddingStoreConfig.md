@@ -1,4 +1,4 @@
-# io.helidon.integrations.langchain4j.InMemoryEmbeddingStoreConfig
+# io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>InMemory<wbr>Embedding<wbr>Store<wbr>Config
 
 ## Description
 

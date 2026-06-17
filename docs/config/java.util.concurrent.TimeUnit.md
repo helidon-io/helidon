@@ -1,4 +1,4 @@
-# java.util.concurrent.TimeUnit
+# java.<wbr>util.<wbr>concurrent.<wbr>Time<wbr>Unit
 
 ## Description
 
@@ -47,10 +47,10 @@ This type is an enumeration.
 
 ## Usages
 
-- [`metrics.publishers.otlp.base-time-unit`](io.helidon.metrics.providers.micrometer.OtlpPublisher.md#base-time-unit)
-- [`metrics.timers.json-units-default`](io.helidon.metrics.TimersConfig.md#json-units-default)
-- [`server.features.observe.observers.metrics.publishers.otlp.base-time-unit`](io.helidon.metrics.providers.micrometer.OtlpPublisher.md#base-time-unit)
-- [`server.features.observe.observers.metrics.timers.json-units-default`](io.helidon.server.features.observe.observers.metrics.TimersConfig.md#json-units-default)
+- <a href="io.helidon.metrics.providers.micrometer.OtlpPublisher.md#base-time-unit"><code>metrics.<wbr>publishers.<wbr>otlp.<wbr>base-<wbr>time-<wbr>unit</code></a>
+- <a href="io.helidon.metrics.TimersConfig.md#json-units-default"><code>metrics.<wbr>timers.<wbr>json-<wbr>units-<wbr>default</code></a>
+- <a href="io.helidon.metrics.providers.micrometer.OtlpPublisher.md#base-time-unit"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>publishers.<wbr>otlp.<wbr>base-<wbr>time-<wbr>unit</code></a>
+- <a href="io.helidon.server.features.observe.observers.metrics.TimersConfig.md#json-units-default"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>timers.<wbr>json-<wbr>units-<wbr>default</code></a>
 
 ---
 

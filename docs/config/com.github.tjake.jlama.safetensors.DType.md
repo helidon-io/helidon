@@ -1,4 +1,4 @@
-# com.github.tjake.jlama.safetensors.DType
+# com.<wbr>github.<wbr>tjake.<wbr>jlama.<wbr>safetensors.<wbr>DType
 
 ## Description
 
@@ -79,7 +79,7 @@ This type is an enumeration.
 
 ## Usages
 
-- [`langchain4j.providers.jlama.working-quantized-type`](io.helidon.langchain4j.providers.JlamaConfig.md#working-quantized-type)
+- <a href="io.helidon.langchain4j.providers.JlamaConfig.md#working-quantized-type"><code>langchain4j.<wbr>providers.<wbr>jlama.<wbr>working-<wbr>quantized-<wbr>type</code></a>
 
 ---
 

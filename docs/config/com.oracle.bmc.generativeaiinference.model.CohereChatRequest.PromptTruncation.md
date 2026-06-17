@@ -1,4 +1,4 @@
-# com.oracle.bmc.generativeaiinference.model.CohereChatRequest.PromptTruncation
+# com.<wbr>oracle.<wbr>bmc.<wbr>generativeaiinference.<wbr>model.<wbr>Cohere<wbr>Chat<wbr>Request.<wbr>Prompt<wbr>Truncation
 
 ## Description
 
@@ -27,7 +27,7 @@ This type is an enumeration.
 
 ## Usages
 
-- [`langchain4j.providers.oci-gen-ai-cohere.prompt-truncation`](io.helidon.langchain4j.providers.OciGenAiCohereConfig.md#prompt-truncation)
+- <a href="io.helidon.langchain4j.providers.OciGenAiCohereConfig.md#prompt-truncation"><code>langchain4j.<wbr>providers.<wbr>oci-<wbr>gen-<wbr>ai-cohere.<wbr>prompt-<wbr>truncation</code></a>
 
 ---
 

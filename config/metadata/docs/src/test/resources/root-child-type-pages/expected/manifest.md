@@ -4,5 +4,5 @@
 
 See the [root type](config_reference.md).
 
-- [com.acme.AcmeClientsConfig](com.acme.AcmeClientsConfig.md)
-- [com.acme.AcmeHttpClientsConfig](com.acme.AcmeHttpClientsConfig.md)
+- [com.<wbr>acme.<wbr>Acme<wbr>Clients<wbr>Config](com.acme.AcmeClientsConfig.md)
+- [com.<wbr>acme.<wbr>Acme<wbr>Http<wbr>Clients<wbr>Config](com.acme.AcmeHttpClientsConfig.md)

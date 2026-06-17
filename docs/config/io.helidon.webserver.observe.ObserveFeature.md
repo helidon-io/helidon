@@ -1,4 +1,4 @@
-# io.helidon.webserver.observe.ObserveFeature
+# io.<wbr>helidon.<wbr>webserver.<wbr>observe.<wbr>Observe<wbr>Feature
 
 ## Description
 
@@ -124,7 +124,7 @@ Configuration for observability feature itself
 
 ## Usages
 
-- [`server.features.observe`](io.helidon.webserver.spi.ServerFeature.md#observe)
+- <a href="io.helidon.webserver.spi.ServerFeature.md#observe"><code>server.<wbr>features.<wbr>observe</code></a>
 
 ---
 

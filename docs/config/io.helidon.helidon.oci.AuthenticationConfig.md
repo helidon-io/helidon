@@ -1,4 +1,4 @@
-# io.helidon.helidon.oci.AuthenticationConfig
+# io.<wbr>helidon.<wbr>helidon.<wbr>oci.<wbr>Authentication<wbr>Config
 
 ## Description
 
@@ -59,7 +59,7 @@ Configuration for helidon.oci.authentication
 
 ## Usages
 
-- [`helidon.oci.authentication`](io.helidon.integrations.oci.OciConfig.md#authentication)
+- <a href="io.helidon.integrations.oci.OciConfig.md#authentication"><code>helidon.<wbr>oci.<wbr>authentication</code></a>
 
 ---
 

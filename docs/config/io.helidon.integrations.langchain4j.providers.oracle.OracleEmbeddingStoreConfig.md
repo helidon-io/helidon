@@ -1,4 +1,4 @@
-# io.helidon.integrations.langchain4j.providers.oracle.OracleEmbeddingStoreConfig
+# io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>oracle.<wbr>Oracle<wbr>Embedding<wbr>Store<wbr>Config
 
 ## Description
 
@@ -139,7 +139,7 @@ Configuration for LangChain4j model OracleEmbeddingStore
 
 ## Usages
 
-- [`langchain4j.providers.oracle`](io.helidon.langchain4j.ProvidersConfig.md#oracle)
+- <a href="io.helidon.langchain4j.ProvidersConfig.md#oracle"><code>langchain4j.<wbr>providers.<wbr>oracle</code></a>
 
 ---
 

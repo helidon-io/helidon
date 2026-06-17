@@ -1,4 +1,4 @@
-# io.helidon.metrics.api.ScopingConfig
+# io.<wbr>helidon.<wbr>metrics.<wbr>api.<wbr>Scoping<wbr>Config
 
 ## Description
 
@@ -62,8 +62,8 @@
 
 ## Usages
 
-- [`metrics.scoping`](io.helidon.MetricsConfig.md#scoping)
-- [`server.features.observe.observers.metrics.scoping`](io.helidon.webserver.observe.metrics.MetricsObserver.md#scoping)
+- <a href="io.helidon.MetricsConfig.md#scoping"><code>metrics.<wbr>scoping</code></a>
+- <a href="io.helidon.webserver.observe.metrics.MetricsObserver.md#scoping"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>scoping</code></a>
 
 ---
 

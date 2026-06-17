@@ -1,4 +1,4 @@
-# io.helidon.webserver.staticcontent.FileSystemHandlerConfig
+# io.<wbr>helidon.<wbr>webserver.<wbr>staticcontent.<wbr>File<wbr>System<wbr>Handler<wbr>Config
 
 ## Description
 
@@ -128,7 +128,7 @@ File system based static content handler configuration
 
 ## Usages
 
-- [`server.features.static-content.path`](io.helidon.webserver.staticcontent.StaticContentFeature.md#path)
+- <a href="io.helidon.webserver.staticcontent.StaticContentFeature.md#path"><code>server.<wbr>features.<wbr>static-<wbr>content.<wbr>path</code></a>
 
 ---
 

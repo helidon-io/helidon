@@ -1,4 +1,4 @@
-# io.helidon.security.ProviderPolicyConfig
+# io.<wbr>helidon.<wbr>security.<wbr>Provider<wbr>Policy<wbr>Config
 
 ## Description
 
@@ -50,7 +50,7 @@ Configuration for security.provider-policy
 
 ## Usages
 
-- [`security.provider-policy`](io.helidon.security.Security.md#provider-policy)
+- <a href="io.helidon.security.Security.md#provider-policy"><code>security.<wbr>provider-<wbr>policy</code></a>
 
 ---
 

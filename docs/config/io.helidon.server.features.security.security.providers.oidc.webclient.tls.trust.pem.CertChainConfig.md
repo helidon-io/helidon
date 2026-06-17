@@ -1,4 +1,4 @@
-# io.helidon.server.features.security.security.providers.oidc.webclient.tls.trust.pem.CertChainConfig
+# io.<wbr>helidon.<wbr>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>trust.<wbr>pem.<wbr>Cert<wbr>Chain<wbr>Config
 
 ## Description
 
@@ -35,7 +35,7 @@ Configuration for server.features.security.security.providers.oidc.webclient.tls
 
 ## Usages
 
-- [`server.features.security.security.providers.oidc.webclient.tls.trust.pem.cert-chain`](io.helidon.common.pki.PemKeys.md#cert-chain)
+- <a href="io.helidon.common.pki.PemKeys.md#cert-chain"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>trust.<wbr>pem.<wbr>cert-<wbr>chain</code></a>
 
 ---
 

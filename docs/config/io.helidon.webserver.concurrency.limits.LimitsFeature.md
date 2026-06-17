@@ -1,4 +1,4 @@
-# io.helidon.webserver.concurrency.limits.LimitsFeature
+# io.<wbr>helidon.<wbr>webserver.<wbr>concurrency.<wbr>limits.<wbr>Limits<wbr>Feature
 
 ## Description
 
@@ -85,7 +85,7 @@ Server feature that adds limits as filters
 
 ## Usages
 
-- [`server.features.limits`](io.helidon.webserver.spi.ServerFeature.md#limits)
+- <a href="io.helidon.webserver.spi.ServerFeature.md#limits"><code>server.<wbr>features.<wbr>limits</code></a>
 
 ---
 

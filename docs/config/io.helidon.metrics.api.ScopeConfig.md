@@ -1,4 +1,4 @@
-# io.helidon.metrics.api.ScopeConfig
+# io.<wbr>helidon.<wbr>metrics.<wbr>api.<wbr>Scope<wbr>Config
 
 ## Description
 
@@ -60,8 +60,8 @@ Configuration settings for a scope within the <code>Metrics<wbr>Config<wbr>Bluep
 
 ## Usages
 
-- [`metrics.scoping.scopes`](io.helidon.metrics.api.ScopingConfig.md#scopes)
-- [`server.features.observe.observers.metrics.scoping.scopes`](io.helidon.metrics.api.ScopingConfig.md#scopes)
+- <a href="io.helidon.metrics.api.ScopingConfig.md#scopes"><code>metrics.<wbr>scoping.<wbr>scopes</code></a>
+- <a href="io.helidon.metrics.api.ScopingConfig.md#scopes"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>scoping.<wbr>scopes</code></a>
 
 ---
 

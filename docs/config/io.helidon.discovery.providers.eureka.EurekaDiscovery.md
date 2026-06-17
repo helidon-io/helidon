@@ -1,4 +1,4 @@
-# io.helidon.discovery.providers.eureka.EurekaDiscovery
+# io.<wbr>helidon.<wbr>discovery.<wbr>providers.<wbr>eureka.<wbr>Eureka<wbr>Discovery
 
 ## Description
 

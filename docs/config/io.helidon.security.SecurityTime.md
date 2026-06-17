@@ -1,4 +1,4 @@
-# io.helidon.security.SecurityTime
+# io.<wbr>helidon.<wbr>security.<wbr>Security<wbr>Time
 
 ## Description
 
@@ -124,8 +124,8 @@ Time used in security, configurable
 
 ## Usages
 
-- [`security.environment.server-time`](io.helidon.security.EnvironmentConfig.md#server-time)
-- [`server.features.security.security.environment.server-time`](io.helidon.server.features.security.security.EnvironmentConfig.md#server-time)
+- <a href="io.helidon.security.EnvironmentConfig.md#server-time"><code>security.<wbr>environment.<wbr>server-<wbr>time</code></a>
+- <a href="io.helidon.server.features.security.security.EnvironmentConfig.md#server-time"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>environment.<wbr>server-<wbr>time</code></a>
 
 ---
 

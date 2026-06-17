@@ -1,4 +1,4 @@
-# io.helidon.webserver.servicecommon.RestServiceSettings
+# io.<wbr>helidon.<wbr>webserver.<wbr>servicecommon.<wbr>Rest<wbr>Service<wbr>Settings
 
 ## Description
 

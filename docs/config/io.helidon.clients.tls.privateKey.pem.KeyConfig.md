@@ -1,4 +1,4 @@
-# io.helidon.clients.tls.privateKey.pem.KeyConfig
+# io.<wbr>helidon.<wbr>clients.<wbr>tls.<wbr>private<wbr>Key.<wbr>pem.<wbr>KeyConfig
 
 ## Description
 
@@ -44,7 +44,7 @@ Configuration for clients.tls.private-key.pem.key
 
 ## Usages
 
-- [`clients.tls.private-key.pem.key`](io.helidon.common.pki.PemKeys.md#key)
+- <a href="io.helidon.common.pki.PemKeys.md#key"><code>clients.<wbr>tls.<wbr>private-<wbr>key.<wbr>pem.<wbr>key</code></a>
 
 ---
 

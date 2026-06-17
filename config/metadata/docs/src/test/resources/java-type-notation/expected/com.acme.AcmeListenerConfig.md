@@ -1,4 +1,4 @@
-# com.acme.AcmeListenerConfig
+# com.<wbr>acme.<wbr>Acme<wbr>Listener<wbr>Config
 
 ## Description
 
@@ -11,8 +11,8 @@ This config type has no options.
 
 ## Usages
 
-- [`server.default-socket`](com.acme.AcmeServerConfig.md#default-socket)
-- [`server.sockets`](com.acme.AcmeServerConfig.md#sockets)
+- <a href="com.acme.AcmeServerConfig.md#default-socket"><code>server.<wbr>default-<wbr>socket</code></a>
+- <a href="com.acme.AcmeServerConfig.md#sockets"><code>server.<wbr>sockets</code></a>
 
 ---
 

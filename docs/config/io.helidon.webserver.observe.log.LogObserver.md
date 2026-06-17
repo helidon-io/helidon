@@ -1,4 +1,4 @@
-# io.helidon.webserver.observe.log.LogObserver
+# io.<wbr>helidon.<wbr>webserver.<wbr>observe.<wbr>log.<wbr>LogObserver
 
 ## Description
 
@@ -54,6 +54,18 @@ Log Observer configuration
 </td>
 <td>Permit all access, even when not authorized</td>
 </tr>
+<tr>
+<td>
+<code>enabled</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Whether this observer is enabled</td>
+</tr>
 </tbody>
 </table>
 
@@ -61,7 +73,7 @@ Log Observer configuration
 
 ## Usages
 
-- [`server.features.observe.observers.log`](io.helidon.webserver.observe.spi.Observer.md#log)
+- <a href="io.helidon.webserver.observe.spi.Observer.md#log"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>log</code></a>
 
 ---
 

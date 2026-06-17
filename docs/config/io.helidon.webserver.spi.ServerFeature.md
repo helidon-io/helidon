@@ -1,4 +1,4 @@
-# io.helidon.webserver.spi.ServerFeature
+# io.<wbr>helidon.<wbr>webserver.<wbr>spi.<wbr>Server<wbr>Feature
 
 ## Description
 
@@ -113,7 +113,7 @@ This type is a provider contract.
 
 ## Usages
 
-- [`server.features`](io.helidon.webserver.WebServer.md#features)
+- <a href="io.helidon.webserver.WebServer.md#features"><code>server.<wbr>features</code></a>
 
 ---
 

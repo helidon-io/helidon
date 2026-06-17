@@ -1,4 +1,4 @@
-# io.helidon.server.features.eureka.instance.TrafficConfig
+# io.<wbr>helidon.<wbr>server.<wbr>features.<wbr>eureka.<wbr>instance.<wbr>Traffic<wbr>Config
 
 ## Description
 
@@ -36,7 +36,7 @@ Configuration for server.features.eureka.instance.traffic
 
 ## Usages
 
-- [`server.features.eureka.instance.traffic`](io.helidon.integrations.eureka.InstanceInfoConfig.md#traffic)
+- <a href="io.helidon.integrations.eureka.InstanceInfoConfig.md#traffic"><code>server.<wbr>features.<wbr>eureka.<wbr>instance.<wbr>traffic</code></a>
 
 ---
 

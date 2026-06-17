@@ -1,4 +1,4 @@
-# io.helidon.integrations.oci.sdk.runtime.OciConfigAuthStrategies
+# io.<wbr>helidon.<wbr>integrations.<wbr>oci.<wbr>sdk.<wbr>runtime.<wbr>OciConfig<wbr>Auth<wbr>Strategies
 
 ## Description
 
@@ -39,7 +39,7 @@ This type is an enumeration.
 
 ## Usages
 
-- [`oci.auth-strategies`](io.helidon.integrations.oci.sdk.runtime.OciConfig.md#auth-strategies)
+- <a href="io.helidon.integrations.oci.sdk.runtime.OciConfig.md#auth-strategies"><code>oci.<wbr>auth-<wbr>strategies</code></a>
 
 ---
 

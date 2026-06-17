@@ -1,4 +1,4 @@
-# io.helidon.server.requestedUriDiscovery.trustedProxies.DenyConfig
+# io.<wbr>helidon.<wbr>server.<wbr>requested<wbr>UriDiscovery.<wbr>trusted<wbr>Proxies.<wbr>Deny<wbr>Config
 
 ## Description
 
@@ -59,7 +59,7 @@ Configuration for server.requested-uri-discovery.trusted-proxies.deny
 
 ## Usages
 
-- [`server.requested-uri-discovery.trusted-proxies.deny`](io.helidon.common.configurable.AllowList.md#deny)
+- <a href="io.helidon.common.configurable.AllowList.md#deny"><code>server.<wbr>requested-<wbr>uri-<wbr>discovery.<wbr>trusted-<wbr>proxies.<wbr>deny</code></a>
 
 ---
 

@@ -1,4 +1,4 @@
-# io.helidon.webserver.grpc.GrpcReflectionFeature
+# io.<wbr>helidon.<wbr>webserver.<wbr>grpc.<wbr>Grpc<wbr>Reflection<wbr>Feature
 
 ## Description
 
@@ -47,7 +47,7 @@ Configuration of gRPC Reflection feature
 
 ## Usages
 
-- [`server.features.grpc-reflection`](io.helidon.webserver.spi.ServerFeature.md#grpc-reflection)
+- <a href="io.helidon.webserver.spi.ServerFeature.md#grpc-reflection"><code>server.<wbr>features.<wbr>grpc-<wbr>reflection</code></a>
 
 ---
 

@@ -1,4 +1,4 @@
-# io.helidon.integrations.micrometer.MicrometerFeature
+# io.<wbr>helidon.<wbr>integrations.<wbr>micrometer.<wbr>Micrometer<wbr>Feature
 
 ## Description
 

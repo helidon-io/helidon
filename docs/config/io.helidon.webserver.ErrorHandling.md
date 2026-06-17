@@ -1,4 +1,4 @@
-# io.helidon.webserver.ErrorHandling
+# io.<wbr>helidon.<wbr>webserver.<wbr>Error<wbr>Handling
 
 ## Description
 
@@ -48,8 +48,8 @@
 
 ## Usages
 
-- [`server.error-handling`](io.helidon.webserver.WebServer.md#error-handling)
-- [`server.sockets.error-handling`](io.helidon.webserver.ListenerConfig.md#error-handling)
+- <a href="io.helidon.webserver.WebServer.md#error-handling"><code>server.<wbr>error-<wbr>handling</code></a>
+- <a href="io.helidon.webserver.ListenerConfig.md#error-handling"><code>server.<wbr>sockets.<wbr>error-<wbr>handling</code></a>
 
 ---
 

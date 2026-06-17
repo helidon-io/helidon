@@ -1,4 +1,4 @@
-# io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.SamplerType
+# io.<wbr>helidon.<wbr>tracing.<wbr>providers.<wbr>jaeger.<wbr>Jaeger<wbr>Tracer<wbr>Builder.<wbr>Sampler<wbr>Type
 
 ## Description
 
@@ -27,7 +27,7 @@ This type is an enumeration.
 
 ## Usages
 
-- [`tracing.sampler-type`](io.helidon.TracingConfig.md#sampler-type)
+- <a href="io.helidon.TracingConfig.md#sampler-type"><code>tracing.<wbr>sampler-<wbr>type</code></a>
 
 ---
 

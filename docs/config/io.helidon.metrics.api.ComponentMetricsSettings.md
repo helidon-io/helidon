@@ -1,4 +1,4 @@
-# io.helidon.metrics.api.ComponentMetricsSettings
+# io.<wbr>helidon.<wbr>metrics.<wbr>api.<wbr>Component<wbr>Metrics<wbr>Settings
 
 ## Description
 

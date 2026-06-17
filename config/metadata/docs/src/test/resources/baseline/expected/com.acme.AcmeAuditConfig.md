@@ -1,4 +1,4 @@
-# com.acme.AcmeAuditConfig
+# com.<wbr>acme.<wbr>Acme<wbr>Audit<wbr>Config
 
 ## Description
 
@@ -41,7 +41,7 @@ ACME Audit configuration
 
 ## Usages
 
-- [`server.features.audit`](com.acme.AcmeFeature.md#audit)
+- <a href="com.acme.AcmeFeature.md#audit"><code>server.<wbr>features.<wbr>audit</code></a>
 
 ---
 

@@ -1,4 +1,4 @@
-# io.helidon.webclient.api.Proxy.ProxyType
+# io.<wbr>helidon.<wbr>webclient.<wbr>api.<wbr>Proxy.<wbr>Proxy<wbr>Type
 
 ## Description
 
@@ -31,11 +31,11 @@ This type is an enumeration.
 
 ## Usages
 
-- [`clients.proxy.type`](io.helidon.webclient.api.Proxy.md#type)
-- [`security.providers.idcs-role-mapper.oidc-config.webclient.proxy.type`](io.helidon.webclient.api.Proxy.md#type)
-- [`security.providers.oidc.webclient.proxy.type`](io.helidon.webclient.api.Proxy.md#type)
-- [`server.features.security.security.providers.idcs-role-mapper.oidc-config.webclient.proxy.type`](io.helidon.webclient.api.Proxy.md#type)
-- [`server.features.security.security.providers.oidc.webclient.proxy.type`](io.helidon.webclient.api.Proxy.md#type)
+- <a href="io.helidon.webclient.api.Proxy.md#type"><code>clients.<wbr>proxy.<wbr>type</code></a>
+- <a href="io.helidon.webclient.api.Proxy.md#type"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>proxy.<wbr>type</code></a>
+- <a href="io.helidon.webclient.api.Proxy.md#type"><code>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>proxy.<wbr>type</code></a>
+- <a href="io.helidon.webclient.api.Proxy.md#type"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>proxy.<wbr>type</code></a>
+- <a href="io.helidon.webclient.api.Proxy.md#type"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>proxy.<wbr>type</code></a>
 
 ---
 

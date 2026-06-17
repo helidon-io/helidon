@@ -1,4 +1,4 @@
-# io.helidon.security.providers.oidc.tenants.OidcMetadataConfig
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>tenants.<wbr>Oidc<wbr>Metadata<wbr>Config
 
 ## Description
 
@@ -35,7 +35,7 @@ Configuration for security.providers.oidc.tenants.oidc-metadata
 
 ## Usages
 
-- [`security.providers.oidc.tenants.oidc-metadata`](io.helidon.security.providers.oidc.common.TenantConfig.md#oidc-metadata)
+- <a href="io.helidon.security.providers.oidc.common.TenantConfig.md#oidc-metadata"><code>security.<wbr>providers.<wbr>oidc.<wbr>tenants.<wbr>oidc-<wbr>metadata</code></a>
 
 ---
 

@@ -1,4 +1,4 @@
-# io.helidon.security.providers.httpsign.HttpSignHeader
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>httpsign.<wbr>Http<wbr>Sign<wbr>Header
 
 ## Description
 

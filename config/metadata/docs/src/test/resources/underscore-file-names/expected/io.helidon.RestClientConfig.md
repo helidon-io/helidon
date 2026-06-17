@@ -1,4 +1,4 @@
-# io.helidon.RestClientConfig
+# io.<wbr>helidon.<wbr>Rest<wbr>Client<wbr>Config
 
 ## Description
 
@@ -28,7 +28,7 @@ Configuration for rest-client
 
 ## Usages
 
-- [`rest-client`](config_reference.md#rest-client)
+- <a href="config_reference.md#rest-client"><code>rest-<wbr>client</code></a>
 
 ---
 

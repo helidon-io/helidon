@@ -353,17 +353,19 @@ final class CmPageResolver {
                 }
                 var targetPage = page(row.targetPageKey);
                 row.fileName = targetPage.fileName;
-                if (page.kind == Kind.CONFIG) {
+                if (page.kind == Kind.CONFIG || page.kind == Kind.CONTRACT) {
                     row.anchor = names.anchor(page.fileName, row.key, row.identity);
                 }
             }
+        }
+        for (var page : pageBuilders.values()) {
             for (var usage : page.rawUsages.values()) {
                 if (usage.pageKey == null) {
                     var anchor = names.anchor(rootPageName, usage.node.key(), usage.node.identity());
                     page.usages.add(new Usage(usage.path, rootPageName, anchor));
                 } else {
                     var targetPage = page(usage.pageKey);
-                    var anchor = names.anchor(targetPage.fileName, usage.node.key(), targetPage.rowIdentity(usage.node));
+                    var anchor = targetPage.usageAnchor(usage.node, names);
                     page.usages.add(new Usage(usage.path, targetPage.fileName, anchor));
                 }
             }
@@ -604,7 +606,35 @@ final class CmPageResolver {
         }
 
         String rowIdentity(CmNode node) {
-            return isSynthetic() ? node.identity() : typeName;
+            return switch (kind) {
+                case CONFIG -> isSynthetic() ? node.identity() : typeName;
+                case CONTRACT -> node.identity();
+                case ENUM -> typeName;
+                case ROOT -> ROOT_PAGE_KEY;
+            };
+        }
+
+        String usageAnchor(CmNode node, CmDocNames names) {
+            if (kind != Kind.CONTRACT) {
+                return names.anchor(fileName, node.key(), rowIdentity(node));
+            }
+            var firstKeyMatch = "";
+            var identity = rowIdentity(node);
+            for (var row : rows) {
+                if (!row.key.equals(node.key())) {
+                    continue;
+                }
+                if (firstKeyMatch.isEmpty()) {
+                    firstKeyMatch = row.anchor;
+                }
+                if (row.identity.equals(identity)) {
+                    return row.anchor;
+                }
+            }
+            if (firstKeyMatch.isEmpty()) {
+                throw new IllegalStateException("Missing contract row anchor: " + fileName + "#" + node.key());
+            }
+            return firstKeyMatch;
         }
 
         CmPage build() {

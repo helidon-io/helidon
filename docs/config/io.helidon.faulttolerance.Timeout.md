@@ -1,4 +1,4 @@
-# io.helidon.faulttolerance.Timeout
+# io.<wbr>helidon.<wbr>faulttolerance.<wbr>Timeout
 
 ## Description
 
@@ -60,7 +60,7 @@
 
 ## Usages
 
-- [`fault-tolerance.timeouts`](io.helidon.FaultToleranceConfig.md#timeouts)
+- <a href="io.helidon.FaultToleranceConfig.md#timeouts"><code>fault-<wbr>tolerance.<wbr>timeouts</code></a>
 
 ---
 

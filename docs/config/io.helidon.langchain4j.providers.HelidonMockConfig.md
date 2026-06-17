@@ -1,4 +1,4 @@
-# io.helidon.langchain4j.providers.HelidonMockConfig
+# io.<wbr>helidon.<wbr>langchain4j.<wbr>providers.<wbr>Helidon<wbr>Mock<wbr>Config
 
 ## Description
 
@@ -50,12 +50,12 @@ Merged configuration for langchain4j.providers.helidon-mock
 
 ## Merged Types
 
-- [io.helidon.integrations.langchain4j.providers.mock.MockChatModel](io.helidon.integrations.langchain4j.providers.mock.MockChatModel.md)
-- [io.helidon.integrations.langchain4j.providers.mock.MockStreamingChatModel](io.helidon.integrations.langchain4j.providers.mock.MockStreamingChatModel.md)
+- [io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>mock.<wbr>Mock<wbr>Chat<wbr>Model](io.helidon.integrations.langchain4j.providers.mock.MockChatModel.md)
+- [io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>mock.<wbr>Mock<wbr>Streaming<wbr>Chat<wbr>Model](io.helidon.integrations.langchain4j.providers.mock.MockStreamingChatModel.md)
 
 ## Usages
 
-- [`langchain4j.providers.helidon-mock`](io.helidon.langchain4j.ProvidersConfig.md#helidon-mock)
+- <a href="io.helidon.langchain4j.ProvidersConfig.md#helidon-mock"><code>langchain4j.<wbr>providers.<wbr>helidon-<wbr>mock</code></a>
 
 ---
 

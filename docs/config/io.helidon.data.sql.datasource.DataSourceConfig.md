@@ -1,4 +1,4 @@
-# io.helidon.data.sql.datasource.DataSourceConfig
+# io.<wbr>helidon.<wbr>data.<wbr>sql.<wbr>datasource.<wbr>Data<wbr>Source<wbr>Config
 
 ## Description
 
@@ -62,7 +62,7 @@
 
 ## Usages
 
-- [`data.sources.sql`](io.helidon.data.SourcesConfig.md#sql)
+- <a href="io.helidon.data.SourcesConfig.md#sql"><code>data.<wbr>sources.<wbr>sql</code></a>
 
 ---
 

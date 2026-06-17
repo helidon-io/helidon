@@ -1,4 +1,4 @@
-# io.helidon.common.concurrency.limits.FixedLimit
+# io.<wbr>helidon.<wbr>common.<wbr>concurrency.<wbr>limits.<wbr>Fixed<wbr>Limit
 
 ## Description
 
@@ -84,9 +84,9 @@ Configuration of <code>Fixed<wbr>Limit</code>
 
 ## Usages
 
-- [`server.concurrency-limit.fixed`](io.helidon.common.concurrency.limits.Limit.md#fixed)
-- [`server.features.limits.concurrency-limit.fixed`](io.helidon.common.concurrency.limits.Limit.md#fixed)
-- [`server.sockets.concurrency-limit.fixed`](io.helidon.common.concurrency.limits.Limit.md#fixed)
+- <a href="io.helidon.common.concurrency.limits.Limit.md#fixed"><code>server.<wbr>concurrency-<wbr>limit.<wbr>fixed</code></a>
+- <a href="io.helidon.common.concurrency.limits.Limit.md#fixed"><code>server.<wbr>features.<wbr>limits.<wbr>concurrency-<wbr>limit.<wbr>fixed</code></a>
+- <a href="io.helidon.common.concurrency.limits.Limit.md#fixed"><code>server.<wbr>sockets.<wbr>concurrency-<wbr>limit.<wbr>fixed</code></a>
 
 ---
 

@@ -1,4 +1,4 @@
-# io.helidon.integrations.eureka.InstanceInfoConfig
+# io.<wbr>helidon.<wbr>integrations.<wbr>eureka.<wbr>Instance<wbr>Info<wbr>Config
 
 ## Description
 
@@ -259,7 +259,7 @@ A <code>Prototype.<wbr>Api prototype</code> describing initial Eureka Server ser
 
 ## Usages
 
-- [`server.features.eureka.instance`](io.helidon.integrations.eureka.EurekaRegistrationServerFeature.md#instance)
+- <a href="io.helidon.integrations.eureka.EurekaRegistrationServerFeature.md#instance"><code>server.<wbr>features.<wbr>eureka.<wbr>instance</code></a>
 
 ---
 

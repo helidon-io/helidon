@@ -1,4 +1,4 @@
-# com.acme.AcmeBulkheadConfig
+# com.<wbr>acme.<wbr>Acme<wbr>Bulkhead<wbr>Config
 
 ## Description
 

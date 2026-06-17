@@ -1,4 +1,4 @@
-# io.helidon.server.features.security.security.EnvironmentConfig
+# io.<wbr>helidon.<wbr>server.<wbr>features.<wbr>security.<wbr>security.<wbr>Environment<wbr>Config
 
 ## Description
 
@@ -35,7 +35,7 @@ Configuration for server.features.security.security.environment
 
 ## Usages
 
-- [`server.features.security.security.environment`](io.helidon.security.Security.md#environment)
+- <a href="io.helidon.security.Security.md#environment"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>environment</code></a>
 
 ---
 

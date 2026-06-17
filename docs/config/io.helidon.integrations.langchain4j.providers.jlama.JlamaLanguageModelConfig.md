@@ -1,4 +1,4 @@
-# io.helidon.integrations.langchain4j.providers.jlama.JlamaLanguageModelConfig
+# io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>jlama.<wbr>Jlama<wbr>Language<wbr>Model<wbr>Config
 
 ## Description
 

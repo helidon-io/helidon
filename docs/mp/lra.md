@@ -71,7 +71,7 @@ JAX-RS(or non-JAX-RS) methods annotated with [@Compensate][compensate] or
 
 ### @LRA
 
-[<sub>javadoc</sub>][sub-javadoc-sub]
+See the [Javadoc][lra-javadoc].
 
 Marks JAX-RS method which should run in LRA context and needs to be accompanied
 by at least minimal set of mandatory participant
@@ -106,15 +106,16 @@ Method parameters:
      timeLimit = 500,
      timeUnit = ChronoUnit.MILLIS)
 @Path("start-example")
-public Response startLra(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId,
-                         String data) {
+public Response startLra(
+        @HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId,
+        String data) {
     return Response.ok().build();
 }
 ```
 
 ### @Compensate
 
-[<sub>javadoc</sub>][compensate]
+See the [Javadoc][compensate].
 
 > [!CAUTION]
 > Expected to be called by LRA [coordinator](#coordinator) only!
@@ -136,8 +137,9 @@ if retry should be done.
 @PUT
 @Path("/compensate")
 @Compensate
-public Response compensateWork(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId,
-                               @HeaderParam(LRA_HTTP_PARENT_CONTEXT_HEADER) URI parent) {
+public Response compensateWork(
+        @HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId,
+        @HeaderParam(LRA_HTTP_PARENT_CONTEXT_HEADER) URI parent) {
     return LRAResponse.compensated();
 }
 ```
@@ -154,7 +156,7 @@ public void compensate(URI lraId) {
 
 ### @Complete
 
-[<sub>javadoc</sub>][sub-javadoc-sub-2]
+See the [Javadoc][lra-complete].
 
 > [!CAUTION]
 > Expected to be called by LRA [coordinator](#coordinator) only!
@@ -175,8 +177,9 @@ if retry should be done.
 @PUT
 @Path("/complete")
 @Complete
-public Response complete(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId,
-                         @HeaderParam(LRA_HTTP_PARENT_CONTEXT_HEADER) URI parentLraId) {
+public Response complete(
+        @HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId,
+        @HeaderParam(LRA_HTTP_PARENT_CONTEXT_HEADER) URI parentLraId) {
     return LRAResponse.completed();
 }
 ```
@@ -193,7 +196,7 @@ public void complete(URI lraId) {
 
 ### @Forget
 
-[<sub>javadoc</sub>][sub-javadoc-sub-3]
+See the [Javadoc][lra-forget].
 
 > [!CAUTION]
 > Expected to be called by LRA [coordinator](#coordinator) only!
@@ -215,8 +218,9 @@ annotated with @Forget is called.
 @DELETE
 @Path("/forget")
 @Forget
-public Response forget(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId,
-                       @HeaderParam(LRA_HTTP_PARENT_CONTEXT_HEADER) URI parent) {
+public Response forget(
+        @HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId,
+        @HeaderParam(LRA_HTTP_PARENT_CONTEXT_HEADER) URI parent) {
     return Response.noContent().build();
 }
 ```
@@ -233,7 +237,7 @@ public void forget(URI lraId) {
 
 ### @Leave
 
-[<sub>javadoc</sub>][sub-javadoc-sub-4]
+See the [Javadoc][lra-leave].
 
 Method annotated with @Leave called with LRA context(with header
 [LRA_HTTP_CONTEXT_HEADER][lra-http-context]) informs [coordinator](#coordinator)
@@ -247,14 +251,15 @@ be called when the particular LRA ends.
 @PUT
 @Path("/leave")
 @Leave
-public Response leaveLRA(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraIdtoLeave) {
+public Response leaveLRA(
+        @HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraIdtoLeave) {
     return Response.ok().build();
 }
 ```
 
 ### @Status
 
-[<sub>javadoc</sub>][sub-javadoc-sub-5]
+See the [Javadoc][lra-status].
 
 > [!CAUTION]
 > Expected to be called by LRA [coordinator](#coordinator) only!
@@ -275,8 +280,10 @@ call it and decide if compensate or complete retry is needed.
 @GET
 @Path("/status")
 @Status
-public Response reportStatus(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId) {
-    return Response.ok(ParticipantStatus.FailedToCompensate).build();
+public Response reportStatus(
+        @HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId) {
+    return Response.ok(ParticipantStatus.FailedToCompensate)
+        .build();
 }
 ```
 
@@ -290,13 +297,13 @@ public Response reportStatus(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId) {
 @Status
 public Response reportStatus(URI lraId) {
     return Response.ok(ParticipantStatus.FailedToCompensate)
-            .build();
+        .build();
 }
 ```
 
 ### @AfterLRA
 
-[<sub>javadoc</sub>][afterlra]
+See the [Javadoc][afterlra].
 
 > [!CAUTION]
 > Expected to be called by LRA [coordinator](#coordinator) only!
@@ -318,9 +325,10 @@ Method annotated with [@AfterLRA][afterlra] in the same class as the one with
 @PUT
 @Path("/finished")
 @AfterLRA
-public Response whenLRAFinishes(@HeaderParam(LRA_HTTP_ENDED_CONTEXT_HEADER) URI lraId,
-                                @HeaderParam(LRA_HTTP_PARENT_CONTEXT_HEADER) URI parentLraId,
-                                LRAStatus status) {
+public Response whenLRAFinishes(
+        @HeaderParam(LRA_HTTP_ENDED_CONTEXT_HEADER) URI lraId,
+        @HeaderParam(LRA_HTTP_PARENT_CONTEXT_HEADER) URI parentLraId,
+        LRAStatus status) {
     return Response.ok().build();
 }
 ```
@@ -338,10 +346,6 @@ public void whenLRAFinishes(URI lraId, LRAStatus status) {
 ```
 
 ## Configuration
-
-```text [Type]
-io.helidon.microprofile.lra
-```
 
 Optional configuration options:
 
@@ -363,8 +367,8 @@ mp.lra:
 ```
 
 - Url of coordinator
-- Propagate LRA headers LRA_HTTP_CONTEXT_HEADER and
-  LRA_HTTP_PARENT_CONTEXT_HEADER through non-LRA endpoints
+- Propagate LRA headers `LRA_HTTP_CONTEXT_HEADER` and
+  `LRA_HTTP_PARENT_CONTEXT_HEADER` through non-LRA endpoints
 - Url of the LRA enabled service overrides standard base uri, so coordinator can
   call load-balancer instead of the service
 
@@ -385,24 +389,27 @@ compensate for cancelled LRA transaction.
 
 Example of simple LRA participant:
 
+<!--@mdc ::code-collapse -->
 ```java
 @PUT
-@LRA(LRA.Type.REQUIRES_NEW) 
+@LRA(LRA.Type.REQUIRES_NEW)
 @Path("start-example")
-public Response startExample(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId, 
-                             String data) {
+public Response startExample(
+        @HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId,
+        String data) {
     if (data.contains("BOOM")) {
-        throw new RuntimeException("BOOM 💥"); 
+        throw new RuntimeException("BOOM 💥");
     }
 
     LOGGER.info("Data " + data + " processed 🏭");
-    return Response.ok().build(); 
+    return Response.ok().build();
 }
 
 @PUT
 @Complete 
 @Path("complete-example")
-public Response completeExample(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId) {
+public Response completeExample(
+        @HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId) {
     LOGGER.log(Level.INFO, "LRA ID: {0} completed 🎉", lraId);
     return LRAResponse.completed();
 }
@@ -410,11 +417,13 @@ public Response completeExample(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId)
 @PUT
 @Compensate 
 @Path("compensate-example")
-public Response compensateExample(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId) {
+public Response compensateExample(
+        @HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId) {
     LOGGER.log(Level.SEVERE, "LRA ID: {0} compensated 🦺", lraId);
     return LRAResponse.compensated();
 }
 ```
+<!--@mdc :: -->
 
 - This JAX-RS PUT method will start new LRA transactions and join it before
   method body gets executed
@@ -462,7 +471,9 @@ public class WithdrawResource {
     @PUT
     @Path("/withdraw")
     @LRA(LRA.Type.REQUIRES_NEW)
-    public Response withdraw(@HeaderParam(LRA.LRA_HTTP_CONTEXT_HEADER) Optional<URI> lraId, String content) {
+    public Response withdraw(
+            @HeaderParam(LRA.LRA_HTTP_CONTEXT_HEADER) Optional<URI> lraId,
+            String content) {
         if ("BOOM".equals(content)) {
             throw new IllegalArgumentException("BOOM");
         }
@@ -581,12 +592,10 @@ public class LraNoDiscoveryTest {
 }
 ```
 
-## Additional Information
-
-### Coordinator
+## Coordinator
 
 Coordinator is a service that tracks all LRA transactions and calls the
-compensate REST endpoints of the participants when the LRA transaction gets
+`compensate` REST endpoints of the participants when the LRA transaction gets
 cancelled or completes (in case it gets closed). In addition, participant also
 keeps track of timeouts, retries participant calls, and assigns LRA ids.
 
@@ -595,7 +604,7 @@ Helidon LRA supports following coordinators:
 - Helidon LRA coordinator
 - [Narayana coordinator](https://narayana.io/lra).
 
-### MicroTx LRA Coordinator
+### MicroTx Coordinator
 
 Oracle Transaction Manager for Microservices - [MicroTx][microtx-lra-coor] is an
 enterprise grade transaction manager for microservices, among other it manages
@@ -653,7 +662,7 @@ tmmConfiguration:
 
 - Enable Narayana compatibility mode
 
-### Helidon LRA Coordinator
+### Helidon Coordinator
 
 > [!CAUTION]
 > Test tool, usage in production is not advised.
@@ -718,7 +727,7 @@ LRA app as follows:
 [microprofile-lon]: https://download.eclipse.org/microprofile/microprofile-lra-2.0/microprofile-lra-spec-2.0.html
 [compensate]: https://download.eclipse.org/microprofile/microprofile-lra-1.0-RC3/apidocs/org/eclipse/microprofile/lra/annotation/Compensate.html
 [afterlra]: https://download.eclipse.org/microprofile/microprofile-lra-1.0-RC3/apidocs/org/eclipse/microprofile/lra/annotation/AfterLRA.html
-[sub-javadoc-sub]: https://download.eclipse.org/microprofile/microprofile-lra-1.0-RC3/apidocs/org/eclipse/microprofile/lra/annotation/ws/rs/LRA.html
+[lra-javadoc]: https://download.eclipse.org/microprofile/microprofile-lra-1.0-RC3/apidocs/org/eclipse/microprofile/lra/annotation/ws/rs/LRA.html
 [value]: https://download.eclipse.org/microprofile/microprofile-lra-1.0-RC3/apidocs/org/eclipse/microprofile/lra/annotation/ws/rs/LRA.html#value--
 [required]: https://download.eclipse.org/microprofile/microprofile-lra-1.0-RC3/apidocs/org/eclipse/microprofile/lra/annotation/ws/rs/LRA.Type.html#REQUIRED
 [requires-new]: https://download.eclipse.org/microprofile/microprofile-lra-1.0-RC3/apidocs/org/eclipse/microprofile/lra/annotation/ws/rs/LRA.Type.html#REQUIRES_NEW
@@ -734,10 +743,10 @@ LRA app as follows:
 [cancelonfamily]: https://download.eclipse.org/microprofile/microprofile-lra-1.0-RC3/apidocs/org/eclipse/microprofile/lra/annotation/ws/rs/LRA.html#cancelOnFamily--
 [lra-http-context]: https://download.eclipse.org/microprofile/microprofile-lra-1.0-RC3/apidocs/org/eclipse/microprofile/lra/annotation/ws/rs/LRA.html#LRA_HTTP_CONTEXT_HEADER
 [lra-http-parent]: https://download.eclipse.org/microprofile/microprofile-lra-1.0-RC3/apidocs/org/eclipse/microprofile/lra/annotation/ws/rs/LRA.html#LRA_HTTP_PARENT_CONTEXT_HEADER
-[sub-javadoc-sub-2]: https://download.eclipse.org/microprofile/microprofile-lra-1.0-RC3/apidocs/org/eclipse/microprofile/lra/annotation/Complete.html
-[sub-javadoc-sub-3]: https://download.eclipse.org/microprofile/microprofile-lra-1.0-RC3/apidocs/org/eclipse/microprofile/lra/annotation/Forget.html
-[sub-javadoc-sub-4]: https://download.eclipse.org/microprofile/microprofile-lra-1.0-RC3/apidocs/org/eclipse/microprofile/lra/annotation/ws/rs/Leave.html
-[sub-javadoc-sub-5]: https://download.eclipse.org/microprofile/microprofile-lra-1.0-RC3/apidocs/org/eclipse/microprofile/lra/annotation/Status.html
+[lra-complete]: https://download.eclipse.org/microprofile/microprofile-lra-1.0-RC3/apidocs/org/eclipse/microprofile/lra/annotation/Complete.html
+[lra-forget]: https://download.eclipse.org/microprofile/microprofile-lra-1.0-RC3/apidocs/org/eclipse/microprofile/lra/annotation/Forget.html
+[lra-leave]: https://download.eclipse.org/microprofile/microprofile-lra-1.0-RC3/apidocs/org/eclipse/microprofile/lra/annotation/ws/rs/Leave.html
+[lra-status]: https://download.eclipse.org/microprofile/microprofile-lra-1.0-RC3/apidocs/org/eclipse/microprofile/lra/annotation/Status.html
 [participantstatu]: https://download.eclipse.org/microprofile/microprofile-lra-1.0-RC3/apidocs/org/eclipse/microprofile/lra/annotation/ParticipantStatus.html
 [lra-http-ended-c]: https://download.eclipse.org/microprofile/microprofile-lra-1.0-RC3/apidocs/org/eclipse/microprofile/lra/annotation/ws/rs/LRA.html#LRA_HTTP_ENDED_CONTEXT_HEADER
 [lrastatus]: https://download.eclipse.org/microprofile/microprofile-lra-1.0-RC3/apidocs/org/eclipse/microprofile/lra/annotation/LRAStatus.html

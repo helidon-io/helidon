@@ -1,4 +1,4 @@
-# io.helidon.security.providers.oidc.common.OidcOutboundType
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>common.<wbr>Oidc<wbr>Outbound<wbr>Type
 
 ## Description
 
@@ -27,10 +27,10 @@ This type is an enumeration.
 
 ## Usages
 
-- [`security.providers.idcs-role-mapper.oidc-config.outbound-type`](io.helidon.security.providers.oidc.common.OidcConfig.md#outbound-type)
-- [`security.providers.oidc.outbound-type`](io.helidon.security.providers.oidc.OidcProvider.md#outbound-type)
-- [`server.features.security.security.providers.idcs-role-mapper.oidc-config.outbound-type`](io.helidon.security.providers.oidc.common.OidcConfig.md#outbound-type)
-- [`server.features.security.security.providers.oidc.outbound-type`](io.helidon.security.providers.oidc.OidcProvider.md#outbound-type)
+- <a href="io.helidon.security.providers.oidc.common.OidcConfig.md#outbound-type"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>outbound-<wbr>type</code></a>
+- <a href="io.helidon.security.providers.oidc.OidcProvider.md#outbound-type"><code>security.<wbr>providers.<wbr>oidc.<wbr>outbound-<wbr>type</code></a>
+- <a href="io.helidon.security.providers.oidc.common.OidcConfig.md#outbound-type"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>outbound-<wbr>type</code></a>
+- <a href="io.helidon.security.providers.oidc.OidcProvider.md#outbound-type"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>outbound-<wbr>type</code></a>
 
 ---
 

@@ -1,4 +1,4 @@
-# io.helidon.telemetry.otelconfig.PeriodicMetricReaderConfig
+# io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Periodic<wbr>Metric<wbr>Reader<wbr>Config
 
 ## Description
 

@@ -1,4 +1,4 @@
-# io.helidon.openapi.OpenApiService
+# io.<wbr>helidon.<wbr>openapi.<wbr>Open<wbr>ApiService
 
 ## Description
 
@@ -12,8 +12,8 @@ No implementations are currently known.
 
 ## Usages
 
-- [`openapi.services`](io.helidon.openapi.OpenApiFeature.md#services)
-- [`server.features.openapi.services`](io.helidon.openapi.OpenApiFeature.md#services)
+- <a href="io.helidon.openapi.OpenApiFeature.md#services"><code>openapi.<wbr>services</code></a>
+- <a href="io.helidon.openapi.OpenApiFeature.md#services"><code>server.<wbr>features.<wbr>openapi.<wbr>services</code></a>
 
 ---
 

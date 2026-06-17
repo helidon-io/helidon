@@ -1,4 +1,4 @@
-# io.helidon.telemetry.otelconfig.LogLimitsConfig
+# io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>LogLimits<wbr>Config
 
 ## Description
 

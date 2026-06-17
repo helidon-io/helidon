@@ -1,4 +1,4 @@
-# io.helidon.security.providers.oidc.tenants.DecryptionKeysConfig
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>tenants.<wbr>Decryption<wbr>Keys<wbr>Config
 
 ## Description
 
@@ -35,7 +35,7 @@ Configuration for security.providers.oidc.tenants.decryption-keys
 
 ## Usages
 
-- [`security.providers.oidc.tenants.decryption-keys`](io.helidon.security.providers.oidc.common.TenantConfig.md#decryption-keys)
+- <a href="io.helidon.security.providers.oidc.common.TenantConfig.md#decryption-keys"><code>security.<wbr>providers.<wbr>oidc.<wbr>tenants.<wbr>decryption-<wbr>keys</code></a>
 
 ---
 

@@ -1,4 +1,4 @@
-# io.helidon.integrations.langchain4j.AiServicesConfig
+# io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>AiServices<wbr>Config
 
 ## Description
 
@@ -32,7 +32,7 @@
 
 ## Usages
 
-- [`langchain4j.services`](io.helidon.Langchain4jConfig.md#services)
+- <a href="io.helidon.Langchain4jConfig.md#services"><code>langchain4j.<wbr>services</code></a>
 
 ---
 

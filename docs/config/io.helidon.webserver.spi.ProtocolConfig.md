@@ -1,4 +1,4 @@
-# io.helidon.webserver.spi.ProtocolConfig
+# io.<wbr>helidon.<wbr>webserver.<wbr>spi.<wbr>Protocol<wbr>Config
 
 ## Description
 
@@ -59,8 +59,8 @@ This type is a provider contract.
 
 ## Usages
 
-- [`server.protocols`](io.helidon.webserver.WebServer.md#protocols)
-- [`server.sockets.protocols`](io.helidon.webserver.ListenerConfig.md#protocols)
+- <a href="io.helidon.webserver.WebServer.md#protocols"><code>server.<wbr>protocols</code></a>
+- <a href="io.helidon.webserver.ListenerConfig.md#protocols"><code>server.<wbr>sockets.<wbr>protocols</code></a>
 
 ---
 

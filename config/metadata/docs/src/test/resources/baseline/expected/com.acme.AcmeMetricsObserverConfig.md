@@ -1,4 +1,4 @@
-# com.acme.AcmeMetricsObserverConfig
+# com.<wbr>acme.<wbr>Acme<wbr>Metrics<wbr>Observer<wbr>Config
 
 ## Description
 

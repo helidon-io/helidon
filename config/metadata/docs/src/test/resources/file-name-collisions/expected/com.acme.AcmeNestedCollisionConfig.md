@@ -1,4 +1,4 @@
-# com.acme.AcmeNestedCollisionConfig
+# com.<wbr>acme.<wbr>Acme<wbr>Nested<wbr>Collision<wbr>Config
 
 ## Description
 

@@ -1,4 +1,4 @@
-# com.acme.AcmeBulkheadConfig
+# com.<wbr>acme.<wbr>Acme<wbr>Bulkhead<wbr>Config
 
 ## Description
 
@@ -48,7 +48,7 @@ ACME Bulkhead configuration
 
 ## Usages
 
-- [`fault-tolerance.bulkheads`](io.helidon.FaultToleranceConfig.md#bulkheads)
+- <a href="io.helidon.FaultToleranceConfig.md#bulkheads"><code>fault-<wbr>tolerance.<wbr>bulkheads</code></a>
 
 ---
 

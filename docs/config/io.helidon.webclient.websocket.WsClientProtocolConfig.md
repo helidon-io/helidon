@@ -1,4 +1,4 @@
-# io.helidon.webclient.websocket.WsClientProtocolConfig
+# io.<wbr>helidon.<wbr>webclient.<wbr>websocket.<wbr>WsClient<wbr>Protocol<wbr>Config
 
 ## Description
 

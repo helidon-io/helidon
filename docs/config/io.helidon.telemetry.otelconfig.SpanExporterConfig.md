@@ -1,4 +1,4 @@
-# io.helidon.telemetry.otelconfig.SpanExporterConfig
+# io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Span<wbr>Exporter<wbr>Config
 
 ## Description
 

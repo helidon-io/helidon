@@ -1,4 +1,4 @@
-# io.helidon.webclient.api.WebClientCookieManager
+# io.<wbr>helidon.<wbr>webclient.<wbr>api.<wbr>WebClient<wbr>Cookie<wbr>Manager
 
 ## Description
 
@@ -56,6 +56,14 @@ Helidon WebClient cookie manager
 </table>
 
 
+
+## Usages
+
+- <a href="io.helidon.webclient.api.WebClient.md#cookie-manager"><code>clients.<wbr>cookie-<wbr>manager</code></a>
+- <a href="io.helidon.webclient.api.WebClient.md#cookie-manager"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>cookie-<wbr>manager</code></a>
+- <a href="io.helidon.webclient.api.WebClient.md#cookie-manager"><code>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>cookie-<wbr>manager</code></a>
+- <a href="io.helidon.webclient.api.WebClient.md#cookie-manager"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>cookie-<wbr>manager</code></a>
+- <a href="io.helidon.webclient.api.WebClient.md#cookie-manager"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>cookie-<wbr>manager</code></a>
 
 ---
 

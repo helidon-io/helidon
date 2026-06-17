@@ -1,4 +1,4 @@
-# io.helidon.security.providers.common.EvictableCache
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>common.<wbr>Evictable<wbr>Cache
 
 ## Description
 
@@ -119,8 +119,8 @@ Generic cache with eviction support
 
 ## Usages
 
-- [`security.providers.idcs-role-mapper.cache-config`](io.helidon.security.providers.IdcsRoleMapperConfig.md#cache-config)
-- [`server.features.security.security.providers.idcs-role-mapper.cache-config`](io.helidon.server.features.security.security.providers.IdcsRoleMapperConfig.md#cache-config)
+- <a href="io.helidon.security.providers.IdcsRoleMapperConfig.md#cache-config"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>cache-<wbr>config</code></a>
+- <a href="io.helidon.server.features.security.security.providers.IdcsRoleMapperConfig.md#cache-config"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>cache-<wbr>config</code></a>
 
 ---
 

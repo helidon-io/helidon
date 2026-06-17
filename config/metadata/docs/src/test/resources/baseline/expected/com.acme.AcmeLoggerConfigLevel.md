@@ -1,4 +1,4 @@
-# com.acme.AcmeLoggerConfigLevel
+# com.<wbr>acme.<wbr>Acme<wbr>Logger<wbr>Config<wbr>Level
 
 ## Description
 
@@ -35,7 +35,7 @@ This type is an enumeration.
 
 ## Usages
 
-- [`server.features.logging.loggers.level`](com.acme.AcmeLoggerConfig.md#level)
+- <a href="com.acme.AcmeLoggerConfig.md#level"><code>server.<wbr>features.<wbr>logging.<wbr>loggers.<wbr>level</code></a>
 
 ---
 

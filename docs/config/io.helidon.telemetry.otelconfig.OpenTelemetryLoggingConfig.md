@@ -1,4 +1,4 @@
-# io.helidon.telemetry.otelconfig.OpenTelemetryLoggingConfig
+# io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Open<wbr>Telemetry<wbr>Logging<wbr>Config
 
 ## Description
 
@@ -89,7 +89,7 @@ Configuration settings for OpenTelemetry logging
 
 ## Usages
 
-- [`telemetry.signals.logging`](io.helidon.telemetry.SignalsConfig.md#logging)
+- <a href="io.helidon.telemetry.SignalsConfig.md#logging"><code>telemetry.<wbr>signals.<wbr>logging</code></a>
 
 ---
 

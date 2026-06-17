@@ -1,4 +1,4 @@
-# io.helidon.webserver.websocket.WsConfig
+# io.<wbr>helidon.<wbr>webserver.<wbr>websocket.<wbr>WsConfig
 
 ## Description
 
@@ -59,8 +59,8 @@ WebSocket protocol configuration
 
 ## Usages
 
-- [`server.protocols.websocket`](io.helidon.webserver.spi.ProtocolConfig.md#websocket)
-- [`server.sockets.protocols.websocket`](io.helidon.webserver.spi.ProtocolConfig.md#websocket)
+- <a href="io.helidon.webserver.spi.ProtocolConfig.md#websocket"><code>server.<wbr>protocols.<wbr>websocket</code></a>
+- <a href="io.helidon.webserver.spi.ProtocolConfig.md#websocket"><code>server.<wbr>sockets.<wbr>protocols.<wbr>websocket</code></a>
 
 ---
 

@@ -1,4 +1,4 @@
-# io.helidon.webserver.staticcontent.TemporaryStorage
+# io.<wbr>helidon.<wbr>webserver.<wbr>staticcontent.<wbr>Temporary<wbr>Storage
 
 ## Description
 
@@ -83,8 +83,8 @@ Configuration of temporary storage for classpath based handlers
 
 ## Usages
 
-- [`server.features.static-content.classpath.temporary-storage`](io.helidon.webserver.staticcontent.ClasspathHandlerConfig.md#temporary-storage)
-- [`server.features.static-content.temporary-storage`](io.helidon.webserver.staticcontent.StaticContentFeature.md#temporary-storage)
+- <a href="io.helidon.webserver.staticcontent.ClasspathHandlerConfig.md#temporary-storage"><code>server.<wbr>features.<wbr>static-<wbr>content.<wbr>classpath.<wbr>temporary-<wbr>storage</code></a>
+- <a href="io.helidon.webserver.staticcontent.StaticContentFeature.md#temporary-storage"><code>server.<wbr>features.<wbr>static-<wbr>content.<wbr>temporary-<wbr>storage</code></a>
 
 ---
 

@@ -1,4 +1,4 @@
-# io.helidon.metrics.api.BuiltInMeterNameFormat
+# io.<wbr>helidon.<wbr>metrics.<wbr>api.<wbr>Built<wbr>InMeter<wbr>Name<wbr>Format
 
 ## Description
 
@@ -27,8 +27,8 @@ This type is an enumeration.
 
 ## Usages
 
-- [`metrics.built-in-meter-name-format`](io.helidon.MetricsConfig.md#built-in-meter-name-format)
-- [`server.features.observe.observers.metrics.built-in-meter-name-format`](io.helidon.webserver.observe.metrics.MetricsObserver.md#built-in-meter-name-format)
+- <a href="io.helidon.MetricsConfig.md#built-in-meter-name-format"><code>metrics.<wbr>built-<wbr>in-meter-<wbr>name-<wbr>format</code></a>
+- <a href="io.helidon.webserver.observe.metrics.MetricsObserver.md#built-in-meter-name-format"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>built-<wbr>in-meter-<wbr>name-<wbr>format</code></a>
 
 ---
 

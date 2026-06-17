@@ -1,8 +1,8 @@
-# io.helidon.webclient.http2.Http2ClientProtocolConfig
+# io.<wbr>helidon.<wbr>webclient.<wbr>http2.<wbr>Http2Client<wbr>Protocol<wbr>Config
 
 ## Description
 
-<code>N/<wbr>A</code>
+Configuration of an HTTP/2 client
 
 ## Configuration options
 
@@ -17,6 +17,18 @@
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+<code>validate-<wbr>response-<wbr>headers</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Whether to validate response headers</td>
+</tr>
 <tr>
 <td>
 <code>flow-<wbr>control-<wbr>block-<wbr>timeout</code>
@@ -39,7 +51,7 @@
 <td>
 <code>64 KB</code>
 </td>
-<td>Configure the maximum size allowed for an entity that can be explicitly buffered by the application by calling <code>io.<wbr>helidon.<wbr>http.<wbr>media.<wbr>Readable<wbr>Entity#<wbr>buffer</code></td>
+<td>Configure the maximum size allowed for an entity that can be explicitly buffered by the application by calling <code>io.<wbr>helidon.<wbr>http.<wbr>media.<wbr>Readable<wbr>Entity.<wbr>buffer(<wbr>)</code></td>
 </tr>
 <tr>
 <td>
@@ -52,6 +64,32 @@
 <code>false</code>
 </td>
 <td>Prior knowledge of HTTP/2 capabilities of the server</td>
+</tr>
+<tr>
+<td>
+<a id="log"></a>
+<a href="io.helidon.http.HttpLogConfig.md">
+<code>log</code>
+</a>
+</td>
+<td>
+<code>Http<wbr>LogConfig</code>
+</td>
+<td>
+</td>
+<td>HTTP Log configuration</td>
+</tr>
+<tr>
+<td>
+<code>validate-<wbr>request-<wbr>headers</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Whether to validate request headers</td>
 </tr>
 <tr>
 <td>
@@ -99,7 +137,7 @@
 <td>
 <code>h2</code>
 </td>
-<td><code>N/<wbr>A</code></td>
+<td>Name of this protocol configuration</td>
 </tr>
 <tr>
 <td>

@@ -1,4 +1,4 @@
-# io.helidon.scheduling.TaskConfig
+# io.<wbr>helidon.<wbr>scheduling.<wbr>Task<wbr>Config
 
 ## Description
 
@@ -47,8 +47,8 @@
 
 ## Dependent Types
 
-- [io.helidon.scheduling.Cron](io.helidon.scheduling.Cron.md)
-- [io.helidon.scheduling.FixedRate](io.helidon.scheduling.FixedRate.md)
+- [io.<wbr>helidon.<wbr>scheduling.<wbr>Cron](io.helidon.scheduling.Cron.md)
+- [io.<wbr>helidon.<wbr>scheduling.<wbr>Fixed<wbr>Rate](io.helidon.scheduling.FixedRate.md)
 
 ---
 

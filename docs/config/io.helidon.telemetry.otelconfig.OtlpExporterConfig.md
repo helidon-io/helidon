@@ -1,4 +1,4 @@
-# io.helidon.telemetry.otelconfig.OtlpExporterConfig
+# io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Otlp<wbr>Exporter<wbr>Config
 
 ## Description
 
@@ -175,9 +175,9 @@ Settings for OpenTelemetry OTLP exporters
 
 ## Dependent Types
 
-- [io.helidon.telemetry.otelconfig.LogRecordExporterConfig](io.helidon.telemetry.otelconfig.LogRecordExporterConfig.md)
-- [io.helidon.telemetry.otelconfig.MetricExporterConfig](io.helidon.telemetry.otelconfig.MetricExporterConfig.md)
-- [io.helidon.telemetry.otelconfig.OtlpHttpExporterConfig](io.helidon.telemetry.otelconfig.OtlpHttpExporterConfig.md)
+- [io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>LogRecord<wbr>Exporter<wbr>Config](io.helidon.telemetry.otelconfig.LogRecordExporterConfig.md)
+- [io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Metric<wbr>Exporter<wbr>Config](io.helidon.telemetry.otelconfig.MetricExporterConfig.md)
+- [io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Otlp<wbr>Http<wbr>Exporter<wbr>Config](io.helidon.telemetry.otelconfig.OtlpHttpExporterConfig.md)
 
 ---
 

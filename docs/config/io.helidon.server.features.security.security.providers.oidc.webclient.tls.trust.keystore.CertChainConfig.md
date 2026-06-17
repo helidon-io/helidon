@@ -1,4 +1,4 @@
-# io.helidon.server.features.security.security.providers.oidc.webclient.tls.trust.keystore.CertChainConfig
+# io.<wbr>helidon.<wbr>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>trust.<wbr>keystore.<wbr>Cert<wbr>Chain<wbr>Config
 
 ## Description
 
@@ -32,7 +32,7 @@ Configuration for server.features.security.security.providers.oidc.webclient.tls
 
 ## Usages
 
-- [`server.features.security.security.providers.oidc.webclient.tls.trust.keystore.cert-chain`](io.helidon.common.pki.KeystoreKeys.md#cert-chain)
+- <a href="io.helidon.common.pki.KeystoreKeys.md#cert-chain"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>trust.<wbr>keystore.<wbr>cert-<wbr>chain</code></a>
 
 ---
 

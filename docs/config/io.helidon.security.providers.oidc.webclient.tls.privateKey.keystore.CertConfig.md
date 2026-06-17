@@ -1,4 +1,4 @@
-# io.helidon.security.providers.oidc.webclient.tls.privateKey.keystore.CertConfig
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>private<wbr>Key.<wbr>keystore.<wbr>Cert<wbr>Config
 
 ## Description
 
@@ -32,7 +32,7 @@ Configuration for security.providers.oidc.webclient.tls.private-key.keystore.cer
 
 ## Usages
 
-- [`security.providers.oidc.webclient.tls.private-key.keystore.cert`](io.helidon.common.pki.KeystoreKeys.md#cert)
+- <a href="io.helidon.common.pki.KeystoreKeys.md#cert"><code>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>private-<wbr>key.<wbr>keystore.<wbr>cert</code></a>
 
 ---
 

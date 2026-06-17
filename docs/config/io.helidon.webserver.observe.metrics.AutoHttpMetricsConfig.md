@@ -1,4 +1,4 @@
-# io.helidon.webserver.observe.metrics.AutoHttpMetricsConfig
+# io.<wbr>helidon.<wbr>webserver.<wbr>observe.<wbr>metrics.<wbr>Auto<wbr>Http<wbr>Metrics<wbr>Config
 
 ## Description
 
@@ -72,8 +72,8 @@ Automatic metrics collection settings
 
 ## Usages
 
-- [`metrics.auto-http-metrics`](io.helidon.MetricsConfig.md#auto-http-metrics)
-- [`server.features.observe.observers.metrics.auto-http-metrics`](io.helidon.webserver.observe.metrics.MetricsObserver.md#auto-http-metrics)
+- <a href="io.helidon.MetricsConfig.md#auto-http-metrics"><code>metrics.<wbr>auto-<wbr>http-<wbr>metrics</code></a>
+- <a href="io.helidon.webserver.observe.metrics.MetricsObserver.md#auto-http-metrics"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>auto-<wbr>http-<wbr>metrics</code></a>
 
 ---
 

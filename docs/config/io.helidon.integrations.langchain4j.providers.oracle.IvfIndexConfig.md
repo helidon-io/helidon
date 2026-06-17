@@ -1,4 +1,4 @@
-# io.helidon.integrations.langchain4j.providers.oracle.IvfIndexConfig
+# io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>oracle.<wbr>IvfIndex<wbr>Config
 
 ## Description
 
@@ -89,7 +89,7 @@
 
 ## Usages
 
-- [`langchain4j.providers.oracle.ivf-index`](io.helidon.integrations.langchain4j.providers.oracle.OracleEmbeddingStoreConfig.md#ivf-index)
+- <a href="io.helidon.integrations.langchain4j.providers.oracle.OracleEmbeddingStoreConfig.md#ivf-index"><code>langchain4j.<wbr>providers.<wbr>oracle.<wbr>ivf-<wbr>index</code></a>
 
 ---
 

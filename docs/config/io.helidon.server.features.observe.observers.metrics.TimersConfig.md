@@ -1,4 +1,4 @@
-# io.helidon.server.features.observe.observers.metrics.TimersConfig
+# io.<wbr>helidon.<wbr>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>Timers<wbr>Config
 
 ## Description
 
@@ -35,7 +35,7 @@ Configuration for server.features.observe.observers.metrics.timers
 
 ## Usages
 
-- [`server.features.observe.observers.metrics.timers`](io.helidon.webserver.observe.metrics.MetricsObserver.md#timers)
+- <a href="io.helidon.webserver.observe.metrics.MetricsObserver.md#timers"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>timers</code></a>
 
 ---
 

@@ -13,7 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 }}
-# {{typeName}}
+# {{{codeBreaks typeName}}}
 
 ## Description
 
@@ -46,7 +46,7 @@ This config type has no options.
 ## Merged Types
 
 {{/if~}}
-- [{{@key}}]({{this}})
+- [{{{codeBreaks @key}}}]({{this}})
 {{~/each}}
 
 {{~#each dependentTypes}}
@@ -54,7 +54,7 @@ This config type has no options.
 ## Dependent Types
 
 {{/if~}}
-- [{{@key}}]({{this}})
+- [{{{codeBreaks @key}}}]({{this}})
 {{~/each}}
 
 {{~> usages.md}}

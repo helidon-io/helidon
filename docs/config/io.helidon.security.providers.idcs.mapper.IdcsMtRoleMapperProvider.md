@@ -1,8 +1,8 @@
-# io.helidon.security.providers.idcs.mapper.IdcsMtRoleMapperProvider
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>idcs.<wbr>mapper.<wbr>Idcs<wbr>MtRole<wbr>Mapper<wbr>Provider
 
 ## Description
 
-Multitenant IDCS role mapping provider
+Multitenant IDCS role mapping provider. With default endpoint resolution, the first identity URI host label and extracted tenant IDs must be single DNS labels: 1 to 63 alphanumeric or hyphen characters, with no leading or trailing hyphen
 
 ## Configuration options
 
@@ -98,7 +98,7 @@ Multitenant IDCS role mapping provider
 </td>
 <td>
 </td>
-<td>Configure token handler for IDCS Tenant ID</td>
+<td>Token handler for an IDCS tenant ID. The extracted tenant ID must be a single DNS label: 1 to 63 alphanumeric or hyphen characters, with no leading or trailing hyphen. Invalid tenant IDs fail before endpoint resolution</td>
 </tr>
 </tbody>
 </table>

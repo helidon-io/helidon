@@ -1,4 +1,4 @@
-# io.helidon.discovery.providers.eureka.CacheConfig
+# io.<wbr>helidon.<wbr>discovery.<wbr>providers.<wbr>eureka.<wbr>Cache<wbr>Config
 
 ## Description
 

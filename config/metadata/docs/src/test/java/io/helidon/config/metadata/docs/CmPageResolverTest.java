@@ -129,12 +129,24 @@ class CmPageResolverTest {
                         ))),
                         hasProperty("tables", CmPage::tables, allOf(
                                 hasProperty("standard", CmPage.Tables::standard,
-                                        hasProperty("rows", CmPage.Table::rows, not(empty()))),
+                                        hasProperty("rows", CmPage.Table::rows, hasItem(allOf(
+                                                hasProperty("key", CmPage.Row::key, is("audit")),
+                                                hasProperty("anchor", CmPage.Row::anchor, is("audit"))
+                                        )))),
                                 hasProperty("experimental", CmPage.Tables::experimental,
                                         hasProperty("isEmpty", CmPage.Table::isEmpty, is(true))),
                                 hasProperty("deprecated", CmPage.Tables::deprecated,
                                         hasProperty("isEmpty", CmPage.Table::isEmpty, is(true)))
                         ))
+                )),
+                hasItem(allOf(
+                        hasProperty("kind", CmPage::kind, is(CmPage.Kind.CONFIG)),
+                        hasProperty("key", CmPage::key, is("config/com.acme.AcmeAuditConfig")),
+                        hasProperty("usages", CmPage::usages, contains(allOf(
+                                hasProperty("path", CmPage.Usage::path, is("server.features.audit")),
+                                hasProperty("fileName", CmPage.Usage::fileName, is("com.acme.AcmeFeature.html")),
+                                hasProperty("anchor", CmPage.Usage::anchor, is("audit"))
+                        )))
                 )),
                 hasItem(allOf(
                         hasProperty("kind", CmPage::kind, is(CmPage.Kind.ENUM)),
@@ -164,6 +176,21 @@ class CmPageResolverTest {
     }
 
     @Test
+    void testProviderDuplicateKeyRowAnchors() throws Exception {
+        var resolver = resolver("provider-duplicate-keys");
+
+        assertThat(resolver.pages(), hasItem(allOf(
+                hasProperty("kind", CmPage::kind, is(CmPage.Kind.CONTRACT)),
+                hasProperty("key", CmPage::key, is("contract/com.acme.AcmeFeature")),
+                hasProperty("tables", CmPage::tables,
+                        hasProperty("standard", CmPage.Tables::standard,
+                                hasProperty("rows", CmPage.Table::rows, contains(
+                                        row("audit", "audit"),
+                                        row("shared", "shared"),
+                                        row("shared", "shared-2"))))))));
+    }
+
+    @Test
     void testSyntheticPages() throws Exception {
         var resolver = resolver();
 
@@ -174,13 +201,23 @@ class CmPageResolverTest {
     }
 
     static CmPageResolver resolver() throws Exception {
-        var testDir = CmDocCodegenTest.testDir("baseline");
+        return resolver("baseline");
+    }
+
+    static CmPageResolver resolver(String testName) throws Exception {
+        var testDir = CmDocCodegenTest.testDir(testName);
         try (var input = Files.newInputStream(testDir.resolve("config-metadata.json"))) {
             var model = CmModel.fromJson(input);
             return new CmPageResolver(model,
                     DUMMY_ROOT_PAGE,
                     PAGE_FILE_NAME_EXTENSION);
         }
+    }
+
+    private static Matcher<CmPage.Row> row(String key, String anchor) {
+        return allOf(
+                hasProperty("key", CmPage.Row::key, is(key)),
+                hasProperty("anchor", CmPage.Row::anchor, is(anchor)));
     }
 
     static <T, U> Matcher<T> hasProperty(String name, Function<T, U> extractor, Matcher<U> subMatcher) {

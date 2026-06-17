@@ -1,4 +1,4 @@
-# com.acme.AcmeOpenAiAltFeatureConfig
+# com.<wbr>acme.<wbr>Acme<wbr>Open<wbr>AiAlt<wbr>Feature<wbr>Config
 
 ## Description
 

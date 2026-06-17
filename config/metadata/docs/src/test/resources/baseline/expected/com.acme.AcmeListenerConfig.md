@@ -1,4 +1,4 @@
-# com.acme.AcmeListenerConfig
+# com.<wbr>acme.<wbr>Acme<wbr>Listener<wbr>Config
 
 ## Description
 
@@ -48,11 +48,11 @@ ACME Listener configuration
 
 ## Dependent Types
 
-- [com.acme.AcmeServerConfig](com.acme.AcmeServerConfig.md)
+- [com.<wbr>acme.<wbr>Acme<wbr>Server<wbr>Config](com.acme.AcmeServerConfig.md)
 
 ## Usages
 
-- [`server.sockets`](com.acme.AcmeServerConfig.md#sockets)
+- <a href="com.acme.AcmeServerConfig.md#sockets"><code>server.<wbr>sockets</code></a>
 
 ---
 

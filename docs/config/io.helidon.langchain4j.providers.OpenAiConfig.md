@@ -1,4 +1,4 @@
-# io.helidon.langchain4j.providers.OpenAiConfig
+# io.<wbr>helidon.<wbr>langchain4j.<wbr>providers.<wbr>Open<wbr>AiConfig
 
 ## Description
 
@@ -559,16 +559,16 @@ Merged configuration for langchain4j.providers.open-ai
 
 ## Merged Types
 
-- [io.helidon.integrations.langchain4j.providers.openai.OpenAiChatModelConfig](io.helidon.integrations.langchain4j.providers.openai.OpenAiChatModelConfig.md)
-- [io.helidon.integrations.langchain4j.providers.openai.OpenAiEmbeddingModelConfig](io.helidon.integrations.langchain4j.providers.openai.OpenAiEmbeddingModelConfig.md)
-- [io.helidon.integrations.langchain4j.providers.openai.OpenAiImageModelConfig](io.helidon.integrations.langchain4j.providers.openai.OpenAiImageModelConfig.md)
-- [io.helidon.integrations.langchain4j.providers.openai.OpenAiLanguageModelConfig](io.helidon.integrations.langchain4j.providers.openai.OpenAiLanguageModelConfig.md)
-- [io.helidon.integrations.langchain4j.providers.openai.OpenAiModerationModelConfig](io.helidon.integrations.langchain4j.providers.openai.OpenAiModerationModelConfig.md)
-- [io.helidon.integrations.langchain4j.providers.openai.OpenAiStreamingChatModelConfig](io.helidon.integrations.langchain4j.providers.openai.OpenAiStreamingChatModelConfig.md)
+- [io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>openai.<wbr>Open<wbr>AiChat<wbr>Model<wbr>Config](io.helidon.integrations.langchain4j.providers.openai.OpenAiChatModelConfig.md)
+- [io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>openai.<wbr>Open<wbr>AiEmbedding<wbr>Model<wbr>Config](io.helidon.integrations.langchain4j.providers.openai.OpenAiEmbeddingModelConfig.md)
+- [io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>openai.<wbr>Open<wbr>AiImage<wbr>Model<wbr>Config](io.helidon.integrations.langchain4j.providers.openai.OpenAiImageModelConfig.md)
+- [io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>openai.<wbr>Open<wbr>AiLanguage<wbr>Model<wbr>Config](io.helidon.integrations.langchain4j.providers.openai.OpenAiLanguageModelConfig.md)
+- [io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>openai.<wbr>Open<wbr>AiModeration<wbr>Model<wbr>Config](io.helidon.integrations.langchain4j.providers.openai.OpenAiModerationModelConfig.md)
+- [io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>openai.<wbr>Open<wbr>AiStreaming<wbr>Chat<wbr>Model<wbr>Config](io.helidon.integrations.langchain4j.providers.openai.OpenAiStreamingChatModelConfig.md)
 
 ## Usages
 
-- [`langchain4j.providers.open-ai`](io.helidon.langchain4j.ProvidersConfig.md#open-ai)
+- <a href="io.helidon.langchain4j.ProvidersConfig.md#open-ai"><code>langchain4j.<wbr>providers.<wbr>open-<wbr>ai</code></a>
 
 ---
 

@@ -1,4 +1,4 @@
-# com.acme.AcmeService
+# com.<wbr>acme.<wbr>Acme<wbr>Service
 
 ## Description
 
@@ -18,6 +18,7 @@ This type is a provider contract.
 <tbody>
 <tr>
 <td>
+<a id="audit"></a>
 <a href="com.acme.AcmeAuditServiceConfig.md">
 <code>audit</code>
 </a>

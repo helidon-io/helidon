@@ -1,4 +1,4 @@
-# io.helidon.server.features.security.security.TracingConfig
+# io.<wbr>helidon.<wbr>server.<wbr>features.<wbr>security.<wbr>security.<wbr>Tracing<wbr>Config
 
 ## Description
 
@@ -36,7 +36,7 @@ Configuration for server.features.security.security.tracing
 
 ## Usages
 
-- [`server.features.security.security.tracing`](io.helidon.security.Security.md#tracing)
+- <a href="io.helidon.security.Security.md#tracing"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>tracing</code></a>
 
 ---
 

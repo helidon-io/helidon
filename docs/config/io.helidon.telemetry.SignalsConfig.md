@@ -1,4 +1,4 @@
-# io.helidon.telemetry.SignalsConfig
+# io.<wbr>helidon.<wbr>telemetry.<wbr>Signals<wbr>Config
 
 ## Description
 
@@ -59,7 +59,7 @@ Configuration for telemetry.signals
 
 ## Usages
 
-- [`telemetry.signals`](io.helidon.telemetry.otelconfig.HelidonOpenTelemetry.md#signals)
+- <a href="io.helidon.telemetry.otelconfig.HelidonOpenTelemetry.md#signals"><code>telemetry.<wbr>signals</code></a>
 
 ---
 

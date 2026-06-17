@@ -1,4 +1,4 @@
-# io.helidon.webclient.jsonrpc.JsonRpcClientProtocolConfig
+# io.<wbr>helidon.<wbr>webclient.<wbr>jsonrpc.<wbr>Json<wbr>RpcClient<wbr>Protocol<wbr>Config
 
 ## Description
 

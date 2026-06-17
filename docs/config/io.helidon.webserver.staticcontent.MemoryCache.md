@@ -1,4 +1,4 @@
-# io.helidon.webserver.staticcontent.MemoryCache
+# io.<wbr>helidon.<wbr>webserver.<wbr>staticcontent.<wbr>Memory<wbr>Cache
 
 ## Description
 
@@ -48,9 +48,9 @@ Configuration of memory cache for static content
 
 ## Usages
 
-- [`server.features.static-content.classpath.memory-cache`](io.helidon.webserver.staticcontent.ClasspathHandlerConfig.md#memory-cache)
-- [`server.features.static-content.memory-cache`](io.helidon.webserver.staticcontent.StaticContentFeature.md#memory-cache)
-- [`server.features.static-content.path.memory-cache`](io.helidon.webserver.staticcontent.FileSystemHandlerConfig.md#memory-cache)
+- <a href="io.helidon.webserver.staticcontent.ClasspathHandlerConfig.md#memory-cache"><code>server.<wbr>features.<wbr>static-<wbr>content.<wbr>classpath.<wbr>memory-<wbr>cache</code></a>
+- <a href="io.helidon.webserver.staticcontent.StaticContentFeature.md#memory-cache"><code>server.<wbr>features.<wbr>static-<wbr>content.<wbr>memory-<wbr>cache</code></a>
+- <a href="io.helidon.webserver.staticcontent.FileSystemHandlerConfig.md#memory-cache"><code>server.<wbr>features.<wbr>static-<wbr>content.<wbr>path.<wbr>memory-<wbr>cache</code></a>
 
 ---
 

@@ -1,4 +1,4 @@
-# io.helidon.server.features.observe.observers.metrics.RestRequestConfig
+# io.<wbr>helidon.<wbr>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>Rest<wbr>Request<wbr>Config
 
 ## Description
 
@@ -36,7 +36,7 @@ Configuration for server.features.observe.observers.metrics.rest-request
 
 ## Usages
 
-- [`server.features.observe.observers.metrics.rest-request`](io.helidon.webserver.observe.metrics.MetricsObserver.md#rest-request)
+- <a href="io.helidon.webserver.observe.metrics.MetricsObserver.md#rest-request"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>rest-<wbr>request</code></a>
 
 ---
 

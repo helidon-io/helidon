@@ -4,8 +4,8 @@
 
 See the [root type](config_reference.md).
 
-- [com.acme.AcmeConfig](com.acme.AcmeConfig.md)
+- [com.<wbr>acme.<wbr>Acme<wbr>Config](com.acme.AcmeConfig.md)
 
 ## Provider Types
 
-- [com.acme.AcmeManager](com.acme.AcmeManager.md)
+- [com.<wbr>acme.<wbr>Acme<wbr>Manager](com.acme.AcmeManager.md)

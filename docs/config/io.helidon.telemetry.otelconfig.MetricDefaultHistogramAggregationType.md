@@ -1,4 +1,4 @@
-# io.helidon.telemetry.otelconfig.MetricDefaultHistogramAggregationType
+# io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Metric<wbr>Default<wbr>Histogram<wbr>Aggregation<wbr>Type
 
 ## Description
 

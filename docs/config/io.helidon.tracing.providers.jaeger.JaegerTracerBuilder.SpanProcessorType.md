@@ -1,4 +1,4 @@
-# io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.SpanProcessorType
+# io.<wbr>helidon.<wbr>tracing.<wbr>providers.<wbr>jaeger.<wbr>Jaeger<wbr>Tracer<wbr>Builder.<wbr>Span<wbr>Processor<wbr>Type
 
 ## Description
 
@@ -27,7 +27,7 @@ This type is an enumeration.
 
 ## Usages
 
-- [`tracing.span-processor-type`](io.helidon.TracingConfig.md#span-processor-type)
+- <a href="io.helidon.TracingConfig.md#span-processor-type"><code>tracing.<wbr>span-<wbr>processor-<wbr>type</code></a>
 
 ---
 

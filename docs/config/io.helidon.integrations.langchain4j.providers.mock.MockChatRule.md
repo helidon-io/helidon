@@ -1,4 +1,4 @@
-# io.helidon.integrations.langchain4j.providers.mock.MockChatRule
+# io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>mock.<wbr>Mock<wbr>Chat<wbr>Rule
 
 ## Description
 
@@ -50,7 +50,7 @@ Configuration blueprint for <code>Mock<wbr>Chat<wbr>Rule</code>
 
 ## Usages
 
-- [`langchain4j.providers.helidon-mock.rules`](io.helidon.langchain4j.providers.HelidonMockConfig.md#rules)
+- <a href="io.helidon.langchain4j.providers.HelidonMockConfig.md#rules"><code>langchain4j.<wbr>providers.<wbr>helidon-<wbr>mock.<wbr>rules</code></a>
 
 ---
 

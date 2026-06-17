@@ -1,4 +1,4 @@
-# io.helidon.tracing.SpanProcessorType
+# io.<wbr>helidon.<wbr>tracing.<wbr>Span<wbr>Processor<wbr>Type
 
 ## Description
 

@@ -4,5 +4,5 @@
 
 See the [root type](config_reference.md).
 
-- [com.acme.api.MetricsConfig](com.acme.api.MetricsConfig.md)
-- [com.acme.metrics.MetricsConfig](com.acme.metrics.MetricsConfig.md)
+- [com.<wbr>acme.<wbr>api.<wbr>Metrics<wbr>Config](com.acme.api.MetricsConfig.md)
+- [com.<wbr>acme.<wbr>metrics.<wbr>Metrics<wbr>Config](com.acme.metrics.MetricsConfig.md)

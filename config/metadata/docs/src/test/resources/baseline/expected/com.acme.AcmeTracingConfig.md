@@ -1,4 +1,4 @@
-# com.acme.AcmeTracingConfig
+# com.<wbr>acme.<wbr>Acme<wbr>Tracing<wbr>Config
 
 ## Description
 
@@ -58,7 +58,7 @@ ACME Tracing configuration
 
 ## Usages
 
-- [`server.features.tracing`](com.acme.AcmeFeature.md#tracing)
+- <a href="com.acme.AcmeFeature.md#tracing"><code>server.<wbr>features.<wbr>tracing</code></a>
 
 ---
 

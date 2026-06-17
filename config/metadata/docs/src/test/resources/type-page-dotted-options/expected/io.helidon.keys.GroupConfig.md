@@ -1,4 +1,4 @@
-# io.helidon.keys.GroupConfig
+# io.<wbr>helidon.<wbr>keys.<wbr>Group<wbr>Config
 
 ## Description
 
@@ -53,7 +53,7 @@ Configuration for keys.group
 
 ## Usages
 
-- [`keys.group`](com.acme.AcmeKeysConfig.md#group)
+- <a href="com.acme.AcmeKeysConfig.md#group"><code>keys.<wbr>group</code></a>
 
 ---
 

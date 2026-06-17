@@ -1,15 +1,5 @@
 # MicroProfile Server
 
-## Content
-
-- [Overview](#overview)
-- [Maven Coordinates](#maven-coordinates)
-- [Usage](#usage)
-- [API](#api)
-- [Configuration](#configuration)
-- [Examples](#examples)
-- [Reference](#reference)
-
 ## Overview
 
 Helidon provides a MicroProfile server implementation
@@ -60,8 +50,9 @@ applications easier to understand and maintain.
 ## API
 
 The following table provides a brief description of routing annotations,
-including its parameters. More information in `Configuring a WebServer route`
-section.
+including its parameters.
+
+See More information in the [`HttpService`](#httpservice) section.
 
 <table>
 <thead>
@@ -72,17 +63,26 @@ section.
 </thead>
 <tbody>
 <tr>
-<td><code>@RoutingName(<wbr>value = &quot;&quot;,<wbr> required = false)</code></td>
-<td><p>Binds a JAX-RS Application or Helidon Service to a specific (named) routing on <code>WebServer</code>.The routing should have a corresponding named socket configured on the WebServer to run the routing on.</p></td>
+<td>
+<!-- @code java --><pre><code>@RoutingName(<wbr>value = &quot;&quot;,<wbr> required = false)</code></pre>
+</td>
+<td style="vertical-align: middle">
+Binds a JAX-RS Application or Helidon Service to a specific (named) routing on <code>WebServer</code>.
+The routing should have a corresponding named socket configured on the WebServer to run the routing on.
+</td>
 </tr>
 <tr>
-<td><pre><code>@RoutingPath(<wbr>&quot;/path&quot;)<wbr></code></pre></td>
-<td><p>Path of a Helidon Service to register with routing.</p></td>
+<td>
+<!-- @code java --><pre><code>@RoutingPath(<wbr>&quot;/path&quot;)<wbr></code></pre>
+</td>
+<td style="vertical-align: middle">
+Path of a Helidon Service to register with routing.
+</td>
 </tr>
 </tbody>
 </table>
 
-## Configuration
+### Configuration options
 
 By default, the server uses the MicroProfile Config, but you may also want to
 use [Helidon configuration](config/introduction.md).
@@ -92,16 +92,11 @@ configuration options.
 
 Configuration reference:
 
-### Configuration options
-
 <!--@include ../config/io.helidon.webserver.WebServer.md#configuration-options delim=--- offset=1 collapseTables=10 -->
 See [Configuration options][io-helidon-webse].
 <!--/include-->
 
-
-## Examples
-
-### Access Log
+## Access Log
 
 Access logging in Helidon is done by a dedicated module that can be added to
 Maven and configured.
@@ -115,38 +110,21 @@ To enable Access logging add the following dependency to project’s `pom.xml`:
 </dependency>
 ```
 
-### Configuring Access Log in a configuration file
-
-Access log can be configured as follows:
-
-Access Log configuration file:
-
-```properties
-server.port=8080
-server.host=0.0.0.0
-server.features.access-log.format=helidon
-```
-
-## io.helidon.webserver.accesslog.AccessLogFeature
-
-### Description
-
-Configuration of access log feature.
-
-### Usages
-
-- [`server.features.access-log`][server-features]
-
 ### Configuration options
 
 <!--@include ../config/io.helidon.webserver.accesslog.AccessLogFeature.md#configuration-options delim=--- offset=1 collapseTables=10 -->
 See [Configuration options][io-helidon-webse-2].
 <!--/include-->
 
+### Configuration Example
 
-See the [manifest](../config/manifest.md) for all available types.
+```properties [microprofile-config.properties]
+server.port=8080
+server.host=0.0.0.0
+server.features.access-log.format=helidon
+```
 
-### Configuring TLS
+## TLS
 
 Helidon MP also supports custom TLS configuration.
 
@@ -197,7 +175,7 @@ server:
 - File loaded from the classpath.
 - File loaded from the file system.
 
-### Configuring additional ports
+## Additional Ports
 
 Helidon MP can expose multiple ports, with the following limitations:
 
@@ -241,7 +219,7 @@ server.sockets.0.bind-address=localhost
 server.features.observe.sockets=admin
 ```
 
-### Configuring A WebServer Route
+## `HTTPService`
 
 Helidon MP Server will pick up CDI beans that implement the
 `io.helidon.webserver.HttpService` interface and configure them with the
@@ -257,14 +235,10 @@ The bean will support injection of `ApplicationScoped` and `Dependent` scoped
 beans. You cannot inject `RequestScoped` beans. Please use WebServer features to
 handle request related objects.
 
-#### Customizing the HTTP service
-
 The service can be customized using annotations and/or configuration to be
 
 - registered on a specific path
 - registered with a named routing
-
-#### Assigning an HTTP service to named ports
 
 Helidon has the concept of named routing. These correspond to the named ports
 configured with WebServer.
@@ -273,17 +247,16 @@ You can assign an HTTP service to a named routing (and as a result to a named
 port) using either an annotation or configuration (or both to override the value
 from annotation).
 
-##### Annotation `@RoutingName`
+### `@RoutingName`
 
 You can annotate a service bean with this annotation to assign it to a specific
-named routing, that is (most likely) going to be bound to a specific port.
+named routing.
 
-The annotation has two attributes: - `value` that defines the routing name -
-`required` to mark that the routing name MUST be configured in Helidon server
+The annotation has two attributes:
+- `value` that defines the routing name
+- `required` to mark that the routing name MUST be configured
 
-@RoutingName example:
-
-```java
+```java [AdminService.java]
 @ApplicationScoped
 @RoutingName(value = "admin", required = true)
 @RoutingPath("/admin")
@@ -298,7 +271,7 @@ public class AdminService implements HttpService {
 The example above will be bound to `admin` routing (and port) and will fail if
 such a port is not configured.
 
-##### Configuration override of routing name
+#### Configuration Override
 
 For each service bean you can define the routing name and its required flag by
 specifying a configuration option `bean-class-name.routing-name.name` and
@@ -317,19 +290,15 @@ io.helidon.examples.AdminService:
     required: false
 ```
 
-#### Configuring an HTTP service path
+### `@RoutingPath`
 
-Each service is registered on a path. If none is configured, then the service
-would be configured on the root path.
+You can configure `@RoutingPath` to define the path a service is registered on.
+If none is configured, then the service would be configured on the root path.
 
 You can configure service path using an annotation or configuration (or both to
 override value from annotation)
 
-##### Annotation `@RoutingPath`
-
-You can configure `@RoutingPath` to define the path a service is registered on.
-
-##### Configuration override of routing path
+##### Configuration Override
 
 For each HTTP service class you can define the routing path by specifying a
 configuration option `class-name.routing-path.path`. The `routing-path`
@@ -345,7 +314,7 @@ io.helidon.examples.AdminService:
     path: "/management"
 ```
 
-### Serving Static Content
+## Static Content
 
 File system static content:
 
@@ -391,7 +360,7 @@ See [Static Content Feature Configuration Reference][static-content-f] for
 details. The only difference is that we set welcome file to `index.html` by
 default.
 
-### Re-direct root using `server.base-path`
+### Root re-direct
 
 To redirect requests for the root path (`/`) to another path you can use the
 `server.base-path` property:
@@ -409,7 +378,7 @@ Note that this feature is not for setting a context root for applications. To
 configure alternate context roots see [Setting Application
 Path][setting-applicat].
 
-### Example configuration of routing
+### Configuration Example
 
 A full configuration example (YAML):
 
@@ -428,7 +397,7 @@ io.helidon.examples.AdminApplication:
     path: "/management"
 ```
 
-### Using Requested URI Discovery
+## Requested URI Discovery
 
 Proxies and reverse proxies between an HTTP client and your Helidon application
 mask important information (for example `Host` header, originating IP address,

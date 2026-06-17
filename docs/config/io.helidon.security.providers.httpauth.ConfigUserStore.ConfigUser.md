@@ -1,4 +1,4 @@
-# io.helidon.security.providers.httpauth.ConfigUserStore.ConfigUser
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>httpauth.<wbr>Config<wbr>User<wbr>Store.<wbr>Config<wbr>User
 
 ## Description
 
@@ -50,10 +50,10 @@ A user that is loaded from configuration
 
 ## Usages
 
-- [`security.providers.http-basic-auth.users`](io.helidon.security.providers.httpauth.HttpBasicAuthProvider.md#users)
-- [`security.providers.http-digest-auth.users`](io.helidon.security.providers.httpauth.HttpDigestAuthProvider.md#users)
-- [`server.features.security.security.providers.http-basic-auth.users`](io.helidon.security.providers.httpauth.HttpBasicAuthProvider.md#users)
-- [`server.features.security.security.providers.http-digest-auth.users`](io.helidon.security.providers.httpauth.HttpDigestAuthProvider.md#users)
+- <a href="io.helidon.security.providers.httpauth.HttpBasicAuthProvider.md#users"><code>security.<wbr>providers.<wbr>http-<wbr>basic-<wbr>auth.<wbr>users</code></a>
+- <a href="io.helidon.security.providers.httpauth.HttpDigestAuthProvider.md#users"><code>security.<wbr>providers.<wbr>http-<wbr>digest-<wbr>auth.<wbr>users</code></a>
+- <a href="io.helidon.security.providers.httpauth.HttpBasicAuthProvider.md#users"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>http-<wbr>basic-<wbr>auth.<wbr>users</code></a>
+- <a href="io.helidon.security.providers.httpauth.HttpDigestAuthProvider.md#users"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>http-<wbr>digest-<wbr>auth.<wbr>users</code></a>
 
 ---
 

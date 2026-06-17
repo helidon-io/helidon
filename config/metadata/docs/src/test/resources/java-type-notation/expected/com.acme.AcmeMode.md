@@ -1,4 +1,4 @@
-# com.acme.AcmeMode
+# com.<wbr>acme.<wbr>Acme<wbr>Mode
 
 ## Description
 
@@ -27,8 +27,8 @@ This type is an enumeration.
 
 ## Usages
 
-- [`server.mode`](com.acme.AcmeServerConfig.md#mode)
-- [`server.modes`](com.acme.AcmeServerConfig.md#modes)
+- <a href="com.acme.AcmeServerConfig.md#mode"><code>server.<wbr>mode</code></a>
+- <a href="com.acme.AcmeServerConfig.md#modes"><code>server.<wbr>modes</code></a>
 
 ---
 

@@ -1,4 +1,4 @@
-# io.helidon.tracing.providers.opentracing.OpenTracingTracerBuilder
+# io.<wbr>helidon.<wbr>tracing.<wbr>providers.<wbr>opentracing.<wbr>Open<wbr>Tracing<wbr>Tracer<wbr>Builder
 
 ## Description
 

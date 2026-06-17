@@ -1,4 +1,4 @@
-# com.acme.ZebraFeatureConfig
+# com.<wbr>acme.<wbr>Zebra<wbr>Feature<wbr>Config
 
 ## Description
 

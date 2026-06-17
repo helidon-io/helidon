@@ -1,4 +1,4 @@
-# io.helidon.integrations.langchain4j.McpClientConfig
+# io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>McpClient<wbr>Config
 
 ## Description
 

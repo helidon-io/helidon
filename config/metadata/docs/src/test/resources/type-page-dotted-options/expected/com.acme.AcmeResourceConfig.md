@@ -1,4 +1,4 @@
-# com.acme.AcmeResourceConfig
+# com.<wbr>acme.<wbr>Acme<wbr>Resource<wbr>Config
 
 ## Description
 
@@ -32,8 +32,8 @@ Resource configuration.
 
 ## Usages
 
-- [`keys.group.resource`](io.helidon.keys.GroupConfig.md#resource)
-- [`keys.resource`](com.acme.AcmeKeysConfig.md#resource)
+- <a href="io.helidon.keys.GroupConfig.md#resource"><code>keys.<wbr>group.<wbr>resource</code></a>
+- <a href="com.acme.AcmeKeysConfig.md#resource"><code>keys.<wbr>resource</code></a>
 
 ---
 

@@ -1,4 +1,4 @@
-# io.helidon.messaging.connectors.kafka.KafkaConfigBuilder
+# io.<wbr>helidon.<wbr>messaging.<wbr>connectors.<wbr>kafka.<wbr>Kafka<wbr>Config<wbr>Builder
 
 ## Description
 

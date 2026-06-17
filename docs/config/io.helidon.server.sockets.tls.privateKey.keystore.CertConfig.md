@@ -1,4 +1,4 @@
-# io.helidon.server.sockets.tls.privateKey.keystore.CertConfig
+# io.<wbr>helidon.<wbr>server.<wbr>sockets.<wbr>tls.<wbr>private<wbr>Key.<wbr>keystore.<wbr>Cert<wbr>Config
 
 ## Description
 
@@ -32,7 +32,7 @@ Configuration for server.sockets.tls.private-key.keystore.cert
 
 ## Usages
 
-- [`server.sockets.tls.private-key.keystore.cert`](io.helidon.common.pki.KeystoreKeys.md#cert)
+- <a href="io.helidon.common.pki.KeystoreKeys.md#cert"><code>server.<wbr>sockets.<wbr>tls.<wbr>private-<wbr>key.<wbr>keystore.<wbr>cert</code></a>
 
 ---
 

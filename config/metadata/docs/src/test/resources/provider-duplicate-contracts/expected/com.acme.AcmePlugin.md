@@ -1,4 +1,4 @@
-# com.acme.AcmePlugin
+# com.<wbr>acme.<wbr>Acme<wbr>Plugin
 
 ## Description
 
@@ -18,6 +18,7 @@ This type is a provider contract.
 <tbody>
 <tr>
 <td>
+<a id="alpha"></a>
 <a href="com.acme.AlphaFeatureConfig.md">
 <code>alpha</code>
 </a>
@@ -26,6 +27,7 @@ This type is a provider contract.
 </tr>
 <tr>
 <td>
+<a id="beta"></a>
 <a href="com.acme.BetaFeatureConfig.md">
 <code>beta</code>
 </a>
@@ -39,7 +41,7 @@ This type is a provider contract.
 
 ## Usages
 
-- [`server.plugins`](com.acme.AcmeServerConfig.md#plugins)
+- <a href="com.acme.AcmeServerConfig.md#plugins"><code>server.<wbr>plugins</code></a>
 
 ---
 

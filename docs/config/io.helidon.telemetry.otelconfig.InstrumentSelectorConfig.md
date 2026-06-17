@@ -1,4 +1,4 @@
-# io.helidon.telemetry.otelconfig.InstrumentSelectorConfig
+# io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Instrument<wbr>Selector<wbr>Config
 
 ## Description
 

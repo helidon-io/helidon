@@ -1,4 +1,4 @@
-# io.helidon.tracing.providers.zipkin.ZipkinTracerBuilder.Version
+# io.<wbr>helidon.<wbr>tracing.<wbr>providers.<wbr>zipkin.<wbr>Zipkin<wbr>Tracer<wbr>Builder.<wbr>Version
 
 ## Description
 
@@ -27,7 +27,7 @@ This type is an enumeration.
 
 ## Usages
 
-- [`tracing.api-version`](io.helidon.TracingConfig.md#api-version)
+- <a href="io.helidon.TracingConfig.md#api-version"><code>tracing.<wbr>api-<wbr>version</code></a>
 
 ---
 

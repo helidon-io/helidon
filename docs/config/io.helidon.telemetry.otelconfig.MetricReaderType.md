@@ -1,4 +1,4 @@
-# io.helidon.telemetry.otelconfig.MetricReaderType
+# io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Metric<wbr>Reader<wbr>Type
 
 ## Description
 

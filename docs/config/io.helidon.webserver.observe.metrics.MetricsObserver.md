@@ -1,4 +1,4 @@
-# io.helidon.webserver.observe.metrics.MetricsObserver
+# io.<wbr>helidon.<wbr>webserver.<wbr>observe.<wbr>metrics.<wbr>Metrics<wbr>Observer
 
 ## Description
 
@@ -281,7 +281,7 @@ Metrics Observer configuration
 
 ## Usages
 
-- [`server.features.observe.observers.metrics`](io.helidon.webserver.observe.spi.Observer.md#metrics)
+- <a href="io.helidon.webserver.observe.spi.Observer.md#metrics"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics</code></a>
 
 ---
 

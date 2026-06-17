@@ -1,4 +1,4 @@
-# io.helidon.security.providers.idcsRoleMapper.oidcConfig.tenants.DecryptionKeysConfig
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>idcs<wbr>Role<wbr>Mapper.<wbr>oidc<wbr>Config.<wbr>tenants.<wbr>Decryption<wbr>Keys<wbr>Config
 
 ## Description
 
@@ -35,7 +35,7 @@ Configuration for security.providers.idcs-role-mapper.oidc-config.tenants.decryp
 
 ## Usages
 
-- [`security.providers.idcs-role-mapper.oidc-config.tenants.decryption-keys`](io.helidon.security.providers.oidc.common.TenantConfig.md#decryption-keys)
+- <a href="io.helidon.security.providers.oidc.common.TenantConfig.md#decryption-keys"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>tenants.<wbr>decryption-<wbr>keys</code></a>
 
 ---
 

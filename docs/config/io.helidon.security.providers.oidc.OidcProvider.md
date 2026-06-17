@@ -1,4 +1,4 @@
-# io.helidon.security.providers.oidc.OidcProvider
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>Oidc<wbr>Provider
 
 ## Description
 
@@ -66,6 +66,18 @@ Open ID Connect security provider
 <code>id_<wbr>token</code>
 </td>
 <td>Name of a query parameter that contains the JWT id token when parameter is used</td>
+</tr>
+<tr>
+<td>
+<code>jwt-<wbr>groups-<wbr>path</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>
+<code>groups</code>
+</td>
+<td>Path to the JWT payload claim containing the groups to add as role grants</td>
 </tr>
 <tr>
 <td>
@@ -210,6 +222,21 @@ Open ID Connect security provider
 </tr>
 <tr>
 <td>
+<a id="redirect-attempt-counter-strategy"></a>
+<a href="io.helidon.security.providers.oidc.common.RedirectAttemptCounterStrategy.md">
+<code>redirect-<wbr>attempt-<wbr>counter-<wbr>strategy</code>
+</a>
+</td>
+<td>
+<code>Redirect<wbr>Attempt<wbr>Counter<wbr>Strategy</code>
+</td>
+<td>
+<code>PARAM</code>
+</td>
+<td>Configure the strategy used to count redirects to an identity server</td>
+</tr>
+<tr>
+<td>
 <code>cookie-<wbr>domain</code>
 </td>
 <td>
@@ -218,6 +245,17 @@ Open ID Connect security provider
 <td>
 </td>
 <td>Domain the cookie is valid for</td>
+</tr>
+<tr>
+<td>
+<code>jwt-<wbr>groups-<wbr>separator</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>
+</td>
+<td>Separator used to split a string claim value into multiple groups</td>
 </tr>
 <tr>
 <td>
@@ -464,7 +502,7 @@ Open ID Connect security provider
 </td>
 <td>
 </td>
-<td>Master password for encryption/decryption of cookies</td>
+<td>Master password for encryption/decryption of cookies. Configure the same value on each service that shares encrypted cookies. If encrypted cookies are enabled and neither this option nor cookie-encryption-name is configured, Helidon creates or reads .helidon-oidc-secret in the current working directory</td>
 </tr>
 <tr>
 <td>
@@ -535,7 +573,7 @@ Open ID Connect security provider
 </td>
 <td>
 </td>
-<td>Name of the encryption configuration available through <code>Security#<wbr>encrypt(<wbr>String,<wbr> byte[])</code> and <code>Security#<wbr>decrypt(<wbr>String,<wbr> String)</code></td>
+<td>Name of the encryption configuration available through Security encryption. If configured and encryption is enabled for any cookie, Security must be registered in the global or current context</td>
 </tr>
 <tr>
 <td>
@@ -583,7 +621,7 @@ Open ID Connect security provider
 <td>
 <code>h_<wbr>ra</code>
 </td>
-<td>Configure the parameter used to store the number of attempts in redirect</td>
+<td>Configure the redirect attempt query parameter and cookie name prefix</td>
 </tr>
 </tbody>
 </table>
@@ -643,8 +681,8 @@ Open ID Connect security provider
 
 ## Usages
 
-- [`security.providers.oidc`](io.helidon.security.spi.SecurityProvider.md#oidc)
-- [`server.features.security.security.providers.oidc`](io.helidon.security.spi.SecurityProvider.md#oidc)
+- <a href="io.helidon.security.spi.SecurityProvider.md#oidc"><code>security.<wbr>providers.<wbr>oidc</code></a>
+- <a href="io.helidon.security.spi.SecurityProvider.md#oidc"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc</code></a>
 
 ---
 

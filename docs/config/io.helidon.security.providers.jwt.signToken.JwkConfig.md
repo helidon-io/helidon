@@ -1,4 +1,4 @@
-# io.helidon.security.providers.jwt.signToken.JwkConfig
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>jwt.<wbr>sign<wbr>Token.<wbr>JwkConfig
 
 ## Description
 
@@ -35,7 +35,7 @@ Configuration for security.providers.jwt.sign-token.jwk
 
 ## Usages
 
-- [`security.providers.jwt.sign-token.jwk`](io.helidon.security.providers.common.OutboundConfig.md#jwk)
+- <a href="io.helidon.security.providers.common.OutboundConfig.md#jwk"><code>security.<wbr>providers.<wbr>jwt.<wbr>sign-<wbr>token.<wbr>jwk</code></a>
 
 ---
 

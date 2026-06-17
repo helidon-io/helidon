@@ -1,4 +1,4 @@
-# io.helidon.metrics.api.MetricsConfig
+# io.<wbr>helidon.<wbr>metrics.<wbr>api.<wbr>Metrics<wbr>Config
 
 ## Description
 
@@ -266,7 +266,7 @@ Configuration settings for metrics
 
 ## Dependent Types
 
-- [io.helidon.webserver.observe.metrics.MetricsObserver](io.helidon.webserver.observe.metrics.MetricsObserver.md)
+- [io.<wbr>helidon.<wbr>webserver.<wbr>observe.<wbr>metrics.<wbr>Metrics<wbr>Observer](io.helidon.webserver.observe.metrics.MetricsObserver.md)
 
 ---
 

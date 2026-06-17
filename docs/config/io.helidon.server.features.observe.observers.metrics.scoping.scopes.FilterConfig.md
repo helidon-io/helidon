@@ -1,4 +1,4 @@
-# io.helidon.server.features.observe.observers.metrics.scoping.scopes.FilterConfig
+# io.<wbr>helidon.<wbr>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>scoping.<wbr>scopes.<wbr>Filter<wbr>Config
 
 ## Description
 
@@ -41,7 +41,7 @@ Configuration for server.features.observe.observers.metrics.scoping.scopes.filte
 
 ## Usages
 
-- [`server.features.observe.observers.metrics.scoping.scopes.filter`](io.helidon.metrics.api.ScopeConfig.md#filter)
+- <a href="io.helidon.metrics.api.ScopeConfig.md#filter"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>scoping.<wbr>scopes.<wbr>filter</code></a>
 
 ---
 

@@ -1,4 +1,4 @@
-# io.helidon.integrations.langchain4j.providers.oracle.JsonIndexConfig
+# io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>oracle.<wbr>Json<wbr>Index<wbr>Config
 
 ## Description
 
@@ -62,7 +62,7 @@
 
 ## Usages
 
-- [`langchain4j.providers.oracle.json-index`](io.helidon.integrations.langchain4j.providers.oracle.OracleEmbeddingStoreConfig.md#json-index)
+- <a href="io.helidon.integrations.langchain4j.providers.oracle.OracleEmbeddingStoreConfig.md#json-index"><code>langchain4j.<wbr>providers.<wbr>oracle.<wbr>json-<wbr>index</code></a>
 
 ---
 

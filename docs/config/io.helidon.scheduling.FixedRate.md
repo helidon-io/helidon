@@ -1,4 +1,4 @@
-# io.helidon.scheduling.FixedRate
+# io.<wbr>helidon.<wbr>scheduling.<wbr>Fixed<wbr>Rate
 
 ## Description
 

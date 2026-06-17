@@ -1,4 +1,4 @@
-# dev.langchain4j.store.embedding.oracle.CreateOption
+# dev.<wbr>langchain4j.<wbr>store.<wbr>embedding.<wbr>oracle.<wbr>Create<wbr>Option
 
 ## Description
 
@@ -31,11 +31,11 @@ This type is an enumeration.
 
 ## Usages
 
-- [`langchain4j.providers.oracle.embedding-table.create-option`](io.helidon.integrations.langchain4j.providers.oracle.EmbeddingTableConfig.md#create-option)
-- [`langchain4j.providers.oracle.ivf-index.create-option`](io.helidon.integrations.langchain4j.providers.oracle.IvfIndexConfig.md#create-option)
-- [`langchain4j.providers.oracle.json-index.create-option`](io.helidon.integrations.langchain4j.providers.oracle.JsonIndexConfig.md#create-option)
-- [`langchain4j.providers.oracle.oracle.create-option`](io.helidon.integrations.langchain4j.providers.oracle.EmbeddingTableConfig.md#create-option)
-- [`langchain4j.providers.oracle.vector-index`](io.helidon.integrations.langchain4j.providers.oracle.OracleEmbeddingStoreConfig.md#vector-index)
+- <a href="io.helidon.integrations.langchain4j.providers.oracle.EmbeddingTableConfig.md#create-option"><code>langchain4j.<wbr>providers.<wbr>oracle.<wbr>embedding-<wbr>table.<wbr>create-<wbr>option</code></a>
+- <a href="io.helidon.integrations.langchain4j.providers.oracle.IvfIndexConfig.md#create-option"><code>langchain4j.<wbr>providers.<wbr>oracle.<wbr>ivf-<wbr>index.<wbr>create-<wbr>option</code></a>
+- <a href="io.helidon.integrations.langchain4j.providers.oracle.JsonIndexConfig.md#create-option"><code>langchain4j.<wbr>providers.<wbr>oracle.<wbr>json-<wbr>index.<wbr>create-<wbr>option</code></a>
+- <a href="io.helidon.integrations.langchain4j.providers.oracle.EmbeddingTableConfig.md#create-option"><code>langchain4j.<wbr>providers.<wbr>oracle.<wbr>oracle.<wbr>create-<wbr>option</code></a>
+- <a href="io.helidon.integrations.langchain4j.providers.oracle.OracleEmbeddingStoreConfig.md#vector-index"><code>langchain4j.<wbr>providers.<wbr>oracle.<wbr>vector-<wbr>index</code></a>
 
 ---
 

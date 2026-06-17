@@ -1,4 +1,4 @@
-# io.helidon.telemetry.otelconfig.SamplerType
+# io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Sampler<wbr>Type
 
 ## Description
 

@@ -1,4 +1,4 @@
-# io.helidon.security.providers.oidc.webclient.tls.privateKey.pem.KeyConfig
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>private<wbr>Key.<wbr>pem.<wbr>KeyConfig
 
 ## Description
 
@@ -44,7 +44,7 @@ Configuration for security.providers.oidc.webclient.tls.private-key.pem.key
 
 ## Usages
 
-- [`security.providers.oidc.webclient.tls.private-key.pem.key`](io.helidon.common.pki.PemKeys.md#key)
+- <a href="io.helidon.common.pki.PemKeys.md#key"><code>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>private-<wbr>key.<wbr>pem.<wbr>key</code></a>
 
 ---
 

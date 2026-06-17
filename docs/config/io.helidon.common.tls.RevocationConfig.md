@@ -1,4 +1,4 @@
-# io.helidon.common.tls.RevocationConfig
+# io.<wbr>helidon.<wbr>common.<wbr>tls.<wbr>Revocation<wbr>Config
 
 ## Description
 
@@ -27,7 +27,7 @@ Certificate revocation configuration
 <td>
 <code>false</code>
 </td>
-<td>Allow revocation check to succeed if the revocation status cannot be determined for one of the following reasons: <ul>  <li>The CRL or OCSP response cannot be obtained because of a      network error.</li></ul></td>
+<td>Allow revocation check to succeed if the revocation status cannot be determined for one of the following reasons: <ul>  <li>The CRL or OCSP response cannot be obtained because of a      network error</td>
 </tr>
 <tr>
 <td>
@@ -95,13 +95,13 @@ Certificate revocation configuration
 
 ## Usages
 
-- [`clients.tls.revocation`](io.helidon.common.tls.Tls.md#revocation)
-- [`security.providers.idcs-role-mapper.oidc-config.webclient.tls.revocation`](io.helidon.common.tls.Tls.md#revocation)
-- [`security.providers.oidc.webclient.tls.revocation`](io.helidon.common.tls.Tls.md#revocation)
-- [`server.features.security.security.providers.idcs-role-mapper.oidc-config.webclient.tls.revocation`](io.helidon.common.tls.Tls.md#revocation)
-- [`server.features.security.security.providers.oidc.webclient.tls.revocation`](io.helidon.common.tls.Tls.md#revocation)
-- [`server.sockets.tls.revocation`](io.helidon.common.tls.Tls.md#revocation)
-- [`server.tls.revocation`](io.helidon.common.tls.Tls.md#revocation)
+- <a href="io.helidon.common.tls.Tls.md#revocation"><code>clients.<wbr>tls.<wbr>revocation</code></a>
+- <a href="io.helidon.common.tls.Tls.md#revocation"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>tls.<wbr>revocation</code></a>
+- <a href="io.helidon.common.tls.Tls.md#revocation"><code>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>revocation</code></a>
+- <a href="io.helidon.common.tls.Tls.md#revocation"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>tls.<wbr>revocation</code></a>
+- <a href="io.helidon.common.tls.Tls.md#revocation"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>revocation</code></a>
+- <a href="io.helidon.common.tls.Tls.md#revocation"><code>server.<wbr>sockets.<wbr>tls.<wbr>revocation</code></a>
+- <a href="io.helidon.common.tls.Tls.md#revocation"><code>server.<wbr>tls.<wbr>revocation</code></a>
 
 ---
 

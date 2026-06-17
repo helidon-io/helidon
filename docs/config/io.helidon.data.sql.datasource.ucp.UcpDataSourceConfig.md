@@ -1,4 +1,4 @@
-# io.helidon.data.sql.datasource.ucp.UcpDataSourceConfig
+# io.<wbr>helidon.<wbr>data.<wbr>sql.<wbr>datasource.<wbr>ucp.<wbr>UcpData<wbr>Source<wbr>Config
 
 ## Description
 
@@ -410,7 +410,7 @@ UCP specific configuration for <code>javax.<wbr>sql.<wbr>Data<wbr>Source</code>
 
 ## Usages
 
-- [`data.sources.sql.provider.ucp`](io.helidon.data.sql.datasource.ProviderConfig.md#ucp)
+- <a href="io.helidon.data.sql.datasource.ProviderConfig.md#ucp"><code>data.<wbr>sources.<wbr>sql.<wbr>provider.<wbr>ucp</code></a>
 
 ---
 

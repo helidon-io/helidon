@@ -1,4 +1,4 @@
-# com.acme.AcmeIvfIndexConfig
+# com.<wbr>acme.<wbr>Acme<wbr>IvfIndex<wbr>Config
 
 ## Description
 
@@ -11,7 +11,7 @@ This config type has no options.
 
 ## Usages
 
-- [`store.ivf-index`](com.acme.AcmeStoreConfig.md#ivf-index)
+- <a href="com.acme.AcmeStoreConfig.md#ivf-index"><code>store.<wbr>ivf-<wbr>index</code></a>
 
 ---
 

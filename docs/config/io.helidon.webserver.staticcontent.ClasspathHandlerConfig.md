@@ -1,4 +1,4 @@
-# io.helidon.webserver.staticcontent.ClasspathHandlerConfig
+# io.<wbr>helidon.<wbr>webserver.<wbr>staticcontent.<wbr>Classpath<wbr>Handler<wbr>Config
 
 ## Description
 
@@ -153,7 +153,7 @@ Classpath based static content handler configuration
 
 ## Usages
 
-- [`server.features.static-content.classpath`](io.helidon.webserver.staticcontent.StaticContentFeature.md#classpath)
+- <a href="io.helidon.webserver.staticcontent.StaticContentFeature.md#classpath"><code>server.<wbr>features.<wbr>static-<wbr>content.<wbr>classpath</code></a>
 
 ---
 

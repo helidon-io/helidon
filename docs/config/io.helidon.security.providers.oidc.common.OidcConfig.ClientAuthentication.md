@@ -1,4 +1,4 @@
-# io.helidon.security.providers.oidc.common.OidcConfig.ClientAuthentication
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>common.<wbr>Oidc<wbr>Config.<wbr>Client<wbr>Authentication
 
 ## Description
 
@@ -43,12 +43,12 @@ This type is an enumeration.
 
 ## Usages
 
-- [`security.providers.idcs-role-mapper.oidc-config.tenants.token-endpoint-auth`](io.helidon.security.providers.oidc.common.TenantConfig.md#token-endpoint-auth)
-- [`security.providers.idcs-role-mapper.oidc-config.token-endpoint-auth`](io.helidon.security.providers.oidc.common.OidcConfig.md#token-endpoint-auth)
-- [`security.providers.oidc.tenants.token-endpoint-auth`](io.helidon.security.providers.oidc.common.TenantConfig.md#token-endpoint-auth)
-- [`server.features.security.security.providers.idcs-role-mapper.oidc-config.tenants.token-endpoint-auth`](io.helidon.security.providers.oidc.common.TenantConfig.md#token-endpoint-auth)
-- [`server.features.security.security.providers.idcs-role-mapper.oidc-config.token-endpoint-auth`](io.helidon.security.providers.oidc.common.OidcConfig.md#token-endpoint-auth)
-- [`server.features.security.security.providers.oidc.tenants.token-endpoint-auth`](io.helidon.security.providers.oidc.common.TenantConfig.md#token-endpoint-auth)
+- <a href="io.helidon.security.providers.oidc.common.TenantConfig.md#token-endpoint-auth"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>tenants.<wbr>token-<wbr>endpoint-<wbr>auth</code></a>
+- <a href="io.helidon.security.providers.oidc.common.OidcConfig.md#token-endpoint-auth"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>token-<wbr>endpoint-<wbr>auth</code></a>
+- <a href="io.helidon.security.providers.oidc.common.TenantConfig.md#token-endpoint-auth"><code>security.<wbr>providers.<wbr>oidc.<wbr>tenants.<wbr>token-<wbr>endpoint-<wbr>auth</code></a>
+- <a href="io.helidon.security.providers.oidc.common.TenantConfig.md#token-endpoint-auth"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>tenants.<wbr>token-<wbr>endpoint-<wbr>auth</code></a>
+- <a href="io.helidon.security.providers.oidc.common.OidcConfig.md#token-endpoint-auth"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>token-<wbr>endpoint-<wbr>auth</code></a>
+- <a href="io.helidon.security.providers.oidc.common.TenantConfig.md#token-endpoint-auth"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>tenants.<wbr>token-<wbr>endpoint-<wbr>auth</code></a>
 
 ---
 

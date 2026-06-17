@@ -1,4 +1,4 @@
-# io.helidon.server.tls.privateKey.pem.PublicKeyConfig
+# io.<wbr>helidon.<wbr>server.<wbr>tls.<wbr>private<wbr>Key.<wbr>pem.<wbr>Public<wbr>KeyConfig
 
 ## Description
 
@@ -35,7 +35,7 @@ Configuration for server.tls.private-key.pem.public-key
 
 ## Usages
 
-- [`server.tls.private-key.pem.public-key`](io.helidon.common.pki.PemKeys.md#public-key)
+- <a href="io.helidon.common.pki.PemKeys.md#public-key"><code>server.<wbr>tls.<wbr>private-<wbr>key.<wbr>pem.<wbr>public-<wbr>key</code></a>
 
 ---
 

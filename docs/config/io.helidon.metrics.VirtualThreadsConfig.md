@@ -1,4 +1,4 @@
-# io.helidon.metrics.VirtualThreadsConfig
+# io.<wbr>helidon.<wbr>metrics.<wbr>Virtual<wbr>Threads<wbr>Config
 
 ## Description
 
@@ -49,7 +49,7 @@ Configuration for metrics.virtual-threads
 
 ## Usages
 
-- [`metrics.virtual-threads`](io.helidon.MetricsConfig.md#virtual-threads)
+- <a href="io.helidon.MetricsConfig.md#virtual-threads"><code>metrics.<wbr>virtual-<wbr>threads</code></a>
 
 ---
 

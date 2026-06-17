@@ -1,4 +1,4 @@
-# io.helidon.telemetry.otelconfig.OtlpHttpExporterConfig
+# io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Otlp<wbr>Http<wbr>Exporter<wbr>Config
 
 ## Description
 

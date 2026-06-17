@@ -1,4 +1,4 @@
-# dev.langchain4j.model.embedding.onnx.PoolingMode
+# dev.<wbr>langchain4j.<wbr>model.<wbr>embedding.<wbr>onnx.<wbr>Pooling<wbr>Mode
 
 ## Description
 
@@ -27,7 +27,7 @@ This type is an enumeration.
 
 ## Usages
 
-- [`langchain4j.providers.lc4j-in-process.pooling-mode`](io.helidon.integrations.langchain4j.providers.lc4jinprocess.InProcessEmbeddingModelConfig.md#pooling-mode)
+- <a href="io.helidon.integrations.langchain4j.providers.lc4jinprocess.InProcessEmbeddingModelConfig.md#pooling-mode"><code>langchain4j.<wbr>providers.<wbr>lc4j-<wbr>in-process.<wbr>pooling-<wbr>mode</code></a>
 
 ---
 

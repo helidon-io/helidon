@@ -1,4 +1,4 @@
-# io.helidon.integrations.langchain4j.providers.jlama.JlamaChatModelConfig
+# io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>jlama.<wbr>Jlama<wbr>Chat<wbr>Model<wbr>Config
 
 ## Description
 

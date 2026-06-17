@@ -1,4 +1,4 @@
-# com.acme.AcmeConfig
+# com.<wbr>acme.<wbr>Acme<wbr>Config
 
 ## Description
 
@@ -35,7 +35,7 @@ ACME configuration.
 
 ## Usages
 
-- [`acme`](config_reference.md#acme)
+- <a href="config_reference.md#acme"><code>acme</code></a>
 
 ---
 

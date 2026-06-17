@@ -1,4 +1,4 @@
-# io.helidon.telemetry.otelconfig.MetricExporterConfig
+# io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Metric<wbr>Exporter<wbr>Config
 
 ## Description
 

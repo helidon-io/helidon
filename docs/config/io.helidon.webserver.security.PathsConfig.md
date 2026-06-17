@@ -1,4 +1,4 @@
-# io.helidon.webserver.security.PathsConfig
+# io.<wbr>helidon.<wbr>webserver.<wbr>security.<wbr>Paths<wbr>Config
 
 ## Description
 
@@ -131,7 +131,7 @@ Configuration of a single path security setup
 
 ## Usages
 
-- [`server.features.security.paths`](io.helidon.webserver.security.SecurityFeature.md#paths)
+- <a href="io.helidon.webserver.security.SecurityFeature.md#paths"><code>server.<wbr>features.<wbr>security.<wbr>paths</code></a>
 
 ---
 

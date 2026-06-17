@@ -1,4 +1,4 @@
-# io.helidon.webclient.grpc.GrpcClientProtocolConfig
+# io.<wbr>helidon.<wbr>webclient.<wbr>grpc.<wbr>Grpc<wbr>Client<wbr>Protocol<wbr>Config
 
 ## Description
 

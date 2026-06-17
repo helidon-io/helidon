@@ -1,4 +1,4 @@
-# io.helidon.webserver.cors.CorsFeature
+# io.<wbr>helidon.<wbr>webserver.<wbr>cors.<wbr>Cors<wbr>Feature
 
 ## Description
 
@@ -96,8 +96,8 @@ Configuration of CORS feature
 
 ## Usages
 
-- [`cors`](config_reference.md#cors)
-- [`server.features.cors`](io.helidon.webserver.spi.ServerFeature.md#cors)
+- <a href="config_reference.md#cors"><code>cors</code></a>
+- <a href="io.helidon.webserver.spi.ServerFeature.md#cors"><code>server.<wbr>features.<wbr>cors</code></a>
 
 ---
 

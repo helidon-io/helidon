@@ -1,4 +1,4 @@
-# io.helidon.telemetry.otelconfig.CompressionType
+# io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Compression<wbr>Type
 
 ## Description
 

@@ -1,4 +1,4 @@
-# io.helidon.common.tls.TlsClientAuth
+# io.<wbr>helidon.<wbr>common.<wbr>tls.<wbr>TlsClient<wbr>Auth
 
 ## Description
 
@@ -31,13 +31,13 @@ This type is an enumeration.
 
 ## Usages
 
-- [`clients.tls.client-auth`](io.helidon.common.tls.Tls.md#client-auth)
-- [`security.providers.idcs-role-mapper.oidc-config.webclient.tls.client-auth`](io.helidon.common.tls.Tls.md#client-auth)
-- [`security.providers.oidc.webclient.tls.client-auth`](io.helidon.common.tls.Tls.md#client-auth)
-- [`server.features.security.security.providers.idcs-role-mapper.oidc-config.webclient.tls.client-auth`](io.helidon.common.tls.Tls.md#client-auth)
-- [`server.features.security.security.providers.oidc.webclient.tls.client-auth`](io.helidon.common.tls.Tls.md#client-auth)
-- [`server.sockets.tls.client-auth`](io.helidon.common.tls.Tls.md#client-auth)
-- [`server.tls.client-auth`](io.helidon.common.tls.Tls.md#client-auth)
+- <a href="io.helidon.common.tls.Tls.md#client-auth"><code>clients.<wbr>tls.<wbr>client-<wbr>auth</code></a>
+- <a href="io.helidon.common.tls.Tls.md#client-auth"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>tls.<wbr>client-<wbr>auth</code></a>
+- <a href="io.helidon.common.tls.Tls.md#client-auth"><code>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>client-<wbr>auth</code></a>
+- <a href="io.helidon.common.tls.Tls.md#client-auth"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>tls.<wbr>client-<wbr>auth</code></a>
+- <a href="io.helidon.common.tls.Tls.md#client-auth"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>client-<wbr>auth</code></a>
+- <a href="io.helidon.common.tls.Tls.md#client-auth"><code>server.<wbr>sockets.<wbr>tls.<wbr>client-<wbr>auth</code></a>
+- <a href="io.helidon.common.tls.Tls.md#client-auth"><code>server.<wbr>tls.<wbr>client-<wbr>auth</code></a>
 
 ---
 

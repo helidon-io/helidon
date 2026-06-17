@@ -1,4 +1,4 @@
-# io.helidon.integrations.eureka.LeaseInfoConfig
+# io.<wbr>helidon.<wbr>integrations.<wbr>eureka.<wbr>Lease<wbr>Info<wbr>Config
 
 ## Description
 
@@ -48,7 +48,7 @@ A <code>Prototype.<wbr>Api prototype</code> describing initial Eureka Server ser
 
 ## Usages
 
-- [`server.features.eureka.instance.lease`](io.helidon.integrations.eureka.InstanceInfoConfig.md#lease)
+- <a href="io.helidon.integrations.eureka.InstanceInfoConfig.md#lease"><code>server.<wbr>features.<wbr>eureka.<wbr>instance.<wbr>lease</code></a>
 
 ---
 

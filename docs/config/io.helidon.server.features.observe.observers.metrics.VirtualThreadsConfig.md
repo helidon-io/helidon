@@ -1,4 +1,4 @@
-# io.helidon.server.features.observe.observers.metrics.VirtualThreadsConfig
+# io.<wbr>helidon.<wbr>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>Virtual<wbr>Threads<wbr>Config
 
 ## Description
 
@@ -49,7 +49,7 @@ Configuration for server.features.observe.observers.metrics.virtual-threads
 
 ## Usages
 
-- [`server.features.observe.observers.metrics.virtual-threads`](io.helidon.webserver.observe.metrics.MetricsObserver.md#virtual-threads)
+- <a href="io.helidon.webserver.observe.metrics.MetricsObserver.md#virtual-threads"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>virtual-<wbr>threads</code></a>
 
 ---
 

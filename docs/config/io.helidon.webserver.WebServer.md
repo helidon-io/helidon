@@ -1,4 +1,4 @@
-# io.helidon.webserver.WebServer
+# io.<wbr>helidon.<wbr>webserver.<wbr>WebServer
 
 ## Description
 
@@ -195,7 +195,7 @@ WebServer configuration bean
 <td>
 <code>&#8288;-&#8288;1</code>
 </td>
-<td>Limits the number of connections that can be opened at a single point in time</td>
+<td>Limits the number of connection permits that this listener may reserve before accepting sockets</td>
 </tr>
 <tr>
 <td>
@@ -474,7 +474,7 @@ WebServer configuration bean
 
 ## Usages
 
-- [`server`](config_reference.md#server)
+- <a href="config_reference.md#server"><code>server</code></a>
 
 ---
 

@@ -1,4 +1,4 @@
-# io.helidon.security.providers.oidc.common.PkceChallengeMethod
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>common.<wbr>Pkce<wbr>Challenge<wbr>Method
 
 ## Description
 
@@ -27,10 +27,10 @@ This type is an enumeration.
 
 ## Usages
 
-- [`security.providers.idcs-role-mapper.oidc-config.pkce-challenge-method`](io.helidon.security.providers.oidc.common.OidcConfig.md#pkce-challenge-method)
-- [`security.providers.oidc.pkce-challenge-method`](io.helidon.security.providers.oidc.OidcProvider.md#pkce-challenge-method)
-- [`server.features.security.security.providers.idcs-role-mapper.oidc-config.pkce-challenge-method`](io.helidon.security.providers.oidc.common.OidcConfig.md#pkce-challenge-method)
-- [`server.features.security.security.providers.oidc.pkce-challenge-method`](io.helidon.security.providers.oidc.OidcProvider.md#pkce-challenge-method)
+- <a href="io.helidon.security.providers.oidc.common.OidcConfig.md#pkce-challenge-method"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>pkce-<wbr>challenge-<wbr>method</code></a>
+- <a href="io.helidon.security.providers.oidc.OidcProvider.md#pkce-challenge-method"><code>security.<wbr>providers.<wbr>oidc.<wbr>pkce-<wbr>challenge-<wbr>method</code></a>
+- <a href="io.helidon.security.providers.oidc.common.OidcConfig.md#pkce-challenge-method"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>pkce-<wbr>challenge-<wbr>method</code></a>
+- <a href="io.helidon.security.providers.oidc.OidcProvider.md#pkce-challenge-method"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>pkce-<wbr>challenge-<wbr>method</code></a>
 
 ---
 

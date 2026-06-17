@@ -1,4 +1,4 @@
-# io.helidon.openapi.OpenApiFeature
+# io.<wbr>helidon.<wbr>openapi.<wbr>Open<wbr>ApiFeature
 
 ## Description
 
@@ -185,8 +185,8 @@
 
 ## Usages
 
-- [`openapi`](config_reference.md#openapi)
-- [`server.features.openapi`](io.helidon.webserver.spi.ServerFeature.md#openapi)
+- <a href="config_reference.md#openapi"><code>openapi</code></a>
+- <a href="io.helidon.webserver.spi.ServerFeature.md#openapi"><code>server.<wbr>features.<wbr>openapi</code></a>
 
 ---
 

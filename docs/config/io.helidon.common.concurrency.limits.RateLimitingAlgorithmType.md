@@ -1,4 +1,4 @@
-# io.helidon.common.concurrency.limits.RateLimitingAlgorithmType
+# io.<wbr>helidon.<wbr>common.<wbr>concurrency.<wbr>limits.<wbr>Rate<wbr>Limiting<wbr>Algorithm<wbr>Type
 
 ## Description
 
@@ -27,9 +27,9 @@ This type is an enumeration.
 
 ## Usages
 
-- [`server.concurrency-limit.throughput.rate-limiting-algorithm`](io.helidon.common.concurrency.limits.ThroughputLimit.md#rate-limiting-algorithm)
-- [`server.features.limits.concurrency-limit.throughput.rate-limiting-algorithm`](io.helidon.common.concurrency.limits.ThroughputLimit.md#rate-limiting-algorithm)
-- [`server.sockets.concurrency-limit.throughput.rate-limiting-algorithm`](io.helidon.common.concurrency.limits.ThroughputLimit.md#rate-limiting-algorithm)
+- <a href="io.helidon.common.concurrency.limits.ThroughputLimit.md#rate-limiting-algorithm"><code>server.<wbr>concurrency-<wbr>limit.<wbr>throughput.<wbr>rate-<wbr>limiting-<wbr>algorithm</code></a>
+- <a href="io.helidon.common.concurrency.limits.ThroughputLimit.md#rate-limiting-algorithm"><code>server.<wbr>features.<wbr>limits.<wbr>concurrency-<wbr>limit.<wbr>throughput.<wbr>rate-<wbr>limiting-<wbr>algorithm</code></a>
+- <a href="io.helidon.common.concurrency.limits.ThroughputLimit.md#rate-limiting-algorithm"><code>server.<wbr>sockets.<wbr>concurrency-<wbr>limit.<wbr>throughput.<wbr>rate-<wbr>limiting-<wbr>algorithm</code></a>
 
 ---
 

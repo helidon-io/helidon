@@ -1,4 +1,4 @@
-# io.helidon.webserver.context.ContextFeature
+# io.<wbr>helidon.<wbr>webserver.<wbr>context.<wbr>Context<wbr>Feature
 
 ## Description
 
@@ -61,7 +61,7 @@ Configuration of context feature
 
 ## Usages
 
-- [`server.features.context`](io.helidon.webserver.spi.ServerFeature.md#context)
+- <a href="io.helidon.webserver.spi.ServerFeature.md#context"><code>server.<wbr>features.<wbr>context</code></a>
 
 ---
 

@@ -1,4 +1,4 @@
-# io.helidon.security.providers.idcsRoleMapper.oidcConfig.webclient.tls.trust.keystore.CertChainConfig
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>idcs<wbr>Role<wbr>Mapper.<wbr>oidc<wbr>Config.<wbr>webclient.<wbr>tls.<wbr>trust.<wbr>keystore.<wbr>Cert<wbr>Chain<wbr>Config
 
 ## Description
 
@@ -32,7 +32,7 @@ Configuration for security.providers.idcs-role-mapper.oidc-config.webclient.tls.
 
 ## Usages
 
-- [`security.providers.idcs-role-mapper.oidc-config.webclient.tls.trust.keystore.cert-chain`](io.helidon.common.pki.KeystoreKeys.md#cert-chain)
+- <a href="io.helidon.common.pki.KeystoreKeys.md#cert-chain"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>tls.<wbr>trust.<wbr>keystore.<wbr>cert-<wbr>chain</code></a>
 
 ---
 

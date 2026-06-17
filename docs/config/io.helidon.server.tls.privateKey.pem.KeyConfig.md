@@ -1,4 +1,4 @@
-# io.helidon.server.tls.privateKey.pem.KeyConfig
+# io.<wbr>helidon.<wbr>server.<wbr>tls.<wbr>private<wbr>Key.<wbr>pem.<wbr>KeyConfig
 
 ## Description
 
@@ -44,7 +44,7 @@ Configuration for server.tls.private-key.pem.key
 
 ## Usages
 
-- [`server.tls.private-key.pem.key`](io.helidon.common.pki.PemKeys.md#key)
+- <a href="io.helidon.common.pki.PemKeys.md#key"><code>server.<wbr>tls.<wbr>private-<wbr>key.<wbr>pem.<wbr>key</code></a>
 
 ---
 

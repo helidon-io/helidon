@@ -1,4 +1,4 @@
-# io.helidon.server.features.security.security.SecretsConfig
+# io.<wbr>helidon.<wbr>server.<wbr>features.<wbr>security.<wbr>security.<wbr>Secrets<wbr>Config
 
 ## Description
 
@@ -53,7 +53,7 @@ Configuration for server.features.security.security.secrets
 
 ## Usages
 
-- [`server.features.security.security.secrets`](io.helidon.security.Security.md#secrets)
+- <a href="io.helidon.security.Security.md#secrets"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>secrets</code></a>
 
 ---
 

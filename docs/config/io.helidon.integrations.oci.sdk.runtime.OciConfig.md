@@ -1,4 +1,4 @@
-# io.helidon.integrations.oci.sdk.runtime.OciConfig
+# io.<wbr>helidon.<wbr>integrations.<wbr>oci.<wbr>sdk.<wbr>runtime.<wbr>OciConfig
 
 ## Description
 
@@ -80,7 +80,7 @@ Configuration used by <code>Oci<wbr>Authentication<wbr>Details<wbr>Provider</cod
 
 ## Usages
 
-- [`oci`](config_reference.md#oci)
+- <a href="config_reference.md#oci"><code>oci</code></a>
 
 ---
 

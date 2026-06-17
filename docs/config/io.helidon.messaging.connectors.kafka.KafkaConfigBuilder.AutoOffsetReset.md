@@ -1,4 +1,4 @@
-# io.helidon.messaging.connectors.kafka.KafkaConfigBuilder.AutoOffsetReset
+# io.<wbr>helidon.<wbr>messaging.<wbr>connectors.<wbr>kafka.<wbr>Kafka<wbr>Config<wbr>Builder.<wbr>Auto<wbr>Offset<wbr>Reset
 
 ## Description
 

@@ -1,4 +1,4 @@
-# com.acme.BetaFeatureConfig
+# com.<wbr>acme.<wbr>Beta<wbr>Feature<wbr>Config
 
 ## Description
 

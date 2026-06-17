@@ -1,4 +1,4 @@
-# io.helidon.TracingConfig
+# io.<wbr>helidon.<wbr>Tracing<wbr>Config
 
 ## Description
 
@@ -34,6 +34,17 @@ Merged configuration for tracing
 </tr>
 <tr>
 <td>
+<code>boolean-<wbr>tags</code>
+</td>
+<td>
+<code>Map&lt;<wbr>String,<wbr> Boolean&gt;</code>
+</td>
+<td>
+</td>
+<td>Tracer-level tags with boolean values added to all reported spans</td>
+</tr>
+<tr>
+<td>
 <a id="client-cert-pem"></a>
 <a href="io.helidon.common.configurable.Resource.md">
 <code>client-<wbr>cert-<wbr>pem</code>
@@ -45,6 +56,30 @@ Merged configuration for tracing
 <td>
 </td>
 <td>Certificate of client in PEM format</td>
+</tr>
+<tr>
+<td>
+<code>enabled</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Whether to enable tracing</td>
+</tr>
+<tr>
+<td>
+<code>export-<wbr>timeout</code>
+</td>
+<td>
+<code>Duration</code>
+</td>
+<td>
+<code>PT10S</code>
+</td>
+<td>Maximum time a transmission can be in progress before being cancelled</td>
 </tr>
 <tr>
 <td>
@@ -75,6 +110,40 @@ Merged configuration for tracing
 </tr>
 <tr>
 <td>
+<code>global</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Whether to create and register a tracer as the global tracer</td>
+</tr>
+<tr>
+<td>
+<code>host</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>
+</td>
+<td>Host used in connecting to the tracing collector</td>
+</tr>
+<tr>
+<td>
+<code>int-<wbr>tags</code>
+</td>
+<td>
+<code>Map&lt;<wbr>String,<wbr> Integer&gt;</code>
+</td>
+<td>
+</td>
+<td>Tracer level tags with integer values added to all reported spans</td>
+</tr>
+<tr>
+<td>
 <code>max-<wbr>export-<wbr>batch-<wbr>size</code>
 </td>
 <td>
@@ -96,6 +165,28 @@ Merged configuration for tracing
 <code>2048</code>
 </td>
 <td>Maximum Queue Size of exporter requests</td>
+</tr>
+<tr>
+<td>
+<code>path</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>
+</td>
+<td>Path at the collector host and port used when sending trace data to the collector</td>
+</tr>
+<tr>
+<td>
+<code>port</code>
+</td>
+<td>
+<code>Integer</code>
+</td>
+<td>
+</td>
+<td>Port used in connecting to the tracing collector</td>
 </tr>
 <tr>
 <td>
@@ -139,6 +230,17 @@ Merged configuration for tracing
 </tr>
 <tr>
 <td>
+<code>protocol</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>
+</td>
+<td>Protocol (such as <code>http</code> or <code>https</code>) used in connecting to the tracing collector</td>
+</tr>
+<tr>
+<td>
 <code>sampler-<wbr>param</code>
 </td>
 <td>
@@ -178,6 +280,17 @@ Merged configuration for tracing
 </tr>
 <tr>
 <td>
+<code>service</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>
+</td>
+<td>Service name of the traced service</td>
+</tr>
+<tr>
+<td>
 <a id="span-processor-type"></a>
 <a href="io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.SpanProcessorType.md">
 <code>span-<wbr>processor-<wbr>type</code>
@@ -193,6 +306,17 @@ Merged configuration for tracing
 </tr>
 <tr>
 <td>
+<code>tags</code>
+</td>
+<td>
+<code>Map&lt;<wbr>String,<wbr> String&gt;</code>
+</td>
+<td>
+</td>
+<td>Tracer-level tags with <code>String</code> values added to all reported spans</td>
+</tr>
+<tr>
+<td>
 <a id="trusted-cert-pem"></a>
 <a href="io.helidon.common.configurable.Resource.md">
 <code>trusted-<wbr>cert-<wbr>pem</code>
@@ -205,6 +329,17 @@ Merged configuration for tracing
 </td>
 <td>Trusted certificates in PEM format</td>
 </tr>
+<tr>
+<td>
+<code>uri</code>
+</td>
+<td>
+<code>URI</code>
+</td>
+<td>
+</td>
+<td>URI for the collector to which to send tracing data</td>
+</tr>
 </tbody>
 </table>
 
@@ -212,13 +347,13 @@ Merged configuration for tracing
 
 ## Merged Types
 
-- [io.helidon.tracing.providers.jaeger.JaegerTracerBuilder](io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.md)
-- [io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracer](io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracer.md)
-- [io.helidon.tracing.providers.zipkin.ZipkinTracerBuilder](io.helidon.tracing.providers.zipkin.ZipkinTracerBuilder.md)
+- [io.<wbr>helidon.<wbr>tracing.<wbr>providers.<wbr>jaeger.<wbr>Jaeger<wbr>Tracer<wbr>Builder](io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.md)
+- [io.<wbr>helidon.<wbr>tracing.<wbr>providers.<wbr>opentelemetry.<wbr>Open<wbr>Telemetry<wbr>Tracer](io.helidon.tracing.providers.opentelemetry.OpenTelemetryTracer.md)
+- [io.<wbr>helidon.<wbr>tracing.<wbr>providers.<wbr>zipkin.<wbr>Zipkin<wbr>Tracer<wbr>Builder](io.helidon.tracing.providers.zipkin.ZipkinTracerBuilder.md)
 
 ## Usages
 
-- [`tracing`](config_reference.md#tracing)
+- <a href="config_reference.md#tracing"><code>tracing</code></a>
 
 ---
 

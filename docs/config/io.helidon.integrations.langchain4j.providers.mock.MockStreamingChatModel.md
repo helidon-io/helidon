@@ -1,4 +1,4 @@
-# io.helidon.integrations.langchain4j.providers.mock.MockStreamingChatModel
+# io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>mock.<wbr>Mock<wbr>Streaming<wbr>Chat<wbr>Model
 
 ## Description
 

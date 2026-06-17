@@ -1,4 +1,4 @@
-# io.helidon.oci.ImdsConfig
+# io.<wbr>helidon.<wbr>oci.<wbr>Imds<wbr>Config
 
 ## Description
 
@@ -49,7 +49,7 @@ Configuration for oci.imds
 
 ## Usages
 
-- [`oci.imds`](io.helidon.integrations.oci.sdk.runtime.OciConfig.md#imds)
+- <a href="io.helidon.integrations.oci.sdk.runtime.OciConfig.md#imds"><code>oci.<wbr>imds</code></a>
 
 ---
 

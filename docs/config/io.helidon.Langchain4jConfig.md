@@ -1,4 +1,4 @@
-# io.helidon.Langchain4jConfig
+# io.<wbr>helidon.<wbr>Langchain4j<wbr>Config
 
 ## Description
 
@@ -49,7 +49,7 @@ Configuration for langchain4j
 
 ## Usages
 
-- [`langchain4j`](config_reference.md#langchain4j)
+- <a href="config_reference.md#langchain4j"><code>langchain4j</code></a>
 
 ---
 

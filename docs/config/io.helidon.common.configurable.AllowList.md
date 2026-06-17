@@ -1,4 +1,4 @@
-# io.helidon.common.configurable.AllowList
+# io.<wbr>helidon.<wbr>common.<wbr>configurable.<wbr>Allow<wbr>List
 
 ## Description
 
@@ -40,12 +40,12 @@
 
 ## Usages
 
-- [`server.protocols.http_1_1.requested-uri-discovery.trusted-proxies`](io.helidon.http.RequestedUriDiscoveryContext.md#trusted-proxies)
-- [`server.protocols.http_2.requested-uri-discovery.trusted-proxies`](io.helidon.http.RequestedUriDiscoveryContext.md#trusted-proxies)
-- [`server.requested-uri-discovery.trusted-proxies`](io.helidon.http.RequestedUriDiscoveryContext.md#trusted-proxies)
-- [`server.sockets.protocols.http_1_1.requested-uri-discovery.trusted-proxies`](io.helidon.http.RequestedUriDiscoveryContext.md#trusted-proxies)
-- [`server.sockets.protocols.http_2.requested-uri-discovery.trusted-proxies`](io.helidon.http.RequestedUriDiscoveryContext.md#trusted-proxies)
-- [`server.sockets.requested-uri-discovery.trusted-proxies`](io.helidon.http.RequestedUriDiscoveryContext.md#trusted-proxies)
+- <a href="io.helidon.http.RequestedUriDiscoveryContext.md#trusted-proxies"><code>server.<wbr>protocols.<wbr>http_<wbr>1_1.<wbr>requested-<wbr>uri-<wbr>discovery.<wbr>trusted-<wbr>proxies</code></a>
+- <a href="io.helidon.http.RequestedUriDiscoveryContext.md#trusted-proxies"><code>server.<wbr>protocols.<wbr>http_<wbr>2.requested-<wbr>uri-<wbr>discovery.<wbr>trusted-<wbr>proxies</code></a>
+- <a href="io.helidon.http.RequestedUriDiscoveryContext.md#trusted-proxies"><code>server.<wbr>requested-<wbr>uri-<wbr>discovery.<wbr>trusted-<wbr>proxies</code></a>
+- <a href="io.helidon.http.RequestedUriDiscoveryContext.md#trusted-proxies"><code>server.<wbr>sockets.<wbr>protocols.<wbr>http_<wbr>1_1.<wbr>requested-<wbr>uri-<wbr>discovery.<wbr>trusted-<wbr>proxies</code></a>
+- <a href="io.helidon.http.RequestedUriDiscoveryContext.md#trusted-proxies"><code>server.<wbr>sockets.<wbr>protocols.<wbr>http_<wbr>2.requested-<wbr>uri-<wbr>discovery.<wbr>trusted-<wbr>proxies</code></a>
+- <a href="io.helidon.http.RequestedUriDiscoveryContext.md#trusted-proxies"><code>server.<wbr>sockets.<wbr>requested-<wbr>uri-<wbr>discovery.<wbr>trusted-<wbr>proxies</code></a>
 
 ---
 

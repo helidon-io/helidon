@@ -1,4 +1,4 @@
-# io.helidon.server.tls.trust.keystore.CertConfig
+# io.<wbr>helidon.<wbr>server.<wbr>tls.<wbr>trust.<wbr>keystore.<wbr>Cert<wbr>Config
 
 ## Description
 
@@ -32,7 +32,7 @@ Configuration for server.tls.trust.keystore.cert
 
 ## Usages
 
-- [`server.tls.trust.keystore.cert`](io.helidon.common.pki.KeystoreKeys.md#cert)
+- <a href="io.helidon.common.pki.KeystoreKeys.md#cert"><code>server.<wbr>tls.<wbr>trust.<wbr>keystore.<wbr>cert</code></a>
 
 ---
 

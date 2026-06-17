@@ -1,4 +1,4 @@
-# com.acme.AcmeManager
+# com.<wbr>acme.<wbr>Acme<wbr>Manager
 
 ## Description
 
@@ -12,7 +12,7 @@ No implementations are currently known.
 
 ## Usages
 
-- [`acme.manager`](com.acme.AcmeConfig.md#manager)
+- <a href="com.acme.AcmeConfig.md#manager"><code>acme.<wbr>manager</code></a>
 
 ---
 

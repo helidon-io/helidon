@@ -1,4 +1,4 @@
-# io.helidon.langchain4j.ProvidersConfig
+# io.<wbr>helidon.<wbr>langchain4j.<wbr>Providers<wbr>Config
 
 ## Description
 
@@ -121,7 +121,7 @@ Configuration for langchain4j.providers
 
 ## Usages
 
-- [`langchain4j.providers`](io.helidon.Langchain4jConfig.md#providers)
+- <a href="io.helidon.Langchain4jConfig.md#providers"><code>langchain4j.<wbr>providers</code></a>
 
 ---
 

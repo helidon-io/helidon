@@ -1,4 +1,4 @@
-# io.helidon.webserver.staticcontent.StaticContentFeature
+# io.<wbr>helidon.<wbr>webserver.<wbr>staticcontent.<wbr>Static<wbr>Content<wbr>Feature
 
 ## Description
 
@@ -137,7 +137,7 @@ Configuration of Static content feature
 
 ## Usages
 
-- [`server.features.static-content`](io.helidon.webserver.spi.ServerFeature.md#static-content)
+- <a href="io.helidon.webserver.spi.ServerFeature.md#static-content"><code>server.<wbr>features.<wbr>static-<wbr>content</code></a>
 
 ---
 

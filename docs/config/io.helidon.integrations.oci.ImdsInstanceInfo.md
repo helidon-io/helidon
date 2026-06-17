@@ -1,4 +1,4 @@
-# io.helidon.integrations.oci.ImdsInstanceInfo
+# io.<wbr>helidon.<wbr>integrations.<wbr>oci.<wbr>Imds<wbr>Instance<wbr>Info
 
 ## Description
 

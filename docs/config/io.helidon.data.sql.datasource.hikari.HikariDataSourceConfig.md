@@ -1,4 +1,4 @@
-# io.helidon.data.sql.datasource.hikari.HikariDataSourceConfig
+# io.<wbr>helidon.<wbr>data.<wbr>sql.<wbr>datasource.<wbr>hikari.<wbr>Hikari<wbr>Data<wbr>Source<wbr>Config
 
 ## Description
 
@@ -224,7 +224,7 @@ Hikari connection pool specific configuration for <code>javax.<wbr>sql.<wbr>Data
 
 ## Usages
 
-- [`data.sources.sql.provider.hikari`](io.helidon.data.sql.datasource.ProviderConfig.md#hikari)
+- <a href="io.helidon.data.sql.datasource.ProviderConfig.md#hikari"><code>data.<wbr>sources.<wbr>sql.<wbr>provider.<wbr>hikari</code></a>
 
 ---
 

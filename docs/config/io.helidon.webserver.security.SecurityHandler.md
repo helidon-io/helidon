@@ -1,4 +1,4 @@
-# io.helidon.webserver.security.SecurityHandler
+# io.<wbr>helidon.<wbr>webserver.<wbr>security.<wbr>Security<wbr>Handler
 
 ## Description
 
@@ -113,11 +113,11 @@ Configuration of a <code>io.<wbr>helidon.<wbr>webserver.<wbr>security.<wbr>Secur
 
 ## Dependent Types
 
-- [io.helidon.webserver.security.PathsConfig](io.helidon.webserver.security.PathsConfig.md)
+- [io.<wbr>helidon.<wbr>webserver.<wbr>security.<wbr>Paths<wbr>Config](io.helidon.webserver.security.PathsConfig.md)
 
 ## Usages
 
-- [`server.features.security.defaults`](io.helidon.webserver.security.SecurityFeature.md#defaults)
+- <a href="io.helidon.webserver.security.SecurityFeature.md#defaults"><code>server.<wbr>features.<wbr>security.<wbr>defaults</code></a>
 
 ---
 

@@ -1,4 +1,4 @@
-# com.github.tjake.jlama.model.functions.Generator.PoolingType
+# com.<wbr>github.<wbr>tjake.<wbr>jlama.<wbr>model.<wbr>functions.<wbr>Generator.<wbr>Pooling<wbr>Type
 
 ## Description
 
@@ -35,7 +35,7 @@ This type is an enumeration.
 
 ## Usages
 
-- [`langchain4j.providers.jlama.pooling-type`](io.helidon.langchain4j.providers.JlamaConfig.md#pooling-type)
+- <a href="io.helidon.langchain4j.providers.JlamaConfig.md#pooling-type"><code>langchain4j.<wbr>providers.<wbr>jlama.<wbr>pooling-<wbr>type</code></a>
 
 ---
 

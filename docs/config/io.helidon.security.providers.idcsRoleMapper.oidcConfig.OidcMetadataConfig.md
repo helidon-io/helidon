@@ -1,4 +1,4 @@
-# io.helidon.security.providers.idcsRoleMapper.oidcConfig.OidcMetadataConfig
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>idcs<wbr>Role<wbr>Mapper.<wbr>oidc<wbr>Config.<wbr>Oidc<wbr>Metadata<wbr>Config
 
 ## Description
 
@@ -35,7 +35,7 @@ Configuration for security.providers.idcs-role-mapper.oidc-config.oidc-metadata
 
 ## Usages
 
-- [`security.providers.idcs-role-mapper.oidc-config.oidc-metadata`](io.helidon.security.providers.oidc.common.OidcConfig.md#oidc-metadata)
+- <a href="io.helidon.security.providers.oidc.common.OidcConfig.md#oidc-metadata"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>oidc-<wbr>metadata</code></a>
 
 ---
 

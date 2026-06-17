@@ -1,4 +1,4 @@
-# io.helidon.telemetry.otelconfig.RetryPolicyConfig
+# io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Retry<wbr>Policy<wbr>Config
 
 ## Description
 

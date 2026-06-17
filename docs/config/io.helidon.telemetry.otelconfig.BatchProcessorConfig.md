@@ -1,4 +1,4 @@
-# io.helidon.telemetry.otelconfig.BatchProcessorConfig
+# io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Batch<wbr>Processor<wbr>Config
 
 ## Description
 

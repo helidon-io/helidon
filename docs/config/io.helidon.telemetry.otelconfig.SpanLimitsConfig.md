@@ -1,4 +1,4 @@
-# io.helidon.telemetry.otelconfig.SpanLimitsConfig
+# io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Span<wbr>Limits<wbr>Config
 
 ## Description
 

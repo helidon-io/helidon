@@ -1,4 +1,4 @@
-# io.helidon.integrations.oci.ConfigMethodConfig
+# io.<wbr>helidon.<wbr>integrations.<wbr>oci.<wbr>Config<wbr>Method<wbr>Config
 
 ## Description
 
@@ -80,7 +80,7 @@ Configuration of the <code>config</code> authentication method
 
 ## Usages
 
-- [`helidon.oci.authentication.config`](io.helidon.helidon.oci.AuthenticationConfig.md#config)
+- <a href="io.helidon.helidon.oci.AuthenticationConfig.md#config"><code>helidon.<wbr>oci.<wbr>authentication.<wbr>config</code></a>
 
 ---
 

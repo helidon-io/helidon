@@ -1,4 +1,4 @@
-# io.helidon.scheduling.FixedRate.DelayType
+# io.<wbr>helidon.<wbr>scheduling.<wbr>Fixed<wbr>Rate.<wbr>Delay<wbr>Type
 
 ## Description
 

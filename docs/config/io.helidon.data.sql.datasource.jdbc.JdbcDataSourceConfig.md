@@ -1,4 +1,4 @@
-# io.helidon.data.sql.datasource.jdbc.JdbcDataSourceConfig
+# io.<wbr>helidon.<wbr>data.<wbr>sql.<wbr>datasource.<wbr>jdbc.<wbr>Jdbc<wbr>Data<wbr>Source<wbr>Config
 
 ## Description
 
@@ -80,7 +80,7 @@ JDBC Data source configuration
 
 ## Usages
 
-- [`data.sources.sql.provider.jdbc`](io.helidon.data.sql.datasource.ProviderConfig.md#jdbc)
+- <a href="io.helidon.data.sql.datasource.ProviderConfig.md#jdbc"><code>data.<wbr>sources.<wbr>sql.<wbr>provider.<wbr>jdbc</code></a>
 
 ---
 

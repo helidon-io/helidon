@@ -1,4 +1,4 @@
-# io.helidon.security.providers.oidc.webclient.tls.trust.pem.PublicKeyConfig
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>trust.<wbr>pem.<wbr>Public<wbr>KeyConfig
 
 ## Description
 
@@ -35,7 +35,7 @@ Configuration for security.providers.oidc.webclient.tls.trust.pem.public-key
 
 ## Usages
 
-- [`security.providers.oidc.webclient.tls.trust.pem.public-key`](io.helidon.common.pki.PemKeys.md#public-key)
+- <a href="io.helidon.common.pki.PemKeys.md#public-key"><code>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>trust.<wbr>pem.<wbr>public-<wbr>key</code></a>
 
 ---
 

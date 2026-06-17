@@ -1,4 +1,4 @@
-# io.helidon.webserver.observe.log.LogStreamConfig
+# io.<wbr>helidon.<wbr>webserver.<wbr>observe.<wbr>log.<wbr>LogStream<wbr>Config
 
 ## Description
 
@@ -84,7 +84,7 @@ Log stream configuration for Log Observer
 
 ## Usages
 
-- [`server.features.observe.observers.log.stream`](io.helidon.webserver.observe.log.LogObserver.md#stream)
+- <a href="io.helidon.webserver.observe.log.LogObserver.md#stream"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>log.<wbr>stream</code></a>
 
 ---
 

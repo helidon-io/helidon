@@ -1,4 +1,4 @@
-# io.helidon.http.media.MediaSupportConfig
+# io.<wbr>helidon.<wbr>http.<wbr>media.<wbr>Media<wbr>Support<wbr>Config
 
 ## Description
 
@@ -47,6 +47,15 @@ A set of configurable options expected to be used by each media support
 </table>
 
 
+
+## Dependent Types
+
+- [io.<wbr>helidon.<wbr>http.<wbr>media.<wbr>gson.<wbr>Gson<wbr>Support](io.helidon.http.media.gson.GsonSupport.md)
+- [io.<wbr>helidon.<wbr>http.<wbr>media.<wbr>jackson.<wbr>Jackson<wbr>Support](io.helidon.http.media.jackson.JacksonSupport.md)
+- [io.<wbr>helidon.<wbr>http.<wbr>media.<wbr>json.<wbr>Json<wbr>Support](io.helidon.http.media.json.JsonSupport.md)
+- [io.<wbr>helidon.<wbr>http.<wbr>media.<wbr>json.<wbr>binding.<wbr>Json<wbr>Binding<wbr>Support](io.helidon.http.media.json.binding.JsonBindingSupport.md)
+- [io.<wbr>helidon.<wbr>http.<wbr>media.<wbr>json.<wbr>smile.<wbr>Smile<wbr>Support](io.helidon.http.media.json.smile.SmileSupport.md)
+- [io.<wbr>helidon.<wbr>http.<wbr>media.<wbr>jsonb.<wbr>Jsonb<wbr>Support](io.helidon.http.media.jsonb.JsonbSupport.md)
 
 ---
 

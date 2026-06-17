@@ -1,4 +1,4 @@
-# io.helidon.webserver.cors.CorsPathConfig
+# io.<wbr>helidon.<wbr>webserver.<wbr>cors.<wbr>Cors<wbr>Path<wbr>Config
 
 ## Description
 
@@ -118,8 +118,8 @@ Configuration of CORS for a specific path
 
 ## Usages
 
-- [`cors.paths`](io.helidon.webserver.cors.CorsFeature.md#paths)
-- [`server.features.cors.paths`](io.helidon.webserver.cors.CorsFeature.md#paths)
+- <a href="io.helidon.webserver.cors.CorsFeature.md#paths"><code>cors.<wbr>paths</code></a>
+- <a href="io.helidon.webserver.cors.CorsFeature.md#paths"><code>server.<wbr>features.<wbr>cors.<wbr>paths</code></a>
 
 ---
 

@@ -1,4 +1,4 @@
-# io.helidon.telemetry.otelconfig.ViewRegistrationConfig
+# io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>View<wbr>Registration<wbr>Config
 
 ## Description
 

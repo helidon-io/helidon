@@ -1,4 +1,4 @@
-# io.helidon.security.providers.jwt.AtnTokenConfig
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>jwt.<wbr>AtnToken<wbr>Config
 
 ## Description
 
@@ -53,7 +53,18 @@ Configuration for security.providers.jwt.atn-token
 </td>
 <td>
 </td>
-<td>Audience expected in inbound JWTs</td>
+<td>Audience expected in inbound JWTs. Required when authentication is enabled and signature verification is disabled</td>
+</tr>
+<tr>
+<td>
+<code>jwt-<wbr>issuer</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>
+</td>
+<td>Issuer expected in inbound JWTs. Required when authentication is enabled and signature verification is disabled</td>
 </tr>
 <tr>
 <td>
@@ -65,7 +76,7 @@ Configuration for security.providers.jwt.atn-token
 <td>
 <code>true</code>
 </td>
-<td>Configure whether to verify signatures</td>
+<td>Whether to verify inbound JWT signatures. If set to false while authentication is enabled, atn-token.jwt-issuer and atn-token.jwt-audience are required</td>
 </tr>
 </tbody>
 </table>
@@ -74,7 +85,7 @@ Configuration for security.providers.jwt.atn-token
 
 ## Usages
 
-- [`security.providers.jwt.atn-token`](io.helidon.security.providers.jwt.JwtProvider.md#atn-token)
+- <a href="io.helidon.security.providers.jwt.JwtProvider.md#atn-token"><code>security.<wbr>providers.<wbr>jwt.<wbr>atn-<wbr>token</code></a>
 
 ---
 

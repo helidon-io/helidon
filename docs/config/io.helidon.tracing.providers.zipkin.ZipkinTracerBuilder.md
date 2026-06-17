@@ -1,4 +1,4 @@
-# io.helidon.tracing.providers.zipkin.ZipkinTracerBuilder
+# io.<wbr>helidon.<wbr>tracing.<wbr>providers.<wbr>zipkin.<wbr>Zipkin<wbr>Tracer<wbr>Builder
 
 ## Description
 

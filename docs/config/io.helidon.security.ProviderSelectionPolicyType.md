@@ -1,4 +1,4 @@
-# io.helidon.security.ProviderSelectionPolicyType
+# io.<wbr>helidon.<wbr>security.<wbr>Provider<wbr>Selection<wbr>Policy<wbr>Type
 
 ## Description
 
@@ -31,8 +31,8 @@ This type is an enumeration.
 
 ## Usages
 
-- [`security.provider-policy.type`](io.helidon.security.ProviderPolicyConfig.md#type)
-- [`server.features.security.security.provider-policy.type`](io.helidon.server.features.security.security.ProviderPolicyConfig.md#type)
+- <a href="io.helidon.security.ProviderPolicyConfig.md#type"><code>security.<wbr>provider-<wbr>policy.<wbr>type</code></a>
+- <a href="io.helidon.server.features.security.security.ProviderPolicyConfig.md#type"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>provider-<wbr>policy.<wbr>type</code></a>
 
 ---
 

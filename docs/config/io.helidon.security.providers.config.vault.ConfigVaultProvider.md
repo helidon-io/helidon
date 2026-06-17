@@ -1,4 +1,4 @@
-# io.helidon.security.providers.config.vault.ConfigVaultProvider
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>config.<wbr>vault.<wbr>Config<wbr>Vault<wbr>Provider
 
 ## Description
 
@@ -32,8 +32,8 @@ Secrets and Encryption provider using just configuration
 
 ## Usages
 
-- [`security.providers.config-vault`](io.helidon.security.spi.SecurityProvider.md#config-vault)
-- [`server.features.security.security.providers.config-vault`](io.helidon.security.spi.SecurityProvider.md#config-vault)
+- <a href="io.helidon.security.spi.SecurityProvider.md#config-vault"><code>security.<wbr>providers.<wbr>config-<wbr>vault</code></a>
+- <a href="io.helidon.security.spi.SecurityProvider.md#config-vault"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>config-<wbr>vault</code></a>
 
 ---
 

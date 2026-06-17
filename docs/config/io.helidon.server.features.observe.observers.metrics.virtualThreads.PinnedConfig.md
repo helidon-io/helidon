@@ -1,4 +1,4 @@
-# io.helidon.server.features.observe.observers.metrics.virtualThreads.PinnedConfig
+# io.<wbr>helidon.<wbr>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>virtual<wbr>Threads.<wbr>Pinned<wbr>Config
 
 ## Description
 
@@ -36,7 +36,7 @@ Configuration for server.features.observe.observers.metrics.virtual-threads.pinn
 
 ## Usages
 
-- [`server.features.observe.observers.metrics.virtual-threads.pinned`](io.helidon.server.features.observe.observers.metrics.VirtualThreadsConfig.md#pinned)
+- <a href="io.helidon.server.features.observe.observers.metrics.VirtualThreadsConfig.md#pinned"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>virtual-<wbr>threads.<wbr>pinned</code></a>
 
 ---
 

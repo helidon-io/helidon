@@ -1,4 +1,4 @@
-# io.helidon.metrics.api.GcTimeType
+# io.<wbr>helidon.<wbr>metrics.<wbr>api.<wbr>GcTime<wbr>Type
 
 ## Description
 
@@ -27,8 +27,8 @@ This type is an enumeration.
 
 ## Usages
 
-- [`metrics.gc-time-type`](io.helidon.MetricsConfig.md#gc-time-type)
-- [`server.features.observe.observers.metrics.gc-time-type`](io.helidon.webserver.observe.metrics.MetricsObserver.md#gc-time-type)
+- <a href="io.helidon.MetricsConfig.md#gc-time-type"><code>metrics.<wbr>gc-time-<wbr>type</code></a>
+- <a href="io.helidon.webserver.observe.metrics.MetricsObserver.md#gc-time-type"><code>server.<wbr>features.<wbr>observe.<wbr>observers.<wbr>metrics.<wbr>gc-time-<wbr>type</code></a>
 
 ---
 

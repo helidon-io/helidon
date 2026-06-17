@@ -1,4 +1,4 @@
-# io.helidon.security.SubjectType
+# io.<wbr>helidon.<wbr>security.<wbr>Subject<wbr>Type
 
 ## Description
 
@@ -27,16 +27,16 @@ This type is an enumeration.
 
 ## Usages
 
-- [`security.providers.header-atn.principal-type`](io.helidon.security.providers.header.HeaderAtnProvider.md#principal-type)
-- [`security.providers.http-basic-auth.principal-type`](io.helidon.security.providers.httpauth.HttpBasicAuthProvider.md#principal-type)
-- [`security.providers.http-digest-auth.principal-type`](io.helidon.security.providers.httpauth.HttpDigestAuthProvider.md#principal-type)
-- [`security.providers.idcs-role-mapper.subject-types`](io.helidon.security.providers.IdcsRoleMapperConfig.md#subject-types)
-- [`security.providers.jwt.principal-type`](io.helidon.security.providers.jwt.JwtProvider.md#principal-type)
-- [`server.features.security.security.providers.header-atn.principal-type`](io.helidon.security.providers.header.HeaderAtnProvider.md#principal-type)
-- [`server.features.security.security.providers.http-basic-auth.principal-type`](io.helidon.security.providers.httpauth.HttpBasicAuthProvider.md#principal-type)
-- [`server.features.security.security.providers.http-digest-auth.principal-type`](io.helidon.security.providers.httpauth.HttpDigestAuthProvider.md#principal-type)
-- [`server.features.security.security.providers.idcs-role-mapper.subject-types`](io.helidon.server.features.security.security.providers.IdcsRoleMapperConfig.md#subject-types)
-- [`server.features.security.security.providers.jwt.principal-type`](io.helidon.security.providers.jwt.JwtProvider.md#principal-type)
+- <a href="io.helidon.security.providers.header.HeaderAtnProvider.md#principal-type"><code>security.<wbr>providers.<wbr>header-<wbr>atn.<wbr>principal-<wbr>type</code></a>
+- <a href="io.helidon.security.providers.httpauth.HttpBasicAuthProvider.md#principal-type"><code>security.<wbr>providers.<wbr>http-<wbr>basic-<wbr>auth.<wbr>principal-<wbr>type</code></a>
+- <a href="io.helidon.security.providers.httpauth.HttpDigestAuthProvider.md#principal-type"><code>security.<wbr>providers.<wbr>http-<wbr>digest-<wbr>auth.<wbr>principal-<wbr>type</code></a>
+- <a href="io.helidon.security.providers.IdcsRoleMapperConfig.md#subject-types"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>subject-<wbr>types</code></a>
+- <a href="io.helidon.security.providers.jwt.JwtProvider.md#principal-type"><code>security.<wbr>providers.<wbr>jwt.<wbr>principal-<wbr>type</code></a>
+- <a href="io.helidon.security.providers.header.HeaderAtnProvider.md#principal-type"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>header-<wbr>atn.<wbr>principal-<wbr>type</code></a>
+- <a href="io.helidon.security.providers.httpauth.HttpBasicAuthProvider.md#principal-type"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>http-<wbr>basic-<wbr>auth.<wbr>principal-<wbr>type</code></a>
+- <a href="io.helidon.security.providers.httpauth.HttpDigestAuthProvider.md#principal-type"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>http-<wbr>digest-<wbr>auth.<wbr>principal-<wbr>type</code></a>
+- <a href="io.helidon.server.features.security.security.providers.IdcsRoleMapperConfig.md#subject-types"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>subject-<wbr>types</code></a>
+- <a href="io.helidon.security.providers.jwt.JwtProvider.md#principal-type"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>jwt.<wbr>principal-<wbr>type</code></a>
 
 ---
 

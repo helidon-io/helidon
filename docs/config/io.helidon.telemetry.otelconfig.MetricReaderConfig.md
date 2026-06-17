@@ -1,4 +1,4 @@
-# io.helidon.telemetry.otelconfig.MetricReaderConfig
+# io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Metric<wbr>Reader<wbr>Config
 
 ## Description
 
@@ -50,7 +50,7 @@ Settings for a metric reader
 
 ## Dependent Types
 
-- [io.helidon.telemetry.otelconfig.PeriodicMetricReaderConfig](io.helidon.telemetry.otelconfig.PeriodicMetricReaderConfig.md)
+- [io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Periodic<wbr>Metric<wbr>Reader<wbr>Config](io.helidon.telemetry.otelconfig.PeriodicMetricReaderConfig.md)
 
 ---
 

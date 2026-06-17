@@ -4,15 +4,15 @@
 
 See the [root type](config_reference.md).
 
-- [com.acme.AcmeAuditConfig](com.acme.AcmeAuditConfig.md)
-- [com.acme.AcmeListenerConfig](com.acme.AcmeListenerConfig.md)
-- [com.acme.AcmeServerConfig](com.acme.AcmeServerConfig.md)
+- [com.<wbr>acme.<wbr>Acme<wbr>Audit<wbr>Config](com.acme.AcmeAuditConfig.md)
+- [com.<wbr>acme.<wbr>Acme<wbr>Listener<wbr>Config](com.acme.AcmeListenerConfig.md)
+- [com.<wbr>acme.<wbr>Acme<wbr>Server<wbr>Config](com.acme.AcmeServerConfig.md)
 
 ## Provider Types
 
-- [com.acme.AcmeFeature](com.acme.AcmeFeature.md)
+- [com.<wbr>acme.<wbr>Acme<wbr>Feature](com.acme.AcmeFeature.md)
 
 ## Enum Types
 
-- [com.acme.AcmeMode](com.acme.AcmeMode.md)
-- [com.acme.AcmeNamedMode](com.acme.AcmeNamedMode.md)
+- [com.<wbr>acme.<wbr>Acme<wbr>Mode](com.acme.AcmeMode.md)
+- [com.<wbr>acme.<wbr>Acme<wbr>Named<wbr>Mode](com.acme.AcmeNamedMode.md)

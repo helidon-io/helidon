@@ -1,4 +1,4 @@
-# io.helidon.webserver.accesslog.AccessLogFeature
+# io.<wbr>helidon.<wbr>webserver.<wbr>accesslog.<wbr>Access<wbr>LogFeature
 
 ## Description
 
@@ -82,7 +82,7 @@ Configuration of access log feature
 
 ## Usages
 
-- [`server.features.access-log`](io.helidon.webserver.spi.ServerFeature.md#access-log)
+- <a href="io.helidon.webserver.spi.ServerFeature.md#access-log"><code>server.<wbr>features.<wbr>access-<wbr>log</code></a>
 
 ---
 

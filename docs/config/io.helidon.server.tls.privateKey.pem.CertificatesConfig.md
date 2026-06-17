@@ -1,4 +1,4 @@
-# io.helidon.server.tls.privateKey.pem.CertificatesConfig
+# io.<wbr>helidon.<wbr>server.<wbr>tls.<wbr>private<wbr>Key.<wbr>pem.<wbr>Certificates<wbr>Config
 
 ## Description
 
@@ -35,7 +35,7 @@ Configuration for server.tls.private-key.pem.certificates
 
 ## Usages
 
-- [`server.tls.private-key.pem.certificates`](io.helidon.common.pki.PemKeys.md#certificates)
+- <a href="io.helidon.common.pki.PemKeys.md#certificates"><code>server.<wbr>tls.<wbr>private-<wbr>key.<wbr>pem.<wbr>certificates</code></a>
 
 ---
 

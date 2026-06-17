@@ -1,4 +1,4 @@
-# io.helidon.server.sockets.tls.trust.pem.CertificatesConfig
+# io.<wbr>helidon.<wbr>server.<wbr>sockets.<wbr>tls.<wbr>trust.<wbr>pem.<wbr>Certificates<wbr>Config
 
 ## Description
 
@@ -35,7 +35,7 @@ Configuration for server.sockets.tls.trust.pem.certificates
 
 ## Usages
 
-- [`server.sockets.tls.trust.pem.certificates`](io.helidon.common.pki.PemKeys.md#certificates)
+- <a href="io.helidon.common.pki.PemKeys.md#certificates"><code>server.<wbr>sockets.<wbr>tls.<wbr>trust.<wbr>pem.<wbr>certificates</code></a>
 
 ---
 

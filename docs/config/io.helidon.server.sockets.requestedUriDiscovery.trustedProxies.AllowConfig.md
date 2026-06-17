@@ -1,4 +1,4 @@
-# io.helidon.server.sockets.requestedUriDiscovery.trustedProxies.AllowConfig
+# io.<wbr>helidon.<wbr>server.<wbr>sockets.<wbr>requested<wbr>UriDiscovery.<wbr>trusted<wbr>Proxies.<wbr>Allow<wbr>Config
 
 ## Description
 
@@ -80,7 +80,7 @@ Configuration for server.sockets.requested-uri-discovery.trusted-proxies.allow
 
 ## Usages
 
-- [`server.sockets.requested-uri-discovery.trusted-proxies.allow`](io.helidon.common.configurable.AllowList.md#allow)
+- <a href="io.helidon.common.configurable.AllowList.md#allow"><code>server.<wbr>sockets.<wbr>requested-<wbr>uri-<wbr>discovery.<wbr>trusted-<wbr>proxies.<wbr>allow</code></a>
 
 ---
 

@@ -1,4 +1,4 @@
-# io.helidon.security.spi.SecurityProvider
+# io.<wbr>helidon.<wbr>security.<wbr>spi.<wbr>Security<wbr>Provider
 
 ## Description
 
@@ -77,7 +77,7 @@ This type is a provider contract.
 <code>idcs-<wbr>role-<wbr>mapper</code>
 </a>
 </td>
-<td>Multitenant IDCS role mapping provider</td>
+<td>Multitenant IDCS role mapping provider. With default endpoint resolution, the first identity URI host label and extracted tenant IDs must be single DNS labels: 1 to 63 alphanumeric or hyphen characters, with no leading or trailing hyphen</td>
 </tr>
 <tr>
 <td>
@@ -113,8 +113,8 @@ This type is a provider contract.
 
 ## Usages
 
-- [`security.providers`](io.helidon.security.Security.md#providers)
-- [`server.features.security.security.providers`](io.helidon.security.Security.md#providers)
+- <a href="io.helidon.security.Security.md#providers"><code>security.<wbr>providers</code></a>
+- <a href="io.helidon.security.Security.md#providers"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers</code></a>
 
 ---
 

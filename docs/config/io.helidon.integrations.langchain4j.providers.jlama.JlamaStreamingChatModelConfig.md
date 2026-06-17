@@ -1,4 +1,4 @@
-# io.helidon.integrations.langchain4j.providers.jlama.JlamaStreamingChatModelConfig
+# io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>jlama.<wbr>Jlama<wbr>Streaming<wbr>Chat<wbr>Model<wbr>Config
 
 ## Description
 

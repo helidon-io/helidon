@@ -1,4 +1,4 @@
-# io.helidon.messaging.connectors.jms.JmsConfigBuilder
+# io.<wbr>helidon.<wbr>messaging.<wbr>connectors.<wbr>jms.<wbr>JmsConfig<wbr>Builder
 
 ## Description
 

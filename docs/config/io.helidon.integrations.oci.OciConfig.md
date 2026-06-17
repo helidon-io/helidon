@@ -1,4 +1,4 @@
-# io.helidon.integrations.oci.OciConfig
+# io.<wbr>helidon.<wbr>integrations.<wbr>oci.<wbr>OciConfig
 
 ## Description
 
@@ -139,7 +139,7 @@ Meta configuration of OCI integration for Helidon
 
 ## Usages
 
-- [`helidon.oci`](io.helidon.HelidonConfig.md#oci)
+- <a href="io.helidon.HelidonConfig.md#oci"><code>helidon.<wbr>oci</code></a>
 
 ---
 

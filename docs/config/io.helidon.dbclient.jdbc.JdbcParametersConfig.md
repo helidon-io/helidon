@@ -1,4 +1,4 @@
-# io.helidon.dbclient.jdbc.JdbcParametersConfig
+# io.<wbr>helidon.<wbr>dbclient.<wbr>jdbc.<wbr>Jdbc<wbr>Parameters<wbr>Config
 
 ## Description
 

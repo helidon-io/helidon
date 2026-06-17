@@ -1,4 +1,4 @@
-# io.helidon.server.features.security.security.providers.idcsRoleMapper.oidcConfig.webclient.tls.trust.pem.KeyConfig
+# io.<wbr>helidon.<wbr>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs<wbr>Role<wbr>Mapper.<wbr>oidc<wbr>Config.<wbr>webclient.<wbr>tls.<wbr>trust.<wbr>pem.<wbr>KeyConfig
 
 ## Description
 
@@ -44,7 +44,7 @@ Configuration for server.features.security.security.providers.idcs-role-mapper.o
 
 ## Usages
 
-- [`server.features.security.security.providers.idcs-role-mapper.oidc-config.webclient.tls.trust.pem.key`](io.helidon.common.pki.PemKeys.md#key)
+- <a href="io.helidon.common.pki.PemKeys.md#key"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>tls.<wbr>trust.<wbr>pem.<wbr>key</code></a>
 
 ---
 

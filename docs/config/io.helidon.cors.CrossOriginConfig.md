@@ -1,4 +1,4 @@
-# io.helidon.cors.CrossOriginConfig
+# io.<wbr>helidon.<wbr>cors.<wbr>Cross<wbr>Origin<wbr>Config
 
 ## Description
 
@@ -39,7 +39,7 @@ Represents information about cross origin request sharing
 <td>
 <code>false</code>
 </td>
-<td>Sets the allow credentials flag</td>
+<td>Sets the allow credentials flag. Cannot be enabled with wildcard origins</td>
 </tr>
 <tr>
 <td>
@@ -119,13 +119,13 @@ Represents information about cross origin request sharing
 
 ## Usages
 
-- [`openapi.cors`](io.helidon.openapi.OpenApiFeature.md#cors)
-- [`security.providers.idcs-role-mapper.oidc-config.cors`](io.helidon.security.providers.oidc.common.OidcConfig.md#cors)
-- [`security.providers.oidc.cors`](io.helidon.security.providers.oidc.OidcProvider.md#cors)
-- [`server.features.observe.cors`](io.helidon.webserver.observe.ObserveFeature.md#cors)
-- [`server.features.openapi.cors`](io.helidon.openapi.OpenApiFeature.md#cors)
-- [`server.features.security.security.providers.idcs-role-mapper.oidc-config.cors`](io.helidon.security.providers.oidc.common.OidcConfig.md#cors)
-- [`server.features.security.security.providers.oidc.cors`](io.helidon.security.providers.oidc.OidcProvider.md#cors)
+- <a href="io.helidon.openapi.OpenApiFeature.md#cors"><code>openapi.<wbr>cors</code></a>
+- <a href="io.helidon.security.providers.oidc.common.OidcConfig.md#cors"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>cors</code></a>
+- <a href="io.helidon.security.providers.oidc.OidcProvider.md#cors"><code>security.<wbr>providers.<wbr>oidc.<wbr>cors</code></a>
+- <a href="io.helidon.webserver.observe.ObserveFeature.md#cors"><code>server.<wbr>features.<wbr>observe.<wbr>cors</code></a>
+- <a href="io.helidon.openapi.OpenApiFeature.md#cors"><code>server.<wbr>features.<wbr>openapi.<wbr>cors</code></a>
+- <a href="io.helidon.security.providers.oidc.common.OidcConfig.md#cors"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>cors</code></a>
+- <a href="io.helidon.security.providers.oidc.OidcProvider.md#cors"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>cors</code></a>
 
 ---
 

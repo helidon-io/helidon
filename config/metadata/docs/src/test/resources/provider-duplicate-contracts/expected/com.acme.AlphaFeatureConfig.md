@@ -1,4 +1,4 @@
-# com.acme.AlphaFeatureConfig
+# com.<wbr>acme.<wbr>Alpha<wbr>Feature<wbr>Config
 
 ## Description
 

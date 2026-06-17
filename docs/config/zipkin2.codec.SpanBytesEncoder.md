@@ -1,4 +1,4 @@
-# zipkin2.codec.SpanBytesEncoder
+# zipkin2.<wbr>codec.<wbr>Span<wbr>Bytes<wbr>Encoder
 
 ## Description
 

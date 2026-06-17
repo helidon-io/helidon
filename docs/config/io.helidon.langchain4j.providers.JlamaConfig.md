@@ -1,4 +1,4 @@
-# io.helidon.langchain4j.providers.JlamaConfig
+# io.<wbr>helidon.<wbr>langchain4j.<wbr>providers.<wbr>Jlama<wbr>Config
 
 ## Description
 
@@ -152,14 +152,14 @@ Merged configuration for langchain4j.providers.jlama
 
 ## Merged Types
 
-- [io.helidon.integrations.langchain4j.providers.jlama.JlamaChatModelConfig](io.helidon.integrations.langchain4j.providers.jlama.JlamaChatModelConfig.md)
-- [io.helidon.integrations.langchain4j.providers.jlama.JlamaEmbeddingModelConfig](io.helidon.integrations.langchain4j.providers.jlama.JlamaEmbeddingModelConfig.md)
-- [io.helidon.integrations.langchain4j.providers.jlama.JlamaLanguageModelConfig](io.helidon.integrations.langchain4j.providers.jlama.JlamaLanguageModelConfig.md)
-- [io.helidon.integrations.langchain4j.providers.jlama.JlamaStreamingChatModelConfig](io.helidon.integrations.langchain4j.providers.jlama.JlamaStreamingChatModelConfig.md)
+- [io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>jlama.<wbr>Jlama<wbr>Chat<wbr>Model<wbr>Config](io.helidon.integrations.langchain4j.providers.jlama.JlamaChatModelConfig.md)
+- [io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>jlama.<wbr>Jlama<wbr>Embedding<wbr>Model<wbr>Config](io.helidon.integrations.langchain4j.providers.jlama.JlamaEmbeddingModelConfig.md)
+- [io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>jlama.<wbr>Jlama<wbr>Language<wbr>Model<wbr>Config](io.helidon.integrations.langchain4j.providers.jlama.JlamaLanguageModelConfig.md)
+- [io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>jlama.<wbr>Jlama<wbr>Streaming<wbr>Chat<wbr>Model<wbr>Config](io.helidon.integrations.langchain4j.providers.jlama.JlamaStreamingChatModelConfig.md)
 
 ## Usages
 
-- [`langchain4j.providers.jlama`](io.helidon.langchain4j.ProvidersConfig.md#jlama)
+- <a href="io.helidon.langchain4j.ProvidersConfig.md#jlama"><code>langchain4j.<wbr>providers.<wbr>jlama</code></a>
 
 ---
 

@@ -1,4 +1,4 @@
-# io.helidon.integrations.langchain4j.providers.ollama.OllamaLanguageModelConfig
+# io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>ollama.<wbr>Ollama<wbr>Language<wbr>Model<wbr>Config
 
 ## Description
 

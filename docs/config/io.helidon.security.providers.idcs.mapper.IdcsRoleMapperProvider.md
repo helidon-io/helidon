@@ -1,4 +1,4 @@
-# io.helidon.security.providers.idcs.mapper.IdcsRoleMapperProvider
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>idcs.<wbr>mapper.<wbr>Idcs<wbr>Role<wbr>Mapper<wbr>Provider
 
 ## Description
 

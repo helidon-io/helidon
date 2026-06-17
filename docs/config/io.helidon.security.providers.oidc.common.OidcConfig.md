@@ -1,4 +1,4 @@
-# io.helidon.security.providers.oidc.common.OidcConfig
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>common.<wbr>Oidc<wbr>Config
 
 ## Description
 
@@ -167,7 +167,7 @@ Open ID Connect configuration
 </td>
 <td>
 </td>
-<td>Name of the encryption configuration available through <code>Security#<wbr>encrypt(<wbr>String,<wbr> byte[])</code> and <code>Security#<wbr>decrypt(<wbr>String,<wbr> String)</code></td>
+<td>Name of the encryption configuration available through Security encryption. If configured and encryption is enabled for any cookie, Security must be registered in the global or current context</td>
 </tr>
 <tr>
 <td>
@@ -178,7 +178,7 @@ Open ID Connect configuration
 </td>
 <td>
 </td>
-<td>Master password for encryption/decryption of cookies</td>
+<td>Master password for encryption/decryption of cookies. Configure the same value on each service that shares encrypted cookies. If encrypted cookies are enabled and neither this option nor cookie-encryption-name is configured, Helidon creates or reads .helidon-oidc-secret in the current working directory</td>
 </tr>
 <tr>
 <td>
@@ -636,6 +636,21 @@ Open ID Connect configuration
 </tr>
 <tr>
 <td>
+<a id="redirect-attempt-counter-strategy"></a>
+<a href="io.helidon.security.providers.oidc.common.RedirectAttemptCounterStrategy.md">
+<code>redirect-<wbr>attempt-<wbr>counter-<wbr>strategy</code>
+</a>
+</td>
+<td>
+<code>Redirect<wbr>Attempt<wbr>Counter<wbr>Strategy</code>
+</td>
+<td>
+<code>PARAM</code>
+</td>
+<td>Configure the strategy used to count redirects to an identity server</td>
+</tr>
+<tr>
+<td>
 <code>redirect-<wbr>attempt-<wbr>param</code>
 </td>
 <td>
@@ -644,7 +659,7 @@ Open ID Connect configuration
 <td>
 <code>h_<wbr>ra</code>
 </td>
-<td>Configure the parameter used to store the number of attempts in redirect</td>
+<td>Configure the redirect attempt query parameter and cookie name prefix</td>
 </tr>
 <tr>
 <td>
@@ -721,7 +736,7 @@ Open ID Connect configuration
 <td>
 <code>CLIENT_<wbr>SECRET_<wbr>BASIC</code>
 </td>
-<td>Type of authentication to use when invoking the token endpoint</td>
+<td>Type of authentication to use when invoking the token endpoint. With CLIENT_SECRET_BASIC, credentials are sent only to POST requests on the resolved token endpoint scheme, host, and path and, when JWT introspection is used, to POST requests on the resolved introspection endpoint scheme, host, and path</td>
 </tr>
 <tr>
 <td>
@@ -830,12 +845,12 @@ Open ID Connect configuration
 
 ## Dependent Types
 
-- [io.helidon.security.providers.oidc.OidcProvider](io.helidon.security.providers.oidc.OidcProvider.md)
+- [io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>Oidc<wbr>Provider](io.helidon.security.providers.oidc.OidcProvider.md)
 
 ## Usages
 
-- [`security.providers.idcs-role-mapper.oidc-config`](io.helidon.security.providers.IdcsRoleMapperConfig.md#oidc-config)
-- [`server.features.security.security.providers.idcs-role-mapper.oidc-config`](io.helidon.server.features.security.security.providers.IdcsRoleMapperConfig.md#oidc-config)
+- <a href="io.helidon.security.providers.IdcsRoleMapperConfig.md#oidc-config"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config</code></a>
+- <a href="io.helidon.server.features.security.security.providers.IdcsRoleMapperConfig.md#oidc-config"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config</code></a>
 
 ---
 

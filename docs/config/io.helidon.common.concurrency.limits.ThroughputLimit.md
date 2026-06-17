@@ -1,4 +1,4 @@
-# io.helidon.common.concurrency.limits.ThroughputLimit
+# io.<wbr>helidon.<wbr>common.<wbr>concurrency.<wbr>limits.<wbr>Throughput<wbr>Limit
 
 ## Description
 
@@ -111,9 +111,9 @@ Configuration of <code>Throughput<wbr>Limit</code>
 
 ## Usages
 
-- [`server.concurrency-limit.throughput`](io.helidon.common.concurrency.limits.Limit.md#throughput)
-- [`server.features.limits.concurrency-limit.throughput`](io.helidon.common.concurrency.limits.Limit.md#throughput)
-- [`server.sockets.concurrency-limit.throughput`](io.helidon.common.concurrency.limits.Limit.md#throughput)
+- <a href="io.helidon.common.concurrency.limits.Limit.md#throughput"><code>server.<wbr>concurrency-<wbr>limit.<wbr>throughput</code></a>
+- <a href="io.helidon.common.concurrency.limits.Limit.md#throughput"><code>server.<wbr>features.<wbr>limits.<wbr>concurrency-<wbr>limit.<wbr>throughput</code></a>
+- <a href="io.helidon.common.concurrency.limits.Limit.md#throughput"><code>server.<wbr>sockets.<wbr>concurrency-<wbr>limit.<wbr>throughput</code></a>
 
 ---
 

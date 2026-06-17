@@ -1,4 +1,4 @@
-# io.helidon.metrics.TimersConfig
+# io.<wbr>helidon.<wbr>metrics.<wbr>Timers<wbr>Config
 
 ## Description
 
@@ -35,7 +35,7 @@ Configuration for metrics.timers
 
 ## Usages
 
-- [`metrics.timers`](io.helidon.MetricsConfig.md#timers)
+- <a href="io.helidon.MetricsConfig.md#timers"><code>metrics.<wbr>timers</code></a>
 
 ---
 

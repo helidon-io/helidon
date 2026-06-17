@@ -1,4 +1,4 @@
-# io.helidon.security.providers.httpsign.HttpSignProvider
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>httpsign.<wbr>Http<wbr>Sign<wbr>Provider
 
 ## Description
 
@@ -30,6 +30,18 @@ HTTP header signature provider
 <td>
 </td>
 <td>Add a header that is validated on inbound requests</td>
+</tr>
+<tr>
+<td>
+<code>inbound-<wbr>date-<wbr>validity</code>
+</td>
+<td>
+<code>Duration</code>
+</td>
+<td>
+<code>PT5M</code>
+</td>
+<td>Configure the maximum accepted age or future skew for the signed <code>Date</code> header</td>
 </tr>
 <tr>
 <td>

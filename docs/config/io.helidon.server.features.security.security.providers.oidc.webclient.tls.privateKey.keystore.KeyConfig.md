@@ -1,4 +1,4 @@
-# io.helidon.server.features.security.security.providers.oidc.webclient.tls.privateKey.keystore.KeyConfig
+# io.<wbr>helidon.<wbr>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>private<wbr>Key.<wbr>keystore.<wbr>KeyConfig
 
 ## Description
 
@@ -41,7 +41,7 @@ Configuration for server.features.security.security.providers.oidc.webclient.tls
 
 ## Usages
 
-- [`server.features.security.security.providers.oidc.webclient.tls.private-key.keystore.key`](io.helidon.common.pki.KeystoreKeys.md#key)
+- <a href="io.helidon.common.pki.KeystoreKeys.md#key"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>tls.<wbr>private-<wbr>key.<wbr>keystore.<wbr>key</code></a>
 
 ---
 

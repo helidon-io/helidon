@@ -1,4 +1,4 @@
-# io.helidon.http.encoding.ContentEncodingContext
+# io.<wbr>helidon.<wbr>http.<wbr>encoding.<wbr>Content<wbr>Encoding<wbr>Context
 
 ## Description
 
@@ -50,8 +50,13 @@ Content encoding support to obtain encoders and decoders
 
 ## Usages
 
-- [`server.content-encoding`](io.helidon.webserver.WebServer.md#content-encoding)
-- [`server.sockets.content-encoding`](io.helidon.webserver.ListenerConfig.md#content-encoding)
+- <a href="io.helidon.webclient.api.WebClient.md#content-encoding"><code>clients.<wbr>content-<wbr>encoding</code></a>
+- <a href="io.helidon.webclient.api.WebClient.md#content-encoding"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>content-<wbr>encoding</code></a>
+- <a href="io.helidon.webclient.api.WebClient.md#content-encoding"><code>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>content-<wbr>encoding</code></a>
+- <a href="io.helidon.webserver.WebServer.md#content-encoding"><code>server.<wbr>content-<wbr>encoding</code></a>
+- <a href="io.helidon.webclient.api.WebClient.md#content-encoding"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>content-<wbr>encoding</code></a>
+- <a href="io.helidon.webclient.api.WebClient.md#content-encoding"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>content-<wbr>encoding</code></a>
+- <a href="io.helidon.webserver.ListenerConfig.md#content-encoding"><code>server.<wbr>sockets.<wbr>content-<wbr>encoding</code></a>
 
 ---
 

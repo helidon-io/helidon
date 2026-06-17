@@ -1,4 +1,4 @@
-# io.helidon.integrations.langchain4j.providers.lc4jinprocess.InProcessModelType
+# io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>lc4jinprocess.<wbr>InProcess<wbr>Model<wbr>Type
 
 ## Description
 
@@ -31,7 +31,7 @@ This type is an enumeration.
 
 ## Usages
 
-- [`langchain4j.providers.lc4j-in-process.type`](io.helidon.integrations.langchain4j.providers.lc4jinprocess.InProcessEmbeddingModelConfig.md#type)
+- <a href="io.helidon.integrations.langchain4j.providers.lc4jinprocess.InProcessEmbeddingModelConfig.md#type"><code>langchain4j.<wbr>providers.<wbr>lc4j-<wbr>in-process.<wbr>type</code></a>
 
 ---
 

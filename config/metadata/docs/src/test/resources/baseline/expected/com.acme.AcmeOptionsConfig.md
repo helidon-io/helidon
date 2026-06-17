@@ -1,4 +1,4 @@
-# com.acme.AcmeOptionsConfig
+# com.<wbr>acme.<wbr>Acme<wbr>Options<wbr>Config
 
 ## Description
 
@@ -62,7 +62,7 @@ N/A
 
 ## Dependent Types
 
-- [com.acme.AcmeServerConfig](com.acme.AcmeServerConfig.md)
+- [com.<wbr>acme.<wbr>Acme<wbr>Server<wbr>Config](com.acme.AcmeServerConfig.md)
 
 ---
 

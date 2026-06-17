@@ -1,4 +1,4 @@
-# io.helidon.faulttolerance.Retry
+# io.<wbr>helidon.<wbr>faulttolerance.<wbr>Retry
 
 ## Description
 
@@ -96,7 +96,7 @@
 
 ## Usages
 
-- [`fault-tolerance.retries`](io.helidon.FaultToleranceConfig.md#retries)
+- <a href="io.helidon.FaultToleranceConfig.md#retries"><code>fault-<wbr>tolerance.<wbr>retries</code></a>
 
 ---
 

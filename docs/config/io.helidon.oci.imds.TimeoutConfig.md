@@ -1,4 +1,4 @@
-# io.helidon.oci.imds.TimeoutConfig
+# io.<wbr>helidon.<wbr>oci.<wbr>imds.<wbr>Timeout<wbr>Config
 
 ## Description
 
@@ -36,7 +36,7 @@ Configuration for oci.imds.timeout
 
 ## Usages
 
-- [`oci.imds.timeout`](io.helidon.oci.ImdsConfig.md#timeout)
+- <a href="io.helidon.oci.ImdsConfig.md#timeout"><code>oci.<wbr>imds.<wbr>timeout</code></a>
 
 ---
 

@@ -1,4 +1,4 @@
-# com.acme.AcmeHelperConfig
+# com.<wbr>acme.<wbr>Acme<wbr>Helper<wbr>Config
 
 ## Description
 

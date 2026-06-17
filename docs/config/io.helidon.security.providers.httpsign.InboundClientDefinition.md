@@ -1,4 +1,4 @@
-# io.helidon.security.providers.httpsign.InboundClientDefinition
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>httpsign.<wbr>Inbound<wbr>Client<wbr>Definition
 
 ## Description
 

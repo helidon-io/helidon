@@ -1,4 +1,4 @@
-# com.acme.AcmeCollisionConfig
+# com.<wbr>acme.<wbr>Acme<wbr>Collision<wbr>Config
 
 ## Description
 

@@ -1,4 +1,4 @@
-# io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.PropagationFormat
+# io.<wbr>helidon.<wbr>tracing.<wbr>providers.<wbr>jaeger.<wbr>Jaeger<wbr>Tracer<wbr>Builder.<wbr>Propagation<wbr>Format
 
 ## Description
 
@@ -35,7 +35,7 @@ This type is an enumeration.
 
 ## Usages
 
-- [`tracing.propagation`](io.helidon.TracingConfig.md#propagation)
+- <a href="io.helidon.TracingConfig.md#propagation"><code>tracing.<wbr>propagation</code></a>
 
 ---
 

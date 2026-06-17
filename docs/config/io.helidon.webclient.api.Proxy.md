@@ -1,4 +1,4 @@
-# io.helidon.webclient.api.Proxy
+# io.<wbr>helidon.<wbr>webclient.<wbr>api.<wbr>Proxy
 
 ## Description
 
@@ -105,11 +105,11 @@ A definition of a proxy server to use for outgoing requests
 
 ## Usages
 
-- [`clients.proxy`](io.helidon.webclient.api.WebClient.md#proxy)
-- [`security.providers.idcs-role-mapper.oidc-config.webclient.proxy`](io.helidon.webclient.api.WebClient.md#proxy)
-- [`security.providers.oidc.webclient.proxy`](io.helidon.webclient.api.WebClient.md#proxy)
-- [`server.features.security.security.providers.idcs-role-mapper.oidc-config.webclient.proxy`](io.helidon.webclient.api.WebClient.md#proxy)
-- [`server.features.security.security.providers.oidc.webclient.proxy`](io.helidon.webclient.api.WebClient.md#proxy)
+- <a href="io.helidon.webclient.api.WebClient.md#proxy"><code>clients.<wbr>proxy</code></a>
+- <a href="io.helidon.webclient.api.WebClient.md#proxy"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>proxy</code></a>
+- <a href="io.helidon.webclient.api.WebClient.md#proxy"><code>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>proxy</code></a>
+- <a href="io.helidon.webclient.api.WebClient.md#proxy"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>proxy</code></a>
+- <a href="io.helidon.webclient.api.WebClient.md#proxy"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>proxy</code></a>
 
 ---
 

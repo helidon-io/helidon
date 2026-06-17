@@ -1,4 +1,4 @@
-# io.helidon.security.providers.idcsRoleMapper.oidcConfig.SignJwkConfig
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>idcs<wbr>Role<wbr>Mapper.<wbr>oidc<wbr>Config.<wbr>Sign<wbr>JwkConfig
 
 ## Description
 
@@ -35,7 +35,7 @@ Configuration for security.providers.idcs-role-mapper.oidc-config.sign-jwk
 
 ## Usages
 
-- [`security.providers.idcs-role-mapper.oidc-config.sign-jwk`](io.helidon.security.providers.oidc.common.OidcConfig.md#sign-jwk)
+- <a href="io.helidon.security.providers.oidc.common.OidcConfig.md#sign-jwk"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>sign-<wbr>jwk</code></a>
 
 ---
 

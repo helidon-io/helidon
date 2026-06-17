@@ -1,4 +1,4 @@
-# io.helidon.security.Security
+# io.<wbr>helidon.<wbr>security.<wbr>Security
 
 ## Description
 
@@ -125,8 +125,8 @@ Configuration of security providers, integration and other security options
 
 ## Usages
 
-- [`security`](config_reference.md#security)
-- [`server.features.security.security`](io.helidon.webserver.security.SecurityFeature.md#security)
+- <a href="config_reference.md#security"><code>security</code></a>
+- <a href="io.helidon.webserver.security.SecurityFeature.md#security"><code>server.<wbr>features.<wbr>security.<wbr>security</code></a>
 
 ---
 

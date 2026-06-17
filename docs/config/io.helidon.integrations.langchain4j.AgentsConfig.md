@@ -1,4 +1,4 @@
-# io.helidon.integrations.langchain4j.AgentsConfig
+# io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>Agents<wbr>Config
 
 ## Description
 
@@ -201,7 +201,7 @@ Configuration for a single LangChain4j agent
 
 ## Usages
 
-- [`langchain4j.agents`](io.helidon.Langchain4jConfig.md#agents)
+- <a href="io.helidon.Langchain4jConfig.md#agents"><code>langchain4j.<wbr>agents</code></a>
 
 ---
 

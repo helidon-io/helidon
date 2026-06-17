@@ -318,17 +318,12 @@ Users of the Helidon Eureka Discovery provider may also be interested in the
 (related) [Eureka Server Service Instance Registration][eureka-server-se]
 feature.
 
-## Integrations
-
-Helidon integrates a [Discovery provider](#providers) with other Helidon modules
-as described below.
-
-### Web Client Discovery Integration
+## WebClient Integration
 
 Helidon integrates a [Discovery provider](#providers) with [Web
 Client](webclient.md).
 
-#### Maven Coordinates
+### Maven Coordinates
 
 To include the Helidon Web Client Discovery integration in your project, you add
 the Web Client Discovery integration dependency as well as a [Discovery
@@ -363,7 +358,7 @@ Dependencies](../managing-dependencies.md)):
 The behavior of the Web Client Discovery integration is [fully specified and
 documented][fully-specified].
 
-#### Configuration
+### Configuration
 
 The Helidon Web Client Discovery integration can be configured using [Helidon
 Config](config/introduction.md). Examples shown below are in YAML, but are
@@ -385,7 +380,7 @@ webclient:
 You also configure the Discovery provider in use following its documentation.
 See, for example, [Eureka configuration](#configuration).
 
-#### Configuring URIs
+### Configuring URIs
 
 To mark URIs requested by a Web Client as subject to discovery, and to use
 discovery names appropriate for them, you need to configure *prefix URIs*. URIs

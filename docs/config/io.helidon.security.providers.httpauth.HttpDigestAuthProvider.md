@@ -1,4 +1,4 @@
-# io.helidon.security.providers.httpauth.HttpDigestAuthProvider
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>httpauth.<wbr>Http<wbr>Digest<wbr>Auth<wbr>Provider
 
 ## Description
 
@@ -130,8 +130,8 @@ Http digest authentication security provider
 
 ## Usages
 
-- [`security.providers.http-digest-auth`](io.helidon.security.spi.SecurityProvider.md#http-digest-auth)
-- [`server.features.security.security.providers.http-digest-auth`](io.helidon.security.spi.SecurityProvider.md#http-digest-auth)
+- <a href="io.helidon.security.spi.SecurityProvider.md#http-digest-auth"><code>security.<wbr>providers.<wbr>http-<wbr>digest-<wbr>auth</code></a>
+- <a href="io.helidon.security.spi.SecurityProvider.md#http-digest-auth"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>http-<wbr>digest-<wbr>auth</code></a>
 
 ---
 

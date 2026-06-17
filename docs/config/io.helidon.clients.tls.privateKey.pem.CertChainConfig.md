@@ -1,4 +1,4 @@
-# io.helidon.clients.tls.privateKey.pem.CertChainConfig
+# io.<wbr>helidon.<wbr>clients.<wbr>tls.<wbr>private<wbr>Key.<wbr>pem.<wbr>Cert<wbr>Chain<wbr>Config
 
 ## Description
 
@@ -35,7 +35,7 @@ Configuration for clients.tls.private-key.pem.cert-chain
 
 ## Usages
 
-- [`clients.tls.private-key.pem.cert-chain`](io.helidon.common.pki.PemKeys.md#cert-chain)
+- <a href="io.helidon.common.pki.PemKeys.md#cert-chain"><code>clients.<wbr>tls.<wbr>private-<wbr>key.<wbr>pem.<wbr>cert-<wbr>chain</code></a>
 
 ---
 

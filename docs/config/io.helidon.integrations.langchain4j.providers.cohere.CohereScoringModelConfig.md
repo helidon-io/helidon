@@ -1,4 +1,4 @@
-# io.helidon.integrations.langchain4j.providers.cohere.CohereScoringModelConfig
+# io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>cohere.<wbr>Cohere<wbr>Scoring<wbr>Model<wbr>Config
 
 ## Description
 

@@ -1,4 +1,4 @@
-# io.helidon.security.providers.jwt.JwtProvider
+# io.<wbr>helidon.<wbr>security.<wbr>providers.<wbr>jwt.<wbr>JwtProvider
 
 ## Description
 
@@ -65,6 +65,29 @@ JWT authentication provider
 <code>true</code>
 </td>
 <td>Whether to authenticate requests</td>
+</tr>
+<tr>
+<td>
+<code>jwt-<wbr>groups-<wbr>path</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>
+<code>groups</code>
+</td>
+<td>Path to the JWT payload claim containing the groups to add as role grants</td>
+</tr>
+<tr>
+<td>
+<code>jwt-<wbr>groups-<wbr>separator</code>
+</td>
+<td>
+<code>String</code>
+</td>
+<td>
+</td>
+<td>Separator used to split a string claim value into multiple groups</td>
 </tr>
 <tr>
 <td>
@@ -138,8 +161,8 @@ JWT authentication provider
 
 ## Usages
 
-- [`security.providers.jwt`](io.helidon.security.spi.SecurityProvider.md#jwt)
-- [`server.features.security.security.providers.jwt`](io.helidon.security.spi.SecurityProvider.md#jwt)
+- <a href="io.helidon.security.spi.SecurityProvider.md#jwt"><code>security.<wbr>providers.<wbr>jwt</code></a>
+- <a href="io.helidon.security.spi.SecurityProvider.md#jwt"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>jwt</code></a>
 
 ---
 

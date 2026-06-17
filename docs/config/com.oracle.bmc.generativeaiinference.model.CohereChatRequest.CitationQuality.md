@@ -1,4 +1,4 @@
-# com.oracle.bmc.generativeaiinference.model.CohereChatRequest.CitationQuality
+# com.<wbr>oracle.<wbr>bmc.<wbr>generativeaiinference.<wbr>model.<wbr>Cohere<wbr>Chat<wbr>Request.<wbr>Citation<wbr>Quality
 
 ## Description
 
@@ -27,7 +27,7 @@ This type is an enumeration.
 
 ## Usages
 
-- [`langchain4j.providers.oci-gen-ai-cohere.citation-quality`](io.helidon.langchain4j.providers.OciGenAiCohereConfig.md#citation-quality)
+- <a href="io.helidon.langchain4j.providers.OciGenAiCohereConfig.md#citation-quality"><code>langchain4j.<wbr>providers.<wbr>oci-<wbr>gen-<wbr>ai-cohere.<wbr>citation-<wbr>quality</code></a>
 
 ---
 

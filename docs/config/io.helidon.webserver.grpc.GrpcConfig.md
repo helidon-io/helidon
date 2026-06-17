@@ -1,4 +1,4 @@
-# io.helidon.webserver.grpc.GrpcConfig
+# io.<wbr>helidon.<wbr>webserver.<wbr>grpc.<wbr>Grpc<wbr>Config
 
 ## Description
 
@@ -86,8 +86,8 @@
 
 ## Usages
 
-- [`server.protocols.grpc`](io.helidon.webserver.spi.ProtocolConfig.md#grpc)
-- [`server.sockets.protocols.grpc`](io.helidon.webserver.spi.ProtocolConfig.md#grpc)
+- <a href="io.helidon.webserver.spi.ProtocolConfig.md#grpc"><code>server.<wbr>protocols.<wbr>grpc</code></a>
+- <a href="io.helidon.webserver.spi.ProtocolConfig.md#grpc"><code>server.<wbr>sockets.<wbr>protocols.<wbr>grpc</code></a>
 
 ---
 

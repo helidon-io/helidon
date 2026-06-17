@@ -1,4 +1,4 @@
-# io.helidon.ConfigReferenceConfig
+# io.<wbr>helidon.<wbr>Config<wbr>Reference<wbr>Config
 
 ## Description
 
@@ -28,7 +28,7 @@ Configuration for config_reference
 
 ## Usages
 
-- [`config_reference`](config_reference.md#config_reference)
+- <a href="config_reference.md#config_reference"><code>config_<wbr>reference</code></a>
 
 ---
 

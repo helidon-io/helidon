@@ -1,4 +1,4 @@
-# io.opentelemetry.sdk.common.InternalTelemetryVersion
+# io.<wbr>opentelemetry.<wbr>sdk.<wbr>common.<wbr>Internal<wbr>Telemetry<wbr>Version
 
 ## Description
 

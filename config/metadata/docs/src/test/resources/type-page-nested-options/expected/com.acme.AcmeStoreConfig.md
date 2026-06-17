@@ -1,4 +1,4 @@
-# com.acme.AcmeStoreConfig
+# com.<wbr>acme.<wbr>Acme<wbr>Store<wbr>Config
 
 ## Description
 
@@ -56,7 +56,7 @@ Store configuration.
 
 ## Usages
 
-- [`store`](config_reference.md#store)
+- <a href="config_reference.md#store"><code>store</code></a>
 
 ---
 

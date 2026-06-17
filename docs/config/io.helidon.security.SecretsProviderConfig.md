@@ -1,4 +1,4 @@
-# io.helidon.security.SecretsProviderConfig
+# io.<wbr>helidon.<wbr>security.<wbr>Secrets<wbr>Provider<wbr>Config
 
 ## Description
 
@@ -32,8 +32,8 @@ This type is a provider contract.
 
 ## Usages
 
-- [`security.secrets.config`](io.helidon.security.SecretsConfig.md#config)
-- [`server.features.security.security.secrets.config`](io.helidon.server.features.security.security.SecretsConfig.md#config)
+- <a href="io.helidon.security.SecretsConfig.md#config"><code>security.<wbr>secrets.<wbr>config</code></a>
+- <a href="io.helidon.server.features.security.security.SecretsConfig.md#config"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>secrets.<wbr>config</code></a>
 
 ---
 

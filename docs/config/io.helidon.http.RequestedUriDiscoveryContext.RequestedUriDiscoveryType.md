@@ -1,4 +1,4 @@
-# io.helidon.http.RequestedUriDiscoveryContext.RequestedUriDiscoveryType
+# io.<wbr>helidon.<wbr>http.<wbr>Requested<wbr>UriDiscovery<wbr>Context.<wbr>Requested<wbr>UriDiscovery<wbr>Type
 
 ## Description
 
@@ -31,12 +31,12 @@ This type is an enumeration.
 
 ## Usages
 
-- [`server.protocols.http_1_1.requested-uri-discovery.types`](io.helidon.http.RequestedUriDiscoveryContext.md#types)
-- [`server.protocols.http_2.requested-uri-discovery.types`](io.helidon.http.RequestedUriDiscoveryContext.md#types)
-- [`server.requested-uri-discovery.types`](io.helidon.http.RequestedUriDiscoveryContext.md#types)
-- [`server.sockets.protocols.http_1_1.requested-uri-discovery.types`](io.helidon.http.RequestedUriDiscoveryContext.md#types)
-- [`server.sockets.protocols.http_2.requested-uri-discovery.types`](io.helidon.http.RequestedUriDiscoveryContext.md#types)
-- [`server.sockets.requested-uri-discovery.types`](io.helidon.http.RequestedUriDiscoveryContext.md#types)
+- <a href="io.helidon.http.RequestedUriDiscoveryContext.md#types"><code>server.<wbr>protocols.<wbr>http_<wbr>1_1.<wbr>requested-<wbr>uri-<wbr>discovery.<wbr>types</code></a>
+- <a href="io.helidon.http.RequestedUriDiscoveryContext.md#types"><code>server.<wbr>protocols.<wbr>http_<wbr>2.requested-<wbr>uri-<wbr>discovery.<wbr>types</code></a>
+- <a href="io.helidon.http.RequestedUriDiscoveryContext.md#types"><code>server.<wbr>requested-<wbr>uri-<wbr>discovery.<wbr>types</code></a>
+- <a href="io.helidon.http.RequestedUriDiscoveryContext.md#types"><code>server.<wbr>sockets.<wbr>protocols.<wbr>http_<wbr>1_1.<wbr>requested-<wbr>uri-<wbr>discovery.<wbr>types</code></a>
+- <a href="io.helidon.http.RequestedUriDiscoveryContext.md#types"><code>server.<wbr>sockets.<wbr>protocols.<wbr>http_<wbr>2.requested-<wbr>uri-<wbr>discovery.<wbr>types</code></a>
+- <a href="io.helidon.http.RequestedUriDiscoveryContext.md#types"><code>server.<wbr>sockets.<wbr>requested-<wbr>uri-<wbr>discovery.<wbr>types</code></a>
 
 ---
 

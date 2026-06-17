@@ -1,4 +1,4 @@
-# io.helidon.integrations.eureka.EurekaRegistrationServerFeature
+# io.<wbr>helidon.<wbr>integrations.<wbr>eureka.<wbr>Eureka<wbr>Registration<wbr>Server<wbr>Feature
 
 ## Description
 
@@ -62,7 +62,7 @@ A <code>Prototype.<wbr>Api prototype</code> for <code>Eureka<wbr>Registration<wb
 
 ## Usages
 
-- [`server.features.eureka`](io.helidon.webserver.spi.ServerFeature.md#eureka)
+- <a href="io.helidon.webserver.spi.ServerFeature.md#eureka"><code>server.<wbr>features.<wbr>eureka</code></a>
 
 ---
 

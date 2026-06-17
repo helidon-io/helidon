@@ -1,4 +1,4 @@
-# io.helidon.webserver.staticcontent.BaseHandlerConfig
+# io.<wbr>helidon.<wbr>webserver.<wbr>staticcontent.<wbr>Base<wbr>Handler<wbr>Config
 
 ## Description
 
@@ -117,8 +117,8 @@ Configuration of static content handlers that is common for classpath and file s
 
 ## Dependent Types
 
-- [io.helidon.webserver.staticcontent.ClasspathHandlerConfig](io.helidon.webserver.staticcontent.ClasspathHandlerConfig.md)
-- [io.helidon.webserver.staticcontent.FileSystemHandlerConfig](io.helidon.webserver.staticcontent.FileSystemHandlerConfig.md)
+- [io.<wbr>helidon.<wbr>webserver.<wbr>staticcontent.<wbr>Classpath<wbr>Handler<wbr>Config](io.helidon.webserver.staticcontent.ClasspathHandlerConfig.md)
+- [io.<wbr>helidon.<wbr>webserver.<wbr>staticcontent.<wbr>File<wbr>System<wbr>Handler<wbr>Config](io.helidon.webserver.staticcontent.FileSystemHandlerConfig.md)
 
 ---
 

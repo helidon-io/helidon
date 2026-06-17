@@ -1,4 +1,4 @@
-# io.helidon.integrations.langchain4j.providers.lc4jinprocess.InProcessEmbeddingModelConfig
+# io.<wbr>helidon.<wbr>integrations.<wbr>langchain4j.<wbr>providers.<wbr>lc4jinprocess.<wbr>InProcess<wbr>Embedding<wbr>Model<wbr>Config
 
 ## Description
 
@@ -97,7 +97,7 @@ Configuration blueprint for LangChain4j in-process models
 
 ## Usages
 
-- [`langchain4j.providers.lc4j-in-process`](io.helidon.langchain4j.ProvidersConfig.md#lc4j-in-process)
+- <a href="io.helidon.langchain4j.ProvidersConfig.md#lc4j-in-process"><code>langchain4j.<wbr>providers.<wbr>lc4j-<wbr>in-process</code></a>
 
 ---
 
