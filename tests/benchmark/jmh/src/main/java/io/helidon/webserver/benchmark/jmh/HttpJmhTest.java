@@ -50,6 +50,7 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.TearDown;
+import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.infra.Blackhole;
 
 @State(Scope.Benchmark)
@@ -61,6 +62,7 @@ public class HttpJmhTest {
     private static final Header CONTENT_LENGTH = HeaderValues.createCached(HeaderNames.CONTENT_LENGTH, "13");
     private static final int LARGE_RESPONSE_SIZE = 128 * 1024;
     private static final int HTTP2_REUSE_REQUESTS = 16;
+    private static final int HTTP2_REUSE_THREADS = 1;
     private static final Header LARGE_CONTENT_LENGTH = HeaderValues.createCached(HeaderNames.CONTENT_LENGTH,
                                                                                  String.valueOf(LARGE_RESPONSE_SIZE));
     private static final Header SERVER = HeaderValues.createCached(HeaderNames.SERVER, "Helidon");
@@ -171,6 +173,7 @@ public class HttpJmhTest {
     }
 
     @Benchmark
+    @Threads(HTTP2_REUSE_THREADS)
     public void http2MaxConcurrentStreamReuseLargeResponse(Blackhole bh) {
         for (int i = 0; i < HTTP2_REUSE_REQUESTS; i++) {
             try (Http2ClientResponse response = helidonHttp2Client.get("/http2-large").request()) {
