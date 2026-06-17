@@ -31,6 +31,7 @@ import java.nio.channels.SocketChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -44,6 +45,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.concurrency.limits.Limit;
@@ -72,8 +77,11 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.lessThan;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -1032,7 +1040,9 @@ class ServerListenerLifecycleTest {
         TestTransportBindingProvider.reset();
         WebServer.builder()
                 .shutdownHook(false)
-                .maxConnections(1)
+                .bindingsDiscoverServices(false)
+                .maxConnections(2)
+                .addBinding(disabledTcpBinding())
                 .addBinding(new TestTransportBindingConfig(TestTransportBindingConfig.TYPE, true))
                 .addBinding(TestTransportBindingConfig.alternate("second", true))
                 .build();
@@ -1042,6 +1052,45 @@ class ServerListenerLifecycleTest {
 
         assertThat(first, notNullValue());
         assertThat(second, sameInstance(first));
+    }
+
+    @Test
+    void listenerWarnsWhenActiveBindingsExceedMaxConnections() {
+        TestTransportBindingProvider.reset();
+
+        try (TestLogHandler logHandler = TestLogHandler.install()) {
+            WebServer.builder()
+                    .shutdownHook(false)
+                    .bindingsDiscoverServices(false)
+                    .maxConnections(1)
+                    .addBinding(disabledTcpBinding())
+                    .addBinding(new TestTransportBindingConfig(TestTransportBindingConfig.TYPE, true))
+                    .addBinding(TestTransportBindingConfig.alternate("second", true))
+                    .build();
+
+            assertThat(logHandler.warningMessages(),
+                       hasItem(allOf(containsString("Listener @default has 2 active transport bindings"),
+                                     containsString("maxConnections is 1"),
+                                     containsString("may never accept a connection"))));
+        }
+    }
+
+    @Test
+    void listenerDoesNotWarnWhenDisabledBindingsExceedMaxConnections() {
+        TestTransportBindingProvider.reset();
+
+        try (TestLogHandler logHandler = TestLogHandler.install()) {
+            WebServer.builder()
+                    .shutdownHook(false)
+                    .bindingsDiscoverServices(false)
+                    .maxConnections(1)
+                    .addBinding(disabledTcpBinding())
+                    .addBinding(new TestTransportBindingConfig(TestTransportBindingConfig.TYPE, true))
+                    .addBinding(TestTransportBindingConfig.alternate("disabled", false))
+                    .build();
+
+            assertThat(logHandler.warningMessages(), empty());
+        }
     }
 
     @Test
@@ -1719,6 +1768,48 @@ class ServerListenerLifecycleTest {
             listener.stop();
         } catch (RuntimeException | Error e) {
             failure.set(e);
+        }
+    }
+
+    private static final class TestLogHandler extends Handler implements AutoCloseable {
+        private final Logger logger;
+        private final Level previousLevel;
+        private final List<LogRecord> records = new ArrayList<>();
+
+        private TestLogHandler(Logger logger) {
+            this.logger = logger;
+            this.previousLevel = logger.getLevel();
+            setLevel(Level.ALL);
+        }
+
+        static TestLogHandler install() {
+            Logger logger = Logger.getLogger(ServerListener.class.getName());
+            TestLogHandler handler = new TestLogHandler(logger);
+            logger.setLevel(Level.ALL);
+            logger.addHandler(handler);
+            return handler;
+        }
+
+        @Override
+        public void publish(LogRecord record) {
+            records.add(record);
+        }
+
+        @Override
+        public void flush() {
+        }
+
+        @Override
+        public void close() {
+            logger.removeHandler(this);
+            logger.setLevel(previousLevel);
+        }
+
+        private List<String> warningMessages() {
+            return records.stream()
+                    .filter(record -> record.getLevel().intValue() >= Level.WARNING.intValue())
+                    .map(LogRecord::getMessage)
+                    .toList();
         }
     }
 
