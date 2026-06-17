@@ -34,6 +34,12 @@ public class ConfigUserStore implements SecureUserStore {
     private final Map<String, ConfigUser> users = new HashMap<>();
 
     /**
+     * Create an empty configuration-backed user store.
+     */
+    public ConfigUserStore() {
+    }
+
+    /**
      * Create an instance from config. Expects key "users" to be the current key.
      * Example:
      * <pre>

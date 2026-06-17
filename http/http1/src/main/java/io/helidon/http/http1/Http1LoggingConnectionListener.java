@@ -98,11 +98,11 @@ public class Http1LoggingConnectionListener implements Http1ConnectionListener {
     @Override
     public void headers(SocketContext ctx, Headers headers) {
         if (logger.isLoggable(TRACE)) {
-            ctx.log(logger, TRACE, "%s headers: %n%s",
+            ctx.log(logger, TRACE, "%s headers: \n%s",
                     prefix,
                     unsafeLogRawData ? logFormatter.formatAll(headers) : logFormatter.format(headers));
         } else if (logger.isLoggable(DEBUG)) {
-            ctx.log(logger, DEBUG, "%s headers: %n%s",
+            ctx.log(logger, DEBUG, "%s headers: \n%s",
                     prefix,
                     logFormatter.format(headers));
         }
