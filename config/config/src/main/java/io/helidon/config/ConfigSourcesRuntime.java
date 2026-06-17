@@ -107,6 +107,12 @@ final class ConfigSourcesRuntime {
                         }));
     }
 
+    void stopChanges() {
+        loadedData.stream()
+                .filter(loaded -> loaded.runtime().changesSupported())
+                .forEach(loaded -> loaded.runtime().stopChanges());
+    }
+
     // update the runtime with the new data set
     private void processChange(RuntimeWithData runtimeWithData, String changedKey, ConfigNode changeNode) {
         ConfigKeyImpl key = ConfigKeyImpl.of(changedKey);

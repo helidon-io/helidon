@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,6 +47,9 @@ class ConfigProducerTest {
     @Order(0)
         // this must be first, as once we set global config, this method will always fail
     void testConfig() {
+        TestConfigSource.POLLING_STARTED.set(false);
+        TestConfigSource.POLLING_STOPPED.set(false);
+
         registryManager = ServiceRegistryManager.create();
         GlobalServiceRegistry.registry(registryManager.registry());
 
@@ -58,6 +61,12 @@ class ConfigProducerTest {
         // make sure we can get the config from registry as io.helidon.config.Config as well
         io.helidon.config.Config helidonConfig = Services.get(io.helidon.config.Config.class);
         assertThat(helidonConfig.get("app.value").asString().asOptional(), is(Optional.of("source")));
+        assertThat(TestConfigSource.POLLING_STARTED.get(), is(true));
+
+        registryManager.shutdown();
+        registryManager = null;
+
+        assertThat(TestConfigSource.POLLING_STOPPED.get(), is(true));
     }
 
     @Test

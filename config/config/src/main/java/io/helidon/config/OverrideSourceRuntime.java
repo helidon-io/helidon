@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ class OverrideSourceRuntime {
     private static final System.Logger LOGGER = System.getLogger(OverrideSourceRuntime.class.getName());
 
     private final OverrideReloader reloader;
-    private final Runnable changesRunnable;
+    private final ChangeSupport changeSupport;
     private final OverrideSource source;
     // we only want to start change support if changes are supported by the source
     private final boolean changesSupported;
@@ -62,7 +62,7 @@ class OverrideSourceRuntime {
 
         // change support
         boolean changesSupported = false;
-        Runnable changesRunnable = null;
+        ChangeSupport changeSupport = null;
 
         if (overrideSource instanceof WatchableSource) {
             WatchableSource<Object> watchable = (WatchableSource<Object>) source;
@@ -70,7 +70,7 @@ class OverrideSourceRuntime {
 
             if (changeWatcher.isPresent()) {
                 changesSupported = true;
-                changesRunnable = new WatchableChangesStarter(
+                changeSupport = new WatchableChangesStarter(
                         lastData,
                         reloader,
                         source,
@@ -86,7 +86,7 @@ class OverrideSourceRuntime {
 
             if (pollingStrategy.isPresent()) {
                 changesSupported = true;
-                changesRunnable = new PollingStrategyStarter(
+                changeSupport = new PollingStrategyStarter(
                         lastData,
                         reloader,
                         source,
@@ -97,7 +97,7 @@ class OverrideSourceRuntime {
             }
         }
 
-        this.changesRunnable = changesRunnable;
+        this.changeSupport = changeSupport;
         this.changesSupported = changesSupported;
     }
 
@@ -122,7 +122,14 @@ class OverrideSourceRuntime {
     void startChanges() {
         if (!changesStarted && dataLoaded && changesSupported) {
             changesStarted = true;
-            changesRunnable.run();
+            changeSupport.start();
+        }
+    }
+
+    void stopChanges() {
+        if (changesStarted && changesSupported) {
+            changesStarted = false;
+            changeSupport.stop();
         }
     }
 
@@ -191,7 +198,14 @@ class OverrideSourceRuntime {
         this.changeListener.set(listener);
     }
 
-    private static final class PollingStrategyStarter implements Runnable {
+    private interface ChangeSupport {
+        void start();
+
+        default void stop() {
+        }
+    }
+
+    private static final class PollingStrategyStarter implements ChangeSupport {
         private final PollingStrategy pollingStrategy;
         private final PollingStrategyListener listener;
 
@@ -208,8 +222,13 @@ class OverrideSourceRuntime {
         }
 
         @Override
-        public void run() {
+        public void start() {
             pollingStrategy.start(listener);
+        }
+
+        @Override
+        public void stop() {
+            pollingStrategy.stop();
         }
     }
 
@@ -262,7 +281,7 @@ class OverrideSourceRuntime {
         }
     }
 
-    private static final class WatchableChangesStarter implements Runnable {
+    private static final class WatchableChangesStarter implements ChangeSupport {
         private final WatchableSource<Object> watchable;
         private final WatchableListener listener;
         private final ChangeWatcher<Object> changeWatcher;
@@ -279,9 +298,14 @@ class OverrideSourceRuntime {
         }
 
         @Override
-        public void run() {
+        public void start() {
             Object target = watchable.target();
             changeWatcher.start(target, listener);
+        }
+
+        @Override
+        public void stop() {
+            changeWatcher.stop();
         }
     }
 

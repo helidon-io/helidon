@@ -73,6 +73,11 @@ class ConfigProvider implements Supplier<Config> {
         return config;
     }
 
+    @Service.PreDestroy
+    void preDestroy() {
+        config.context().stopChangeSupport();
+    }
+
     private void defaultConfigSources(io.helidon.config.Config.Builder configBuilder,
                                       Supplier<List<ConfigParser>> configParsers) {
 
