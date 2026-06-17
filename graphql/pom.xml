@@ -26,7 +26,7 @@
     <parent>
         <artifactId>helidon-project</artifactId>
         <groupId>io.helidon</groupId>
-        <version>3.2.18-SNAPSHOT</version>
+        <version>3.2.19-SNAPSHOT</version>
     </parent>
 
     <groupId>io.helidon.graphql</groupId>
