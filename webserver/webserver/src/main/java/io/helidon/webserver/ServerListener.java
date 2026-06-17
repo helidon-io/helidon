@@ -51,6 +51,7 @@ import io.helidon.webserver.spi.TransportBinding;
 import io.helidon.webserver.spi.TransportBindingFactory;
 
 import static java.lang.System.Logger.Level.DEBUG;
+import static java.lang.System.Logger.Level.WARNING;
 
 class ServerListener implements TransportBindingContext, ListenerContext {
     private static final System.Logger LOGGER = System.getLogger(ServerListener.class.getName());
@@ -141,6 +142,15 @@ class ServerListener implements TransportBindingContext, ListenerContext {
         this.idleConnectionTimer = idleConnectionTimer;
         this.fatalListenerFailureHandler = Objects.requireNonNull(fatalListenerFailureHandler, "fatalListenerFailureHandler");
         this.transportBindings = planTransportBindings(protocolConfigs);
+        int maxConnections = listenerConfig.maxConnections();
+        int bindingCount = transportBindings.size();
+        if (maxConnections > 0 && bindingCount > maxConnections) {
+            LOGGER.log(WARNING, "Listener " + socketName + " has " + bindingCount
+                    + " active transport bindings, but maxConnections is " + maxConnections
+                    + ". Connection permits are shared across transport bindings, so at least one binding may never "
+                    + "accept a connection. Configure maxConnections to at least the number of active transport bindings "
+                    + "or leave it unlimited.");
+        }
     }
 
     @Override
