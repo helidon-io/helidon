@@ -57,7 +57,8 @@ class ServerListener implements TransportBindingContext, ListenerContext {
     private static final System.Logger LOGGER = System.getLogger(ServerListener.class.getName());
     private static final String EXPLICIT_SSL_CONTEXT_RELOAD_NOT_SUPPORTED =
             "TLS cannot be reloaded when an explicit instance of SSL context was used to create it";
-    private static final long BINDING_STOP_COMPLETION_MARGIN_NANOS = TimeUnit.MILLISECONDS.toNanos(10);
+    // TransportBinding.stop receives the graceful period and may need time after it expires to run forced cleanup.
+    private static final long BINDING_FORCE_STOP_COMPLETION_TIMEOUT_NANOS = TimeUnit.SECONDS.toNanos(1);
 
     private final String socketName;
     private final ListenerConfig listenerConfig;
@@ -722,10 +723,10 @@ class ServerListener implements TransportBindingContext, ListenerContext {
 
     private static long bindingStopTimeoutNanos(Duration gracefulPeriod) {
         long timeoutNanos = timeoutNanos(gracefulPeriod);
-        if (timeoutNanos > Long.MAX_VALUE - BINDING_STOP_COMPLETION_MARGIN_NANOS) {
+        if (timeoutNanos > Long.MAX_VALUE - BINDING_FORCE_STOP_COMPLETION_TIMEOUT_NANOS) {
             return Long.MAX_VALUE;
         }
-        return timeoutNanos + BINDING_STOP_COMPLETION_MARGIN_NANOS;
+        return timeoutNanos + BINDING_FORCE_STOP_COMPLETION_TIMEOUT_NANOS;
     }
 
     private static long timeoutNanos(Duration gracefulPeriod) {
