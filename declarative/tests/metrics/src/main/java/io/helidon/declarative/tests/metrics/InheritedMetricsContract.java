@@ -17,6 +17,7 @@
 package io.helidon.declarative.tests.metrics;
 
 import io.helidon.http.Http;
+import io.helidon.metrics.api.Meter;
 import io.helidon.metrics.api.Metrics;
 import io.helidon.service.registry.Service;
 
@@ -27,4 +28,7 @@ interface InheritedMetricsContract {
     @Http.Path("/inherited-counted")
     @Metrics.Counted(value = "inherited-counted", absoluteName = true)
     String inheritedCounted();
+
+    @Metrics.Gauge(value = "inherited-gauge", absoluteName = true, unit = Meter.BaseUnits.BYTES)
+    int inheritedGaugeValue();
 }

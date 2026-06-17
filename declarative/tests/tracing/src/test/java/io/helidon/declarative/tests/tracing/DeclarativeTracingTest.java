@@ -274,6 +274,80 @@ public class DeclarativeTracingTest {
         assertAttribute(tracedMethod.getAttributes(), "source", "contract");
     }
 
+    @Test
+    @Order(5)
+    void testInheritedTypeTraced() {
+        var response = client.get("/inherited/type-traced").request(String.class);
+
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity(), is("type traced"));
+
+        var data = exporter.spanData(3);
+        exporter.clear();
+
+        SpanData tracedMethod = null;
+        for (SpanData spanDatum : data) {
+            switch (spanDatum.getName()) {
+            case "HTTP Request":
+            case "content-write":
+                break;
+            default:
+                tracedMethod = spanDatum;
+                break;
+            }
+        }
+
+        Set<String> names = data.stream()
+                .map(SpanData::getName)
+                .collect(Collectors.toSet());
+
+        assertThat("Found names: " + names + ", missing inherited type traced method", tracedMethod, notNullValue());
+        assertThat(tracedMethod.getName(), is("inherited-type-typeTraced"));
+        assertThat(tracedMethod.getKind(), is(SpanKind.SERVER));
+        assertThat(tracedMethod.getStatus().getStatusCode(), is(StatusCode.UNSET));
+
+        assertAttribute(tracedMethod.getAttributes(), "source", "contract-type");
+    }
+
+    @Test
+    @Order(6)
+    void testInheritedTaggedParam() {
+        var response = client.get("/inherited/tagged")
+                .queryParam("id", "7")
+                .request(String.class);
+
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity(), is("tagged 7"));
+
+        var data = exporter.spanData(3);
+        exporter.clear();
+
+        SpanData tracedMethod = null;
+        for (SpanData spanDatum : data) {
+            switch (spanDatum.getName()) {
+            case "HTTP Request":
+            case "content-write":
+                break;
+            default:
+                tracedMethod = spanDatum;
+                break;
+            }
+        }
+
+        Set<String> names = data.stream()
+                .map(SpanData::getName)
+                .collect(Collectors.toSet());
+
+        assertThat("Found names: " + names + ", missing inherited tagged traced method", tracedMethod, notNullValue());
+        assertThat(tracedMethod.getName(), is("inherited-tagged"));
+        assertThat(tracedMethod.getKind(), is(SpanKind.SERVER));
+        assertThat(tracedMethod.getStatus().getStatusCode(), is(StatusCode.UNSET));
+
+        assertAttribute(tracedMethod.getAttributes(), "source", "contract-type");
+        Long actualValue = tracedMethod.getAttributes().get(AttributeKey.longKey("id"));
+        assertThat("Long Attribute of key: id", actualValue, is(7L));
+    }
+
     private void assertAttribute(Attributes attributes, String key, String expectedValue) {
         var actualValue = attributes.get(AttributeKey.stringKey(key));
 

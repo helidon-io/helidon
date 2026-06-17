@@ -125,5 +125,10 @@ class DeclarativeMetricsTest {
                 .orElse(null);
         assertThat(inheritedCounted, notNullValue());
         assertThat(inheritedCounted.intValue(), is(1));
+
+        BigDecimal inheritedGauge = appMetrics.numberValue("inherited-gauge;application=MyNiceApp;endpoint=TestEndpoint")
+                .orElse(null);
+        assertThat(inheritedGauge, notNullValue());
+        assertThat(inheritedGauge.intValue(), is(43));
     }
 }

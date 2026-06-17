@@ -30,4 +30,14 @@ class InheritedTracingEndpoint implements InheritedTracingContract {
     public String inheritedTraced() {
         return "inherited traced";
     }
+
+    @Override
+    public String typeTraced() {
+        return "type traced";
+    }
+
+    @Override
+    public String inheritedTagged(int id) {
+        return "tagged " + id;
+    }
 }

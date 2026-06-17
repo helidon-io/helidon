@@ -18,10 +18,14 @@ package io.helidon.declarative.codegen.tracing;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
 
 import io.helidon.codegen.CodegenException;
@@ -29,11 +33,13 @@ import io.helidon.codegen.ElementInfoPredicates;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.ElementSignature;
+import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.RegistryRoundContext;
+import io.helidon.service.codegen.ServiceContracts;
 import io.helidon.service.codegen.spi.RegistryCodegenExtension;
 
 import static io.helidon.declarative.codegen.tracing.TracingTypes.ANNOTATION_TAG_PARAM;
@@ -62,16 +68,34 @@ class TracingExtension implements RegistryCodegenExtension {
             if (type.kind() == ElementKind.INTERFACE) {
                 continue;
             }
-            var tracedElementValue = tracedElements.computeIfAbsent(type.typeName(),
-                                                                    k -> new TracedElements(type, new HashMap<>()));
-            var map = tracedElementValue.elements();
+            TracedElements tracedElementValue = tracedElements(tracedElements,
+                                                               type,
+                                                               type.findAnnotation(ANNOTATION_TRACED));
 
-            type.elementInfo()
-                    .stream()
-                    .filter(ElementInfoPredicates::isMethod)
-                    .filter(Predicate.not(ElementInfoPredicates::isStatic))
-                    .filter(Predicate.not(ElementInfoPredicates::isPrivate))
-                    .forEach(element -> map.put(element.signature(), element));
+            addTypeTracedMethods(tracedElementValue, type);
+        }
+
+        for (TypeInfo type : roundTypes) {
+            if (type.kind() == ElementKind.INTERFACE) {
+                continue;
+            }
+
+            Set<ResolvedType> contracts = new HashSet<>();
+            ServiceContracts.create(ctx.options(), roundContext::typeInfo, type)
+                    .addContracts(contracts, new HashSet<>(), type);
+
+            Optional<Annotation> contractTypeAnnotation = contracts.stream()
+                    .map(ResolvedType::type)
+                    .sorted(Comparator.comparing(TypeName::resolvedName))
+                    .flatMap(contract -> roundContext.typeInfo(contract)
+                            .or(() -> roundContext.typeInfo(contract.genericTypeName()))
+                            .stream())
+                    .flatMap(contract -> contract.findAnnotation(ANNOTATION_TRACED).stream())
+                    .findFirst();
+
+            if (contractTypeAnnotation.isPresent()) {
+                addTypeTracedMethods(tracedElements(tracedElements, type, contractTypeAnnotation), type);
+            }
         }
 
         for (TypeInfo type : roundTypes) {
@@ -86,7 +110,7 @@ class TracingExtension implements RegistryCodegenExtension {
                     continue;
                 }
 
-                tracedElements.computeIfAbsent(type.typeName(), k -> new TracedElements(type, new HashMap<>()))
+                tracedElements(tracedElements, type, Optional.empty())
                         .elements()
                         .put(element.signature(), element);
             }
@@ -106,15 +130,46 @@ class TracingExtension implements RegistryCodegenExtension {
             int index = 0;
 
             for (TypedElementInfo element : elements.values()) {
-                processElement(handler, serviceTypeInfo, serviceType, element, index);
+                processElement(handler,
+                               serviceTypeInfo,
+                               serviceType,
+                               tracedElementValue.typeAnnotation(),
+                               element,
+                               index);
                 index++;
             }
         }
     }
 
+    private TracedElements tracedElements(Map<TypeName, TracedElements> tracedElements,
+                                          TypeInfo type,
+                                          Optional<Annotation> typeAnnotation) {
+        return tracedElements.compute(type.typeName(), (key, existing) -> {
+            if (existing == null) {
+                return new TracedElements(type, typeAnnotation, new HashMap<>());
+            }
+            if (existing.typeAnnotation().isEmpty() && typeAnnotation.isPresent()) {
+                return new TracedElements(existing.type(), typeAnnotation, existing.elements());
+            }
+            return existing;
+        });
+    }
+
+    private void addTypeTracedMethods(TracedElements tracedElementValue, TypeInfo type) {
+        Map<ElementSignature, TypedElementInfo> map = tracedElementValue.elements();
+
+        type.elementInfo()
+                .stream()
+                .filter(ElementInfoPredicates::isMethod)
+                .filter(Predicate.not(ElementInfoPredicates::isStatic))
+                .filter(Predicate.not(ElementInfoPredicates::isPrivate))
+                .forEach(element -> map.put(element.signature(), element));
+    }
+
     private void processElement(TracedHandler handler,
                                 TypeInfo serviceTypeInfo,
                                 TypeName serviceType,
+                                Optional<Annotation> typeAnnotation,
                                 TypedElementInfo element,
                                 int index) {
         // collect tags, kind etc. from all annotations
@@ -124,7 +179,7 @@ class TracingExtension implements RegistryCodegenExtension {
         String spanKind = DEFAULT_SPAN_KIND;
 
         // first gather data from type annotation
-        var maybeTraced = serviceTypeInfo.findAnnotation(ANNOTATION_TRACED);
+        var maybeTraced = typeAnnotation.or(() -> serviceTypeInfo.findAnnotation(ANNOTATION_TRACED));
         if (maybeTraced.isPresent()) {
             var traced = maybeTraced.get();
             nameTemplate = traced.value()
@@ -189,7 +244,7 @@ class TracingExtension implements RegistryCodegenExtension {
                 tagName = tagParam.value()
                         .filter(Predicate.not(String::isBlank))
                         .orElse(tagName);
-                tagParams.add(new TagParam(i, element.typeName(), tagName));
+                tagParams.add(new TagParam(i, param.typeName(), tagName));
             }
             i++;
         }
@@ -197,7 +252,9 @@ class TracingExtension implements RegistryCodegenExtension {
         handler.handle(serviceType, element, index, spanName, spanKind, tags, tagParams);
     }
 
-    private record TracedElements(TypeInfo type, Map<ElementSignature, TypedElementInfo> elements) {
+    private record TracedElements(TypeInfo type,
+                                  Optional<Annotation> typeAnnotation,
+                                  Map<ElementSignature, TypedElementInfo> elements) {
     }
 
     record TagParam(int index, TypeName type, String name) {

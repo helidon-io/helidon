@@ -52,6 +52,11 @@ class TestEndpoint implements InheritedMetricsContract {
         return "inherited counted";
     }
 
+    @Override
+    public int inheritedGaugeValue() {
+        return gaugeValue.get() + 1;
+    }
+
     @Http.GET
     @Http.Path("/timed")
     @Metrics.Timed(value = "my-timed-metric", absoluteName = true)

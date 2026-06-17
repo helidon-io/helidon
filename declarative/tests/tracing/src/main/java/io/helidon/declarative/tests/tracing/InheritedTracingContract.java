@@ -24,6 +24,9 @@ import io.helidon.tracing.Tracing;
 @SuppressWarnings("deprecation")
 @Service.Contract
 @Http.Path("/inherited")
+@Tracing.Traced(value = "inherited-type-%2$s",
+                tags = @Tracing.Tag(key = "source", value = "contract-type"),
+                kind = Span.Kind.SERVER)
 interface InheritedTracingContract {
     @Http.GET
     @Http.Path("/traced")
@@ -31,4 +34,13 @@ interface InheritedTracingContract {
                     tags = @Tracing.Tag(key = "source", value = "contract"),
                     kind = Span.Kind.SERVER)
     String inheritedTraced();
+
+    @Http.GET
+    @Http.Path("/type-traced")
+    String typeTraced();
+
+    @Http.GET
+    @Http.Path("/tagged")
+    @Tracing.Traced(value = "inherited-tagged", kind = Span.Kind.SERVER)
+    String inheritedTagged(@Http.QueryParam("id") @Tracing.ParamTag("id") int id);
 }

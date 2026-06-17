@@ -17,7 +17,6 @@
 package io.helidon.declarative.codegen.metrics;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -209,7 +208,20 @@ class MetricsExtension implements RegistryCodegenExtension {
     private void generateGaugeRegistrars(RegistryRoundContext roundContext, Map<TypeName, TypeInfo> types) {
         Map<TypeName, List<Gauge>> gaugeByType = new HashMap<>();
 
-        addGauges(roundContext, gaugeByType);
+        for (TypeInfo typeInfo : types.values()) {
+            if (typeInfo.kind() == ElementKind.INTERFACE) {
+                continue;
+            }
+            for (TypedElementInfo element : typeInfo.elementInfo()) {
+                if (!element.hasAnnotation(ANNOTATION_GAUGE)) {
+                    continue;
+                }
+
+                TypeName typeName = typeInfo.typeName();
+                var allGauges = gaugeByType.computeIfAbsent(typeName, k -> new ArrayList<>());
+                processGauge(roundContext, allGauges, typeName, element);
+            }
+        }
 
         GaugeHandler handler = new GaugeHandler(roundContext);
 
@@ -236,25 +248,6 @@ class MetricsExtension implements RegistryCodegenExtension {
                                                    + " or it must be a CDI bean (in Helidon MP).",
                                            typeInfo.originatingElementValue());
             }
-        }
-    }
-
-    private TypeName enclosingType(TypedElementInfo element) {
-        Optional<TypeName> enclosingType = element.enclosingType();
-        if (enclosingType.isEmpty()) {
-            throw new CodegenException("Element " + element + " does not have an enclosing type",
-                                       element.originatingElementValue());
-        }
-        return enclosingType.get();
-    }
-
-    private void addGauges(RegistryRoundContext roundContext,
-                           Map<TypeName, List<Gauge>> gaugesByType) {
-        Collection<TypedElementInfo> elements = roundContext.annotatedElements(ANNOTATION_GAUGE);
-        for (TypedElementInfo element : elements) {
-            TypeName enclosingType = enclosingType(element);
-            var allGauges = gaugesByType.computeIfAbsent(enclosingType, k -> new ArrayList<>());
-            processGauge(roundContext, allGauges, enclosingType, element);
         }
     }
 
