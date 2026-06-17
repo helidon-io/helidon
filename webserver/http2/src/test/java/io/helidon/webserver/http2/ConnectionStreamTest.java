@@ -23,6 +23,8 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -65,6 +67,28 @@ class ConnectionStreamTest {
 
         assertThat(streams.size(), Matchers.is(0));
         assertThat(streams.isEmpty(), Matchers.is(true));
+    }
+
+    @Test
+    void deactivatedStreamRemainsAvailableUntilRemoved() {
+        Http2ConnectionStreams streams = new Http2ConnectionStreams();
+        Http2ServerStream s = mockStream(1);
+        Http2Connection.StreamContext ctx = new Http2Connection.StreamContext(1, 8192, s);
+
+        streams.put(ctx);
+        streams.activate(1);
+        streams.deactivate(1);
+
+        assertThat(streams.size(), Matchers.is(0));
+        assertThat(streams.isEmpty(), Matchers.is(true));
+        assertThat(streams.get(1), sameInstance(ctx));
+
+        streams.doMaintenance();
+        assertThat(streams.get(1), sameInstance(ctx));
+
+        streams.remove(1);
+        streams.doMaintenance();
+        assertThat(streams.get(1), nullValue());
     }
 
     @Test

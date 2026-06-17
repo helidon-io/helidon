@@ -38,9 +38,7 @@ final class Http2ConnectionStreams implements Http2ConcurrentConnectionStreams {
 
     @Override
     public void remove(int streamId) {
-        if (activeStreamIds.remove(streamId)) {
-            activeStreams.decrementAndGet();
-        }
+        deactivate(streamId);
         forRemoval.add(streamId);
     }
 
@@ -51,6 +49,13 @@ final class Http2ConnectionStreams implements Http2ConcurrentConnectionStreams {
     void activate(int streamId) {
         if (activeStreamIds.add(streamId)) {
             activeStreams.incrementAndGet();
+        }
+    }
+
+    @Override
+    public void deactivate(int streamId) {
+        if (activeStreamIds.remove(streamId)) {
+            activeStreams.decrementAndGet();
         }
     }
 

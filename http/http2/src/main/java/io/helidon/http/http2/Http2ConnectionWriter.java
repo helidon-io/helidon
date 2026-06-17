@@ -17,6 +17,7 @@
 package io.helidon.http.http2;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -28,6 +29,8 @@ import io.helidon.common.socket.SocketContext;
  * HTTP/2 connection writer.
  */
 public class Http2ConnectionWriter implements Http2StreamWriter {
+    private static final Runnable NO_OP = () -> { };
+
     private final DataWriter writer;
 
     private final Lock streamLock = new ReentrantLock(true);
@@ -61,9 +64,28 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
 
     @Override
     public void writeData(Http2FrameData frame, FlowControl.Outbound flowControl) {
+        writeData(frame, flowControl, NO_OP);
+    }
+
+    /**
+     * Write a frame with flow control and notify when an {@code END_STREAM}
+     * data frame has been written and accounted for.
+     *
+     * @param frame                   data frame
+     * @param flowControl             outbound flow control
+     * @param onEndStreamFrameWritten action to run after the {@code END_STREAM}
+     *                                data frame is written and accounted for
+     * @return number of bytes written
+     */
+    public int writeData(Http2FrameData frame, FlowControl.Outbound flowControl, Runnable onEndStreamFrameWritten) {
+        Objects.requireNonNull(frame);
+        Objects.requireNonNull(flowControl);
+        Objects.requireNonNull(onEndStreamFrameWritten);
+        int written = 0;
         for (Http2FrameData f : frame.split(flowControl.maxFrameSize())) {
-            splitAndWrite(f, flowControl);
+            written += splitAndWrite(f, flowControl, onEndStreamFrameWritten);
         }
+        return written;
     }
 
     @Override
@@ -201,25 +223,48 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         }
     }
 
-    private void splitAndWrite(Http2FrameData frame, FlowControl.Outbound flowControl) {
+    private int splitAndWrite(Http2FrameData frame,
+                              FlowControl.Outbound flowControl,
+                              Runnable onEndStreamFrameWritten) {
+        int written = 0;
         Http2FrameData currFrame = frame;
         while (true) {
             Http2FrameData[] splitFrames = flowControl.cut(currFrame);
             if (splitFrames.length == 1) {
                 // windows are wide enough
-                lockedWrite(currFrame);
-                flowControl.decrementWindowSize(currFrame.header().length());
+                written += lockedWriteData(currFrame, flowControl, onEndStreamFrameWritten);
                 break;
             } else if (splitFrames.length == 0) {
                 // block until window update
                 flowControl.blockTillUpdate();
             } else if (splitFrames.length == 2) {
                 // write send-able part and block until window update with the rest
-                lockedWrite(splitFrames[0]);
-                flowControl.decrementWindowSize(splitFrames[0].header().length());
+                written += lockedWriteData(splitFrames[0], flowControl, onEndStreamFrameWritten);
                 flowControl.blockTillUpdate();
                 currFrame = splitFrames[1];
             }
         }
+        return written;
+    }
+
+    private int lockedWriteData(Http2FrameData frame,
+                                FlowControl.Outbound flowControl,
+                                Runnable onEndStreamFrameWritten) {
+        lock();
+        try {
+            noLockWrite(frame);
+            flowControl.decrementWindowSize(frame.header().length());
+            if (frame.header().type() == Http2FrameType.DATA
+                    && frame.header().flags(Http2FrameTypes.DATA).endOfStream()) {
+                onEndStreamFrameWritten.run();
+            }
+            return frameBytes(frame);
+        } finally {
+            streamLock.unlock();
+        }
+    }
+
+    private static int frameBytes(Http2FrameData frame) {
+        return frame.header().length() + Http2FrameHeader.LENGTH;
     }
 }
