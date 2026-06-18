@@ -94,6 +94,24 @@ class WebServerConfigSupport {
                                                   + " \"ServerConfig.Builder\", not as a named routing.");
             }
 
+            Map<String, ListenerConfig> sockets = target.sockets();
+            Map<String, ListenerConfig> namedSockets = new LinkedHashMap<>();
+            boolean socketNamesUpdated = false;
+            for (Map.Entry<String, ListenerConfig> entry : sockets.entrySet()) {
+                String socketName = entry.getKey();
+                ListenerConfig socketConfig = entry.getValue();
+                if (!socketName.equals(socketConfig.name())) {
+                    socketConfig = ListenerConfig.builder(socketConfig)
+                            .name(socketName)
+                            .buildPrototype();
+                    socketNamesUpdated = true;
+                }
+                namedSockets.put(socketName, socketConfig);
+            }
+            if (socketNamesUpdated) {
+                target.sockets(namedSockets);
+            }
+
             List<ServerFeature> features = target.features();
             List<ServerFeature> uniqueFeatures = new ArrayList<>();
             Set<FeatureId> registeredFeatures = new HashSet<>();
