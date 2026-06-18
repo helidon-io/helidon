@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
@@ -84,8 +85,16 @@ class InvocationHandlerImpl implements InvocationHandler {
 
     @Override
     public Map<String, Object> execute(String query, String operationName, Map<String, Object> variables) {
+        return execute(query, operationName, variables, Map.of());
+    }
+
+    @Override
+    public Map<String, Object> execute(String query,
+                                       String operationName,
+                                       Map<String, Object> variables,
+                                       Map<String, Object> contextValues) {
         try {
-            return doExecute(query, operationName, variables);
+            return doExecute(query, operationName, variables, contextValues);
         } catch (RuntimeException e) {
             LOGGER.log(Level.DEBUG, "Failed to execute query " + query, e);
             Map<String, Object> result = new HashMap<>();
@@ -94,25 +103,43 @@ class InvocationHandlerImpl implements InvocationHandler {
         }
     }
 
-    private Map<String, Object> doExecute(String query, String operationName, Map<String, Object> variables) {
-        Context commonContext = Contexts.context().orElseGet(Context::create);
+    private Map<String, Object> doExecute(String query,
+                                          String operationName,
+                                          Map<String, Object> variables,
+                                          Map<String, Object> contextValues) {
+        Objects.requireNonNull(contextValues);
+        Context commonContext = commonContext(contextValues);
         ExecutionContext context = new ExecutionContextImpl(commonContext);
+        contextValues.forEach(context::setContextValue);
+        context.setContextValue(ExecutionContext.HELIDON_CONTEXT_KEY, commonContext);
+        context.setContextValue(ExecutionContext.EXECUTION_CONTEXT_KEY, context);
         return Contexts.runInContext(commonContext, () -> doExecuteInContext(query,
                                                                              operationName,
                                                                              variables,
-                                                                             context));
+                                                                             context,
+                                                                             commonContext,
+                                                                             contextValues));
     }
 
     private Map<String, Object> doExecuteInContext(String query,
                                                    String operationName,
                                                    Map<String, Object> variables,
-                                                   ExecutionContext context) {
+                                                   ExecutionContext context,
+                                                   Context commonContext,
+                                                   Map<String, Object> contextValues) {
         contextHandlers.forEach(handler -> handler.update(context));
+        context.setContextValue(ExecutionContext.HELIDON_CONTEXT_KEY, commonContext);
+        context.setContextValue(ExecutionContext.EXECUTION_CONTEXT_KEY, context);
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(query)
                 .operationName(operationName)
                 .context(context)
+                .graphQLContext(builder -> {
+                    builder.of(contextValues);
+                    builder.put(ExecutionContext.HELIDON_CONTEXT_KEY, commonContext);
+                    builder.put(ExecutionContext.EXECUTION_CONTEXT_KEY, context);
+                })
                 .variables(variables)
                 .build();
 
@@ -291,6 +318,14 @@ class InvocationHandlerImpl implements InvocationHandler {
         } else {
             return message;
         }
+    }
+
+    private Context commonContext(Map<String, Object> contextValues) {
+        Object value = contextValues.get(ExecutionContext.HELIDON_CONTEXT_KEY);
+        if (value instanceof Context context) {
+            return context;
+        }
+        return Contexts.context().orElseGet(Context::create);
     }
 
     @SuppressWarnings("unchecked")

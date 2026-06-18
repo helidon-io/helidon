@@ -16,6 +16,8 @@
 
 package io.helidon.webserver.graphql;
 
+import io.helidon.common.context.Context;
+import io.helidon.graphql.server.ExecutionContext;
 import io.helidon.graphql.server.InvocationHandler;
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
@@ -25,7 +27,6 @@ import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 
 import graphql.schema.GraphQLSchema;
-import graphql.schema.StaticDataFetcher;
 import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.SchemaGenerator;
 import graphql.schema.idl.SchemaParser;
@@ -58,31 +59,43 @@ class GraphQlServiceTest {
     @Test
     void testHelloWorld() {
         try (Http1ClientResponse response = client.post("/graphql")
-                .submit("{\"query\": \"{hello}\"}")) {
+                .submit("{\"query\": \"{hello requestContextAvailable}\"}")) {
             assertThat(response.status(), is(Status.OK_200));
             JsonObject json = response.as(JsonObject.class);
             assertThat("POST errors: " + json.get("errors"), json, notNullValue());
             assertThat("POST", json.get("data").asJsonObject().getJsonString("hello").getString(), is("world"));
+            assertThat("POST context",
+                       json.get("data").asJsonObject().getBoolean("requestContextAvailable"),
+                       is(true));
         }
 
         try (Http1ClientResponse response = client.get("/graphql")
-                .queryParam("query", "{hello}")
+                .queryParam("query", "{hello requestContextAvailable}")
                 .request()) {
             assertThat(response.status(), is(Status.OK_200));
             JsonObject json = response.as(JsonObject.class);
             assertThat("GET errors: " + json.get("errors"), json, notNullValue());
             assertThat("GET", json.get("data").asJsonObject().getJsonString("hello").getString(), is("world"));
+            assertThat("GET context",
+                       json.get("data").asJsonObject().getBoolean("requestContextAvailable"),
+                       is(true));
         }
     }
 
     private static GraphQLSchema buildSchema() {
-        String schema = "type Query{hello: String}";
+        String schema = "type Query{hello: String requestContextAvailable: Boolean}";
 
         SchemaParser schemaParser = new SchemaParser();
         TypeDefinitionRegistry typeDefinitionRegistry = schemaParser.parse(schema);
 
         RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring()
-                .type("Query", builder -> builder.dataFetcher("hello", new StaticDataFetcher("world")))
+                .type("Query", builder -> builder.dataFetcher("hello", _ -> "world")
+                        .dataFetcher("requestContextAvailable", environment -> {
+                            Context context = environment.getGraphQlContext().get(ExecutionContext.HELIDON_CONTEXT_KEY);
+                            return context == environment.<ExecutionContext>getContext()
+                                    .contextValue(ExecutionContext.HELIDON_CONTEXT_KEY, Context.class)
+                                    .orElseThrow();
+                        }))
                 .build();
 
         SchemaGenerator schemaGenerator = new SchemaGenerator();

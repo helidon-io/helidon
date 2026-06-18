@@ -26,6 +26,7 @@ import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.config.Config;
+import io.helidon.graphql.server.ExecutionContext;
 import io.helidon.graphql.server.GraphQlConstants;
 import io.helidon.graphql.server.InvocationHandler;
 import io.helidon.webserver.http.Handler;
@@ -110,7 +111,8 @@ public class GraphQlService implements HttpService {
     // handle POST request for GraphQL endpoint
     private void graphQlPost(ServerRequest req, ServerResponse res) {
         LinkedHashMap entity = JSONB.fromJson(req.content().inputStream(), LINKED_HASH_MAP_GENERIC_TYPE.type());
-        processRequest(res,
+        processRequest(req,
+                       res,
                        (String) entity.get("query"),
                        (String) entity.get("operationName"),
                        toVariableMap(entity.get("variables")));
@@ -125,7 +127,7 @@ public class GraphQlService implements HttpService {
                 .map(this::toVariableMap)
                 .orElseGet(Map::of);
 
-        processRequest(res, query, operationName, variables);
+        processRequest(req, res, query, operationName, variables);
     }
 
     // handle GET request to obtain GraphQL schema
@@ -133,13 +135,18 @@ public class GraphQlService implements HttpService {
         res.send(invocationHandler.schemaString());
     }
 
-    private void processRequest(ServerResponse res,
+    private void processRequest(ServerRequest req,
+                                ServerResponse res,
                                 String query,
                                 String operationName,
                                 Map<String, Object> variables) {
 
         res.headers().contentType(MediaTypes.APPLICATION_JSON);
-        res.send(JSONB.toJson(invocationHandler.execute(query, operationName, variables)));
+        res.send(JSONB.toJson(invocationHandler.execute(query, operationName, variables, requestContext(req))));
+    }
+
+    private Map<String, Object> requestContext(ServerRequest req) {
+        return Map.of(ExecutionContext.HELIDON_CONTEXT_KEY, req.context());
     }
 
     private Map<String, Object> toVariableMap(Object variables) {

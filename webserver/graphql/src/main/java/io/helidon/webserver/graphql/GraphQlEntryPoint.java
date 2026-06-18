@@ -22,6 +22,7 @@ import java.util.Set;
 import io.helidon.common.Api;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.graphql.server.ExecutionContext;
 import io.helidon.service.registry.Interception;
 import io.helidon.service.registry.InterceptionContext;
 import io.helidon.service.registry.Qualifier;
@@ -53,7 +54,8 @@ public final class GraphQlEntryPoint {
          * @param chain invocation chain, interceptor must call
          *        {@link io.helidon.webserver.graphql.GraphQlEntryPoint.Interceptor.Chain#proceed
          *        (DataFetchingEnvironment)}
-         * @param environment GraphQL Java data fetching environment
+         * @param environment GraphQL Java data fetching environment; the GraphQL context contains
+         *        {@link ExecutionContext#HELIDON_CONTEXT_KEY} and {@link ExecutionContext#EXECUTION_CONTEXT_KEY}
          * @return resolver result
          * @throws java.lang.Exception in case the invocation fails, or the interceptor needs to stop processing with an
          *         exception

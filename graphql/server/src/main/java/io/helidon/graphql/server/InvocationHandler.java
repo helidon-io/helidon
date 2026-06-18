@@ -82,6 +82,24 @@ public interface InvocationHandler {
     Map<String, Object> execute(String query, String operationName, Map<String, Object> variables);
 
     /**
+     * Execute a GraphQL query with context values available from {@link ExecutionContext#contextValue(String)}
+     * and from {@link graphql.schema.DataFetchingEnvironment#getGraphQlContext()}.
+     *
+     * @param query query string
+     * @param operationName operation name
+     * @param variables variables to use (optional)
+     * @param contextValues context values to use for this execution
+     * @return GraphQL result
+     */
+    default Map<String, Object> execute(String query,
+                                        String operationName,
+                                        Map<String, Object> variables,
+                                        Map<String, Object> contextValues) {
+        Objects.requireNonNull(contextValues);
+        return execute(query, operationName, variables);
+    }
+
+    /**
      * The schema of this GraphQL endpoint.
      *
      * @return schema as a string
