@@ -107,6 +107,12 @@ class GrpcServerExtension implements RegistryCodegenExtension {
             if (Annotations.findFirst(GRPC_PROTO, annotations).isEmpty()) {
                 continue;
             }
+            if (!explicitGrpcMethodAnnotations(method).isEmpty()) {
+                throw new CodegenException("@Grpc.Proto method on "
+                                                   + serverEndpoint.typeName().fqName()
+                                                   + " must not declare a gRPC method annotation.",
+                                           method.originatingElementValue());
+            }
             if (!method.parameterArguments().isEmpty() || !method.typeName().equals(PROTO_FILE_DESCRIPTOR)) {
                 throw new CodegenException("@Grpc.Proto method on "
                                                    + serverEndpoint.typeName().fqName()
@@ -132,6 +138,13 @@ class GrpcServerExtension implements RegistryCodegenExtension {
             return Optional.empty();
         }
 
+        List<Annotation> grpcMethodAnnotations = explicitGrpcMethodAnnotations(method);
+        if (grpcMethodAnnotations.size() > 1) {
+            throw new CodegenException("Declarative gRPC server method "
+                                               + serverEndpoint.typeName().fqName() + "." + method.elementName()
+                                               + "() must declare exactly one gRPC method annotation.",
+                                       method.originatingElementValue());
+        }
         Optional<Annotation> maybeGrpcMethod = DeclarativeUtils.findMetaAnnotated(annotations, GRPC_METHOD);
         if (maybeGrpcMethod.isEmpty()) {
             return Optional.empty();
@@ -210,6 +223,13 @@ class GrpcServerExtension implements RegistryCodegenExtension {
                                        method.originatingElementValue());
         }
         return methodType;
+    }
+
+    private static List<Annotation> explicitGrpcMethodAnnotations(TypedElementInfo method) {
+        return method.annotations()
+                .stream()
+                .filter(it -> it.typeName().equals(GRPC_METHOD) || it.hasMetaAnnotation(GRPC_METHOD))
+                .toList();
     }
 
     private static String methodName(TypedElementInfo method, List<Annotation> annotations) {

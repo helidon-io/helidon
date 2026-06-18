@@ -246,4 +246,235 @@ class GrpcServerCodegenTest {
         assertThat(metadata, containsString("\"descriptor\":\"com.example.GreetingGrpc__GrpcRegistration__ServiceDescriptor\""));
         assertThat(metadata, containsString("\"io.helidon.webserver.grpc.GrpcRouteRegistration\""));
     }
+
+    @Test
+    void grpcServiceRequiresProtoMethod() {
+        var result = compileGrpcService("grpc-server-missing-proto", """
+                @Grpc.Unary("SayHello")
+                GreetingReply sayHello(GreetingRequest request) {
+                    return new GreetingReply();
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "Declarative gRPC service com.example.GreetingGrpc must declare a @Grpc.Proto method "
+                                       + "returning com.google.protobuf.Descriptors.FileDescriptor.");
+    }
+
+    @Test
+    void grpcServiceRequiresGrpcMethod() {
+        var result = compileGrpcService("grpc-server-no-methods", """
+                @Grpc.Proto
+                Descriptors.FileDescriptor proto() {
+                    return null;
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "Declarative gRPC service com.example.GreetingGrpc must declare at least one gRPC method.");
+    }
+
+    @Test
+    void grpcProtoMethodRequiresFileDescriptorWithoutParameters() {
+        var result = compileGrpcService("grpc-server-bad-proto", """
+                @Grpc.Proto
+                String proto(GreetingRequest request) {
+                    return "";
+                }
+
+                @Grpc.Unary("SayHello")
+                GreetingReply sayHello(GreetingRequest request) {
+                    return new GreetingReply();
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "@Grpc.Proto method on com.example.GreetingGrpc must return "
+                                       + "com.google.protobuf.Descriptors.FileDescriptor and have no parameters.");
+    }
+
+    @Test
+    void grpcMethodMustNotDeclareCheckedException() {
+        var result = compileGrpcService("grpc-server-checked-exception", """
+                @Grpc.Proto
+                Descriptors.FileDescriptor proto() {
+                    return null;
+                }
+
+                @Grpc.Unary("SayHello")
+                GreetingReply sayHello(GreetingRequest request) throws IOException {
+                    return new GreetingReply();
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "Declarative gRPC server methods must not declare checked exceptions: "
+                                       + "com.example.GreetingGrpc.sayHello()");
+    }
+
+    @Test
+    void grpcUnaryMethodRejectsUnsupportedSignature() {
+        var result = compileGrpcService("grpc-server-bad-unary-signature", """
+                @Grpc.Proto
+                Descriptors.FileDescriptor proto() {
+                    return null;
+                }
+
+                @Grpc.Unary("SayHello")
+                void sayHello(GreetingRequest request) {
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "Unsupported declarative gRPC method signature for "
+                                       + "com.example.GreetingGrpc.sayHello()");
+    }
+
+    @Test
+    void grpcClientStreamingMethodRejectsUnarySignature() {
+        var result = compileGrpcService("grpc-server-bad-client-streaming-signature", """
+                @Grpc.Proto
+                Descriptors.FileDescriptor proto() {
+                    return null;
+                }
+
+                @Grpc.ClientStreaming("CollectHello")
+                GreetingReply collectHello(GreetingRequest request) {
+                    return new GreetingReply();
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "Unsupported declarative gRPC method signature for "
+                                       + "com.example.GreetingGrpc.collectHello()");
+    }
+
+    @Test
+    void grpcServerStreamingMethodRejectsRequestStreamingSignature() {
+        var result = compileGrpcService("grpc-server-bad-server-streaming-signature", """
+                @Grpc.Proto
+                Descriptors.FileDescriptor proto() {
+                    return null;
+                }
+
+                @Grpc.ServerStreaming("StreamHello")
+                StreamObserver<GreetingRequest> streamHello(StreamObserver<GreetingReply> responseObserver) {
+                    return null;
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "Unsupported declarative gRPC method signature for "
+                                       + "com.example.GreetingGrpc.streamHello()");
+    }
+
+    @Test
+    void grpcMethodRejectsMultipleMethodAnnotations() {
+        var result = compileGrpcService("grpc-server-multiple-method-annotations", """
+                @Grpc.Proto
+                Descriptors.FileDescriptor proto() {
+                    return null;
+                }
+
+                @Grpc.Unary("SayHello")
+                @Grpc.ServerStreaming("StreamHello")
+                void sayHello(GreetingRequest request, StreamObserver<GreetingReply> responseObserver) {
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "Declarative gRPC server method com.example.GreetingGrpc.sayHello() "
+                                       + "must declare exactly one gRPC method annotation.");
+    }
+
+    @Test
+    void grpcProtoMethodRejectsMethodAnnotation() {
+        var result = compileGrpcService("grpc-server-proto-method-annotation", """
+                @Grpc.Proto
+                @Grpc.Unary("Proto")
+                Descriptors.FileDescriptor proto() {
+                    return null;
+                }
+
+                @Grpc.Unary("SayHello")
+                GreetingReply sayHello(GreetingRequest request) {
+                    return new GreetingReply();
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "@Grpc.Proto method on com.example.GreetingGrpc "
+                                       + "must not declare a gRPC method annotation.");
+    }
+
+    @Test
+    void grpcMethodRejectsUnsupportedMethodType() {
+        var result = compileGrpcService("grpc-server-unsupported-method-type", """
+                @Grpc.Proto
+                Descriptors.FileDescriptor proto() {
+                    return null;
+                }
+
+                @Grpc.GrpcMethod(MethodDescriptor.MethodType.UNKNOWN)
+                GreetingReply unknown(GreetingRequest request) {
+                    return new GreetingReply();
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "Declarative gRPC server supports only unary, server streaming, client streaming, "
+                                       + "and bidirectional streaming methods in this version. Method unknown() uses UNKNOWN.");
+    }
+
+    private static TestCompiler.Result compileGrpcService(String workDir, String serviceBody) {
+        return TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/" + workDir))
+                .addSource("GreetingGrpc.java", """
+                        package com.example;
+
+                        import com.google.protobuf.Descriptors;
+
+                        import java.io.IOException;
+
+                        import io.grpc.MethodDescriptor;
+                        import io.grpc.stub.StreamObserver;
+                        import io.helidon.grpc.api.Grpc;
+                        import io.helidon.service.registry.Service;
+
+                        @Grpc.GrpcService("Greeting")
+                        @Service.Singleton
+                        class GreetingGrpc {
+                        %s
+                        }
+
+                        class GreetingRequest {
+                        }
+
+                        class GreetingReply {
+                        }
+                        """.formatted(serviceBody.indent(4)))
+                .addSource("Main.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.GenerateBinding
+                        class Main {
+                        }
+                        """)
+                .build()
+                .compile();
+    }
+
+    private static void assertCompilationFails(TestCompiler.Result result, String... diagnosticParts) {
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat("Build should fail", result.success(), is(false));
+        assertThat(diagnostics, containsString("error:"));
+        for (String diagnosticPart : diagnosticParts) {
+            assertThat(diagnostics, containsString(diagnosticPart));
+        }
+    }
 }
