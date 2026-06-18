@@ -41,10 +41,13 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ServerTest
 class DeclarativeGrpcTest {
     private static final String USERNAME = "tomas";
+    private static final String ADMIN = "admin";
+    private static final String USER = "user";
     private static final char[] PASSWORD = "changeit".toCharArray();
 
     private final ManagedChannel channel;
@@ -78,21 +81,41 @@ class DeclarativeGrpcTest {
     void testSecureUnary() {
         var request = request("Tomas");
 
-        try {
-            var response = blockingStub.secureGreet(request);
-            throw new AssertionError("Unauthenticated gRPC call reached application handler: "
-                                             + response.getMessage());
-        } catch (StatusRuntimeException e) {
-            assertThat(e.getStatus().getCode(), is(Code.UNAUTHENTICATED));
-        }
+        var unauthenticated = assertThrows(StatusRuntimeException.class, () -> blockingStub.secureGreet(request));
+        assertThat(unauthenticated.getStatus().getCode(), is(Code.UNAUTHENTICATED));
 
-        String token = USERNAME + ":" + new String(PASSWORD);
-        Metadata headers = new Metadata();
-        headers.put(Metadata.Key.of("authorization", Metadata.ASCII_STRING_MARSHALLER),
-                    "Basic " + Base64.getEncoder().encodeToString(token.getBytes(StandardCharsets.UTF_8)));
-        var response = blockingStub
-                .withInterceptors(MetadataUtils.newAttachHeadersInterceptor(headers))
+        var response = authenticatedBlockingStub(USERNAME)
                 .secureGreet(request);
+
+        assertThat(response.getMessage(), is("Hello Tomas"));
+    }
+
+    @Test
+    void testAuthorizedUnary() {
+        var request = request("Tomas");
+
+        var unauthenticated = assertThrows(StatusRuntimeException.class, () -> blockingStub.authorizedGreet(request));
+        assertThat(unauthenticated.getStatus().getCode(), is(Code.UNAUTHENTICATED));
+
+        var response = authenticatedBlockingStub(USERNAME)
+                .authorizedGreet(request);
+
+        assertThat(response.getMessage(), is("Hello Tomas"));
+    }
+
+    @Test
+    void testRoleProtectedUnary() {
+        var request = request("Tomas");
+
+        var unauthenticated = assertThrows(StatusRuntimeException.class, () -> blockingStub.adminGreet(request));
+        assertThat(unauthenticated.getStatus().getCode(), is(Code.UNAUTHENTICATED));
+
+        var wrongRole = assertThrows(StatusRuntimeException.class,
+                                     () -> authenticatedBlockingStub(USER).adminGreet(request));
+        assertThat(wrongRole.getStatus().getCode(), is(Code.PERMISSION_DENIED));
+
+        var response = authenticatedBlockingStub(ADMIN)
+                .adminGreet(request);
 
         assertThat(response.getMessage(), is("Hello Tomas"));
     }
@@ -186,5 +209,13 @@ class DeclarativeGrpcTest {
         return DeclarativeGrpcProto.GreetingReply.newBuilder()
                 .setMessage(message)
                 .build();
+    }
+
+    private GreetingServiceGrpc.GreetingServiceBlockingStub authenticatedBlockingStub(String username) {
+        String token = username + ":" + new String(PASSWORD);
+        Metadata headers = new Metadata();
+        headers.put(Metadata.Key.of("authorization", Metadata.ASCII_STRING_MARSHALLER),
+                    "Basic " + Base64.getEncoder().encodeToString(token.getBytes(StandardCharsets.UTF_8)));
+        return blockingStub.withInterceptors(MetadataUtils.newAttachHeadersInterceptor(headers));
     }
 }

@@ -22,10 +22,12 @@ import io.helidon.declarative.tests.grpc.DeclarativeGrpcProto.GreetingReply;
 import io.helidon.declarative.tests.grpc.DeclarativeGrpcProto.GreetingRequest;
 import io.helidon.grpc.api.Grpc;
 import io.helidon.security.annotations.Authenticated;
+import io.helidon.security.annotations.Authorized;
 import io.helidon.service.registry.Service;
 
 import com.google.protobuf.Descriptors;
 import io.grpc.stub.StreamObserver;
+import jakarta.annotation.security.RolesAllowed;
 
 @Grpc.GrpcService("GreetingService")
 @Service.Singleton
@@ -43,6 +45,19 @@ class GreetingEndpoint {
     @Grpc.Unary("SecureGreet")
     @Authenticated
     GreetingReply secureGreet(GreetingRequest request) {
+        return reply(request.getName());
+    }
+
+    @Grpc.Unary("AuthorizedGreet")
+    @Authenticated
+    @Authorized
+    GreetingReply authorizedGreet(GreetingRequest request) {
+        return reply(request.getName());
+    }
+
+    @Grpc.Unary("AdminGreet")
+    @RolesAllowed("admin")
+    GreetingReply adminGreet(GreetingRequest request) {
         return reply(request.getName());
     }
 

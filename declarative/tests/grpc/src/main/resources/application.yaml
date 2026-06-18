@@ -21,7 +21,14 @@ grpc:
 
 security:
   providers:
+    - abac:
     - http-basic-auth:
         users:
           - login: "tomas"
             password: "changeit"
+          - login: "admin"
+            password: "changeit"
+            roles: ["admin"]
+          - login: "user"
+            password: "changeit"
+            roles: ["user"]

@@ -31,6 +31,7 @@ import io.helidon.common.types.Annotation;
 import io.helidon.config.NamedService;
 import io.helidon.grpc.api.Grpc;
 import io.helidon.security.annotations.Authenticated;
+import io.helidon.security.annotations.Authorized;
 import io.helidon.service.registry.Dependency;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceDescriptor;
@@ -43,6 +44,7 @@ import com.google.protobuf.Descriptors;
 import io.grpc.MethodDescriptor;
 import io.grpc.ServerInterceptor;
 import io.grpc.stub.StreamObserver;
+import jakarta.annotation.security.RolesAllowed;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
@@ -62,9 +64,11 @@ class GrpcServerCodegenTest {
             GrpcRouteRegistration.class,
             GrpcServiceDescriptor.class,
             Authenticated.class,
+            Authorized.class,
             MethodDescriptor.class,
             NamedService.class,
             Prototype.class,
+            RolesAllowed.class,
             ServerInterceptor.class,
             Service.class,
             ServiceDescriptor.class,
@@ -86,7 +90,9 @@ class GrpcServerCodegenTest {
                         import io.grpc.stub.StreamObserver;
                         import io.helidon.grpc.api.Grpc;
                         import io.helidon.security.annotations.Authenticated;
+                        import io.helidon.security.annotations.Authorized;
                         import io.helidon.service.registry.Service;
+                        import jakarta.annotation.security.RolesAllowed;
 
                         @Grpc.GrpcService("Greeting")
                         @Service.Singleton
@@ -99,6 +105,18 @@ class GrpcServerCodegenTest {
                             @Grpc.Unary("SayHello")
                             @Authenticated
                             GreetingReply sayHello(GreetingRequest request) {
+                                return new GreetingReply();
+                            }
+
+                            @Grpc.Unary("AuthorizeHello")
+                            @Authorized
+                            GreetingReply authorizeHello(GreetingRequest request) {
+                                return new GreetingReply();
+                            }
+
+                            @Grpc.Unary("AdminHello")
+                            @RolesAllowed("admin")
+                            GreetingReply adminHello(GreetingRequest request) {
                                 return new GreetingReply();
                             }
 
@@ -151,7 +169,11 @@ class GrpcServerCodegenTest {
         assertThat(registration, containsString(".bidirectional(\"ChatHello\", this::chatHello"));
         assertThat(registration, containsString("entryPoints.interceptor("));
         assertThat(registration, containsString("GrpcSecurity.enforce().authenticate().configure(rules);"));
+        assertThat(registration, containsString("GrpcSecurity.enforce().authorize().configure(rules);"));
+        assertThat(registration, containsString("GrpcSecurity.enforce().rolesAllowed(\"admin\").configure(rules);"));
         assertThat(registration, containsString("GreetingGrpc__ServiceDescriptor.METHOD_SAY_HELLO"));
+        assertThat(registration, containsString("GreetingGrpc__ServiceDescriptor.METHOD_AUTHORIZE_HELLO"));
+        assertThat(registration, containsString("GreetingGrpc__ServiceDescriptor.METHOD_ADMIN_HELLO"));
         assertThat(registration, containsString("GreetingGrpc__ServiceDescriptor.METHOD_STREAM_HELLO"));
         assertThat(registration, containsString("GreetingGrpc__ServiceDescriptor.METHOD_COLLECT_HELLO"));
         assertThat(registration, containsString("GreetingGrpc__ServiceDescriptor.METHOD_CHAT_HELLO"));
