@@ -21,6 +21,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.helidon.common.context.Context;
 import io.helidon.graphql.GraphQl;
 import io.helidon.graphql.server.ExecutionContext;
+import io.helidon.security.SecurityContext;
+import io.helidon.security.abac.role.RoleValidator;
+import io.helidon.security.annotations.Authenticated;
+import io.helidon.security.annotations.Authorized;
 import io.helidon.validation.Validation;
 import io.helidon.webserver.graphql.GraphQlServer;
 
@@ -64,6 +68,14 @@ class GraphEndpoint {
                 .filter(it -> it == executionContext)
                 .isPresent();
         return matchingContext && matchingExecutionContext && "contextAvailable".equals(environment.getField().getName());
+    }
+
+    @GraphQl.Query
+    @Authenticated
+    @Authorized
+    @RoleValidator.Roles("admin")
+    String securedMessage(SecurityContext securityContext) {
+        return "Secured " + securityContext.userName();
     }
 
     @GraphQlServer.Field

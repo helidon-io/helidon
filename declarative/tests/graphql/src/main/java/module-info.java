@@ -23,11 +23,18 @@ module io.helidon.declarative.tests.graphql {
     requires io.helidon.graphql;
     requires io.helidon.graphql.server;
     requires io.helidon.logging.common;
+    requires io.helidon.security;
+    requires io.helidon.security.abac.role;
+    requires io.helidon.security.annotations;
+    requires io.helidon.security.providers.abac;
+    requires io.helidon.security.providers.httpauth;
     requires io.helidon.service.registry;
     requires io.helidon.validation;
     requires io.helidon.webclient.api;
     requires io.helidon.webserver;
+    requires io.helidon.webserver.context;
     requires io.helidon.webserver.graphql;
+    requires io.helidon.webserver.security;
 
     // needed for generated binding
     requires io.helidon.config.yaml;

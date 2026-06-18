@@ -16,6 +16,10 @@
 
 package io.helidon.declarative.tests.graphql;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonValueType;
@@ -59,6 +63,7 @@ class DeclarativeGraphQlTest {
             assertThat(schema, containsString("book: Book"));
             assertThat(schema, containsString("titleByIsbn(isbn: ISBN): String"));
             assertThat(schema, containsString("contextAvailable: Boolean!"));
+            assertThat(schema, containsString("securedMessage: String"));
             assertThat(schema, containsString("type Mutation"));
             assertThat(schema, containsString("update(enabled: Boolean!): Boolean!"));
             assertThat(schema, containsString("scalar ISBN"));
@@ -155,17 +160,81 @@ class DeclarativeGraphQlTest {
         assertThat(errors, containsString("validatedGreeting"));
     }
 
+    @Test
+    void testResolverAuthenticationFailure() {
+        JsonObject json = graphQlResponse("""
+                                                  {
+                                                    "query": "{ hello(name: \\"Helidon\\") securedMessage }"
+                                                  }
+                                                  """);
+
+        JsonObject data = json.objectValue("data").orElseThrow();
+        assertThat(data.stringValue("hello").orElseThrow(), is("Hello Helidon"));
+        assertThat(data.value("securedMessage").orElseThrow().type(), is(JsonValueType.NULL));
+        String errors = json.arrayValue("errors").orElseThrow().toString();
+        assertThat(errors, containsString("Security did not allow this request to proceed"));
+        assertThat(errors, containsString("securedMessage"));
+    }
+
+    @Test
+    void testResolverAuthorizationFailure() {
+        JsonObject json = graphQlResponse("""
+                                                  {
+                                                    "query": "{ hello(name: \\"Helidon\\") securedMessage }"
+                                                  }
+                                                  """,
+                                          "jill",
+                                          "password");
+
+        JsonObject data = json.objectValue("data").orElseThrow();
+        assertThat(data.stringValue("hello").orElseThrow(), is("Hello Helidon"));
+        assertThat(data.value("securedMessage").orElseThrow().type(), is(JsonValueType.NULL));
+        String errors = json.arrayValue("errors").orElseThrow().toString();
+        assertThat(errors, containsString("Security did not allow this request to proceed"));
+        assertThat(errors, containsString("securedMessage"));
+    }
+
+    @Test
+    void testResolverSecuritySuccess() {
+        JsonObject data = graphQl("""
+                                          {
+                                            "query": "{ hello(name: \\"Helidon\\") securedMessage }"
+                                          }
+                                          """,
+                                  "jack",
+                                  "jackIsGreat");
+
+        assertThat(data.stringValue("hello").orElseThrow(), is("Hello Helidon"));
+        assertThat(data.stringValue("securedMessage").orElseThrow(), is("Secured jack"));
+    }
+
     private JsonObject graphQl(String request) {
-        JsonObject json = graphQlResponse(request);
+        return graphQl(request, null, null);
+    }
+
+    private JsonObject graphQl(String request, String username, String password) {
+        JsonObject json = graphQlResponse(request, username, password);
         assertThat("GraphQL errors: " + json.value("errors"), json.value("errors").isEmpty(), is(true));
         return json.objectValue("data").orElseThrow();
     }
 
     private JsonObject graphQlResponse(String request) {
-        try (Http1ClientResponse response = client.post("/graphql")
-                .submit(request)) {
+        return graphQlResponse(request, null, null);
+    }
+
+    private JsonObject graphQlResponse(String request, String username, String password) {
+        var requestBuilder = client.post("/graphql");
+        if (username != null) {
+            requestBuilder.header(HeaderNames.AUTHORIZATION, basic(username, password));
+        }
+        try (Http1ClientResponse response = requestBuilder.submit(request)) {
             assertThat(response.status(), is(Status.OK_200));
             return response.as(JsonObject.class);
         }
+    }
+
+    private static String basic(String username, String password) {
+        String credentials = username + ":" + password;
+        return "Basic " + Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
     }
 }
