@@ -19,6 +19,7 @@ package io.helidon.webclient.http1;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.net.SocketTimeoutException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
@@ -34,7 +35,6 @@ import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.Headers;
-import io.helidon.http.Http1HeadersParser;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
@@ -71,7 +71,8 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                                        DataReader reader,
                                        BufferData writeBuffer) {
 
-        ClientConnectionOutputStream cos = new ClientConnectionOutputStream(connection,
+        ClientConnectionOutputStream cos = new ClientConnectionOutputStream(this,
+                                                                            connection,
                                                                             writer,
                                                                             reader,
                                                                             writeBuffer,
@@ -103,30 +104,9 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
         reader = cos.reader;
         connection = cos.connection;
 
-        Status responseStatus;
-        try {
-            responseStatus = Http1StatusParser.readStatus(reader, http1Client.protocolConfig().maxStatusLineLength());
-            if (responseStatus == Status.CONTINUE_100) {
-                // skip the next empty end of line
-                readHeaders(reader);
-                responseStatus = Http1StatusParser.readStatus(reader, http1Client.protocolConfig().maxStatusLineLength());
-            }
-        } catch (UncheckedIOException e) {
-            // if we get a timeout or connection close, we must close the resource (as otherwise we may receive
-            // data of this request on the next use of this connection
-            try {
-                connection.closeResource();
-            } catch (Exception ex) {
-                e.addSuppressed(ex);
-            }
-            throw e;
-        }
-
-        recvListener().status(connection.helidonSocket(), responseStatus);
-
-        ClientResponseHeaders responseHeaders = readHeaders(reader);
-
-        recvListener().headers(connection.helidonSocket(), responseHeaders);
+        ResponseHead responseHead = readResponseHead(connection, reader);
+        Status responseStatus = responseHead.status();
+        ClientResponseHeaders responseHeaders = responseHead.headers();
 
         if (originalRequest().followRedirects()
                 && RedirectionProcessor.redirectionStatusCode(responseStatus)) {
@@ -179,9 +159,9 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
         private final Http1ClientRequestImpl originalRequest;
         private final CompletableFuture<WebClientServiceRequest> whenSent;
         private final CompletableFuture<WebClientServiceResponse> whenComplete;
+        private final Http1CallOutputStreamChain callChain;
         private final Http1ClientImpl http1Client;
         private final Http1ConnectionListener sendListener;
-        private final Http1ConnectionListener recvListener;
         private final HttpClientConfig clientConfig;
         private final Http1ClientProtocolConfig protocolConfig;
         private final WritableHeaders<?> headers;
@@ -202,7 +182,8 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
         private Http1ClientResponseImpl response;
         private WebClientServiceResponse serviceResponse;
 
-        private ClientConnectionOutputStream(ClientConnection connection,
+        private ClientConnectionOutputStream(Http1CallOutputStreamChain callChain,
+                                             ClientConnection connection,
                                              DataWriter writer,
                                              DataReader reader,
                                              BufferData prologue,
@@ -212,6 +193,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                                              Http1ClientRequestImpl originalRequest,
                                              CompletableFuture<WebClientServiceRequest> whenSent,
                                              CompletableFuture<WebClientServiceResponse> whenComplete) {
+            this.callChain = callChain;
             this.connection = connection;
             this.ctx = connection.helidonSocket();
             this.writer = writer;
@@ -229,7 +211,6 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             this.whenSent = whenSent;
             this.whenComplete = whenComplete;
             this.sendListener = http1Client.sendListener();
-            this.recvListener = http1Client.recvListener();
         }
 
         @Override
@@ -422,37 +403,37 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             whenSent.complete(request);
 
             if (expects100Continue) {
-                Status responseStatus;
+                ResponseHead responseHead = null;
 
                 try {
                     writer.flush();     // flush before a read
                     connection.readTimeout(originalRequest.readContinueTimeout());
-                    responseStatus = Http1StatusParser.readStatus(reader, protocolConfig.maxStatusLineLength());
-
-                    recvListener.status(connection.helidonSocket(), responseStatus);
-                } catch (UncheckedIOException ignored) {
-                    // we assume this is a timeout exception, if the socket got closed, next read will throw appropriate exception
-                    // we treat this as receiving 100-Continue
-                    responseStatus = null;
-                    connection.allowExpectContinue(false);
+                    responseHead = callChain.readResponseHead(connection,
+                                                              reader,
+                                                              Http1CallChainBase::isPreContinueInterimResponse,
+                                                              false);
+                } catch (UncheckedIOException e) {
+                    if (e.getCause() instanceof SocketTimeoutException) {
+                        responseHead = null;
+                        connection.allowExpectContinue(false);
+                    } else {
+                        try {
+                            connection.closeResource();
+                        } catch (Exception ex) {
+                            e.addSuppressed(ex);
+                        }
+                        throw e;
+                    }
                 } finally {
-                    connection.readTimeout(originalRequest.readTimeout());
-                }
-                if (responseStatus == Status.CONTINUE_100) {
-                    // there is the status and (usually) empty headers. We ignore such headers
-                    Http1HeadersParser.readHeaders(reader,
-                                                   protocolConfig.maxHeaderSize(),
-                                                   protocolConfig.validateResponseHeaders());
-                }
-                if (responseStatus == null) {
-                    responseStatus = Status.CONTINUE_100;
+                    if (connection.isConnected()) {
+                        connection.readTimeout(originalRequest.readTimeout());
+                    }
                 }
 
-                if (responseStatus != Status.CONTINUE_100) {
-                    WritableHeaders<?> responseHeaders = Http1HeadersParser.readHeaders(reader,
-                                                                                        protocolConfig.maxHeaderSize(),
-                                                                                        protocolConfig.validateResponseHeaders());
-                    recvListener.headers(connection.helidonSocket(), responseHeaders);
+                Status responseStatus = responseHead == null ? Status.CONTINUE_100 : responseHead.status();
+
+                if (responseStatus.code() != Status.CONTINUE_100.code()) {
+                    ClientResponseHeaders responseHeaders = responseHead.headers();
 
                     if (RedirectionProcessor.redirectionStatusCode(responseStatus) && originalRequest.followRedirects()) {
                         // redirect as needed
@@ -468,7 +449,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                                                                      connection,
                                                                      reader,
                                                                      responseStatus,
-                                                                     ClientResponseHeaders.create(responseHeaders),
+                                                                     responseHeaders,
                                                                      whenComplete);
                         //we are not sending anything by this OS, we need to interrupt it.
                         throw new OutputStreamInterruptedException();
@@ -477,7 +458,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             }
         }
 
-        private void redirect(Status lastStatus, WritableHeaders<?> headerValues) {
+        private void redirect(Status lastStatus, Headers headerValues) {
             String redirectedUri = headerValues.get(HeaderNames.LOCATION).get();
             ClientUri lastUri = originalRequest.uri();
             Method method;

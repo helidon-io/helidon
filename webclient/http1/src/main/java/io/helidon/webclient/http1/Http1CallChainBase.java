@@ -24,6 +24,7 @@ import java.net.UnixDomainSocketAddress;
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import io.helidon.common.ParserHelper;
@@ -101,7 +102,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         WebClientServiceResponse.Builder builder = WebClientServiceResponse.builder();
         AtomicReference<WebClientServiceResponse> response = new AtomicReference<>();
 
-        if (mayHaveEntity(responseStatus, responseHeaders)) {
+        if (mayHaveEntity(serviceRequest.method(), responseStatus, responseHeaders)) {
             // this may be an entity (if content length is set to zero, we know there is no entity)
             builder.inputStream(inputStream(clientConfig,
                                             recvListener,
@@ -240,33 +241,16 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
     WebClientServiceResponse readResponse(WebClientServiceRequest serviceRequest,
                                           ClientConnection connection,
                                           DataReader reader) {
-
-        Status responseStatus;
-        try {
-            responseStatus = Http1StatusParser.readStatus(reader, protocolConfig.maxStatusLineLength());
-        } catch (UncheckedIOException e) {
-            // if we get a timeout or connection close, we must close the resource (as otherwise we may receive
-            // data of this request on the next use of this connection
-            try {
-                connection.closeResource();
-            } catch (Exception ex) {
-                e.addSuppressed(ex);
-            }
-            throw e;
-        }
-
-        recvListener.status(connection.helidonSocket(), responseStatus);
-
-        ClientResponseHeaders responseHeaders = readHeaders(reader);
-
-        recvListener.headers(connection.helidonSocket(), responseHeaders);
+        ResponseHead responseHead = originalRequest.outputStreamRedirect()
+                ? readResponseHead(connection, reader, Http1CallChainBase::isPreContinueInterimResponse)
+                : readResponseHead(connection, reader);
 
         return createServiceResponse(http1Client,
                                      serviceRequest,
                                      connection,
                                      reader,
-                                     responseStatus,
-                                     responseHeaders,
+                                     responseHead.status(),
+                                     responseHead.headers(),
                                      whenComplete);
     }
 
@@ -274,16 +258,72 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         return sendListener;
     }
 
+    ResponseHead readResponseHead(ClientConnection connection, DataReader reader) {
+        return readResponseHead(connection, reader, Http1CallChainBase::isInterimResponse);
+    }
+
+    ResponseHead readResponseHead(ClientConnection connection, DataReader reader, Predicate<Status> skippedResponse) {
+        return readResponseHead(connection, reader, skippedResponse, true);
+    }
+
+    ResponseHead readResponseHead(ClientConnection connection,
+                                  DataReader reader,
+                                  Predicate<Status> skippedResponse,
+                                  boolean closeOnReadFailure) {
+        while (true) {
+            Status responseStatus;
+            try {
+                responseStatus = Http1StatusParser.readStatus(reader, protocolConfig.maxStatusLineLength());
+            } catch (UncheckedIOException e) {
+                if (closeOnReadFailure) {
+                    // Normal response reads cannot reuse a connection after a timeout or close while reading status.
+                    try {
+                        connection.closeResource();
+                    } catch (Exception ex) {
+                        e.addSuppressed(ex);
+                    }
+                }
+                throw e;
+            }
+            recvListener.status(connection.helidonSocket(), responseStatus);
+            ClientResponseHeaders responseHeaders = readHeaders(reader);
+            recvListener.headers(connection.helidonSocket(), responseHeaders);
+
+            if (!skippedResponse.test(responseStatus)) {
+                return new ResponseHead(responseStatus, responseHeaders);
+            }
+        }
+    }
+
+    static boolean isPreContinueInterimResponse(Status responseStatus) {
+        return isInterimResponse(responseStatus)
+                && responseStatus.code() != Status.CONTINUE_100.code();
+    }
+
+    private static boolean isInterimResponse(Status responseStatus) {
+        return responseStatus.family() == Status.Family.INFORMATIONAL
+                && responseStatus.code() != Status.SWITCHING_PROTOCOLS_101.code();
+    }
+
+    record ResponseHead(Status status, ClientResponseHeaders headers) {
+    }
+
     Http1ConnectionListener recvListener() {
         return recvListener;
     }
 
-    private static boolean mayHaveEntity(Status responseStatus, ClientResponseHeaders responseHeaders) {
+    private static boolean mayHaveEntity(Method requestMethod, Status responseStatus, ClientResponseHeaders responseHeaders) {
+        if (requestMethod == Method.HEAD) {
+            return false;
+        }
         if (responseHeaders.contains(HeaderValues.CONTENT_LENGTH_ZERO)) {
             return false;
         }
-        // Why is NOT_MODIFIED_304 not added here too?
-        if (responseStatus.code() == Status.NO_CONTENT_204.code()) {
+        int statusCode = responseStatus.code();
+        if (responseStatus.family() == Status.Family.INFORMATIONAL
+                || statusCode == Status.NO_CONTENT_204.code()
+                || statusCode == Status.RESET_CONTENT_205.code()
+                || statusCode == Status.NOT_MODIFIED_304.code()) {
             return false;
         }
         if ((

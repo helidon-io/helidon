@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,12 +38,14 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 // Use by both RoutingTest and RulesTest to share the same test methods
 abstract class RoutingTestBase {
     private static final Header MULTI_HANDLER = HeaderValues.createCached(
             HeaderNames.create("X-Multi-Handler"), "true");
+    private static final String HEAD_ROUTE_HEADER = "X-Head-Route";
     static Http1Client client;
     // Functions that will be used to execute http webclient shortcut methods
     private static Function<String, Http1ClientRequest> get = x -> client.get(x);
@@ -59,6 +61,11 @@ abstract class RoutingTestBase {
     static void multiHandler(ServerRequest req, ServerResponse res) {
         res.headers().set(MULTI_HANDLER);
         res.next();
+    }
+
+    static void sendHead(ServerResponse res, String responseMessage) {
+        res.headers().set(HeaderValues.createCached(HeaderNames.create(HEAD_ROUTE_HEADER), responseMessage));
+        res.send(responseMessage);
     }
 
     @Test
@@ -105,10 +112,13 @@ abstract class RoutingTestBase {
 
     @ParameterizedTest
     @MethodSource("basic")
-    void testHttpShortcutMethods(Function<String, Http1ClientRequest> request, String path, String responseMessage) {
+    void testHttpShortcutMethods(Function<String, Http1ClientRequest> request,
+                                 String path,
+                                 String responseMessage,
+                                 boolean hasResponseEntity) {
         try (Http1ClientResponse response = request.apply(path).request()) {
             assertThat(response.status(), is(Status.OK_200));
-            assertThat(response.as(String.class), is(responseMessage));
+            assertResponseEntity(response, responseMessage, hasResponseEntity);
         }
     }
 
@@ -116,10 +126,11 @@ abstract class RoutingTestBase {
     @MethodSource("withoutPathPattern")
     void testHttpShortcutMethodsWithoutPathPattern(Function<String, Http1ClientRequest> request,
                                                    String path,
-                                                   String responseMessage) {
+                                                   String responseMessage,
+                                                   boolean hasResponseEntity) {
         try (Http1ClientResponse response = request.apply(path).request()) {
             assertThat(response.status(), is(Status.OK_200));
-            assertThat(response.as(String.class), is(responseMessage));
+            assertResponseEntity(response, responseMessage, hasResponseEntity);
         }
     }
 
@@ -138,40 +149,53 @@ abstract class RoutingTestBase {
     @MethodSource("withMultiHandlers")
     void testHttpShortcutMethodsWithMultiHandlers(Function<String, Http1ClientRequest> request,
                                                   String path,
-                                                  String responseMessage) {
+                                                  String responseMessage,
+                                                  boolean hasResponseEntity) {
         try (Http1ClientResponse response = request.apply(path).request()) {
             assertThat(response.status(), is(Status.OK_200));
             assertThat(response.headers(), hasHeader(MULTI_HANDLER));
+            assertResponseEntity(response, responseMessage, hasResponseEntity);
+        }
+    }
+
+    private static void assertResponseEntity(Http1ClientResponse response,
+                                             String responseMessage,
+                                             boolean hasResponseEntity) {
+        if (hasResponseEntity) {
             assertThat(response.as(String.class), is(responseMessage));
+        } else {
+            assertThat(response.headers(),
+                       hasHeader(HeaderValues.createCached(HeaderNames.create(HEAD_ROUTE_HEADER), responseMessage)));
+            assertThrows(IllegalStateException.class, () -> response.as(String.class));
         }
     }
 
     private static Stream<Arguments> basic() {
         return Stream.of(
-                arguments(get, "/get", "get"),
-                arguments(post, "/post", "post"),
-                arguments(put, "/put", "put"),
-                arguments(delete, "/delete", "delete"),
-                arguments(head, "/head", "head"),
-                arguments(options, "/options", "options"),
-                arguments(trace, "/trace", "trace"),
-                arguments(patch, "/patch", "patch"),
-                arguments(delete, "/any", "any"),
-                arguments(post, "/any", "any"),
-                arguments(get, "/any", "any")
+                arguments(get, "/get", "get", true),
+                arguments(post, "/post", "post", true),
+                arguments(put, "/put", "put", true),
+                arguments(delete, "/delete", "delete", true),
+                arguments(head, "/head", "head", false),
+                arguments(options, "/options", "options", true),
+                arguments(trace, "/trace", "trace", true),
+                arguments(patch, "/patch", "patch", true),
+                arguments(delete, "/any", "any", true),
+                arguments(post, "/any", "any", true),
+                arguments(get, "/any", "any", true)
         );
     }
 
     private static Stream<Arguments> withoutPathPattern() {
         return Stream.of(
-                arguments(get, "/get_catchall", "get_catchall"),
-                arguments(post, "/post_catchall", "post_catchall"),
-                arguments(put, "/put_catchall", "put_catchall"),
-                arguments(delete, "/delete_catchall", "delete_catchall"),
-                arguments(head, "/head_catchall", "head_catchall"),
-                arguments(options, "/options_catchall", "options_catchall"),
-                arguments(trace, "/trace_catchall", "trace_catchall"),
-                arguments(patch, "/patch_catchall", "patch_catchall")
+                arguments(get, "/get_catchall", "get_catchall", true),
+                arguments(post, "/post_catchall", "post_catchall", true),
+                arguments(put, "/put_catchall", "put_catchall", true),
+                arguments(delete, "/delete_catchall", "delete_catchall", true),
+                arguments(head, "/head_catchall", "head_catchall", false),
+                arguments(options, "/options_catchall", "options_catchall", true),
+                arguments(trace, "/trace_catchall", "trace_catchall", true),
+                arguments(patch, "/patch_catchall", "patch_catchall", true)
         );
     }
 
@@ -184,14 +208,14 @@ abstract class RoutingTestBase {
 
     private static Stream<Arguments> withMultiHandlers() {
         return Stream.of(
-                arguments(get, "/get_multi", "get_multi"),
-                arguments(post, "/post_multi", "post_multi"),
-                arguments(put, "/put_multi", "put_multi"),
-                arguments(delete, "/delete_multi", "delete_multi"),
-                arguments(head, "/head_multi", "head_multi"),
-                arguments(options, "/options_multi", "options_multi"),
-                arguments(trace, "/trace_multi", "trace_multi"),
-                arguments(patch, "/patch_multi", "patch_multi")
+                arguments(get, "/get_multi", "get_multi", true),
+                arguments(post, "/post_multi", "post_multi", true),
+                arguments(put, "/put_multi", "put_multi", true),
+                arguments(delete, "/delete_multi", "delete_multi", true),
+                arguments(head, "/head_multi", "head_multi", false),
+                arguments(options, "/options_multi", "options_multi", true),
+                arguments(trace, "/trace_multi", "trace_multi", true),
+                arguments(patch, "/patch_multi", "patch_multi", true)
         );
     }
 }
