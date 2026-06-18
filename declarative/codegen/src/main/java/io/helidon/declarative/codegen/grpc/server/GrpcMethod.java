@@ -30,6 +30,6 @@ record GrpcMethod(TypedElementInfo method,
     enum Invocation {
         UNARY_RETURN,
         OBSERVER,
-        CLIENT_STREAMING
+        REQUEST_STREAMING
     }
 }

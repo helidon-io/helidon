@@ -24,6 +24,7 @@ service GreetingService {
   rpc SecureGreet (GreetingRequest) returns (GreetingReply) {}
   rpc Split (GreetingRequest) returns (stream GreetingReply) {}
   rpc Join (stream GreetingRequest) returns (GreetingReply) {}
+  rpc Chat (stream GreetingRequest) returns (stream GreetingReply) {}
 }
 
 message GreetingRequest {

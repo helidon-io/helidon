@@ -76,6 +76,26 @@ class GreetingEndpoint {
         };
     }
 
+    @Grpc.Bidirectional("Chat")
+    StreamObserver<GreetingRequest> chat(StreamObserver<GreetingReply> responseObserver) {
+        return new StreamObserver<>() {
+            @Override
+            public void onNext(GreetingRequest request) {
+                responseObserver.onNext(reply(request.getName()));
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                responseObserver.onError(throwable);
+            }
+
+            @Override
+            public void onCompleted() {
+                responseObserver.onCompleted();
+            }
+        };
+    }
+
     private GreetingReply reply(String name) {
         return GreetingReply.newBuilder()
                 .setMessage("Hello " + name)

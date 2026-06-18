@@ -122,6 +122,7 @@ class GrpcServerRegistrationGenerator {
             case "UNARY" -> "unary";
             case "SERVER_STREAMING" -> "serverStreaming";
             case "CLIENT_STREAMING" -> "clientStreaming";
+            case "BIDI_STREAMING" -> "bidirectional";
             default -> throw new IllegalArgumentException("Unsupported gRPC method type: " + method.methodType());
             };
             String constant = toConstantName("METHOD_" + method.uniqueName());
@@ -239,7 +240,7 @@ class GrpcServerRegistrationGenerator {
             TypeName responseObserver = TypeName.builder(STREAM_OBSERVER)
                     .addTypeArgument(grpcMethod.responseType())
                     .build();
-            if (grpcMethod.invocation() == GrpcMethod.Invocation.CLIENT_STREAMING) {
+            if (grpcMethod.invocation() == GrpcMethod.Invocation.REQUEST_STREAMING) {
                 TypeName requestObserver = TypeName.builder(STREAM_OBSERVER)
                         .addTypeArgument(grpcMethod.requestType())
                         .build();

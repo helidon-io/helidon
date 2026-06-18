@@ -110,6 +110,11 @@ class GrpcServerCodegenTest {
                             StreamObserver<GreetingRequest> collectHello(StreamObserver<GreetingReply> responseObserver) {
                                 return null;
                             }
+
+                            @Grpc.Bidirectional("ChatHello")
+                            StreamObserver<GreetingRequest> chatHello(StreamObserver<GreetingReply> responseObserver) {
+                                return null;
+                            }
                         }
 
                         class GreetingRequest {
@@ -143,13 +148,16 @@ class GrpcServerCodegenTest {
         assertThat(registration, containsString(".unary(\"SayHello\", this::sayHello"));
         assertThat(registration, containsString(".serverStreaming(\"StreamHello\", this::streamHello"));
         assertThat(registration, containsString(".clientStreaming(\"CollectHello\", this::collectHello"));
+        assertThat(registration, containsString(".bidirectional(\"ChatHello\", this::chatHello"));
         assertThat(registration, containsString("entryPoints.interceptor("));
         assertThat(registration, containsString("GrpcSecurity.enforce().authenticate().configure(rules);"));
         assertThat(registration, containsString("GreetingGrpc__ServiceDescriptor.METHOD_SAY_HELLO"));
         assertThat(registration, containsString("GreetingGrpc__ServiceDescriptor.METHOD_STREAM_HELLO"));
         assertThat(registration, containsString("GreetingGrpc__ServiceDescriptor.METHOD_COLLECT_HELLO"));
+        assertThat(registration, containsString("GreetingGrpc__ServiceDescriptor.METHOD_CHAT_HELLO"));
         assertThat(registration, containsString("responseObserver.onNext(endpoint.get().sayHello(request));"));
         assertThat(registration, containsString("endpoint.get().streamHello(request, responseObserver);"));
         assertThat(registration, containsString("return endpoint.get().collectHello(responseObserver);"));
+        assertThat(registration, containsString("return endpoint.get().chatHello(responseObserver);"));
     }
 }

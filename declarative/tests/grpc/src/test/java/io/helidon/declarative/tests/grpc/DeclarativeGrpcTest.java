@@ -141,6 +141,41 @@ class DeclarativeGrpcTest {
         assertThat(replies, contains(reply("Hello Tomas, Helidon")));
     }
 
+    @Test
+    void testBidirectionalStreaming() throws InterruptedException {
+        CountDownLatch completed = new CountDownLatch(1);
+        AtomicReference<Throwable> error = new AtomicReference<>();
+        var replies = new ArrayList<DeclarativeGrpcProto.GreetingReply>();
+        StreamObserver<GreetingRequest> requests = asyncStub.chat(new StreamObserver<>() {
+            @Override
+            public void onNext(DeclarativeGrpcProto.GreetingReply response) {
+                replies.add(response);
+            }
+
+            @Override
+            public void onError(Throwable throwable) {
+                error.set(throwable);
+                completed.countDown();
+            }
+
+            @Override
+            public void onCompleted() {
+                completed.countDown();
+            }
+        });
+
+        requests.onNext(request("Tomas"));
+        requests.onNext(request("Helidon"));
+        requests.onCompleted();
+
+        assertThat("bidirectional stream completed",
+                   completed.await(10, TimeUnit.SECONDS),
+                   is(true));
+        assertThat(error.get(), nullValue());
+        assertThat(replies,
+                   contains(reply("Hello Tomas"), reply("Hello Helidon")));
+    }
+
     private static GreetingRequest request(String name) {
         return GreetingRequest.newBuilder()
                 .setName(name)
