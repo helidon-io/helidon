@@ -38,6 +38,8 @@ module io.helidon.declarative.codegen {
     exports io.helidon.declarative.codegen.http.restclient;
     // typed gRPC client
     exports io.helidon.declarative.codegen.grpc.client;
+    // GraphQL server endpoints
+    exports io.helidon.declarative.codegen.graphql.server;
     // fault tolerance (fallback, retry, circuit breaker)
     exports io.helidon.declarative.codegen.faulttolerance;
     // scheduling
@@ -54,6 +56,7 @@ module io.helidon.declarative.codegen {
     provides io.helidon.service.codegen.spi.RegistryCodegenExtensionProvider
             with io.helidon.declarative.codegen.faulttolerance.FtExtensionProvider,
                     io.helidon.declarative.codegen.scheduling.SchedulingExtensionProvider,
+                    io.helidon.declarative.codegen.graphql.server.GraphQlServerExtensionProvider,
                     io.helidon.declarative.codegen.http.restclient.RestClientExtensionProvider,
                     io.helidon.declarative.codegen.grpc.client.GrpcClientExtensionProvider,
                     io.helidon.declarative.codegen.http.webserver.RestServerExtensionProvider,
