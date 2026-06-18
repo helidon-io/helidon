@@ -22,11 +22,18 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.media.type.MediaTypes;
+import io.helidon.common.types.Annotation;
+import io.helidon.common.types.ElementKind;
+import io.helidon.common.types.TypeNames;
+import io.helidon.common.types.TypedElementInfo;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.config.Config;
 import io.helidon.graphql.server.ExecutionContext;
@@ -40,7 +47,10 @@ import io.helidon.json.JsonObject;
 import io.helidon.json.JsonParser;
 import io.helidon.json.JsonString;
 import io.helidon.json.JsonValue;
+import io.helidon.service.registry.Qualifier;
+import io.helidon.service.registry.ServiceDescriptor;
 import io.helidon.webserver.http.Handler;
+import io.helidon.webserver.http.HttpEntryPoint;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
 import io.helidon.webserver.http.SecureHandler;
@@ -53,11 +63,18 @@ import graphql.schema.GraphQLSchema;
  * Support for GraphQL for Helidon WebServer.
  */
 public class GraphQlService implements HttpService {
+    private static final TypedElementInfo POST_METHOD = requestMethod("graphQlPost");
+    private static final TypedElementInfo GET_METHOD = requestMethod("graphQlGet");
+    private static final TypedElementInfo SCHEMA_METHOD = requestMethod("graphQlSchema");
+
     private final String context;
     private final String schemaUri;
     private final InvocationHandler invocationHandler;
     private final ExecutorService executor;
     private final boolean permitAll;
+    private final Handler graphQlPost;
+    private final Handler graphQlGet;
+    private final Handler graphQlSchema;
 
     private GraphQlService(Builder builder) {
         this.context = builder.context;
@@ -65,6 +82,9 @@ public class GraphQlService implements HttpService {
         this.invocationHandler = builder.handler;
         this.executor = builder.executor.get();
         this.permitAll = builder.permitAll;
+        this.graphQlPost = builder.postEntryPoint.apply(this::graphQlPost);
+        this.graphQlGet = builder.getEntryPoint.apply(this::graphQlGet);
+        this.graphQlSchema = builder.schemaEntryPoint.apply(this::graphQlSchema);
     }
 
     /**
@@ -92,10 +112,10 @@ public class GraphQlService implements HttpService {
     @Override
     public void routing(HttpRules rules) {
         // schema
-        rules.get(context + schemaUri, protect(this::graphQlSchema));
+        rules.get(context + schemaUri, protect(graphQlSchema));
         // get and post endpoint for graphQL
-        rules.get(context, protect(this::graphQlGet))
-                .post(context, protect(this::graphQlPost));
+        rules.get(context, protect(graphQlGet))
+                .post(context, protect(graphQlPost));
     }
 
     private Handler protect(Handler handler) {
@@ -103,6 +123,14 @@ public class GraphQlService implements HttpService {
             return handler;
         }
         return SecureHandler.authenticate().wrap(handler);
+    }
+
+    private static TypedElementInfo requestMethod(String name) {
+        return TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .elementName(name)
+                .typeName(TypeNames.PRIMITIVE_VOID)
+                .build();
     }
 
     // handle POST request for GraphQL endpoint
@@ -259,6 +287,9 @@ public class GraphQlService implements HttpService {
         private Supplier<? extends ExecutorService> executor;
         private InvocationHandler handler;
         private boolean permitAll;
+        private Function<Handler, Handler> postEntryPoint = Function.identity();
+        private Function<Handler, Handler> getEntryPoint = Function.identity();
+        private Function<Handler, Handler> schemaEntryPoint = Function.identity();
 
         private Builder() {
         }
@@ -350,6 +381,46 @@ public class GraphQlService implements HttpService {
          */
         public Builder invocationHandler(Supplier<InvocationHandler> handler) {
             return invocationHandler(handler.get());
+        }
+
+        /**
+         * Configure HTTP entry point wrapping for this GraphQL service.
+         * <p>
+         * This is primarily used by generated declarative GraphQL features so request-level HTTP interceptors, such as
+         * WebServer security, can run before GraphQL request processing begins.
+         *
+         * @param entryPoints HTTP entry points
+         * @param descriptor descriptor of the declarative endpoint
+         * @param typeQualifiers qualifiers of the declarative endpoint
+         * @param typeAnnotations annotations of the declarative endpoint
+         * @return updated builder instance
+         */
+        public Builder httpEntryPoints(HttpEntryPoint.EntryPoints entryPoints,
+                                       ServiceDescriptor<?> descriptor,
+                                       Set<Qualifier> typeQualifiers,
+                                       List<Annotation> typeAnnotations) {
+
+            Objects.requireNonNull(entryPoints);
+            Objects.requireNonNull(descriptor);
+            Objects.requireNonNull(typeQualifiers);
+            Objects.requireNonNull(typeAnnotations);
+
+            this.postEntryPoint = handler -> entryPoints.handler(descriptor,
+                                                                 typeQualifiers,
+                                                                 typeAnnotations,
+                                                                 POST_METHOD,
+                                                                 handler);
+            this.getEntryPoint = handler -> entryPoints.handler(descriptor,
+                                                                typeQualifiers,
+                                                                typeAnnotations,
+                                                                GET_METHOD,
+                                                                handler);
+            this.schemaEntryPoint = handler -> entryPoints.handler(descriptor,
+                                                                   typeQualifiers,
+                                                                   typeAnnotations,
+                                                                   SCHEMA_METHOD,
+                                                                   handler);
+            return this;
         }
 
         /**

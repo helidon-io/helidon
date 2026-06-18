@@ -33,6 +33,9 @@ final class GraphQlServerCodegenTypes {
 
     static final TypeName COMMON_CONTEXT = TypeName.create("io.helidon.common.context.Context");
     static final TypeName GRAPHQL_EXECUTION_CONTEXT = TypeName.create("io.helidon.graphql.server.ExecutionContext");
+    static final TypeName SECURITY_AUDITED = TypeName.create("io.helidon.security.annotations.Audited");
+    static final TypeName SECURITY_AUTHENTICATED = TypeName.create("io.helidon.security.annotations.Authenticated");
+    static final TypeName SECURITY_AUTHORIZED = TypeName.create("io.helidon.security.annotations.Authorized");
     static final TypeName SECURITY_CONTEXT = TypeName.create("io.helidon.security.SecurityContext");
 
     static final TypeName GRAPHQL_SERVER_ENDPOINT = TypeName.create("io.helidon.webserver.graphql.GraphQlServer.Endpoint");
@@ -61,6 +64,7 @@ final class GraphQlServerCodegenTypes {
     static final TypeName INVOCATION_HANDLER = TypeName.create("io.helidon.graphql.server.InvocationHandler");
     static final TypeName SERVER_HTTP_FEATURE = TypeName.create("io.helidon.webserver.http.HttpFeature");
     static final TypeName SERVER_HTTP_ROUTING_BUILDER = TypeName.create("io.helidon.webserver.http.HttpRouting.Builder");
+    static final TypeName HTTP_ENTRY_POINTS = TypeName.create("io.helidon.webserver.http.HttpEntryPoint.EntryPoints");
     static final TypeName GRAPHQL_SERVICE = TypeName.create("io.helidon.webserver.graphql.GraphQlService");
     static final TypeName GRAPHQL_ENTRY_POINTS = TypeName.create("io.helidon.webserver.graphql.GraphQlEntryPoint.EntryPoints");
 

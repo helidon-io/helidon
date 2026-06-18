@@ -77,10 +77,14 @@ import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegen
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_SERVER_SOURCE;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_SERVICE;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_VALUE;
+import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.HTTP_ENTRY_POINTS;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.INVOCATION_HANDLER;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.RUNTIME_WIRING;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.SCHEMA_GENERATOR;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.SCHEMA_PARSER;
+import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.SECURITY_AUDITED;
+import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.SECURITY_AUTHENTICATED;
+import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.SECURITY_AUTHORIZED;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.SECURITY_CONTEXT;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.SERVER_HTTP_FEATURE;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.SERVER_HTTP_ROUTING_BUILDER;
@@ -95,6 +99,9 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
     private static final TypeName LIST_OF_GRAPHQL_SCALARS = TypeName.builder(TypeNames.LIST)
             .addTypeArgument(GRAPHQL_SCALAR_SPI)
             .build();
+    private static final Set<TypeName> REQUEST_SECURITY_ANNOTATIONS = Set.of(SECURITY_AUDITED,
+                                                                              SECURITY_AUTHENTICATED,
+                                                                              SECURITY_AUTHORIZED);
 
     private final RegistryCodegenContext ctx;
 
@@ -149,6 +156,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
 
     private GraphQlGroup toGroup(RegistryRoundContext roundContext, List<EndpointDeclaration> declarations) {
         validateGroupPackage(declarations);
+        validateGroupRequestSecurity(declarations);
         String schemaUri = schemaUri(declarations);
         SchemaTypes schemaTypes = new SchemaTypes(roundContext);
         Resolvers resolvers = new Resolvers(new ArrayList<>(),
@@ -186,6 +194,34 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                                            + "same package so generated resolver code can access package-private endpoint "
                                            + "and schema types.",
                                    declarations.getFirst().typeInfo().originatingElementValue());
+    }
+
+    private static void validateGroupRequestSecurity(List<EndpointDeclaration> declarations) {
+        if (declarations.size() <= 1) {
+            return;
+        }
+
+        List<Annotation> expected = requestSecurityAnnotations(declarations.getFirst());
+        for (EndpointDeclaration declaration : declarations) {
+            List<Annotation> actual = requestSecurityAnnotations(declaration);
+            if (!expected.equals(actual)) {
+                throw new CodegenException("Declarative GraphQL endpoint group for "
+                                                   + groupDescription(declaration.groupKey())
+                                                   + " contains different endpoint-level request security annotations. "
+                                                   + "Grouped endpoints share one HTTP route, so @Authenticated, "
+                                                   + "@Authorized, and @Audited must be declared consistently on every "
+                                                   + "endpoint in the group.",
+                                           declaration.typeInfo().originatingElementValue());
+            }
+        }
+    }
+
+    private static List<Annotation> requestSecurityAnnotations(EndpointDeclaration declaration) {
+        return declaration.annotations()
+                .stream()
+                .filter(it -> REQUEST_SECURITY_ANNOTATIONS.contains(it.typeName()))
+                .sorted()
+                .toList();
     }
 
     private static String schemaUri(List<EndpointDeclaration> declarations) {
@@ -533,6 +569,11 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         classModel.addField(field -> field
                 .accessModifier(AccessModifier.PRIVATE)
                 .isFinal(true)
+                .type(HTTP_ENTRY_POINTS)
+                .name("httpEntryPoints"));
+        classModel.addField(field -> field
+                .accessModifier(AccessModifier.PRIVATE)
+                .isFinal(true)
                 .type(LIST_OF_GRAPHQL_SCALARS)
                 .name("scalars"));
 
@@ -554,9 +595,13 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                         .type(GRAPHQL_ENTRY_POINTS)
                         .name("entryPoints"))
                 .addParameter(param -> param
+                        .type(HTTP_ENTRY_POINTS)
+                        .name("httpEntryPoints"))
+                .addParameter(param -> param
                         .type(LIST_OF_GRAPHQL_SCALARS)
                         .name("scalars"))
                 .addContentLine("this.entryPoints = entryPoints;")
+                .addContentLine("this.httpEntryPoints = httpEntryPoints;")
                 .addContentLine("this.scalars = scalars;");
         classModel.addConstructor(constructor);
 
@@ -583,6 +628,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
     }
 
     private void addSetupMethod(ClassModel.Builder classModel, GraphQlGroup group) {
+        TypeName descriptorType = ctx.descriptorType(group.primaryEndpoint().typeInfo().typeName());
         classModel.addMethod(setup -> setup
                 .accessModifier(AccessModifier.PUBLIC)
                 .addAnnotation(Annotations.OVERRIDE)
@@ -590,6 +636,12 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                 .addParameter(routing -> routing
                         .name("routing")
                         .type(SERVER_HTTP_ROUTING_BUILDER))
+                .addContent("var descriptor = ")
+                .addContent(descriptorType)
+                .addContentLine(".INSTANCE;")
+                .addContent("var annotations = ")
+                .addContent(descriptorType)
+                .addContentLine(".ANNOTATIONS;")
                 .addContent("routing.register(")
                 .addContent(GRAPHQL_SERVICE)
                 .addContentLine(".builder()")
@@ -601,6 +653,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                 .addContent(".schemaUri(")
                 .addContentLiteral(group.schemaUri())
                 .addContentLine(")")
+                .addContentLine(".httpEntryPoints(httpEntryPoints, descriptor, descriptor.qualifiers(), annotations)")
                 .addContentLine(".invocationHandler(invocationHandler())")
                 .addContentLine(".build());")
                 .decreaseContentPadding()

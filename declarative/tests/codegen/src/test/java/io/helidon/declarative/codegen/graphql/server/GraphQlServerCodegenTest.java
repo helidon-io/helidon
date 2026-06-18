@@ -34,12 +34,14 @@ import io.helidon.graphql.server.ExecutionContext;
 import io.helidon.graphql.server.InvocationHandler;
 import io.helidon.graphql.spi.GraphQlScalar;
 import io.helidon.security.SecurityContext;
+import io.helidon.security.annotations.Authenticated;
 import io.helidon.service.registry.Dependency;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceDescriptor;
 import io.helidon.webserver.graphql.GraphQlEntryPoint;
 import io.helidon.webserver.graphql.GraphQlServer;
 import io.helidon.webserver.graphql.GraphQlService;
+import io.helidon.webserver.http.HttpEntryPoint;
 import io.helidon.webserver.http.HttpFeature;
 import io.helidon.webserver.http.HttpRouting;
 
@@ -75,6 +77,7 @@ class GraphQlServerCodegenTest {
             GraphQlEntryPoint.class,
             GraphQlServer.class,
             GraphQlService.class,
+            HttpEntryPoint.class,
             HttpFeature.class,
             HttpRouting.class,
             io.helidon.common.security.SecurityContext.class,
@@ -84,6 +87,7 @@ class GraphQlServerCodegenTest {
             SchemaGenerator.class,
             SchemaParser.class,
             SecurityContext.class,
+            Authenticated.class,
             Service.class,
             ServiceDescriptor.class,
             TypeDefinitionRegistry.class
@@ -248,6 +252,9 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("routing.register(GraphQlService.builder()"));
         assertThat(generated, containsString(".webContext(\"/api/graphql\")"));
         assertThat(generated, containsString(".schemaUri(\"/schema\")"));
+        assertThat(generated, containsString("HttpEntryPoint.EntryPoints httpEntryPoints"));
+        assertThat(generated, containsString("this.httpEntryPoints = httpEntryPoints;"));
+        assertThat(generated, containsString(".httpEntryPoints(httpEntryPoints, descriptor, descriptor.qualifiers(), annotations)"));
         assertThat(generated, containsString("entryPoints.dataFetcher("));
         assertThat(generated, containsString("type Query"));
         assertThat(generated, containsString("hello(name: String): String"));
@@ -496,6 +503,51 @@ class GraphQlServerCodegenTest {
         String diagnostics = String.join("\n", result.diagnostics());
         assertThat(diagnostics, result.success(), is(false));
         assertThat(diagnostics, containsString("Conflicting GraphQL schema URI"));
+    }
+
+    @Test
+    void groupedEndpointsWithDifferentRequestSecurityAnnotationsFailCodegen() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-request-security-conflict"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.security.annotations.Authenticated;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @Authenticated
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            String hello() {
+                                return "hello";
+                            }
+                        }
+                        """)
+                .addSource("LibraryEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class LibraryEndpoint {
+                            @GraphQl.Query
+                            String library() {
+                                return "library";
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("different endpoint-level request security annotations"));
     }
 
     @Test

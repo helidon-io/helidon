@@ -23,9 +23,11 @@ import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.testing.junit5.ServerTest;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -36,6 +38,11 @@ class DeclarativeGraphQlTest {
 
     DeclarativeGraphQlTest(Http1Client client) {
         this.client = client;
+    }
+
+    @BeforeEach
+    void beforeEach() {
+        GraphQlEntryPointRecorder.reset();
     }
 
     @Test
@@ -64,6 +71,31 @@ class DeclarativeGraphQlTest {
             assertThat(schema, containsString("\"Currently available\""));
             assertThat(schema, containsString("OUT_OF_PRINT"));
         }
+    }
+
+    @Test
+    void testGeneratedHttpEntryPointInterception() {
+        try (Http1ClientResponse response = client.get("/graphql/schema.graphql")
+                .request()) {
+            assertThat(response.status(), is(Status.OK_200));
+        }
+
+        graphQl("""
+                        {
+                          "query": "{ hello(name: \\"Helidon\\") }"
+                        }
+                        """);
+
+        try (Http1ClientResponse response = client.get("/graphql")
+                .queryParam("query", "{ catalogName }")
+                .request()) {
+            assertThat(response.status(), is(Status.OK_200));
+        }
+
+        assertThat(GraphQlEntryPointRecorder.executions(),
+                   hasItems(CatalogEndpoint.class.getName() + ".graphQlSchema()",
+                            CatalogEndpoint.class.getName() + ".graphQlPost()",
+                            CatalogEndpoint.class.getName() + ".graphQlGet()"));
     }
 
     @Test

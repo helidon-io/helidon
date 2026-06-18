@@ -18,14 +18,23 @@ package io.helidon.webserver.graphql;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.common.context.Context;
+import io.helidon.common.types.Annotation;
+import io.helidon.common.types.TypedElementInfo;
 import io.helidon.graphql.server.ExecutionContext;
 import io.helidon.graphql.server.InvocationHandler;
 import io.helidon.http.Status;
 import io.helidon.json.JsonArray;
 import io.helidon.json.JsonNull;
 import io.helidon.json.JsonObject;
+import io.helidon.service.registry.Qualifier;
+import io.helidon.service.registry.ServiceDescriptor;
+import io.helidon.webserver.http.Handler;
+import io.helidon.webserver.http.HttpEntryPoint;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.http.HttpRouting;
@@ -37,14 +46,17 @@ import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.SchemaGenerator;
 import graphql.schema.idl.SchemaParser;
 import graphql.schema.idl.TypeDefinitionRegistry;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.mock;
 
 @ServerTest
 class GraphQlServiceTest {
+    private static final RecordingEntryPoints ENTRY_POINTS = new RecordingEntryPoints();
 
     private final Http1Client client;
 
@@ -55,9 +67,15 @@ class GraphQlServiceTest {
     @SetUpRoute
     static void routing(HttpRouting.Builder builder) {
         builder.register(GraphQlService.builder()
+                                 .httpEntryPoints(ENTRY_POINTS, mock(ServiceDescriptor.class), Set.of(), List.of())
                                  .invocationHandler(InvocationHandler.create(buildSchema()))
                                  .permitAll(true)
                                  .build());
+    }
+
+    @BeforeEach
+    void resetEntryPoints() {
+        ENTRY_POINTS.reset();
     }
 
     @Test
@@ -86,6 +104,29 @@ class GraphQlServiceTest {
                        data.booleanValue("requestContextAvailable").orElseThrow(),
                        is(true));
         }
+    }
+
+    @Test
+    void entryPointsWrapGraphQlHttpRoutes() {
+        try (Http1ClientResponse response = client.get("/graphql/schema.graphql")
+                .request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), containsString("type Query"));
+        }
+
+        try (Http1ClientResponse response = client.post("/graphql")
+                .submit("{\"query\": \"{hello}\"}")) {
+            assertThat(response.status(), is(Status.OK_200));
+        }
+
+        try (Http1ClientResponse response = client.get("/graphql")
+                .queryParam("query", "{hello}")
+                .request()) {
+            assertThat(response.status(), is(Status.OK_200));
+        }
+
+        assertThat(ENTRY_POINTS.invocations(), is(3));
+        assertThat(ENTRY_POINTS.methodNames(), is(List.of("graphQlSchema", "graphQlPost", "graphQlGet")));
     }
 
     @Test
@@ -216,5 +257,36 @@ class GraphQlServiceTest {
 
         SchemaGenerator schemaGenerator = new SchemaGenerator();
         return schemaGenerator.makeExecutableSchema(typeDefinitionRegistry, runtimeWiring);
+    }
+
+    private static final class RecordingEntryPoints implements HttpEntryPoint.EntryPoints {
+        private final AtomicInteger invocations = new AtomicInteger();
+        private final List<String> methodNames = new CopyOnWriteArrayList<>();
+
+        @Override
+        public Handler handler(ServiceDescriptor<?> descriptor,
+                               Set<Qualifier> typeQualifiers,
+                               List<Annotation> typeAnnotations,
+                               TypedElementInfo methodInfo,
+                               Handler actualHandler) {
+            return (req, res) -> {
+                invocations.incrementAndGet();
+                methodNames.add(methodInfo.elementName());
+                actualHandler.handle(req, res);
+            };
+        }
+
+        private void reset() {
+            invocations.set(0);
+            methodNames.clear();
+        }
+
+        private int invocations() {
+            return invocations.get();
+        }
+
+        private List<String> methodNames() {
+            return List.copyOf(methodNames);
+        }
     }
 }
