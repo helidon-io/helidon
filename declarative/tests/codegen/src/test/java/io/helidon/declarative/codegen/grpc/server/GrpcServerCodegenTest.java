@@ -97,6 +97,11 @@ class GrpcServerCodegenTest {
                             @Grpc.ServerStreaming("StreamHello")
                             void streamHello(GreetingRequest request, StreamObserver<GreetingReply> responseObserver) {
                             }
+
+                            @Grpc.ClientStreaming("CollectHello")
+                            StreamObserver<GreetingRequest> collectHello(StreamObserver<GreetingReply> responseObserver) {
+                                return null;
+                            }
                         }
 
                         class GreetingRequest {
@@ -129,10 +134,13 @@ class GrpcServerCodegenTest {
         assertThat(registration, containsString(".proto(proto())"));
         assertThat(registration, containsString(".unary(\"SayHello\", this::sayHello"));
         assertThat(registration, containsString(".serverStreaming(\"StreamHello\", this::streamHello"));
+        assertThat(registration, containsString(".clientStreaming(\"CollectHello\", this::collectHello"));
         assertThat(registration, containsString("entryPoints.interceptor("));
         assertThat(registration, containsString("GreetingGrpc__ServiceDescriptor.METHOD_SAY_HELLO"));
         assertThat(registration, containsString("GreetingGrpc__ServiceDescriptor.METHOD_STREAM_HELLO"));
+        assertThat(registration, containsString("GreetingGrpc__ServiceDescriptor.METHOD_COLLECT_HELLO"));
         assertThat(registration, containsString("responseObserver.onNext(endpoint.get().sayHello(request));"));
         assertThat(registration, containsString("endpoint.get().streamHello(request, responseObserver);"));
+        assertThat(registration, containsString("return endpoint.get().collectHello(responseObserver);"));
     }
 }

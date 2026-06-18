@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-package io.helidon.declarative.codegen.grpc.server;
+syntax = "proto3";
 
-import io.helidon.common.types.TypeName;
-import io.helidon.common.types.TypedElementInfo;
+option java_package = "io.helidon.declarative.tests.grpc";
+option java_outer_classname = "DeclarativeGrpcProto";
 
-record GrpcMethod(TypedElementInfo method,
-                  String grpcName,
-                  String uniqueName,
-                  String methodType,
-                  Invocation invocation,
-                  TypeName requestType,
-                  TypeName responseType) {
-    enum Invocation {
-        UNARY_RETURN,
-        OBSERVER,
-        CLIENT_STREAMING
-    }
+service GreetingService {
+  rpc Greet (GreetingRequest) returns (GreetingReply) {}
+  rpc Split (GreetingRequest) returns (stream GreetingReply) {}
+  rpc Join (stream GreetingRequest) returns (GreetingReply) {}
+}
+
+message GreetingRequest {
+  string name = 1;
+}
+
+message GreetingReply {
+  string message = 1;
 }

@@ -110,7 +110,12 @@ class GrpcServerRegistrationGenerator {
                 .addContentLine(".proto(proto())");
 
         for (GrpcMethod method : endpoint.methods()) {
-            String registrationMethod = "UNARY".equals(method.methodType()) ? "unary" : "serverStreaming";
+            String registrationMethod = switch (method.methodType()) {
+            case "UNARY" -> "unary";
+            case "SERVER_STREAMING" -> "serverStreaming";
+            case "CLIENT_STREAMING" -> "clientStreaming";
+            default -> throw new IllegalArgumentException("Unsupported gRPC method type: " + method.methodType());
+            };
             String constant = toConstantName("METHOD_" + method.uniqueName());
             constructor.addContent(".")
                     .addContent(registrationMethod)
@@ -187,6 +192,20 @@ class GrpcServerRegistrationGenerator {
             TypeName responseObserver = TypeName.builder(STREAM_OBSERVER)
                     .addTypeArgument(grpcMethod.responseType())
                     .build();
+            if (grpcMethod.invocation() == GrpcMethod.Invocation.CLIENT_STREAMING) {
+                TypeName requestObserver = TypeName.builder(STREAM_OBSERVER)
+                        .addTypeArgument(grpcMethod.requestType())
+                        .build();
+                classModel.addMethod(method -> method
+                        .accessModifier(AccessModifier.PRIVATE)
+                        .returnType(requestObserver)
+                        .name(grpcMethod.uniqueName())
+                        .addParameter(responseObserver, "responseObserver")
+                        .addContent("return endpoint.get().")
+                        .addContent(grpcMethod.method().elementName())
+                        .addContentLine("(responseObserver);"));
+                continue;
+            }
             classModel.addMethod(method -> {
                 method.accessModifier(AccessModifier.PRIVATE)
                         .returnType(TypeNames.PRIMITIVE_VOID)
