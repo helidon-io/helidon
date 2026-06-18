@@ -16,12 +16,15 @@
 
 package io.helidon.webserver.graphql;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Supplier;
 
-import io.helidon.common.GenericType;
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.uri.UriQuery;
@@ -29,6 +32,14 @@ import io.helidon.config.Config;
 import io.helidon.graphql.server.ExecutionContext;
 import io.helidon.graphql.server.GraphQlConstants;
 import io.helidon.graphql.server.InvocationHandler;
+import io.helidon.json.JsonArray;
+import io.helidon.json.JsonBoolean;
+import io.helidon.json.JsonNull;
+import io.helidon.json.JsonNumber;
+import io.helidon.json.JsonObject;
+import io.helidon.json.JsonParser;
+import io.helidon.json.JsonString;
+import io.helidon.json.JsonValue;
 import io.helidon.webserver.http.Handler;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
@@ -37,25 +48,11 @@ import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
 import graphql.schema.GraphQLSchema;
-import jakarta.json.bind.Jsonb;
-import jakarta.json.bind.JsonbBuilder;
-import jakarta.json.bind.JsonbConfig;
-
-import static org.eclipse.yasson.YassonConfig.ZERO_TIME_PARSE_DEFAULTING;
 
 /**
  * Support for GraphQL for Helidon WebServer.
  */
 public class GraphQlService implements HttpService {
-    private static final Jsonb JSONB = JsonbBuilder.newBuilder()
-            .withConfig(new JsonbConfig()
-                                .setProperty(ZERO_TIME_PARSE_DEFAULTING, true)
-                                .withNullValues(true).withAdapters())
-            .build();
-
-    @SuppressWarnings("rawtypes")
-    private static final GenericType<LinkedHashMap> LINKED_HASH_MAP_GENERIC_TYPE = GenericType.create(LinkedHashMap.class);
-
     private final String context;
     private final String schemaUri;
     private final InvocationHandler invocationHandler;
@@ -110,12 +107,12 @@ public class GraphQlService implements HttpService {
 
     // handle POST request for GraphQL endpoint
     private void graphQlPost(ServerRequest req, ServerResponse res) {
-        LinkedHashMap entity = JSONB.fromJson(req.content().inputStream(), LINKED_HASH_MAP_GENERIC_TYPE.type());
+        JsonObject entity = JsonParser.create(req.content().inputStream()).readJsonObject();
         processRequest(req,
                        res,
-                       (String) entity.get("query"),
-                       (String) entity.get("operationName"),
-                       toVariableMap(entity.get("variables")));
+                       stringValue(entity, "query"),
+                       stringValue(entity, "operationName"),
+                       toVariableMap(entity.value("variables").orElse(null)));
     }
 
     // handle GET request for GraphQL endpoint
@@ -142,34 +139,115 @@ public class GraphQlService implements HttpService {
                                 Map<String, Object> variables) {
 
         res.headers().contentType(MediaTypes.APPLICATION_JSON);
-        res.send(JSONB.toJson(invocationHandler.execute(query, operationName, variables, requestContext(req))));
+        Map<String, Object> result = invocationHandler.execute(query, operationName, variables, requestContext(req));
+        res.send(toJsonObject(result).toString());
     }
 
     private Map<String, Object> requestContext(ServerRequest req) {
         return Map.of(ExecutionContext.HELIDON_CONTEXT_KEY, req.context());
     }
 
-    private Map<String, Object> toVariableMap(Object variables) {
-        if (variables == null) {
+    private static String stringValue(JsonObject object, String name) {
+        return object.value(name)
+                .filter(value -> !(value instanceof JsonNull))
+                .map(JsonValue::asString)
+                .map(JsonString::value)
+                .orElse(null);
+    }
+
+    private Map<String, Object> toVariableMap(JsonValue variables) {
+        if (variables == null || variables instanceof JsonNull) {
             return Map.of();
         }
 
-        if (variables instanceof Map) {
-            Map<String, Object> result = new LinkedHashMap<>();
-            Map<?, ?> variablesMap = (Map<?, ?>) variables;
-            variablesMap.forEach((k, v) -> result.put(String.valueOf(k), v));
-            return result;
-        } else {
-            return toVariableMap(String.valueOf(variables));
-        }
+        return switch (variables) {
+        case JsonObject object -> toVariableMap(object);
+        case JsonString string -> toVariableMap(string.value());
+        default -> throw new IllegalArgumentException("GraphQL variables must be a JSON object.");
+        };
     }
 
-    @SuppressWarnings("unchecked")
+    private static Map<String, Object> toVariableMap(JsonObject variables) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        for (String key : variables.keysAsStrings()) {
+            result.put(key, toJavaValue(variables.value(key).orElseThrow()));
+        }
+        return result;
+    }
+
     private Map<String, Object> toVariableMap(String jsonString) {
         if (jsonString == null || jsonString.trim().isBlank()) {
             return Map.of();
         }
-        return JSONB.fromJson(jsonString, LinkedHashMap.class);
+        return toVariableMap(JsonParser.create(jsonString).readJsonObject());
+    }
+
+    private static Object toJavaValue(JsonValue value) {
+        return switch (value) {
+        case JsonArray array -> toJavaList(array);
+        case JsonBoolean bool -> bool.value();
+        case JsonNull _ -> null;
+        case JsonNumber number -> toJavaNumber(number);
+        case JsonObject object -> toVariableMap(object);
+        case JsonString string -> string.value();
+        default -> throw new IllegalArgumentException("Unsupported JSON value type: " + value.type());
+        };
+    }
+
+    private static List<Object> toJavaList(JsonArray array) {
+        List<Object> result = new ArrayList<>(array.size());
+        array.values().forEach(value -> result.add(toJavaValue(value)));
+        return result;
+    }
+
+    private static Object toJavaNumber(JsonNumber number) {
+        BigDecimal value = number.bigDecimalValue();
+        if (value.scale() <= 0) {
+            try {
+                return value.intValueExact();
+            } catch (ArithmeticException e) {
+                try {
+                    return value.longValueExact();
+                } catch (ArithmeticException ignored) {
+                    return value.toBigIntegerExact();
+                }
+            }
+        }
+        return value;
+    }
+
+    private static JsonObject toJsonObject(Map<?, ?> map) {
+        JsonObject.Builder builder = JsonObject.builder();
+        map.forEach((key, value) -> builder.set(String.valueOf(key), toJsonValue(value)));
+        return builder.build();
+    }
+
+    private static JsonValue toJsonValue(Object value) {
+        return switch (value) {
+        case null -> JsonNull.instance();
+        case JsonValue jsonValue -> jsonValue;
+        case String string -> JsonString.create(string);
+        case Character character -> JsonString.create(character.toString());
+        case Boolean bool -> JsonBoolean.create(bool);
+        case BigDecimal bigDecimal -> JsonNumber.create(bigDecimal);
+        case BigInteger bigInteger -> JsonNumber.create(new BigDecimal(bigInteger));
+        case Byte number -> JsonNumber.create(number.longValue());
+        case Short number -> JsonNumber.create(number.longValue());
+        case Integer number -> JsonNumber.create(number.longValue());
+        case Long number -> JsonNumber.create(number);
+        case Float number -> JsonNumber.create(number.doubleValue());
+        case Double number -> JsonNumber.create(number);
+        case Number number -> JsonNumber.create(new BigDecimal(number.toString()));
+        case Map<?, ?> map -> toJsonObject(map);
+        case Iterable<?> iterable -> toJsonArray(iterable);
+        default -> throw new IllegalArgumentException("Unsupported GraphQL result type: " + value.getClass().getName());
+        };
+    }
+
+    private static JsonArray toJsonArray(Iterable<?> iterable) {
+        List<JsonValue> values = new ArrayList<>();
+        iterable.forEach(value -> values.add(toJsonValue(value)));
+        return JsonArray.create(values);
     }
 
     /**
