@@ -217,6 +217,48 @@ class GrpcProtocolHandlerTest {
     }
 
     @Test
+    void testHalfCloseExceptionSendsGrpcStatus() {
+        AtomicInteger cancellations = new AtomicInteger();
+        AtomicReference<Http2Headers> trailers = new AtomicReference<>();
+        ServerCall.Listener<String> listener = new ServerCall.Listener<>() {
+            @Override
+            public void onHalfClose() {
+                throw Status.INVALID_ARGUMENT.withDescription("bad request").asRuntimeException();
+            }
+
+            @Override
+            public void onCancel() {
+                cancellations.incrementAndGet();
+            }
+        };
+        BufferData data = grpcData("bad");
+        GrpcProtocolHandler<String, String> handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
+                                                                                Http2Headers.create(WritableHeaders.create()),
+                                                                                headersCapturingWriter(trailers),
+                                                                                1,
+                                                                                null,
+                                                                                Http2StreamState.OPEN,
+                                                                                route(listener),
+                                                                                GrpcConfig.create());
+        handler.init();
+        Http2FrameHeader header = Http2FrameHeader.create(data.available(),
+                                                          Http2FrameTypes.DATA,
+                                                          Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM),
+                                                          1);
+
+        assertDoesNotThrow(() -> handler.data(header, data));
+
+        assertAll(
+                () -> assertThat(cancellations.get(), is(0)),
+                () -> assertThat(handler.streamState(), is(Http2StreamState.CLOSED)),
+                () -> assertThat(trailers.get().httpHeaders().first(GrpcStatus.STATUS_NAME),
+                                 is(Optional.of(String.valueOf(Status.Code.INVALID_ARGUMENT.value())))),
+                () -> assertThat(trailers.get().httpHeaders().first(GrpcStatus.MESSAGE_NAME),
+                                 is(Optional.of("bad request")))
+        );
+    }
+
+    @Test
     void testCloseBeforeListenerAssignmentClosesStream() {
         ServerMethodDefinition<String, String> definition =
                 ServerMethodDefinition.create(stringMethodDescriptor(), new ServerCallHandler<>() {
@@ -366,6 +408,15 @@ class GrpcProtocolHandlerTest {
         };
     }
 
+    private static BufferData grpcData(String content) {
+        byte[] bytes = content.getBytes(StandardCharsets.UTF_8);
+        BufferData data = BufferData.create(5 + bytes.length);
+        data.write(0);
+        data.writeUnsignedInt32(bytes.length);
+        data.write(bytes);
+        return data;
+    }
+
     private static MethodDescriptor<String, String> stringMethodDescriptor() {
         MethodDescriptor.Marshaller<String> marshaller = new MethodDescriptor.Marshaller<>() {
             @Override
@@ -388,6 +439,36 @@ class GrpcProtocolHandlerTest {
                 .setRequestMarshaller(marshaller)
                 .setResponseMarshaller(marshaller)
                 .build();
+    }
+
+    private static Http2StreamWriter headersCapturingWriter(AtomicReference<Http2Headers> capturedHeaders) {
+        return new Http2StreamWriter() {
+            @Override
+            public void write(Http2FrameData frame) {
+            }
+
+            @Override
+            public void writeData(Http2FrameData frame, FlowControl.Outbound flowControl) {
+            }
+
+            @Override
+            public int writeHeaders(Http2Headers headers,
+                                    int streamId,
+                                    Http2Flag.HeaderFlags flags,
+                                    FlowControl.Outbound flowControl) {
+                capturedHeaders.set(headers);
+                return 0;
+            }
+
+            @Override
+            public int writeHeaders(Http2Headers headers,
+                                    int streamId,
+                                    Http2Flag.HeaderFlags flags,
+                                    Http2FrameData dataFrame,
+                                    FlowControl.Outbound flowControl) {
+                throw new UnsupportedOperationException("Unused");
+            }
+        };
     }
 
     private static Http2StreamWriter headersFailingWriter() {

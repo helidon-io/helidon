@@ -33,6 +33,7 @@ module io.helidon.declarative.tests.grpc {
     requires io.helidon.webserver;
     requires io.helidon.webserver.grpc;
     requires io.helidon.webserver.grpc.security;
+    requires io.helidon.webserver.grpc.validation;
 
     requires com.google.protobuf;
     requires io.grpc;

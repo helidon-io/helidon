@@ -121,6 +121,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private final StreamFlowControl flowControl;
     private final GrpcConfig grpcConfig;
 
+    private volatile ServerCall<REQ, RES> serverCall;
     private volatile ServerCall.Listener<REQ> listener;
     private BufferData entityBytes;
     private BufferData readBufferData = BufferData.create(INITIAL_BUFFER_SIZE);
@@ -158,6 +159,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     public void init() {
         try {
             ServerCall<REQ, RES> serverCall = createServerCall();
+            this.serverCall = serverCall;
             Headers httpHeaders = headers.httpHeaders();
 
             // setup compression
@@ -305,7 +307,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
             if (isPeerCancellation(e)) {
                 throw new ServerConnectionException("gRPC call cancelled by remote peer", e);
             }
-            listener.onCancel();
+            closeOnException(e, header);
             LOGGER.log(ERROR, "Failed to process grpc request, data bytes: " + data.available(), e);
         }
     }
@@ -369,6 +371,19 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
     private boolean isPeerCancellation(Throwable throwable) {
         return callCancelled && Status.fromThrowable(throwable).getCode() == Status.Code.CANCELLED;
+    }
+
+    private void closeOnException(Throwable throwable, Http2FrameHeader header) {
+        if (header.flags(Http2FrameTypes.DATA).endOfStream()) {
+            currentStreamState.updateAndGet(
+                    current -> nextStreamState(current, Http2StreamState.HALF_CLOSED_REMOTE));
+        }
+
+        ServerCall<REQ, RES> call = serverCall;
+        if (call != null && currentStreamState.get() != CLOSED) {
+            Metadata trailers = Status.trailersFromThrowable(throwable);
+            call.close(Status.fromThrowable(throwable), trailers == null ? new Metadata() : trailers);
+        }
     }
 
     private void writeHeaders(Http2Headers http2Headers, HeaderFlags flags) {

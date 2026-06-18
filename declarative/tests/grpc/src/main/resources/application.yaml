@@ -18,6 +18,8 @@ grpc:
   grpc-services:
     security:
       enabled: true
+    validation:
+      enabled: true
 
 security:
   providers:

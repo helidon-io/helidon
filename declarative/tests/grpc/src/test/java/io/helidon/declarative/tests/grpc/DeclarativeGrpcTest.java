@@ -40,6 +40,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -91,6 +92,14 @@ class DeclarativeGrpcTest {
         var response = blockingStub.validatedGreet(request("Tomas"));
 
         assertThat(response.getMessage(), is("Hello Tomas"));
+        assertThat(GreetingRequestValidatorProvider.invocations(), is(1));
+
+        GreetingRequestValidatorProvider.reset();
+
+        var invalid = assertThrows(StatusRuntimeException.class, () -> blockingStub.validatedGreet(request(" ")));
+
+        assertThat(invalid.getStatus().getCode(), is(Code.INVALID_ARGUMENT));
+        assertThat(invalid.getStatus().getDescription(), containsString("name is blank"));
         assertThat(GreetingRequestValidatorProvider.invocations(), is(1));
     }
 
