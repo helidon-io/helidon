@@ -117,6 +117,18 @@ class GraphQlServerCodegenTest {
                             Boolean update(@GraphQl.Argument("enabled") boolean enabled) {
                                 return enabled;
                             }
+
+                            @GraphQlServer.Field
+                            @GraphQl.Description("Book summary")
+                            String summary(@GraphQlServer.Source Book book,
+                                           @GraphQl.Argument("prefix") String prefix) {
+                                return prefix + ": " + book.title();
+                            }
+
+                            @GraphQlServer.Field("score")
+                            int score(Book book) {
+                                return 10;
+                            }
                         }
                         """)
                 .addSource("Book.java", """
@@ -204,6 +216,9 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("type Book"));
         assertThat(generated, containsString("title: String!"));
         assertThat(generated, containsString("state: BookStatus"));
+        assertThat(generated, containsString("Book summary"));
+        assertThat(generated, containsString("summary(prefix: String): String"));
+        assertThat(generated, containsString("score: Int!"));
         assertThat(generated, not(containsString("internal:")));
         assertThat(generated, containsString("enum BookStatus"));
         assertThat(generated, containsString("Currently available"));
@@ -215,6 +230,11 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("builder.type(\"Book\""));
         assertThat(generated, containsString(".dataFetcher(\"title\", environment -> ((Book) environment.getSource()).title())"));
         assertThat(generated, containsString(".dataFetcher(\"state\", environment -> ((Book) environment.getSource()).status())"));
+        assertThat(generated, containsString(".dataFetcher(\"summary\", fetcher_"));
+        assertThat(generated, containsString(".dataFetcher(\"score\", fetcher_"));
+        assertThat(generated, containsString("this.endpoint.summary("));
+        assertThat(generated, containsString("((Book) environment.getSource())"));
+        assertThat(generated, containsString("(String) environment.getArgument(\"prefix\")"));
         assertThat(generated, containsString("builder.type(\"AuthorDto\""));
         assertThat(generated, containsString(".dataFetcher(\"name\", environment -> ((AuthorDto) environment.getSource()).getName())"));
         assertThat(generated, containsString(".dataFetcher(\"active\", environment -> ((AuthorDto) environment.getSource()).isActive())"));
@@ -333,5 +353,179 @@ class GraphQlServerCodegenTest {
         String diagnostics = String.join("\n", result.diagnostics());
         assertThat(diagnostics, result.success(), is(false));
         assertThat(diagnostics, containsString("must be annotated with @GraphQl.Entity"));
+    }
+
+    @Test
+    void childFieldWithoutSourceParameterFailsCodegen() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-field-missing-source"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            Book book() {
+                                return new Book("Dune");
+                            }
+
+                            @GraphQlServer.Field
+                            String summary() {
+                                return "Dune";
+                            }
+                        }
+                        """)
+                .addSource("Book.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Entity
+                        record Book(String title) {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("must declare exactly one source parameter"));
+    }
+
+    @Test
+    void childFieldDuplicateObjectFieldFailsCodegen() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-field-duplicate"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            Book book() {
+                                return new Book("Dune");
+                            }
+
+                            @GraphQlServer.Field
+                            String title(Book book) {
+                                return book.title();
+                            }
+                        }
+                        """)
+                .addSource("Book.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Entity
+                        record Book(String title) {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("Duplicate GraphQL field 'title'"));
+    }
+
+    @Test
+    void childFieldConflictingNamesFailCodegen() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-field-name-conflict"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            Book book() {
+                                return new Book("Dune");
+                            }
+
+                            @GraphQlServer.Field("summary")
+                            @GraphQl.Name("description")
+                            String summary(Book book) {
+                                return book.title();
+                            }
+                        }
+                        """)
+                .addSource("Book.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Entity
+                        record Book(String title) {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("@GraphQlServer.Field value and @GraphQl.Name"));
+    }
+
+    @Test
+    void mixedResolverAnnotationsFailCodegen() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-mixed-resolver-annotations"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            Book book() {
+                                return new Book("Dune");
+                            }
+
+                            @GraphQl.Query
+                            @GraphQlServer.Field
+                            String invalid(Book book) {
+                                return book.title();
+                            }
+                        }
+                        """)
+                .addSource("Book.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Entity
+                        record Book(String title) {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("can only use one of @GraphQl.Query, @GraphQl.Mutation"));
     }
 }

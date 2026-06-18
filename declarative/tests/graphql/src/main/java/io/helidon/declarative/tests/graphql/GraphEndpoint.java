@@ -35,6 +35,11 @@ class GraphEndpoint {
         return new Book("Dune", BookStatus.AVAILABLE, "hidden");
     }
 
+    @GraphQlServer.Field
+    String summary(@GraphQlServer.Source Book book, @GraphQl.Argument("prefix") String prefix) {
+        return prefix + ": " + book.title();
+    }
+
     @GraphQl.Query
     boolean enabled() {
         return enabled.get();

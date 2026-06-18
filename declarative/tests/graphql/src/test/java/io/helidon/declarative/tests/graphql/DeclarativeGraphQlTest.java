@@ -52,6 +52,7 @@ class DeclarativeGraphQlTest {
             assertThat(schema, containsString("\"Book result\""));
             assertThat(schema, containsString("title: String!"));
             assertThat(schema, containsString("state: BookStatus"));
+            assertThat(schema, containsString("summary(prefix: String): String"));
             assertThat(schema, containsString("enum BookStatus"));
             assertThat(schema, containsString("\"Currently available\""));
             assertThat(schema, containsString("OUT_OF_PRINT"));
@@ -62,7 +63,7 @@ class DeclarativeGraphQlTest {
     void testQueryAndObjectResult() {
         JsonObject data = graphQl("""
                                           {
-                                            "query": "{ hello(name: \\"Helidon\\") book { title state } }"
+                                            "query": "{ hello(name: \\"Helidon\\") book { title state summary(prefix: \\"Read\\") } }"
                                           }
                                           """);
 
@@ -70,6 +71,7 @@ class DeclarativeGraphQlTest {
         JsonObject book = data.objectValue("book").orElseThrow();
         assertThat(book.stringValue("title").orElseThrow(), is("Dune"));
         assertThat(book.stringValue("state").orElseThrow(), is("AVAILABLE"));
+        assertThat(book.stringValue("summary").orElseThrow(), is("Read: Dune"));
         assertThat(book.value("internal").isEmpty(), is(true));
     }
 
