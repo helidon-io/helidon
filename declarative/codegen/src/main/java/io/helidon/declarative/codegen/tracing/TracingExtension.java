@@ -38,6 +38,7 @@ import io.helidon.common.types.ResolvedType;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.declarative.codegen.common.DeclarativeElementInfo;
 import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.RegistryRoundContext;
 import io.helidon.service.codegen.ServiceContracts;
@@ -84,19 +85,62 @@ class TracingExtension implements RegistryCodegenExtension {
                     .addContracts(contracts, new HashSet<>(), type);
 
             contracts.stream()
-                    .map(ResolvedType::type)
-                    .sorted(Comparator.comparing(TypeName::resolvedName))
-                    .flatMap(contract -> roundContext.typeInfo(contract)
-                            .or(() -> roundContext.typeInfo(contract.genericTypeName()))
+                    .sorted(Comparator.comparing(contract -> contract.type().resolvedName()))
+                    .flatMap(contract -> roundContext.typeInfo(contract.type())
+                            .or(() -> roundContext.typeInfo(contract.type().genericTypeName()))
+                            .map(it -> Map.entry(contract, it))
                             .stream())
-                    .filter(contract -> contract.hasAnnotation(ANNOTATION_TRACED))
-                    .forEach(contract -> {
+                    .filter(contract -> contract.getValue().hasAnnotation(ANNOTATION_TRACED))
+                    .forEach(contractEntry -> {
+                        ResolvedType resolvedContract = contractEntry.getKey();
+                        TypeInfo contract = contractEntry.getValue();
+                        List<String> typeParameters = contract.typeName().typeParameters();
+                        List<TypeName> typeArguments = resolvedContract.type().typeArguments();
+                        if (typeArguments.isEmpty()) {
+                            typeArguments = contract.typeName().typeArguments();
+                        }
+                        if (typeParameters.isEmpty()) {
+                            typeParameters = contract.declaredType()
+                                    .typeArguments()
+                                    .stream()
+                                    .filter(TypeName::generic)
+                                    .filter(Predicate.not(TypeName::wildcard))
+                                    .map(TypeName::className)
+                                    .map(TracingExtension::genericTypeName)
+                                    .toList();
+                        }
+                        final Map<String, TypeName> typeArgumentMapping;
+                        if (typeParameters.isEmpty() || typeArguments.isEmpty()) {
+                            typeArgumentMapping = Map.of();
+                        } else {
+                            Map<String, TypeName> result = new HashMap<>();
+                            for (int i = 0; i < Math.min(typeParameters.size(), typeArguments.size()); i++) {
+                                result.put(genericTypeName(typeParameters.get(i)), typeArguments.get(i));
+                            }
+                            typeArgumentMapping = result;
+                        }
                         Set<ElementSignature> contractMethods = contract.elementInfo()
                                 .stream()
                                 .filter(ElementInfoPredicates::isMethod)
                                 .filter(Predicate.not(ElementInfoPredicates::isStatic))
                                 .filter(Predicate.not(ElementInfoPredicates::isPrivate))
-                                .map(TypedElementInfo::signature)
+                                .map(element -> {
+                                    if (typeArgumentMapping.isEmpty()) {
+                                        return element.signature();
+                                    }
+                                    List<TypedElementInfo> parameters = element.parameterArguments()
+                                            .stream()
+                                            .map(it -> TypedElementInfo.builder(it)
+                                                    .typeName(resolveTypeArguments(it.typeName(), typeArgumentMapping))
+                                                    .build())
+                                            .toList();
+
+                                    return TypedElementInfo.builder(element)
+                                            .typeName(resolveTypeArguments(element.typeName(), typeArgumentMapping))
+                                            .parameterArguments(parameters)
+                                            .build()
+                                            .signature();
+                                })
                                 .collect(Collectors.toUnmodifiableSet());
 
                         var contractAnnotation = contract.findAnnotation(ANNOTATION_TRACED);
@@ -113,7 +157,8 @@ class TracingExtension implements RegistryCodegenExtension {
                 continue;
             }
             for (TypedElementInfo element : type.elementInfo()) {
-                if (!ElementInfoPredicates.isMethod(element)
+                if (!DeclarativeElementInfo.belongsToService(type, element)
+                        || !ElementInfoPredicates.isMethod(element)
                         || ElementInfoPredicates.isStatic(element)
                         || ElementInfoPredicates.isPrivate(element)
                         || !element.hasAnnotation(ANNOTATION_TRACED)) {
@@ -177,11 +222,58 @@ class TracingExtension implements RegistryCodegenExtension {
             if (existing == null) {
                 return new TracedElement(element, typeAnnotation);
             }
+            if (!existing.element().hasAnnotation(ANNOTATION_TRACED) && element.hasAnnotation(ANNOTATION_TRACED)) {
+                return new TracedElement(element, existing.typeAnnotation().or(() -> typeAnnotation));
+            }
             if (existing.typeAnnotation().isEmpty() && typeAnnotation.isPresent()) {
                 return new TracedElement(existing.element(), typeAnnotation);
             }
             return existing;
         });
+    }
+
+    private static String genericTypeName(String typeParameter) {
+        String name = typeParameter.trim();
+        int index = name.indexOf(' ');
+        return index == -1 ? name : name.substring(0, index);
+    }
+
+    private TypeName resolveTypeArguments(TypeName typeName, Map<String, TypeName> typeArguments) {
+        if (typeName.generic()) {
+            TypeName resolved = typeArguments.get(typeName.className().trim());
+            if (resolved != null) {
+                return resolved;
+            }
+        }
+
+        List<TypeName> resolvedTypeArguments = typeName.typeArguments()
+                .stream()
+                .map(it -> resolveTypeArguments(it, typeArguments))
+                .toList();
+        List<TypeName> resolvedLowerBounds = typeName.lowerBounds()
+                .stream()
+                .map(it -> resolveTypeArguments(it, typeArguments))
+                .toList();
+        List<TypeName> resolvedUpperBounds = typeName.upperBounds()
+                .stream()
+                .map(it -> resolveTypeArguments(it, typeArguments))
+                .toList();
+        Optional<TypeName> resolvedComponentType = typeName.componentType()
+                .map(it -> resolveTypeArguments(it, typeArguments));
+
+        if (resolvedTypeArguments.equals(typeName.typeArguments())
+                && resolvedLowerBounds.equals(typeName.lowerBounds())
+                && resolvedUpperBounds.equals(typeName.upperBounds())
+                && resolvedComponentType.equals(typeName.componentType())) {
+            return typeName;
+        }
+
+        TypeName.Builder builder = TypeName.builder(typeName)
+                .typeArguments(resolvedTypeArguments)
+                .lowerBounds(resolvedLowerBounds)
+                .upperBounds(resolvedUpperBounds);
+        resolvedComponentType.ifPresent(builder::componentType);
+        return builder.build();
     }
 
     private void processElement(TracedHandler handler,

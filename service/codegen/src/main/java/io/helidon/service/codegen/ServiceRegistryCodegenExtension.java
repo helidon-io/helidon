@@ -69,7 +69,8 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
                                              discoveryPredicate(it.supportedAnnotations(),
                                                                 it.supportedAnnotationPackages()),
                                              it.supportedMetaAnnotations(),
-                                             it.supportsServiceContractAnnotations());
+                                             it.supportsServiceContractAnnotations(),
+                                             it.supportsFactoryProvidedServiceContractAnnotations());
                 })
                 .toList();
     }
@@ -344,12 +345,14 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
                                                                              supportedAnnotationsCache,
                                                                              metaAnnotationsCache,
                                                                              metaAnnotatedCache));
-        result.addAll(supportedAnnotationsOnContracts(roundContext,
-                                                      extension,
-                                                      ServiceTypes.factoryProvidedContracts(serviceContracts, serviceType),
-                                                      supportedAnnotationsCache,
-                                                      metaAnnotationsCache,
-                                                      metaAnnotatedCache));
+        if (extension.supportsFactoryProvidedServiceContractAnnotations()) {
+            result.addAll(supportedAnnotationsOnContracts(roundContext,
+                                                          extension,
+                                                          ServiceTypes.factoryProvidedContracts(serviceContracts, serviceType),
+                                                          supportedAnnotationsCache,
+                                                          metaAnnotationsCache,
+                                                          metaAnnotatedCache));
+        }
 
         return Set.copyOf(result);
     }
@@ -502,7 +505,8 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
     private record ExtensionInfo(RegistryCodegenExtension extension,
                                  Predicate<TypeName> supportedAnnotationsPredicate,
                                  Set<TypeName> supportedMetaAnnotations,
-                                 boolean supportsServiceContractAnnotations) {
+                                 boolean supportsServiceContractAnnotations,
+                                 boolean supportsFactoryProvidedServiceContractAnnotations) {
     }
 
     private record ElementKey(TypeName owner, ElementSignature signature) {

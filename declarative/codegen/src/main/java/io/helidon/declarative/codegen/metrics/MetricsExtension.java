@@ -34,6 +34,7 @@ import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.declarative.codegen.common.DeclarativeElementInfo;
 import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.RegistryRoundContext;
 import io.helidon.service.codegen.spi.RegistryCodegenExtension;
@@ -169,7 +170,8 @@ class MetricsExtension implements RegistryCodegenExtension {
                 continue;
             }
             for (TypedElementInfo element : typeInfo.elementInfo()) {
-                if (!element.hasAnnotation(ANNOTATION_COUNTED)) {
+                if (!DeclarativeElementInfo.belongsToService(typeInfo, element)
+                        || !element.hasAnnotation(ANNOTATION_COUNTED)) {
                     continue;
                 }
 
@@ -193,7 +195,8 @@ class MetricsExtension implements RegistryCodegenExtension {
                 continue;
             }
             for (TypedElementInfo element : typeInfo.elementInfo()) {
-                if (!element.hasAnnotation(ANNOTATION_TIMED)) {
+                if (!DeclarativeElementInfo.belongsToService(typeInfo, element)
+                        || !element.hasAnnotation(ANNOTATION_TIMED)) {
                     continue;
                 }
 
@@ -213,7 +216,8 @@ class MetricsExtension implements RegistryCodegenExtension {
                 continue;
             }
             for (TypedElementInfo element : typeInfo.elementInfo()) {
-                if (!element.hasAnnotation(ANNOTATION_GAUGE)) {
+                if (!DeclarativeElementInfo.belongsToService(typeInfo, element)
+                        || !element.hasAnnotation(ANNOTATION_GAUGE)) {
                     continue;
                 }
 

@@ -29,9 +29,10 @@ public interface RegistryCodegenExtensionProvider extends CodegenProvider {
      * Whether this extension should also process services whose service contracts contain annotations
      * supported by this extension.
      * <p>
-     * Service contracts include direct service contracts and contracts provided by factory services. Contract annotations
-     * are discovered from nested contract metadata, including annotations on the contract type, methods, method parameters,
-     * parameter and return type arguments, and annotations matched through {@link #supportedMetaAnnotations()}.
+     * Service contracts include contracts discovered for the service type. Contract annotations are discovered from nested
+     * contract metadata, including annotations on the contract type, methods, method parameters, parameter and return type
+     * arguments, and annotations matched through {@link #supportedMetaAnnotations()}. Factory-provided contracts are
+     * controlled separately by {@link #supportsFactoryProvidedServiceContractAnnotations()}.
      * <p>
      * Matching services are passed to the extension through {@link io.helidon.service.codegen.RegistryRoundContext#types()}.
      * <p>
@@ -43,6 +44,18 @@ public interface RegistryCodegenExtensionProvider extends CodegenProvider {
      */
     default boolean supportsServiceContractAnnotations() {
         return false;
+    }
+
+    /**
+     * Whether this extension should also process factory services whose provided service contracts contain annotations
+     * supported by this extension.
+     * <p>
+     * This method follows {@link #supportsServiceContractAnnotations()} by default for backward compatibility.
+     *
+     * @return whether factory services with supported provided-contract annotations should be processed
+     */
+    default boolean supportsFactoryProvidedServiceContractAnnotations() {
+        return supportsServiceContractAnnotations();
     }
 
     /**

@@ -31,6 +31,7 @@ import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.declarative.codegen.common.DeclarativeElementInfo;
 import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.RegistryRoundContext;
 
@@ -58,7 +59,8 @@ abstract class FtHandler {
                 continue;
             }
             for (TypedElementInfo element : enclosingType.elementInfo()) {
-                if (!element.hasAnnotation(annotation)) {
+                if (!DeclarativeElementInfo.belongsToService(enclosingType, element)
+                        || !element.hasAnnotation(annotation)) {
                     continue;
                 }
                 String target = elementTarget(enclosingType, element);

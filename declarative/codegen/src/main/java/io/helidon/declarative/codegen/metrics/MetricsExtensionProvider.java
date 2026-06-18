@@ -54,6 +54,11 @@ public class MetricsExtensionProvider implements RegistryCodegenExtensionProvide
     }
 
     @Override
+    public boolean supportsFactoryProvidedServiceContractAnnotations() {
+        return false;
+    }
+
+    @Override
     public RegistryCodegenExtension create(RegistryCodegenContext codegenContext) {
         return new MetricsExtension(codegenContext);
     }

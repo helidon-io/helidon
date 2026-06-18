@@ -208,6 +208,7 @@ Fault tolerance annotations allow adding features to methods on services.
 The annotations can be added to any method that supports interception (i.e. methods that are not private).
 Method-level fault tolerance annotations can also be declared on methods inherited from service contracts and typed
 HTTP client interfaces. Type-level fault tolerance annotations on interfaces are not inherited by service methods.
+Contracts provided by registry-managed service factories are not included.
 
 Method Annotations:
 
@@ -446,6 +447,7 @@ Method annotations:
 - link:{metrics-javadoc-base-url}/io/helidon/metrics/api/Metrics.Gauge.html[`io.helidon.metrics.api.Metrics.Gauge`] - marks a method that returns a number as a gauge
 
 Metrics method annotations can also be declared on methods inherited from service contracts and typed HTTP client interfaces.
+Contracts provided by registry-managed service factories are not included.
 
 In addition, we can use link:{metrics-javadoc-base-url}/io/helidon/metrics/api/Metrics.Tag.html[`io.helidon.metrics.api.Metrics.Tag`] annotation on a type, method, or as a `tags` property of an annotation to add tags to the metric. Tags from type definition will be added to all metrics on the type, tags on methods on all metrics on the method, and tags in the metric annotation will only be used by that metric.
 
@@ -471,6 +473,7 @@ Add support for tracing of methods.
 This feature will add a new span for each annotated method (or all methods on an annotated type).
 Tracing annotations can also be declared on methods inherited from service contracts and typed HTTP client interfaces.
 A type-level tracing annotation on a contract interface applies only to methods declared by that contract.
+Contracts provided by registry-managed service factories are not included.
 
 Annotations:
 
