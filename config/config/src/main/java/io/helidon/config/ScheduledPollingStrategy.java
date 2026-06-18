@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.config;
 import java.lang.System.Logger.Level;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Objects;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
@@ -49,6 +50,7 @@ public final class ScheduledPollingStrategy implements PollingStrategy {
     private ScheduledExecutorService executor;
     private ScheduledFuture<?> scheduledFuture;
     private Polled polled;
+    private boolean pollFailureLogged;
 
     private ScheduledPollingStrategy(Builder builder) {
         this.recurringPolicy = builder.recurringPolicy;
@@ -89,6 +91,8 @@ public final class ScheduledPollingStrategy implements PollingStrategy {
 
     @Override
     public synchronized void start(Polled polled) {
+        Objects.requireNonNull(polled, "polled");
+
         if (defaultExecutor && executor.isShutdown()) {
             executor = Executors.newSingleThreadScheduledExecutor(new ConfigThreadFactory("file-watch-polling"));
         }
@@ -98,6 +102,7 @@ public final class ScheduledPollingStrategy implements PollingStrategy {
         }
 
         this.polled = polled;
+        this.pollFailureLogged = false;
         scheduleNext();
     }
 
@@ -128,7 +133,24 @@ public final class ScheduledPollingStrategy implements PollingStrategy {
     }
 
     private synchronized void fireEvent() {
-        ChangeEventType event = polled.poll(Instant.now());
+        ChangeEventType event;
+        try {
+            event = polled.poll(Instant.now());
+        } catch (RuntimeException e) {
+            if (!pollFailureLogged) {
+                LOGGER.log(Level.WARNING, "Failed to poll config source, polling will continue; "
+                        + "further failures are logged at debug.", e);
+                pollFailureLogged = true;
+            } else {
+                LOGGER.log(Level.DEBUG, "Config polling failure", e);
+            }
+            scheduleNext();
+            return;
+        }
+
+        Objects.requireNonNull(event, "Change event type must not be null");
+        pollFailureLogged = false;
+
         switch (event) {
         case CHANGED:
         case DELETED:

@@ -116,6 +116,12 @@ class ProviderImpl implements Config.Context {
         return lastConfigInstance();
     }
 
+    @Override
+    public void stopChangeSupport() {
+        configSource.stopChanges();
+        overrideSource.stopChanges();
+    }
+
     Optional<ConfigNode> lazyValue(String string) {
         return configSource.lazyValue(string);
     }

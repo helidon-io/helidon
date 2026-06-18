@@ -1137,6 +1137,15 @@ public interface Config {
          * @see Config.Builder
          */
         Config reload();
+
+        /**
+         * Stops background change support tasks associated with this context.
+         * <p>
+         * The current configuration tree remains usable after this method returns, including calls to
+         * {@link #last()} and {@link #reload()}.
+         */
+        default void stopChangeSupport() {
+        }
     }
 
     /**

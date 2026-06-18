@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +20,13 @@ import java.util.AbstractMap.SimpleEntry;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
 import io.helidon.config.spi.ConfigNode.ObjectNode;
+import io.helidon.config.spi.PollingStrategy;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -264,6 +267,63 @@ public class ConfigContextTest {
         assertThat(c.config.context().timestamp(), is(c.config.timestamp()));
         assertThat(c.config.context().last(), is(c.config));
         assertThat(c.config.context().last().key(), is(c.config.key()));
+    }
+
+    @Test
+    public void testStopChangeSupportStopsPollingStrategy() {
+        AtomicBoolean stopped = new AtomicBoolean();
+        PollingStrategy pollingStrategy = new PollingStrategy() {
+            @Override
+            public void start(Polled polled) {
+            }
+
+            @Override
+            public void stop() {
+                stopped.set(true);
+            }
+        };
+        Config config = Config.builder()
+                .addSource(TestingConfigSource.builder()
+                                   .objectNode(createSource("old"))
+                                   .pollingStrategy(pollingStrategy)
+                                   .build())
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .build();
+
+        config.get("sub").context().stopChangeSupport();
+
+        assertThat(stopped.get(), is(true));
+        assertThat(config.get(PROP1).asString().get(), is("oldVal_1_1"));
+    }
+
+    @Test
+    public void testStopChangeSupportStopsPrefixedSourcePollingStrategy() {
+        AtomicBoolean stopped = new AtomicBoolean();
+        PollingStrategy pollingStrategy = new PollingStrategy() {
+            @Override
+            public void start(Polled polled) {
+            }
+
+            @Override
+            public void stop() {
+                stopped.set(true);
+            }
+        };
+        Config config = Config.builder()
+                .addSource(ConfigSources.prefixed("prefix",
+                                                  () -> TestingConfigSource.builder()
+                                                          .objectNode(createSource("old"))
+                                                          .pollingStrategy(pollingStrategy)
+                                                          .build()))
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .build();
+
+        config.get("prefix.sub").context().stopChangeSupport();
+
+        assertThat(stopped.get(), is(true));
+        assertThat(config.get("prefix." + PROP1).asString().get(), is("oldVal_1_1"));
     }
 
 }

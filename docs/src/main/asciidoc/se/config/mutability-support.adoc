@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -68,6 +68,9 @@ that used the context.
 |`Config reload()` |Reloads the
 entire config tree from the current contents of the same config sources used to
 load the tree in which the current node resides.
+|`void stopChangeSupport()` |Stops background change support tasks associated
+with this context. The current config tree remains usable, and your application
+can still invoke `last()` and `reload()`.
 |===
 
 Note that the config context describes or replaces a currently-loaded config tree.
