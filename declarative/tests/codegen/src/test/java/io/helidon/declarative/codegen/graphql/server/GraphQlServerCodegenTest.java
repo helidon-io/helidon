@@ -51,6 +51,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class GraphQlServerCodegenTest {
@@ -100,9 +101,63 @@ class GraphQlServerCodegenTest {
                                 return "Hello " + name;
                             }
 
+                            @GraphQl.Query
+                            Book book() {
+                                return new Book("Dune", BookStatus.AVAILABLE, "hidden");
+                            }
+
+                            @GraphQl.Query
+                            AuthorDto author() {
+                                return new AuthorDto("Frank Herbert", true);
+                            }
+
                             @GraphQl.Mutation
                             Boolean update(@GraphQl.Argument("enabled") boolean enabled) {
                                 return enabled;
+                            }
+                        }
+                        """)
+                .addSource("Book.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Description("Book result")
+                        record Book(@GraphQl.NonNull String title,
+                                    @GraphQl.Name("state") BookStatus status,
+                                    @GraphQl.Ignore String internal) {
+                        }
+                        """)
+                .addSource("BookStatus.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        enum BookStatus {
+                            @GraphQl.Description("Currently available")
+                            AVAILABLE,
+                            @GraphQl.Name("OUT_OF_PRINT")
+                            OUT
+                        }
+                        """)
+                .addSource("AuthorDto.java", """
+                        package com.example;
+
+                        public class AuthorDto {
+                            private final String name;
+                            private final boolean active;
+
+                            AuthorDto(String name, boolean active) {
+                                this.name = name;
+                                this.active = active;
+                            }
+
+                            public String getName() {
+                                return name;
+                            }
+
+                            public boolean isActive() {
+                                return active;
                             }
                         }
                         """)
@@ -134,7 +189,27 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("entryPoints.dataFetcher("));
         assertThat(generated, containsString("type Query"));
         assertThat(generated, containsString("hello(name: String): String"));
+        assertThat(generated, containsString("book: Book"));
+        assertThat(generated, containsString("author: AuthorDto"));
         assertThat(generated, containsString("type Mutation"));
         assertThat(generated, containsString("update(enabled: Boolean!): Boolean"));
+        assertThat(generated, containsString("Book result"));
+        assertThat(generated, containsString("type Book"));
+        assertThat(generated, containsString("title: String!"));
+        assertThat(generated, containsString("state: BookStatus"));
+        assertThat(generated, not(containsString("internal:")));
+        assertThat(generated, containsString("enum BookStatus"));
+        assertThat(generated, containsString("Currently available"));
+        assertThat(generated, containsString("AVAILABLE"));
+        assertThat(generated, containsString("OUT_OF_PRINT"));
+        assertThat(generated, containsString("type AuthorDto"));
+        assertThat(generated, containsString("name: String"));
+        assertThat(generated, containsString("active: Boolean!"));
+        assertThat(generated, containsString("builder.type(\"Book\""));
+        assertThat(generated, containsString(".dataFetcher(\"title\", environment -> ((Book) environment.getSource()).title())"));
+        assertThat(generated, containsString(".dataFetcher(\"state\", environment -> ((Book) environment.getSource()).status())"));
+        assertThat(generated, containsString("builder.type(\"AuthorDto\""));
+        assertThat(generated, containsString(".dataFetcher(\"name\", environment -> ((AuthorDto) environment.getSource()).getName())"));
+        assertThat(generated, containsString(".dataFetcher(\"active\", environment -> ((AuthorDto) environment.getSource()).isActive())"));
     }
 }

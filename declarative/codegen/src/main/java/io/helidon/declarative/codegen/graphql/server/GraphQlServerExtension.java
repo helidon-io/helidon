@@ -19,7 +19,9 @@ package io.helidon.declarative.codegen.graphql.server;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
@@ -47,6 +49,7 @@ import static io.helidon.codegen.CodegenUtil.toConstantName;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.DATA_FETCHING_ENVIRONMENT;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_ARGUMENT;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_DEFAULT_VALUE;
+import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_DESCRIPTION;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_ENTRY_POINTS;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_IGNORE;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_MUTATION;
@@ -85,16 +88,17 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         Collection<TypeInfo> endpoints = roundContext.annotatedTypes(GRAPHQL_SERVER_ENDPOINT);
 
         for (TypeInfo endpoint : endpoints) {
-            process(roundContext, toEndpoint(endpoint));
+            process(roundContext, toEndpoint(roundContext, endpoint));
         }
     }
 
-    private GraphQlEndpoint toEndpoint(TypeInfo typeInfo) {
+    private GraphQlEndpoint toEndpoint(RegistryRoundContext roundContext, TypeInfo typeInfo) {
         if (typeInfo.kind() == ElementKind.INTERFACE) {
             throw new CodegenException("Interfaces should not be annotated with " + GRAPHQL_SERVER_ENDPOINT.fqName(),
                                        typeInfo.originatingElementValue());
         }
 
+        SchemaTypes schemaTypes = new SchemaTypes(roundContext);
         Set<Annotation> typeAnnotations = new HashSet<>(TypeHierarchy.hierarchyAnnotations(ctx, typeInfo));
         String listener = Annotations.findFirst(GRAPHQL_SERVER_LISTENER, typeAnnotations)
                 .flatMap(Annotation::stringValue)
@@ -118,7 +122,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                 .filter(ElementInfoPredicates::isMethod)
                 .filter(not(ElementInfoPredicates::isPrivate))
                 .filter(not(ElementInfoPredicates::isStatic))
-                .forEach(method -> addOperation(typeInfo, method, queries, mutations, queryNames, mutationNames));
+                .forEach(method -> addOperation(schemaTypes, typeInfo, method, queries, mutations, queryNames, mutationNames));
 
         if (queries.isEmpty()) {
             throw new CodegenException("Declarative GraphQL endpoint " + typeInfo.typeName().fqName()
@@ -131,11 +135,13 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                                    Optional.ofNullable(listener),
                                    context,
                                    schemaUri,
+                                   schemaTypes,
                                    List.copyOf(queries),
                                    List.copyOf(mutations));
     }
 
-    private void addOperation(TypeInfo endpoint,
+    private void addOperation(SchemaTypes schemaTypes,
+                              TypeInfo endpoint,
                               TypedElementInfo method,
                               List<Operation> queries,
                               List<Operation> mutations,
@@ -172,9 +178,9 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                                        method.originatingElementValue());
         }
 
-        if (graphQlType(method.typeName()).isEmpty()) {
-            throw unsupportedType("Return type", endpoint, method, method.typeName(), method.originatingElementValue());
-        }
+        schemaTypes.outputType(method.typeName(),
+                               method.typeName().primitive() || hasNonNull(annotations),
+                               method.originatingElementValue());
 
         var arguments = new ArrayList<Argument>();
         int index = 0;
@@ -205,8 +211,8 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                                 TypedElementInfo method,
                                 TypedElementInfo parameter,
                                 Set<Annotation> annotations) {
-        if (graphQlType(parameter.typeName()).isEmpty()) {
-            throw unsupportedType("Argument type", endpoint, method, parameter.typeName(), parameter.originatingElementValue());
+        if (scalarGraphQlType(parameter.typeName()).isEmpty()) {
+            throw unsupportedArgumentType(endpoint, method, parameter.typeName(), parameter.originatingElementValue());
         }
         String graphQlName = Annotations.findFirst(GRAPHQL_ARGUMENT, annotations)
                 .flatMap(Annotation::stringValue)
@@ -365,6 +371,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
 
             addWiring(method, "Query", endpoint.queries(), descriptorType);
             addWiring(method, "Mutation", endpoint.mutations(), descriptorType);
+            addObjectWiring(method, endpoint.schemaTypes().objectTypes());
 
             method.addContentLine("return builder.build();");
         });
@@ -413,6 +420,28 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         method.addContentLine(");")
                 .decreaseContentPadding()
                 .decreaseContentPadding();
+    }
+
+    private void addObjectWiring(io.helidon.codegen.classmodel.Method.Builder method, List<ObjectSchemaType> objectTypes) {
+        for (ObjectSchemaType objectType : objectTypes) {
+            method.addContent("builder.type(")
+                    .addContentLiteral(objectType.graphQlName())
+                    .addContentLine(", type -> type")
+                    .increaseContentPadding()
+                    .increaseContentPadding();
+            for (SchemaField field : objectType.fields()) {
+                method.addContent(".dataFetcher(")
+                        .addContentLiteral(field.graphQlName())
+                        .addContent(", environment -> ((")
+                        .addContent(objectType.javaType())
+                        .addContent(") environment.getSource()).")
+                        .addContent(field.accessor())
+                        .addContentLine(")");
+            }
+            method.addContentLine(");")
+                    .decreaseContentPadding()
+                    .decreaseContentPadding();
+        }
     }
 
     private void addResolverMethods(ClassModel.Builder classModel, GraphQlEndpoint endpoint) {
@@ -474,7 +503,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                     .addContent(")");
             return;
         }
-        throw unsupportedType("Argument type", null, null, type, argument.parameter().originatingElementValue());
+        throw unsupportedArgumentType(null, null, type, argument.parameter().originatingElementValue());
     }
 
     private String schema(GraphQlEndpoint endpoint) {
@@ -486,15 +515,16 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         }
         result.append("}\n\n");
 
-        appendType(result, "Query", endpoint.queries());
+        appendType(result, "Query", endpoint.queries(), endpoint.schemaTypes());
         if (!endpoint.mutations().isEmpty()) {
             result.append('\n');
-            appendType(result, "Mutation", endpoint.mutations());
+            appendType(result, "Mutation", endpoint.mutations(), endpoint.schemaTypes());
         }
+        endpoint.schemaTypes().appendTo(result);
         return result.toString();
     }
 
-    private void appendType(StringBuilder result, String typeName, List<Operation> operations) {
+    private void appendType(StringBuilder result, String typeName, List<Operation> operations, SchemaTypes schemaTypes) {
         result.append("type ")
                 .append(typeName)
                 .append(" {\n");
@@ -510,21 +540,22 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                     }
                     result.append(argument.graphQlName())
                             .append(": ")
-                            .append(schemaType(argument.parameter().typeName(), argument.nonNull()));
+                            .append(scalarSchemaType(argument.parameter().typeName(), argument.nonNull()));
                     argument.defaultValue().ifPresent(value -> result.append(" = ").append(value));
                 }
                 result.append(')');
             }
             result.append(": ")
-                    .append(schemaType(operation.method().typeName(),
-                                       operation.method().typeName().primitive()
-                                               || hasNonNull(operation.annotations())))
+                    .append(schemaTypes.outputType(operation.method().typeName(),
+                                                   operation.method().typeName().primitive()
+                                                           || hasNonNull(operation.annotations()),
+                                                   operation.method().originatingElementValue()))
                     .append('\n');
         }
         result.append("}\n");
     }
 
-    private static boolean hasNonNull(List<Annotation> annotations) {
+    private static boolean hasNonNull(Collection<Annotation> annotations) {
         return Annotations.findFirst(GRAPHQL_NON_NULL, annotations).isPresent();
     }
 
@@ -535,12 +566,12 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                 .orElse(defaultName);
     }
 
-    private static String schemaType(TypeName type, boolean nonNull) {
-        String graphQlType = graphQlType(type).orElseThrow();
+    private static String scalarSchemaType(TypeName type, boolean nonNull) {
+        String graphQlType = scalarGraphQlType(type).orElseThrow();
         return nonNull ? graphQlType + "!" : graphQlType;
     }
 
-    private static Optional<String> graphQlType(TypeName type) {
+    private static Optional<String> scalarGraphQlType(TypeName type) {
         TypeName boxed = type.boxed();
         if (boxed.equals(TypeNames.STRING)) {
             return Optional.of("String");
@@ -557,13 +588,307 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         return Optional.empty();
     }
 
-    private static CodegenException unsupportedType(String subject,
-                                                    TypeInfo endpoint,
-                                                    TypedElementInfo method,
-                                                    TypeName type,
-                                                    Object originatingElement) {
-        StringBuilder message = new StringBuilder(subject)
-                .append(" ")
+    private final class SchemaTypes {
+        private final RegistryRoundContext roundContext;
+        private final Map<TypeName, SchemaType> types = new LinkedHashMap<>();
+        private final Map<String, TypeName> graphQlNames = new LinkedHashMap<>();
+        private final Set<TypeName> visiting = new HashSet<>();
+
+        private SchemaTypes(RegistryRoundContext roundContext) {
+            this.roundContext = roundContext;
+        }
+
+        private String outputType(TypeName type, boolean nonNull, Object originatingElement) {
+            String graphQlType = outputType(type, originatingElement);
+            return nonNull ? graphQlType + "!" : graphQlType;
+        }
+
+        private List<ObjectSchemaType> objectTypes() {
+            return types.values()
+                    .stream()
+                    .filter(ObjectSchemaType.class::isInstance)
+                    .map(ObjectSchemaType.class::cast)
+                    .toList();
+        }
+
+        private void appendTo(StringBuilder result) {
+            for (SchemaType type : types.values()) {
+                result.append('\n');
+                if (type instanceof ObjectSchemaType objectType) {
+                    appendObject(result, objectType);
+                } else if (type instanceof EnumSchemaType enumType) {
+                    appendEnum(result, enumType);
+                }
+            }
+        }
+
+        private String outputType(TypeName type, Object originatingElement) {
+            Optional<String> scalar = scalarGraphQlType(type);
+            if (scalar.isPresent()) {
+                return scalar.get();
+            }
+
+            TypeInfo typeInfo = roundContext.typeInfo(type.boxed())
+                    .or(() -> roundContext.typeInfo(type))
+                    .orElseThrow(() -> unsupportedOutputType(type, originatingElement));
+
+            if (typeInfo.kind() == ElementKind.ENUM) {
+                return enumType(typeInfo);
+            }
+            if (typeInfo.kind() == ElementKind.RECORD
+                    || typeInfo.kind() == ElementKind.CLASS
+                    || typeInfo.kind() == ElementKind.INTERFACE) {
+                return objectType(typeInfo);
+            }
+            throw unsupportedOutputType(type, originatingElement);
+        }
+
+        private String enumType(TypeInfo typeInfo) {
+            TypeName typeName = typeInfo.typeName();
+            SchemaType existing = types.get(typeName);
+            if (existing != null) {
+                return existing.graphQlName();
+            }
+
+            Set<Annotation> annotations = new HashSet<>(TypeHierarchy.hierarchyAnnotations(ctx, typeInfo));
+            String graphQlName = typeName(typeInfo, annotations);
+            reserveTypeName(typeInfo, graphQlName);
+            List<EnumValue> values = enumValues(typeInfo);
+            if (values.isEmpty()) {
+                throw new CodegenException("GraphQL enum type " + typeName.fqName()
+                                                   + " does not declare any enum constants.",
+                                           typeInfo.originatingElementValue());
+            }
+            types.put(typeName, new EnumSchemaType(graphQlName, description(annotations), values));
+            return graphQlName;
+        }
+
+        private String objectType(TypeInfo typeInfo) {
+            TypeName typeName = typeInfo.typeName();
+            SchemaType existing = types.get(typeName);
+            if (existing != null) {
+                return existing.graphQlName();
+            }
+
+            Set<Annotation> annotations = new HashSet<>(TypeHierarchy.hierarchyAnnotations(ctx, typeInfo));
+            String graphQlName = typeName(typeInfo, annotations);
+            reserveTypeName(typeInfo, graphQlName);
+            types.put(typeName, new ObjectSchemaType(typeName, graphQlName, description(annotations), List.of()));
+
+            if (!visiting.add(typeName)) {
+                return graphQlName;
+            }
+            try {
+                List<SchemaField> fields = objectFields(typeInfo);
+                if (fields.isEmpty()) {
+                    throw new CodegenException("GraphQL object type " + typeName.fqName()
+                                                       + " does not declare any readable fields.",
+                                               typeInfo.originatingElementValue());
+                }
+                types.put(typeName, new ObjectSchemaType(typeName, graphQlName, description(annotations), fields));
+            } finally {
+                visiting.remove(typeName);
+            }
+            return graphQlName;
+        }
+
+        private List<EnumValue> enumValues(TypeInfo typeInfo) {
+            return typeInfo.elementInfo()
+                    .stream()
+                    .filter(it -> it.kind() == ElementKind.ENUM_CONSTANT)
+                    .map(this::enumValue)
+                    .toList();
+        }
+
+        private EnumValue enumValue(TypedElementInfo enumConstant) {
+            Set<Annotation> annotations = new HashSet<>(enumConstant.annotations());
+            return new EnumValue(graphQlName(annotations, enumConstant.elementName()), description(annotations));
+        }
+
+        private List<SchemaField> objectFields(TypeInfo typeInfo) {
+            Map<String, SchemaField> fields = new LinkedHashMap<>();
+
+            if (typeInfo.kind() == ElementKind.RECORD) {
+                typeInfo.elementInfo()
+                        .stream()
+                        .filter(it -> it.kind() == ElementKind.RECORD_COMPONENT)
+                        .forEach(it -> addField(typeInfo, fields, it, it.elementName(), it.elementName() + "()"));
+                return List.copyOf(fields.values());
+            }
+
+            typeInfo.elementInfo()
+                    .stream()
+                    .filter(it -> it.kind() == ElementKind.FIELD)
+                    .filter(it -> it.accessModifier() == AccessModifier.PUBLIC)
+                    .filter(not(ElementInfoPredicates::isStatic))
+                    .forEach(it -> addField(typeInfo, fields, it, it.elementName(), it.elementName()));
+
+            typeInfo.elementInfo()
+                    .stream()
+                    .filter(ElementInfoPredicates::isMethod)
+                    .filter(it -> it.accessModifier() == AccessModifier.PUBLIC)
+                    .filter(not(ElementInfoPredicates::isStatic))
+                    .filter(it -> it.parameterArguments().isEmpty())
+                    .forEach(it -> propertyName(it).ifPresent(name -> addField(typeInfo,
+                                                                                fields,
+                                                                                it,
+                                                                                name,
+                                                                                it.elementName() + "()")));
+
+            return List.copyOf(fields.values());
+        }
+
+        private void addField(TypeInfo typeInfo,
+                              Map<String, SchemaField> fields,
+                              TypedElementInfo element,
+                              String defaultName,
+                              String accessor) {
+            Set<Annotation> annotations = new HashSet<>(element.annotations());
+            if (Annotations.findFirst(GRAPHQL_IGNORE, annotations).isPresent()) {
+                return;
+            }
+            String graphQlName = graphQlName(annotations, defaultName);
+            String schemaType = outputType(element.typeName(),
+                                           element.typeName().primitive() || hasNonNull(annotations),
+                                           element.originatingElementValue());
+            SchemaField previous = fields.putIfAbsent(graphQlName,
+                                                      new SchemaField(graphQlName,
+                                                                      schemaType,
+                                                                      description(annotations),
+                                                                      accessor));
+            if (previous != null) {
+                throw new CodegenException("Duplicate GraphQL field '" + graphQlName + "' in type "
+                                                   + typeInfo.typeName().fqName(),
+                                           element.originatingElementValue());
+            }
+        }
+
+        private void reserveTypeName(TypeInfo typeInfo, String graphQlName) {
+            if ("Query".equals(graphQlName) || "Mutation".equals(graphQlName)) {
+                throw new CodegenException("GraphQL type " + typeInfo.typeName().fqName()
+                                                   + " cannot use reserved type name '" + graphQlName + "'.",
+                                           typeInfo.originatingElementValue());
+            }
+            TypeName previous = graphQlNames.putIfAbsent(graphQlName, typeInfo.typeName());
+            if (previous != null && !previous.equals(typeInfo.typeName())) {
+                throw new CodegenException("Duplicate GraphQL type name '" + graphQlName + "' for "
+                                                   + previous.fqName() + " and " + typeInfo.typeName().fqName() + ".",
+                                           typeInfo.originatingElementValue());
+            }
+        }
+    }
+
+    private static Optional<String> propertyName(TypedElementInfo method) {
+        String methodName = method.elementName();
+        if (isPropertyGetter(methodName)) {
+            return Optional.of(nameFromPropertyGetter(methodName));
+        }
+        if (isBooleanPropertyGetter(methodName, method.typeName())) {
+            return Optional.of(nameFromBooleanPropertyGetter(methodName));
+        }
+        return Optional.empty();
+    }
+
+    private static boolean isPropertyGetter(String methodName) {
+        return methodName.startsWith("get")
+                && methodName.length() > 3
+                && Character.isUpperCase(methodName.charAt(3))
+                && !"getClass".equals(methodName);
+    }
+
+    private static boolean isBooleanPropertyGetter(String methodName, TypeName typeName) {
+        TypeName boxed = typeName.boxed();
+        return methodName.startsWith("is")
+                && methodName.length() > 2
+                && Character.isUpperCase(methodName.charAt(2))
+                && boxed.equals(TypeNames.BOXED_BOOLEAN);
+    }
+
+    private static String nameFromPropertyGetter(String methodName) {
+        return lowerFirstProperty(methodName.substring(3));
+    }
+
+    private static String nameFromBooleanPropertyGetter(String methodName) {
+        return lowerFirstProperty(methodName.substring(2));
+    }
+
+    private static String lowerFirstProperty(String propertyName) {
+        char firstChar = propertyName.charAt(0);
+        if (propertyName.length() == 1) {
+            return String.valueOf(Character.toLowerCase(firstChar));
+        }
+        if (!Character.isUpperCase(propertyName.charAt(1))) {
+            return Character.toLowerCase(firstChar) + propertyName.substring(1);
+        }
+        return propertyName;
+    }
+
+    private static String typeName(TypeInfo typeInfo, Set<Annotation> annotations) {
+        return graphQlName(annotations, typeInfo.typeName().className());
+    }
+
+    private static Optional<String> description(Set<Annotation> annotations) {
+        return Annotations.findFirst(GRAPHQL_DESCRIPTION, annotations)
+                .flatMap(Annotation::stringValue)
+                .filter(not(String::isBlank));
+    }
+
+    private static void appendObject(StringBuilder result, ObjectSchemaType objectType) {
+        appendDescription(result, 0, objectType.description());
+        result.append("type ")
+                .append(objectType.graphQlName())
+                .append(" {\n");
+        for (SchemaField field : objectType.fields()) {
+            appendDescription(result, 2, field.description());
+            result.append("  ")
+                    .append(field.graphQlName())
+                    .append(": ")
+                    .append(field.schemaType())
+                    .append('\n');
+        }
+        result.append("}\n");
+    }
+
+    private static void appendEnum(StringBuilder result, EnumSchemaType enumType) {
+        appendDescription(result, 0, enumType.description());
+        result.append("enum ")
+                .append(enumType.graphQlName())
+                .append(" {\n");
+        for (EnumValue value : enumType.values()) {
+            appendDescription(result, 2, value.description());
+            result.append("  ")
+                    .append(value.graphQlName())
+                    .append('\n');
+        }
+        result.append("}\n");
+    }
+
+    private static void appendDescription(StringBuilder result, int indent, Optional<String> description) {
+        description.ifPresent(value -> result.append(" ".repeat(indent))
+                .append('"')
+                .append(escapeDescription(value))
+                .append("\"\n"));
+    }
+
+    private static String escapeDescription(String description) {
+        return description.replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n");
+    }
+
+    private CodegenException unsupportedOutputType(TypeName type, Object originatingElement) {
+        return new CodegenException("Return or field type " + type.fqName()
+                                            + " is not supported by the declarative GraphQL generator. Supported output types "
+                                            + "are String, int/Integer, double/Double, boolean/Boolean, enums, records, "
+                                            + "and DTO classes or interfaces with readable fields or getters.",
+                                    originatingElement);
+    }
+
+    private static CodegenException unsupportedArgumentType(TypeInfo endpoint,
+                                                           TypedElementInfo method,
+                                                           TypeName type,
+                                                           Object originatingElement) {
+        StringBuilder message = new StringBuilder("Argument type ")
                 .append(type.fqName())
                 .append(" is not supported by the initial declarative GraphQL generator");
         if (endpoint != null && method != null) {
@@ -572,7 +897,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                     .append(".")
                     .append(method.elementName());
         }
-        message.append(". Supported scalar types are String, int/Integer, double/Double, and boolean/Boolean.");
+        message.append(". Supported argument types are String, int/Integer, double/Double, and boolean/Boolean.");
         return new CodegenException(message.toString(), originatingElement);
     }
 
@@ -596,6 +921,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                                    Optional<String> listener,
                                    String context,
                                    String schemaUri,
+                                   SchemaTypes schemaTypes,
                                    List<Operation> queries,
                                    List<Operation> mutations) {
         List<Operation> operations() {
@@ -618,5 +944,30 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                             List<Annotation> annotations,
                             Optional<String> defaultValue,
                             boolean nonNull) {
+    }
+
+    private interface SchemaType {
+        String graphQlName();
+    }
+
+    private record ObjectSchemaType(TypeName javaType,
+                                    String graphQlName,
+                                    Optional<String> description,
+                                    List<SchemaField> fields) implements SchemaType {
+    }
+
+    private record EnumSchemaType(String graphQlName,
+                                  Optional<String> description,
+                                  List<EnumValue> values) implements SchemaType {
+    }
+
+    private record SchemaField(String graphQlName,
+                               String schemaType,
+                               Optional<String> description,
+                               String accessor) {
+    }
+
+    private record EnumValue(String graphQlName,
+                             Optional<String> description) {
     }
 }

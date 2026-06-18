@@ -23,6 +23,7 @@ final class GraphQlServerCodegenTypes {
     static final TypeName GRAPHQL_MUTATION = TypeName.create("io.helidon.graphql.GraphQl.Mutation");
     static final TypeName GRAPHQL_ARGUMENT = TypeName.create("io.helidon.graphql.GraphQl.Argument");
     static final TypeName GRAPHQL_NAME = TypeName.create("io.helidon.graphql.GraphQl.Name");
+    static final TypeName GRAPHQL_DESCRIPTION = TypeName.create("io.helidon.graphql.GraphQl.Description");
     static final TypeName GRAPHQL_DEFAULT_VALUE = TypeName.create("io.helidon.graphql.GraphQl.DefaultValue");
     static final TypeName GRAPHQL_NON_NULL = TypeName.create("io.helidon.graphql.GraphQl.NonNull");
     static final TypeName GRAPHQL_IGNORE = TypeName.create("io.helidon.graphql.GraphQl.Ignore");
