@@ -23,5 +23,6 @@ module io.helidon.graphql {
     requires io.helidon.service.registry;
 
     exports io.helidon.graphql;
+    exports io.helidon.graphql.spi;
 
 }

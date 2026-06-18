@@ -47,11 +47,14 @@ class DeclarativeGraphQlTest {
             assertThat(schema, containsString("type Query"));
             assertThat(schema, containsString("hello(name: String): String"));
             assertThat(schema, containsString("book: Book"));
+            assertThat(schema, containsString("titleByIsbn(isbn: ISBN): String"));
             assertThat(schema, containsString("type Mutation"));
             assertThat(schema, containsString("update(enabled: Boolean!): Boolean!"));
+            assertThat(schema, containsString("scalar ISBN"));
             assertThat(schema, containsString("\"Book result\""));
             assertThat(schema, containsString("title: String!"));
             assertThat(schema, containsString("state: BookStatus"));
+            assertThat(schema, containsString("isbn: ISBN"));
             assertThat(schema, containsString("summary(prefix: String): String"));
             assertThat(schema, containsString("enum BookStatus"));
             assertThat(schema, containsString("\"Currently available\""));
@@ -63,14 +66,18 @@ class DeclarativeGraphQlTest {
     void testQueryAndObjectResult() {
         JsonObject data = graphQl("""
                                           {
-                                            "query": "{ hello(name: \\"Helidon\\") book { title state summary(prefix: \\"Read\\") } }"
+                                            "query": "query($isbn: ISBN!) { hello(name: \\"Helidon\\") titleByIsbn(isbn: $isbn) literalTitle: titleByIsbn(isbn: \\"9780441172719\\") book { title state isbn summary(prefix: \\"Read\\") } }",
+                                            "variables": { "isbn": "9780441172719" }
                                           }
                                           """);
 
         assertThat(data.stringValue("hello").orElseThrow(), is("Hello Helidon"));
+        assertThat(data.stringValue("titleByIsbn").orElseThrow(), is("Dune: 9780441172719"));
+        assertThat(data.stringValue("literalTitle").orElseThrow(), is("Dune: 9780441172719"));
         JsonObject book = data.objectValue("book").orElseThrow();
         assertThat(book.stringValue("title").orElseThrow(), is("Dune"));
         assertThat(book.stringValue("state").orElseThrow(), is("AVAILABLE"));
+        assertThat(book.stringValue("isbn").orElseThrow(), is("9780441172719"));
         assertThat(book.stringValue("summary").orElseThrow(), is("Read: Dune"));
         assertThat(book.value("internal").isEmpty(), is(true));
     }

@@ -18,10 +18,7 @@ package io.helidon.declarative.tests.graphql;
 
 import io.helidon.graphql.GraphQl;
 
-@GraphQl.Entity
-@GraphQl.Description("Book result")
-record Book(@GraphQl.NonNull String title,
-            @GraphQl.Name("state") BookStatus status,
-            Isbn isbn,
-            @GraphQl.Ignore String internal) {
+@GraphQl.Scalar("ISBN")
+@GraphQl.Description("ISBN scalar")
+record Isbn(String value) {
 }

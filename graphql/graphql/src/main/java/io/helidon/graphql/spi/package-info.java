@@ -14,14 +14,7 @@
  * limitations under the License.
  */
 
-package io.helidon.declarative.tests.graphql;
-
-import io.helidon.graphql.GraphQl;
-
-@GraphQl.Entity
-@GraphQl.Description("Book result")
-record Book(@GraphQl.NonNull String title,
-            @GraphQl.Name("state") BookStatus status,
-            Isbn isbn,
-            @GraphQl.Ignore String internal) {
-}
+/**
+ * GraphQL service provider interfaces.
+ */
+package io.helidon.graphql.spi;

@@ -32,7 +32,12 @@ class GraphEndpoint {
 
     @GraphQl.Query
     Book book() {
-        return new Book("Dune", BookStatus.AVAILABLE, "hidden");
+        return new Book("Dune", BookStatus.AVAILABLE, new Isbn("9780441172719"), "hidden");
+    }
+
+    @GraphQl.Query
+    String titleByIsbn(@GraphQl.Argument("isbn") Isbn isbn) {
+        return "Dune: " + isbn.value();
     }
 
     @GraphQlServer.Field

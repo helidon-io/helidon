@@ -16,12 +16,33 @@
 
 package io.helidon.declarative.tests.graphql;
 
-import io.helidon.graphql.GraphQl;
+import io.helidon.graphql.spi.GraphQlScalar;
+import io.helidon.service.registry.Service;
 
-@GraphQl.Entity
-@GraphQl.Description("Book result")
-record Book(@GraphQl.NonNull String title,
-            @GraphQl.Name("state") BookStatus status,
-            Isbn isbn,
-            @GraphQl.Ignore String internal) {
+@Service.Singleton
+class IsbnScalar implements GraphQlScalar {
+    @Override
+    public String name() {
+        return "ISBN";
+    }
+
+    @Override
+    public Class<?> type() {
+        return Isbn.class;
+    }
+
+    @Override
+    public String description() {
+        return "ISBN scalar";
+    }
+
+    @Override
+    public Object serialize(Object value) {
+        return ((Isbn) value).value();
+    }
+
+    @Override
+    public Object parseValue(Object value) {
+        return new Isbn((String) value);
+    }
 }

@@ -30,6 +30,7 @@ import io.helidon.common.types.Annotation;
 import io.helidon.config.Config;
 import io.helidon.graphql.GraphQl;
 import io.helidon.graphql.server.InvocationHandler;
+import io.helidon.graphql.spi.GraphQlScalar;
 import io.helidon.service.registry.Dependency;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceDescriptor;
@@ -65,6 +66,7 @@ class GraphQlServerCodegenTest {
             Generated.class,
             GraphQLSchema.class,
             GraphQl.class,
+            GraphQlScalar.class,
             GraphQlEntryPoint.class,
             GraphQlServer.class,
             GraphQlService.class,
@@ -105,7 +107,7 @@ class GraphQlServerCodegenTest {
 
                             @GraphQl.Query
                             Book book() {
-                                return new Book("Dune", BookStatus.AVAILABLE, "hidden");
+                                return new Book("Dune", BookStatus.AVAILABLE, new Isbn("9780441172719"), "hidden");
                             }
 
                             @GraphQl.Query
@@ -116,6 +118,11 @@ class GraphQlServerCodegenTest {
                             @GraphQl.Mutation
                             Boolean update(@GraphQl.Argument("enabled") boolean enabled) {
                                 return enabled;
+                            }
+
+                            @GraphQl.Query
+                            Isbn bookIsbn(@GraphQl.Argument("value") Isbn value) {
+                                return value;
                             }
 
                             @GraphQlServer.Field
@@ -140,7 +147,18 @@ class GraphQlServerCodegenTest {
                         @GraphQl.Description("Book result")
                         record Book(@GraphQl.NonNull String title,
                                     @GraphQl.Name("state") BookStatus status,
+                                    Isbn isbn,
                                     @GraphQl.Ignore String internal) {
+                        }
+                        """)
+                .addSource("Isbn.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Scalar("ISBN")
+                        @GraphQl.Description("ISBN scalar")
+                        record Isbn(String value) {
                         }
                         """)
                 .addSource("BookStatus.java", """
@@ -210,12 +228,16 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("hello(name: String): String"));
         assertThat(generated, containsString("book: Book"));
         assertThat(generated, containsString("author: AuthorDto"));
+        assertThat(generated, containsString("bookIsbn(value: ISBN): ISBN"));
         assertThat(generated, containsString("type Mutation"));
         assertThat(generated, containsString("update(enabled: Boolean!): Boolean"));
+        assertThat(generated, containsString("ISBN scalar"));
+        assertThat(generated, containsString("scalar ISBN"));
         assertThat(generated, containsString("Book result"));
         assertThat(generated, containsString("type Book"));
         assertThat(generated, containsString("title: String!"));
         assertThat(generated, containsString("state: BookStatus"));
+        assertThat(generated, containsString("isbn: ISBN"));
         assertThat(generated, containsString("Book summary"));
         assertThat(generated, containsString("summary(prefix: String): String"));
         assertThat(generated, containsString("score: Int!"));
@@ -230,6 +252,15 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("builder.type(\"Book\""));
         assertThat(generated, containsString(".dataFetcher(\"title\", environment -> ((Book) environment.getSource()).title())"));
         assertThat(generated, containsString(".dataFetcher(\"state\", environment -> ((Book) environment.getSource()).status())"));
+        assertThat(generated, containsString(".dataFetcher(\"isbn\", environment -> ((Book) environment.getSource()).isbn())"));
+        assertThat(generated, containsString("List<GraphQlScalar> scalars"));
+        assertThat(generated, containsString("builder.scalar(graphQlScalar(\"ISBN\", Isbn.class));"));
+        assertThat(generated, containsString("new Coercing<Object, Object>()"));
+        assertThat(generated, containsString("scalar.serialize(dataFetcherResult)"));
+        assertThat(generated, containsString("scalar.parseValue(input)"));
+        assertThat(generated, containsString("scalar.parseLiteral(scalarLiteralValue(input))"));
+        assertThat(generated, containsString("scalarLiteralValue("));
+        assertThat(generated, containsString("(Isbn) environment.getArgument(\"value\")"));
         assertThat(generated, containsString(".dataFetcher(\"summary\", fetcher_"));
         assertThat(generated, containsString(".dataFetcher(\"score\", fetcher_"));
         assertThat(generated, containsString("this.endpoint.summary("));

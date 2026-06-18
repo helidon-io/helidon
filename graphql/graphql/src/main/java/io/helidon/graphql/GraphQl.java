@@ -180,6 +180,9 @@ public final class GraphQl {
 
     /**
      * Marks a Java type as a GraphQL scalar.
+     * <p>
+     * Server and client integrations use a matching {@link io.helidon.graphql.spi.GraphQlScalar} Service Registry
+     * implementation to convert values of the annotated Java type.
      */
     @Target(ElementType.TYPE)
     @Retention(RetentionPolicy.CLASS)

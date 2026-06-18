@@ -28,6 +28,8 @@ final class GraphQlServerCodegenTypes {
     static final TypeName GRAPHQL_DEFAULT_VALUE = TypeName.create("io.helidon.graphql.GraphQl.DefaultValue");
     static final TypeName GRAPHQL_NON_NULL = TypeName.create("io.helidon.graphql.GraphQl.NonNull");
     static final TypeName GRAPHQL_IGNORE = TypeName.create("io.helidon.graphql.GraphQl.Ignore");
+    static final TypeName GRAPHQL_SCALAR = TypeName.create("io.helidon.graphql.GraphQl.Scalar");
+    static final TypeName GRAPHQL_SCALAR_SPI = TypeName.create("io.helidon.graphql.spi.GraphQlScalar");
 
     static final TypeName GRAPHQL_SERVER_ENDPOINT = TypeName.create("io.helidon.webserver.graphql.GraphQlServer.Endpoint");
     static final TypeName GRAPHQL_SERVER_LISTENER = TypeName.create("io.helidon.webserver.graphql.GraphQlServer.Listener");
@@ -37,6 +39,15 @@ final class GraphQlServerCodegenTypes {
     static final TypeName GRAPHQL_SERVER_SOURCE = TypeName.create("io.helidon.webserver.graphql.GraphQlServer.Source");
 
     static final TypeName DATA_FETCHING_ENVIRONMENT = TypeName.create("graphql.schema.DataFetchingEnvironment");
+    static final TypeName GRAPHQL_CONTEXT = TypeName.create("graphql.GraphQLContext");
+    static final TypeName GRAPHQL_SCALAR_TYPE = TypeName.create("graphql.schema.GraphQLScalarType");
+    static final TypeName COERCED_VARIABLES = TypeName.create("graphql.execution.CoercedVariables");
+    static final TypeName COERCING = TypeName.create("graphql.schema.Coercing");
+    static final TypeName COERCING_PARSE_LITERAL_EXCEPTION =
+            TypeName.create("graphql.schema.CoercingParseLiteralException");
+    static final TypeName COERCING_PARSE_VALUE_EXCEPTION = TypeName.create("graphql.schema.CoercingParseValueException");
+    static final TypeName COERCING_SERIALIZE_EXCEPTION = TypeName.create("graphql.schema.CoercingSerializeException");
+    static final TypeName GRAPHQL_VALUE = TypeName.create("graphql.language.Value");
     static final TypeName GRAPHQL_SCHEMA = TypeName.create("graphql.schema.GraphQLSchema");
     static final TypeName RUNTIME_WIRING = TypeName.create("graphql.schema.idl.RuntimeWiring");
     static final TypeName SCHEMA_GENERATOR = TypeName.create("graphql.schema.idl.SchemaGenerator");
