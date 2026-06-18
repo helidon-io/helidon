@@ -24,7 +24,12 @@ final class GrpcServerTypes {
     static final TypeName GRPC_PROTO = TypeName.create("io.helidon.grpc.api.Grpc.Proto");
     static final TypeName GRPC_ENTRY_POINTS = TypeName.create("io.helidon.webserver.grpc.GrpcEntryPoint.EntryPoints");
     static final TypeName GRPC_ROUTE_REGISTRATION = TypeName.create("io.helidon.webserver.grpc.GrpcRouteRegistration");
+    static final TypeName GRPC_SECURITY = TypeName.create("io.helidon.webserver.grpc.security.GrpcSecurity");
     static final TypeName GRPC_SERVICE_DESCRIPTOR = TypeName.create("io.helidon.webserver.grpc.GrpcServiceDescriptor");
+    static final TypeName SECURITY_AUTHENTICATED = TypeName.create("io.helidon.security.annotations.Authenticated");
+    static final TypeName SECURITY_AUTHORIZED = TypeName.create("io.helidon.security.annotations.Authorized");
+    static final TypeName SECURITY_ROLES = TypeName.create("io.helidon.security.abac.role.RoleValidator.Roles");
+    static final TypeName SECURITY_ROLES_ALLOWED = TypeName.create("jakarta.annotation.security.RolesAllowed");
     static final TypeName PROTO_FILE_DESCRIPTOR = TypeName.create("com.google.protobuf.Descriptors.FileDescriptor");
     static final TypeName STREAM_OBSERVER = TypeName.create("io.grpc.stub.StreamObserver");
 

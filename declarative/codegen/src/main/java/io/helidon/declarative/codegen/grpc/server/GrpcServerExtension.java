@@ -18,8 +18,10 @@ package io.helidon.declarative.codegen.grpc.server;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.ElementInfoPredicates;
@@ -40,6 +42,10 @@ import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_ME
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_PROTO;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_SERVICE;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.PROTO_FILE_DESCRIPTOR;
+import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.SECURITY_AUTHENTICATED;
+import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.SECURITY_AUTHORIZED;
+import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.SECURITY_ROLES;
+import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.SECURITY_ROLES_ALLOWED;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.STREAM_OBSERVER;
 
 class GrpcServerExtension implements RegistryCodegenExtension {
@@ -85,7 +91,11 @@ class GrpcServerExtension implements RegistryCodegenExtension {
         Annotation serviceAnnotation = serverEndpoint.findAnnotation(GRPC_SERVICE)
                 .orElseThrow(() -> new CodegenException("Missing " + GRPC_SERVICE.fqName(),
                                                         serverEndpoint.originatingElementValue()));
-        return new GrpcEndpoint(serverEndpoint, serviceAnnotation.stringValue().orElse(""), protoMethod, List.copyOf(methods));
+        return new GrpcEndpoint(serverEndpoint,
+                                serviceAnnotation.stringValue().orElse(""),
+                                protoMethod,
+                                security(serverEndpoint.annotations()),
+                                List.copyOf(methods));
     }
 
     private Optional<GrpcProtoMethod> findProtoMethod(TypeInfo serverEndpoint) {
@@ -176,7 +186,8 @@ class GrpcServerExtension implements RegistryCodegenExtension {
                                           methodType,
                                           invocation,
                                           requestType,
-                                          responseType));
+                                          responseType,
+                                          security(annotations)));
     }
 
     private String methodType(TypedElementInfo method, Annotation grpcMethod) {
@@ -208,5 +219,27 @@ class GrpcServerExtension implements RegistryCodegenExtension {
                 ? concreteAnnotation.stringValue("name").orElse("")
                 : concreteAnnotation.stringValue().orElse("");
         return name.isBlank() ? method.elementName() : name;
+    }
+
+    private static GrpcSecurityDefinition security(List<Annotation> annotations) {
+        Optional<Annotation> authenticated = Annotations.findFirst(SECURITY_AUTHENTICATED, annotations);
+        Optional<Annotation> authorized = Annotations.findFirst(SECURITY_AUTHORIZED, annotations);
+        Set<String> rolesAllowed = new LinkedHashSet<>();
+        for (Annotation annotation : annotations) {
+            if (annotation.typeName().equals(SECURITY_ROLES) || annotation.typeName().equals(SECURITY_ROLES_ALLOWED)) {
+                rolesAllowed.addAll(annotation.stringValues().orElseGet(List::of));
+            }
+        }
+
+        if (authenticated.isEmpty() && authorized.isEmpty() && rolesAllowed.isEmpty()) {
+            return GrpcSecurityDefinition.empty();
+        }
+
+        return new GrpcSecurityDefinition(authenticated.flatMap(Annotation::booleanValue),
+                                          authenticated.flatMap(it -> it.booleanValue("optional")).orElse(false),
+                                          authenticated.flatMap(it -> it.stringValue("provider")).filter(it -> !it.isBlank()),
+                                          authorized.flatMap(Annotation::booleanValue),
+                                          authorized.flatMap(it -> it.stringValue("provider")).filter(it -> !it.isBlank()),
+                                          List.copyOf(rolesAllowed));
     }
 }

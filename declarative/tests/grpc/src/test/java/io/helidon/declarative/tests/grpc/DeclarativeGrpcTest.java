@@ -16,7 +16,9 @@
 
 package io.helidon.declarative.tests.grpc;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -27,6 +29,10 @@ import io.helidon.webserver.testing.junit5.ServerTest;
 
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.Metadata;
+import io.grpc.Status.Code;
+import io.grpc.StatusRuntimeException;
+import io.grpc.stub.MetadataUtils;
 import io.grpc.stub.StreamObserver;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -38,6 +44,9 @@ import static org.hamcrest.Matchers.nullValue;
 
 @ServerTest
 class DeclarativeGrpcTest {
+    private static final String USERNAME = "tomas";
+    private static final char[] PASSWORD = "changeit".toCharArray();
+
     private final ManagedChannel channel;
     private final GreetingServiceGrpc.GreetingServiceBlockingStub blockingStub;
     private final GreetingServiceGrpc.GreetingServiceStub asyncStub;
@@ -61,6 +70,29 @@ class DeclarativeGrpcTest {
     @Test
     void testUnary() {
         var response = blockingStub.greet(request("Tomas"));
+
+        assertThat(response.getMessage(), is("Hello Tomas"));
+    }
+
+    @Test
+    void testSecureUnary() {
+        var request = request("Tomas");
+
+        try {
+            var response = blockingStub.secureGreet(request);
+            throw new AssertionError("Unauthenticated gRPC call reached application handler: "
+                                             + response.getMessage());
+        } catch (StatusRuntimeException e) {
+            assertThat(e.getStatus().getCode(), is(Code.UNAUTHENTICATED));
+        }
+
+        String token = USERNAME + ":" + new String(PASSWORD);
+        Metadata headers = new Metadata();
+        headers.put(Metadata.Key.of("authorization", Metadata.ASCII_STRING_MARSHALLER),
+                    "Basic " + Base64.getEncoder().encodeToString(token.getBytes(StandardCharsets.UTF_8)));
+        var response = blockingStub
+                .withInterceptors(MetadataUtils.newAttachHeadersInterceptor(headers))
+                .secureGreet(request);
 
         assertThat(response.getMessage(), is("Hello Tomas"));
     }

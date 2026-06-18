@@ -28,13 +28,16 @@ import io.helidon.codegen.testing.TestCompiler;
 import io.helidon.common.Generated;
 import io.helidon.common.GenericType;
 import io.helidon.common.types.Annotation;
+import io.helidon.config.NamedService;
 import io.helidon.grpc.api.Grpc;
+import io.helidon.security.annotations.Authenticated;
 import io.helidon.service.registry.Dependency;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceDescriptor;
 import io.helidon.webserver.grpc.GrpcEntryPoint;
 import io.helidon.webserver.grpc.GrpcRouteRegistration;
 import io.helidon.webserver.grpc.GrpcServiceDescriptor;
+import io.helidon.webserver.grpc.security.GrpcSecurity;
 
 import com.google.protobuf.Descriptors;
 import io.grpc.MethodDescriptor;
@@ -54,10 +57,13 @@ class GrpcServerCodegenTest {
             Generated.class,
             GenericType.class,
             Grpc.class,
+            GrpcSecurity.class,
             GrpcEntryPoint.class,
             GrpcRouteRegistration.class,
             GrpcServiceDescriptor.class,
+            Authenticated.class,
             MethodDescriptor.class,
+            NamedService.class,
             Prototype.class,
             ServerInterceptor.class,
             Service.class,
@@ -79,6 +85,7 @@ class GrpcServerCodegenTest {
 
                         import io.grpc.stub.StreamObserver;
                         import io.helidon.grpc.api.Grpc;
+                        import io.helidon.security.annotations.Authenticated;
                         import io.helidon.service.registry.Service;
 
                         @Grpc.GrpcService("Greeting")
@@ -90,6 +97,7 @@ class GrpcServerCodegenTest {
                             }
 
                             @Grpc.Unary("SayHello")
+                            @Authenticated
                             GreetingReply sayHello(GreetingRequest request) {
                                 return new GreetingReply();
                             }
@@ -136,6 +144,7 @@ class GrpcServerCodegenTest {
         assertThat(registration, containsString(".serverStreaming(\"StreamHello\", this::streamHello"));
         assertThat(registration, containsString(".clientStreaming(\"CollectHello\", this::collectHello"));
         assertThat(registration, containsString("entryPoints.interceptor("));
+        assertThat(registration, containsString("GrpcSecurity.enforce().authenticate().configure(rules);"));
         assertThat(registration, containsString("GreetingGrpc__ServiceDescriptor.METHOD_SAY_HELLO"));
         assertThat(registration, containsString("GreetingGrpc__ServiceDescriptor.METHOD_STREAM_HELLO"));
         assertThat(registration, containsString("GreetingGrpc__ServiceDescriptor.METHOD_COLLECT_HELLO"));

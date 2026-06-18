@@ -31,6 +31,7 @@ import static io.helidon.codegen.CodegenUtil.toConstantName;
 import static io.helidon.declarative.codegen.DeclarativeTypes.SINGLETON_ANNOTATION;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_ENTRY_POINTS;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_ROUTE_REGISTRATION;
+import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_SECURITY;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_SERVICE_DESCRIPTOR;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.PROTO_FILE_DESCRIPTOR;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.STREAM_OBSERVER;
@@ -98,7 +99,7 @@ class GrpcServerRegistrationGenerator {
                 .addContent("var annotations = ")
                 .addContent(descriptorType)
                 .addContentLine(".ANNOTATIONS;")
-                .addContent("this.descriptor = ")
+                .addContent("var builder = ")
                 .addContent(GRPC_SERVICE_DESCRIPTOR)
                 .addContent(".builder(")
                 .addContent(endpointType)
@@ -107,7 +108,14 @@ class GrpcServerRegistrationGenerator {
                 .addContentLine(")")
                 .increaseContentPadding()
                 .increaseContentPadding()
-                .addContentLine(".proto(proto())");
+                .addContentLine(".proto(proto());")
+                .decreaseContentPadding()
+                .decreaseContentPadding();
+
+        addSecurity(endpoint.security(), constructor);
+        if (!endpoint.security().isEmpty()) {
+            constructor.addContentLine(".configure(builder);");
+        }
 
         for (GrpcMethod method : endpoint.methods()) {
             String registrationMethod = switch (method.methodType()) {
@@ -117,14 +125,15 @@ class GrpcServerRegistrationGenerator {
             default -> throw new IllegalArgumentException("Unsupported gRPC method type: " + method.methodType());
             };
             String constant = toConstantName("METHOD_" + method.uniqueName());
-            constructor.addContent(".")
+            constructor.addContent("builder.")
                     .addContent(registrationMethod)
                     .addContent("(")
                     .addContentLiteral(method.grpcName())
                     .addContent(", this::")
                     .addContent(method.uniqueName())
-                    .addContentLine(", rules -> rules.intercept(")
+                    .addContentLine(", rules -> {")
                     .increaseContentPadding()
+                    .addContentLine("rules.intercept(")
                     .increaseContentPadding()
                     .addContentLine("entryPoints.interceptor(")
                     .increaseContentPadding()
@@ -135,13 +144,51 @@ class GrpcServerRegistrationGenerator {
                     .addContent(descriptorType)
                     .addContent(".")
                     .addContent(constant)
-                    .addContentLine(")))")
-                    .decreaseContentPadding()
+                    .addContentLine("));")
                     .decreaseContentPadding()
                     .decreaseContentPadding()
                     .decreaseContentPadding();
+            addSecurity(method.security(), constructor);
+            if (!method.security().isEmpty()) {
+                constructor.addContentLine(".configure(rules);");
+            }
+            constructor.decreaseContentPadding()
+                    .addContentLine("});");
         }
-        return constructor.addContentLine(".build();");
+        return constructor.addContentLine("this.descriptor = builder.build();");
+    }
+
+    private static void addSecurity(GrpcSecurityDefinition security, Constructor.Builder constructor) {
+        if (security.isEmpty()) {
+            return;
+        }
+        constructor.addContent(GRPC_SECURITY)
+                .addContent(".enforce()");
+        security.authenticate().ifPresent(authenticate -> constructor.addContent(authenticate
+                                                                                         ? ".authenticate()"
+                                                                                         : ".skipAuthentication()"));
+        if (security.authenticationOptional()) {
+            constructor.addContent(".authenticationOptional()");
+        }
+        security.authenticator().ifPresent(authenticator -> constructor.addContent(".authenticator(")
+                .addContentLiteral(authenticator)
+                .addContent(")"));
+        security.authorize().ifPresent(authorize -> constructor.addContent(authorize
+                                                                                   ? ".authorize()"
+                                                                                   : ".skipAuthorization()"));
+        security.authorizer().ifPresent(authorizer -> constructor.addContent(".authorizer(")
+                .addContentLiteral(authorizer)
+                .addContent(")"));
+        if (!security.rolesAllowed().isEmpty()) {
+            constructor.addContent(".rolesAllowed(");
+            String separator = "";
+            for (String role : security.rolesAllowed()) {
+                constructor.addContent(separator)
+                        .addContentLiteral(role);
+                separator = ", ";
+            }
+            constructor.addContent(")");
+        }
     }
 
     private static void addDescriptorMethod(ClassModel.Builder classModel) {

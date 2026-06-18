@@ -24,10 +24,13 @@ module io.helidon.declarative.tests.grpc {
     requires io.helidon.http;
     requires io.helidon.logging.common;
     requires io.helidon.metrics.api;
+    requires io.helidon.security;
+    requires io.helidon.security.annotations;
     requires io.helidon.service.registry;
     requires io.helidon.tracing;
     requires io.helidon.webserver;
     requires io.helidon.webserver.grpc;
+    requires io.helidon.webserver.grpc.security;
 
     requires com.google.protobuf;
     requires io.grpc;

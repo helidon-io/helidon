@@ -23,5 +23,6 @@ import io.helidon.common.types.TypeInfo;
 record GrpcEndpoint(TypeInfo type,
                     String serviceName,
                     GrpcProtoMethod protoMethod,
+                    GrpcSecurityDefinition security,
                     List<GrpcMethod> methods) {
 }

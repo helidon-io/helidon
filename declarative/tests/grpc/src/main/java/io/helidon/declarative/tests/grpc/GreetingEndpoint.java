@@ -21,6 +21,7 @@ import java.util.StringJoiner;
 import io.helidon.declarative.tests.grpc.DeclarativeGrpcProto.GreetingReply;
 import io.helidon.declarative.tests.grpc.DeclarativeGrpcProto.GreetingRequest;
 import io.helidon.grpc.api.Grpc;
+import io.helidon.security.annotations.Authenticated;
 import io.helidon.service.registry.Service;
 
 import com.google.protobuf.Descriptors;
@@ -36,6 +37,12 @@ class GreetingEndpoint {
 
     @Grpc.Unary("Greet")
     GreetingReply greet(GreetingRequest request) {
+        return reply(request.getName());
+    }
+
+    @Grpc.Unary("SecureGreet")
+    @Authenticated
+    GreetingReply secureGreet(GreetingRequest request) {
         return reply(request.getName());
     }
 

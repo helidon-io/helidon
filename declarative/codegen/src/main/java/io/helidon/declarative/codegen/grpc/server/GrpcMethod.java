@@ -25,7 +25,8 @@ record GrpcMethod(TypedElementInfo method,
                   String methodType,
                   Invocation invocation,
                   TypeName requestType,
-                  TypeName responseType) {
+                  TypeName responseType,
+                  GrpcSecurityDefinition security) {
     enum Invocation {
         UNARY_RETURN,
         OBSERVER,
