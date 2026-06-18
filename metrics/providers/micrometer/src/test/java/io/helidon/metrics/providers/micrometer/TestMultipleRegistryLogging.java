@@ -147,6 +147,59 @@ class TestMultipleRegistryLogging {
     }
 
     @Test
+    void testProgrammaticRegistriesWithSameSystemTagKeyRemainDistinct() {
+        String counterName = "sameSystemTagKeyCounter";
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        MetricsConfig firstConfig = MetricsConfig.builder()
+                .tags(List.of(metricsFactory.tagCreate("cluster", "one")))
+                .warnOnMultipleRegistries(false)
+                .build();
+        MetricsConfig secondConfig = MetricsConfig.builder()
+                .tags(List.of(metricsFactory.tagCreate("cluster", "two")))
+                .warnOnMultipleRegistries(false)
+                .build();
+
+        MeterRegistry firstRegistry = metricsFactory.createMeterRegistry(firstConfig);
+        MeterRegistry secondRegistry = metricsFactory.createMeterRegistry(secondConfig);
+
+        Counter firstCounter = firstRegistry.getOrCreate(metricsFactory.counterBuilder(counterName));
+        firstCounter.increment();
+        Counter secondCounter = secondRegistry.getOrCreate(metricsFactory.counterBuilder(counterName));
+        secondCounter.increment();
+
+        assertThat("System tag from the first registry",
+                   firstCounter.unwrap(io.micrometer.core.instrument.Counter.class).getId().getTag("cluster"),
+                   equalTo("one"));
+        assertThat("System tag from the second registry",
+                   secondCounter.unwrap(io.micrometer.core.instrument.Counter.class).getId().getTag("cluster"),
+                   equalTo("two"));
+    }
+
+    @Test
+    void testDirectMicrometerRegistrationUsesGlobalSystemTags() {
+        String counterName = "directMicrometerCounter";
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        MetricsConfig metricsConfig = MetricsConfig.builder()
+                .tags(List.of(metricsFactory.tagCreate("cluster", "blue")))
+                .appTagName("app")
+                .appName("direct")
+                .warnOnMultipleRegistries(false)
+                .build();
+
+        metricsFactory.globalRegistry(metricsConfig);
+
+        io.micrometer.core.instrument.Counter counter =
+                io.micrometer.core.instrument.Metrics.counter(counterName);
+
+        assertThat("System tag from the global registry",
+                   counter.getId().getTag("cluster"),
+                   equalTo("blue"));
+        assertThat("App tag from the global registry",
+                   counter.getId().getTag("app"),
+                   equalTo("direct"));
+    }
+
+    @Test
     void testServiceRegistryShutdownReleasesMetricsFactoryState() {
         ServiceRegistryManager manager = ServiceRegistryManager.create();
         try {
