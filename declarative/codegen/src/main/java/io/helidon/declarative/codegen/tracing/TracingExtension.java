@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.ElementInfoPredicates;
@@ -68,11 +69,9 @@ class TracingExtension implements RegistryCodegenExtension {
             if (type.kind() == ElementKind.INTERFACE) {
                 continue;
             }
-            TracedElements tracedElementValue = tracedElements(tracedElements,
-                                                               type,
-                                                               type.findAnnotation(ANNOTATION_TRACED));
+            TracedElements tracedElementValue = tracedElements(tracedElements, type);
 
-            addTypeTracedMethods(tracedElementValue, type);
+            addTypeTracedMethods(tracedElementValue, type.elementInfo(), type.findAnnotation(ANNOTATION_TRACED));
         }
 
         for (TypeInfo type : roundTypes) {
@@ -84,18 +83,29 @@ class TracingExtension implements RegistryCodegenExtension {
             ServiceContracts.create(ctx.options(), roundContext::typeInfo, type)
                     .addContracts(contracts, new HashSet<>(), type);
 
-            Optional<Annotation> contractTypeAnnotation = contracts.stream()
+            contracts.stream()
                     .map(ResolvedType::type)
                     .sorted(Comparator.comparing(TypeName::resolvedName))
                     .flatMap(contract -> roundContext.typeInfo(contract)
                             .or(() -> roundContext.typeInfo(contract.genericTypeName()))
                             .stream())
-                    .flatMap(contract -> contract.findAnnotation(ANNOTATION_TRACED).stream())
-                    .findFirst();
+                    .filter(contract -> contract.hasAnnotation(ANNOTATION_TRACED))
+                    .forEach(contract -> {
+                        Set<ElementSignature> contractMethods = contract.elementInfo()
+                                .stream()
+                                .filter(ElementInfoPredicates::isMethod)
+                                .filter(Predicate.not(ElementInfoPredicates::isStatic))
+                                .filter(Predicate.not(ElementInfoPredicates::isPrivate))
+                                .map(TypedElementInfo::signature)
+                                .collect(Collectors.toUnmodifiableSet());
 
-            if (contractTypeAnnotation.isPresent()) {
-                addTypeTracedMethods(tracedElements(tracedElements, type, contractTypeAnnotation), type);
-            }
+                        var contractAnnotation = contract.findAnnotation(ANNOTATION_TRACED);
+                        var serviceMethods = type.elementInfo()
+                                .stream()
+                                .filter(it -> contractMethods.contains(it.signature()))
+                                .toList();
+                        addTypeTracedMethods(tracedElements(tracedElements, type), serviceMethods, contractAnnotation);
+                    });
         }
 
         for (TypeInfo type : roundTypes) {
@@ -110,9 +120,9 @@ class TracingExtension implements RegistryCodegenExtension {
                     continue;
                 }
 
-                tracedElements(tracedElements, type, Optional.empty())
-                        .elements()
-                        .put(element.signature(), element);
+                addTracedElement(tracedElements(tracedElements, type).elements(),
+                                 element,
+                                 Optional.empty());
             }
         }
 
@@ -126,15 +136,15 @@ class TracingExtension implements RegistryCodegenExtension {
             TypeName serviceType = tracedEntry.getKey();
             TracedElements tracedElementValue = tracedEntry.getValue();
             TypeInfo serviceTypeInfo = tracedElementValue.type();
-            Map<ElementSignature, TypedElementInfo> elements = tracedElementValue.elements();
+            Map<ElementSignature, TracedElement> elements = tracedElementValue.elements();
             int index = 0;
 
-            for (TypedElementInfo element : elements.values()) {
+            for (TracedElement element : elements.values()) {
                 processElement(handler,
                                serviceTypeInfo,
                                serviceType,
-                               tracedElementValue.typeAnnotation(),
-                               element,
+                               element.typeAnnotation(),
+                               element.element(),
                                index);
                 index++;
             }
@@ -142,28 +152,36 @@ class TracingExtension implements RegistryCodegenExtension {
     }
 
     private TracedElements tracedElements(Map<TypeName, TracedElements> tracedElements,
-                                          TypeInfo type,
-                                          Optional<Annotation> typeAnnotation) {
-        return tracedElements.compute(type.typeName(), (key, existing) -> {
-            if (existing == null) {
-                return new TracedElements(type, typeAnnotation, new HashMap<>());
-            }
-            if (existing.typeAnnotation().isEmpty() && typeAnnotation.isPresent()) {
-                return new TracedElements(existing.type(), typeAnnotation, existing.elements());
-            }
-            return existing;
-        });
+                                          TypeInfo type) {
+        return tracedElements.computeIfAbsent(type.typeName(),
+                                              key -> new TracedElements(type, new HashMap<>()));
     }
 
-    private void addTypeTracedMethods(TracedElements tracedElementValue, TypeInfo type) {
-        Map<ElementSignature, TypedElementInfo> map = tracedElementValue.elements();
+    private void addTypeTracedMethods(TracedElements tracedElementValue,
+                                      Collection<TypedElementInfo> elements,
+                                      Optional<Annotation> typeAnnotation) {
+        Map<ElementSignature, TracedElement> map = tracedElementValue.elements();
 
-        type.elementInfo()
+        elements
                 .stream()
                 .filter(ElementInfoPredicates::isMethod)
                 .filter(Predicate.not(ElementInfoPredicates::isStatic))
                 .filter(Predicate.not(ElementInfoPredicates::isPrivate))
-                .forEach(element -> map.put(element.signature(), element));
+                .forEach(element -> addTracedElement(map, element, typeAnnotation));
+    }
+
+    private void addTracedElement(Map<ElementSignature, TracedElement> map,
+                                  TypedElementInfo element,
+                                  Optional<Annotation> typeAnnotation) {
+        map.compute(element.signature(), (key, existing) -> {
+            if (existing == null) {
+                return new TracedElement(element, typeAnnotation);
+            }
+            if (existing.typeAnnotation().isEmpty() && typeAnnotation.isPresent()) {
+                return new TracedElement(existing.element(), typeAnnotation);
+            }
+            return existing;
+        });
     }
 
     private void processElement(TracedHandler handler,
@@ -253,8 +271,11 @@ class TracingExtension implements RegistryCodegenExtension {
     }
 
     private record TracedElements(TypeInfo type,
-                                  Optional<Annotation> typeAnnotation,
-                                  Map<ElementSignature, TypedElementInfo> elements) {
+                                  Map<ElementSignature, TracedElement> elements) {
+    }
+
+    private record TracedElement(TypedElementInfo element,
+                                 Optional<Annotation> typeAnnotation) {
     }
 
     record TagParam(int index, TypeName type, String name) {

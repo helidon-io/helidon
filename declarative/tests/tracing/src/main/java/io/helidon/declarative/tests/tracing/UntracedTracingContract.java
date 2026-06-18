@@ -16,33 +16,12 @@
 
 package io.helidon.declarative.tests.tracing;
 
+import io.helidon.http.Http;
 import io.helidon.service.registry.Service;
-import io.helidon.webserver.http.RestServer;
 
-@RestServer.Endpoint
-@Service.Singleton
-class InheritedTracingEndpoint implements InheritedTracingContract, UntracedTracingContract {
-    @Service.Inject
-    InheritedTracingEndpoint() {
-    }
-
-    @Override
-    public String inheritedTraced() {
-        return "inherited traced";
-    }
-
-    @Override
-    public String typeTraced() {
-        return "type traced";
-    }
-
-    @Override
-    public String inheritedTagged(int id) {
-        return "tagged " + id;
-    }
-
-    @Override
-    public String untraced() {
-        return "untraced";
-    }
+@Service.Contract
+interface UntracedTracingContract {
+    @Http.GET
+    @Http.Path("/plain")
+    String untraced();
 }

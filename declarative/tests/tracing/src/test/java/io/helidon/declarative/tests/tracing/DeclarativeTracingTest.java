@@ -348,6 +348,24 @@ public class DeclarativeTracingTest {
         assertThat("Long Attribute of key: id", actualValue, is(7L));
     }
 
+    @Test
+    @Order(7)
+    void testInheritedTypeTracedDoesNotApplyToOtherContracts() {
+        var response = client.get("/inherited/plain").request(String.class);
+
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity(), is("untraced"));
+
+        var data = exporter.spanData(2);
+        exporter.clear();
+
+        Set<String> names = data.stream()
+                .map(SpanData::getName)
+                .collect(Collectors.toSet());
+
+        assertThat(names, is(Set.of("HTTP Request", "content-write")));
+    }
+
     private void assertAttribute(Attributes attributes, String key, String expectedValue) {
         var actualValue = attributes.get(AttributeKey.stringKey(key));
 
