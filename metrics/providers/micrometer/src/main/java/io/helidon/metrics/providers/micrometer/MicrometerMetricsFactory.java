@@ -18,6 +18,7 @@ package io.helidon.metrics.providers.micrometer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -71,6 +72,8 @@ class MicrometerMetricsFactory implements MetricsFactory {
     private final ReentrantLock lock = new ReentrantLock();
     private final MultipleRegistryWarnings multipleRegistryWarnings = new MultipleRegistryWarnings();
 
+    private volatile Map<String, String> globalRegistrySystemTags = Map.of();
+
     private final LazyValue<Collection<MeterRegistryLifeCycleListener>> meterRegistryLifeCycleListeners =
             LazyValue.create(() -> HelidonServiceLoader.create(ServiceLoader.load(MeterRegistryLifeCycleListener.class))
                     .asList());
@@ -99,6 +102,10 @@ class MicrometerMetricsFactory implements MetricsFactory {
                                            Collection<MetersProvider> metersProviders,
                                            Consumer<MicrometerMetricsFactory> onClose) {
         return new MicrometerMetricsFactory(metricsConfig, metersProviders, onClose);
+    }
+
+    Map<String, String> globalRegistrySystemTags() {
+        return globalRegistrySystemTags;
     }
 
     void onMeterAdded(io.micrometer.core.instrument.Meter meter) {
@@ -201,6 +208,7 @@ class MicrometerMetricsFactory implements MetricsFactory {
             globalMeterRegistry = save(metricsConfig, MMeterRegistry.builder(Metrics.globalRegistry, this)
                                                .metricsConfig(metricsConfig)
                                                .build());
+            globalRegistrySystemTags = globalMeterRegistry.displayTagPairs();
 
             /*
              Let listeners enroll their callbacks for meter creation and removal with the new registry if they want before
@@ -230,6 +238,7 @@ class MicrometerMetricsFactory implements MetricsFactory {
             List<MMeterRegistry> registries = List.copyOf(meterRegistries);
             registries.forEach(MMeterRegistry::close);
             meterRegistries.clear();
+            globalRegistrySystemTags = Map.of();
             closePublisherRegistries();
             metersProviders.forEach(provider -> {
                 if (provider instanceof AutoCloseable closeable) {
@@ -415,6 +424,7 @@ class MicrometerMetricsFactory implements MetricsFactory {
             meterRegistries.remove(globalMeterRegistry);
             globalMeterRegistry = null;
         }
+        globalRegistrySystemTags = Map.of();
         closePublisherRegistries();
     }
 

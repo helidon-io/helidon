@@ -108,7 +108,25 @@ public class MicrometerMetricsFactoryProvider implements MetricsFactoryProvider 
                     @Override
                     public Meter.Id map(Meter.Id id) {
                         List<io.micrometer.core.instrument.Tag> tags = CURRENT_SYSTEM_TAGS.get();
-                        if (tags == null || tags.isEmpty()) {
+                        if (tags == null) {
+                            List<MicrometerMetricsFactory> factories = liveFactories();
+                            Map<String, String> fallbackTags = Map.of();
+                            for (int i = factories.size() - 1; i >= 0; i--) {
+                                fallbackTags = factories.get(i).globalRegistrySystemTags();
+                                if (!fallbackTags.isEmpty()) {
+                                    break;
+                                }
+                            }
+                            if (fallbackTags.isEmpty()) {
+                                return id;
+                            }
+                            Map<String, String> systemTags = fallbackTags;
+                            List<io.micrometer.core.instrument.Tag> fallbackTagList = new ArrayList<>();
+                            systemTags.forEach((name, value) ->
+                                                       fallbackTagList.add(io.micrometer.core.instrument.Tag.of(name, value)));
+                            tags = fallbackTagList;
+                        }
+                        if (tags.isEmpty()) {
                             return id;
                         }
                         return id.replaceTags(Tags.concat(tags, id.getTagsAsIterable()));

@@ -640,6 +640,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                 .assignScope(realScope, builderTagSetter));
 
         io.helidon.metrics.api.Meter.Id id = mBuilder.id();
+        displayTagPairs().forEach(mBuilder::delegateTag);
 
         lock.readLock().lock();
 
@@ -676,7 +677,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                            + " during creation of new meter " + mBuilder);
             }
 
-            M meter = MicrometerMetricsFactoryProvider.withSystemTags(systemTagsManager.displayTagPairs(),
+            M meter = MicrometerMetricsFactoryProvider.withSystemTags(Map.of(),
                                                                       () -> registration.apply(delegate()));
 
             /*
@@ -818,8 +819,21 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     }
 
     private io.helidon.metrics.api.Meter.Id neutralIdWithoutSystemTags(Meter.Id micrometerId) {
+        Map<String, String> systemTags = displayTagPairs();
+        List<io.helidon.metrics.api.Tag> tags = new ArrayList<>();
+        MTag.neutralTags(micrometerId.getTags()).forEach(tag -> {
+            String systemTagValue = systemTags.get(tag.key());
+            if (!tag.value().equals(systemTagValue)) {
+                tags.add(tag);
+            }
+        });
+
         return MMeter.PlainId.create(micrometerId.getName(),
-                                     systemTagsManager.withoutSystemTags(MTag.neutralTags(micrometerId.getTags())));
+                                     tags);
+    }
+
+    Map<String, String> displayTagPairs() {
+        return systemTagsManager.displayTagPairs();
     }
 
     private void recordNewMeter(io.helidon.metrics.api.Meter.Id id,
