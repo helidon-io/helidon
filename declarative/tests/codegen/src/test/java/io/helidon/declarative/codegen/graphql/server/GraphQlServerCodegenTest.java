@@ -26,11 +26,14 @@ import io.helidon.builder.api.Prototype;
 import io.helidon.codegen.apt.AptProcessor;
 import io.helidon.codegen.testing.TestCompiler;
 import io.helidon.common.Generated;
+import io.helidon.common.context.Context;
 import io.helidon.common.types.Annotation;
 import io.helidon.config.Config;
 import io.helidon.graphql.GraphQl;
+import io.helidon.graphql.server.ExecutionContext;
 import io.helidon.graphql.server.InvocationHandler;
 import io.helidon.graphql.spi.GraphQlScalar;
+import io.helidon.security.SecurityContext;
 import io.helidon.service.registry.Dependency;
 import io.helidon.service.registry.Service;
 import io.helidon.service.registry.ServiceDescriptor;
@@ -67,16 +70,20 @@ class GraphQlServerCodegenTest {
             GraphQLSchema.class,
             GraphQl.class,
             GraphQlScalar.class,
+            Context.class,
+            ExecutionContext.class,
             GraphQlEntryPoint.class,
             GraphQlServer.class,
             GraphQlService.class,
             HttpFeature.class,
             HttpRouting.class,
+            io.helidon.common.security.SecurityContext.class,
             InvocationHandler.class,
             Prototype.class,
             RuntimeWiring.class,
             SchemaGenerator.class,
             SchemaParser.class,
+            SecurityContext.class,
             Service.class,
             ServiceDescriptor.class,
             TypeDefinitionRegistry.class
@@ -92,8 +99,13 @@ class GraphQlServerCodegenTest {
                 .addSource("GraphEndpoint.java", """
                         package com.example;
 
+                        import io.helidon.common.context.Context;
                         import io.helidon.graphql.GraphQl;
+                        import io.helidon.graphql.server.ExecutionContext;
+                        import io.helidon.security.SecurityContext;
                         import io.helidon.webserver.graphql.GraphQlServer;
+
+                        import graphql.schema.DataFetchingEnvironment;
 
                         @GraphQlServer.Endpoint
                         @GraphQlServer.Listener("@default")
@@ -123,6 +135,19 @@ class GraphQlServerCodegenTest {
                             @GraphQl.Query
                             Isbn bookIsbn(@GraphQl.Argument("value") Isbn value) {
                                 return value;
+                            }
+
+                            @GraphQl.Query
+                            String contextSummary(Context context,
+                                                  ExecutionContext executionContext,
+                                                  DataFetchingEnvironment environment) {
+                                return context.id() + executionContext.hasPartialResultsException()
+                                        + environment.getField().getName();
+                            }
+
+                            @GraphQl.Query
+                            boolean secure(SecurityContext securityContext) {
+                                return securityContext.isAuthenticated();
                             }
 
                             @GraphQlServer.Field
@@ -229,6 +254,8 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("book: Book"));
         assertThat(generated, containsString("author: AuthorDto"));
         assertThat(generated, containsString("bookIsbn(value: ISBN): ISBN"));
+        assertThat(generated, containsString("contextSummary: String"));
+        assertThat(generated, containsString("secure: Boolean!"));
         assertThat(generated, containsString("type Mutation"));
         assertThat(generated, containsString("update(enabled: Boolean!): Boolean"));
         assertThat(generated, containsString("ISBN scalar"));
@@ -261,6 +288,12 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("scalar.parseLiteral(scalarLiteralValue(input))"));
         assertThat(generated, containsString("scalarLiteralValue("));
         assertThat(generated, containsString("(Isbn) environment.getArgument(\"value\")"));
+        assertThat(generated, containsString("helidonContext(environment)"));
+        assertThat(generated, containsString("graphQlExecutionContext(environment)"));
+        assertThat(generated, containsString("securityContext(environment)"));
+        assertThat(generated, containsString("ExecutionContext.HELIDON_CONTEXT_KEY"));
+        assertThat(generated, containsString("ExecutionContext.EXECUTION_CONTEXT_KEY"));
+        assertThat(generated, containsString(".get(SecurityContext.class)"));
         assertThat(generated, containsString(".dataFetcher(\"summary\", fetcher_"));
         assertThat(generated, containsString(".dataFetcher(\"score\", fetcher_"));
         assertThat(generated, containsString("this.endpoint.summary("));

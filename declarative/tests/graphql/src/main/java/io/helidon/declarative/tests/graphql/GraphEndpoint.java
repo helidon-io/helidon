@@ -18,8 +18,12 @@ package io.helidon.declarative.tests.graphql;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import io.helidon.common.context.Context;
 import io.helidon.graphql.GraphQl;
+import io.helidon.graphql.server.ExecutionContext;
 import io.helidon.webserver.graphql.GraphQlServer;
+
+import graphql.schema.DataFetchingEnvironment;
 
 @GraphQlServer.Endpoint
 class GraphEndpoint {
@@ -38,6 +42,20 @@ class GraphEndpoint {
     @GraphQl.Query
     String titleByIsbn(@GraphQl.Argument("isbn") Isbn isbn) {
         return "Dune: " + isbn.value();
+    }
+
+    @GraphQl.Query
+    boolean contextAvailable(Context context,
+                             ExecutionContext executionContext,
+                             DataFetchingEnvironment environment) {
+        boolean matchingContext = executionContext.contextValue(ExecutionContext.HELIDON_CONTEXT_KEY, Context.class)
+                .filter(it -> it == context)
+                .isPresent();
+        boolean matchingExecutionContext = executionContext.contextValue(ExecutionContext.EXECUTION_CONTEXT_KEY,
+                                                                         ExecutionContext.class)
+                .filter(it -> it == executionContext)
+                .isPresent();
+        return matchingContext && matchingExecutionContext && "contextAvailable".equals(environment.getField().getName());
     }
 
     @GraphQlServer.Field

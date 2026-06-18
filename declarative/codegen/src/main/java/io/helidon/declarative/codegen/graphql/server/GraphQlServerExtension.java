@@ -51,6 +51,7 @@ import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegen
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.COERCING_PARSE_LITERAL_EXCEPTION;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.COERCING_PARSE_VALUE_EXCEPTION;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.COERCING_SERIALIZE_EXCEPTION;
+import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.COMMON_CONTEXT;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.DATA_FETCHING_ENVIRONMENT;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_ARGUMENT;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_CONTEXT;
@@ -58,6 +59,7 @@ import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegen
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_DESCRIPTION;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_ENTITY;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_ENTRY_POINTS;
+import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_EXECUTION_CONTEXT;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_IGNORE;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_MUTATION;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_NAME;
@@ -79,6 +81,7 @@ import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegen
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.RUNTIME_WIRING;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.SCHEMA_GENERATOR;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.SCHEMA_PARSER;
+import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.SECURITY_CONTEXT;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.SERVER_HTTP_FEATURE;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.SERVER_HTTP_ROUTING_BUILDER;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.TYPE_DEFINITION_REGISTRY;
@@ -253,11 +256,16 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                 result.add(new ResolverParameter(parameter,
                                                 Optional.empty(),
                                                 Optional.of(source.orElseThrow().typeInfo()),
-                                                false));
+                                                ResolverParameterKind.SOURCE));
                 continue;
             }
-            if (parameter.typeName().equals(DATA_FETCHING_ENVIRONMENT)) {
-                result.add(new ResolverParameter(parameter, Optional.empty(), Optional.empty(), true));
+
+            Optional<ResolverParameterKind> specialParameter = specialParameterKind(parameter.typeName());
+            if (specialParameter.isPresent()) {
+                result.add(new ResolverParameter(parameter,
+                                                Optional.empty(),
+                                                Optional.empty(),
+                                                specialParameter.orElseThrow()));
                 continue;
             }
 
@@ -273,7 +281,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                                                                   parameter,
                                                                   parameterAnnotations)),
                                             Optional.empty(),
-                                            false));
+                                            ResolverParameterKind.ARGUMENT));
         }
         return List.copyOf(result);
     }
@@ -306,7 +314,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                 annotated.add(source.orElseThrow(() -> unsupportedSourceType(endpoint, method, parameter)));
             } else if (source.isPresent()
                     && Annotations.findFirst(GRAPHQL_ARGUMENT, annotations).isEmpty()
-                    && !parameter.typeName().equals(DATA_FETCHING_ENVIRONMENT)) {
+                    && specialParameterKind(parameter.typeName()).isEmpty()) {
                 inferred.add(source.orElseThrow());
             }
         }
@@ -338,7 +346,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         if (isScalarType(roundContext, parameter.typeName())) {
             return Optional.empty();
         }
-        if (parameter.typeName().equals(DATA_FETCHING_ENVIRONMENT)) {
+        if (specialParameterKind(parameter.typeName()).isPresent()) {
             return Optional.empty();
         }
 
@@ -351,6 +359,23 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
             return Optional.of(new SourceParameter(index, parameter, typeInfo));
         }
         throw unsupportedSourceType(endpoint, method, parameter);
+    }
+
+    private static Optional<ResolverParameterKind> specialParameterKind(TypeName type) {
+        TypeName boxed = type.boxed();
+        if (boxed.equals(DATA_FETCHING_ENVIRONMENT)) {
+            return Optional.of(ResolverParameterKind.ENVIRONMENT);
+        }
+        if (boxed.equals(COMMON_CONTEXT)) {
+            return Optional.of(ResolverParameterKind.HELIDON_CONTEXT);
+        }
+        if (boxed.equals(GRAPHQL_EXECUTION_CONTEXT)) {
+            return Optional.of(ResolverParameterKind.EXECUTION_CONTEXT);
+        }
+        if (boxed.equals(SECURITY_CONTEXT)) {
+            return Optional.of(ResolverParameterKind.SECURITY_CONTEXT);
+        }
+        return Optional.empty();
     }
 
     private static String fieldName(TypeInfo endpoint,
@@ -451,6 +476,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         addInvocationHandlerMethod(classModel);
         addRuntimeWiringMethod(classModel, endpoint, ctx.descriptorType(endpointTypeName));
         addScalarMethods(classModel);
+        addContextParameterMethods(classModel, endpoint.operations());
         addResolverMethods(classModel, endpoint);
 
         roundContext.addGeneratedType(generatedType, classModel, endpointTypeName, type.originatingElementValue());
@@ -692,17 +718,30 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
     }
 
     private void resolverParameterValue(io.helidon.codegen.classmodel.Method.Builder method, ResolverParameter parameter) {
-        if (parameter.sourceType().isPresent()) {
+        switch (parameter.kind()) {
+        case SOURCE:
             method.addContent("((")
                     .addContent(parameter.sourceType().orElseThrow().typeName())
                     .addContent(") environment.getSource())");
             return;
-        }
-        if (parameter.environment()) {
+        case ENVIRONMENT:
             method.addContent("environment");
             return;
+        case HELIDON_CONTEXT:
+            method.addContent("helidonContext(environment)");
+            return;
+        case EXECUTION_CONTEXT:
+            method.addContent("graphQlExecutionContext(environment)");
+            return;
+        case SECURITY_CONTEXT:
+            method.addContent("securityContext(environment)");
+            return;
+        case ARGUMENT:
+            argumentValue(method, parameter.argument().orElseThrow());
+            return;
+        default:
+            throw new IllegalStateException("Unsupported GraphQL resolver parameter kind: " + parameter.kind());
         }
-        argumentValue(method, parameter.argument().orElseThrow());
     }
 
     private void argumentValue(io.helidon.codegen.classmodel.Method.Builder method, Argument argument) {
@@ -812,6 +851,82 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                 .addContentLine("(\"Unsupported GraphQL scalar literal: \" + value.getClass().getName());")
                 .decreaseContentPadding()
                 .addContentLine("};"));
+    }
+
+    private void addContextParameterMethods(ClassModel.Builder classModel, List<Operation> operations) {
+        boolean usesHelidonContext = usesParameter(operations, ResolverParameterKind.HELIDON_CONTEXT)
+                || usesParameter(operations, ResolverParameterKind.SECURITY_CONTEXT);
+        boolean usesExecutionContext = usesParameter(operations, ResolverParameterKind.EXECUTION_CONTEXT);
+        boolean usesSecurityContext = usesParameter(operations, ResolverParameterKind.SECURITY_CONTEXT);
+
+        if (usesHelidonContext) {
+            classModel.addMethod(method -> method
+                    .accessModifier(AccessModifier.PRIVATE)
+                    .isStatic(true)
+                    .returnType(COMMON_CONTEXT)
+                    .name("helidonContext")
+                    .addParameter(param -> param
+                            .type(DATA_FETCHING_ENVIRONMENT)
+                            .name("environment"))
+                    .addContent(COMMON_CONTEXT)
+                    .addContent(" context = environment.getGraphQlContext().get(")
+                    .addContent(GRAPHQL_EXECUTION_CONTEXT)
+                    .addContentLine(".HELIDON_CONTEXT_KEY);")
+                    .addContentLine("if (context == null) {")
+                    .increaseContentPadding()
+                    .addContentLine("throw new IllegalStateException(\"Missing Helidon context for GraphQL resolver.\");")
+                    .decreaseContentPadding()
+                    .addContentLine("}")
+                    .addContentLine("return context;"));
+        }
+
+        if (usesExecutionContext) {
+            classModel.addMethod(method -> method
+                    .accessModifier(AccessModifier.PRIVATE)
+                    .isStatic(true)
+                    .returnType(GRAPHQL_EXECUTION_CONTEXT)
+                    .name("graphQlExecutionContext")
+                    .addParameter(param -> param
+                            .type(DATA_FETCHING_ENVIRONMENT)
+                            .name("environment"))
+                    .addContent(GRAPHQL_EXECUTION_CONTEXT)
+                    .addContent(" context = environment.getGraphQlContext().get(")
+                    .addContent(GRAPHQL_EXECUTION_CONTEXT)
+                    .addContentLine(".EXECUTION_CONTEXT_KEY);")
+                    .addContentLine("if (context == null) {")
+                    .increaseContentPadding()
+                    .addContentLine("throw new IllegalStateException(\"Missing GraphQL execution context for resolver.\");")
+                    .decreaseContentPadding()
+                    .addContentLine("}")
+                    .addContentLine("return context;"));
+        }
+
+        if (usesSecurityContext) {
+            classModel.addMethod(method -> method
+                    .accessModifier(AccessModifier.PRIVATE)
+                    .isStatic(true)
+                    .returnType(SECURITY_CONTEXT)
+                    .name("securityContext")
+                    .addParameter(param -> param
+                            .type(DATA_FETCHING_ENVIRONMENT)
+                            .name("environment"))
+                    .addContentLine("return helidonContext(environment)")
+                    .increaseContentPadding()
+                    .addContent(".get(")
+                    .addContent(SECURITY_CONTEXT)
+                    .addContentLine(".class)")
+                    .addContentLine(".orElseThrow(() -> new IllegalStateException(")
+                    .increaseContentPadding()
+                    .addContentLine("\"Missing security context for GraphQL resolver.\"));")
+                    .decreaseContentPadding()
+                    .decreaseContentPadding());
+        }
+    }
+
+    private static boolean usesParameter(List<Operation> operations, ResolverParameterKind kind) {
+        return operations.stream()
+                .flatMap(operation -> operation.parameters().stream())
+                .anyMatch(parameter -> parameter.kind() == kind);
     }
 
     private void addScalarCoercingMethods(io.helidon.codegen.classmodel.Method.Builder method) {
@@ -1491,7 +1606,16 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
     private record ResolverParameter(TypedElementInfo parameter,
                                      Optional<Argument> argument,
                                      Optional<TypeInfo> sourceType,
-                                     boolean environment) {
+                                     ResolverParameterKind kind) {
+    }
+
+    private enum ResolverParameterKind {
+        ARGUMENT,
+        SOURCE,
+        ENVIRONMENT,
+        HELIDON_CONTEXT,
+        EXECUTION_CONTEXT,
+        SECURITY_CONTEXT
     }
 
     private record SourceParameter(int index,
