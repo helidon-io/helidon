@@ -78,6 +78,13 @@ class DeclarativeGrpcTest {
     }
 
     @Test
+    void testUnaryUsesServiceRegistryInvocation() {
+        var response = blockingStub.interceptedGreet(request("Tomas"));
+
+        assertThat(response.getMessage(), is("Hello Tomas intercepted"));
+    }
+
+    @Test
     void testSecureUnary() {
         var request = request("Tomas");
 

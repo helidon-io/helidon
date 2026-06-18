@@ -16,6 +16,10 @@
 
 package io.helidon.declarative.tests.grpc;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.util.StringJoiner;
 
 import io.helidon.declarative.tests.grpc.DeclarativeGrpcProto.GreetingReply;
@@ -39,6 +43,12 @@ class GreetingEndpoint {
 
     @Grpc.Unary("Greet")
     GreetingReply greet(GreetingRequest request) {
+        return reply(request.getName());
+    }
+
+    @Grpc.Unary("InterceptedGreet")
+    @InterceptedGreeting
+    GreetingReply interceptedGreet(GreetingRequest request) {
         return reply(request.getName());
     }
 
@@ -116,4 +126,10 @@ class GreetingEndpoint {
                 .setMessage("Hello " + name)
                 .build();
     }
+}
+
+@io.helidon.service.registry.Interception.Intercepted
+@Retention(RetentionPolicy.CLASS)
+@Target(ElementType.METHOD)
+@interface InterceptedGreeting {
 }
