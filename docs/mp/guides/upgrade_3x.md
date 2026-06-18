@@ -172,7 +172,7 @@ Deprecations in the following classes:
 - `Resource` - old configuration approach (since 2.0)
 - `ThreadPoolSupplier` - Named thread pools (since 2.4.2)
 
-More information in the following [Task][task].
+More information in the following [task][task].
 
 ### Media Common
 
@@ -185,7 +185,7 @@ Deprecations in the following classes:
 - `MessageBodyWriterContext` - Methods with alternatives (since 2.0)
 - `ReadableByteChannelPublisher` - Class with alternative (since 2.0)
 
-More information in the following [Task][task-2].
+More information in the following [task][task-2].
 
 ### Metrics
 
@@ -196,7 +196,7 @@ Deprecations in the following classes:
   backward compatibility only
 - `RegistryFactory` - New class in metrics API, for backward compatibility only
 
-More information in the following [Task][task-3].
+More information in the following [task][task-3].
 
 ### Common Context
 
@@ -204,7 +204,7 @@ Deprecations in the following class:
 
 - `DataPropagationProvider` - clearData should use new method
 
-More information in the following [Task][task-4].
+More information in the following [task][task-4].
 
 ### GRPC core
 
@@ -212,7 +212,7 @@ Deprecations:
 
 - `JavaMarshaller` - removed support for JavaMarshaller
 
-More information in the following [Task][task-5].
+More information in the following [task][task-5].
 
 ### LRA
 
@@ -221,7 +221,7 @@ Deprecations in the following class:
 - `CoordinatorClient` - multiple methods
 - `Headers`
 
-More information in the following [Task][task-6].
+More information in the following [task][task-6].
 
 ### MP Messaging
 
@@ -229,7 +229,7 @@ Deprecations in the following class:
 
 - `MessagingCdiExtension` - Alternative methods used
 
-More information in the following [Task][task-7].
+More information in the following [task][task-7].
 
 ### JWT
 
@@ -237,7 +237,7 @@ Deprecations in the following class:
 
 - `Jwt` - Audience can be a list (since 2.4.0)
 
-More information in the following [Task][task-8].
+More information in the following [task][task-8].
 
 ### MP Metrics
 
@@ -246,13 +246,13 @@ Deprecations in the following class:
 - `MetricUtil` - multiple methods
 - `MetricsCdiExtension` - multiple methods
 
-More information in the following [Task][task-9].
+More information in the following [task][task-9].
 
 ### HTTP Signature Security Provider
 
 - `backwardCompatibleEol` - set to false
 
-More information in the following [Task][task-10].
+More information in the following [task][task-10].
 
 ### Service Common
 
@@ -260,14 +260,14 @@ Deprecations in the following class:
 
 - `HelidonRestServiceSupport` - method *configureEndpoint(Rules)*
 
-More information in the following [Task][task-9].
+More information in the following [task][task-9].
 
 ### WebServer
 
 - `Static content support` in `WebServer` - moved to a separate module. Fully
   removed from `WebServer` module.
 
-More information in the following [Task][task-11].
+More information in the following [task][task-11].
 
 [microprofile-con]: https://download.eclipse.org/microprofile/microprofile-config-3.0.1/microprofile-config-spec-3.0.1.html#_incompatible_changes
 [microprofile-fau]: https://download.eclipse.org/microprofile/microprofile-fault-tolerance-4.0/microprofile-fault-tolerance-spec-4.0.html#_backward_incompatible_changes=

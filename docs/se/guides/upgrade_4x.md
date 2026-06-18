@@ -31,7 +31,7 @@ In Helidon 4.x, Helidon SE moves from an asynchronous-style API to a
 blocking-style API that is optimized for use with virtual threads. Currently,
 there is no compatibility API available.
 
-### New Web Server Implementation
+### New WebServer Implementation
 
 Helidon 4.x introduces Helidon WebServer, a virtual threads-based web server
 implementation based on the JDK Project Loom. Helidon WebServer replaces Netty,
@@ -47,7 +47,7 @@ Use Helidon 3.x to extract a JSON body from an HTTP request and do something:
 
 ```java
 request.content().as(JsonObject.class)
-        .thenAccept(jo -> doSomething(jo, response));
+    .thenAccept(jo -> doSomething(jo, response));
 ```
 
 Use Helidon 4.x to extract a JSON body from an HTTP request and do something:
@@ -69,27 +69,25 @@ further server operations had to wait. For example:
 Start Helidon SE 3.x server:
 
 ```java
-static Single<WebServer> startServer() {
-    Config config = Config.create();
+Config config = Config.create();
 
-    WebServer server = WebServer.builder(createRouting(config))
-            .config(config.get("server"))
-            .addMediaSupport(JsonpSupport.create())
-            .build();
+WebServer server = WebServer.builder(createRouting(config))
+        .config(config.get("server"))
+        .addMediaSupport(JsonpSupport.create())
+        .build();
 
-    Single<WebServer> webserver = server.start(); 
+Single<WebServer> webserver = server.start();
 
-    webserver.thenAccept(ws -> { 
-                System.out.println("WEB server is up! http://localhost:" + ws.port() + "/greet");
-                ws.whenShutdown().thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
-            })
-            .exceptionallyAccept(t -> { 
-                System.err.println("Startup failed: " + t.getMessage());
-                t.printStackTrace(System.err);
-            });
-
-    return webserver;
-}
+webserver.thenAccept(it -> {
+    System.out.println("WEB server is up! http://localhost:"
+        + it.port() + "/greet");
+    it.whenShutdown().thenRun(() ->
+        System.out.println("WEB server is DOWN. Good bye!"));
+})
+.exceptionallyAccept(ex -> {
+    System.err.println("Startup failed: " + ex.getMessage());
+    ex.printStackTrace(System.err);
+});
 ```
 
 - Server is started in an asynchronous way. A `Single` object is returned.
@@ -103,18 +101,16 @@ available language constructions. For example:
 Start Helidon SE 4.x server:
 
 ```java
-public static void main(String[] args) {
+Config config = Config.global();
 
-    Config config = Config.global();
+WebServer server = WebServer.builder()
+        .config(config.get("server"))
+        .routing(Main::routing)
+        .build()
+        .start();
 
-    WebServer server = WebServer.builder() 
-            .config(config.get("server"))
-            .routing(Main::routing)
-            .build()
-            .start(); 
-
-    System.out.println("WEB server is up! http://localhost:" + server.port() + "/greet"); 
-}
+System.out.println("WEB server is up! http://localhost:"
+    + server.port() + "/greet");
 ```
 
 - Configure the server.
@@ -132,13 +128,15 @@ Helidon 3.x server lifecycle:
 Single<WebServer> webserver = server.start();
 
 webserver.thenAccept(ws -> {
-            System.out.println("WEB server is up! http://localhost:" + ws.port() + "/greet");
-            ws.whenShutdown().thenRun(() -> System.out.println("Helidon WebServer has stopped"));
-        })
-        .exceptionallyAccept(t -> {
-            System.err.println("Startup failed: " + t.getMessage());
-            t.printStackTrace(System.err);
-        });
+    System.out.println("WEB server is up! http://localhost:"
+        + ws.port() + "/greet");
+    ws.whenShutdown().thenRun(() ->
+        System.out.println("Helidon WebServer has stopped"));
+})
+.exceptionallyAccept(t -> {
+    System.err.println("Startup failed: " + t.getMessage());
+    t.printStackTrace(System.err);
+});
 ```
 
 In Helidon 4.x, no special API is needed for post-server startup tasks since the
@@ -189,17 +187,17 @@ Routing in Helidon SE 3.x server:
 ```java
 private static Routing createRouting(Config config) {
 
-    MetricsSupport metrics = MetricsSupport.create(); 
+    MetricsSupport metrics = MetricsSupport.create();
     HealthSupport health = HealthSupport.builder()
             .addLiveness(HealthChecks.healthChecks())
             .build();
 
-    GreetService greetService = new GreetService(config); 
+    GreetService greetService = new GreetService(config);
 
     return Routing.builder()
-            .register(health) 
+            .register(health)
             .register(metrics)
-            .register("/greet", greetService) 
+            .register("/greet", greetService)
             .build();
 }
 ```
@@ -217,7 +215,7 @@ Routing in Helidon SE 4.x server:
 
 ```java
 static void routing(HttpRouting.Builder routing) {
-    routing.register("/greet", new GreetService()); 
+    routing.register("/greet", new GreetService());
 }
 ```
 
@@ -244,18 +242,21 @@ So, for example, if you used the following in Helidon 3.x:
 Helidon 3.x using RequestPredicate:
 
 ```java
-public abstract class RoutingHandlerResource<I, R> implements HttpService {
+public abstract class RoutingHandlerResource<I, R>
+        implements HttpService {
 
-        protected Handler requestHandler(HttpRules rules, Method method, Handler applyHandler) {
-            switch (method) {
-            case PUT:
-                return RequestPredicate.create()
-                    .accepts(MediaType.APPLICATION_JSON)
-                    .containsHeader(HttpHeaderField.AUTHORIZATION.headerName())
-                    .hasContentType(ContentHeader.TYPE_JSON)
-                    .thenApply(applyHandler);
-            }
-        }
+      protected Handler requestHandler(
+              HttpRules rules, Method method, Handler applyHandler) {
+
+          switch (method) {
+          case PUT:
+              return RequestPredicate.create()
+                  .accepts(MediaType.APPLICATION_JSON)
+                  .containsHeader(HttpHeaderField.AUTHORIZATION.headerName())
+                  .hasContentType(ContentHeader.TYPE_JSON)
+                  .thenApply(applyHandler);
+          }
+      }
 }
 ```
 
@@ -264,9 +265,12 @@ Then, you would now use the following in Helidon 4.x:
 Routing without RequestPredicate in Helidon 4.x:
 
 ```java
-public abstract class RoutingHandlerResource<I, R> implements HttpService {
+public abstract class RoutingHandlerResource<I, R>
+        implements HttpService {
 
-    protected Handler requestHandler(HttpRules rules, Method method, Handler applyHandler) {
+    protected Handler requestHandler(
+            HttpRules rules, Method method, Handler applyHandler) {
+
         return switch (method.text()) {
             case "PUT" -> (req, res) -> {
                 ServerRequestHeaders headers = req.headers();
@@ -307,14 +311,16 @@ Helidon SE 3.x Service:
 public class GreetService implements Service {
 
     @Override
-    public void update(Routing.Rules rules) { 
+    public void update(Routing.Rules rules) {
         rules
-                .get("/", this::getDefaultMessageHandler)
-                .get("/{name}", this::getMessageHandler)
-                .put("/greeting", this::updateGreetingHandler);
+          .get("/", this::getDefaultMessageHandler)
+          .get("/{name}", this::getMessageHandler)
+          .put("/greeting", this::updateGreetingHandler);
     }
 
-    private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) { 
+    private void getDefaultMessageHandler(
+            ServerRequest request, ServerResponse response) {
+
         sendResponse(response, "World");
     }
 
@@ -330,24 +336,28 @@ In Helidon 4.x, the same service looks like this:
 Helidon SE 4.x Service:
 
 ```java
-public class GreetService implements HttpService { 
+public class GreetService implements HttpService {
 
     @Override
-    public void routing(HttpRules rules) { 
+    public void routing(HttpRules rules) {
         rules.get("/", this::getDefaultMessageHandler)
                 .get("/{name}", this::getMessageHandler)
                 .put("/greeting", this::updateGreetingHandler);
     }
 
-    private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) { 
+    private void getDefaultMessageHandler(
+            ServerRequest request, ServerResponse response) {
+
         sendResponse(response, "World");
     }
 
-    private void getMessageHandler(ServerRequest request, ServerResponse response) {
+    private void getMessageHandler(
+            ServerRequest request, ServerResponse response) {
         // ...
     }
 
-    private void updateGreetingHandler(ServerRequest request, ServerResponse response) { 
+    private void updateGreetingHandler(
+            ServerRequest request, ServerResponse response) {
         // ...
     }
 }

@@ -96,16 +96,16 @@ Helidon 2 WebSocket route registering:
 
 ```java
 WebServer.builder(Routing.builder()
-                          .register("/rest", new SomeRestService()) 
-                          .register("/websocket", TyrusSupport.builder() 
-                                  .register(ServerEndpointConfig.Builder
-                                                    .create(MessageBoardEndpoint.class, "/")
-                                                    .encoders(encoders)
-                                                    .build())
-                                  .build()
-                          ))
-        .port(8080)
-        .build();
+    .register("/rest", new SomeRestService())
+    .register("/websocket", TyrusSupport.builder()
+        .register(ServerEndpointConfig.Builder
+            .create(MessageBoardEndpoint.class, "/")
+            .encoders(encoders)
+            .build())
+        .build()
+    ))
+    .port(8080)
+    .build();
 ```
 
 - Traditional REST routing service registration
@@ -117,16 +117,16 @@ Helidon 3 WebSocket route registering:
 
 ```java
 WebServer.builder()
-        .routing(r -> r
-                .register("/rest", new SomeRestService()) 
-        )
-        .addRouting(WebSocketRouting.builder() 
-                            .endpoint("/websocket", ServerEndpointConfig.Builder
-                                    .create(MessageBoardEndpoint.class, "/board")
-                                    .encoders(encoders)
-                                    .build())
-                            .build())
-        .port(8080)
+    .routing(r -> r
+        .register("/rest", new SomeRestService())
+    )
+    .addRouting(WebSocketRouting.builder()
+        .endpoint("/websocket", ServerEndpointConfig.Builder
+            .create(MessageBoardEndpoint.class, "/board")
+            .encoders(encoders)
+            .build())
+        .build())
+    .port(8080)
 ```
 
 - Traditional REST routing service registration
@@ -134,7 +134,7 @@ WebServer.builder()
 
 ## Deprecations
 
-- The custom Helidon OCI clients have been deprecated ([See PR][see-pr]).
+- The custom Helidon OCI clients have been deprecated ([see PR][see-pr]).
 
 Use the OCI Java SDK instead. For Helidon MP, use
 `io.helidon.integrations.oci:helidon-integrations-oci` only for OCI
@@ -142,7 +142,7 @@ authentication, region, and configuration support; the legacy
 `io.helidon.integrations.oci.sdk:helidon-integrations-oci-sdk-cdi` module is
 deprecated.
 
-- The MultiPart buffered readers have been deprecated ([See PR][see-pr-2]). Use
+- The MultiPart buffered readers have been deprecated ([see PR][see-pr-2]). Use
   the MultiPart stream readers instead.
 
 ### Helidon Common
@@ -152,7 +152,7 @@ Deprecations in the following classes:
 - `Resource` - old configuration approach (since 2.0)
 - `ThreadPoolSupplier` - Named thread pools (since 2.4.2)
 
-More information in the following [Task][task].
+More information in the following [task][task].
 
 ### Media Common
 
@@ -165,7 +165,7 @@ Deprecations in the following classes:
 - `MessageBodyWriterContext` - Methods with alternatives (since 2.0)
 - `ReadableByteChannelPublisher` - Class with alternative (since 2.0)
 
-More information in the following [Task][task-2].
+More information in the following [task][task-2].
 
 ### Metrics
 
@@ -176,7 +176,7 @@ Deprecations in the following classes:
   backward compatibility only
 - `RegistryFactory` - New class in metrics API, for backward compatibility only
 
-More information in the following [Task][task-3].
+More information in the following [task][task-3].
 
 ### Common Context
 
@@ -184,7 +184,7 @@ Deprecations in the following class:
 
 - `DataPropagationProvider` - clearData should use new method
 
-More information in the following [Task][task-4].
+More information in the following [task][task-4].
 
 ### GRPC core
 
@@ -192,7 +192,7 @@ Deprecations:
 
 - `JavaMarshaller` - removed support for JavaMarshaller
 
-More information in the following [Task][task-5].
+More information in the following [task][task-5].
 
 gRPC scope is temporarily smaller in Helidon, please follow issue
 <https://github.com/helidon-io/helidon/issues/5418>
@@ -204,7 +204,7 @@ Deprecations in the following class:
 - `CoordinatorClient` - multiple methods
 - `Headers`
 
-More information in the following [Task][task-6].
+More information in the following [task][task-6].
 
 ### MP Messaging
 
@@ -212,7 +212,7 @@ Deprecations in the following class:
 
 - `MessagingCdiExtension` - Alternative methods used
 
-More information in the following [Task][task-7].
+More information in the following [task][task-7].
 
 ### JWT
 
@@ -220,7 +220,7 @@ Deprecations in the following class:
 
 - `Jwt` - Audience can be a list (since 2.4.0)
 
-More information in the following [Task][task-8].
+More information in the following [task][task-8].
 
 ### MP Metrics
 
@@ -229,13 +229,13 @@ Deprecations in the following class:
 - `MetricUtil` - multiple methods
 - `MetricsCdiExtension` - multiple methods
 
-More information in the following [Task][task-9].
+More information in the following [task][task-9].
 
 ### HTTP Signature Security Provider
 
 - `backwardCompatibleEol` - set to false
 
-More information in the following [Task][task-10].
+More information in the following [task][task-10].
 
 ### Service Common
 
@@ -243,14 +243,14 @@ Deprecations in the following class:
 
 - `HelidonRestServiceSupport` - method *configureEndpoint(Rules)*
 
-More information in the following [Task][task-9].
+More information in the following [task][task-9].
 
 ### WebServer
 
 - `Static content support` in `WebServer` - moved to a separate module. Fully
   removed from `WebServer` module.
 
-More information in the following [Task][task-11].
+More information in the following [task][task-11].
 
 [see-pr]: https://github.com/helidon-io/helidon/pull/4015
 [see-pr-2]: https://github.com/helidon-io/helidon/pull/4096
