@@ -29,13 +29,19 @@ import io.helidon.webserver.spi.ServerConnectionSelectorProvider;
 public class TestRequiredTransportConnectionSelectorProvider
         implements ServerConnectionSelectorProvider<TestRequiredTransportProtocolConfig> {
     private static final AtomicInteger CREATES = new AtomicInteger();
+    private static volatile String listenerName;
 
     static void reset() {
         CREATES.set(0);
+        listenerName = null;
     }
 
     static int creates() {
         return CREATES.get();
+    }
+
+    static String listenerName() {
+        return listenerName;
     }
 
     @Override
@@ -53,6 +59,7 @@ public class TestRequiredTransportConnectionSelectorProvider
                                            TestRequiredTransportProtocolConfig config,
                                            ProtocolConfigs configs) {
         CREATES.incrementAndGet();
+        TestRequiredTransportConnectionSelectorProvider.listenerName = listenerName;
         return new TestRequiredTransportConnectionSelector(config.name());
     }
 

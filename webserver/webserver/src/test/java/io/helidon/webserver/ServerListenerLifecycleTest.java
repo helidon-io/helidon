@@ -1613,6 +1613,25 @@ class ServerListenerLifecycleTest {
     }
 
     @Test
+    void builderNamedSocketUsesMapKeyAsListenerName() {
+        TestRequiredTransportConnectionSelectorProvider.reset();
+        WebServerConfig serverConfig = WebServer.builder()
+                .shutdownHook(false)
+                .putSocket("admin", socket -> socket
+                        .address(InetAddress.getLoopbackAddress())
+                        .port(0)
+                        .addProtocol(new TestRequiredTransportProtocolConfig("test-protocol",
+                                                                             Set.of(TcpTransportBinding.TYPE))))
+                .buildPrototype();
+
+        assertThat(serverConfig.sockets().get("admin").name(), is("admin"));
+
+        WebServer.create(serverConfig);
+
+        assertThat(TestRequiredTransportConnectionSelectorProvider.listenerName(), is("admin"));
+    }
+
+    @Test
     void webServerSuspendFailureStopsAllListenersAndPreservesCleanupFailure() throws Exception {
         ThrowingBlockingConnection connection = new ThrowingBlockingConnection(new AtomicInteger(), "suspend close failed");
         QueueingConnectionSelector selector = new QueueingConnectionSelector(connection);
