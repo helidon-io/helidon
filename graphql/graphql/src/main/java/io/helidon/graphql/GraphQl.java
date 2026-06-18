@@ -70,6 +70,18 @@ public final class GraphQl {
     }
 
     /**
+     * Marks a Java type that should be included in generated GraphQL schema output.
+     * <p>
+     * Resolver return types and object fields that use Java classes, records, interfaces, or enums must reference types
+     * annotated with this annotation before the declarative GraphQL generator emits SDL for them.
+     */
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.CLASS)
+    @Documented
+    public @interface Entity {
+    }
+
+    /**
      * Names a GraphQL argument or variable parameter.
      */
     @Target({ElementType.PARAMETER, ElementType.RECORD_COMPONENT})

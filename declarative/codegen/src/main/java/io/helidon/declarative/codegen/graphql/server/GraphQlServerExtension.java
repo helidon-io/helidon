@@ -50,6 +50,7 @@ import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegen
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_ARGUMENT;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_DEFAULT_VALUE;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_DESCRIPTION;
+import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_ENTITY;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_ENTRY_POINTS;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_IGNORE;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_MUTATION;
@@ -650,6 +651,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                 return existing.graphQlName();
             }
 
+            requireEntity(typeInfo);
             Set<Annotation> annotations = new HashSet<>(TypeHierarchy.hierarchyAnnotations(ctx, typeInfo));
             String graphQlName = typeName(typeInfo, annotations);
             reserveTypeName(typeInfo, graphQlName);
@@ -670,6 +672,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                 return existing.graphQlName();
             }
 
+            requireEntity(typeInfo);
             Set<Annotation> annotations = new HashSet<>(TypeHierarchy.hierarchyAnnotations(ctx, typeInfo));
             String graphQlName = typeName(typeInfo, annotations);
             reserveTypeName(typeInfo, graphQlName);
@@ -833,6 +836,14 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                 .filter(not(String::isBlank));
     }
 
+    private static void requireEntity(TypeInfo typeInfo) {
+        if (typeInfo.findAnnotation(GRAPHQL_ENTITY).isEmpty()) {
+            throw new CodegenException("GraphQL schema type " + typeInfo.typeName().fqName()
+                                               + " must be annotated with @GraphQl.Entity before SDL is generated for it.",
+                                       typeInfo.originatingElementValue());
+        }
+    }
+
     private static void appendObject(StringBuilder result, ObjectSchemaType objectType) {
         appendDescription(result, 0, objectType.description());
         result.append("type ")
@@ -879,8 +890,8 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
     private CodegenException unsupportedOutputType(TypeName type, Object originatingElement) {
         return new CodegenException("Return or field type " + type.fqName()
                                             + " is not supported by the declarative GraphQL generator. Supported output types "
-                                            + "are String, int/Integer, double/Double, boolean/Boolean, enums, records, "
-                                            + "and DTO classes or interfaces with readable fields or getters.",
+                                            + "are String, int/Integer, double/Double, boolean/Boolean, and Java "
+                                            + "enums/classes/records/interfaces annotated with @GraphQl.Entity.",
                                     originatingElement);
     }
 

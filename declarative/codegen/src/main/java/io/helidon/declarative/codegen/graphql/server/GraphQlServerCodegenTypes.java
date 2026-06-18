@@ -21,6 +21,7 @@ import io.helidon.common.types.TypeName;
 final class GraphQlServerCodegenTypes {
     static final TypeName GRAPHQL_QUERY = TypeName.create("io.helidon.graphql.GraphQl.Query");
     static final TypeName GRAPHQL_MUTATION = TypeName.create("io.helidon.graphql.GraphQl.Mutation");
+    static final TypeName GRAPHQL_ENTITY = TypeName.create("io.helidon.graphql.GraphQl.Entity");
     static final TypeName GRAPHQL_ARGUMENT = TypeName.create("io.helidon.graphql.GraphQl.Argument");
     static final TypeName GRAPHQL_NAME = TypeName.create("io.helidon.graphql.GraphQl.Name");
     static final TypeName GRAPHQL_DESCRIPTION = TypeName.create("io.helidon.graphql.GraphQl.Description");

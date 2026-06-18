@@ -55,34 +55,36 @@ import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class GraphQlServerCodegenTest {
+    private static final List<Class<?>> GRAPHQL_CLASSPATH = List.of(
+            Annotation.class,
+            Config.class,
+            DataFetcher.class,
+            DataFetchingEnvironment.class,
+            DataLoader.class,
+            Dependency.class,
+            Generated.class,
+            GraphQLSchema.class,
+            GraphQl.class,
+            GraphQlEntryPoint.class,
+            GraphQlServer.class,
+            GraphQlService.class,
+            HttpFeature.class,
+            HttpRouting.class,
+            InvocationHandler.class,
+            Prototype.class,
+            RuntimeWiring.class,
+            SchemaGenerator.class,
+            SchemaParser.class,
+            Service.class,
+            ServiceDescriptor.class,
+            TypeDefinitionRegistry.class
+    );
+
     @Test
     void generatedGraphQlFeatureRegistersSchemaAndEntryPoints() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
-                .addClasspath(List.of(
-                        Annotation.class,
-                        Config.class,
-                        DataFetcher.class,
-                        DataFetchingEnvironment.class,
-                        DataLoader.class,
-                        Dependency.class,
-                        Generated.class,
-                        GraphQLSchema.class,
-                        GraphQl.class,
-                        GraphQlEntryPoint.class,
-                        GraphQlServer.class,
-                        GraphQlService.class,
-                        HttpFeature.class,
-                        HttpRouting.class,
-                        InvocationHandler.class,
-                        Prototype.class,
-                        RuntimeWiring.class,
-                        SchemaGenerator.class,
-                        SchemaParser.class,
-                        Service.class,
-                        ServiceDescriptor.class,
-                        TypeDefinitionRegistry.class
-                ))
+                .addClasspath(GRAPHQL_CLASSPATH)
                 .addProcessor(AptProcessor::new)
                 .workDir(Path.of("target/test-compiler/graphql-server"))
                 .addSource("GraphEndpoint.java", """
@@ -122,6 +124,7 @@ class GraphQlServerCodegenTest {
 
                         import io.helidon.graphql.GraphQl;
 
+                        @GraphQl.Entity
                         @GraphQl.Description("Book result")
                         record Book(@GraphQl.NonNull String title,
                                     @GraphQl.Name("state") BookStatus status,
@@ -133,6 +136,7 @@ class GraphQlServerCodegenTest {
 
                         import io.helidon.graphql.GraphQl;
 
+                        @GraphQl.Entity
                         enum BookStatus {
                             @GraphQl.Description("Currently available")
                             AVAILABLE,
@@ -143,6 +147,9 @@ class GraphQlServerCodegenTest {
                 .addSource("AuthorDto.java", """
                         package com.example;
 
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Entity
                         public class AuthorDto {
                             private final String name;
                             private final boolean active;
@@ -211,5 +218,120 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("builder.type(\"AuthorDto\""));
         assertThat(generated, containsString(".dataFetcher(\"name\", environment -> ((AuthorDto) environment.getSource()).getName())"));
         assertThat(generated, containsString(".dataFetcher(\"active\", environment -> ((AuthorDto) environment.getSource()).isActive())"));
+    }
+
+    @Test
+    void missingGraphQlEntityOnObjectReturnTypeFailsCodegen() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-missing-entity"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            Book book() {
+                                return new Book("Dune");
+                            }
+                        }
+                        """)
+                .addSource("Book.java", """
+                        package com.example;
+
+                        record Book(String title) {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("must be annotated with @GraphQl.Entity"));
+    }
+
+    @Test
+    void missingGraphQlEntityOnNestedObjectFieldFailsCodegen() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-missing-nested-entity"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            Book book() {
+                                return new Book("Dune", new Publisher("Ace"));
+                            }
+                        }
+                        """)
+                .addSource("Book.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Entity
+                        record Book(String title, Publisher publisher) {
+                        }
+                        """)
+                .addSource("Publisher.java", """
+                        package com.example;
+
+                        record Publisher(String name) {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("must be annotated with @GraphQl.Entity"));
+    }
+
+    @Test
+    void missingGraphQlEntityOnEnumReturnTypeFailsCodegen() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-missing-enum-entity"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            BookStatus status() {
+                                return BookStatus.AVAILABLE;
+                            }
+                        }
+                        """)
+                .addSource("BookStatus.java", """
+                        package com.example;
+
+                        enum BookStatus {
+                            AVAILABLE
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("must be annotated with @GraphQl.Entity"));
     }
 }
