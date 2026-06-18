@@ -29,6 +29,8 @@ module io.helidon.declarative.codegen {
     exports io.helidon.declarative.codegen;
 
     exports io.helidon.declarative.codegen.http;
+    // gRPC server endpoints
+    exports io.helidon.declarative.codegen.grpc.server;
     // webserver related code generation (HTTP endpoints)
     exports io.helidon.declarative.codegen.http.webserver;
     exports io.helidon.declarative.codegen.http.webserver.spi;
@@ -55,6 +57,7 @@ module io.helidon.declarative.codegen {
                     io.helidon.declarative.codegen.validation.ValidationExtensionProvider,
                     io.helidon.declarative.codegen.metrics.MetricsExtensionProvider,
                     io.helidon.declarative.codegen.tracing.TracingExtensionProvider,
+                    io.helidon.declarative.codegen.grpc.server.GrpcServerExtensionProvider,
                     io.helidon.declarative.codegen.websocket.server.WebSocketServerExtensionProvider,
                     io.helidon.declarative.codegen.websocket.client.WebSocketClientExtensionProvider,
                     io.helidon.declarative.codegen.cors.CorsExtensionProvider;

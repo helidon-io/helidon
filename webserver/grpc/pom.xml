@@ -48,6 +48,10 @@
             <artifactId>helidon-webserver-http2</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.service</groupId>
+            <artifactId>helidon-service-registry</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.grpc</groupId>
             <artifactId>helidon-grpc-core</artifactId>
         </dependency>

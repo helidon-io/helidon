@@ -23,6 +23,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import io.helidon.service.registry.Service;
+
 import io.grpc.MethodDescriptor;
 
 /**
@@ -248,6 +250,7 @@ public interface Grpc {
      */
     @Target({ElementType.METHOD, ElementType.ANNOTATION_TYPE})
     @Retention(RetentionPolicy.RUNTIME)
+    @Service.EntryPoint
     @Documented
     @Inherited
     @interface GrpcMethod {

@@ -92,6 +92,16 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>io.helidon.grpc</groupId>
+            <artifactId>helidon-grpc-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.helidon.webserver</groupId>
+            <artifactId>helidon-webserver-grpc</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.webserver</groupId>
             <artifactId>helidon-webserver-websocket</artifactId>
             <scope>test</scope>

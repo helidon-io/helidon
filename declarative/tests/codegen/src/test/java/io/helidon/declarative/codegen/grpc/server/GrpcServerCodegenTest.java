@@ -1,0 +1,138 @@
+/*
+ * Copyright (c) 2026 Oracle and/or its affiliates.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package io.helidon.declarative.codegen.grpc.server;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+
+import io.helidon.builder.api.Prototype;
+import io.helidon.codegen.apt.AptProcessor;
+import io.helidon.codegen.testing.TestCompiler;
+import io.helidon.common.Generated;
+import io.helidon.common.GenericType;
+import io.helidon.common.types.Annotation;
+import io.helidon.grpc.api.Grpc;
+import io.helidon.service.registry.Dependency;
+import io.helidon.service.registry.Service;
+import io.helidon.service.registry.ServiceDescriptor;
+import io.helidon.webserver.grpc.GrpcEntryPoint;
+import io.helidon.webserver.grpc.GrpcRouteRegistration;
+import io.helidon.webserver.grpc.GrpcServiceDescriptor;
+
+import com.google.protobuf.Descriptors;
+import io.grpc.MethodDescriptor;
+import io.grpc.ServerInterceptor;
+import io.grpc.stub.StreamObserver;
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+
+class GrpcServerCodegenTest {
+    private static final List<Class<?>> CLASSPATH = List.of(
+            Annotation.class,
+            Dependency.class,
+            Descriptors.FileDescriptor.class,
+            Generated.class,
+            GenericType.class,
+            Grpc.class,
+            GrpcEntryPoint.class,
+            GrpcRouteRegistration.class,
+            GrpcServiceDescriptor.class,
+            MethodDescriptor.class,
+            Prototype.class,
+            ServerInterceptor.class,
+            Service.class,
+            ServiceDescriptor.class,
+            StreamObserver.class
+    );
+
+    @Test
+    void generatedServerRegistrationUsesGrpcDescriptors() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/grpc-server"))
+                .addSource("GreetingGrpc.java", """
+                        package com.example;
+
+                        import com.google.protobuf.Descriptors;
+
+                        import io.grpc.stub.StreamObserver;
+                        import io.helidon.grpc.api.Grpc;
+                        import io.helidon.service.registry.Service;
+
+                        @Grpc.GrpcService("Greeting")
+                        @Service.Singleton
+                        class GreetingGrpc {
+                            @Grpc.Proto
+                            Descriptors.FileDescriptor proto() {
+                                return null;
+                            }
+
+                            @Grpc.Unary("SayHello")
+                            GreetingReply sayHello(GreetingRequest request) {
+                                return new GreetingReply();
+                            }
+
+                            @Grpc.ServerStreaming("StreamHello")
+                            void streamHello(GreetingRequest request, StreamObserver<GreetingReply> responseObserver) {
+                            }
+                        }
+
+                        class GreetingRequest {
+                        }
+
+                        class GreetingReply {
+                        }
+                        """)
+                .addSource("Main.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.GenerateBinding
+                        class Main {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        Path generatedRegistration = result.sourceOutput().resolve("com/example/GreetingGrpc__GrpcRegistration.java");
+        assertThat("Generated source should exist: " + generatedRegistration, Files.exists(generatedRegistration), is(true));
+
+        String registration = Files.readString(generatedRegistration, StandardCharsets.UTF_8);
+        assertThat(registration, containsString("implements GrpcRouteRegistration"));
+        assertThat(registration, containsString("GrpcServiceDescriptor.builder(GreetingGrpc.class, \"Greeting\")"));
+        assertThat(registration, containsString(".proto(proto())"));
+        assertThat(registration, containsString(".unary(\"SayHello\", this::sayHello"));
+        assertThat(registration, containsString(".serverStreaming(\"StreamHello\", this::streamHello"));
+        assertThat(registration, containsString("entryPoints.interceptor("));
+        assertThat(registration, containsString("GreetingGrpc__ServiceDescriptor.METHOD_SAY_HELLO"));
+        assertThat(registration, containsString("GreetingGrpc__ServiceDescriptor.METHOD_STREAM_HELLO"));
+        assertThat(registration, containsString("responseObserver.onNext(endpoint.get().sayHello(request));"));
+        assertThat(registration, containsString("endpoint.get().streamHello(request, responseObserver);"));
+    }
+}
