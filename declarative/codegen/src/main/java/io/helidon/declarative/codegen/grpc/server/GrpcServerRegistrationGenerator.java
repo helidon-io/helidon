@@ -74,6 +74,7 @@ class GrpcServerRegistrationGenerator {
                 .isFinal(true)
                 .type(GRPC_SERVICE_DESCRIPTOR)
                 .name("descriptor"));
+        addMethodInfoFields(classModel, endpoint);
         classModel.addConstructor(constructor(ctx, endpoint, endpointSupplier));
         addDescriptorMethod(classModel);
         addProtoMethod(classModel, endpoint);
@@ -142,8 +143,6 @@ class GrpcServerRegistrationGenerator {
                     .addContentLine("descriptor,")
                     .addContentLine("descriptor.qualifiers(),")
                     .addContentLine("annotations,")
-                    .addContent(descriptorType)
-                    .addContent(".")
                     .addContent(constant)
                     .addContentLine("));")
                     .decreaseContentPadding()
@@ -157,6 +156,19 @@ class GrpcServerRegistrationGenerator {
                     .addContentLine("});");
         }
         return constructor.addContentLine("this.descriptor = builder.build();");
+    }
+
+    private static void addMethodInfoFields(ClassModel.Builder classModel, GrpcEndpoint endpoint) {
+        for (GrpcMethod grpcMethod : endpoint.methods()) {
+            String constant = toConstantName("METHOD_" + grpcMethod.uniqueName());
+            classModel.addField(field -> field
+                    .accessModifier(AccessModifier.PRIVATE)
+                    .isStatic(true)
+                    .isFinal(true)
+                    .type(TypeNames.TYPED_ELEMENT_INFO)
+                    .name(constant)
+                    .addContentCreate(grpcMethod.method()));
+        }
     }
 
     private static void addSecurity(GrpcSecurityDefinition security, Constructor.Builder constructor) {
