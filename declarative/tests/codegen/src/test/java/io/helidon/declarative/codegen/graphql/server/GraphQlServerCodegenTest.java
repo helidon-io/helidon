@@ -296,12 +296,249 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString(".get(SecurityContext.class)"));
         assertThat(generated, containsString(".dataFetcher(\"summary\", fetcher_"));
         assertThat(generated, containsString(".dataFetcher(\"score\", fetcher_"));
-        assertThat(generated, containsString("this.endpoint.summary("));
+        assertThat(generated, containsString("this.endpoint_0.summary("));
         assertThat(generated, containsString("((Book) environment.getSource())"));
         assertThat(generated, containsString("(String) environment.getArgument(\"prefix\")"));
         assertThat(generated, containsString("builder.type(\"AuthorDto\""));
         assertThat(generated, containsString(".dataFetcher(\"name\", environment -> ((AuthorDto) environment.getSource()).getName())"));
         assertThat(generated, containsString(".dataFetcher(\"active\", environment -> ((AuthorDto) environment.getSource()).isActive())"));
+    }
+
+    @Test
+    void endpointsWithSameListenerAndContextShareGeneratedFeature() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-grouped-endpoints"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        @GraphQlServer.Listener("@default")
+                        @GraphQlServer.Context("/graphql")
+                        @GraphQlServer.SchemaUri("/schema.graphql")
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            Book book() {
+                                return new Book("Dune");
+                            }
+                        }
+                        """)
+                .addSource("LibraryEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class LibraryEndpoint {
+                            @GraphQl.Query
+                            String library() {
+                                return "central";
+                            }
+
+                            @GraphQl.Mutation
+                            boolean reset() {
+                                return true;
+                            }
+                        }
+                        """)
+                .addSource("Book.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Entity
+                        record Book(String title) {
+                        }
+                        """)
+                .addSource("Main.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.GenerateBinding
+                        class Main {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        var generatedSources = Files.walk(result.sourceOutput())
+                .filter(it -> it.getFileName().toString().endsWith("__GraphQlFeature.java"))
+                .toList();
+        assertThat(generatedSources.size(), is(1));
+        assertThat(generatedSources.getFirst().getFileName().toString(), is("GraphEndpoint__GraphQlFeature.java"));
+
+        String generated = Files.readString(generatedSources.getFirst(), StandardCharsets.UTF_8);
+        assertThat(generated, containsString("class GraphEndpoint__GraphQlFeature implements HttpFeature"));
+        assertThat(generated, containsString("GraphEndpoint endpoint_0"));
+        assertThat(generated, containsString("LibraryEndpoint endpoint_1"));
+        assertThat(generated, containsString("this.endpoint_0.book("));
+        assertThat(generated, containsString("this.endpoint_1.library("));
+        assertThat(generated, containsString("this.endpoint_1.reset("));
+        assertThat(generated, containsString("book: Book"));
+        assertThat(generated, containsString("library: String"));
+        assertThat(generated, containsString("type Mutation"));
+        assertThat(generated, containsString("reset: Boolean!"));
+        assertThat(generated.split("routing.register", -1).length - 1, is(1));
+    }
+
+    @Test
+    void endpointsWithDifferentContextsGenerateSeparateFeatures() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-separate-contexts"))
+                .addSource("AdminEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        @GraphQlServer.Context("/admin/graphql")
+                        class AdminEndpoint {
+                            @GraphQl.Query
+                            String admin() {
+                                return "admin";
+                            }
+                        }
+                        """)
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            String user() {
+                                return "user";
+                            }
+                        }
+                        """)
+                .addSource("Main.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.GenerateBinding
+                        class Main {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        var generatedSources = Files.walk(result.sourceOutput())
+                .filter(it -> it.getFileName().toString().endsWith("__GraphQlFeature.java"))
+                .toList();
+        assertThat(generatedSources.size(), is(2));
+        String generated = Files.readString(generatedSources.getFirst(), StandardCharsets.UTF_8)
+                + Files.readString(generatedSources.get(1), StandardCharsets.UTF_8);
+        assertThat(generated, containsString(".webContext(\"/admin/graphql\")"));
+        assertThat(generated, containsString(".webContext(\"/graphql\")"));
+        assertThat(generated.split("routing.register", -1).length - 1, is(2));
+    }
+
+    @Test
+    void groupedEndpointsWithConflictingSchemaUriFailCodegen() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-schema-uri-conflict"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        @GraphQlServer.SchemaUri("/schema")
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            String hello() {
+                                return "hello";
+                            }
+                        }
+                        """)
+                .addSource("LibraryEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        @GraphQlServer.SchemaUri("/other")
+                        class LibraryEndpoint {
+                            @GraphQl.Query
+                            String library() {
+                                return "library";
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("Conflicting GraphQL schema URI"));
+    }
+
+    @Test
+    void duplicateQueryAcrossGroupedEndpointsFailsCodegen() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-group-duplicate-query"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            String hello() {
+                                return "hello";
+                            }
+                        }
+                        """)
+                .addSource("LibraryEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class LibraryEndpoint {
+                            @GraphQl.Query
+                            String hello() {
+                                return "library";
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("Duplicate GraphQL query field 'hello'"));
     }
 
     @Test

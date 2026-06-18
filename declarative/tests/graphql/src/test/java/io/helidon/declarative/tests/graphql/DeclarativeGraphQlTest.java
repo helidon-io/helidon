@@ -46,6 +46,7 @@ class DeclarativeGraphQlTest {
 
             assertThat(schema, containsString("type Query"));
             assertThat(schema, containsString("hello(name: String): String"));
+            assertThat(schema, containsString("catalogName: String"));
             assertThat(schema, containsString("book: Book"));
             assertThat(schema, containsString("titleByIsbn(isbn: ISBN): String"));
             assertThat(schema, containsString("contextAvailable: Boolean!"));
@@ -67,12 +68,13 @@ class DeclarativeGraphQlTest {
     void testQueryAndObjectResult() {
         JsonObject data = graphQl("""
                                           {
-                                            "query": "query($isbn: ISBN!) { hello(name: \\"Helidon\\") contextAvailable titleByIsbn(isbn: $isbn) literalTitle: titleByIsbn(isbn: \\"9780441172719\\") book { title state isbn summary(prefix: \\"Read\\") } }",
+                                            "query": "query($isbn: ISBN!) { hello(name: \\"Helidon\\") catalogName contextAvailable titleByIsbn(isbn: $isbn) literalTitle: titleByIsbn(isbn: \\"9780441172719\\") book { title state isbn summary(prefix: \\"Read\\") } }",
                                             "variables": { "isbn": "9780441172719" }
                                           }
                                           """);
 
         assertThat(data.stringValue("hello").orElseThrow(), is("Hello Helidon"));
+        assertThat(data.stringValue("catalogName").orElseThrow(), is("Arrakeen Library"));
         assertThat(data.booleanValue("contextAvailable").orElseThrow(), is(true));
         assertThat(data.stringValue("titleByIsbn").orElseThrow(), is("Dune: 9780441172719"));
         assertThat(data.stringValue("literalTitle").orElseThrow(), is("Dune: 9780441172719"));

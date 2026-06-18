@@ -89,6 +89,7 @@ import static java.util.function.Predicate.not;
 
 class GraphQlServerExtension implements RegistryCodegenExtension {
     private static final TypeName GENERATOR = TypeName.create(GraphQlServerExtension.class);
+    private static final String DEFAULT_LISTENER = "@default";
     private static final String DEFAULT_CONTEXT = "/graphql";
     private static final String DEFAULT_SCHEMA_URI = "/schema.graphql";
     private static final TypeName LIST_OF_GRAPHQL_SCALARS = TypeName.builder(TypeNames.LIST)
@@ -104,23 +105,33 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
     @Override
     public void process(RegistryRoundContext roundContext) {
         Collection<TypeInfo> endpoints = roundContext.annotatedTypes(GRAPHQL_SERVER_ENDPOINT);
+        List<TypeInfo> sortedEndpoints = endpoints.stream()
+                .sorted((first, second) -> first.typeName().fqName().compareTo(second.typeName().fqName()))
+                .toList();
+        Map<GroupKey, List<EndpointDeclaration>> groups = new LinkedHashMap<>();
 
-        for (TypeInfo endpoint : endpoints) {
-            process(roundContext, toEndpoint(roundContext, endpoint));
+        for (TypeInfo endpoint : sortedEndpoints) {
+            EndpointDeclaration declaration = toEndpointDeclaration(endpoint);
+            groups.computeIfAbsent(declaration.groupKey(), it -> new ArrayList<>())
+                    .add(declaration);
+        }
+
+        for (List<EndpointDeclaration> groupDeclarations : groups.values()) {
+            process(roundContext, toGroup(roundContext, groupDeclarations));
         }
     }
 
-    private GraphQlEndpoint toEndpoint(RegistryRoundContext roundContext, TypeInfo typeInfo) {
+    private EndpointDeclaration toEndpointDeclaration(TypeInfo typeInfo) {
         if (typeInfo.kind() == ElementKind.INTERFACE) {
             throw new CodegenException("Interfaces should not be annotated with " + GRAPHQL_SERVER_ENDPOINT.fqName(),
                                        typeInfo.originatingElementValue());
         }
 
-        SchemaTypes schemaTypes = new SchemaTypes(roundContext);
         Set<Annotation> typeAnnotations = new HashSet<>(TypeHierarchy.hierarchyAnnotations(ctx, typeInfo));
         String listener = Annotations.findFirst(GRAPHQL_SERVER_LISTENER, typeAnnotations)
                 .flatMap(Annotation::stringValue)
-                .orElse(null);
+                .filter(not(String::isBlank))
+                .orElse(DEFAULT_LISTENER);
         String context = Annotations.findFirst(GRAPHQL_SERVER_CONTEXT, typeAnnotations)
                 .flatMap(Annotation::stringValue)
                 .filter(not(String::isBlank))
@@ -130,35 +141,95 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                 .filter(not(String::isBlank))
                 .orElse(DEFAULT_SCHEMA_URI);
 
+        return new EndpointDeclaration(typeInfo,
+                                       typeAnnotations,
+                                       new GroupKey(listener, context),
+                                       schemaUri);
+    }
+
+    private GraphQlGroup toGroup(RegistryRoundContext roundContext, List<EndpointDeclaration> declarations) {
+        validateGroupPackage(declarations);
+        String schemaUri = schemaUri(declarations);
+        SchemaTypes schemaTypes = new SchemaTypes(roundContext);
+        Resolvers resolvers = new Resolvers(new ArrayList<>(),
+                                            new ArrayList<>(),
+                                            new ArrayList<>(),
+                                            new HashSet<>(),
+                                            new HashSet<>());
+        List<GraphQlEndpoint> endpoints = declarations.stream()
+                .map(declaration -> toEndpoint(schemaTypes, resolvers, declaration))
+                .toList();
+
+        if (resolvers.queries().isEmpty()) {
+            throw new CodegenException("Declarative GraphQL endpoint group for "
+                                               + groupDescription(declarations.getFirst().groupKey())
+                                               + " must define at least one @GraphQl.Query method.",
+                                       declarations.getFirst().typeInfo().originatingElementValue());
+        }
+        schemaTypes.validate();
+
+        return new GraphQlGroup(declarations.getFirst().groupKey(), schemaUri, schemaTypes, endpoints);
+    }
+
+    private static void validateGroupPackage(List<EndpointDeclaration> declarations) {
+        Set<String> packages = new HashSet<>();
+        for (EndpointDeclaration declaration : declarations) {
+            packages.add(declaration.typeInfo().typeName().packageName());
+        }
+        if (packages.size() <= 1) {
+            return;
+        }
+
+        throw new CodegenException("Declarative GraphQL endpoint group for "
+                                           + groupDescription(declarations.getFirst().groupKey())
+                                           + " contains endpoints in multiple packages. Grouped endpoints must be in the "
+                                           + "same package so generated resolver code can access package-private endpoint "
+                                           + "and schema types.",
+                                   declarations.getFirst().typeInfo().originatingElementValue());
+    }
+
+    private static String schemaUri(List<EndpointDeclaration> declarations) {
+        String schemaUri = declarations.getFirst().schemaUri();
+        for (EndpointDeclaration declaration : declarations) {
+            if (!schemaUri.equals(declaration.schemaUri())) {
+                throw new CodegenException("Conflicting GraphQL schema URI in endpoint group for "
+                                                   + groupDescription(declaration.groupKey()) + ": '"
+                                                   + schemaUri + "' and '" + declaration.schemaUri() + "'.",
+                                           declaration.typeInfo().originatingElementValue());
+            }
+        }
+        return schemaUri;
+    }
+
+    private static String groupDescription(GroupKey key) {
+        return "listener '" + key.listener() + "' and context '" + key.context() + "'";
+    }
+
+    private GraphQlEndpoint toEndpoint(SchemaTypes schemaTypes,
+                                       Resolvers resolvers,
+                                       EndpointDeclaration declaration) {
+        TypeInfo typeInfo = declaration.typeInfo();
         List<Operation> queries = new ArrayList<>();
         List<Operation> mutations = new ArrayList<>();
         List<Operation> fieldResolvers = new ArrayList<>();
-        Resolvers resolvers = new Resolvers(queries,
-                                            mutations,
-                                            fieldResolvers,
-                                            new HashSet<>(),
-                                            new HashSet<>());
+        Resolvers endpointResolvers = new Resolvers(queries,
+                                                    mutations,
+                                                    fieldResolvers,
+                                                    resolvers.queryNames(),
+                                                    resolvers.mutationNames());
 
         typeInfo.elementInfo()
                 .stream()
                 .filter(ElementInfoPredicates::isMethod)
                 .filter(not(ElementInfoPredicates::isPrivate))
                 .filter(not(ElementInfoPredicates::isStatic))
-                .forEach(method -> addResolver(schemaTypes, typeInfo, method, resolvers));
+                .forEach(method -> addResolver(schemaTypes, typeInfo, method, endpointResolvers));
 
-        if (queries.isEmpty()) {
-            throw new CodegenException("Declarative GraphQL endpoint " + typeInfo.typeName().fqName()
-                                               + " must define at least one @GraphQl.Query method.",
-                                       typeInfo.originatingElementValue());
-        }
-        schemaTypes.validate();
-
+        resolvers.queries().addAll(queries);
+        resolvers.mutations().addAll(mutations);
+        resolvers.fieldResolvers().addAll(fieldResolvers);
         return new GraphQlEndpoint(typeInfo,
-                                   typeAnnotations,
-                                   Optional.ofNullable(listener),
-                                   context,
-                                   schemaUri,
-                                   schemaTypes,
+                                   declaration.annotations(),
                                    List.copyOf(queries),
                                    List.copyOf(mutations),
                                    List.copyOf(fieldResolvers));
@@ -208,9 +279,11 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         List<ResolverParameter> parameters = resolverParameters(schemaTypes, endpoint, method, Optional.empty());
 
         Operation operation = new Operation(kind,
+                                            endpoint,
                                             method,
                                             List.copyOf(annotations),
                                             graphQlName,
+                                            resolverMethodName(endpoint, method),
                                             ctx.uniqueName(endpoint, method),
                                             parameters);
         if (kind == OperationKind.QUERY) {
@@ -235,9 +308,11 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                                                    method.originatingElementValue());
 
         Operation operation = new Operation(OperationKind.FIELD,
+                                            endpoint,
                                             method,
                                             List.copyOf(annotations),
                                             graphQlName,
+                                            resolverMethodName(endpoint, method),
                                             ctx.uniqueName(endpoint, method),
                                             parameters);
         schemaTypes.addFieldResolver(source.typeInfo(), operation, schemaType);
@@ -396,6 +471,11 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         return fieldName.or(() -> graphQlName).orElse(method.elementName());
     }
 
+    private String resolverMethodName(TypeInfo endpoint, TypedElementInfo method) {
+        return endpoint.typeName().classNameWithEnclosingNames().replace('.', '_')
+                + "_" + ctx.uniqueName(endpoint, method);
+    }
+
     private Argument toArgument(SchemaTypes schemaTypes,
                                 TypeInfo endpoint,
                                 TypedElementInfo method,
@@ -418,8 +498,8 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         return new Argument(parameter, graphQlName, List.copyOf(annotations), defaultValue, nonNull, schemaType);
     }
 
-    private void process(RegistryRoundContext roundContext, GraphQlEndpoint endpoint) {
-        TypeInfo type = endpoint.typeInfo();
+    private void process(RegistryRoundContext roundContext, GraphQlGroup group) {
+        TypeInfo type = group.primaryEndpoint().typeInfo();
         TypeName endpointTypeName = type.typeName();
         String classNameBase = endpointTypeName.classNameWithEnclosingNames().replace('.', '_');
         String className = classNameBase + "__GraphQlFeature";
@@ -437,11 +517,14 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                 .addAnnotation(DeclarativeTypes.SUPPRESS_API)
                 .addInterface(SERVER_HTTP_FEATURE);
 
-        classModel.addField(field -> field
-                .accessModifier(AccessModifier.PRIVATE)
-                .isFinal(true)
-                .type(endpointTypeName)
-                .name("endpoint"));
+        Map<TypeName, String> endpointFields = endpointFields(group);
+        for (GraphQlEndpoint endpoint : group.endpoints()) {
+            classModel.addField(field -> field
+                    .accessModifier(AccessModifier.PRIVATE)
+                    .isFinal(true)
+                    .type(endpoint.typeInfo().typeName())
+                    .name(endpointFields.get(endpoint.typeInfo().typeName())));
+        }
         classModel.addField(field -> field
                 .accessModifier(AccessModifier.PRIVATE)
                 .isFinal(true)
@@ -455,34 +538,51 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
 
         Constructor.Builder constructor = Constructor.builder()
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
-                .addAnnotation(Annotation.create(ServiceCodegenTypes.SERVICE_ANNOTATION_INJECT))
-                .addParameter(param -> param
-                        .type(endpointTypeName)
-                        .name("endpoint"))
-                .addParameter(param -> param
+                .addAnnotation(Annotation.create(ServiceCodegenTypes.SERVICE_ANNOTATION_INJECT));
+        for (GraphQlEndpoint endpoint : group.endpoints()) {
+            String fieldName = endpointFields.get(endpoint.typeInfo().typeName());
+            constructor.addParameter(param -> param
+                            .type(endpoint.typeInfo().typeName())
+                            .name(fieldName))
+                    .addContent("this.")
+                    .addContent(fieldName)
+                    .addContent(" = ")
+                    .addContent(fieldName)
+                    .addContentLine(";");
+        }
+        constructor.addParameter(param -> param
                         .type(GRAPHQL_ENTRY_POINTS)
                         .name("entryPoints"))
                 .addParameter(param -> param
                         .type(LIST_OF_GRAPHQL_SCALARS)
                         .name("scalars"))
-                .addContentLine("this.endpoint = endpoint;")
                 .addContentLine("this.entryPoints = entryPoints;")
                 .addContentLine("this.scalars = scalars;");
         classModel.addConstructor(constructor);
 
-        addSetupMethod(classModel, endpoint);
-        addSocketMethods(classModel, endpoint);
-        addSchemaMethod(classModel, endpoint);
+        addSetupMethod(classModel, group);
+        addSocketMethods(classModel, group);
+        addSchemaMethod(classModel, group);
         addInvocationHandlerMethod(classModel);
-        addRuntimeWiringMethod(classModel, endpoint, ctx.descriptorType(endpointTypeName));
+        addRuntimeWiringMethod(classModel, group);
         addScalarMethods(classModel);
-        addContextParameterMethods(classModel, endpoint.operations());
-        addResolverMethods(classModel, endpoint);
+        addContextParameterMethods(classModel, group.operations());
+        addResolverMethods(classModel, group, endpointFields);
 
         roundContext.addGeneratedType(generatedType, classModel, endpointTypeName, type.originatingElementValue());
     }
 
-    private void addSetupMethod(ClassModel.Builder classModel, GraphQlEndpoint endpoint) {
+    private Map<TypeName, String> endpointFields(GraphQlGroup group) {
+        Map<TypeName, String> result = new LinkedHashMap<>();
+        int index = 0;
+        for (GraphQlEndpoint endpoint : group.endpoints()) {
+            result.put(endpoint.typeInfo().typeName(), "endpoint_" + index);
+            index++;
+        }
+        return result;
+    }
+
+    private void addSetupMethod(ClassModel.Builder classModel, GraphQlGroup group) {
         classModel.addMethod(setup -> setup
                 .accessModifier(AccessModifier.PUBLIC)
                 .addAnnotation(Annotations.OVERRIDE)
@@ -496,10 +596,10 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                 .increaseContentPadding()
                 .increaseContentPadding()
                 .addContent(".webContext(")
-                .addContentLiteral(endpoint.context())
+                .addContentLiteral(group.key().context())
                 .addContentLine(")")
                 .addContent(".schemaUri(")
-                .addContentLiteral(endpoint.schemaUri())
+                .addContentLiteral(group.schemaUri())
                 .addContentLine(")")
                 .addContentLine(".invocationHandler(invocationHandler())")
                 .addContentLine(".build());")
@@ -507,32 +607,34 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                 .decreaseContentPadding());
     }
 
-    private void addSocketMethods(ClassModel.Builder classModel, GraphQlEndpoint endpoint) {
-        endpoint.listener().ifPresent(listener -> {
-            classModel.addMethod(socket -> socket
-                    .accessModifier(AccessModifier.PUBLIC)
-                    .returnType(TypeNames.STRING)
-                    .name("socket")
-                    .addAnnotation(Annotations.OVERRIDE)
-                    .addContent("return ")
-                    .addContentLiteral(listener)
-                    .addContentLine(";"));
-            classModel.addMethod(socket -> socket
-                    .accessModifier(AccessModifier.PUBLIC)
-                    .returnType(TypeNames.PRIMITIVE_BOOLEAN)
-                    .name("socketRequired")
-                    .addAnnotation(Annotations.OVERRIDE)
-                    .addContentLine("return true;"));
-        });
+    private void addSocketMethods(ClassModel.Builder classModel, GraphQlGroup group) {
+        if (DEFAULT_LISTENER.equals(group.key().listener())) {
+            return;
+        }
+
+        classModel.addMethod(socket -> socket
+                .accessModifier(AccessModifier.PUBLIC)
+                .returnType(TypeNames.STRING)
+                .name("socket")
+                .addAnnotation(Annotations.OVERRIDE)
+                .addContent("return ")
+                .addContentLiteral(group.key().listener())
+                .addContentLine(";"));
+        classModel.addMethod(socket -> socket
+                .accessModifier(AccessModifier.PUBLIC)
+                .returnType(TypeNames.PRIMITIVE_BOOLEAN)
+                .name("socketRequired")
+                .addAnnotation(Annotations.OVERRIDE)
+                .addContentLine("return true;"));
     }
 
-    private void addSchemaMethod(ClassModel.Builder classModel, GraphQlEndpoint endpoint) {
+    private void addSchemaMethod(ClassModel.Builder classModel, GraphQlGroup group) {
         classModel.addMethod(method -> method
                 .accessModifier(AccessModifier.PRIVATE)
                 .returnType(GRAPHQL_SCHEMA)
                 .name("schema")
                 .addContent("String schema = ")
-                .addContentLiteral(schema(endpoint))
+                .addContentLiteral(schema(group))
                 .addContentLine(";")
                 .addContent(TYPE_DEFINITION_REGISTRY)
                 .addContent(" typeDefinitionRegistry = new ")
@@ -555,28 +657,20 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                 .addContentLine(".create(schema());"));
     }
 
-    private void addRuntimeWiringMethod(ClassModel.Builder classModel,
-                                        GraphQlEndpoint endpoint,
-                                        TypeName descriptorType) {
+    private void addRuntimeWiringMethod(ClassModel.Builder classModel, GraphQlGroup group) {
         classModel.addMethod(method -> {
             method.accessModifier(AccessModifier.PRIVATE)
                     .returnType(RUNTIME_WIRING)
                     .name("runtimeWiring")
-                    .addContent("var descriptor = ")
-                    .addContent(descriptorType)
-                    .addContentLine(".INSTANCE;")
-                    .addContent("var annotations = ")
-                    .addContent(descriptorType)
-                    .addContentLine(".ANNOTATIONS;")
                     .addContent("var builder = ")
                     .addContent(RUNTIME_WIRING)
                     .addContentLine(".newRuntimeWiring();");
 
-            addScalarWiring(method, endpoint.schemaTypes().scalarTypes());
-            addDataFetcherVariables(method, endpoint.operations(), descriptorType);
-            addWiring(method, "Query", endpoint.queries());
-            addWiring(method, "Mutation", endpoint.mutations());
-            addObjectWiring(method, endpoint.schemaTypes().objectTypes());
+            addScalarWiring(method, group.schemaTypes().scalarTypes());
+            addDataFetcherVariables(method, group);
+            addWiring(method, "Query", group.queries());
+            addWiring(method, "Mutation", group.mutations());
+            addObjectWiring(method, group.schemaTypes().objectTypes());
 
             method.addContentLine("return builder.build();");
         });
@@ -592,25 +686,52 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         }
     }
 
-    private void addDataFetcherVariables(io.helidon.codegen.classmodel.Method.Builder method,
-                                         List<Operation> operations,
-                                         TypeName descriptorType) {
+    private void addDataFetcherVariables(io.helidon.codegen.classmodel.Method.Builder method, GraphQlGroup group) {
+        List<Operation> operations = group.operations();
         if (operations.isEmpty()) {
             return;
         }
 
+        Map<TypeName, String> descriptorVariables = new LinkedHashMap<>();
+        Map<TypeName, String> annotationsVariables = new LinkedHashMap<>();
+        int endpointIndex = 0;
+        for (GraphQlEndpoint endpoint : group.endpoints()) {
+            TypeName endpointType = endpoint.typeInfo().typeName();
+            TypeName descriptorType = ctx.descriptorType(endpointType);
+            String descriptorName = "descriptor_" + endpointIndex;
+            String annotationsName = "annotations_" + endpointIndex;
+            descriptorVariables.put(endpointType, descriptorName);
+            annotationsVariables.put(endpointType, annotationsName);
+            method.addContent("var ")
+                    .addContent(descriptorName)
+                    .addContent(" = ")
+                    .addContent(descriptorType)
+                    .addContentLine(".INSTANCE;");
+            method.addContent("var ")
+                    .addContent(annotationsName)
+                    .addContent(" = ")
+                    .addContent(descriptorType)
+                    .addContentLine(".ANNOTATIONS;");
+            endpointIndex++;
+        }
+
         for (Operation operation : operations) {
+            TypeName endpointType = operation.endpoint().typeName();
+            TypeName descriptorType = ctx.descriptorType(endpointType);
             method.addContent("var fetcher_")
                     .addContent(operation.uniqueName())
                     .addContentLine(" = entryPoints.dataFetcher(")
                     .increaseContentPadding()
                     .increaseContentPadding()
-                    .addContentLine("descriptor,")
-                    .addContentLine("descriptor.qualifiers(),")
-                    .addContentLine("annotations,")
+                    .addContent(descriptorVariables.get(endpointType))
+                    .addContentLine(",")
+                    .addContent(descriptorVariables.get(endpointType))
+                    .addContentLine(".qualifiers(),")
+                    .addContent(annotationsVariables.get(endpointType))
+                    .addContentLine(",")
                     .addContent(descriptorType)
                     .addContent(".")
-                    .addContent(toConstantName("METHOD_" + operation.uniqueName()))
+                    .addContent(toConstantName("METHOD_" + operation.descriptorMethodName()))
                     .addContentLine(",")
                     .addContent("this::")
                     .addContent(operation.uniqueName())
@@ -672,8 +793,10 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         }
     }
 
-    private void addResolverMethods(ClassModel.Builder classModel, GraphQlEndpoint endpoint) {
-        endpoint.operations()
+    private void addResolverMethods(ClassModel.Builder classModel,
+                                    GraphQlGroup group,
+                                    Map<TypeName, String> endpointFields) {
+        group.operations()
                 .forEach(operation -> classModel.addMethod(method -> method
                         .accessModifier(AccessModifier.PRIVATE)
                         .returnType(TypeNames.OBJECT)
@@ -682,13 +805,15 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                                 .type(DATA_FETCHING_ENVIRONMENT)
                                 .name("environment"))
                         .addThrows(TypeName.create(Exception.class))
-                        .update(it -> resolverBody(it, endpoint, operation))));
+                        .update(it -> resolverBody(it, operation, endpointFields))));
     }
 
     private void resolverBody(io.helidon.codegen.classmodel.Method.Builder method,
-                              GraphQlEndpoint endpoint,
-                              Operation operation) {
-        method.addContent("return this.endpoint.")
+                              Operation operation,
+                              Map<TypeName, String> endpointFields) {
+        method.addContent("return this.")
+                .addContent(endpointFields.get(operation.endpoint().typeName()))
+                .addContent(".")
                 .addContent(operation.method().elementName())
                 .addContent("(");
         List<ResolverParameter> parameters = operation.parameters();
@@ -1006,21 +1131,21 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                 .addContentLine("}");
     }
 
-    private String schema(GraphQlEndpoint endpoint) {
+    private String schema(GraphQlGroup group) {
         StringBuilder result = new StringBuilder();
         result.append("schema {\n")
                 .append("  query: Query\n");
-        if (!endpoint.mutations().isEmpty()) {
+        if (!group.mutations().isEmpty()) {
             result.append("  mutation: Mutation\n");
         }
         result.append("}\n\n");
 
-        appendType(result, "Query", endpoint.queries(), endpoint.schemaTypes());
-        if (!endpoint.mutations().isEmpty()) {
+        appendType(result, "Query", group.queries(), group.schemaTypes());
+        if (!group.mutations().isEmpty()) {
             result.append('\n');
-            appendType(result, "Mutation", endpoint.mutations(), endpoint.schemaTypes());
+            appendType(result, "Mutation", group.mutations(), group.schemaTypes());
         }
-        endpoint.schemaTypes().appendTo(result);
+        group.schemaTypes().appendTo(result);
         return result.toString();
     }
 
@@ -1573,12 +1698,45 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                              Set<String> mutationNames) {
     }
 
+    private record EndpointDeclaration(TypeInfo typeInfo,
+                                       Set<Annotation> annotations,
+                                       GroupKey groupKey,
+                                       String schemaUri) {
+    }
+
+    private record GroupKey(String listener,
+                            String context) {
+    }
+
+    private record GraphQlGroup(GroupKey key,
+                                String schemaUri,
+                                SchemaTypes schemaTypes,
+                                List<GraphQlEndpoint> endpoints) {
+        GraphQlEndpoint primaryEndpoint() {
+            return endpoints.getFirst();
+        }
+
+        List<Operation> queries() {
+            return endpoints.stream()
+                    .flatMap(endpoint -> endpoint.queries().stream())
+                    .toList();
+        }
+
+        List<Operation> mutations() {
+            return endpoints.stream()
+                    .flatMap(endpoint -> endpoint.mutations().stream())
+                    .toList();
+        }
+
+        List<Operation> operations() {
+            return endpoints.stream()
+                    .flatMap(endpoint -> endpoint.operations().stream())
+                    .toList();
+        }
+    }
+
     private record GraphQlEndpoint(TypeInfo typeInfo,
                                    Set<Annotation> annotations,
-                                   Optional<String> listener,
-                                   String context,
-                                   String schemaUri,
-                                   SchemaTypes schemaTypes,
                                    List<Operation> queries,
                                    List<Operation> mutations,
                                    List<Operation> fieldResolvers) {
@@ -1591,10 +1749,12 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
     }
 
     private record Operation(OperationKind kind,
+                             TypeInfo endpoint,
                              TypedElementInfo method,
                              List<Annotation> annotations,
                              String graphQlName,
                              String uniqueName,
+                             String descriptorMethodName,
                              List<ResolverParameter> parameters) {
         List<Argument> arguments() {
             return parameters.stream()
