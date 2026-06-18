@@ -63,6 +63,10 @@
             <artifactId>helidon-service-registry</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.validation</groupId>
+            <artifactId>helidon-validation</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.webclient</groupId>
             <artifactId>helidon-webclient</artifactId>
         </dependency>

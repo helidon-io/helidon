@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.helidon.common.context.Context;
 import io.helidon.graphql.GraphQl;
 import io.helidon.graphql.server.ExecutionContext;
+import io.helidon.validation.Validation;
 import io.helidon.webserver.graphql.GraphQlServer;
 
 import graphql.schema.DataFetchingEnvironment;
@@ -32,6 +33,13 @@ class GraphEndpoint {
     @GraphQl.Query
     String hello(@GraphQl.Argument("name") String name) {
         return "Hello " + name;
+    }
+
+    @GraphQl.Query
+    String validatedGreeting(@GraphQl.Argument("name")
+                             @GraphQl.DefaultValue("\"Reader\"")
+                             @Validation.String.NotBlank String name) {
+        return "Validated " + name;
     }
 
     @GraphQl.Query

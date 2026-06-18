@@ -18,6 +18,7 @@ package io.helidon.declarative.tests.graphql;
 
 import io.helidon.http.Status;
 import io.helidon.json.JsonObject;
+import io.helidon.json.JsonValueType;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.testing.junit5.ServerTest;
@@ -47,6 +48,7 @@ class DeclarativeGraphQlTest {
             assertThat(schema, containsString("type Query"));
             assertThat(schema, containsString("hello(name: String): String"));
             assertThat(schema, containsString("catalogName: String"));
+            assertThat(schema, containsString("validatedGreeting(name: String = \"Reader\"): String"));
             assertThat(schema, containsString("book: Book"));
             assertThat(schema, containsString("titleByIsbn(isbn: ISBN): String"));
             assertThat(schema, containsString("contextAvailable: Boolean!"));
@@ -68,13 +70,14 @@ class DeclarativeGraphQlTest {
     void testQueryAndObjectResult() {
         JsonObject data = graphQl("""
                                           {
-                                            "query": "query($isbn: ISBN!) { hello(name: \\"Helidon\\") catalogName contextAvailable titleByIsbn(isbn: $isbn) literalTitle: titleByIsbn(isbn: \\"9780441172719\\") book { title state isbn summary(prefix: \\"Read\\") } }",
+                                            "query": "query($isbn: ISBN!) { hello(name: \\"Helidon\\") catalogName validatedGreeting contextAvailable titleByIsbn(isbn: $isbn) literalTitle: titleByIsbn(isbn: \\"9780441172719\\") book { title state isbn summary(prefix: \\"Read\\") } }",
                                             "variables": { "isbn": "9780441172719" }
                                           }
                                           """);
 
         assertThat(data.stringValue("hello").orElseThrow(), is("Hello Helidon"));
         assertThat(data.stringValue("catalogName").orElseThrow(), is("Arrakeen Library"));
+        assertThat(data.stringValue("validatedGreeting").orElseThrow(), is("Validated Reader"));
         assertThat(data.booleanValue("contextAvailable").orElseThrow(), is(true));
         assertThat(data.stringValue("titleByIsbn").orElseThrow(), is("Dune: 9780441172719"));
         assertThat(data.stringValue("literalTitle").orElseThrow(), is("Dune: 9780441172719"));
@@ -104,13 +107,33 @@ class DeclarativeGraphQlTest {
         assertThat(queryData.booleanValue("enabled").orElseThrow(), is(true));
     }
 
+    @Test
+    void testResolverValidationFailure() {
+        JsonObject json = graphQlResponse("""
+                                                  {
+                                                    "query": "{ hello(name: \\"Helidon\\") validatedGreeting(name: \\"\\") }"
+                                                  }
+                                                  """);
+
+        JsonObject data = json.objectValue("data").orElseThrow();
+        assertThat(data.stringValue("hello").orElseThrow(), is("Hello Helidon"));
+        assertThat(data.value("validatedGreeting").orElseThrow().type(), is(JsonValueType.NULL));
+        String errors = json.arrayValue("errors").orElseThrow().toString();
+        assertThat(errors, containsString("is blank"));
+        assertThat(errors, containsString("validatedGreeting"));
+    }
+
     private JsonObject graphQl(String request) {
+        JsonObject json = graphQlResponse(request);
+        assertThat("GraphQL errors: " + json.value("errors"), json.value("errors").isEmpty(), is(true));
+        return json.objectValue("data").orElseThrow();
+    }
+
+    private JsonObject graphQlResponse(String request) {
         try (Http1ClientResponse response = client.post("/graphql")
                 .submit(request)) {
             assertThat(response.status(), is(Status.OK_200));
-            JsonObject json = response.as(JsonObject.class);
-            assertThat("GraphQL errors: " + json.value("errors"), json.value("errors").isEmpty(), is(true));
-            return json.objectValue("data").orElseThrow();
+            return response.as(JsonObject.class);
         }
     }
 }

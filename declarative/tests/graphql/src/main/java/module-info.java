@@ -24,6 +24,7 @@ module io.helidon.declarative.tests.graphql {
     requires io.helidon.graphql.server;
     requires io.helidon.logging.common;
     requires io.helidon.service.registry;
+    requires io.helidon.validation;
     requires io.helidon.webclient.api;
     requires io.helidon.webserver;
     requires io.helidon.webserver.graphql;
