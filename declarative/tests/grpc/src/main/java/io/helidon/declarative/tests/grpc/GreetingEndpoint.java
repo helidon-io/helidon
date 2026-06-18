@@ -28,6 +28,7 @@ import io.helidon.grpc.api.Grpc;
 import io.helidon.security.annotations.Authenticated;
 import io.helidon.security.annotations.Authorized;
 import io.helidon.service.registry.Service;
+import io.helidon.validation.Validation;
 
 import com.google.protobuf.Descriptors;
 import io.grpc.stub.StreamObserver;
@@ -49,6 +50,11 @@ class GreetingEndpoint {
     @Grpc.Unary("InterceptedGreet")
     @InterceptedGreeting
     GreetingReply interceptedGreet(GreetingRequest request) {
+        return reply(request.getName());
+    }
+
+    @Grpc.Unary("ValidatedGreet")
+    GreetingReply validatedGreet(@ValidGreetingRequest GreetingRequest request) {
         return reply(request.getName());
     }
 
@@ -132,4 +138,9 @@ class GreetingEndpoint {
 @Retention(RetentionPolicy.CLASS)
 @Target(ElementType.METHOD)
 @interface InterceptedGreeting {
+}
+
+@Validation.Constraint
+@Target(ElementType.PARAMETER)
+@interface ValidGreetingRequest {
 }

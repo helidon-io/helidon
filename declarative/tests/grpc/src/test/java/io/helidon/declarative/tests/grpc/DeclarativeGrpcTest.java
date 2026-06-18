@@ -85,6 +85,16 @@ class DeclarativeGrpcTest {
     }
 
     @Test
+    void testValidatedUnary() {
+        GreetingRequestValidatorProvider.reset();
+
+        var response = blockingStub.validatedGreet(request("Tomas"));
+
+        assertThat(response.getMessage(), is("Hello Tomas"));
+        assertThat(GreetingRequestValidatorProvider.invocations(), is(1));
+    }
+
+    @Test
     void testSecureUnary() {
         var request = request("Tomas");
 

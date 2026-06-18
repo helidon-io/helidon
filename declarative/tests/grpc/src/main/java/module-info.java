@@ -29,6 +29,7 @@ module io.helidon.declarative.tests.grpc {
     requires io.helidon.security.annotations;
     requires io.helidon.service.registry;
     requires io.helidon.tracing;
+    requires io.helidon.validation;
     requires io.helidon.webserver;
     requires io.helidon.webserver.grpc;
     requires io.helidon.webserver.grpc.security;

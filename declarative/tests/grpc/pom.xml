@@ -107,6 +107,10 @@
             <artifactId>helidon-tracing</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.validation</groupId>
+            <artifactId>helidon-validation</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.logging</groupId>
             <artifactId>helidon-logging-jul</artifactId>
             <scope>runtime</scope>
