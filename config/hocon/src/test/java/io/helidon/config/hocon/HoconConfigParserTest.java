@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2017, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,6 +81,102 @@ public class HoconConfigParserTest {
 
         assertThat(node.entrySet(), hasSize(1));
         assertThat(node.get("env-var"), valueNode("This Is My ENV VARS Value."));
+    }
+
+    @Test
+    void testReferencePathRegexSupportsHoconSyntaxAndHelidonEscaping() {
+        com.typesafe.config.Config hocon = com.typesafe.config.ConfigFactory.parseString(""
+                + "required = ${root.target}\n"
+                + "optional = ${? root.optional }\n"
+                + "requiredWithWhitespace = ${ root.spaced }\n");
+
+        assertThat(HoconConfigParser.referencePaths(hocon.root().get("required"), false),
+                   is(Set.of(List.of("root", "target"))));
+        assertThat(HoconConfigParser.referencePaths(hocon.root().get("required"), true),
+                   is(Set.of()));
+        assertThat(HoconConfigParser.referencePaths(hocon.root().get("optional"), true),
+                   is(Set.of(List.of("root", "optional"))));
+        assertThat(HoconConfigParser.referencePaths(hocon.root().get("optional"), false),
+                   is(Set.of()));
+        assertThat(HoconConfigParser.referencePaths(hocon.root().get("requiredWithWhitespace"), false),
+                   is(Set.of(List.of("root", "spaced"))));
+        assertThat(HoconConfigParser.referencePaths(com.typesafe.config.ConfigValueFactory.fromAnyRef("\\${root.escaped}"),
+                                                    false),
+                   is(Set.of()));
+        assertThat(HoconConfigParser.referencePaths(com.typesafe.config.ConfigValueFactory.fromAnyRef("${bad[}"),
+                                                    false),
+                   is(Set.of()));
+    }
+
+    @Test
+    void testUnresolvedMergeKeepsReferenceDeferred() {
+        String hocon = ""
+                + "root.object {\n"
+                + "  target: \"base\"\n"
+                + "  value: \"base\"\n"
+                + "}\n"
+                + "root.object {\n"
+                + "  value: ${root.object.target}\n"
+                + "}\n";
+
+        Config config = Config.builder()
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .addParser(HoconConfigParser.create())
+                .disableParserServices()
+                .addSource(ConfigSources.create(Map.of("root.object.target", "override")))
+                .addSource(ConfigSources.create(hocon, MediaTypes.APPLICATION_HOCON))
+                .build();
+
+        assertThat(config.get("root.object.value").asString().orElse(null), is("override"));
+    }
+
+    @Test
+    void testUnresolvedMergeInListKeepsReferenceDeferred() {
+        Config config = Config.builder()
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .addParser(HoconConfigParser.create())
+                .disableParserServices()
+                .addSource(ConfigSources.create(Map.of("T", "override")))
+                .addSource(ConfigSources.create("items = [{ a = \"base\", a = ${T} }]\n",
+                                                MediaTypes.APPLICATION_HOCON))
+                .build();
+
+        assertThat(config.get("items.0.a").asString().orElse(null), is("override"));
+    }
+
+    @Test
+    void testHiddenUnresolvedSubstitutionIsNotEvaluated() {
+        Config config = Config.builder()
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .addParser(HoconConfigParser.create())
+                .disableParserServices()
+                .addSource(ConfigSources.create("foo = ${does-not-exist}\nfoo = 42\n",
+                                                MediaTypes.APPLICATION_HOCON))
+                .build();
+
+        assertThat(config.get("foo").asString().orElse(null), is("42"));
+    }
+
+    @Test
+    void testObjectReferenceUsesFinalMergedValue() {
+        String hocon = ""
+                + "bar : { foo : 42,\n"
+                + "        baz : ${bar.foo}\n"
+                + "      }\n"
+                + "bar : { foo : 43 }\n";
+
+        Config config = Config.builder()
+                .disableEnvironmentVariablesSource()
+                .disableSystemPropertiesSource()
+                .addParser(HoconConfigParser.create())
+                .disableParserServices()
+                .addSource(ConfigSources.create(hocon, MediaTypes.APPLICATION_HOCON))
+                .build();
+
+        assertThat(config.get("bar.baz").asString().orElse(null), is("43"));
     }
 
     @Test
