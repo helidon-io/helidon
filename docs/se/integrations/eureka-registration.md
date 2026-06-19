@@ -30,6 +30,8 @@ Dependencies](../../managing-dependencies.md)).
    scope is therefore usually `runtime`, indicating that the feature will be
    available on the runtime classpath.
 <!--@mdc :: -->
+
+This feature is fundamentally a [`ServerFeature`][serverfeature], and is
 automatically installed by its [associated
 `ServerFeatureProvider`][associated-serve] when the provider is found in
 configuration (see below).

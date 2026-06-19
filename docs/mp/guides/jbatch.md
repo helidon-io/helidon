@@ -225,6 +225,8 @@ Add this code to your job descriptor.xml file:
    `MyItemWriter`.
 2. The second step of the job includes `MyBatchlet`.
 <!--@mdc :: -->
+
+> [!NOTE]
 > You must specify the fully qualified names in the `ref` properties, like
 > `jobs.io.helidon.examples.jbatch.MyItemReader`, otherwise it will not work.
 

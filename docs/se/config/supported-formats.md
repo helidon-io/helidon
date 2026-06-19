@@ -252,6 +252,8 @@ Config config = Config.create(
 1. Use the etcd-specific change watcher strategy.
 <!--@mdc :: -->
 
+#### Loading Meta-configuration via Etcd
+
 To read meta-configuration from an Etcd source set the following required
 properties for the source:
 

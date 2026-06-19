@@ -201,6 +201,8 @@ metrics:
    endpoint.
 <!--@mdc :: -->
 
+## Prometheus Publisher
+
 If you configure a Prometheus publisher or rely on the inferred one, Helidon can
 make the metrics data available in the Prometheus/OpenMetrics format. (To serve
 the data at the metrics endpoint in your service, your project must also depend
@@ -447,23 +449,23 @@ following example.
 
 JSON metrics output structured by scope (partial):
 
-<!--@mdc ::code-callout -->
+<!--@mdc ::code-callout{collapsed} -->
 ```json
 {
-  "application": {  <1>
+  "application": { // <1>
     "getTimer": {
       "type": "timer",
       "unit": "seconds",
       "description": "Timer for getting the default greeting"
     }
   },
-  "vendor": {       <1>
+  "vendor": { // <1>
     "requests.count": {
       "type": "counter",
       "description": "Each request (regardless of HTTP method) will increase this counter"
     }
   },
-  "base": {         <1>
+  "base": { // <1>
     "cpu.systemLoadAverage": {
       "type": "gauge",
       "description": "Displays the system load average for the last minute."
@@ -477,6 +479,8 @@ JSON metrics output structured by scope (partial):
 ```
 1. Note the `application`, `vendor`, and `base` sections.
 <!--@mdc :: -->
+
+If an HTTP request [selects by scope](#metrics-endpoint), the output omits the
 extra level of structure that identifies the scope as shown in the following
 example.
 
@@ -920,6 +924,8 @@ public class GreetService implements HttpService {
 4. Increment the access counter for every request.
 <!--@mdc :: -->
 
+Perform the following steps to see the new counter in action.
+
 Build and run the application:
 
 ```shell [Terminal]
@@ -937,7 +943,7 @@ curl 'http://localhost:8080/observe/metrics?scope=application' # <1>
 <!--@mdc :: -->
 
 <!--@mdc ::code-callout -->
-```text [Response]
+```log [Response]
 # HELP accessctr_total
 # TYPE accessctr_total counter
 accessctr_total{scope="application",} 0.0 # <2>

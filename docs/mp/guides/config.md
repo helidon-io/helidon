@@ -138,6 +138,8 @@ static Server startServer() {
    configuration is used.
 <!--@mdc :: -->
 
+### Source Precedence for Default Configuration
+
 In order to properly configure your application using configuration sources, you
 need to understand the precedence rules that Helidon uses to merge your
 configuration data. By default, Helidon will use the following sources in
@@ -292,6 +294,8 @@ public class GreetingProvider {
    `GreetingProvider`. constructor as a `String` parameter named `message`.
 <!--@mdc :: -->
 
+### Injecting at Field Level
+
 You can inject configuration at the field level as shown below. Use the
 `volatile` keyword since you cannot use `AtomicReference` with field level
 injection.
@@ -330,6 +334,8 @@ public class GreetingProvider {
 1. Inject the value of `app.greeting` into the `GreetingProvider` object.
 2. Define a class member variable to hold the greeting.
 <!--@mdc :: -->
+
+Build and run the application, then invoke the endpoint:
 
 ```shell [Terminal]
 curl http://localhost:8080/greet
@@ -373,6 +379,8 @@ public class GreetingProvider {
 2. Get the `app.greeting` value from the `Config` object and set the member
    variable.
 <!--@mdc :: -->
+
+Build and run the application, then invoke the endpoint:
 
 ```shell [Terminal]
 curl http://localhost:8080/greet
@@ -444,6 +452,8 @@ public class GreetingProvider {
 3. Get the value from the `sender` `Config` node.
 <!--@mdc :: -->
 
+Build and run the application, then invoke the endpoint:
+
 ```shell [Terminal]
 curl http://localhost:8080/greet
 ```
@@ -478,6 +488,8 @@ private static Config buildConfig() {
 2. The server port is specified in `META-INF/microprofile-config.properties`
    within the `helidon-quickstart-mp.jar`.
 <!--@mdc :: -->
+
+Update the following code from `GreetingProvider.java`:
 ```java [GreetingProvider.java]
 @ApplicationScoped
 public class GreetingProvider {
@@ -634,6 +646,8 @@ curl http://localhost:31143/greet
 1. The greeting value from `/etc/config/config-file.properties` within the
    container was used.
 <!--@mdc :: -->
+
+You can now delete the Kubernetes resources that were just created during this
 example.
 
 Delete the Kubernetes resources:

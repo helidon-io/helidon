@@ -36,6 +36,8 @@ To enable Validation, add the following dependency to your project’s `pom.xml`
    validation failures
 <!--@mdc :: -->
 
+## Usage
+
 ### Validated type
 
 A type annotated with `@Validation.Validated` will have validation code
@@ -134,6 +136,8 @@ var response = context.response(); // <5>
 5. Get a validation response from the context
 <!--@mdc :: -->
 
+And the second throws an exception if validation failed:
+
 Example of validating an object using any constraint that throws an exception:
 
 <!--@mdc ::code-callout -->
@@ -152,4 +156,6 @@ context.throwOnFailure(); // <5>
    must match the type provided in previous step)
 5. Throw and exception in case any of the checks failed
 <!--@mdc :: -->
+
+[helidon-declarat]: ../se/injection/declarative.md#validation
 [io-helidon-valid]: https://helidon.io/docs/v4/apidocs/io.helidon.validation/io/helidon/validation/Validators.html

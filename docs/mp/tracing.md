@@ -361,6 +361,8 @@ Response body:
 ```
 1. Notice the greeting came from the second service.
 <!--@mdc :: -->
+
+Refresh the Jaeger UI trace listing page and notice that there is a trace across
 two services.
 
 <figure>

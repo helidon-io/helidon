@@ -261,6 +261,8 @@ void snippet1(Config config) {
 7. Add the `ObserveFeature` instance as a feature to the webserver.
 8. Record when the server has actually started.
 <!--@mdc :: -->
+
+Note that the health check type and name are fixed, whereas the health check
 recomputes the value of the response every time Helidon queries it.
 
 > [!NOTE]
@@ -412,6 +414,8 @@ HealthObserver healthObserver = HealthObserver.builder()
 ```
 1. Changes the health endpoint path to `/myhealth`.
 <!--@mdc :: -->
+
+Build and run the application, then verify that the health check endpoint
 responds at /myhealth:
 
 ```shell [Terminal]
@@ -450,6 +454,8 @@ HealthObserver healthObserver = HealthObserver.builder()
 1. Find and apply any health-related settings from configuration at the
    `server.features.observe.observers.health` config key.
 <!--@mdc :: -->
+
+Your code decides what config key to use for retrieving the configuration.
 Recall earlier, before adding custom health checks, you added a config section
 for health to set `details` to `true`--at
 `server.features.observe.observers.health`. Helidon used that configuration to
@@ -514,6 +520,8 @@ ObserveFeature observe = ObserveFeature.builder()
 3. Add a custom start-up check.
 4. Add a custom liveness check.
 <!--@mdc :: -->
+
+Build and run the application, then verify the liveness, readiness, and started
 endpoints:
 
 ```shell [Terminal]

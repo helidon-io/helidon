@@ -78,6 +78,8 @@ WebServer.builder()
 1. register service with routing path
 <!--@mdc :: -->
 
+And not much harder to use it with Helidon MP:
+
 ```java
 @ApplicationScoped
 public class MyBean {

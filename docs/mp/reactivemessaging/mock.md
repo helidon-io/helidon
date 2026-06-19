@@ -43,6 +43,8 @@ mockConnector.incoming("my-incoming-channel", String.class) // <1>
 1. Get incoming channel of given name and payload type
 <!--@mdc :: -->
 
+### Asserting Data
+
 Awaiting and asserting payloads with custom mapper:
 
 <!--@mdc ::code-callout -->
@@ -55,6 +57,8 @@ mockConnector
 2. Request number of expected items and block the thread until items arrive then
    assert the payloads
 <!--@mdc :: -->
+
+## Configuration
 
 | Key            | Default value    | Description                                                        |
 |----------------|------------------|--------------------------------------------------------------------|
@@ -118,4 +122,6 @@ public class MessagingTest {
    are intercepted on `test-channel-out` channel’s downstream and assert those
    with expected values.
 <!--@mdc :: -->
+
+[junit-5]: ../testing/testing.md
 [testng]: ../testing/testing-ng.md

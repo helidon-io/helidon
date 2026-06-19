@@ -126,6 +126,8 @@ security:
 7. Protection of static content configured on `/static` path with either `user`
    or `monitor` role required
 <!--@mdc :: -->
+
+If you need to use a properties file, such as `microprofile-config.properties`,
 you can convert the file by using index based numbers for arrays, such as:
 
 ```properties [microprofile-config.properties]

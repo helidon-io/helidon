@@ -46,16 +46,17 @@ Create a new empty directory for the project (for example,
 
 Create a new Maven POM file (called `pom.xml`) and add the following content:
 
-Initial Maven POM file:
+The POM file contains the basic project information and configurations needed to
+get started.
 
-<!--@mdc ::code-collapse -->
+<!--@mdc ::code-callout{collapsed} -->
 ```xml [pom.xml]
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <parent>
+    <parent> <!-- (1) -->
       <groupId>io.helidon.applications</groupId>
       <artifactId>helidon-mp</artifactId>
       <version>4.4.0-SNAPSHOT</version>
@@ -63,21 +64,21 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/x
     </parent>
     
     <groupId>io.helidon.examples</groupId>
-    <artifactId>helidon-mp-tutorial</artifactId>
+    <artifactId>helidon-mp-tutorial</artifactId>  <!-- (2) -->
     <name>${project.artifactId}</name>
     
     <properties>
-      <mainClass>io.helidon.examples.Main</mainClass>
+      <mainClass>io.helidon.examples.Main</mainClass>  <!-- (3) -->
     </properties>
 
     <dependencies>
       <dependency>
         <groupId>io.helidon.microprofile.bundles</groupId>
-        <artifactId>helidon-microprofile</artifactId>
+        <artifactId>helidon-microprofile</artifactId>  <!-- (4) -->
       </dependency>
     </dependencies>
 
-    <build>
+    <build>  <!-- (5) -->
       <plugins>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -101,27 +102,23 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/x
     </build>
 </project>
 ```
+1. Includes the Helidon MP application parent pom. This parent pom contains
+   dependency and plugin management to keep your application’s pom simple and
+   clean.
+2. Establishes the Maven coordinates for the new project.
+3. Sets the `mainClass` which will be used later when building a JAR file. The
+   class will be created later in this tutorial.
+4. Adds a dependency for the MicroProfile bundle which allows the use of
+   MicroProfile features in the application. The helidon-mp parent pom includes
+   dependency management, so you don’t need to include a version number here. You
+   will automatically use the version of Helidon that matches the version of the
+   parent pom (4.4.0-SNAPSHOT in this case).
+5. Adds plugins to be executed during the build. The `maven-dependency-plugin` is
+   used to copy the runtime dependencies into your target directory. The
+   `jandex-maven-plugin` builds an index of your class files for faster loading.
+   The Helidon parent pom handles the details of configuring these plugins. But
+   you can modify the configuration here.
 <!--@mdc :: -->
-
-The POM file contains the basic project information and configurations needed to
-get started and does the following:
-
-- Includes the Helidon MP application parent pom. This parent pom contains
-  dependency and plugin management to keep your application’s pom simple and
-  clean.
-- Establishes the Maven coordinates for the new project.
-- Sets the `mainClass` which will be used later when building a JAR file. The
-  class will be created later in this tutorial.
-- Adds a dependency for the MicroProfile bundle which allows the use of
-  MicroProfile features in the application. The helidon-mp parent pom includes
-  dependency management, so you don’t need to include a version number here. You
-  will automatically use the version of Helidon that matches the version of the
-  parent pom (4.4.0-SNAPSHOT in this case).
-- Adds plugins to be executed during the build. The `maven-dependency-plugin` is
-  used to copy the runtime dependencies into your target directory. The
-  `jandex-maven-plugin` builds an index of your class files for faster loading.
-  The Helidon parent pom handles the details of configuring these plugins. But
-  you can modify the configuration here.
 
 > [!TIP]
 > MicroProfile contains features like Metrics, Health Check, Streams Operators,
@@ -199,6 +196,8 @@ public class GreetResource {
    "message" with the content "Hello World". This method will be expanded and
    improved later in the tutorial.
 <!--@mdc :: -->
+
+> [!TIP]
 > So far this is just a JAX-RS application, with no Helidon or MicroProfile
 > specific code in it. There are many JAX-RS tutorials available if you want to
 > learn more about this kind of application.
@@ -232,7 +231,8 @@ public final class Main {
 In this class, a `main` method is defined which starts the Helidon MP server and
 prints out a message with the listen address.
 
-to use the annotations discussed above to discover Java beans in the
+Helidon MP applications also require a `beans.xml` resource file to tell
+Helidon to use the annotations discussed above to discover Java beans in the
 application.
 
 Create a `beans.xml` in the `src/main/resources/META-INF` directory with the
@@ -252,6 +252,8 @@ following content:
 1. The `bean-discovery-mode` tells Helidon to look for the annotations to
    discover Java beans in the application.
 <!--@mdc :: -->
+
+## Build the Application
 
 Helidon MP applications are packaged into a JAR file and the dependencies are
 copied into a `libs` directory.
@@ -365,6 +367,8 @@ public class GreetingProvider {
    demonstrates how to read configuration information into the application. A
    getter and setter are also included in this class.
 <!--@mdc :: -->
+
+The `GreetResource` must be updated to use this value instead of the hard coded
 response. Make the following updates to that class:
 
 Updated GreetResource class:
@@ -404,6 +408,8 @@ public class GreetResource {
 3. In `createResponse()` the message is obtained from the `GreetingProvider`
    which in turn got it from the configuration files.
 <!--@mdc :: -->
+
+Rebuild and run the application. Notice that it now uses the greeting from the
 configuration file. Change the configuration file and restart the application,
 notice that it uses the changed value.
 
@@ -460,6 +466,8 @@ public Response updateGreeting(JsonObject jsonObject) { // <2>
    the method body there is code to check for the expected JSON, extract the
    value and update the message in the `GreetingProvider`.
 <!--@mdc :: -->
+
+Rebuild and run the application. Test the new services using curl commands
 similar to those shown below:
 
 Testing the new services:
@@ -600,6 +608,8 @@ public JsonObject getDefaultMessage() {
 ```
 1. The `Timed` annotation is added to the `getDefaultMessage()` method.
 <!--@mdc :: -->
+
+Rebuild and run the application. Make some calls to the endpoint
 (<http://localhost:8080/greet>) so there will be some data to report. Then
 obtain the application metrics as follows:
 
@@ -607,6 +617,9 @@ Checking the application metrics:
 
 ```shell [Terminal]
 curl -H "Accept: application/json" http://localhost:8080/metrics/application
+```
+
+```json [Response]
 {
   "io.helidon.examples.GreetResource.getDefaultMessage": {
     "count": 2,
@@ -638,9 +651,12 @@ built-in health check using the following URL:
 
 Health check:
 
-<!--@mdc ::code-collapse -->
 ```shell [Terminal]
 curl -s -X GET http://localhost:8080/health
+```
+
+<!--@mdc ::code-collapse -->
+```json [Response]
 {
   "outcome": "UP",
   "status": "UP",
@@ -736,24 +752,77 @@ public class GreetHealthcheck implements HealthCheck {
    `GreetingProvider,getMessage()` method returns the string `"Hello"` and
    unhealthy otherwise.
 <!--@mdc :: -->
+
+Rebuild the application, make sure that the `mp.conf` has the `greeting` set to
 something other than `"Hello"` and then run the application and check the
 health:
 
 Custom health check reporting unhealthy state:
 
-<!--@mdc ::code-callout -->
 ```shell [Terminal]
 curl -i -X GET http://localhost:8080/health/live
-HTTP/1.1 503 Service Unavailable <1>
+```
+
+<!--@mdc ::code-callout -->
+```log [Response]
+HTTP/1.1 503 Service Unavailable # <1>
 Content-Type: application/json
 Date: Fri, 23 Aug 2019 10:07:23 -0400
 transfer-encoding: chunked
 connection: keep-alive
-
-{"outcome":"DOWN","status":"DOWN","checks":[{"name":"deadlock","state":"UP","status":"UP"},{"name":"diskSpace","state":"UP","status":"UP","data":{"free":"381.08 GB","freeBytes":409182306304,"percentFree":"43.37%","total":"878.70 GB","totalBytes":943491723264}},{"name":"greeting","state":"DOWN","status":"DOWN","data":{"greeting":"Hey"}},{"name":"heapMemory","state":"UP","status":"UP","data":{"free":"243.81 MB","freeBytes":255651048,"max":"3.46 GB","maxBytes":3715629056,"percentFree":"98.58%","total":"294.00 MB","totalBytes":308281344}}]} <2>
 ```
 1. The HTTP return code is now 503 Service Unavailable.
-2. The status is reported as "DOWN" and the custom check is included in the
+<!--@mdc :: -->
+
+<!--@mdc ::code-callout{collapsed} -->
+```json [Entity]
+{
+   "outcome": "DOWN",
+   "status": "DOWN", // <1>
+   "checks": [
+      {
+         "name": "deadlock",
+         "state": "UP",
+         "status": "UP"
+      },
+      {
+         "name": "diskSpace",
+         "state": "UP",
+         "status": "UP",
+         "data": {
+            "free": "381.08 GB",
+            "freeBytes": 409182306304,
+            "percentFree": "43.37%",
+            "total": "878.70 GB",
+            "totalBytes": 943491723264
+         }
+      },
+      {
+         "name": "greeting",
+         "state": "DOWN",
+         "status": "DOWN",
+         "data": {
+            "greeting": "Hey"
+         }
+      },
+      {
+         "name": "heapMemory",
+         "state": "UP",
+         "status": "UP",
+         "data": {
+            "free": "243.81 MB",
+            "freeBytes": 255651048,
+            "max": "3.46 GB",
+            "maxBytes": 3715629056,
+            "percentFree": "98.58%",
+            "total": "294.00 MB",
+            "totalBytes": 308281344
+         }
+      }
+   ]
+}
+```
+1. The status is reported as "DOWN" and the custom check is included in the
    output.
 <!--@mdc :: -->
 
@@ -762,27 +831,83 @@ health again:
 
 Update the greeting and check health again:
 
-<!--@mdc ::code-callout -->
 ```shell [Terminal]
-# update greeting
 curl -i -X PUT -H "Content-Type: application/json" -d '{"greeting": "Hello"}' http://localhost:8080/greet/greeting
-HTTP/1.1 204 No Content <1>
+```
+
+<!--@mdc ::code-callout -->
+```log [Response]
+HTTP/1.1 204 No Content # <1>
 Date: Thu, 22 Aug 2019 13:29:57 -0400
 connection: keep-alive
+```
+1. The PUT returns an HTTP 204.
+<!--@mdc :: -->
 
-# check health
+```shell [Terminal]
 curl -i -X GET http://localhost:8080/health/live
-HTTP/1.1 200 OK <2>
+```
+
+<!--@mdc ::code-callout -->
+```log [Response]
+HTTP/1.1 200 OK # <1>
 Content-Type: application/json
 Date: Fri, 23 Aug 2019 10:08:09 -0400
 connection: keep-alive
 content-length: 536
-
-{"outcome":"UP","status":"UP","checks":[{"name":"deadlock","state":"UP","status":"UP"},{"name":"diskSpace","state":"UP","status":"UP","data":{"free":"381.08 GB","freeBytes":409179811840,"percentFree":"43.37%","total":"878.70 GB","totalBytes":943491723264}},{"name":"greeting","state":"UP","status":"UP","data":{"greeting":"Hello"}},{"name":"heapMemory","state":"UP","status":"UP","data":{"free":"237.25 MB","freeBytes":248769720,"max":"3.46 GB","maxBytes":3715629056,"percentFree":"98.40%","total":"294.00 MB","totalBytes":308281344}}]} <3>
 ```
-1. The PUT returns an HTTP 204.
-2. The health check now returns an HTTP 200.
-3. The status is now reported as "UP" and the details are provided in the checks.
+1. The health check now returns an HTTP 200.
+<!--@mdc :: -->
+
+<!--@mdc ::code-callout{collapsed} -->
+```json [Entity]
+{
+   "outcome": "UP",
+   "status": "UP", // <1>
+   "checks": [
+      {
+         "name": "deadlock",
+         "state": "UP",
+         "status": "UP"
+      },
+      {
+         "name": "diskSpace",
+         "state": "UP",
+         "status": "UP",
+         "data": {
+            "free": "381.08 GB",
+            "freeBytes": 409179811840,
+            "percentFree": "43.37%",
+            "total": "878.70 GB",
+            "totalBytes": 943491723264
+         }
+      },
+      {
+         "name": "greeting",
+         "state": "UP",
+         "status": "UP",
+         "data": {
+            "greeting": "Hello"
+         }
+      },
+      {
+         "name": "heapMemory",
+         "state": "UP",
+         "status": "UP",
+         "data": {
+            "free": "237.25 MB",
+            "freeBytes": 248769720,
+            "max": "3.46 GB",
+            "maxBytes": 3715629056,
+            "percentFree": "98.40%",
+            "total": "294.00 MB",
+            "totalBytes": 308281344
+         }
+      }
+   ]
+}
+```
+1. The status is now reported as "UP" and the details are provided in the checks.
 <!--@mdc :: -->
 
 Learn more about health checks in the [Health Check Guide](health.md).

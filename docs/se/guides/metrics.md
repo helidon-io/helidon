@@ -104,6 +104,8 @@ Metrics dependencies in the generated `pom.xml`:
    implementation of the API.
 2. Includes the built-in meters.
 <!--@mdc :: -->
+
+With these dependencies in your project, Helidon’s auto-discovery of webserver
 features automatically finds and runs the metrics subsystem. You do not need to
 change any of the generated source code.
 
@@ -314,7 +316,7 @@ Your Helidon SE application can also control the KPI settings programmatically.
 
 Assign KPI metrics behavior from code
 
-<!--@mdc ::code-callout{collapsed} -->
+<!--@mdc ::code-callout -->
 ```java
 KeyPerformanceIndicatorMetricsConfig kpiConfig =
     KeyPerformanceIndicatorMetricsConfig.builder() // <1>
@@ -551,6 +553,8 @@ static void routing(HttpRouting.Builder routing) {
    requests with the `/cards` root path to the `GreetingCards` service.
 <!--@mdc :: -->
 
+Build and run the application, then invoke the endpoints below:
+
 ```shell [Terminal]
 curl http://localhost:8080/cards
 curl -H "Accept: application/json" 'http://localhost:8080/observe/metrics?scope=application'
@@ -612,6 +616,8 @@ public class GreetingCards implements HttpService {
 4. Arrange for the timer sample to be stopped and applied to the `cardTimer`
    once Helidon sends the response to the client.
 <!--@mdc :: -->
+
+Build and run the application, then invoke the endpoints below:
 
 ```shell [Terminal]
 curl http://localhost:8080/cards
@@ -687,6 +693,8 @@ public class GreetingCards implements HttpService {
    request.
 <!--@mdc :: -->
 
+Build and run the application, then invoke the endpoints below:
+
 ```shell [Terminal]
 curl http://localhost:8080/cards
 curl -H "Accept: application/json"  'http://localhost:8080/observe/metrics?scope=application'
@@ -755,6 +763,8 @@ public class GreetingCards implements HttpService {
    temperature from 0 to 100.0 each time the metrics system interrogates the
    gauge.
 <!--@mdc :: -->
+
+Build and run the application, then invoke the endpoint below:
 
 ```shell [Terminal]
 curl -H "Accept: application/json"  'http://localhost:8080/observe/metrics?scope=application
@@ -852,6 +862,8 @@ helidon-metrics   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s # <
 ```
 1. A service of type `NodePort` that serves the default routes on port `31143`.
 <!--@mdc :: -->
+
+Verify the metrics endpoint using port `30116`, your port will likely be
 different:
 
 ```shell [Terminal]

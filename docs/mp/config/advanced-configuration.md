@@ -65,6 +65,8 @@ resolver.registerConfig(config, null); // <5>
 5. Registers the config, so it can be used by other components
 <!--@mdc :: -->
 
+### Create YAML MicroProfile Config Source
+
 You can create YAML MicroProfile Config Source from a path or a URL. When you
 create a MicroProfile instance from the builder, the `YamlMpConfigSource` allows
 you to create a custom Config Source and register it with the builder.
@@ -135,6 +137,8 @@ public class CustomConfigSource implements ConfigSource {
 3. Returns the value of the requested key, or `null` if the key is not available
 4. Returns the ordinal of this Config Source.
 <!--@mdc :: -->
+
+## Creating MicroProfile Config Sources from meta-config
 
 Instead of directly specifying the configuration sources in your code, you can
 use meta-configuration in a file that declares the configuration sources, and
@@ -293,6 +297,8 @@ public class CustomMpMetaConfigProvider implements MpMetaConfigProvider {
    found.
 <!--@mdc :: -->
 
+## Creating MicroProfile Config Source from Helidon SE Config Source
+
 To use the Helidon SE features in Helidon MP, create MicroProfile Config Source
 from Helidon SE Config Source. The Config Source is immutable regardless of
 configured polling strategy or change watchers.
@@ -306,6 +312,8 @@ Config config = ConfigProviderResolver.instance()
 ```
 1. Creates a MicroProfile config instance using Helidon Config Source.
 <!--@mdc :: -->
+
+## Creating MicroProfile Config Source from Helidon SE Config Instance
 
 To use advanced Helidon SE features in Helidon MP, create MicroProfile Config
 Source from Helidon SE Config. The Config Source is mutable if the config uses

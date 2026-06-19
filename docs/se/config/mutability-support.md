@@ -133,6 +133,8 @@ config.get("greeting") // <1>
    representing the updated subtree rooted at `greeting`.
 <!--@mdc :: -->
 
+## Accessing Always-current Values
+
 Some applications do not need to respond to change as they happen. Instead, it’s
 sufficient that they simply have access to the current value for a particular
 key in the configuration.

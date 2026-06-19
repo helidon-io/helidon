@@ -934,6 +934,8 @@ static class CorsEndpoint {
 4. Configure max age to be 3 minutes
 <!--@mdc :: -->
 
+### Health Checks
+
 To add a declarative health check, create a service that implements
 io.helidon.health.HealthCheck or produces an instance of it. The WebServer
 health observer discovers all such services and uses them to contribute to the

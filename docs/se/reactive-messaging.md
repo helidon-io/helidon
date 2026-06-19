@@ -225,6 +225,8 @@ public class ExampleConnector implements IncomingConnectorFactory {
 1. Config context is merged from channel and connector contexts
 <!--@mdc :: -->
 
+###### Explicit Config for Messaging Connector
+
 An explicit config for channel’s publisher is possible with
 `Channel.Builder#publisherConfig(Config config)` and for a subscriber with the
 `Channel.Builder#subscriberConfig(Config config)`. The supplied [Helidon
@@ -391,6 +393,8 @@ Messaging messaging = Messaging.builder()
 3. Prepare Kafka connector, can be used by any channel
 <!--@mdc :: -->
 
+##### Implicit Helidon Config for Kafka Connector
+
 Example of connector config:
 
 <!--@mdc ::code-callout -->
@@ -457,6 +461,8 @@ Messaging messaging = Messaging.builder()
 ```
 1. Prepare Kafka connector, can be used by any channel
 <!--@mdc :: -->
+
+Don’t forget to check out the examples with pre-configured Kafka docker image,
 for easy testing:
 
 - [Helidon messaging examples][helidon-messagin]
@@ -535,6 +541,8 @@ Messaging messaging = Messaging.builder()
 3. Prepare JMS connector, can be used by any channel
 <!--@mdc :: -->
 
+##### Implicit Helidon Config for JMS Connector
+
 Example of connector config:
 
 ```yaml [application.yaml]
@@ -595,6 +603,8 @@ Messaging messaging = Messaging.builder()
 ```
 1. Prepare JMS connector, can be used by any channel
 <!--@mdc :: -->
+
+Don’t forget to check out the examples with pre-configured ActiveMQ docker
 image, for easy testing:
 
 - [Helidon Messaging Examples][helidon-messagin]
@@ -662,6 +672,8 @@ Messaging.builder() // <5>
    immediately
 7. Subscribe callback for any message coming from `example_queue_1`
 <!--@mdc :: -->
+
+## Configuration
 
 - [Configuration for Messaging Connector][configuration-fo]
 - [Explicit Configuration with Config Builder for Kafka

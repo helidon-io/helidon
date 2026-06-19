@@ -148,6 +148,8 @@ Add the following dependencies to pom.xml:
 2. Observability features for tracing.
 3. OpenTelemetry tracing provider.
 <!--@mdc :: -->
+
+Helidon offers several tracing providers: OpenTelemetry, Zipkin, and Jaeger
 (deprecated). All spans sent by Helidon to the backend need to be associated
 with a service, assigned by the `tracing.service` setting in the example below.
 
@@ -259,6 +261,8 @@ private void getDefaultMessageHandler(ServerRequest request,
 6. End the span with an exception if one was thrown.
 <!--@mdc :: -->
 
+Build the application and run it:
+
 ```shell [Terminal]
 mvn package
 java -jar target/helidon-quickstart-se.jar
@@ -353,6 +357,8 @@ Add the following dependencies to pom.xml:
 2. Observability features for tracing.
 3. OpenTelemetry tracing provider.
 <!--@mdc :: -->
+
+Replace src/main/resources/application.yaml with the following:
 
 ```shell [Terminal]
 app:
@@ -531,6 +537,8 @@ curl -i http://localhost:8080/greet/outbound # <1>
 ```
 1. Notice the greeting came from the second service.
 <!--@mdc :: -->
+
+Refresh the Jaeger UI trace listing page and notice that there is a trace across
 two services. Click on that trace to see its details.
 
 <figure>

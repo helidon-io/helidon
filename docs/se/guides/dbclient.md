@@ -130,6 +130,8 @@ java -jar h2-{latest-version}.jar -webAllowOthers -tcpAllowOthers -web -tcp # <2
 2. Start the database
 <!--@mdc :: -->
 
+### Connect to the Database
+
 Open the console at <http://127.0.0.1:8082> in your favorite browser. It
 displays a login window. Select `Generic H2` from `Saved Settings`. The
 following settings should be set by default:
@@ -226,6 +228,8 @@ Copy these dependencies to pom.xml:
 7. Support for Jsonp.
 <!--@mdc :: -->
 
+### Configure the DB Client
+
 To configure the application, Helidon uses the `application.yaml`. The DB Client
 configuration can be joined in the same file and is located here:
 `src/main/resources`.
@@ -315,6 +319,8 @@ public static void main(String[] args) {
 5. Register the ObserveFeature on the server
 <!--@mdc :: -->
 
+### Create the Library service
+
 Create LibraryService class into `io.helidon.examples.quickstart.se` package.
 
 LibraryService class looks like this:
@@ -347,6 +353,8 @@ public class LibraryService implements HttpService {
 2. Initialize the DB Client instance using global config
 3. Initialize the database schema
 <!--@mdc :: -->
+
+As the LibraryService implements `io.helidon.webserver.HttpService`, the
 `routing(HttpRules)` method has to be implemented. It defines application
 endpoints and Http request which can be reached by clients.
 
@@ -368,6 +376,8 @@ public void routing(HttpRules rules) {
 3. Remove a book from the library.
 4. Return the book information in Json format.
 <!--@mdc :: -->
+
+To summarize, there is one endpoint that can manipulate books. The number of
 endpoints and application features can be changed from these rules by creating
 or modifying methods. `{name}` is a path parameter for the book name. The
 architecture of the application is defined, so the next step is to create these
@@ -397,6 +407,8 @@ private void getBook(ServerRequest request,
 3. Sends 404 HTTP status if no book was found for the given name.
 4. Sends book information to the client.
 <!--@mdc :: -->
+
+The `getBook` method reach the book from the database and send the information
 to the client. The name of the book is located into the url path. If the book is
 not present in the database, an HTTP 404 is sent back. The `execute()` method is
 called on the dbClient instance to execute one statement. Nevertheless, it is
@@ -458,6 +470,8 @@ private void addBook(ServerRequest request,
    provided with `addParam` method.
 2. A new book was added to library, so an HTTP 201 code is returned.
 <!--@mdc :: -->
+
+When a user adds a new book, it uses HTTP PUT method where the book name is in
 the URL and the information in the request content. To catch this content, the
 information is retrieved as a string and then the DB Client execute the
 `insert-book` script to add the book to the library. It requires two parameters,
@@ -483,6 +497,8 @@ private void deleteBook(ServerRequest request,
    its name.
 2. The required book was removed, so an HTTP 204 is sent.
 <!--@mdc :: -->
+
+To remove a book from the library, use the "delete-book" script in the way than
 previously. If the book is removed successfully, an HTTP 204 is sent back.
 
 ### Set Up Routing
@@ -500,6 +516,8 @@ static void routing(HttpRouting.Builder routing) {
 ```
 1. Register the LibraryService to the Routing.
 <!--@mdc :: -->
+
+The library service does not yet exist, but you’ll create it in the next step of
 the guide.
 
 ## Build and Run the Library Application

@@ -156,6 +156,8 @@ class ChatModelFactory implements Supplier<ChatModel> {
 1. Custom name of the resulting declarative service bean referencable from Ai
    Services or Agents
 <!--@mdc :: -->
+
+> [!NOTE]
 > Supplier factories can be **standalone** or **static inner** classes.
 
 To use such a manually created model, reference it by name.
@@ -368,6 +370,8 @@ NamedChatAiService namedService = Services.getNamed(NamedChatAiService.class, "c
 1. Programmatic lookup by type.
 2. Programmatic lookup by declarative bean name.
 <!--@mdc :: -->
+
+Named AI services can be configured under `langchain4j.services`, where values
 in configuration override annotation values.
 
 ### Agents
@@ -432,6 +436,8 @@ String answer = cliExpert.answer("How do I generate a Helidon SE project?");
 1. This is programmatic lookup: fetch the named agent directly from Helidon’s
    service registry at runtime.
 <!--@mdc :: -->
+
+Agents can be configured or overridden using `langchain4j.agents.<agent-name>`
 entries, for example to replace a chat model or adjust an output key.
 
 ![LangChain4j agents in Helidon](../../../images/lc4j/agents.svg)

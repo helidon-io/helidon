@@ -352,6 +352,8 @@ routing.addFeature(OidcFeature.create(config));   // <1>
 ```
 1. Create and register `OidcFeature`.
 <!--@mdc :: -->
+
+That code is extracting security properties from application.yaml into two
 steps. First the Security instance is used to bootstrap security, so the
 SecurityFeature instance can integrate security into Web Server. Then,
 OidcFeature instance registers the endpoint to which OIDC redirects browser

@@ -36,6 +36,8 @@ To enable Helidon Tracing, add the following dependency to your project’s
 1. Helidon tracing dependency.
 2. Observability dependencies for tracing.
 <!--@mdc :: -->
+
+To transmit tracing data from your service to a backend, you need to add a
 tracing provider to your project.
 
 For Jaeger:
@@ -126,6 +128,8 @@ WebServer.builder()
 2. Add an observability feature using the created `Tracer`.
 <!--@mdc :: -->
 
+### Custom Spans
+
 To create a custom span from tracer:
 
 <!--@mdc ::code-callout -->
@@ -145,6 +149,8 @@ try { // <2>
 2. Do some work and end span.
 3. End span with exception.
 <!--@mdc :: -->
+
+## Handling Baggage
 
 Your application can set and read baggage associated with a [`Span`][span]. The
 `Span.baggage()` method returns a [`WritableBaggage`][writablebaggage] instance.
@@ -332,6 +338,8 @@ server.addFeature(ObserveFeature.builder()
 1. Create `Tracer` using `TracerBuilder` from configuration.
 2. Add the `Tracer` as an observability feature.
 <!--@mdc :: -->
+
+#### Path-based Configuration in Helidon WebServer
 
 For Web Server we have path-based support for configuring tracing, in addition
 to the configuration described above.

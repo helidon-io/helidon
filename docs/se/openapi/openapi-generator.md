@@ -686,7 +686,7 @@ and send the correct response, as shown next.
 
 The customized `handleAddPet` method in the `PetApiImpl` class:
 
-<!--@mdc ::code-callout{collapsed} -->
+<!--@mdc ::code-callout -->
 ```java
 public class PetServiceImpl extends PetService {
 
@@ -713,13 +713,15 @@ public class PetServiceImpl extends PetService {
 3. Business logic: add the pet to the data store.
 4. Prepare and send the `200` response.
 <!--@mdc :: -->
+
+If a response has any *required* response parameters you would pass them as
 parameters to the `builder` method. Add *optional* response parameters using
 other generated builder methods. The following example illustrates this for the
 `findPetsByTags` operation and its `response` output parameter.
 
 The customized findPetsByTags method in the PetApiImpl class:
 
-<!--@mdc ::code-callout{collapsed} -->
+<!--@mdc ::code-callout -->
 ```java
 public class PetServiceImpl extends PetService {
 
@@ -791,10 +793,10 @@ incoming parameter for that operation, a method which extracts and validates the
 parameter. Override how a parameter is extracted by following these steps, using
 the `AddPetOp` as an example.
 
-1.  Write a class which extends the inner class for the operation.
-2.  In that subclass override the relevant method.
+- Write a class which extends the inner class for the operation. 
+- In that subclass override the relevant method.
 
-    Customized AddPetOp class:
+    Customized `AddPetOp` class:
 
     <!--@mdc ::code-callout -->
     ```java
@@ -823,20 +825,20 @@ the `AddPetOp` as an example.
     3. Return the extracted value, properly typed.
     <!--@mdc :: -->
 
-3.  In the implementation class for the API (`PetServiceImpl`) override the
-    `createAddPetOp` method so it returns an instance of your new subclass
-    `AddPetOpCustom` of the operation inner class `AddPetOp`.
+- In the implementation class for the API (`PetServiceImpl`) override the
+  `createAddPetOp` method so it returns an instance of your new subclass
+  `AddPetOpCustom` of the operation inner class `AddPetOp`.
 
-    Providing your custom implementation of AddPet:
+  Providing your custom implementation of AddPet:
 
-    ```java
-    public class PetServiceImpl extends PetService {
-        @Override
-        protected AddPetOp createAddPetOp() {
-            return new AddPetOpCustom();
-        }
-    }
-    ```
+  ```java
+  public class PetServiceImpl extends PetService {
+      @Override
+      protected AddPetOp createAddPetOp() {
+          return new AddPetOpCustom();
+      }
+  }
+  ```
 
 ##### Override how an operation is prepared from a request
 
@@ -906,7 +908,7 @@ public class ExampleClient {
   the same server.
 2. Creates an `ApiClient` instance using default settings from the OpenAPI
   document.
-<!--@mdc :: ->
+<!--@mdc :: -->
 
 Your code relies fully on the automatic `WebClient`. In many cases, this
 approach works very well, especially if the OpenAPI document correctly declares
@@ -1032,23 +1034,24 @@ a `PetApi` using an `ApiClient` object:
 
 Preparing the PetStore Client API:
 
+<!--@mdc ::code-callout -->
 ```java
 public class ExampleClient {
 
-    private ApiClient apiClient;
+    private ApiClient apiClient; // <1>
 
-    private PetApi petApi;
+    private PetApi petApi; // <2>
 
     void preparePetApi() {
-        petApi = PetApiImpl.create(apiClient);
+        petApi = PetApiImpl.create(apiClient); // <3>
     }
 }
 ```
-
-- Stores a reusable `AppClient`.
-- Stores a reusable `PetApi` for invoking pet-related operations.
-- Initializes and saves the `PetApi` instance using the previously-prepared
-  `apiClient`.
+1. Stores a reusable `AppClient`.
+2. Stores a reusable `PetApi` for invoking pet-related operations.
+3. Initializes and saves the `PetApi` instance using the previously-prepared
+   `apiClient`.
+<!--@mdc :: -->
 
 #### Invoking Remote Endpoints
 
@@ -1089,18 +1092,19 @@ specific needs of the code you are writing.
 
 Access with only result access:
 
+<!--@mdc ::code-callout -->
 ```java
 void findAvailablePets() {
     ApiResponse<List<Pet>> apiResponse =
-            petApi.findPetsByStatus(List.of(Pet.StatusEnum.AVAILABLE.value()));
+            petApi.findPetsByStatus(List.of(Pet.StatusEnum.AVAILABLE.value())); // <1>
 
-    List<Pet> availablePets = apiResponse.result();
+    List<Pet> availablePets = apiResponse.result(); // <2>
 }
 ```
-
-- Use the previously-prepared `petApi` to find pets that have the `available`
-  status.
-- Retrieve the typed result from the `ApiResponse`.
+1. Use the previously-prepared `petApi` to find pets that have the `available`
+   status.
+2. Retrieve the typed result from the `ApiResponse`.
+<!--@mdc :: -->
 
 ##### Access with status checking
 
@@ -1112,26 +1116,27 @@ The next example shows how your code can use the `HTTPClientResponse`.
 
 Access with status checking:
 
+<!--@mdc ::code-callout -->
 ```java
 void findAvailablePets() {
     ApiResponse<List<Pet>> apiResponse =
-            petApi.findPetsByStatus(List.of(Pet.StatusEnum.AVAILABLE.value()));
+            petApi.findPetsByStatus(List.of(Pet.StatusEnum.AVAILABLE.value())); // <1>
 
-    try (HttpClientResponse webClientResponse = apiResponse.webClientResponse()) {
-        if (webClientResponse.status().code() != 200) {
+    try (HttpClientResponse webClientResponse = apiResponse.webClientResponse()) { // <2>
+        if (webClientResponse.status().code() != 200) { // <3>
             // Handle a non-successful status.
         }
     }
 
-    List<Pet> avlPets = apiResponse.result();
+    List<Pet> avlPets = apiResponse.result(); // <4>
 }
 ```
-
-- Start the remote service invocation.
-- Wait for the HTTP response status and headers to arrive.
-- Check the status in the HTTP response.
-- Wait for the content to arrive, extracting the result and converting it to the
-  proper type.
+1. Start the remote service invocation.
+2. Wait for the HTTP response status and headers to arrive.
+3. Check the status in the HTTP response.
+4. Wait for the content to arrive, extracting the result and converting it to the
+   proper type.
+<!--@mdc :: -->
 
 This code also blocks the current thread, first to wait for the initial response
 and then to wait for the result content.

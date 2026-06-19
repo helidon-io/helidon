@@ -107,6 +107,8 @@ Config config = Config.create(); // <1>
 1. The `Config` object is created with default settings.
 <!--@mdc :: -->
 
+### Source Precedence for Default Configuration
+
 In order to properly configure your application using configuration sources, you
 need to understand the precedence rules that Helidon uses to merge your
 configuration data. By default, Helidon will use the following sources in
@@ -286,6 +288,8 @@ private static Config buildConfig() {
 3. You must specify the existing `application.yaml` or Helidon will not use it as
    a configuration source even though it is considered a default source.
 <!--@mdc :: -->
+
+Build and run the application (without the system property). Invoke the
 endpoint:
 
 ```shell [Terminal]
@@ -325,6 +329,8 @@ return Config.builder()
 1. Swap the source order, putting `application.yaml` first.
 <!--@mdc :: -->
 
+Build and run the application, then invoke the endpoint:
+
 ```shell [Terminal]
 curl http://localhost:8080/greet
 ```
@@ -338,6 +344,8 @@ curl http://localhost:8080/greet
 1. The file `application.yaml` was used to get the greeting since it now has
    precedence over `config.properties`.
 <!--@mdc :: -->
+
+### External File Sources
 
 You can move all or part of your configuration to external files, making them
 optional or mandatory. The obvious advantage to this approach is that you do not
@@ -372,6 +380,8 @@ return Config.builder()
 1. Add a mandatory configuration file.
 <!--@mdc :: -->
 
+Build and run the application, then invoke the endpoint:
+
 ```shell [Terminal]
 curl http://localhost:8080/greet
 ```
@@ -404,6 +414,8 @@ return Config.builder()
 ```
 1. Specify a file that doesn’t exist.
 <!--@mdc :: -->
+
+Build then start the application and you will see the following output:
 
 ```shell [Terminal]
 Exception in thread "main" io.helidon.config.ConfigException: Cannot load data from mandatory source FileConfig[missing-file]. File `missing-file` not found.
@@ -449,6 +461,8 @@ return Config.builder()
 1. Add a mandatory configuration directory.
 <!--@mdc :: -->
 
+Build and run the application, then invoke the endpoint and check the response:
+
 ```shell [Terminal]
 curl http://localhost:8080/greet
 ```
@@ -480,6 +494,8 @@ return Config.builder()
 ```
 1. Add each config source using the `addSource` method.
 <!--@mdc :: -->
+
+Build and run the application, then invoke the endpoint:
 
 ```shell [Terminal]
 curl http://localhost:8080/greet
@@ -527,6 +543,8 @@ return Config.create(); // <1>
 1. Will use `config-profile.yaml` by default
 <!--@mdc :: -->
 
+Build and run the application, then invoke the endpoint:
+
 ```shell [Terminal]
 curl http://localhost:8080/greet
 ```
@@ -539,6 +557,8 @@ curl http://localhost:8080/greet
 ```
 1. The `application.yaml` resource file was used to get the greeting.
 <!--@mdc :: -->
+
+The source precedence order in a profile file is the order of appearance in the
 file. This is demonstrated below where the `config-file.properties` has the
 highest order of precedence.
 
@@ -577,6 +597,8 @@ curl http://localhost:8080/greet
 ```
 1. The `config-file.properties` source now takes precedence.
 <!--@mdc :: -->
+
+When using a profile file, you need to explicitly include both environment
 variables and system properties as a source if you want to use them.
 
 Replace the contents of the `config-profile.yaml` file:
@@ -620,7 +642,7 @@ Config\>][advanced-config].
 The simplest way to access configuration data is using a key, as shown below in
 the `GreetFeature` class. The key can be composite as shown below:
 
-View the GreetService constructor:
+View the `GreetService` constructor:
 
 <!--@mdc ::code-callout -->
 ```java
@@ -629,7 +651,9 @@ greeting.set(Config.global().get("app").get("greeting").asString().orElse("Ciao"
 1. Get the `app.greeting` node using a composite key.
 <!--@mdc :: -->
 
-Replace the GreetService constructor with the following code:
+You can also access the same greeting by navigating the nodes.
+
+Replace the `GreetService` constructor with the following code:
 
 <!--@mdc ::code-callout -->
 ```java
@@ -637,6 +661,8 @@ greeting.set(Config.global().get("app.greeting").asString().orElse("Ciao")); // 
 ```
 1. Get the `app.greeting` node using a composite key.
 <!--@mdc :: -->
+
+Build and run the application, then invoke the endpoint:
 
 ```shell [Terminal]
 curl http://localhost:8080/greet
@@ -675,7 +701,7 @@ app:
   child3: child3-node
 ```
 
-Update the `GreetService.java` file and replace the GreetService constructor
+Update the `GreetService.java` file and replace the `GreetService` constructor
 with the following:
 
 <!--@mdc ::code-callout -->
@@ -692,6 +718,8 @@ greeting.set(appGreetings.get(0).asString().get());
 2. Include only nodes that have the name `greeting`.
 3. Add the `greeting` node to the collection.
 <!--@mdc :: -->
+
+Build and run the application, then invoke the endpoint:
 
 ```shell [Terminal]
 curl http://localhost:8080/greet
@@ -727,7 +755,7 @@ sources:
       resource: "application.yaml"
 ```
 
-Update the GreetService class and replace the GreetService constructor:
+Update the `GreetService` class and replace the `GreetService` constructor:
 
 <!--@mdc ::code-callout -->
 ```java
@@ -739,6 +767,8 @@ greetingConfig.onChange(cfg -> greeting.set(cfg.asString().orElse("Ciao"))); // 
 2. Register a listener that will get called by Helidon when the configuration
    changes. The listener will update the greeting with the new value.
 <!--@mdc :: -->
+
+Build and run the application, then invoke the endpoint:
 
 ```shell [Terminal]
 curl http://localhost:8080/greet
@@ -801,6 +831,8 @@ return Config.builder()
 2. The server port is specified in `application.yaml` within the
    `helidon-quickstart-se.jar`.
 <!--@mdc :: -->
+
+Replace the `GreetService` constructor with the following code:
 
 ```java
 greeting.set(Config.global().get("app.greeting").asString().orElse("Ciao"));
@@ -950,6 +982,8 @@ curl http://localhost:31143/greet
 1. The greeting value from `/etc/config/config-file.properties` within the
    container was used.
 <!--@mdc :: -->
+
+You can now delete the Kubernetes resources that were just created during this
 example.
 
 Delete the Kubernetes resources:

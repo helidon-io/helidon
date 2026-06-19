@@ -131,6 +131,8 @@ class MyServerTest {
 5. Call the `client` to obtain server response
 6. Perform the necessary assertions.
 <!--@mdc :: -->
+
+To trigger the framework to start and configure the server, annotate the testing
 class with the `@ServerTest` annotation.
 
 In this test, the `Http1Client` client is used, which means that the framework
@@ -187,6 +189,8 @@ class MyRoutingTest {
 5. Call the `client` to obtain server response.
 6. Perform the necessary assertions.
 <!--@mdc :: -->
+
+If only routing tests are required, this is a "lighter" way of testing because
 the framework will not configure and run the full Helidon server. This way, no
 real ports will be opened. All the communication will be done through
 `DirectClient`, which makes the tests very effective.
@@ -226,6 +230,8 @@ Configure pinning threshold:
 ```
 1. Change pinning threshold from default(20) to 50 milliseconds.
 <!--@mdc :: -->
+
+When pinning is detected, test fails with stacktrace pointing to the line of
 code causing it.
 
 ## Service Registry
@@ -339,6 +345,8 @@ static class ClientSideListener implements WsListener {
 2. Save the message when received and close the connection.
 3. React on an error.
 <!--@mdc :: -->
+
+The WebSocket `ClientSideListener` is also a helper class that implements
 `WsListener` and is very straightforward:
 
 ServerSideListener helper class:
@@ -357,6 +365,8 @@ static class ServerSideListener implements WsListener {
 ```
 1. Send "ws" on a received message.
 <!--@mdc :: -->
+
+The testing class should be annotated with `@RoutingTest` only if routing tests
 are required without real port opening. Instead of `WsClient`, use
 `DirectWsClient`.
 

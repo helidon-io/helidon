@@ -61,6 +61,8 @@ private static GrpcRouting.Builder createRouting(Config config) {
 3. Register `MathService` instance.
 4. Register a custom unary gRPC route
 <!--@mdc :: -->
+
+Both standard gRPC services that implement the `io.grpc.BindableService`
 interface (typically created by extending generated server-side stubs and
 overriding their methods) and Helidon gRPC services that implement the
 io.helidon.grpc.server.GrpcService interface can be registered.
@@ -155,6 +157,8 @@ class EchoService implements GrpcService {
 5. Create the response containing the extracted message.
 6. Send the response back to the client by completing the response observer.
 <!--@mdc :: -->
+
+> [!NOTE]
 > The `complete` method shown in the example above is just one of many helper
 > methods available in the `ResponseHelper` class. See the full list
 > [here][here].
@@ -262,6 +266,11 @@ WebServer.builder()
 1. Configure HTTP routing of the server
 2. Configure gRPC routing of the server
 <!--@mdc :: -->
+
+- Configure HTTP routing of the server
+- Configure gRPC routing of the server
+
+### Configuring the gRPC Reflection Service
 
 When a gRPC client interacts with a server, it must have access to the
 corresponding `.proto` file to understand the available services, methods, and

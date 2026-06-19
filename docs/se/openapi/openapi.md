@@ -153,6 +153,8 @@ WebServer server = WebServer.builder()
 1. Adds the `OpenApiFeature` service to your server using the `openapi` section
    from configuration.
 <!--@mdc :: -->
+
+If you need programmatic control over the `OpenApiFeature` instance, invoke
 `OpenApiFeature.builder()` to get an `OpenApiFeature.Builder` object and work
 with it, then invoke the builder’s `build` method and pass the resulting
 `OpenApiFeature` instance to the `WebServer.Builder` `addFeature` method.

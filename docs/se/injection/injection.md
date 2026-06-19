@@ -742,6 +742,8 @@ class MyServiceInterceptor implements Interception.Interceptor {
 2. Passing interceptor processing to another interceptor in the chain
 <!--@mdc :: -->
 
+### Delegate annotation
+
 The [`@Interception.Delegate`][interception-del] annotation enables interception
 for classes that aren’t created through the service registry but are instead
 produced by a factory (More about factories can be found here - [Factory

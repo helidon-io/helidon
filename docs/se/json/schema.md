@@ -83,6 +83,8 @@ public record ExampleSchema(@JsonSchema.Integer.Minimum(0) int exampleProperty) 
 1. Schema defining annotation. Without this annotation the class/record will not
    be processed as a JSON schema
 <!--@mdc :: -->
+
+In addition, the following section must be added to the `build` of the Maven
 `pom.xml` to enable annotation processors that generate the necessary code:
 
 ```xml [pom.xml]

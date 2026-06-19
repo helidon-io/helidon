@@ -155,6 +155,8 @@ Config provName5 = config.get("data").get("providers").get("0").get("name"); // 
 2. mixed style (composite key and single key)
 3. navigating one level with each `get` invocation
 <!--@mdc :: -->
+
+The `Config.get(key)` method always returns a `Config` object without throwing
 an exception. If the specified key does not exist the method returns a `Config`
 node of type `MISSING`. There are several ways your application can tell whether
 a given config value exists.
@@ -264,6 +266,8 @@ assert providers.get(1).key().toString().equals("data.providers.1"); // <2>
 2. Check that the list contains the expected child nodes with keys
    `data.providers.0` and `data.providers.1`.
 <!--@mdc :: -->
+
+The `traverse()` method returns a stream of the nodes in the subtree that is
 rooted at the current configuration node. Depending on the structure of the
 loaded configuration the stream contains a mix of object, list or leaf value
 nodes.
@@ -278,15 +282,16 @@ config.get("data.providers")
 ```
 1. Visit the subtree rooted at the `data.providers` *list* node.
 2. Prints out following list of nodes (type and key):
-    ```log
-    OBJECT   data.providers.0
-    VALUE   data.providers.0.name
-    VALUE   data.providers.0.class
-    OBJECT  data.providers.1
-    VALUE   data.providers.1.name
-    VALUE   data.providers.1.class
-    ```
 <!--@mdc :: -->
+
+```text
+OBJECT   data.providers.0
+VALUE   data.providers.0.name
+VALUE   data.providers.0.class
+OBJECT  data.providers.1
+VALUE   data.providers.1.name
+VALUE   data.providers.1.class
+```
 
 The optional `Predicate<Config>` argument to the `traverse` methods allows the
 application to prune the traversal of a subtree at any point.
@@ -301,15 +306,16 @@ config.traverse(node -> !node.name().equals("data")) // <1>
 1. Visit all *root* sub-nodes, excluding whole `data` tree structure but
    including others.
 2. Prints out following list of nodes (type and key):
-    ```log
-    OBJECT    app
-    VALUE   app.page-size
-    VALUE   app.greeting
-    LIST    app.basic-range
-    VALUE   app.basic-range.0
-    VALUE   app.basic-range.1
-    ```
 <!--@mdc :: -->
+
+```text
+OBJECT    app
+VALUE   app.page-size
+VALUE   app.greeting
+LIST    app.basic-range
+VALUE   app.basic-range.0
+VALUE   app.basic-range.1
+```
 
 ## Detaching a Config Subtree
 
@@ -362,6 +368,8 @@ assert detachedFromAlternate.get("debug").equals("true"); // <2>
 2. Detaching so the `web` node is the root can use the same key regardless of
    where the config subtree came from.
 <!--@mdc :: -->
+
+[confignode]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/spi/ConfigNode.html
 [hocon]: https://github.com/lightbend/config/blob/master/HOCON.md
 [name]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/Config.html#name--
 [key]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/Config.html#key--

@@ -159,6 +159,8 @@ public class MovieRepository {
 2. Use of `Neo4j` driver to extract all Movies
 <!--@mdc :: -->
 
+Movies can now be returned as JSON objects:
+
 ```java
 @GET
 @Produces(MediaType.APPLICATION_JSON)

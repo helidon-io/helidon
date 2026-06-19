@@ -121,6 +121,8 @@ In addition to these features, Vault itself can be authenticated as follows:
     1. The token role must be configured in Vault
     <!--@mdc :: -->
 
+Minimal configuration to connect to Vault:
+
 Code to get the Sys operations of Vault:
 
 ```java
@@ -211,6 +213,8 @@ void getSecret(ServerRequest req, ServerResponse res) { // <2>
 2. Get the secret on a specified path.
 <!--@mdc :: -->
 
+### KV1 Secrets
+
 Key/Value version 1 secrets engine operations:
 
 <!--@mdc ::code-callout{collapsed} -->
@@ -265,6 +269,8 @@ void getSecret(ServerRequest req, ServerResponse res) { // <5>
 5. Get the secret on a specified path.
 <!--@mdc :: -->
 
+### KV2 Secrets
+
 Key/Value version 2 secrets engine operations:
 
 <!--@mdc ::code-callout{collapsed} -->
@@ -305,6 +311,8 @@ void getSecret(ServerRequest req, ServerResponse res) { // <3>
 2. Delete the secret on a specified path.
 3. Get the secret on a specified path.
 <!--@mdc :: -->
+
+### Transit secrets
 
 Transit secrets engine operations:
 
@@ -428,6 +436,8 @@ void verify(ServerRequest req, ServerResponse res) { // <10>
 10. Verify signature.
 <!--@mdc :: -->
 
+### Authentication with Kubernetes
+
 In order to use Kubernetes authentication:
 
 <!--@mdc ::code-callout{collapsed} -->
@@ -507,6 +517,8 @@ class K8sExample {
 3. Disable Kubernetes authentication if needed.
 4. Function used to enable Kubernetes authentication.
 <!--@mdc :: -->
+
+## Local testing
 
 Vault is available as a docker image, so to test locally, you can simply:
 

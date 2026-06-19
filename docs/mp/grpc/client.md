@@ -134,6 +134,8 @@ interface StringServiceClient {
    name. This is the same name as used in the channel configuration in the
    examples provided in the [Configuration section](#configuration).
 <!--@mdc :: -->
+
+There is no need to write any code to implement the client. The Helidon MP gRPC
 API will create a dynamic proxy for the interface using the information from the
 annotations and method signatures.
 
@@ -174,6 +176,8 @@ public class MyAppBean {
 2. The `@Grpc.GrpcProxy` annotation is used by the CDI container to match the
    injection point to the gRPC MP API provider.
 <!--@mdc :: -->
+
+When the CDI container instantiates `MyAppBean`, it will inject a dynamic proxy
 into the `stringServiceClient` field, and then provide the necessary logic for
 the proxy methods to convert a method call into a gRPC call.
 
@@ -200,6 +204,8 @@ private Channel channel;
    name as used in the channel configuration in the examples provided in the
    [Configuration section](#configuration).
 <!--@mdc :: -->
+
+An injected channel can be used, for example, when directly instantiating
 `protoc` generated stubs.
 
 ## Examples

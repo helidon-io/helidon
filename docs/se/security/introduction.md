@@ -89,6 +89,8 @@ if (response.status().isSuccess()) {
 2. Use the context to authenticate a request
 <!--@mdc :: -->
 
+### Builder Pattern
+
 Security through a builder:
 
 <!--@mdc ::code-callout -->
@@ -99,6 +101,8 @@ Security security = Security.builder()
 ```
 1. Create a provider instance based on the provider documentation
 <!--@mdc :: -->
+
+### Configuration Pattern
 
 See [Secure config](tools.md) for details about encrypting passwords in
 configuration files.
@@ -111,6 +115,8 @@ Security security = Security.create(config); // <1>
 ```
 1. Uses `io.helidon.Config`
 <!--@mdc :: -->
+
+As mentioned above, security features are implemented through providers, which
 are configured under key `security.providers`. Each element of the list is one
 security provider. The key of the provider must match its config key (as
 documented in [Security Providers](providers.md) for each supported provider).

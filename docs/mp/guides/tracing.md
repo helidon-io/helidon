@@ -249,6 +249,8 @@ class GreetingProvider {
 1. Enable tracing for getMessage.
 <!--@mdc :: -->
 
+Build and run the application, then invoke the endpoints and check the response:
+
 ```shell [Terminal]
 curl http://localhost:8080/greet
 ```
@@ -281,6 +283,8 @@ public class GreetingProvider {
    methods that are private.
 2. Remove @Traced for the `getMessage` method.
 <!--@mdc :: -->
+
+Build and run the application, then invoke the endpoints and check the response:
 
 ```shell [Terminal]
 curl http://localhost:8080/greet
@@ -326,6 +330,8 @@ public class GreetingProvider {
 2. The `getMessage2` method will not be traced, even with the @Traced annotation,
    since it is called internally by `getMessage`.
 <!--@mdc :: -->
+
+Build and run the application, then invoke the endpoints:
 
 ```shell [Terminal]
 curl http://localhost:8080/greet
@@ -475,6 +481,8 @@ curl -i http://localhost:8080/greet/outbound # <1>
 ```
 1. Notice the greeting came from the second service.
 <!--@mdc :: -->
+
+Refresh the Jaeger UI trace listing page and notice that there is a trace across
 two services.
 
 <figure>

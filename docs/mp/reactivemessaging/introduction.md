@@ -373,6 +373,8 @@ public CompletionStage<Void> receiveAndAckMessage(Message<String> msg) {
 1. Calling ack() will print "This particular message was acked!" to System.out
 <!--@mdc :: -->
 
+Example of explicit pre-process acknowledgment:
+
 ```java
 @Outgoing("consume-and-ack")
 public Publisher<Message<String>> streamOfMessages() {

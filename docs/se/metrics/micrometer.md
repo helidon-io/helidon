@@ -139,6 +139,8 @@ HttpRouting.builder()
    in creating and updating meters.
 <!--@mdc :: -->
 
+### Create and Update Meters in Your Application Service
+
 Define and use a Counter:
 
 <!--@mdc ::code-callout -->
@@ -175,6 +177,8 @@ class MyService implements HttpService {
 3. Update the counter and then delegate the rest of the request processing to the
    next handler in the chain.
 <!--@mdc :: -->
+
+The example above enrolls the built-in Prometheus meter registry with the
 default Prometheus registry configuration. You can change the default setup for
 built-in registries, and you can enroll other meter registries your application
 creates itself.
@@ -217,6 +221,8 @@ MicrometerFeature micrometerFeature = MicrometerFeature.builder()
 1. Enroll the `PROMETHEUS` built-in registry type with your meter registry
    configuration.
 <!--@mdc :: -->
+
+#### Using Configuration
 
 To use configuration to control the selection and behavior of Helidon’s built-in
 Micrometer meter registries, include in your configuration (such as

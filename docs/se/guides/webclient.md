@@ -135,6 +135,8 @@ WebClient webClient = WebClient.builder()
 ```
 1. The base URI of the outbound requests.
 <!--@mdc :: -->
+
+By default, the Helidon quickstart application runs on localhost:8080. If for
 some reason the host name or port number of the quickstart application is
 changed, make sure that the baseURI is also modified to reflect that change.
 Once built, the WebClient can be used to send a GET request to the greeting
@@ -155,6 +157,8 @@ System.out.println(entityString);
 3. Execute the request
 4. Return response entity handled as a String.
 <!--@mdc :: -->
+
+The path method appends `/greet` to the WebClient base URI which results to the
 request URI becoming `http://localhost:8080/greet`. The received response entity
 will be a greeting message and will be automatically handled as a String. If no
 specific type is set in the method request(), `HttpClientResponse` will be
@@ -224,6 +228,8 @@ System.out.println(value);
 1. Request a JsonObject as return value.
 2. Extract the value of the JsonObject with name of `message`.
 <!--@mdc :: -->
+
+In the URI, the String value following `greet` is a path parameter which allows
 the application to greet someone.
 
 Output:
@@ -258,6 +264,8 @@ System.out.println(entityString);
 4. Execute a GET call to verify that the greeting has been changed.
 5. Retrieve the greeting message from the JSON object
 <!--@mdc :: -->
+
+Executing the above code will yield this output showing that the greeting word
 has been changed.
 
 Output:
@@ -317,6 +325,8 @@ WebClientService clientServiceMetric = WebClientMetrics.counter()
 3. Specify how the name of the metric will be generated using the `nameFormat`.
 4. Build a WebClient Metric Service that can count number of GET requests made.
 <!--@mdc :: -->
+
+In this example, the metric uses a `Counter` to measure the number of `GET`
 requests executed on the `localhost`. The format strings in the parameter value
 of `nameFormat` method will identify how the name of a metric will get
 generated:
@@ -347,6 +357,8 @@ webClient.get().path("/greet").request(); // <2>
 1. Register the metric service to the webclient.
 2. Send an HTTP GET request
 <!--@mdc :: -->
+
+To verify that the metric is set up correctly, print the value of the Counter at
 the end of the main method.
 
 Print the metric count:
@@ -418,6 +430,8 @@ System.out.println(counterName + ": " + counter.count()); // <6>
 5. Send an HTTP GET request
 6. Print out the metric result
 <!--@mdc :: -->
+
+As demonstrated, using the configuration file reduces the amount of code needed
 in the source code. For more information about metrics, see the [Helidon Metrics
 Guide](metrics.md).
 

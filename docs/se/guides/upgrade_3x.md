@@ -112,6 +112,8 @@ WebServer.builder(Routing.builder()
 2. WebSocket setup with Tyrus service
 <!--@mdc :: -->
 
+In Helidon 3, WebSocket routing is defined by adding another routing:
+
 Helidon 3 WebSocket route registering:
 
 <!--@mdc ::code-callout -->
@@ -131,6 +133,8 @@ WebServer.builder()
 1. Traditional REST routing service registration
 2. WebSocket routing setup
 <!--@mdc :: -->
+
+## Deprecations
 
 - The custom Helidon OCI clients have been deprecated ([see PR][see-pr]).
 

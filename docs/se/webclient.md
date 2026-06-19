@@ -101,6 +101,8 @@ client.get()
 4. Adds fragment to the request
 5. Adds header to the request
 <!--@mdc :: -->
+
+For more information about these optional parameters, check out
 [ClientRequestBase][clientrequestbas] API, which is a parent class of
 [HttpClientRequest][httpclientreques].
 
@@ -220,6 +222,8 @@ WebClient.builder()
 ```
 1. Register CustomMedia support from the WebClient.
 <!--@mdc :: -->
+
+### DNS Resolving
 
 WebClient provides three DNS resolver implementations out of the box:
 
@@ -457,6 +461,8 @@ WebClient.builder()
 2. Passing the client configuration node
 <!--@mdc :: -->
 
+### Adding Service to WebClient
+
 WebClient currently supports several built-in services, namely
 
 - [`discovery`][discovery]
@@ -588,6 +594,8 @@ WebClient.builder()
    is on classpath, so we can just use `Config.create()`
 2. Passing the client configuration node
 <!--@mdc :: -->
+
+## Setting Protocol configuration
 
 Individual protocols can be customized using the `protocol-config` parameter.
 

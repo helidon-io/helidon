@@ -243,6 +243,8 @@ javax.sql.DataSource.test.foo.bar=baz# <1><2><3>
    `foo.bar`.
 <!--@mdc :: -->
 
+#### Examples
+
 Here are some examples illustrating general named data source configuration
 patterns in various [common MicroProfile Config-compatible
 locations][common-microprof].
@@ -333,6 +335,8 @@ javax.sql.DataSource.main.password = tiger
    [`PoolDataSourceImpl#setConnectionFactoryClassName(String)`][pooldatasourceim]).
 2. See [Thin-style Service Name Syntax][connect-to-an-or].
 <!--@mdc :: -->
+
+In general, the properties that can be set on the Oracle Universal Connection
 Pool can be inferred from the "setter" methods found in [the Javadoc for the
 `PoolDataSourceImpl` class][the-javadoc-for].
 
@@ -380,6 +384,8 @@ javax.sql.DataSource.test.dataSource.password =
 2. Why `dataSource.`? See [`PropertyElf.java`, lines 47–49][propertyelf-java].
 3. See [the H2 database’s documentation about its URL format][connect-to-an-h2].
 <!--@mdc :: -->
+
+HikariCP’s configuration properties are described [on its GitHub
 repository][on-its-github-re]. Properties that should be forwarded on to the
 vendor-supplied `DataSource` [are prefixed with `dataSource.`][unlike-hikaricp]
 as seen in the example above.
@@ -438,6 +444,8 @@ public SomeObject(@Named("test") DataSource ds) { // <3>
    may be named anything you like.
 4. The injected argument will never be `null`.
 <!--@mdc :: -->
+
+## Jakarta Transactions (JTA) Integration
 
 ### Overview
 
@@ -541,6 +549,8 @@ public void setGreeting(Integer id) {
    Persistence][jakarta-persiste] object like a managed
    [`EntityManager`][entitymanager]).
 <!--@mdc :: -->
+
+## Jakarta Persistence (JPA)
 
 ### Overview
 
@@ -697,6 +707,8 @@ below:
 2. Because your [dependencies are managed](../managing-dependencies.md), this
    will resolve to the currently supported version of Hibernate ORM.
 <!--@mdc :: -->
+
+For more on the Hibernate ORM `hibernate-jpamodelgen` annotation processor, see
 [Hibernate Metamodel Generator][hibernate-metamo] in Hibernate ORM’s
 documentation.
 
@@ -833,6 +845,8 @@ following `<plugin>` element is present as a child element of your project’s
 ```
 1. Always check [Maven Central][maven-central] for up-to-date versions.
 <!--@mdc :: -->
+
+For more on the EclipseLink static weaving command-line utility, see [Static
 Weaving][static-weaving] in the EclipseLink documentation.
 
 ### Configuration
@@ -905,6 +919,8 @@ XML:
 2. `<persistence-unit>` elements are listed here.
 <!--@mdc :: -->
 
+#### Persistence Unit
+
 You list your application’s persistence units as `<persistence-unit>` child
 elements of the enclosing `<persistence>` element. Each `<persistence-unit>`
 element identifies a named persistence unit that will correspond to an
@@ -935,6 +951,8 @@ description:
 2. The order of subsequent child elements is significant and governed by the [XML
    schema][xml-schema].
 <!--@mdc :: -->
+
+> [!NOTE]
 > In most microservices, there will be only one persistence unit.
 
 > [!TIP]
@@ -982,6 +1000,8 @@ description, linked with a JTA data source named `main`:
 2. Other persistence unit characteristics go here.
 <!--@mdc :: -->
 
+##### Classes
+
 A persistence unit lists the classes that should be managed and that will take
 part in Jakarta Persistence workflows. You must list:
 
@@ -1025,6 +1045,8 @@ classes:
    containing `<classes>` element or similar.
 2. Other persistence unit characteristics go here.
 <!--@mdc :: -->
+
+##### Properties
 
 Persistence units can have simple properties attached to them to further
 configure the backing JPA provider. You use the [`<properties>`
@@ -1075,6 +1097,8 @@ classes, configuring a Hibernate ORM-specific property:
    [weaving][weaving] in the EclipseLink documentation for more details about the
    `eclipselink.weaving` property.
 <!--@mdc :: -->
+
+> [!TIP]
 > For an exhaustive list of Hibernate ORM-specific properties, see
 > [Configurations][configurations] in the Hibernate ORM documentation.
 

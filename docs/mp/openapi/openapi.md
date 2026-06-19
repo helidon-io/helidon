@@ -108,6 +108,8 @@ public JsonObject getDefaultMessage() {
 2. `@APIResponse` describes the HTTP response and declares its media type and
    contents.
 <!--@mdc :: -->
+
+You can also define any request parameters the endpoint expects, although this
 endpoint uses none.
 
 This excerpt shows only a few annotations for illustration. The [Helidon MP
@@ -232,6 +234,8 @@ public Response updateGreeting(JsonObject jsonObject) {
    annotations `@Content`, `@Schema` and `@ExampleObjects` are used to give more
    details about the returned data.
 <!--@mdc :: -->
+
+If we want to hide a specific path an `OASFilter` is used.
 
 The OASFilter interface allows application developers to receive callbacks for
 various key OpenAPI elements. The interface has a default implementation for
@@ -416,6 +420,8 @@ current project but another dependency and to index a specific type from it.
 3. Selects the type or types from the `fileSet` you want to include in the
    generated index.
 <!--@mdc :: -->
+
+You can add more than one dependency and scan for more than a single type. See
 the [Helidon MP OpenAPI expanded Jandex example][helidon-mp-opena-2] for more
 information and a complete project that indexes a dependency.
 

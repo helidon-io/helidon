@@ -302,6 +302,8 @@ public class GreetLivenessCheck implements HealthCheck {
 3. Build the HealthCheckResponse with status `UP` and the current time.
 <!--@mdc :: -->
 
+Build and run the application, then verify the custom liveness health endpoint:
+
 ```shell [Terminal]
 curl http://localhost:8080/health/live
 ```
@@ -359,17 +361,20 @@ public class GreetReadinessCheck implements HealthCheck {
 3. Record the time at startup.
 4. Become ready after 5 seconds.
 <!--@mdc :: -->
-seconds and you will see that the application is not ready:
+
+Build and run the application. Issue the curl command with -v within five
+seconds, and you will see that the application is not ready:
 
 ```shell [Terminal]
 curl -v  http://localhost:8080/health/ready
 ```
 
-*HTTP response status*
-
-< HTTP/1.1 503 Service Unavailable
-
-- The HTTP status is `503` since the application is not ready.
+<!--@mdc ::code-callout -->
+```log [Response]
+< HTTP/1.1 503 Service Unavailable # <1>
+```
+1. The HTTP status is `503` since the application is not ready.
+<!--@mdc :: -->
 
 ```json [Response]
 {
@@ -392,11 +397,12 @@ After five seconds you will see the application is ready:
 curl -v http://localhost:8080/health/ready
 ```
 
-*HTTP response status*
-
-< HTTP/1.1 200 OK
-
-- The HTTP status is `200` indicating that the application is ready.
+<!--@mdc ::code-callout -->
+```log [Response]
+< HTTP/1.1 200 OK # <1>
+```
+1. The HTTP status is `200` indicating that the application is ready.
+<!--@mdc :: -->
 
 ```json [Response]
 {
@@ -455,17 +461,20 @@ public class GreetStartedCheck implements HealthCheck {
    started eight seconds later.
 4. Become ready after 5 seconds.
 <!--@mdc :: -->
-seconds and you will see that the application has not yet started:
+
+Build and run the application. Issue the curl command with -v within five
+seconds, and you will see that the application has not yet started:
 
 ```shell [Terminal]
 curl -v  http://localhost:8080/health/started
 ```
 
-*HTTP response status:*
-
-< HTTP/1.1 503 Service Unavailable
-
-- The HTTP status is `503` since the application has not started.
+<!--@mdc ::code-callout -->
+```log [Response]
+< HTTP/1.1 503 Service Unavailable # <1>
+```
+1. The HTTP status is `503` since the application has not started.
+<!--@mdc :: -->
 
 ```json [Response]
 {
@@ -488,11 +497,12 @@ After eight seconds you will see the application has started:
 curl -v http://localhost:8080/health/started
 ```
 
-*HTTP response status:*
-
-< HTTP/1.1 200 OK
-
-- The HTTP status is `200` indicating that the application is started.
+<!--@mdc ::code-callout -->
+```log [Response]
+< HTTP/1.1 200 OK # <1>
+```
+1. The HTTP status is `200` indicating that the application is started.
+<!--@mdc :: -->
 
 ```json [Response]
 {

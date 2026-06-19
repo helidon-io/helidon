@@ -96,6 +96,8 @@ static Single<WebServer> startServer() {
 2. Wait for the server to start and print the message in an asynchronous way.
 3. Gracefully handle exceptions if they occur during the initialization process.
 <!--@mdc :: -->
+
+In Helidon 4.x, you can create and configure a server and then wait for it to
 start. If any exceptions happen, they are handled the traditional way using
 available language constructions. For example:
 
@@ -120,6 +122,8 @@ public static void main(String[] args) {
 2. Start the server. No reactive objects returned.
 3. Print a message when the server is started.
 <!--@mdc :: -->
+
+### Additional Server Lifecycle Tasks
 
 In Helidon 3.x, if you provided code to run after WebServer startup and after
 WebServer shutdown, you needed to use asynchronous constructs, like so:
@@ -209,6 +213,8 @@ private static Routing createRouting(Config config) {
 3. Register `Metrics` and `Health` support as Helidon Services.
 4. Register the regular Greeting service.
 <!--@mdc :: -->
+
+In Helidon 4.x, the Metrics and Health features are automatically discovered
 and, assuming you added the dependencies to your project, the routing is
 configured in the following way:
 
@@ -222,6 +228,8 @@ static void routing(HttpRouting.Builder routing) {
 ```
 1. Register Greeting service as in previous versions of Helidon.
 <!--@mdc :: -->
+
+If you want to add these features to the server programmatically, you would use
 `WebServer.builder().addFeature()` method instead.
 
 `Feature` encapsulates a set of endpoints, services and/or filters. It is
@@ -330,6 +338,8 @@ public class GreetService implements Service {
 2. Handle a `Request` and return a `Response`.
 <!--@mdc :: -->
 
+In Helidon 4.x, the same service looks like this:
+
 Helidon SE 4.x Service:
 
 <!--@mdc ::code-callout -->
@@ -360,6 +370,8 @@ public class GreetService implements HttpService { // <1>
 2. Use `routing(HttpRules rules)` to set up routing.
 3. Handle a `Request` and return a `Response`.
 <!--@mdc :: -->
+
+Learn more about `HttpService` and `Routing` at [Helidon SE
 WebServer](../webserver/webserver.md).
 
 ## Other Changes

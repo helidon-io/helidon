@@ -83,6 +83,8 @@ public class customer {
 4. a mutation that creates a Customer and returns the newly created `Customer`
 <!--@mdc :: -->
 
+The example above would generate a GraphQL schema as shown below:
+
 Sample GraphQL schema:
 
 ```graphql

@@ -186,6 +186,8 @@ public class MyExtension implements GrpcMpExtension {
    routing, as described in the [gRPC Server Routing][grpc-server-rout]
    documentation.
 <!--@mdc :: -->
+
+The `GrpcMpExtension` instances are discovered and loaded using the service
 loader, so for this example above to work, a file
 `META-INF/services/io.helidon.microprofile.grpc.server.spi.GrpcMpExtension`
 would need to be created with the name of the extension shown above.

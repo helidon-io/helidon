@@ -223,6 +223,8 @@ public class CubbyholeResource {
 3. Get the secret on a specified path.
 <!--@mdc :: -->
 
+### KV1 secrets
+
 Key/Value version 1 secrets engine operations:
 
 <!--@mdc ::code-callout{collapsed} -->
@@ -308,6 +310,8 @@ public class Kv1Resource {
 5. Get the secret on a specified path.
 <!--@mdc :: -->
 
+### KV2 secrets
+
 Key/Value version 2 secrets engine operations:
 
 <!--@mdc ::code-callout{collapsed} -->
@@ -370,6 +374,8 @@ public class Kv2Resource {
 2. Delete the secret on a specified path.
 3. Get the secret on a specified path.
 <!--@mdc :: -->
+
+### Transit secrets
 
 Transit secrets engine operations:
 
@@ -521,6 +527,8 @@ public class TransitResource {
 9. Verify HMAC.
 10. Verify signature.
 <!--@mdc :: -->
+
+## Local Testing
 
 Vault is available as a docker image, so to test locally, you can simply:
 

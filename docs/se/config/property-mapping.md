@@ -30,6 +30,8 @@ ConfigValue<Boolean> value2 = configNode.as(Boolean.class); // <2>
 2. Generic method (for any type)
 <!--@mdc :: -->
 
+Built-in conversions to simple types:
+
 <table>
 <thead>
 <tr>
@@ -593,6 +595,8 @@ public class AppConfig {
    with the key `timestamp`.
 8. `BasicRangeSupplier` is used to supply the `List<Integer>` default value.
 <!--@mdc :: -->
+
+Here is an example of code loading config and mapping part of it to the
 `AppConfig` bean above.
 
 Map app config node into AppConfig class:
@@ -620,6 +624,8 @@ assert app.getTimestamp() == null; // <2>
 2. Because the bean property `timestamp` was marked as transient, the config
    system did not set it.
 <!--@mdc :: -->
+
+### Builder as JavaBean
 
 If the target class includes the public static method `builder()` that returns
 any object, then the config system will make sure that the return type has a
@@ -678,6 +684,8 @@ public static class Builder { // <1>
    creating the new instance of `AppConfig` for use by the application.
 <!--@mdc :: -->
 
+### Target Class with Annotated Factory Method or Constructor
+
 Another option is to annotate the parameters to a *factory method* or to a
 constructor on the target class. You can add a *factory method* to the target
 class, a `public static` method `from` with parameters annotated to link them to
@@ -710,6 +718,8 @@ public static AppConfig from(
    is **mandatory** and must appear in the configuration source. Otherwise, the
    config system throws a `ConfigMappingException`.
 <!--@mdc :: -->
+
+Alternatively, you can use an annotated constructor instead of a static factory
 method. Revising the example above, make the constructor public, annotate its
 parameters, and remove the now-unneeded `from` factory method.
 
@@ -735,6 +745,8 @@ public AppConfig( // <1>
 2. Each parameter has the `ConfigValue` annotation to at least specify the config
    key name.
 <!--@mdc :: -->
+
+When the application invokes `config.as(AppConfig.class)`, the config system
 locates the public annotated constructor and invokes it, passing as arguments
 the data it fetches from the configuration matching the annotation `key` names
 with the configuration keys.

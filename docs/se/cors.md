@@ -137,6 +137,8 @@ WebServer.builder()
 6. Build the `CorsFeature` instance
 7. Register the new `CorsFeature` instance with WebServer builder
 <!--@mdc :: -->
+
+The ordering of `.addPath(...)` methods when configuring the `CorsFeature` is
 significant, as they are checked in order, and the first `CorsPathConfig` that
 matches the requested path and method will be used.
 

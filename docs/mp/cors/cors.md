@@ -127,6 +127,8 @@ cors.paths._i_.enabled= # <5>
 5. The `enabled` setting lets you control whether the system uses that set of
    CORS configuration. Defaults to `true`.
 <!--@mdc :: -->
+
+The system uses the index `i`, not the position in the config file, to identify
 the settings for a particular resource.
 
 Path patterns can be any expression accepted by the [`PathMatcher`][pathmatcher]
@@ -213,6 +215,8 @@ public class GreetResource { // <1>
    annotations specifies sharing only via the `PUT` HTTP method, and the
    `@Cors.AllowOrigins` specifies sharing only to the two listed origins.
 <!--@mdc :: -->
+
+### Adding Configuration
 
 You could use the following configuration in place of using annotations to set
 up the same CORS behavior.

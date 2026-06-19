@@ -61,6 +61,8 @@ WebServer.builder()
 2. Server expects the configuration tree located on the node of `server`
 <!--@mdc :: -->
 
+### Configuring TLS
+
 Configure TLS either programmatically, or by the Helidon configuration
 framework.
 
@@ -128,6 +130,8 @@ WebServer.builder()
 2. Server expects the configuration tree located on the node of `server`
 <!--@mdc :: -->
 
+Or you can only create WebServerTls instance based on the config file.
+
 WebServerTls instance based on `application.yaml` file located on the classpath:
 
 ```java [application.yaml]
@@ -191,6 +195,8 @@ WebServer.builder()
 1. Handle all GETs to `/hello` path. Send the `Hello World!` string.
 2. Create a server instance with the provided routing
 <!--@mdc :: -->
+
+### HTTP Method Routing
 
 `HttpRouting.Builder` lets you specify how to handle each HTTP method. For
 example:
@@ -269,6 +275,8 @@ routing.route(HttpRoute.builder()
 1. The route is specified for `GET` and `POST` requests
 2. The handler consumes the request payload and echoes it back
 <!--@mdc :: -->
+
+### Organizing Code into Services
 
 By implementing the `io.helidon.webserver.http.HttpService` interface you can
 organize your code into one or more services, each with its own path prefix and
@@ -426,6 +434,8 @@ rules.get("/hello", (req, res) -> { // <1>
 2. send the response
 <!--@mdc :: -->
 
+## Protocol-Specific Routing
+
 Handling routes based on the protocol version is possible by registering
 specific routes on routing builder.
 
@@ -442,6 +452,8 @@ rules.get("/any-version", (req, res) -> res.send("HTTP Version " + req.prologue(
 2. An HTTP/1.1 route registered on `/version-specific` path
 3. An HTTP/2 route registered on `/version-specific` path
 <!--@mdc :: -->
+
+While `Http1Route` for Http/1 is always available with Helidon webserver, other
 routes like `Http2Route` for [HTTP/2](#http2-support) needs to be added as
 additional dependency.
 
@@ -485,7 +497,7 @@ To set up requested URI discovery on the default socket for your server, use the
 
 Requested URI set-up for the default server socket:
 
-<!--@mdc ::code-callout{collapsed} -->
+<!--@mdc ::code-callout -->
 ```java
 import io.helidon.common.configurable.AllowList;
 import jakarta.json.Json;
@@ -575,6 +587,8 @@ routing.error(MyException.class, (req, res, ex) -> { // <1>
    upstream handlers
 2. Finishes the request handling by sending a response
 <!--@mdc :: -->
+
+Error handlers are called when
 
 - an exception is thrown from a handler
 
@@ -903,6 +917,8 @@ builder.addFeature(StaticContentFeature.builder() // <1>
 6. serve the classpath content on root context `/`
 <!--@mdc :: -->
 
+Static content can also be registered using the configuration of server feature.
+
 If you use `Config` with your webserver setup, you can register the same static
 content using configuration:
 
@@ -1092,6 +1108,8 @@ rules.post("/echo", (req, res) -> {
    there is not working with raw JSON here.
 <!--@mdc :: -->
 
+Example of posting JSON to the /echo endpoint:
+
 ```shell [Terminal]
 curl --noproxy '*' -X POST -H "Content-Type: application/json" \
     http://localhost:8080/echo -d '{"name":"Joe"}'
@@ -1180,6 +1198,8 @@ rules.post("/echo", (req, res) -> {
 1. This handler consumes a `Person` instance and simply echoes it back. Note that
    there is no working with raw JSON here.
 <!--@mdc :: -->
+
+Example of posting JSON to the /echo endpoint:
 
 ```shell [Terminal]
 curl --noproxy '*' -X POST -H "Content-Type: application/json" \
@@ -1274,6 +1294,8 @@ rules.post("/echo", (req, res) -> {
 1. This handler consumes a `Person` instance and simply echoes it back. Note that
    there is no working with raw JSON here.
 <!--@mdc :: -->
+
+Example of posting JSON to the /echo endpoint:
 
 ```shell [Terminal]
 curl --noproxy '*' -X POST -H "Content-Type: application/json" \

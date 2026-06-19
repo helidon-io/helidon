@@ -149,6 +149,8 @@ record MovieRepository(Driver driver) { // <1>
 2. Use `Neo4j` driver to extract all Movies
 <!--@mdc :: -->
 
+Movies can now be returned as JSON objects:
+
 ```java
 record MovieService(MovieRepository movieRepository) implements HttpService {
 
@@ -195,6 +197,8 @@ System.out.println("WEB server is up! http://localhost:" + server.port() + "/api
 3. Use of `Neo4jHealthCheck` to add *Neo4j* health support.
 4. Register `MovieService` in *Routing*.
 <!--@mdc :: -->
+
+Now build and run.
 
 ```shell [Terminal]
 mvn package

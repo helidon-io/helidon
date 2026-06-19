@@ -97,6 +97,8 @@ the following dependencies in your project:
 3. Add the database JDBC driver (only for JDBC)
 <!--@mdc :: -->
 
+### Use Helidon Config to configure the client.
+
 The DB Client must be configured before you begin. In the example below we’ll
 use Helidon Config to set up JDBC-based client:
 

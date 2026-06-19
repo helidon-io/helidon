@@ -155,6 +155,8 @@ public class GreetLivenessCheck implements HealthCheck {
 3. Build the HealthCheckResponse with status `UP` and the current time.
 <!--@mdc :: -->
 
+Build and run the application, then verify the custom liveness health endpoint:
+
 ```shell [Terminal]
 curl http://localhost:8080/health/live
 ```
@@ -216,6 +218,8 @@ public class GreetReadinessCheck implements HealthCheck {
 2. Build the `HealthCheckResponse` with status `UP` after five seconds, else `DOWN`.
 3. Record the time at startup.
 <!--@mdc :: -->
+
+Build and run the application. Issue the curl command with -v within five
 seconds, and you will see that the application is not ready:
 
 ```shell [Terminal]
@@ -324,6 +328,8 @@ public class GreetStartedCheck implements HealthCheck {
 3. Record the time at startup of Helidon; the application will declare itself as
    started eight seconds later.
 <!--@mdc :: -->
+
+Build and run the application. Issue the curl command with -v within five
 seconds, and you will see that the application has not yet started:
 
 ```shell [Terminal]
@@ -338,6 +344,8 @@ HTTP response status:
 ```
 1. The HTTP status is `503` since the application has not started.
 <!--@mdc :: -->
+
+Response body:
 
 ```json
 {
@@ -368,6 +376,8 @@ HTTP response status:
 ```
 1. The HTTP status is `200` indicating that the application is started.
 <!--@mdc :: -->
+
+Response body:
 
 ```json
 {

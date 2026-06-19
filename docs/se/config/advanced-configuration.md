@@ -509,6 +509,8 @@ assert config.get(Key.escapeName("oracle.com")).name().equals("oracle.com"); // 
 7. ...and name `"oracle.com"`.
 <!--@mdc :: -->
 
+## Filters, Overrides, and Token Substitution
+
 When your application retrieves a config value, the config system can transform
 it before returning the value, according to *filters*, *overrides*, and
 *tokens*. The config system provides some built-in instances of these you can
@@ -648,6 +650,8 @@ Config config = Config.create(
    `config.properties` config source.
 <!--@mdc :: -->
 
+### Executors for Source Change Events
+
 Recall that when a change watcher detects a change in a source, it informs
 interested parties of the changes. By default, each `Config.Builder` arranges
 for the resulting `Config` tree to use a shared executor that reuses available
@@ -683,6 +687,8 @@ Config config = Config.builder()
 3. Uses the same `Executor` and event buffer size for the config source as for
    the override source above.
 <!--@mdc :: -->
+
+### Retry Policy Custom Executor
 
 You can control which executor a retry policy should use for its work. The
 `RetryPolicies.repeat(int retries)` method returns a

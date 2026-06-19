@@ -71,9 +71,9 @@ The example below shows the UI if you modify the Helidon SE QuickStart greeting
 application to contain a static OpenAPI file which describes the service
 endpoints.
 
+Example OpenAPI UI Screen:
 <figure>
 <img src="../../images/openapi-ui-screen-capture-greeting-se-start.png" alt="openapi ui screen capture greeting se start" />
-<figcaption>Example OpenAPI UI Screen</figcaption>
 </figure>
 
 With the OpenAPI UI displayed, follow these steps to access one of your
@@ -103,9 +103,9 @@ Note that the UI shows the actual response from invoking the operation in the
 possible responses from the operation as declared in the OpenAPI document for
 the application.
 
+Example OpenAPI UI Screen:
 <figure>
 <img src="../../images/openapi-ui-screen-capture-greeting-se-expanded.png" alt="openapi ui screen capture greeting se expanded" />
-<figcaption>Example OpenAPI UI Screen</figcaption>
 </figure>
 
 ## API
@@ -137,6 +137,8 @@ WebServer server = WebServer.builder()
 1. Add the OpenAPI feature to the server, configured using the `openapi` section
    of the configuration.
 <!--@mdc :: -->
+
+If your code invokes the `OpenApiFeature.Builder` `config` method, Helidon
 automatically applies the `ui` section of the `openapi` configuration to the UI.
 
 ### Customizing the UI Behavior
@@ -177,6 +179,8 @@ WebServer server = WebServer.builder()
 4. Set UI behavior programmatically.
 5. Set additional UI behavior based on UI configuration.
 <!--@mdc :: -->
+
+The order in which your code invokes the methods on `OpenApiUi.Builder` and
 `OpenApiFeature.Builder` determines the outcome. For instance, the example above
 adds the UI service to the `OpenApiFeature.Builder` *before* applying
 configuration to the `OpenApiFeature.Builder`. If the configuration contains a
@@ -214,20 +218,21 @@ component][configure-the-he] to change where it serves the OpenAPI document.
 
 Configure OpenAPI behavior:
 
+<!--@mdc ::code-callout -->
 ```yaml [application.yaml]
 server:
-port: 8080
+port: 8080 # <1>
 host: 0.0.0.0
 features:
-openapi:
-  web-context: /myopenapi
+openapi: # <2>
+  web-context: /myopenapi # <3>
 ```
-
-- The `port` and `host` settings are for the server as a whole, not
-specifically for OpenAPI.
-- The `openapi` subsection within `features` contains OpenAPI settings.
-- Changes the endpoint for returning the OpenAPI document from the default
-`/openapi` to `/myopenapi`.
+1. The `port` and `host` settings are for the server as a whole, not
+   specifically for OpenAPI.
+2. The `openapi` subsection within `features` contains OpenAPI settings.
+3. Changes the endpoint for returning the OpenAPI document from the default
+   `/openapi` to `/myopenapi`.
+<!--@mdc :: -->
 
 In this case, the path for the UI component is your customized OpenAPI path
 with `/ui` as a suffix. With the example above, the UI responds at
@@ -253,6 +258,7 @@ server:
 1. Introduces OpenAPI UI settings
 2. Specifies an alternate path for the UI
 <!--@mdc :: -->
+> [!NOTE]
 > The `server.features.openapi.services.ui.web-context` setting assigns the
 > *entire* web-context for the UI, not the suffix appended to the
 > `OpenApiFeature` endpoint.

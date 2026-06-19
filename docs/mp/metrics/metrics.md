@@ -420,20 +420,20 @@ JSON metrics output structured by scope (partial):
 <!--@mdc ::code-callout -->
 ```json
 {
-  "application": {  <1>
+  "application": { // <1>
     "getTimer": {
       "type": "timer",
       "unit": "seconds",
       "description": "Timer for getting the default greeting"
     }
   },
-  "vendor": {       <1>
+  "vendor": { // <1>
     "requests.count": {
       "type": "counter",
       "description": "Each request (regardless of HTTP method) will increase this counter"
     }
   },
-  "base": {         <1>
+  "base": { // <1>
     "cpu.systemLoadAverage": {
       "type": "gauge",
       "description": "Displays the system load average for the last minute."
@@ -771,23 +771,24 @@ Helidon decides whether to measure incoming requests as follows:
 The `auto-http-metrics.sockets` setting controls which sockets are included in
 the measurements; if not set, Helidon measures requests on all sockets.
 
-Including and Excluding Endpoints from Automatic Measurement:
+Including and excluding endpoints from automatic measurement:
 
+<!--@mdc ::code-callout -->
 ```properties [microprofile-config.properties]
-server.features.observe.observers.metrics.auto-http-metrics.paths.0.path=/greet        
+server.features.observe.observers.metrics.auto-http-metrics.paths.0.path=/greet # <1>
 server.features.observe.observers.metrics.auto-http-metrics.paths.0.methods=GET,HEAD
 
-server.features.observe.observers.metrics.auto-http-metrics.paths.1.path=/greet/{name} 
+server.features.observe.observers.metrics.auto-http-metrics.paths.1.path=/greet/{name} # <2> 
 server.features.observe.observers.metrics.auto-http-metrics.paths.1.enabled=false
 
-server.features.observe.observers.metrics.auto-http-metrics.sockets=@default,private   
+server.features.observe.observers.metrics.auto-http-metrics.sockets=@default,private # <3>
 ```
-
-- Measure `/greet` for only `GET` and `HEAD` requests.
-- Do not measure the personalized greeting requests.
-- Measure only endpoints on the default socket and the socket named `private`.
+1. Measure `/greet` for only `GET` and `HEAD` requests.
+2. Do not measure the personalized greeting requests.
+3. Measure only endpoints on the default socket and the socket named `private`.
   Endpoints on other sockets (such as if you had an `admin` socket) are not
   measured.
+<!--@mdc :: -->
 
 The [AutoHttpMetricsConfig documentation][autohttpmetricsc] describes the
 configuration more fully.
@@ -803,7 +804,7 @@ The following example adds a new resource class, `GreetingCards`, to the Helidon
 MP QuickStart example. It shows how to use the `@Counted` annotation to track
 the number of times the `/cards` endpoint is called.
 
-Create a new class GreetingCards with the following code:
+Create a new class `GreetingCards` with the following code:
 
 <!--@mdc ::code-callout -->
 ```java
@@ -834,6 +835,8 @@ public class GreetingCards {
    creating it if needed. The counter is incremented each time the anyCards
    method is called. The `name` attribute is optional.
 <!--@mdc :: -->
+
+Build and run the application:
 
 ```shell [Terminal]
 mvn package
@@ -882,7 +885,7 @@ Note that when using multiple annotations on a method, you **must** give the
 metrics different names as shown below, although they do not have to be
 absolute.
 
-Update the GreetingCards class with the following code:
+Update the `GreetingCards` class with the following code:
 
 <!--@mdc ::code-callout -->
 ```java
@@ -909,6 +912,8 @@ public class GreetingCards {
    remove the path prefix from the name.
 2. Add the `@Timed` annotation to get a `Timer` metric.
 <!--@mdc :: -->
+
+Build and run the application:
 
 ```shell [Terminal]
 mvn package
@@ -950,7 +955,7 @@ count all card queries. In the following example, the method-level metrics are
 not needed to aggregate the counts, but they are left in the example to
 demonstrate the combined output of all three metrics.
 
-Update the GreetingCards class with the following code:
+Update the `GreetingCards` class with the following code:
 
 <!--@mdc ::code-callout -->
 ```java
@@ -985,6 +990,8 @@ public class GreetingCards {
 2. Use `absolute=true` to remove path prefix for method-level annotations.
 3. Add a method with a `Counter` metric to get birthday cards.
 <!--@mdc :: -->
+
+Build and run the application:
 
 ```shell [Terminal]
 mvn package
@@ -1027,7 +1034,7 @@ updated by the application code. This annotation can be used on fields of type
 The following example shows how to use a field-level `Counter` metric to track
 cache hits.
 
-Update the GreetingCards class with the following code:
+Update the `GreetingCards` class with the following code:
 
 <!--@mdc ::code-callout{collapsed} -->
 ```java
@@ -1077,6 +1084,8 @@ public class GreetingCards {
 4. Randomly increment the `cacheHits` counter.
 <!--@mdc :: -->
 
+Build and run the application, then invoke the following endpoints:
+
 ```shell [Terminal]
 curl http://localhost:8080/cards
 curl http://localhost:8080/cards
@@ -1123,7 +1132,7 @@ the gauge as part of the metrics response.
 The following example demonstrates how to use a `Gauge` to track application
 up-time.
 
-Create a new GreetingCardsAppMetrics class with the following code:
+Create a new `GreetingCardsAppMetrics` class with the following code:
 
 <!--@mdc ::code-callout -->
 ```java
@@ -1149,6 +1158,8 @@ public class GreetingCardsAppMetrics {
 4. Return the application `appUpTimeSeconds` metric, which will be included in
    the application metrics.
 <!--@mdc :: -->
+
+Update the `GreetingCards` class with the following code to simplify the metrics
 output:
 
 ```java
@@ -1215,6 +1226,8 @@ public class MyExtension implements Extension {
 2. Injects a `MetricRegistry` (the application registry by default).
 3. Uses the injected registry to register a metric (a counter in this case).
 <!--@mdc :: -->
+
+Helidon does not prevent you from working with metrics earlier than the
 `RuntimeStart` event, but, if you do so, then Helidon might ignore certain
 configuration settings that would otherwise control how metrics behaves.
 
@@ -1399,6 +1412,8 @@ helidon-metrics   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s # <
 ```
 1. A service of type `NodePort` that serves the default routes on port `31143`.
 <!--@mdc :: -->
+
+Verify the metrics endpoint using port 30116, your port will likely be
 different:
 
 ```shell [Terminal]

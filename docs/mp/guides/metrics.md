@@ -388,6 +388,8 @@ public class GreetingCards {
    method is called. The `name` attribute is optional.
 <!--@mdc :: -->
 
+Build and run the application, then invoke the application endpoints below:
+
 ```shell [Terminal]
 curl http://localhost:8080/cards
 curl http://localhost:8080/cards
@@ -445,6 +447,8 @@ public class GreetingCards {
    remove the path prefix from the name.
 2. Add the `@Timed` annotation to get a `Timer` metric.
 <!--@mdc :: -->
+
+Build and run the application, then invoke the application endpoints below:
 
 ```shell [Terminal]
 curl http://localhost:8080/cards
@@ -518,6 +522,8 @@ public class GreetingCards {
    `specialEventCard`.
 <!--@mdc :: -->
 
+Build and run the application, then invoke the following endpoints:
+
 ```shell [Terminal]
 curl  http://localhost:8080/cards/wedding
 curl  http://localhost:8080/cards/birthday
@@ -579,6 +585,8 @@ public class GreetingCards {
 2. Use `absolute=true` to remove path prefix for method-level annotations.
 3. Add a method with a `Counter` metric to get birthday cards.
 <!--@mdc :: -->
+
+Build and run the application, then invoke the following endpoints:
 
 ```shell [Terminal]
 curl http://localhost:8080/cards
@@ -656,6 +664,8 @@ public class GreetingCards {
 4. Randomly increment the `cacheHits` counter.
 <!--@mdc :: -->
 
+Build and run the application, then invoke the following endpoints:
+
 ```shell [Terminal]
 curl http://localhost:8080/cards
 curl http://localhost:8080/cards
@@ -713,6 +723,8 @@ public class GreetingCardsAppMetrics {
 4. Return the application `appUpTimeSeconds` metric, which will be included in
    the application metrics.
 <!--@mdc :: -->
+
+Update the GreetingCards class with the following code to simplify the metrics
 output:
 
 ```java

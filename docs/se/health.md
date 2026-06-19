@@ -129,6 +129,8 @@ ObserveFeature observe = ObserveFeature.builder()
 6. Set the name of the custom health check.
 <!--@mdc :: -->
 
+#### Option 2: Using an in-line lambda expression
+
 If the logic for computing the health check response is fairly simple, express
 it as an in-line lambda when you register the health check.
 
@@ -159,6 +161,8 @@ ObserveFeature observe = ObserveFeature.builder()
 6. Set the type of the custom health check.
 7. Set the name of the custom health check.
 <!--@mdc :: -->
+
+Note that the logic in the lambda expression runs every time Helidon probes the
 added health check, so the values passed to `status` and `detail` are recomputed
 every time.
 
@@ -223,6 +227,8 @@ ObserveFeature observe = ObserveFeature.builder()
    `HealthObserver`.
 <!--@mdc :: -->
 
+#### Adding Observability (including the Custom Health Checks) to Helidon
+
 The code examples above prepare the `observe` feature instance using the
 built-in and custom health checks. To activate the health subsystem and other
 auto-discovered observability subsystems, add that `observe` instance as a
@@ -241,6 +247,8 @@ WebServer server = WebServer.builder()
 ```
 1. Add the previously-prepared health observer to the server as a feature
 <!--@mdc :: -->
+
+#### Triggering and Interpreting Health Check Output
 
 Health support in Helidon is part of the observability feature. `HealthObserver`
 is a Helidon-provided observability implementation that contains a collection of
@@ -406,6 +414,8 @@ WebServer server = WebServer.builder()
 2. Adds the specific built-in check(s) you want.
 3. Adds a custom check (in a previously-prepared variable `hc`).
 <!--@mdc :: -->
+
+You can control the thresholds for built-in health checks in either of two ways:
 
 - Create the health checks individually using their builders instead of using
   the `HealthChecks` convenience class. See the [table](#built-in-health-checks)

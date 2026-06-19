@@ -331,6 +331,9 @@ interface ServiceConfigBlueprint extends Prototype.Factory<Service> { // <1>
    objects.
 <!--@mdc :: -->
 
+- Extending `Prototype.Factory<Service>` enables creating `Service` runtime
+  objects.
+
 Usage:
 
 - Using a fluent builder:

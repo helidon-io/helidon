@@ -432,6 +432,8 @@ public Response compensateExample(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraI
 6. Method which will be called by coordinator when LRA is canceled
 <!--@mdc :: -->
 
+## Testing
+
 Testing of JAX-RS resources with LRA can be challenging as LRA participant
 running in parallel with the test is needed.
 
@@ -535,6 +537,8 @@ public class LraTest {
 5. Asserting LRA state in coordinator
 <!--@mdc :: -->
 
+LRA testing feature has the following default configuration:
+
 - port: `0` - coordinator is started on random port(Helidon LRA participant is
   capable to discover test coordinator automatically)
 - bind-address: `localhost` - bind address of the coordinator
@@ -569,6 +573,8 @@ public class LraCustomConfigTest {
 3. Persist LRA managed by coordinator(default is false)
 4. Use build time Jandex index(default is false)
 <!--@mdc :: -->
+
+When CDI bean auto-discovery is not desired, LRA and Config CDI extensions needs
 to be added manually.
 
 HelidonTest setup with disabled discovery:

@@ -33,6 +33,8 @@ class MyTest {
 ```
 1. Enable the test class
 <!--@mdc :: -->
+
+> [!NOTE]
 > By default, a MicroProfile Config profile named "test" is defined.
 >
 > It can be changed via:
@@ -78,6 +80,8 @@ class MyTest {
 1. Disable CDI discovery
 2. Add a bean class
 <!--@mdc :: -->
+
+When disabling discovery, it can be difficult to identify the CDI extensions
 needed to activate the desired features.
 
 JAXRS (Jersey) support can be added easily using [`@AddJaxRs`][addjaxrs].
@@ -96,6 +100,8 @@ class MyTest {
 1. Add JAX-RS (Jersey) support
 2. Add a resource class to the CDI container
 <!--@mdc :: -->
+
+Note the following Helidon CDI extensions:
 
 | Extension                                | Note                                      |
 |------------------------------------------|-------------------------------------------|
@@ -152,6 +158,8 @@ class MyTest {
 1. `testOne` executes in the shared CDI container
 2. `testTwo` executes in a dedicated CDI container
 <!--@mdc :: -->
+
+### Configuration
 
 The test configuration can be set up in two exclusive ways:
 
@@ -457,6 +465,8 @@ class MyBean {
 5. Inject the configuration
 <!--@mdc :: -->
 
+### Request Scope Example
+
 The following example demonstrates how to use [`@RequestScoped`][requestscoped]
 with JAXRS without CDI discovery.
 
@@ -494,6 +504,8 @@ class MyResource {
 2. Add JAXRS (Jersey) support
 3. Add `MyResource` to the CDI container
 <!--@mdc :: -->
+
+## Mock Support
 
 Mocking in Helidon MP is all about replacing CDI beans with instrumented mock
 classes.
@@ -567,6 +579,8 @@ class MyService {
 2. Customize the behavior
 <!--@mdc :: -->
 
+### Using CDI Alternative
+
 [`@Alternative`][alternative] can be used to replace a CDI bean with an
 instrumented instance.
 
@@ -628,6 +642,8 @@ class MyService {
 4. Customize the behavior
 <!--@mdc :: -->
 
+## Virtual Threads
+
 Virtual Threads pinning can be detected during tests.
 
 A virtual thread is "pinning" when it blocks its carrier thread in a way that
@@ -661,6 +677,8 @@ class MyTest {
 ```
 1. Change pinning threshold from default(20) to 50 milliseconds.
 <!--@mdc :: -->
+
+When pinning is detected, the test fails with a stacktrace pointing at the
 culprit.
 
 ## Reference

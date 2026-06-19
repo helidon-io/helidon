@@ -136,6 +136,8 @@ class HelidonBean {
 2. Additional attributes can be set on a method.
 <!--@mdc :: -->
 
+### Working With Tracers
+
 You can inject OpenTelemetry `Tracer` using the regular `@Inject` annotation and
 use `SpanBuilder` to manually create, star and stop spans.
 
@@ -166,6 +168,8 @@ public class HelidonEndpoint {
 1. Inject `Tracer`.
 2. Use `Tracer.spanBuilder` to create and start new `Span`.
 <!--@mdc :: -->
+
+Helidon MicroProfile Telemetry is integrated with [Helidon Tracing
 API](tracing.md). This means that both APIs can be mixed, and all parent
 hierarchies will be kept. In the case below, `@WithSpan` annotated method is
 mixed with manually created `io.helidon.tracing.Span`:
@@ -199,6 +203,8 @@ public GreetingMessage mixedSpanInjected() {
 2. Use the injected tracer to create `io.helidon.tracing.Span` using the
    `spanBuilder()` method.
 <!--@mdc :: -->
+
+The span is then started and ended manually. Span parent relations will be
 preserved. This means that span named "mixed_injected" with have parent span
 named "mixed_parent_injected", which will have parent span named
 "mixed_injected".
@@ -227,6 +233,8 @@ public GreetingMessage mixedSpan() {
 1. Obtain tracer using the `io.helidon.tracing.Tracer.global()` method;
 2. Use the created tracer to create a span.
 <!--@mdc :: -->
+
+The span is then started and ended manually. Span parent relations will be
 preserved.
 
 ### Working With Spans
@@ -261,6 +269,8 @@ public class HelidonEndpoint {
 3. Use `Span.current()` to access the current span.
 <!--@mdc :: -->
 
+### Working With Baggage
+
 The same functionality is available for the `Baggage` API:
 
 Inject the current baggage:
@@ -289,6 +299,8 @@ public class HelidonEndpoint {
 2. Use the injected baggage.
 3. Use `Baggage.current()` to access the current baggage.
 <!--@mdc :: -->
+
+### Responding to Span Lifecycle Events
 
 Applications and libraries can register listeners to be notified at several
 moments during the lifecycle of every Helidon span:
@@ -492,6 +504,8 @@ should be added to project’s pom.xml file.
 2. OpenTelemetry Jaeger exporter.
 <!--@mdc :: -->
 
+Add these lines to `META-INF/microprofile-config.properties`:
+
 MicroProfile Telemetry properties:
 
 <!--@mdc ::code-callout -->
@@ -539,6 +553,8 @@ public class GreetResource {
 1. Use of `@WithSpan` with name "default".
 <!--@mdc :: -->
 
+Now let’s call the Greeting endpoint:
+
 ```shell [Terminal]
 curl localhost:8080/greet
 Hello World
@@ -579,6 +595,8 @@ public JsonObject useCustomSpan() {
 4. End the custom span.
 <!--@mdc :: -->
 
+Let us call the custom endpoint:
+
 ```shell [Terminal]
 curl localhost:8080/greeting/custom
 ```
@@ -612,6 +630,8 @@ public String outbound() {
 2. Wrap method using `WithSpan`.
 3. Call the secondary service.
 <!--@mdc :: -->
+
+The secondary service is basic; it has only one method, which is also annotated
 with `@WithSpan`.
 
 Secondary service:
@@ -627,6 +647,8 @@ public String getSecondaryMessage() {
 1. Wrap method in a span.
 2. Return a string.
 <!--@mdc :: -->
+
+Let us call the *Outbound* endpoint:
 
 ```shell [Terminal]
 curl localhost:8080/greet/outbound

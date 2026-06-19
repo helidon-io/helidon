@@ -36,6 +36,8 @@ To enable Helidon Discovery, add the following dependency to your project’s
 1. Helidon Discovery API dependency.
 <!--@mdc :: -->
 
+Discovery is implemented by one or more
+
 [discovery providers](#providers). Generally you will choose a single provider
 and include its relevant dependencies on your runtime classpath as well. See the
 [Providers](#providers) section for more details.
@@ -206,6 +208,8 @@ Dependencies](../managing-dependencies.md)).
    if you plan to call provider-specific methods.
 <!--@mdc :: -->
 
+#### Configuration
+
 The Helidon Eureka Discovery provider can be configured using [Helidon
 Config](config/introduction.md). Examples shown below are in YAML, but are
 expressible in any format and any location that Helidon Config supports.
@@ -253,7 +257,7 @@ default. You can configure, among [other things][other-things]:
 - how often the cache refreshes
 - whether the cache is computed or fully replaced
 
-<!--@mdc ::code-callout{collapsed} -->
+<!--@mdc ::code-callout -->
 ```yaml [application.yaml]
 discovery: #<1>
   eureka: #<2>
@@ -364,6 +368,8 @@ Dependencies](../managing-dependencies.md)):
    provider-specific classes and methods (the most common case). Use `compile`
    if you plan to call provider-specific methods.
 <!--@mdc :: -->
+
+The behavior of the Web Client Discovery integration is [fully specified and
 documented][fully-specified].
 
 ### Configuration

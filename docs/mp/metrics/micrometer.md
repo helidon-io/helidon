@@ -147,6 +147,8 @@ public JsonObject getMessage(@PathParam("name") String name) {
    personalized greeting.
 <!--@mdc :: -->
 
+### Using the Helidon-provided Micrometer `MeterRegistry` from Code
+
 In addition to annotating your methods, you can create, look up, and update
 metrics explicitly in your code.
 
