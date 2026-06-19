@@ -17,12 +17,15 @@
 package io.helidon.webserver.security;
 
 import java.lang.System.Logger.Level;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -84,6 +87,8 @@ class HttpSecurityInterceptor implements Interception.EntryPointInterceptor {
     private final ReentrantReadWriteLock typeSecurityDefinitionLock = new ReentrantReadWriteLock();
     private final Map<Signature, HttpSecurityDefinition> methodSecurityDefinitions = new HashMap<>();
     private final ReentrantReadWriteLock methodSecurityDefinitionLock = new ReentrantReadWriteLock();
+    private final Set<InterceptionContext> noSecurityGenericContexts = Collections.newSetFromMap(new WeakHashMap<>());
+    private final ReentrantReadWriteLock noSecurityGenericContextLock = new ReentrantReadWriteLock();
 
     HttpSecurityInterceptor(Security security,
                             Config config,
@@ -219,9 +224,14 @@ class HttpSecurityInterceptor implements Interception.EntryPointInterceptor {
     private <T> T proceedGeneric(InterceptionContext ctx,
                                  Interception.Interceptor.Chain<T> chain,
                                  Object[] args) throws Exception {
+        if (noGenericSecurity(ctx)) {
+            return chain.proceed(args);
+        }
+
         HttpSecurityDefinition definition = methodSecurity(ctx);
 
         if (definition.noSecurity()) {
+            rememberNoGenericSecurity(ctx);
             return chain.proceed(args);
         }
 
@@ -272,6 +282,24 @@ class HttpSecurityInterceptor implements Interception.EntryPointInterceptor {
                 securityContext.endpointConfig(previousEndpointConfig);
                 context.unregister(securityContext);
             }
+        }
+    }
+
+    private boolean noGenericSecurity(InterceptionContext ctx) {
+        noSecurityGenericContextLock.readLock().lock();
+        try {
+            return noSecurityGenericContexts.contains(ctx);
+        } finally {
+            noSecurityGenericContextLock.readLock().unlock();
+        }
+    }
+
+    private void rememberNoGenericSecurity(InterceptionContext ctx) {
+        noSecurityGenericContextLock.writeLock().lock();
+        try {
+            noSecurityGenericContexts.add(ctx);
+        } finally {
+            noSecurityGenericContextLock.writeLock().unlock();
         }
     }
 

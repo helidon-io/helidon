@@ -33,6 +33,7 @@ import io.helidon.common.uri.UriInfo;
 import io.helidon.common.uri.UriPath;
 import io.helidon.common.uri.UriQuery;
 import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
@@ -56,7 +57,9 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -184,6 +187,32 @@ class SecurityEnvironmentPropagationTest {
         assertThat(env.path().orElseThrow(), is("/graphql"));
         assertThat(env.abacAttribute("resourceType").orElseThrow(), is(SecurityEnvironmentPropagationTest.class.getName()));
         assertThat(securityContext.env().path().orElseThrow(), is("/graphql"));
+    }
+
+    @Test
+    void testGenericNoSecuritySkipsMetadataLookupAfterFirstInvocation() throws Exception {
+        Security security = Security.builder().build();
+        HttpSecurityInterceptor interceptor = new HttpSecurityInterceptor(security,
+                                                                         Config.just(ConfigSources.create(Map.of(
+                                                                                 "server.features.security.declarative"
+                                                                                         + ".authorize-annotated-only",
+                                                                                 "true"))),
+                                                                         List.of(),
+                                                                         List.of());
+        InterceptionContext interceptionContext = interceptionContext(SecurityEnvironmentPropagationTest.class,
+                                                                      "publicResolver");
+
+        String first = interceptor.proceed(interceptionContext, _ -> "actual", "environment");
+
+        clearInvocations(interceptionContext);
+
+        String second = interceptor.proceed(interceptionContext, _ -> "actual", "environment");
+
+        assertThat(first, is("actual"));
+        assertThat(second, is("actual"));
+        verify(interceptionContext, never()).serviceInfo();
+        verify(interceptionContext, never()).elementInfo();
+        verify(interceptionContext, never()).typeAnnotations();
     }
 
     @Test

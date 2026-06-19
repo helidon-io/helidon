@@ -900,12 +900,12 @@ Annotations on resolver methods:
 Annotations on schema types, fields, and resolver parameters:
 
 - link:{javadoc-base-url}/io.helidon.graphql/io/helidon/graphql/GraphQl.Entity.html[`io.helidon.graphql.GraphQl.Entity`] - required marker for Java classes, records, interfaces, and enums that contribute SDL
-- link:{javadoc-base-url}/io.helidon.graphql/io/helidon/graphql/GraphQl.Argument.html[`io.helidon.graphql.GraphQl.Argument`] - GraphQL argument name
+- link:{javadoc-base-url}/io.helidon.graphql/io/helidon/graphql/GraphQl.Argument.html[`io.helidon.graphql.GraphQl.Argument`] - GraphQL resolver argument name
 - link:{javadoc-base-url}/io.helidon.graphql/io/helidon/graphql/GraphQl.Name.html[`io.helidon.graphql.GraphQl.Name`] - GraphQL name override
 - link:{javadoc-base-url}/io.helidon.graphql/io/helidon/graphql/GraphQl.Description.html[`io.helidon.graphql.GraphQl.Description`] - GraphQL description
 - link:{javadoc-base-url}/io.helidon.graphql/io/helidon/graphql/GraphQl.DefaultValue.html[`io.helidon.graphql.GraphQl.DefaultValue`] - GraphQL default value literal for an argument
 - link:{javadoc-base-url}/io.helidon.graphql/io/helidon/graphql/GraphQl.NonNull.html[`io.helidon.graphql.GraphQl.NonNull`] - non-null schema element
-- link:{javadoc-base-url}/io.helidon.graphql/io/helidon/graphql/GraphQl.Ignore.html[`io.helidon.graphql.GraphQl.Ignore`] - exclude a Java member from SDL
+- link:{javadoc-base-url}/io.helidon.graphql/io/helidon/graphql/GraphQl.Ignore.html[`io.helidon.graphql.GraphQl.Ignore`] - exclude an output Java member from SDL
 - link:{javadoc-base-url}/io.helidon.graphql/io/helidon/graphql/GraphQl.Scalar.html[`io.helidon.graphql.GraphQl.Scalar`] - custom scalar Java type
 - link:{javadoc-base-url}/io.helidon.webserver.graphql/io/helidon/webserver/graphql/GraphQlServer.Source.html[`io.helidon.webserver.graphql.GraphQlServer.Source`] - child resolver source object
 

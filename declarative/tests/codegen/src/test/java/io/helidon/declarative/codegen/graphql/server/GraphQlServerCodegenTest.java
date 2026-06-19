@@ -384,34 +384,43 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("if (type.isInstance(value))"));
         assertThat(generated, containsString("Expected GraphQL \" + graphQlType"));
         assertThat(generated, containsString("(Isbn) inputValue(environment.getArgument(\"value\"), Isbn.class, \"ISBN\")"));
-        assertThat(generated, containsString("enum_com_example_BookStatus(environment.getArgument(\"status\"))"));
-        assertThat(generated, containsString("list_java_util_List_com_example_BookStatus_(environment.getArgument(\"statuses\"))"));
-        assertThat(generated, containsString("list_java_util_List_com_example_Isbn_(environment.getArgument(\"values\"))"));
-        assertThat(generated, containsString("private static List<BookStatus> list_java_util_List_com_example_BookStatus_(Object value)"));
-        assertThat(generated, containsString("private static List<Isbn> list_java_util_List_com_example_Isbn_(Object value)"));
-        assertThat(generated, containsString("Expected GraphQL list value for [BookStatus] to be List"));
-        assertThat(generated, containsString("Expected GraphQL list value for [ISBN] to be List"));
-        assertThat(generated, containsString("result.add(enum_com_example_BookStatus(it));"));
+        assertThat(generated, containsString("enum_com_2e_example_2e_BookStatus(environment.getArgument(\"status\"))"));
+        assertThat(generated, containsString("list_java_2e_util_2e_List_3c_com_2e_example_2e_BookStatus_3e_("
+                                                     + "environment.getArgument(\"statuses\"))"));
+        assertThat(generated, containsString("list_java_2e_util_2e_List_3c_com_2e_example_2e_Isbn_3e_("
+                                                     + "environment.getArgument(\"values\"))"));
+        assertThat(generated, containsString("private static List<BookStatus> "
+                                                     + "list_java_2e_util_2e_List_3c_com_2e_example_2e_BookStatus_3e_("
+                                                     + "Object value)"));
+        assertThat(generated, containsString("private static List<Isbn> "
+                                                     + "list_java_2e_util_2e_List_3c_com_2e_example_2e_Isbn_3e_("
+                                                     + "Object value)"));
+        assertThat(generated, containsString("Expected GraphQL list value for [BookStatus]."));
+        assertThat(generated, containsString("Expected GraphQL list value for [ISBN]."));
+        assertThat(generated, containsString("result.add(enum_com_2e_example_2e_BookStatus(it));"));
         assertThat(generated, containsString("result.add((Isbn) inputValue(it, Isbn.class, \"ISBN\"));"));
-        assertThat(generated, containsString("input_com_example_BookSearch(environment.getArgument(\"criteria\"))"));
-        assertThat(generated, containsString("private static BookStatus enum_com_example_BookStatus(Object value)"));
-        assertThat(generated, containsString("Expected GraphQL enum value for BookStatus to be String"));
+        assertThat(generated, containsString("input_com_2e_example_2e_BookSearch(environment.getArgument(\"criteria\"))"));
+        assertThat(generated, containsString("private static BookStatus enum_com_2e_example_2e_BookStatus(Object value)"));
+        assertThat(generated, containsString("Expected GraphQL enum value for BookStatus to be a string"));
         assertThat(generated, containsString("return switch (enumName)"));
         assertThat(generated, containsString("case \"OUT_OF_PRINT\" -> BookStatus.OUT;"));
-        assertThat(generated, containsString("private static BookSearch input_com_example_BookSearch(Object value)"));
-        assertThat(generated, containsString("private static BookFilter input_com_example_BookFilter(Object value)"));
+        assertThat(generated, containsString("private static BookSearch input_com_2e_example_2e_BookSearch(Object value)"));
+        assertThat(generated, containsString("private static BookFilter input_com_2e_example_2e_BookFilter(Object value)"));
         assertThat(generated, containsString("if (!(value instanceof java.util.Map<?, ?> input))"));
-        assertThat(generated, containsString("Expected GraphQL input object value for BookSearchInput to be Map"));
-        assertThat(generated, containsString("Expected GraphQL input object value for BookFilterInput to be Map"));
+        assertThat(generated, containsString("Expected GraphQL input object value for BookSearchInput."));
+        assertThat(generated, containsString("Expected GraphQL input object value for BookFilterInput."));
         assertThat(generated, containsString("return new BookSearch("));
         assertThat(generated, containsString("(String) inputValue(input.get(\"phrase\"), String.class, \"String\")"));
         assertThat(generated, containsString("(Integer) inputValue(input.get(\"minimumScore\"), Integer.class, \"Int\")"));
-        assertThat(generated, containsString("enum_com_example_BookStatus(input.get(\"status\"))"));
-        assertThat(generated, containsString("list_java_util_List_java_lang_String_(input.get(\"tags\"))"));
-        assertThat(generated, containsString("list_java_util_List_com_example_BookStatus_(input.get(\"statuses\"))"));
-        assertThat(generated, containsString("list_java_util_List_com_example_Isbn_(input.get(\"isbns\"))"));
-        assertThat(generated, containsString("list_java_util_List_com_example_BookFilter_(input.get(\"filters\"))"));
-        assertThat(generated, containsString("result.add(input_com_example_BookFilter(it));"));
+        assertThat(generated, containsString("enum_com_2e_example_2e_BookStatus(input.get(\"status\"))"));
+        assertThat(generated, containsString("list_java_2e_util_2e_List_3c_java_2e_lang_2e_String_3e_(input.get(\"tags\"))"));
+        assertThat(generated, containsString("list_java_2e_util_2e_List_3c_com_2e_example_2e_BookStatus_3e_("
+                                                     + "input.get(\"statuses\"))"));
+        assertThat(generated, containsString("list_java_2e_util_2e_List_3c_com_2e_example_2e_Isbn_3e_("
+                                                     + "input.get(\"isbns\"))"));
+        assertThat(generated, containsString("list_java_2e_util_2e_List_3c_com_2e_example_2e_BookFilter_3e_("
+                                                     + "input.get(\"filters\"))"));
+        assertThat(generated, containsString("result.add(input_com_2e_example_2e_BookFilter(it));"));
         assertThat(generated, containsString("helidonContext(environment)"));
         assertThat(generated, containsString("graphQlExecutionContext(environment)"));
         assertThat(generated, containsString("securityContext(environment)"));
@@ -423,7 +432,8 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("this.endpoint_0.summary("));
         assertThat(generated, containsString("((Book) environment.getSource())"));
         assertThat(generated, containsString("(String) inputValue(environment.getArgument(\"prefix\"), String.class, \"String\")"));
-        assertThat(generated, containsString("list_java_util_List_java_lang_String_(environment.getArgument(\"tags\"))"));
+        assertThat(generated, containsString("list_java_2e_util_2e_List_3c_java_2e_lang_2e_String_3e_("
+                                                     + "environment.getArgument(\"tags\"))"));
         assertThat(generated, containsString("builder.type(\"AuthorDto\""));
         assertThat(generated, containsString(".dataFetcher(\"name\", environment -> ((AuthorDto) environment.getSource()).getName())"));
         assertThat(generated, containsString(".dataFetcher(\"active\", environment -> ((AuthorDto) environment.getSource()).isActive())"));
@@ -867,6 +877,75 @@ class GraphQlServerCodegenTest {
         assertThat(diagnostics, result.success(), is(false));
         assertThat(diagnostics, containsString("Duplicate GraphQL type name 'BookInput'"));
         assertThat(diagnostics, containsString("GraphQL output and input types share one schema namespace"));
+    }
+
+    @Test
+    void invalidGraphQlNameFailsCodegen() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-invalid-name"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            @GraphQl.Name("bad-name")
+                            String invalid() {
+                                return "invalid";
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("GraphQL name 'bad-name' must match [_A-Za-z][_0-9A-Za-z]*"));
+    }
+
+    @Test
+    void reservedGraphQlNameFailsCodegen() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-reserved-name"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            Book book() {
+                                return new Book("Dune");
+                            }
+                        }
+                        """)
+                .addSource("Book.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Entity
+                        @GraphQl.Name("__Book")
+                        record Book(String title) {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("GraphQL name '__Book' must not start with '__'"));
     }
 
     @Test

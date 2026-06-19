@@ -143,10 +143,12 @@ type; wildcards and generic element variables are rejected. Other Java scalar ty
 `BigDecimal`, maps, or optional values, require `@GraphQl.Scalar` with a matching `GraphQlScalar` service.
 Automatic entity fields support only GraphQL schema annotations; use an explicit `@GraphQlServer.Field` resolver when a
 field needs annotation-driven runtime behavior.
+Generated GraphQL names must match the GraphQL `Name` grammar, `[_A-Za-z][_0-9A-Za-z]*`, and must not start with `__`,
+which GraphQL reserves for introspection.
 
 Declarative resolver parameters can bind:
 
-- GraphQL arguments, using `@GraphQl.Argument` when the Java parameter name should not be used.
+- GraphQL arguments, using `@GraphQl.Argument` on resolver parameters when the Java parameter name should not be used.
 - Child resolver source objects, using `@GraphQlServer.Source` when the source parameter cannot be inferred.
 - `graphql.schema.DataFetchingEnvironment`.
 - Helidon `Context`, GraphQL `ExecutionContext`, and `SecurityContext` propagated from the current request.

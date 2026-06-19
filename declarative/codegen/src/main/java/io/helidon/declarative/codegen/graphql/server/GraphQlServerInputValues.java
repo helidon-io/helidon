@@ -63,11 +63,7 @@ final class GraphQlServerInputValues {
                 .addContentLine("return value;")
                 .decreaseContentPadding()
                 .addContentLine("}")
-                .addContentLine("throw new IllegalArgumentException(\"Expected GraphQL \" + graphQlType")
-                .increaseContentPadding()
-                .addContentLine("+ \" value to be \" + type.getName()")
-                .addContentLine("+ \", but got \" + value.getClass().getName() + \".\");")
-                .decreaseContentPadding());
+                .addContentLine("throw new IllegalArgumentException(\"Expected GraphQL \" + graphQlType + \" value.\");"));
     }
 
     static List<EnumSchemaType> enumInputTypes(List<Operation> operations, List<InputSchemaType> inputTypes) {
@@ -111,10 +107,7 @@ final class GraphQlServerInputValues {
                         .increaseContentPadding()
                         .addContent("throw new IllegalArgumentException(\"Expected GraphQL enum value for ")
                         .addContent(enumType.graphQlName())
-                        .addContentLine(" to be String, but got \"")
-                        .increaseContentPadding()
-                        .addContentLine("+ value.getClass().getName() + \".\");")
-                        .decreaseContentPadding()
+                        .addContentLine(" to be a string.\");")
                         .decreaseContentPadding()
                         .addContentLine("}")
                         .addContentLine("return switch (enumName) {")
@@ -172,10 +165,7 @@ final class GraphQlServerInputValues {
                         .increaseContentPadding()
                         .addContent("throw new IllegalArgumentException(\"Expected GraphQL list value for ")
                         .addContent(listType.graphQlName())
-                        .addContentLine(" to be List, but got \"")
-                        .increaseContentPadding()
-                        .addContentLine("+ value.getClass().getName() + \".\");")
-                        .decreaseContentPadding()
+                        .addContentLine(".\");")
                         .decreaseContentPadding()
                         .addContentLine("}")
                         .addContent("var result = new java.util.ArrayList<")
@@ -212,10 +202,7 @@ final class GraphQlServerInputValues {
                         .increaseContentPadding()
                         .addContent("throw new IllegalArgumentException(\"Expected GraphQL input object value for ")
                         .addContent(inputType.graphQlName())
-                        .addContentLine(" to be Map, but got \"")
-                        .increaseContentPadding()
-                        .addContentLine("+ value.getClass().getName() + \".\");")
-                        .decreaseContentPadding()
+                        .addContentLine(".\");")
                         .decreaseContentPadding()
                         .addContentLine("}")
                         .addContent("return new ")
@@ -291,14 +278,35 @@ final class GraphQlServerInputValues {
     }
 
     private static String inputObjectMethodName(InputSchemaType inputType) {
-        return "input_" + inputType.javaType().fqName().replace('.', '_').replace('$', '_');
+        return "input_" + javaIdentifierSuffix(inputType.javaType().fqName());
     }
 
     private static String enumInputMethodName(EnumSchemaType enumType) {
-        return "enum_" + enumType.javaType().fqName().replace('.', '_').replace('$', '_');
+        return "enum_" + javaIdentifierSuffix(enumType.javaType().fqName());
     }
 
     private static String listInputMethodName(ValueSchemaType listType) {
-        return "list_" + listType.javaType().resolvedName().replaceAll("[^A-Za-z0-9]", "_");
+        return "list_" + javaIdentifierSuffix(listType.javaType().resolvedName());
+    }
+
+    private static String javaIdentifierSuffix(String value) {
+        StringBuilder result = new StringBuilder(value.length());
+        for (int i = 0; i < value.length(); i++) {
+            char ch = value.charAt(i);
+            if (isAsciiAlphaNumeric(ch)) {
+                result.append(ch);
+            } else {
+                result.append('_')
+                        .append(Integer.toHexString(ch))
+                        .append('_');
+            }
+        }
+        return result.toString();
+    }
+
+    private static boolean isAsciiAlphaNumeric(char ch) {
+        return (ch >= 'A' && ch <= 'Z')
+                || (ch >= 'a' && ch <= 'z')
+                || (ch >= '0' && ch <= '9');
     }
 }

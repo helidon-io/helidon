@@ -333,7 +333,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         }
 
         OperationKind kind = query.isPresent() ? OperationKind.QUERY : OperationKind.MUTATION;
-        String graphQlName = graphQlName(annotations, method.elementName());
+        String graphQlName = graphQlName(annotations, method.elementName(), method.originatingElementValue());
         Set<String> names = kind == OperationKind.QUERY ? resolvers.queryNames() : resolvers.mutationNames();
         if (!names.add(graphQlName)) {
             throw new CodegenException("Duplicate GraphQL " + kind.label() + " field '" + graphQlName + "' in endpoint "
@@ -623,7 +623,8 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                                                + method.elementName(),
                                        method.originatingElementValue());
         }
-        return fieldName.or(() -> graphQlName).orElse(method.elementName());
+        return validateGraphQlName(fieldName.or(() -> graphQlName).orElse(method.elementName()),
+                                   method.originatingElementValue());
     }
 
     private String resolverMethodName(TypeInfo endpoint, TypedElementInfo method) {
@@ -643,7 +644,8 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         String graphQlName = Annotations.findFirst(GRAPHQL_ARGUMENT, annotations)
                 .flatMap(Annotation::stringValue)
                 .filter(not(String::isBlank))
-                .orElseGet(() -> graphQlName(annotations, parameter.elementName()));
+                .map(it -> validateGraphQlName(it, parameter.originatingElementValue()))
+                .orElseGet(() -> graphQlName(annotations, parameter.elementName(), parameter.originatingElementValue()));
         Optional<String> defaultValue = Annotations.findFirst(GRAPHQL_DEFAULT_VALUE, annotations)
                 .flatMap(Annotation::stringValue)
                 .filter(not(String::isBlank));
@@ -1195,11 +1197,45 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         result.append("}\n");
     }
 
-    private static String graphQlName(Set<Annotation> annotations, String defaultName) {
-        return Annotations.findFirst(GRAPHQL_NAME, annotations)
+    private static String graphQlName(Set<Annotation> annotations, String defaultName, Object originatingElement) {
+        String name = Annotations.findFirst(GRAPHQL_NAME, annotations)
                 .flatMap(Annotation::stringValue)
                 .filter(not(String::isBlank))
                 .orElse(defaultName);
+        return validateGraphQlName(name, originatingElement);
+    }
+
+    private static String validateGraphQlName(String name, Object originatingElement) {
+        if (!isGraphQlName(name)) {
+            throw new CodegenException("GraphQL name '" + name + "' must match [_A-Za-z][_0-9A-Za-z]*.",
+                                       originatingElement);
+        }
+        if (name.startsWith("__")) {
+            throw new CodegenException("GraphQL name '" + name
+                                               + "' must not start with '__'. GraphQL reserves names beginning with '__'.",
+                                       originatingElement);
+        }
+        return name;
+    }
+
+    private static boolean isGraphQlName(String name) {
+        if (name.isEmpty() || !isGraphQlNameStart(name.charAt(0))) {
+            return false;
+        }
+        for (int i = 1; i < name.length(); i++) {
+            if (!isGraphQlNamePart(name.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static boolean isGraphQlNameStart(char ch) {
+        return ch == '_' || (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z');
+    }
+
+    private static boolean isGraphQlNamePart(char ch) {
+        return isGraphQlNameStart(ch) || (ch >= '0' && ch <= '9');
     }
 
     private static Optional<String> builtinScalarGraphQlType(TypeName type) {
@@ -1532,7 +1568,9 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         private EnumValue enumValue(TypedElementInfo enumConstant) {
             Set<Annotation> annotations = new HashSet<>(enumConstant.annotations());
             return new EnumValue(enumConstant.elementName(),
-                                 graphQlName(annotations, enumConstant.elementName()),
+                                 graphQlName(annotations,
+                                             enumConstant.elementName(),
+                                             enumConstant.originatingElementValue()),
                                  description(annotations));
         }
 
@@ -1588,7 +1626,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                 return;
             }
             validateAutomaticFieldAnnotations(typeInfo, element, annotations);
-            String graphQlName = graphQlName(annotations, defaultName);
+            String graphQlName = graphQlName(annotations, defaultName, element.originatingElementValue());
             String schemaType = outputType(element.typeName(),
                                            element.typeName().primitive() || hasNonNull(annotations),
                                            element.originatingElementValue());
@@ -1623,7 +1661,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                                                    + ". Default values are supported on resolver arguments only.",
                                            element.originatingElementValue());
             }
-            String graphQlName = graphQlName(annotations, defaultName);
+            String graphQlName = graphQlName(annotations, defaultName, element.originatingElementValue());
             InputSchemaFieldType fieldType = inputFieldType(typeInfo, element);
             String schemaType = element.typeName().primitive() || hasNonNull(annotations)
                     ? fieldType.graphQlName() + "!"
@@ -1685,7 +1723,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
     }
 
     private static String typeName(TypeInfo typeInfo, Set<Annotation> annotations) {
-        return graphQlName(annotations, typeInfo.typeName().className());
+        return graphQlName(annotations, typeInfo.typeName().className(), typeInfo.originatingElementValue());
     }
 
     private static String inputTypeName(TypeInfo typeInfo, Set<Annotation> annotations) {
@@ -1724,7 +1762,8 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                                                + "on " + typeInfo.typeName().fqName(),
                                        typeInfo.originatingElementValue());
         }
-        return scalarName.or(() -> graphQlName).orElse(typeInfo.typeName().className());
+        return validateGraphQlName(scalarName.or(() -> graphQlName).orElse(typeInfo.typeName().className()),
+                                   typeInfo.originatingElementValue());
     }
 
     private static Optional<String> description(Set<Annotation> annotations) {

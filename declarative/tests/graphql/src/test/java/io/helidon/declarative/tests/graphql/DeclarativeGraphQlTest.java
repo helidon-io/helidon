@@ -40,6 +40,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -359,10 +360,74 @@ class DeclarativeGraphQlTest {
         assertThat(data.stringValue("hello").orElseThrow(), is("Hello Helidon"));
         assertThat(data.value("titleByIsbn").orElseThrow().type(), is(JsonValueType.NULL));
         String errors = json.arrayValue("errors").orElseThrow().toString();
-        assertThat(errors, containsString("Expected GraphQL ISBN value to be "
-                                                  + Isbn.class.getName()
-                                                  + ", but got java.lang.String."));
+        assertThat(errors, containsString("Expected GraphQL ISBN value."));
+        assertThat(errors, not(containsString(Isbn.class.getName())));
+        assertThat(errors, not(containsString(String.class.getName())));
         assertThat(errors, containsString("titleByIsbn"));
+    }
+
+    @Test
+    void testRequestLevelSecurityFailure() {
+        try (Http1ClientResponse response = client.get("/secured-graphql/schema.graphql")
+                .request()) {
+            assertThat(response.status(), is(Status.UNAUTHORIZED_401));
+        }
+
+        try (Http1ClientResponse response = client.get("/secured-graphql")
+                .queryParam("query", "{ securedRequest }")
+                .request()) {
+            assertThat(response.status(), is(Status.UNAUTHORIZED_401));
+        }
+
+        try (Http1ClientResponse response = client.post("/secured-graphql")
+                .submit("""
+                                {
+                                  "query": "{ securedRequest }"
+                                }
+                                """)) {
+            assertThat(response.status(), is(Status.UNAUTHORIZED_401));
+        }
+
+        try (Http1ClientResponse response = client.post("/secured-graphql")
+                .header(HeaderNames.AUTHORIZATION, basic("jill", "password"))
+                .submit("""
+                                {
+                                  "query": "{ securedRequest }"
+                                }
+                                """)) {
+            assertThat(response.status(), is(Status.FORBIDDEN_403));
+        }
+    }
+
+    @Test
+    void testRequestLevelSecuritySuccess() {
+        try (Http1ClientResponse response = client.get("/secured-graphql/schema.graphql")
+                .header(HeaderNames.AUTHORIZATION, basic("jack", "jackIsGreat"))
+                .request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            assertThat(response.as(String.class), containsString("securedRequest: String"));
+        }
+
+        try (Http1ClientResponse response = client.get("/secured-graphql")
+                .queryParam("query", "{ securedRequest }")
+                .header(HeaderNames.AUTHORIZATION, basic("jack", "jackIsGreat"))
+                .request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            JsonObject json = response.as(JsonObject.class);
+            assertThat(json.value("errors").isEmpty(), is(true));
+            assertThat(json.objectValue("data").orElseThrow()
+                               .stringValue("securedRequest").orElseThrow(), is("Secured request jack"));
+        }
+
+        JsonObject data = graphQl("""
+                                          {
+                                            "query": "{ securedRequest }"
+                                          }
+                                          """,
+                                  "/secured-graphql",
+                                  "jack",
+                                  "jackIsGreat");
+        assertThat(data.stringValue("securedRequest").orElseThrow(), is("Secured request jack"));
     }
 
     @Test
@@ -418,7 +483,11 @@ class DeclarativeGraphQlTest {
     }
 
     private JsonObject graphQl(String request, String username, String password) {
-        JsonObject json = graphQlResponse(request, username, password);
+        return graphQl(request, "/graphql", username, password);
+    }
+
+    private JsonObject graphQl(String request, String path, String username, String password) {
+        JsonObject json = graphQlResponse(request, path, username, password);
         assertThat("GraphQL errors: " + json.value("errors"), json.value("errors").isEmpty(), is(true));
         return json.objectValue("data").orElseThrow();
     }
@@ -428,7 +497,11 @@ class DeclarativeGraphQlTest {
     }
 
     private JsonObject graphQlResponse(String request, String username, String password) {
-        var requestBuilder = client.post("/graphql");
+        return graphQlResponse(request, "/graphql", username, password);
+    }
+
+    private JsonObject graphQlResponse(String request, String path, String username, String password) {
+        var requestBuilder = client.post(path);
         if (username != null) {
             requestBuilder.header(HeaderNames.AUTHORIZATION, basic(username, password));
         }

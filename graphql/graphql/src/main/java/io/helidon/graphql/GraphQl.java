@@ -82,9 +82,9 @@ public final class GraphQl {
     }
 
     /**
-     * Names a GraphQL argument or variable parameter.
+     * Names a GraphQL resolver argument parameter.
      */
-    @Target({ElementType.PARAMETER, ElementType.RECORD_COMPONENT})
+    @Target(ElementType.PARAMETER)
     @Retention(RetentionPolicy.CLASS)
     @Documented
     @Service.Qualifier
@@ -173,7 +173,10 @@ public final class GraphQl {
     }
 
     /**
-     * Excludes a Java member from generated schema output.
+     * Excludes an output Java member from generated schema output.
+     * <p>
+     * The declarative server generator rejects this annotation on GraphQL input record components, because input records
+     * must provide every constructor component.
      */
     @Target({ElementType.METHOD, ElementType.FIELD, ElementType.RECORD_COMPONENT})
     @Retention(RetentionPolicy.CLASS)
