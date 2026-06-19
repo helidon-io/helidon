@@ -45,7 +45,8 @@ public interface GrpcRouteRegistration {
 
     /**
      * Whether the socket defined in {@link #socket()} must be present for this registration, or it can be
-     * exposed on default socket.
+     * exposed on default socket. When this method returns {@code false} and {@link #socket()} returns a named socket
+     * that is not configured on the server, the registration falls back to the default socket.
      *
      * @return {@code true} if this registration must be exposed on the named socket, {@code false} by default
      */

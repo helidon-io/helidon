@@ -286,8 +286,21 @@ Annotations on endpoint methods:
 - link:{grpc-api-javadoc-base-url}/io/helidon/grpc/api/Grpc.ClientStreaming.html[`io.helidon.grpc.api.Grpc.ClientStreaming`] - client-streaming gRPC method
 - link:{grpc-api-javadoc-base-url}/io/helidon/grpc/api/Grpc.Bidirectional.html[`io.helidon.grpc.api.Grpc.Bidirectional`] - bidirectional streaming gRPC method
 
+Each endpoint method must declare exactly one gRPC method annotation and must not declare checked exceptions. The Java
+annotation type must match the streaming cardinality declared by the proto method.
+
+Supported server method signatures:
+
+- Unary: `Res method(Req)` or `void method(Req, StreamObserver<Res>)`
+- Server streaming: `void method(Req, StreamObserver<Res>)`
+- Client streaming: `StreamObserver<Req> method(StreamObserver<Res>)`
+- Bidirectional streaming: `StreamObserver<Req> method(StreamObserver<Res>)`
+
 Generated registrations use the fully-qualified gRPC service name, including the proto package when present. Route
 registration is enabled by default and can be disabled with `server.features.grpc-route-registration.enabled=false`.
+Custom `GrpcRouteRegistration` implementations can return a named socket. If that socket is not configured and
+`socketRequired()` returns `false`, the registration falls back to the default socket. Return `true` from
+`socketRequired()` to fail startup when the named socket is missing.
 
 Validation annotations on declarative gRPC server methods are enforced by generated entry point interceptors. To map a
 `ValidationException` to gRPC `INVALID_ARGUMENT`, add `helidon-webserver-grpc-validation` to the server runtime. The
@@ -314,6 +327,17 @@ Annotations on endpoint methods:
 - link:{grpc-api-javadoc-base-url}/io/helidon/grpc/api/Grpc.ServerStreaming.html[`io.helidon.grpc.api.Grpc.ServerStreaming`] - server-streaming gRPC method
 - link:{grpc-api-javadoc-base-url}/io/helidon/grpc/api/Grpc.ClientStreaming.html[`io.helidon.grpc.api.Grpc.ClientStreaming`] - client-streaming gRPC method
 - link:{grpc-api-javadoc-base-url}/io/helidon/grpc/api/Grpc.Bidirectional.html[`io.helidon.grpc.api.Grpc.Bidirectional`] - bidirectional streaming gRPC method
+
+Each abstract non-default client method must declare exactly one gRPC method annotation and must not declare checked
+exceptions.
+
+Supported client method signatures:
+
+- Unary: `Res method(Req)` or `void method(Req, StreamObserver<Res>)`
+- Server streaming: `Iterator<Res> method(Req)` or `void method(Req, StreamObserver<Res>)`
+- Client streaming: `Res method(Iterator<Req>)` or `StreamObserver<Req> method(StreamObserver<Res>)`
+- Bidirectional streaming: `Iterator<Res> method(Iterator<Req>)` or
+  `StreamObserver<Req> method(StreamObserver<Res>)`
 
 To inject a typed gRPC client, use the annotated interface with the `@GrpcClient.Client` qualifier.
 
@@ -598,7 +622,8 @@ security configuration.
 Supported annotations:
 
 - `io.helidon.security.annotations.Authenticated` - mark an endpoint or a method as requiring authentication
-- `io.helidon.security.annotations.Authorized` - mark an endpoint or a method as requiring authorization
+- `io.helidon.security.annotations.Authorized` - mark an endpoint or a method as requiring authorization;
+  `explicit = true` is not supported for declarative gRPC
 - `io.helidon.security.annotations.Audited` - mark an endpoint or a method as requiring audit logging
 - `io.helidon.security.abac.role.RoleValidator.PermitAll` - annotated method does not require any authentication or authorization (even if endpoint does)
 - `jakarta.annotation.security.PermitAll` - same as `RoleValidator.PermitAll`

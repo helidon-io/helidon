@@ -94,13 +94,14 @@ class GrpcServerExtension implements RegistryCodegenExtension {
                                                                 + " must declare a @Grpc.Proto method returning "
                                                                 + PROTO_FILE_DESCRIPTOR.fqName() + ".",
                                                         serverEndpoint.originatingElementValue()));
+        List<Annotation> typeAnnotations = TypeHierarchy.hierarchyAnnotations(ctx, serverEndpoint);
         Annotation serviceAnnotation = serverEndpoint.findAnnotation(GRPC_SERVICE)
                 .orElseThrow(() -> new CodegenException("Missing " + GRPC_SERVICE.fqName(),
                                                         serverEndpoint.originatingElementValue()));
         return new GrpcEndpoint(serverEndpoint,
                                 serviceAnnotation.stringValue().orElse(""),
                                 protoMethod,
-                                security(serverEndpoint.annotations(),
+                                security(typeAnnotations,
                                          serverEndpoint.typeName().fqName(),
                                          serverEndpoint.originatingElementValue()),
                                 List.copyOf(methods));

@@ -119,9 +119,13 @@ class GrpcServerCodegenTest {
                         import jakarta.annotation.security.PermitAll;
                         import jakarta.annotation.security.RolesAllowed;
 
+                        @Authenticated
+                        interface SecuredGreetingGrpc {
+                        }
+
                         @Grpc.GrpcService("Greeting")
                         @Service.Singleton
-                        class GreetingGrpc {
+                        class GreetingGrpc implements SecuredGreetingGrpc {
                             @Grpc.Proto
                             Descriptors.FileDescriptor proto() {
                                 return null;
@@ -232,8 +236,22 @@ class GrpcServerCodegenTest {
 
         String registration = Files.readString(generatedRegistration, StandardCharsets.UTF_8);
         assertThat(registration, containsString("implements GrpcRouteRegistration"));
+        assertThat(registration, containsString("private final GreetingGrpc endpoint;"));
         assertThat(registration, containsString("GrpcServiceDescriptor.builder(GreetingGrpc.class, \"Greeting\")"));
-        assertThat(registration, containsString(".proto(proto())"));
+        assertThat(registration, containsString("var declarative__proto = proto();"));
+        assertThat(registration, containsString(".proto(declarative__proto)"));
+        assertThat(registration, containsString("validateProtoMethod(declarative__proto, \"Greeting\", \"SayHello\", "
+                                                        + "false, false);"));
+        assertThat(registration, containsString("validateProtoMethod(declarative__proto, \"Greeting\", \"StreamHello\", "
+                                                        + "false, true);"));
+        assertThat(registration, containsString("validateProtoMethod(declarative__proto, \"Greeting\", \"CollectHello\", "
+                                                        + "true, false);"));
+        assertThat(registration, containsString("validateProtoMethod(declarative__proto, \"Greeting\", \"ChatHello\", "
+                                                        + "true, true);"));
+        assertThat(registration, containsString("private static void validateProtoMethod"));
+        assertThat(registration, containsString("method.isClientStreaming() != clientStreaming"));
+        assertThat(registration, containsString("method.isServerStreaming() != serverStreaming"));
+        assertThat(registration, containsString("private static String methodType"));
         assertThat(registration, containsString(".unary(\"SayHello\", this::sayHello"));
         assertThat(registration, containsString(".unary(\"ValidatedHello\", this::validatedHello"));
         assertThat(registration, containsString(".unary(\"InterceptedHello\", this::interceptedHello"));
@@ -243,6 +261,8 @@ class GrpcServerCodegenTest {
         assertThat(registration, containsString("if (entryPoints.hasInterceptors()) {"));
         assertThat(registration, containsString("entryPoints.interceptor("));
         assertThat(registration, containsString("GrpcSecurity.enforce().authenticate().securityLevel("));
+        assertThat(registration, containsString(".classAnnotations(GreetingGrpc__ServiceDescriptor.ANNOTATIONS)"
+                                                        + ".build()).configure(builder);"));
         assertThat(registration, containsString("GrpcSecurity.enforce().authorize().securityLevel("));
         assertThat(registration, containsString("GrpcSecurity.enforce().rolesAllowed(\"admin\").securityLevel("));
         assertThat(registration, containsString("GrpcSecurity.enforce().skipAuthentication().authorize().securityLevel("));
@@ -268,12 +288,12 @@ class GrpcServerCodegenTest {
         assertThat(registration, containsString("private static final TypedElementInfo METHOD_CHAT_HELLO"));
         assertThat(registration, containsString("METHOD_VALIDATED_HELLO));"));
         assertThat(registration, containsString("METHOD_INTERCEPTED_HELLO));"));
-        assertThat(registration, containsString("responseObserver.onNext(endpoint.get().sayHello(request));"));
-        assertThat(registration, containsString("responseObserver.onNext(endpoint.get().validatedHello(request));"));
-        assertThat(registration, containsString("responseObserver.onNext(endpoint.get().interceptedHello(request));"));
-        assertThat(registration, containsString("endpoint.get().streamHello(request, responseObserver);"));
-        assertThat(registration, containsString("return endpoint.get().collectHello(responseObserver);"));
-        assertThat(registration, containsString("return endpoint.get().chatHello(responseObserver);"));
+        assertThat(registration, containsString("responseObserver.onNext(endpoint.sayHello(request));"));
+        assertThat(registration, containsString("responseObserver.onNext(endpoint.validatedHello(request));"));
+        assertThat(registration, containsString("responseObserver.onNext(endpoint.interceptedHello(request));"));
+        assertThat(registration, containsString("endpoint.streamHello(request, responseObserver);"));
+        assertThat(registration, containsString("return endpoint.collectHello(responseObserver);"));
+        assertThat(registration, containsString("return endpoint.chatHello(responseObserver);"));
 
         Path validationInterceptor = result.sourceOutput().resolve("com/example/GreetingGrpc__ValidationInterceptor_0.java");
         assertThat("Generated source should exist: " + validationInterceptor, Files.exists(validationInterceptor), is(true));

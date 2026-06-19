@@ -386,7 +386,7 @@ class GrpcClientExtension implements RegistryCodegenExtension {
                 .decreaseContentPadding()
                 .addContentLine("}")
                 .addContentLine("declarative__clientBuilder.baseUri(uri);")
-                .addContentLine("if (uri.startsWith(\"http://\")) {")
+                .addContentLine("if (uri.regionMatches(true, 0, \"http://\", 0, \"http://\".length())) {")
                 .increaseContentPadding()
                 .addContentLine("declarative__clientBuilder.tls(it -> it.enabled(false));")
                 .decreaseContentPadding()

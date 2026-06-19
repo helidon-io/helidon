@@ -176,6 +176,7 @@ class GrpcClientCodegenTest {
         assertThat(client, containsString("declarative__client = registryClient.get().orElse(null);"));
         assertThat(client, containsString("declarative__clientBuilder.config(declarative__clientConfig);"));
         assertThat(client, containsString("declarative__clientBuilder.baseUri(uri);"));
+        assertThat(client, containsString("uri.regionMatches(true, 0, \"http://\", 0, \"http://\".length())"));
         assertThat(client, containsString("declarative__clientBuilder.tls(it -> it.enabled(false));"));
         assertThat(client, containsString("return serviceClient.unary(\"Greet\", request);"));
         assertThat(client, containsString("serviceClient.unary(\"AsyncGreet\", request, responseObserver);"));

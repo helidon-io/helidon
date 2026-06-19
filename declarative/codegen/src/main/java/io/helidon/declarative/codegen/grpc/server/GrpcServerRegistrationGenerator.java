@@ -26,6 +26,7 @@ import io.helidon.common.types.TypeNames;
 import io.helidon.declarative.codegen.DeclarativeTypes;
 import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.RegistryRoundContext;
+import io.helidon.service.codegen.ServiceCodegenTypes;
 
 import static io.helidon.codegen.CodegenUtil.toConstantName;
 import static io.helidon.declarative.codegen.DeclarativeTypes.SINGLETON_ANNOTATION;
@@ -51,6 +52,8 @@ class GrpcServerRegistrationGenerator {
         TypeName endpointSupplier = TypeName.builder(TypeNames.SUPPLIER)
                 .addTypeArgument(endpointType)
                 .build();
+        boolean singleton = endpoint.type().hasAnnotation(ServiceCodegenTypes.SERVICE_ANNOTATION_SINGLETON);
+        TypeName endpointFieldType = singleton ? endpointType : endpointSupplier;
 
         ClassModel.Builder classModel = ClassModel.builder()
                 .copyright(CodegenUtil.copyright(GrpcServerExtension.GENERATOR, endpointType, generatedType))
@@ -68,7 +71,7 @@ class GrpcServerRegistrationGenerator {
         classModel.addField(field -> field
                 .accessModifier(AccessModifier.PRIVATE)
                 .isFinal(true)
-                .type(endpointSupplier)
+                .type(endpointFieldType)
                 .name("endpoint"));
         classModel.addField(field -> field
                 .accessModifier(AccessModifier.PRIVATE)
@@ -76,23 +79,25 @@ class GrpcServerRegistrationGenerator {
                 .type(GRPC_SERVICE_DESCRIPTOR)
                 .name("descriptor"));
         addMethodInfoFields(classModel, endpoint);
-        classModel.addConstructor(constructor(ctx, endpoint, endpointSupplier));
+        classModel.addConstructor(constructor(ctx, endpoint, endpointFieldType));
         addDescriptorMethod(classModel);
-        addProtoMethod(classModel, endpoint);
+        addProtoMethod(classModel, endpoint, singleton);
+        addValidateProtoMethod(classModel);
+        addMethodTypeMethod(classModel);
         addToStringMethod(classModel, endpoint);
-        addHandlerMethods(classModel, endpoint);
+        addHandlerMethods(classModel, endpoint, singleton);
 
         roundContext.addGeneratedType(generatedType, classModel, endpointType, endpoint.type().originatingElementValue());
     }
 
     private static Constructor.Builder constructor(RegistryCodegenContext ctx,
                                                    GrpcEndpoint endpoint,
-                                                   TypeName endpointSupplier) {
+                                                   TypeName endpointFieldType) {
         TypeName endpointType = endpoint.type().typeName();
         TypeName descriptorType = ctx.descriptorType(endpointType);
         var constructor = Constructor.builder()
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
-                .addParameter(endpointSupplier, "endpoint")
+                .addParameter(endpointFieldType, "endpoint")
                 .addParameter(GRPC_ENTRY_POINTS, "entryPoints")
                 .addContentLine("this.endpoint = endpoint;")
                 .addContent("var descriptor = ")
@@ -101,6 +106,7 @@ class GrpcServerRegistrationGenerator {
                 .addContent("var annotations = ")
                 .addContent(descriptorType)
                 .addContentLine(".ANNOTATIONS;")
+                .addContentLine("var declarative__proto = proto();")
                 .addContent("var builder = ")
                 .addContent(GRPC_SERVICE_DESCRIPTOR)
                 .addContent(".builder(")
@@ -110,7 +116,7 @@ class GrpcServerRegistrationGenerator {
                 .addContentLine(")")
                 .increaseContentPadding()
                 .increaseContentPadding()
-                .addContentLine(".proto(proto());")
+                .addContentLine(".proto(declarative__proto);")
                 .decreaseContentPadding()
                 .decreaseContentPadding();
 
@@ -120,6 +126,10 @@ class GrpcServerRegistrationGenerator {
         }
 
         for (GrpcMethod method : endpoint.methods()) {
+            boolean clientStreaming = "CLIENT_STREAMING".equals(method.methodType())
+                    || "BIDI_STREAMING".equals(method.methodType());
+            boolean serverStreaming = "SERVER_STREAMING".equals(method.methodType())
+                    || "BIDI_STREAMING".equals(method.methodType());
             String registrationMethod = switch (method.methodType()) {
             case "UNARY" -> "unary";
             case "SERVER_STREAMING" -> "serverStreaming";
@@ -128,7 +138,16 @@ class GrpcServerRegistrationGenerator {
             default -> throw new IllegalArgumentException("Unsupported gRPC method type: " + method.methodType());
             };
             String constant = toConstantName("METHOD_" + method.uniqueName());
-            constructor.addContent("builder.")
+            constructor.addContent("validateProtoMethod(declarative__proto, ")
+                    .addContentLiteral(endpoint.serviceName())
+                    .addContent(", ")
+                    .addContentLiteral(method.grpcName())
+                    .addContent(", ")
+                    .addContent(String.valueOf(clientStreaming))
+                    .addContent(", ")
+                    .addContent(String.valueOf(serverStreaming))
+                    .addContentLine(");")
+                    .addContent("builder.")
                     .addContent(registrationMethod)
                     .addContent("(")
                     .addContentLiteral(method.grpcName())
@@ -252,7 +271,7 @@ class GrpcServerRegistrationGenerator {
                 .addContentLine("return descriptor;"));
     }
 
-    private static void addProtoMethod(ClassModel.Builder classModel, GrpcEndpoint endpoint) {
+    private static void addProtoMethod(ClassModel.Builder classModel, GrpcEndpoint endpoint, boolean singleton) {
         TypeName endpointType = endpoint.type().typeName();
         GrpcProtoMethod protoMethod = endpoint.protoMethod();
         classModel.addMethod(proto -> {
@@ -266,11 +285,89 @@ class GrpcServerRegistrationGenerator {
                         .addContent(protoMethod.method().elementName())
                         .addContentLine("();");
             } else {
-                proto.addContent("return endpoint.get().")
+                proto.addContent(singleton ? "return endpoint." : "return endpoint.get().")
                         .addContent(protoMethod.method().elementName())
                         .addContentLine("();");
             }
         });
+    }
+
+    private static void addValidateProtoMethod(ClassModel.Builder classModel) {
+        classModel.addMethod(method -> method
+                .accessModifier(AccessModifier.PRIVATE)
+                .isStatic(true)
+                .returnType(TypeNames.PRIMITIVE_VOID)
+                .name("validateProtoMethod")
+                .addParameter(PROTO_FILE_DESCRIPTOR, "proto")
+                .addParameter(TypeNames.STRING, "serviceName")
+                .addParameter(TypeNames.STRING, "methodName")
+                .addParameter(TypeNames.PRIMITIVE_BOOLEAN, "clientStreaming")
+                .addParameter(TypeNames.PRIMITIVE_BOOLEAN, "serverStreaming")
+                .addContentLine("var protoPackage = proto.getPackage();")
+                .addContentLine("var protoServiceName = serviceName;")
+                .addContentLine("if (!protoPackage.isEmpty() && protoServiceName.startsWith(protoPackage + \".\")) {")
+                .increaseContentPadding()
+                .addContentLine("protoServiceName = protoServiceName.substring(protoPackage.length() + 1);")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContentLine("var service = proto.findServiceByName(protoServiceName);")
+                .addContentLine("if (service == null) {")
+                .increaseContentPadding()
+                .addContentLine("throw new IllegalArgumentException(\"Unable to find gRPC service \" + serviceName")
+                .increaseContentPadding()
+                .addContentLine("+ \" in proto descriptor.\");")
+                .decreaseContentPadding()
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContentLine("var method = service.findMethodByName(methodName);")
+                .addContentLine("if (method == null) {")
+                .increaseContentPadding()
+                .addContentLine("throw new IllegalArgumentException(\"Unable to find gRPC method \" + serviceName")
+                .increaseContentPadding()
+                .addContentLine("+ \"/\" + methodName + \" in proto descriptor.\");")
+                .decreaseContentPadding()
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContentLine("if (method.isClientStreaming() != clientStreaming")
+                .increaseContentPadding()
+                .addContentLine("|| method.isServerStreaming() != serverStreaming) {")
+                .decreaseContentPadding()
+                .increaseContentPadding()
+                .addContentLine("throw new IllegalArgumentException(\"Declarative gRPC method \" + serviceName")
+                .increaseContentPadding()
+                .addContentLine("+ \"/\" + methodName + \" is configured as \"")
+                .addContentLine("+ methodType(clientStreaming, serverStreaming)")
+                .addContentLine("+ \" but proto declares \"")
+                .addContentLine("+ methodType(method.isClientStreaming(), method.isServerStreaming()) + \".\");")
+                .decreaseContentPadding()
+                .decreaseContentPadding()
+                .addContentLine("}"));
+    }
+
+    private static void addMethodTypeMethod(ClassModel.Builder classModel) {
+        classModel.addMethod(method -> method
+                .accessModifier(AccessModifier.PRIVATE)
+                .isStatic(true)
+                .returnType(TypeNames.STRING)
+                .name("methodType")
+                .addParameter(TypeNames.PRIMITIVE_BOOLEAN, "clientStreaming")
+                .addParameter(TypeNames.PRIMITIVE_BOOLEAN, "serverStreaming")
+                .addContentLine("if (clientStreaming && serverStreaming) {")
+                .increaseContentPadding()
+                .addContentLine("return \"BIDI_STREAMING\";")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContentLine("if (clientStreaming) {")
+                .increaseContentPadding()
+                .addContentLine("return \"CLIENT_STREAMING\";")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContentLine("if (serverStreaming) {")
+                .increaseContentPadding()
+                .addContentLine("return \"SERVER_STREAMING\";")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContentLine("return \"UNARY\";"));
     }
 
     private static void addToStringMethod(ClassModel.Builder classModel, GrpcEndpoint endpoint) {
@@ -286,7 +383,8 @@ class GrpcServerRegistrationGenerator {
                 .addContentLine(";"));
     }
 
-    private static void addHandlerMethods(ClassModel.Builder classModel, GrpcEndpoint endpoint) {
+    private static void addHandlerMethods(ClassModel.Builder classModel, GrpcEndpoint endpoint, boolean singleton) {
+        String endpointAccessor = singleton ? "endpoint." : "endpoint.get().";
         for (GrpcMethod grpcMethod : endpoint.methods()) {
             TypeName responseObserver = TypeName.builder(STREAM_OBSERVER)
                     .addTypeArgument(grpcMethod.responseType())
@@ -300,7 +398,7 @@ class GrpcServerRegistrationGenerator {
                         .returnType(requestObserver)
                         .name(grpcMethod.uniqueName())
                         .addParameter(responseObserver, "responseObserver")
-                        .addContent("return endpoint.get().")
+                        .addContent("return " + endpointAccessor)
                         .addContent(grpcMethod.method().elementName())
                         .addContentLine("(responseObserver);"));
                 continue;
@@ -312,12 +410,12 @@ class GrpcServerRegistrationGenerator {
                         .addParameter(grpcMethod.requestType(), "request")
                         .addParameter(responseObserver, "responseObserver");
                 if (grpcMethod.invocation() == GrpcMethod.Invocation.UNARY_RETURN) {
-                    method.addContent("responseObserver.onNext(endpoint.get().")
+                    method.addContent("responseObserver.onNext(" + endpointAccessor)
                             .addContent(grpcMethod.method().elementName())
                             .addContentLine("(request));")
                             .addContentLine("responseObserver.onCompleted();");
                 } else {
-                    method.addContent("endpoint.get().")
+                    method.addContent(endpointAccessor)
                             .addContent(grpcMethod.method().elementName())
                             .addContentLine("(request, responseObserver);");
                 }
