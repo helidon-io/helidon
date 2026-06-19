@@ -19,6 +19,8 @@ package io.helidon.graphql.server;
 import java.util.List;
 import java.util.Map;
 
+import graphql.language.Document;
+import graphql.parser.Parser;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.SchemaGenerator;
@@ -26,6 +28,7 @@ import graphql.schema.idl.SchemaParser;
 import graphql.schema.idl.TypeDefinitionRegistry;
 import org.junit.jupiter.api.Test;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
@@ -57,6 +60,38 @@ class InvocationHandlerObjectResultTest {
 
         List<Map<String, Object>> errors = (List<Map<String, Object>>) result.get("errors");
         assertThat(errors.getFirst().get("path"), is(List.of("book", "summary")));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void parsedDocumentContextUsesParsedDocument() {
+        InvocationHandler handler = InvocationHandler.create(schema());
+        Document document = Parser.parse("{book { title }}");
+
+        Map<String, Object> result = handler.execute("not a query",
+                                                     null,
+                                                     Map.of(),
+                                                     Map.of(GraphQlConstants.PARSED_DOCUMENT_CONTEXT_KEY, document));
+
+        Map<String, Object> data = (Map<String, Object>) result.get("data");
+        Map<String, Object> book = (Map<String, Object>) data.get("book");
+        assertThat(book.get("title"), is("Dune"));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void parsedDocumentContextValidatesParsedDocument() {
+        InvocationHandler handler = InvocationHandler.create(schema());
+        Document document = Parser.parse("{book { unknown }}");
+
+        Map<String, Object> result = handler.execute("{book { title }}",
+                                                     null,
+                                                     Map.of(),
+                                                     Map.of(GraphQlConstants.PARSED_DOCUMENT_CONTEXT_KEY, document));
+
+        List<Map<String, Object>> errors = (List<Map<String, Object>>) result.get("errors");
+        assertThat(errors.getFirst().get("message").toString(), containsString("Field 'unknown'"));
+        assertThat(result.get("data"), is((Object) null));
     }
 
     private static GraphQLSchema schema() {

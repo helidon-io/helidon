@@ -65,6 +65,8 @@ import graphql.language.Document;
 import graphql.language.OperationDefinition;
 import graphql.parser.InvalidSyntaxException;
 import graphql.parser.Parser;
+import graphql.parser.ParserEnvironment;
+import graphql.parser.ParserOptions;
 import graphql.schema.GraphQLSchema;
 
 /**
@@ -158,8 +160,9 @@ public class GraphQlService implements HttpService {
         String operationName = queryParams.first("operationName")
                 .filter(it -> !it.isEmpty())
                 .orElse(null);
+        Optional<ParsedQuery> parsedQuery = parseQuery(query, operationName);
 
-        if (mutationOperation(query, operationName)) {
+        if (parsedQuery.map(ParsedQuery::mutation).orElse(false)) {
             res.status(Status.METHOD_NOT_ALLOWED_405)
                     .send();
             return;
@@ -169,7 +172,7 @@ public class GraphQlService implements HttpService {
                 .map(this::toVariableMap)
                 .orElseGet(Map::of);
 
-        processRequest(req, res, query, operationName, variables);
+        processRequest(req, res, query, operationName, variables, requestContext(req, parsedQuery));
     }
 
     // handle GET request to obtain GraphQL schema
@@ -182,9 +185,18 @@ public class GraphQlService implements HttpService {
                                 String query,
                                 String operationName,
                                 Map<String, Object> variables) {
+        processRequest(req, res, query, operationName, variables, requestContext(req));
+    }
+
+    private void processRequest(ServerRequest req,
+                                ServerResponse res,
+                                String query,
+                                String operationName,
+                                Map<String, Object> variables,
+                                Map<String, Object> contextValues) {
 
         res.headers().contentType(MediaTypes.APPLICATION_JSON);
-        Map<String, Object> result = invocationHandler.execute(query, operationName, variables, requestContext(req));
+        Map<String, Object> result = invocationHandler.execute(query, operationName, variables, contextValues);
         res.send(toJsonBytes(result));
     }
 
@@ -192,18 +204,29 @@ public class GraphQlService implements HttpService {
         return Map.of(ExecutionContext.HELIDON_CONTEXT_KEY, req.context());
     }
 
-    private static boolean mutationOperation(String query, String operationName) {
+    private Map<String, Object> requestContext(ServerRequest req, Optional<ParsedQuery> parsedQuery) {
+        return parsedQuery
+                .map(parsed -> Map.of(ExecutionContext.HELIDON_CONTEXT_KEY, req.context(),
+                                      GraphQlConstants.PARSED_DOCUMENT_CONTEXT_KEY, parsed.document()))
+                .orElseGet(() -> requestContext(req));
+    }
+
+    private static Optional<ParsedQuery> parseQuery(String query, String operationName) {
         Document document;
         try {
-            document = Parser.parse(query);
+            document = Parser.parse(ParserEnvironment.newParserEnvironment()
+                                            .document(query)
+                                            .parserOptions(ParserOptions.getDefaultOperationParserOptions())
+                                            .build());
         } catch (InvalidSyntaxException e) {
-            return false;
+            return Optional.empty();
         }
 
-        return operationDefinition(document, operationName)
+        boolean mutation = operationDefinition(document, operationName)
                 .map(OperationDefinition::getOperation)
                 .filter(OperationDefinition.Operation.MUTATION::equals)
                 .isPresent();
+        return Optional.of(new ParsedQuery(document, mutation));
     }
 
     private static Optional<OperationDefinition> operationDefinition(Document document, String operationName) {
@@ -216,6 +239,9 @@ public class GraphQlService implements HttpService {
             return Optional.of(definitions.getFirst());
         }
         return Optional.empty();
+    }
+
+    private record ParsedQuery(Document document, boolean mutation) {
     }
 
     private static String stringValue(JsonObject object, String name) {

@@ -164,7 +164,8 @@ public interface InvocationHandler {
             }
 
             GraphQL.Builder graphQlBuilder = GraphQL.newGraphQL(schema)
-                    .subscriptionExecutionStrategy(new SubscriptionExecutionStrategy());
+                    .subscriptionExecutionStrategy(new SubscriptionExecutionStrategy())
+                    .preparsedDocumentProvider(InvocationHandlerImpl.preparsedDocumentProvider(schema));
             configureInstrumentation(graphQlBuilder);
             GraphQL graphQl = graphQlBuilder.build();
 

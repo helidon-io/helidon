@@ -23,10 +23,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -39,6 +43,10 @@ import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.GraphQLError;
 import graphql.GraphQLException;
+import graphql.ParseAndValidate;
+import graphql.execution.preparsed.PreparsedDocumentEntry;
+import graphql.execution.preparsed.PreparsedDocumentProvider;
+import graphql.language.Document;
 import graphql.language.SourceLocation;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.SchemaPrinter;
@@ -51,6 +59,7 @@ import static io.helidon.graphql.server.GraphQlConstants.EXTENSIONS;
 import static io.helidon.graphql.server.GraphQlConstants.LINE;
 import static io.helidon.graphql.server.GraphQlConstants.LOCATIONS;
 import static io.helidon.graphql.server.GraphQlConstants.MESSAGE;
+import static io.helidon.graphql.server.GraphQlConstants.PARSED_DOCUMENT_CONTEXT_KEY;
 import static io.helidon.graphql.server.GraphQlConstants.PATH;
 
 class InvocationHandlerImpl implements InvocationHandler {
@@ -81,6 +90,34 @@ class InvocationHandlerImpl implements InvocationHandler {
 
         this.exceptionDenySet.addAll(builder.denyExceptions());
         this.exceptionAllowSet.addAll(builder.allowExceptions());
+    }
+
+    static PreparsedDocumentProvider preparsedDocumentProvider(GraphQLSchema schema) {
+        Objects.requireNonNull(schema);
+        return (executionInput, parseAndValidate) -> preparsedDocument(schema, executionInput, parseAndValidate);
+    }
+
+    private static CompletableFuture<PreparsedDocumentEntry> preparsedDocument(
+            GraphQLSchema schema,
+            ExecutionInput executionInput,
+            Function<ExecutionInput, PreparsedDocumentEntry> parseAndValidate) {
+
+        Object parsedDocument = executionInput.getGraphQLContext().get(PARSED_DOCUMENT_CONTEXT_KEY);
+        if (parsedDocument instanceof Document document) {
+            return CompletableFuture.completedFuture(new PreparsedDocumentEntry(document,
+                                                                               validate(schema, executionInput, document)));
+        }
+        return CompletableFuture.completedFuture(parseAndValidate.apply(executionInput));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<ValidationError> validate(GraphQLSchema schema,
+                                                  ExecutionInput executionInput,
+                                                  Document document) {
+        Object validationPredicate = executionInput.getGraphQLContext()
+                .getOrDefault(ParseAndValidate.INTERNAL_VALIDATION_PREDICATE_HINT, (Predicate<Class<?>>) _ -> true);
+        Locale locale = executionInput.getLocale() == null ? Locale.getDefault() : executionInput.getLocale();
+        return ParseAndValidate.validate(schema, document, (Predicate<Class<?>>) validationPredicate, locale);
     }
 
     @Override
