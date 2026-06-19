@@ -389,7 +389,7 @@ List<Keeper> listAllOrderByAgeAscName();
 The formal grammar for method names is as follows:
 
 <!--@mdc ::code-collapse -->
-```text
+```bnf
 method-name  :: <query> | <delete>
 
 query        :: <action> [ <projection> ] [ "By" <criteria>  [ "OrderBy" <order> ] ]

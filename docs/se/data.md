@@ -258,7 +258,7 @@ keyword. It consists of `expression` and `property` components:
 | Sum             | `getSumPoints`                   | Returns the sum of values. Requires numeric type.          |
 | Avg             | `getAvgPoints`                   | Returns the average value. Requires floating point type.   |
 
-The `property` part is the entity property name and it can contain underscores.
+The `property` part is the entity property name, and it can contain underscores.
 An underscore is interpreted as a dot, which means navigation to a related
 entity attribute. For example, `Keeper_Name` on the `Pet` entity translates to
 the JPQL query `SELECT p.keeper.name FROM Pet p`.
@@ -388,7 +388,7 @@ List<Keeper> listAllOrderByAgeAscName();
 The formal grammar for method names is as follows:
 
 <!--@mdc ::code-collapse -->
-```text
+```bnf
 method-name  :: <query> | <delete>
 
 query        :: <action> [ <projection> ] [ "By" <criteria>  [ "OrderBy" <order> ] ]

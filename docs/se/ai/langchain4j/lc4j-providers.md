@@ -29,45 +29,48 @@ declarative service bean in the Helidon service registry. You can attach it to
 AI services or agents using `@Ai.ContentRetriever("name")`, or inject it
 directly by name.
 
+<!--@mdc ::code-callout -->
 ```yaml [application.yaml]
 langchain4j:
   content-retrievers:
     foo-bar-content-retriever:
-      provider: lc4j-content-retriever 
-      type: embedding-store-content-retriever 
-      embedding-store: foo-bar-inmemory-embedding-store 
-      embedding-model: foo-bar-embedding-model 
+      provider: lc4j-content-retriever # <1>
+      type: embedding-store-content-retriever # <2>
+      embedding-store: foo-bar-inmemory-embedding-store # <3>
+      embedding-model: foo-bar-embedding-model # <4>
       max-results: 10
       min-score: 0.6
 ```
+1. Selects the built-in content retriever provider.
+2. Explicitly selects the default LangChain4j embedding-store-backed retriever
+   type.
+3. Names the embedding store bean used for similarity search.
+4. Sets the embedding model used to convert incoming query text to vectors.
+<!--@mdc :: -->
 
-- Selects the built-in content retriever provider.
-- Explicitly selects the default LangChain4j embedding-store-backed retriever
-  type.
-- Names the embedding store bean used for similarity search.
-- Sets the embedding model used to convert incoming query text to vectors.
-
+<!--@mdc ::code-callout -->
 ```java
 @Ai.Service
 @Ai.ChatModel("foo-bar-chat-model")
-@Ai.ContentRetriever("foo-bar-content-retriever") 
+@Ai.ContentRetriever("foo-bar-content-retriever") //<1>
 public interface FooBarExpert {
     String askFoo(String foo);
 }
 ```
+1. Binds this AI service to the named content retriever bean from configuration.
+<!--@mdc :: -->
 
-- Binds this AI service to the named content retriever bean from configuration.
-
+<!--@mdc ::code-callout -->
 ```java
 @Service.Singleton
 public class RetrieverConsumer {
-    RetrieverConsumer(@Service.Named("foo-bar-content-retriever") ContentRetriever retriever) { 
+    RetrieverConsumer(@Service.Named("foo-bar-content-retriever") ContentRetriever retriever) { //<1>
     }
 }
 ```
-
-- Injects the same named content retriever bean directly into another Helidon
-  declarative service.
+1. Injects the same named content retriever bean directly into another Helidon
+   declarative service.
+<!--@mdc :: -->
 
 Configuration properties:
 
@@ -98,25 +101,27 @@ previously persisted embeddings and segments using LangChain4j
 `InMemoryEmbeddingStore.fromFile(...)`. If `from-file` is not configured, the
 store starts empty.
 
+<!--@mdc ::code-callout -->
 ```yaml [application.yaml]
 langchain4j:
   embedding-stores:
     foo-bar-inmemory-embedding-store:
-      provider: lc4j-in-memory 
+      provider: lc4j-in-memory # <1>
       # optional: preload persisted store content
-      from-file: "target/foo-bar-inmemory-embedding-store.json" 
+      from-file: "target/foo-bar-inmemory-embedding-store.json" # <2>
 
   content-retrievers:
     foo-bar-content-retriever:
       provider: lc4j-content-retriever
       embedding-model: foo-bar-embedding-model
-      embedding-store: foo-bar-inmemory-embedding-store 
+      embedding-store: foo-bar-inmemory-embedding-store # <3>
 ```
+1. Selects the built-in LangChain4j in-memory embedding store provider.
+2. Loads previously persisted embeddings and text segments during startup.
+3. Connects the retriever to the named in-memory embedding store bean.
+<!--@mdc :: -->
 
-- Selects the built-in LangChain4j in-memory embedding store provider.
-- Loads previously persisted embeddings and text segments during startup.
-- Connects the retriever to the named in-memory embedding store bean.
-
+<!--@mdc ::code-callout -->
 ```java
 @Service.Singleton
 public class EmbeddingStoreLifecycle {
@@ -127,16 +132,16 @@ public class EmbeddingStoreLifecycle {
         this.store = store;
     }
 
-    @Service.PreDestroy 
+    @Service.PreDestroy //<1>
     void persistEmbeddingStore() {
-        store.serializeToFile(Path.of("target/foo-bar-inmemory-embedding-store.json")); 
+        store.serializeToFile(Path.of("target/foo-bar-inmemory-embedding-store.json")); //<2>
     }
 }
 ```
-
-- Invoked by Helidon when the singleton service bean is being shut down.
-- Persists current in-memory embeddings and segments to JSON file; the same file
-  can be loaded on next startup using `from-file`.
+1. Invoked by Helidon when the singleton service bean is being shut down.
+2. Persists current in-memory embeddings and segments to JSON file; the same file
+   can be loaded on next startup using `from-file`.
+<!--@mdc :: -->
 
 Configuration properties:
 

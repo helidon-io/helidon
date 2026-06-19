@@ -104,8 +104,9 @@ tracer at runtime.
 
 Run Jaeger within a docker container, then check the Jaeger server working:
 
+<!--@mdc ::code-callout -->
 ```shell [Terminal]
-docker run -d --name jaeger \                  
+docker run -d --name jaeger \                  <1>
   -e COLLECTOR_OTLP_ENABLED=true \
   -p 6831:6831/udp \
   -p 6832:6832/udp \
@@ -119,8 +120,8 @@ docker run -d --name jaeger \
   -p 9411:9411 \
   jaegertracing/all-in-one:1.50
 ```
-
-- Run the Jaeger docker image.
+1. Run the Jaeger docker image.
+<!--@mdc :: -->
 
 Check the Jaeger server by opening in browser:
 
@@ -236,18 +237,17 @@ To trace at the method level, you just annotate a method with @Traced.
 
 Add the @Traced annotation to the getMessage method:
 
+<!--@mdc ::code-callout -->
 ```java
 class GreetingProvider {
-    @Traced 
+    @Traced // <1>
     String getMessage() {
         return message.get();
     }
 }
 ```
-
-- Enable tracing for getMessage.
-
-Build and run the application, then invoke the endpoints and check the response:
+1. Enable tracing for getMessage.
+<!--@mdc :: -->
 
 ```shell [Terminal]
 curl http://localhost:8080/greet
@@ -266,22 +266,21 @@ tracing for all class methods, except for the constructor and private methods.
 Add @Traced to the GreetingProvider class and remove @Traced from the getMessage
 method:
 
+<!--@mdc ::code-callout -->
 ```java
-@Traced 
+@Traced // <1>
 @ApplicationScoped
 public class GreetingProvider {
 
-    String getMessage() { 
+    String getMessage() { // <2>
         return message.get();
     }
 }
 ```
-
-- This will enable tracing for all class methods, except for the constructor and
-  methods that are private.
-- Remove @Traced for the `getMessage` method.
-
-Build and run the application, then invoke the endpoints and check the response:
+1. This will enable tracing for all class methods, except for the constructor and
+   methods that are private.
+2. Remove @Traced for the `getMessage` method.
+<!--@mdc :: -->
 
 ```shell [Terminal]
 curl http://localhost:8080/greet
@@ -296,6 +295,7 @@ You can refresh the UI view and drill down the trace to see the new spans.
 
 Update the GreetingProvider class with the following code:
 
+<!--@mdc ::code-callout -->
 ```java
 @ApplicationScoped
 public class GreetingProvider {
@@ -306,12 +306,12 @@ public class GreetingProvider {
         this.message.set(message);
     }
 
-    @Traced 
+    @Traced // <1>
     String getMessage() {
         return getMessage2();
     }
 
-    @Traced 
+    @Traced // <2>
     String getMessage2() {
         return message.get();
     }
@@ -321,13 +321,11 @@ public class GreetingProvider {
     }
 }
 ```
-
-- The `getMessage` method will be traced since it is externally invoked by
-  `GreetResource`.
-- The `getMessage2` method will not be traced, even with the @Traced annotation,
-  since it is called internally by `getMessage`.
-
-Build and run the application, then invoke the endpoints:
+1. The `getMessage` method will be traced since it is externally invoked by
+   `GreetResource`.
+2. The `getMessage2` method will not be traced, even with the @Traced annotation,
+   since it is called internally by `getMessage`.
+<!--@mdc :: -->
 
 ```shell [Terminal]
 curl http://localhost:8080/greet
@@ -404,11 +402,14 @@ the port is 8081**):
 curl http://localhost:8081/greet
 ```
 
+<!--@mdc ::code-callout -->
 ```json [Response]
 {
-  "message": "Hello From MP-2 World!"
+  "message": "Hello From MP-2 World!" // <1>
 }
 ```
+1. Notice the greeting came from the second service.
+<!--@mdc :: -->
 
 #### Modify the first service
 
@@ -417,14 +418,14 @@ to modify the original application to call it.
 
 Replace the GreetResource class with the following code:
 
-<!--@mdc ::code-collapse -->
+<!--@mdc ::code-callout{collapsed} -->
 ```java
 @Path("/greet")
 @RequestScoped
 public class GreetResource {
 
     @Uri("http://localhost:8081/greet")
-    private WebTarget target; 
+    private WebTarget target; // <1>
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
     private final GreetingProvider greetingProvider;
@@ -441,7 +442,7 @@ public class GreetResource {
     }
 
     @GET
-    @Path("/outbound") 
+    @Path("/outbound") // <2>
     public JsonObject outbound() {
         return target.request().accept(MediaType.APPLICATION_JSON_TYPE).get(JsonObject.class);
     }
@@ -453,30 +454,27 @@ public class GreetResource {
     }
 }
 ```
+1. This is the `WebTarget` needed to send a request to the second service at port
+   `8081`.
+2. This is the new endpoint that will call the second service.
 <!--@mdc :: -->
 
-- This is the `WebTarget` needed to send a request to the second service at port
-  `8081`.
-- This is the new endpoint that will call the second service.
-
-Build and run the application, then invoke the endpoint and check the response:
-
+<!--@mdc ::code-callout -->
 ```shell [Terminal]
-curl -i http://localhost:8080/greet/outbound 
+curl -i http://localhost:8080/greet/outbound # <1>
 ```
+1. The request went to the service on `8080`, which then invoked the service at
+   `8081` to get the greeting.
+<!--@mdc :: -->
 
-- The request went to the service on `8080`, which then invoked the service at
-  `8081` to get the greeting.
-
+<!--@mdc ::code-callout -->
 ```json
 {
-  "message": "Hello From MP-2 World!" 
+  "message": "Hello From MP-2 World!" // <1>
 }
 ```
-
-- Notice the greeting came from the second service.
-
-Refresh the Jaeger UI trace listing page and notice that there is a trace across
+1. Notice the greeting came from the second service.
+<!--@mdc :: -->
 two services.
 
 <figure>
@@ -549,11 +547,12 @@ kubectl apply -f ./jaeger.yaml
 
 Create a Jaeger external server and expose it on port 9142:
 
+<!--@mdc ::code-callout -->
 ```shell [Terminal]
-kubectl expose pod jaeger --name=jaeger-external --port=16687 --target-port=16686 --type=LoadBalancer 
+kubectl expose pod jaeger --name=jaeger-external --port=16687 --target-port=16686 --type=LoadBalancer # <1>
 ```
-
-- Create a service so that you can access the Jaeger UI.
+1. Create a service so that you can access the Jaeger UI.
+<!--@mdc :: -->
 
 Navigate to <http://localhost:16687/search> to validate that you can access
 Jaeger running in Kubernetes. It may take a few seconds before it is ready.
@@ -563,12 +562,12 @@ Jaeger running in Kubernetes. It may take a few seconds before it is ready.
 Create the Kubernetes YAML specification, named `tracing.yaml`, with the
 following contents:
 
-<!--@mdc ::code-collapse -->
+<!--@mdc ::code-callout{collapsed} -->
 ```yaml [tracing.yaml]
 kind: Service
 apiVersion: v1
 metadata:
-  name: helidon-tracing 
+  name: helidon-tracing # <1>
   labels:
     app: helidon-tracing
 spec:
@@ -585,7 +584,7 @@ apiVersion: apps/v1
 metadata:
   name: helidon-tracing
 spec:
-  replicas: 1 
+  replicas: 1 # <2>
   selector:
     matchLabels:
       app: helidon-tracing
@@ -602,10 +601,9 @@ spec:
           ports:
             - containerPort: 8080
 ```
+1. A service of type `NodePort` that serves the default routes on port `8080`.
+2. A deployment with one replica of a pod.
 <!--@mdc :: -->
-
-- A service of type `NodePort` that serves the default routes on port `8080`.
-- A deployment with one replica of a pod.
 
 Create and deploy the application into Kubernetes:
 
@@ -621,12 +619,13 @@ Get the application service information:
 kubectl get service/helidon-tracing
 ```
 
+<!--@mdc ::code-callout -->
 ```shell [Terminal]
 NAME             TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
-helidon-tracing   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s 
+helidon-tracing   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s # <1>
 ```
-
-- A service of type `NodePort` that serves the default routes on port `31143`.
+1. A service of type `NodePort` that serves the default routes on port `31143`.
+<!--@mdc :: -->
 
 Verify the tracing endpoint using port 31143, your port will likely be
 different:

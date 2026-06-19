@@ -219,13 +219,14 @@ an available worker thread it creates a span representing the request’s waitin
 time. Concurrency limit tracing is disabled by default. Enable it using
 configuration:
 
+<!--@mdc ::code-callout -->
 ```yaml
 server:
   features:
     observe:
       observers:
         tracing:
-          wait-tracing-enabled: true 
+          wait-tracing-enabled: true # <1>
 
   concurrency-limit:
     fixed:
@@ -233,8 +234,8 @@ server:
       queue-length: 200
       queue-timeout: PT1S
 ```
-
-- Turns on the addition of a span recording queued wait time.
+1. Turns on the addition of a span recording queued wait time.
+<!--@mdc :: -->
 
 Be sure to add a dependency in your project for one of the Helidon tracing
 implementations. See the [Helidon tracing](../../se/tracing.md) documentation

@@ -98,8 +98,9 @@ runtime.
 
 Run Jaeger within a docker container:
 
+<!--@mdc ::code-callout -->
 ```shell [Terminal]
-docker run -d --name jaeger \ 
+docker run -d --name jaeger \ # <1>
   -e COLLECTOR_OTLP_ENABLED=true \
   -p 6831:6831/udp \
   -p 6832:6832/udp \
@@ -113,8 +114,8 @@ docker run -d --name jaeger \
   -p 9411:9411 \
   jaegertracing/all-in-one:1.50
 ```
-
-- Run the Jaeger docker image.
+1. Run the Jaeger docker image.
+<!--@mdc :: -->
 
 ### Enable Tracing in the Helidon Application
 
@@ -124,30 +125,29 @@ Helidon to use OpenTelemetry at the default host and port, `localhost:4317`.
 
 Add the following dependencies to pom.xml:
 
+<!--@mdc ::code-callout -->
 ```xml [pom.xml]
 <dependencies>
-  <dependency>
-    <groupId>io.helidon.tracing</groupId>
-    <artifactId>helidon-tracing</artifactId>
-  </dependency>
-  <dependency>
-    <groupId>io.helidon.webserver.observe</groupId>
-    <artifactId>helidon-webserver-observe-tracing</artifactId>
-    <scope>runtime</scope>
-  </dependency>
-  <dependency>
-    <groupId>io.helidon.tracing.providers</groupId>
-    <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
-    <scope>runtime</scope>
-  </dependency>
+     <dependency>
+         <groupId>io.helidon.tracing</groupId>
+         <artifactId>helidon-tracing</artifactId>   <!-- (1) -->
+     </dependency>
+     <dependency>
+         <groupId>io.helidon.webserver.observe</groupId>
+         <artifactId>helidon-webserver-observe-tracing</artifactId> <!-- (2) -->
+         <scope>runtime</scope>
+     </dependency>
+     <dependency>
+         <groupId>io.helidon.tracing.providers</groupId>
+         <artifactId>helidon-tracing-providers-opentelemetry</artifactId>  <!-- (3) -->
+         <scope>runtime</scope>
+     </dependency>
 </dependencies>
 ```
-
-- Helidon Tracing dependencies.
-- Observability features for tracing.
-- OpenTelemetry tracing provider.
-
-Helidon offers several tracing providers: OpenTelemetry, Zipkin, and Jaeger
+1. Helidon Tracing API.
+2. Observability features for tracing.
+3. OpenTelemetry tracing provider.
+<!--@mdc :: -->
 (deprecated). All spans sent by Helidon to the backend need to be associated
 with a service, assigned by the `tracing.service` setting in the example below.
 
@@ -235,30 +235,29 @@ creates for the REST endpoint.
 
 Update the GreetService class, replacing the getDefaultMessageHandler method:
 
+<!--@mdc ::code-callout -->
 ```java
 private void getDefaultMessageHandler(ServerRequest request,
                                       ServerResponse response) {
-    var spanBuilder = Tracer.global().spanBuilder("secondchildSpan"); 
-    request.context().get(SpanContext.class).ifPresent(sc -> sc.asParent(spanBuilder)); 
-    var span = spanBuilder.start(); 
+    var spanBuilder = Tracer.global().spanBuilder("secondchildSpan"); // <1>
+    request.context().get(SpanContext.class).ifPresent(sc -> sc.asParent(spanBuilder)); // <2>
+    var span = spanBuilder.start(); // <3>
 
-    try (Scope scope = span.activate()) { 
+    try (Scope scope = span.activate()) { // <4>
         sendResponse(response, "World");
-        span.end(); 
+        span.end(); // <5>
     } catch (Throwable t) {
-        span.end(t);    
+        span.end(t);    // <6>
     }
 }
 ```
-
-- Create a new `Span` using the global tracer.
-- Set the parent of the new span to the span from the `Request` if available.
-- Start the span.
-- Make the new span the current span, returning a `Scope` which is auto-closed.
-- End the span normally after the response is sent.
-- End the span with an exception if one was thrown.
-
-Build the application and run it:
+1. Create a new `Span` using the global tracer.
+2. Set the parent of the new span to the span from the `Request` if available.
+3. Start the span.
+4. Make the new span the current span, returning a `Scope` which is auto-closed.
+5. End the span normally after the response is sent.
+6. End the span with an exception if one was thrown.
+<!--@mdc :: -->
 
 ```shell [Terminal]
 mvn package
@@ -331,30 +330,29 @@ cd helidon-quickstart-se-2
 
 Add the following dependencies to pom.xml:
 
+<!--@mdc ::code-callout -->
 ```xml [pom.xml]
 <dependencies>
-  <dependency>
-    <groupId>io.helidon.tracing</groupId>
-    <artifactId>helidon-tracing</artifactId>
-  </dependency>
-  <dependency>
-    <groupId>io.helidon.webserver.observe</groupId>
-    <artifactId>helidon-webserver-observe-tracing</artifactId>
-    <scope>runtime</scope>
-  </dependency>
-  <dependency>
-    <groupId>io.helidon.tracing.providers</groupId>
-    <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
-    <scope>runtime</scope>
-  </dependency>
+     <dependency>
+         <groupId>io.helidon.tracing</groupId>
+         <artifactId>helidon-tracing</artifactId>   <!-- (1) -->
+     </dependency>
+     <dependency>
+         <groupId>io.helidon.webserver.observe</groupId>
+         <artifactId>helidon-webserver-observe-tracing</artifactId> <!-- (2) -->
+         <scope>runtime</scope>
+     </dependency>
+     <dependency>
+         <groupId>io.helidon.tracing.providers</groupId>
+         <artifactId>helidon-tracing-providers-opentelemetry</artifactId>  <!-- (3) -->
+         <scope>runtime</scope>
+     </dependency>
 </dependencies>
 ```
-
-- Helidon Tracing API.
-- Observability features for tracing.
-- OpenTelemetry tracing provider.
-
-Replace src/main/resources/application.yaml with the following:
+1. Helidon Tracing API.
+2. Observability features for tracing.
+3. OpenTelemetry tracing provider.
+<!--@mdc :: -->
 
 ```shell [Terminal]
 app:
@@ -416,11 +414,14 @@ Run the curl command in a new terminal window (**notice the port is 8081**):
 curl http://localhost:8081/greet
 ```
 
+<!--@mdc ::code-callout -->
 ```json [Response]
 {
-  "message": "Hello From SE-2 World!"
+  "message": "Hello From SE-2 World!" // <1>
 }
 ```
+1. Notice the greeting came from the second service.
+<!--@mdc :: -->
 
 ### Modify the First Service
 
@@ -512,24 +513,24 @@ endpoint and check the response.
 
 Build, run, and access the application:
 
+<!--@mdc ::code-callout -->
 ```shell [Terminal]
 mvn clean package
 java -jar target/helidon-quickstart-se.jar
-curl -i http://localhost:8080/greet/outbound 
+curl -i http://localhost:8080/greet/outbound # <1>
 ```
+1. The request goes to the service on `8080`, which then invokes the service at
+   `8081` to get the greeting.
+<!--@mdc :: -->
 
-- The request goes to the service on `8080`, which then invokes the service at
-  `8081` to get the greeting.
-
+<!--@mdc ::code-callout -->
 ```json [Response]
 {
-  "message": "Hello From SE-2 World!" 
+  "message": "Hello From SE-2 World!" // <1>
 }
 ```
-
-- Notice the greeting came from the second service.
-
-Refresh the Jaeger UI trace listing page and notice that there is a trace across
+1. Notice the greeting came from the second service.
+<!--@mdc :: -->
 two services. Click on that trace to see its details.
 
 <figure>
@@ -561,14 +562,15 @@ running in Kubernetes.
 Replace the tracing configuration in resources/`application.yaml` with the
 following:
 
+<!--@mdc ::code-callout -->
 ```yaml [application.yaml]
-tracing: 
+tracing: # <1>
   service: helidon-se-1
   host: jaeger
 ```
-
-- Helidon service `helidon-se-1` will connect to the Jaeger server at host name
-  `jaeger`.
+1. Helidon service `helidon-se-1` will connect to the Jaeger server at host name
+   `jaeger`.
+<!--@mdc :: -->
 
 Stop the application and build the docker image for your application:
 
@@ -628,12 +630,12 @@ Jaeger running in Kubernetes. It may take a few seconds before it is ready.
 Create the Kubernetes YAML specification, named `tracing.yaml`, with the
 following contents:
 
-<!--@mdc ::code-collapse -->
+<!--@mdc ::code-callout{collapsed} -->
 ```yaml [tracing.yaml]
 kind: Service
 apiVersion: v1
 metadata:
-  name: helidon-tracing 
+  name: helidon-tracing # <1>
   labels:
     app: helidon-tracing
 spec:
@@ -650,7 +652,7 @@ apiVersion: apps/v1
 metadata:
   name: helidon-tracing
 spec:
-  replicas: 1 
+  replicas: 1 # <2>
   selector:
     matchLabels:
       app: helidon-tracing
@@ -667,10 +669,9 @@ spec:
           ports:
             - containerPort: 8080
 ```
+1. A service of type `NodePort` that serves the default routes on port `8080`.
+2. A deployment with one replica of a pod.
 <!--@mdc :: -->
-
-- A service of type `NodePort` that serves the default routes on port `8080`.
-- A deployment with one replica of a pod.
 
 Create and deploy the application into Kubernetes:
 
@@ -686,12 +687,13 @@ Get the application service information:
 kubectl get service/helidon-tracing
 ```
 
+<!--@mdc ::code-callout -->
 ```shell [Terminal]
 NAME             TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
-helidon-tracing   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s 
+helidon-tracing   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s # <1>
 ```
-
-- A service of type `NodePort` that serves the default routes on port `31143`.
+1. A service of type `NodePort` that serves the default routes on port `31143`.
+<!--@mdc :: -->
 
 Verify the tracing endpoint using port 31143, your port will likely be
 different:

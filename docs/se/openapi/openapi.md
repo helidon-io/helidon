@@ -117,20 +117,21 @@ document.
 
 Configure OpenAPI behavior:
 
+<!--@mdc ::code-callout -->
 ```yaml
 server:
-  port: 8080                  
+  port: 8080                  <1>
   host: 0.0.0.0
   features:
-    openapi:                  
-      web-context: /myopenapi 
+    openapi:                  <2>
+      web-context: /myopenapi <3>
 ```
-
-- The `port` and `host` settings are for the server as a whole, not specifically
-  for OpenAPI.
-- The `openapi` subsection within `features` contains OpenAPI settings.
-- Changes the endpoint for returning the OpenAPI document from the default
-  `/openapi` to `/myopenapi`.
+1. The `port` and `host` settings are for the server as a whole, not specifically
+   for OpenAPI.
+2. The `openapi` subsection within `features` contains OpenAPI settings.
+3. Changes the endpoint for returning the OpenAPI document from the default
+   `/openapi` to `/myopenapi`.
+<!--@mdc :: -->
 
 Most Helidon SE applications need only add the dependency as explained above;
 Helidon discovers and registers OpenAPI automatically. The example below shows
@@ -140,19 +141,18 @@ how to create and register `OpenApiFeature` explicitly instead.
 
 Java Code to Create and Register OpenApiFeature:
 
+<!--@mdc ::code-callout -->
 ```java
 WebServer server = WebServer.builder()
         .config(config.get("server"))
-        .addFeature(OpenApiFeature.create(config.get("openapi"))) 
+        .addFeature(OpenApiFeature.create(config.get("openapi"))) // <1>
         .routing(Main::routing)
         .build()
         .start();
 ```
-
-- Adds the `OpenApiFeature` service to your server using the `openapi` section
-  from configuration.
-
-If you need programmatic control over the `OpenApiFeature` instance, invoke
+1. Adds the `OpenApiFeature` service to your server using the `openapi` section
+   from configuration.
+<!--@mdc :: -->
 `OpenApiFeature.builder()` to get an `OpenApiFeature.Builder` object and work
 with it, then invoke the builder’s `build` method and pass the resulting
 `OpenApiFeature` instance to the `WebServer.Builder` `addFeature` method.

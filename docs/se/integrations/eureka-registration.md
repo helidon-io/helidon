@@ -18,19 +18,18 @@ To enable Eureka Server Service Instance Registration Integration, add the
 following dependency to your project’s `pom.xml` (see [Managing
 Dependencies](../../managing-dependencies.md)).
 
+<!--@mdc ::code-callout -->
 ```xml [pom.xml]
 <dependency>
-  <groupId>io.helidon.integrations.eureka</groupId>
-  <artifactId>helidon-integrations-eureka</artifactId>
-  <scope>runtime</scope>
+    <groupId>io.helidon.integrations.eureka</groupId>
+    <artifactId>helidon-integrations-eureka</artifactId>
+    <scope>runtime</scope><!-- (1) -->
 </dependency>
 ```
-
-- Most users do not need to interact programmatically with this feature; the
-  scope is therefore usually `runtime`, indicating that the feature will be
-  available on the runtime classpath.
-
-This feature is fundamentally a [`ServerFeature`][serverfeature], and is
+1. Most users do not need to interact programmatically with this feature; the
+   scope is therefore usually `runtime`, indicating that the feature will be
+   available on the runtime classpath.
+<!--@mdc :: -->
 automatically installed by its [associated
 `ServerFeatureProvider`][associated-serve] when the provider is found in
 configuration (see below).
@@ -41,48 +40,50 @@ You need to specify at an absolute minimum the URI to the available Netflix
 Eureka Server of at least version 2.0.5 in the microservice’s runtime
 environment:
 
+<!--@mdc ::code-callout -->
 ```yaml [application.yaml]
 server:
   features:
-    eureka: 
-      client: 
-        base-uri: "http://localhost:8761/eureka"  
+    eureka: # <1>
+      client: # <2>
+        base-uri: "http://localhost:8761/eureka" # <3> <4>
 ```
-
-- The feature’s configuration is a child of the `server.features.eureka` node,
-  which lists available `ServerFeature` implementations. This feature is one
-  such implementation.
-- Information about the HTTP client the feature uses to communicate with Eureka
-  is a child of this node.
-- The `base-uri` needs to identify an available Netflix Eureka Server of at
-  least version 2.0.5. Netflix Eureka Server is commonly made available on port
-  `8761`.
-- Configuration under the `client` node is wholly defined by the
-  [`HttpClientConfig`][httpclientconfig] interface.
+1. The feature’s configuration is a child of the `server.features.eureka` node,
+   which lists available `ServerFeature` implementations. This feature is one
+   such implementation.
+2. Information about the HTTP client the feature uses to communicate with Eureka
+   is a child of this node.
+3. The `base-uri` needs to identify an available Netflix Eureka Server of at
+   least version 2.0.5. Netflix Eureka Server is commonly made available on port
+   `8761`.
+4. Configuration under the `client` node is wholly defined by the
+   [`HttpClientConfig`][httpclientconfig] interface.
+<!--@mdc :: -->
 
 All other configuration values can be (and ordinarily are) defaulted, but some
 are best set explicitly:
 
+<!--@mdc ::code-callout -->
 ```yaml [application.yaml]
 server:
   features:
     eureka:
-      instance: 
-        name: "My Application" 
-        hostName: example.com 
+      instance: # <1>
+        name: "My Application" # <2>
+        hostName: example.com <3>
 ```
-
-- The feature’s configuration pertaining to the registration itself is a child
-  of the `server.features.eureka.instance` node. Configuration is designed to be
-  familiar to current users of other Netflix Eureka libraries. See the [Helidon
-  Config Reference][helidon-config-r] for a full description of what
-  configuration is allowed.
-- The `name` describes the microservice application, not any given instance of
-  it. Its default value is `unknown`, following Netflix Eureka client
-  convention, so it is best to set it explicitly here instead.
-- The `hostName` node identifies the host. It defaults to the current host,
-  which may or may not be suitable in your environment. Most of the time you can
-  simply omit this node and use the defaulted value.
+1. The feature’s configuration pertaining to the registration itself is a child
+   of the `server.features.eureka.instance` node. Configuration is designed to be
+   familiar to current users of other Netflix Eureka libraries. See the [Helidon
+   Config Reference][helidon-config-r] for a full description of what
+   configuration is allowed.
+2. The `name` describes the microservice application, not any given instance of
+   it. Its default value is `unknown`, following Netflix Eureka client
+   convention, so it is best to set it explicitly here instead.
+3. The `hostName` node identifies the host. It defaults to the current host,
+   which may or may not be suitable in your environment. Most of the time you can
+   simply omit this node and use the defaulted value.
+<!--@mdc :: -->
 
 Please consult the [Helidon Config Reference][helidon-config-r-2] for a full
 description of the permitted configuration.

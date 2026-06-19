@@ -121,35 +121,31 @@ The default UI `web-context` value is the web context for your `OpenApiFeature`
 service with the added suffix `/ui`. If you use the default web context for both
 `OpenApiFeature` and the UI, the UI responds at `/openapi/ui`.
 
-You can use configuration to affect the UI path in these ways:
+Recall that you can [configure the Helidon OpenAPI
+component][configure-the-he] to change where it serves the OpenAPI document.
 
-- Configure the OpenAPI endpoint path (the `/openapi` part).
+```properties [microprofile-config.properties]
+mp.openapi.web-context=/my-openapi
+```
 
-  Recall that you can [configure the Helidon OpenAPI
-  component][configure-the-he] to change where it serves the OpenAPI document.
+In this case, the path for the UI component is your customized OpenAPI path
+with `/ui` as a suffix. With the example above, the UI responds at
+`/myopenapi/ui` and Helidon uses standard content negotiation at `/myopenapi`
+to return either the OpenAPI document or the UI.
 
-  ```properties [microprofile-config.properties]
-  mp.openapi.web-context=/my-openapi
-  ```
+Separately, configure the entire web context path for the UI independently
+of the web context for OpenAPI.
 
-  In this case, the path for the UI component is your customized OpenAPI path
-  with `/ui` as a suffix. With the example above, the UI responds at
-  `/myopenapi/ui` and Helidon uses standard content negotiation at `/myopenapi`
-  to return either the OpenAPI document or the UI.
+Configuring the OpenAPI UI web context:
 
-- Separately, configure the entire web context path for the UI independently
-  of the web context for OpenAPI.
+```properties [microprofile-config.properties]
+mp.openapi.services.ui.web-context=/my-ui
+```
 
-  Configuring the OpenAPI UI web context:
-
-  ```properties [microprofile-config.properties]
-  mp.openapi.services.ui.web-context=/my-ui
-  ```
-
-  > [!NOTE]
-  > The `mp.openapi.services.ui.web-context` setting assigns the *entire*
-  > web-context for the UI, not the suffix appended to the `OpenApiFeature`
-  > endpoint.
+> [!NOTE]
+> The `mp.openapi.services.ui.web-context` setting assigns the *entire*
+> web-context for the UI, not the suffix appended to the `OpenApiFeature`
+> endpoint.
 
 With this configuration, the UI responds at `/my-ui` regardless of the path for
 OpenAPI itself.
@@ -171,7 +167,7 @@ settings, use the enum values they are all lower case declared in the SmallRye
 
 [Helidon OpenAPI MP documentation](../../mp/openapi/openapi.md)
 
-[SmallRye OpenAPI UI GitHub site][openapi-user-int]
+[SmallRye OpenAPI UI on GitHub][openapi-user-int]
 
 [openapi-user-int]: https://github.com/smallrye/smallrye-open-api/tree/3.3.4/ui/open-api-ui
 [configure-the-he]: ../../mp/openapi/openapi.md#configuration

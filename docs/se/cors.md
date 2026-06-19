@@ -112,33 +112,31 @@ low-level API.)
 The following code shows one way to prepare your application’s routing to
 support CORS.
 
+<!--@mdc ::code-callout -->
 ```java
-CorsFeature corsFeature = CorsFeature.builder() // (1)
-        .addPath(path -> path // (2)
-                .pathPattern("/greet/*") // (3)
-                .addAllowOrigin("http://foo.bar") // (4)
-                .addAllowMethod(Method.PUT) // (5)
-        )
-        .build(); // (6)
+CorsFeature corsFeature = CorsFeature.builder() // <1>
+    .addPath(path -> path // <2>
+        .pathPattern("/greet/*") // <3>
+        .addAllowOrigin("http://foo.bar") // <4>
+        .addAllowMethod(Method.PUT)) // <5>
+    .build(); // <6>
 
 WebServer.builder()
         .port(8080)
-        .addFeature(corsFeature) // (7)
+        .addFeature(corsFeature) // <7>
         .build();
 ```
-
-1.  Create a builder for `CorsFeature`
-2.  Add a `CorsPathConfig` using a builder (can be added multiple times with
-    different configuration), this builder allows configuration of all available
-    CORS options
-3.  Configure the path pattern of this CORS config (uses the same pattern as
-    WebServer routing)
-4.  Add allow origin
-5.  Add allow method
-6.  Build the `CorsFeature` instance
-7.  Register the new `CorsFeature` instance with WebServer builder
-
-The ordering of `.addPath(...)` methods when configuring the `CorsFeature` is
+1. Create a builder for `CorsFeature`
+2. Add a `CorsPathConfig` using a builder (can be added multiple times with
+   different configuration), this builder allows configuration of all available
+   CORS options
+3. Configure the path pattern of this CORS config (uses the same pattern as
+   WebServer routing)
+4. Add allow origin
+5. Add allow method
+6. Build the `CorsFeature` instance
+7. Register the new `CorsFeature` instance with WebServer builder
+<!--@mdc :: -->
 significant, as they are checked in order, and the first `CorsPathConfig` that
 matches the requested path and method will be used.
 
@@ -251,7 +249,7 @@ mvn package
 java -jar target/helidon-quickstart-se.jar
 ```
 
-```text
+```text [Output]
 WEB server is up! http://localhost:8080/greet
 ```
 
@@ -264,9 +262,7 @@ origin.
 curl -i -H "Origin: https://other.com" http://localhost:8080/observe/metrics
 ```
 
-Curl output
-
-```shell [Terminal]
+```log [Output]
 HTTP/1.1 403 Forbidden
 Date: Mon, 11 May 2020 11:08:09 -0500
 transfer-encoding: chunked

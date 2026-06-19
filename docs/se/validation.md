@@ -18,24 +18,23 @@ preview feature.
 To enable Validation, add the following dependency to your project’s `pom.xml`
 (see [Managing Dependencies](../managing-dependencies.md)).
 
+<!--@mdc ::code-callout -->
 ```xml [pom.xml]
 <dependencies>
-  <dependency>
-    <groupId>io.helidon.validation</groupId>
-    <artifactId>helidon-validation</artifactId>
-  </dependency>
-  <dependency>
-    <groupId>io.helidon.webserver</groupId>
-    <artifactId>helidon-webserver-validation</artifactId>
-  </dependency>
+    <dependency>
+        <groupId>io.helidon.validation</groupId>
+        <artifactId>helidon-validation</artifactId>    <!-- (1) -->
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.webserver</groupId>
+        <artifactId>helidon-webserver-validation</artifactId> <!-- (2) -->
+    </dependency>
 </dependencies>
 ```
-
-- Helidon validation dependency.
-- WebServer integration with validation, to provide correct HTTP status on
-  validation failures
-
-## Usage
+1. Helidon validation dependency.
+2. WebServer integration with validation, to provide correct HTTP status on
+   validation failures
+<!--@mdc :: -->
 
 ### Validated type
 
@@ -120,41 +119,37 @@ The first approach gives as a validation response:
 
 Example of validating an object using any constraint:
 
+<!--@mdc ::code-callout -->
 ```java
-var provider = Services.getNamed(ConstraintValidatorProvider.class, Validation.String.Pattern.class.getName()); 
-var context = ValidationContext.create(MyType.class); 
-var validator = provider.create(TypeNames.STRING, Annotation.create(Validation.String.Pattern.class, ".*valid.*")); 
-context.check(validator, anInstance); 
-var response = context.response(); 
+var provider = Services.getNamed(ConstraintValidatorProvider.class, Validation.String.Pattern.class.getName()); // <1>
+var context = ValidationContext.create(MyType.class); // <2>
+var validator = provider.create(TypeNames.STRING, Annotation.create(Validation.String.Pattern.class, ".*valid.*")); // <3>
+context.check(validator, anInstance); // <4>
+var response = context.response(); // <5>
 ```
-
-- Get the constraint validation provider from the registry, named by the
-  annotation it handles
-- Create a new validation context (can be used to validate multiple constraints)
-- Create a new validator for a specific type and annotation
-- Check the constraint using the validator and the provided instance (instance
-  must match the type provided in previous step)
-- Get a validation response from the context
-
-And the second throws an exception if validation failed:
+1. Get the constraint validation provider from the registry, named by the annotation it handles
+2. Create a new validation context (can be used to validate multiple constraints)
+3. Create a new validator for a specific type and annotation
+4. Check the constraint using the validator and the provided instance (instance must match the type provided in previous step)
+5. Get a validation response from the context
+<!--@mdc :: -->
 
 Example of validating an object using any constraint that throws an exception:
 
+<!--@mdc ::code-callout -->
 ```java
-var provider = Services.getNamed(ConstraintValidatorProvider.class, Validation.String.Pattern.class.getName()); 
-var context = ValidationContext.create(MyType.class); 
-var validator = provider.create(TypeNames.STRING, Annotation.create(Validation.String.Pattern.class, ".*valid.*")); 
-context.check(validator, anInstance); 
-context.throwOnFailure(); 
+var provider = Services.getNamed(ConstraintValidatorProvider.class, Validation.String.Pattern.class.getName()); // <1>
+var context = ValidationContext.create(MyType.class); // <2>
+var validator = provider.create(TypeNames.STRING, Annotation.create(Validation.String.Pattern.class, ".*valid.*")); // <3>
+context.check(validator, anInstance); // <4>
+context.throwOnFailure(); // <5>
 ```
-
-- Get the constraint validation provider from the registry, named by the
-  annotation it handles
-- Create a new validation context (can be used to validate multiple constraints)
-- Create a new validator for a specific type and annotation
-- Check the constraint using the validator and the provided instance (instance
-  must match the type provided in previous step)
-- Throw and exception in case any of the checks failed
-
-[helidon-declarat]: ../se/injection/declarative.md#validation
+1. Get the constraint validation provider from the registry, named by the
+   annotation it handles
+2. Create a new validation context (can be used to validate multiple constraints)
+3. Create a new validator for a specific type and annotation
+4. Check the constraint using the validator and the provided instance (instance
+   must match the type provided in previous step)
+5. Throw and exception in case any of the checks failed
+<!--@mdc :: -->
 [io-helidon-valid]: https://helidon.io/docs/v4/apidocs/io.helidon.validation/io/helidon/validation/Validators.html

@@ -20,23 +20,22 @@ support for distributed tracing through its own API, backed by either
 To enable Helidon Tracing, add the following dependency to your project’s
 `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
 
+<!--@mdc ::code-callout -->
 ```xml [pom.xml]
 <dependencies>
-  <dependency>
-    <groupId>io.helidon.tracing</groupId>
-    <artifactId>helidon-tracing</artifactId>
-  </dependency>
-  <dependency>
-    <groupId>io.helidon.webserver.observe</groupId>
-    <artifactId>helidon-webserver-observe-tracing</artifactId>
-  </dependency>
+    <dependency>
+        <groupId>io.helidon.tracing</groupId>
+        <artifactId>helidon-tracing</artifactId>    <!-- (1) -->
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.webserver.observe</groupId>
+        <artifactId>helidon-webserver-observe-tracing</artifactId> <!-- (2) -->
+    </dependency>
 </dependencies>
 ```
-
-- Helidon tracing dependency.
-- Observability dependencies for tracing.
-
-To transmit tracing data from your service to a backend, you need to add a
+1. Helidon tracing dependency.
+2. Observability dependencies for tracing.
+<!--@mdc :: -->
 tracing provider to your project.
 
 For Jaeger:
@@ -111,43 +110,41 @@ Helidon abstraction layer and provide a specific tracer implementation as a Java
 
 Configuring Tracer:
 
+<!--@mdc ::code-callout -->
 ```java
-Tracer tracer = TracerBuilder.create("helidon")
+Tracer tracer = TracerBuilder.create("helidon") // <1>
         .build();
 
 WebServer.builder()
         .addFeature(ObserveFeature.builder()
-            .addObserver(TracingObserver.create(tracer))
-            .build())
+                            .addObserver(TracingObserver.create(tracer)) // <2>
+                            .build())
         .build()
         .start();
 ```
-
-- Create a `Tracer`.
-- Add an observability feature using the created `Tracer`.
-
-### Custom Spans
+1. Create a `Tracer`.
+2. Add an observability feature using the created `Tracer`.
+<!--@mdc :: -->
 
 To create a custom span from tracer:
 
+<!--@mdc ::code-callout -->
 ```java
-Span span = tracer.spanBuilder("name") 
+Span span = tracer.spanBuilder("name") // <1>
         .tag("key", "value")
         .start();
 
-try { 
+try { // <2>
     // do some work
     span.end();
-} catch (Throwable t) { 
+} catch (Throwable t) { // <3>
     span.end(t);
 }
 ```
-
-- Create span from tracer.
-- Do some work and end span.
-- End span with exception.
-
-## Handling Baggage
+1. Create span from tracer.
+2. Do some work and end span.
+3. End span with exception.
+<!--@mdc :: -->
 
 Your application can set and read baggage associated with a [`Span`][span]. The
 `Span.baggage()` method returns a [`WritableBaggage`][writablebaggage] instance.
@@ -325,17 +322,16 @@ tracing:
 
 Use the configuration in web server:
 
+<!--@mdc ::code-callout -->
 ```java
-Tracer tracer = TracerBuilder.create(config.get("tracing")).build();
+Tracer tracer = TracerBuilder.create(config.get("tracing")).build(); // <1>
 server.addFeature(ObserveFeature.builder()
-    .addObserver(TracingObserver.create(tracer))
-    .build());
+                          .addObserver(TracingObserver.create(tracer)) // <2>
+                          .build());
 ```
-
-- Create `Tracer` using `TracerBuilder` from configuration.
-- Add the `Tracer` as an observability feature.
-
-#### Path-based Configuration in Helidon WebServer
+1. Create `Tracer` using `TracerBuilder` from configuration.
+2. Add the `Tracer` as an observability feature.
+<!--@mdc :: -->
 
 For Web Server we have path-based support for configuring tracing, in addition
 to the configuration described above.
@@ -542,21 +538,22 @@ See [Configuration options][io-helidon-traci-4].
 
 Example Helidon configuration for OpenTelemetry tracing:
 
+<!--@mdc ::code-callout -->
 ```yaml [application.yaml]
 tracing:
-  service: helidon-otel-tracing-example 
-  global: false      
+  service: helidon-otel-tracing-example # <1>
+  global: false      # <2>
   int-tags:
-    example: 1       
+    example: 1       # <3>
   tags:
-    direction: north 
+    direction: north # <4>
 ```
-
-- Specifies the OpenTelemetry service name.
-- Indicates the configured tracer *should not* be made the global tracer
-  (defaults to `true`).
-- Assigns an integer-valued tag `example` the value `1`.
-- Assigns a string-valued tag `direction` the value `north`.
+1. Specifies the OpenTelemetry service name.
+2. Indicates the configured tracer *should not* be made the global tracer
+   (defaults to `true`).
+3. Assigns an integer-valued tag `example` the value `1`.
+4. Assigns a string-valued tag `direction` the value `north`.
+<!--@mdc :: -->
 
 By default, Helidon tracing support for OpenTelemetry uses OpenTelemetry’s OTLP
 gRPC exporter. Alternatively, you can choose to use OpenTelemetry’s HTTP

@@ -36,7 +36,7 @@ and mutations that work against a fictional `CustomerService` service and
 
 Simple ContactGraphQLApi:
 
-<!--@mdc ::code-collapse -->
+<!--@mdc ::code-callout{collapsed} -->
 ```java
 @ApplicationScoped
 @GraphQLApi
@@ -46,22 +46,22 @@ public class ContactGraphQLApi {
     private CustomerService customerService;
 
     @Query
-    public Collection<Customer> findAllCustomers() { 
+    public Collection<Customer> findAllCustomers() { // <1>
         return customerService.getAllCustomers();
     }
 
     @Query
-    public Customer findCustomer(@Name("customerId") int id) { 
+    public Customer findCustomer(@Name("customerId") int id) { // <2>
         return customerService.getCustomer(id);
     }
 
     @Query
-    public Collection<Customer> findCustomersByName(@Name("name") String name) { 
+    public Collection<Customer> findCustomersByName(@Name("name") String name) { // <3>
         return customerService.getAllCustomers(name);
     }
 
     @Mutation
-    public Customer createCustomer(@Name("customerId") int id, 
+    public Customer createCustomer(@Name("customerId") int id, // <4>
                                   @Name("name") String name,
                                   @Name("balance") float balance) {
         return customerService.createCustomer(id, name, balance);
@@ -77,14 +77,11 @@ public class customer {
     // getters and setters omitted for brevity
 }
 ```
+1. a query with no-arguments that will return all `Customer` s
+2. a query that takes an argument to return a specific `Customer`
+3. a query that optionally takes a name and returns a collection of `Customer` s
+4. a mutation that creates a Customer and returns the newly created `Customer`
 <!--@mdc :: -->
-
-- a query with no-arguments that will return all `Customer` s
-- a query that takes an argument to return a specific `Customer`
-- a query that optionally takes a name and returns a collection of `Customer` s
-- a mutation that creates a Customer and returns the newly created `Customer`
-
-The example above would generate a GraphQL schema as shown below:
 
 Sample GraphQL schema:
 

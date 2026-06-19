@@ -85,26 +85,25 @@ checks, but the following example removes health checks.
 
 Metrics dependencies in the generated `pom.xml`:
 
+<!--@mdc ::code-callout -->
 ```xml [pom.xml]
 <dependencies>
-  <dependency>
-    <groupId>io.helidon.webserver.observe</groupId>
-    <artifactId>helidon-webserver-observe-metrics</artifactId> <!--(1)-->
-  </dependency>
-  <dependency>
-    <groupId>io.helidon.metrics</groupId>
-    <artifactId>helidon-metrics-system-meters</artifactId>     <!--(2)-->
-    <scope>runtime</scope>
-  </dependency>
+    <dependency>
+        <groupId>io.helidon.webserver.observe</groupId>
+        <artifactId>helidon-webserver-observe-metrics</artifactId> <!-- (1) -->
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.metrics</groupId>
+        <artifactId>helidon-metrics-system-meters</artifactId>     <!-- (2) -->
+        <scope>runtime</scope>
+    </dependency>
 </dependencies>
 ```
-
-1.  Includes the Helidon observability component for metrics and, as transitive
-    dependencies, the Helidon neutral metrics API and a full-featured
-    implementation of the API.
-2.  Includes the built-in meters.
-
-With these dependencies in your project, Helidon’s auto-discovery of webserver
+1. Includes the Helidon observability component for metrics and, as transitive
+   dependencies, the Helidon neutral metrics API and a full-featured
+   implementation of the API.
+2. Includes the built-in meters.
+<!--@mdc :: -->
 features automatically finds and runs the metrics subsystem. You do not need to
 change any of the generated source code.
 
@@ -248,28 +247,29 @@ A Helidon SE application can disable metrics processing programmatically.
 
 Disable all metrics behavior
 
+<!--@mdc ::code-callout -->
 ```java
-ObserveFeature observe = ObserveFeature.builder()   // (1)
-        .addObserver(MetricsObserver.builder() // (2)
-                             .enabled(false) // (3)
-                             .build()) // (4)
-        .build(); // (5)
+ObserveFeature observe = ObserveFeature.builder() // <1>
+    .addObserver(MetricsObserver.builder() // <2>
+        .enabled(false) // <3>
+        .build()) // <4>
+    .build(); // <5>
 
-WebServer server = WebServer.builder() // (6)
-        .config(Config.global().get("server"))
-        .addFeature(observe)
-        .routing(Main::routing)
-        .build()
-        .start();
+WebServer server = WebServer.builder() // <6>
+    .config(Config.global().get("server"))
+    .addFeature(observe)
+    .routing(Main::routing)
+    .build()
+    .start();
 ```
-
-1.  Begin preparing the `ObserveFeature`.
-2.  Begin preparing the `MetricsObserver`.
-3.  Disable metrics.
-4.  Complete the `MetricsObserver`.
-5.  Complete the `ObserveFeature`.
-6.  Create and start the `WebServer` with the `ObserveFeature` (and other
-    settings).
+1. Begin preparing the `ObserveFeature`.
+2. Begin preparing the `MetricsObserver`.
+3. Disable metrics.
+4. Complete the `MetricsObserver`.
+5. Complete the `ObserveFeature`.
+6. Create and start the `WebServer` with the `ObserveFeature` (and other
+   settings).
+<!--@mdc :: -->
 
 These builders and interfaces also have methods which accept `Config` objects
 representing the `metrics` node from the application configuration.
@@ -314,40 +314,41 @@ Your Helidon SE application can also control the KPI settings programmatically.
 
 Assign KPI metrics behavior from code
 
+<!--@mdc ::code-callout{collapsed} -->
 ```java
 KeyPerformanceIndicatorMetricsConfig kpiConfig =
-        KeyPerformanceIndicatorMetricsConfig.builder() // (1)
-                .extended(true) // (2)
-                .longRunningRequestThreshold(Duration.ofSeconds(4)) // (3)
-                .build();
+    KeyPerformanceIndicatorMetricsConfig.builder() // <1>
+        .extended(true) // <2>
+        .longRunningRequestThreshold(Duration.ofSeconds(4)) // <3>
+        .build();
 
 MetricsObserver metrics = MetricsObserver.builder()
-        .metricsConfig(MetricsConfig.builder() // (4)
-                               .keyPerformanceIndicatorMetricsConfig(kpiConfig)) // (5)
-        .build();
+    .metricsConfig(MetricsConfig.builder() // <4>
+        .keyPerformanceIndicatorMetricsConfig(kpiConfig)) // <5>
+    .build();
 
 ObserveFeature observe = ObserveFeature.builder()
-        .config(config.get("server.features.observe"))
-        .addObserver(metrics) // (6)
-        .build();
+    .config(config.get("server.features.observe"))
+    .addObserver(metrics) // <6>
+    .build();
 
-WebServer server = WebServer.builder() // (7)
-        .config(config.get("server"))
-        .addFeature(observe)
-        .routing(Main::routing)
-        .build()
-        .start();
+WebServer server = WebServer.builder() // <7>
+    .config(config.get("server"))
+    .addFeature(observe)
+    .routing(Main::routing)
+    .build()
+    .start();
 ```
-
-1.  Create a [`KeyPerformanceIndicatorMetricsConfig` instance (via
-    its][keyperformancein] [`Builder`][builder]) with non-default values.
-2.  Enabled extended KPI meters.
-3.  Set the long-running request threshold.
-4.  Prepare the metrics observer’s builder.
-5.  Update the metrics observer’s builder using the just-prepared KPI metrics
-    config.
-6.  Add the metrics observer to the `ObserveFeature`.
-7.  Add the `ObserveFeature` to the `WebServer`.
+1. Create a [`KeyPerformanceIndicatorMetricsConfig` instance (via
+   its][keyperformancein] [`Builder`][builder]) with non-default values.
+2. Enabled extended KPI meters.
+3. Set the long-running request threshold.
+4. Prepare the metrics observer’s builder.
+5. Update the metrics observer’s builder using the just-prepared KPI metrics
+   config.
+6. Add the metrics observer to the `ObserveFeature`.
+7. Add the `ObserveFeature` to the `WebServer`.
+<!--@mdc :: -->
 
 #### Controlling Meters Related to Virtual Threads Behavior
 
@@ -360,17 +361,50 @@ Helidon.
 For performance reasons Helidon does not report virtual thread meters unless you
 enable them using configuration.
 
-| Meter name              | Usage                                                                                | Source                                                         |
-|-------------------------|--------------------------------------------------------------------------------------|----------------------------------------------------------------|
-| `vthreads.count`        | Current number of active virtual threads.                                            | JFR `jdk.virtualThreadStart` and `jdk.virtualThreadEnd` events |
-| `vthreads.pinned`       | Number of times virtual threads have been pinned.                                    | JFR `jdk.virtualThreadPinned` event                            |
-| `vthreads.recentPinned` | Distribution of the duration of thread pinning. <sup>1</sup>                         | JFR `jdk.virtualThreadPinned` event                            |
-| `vthreads.started`      | Number of virtual threads started.                                                   | JFR `jdk.virtualThreadStart` event                             |
-| `vthreads.submitFailed` | Number of times submissions of a virtual thread to a platform carrier thread failed. | JFR `jdk.virtualThreadSubmitFailed` event                      |
+Meters for Virtual Threads:
 
-Table 1. Meters for Virtual Threads {.tableblock .frame-all .grid-all .stretch}
+<table>
+<thead>
+<th>Meter name</th>
+<th>Usage</th>
+<th>JFR event(s)</th>
+</thead>
+<tr>
+<td rowspan="2"><code>vthreads.<wbr>count</code></td>
+<td rowspan="2">Current number of active virtual threads</td>
+<td><code>jdk.<wbr>virtual<wbr>Thread<wbr>Start</code></td>
+</tr>
+<tr>
+<td><code>jdk.<wbr>virtual<wbr>Thread<wbr>End</code></td>
+</tr>
+<tr>
+<td><code>vthreads.<wbr>pinned</code></td>
+<td>Number of times virtual threads have been pinned</td>
+<td><code>jdk.<wbr>virtual<wbr>Thread<wbr>Pinned</code></td>
+</tr>
+<tr>
+<td><code>vthreads.<wbr>recent<wbr>Pinned</code></td>
+<td>Distribution of the duration of thread pinning. <sup>1</sup></td>
+<td><code>jdk.<wbr>virtual<wbr>Thread<wbr>Pinned</code></td>
+</tr>
+<tr>
+<td><code>vthreads.<wbr>started</code></td>
+<td>Number of virtual threads started</td>
+<td><code>jdk.<wbr>virtual<wbr>Thread<wbr>Start</code></td>
+</tr>
+<tr>
+<td><code>vthreads.<wbr>submit<wbr>Failed</code></td>
+<td>
+Number of times submissions of a virtual thread to a platform carrier thread
+failed
+</td>
+<td><code>jdk.<wbr>virtual<wbr>Thread<wbr>Submit<wbr>Failed</code></td>
+</tr>
+</table>
 
-<sup>1</sup> Distribution summaries can discard stale data, so the `recentPinned` summary might not reflect all thread pinning activity. <sup>1</sup> Distribution summaries can discard stale data, so the `recentPinned` summary might not reflect all thread pinning activity.
+<sup>1</sup> Distribution summaries can discard stale data, so the
+`recentPinned` summary might not reflect all thread pinning activity.
+
 
 #### Configuring Virtual Threads Meters
 
@@ -468,17 +502,18 @@ endpoint is called.
 
 Create a new class named `GreetingCards` with the following code:
 
+<!--@mdc ::code-callout{collapsed} -->
 ```java
 public class GreetingCards implements HttpService {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
 
-    private final Counter cardCounter; // (1)
+    private final Counter cardCounter; // <1>
 
     GreetingCards() {
         cardCounter = Metrics.globalRegistry()
                 .getOrCreate(Counter.builder("cardCount")
-                                     .description("Counts card retrievals")); // (2)
+                                     .description("Counts card retrievals")); // <2>
     }
 
     @Override
@@ -487,7 +522,7 @@ public class GreetingCards implements HttpService {
     }
 
     private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) {
-        cardCounter.increment(); // (3)
+        cardCounter.increment(); // <3>
         sendResponse(response, "Here are some cards ...");
     }
 
@@ -497,40 +532,38 @@ public class GreetingCards implements HttpService {
     }
 }
 ```
+1. Declare a `Counter` member field.
+2. Create and register the `Counter` meter in the global meter registry. This
+   `Counter` will exist for the lifetime of the application.
+3. Increment the count.
+<!--@mdc :: -->
 
-1.  Declare a `Counter` member field.
-2.  Create and register the `Counter` meter in the global meter registry. This
-    `Counter` will exist for the lifetime of the application.
-3.  Increment the count.
-
-Update the `routing` method in the main class as follows:
-
+<!--@mdc ::code-callout -->
 ```java
 static void routing(HttpRouting.Builder routing) {
     routing
             .register("/greet", new GreetService())
-            .register("/cards", new GreetingCards()) // (1)
+            .register("/cards", new GreetingCards()) // <1>
             .get("/simple-greet", (req, res) -> res.send("Hello World!"));
 }
 ```
-
-1.  Add the `GreetingCards` service to the routing. Helidon routes any REST
-    requests with the `/cards` root path to the `GreetingCards` service.
-
-Build and run the application, then invoke the endpoints below:
+1. Add the `GreetingCards` service to the routing. Helidon routes any REST
+   requests with the `/cards` root path to the `GreetingCards` service.
+<!--@mdc :: -->
 
 ```shell [Terminal]
 curl http://localhost:8080/cards
 curl -H "Accept: application/json" 'http://localhost:8080/observe/metrics?scope=application'
 ```
 
+<!--@mdc ::code-callout -->
 ```json [Response]
 {
-  "cardCount": 1 // (1)
+  "cardCount": 1 // <1>
 }
 ```
-
-1.  The count value is one since the method was called once.
+1. The count value is one since the method was called once.
+<!--@mdc :: -->
 
 #### Timer Meter
 
@@ -542,15 +575,16 @@ execution. Whenever the REST `/cards` endpoint is called, the code updates the
 
 Replace the `GreetingCards` class with the following code:
 
+<!--@mdc ::code-callout{collapsed} -->
 ```java
 public class GreetingCards implements HttpService {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
-    private final Timer cardTimer; // (1)
+    private final Timer cardTimer; // <1>
 
     GreetingCards() {
         cardTimer = Metrics.globalRegistry()
-                .getOrCreate(Timer.builder("cardTimer") // (2)
+                .getOrCreate(Timer.builder("cardTimer") // <2>
                                      .description("Times card retrievals"));
     }
 
@@ -560,8 +594,8 @@ public class GreetingCards implements HttpService {
     }
 
     private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) {
-        Timer.Sample timerSample = Timer.start(); // (3)
-        response.whenSent(() -> timerSample.stop(cardTimer)); // (4)
+        Timer.Sample timerSample = Timer.start(); // <3>
+        response.whenSent(() -> timerSample.stop(cardTimer)); // <4>
         sendResponse(response, "Here are some cards ...");
     }
 
@@ -571,15 +605,13 @@ public class GreetingCards implements HttpService {
     }
 }
 ```
-
-1.  Declare a `Timer` member field.
-2.  Create and register the `Timer` metric in the global meter registry.
-3.  Create a timer sample which, among other things, automatically records the
-    starting time.
-4.  Arrange for the timer sample to be stopped and applied to the `cardTimer`
-    once Helidon sends the response to the client.
-
-Build and run the application, then invoke the endpoints below:
+1. Declare a `Timer` member field.
+2. Create and register the `Timer` metric in the global meter registry.
+3. Create a timer sample which, among other things, automatically records the
+   starting time.
+4. Arrange for the timer sample to be stopped and applied to the `cardTimer`
+   once Helidon sends the response to the client.
+<!--@mdc :: -->
 
 ```shell [Terminal]
 curl http://localhost:8080/cards
@@ -616,16 +648,17 @@ records a set of random numbers in a `DistributionSummary` meter when the
 
 Replace the `GreetingCards` class with the following code:
 
+<!--@mdc ::code-callout{collapsed} -->
 ```java
 public class GreetingCards implements HttpService {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
-    private final DistributionSummary cardSummary; // (1)
+    private final DistributionSummary cardSummary; // <1>
 
     GreetingCards() {
         cardSummary = Metrics.globalRegistry()
                 .getOrCreate(DistributionSummary.builder("cardDist")
-                                     .description("random card distribution")); // (2)
+                                     .description("random card distribution")); // <2>
     }
 
     @Override
@@ -634,7 +667,7 @@ public class GreetingCards implements HttpService {
     }
 
     private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) {
-        Random r = new Random(); // (3)
+        Random r = new Random(); // <3>
         for (int i = 0; i < 1000; i++) {
             cardSummary.record(1 + r.nextDouble());
         }
@@ -647,14 +680,12 @@ public class GreetingCards implements HttpService {
     }
 }
 ```
-
-1.  Declare a `DistributionSummary` member field.
-2.  Create and register the `DistributionSummary` meter in the global meter
-    registry
-3.  Update the distribution summary with a random number multiple times for each
-    request.
-
-Build and run the application, then invoke the endpoints below:
+1. Declare a `DistributionSummary` member field.
+2. Create and register the `DistributionSummary` meter in the global meter
+   registry
+3. Update the distribution summary with a random number multiple times for each
+   request.
+<!--@mdc :: -->
 
 ```shell [Terminal]
 curl http://localhost:8080/cards
@@ -691,6 +722,7 @@ value of each registered `Gauge`. The following example demonstrates how a
 
 Replace the `GreetingCards` class with the following code:
 
+<!--@mdc ::code-callout -->
 ```java
 public class GreetingCards implements HttpService {
 
@@ -701,7 +733,7 @@ public class GreetingCards implements HttpService {
         Metrics.globalRegistry()
                 .getOrCreate(Gauge.builder("temperature",
                                            () -> r.nextDouble(100.0))
-                                     .description("Ambient temperature")); // (1)
+                                     .description("Ambient temperature")); // <1>
     }
 
     @Override
@@ -719,25 +751,24 @@ public class GreetingCards implements HttpService {
     }
 }
 ```
-
-1.  Register the `Gauge`, passing a `Supplier<Double>` which furnishes a random
-    temperature from 0 to 100.0 each time the metrics system interrogates the
-    gauge.
-
-Build and run the application, then invoke the endpoint below:
+1. Register the `Gauge`, passing a `Supplier<Double>` which furnishes a random
+   temperature from 0 to 100.0 each time the metrics system interrogates the
+   gauge.
+<!--@mdc :: -->
 
 ```shell [Terminal]
 curl -H "Accept: application/json"  'http://localhost:8080/observe/metrics?scope=application
 ```
 
+<!--@mdc ::code-callout -->
 ```json [Response]
 {
-  "temperature": 46.582132737739066 // (1)
+  "temperature": 46.582132737739066 // <1>
 }
 ```
-
-1.  The current (random) temperature. Accessing the endpoint again returns a
-    different value.
+1. The current (random) temperature. Accessing the endpoint again returns a
+   different value.
+<!--@mdc :: -->
 
 ### Integration with Kubernetes and Prometheus
 
@@ -755,16 +786,16 @@ docker build -t helidon-metrics-se .
 Create the Kubernetes YAML specification, named `metrics.yaml`, with the
 following content:
 
-<!--@mdc ::code-collapse -->
+<!--@mdc ::code-callout{collapsed} -->
 ```yaml
 kind: Service
 apiVersion: v1
 metadata:
-  name: helidon-metrics # (1)
+  name: helidon-metrics # <1>
   labels:
     app: helidon-metrics
   annotations:
-    prometheus.io/scrape: "true" # (2)
+    prometheus.io/scrape: "true" # <2>
 spec:
   type: NodePort
   selector:
@@ -779,7 +810,7 @@ apiVersion: apps/v1
 metadata:
   name: helidon-metrics
 spec:
-  replicas: 1 # (3)
+  replicas: 1 # <3>
   selector:
     matchLabels:
       app: helidon-metrics
@@ -796,12 +827,11 @@ spec:
           ports:
             - containerPort: 8080
 ```
+1. A service of type `NodePort` that serves the default routes on port `8080`.
+2. An annotation that will allow Prometheus to discover and scrape the
+   application pod.
+3. A deployment with one replica of a pod.
 <!--@mdc :: -->
-
-1.  A service of type `NodePort` that serves the default routes on port `8080`.
-2.  An annotation that will allow Prometheus to discover and scrape the
-    application pod.
-3.  A deployment with one replica of a pod.
 
 Create and deploy the application into Kubernetes:
 
@@ -815,14 +845,13 @@ Get the service information:
 kubectl get service/helidon-metrics
 ```
 
+<!--@mdc ::code-callout -->
 ```text
 NAME             TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
-helidon-metrics   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s # (1)
+helidon-metrics   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s # <1>
 ```
-
-1.  A service of type `NodePort` that serves the default routes on port `31143`.
-
-Verify the metrics endpoint using port `30116`, your port will likely be
+1. A service of type `NodePort` that serves the default routes on port `31143`.
+<!--@mdc :: -->
 different:
 
 ```shell [Terminal]

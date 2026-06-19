@@ -110,7 +110,7 @@ This includes both connection information and enables Neo4j metrics propagation.
 
 Finally, we are able to inject and use the `Neo4j` driver.
 
-<!--@mdc ::code-collapse -->
+<!--@mdc ::code-callout{collapsed} -->
 ```java
 @ApplicationScoped
 public class MovieRepository {
@@ -118,11 +118,11 @@ public class MovieRepository {
     private final Driver driver;
 
     @Inject
-    public MovieRepository(Driver driver) { 
+    public MovieRepository(Driver driver) { // <1>
         this.driver = driver;
     }
 
-    List<Movie> findAll() { 
+    List<Movie> findAll() { // <2>
         try (var session = driver.session()) {
             var query = """
                         match (m:Movie)
@@ -155,12 +155,9 @@ public class MovieRepository {
     }
 }
 ```
+1. `Neo4j` driver constructor injection
+2. Use of `Neo4j` driver to extract all Movies
 <!--@mdc :: -->
-
-- `Neo4j` driver constructor injection
-- Use of `Neo4j` driver to extract all Movies
-
-Movies can now be returned as JSON objects:
 
 ```java
 @GET

@@ -913,27 +913,26 @@ Annotations on endpoint method (must be an `OPTIONS` method):
 
 Example of a CORS protected endpoint
 
+<!--@mdc ::code-callout -->
 ```java
 @Service.Singleton
 @Http.Path("/cors")
 static class CorsEndpoint {
     @Http.OPTIONS
-    @Cors.AllowOrigins("${app.cors.allow-origins:http://foos.bar,http://bars.foo}") // (1)
-    @Cors.AllowHeaders({"X-foo", "X-bar"}) // (2)
-    @Cors.AllowMethods({Method.DELETE_NAME, Method.PUT_NAME, "LIST"}) // (3)
-    @Cors.MaxAgeSeconds(180) // (4)
+    @Cors.AllowOrigins("${app.cors.allow-origins:http://foos.bar,http://bars.foo}") // <1>
+    @Cors.AllowHeaders({"X-foo", "X-bar"}) // <2>
+    @Cors.AllowMethods({Method.DELETE_NAME, Method.PUT_NAME, "LIST"}) // <3>
+    @Cors.MaxAgeSeconds(180) // <4>
     void options() {
     }
 }
 ```
-
-1.  Configure origins that can be overridden using config key
-    `app.cors.allow-origins` with the provided default values (comma separated)
-2.  Configure headers the script can send to this host
-3.  Configure allowed methods for CORS requests
-4.  Configure max age to be 3 minutes
-
-### Health Checks
+1. Configure origins that can be overridden using config key
+   `app.cors.allow-origins` with the provided default values (comma separated)
+2. Configure headers the script can send to this host
+3. Configure allowed methods for CORS requests
+4. Configure max age to be 3 minutes
+<!--@mdc :: -->
 
 To add a declarative health check, create a service that implements
 io.helidon.health.HealthCheck or produces an instance of it. The WebServer

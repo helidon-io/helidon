@@ -170,23 +170,22 @@ An extension must implement the
 For example, assuming that there is a gRPC service class called `StringService`
 that needs to be deployed, a gRPC server extension class might look like this:
 
+<!--@mdc ::code-callout -->
 ```java
 public class MyExtension implements GrpcMpExtension {
 
     @Override
-    public void configure(GrpcMpContext context) {           
-        context.routing().service(new StringService());      
+    public void configure(GrpcMpContext context) {           // <1>
+        context.routing().service(new StringService());      // <2>
     }
 }
 ```
-
-- The `configure` method of the extension will be called to allow the extension
-  to add extra configuration to the server.
-- In this example, an instance of the `StringService` is registered with the
-  routing, as described in the [gRPC Server Routing][grpc-server-rout]
-  documentation.
-
-The `GrpcMpExtension` instances are discovered and loaded using the service
+1. The `configure` method of the extension will be called to allow the extension
+   to add extra configuration to the server.
+2. In this example, an instance of the `StringService` is registered with the
+   routing, as described in the [gRPC Server Routing][grpc-server-rout]
+   documentation.
+<!--@mdc :: -->
 loader, so for this example above to work, a file
 `META-INF/services/io.helidon.microprofile.grpc.server.spi.GrpcMpExtension`
 would need to be created with the name of the extension shown above.

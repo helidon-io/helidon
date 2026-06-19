@@ -86,11 +86,12 @@ default, the Quickstart sample project uses the built-in Helidon main class. In
 this guide you want to use your own main class, so you have more control over
 the server initialization. First define your own `Main`:
 
+<!--@mdc ::code-callout -->
 ```java [Main.java]
 public final class Main {
 
     private Main() {
-    } 
+    } // <1>
 
     public static void main(final String[] args) {
         Server server = startServer();
@@ -98,20 +99,19 @@ public final class Main {
     }
 
     static Server startServer() {
-        return Server.create().start(); 
+        return Server.create().start(); // <2>
     }
 
 }
 ```
+1. Notice that this class has an empty no-args constructor to make sure this
+   class cannot be instantiated.
+2. The MicroProfile server is started with the default configuration.
+<!--@mdc :: -->
 
 In this class, a `main` method is defined which starts the Helidon MP server and
 prints out a message with the listen address.
 
-- Notice that this class has an empty no-args constructor to make sure this
-  class cannot be instantiated.
-- The MicroProfile server is started with the default configuration.
-
-Next change the project’s `pom.xml` to use your main class:
 
 ```xml [pom.xml]
 <properties>
@@ -128,16 +128,15 @@ the project you created.
 
 View Main#startServer:
 
+<!--@mdc ::code-callout -->
 ```java
 static Server startServer() {
-    return Server.create().start(); 
+    return Server.create().start(); // <1>
 }
 ```
-
-- There is no `Config` object being used during server creation, so the default
-  configuration is used.
-
-### Source Precedence for Default Configuration
+1. There is no `Config` object being used during server creation, so the default
+   configuration is used.
+<!--@mdc :: -->
 
 In order to properly configure your application using configuration sources, you
 need to understand the precedence rules that Helidon uses to merge your
@@ -190,14 +189,15 @@ Run the curl command in a new terminal window and check the response:
 curl http://localhost:8080/greet
 ```
 
+<!--@mdc ::code-callout -->
 ```json
 {
-  "message": "HelloFromMPConfig World!" 
+  "message": "HelloFromMPConfig World!" // <1>
 }
 ```
-
-- The new `app.greeting` value in `META-INF/microprofile-config.properties` is
-  used.
+1. The new `app.greeting` value in `META-INF/microprofile-config.properties` is
+   used.
+<!--@mdc :: -->
 
 ##### Environment Variable Override
 
@@ -217,14 +217,15 @@ Invoke the endpoint:
 curl http://localhost:8080/greet
 ```
 
+<!--@mdc ::code-callout -->
 ```json [Response]
 {
-  "message": "HelloFromEnvironment World!" 
+  "message": "HelloFromEnvironment World!" // <1>
 }
 ```
-
-- The environment variable took precedence over the value in
-  `META-INF/microprofile-config.properties`.
+1. The environment variable took precedence over the value in
+   `META-INF/microprofile-config.properties`.
+<!--@mdc :: -->
 
 ##### System Property Override
 
@@ -243,14 +244,15 @@ Invoke the endpoint:
 curl http://localhost:8080/greet
 ```
 
+<!--@mdc ::code-callout -->
 ```json [Response]
 {
-  "message": "HelloFromSystemProperty World!" 
+  "message": "HelloFromSystemProperty World!" // <1>
 }
 ```
-
-- The system property took precedence over both the environment variable and
-  `META-INF/microprofile-config.properties`.
+1. The system property took precedence over both the environment variable and
+   `META-INF/microprofile-config.properties`.
+<!--@mdc :: -->
 
 ## Accessing Config within an Application
 
@@ -263,13 +265,14 @@ The generated project already accesses configuration data in the
 
 View the following code from `GreetingProvider.java`:
 
+<!--@mdc ::code-callout -->
 ```java [GreetingProvider.java]
-@ApplicationScoped 
+@ApplicationScoped // <1>
 public class GreetingProvider {
-    private final AtomicReference<String> message = new AtomicReference<>(); 
+    private final AtomicReference<String> message = new AtomicReference<>(); // <2>
 
     @Inject
-    public GreetingProvider(@ConfigProperty(name = "app.greeting") String message) {   
+    public GreetingProvider(@ConfigProperty(name = "app.greeting") String message) {   // <3>
         this.message.set(message);
     }
 
@@ -282,38 +285,38 @@ public class GreetingProvider {
     }
 }
 ```
-
-- This class is application scoped so a single instance of `GreetingProvider`
-  will be shared across the entire application.
-- Define a thread-safe reference that will refer to the message member variable.
-- The value of the configuration property `app.greeting` is injected into the
-  `GreetingProvider`. constructor as a `String` parameter named `message`.
-
-### Injecting at Field Level
+1. This class is application scoped so a single instance of `GreetingProvider`
+   will be shared across the entire application.
+2. Define a thread-safe reference that will refer to the message member variable.
+3. The value of the configuration property `app.greeting` is injected into the
+   `GreetingProvider`. constructor as a `String` parameter named `message`.
+<!--@mdc :: -->
 
 You can inject configuration at the field level as shown below. Use the
 `volatile` keyword since you cannot use `AtomicReference` with field level
 injection.
 
 Update the meta configuration with the following content:
+<!--@mdc ::code-callout -->
 ```yaml [meta-config.yaml]
 sources:
   - type: "classpath"
     properties:
-      resource: "META-INF/microprofile-config.properties"  
+      resource: "META-INF/microprofile-config.properties"  <1>
 ```
-
-- This example only uses the default classpath source.
+1. This example only uses the default classpath source.
+<!--@mdc :: -->
 
 Update the following code from `GreetingProvider.java`:
 
+<!--@mdc ::code-callout -->
 ```java [GreetingProvider.java]
 @ApplicationScoped
 public class GreetingProvider {
 
     @Inject
-    @ConfigProperty(name = "app.greeting") 
-    private volatile String message; 
+    @ConfigProperty(name = "app.greeting") // <1>
+    private volatile String message; // <2>
 
     String getMessage() {
         return message;
@@ -324,11 +327,9 @@ public class GreetingProvider {
     }
 }
 ```
-
-- Inject the value of `app.greeting` into the `GreetingProvider` object.
-- Define a class member variable to hold the greeting.
-
-Build and run the application, then invoke the endpoint:
+1. Inject the value of `app.greeting` into the `GreetingProvider` object.
+2. Define a class member variable to hold the greeting.
+<!--@mdc :: -->
 
 ```shell [Terminal]
 curl http://localhost:8080/greet
@@ -347,14 +348,15 @@ shown below.
 
 Replace the GreetingProvider class:
 
+<!--@mdc ::code-callout -->
 ```java
 @ApplicationScoped
 public class GreetingProvider {
     private final AtomicReference<String> message = new AtomicReference<>();
 
-    @Inject 
+    @Inject // <1>
     public GreetingProvider(Config config) {
-        String message = config.get("app.greeting").asString().get(); 
+        String message = config.get("app.greeting").asString().get(); // <2>
         this.message.set(message);
     }
 
@@ -367,12 +369,10 @@ public class GreetingProvider {
     }
 }
 ```
-
-- Inject the `Config` object into the `GreetingProvider` object.
-- Get the `app.greeting` value from the `Config` object and set the member
-  variable.
-
-Build and run the application, then invoke the endpoint:
+1. Inject the `Config` object into the `GreetingProvider` object.
+2. Get the `app.greeting` value from the `Config` object and set the member
+   variable.
+<!--@mdc :: -->
 
 ```shell [Terminal]
 curl http://localhost:8080/greet
@@ -414,6 +414,7 @@ sources:
 ```
 
 Replace GreetingProvider class with the following code:
+<!--@mdc ::code-callout -->
 ```java [GreetingProvider.java]
 @ApplicationScoped
 public class GreetingProvider {
@@ -424,9 +425,9 @@ public class GreetingProvider {
     Config config;
 
     public void onStartUp(@Observes @Initialized(ApplicationScoped.class) Object init) {
-        Config appNode = config.get("app.greeting"); 
-        message.set(appNode.get("message").asString().get());  
-        sender.set(appNode.get("sender").asString().get());   
+        Config appNode = config.get("app.greeting"); // <1>
+        message.set(appNode.get("message").asString().get());  // <2>
+        sender.set(appNode.get("sender").asString().get());   // <3>
     }
 
     String getMessage() {
@@ -438,12 +439,10 @@ public class GreetingProvider {
     }
 }
 ```
-
-- Get the configuration subtree where the `app.greeting` node is the root.
-- Get the value from the `message` `Config` node.
-- Get the value from the `sender` `Config` node.
-
-Build and run the application, then invoke the endpoint:
+1. Get the configuration subtree where the `app.greeting` node is the root.
+2. Get the value from the `message` `Config` node.
+3. Get the value from the `sender` `Config` node.
+<!--@mdc :: -->
 
 ```shell [Terminal]
 curl http://localhost:8080/greet
@@ -464,22 +463,21 @@ the contents of the configuration file used for the ConfigMap. This example will
 create the file at `/etc/config/config-file.properties`.
 
 Update the Main class and replace the buildConfig method:
+<!--@mdc ::code-callout -->
 ```java [Main.java]
 private static Config buildConfig() {
     return Config.builder()
             .sources(
-                    file("/etc/config/config-file.properties").optional(), 
-                    classpath("META-INF/microprofile-config.properties")) 
+                    file("/etc/config/config-file.properties").optional(), // <1>
+                    classpath("META-INF/microprofile-config.properties")) // <2>
             .build();
 }
 ```
-
-- The `app.greeting` value will be fetched from
-  `/etc/config/config-file.properties` within the container.
-- The server port is specified in `META-INF/microprofile-config.properties`
-  within the `helidon-quickstart-mp.jar`.
-
-Update the following code from `GreetingProvider.java`:
+1. The `app.greeting` value will be fetched from
+   `/etc/config/config-file.properties` within the container.
+2. The server port is specified in `META-INF/microprofile-config.properties`
+   within the `helidon-quickstart-mp.jar`.
+<!--@mdc :: -->
 ```java [GreetingProvider.java]
 @ApplicationScoped
 public class GreetingProvider {
@@ -504,11 +502,14 @@ Build and run the application, then invoke the endpoint:
 curl http://localhost:8080/greet
 ```
 
+<!--@mdc ::code-callout -->
 ```json [Response]
 {
-  "message": "HelloFromConfigFile World!"
+  "message": "HelloFromConfigFile World!" // <1>
 }
 ```
+1. The greeting value from `/etc/config/config-file.properties` within the container was used.
+<!--@mdc :: -->
 
 Stop the application and build the docker image:
 
@@ -528,25 +529,26 @@ View the contents of the ConfigMap:
 kubectl get configmap helidon-configmap -o yaml
 ```
 
+<!--@mdc ::code-callout -->
 ```yaml
 apiVersion: v1
 data:
-  config-file.properties: |  
+  config-file.properties: | # <1> <2>
     app.greeting=HelloFromConfigFile
 kind: ConfigMap
 ```
-
-- The file `config-file.properties` will be created within the Kubernetes
-  container.
-- The `config-file.properties` file will have this single property defined.
+1. The file `config-file.properties` will be created within the Kubernetes
+   container.
+2. The `config-file.properties` file will have this single property defined.
+<!--@mdc :: -->
 
 Create the Kubernetes YAML specification:
-<!--@mdc ::code-collapse -->
+<!--@mdc ::code-callout{collapsed} -->
 ```yaml [k8s-config.yaml]
 kind: Service
 apiVersion: v1
 metadata:
-  name: helidon-config 
+  name: helidon-config # <1>
   labels:
     app: helidon-config
 spec:
@@ -563,7 +565,7 @@ apiVersion: apps/v1
 metadata:
   name: helidon-config
 spec:
-  replicas: 1 
+  replicas: 1 # <2>
   selector:
     matchLabels:
       app: helidon-config
@@ -581,21 +583,20 @@ spec:
             - containerPort: 8080
           volumeMounts:
             - name: config-volume
-              mountPath: /etc/config 
+              mountPath: /etc/config # <3>
       volumes:
         - name: config-volume
           configMap:
             # Provide the name of the ConfigMap containing the files you want
             # to add to the container
-            name:  helidon-configmap 
+            name:  helidon-configmap # <4>
 ```
+1. A service of type `NodePort` that serves the default routes on port `8080`.
+2. A deployment with one replica of a pod.
+3. Mount the ConfigMap as a volume at `/etc/config`. This is where Kubernetes
+   will create `config-file.properties`.
+4. Specify the ConfigMap which contains the configuration data.
 <!--@mdc :: -->
-
-- A service of type `NodePort` that serves the default routes on port `8080`.
-- A deployment with one replica of a pod.
-- Mount the ConfigMap as a volume at `/etc/config`. This is where Kubernetes
-  will create `config-file.properties`.
-- Specify the ConfigMap which contains the configuration data.
 
 Create and deploy the application into Kubernetes:
 
@@ -609,12 +610,13 @@ Get the service information:
 kubectl get service/helidon-config
 ```
 
+<!--@mdc ::code-callout -->
 ```shell [Terminal]
 NAME             TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
-helidon-config   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s 
+helidon-config   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s # <1>
 ```
-
-- A service of type `NodePort` that serves the default routes on port `31143`.
+1. A service of type `NodePort` that serves the default routes on port `31143`.
+<!--@mdc :: -->
 
 Verify the configuration endpoint using port 31143, your port will likely be
 different:
@@ -623,16 +625,15 @@ different:
 curl http://localhost:31143/greet
 ```
 
+<!--@mdc ::code-callout -->
 ```json [Response]
 {
-  "message": "HelloFromConfigFile World!" 
+  "message": "HelloFromConfigFile World!" // <1>
 }
 ```
-
-- The greeting value from `/etc/config/config-file.properties` within the
-  container was used.
-
-You can now delete the Kubernetes resources that were just created during this
+1. The greeting value from `/etc/config/config-file.properties` within the
+   container was used.
+<!--@mdc :: -->
 example.
 
 Delete the Kubernetes resources:

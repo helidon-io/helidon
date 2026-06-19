@@ -39,6 +39,7 @@ for the same provider interface.
 
 Example of custom generating LangChain4j GoogleAiGeminiChatModel integration:
 
+<!--@mdc ::code-callout -->
 ```java
 import io.helidon.builder.api.Option;
 import io.helidon.integrations.langchain4j.AiProvider;
@@ -46,20 +47,20 @@ import io.helidon.integrations.langchain4j.AiProvider;
 import dev.langchain4j.model.googleai.GeminiSafetySetting;
 import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
 
-@AiProvider.ModelConfig(GoogleAiGeminiChatModel.class) 
-interface GoogleAiGeminiLc4jProvider { 
+@AiProvider.ModelConfig(GoogleAiGeminiChatModel.class) // <1>
+interface GoogleAiGeminiLc4jProvider { // <2>
 
     @Option.Configured
-    @Option.RegistryService 
+    @Option.RegistryService //<3>
     List<GeminiSafetySetting> safetySettings();
 }
 ```
-
-- Provide actual LangChain4j model we want to generate binding for.
-- Name of the provider needs comply with convention and end with `Lc4jProvider`,
-  prefix is used for deriving a config key
-- Some properties can be too complex for configuration, we can supply them via
-  injection instead
+1. Provide actual LangChain4j model we want to generate binding for.
+2. Name of the provider needs comply with convention and end with `Lc4jProvider`,
+   prefix is used for deriving a config key
+3. Some properties can be too complex for configuration, we can supply them via
+   injection instead
+<!--@mdc :: -->
 
 You may notice that the **safetySettings** property is manually configured in
 the provider interface, you can do that for the properties that are too complex
@@ -72,10 +73,11 @@ LangChain4j provider config key is by default derived from the provider
 interface name, example: `NameOfTheProviderLc4jProvider` →
 `name-of-the-provider`.
 
+<!--@mdc ::code-callout -->
 ```yaml [application.yaml]
 langchain4j:
   providers:
-    google-ai-gemini: 
+    google-ai-gemini: # <1>
       api-key: ${GEMINI_AI_KEY}
 
   models:
@@ -83,8 +85,8 @@ langchain4j:
       provider: google-ai-gemini
       model-name: gemini-2.5-flash
 ```
-
-- Config key derived from `GoogleAiGeminiLc4jProvider` interface name
+1. Config key derived from `GoogleAiGeminiLc4jProvider` interface name
+<!--@mdc :: -->
 
 ## Injectable Properties
 
@@ -104,6 +106,7 @@ It is possible to configure named qualifiers for injected beans, config property
 `service-registry.named` prefixed with the key of desired property is used as
 named qualifier for lookup when such property exists.
 
+<!--@mdc ::code-callout -->
 ```yaml [application.yaml]
 langchain4j:
   providers:
@@ -115,10 +118,10 @@ langchain4j:
       provider: google-ai-gemini
       model-name: gemini-2.5-flash
       safety-settings:
-        service-registry.named: custom-named-settings 
+        service-registry.named: custom-named-settings <1>
 ```
-
-- Named qualifier can be a string value used for looking up desired beans
+1. Named qualifier can be a string value used for looking up desired beans
+<!--@mdc :: -->
 
 Example of setting up a bean for injectable property `safety-settings`:
 

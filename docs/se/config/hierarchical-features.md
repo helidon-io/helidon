@@ -46,13 +46,13 @@ definition of what keys can be:
 
 The ABNF syntax of config key:
 
-```text
+```bnf
 config-key = *1( key-token *( "." key-token ) )
- key-token = *( unescaped / escaped )
- unescaped = %x00-2D / %x2F-7D / %x7F-10FFFF
-           ; %x2E ('.') and %x7E ('~') are excluded from 'unescaped'
-   escaped = "~" ( "0" / "1" )
-           ; representing '~' and '.', respectively
+key-token = *( unescaped / escaped )
+unescaped = %x00-2D / %x2F-7D / %x7F-10FFFF
+       ; %x2E ('.') and %x7E ('~') are excluded from 'unescaped'
+escaped = "~" ( "0" / "1" )
+       ; representing '~' and '.', respectively
 ```
 
 > [!IMPORTANT]
@@ -142,20 +142,19 @@ All the following lines retrieve the same `Config` node.
 
 Equivalent Config Retrievals:
 
+<!--@mdc ::code-callout -->
 ```java
 assert config.get("") == config;
-Config provName1 = config.get("data.providers.0.name"); 
-Config provName2 = config.get("data.providers.0").get("name"); 
+Config provName1 = config.get("data.providers.0.name"); // <1>
+Config provName2 = config.get("data.providers.0").get("name"); // <2>
 Config provName3 = config.get("data.providers").get("0.name");
 Config provName4 = config.get("data").get("providers.0").get("name");
-Config provName5 = config.get("data").get("providers").get("0").get("name"); 
+Config provName5 = config.get("data").get("providers").get("0").get("name"); // <3>
 ```
-
-- using a single key
-- mixed style (composite key and single key)
-- navigating one level with each `get` invocation
-
-The `Config.get(key)` method always returns a `Config` object without throwing
+1. using a single key
+2. mixed style (composite key and single key)
+3. navigating one level with each `get` invocation
+<!--@mdc :: -->
 an exception. If the specified key does not exist the method returns a `Config`
 node of type `MISSING`. There are several ways your application can tell whether
 a given config value exists.
@@ -226,91 +225,91 @@ General Config Node Methods:
 
 List names of child nodes of an *object* node:
 
+<!--@mdc ::code-callout -->
 ```java
 List<String> appNodeNames = config.get("app")
-        .asNodeList() 
-        .map(nodes -> { 
+        .asNodeList() // <1>
+        .map(nodes -> { // <2>
             return nodes
                     .stream()
                     .map(Config::name)
                     .sorted()
                     .toList();
         })
-        .orElse(List.of()); 
+        .orElse(List.of()); // <3>
 
-assert appNodeNames.get(0).equals("basic-range"); 
-assert appNodeNames.get(1).equals("greeting"); 
-assert appNodeNames.get(2).equals("page-size"); 
+assert appNodeNames.get(0).equals("basic-range"); // <4>
+assert appNodeNames.get(1).equals("greeting"); // <4>
+assert appNodeNames.get(2).equals("page-size"); // <4>
 ```
-
-- Get the ConfigValue with child `Config` instances.
-- Map the node list to names using the Java Stream API (if present)
-- Use an empty list if the "app" node does not exist
-- Check that the list contains the expected child names: `basic-range`,
-  `greeting` and `page-size`.
+1. Get the ConfigValue with child `Config` instances.
+2. Map the node list to names using the Java Stream API (if present)
+3. Use an empty list if the "app" node does not exist
+4. Check that the list contains the expected child names: `basic-range`,
+   `greeting` and `page-size`.
+<!--@mdc :: -->
 
 List child nodes of a *list* node:
 
+<!--@mdc ::code-callout -->
 ```java
 List<Config> providers = config.get("data.providers")
-        .asNodeList().orElse(List.of()); 
+        .asNodeList().orElse(List.of()); // <1>
 
-assert providers.get(0).key().toString().equals("data.providers.0"); 
-assert providers.get(1).key().toString().equals("data.providers.1"); 
+assert providers.get(0).key().toString().equals("data.providers.0"); // <2>
+assert providers.get(1).key().toString().equals("data.providers.1"); // <2>
 ```
-
-- Get child nodes of the `data.providers` *list* node as a `List` of `Config`
-  instances.
-- Check that the list contains the expected child nodes with keys
-  `data.providers.0` and `data.providers.1`.
-
-The `traverse()` method returns a stream of the nodes in the subtree that is
+1. Get child nodes of the `data.providers` *list* node as a `List` of `Config`
+   instances.
+2. Check that the list contains the expected child nodes with keys
+   `data.providers.0` and `data.providers.1`.
+<!--@mdc :: -->
 rooted at the current configuration node. Depending on the structure of the
 loaded configuration the stream contains a mix of object, list or leaf value
 nodes.
 
 Traverse subtree below a *list* node:
 
+<!--@mdc ::code-callout -->
 ```java
 config.get("data.providers")
-        .traverse() 
-        .forEach(node -> System.out.println(node.type() + " \t" + node.key())); 
+        .traverse() // <1>
+        .forEach(node -> System.out.println(node.type() + " \t" + node.key())); // <2>
 ```
-
-- Visit the subtree rooted at the `data.providers` *list* node.
-- Prints out following list of nodes (type and key):
-
-```text
-OBJECT   data.providers.0
-VALUE   data.providers.0.name
-VALUE   data.providers.0.class
-OBJECT  data.providers.1
-VALUE   data.providers.1.name
-VALUE   data.providers.1.class
-```
+1. Visit the subtree rooted at the `data.providers` *list* node.
+2. Prints out following list of nodes (type and key):
+    ```log
+    OBJECT   data.providers.0
+    VALUE   data.providers.0.name
+    VALUE   data.providers.0.class
+    OBJECT  data.providers.1
+    VALUE   data.providers.1.name
+    VALUE   data.providers.1.class
+    ```
+<!--@mdc :: -->
 
 The optional `Predicate<Config>` argument to the `traverse` methods allows the
 application to prune the traversal of a subtree at any point.
 
 Traverse *root* (*object*) node, skipping the entire data subtree:
 
+<!--@mdc ::code-callout -->
 ```java
-config.traverse(node -> !node.name().equals("data")) 
-        .forEach(node -> System.out.println(node.type() + " \t" + node.key())); 
+config.traverse(node -> !node.name().equals("data")) // <1>
+        .forEach(node -> System.out.println(node.type() + " \t" + node.key())); // <2>
 ```
-
-- Visit all *root* sub-nodes, excluding whole `data` tree structure but
-  including others.
-- Prints out following list of nodes (type and key):
-
-```text
-OBJECT    app
-VALUE   app.page-size
-VALUE   app.greeting
-LIST    app.basic-range
-VALUE   app.basic-range.0
-VALUE   app.basic-range.1
-```
+1. Visit all *root* sub-nodes, excluding whole `data` tree structure but
+   including others.
+2. Prints out following list of nodes (type and key):
+    ```log
+    OBJECT    app
+    VALUE   app.page-size
+    VALUE   app.greeting
+    LIST    app.basic-range
+    VALUE   app.basic-range.0
+    VALUE   app.basic-range.1
+    ```
+<!--@mdc :: -->
 
 ## Detaching a Config Subtree
 
@@ -344,26 +343,25 @@ node is unchanged.
 
 Detaching a Subtree:
 
+<!--@mdc ::code-callout -->
 ```java
-// originalRoot is from the original example `.conf` file
+// originalRoot is from the original example .conf file
 // alternateRoot is from the alternate structure above
 
 Config detachedFromOriginal = originalRoot.get("web").detach();
 Config detachedFromAlternate = alternateRoot.get("server.web").detach();
 
-assert originalRoot.get("web.debug").equals("true"); 
-assert alternateRoot.get("server.web.debug").equals("true"); 
+assert originalRoot.get("web.debug").equals("true"); // <1>
+assert alternateRoot.get("server.web.debug").equals("true"); // <1>
 
-assert detachedFromOriginal.get("debug").equals("true"); 
-assert detachedFromAlternate.get("debug").equals("true"); 
+assert detachedFromOriginal.get("debug").equals("true"); // <2>
+assert detachedFromAlternate.get("debug").equals("true"); // <2>
 ```
-
-- Navigation depends on knowing the full structure of the config and so is
-  different for the two cases.
-- Detaching so the `web` node is the root can use the same key regardless of
-  where the config subtree came from.
-
-[confignode]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/spi/ConfigNode.html
+1. Navigation depends on knowing the full structure of the config and so is
+   different for the two cases.
+2. Detaching so the `web` node is the root can use the same key regardless of
+   where the config subtree came from.
+<!--@mdc :: -->
 [hocon]: https://github.com/lightbend/config/blob/master/HOCON.md
 [name]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/Config.html#name--
 [key]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/Config.html#key--

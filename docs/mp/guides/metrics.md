@@ -358,16 +358,17 @@ track the number of times the `/cards` endpoint is called.
 
 Create a new class GreetingCards with the following code:
 
+<!--@mdc ::code-callout -->
 ```java
-@Path("/cards") 
-@RequestScoped 
+@Path("/cards") //<1>
+@RequestScoped // <2>
 public class GreetingCards {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Counted(name = "any-card")  
+    @Counted(name = "any-card")  // <3>
     public JsonObject anyCard() throws InterruptedException {
         return createResponse("Here are some random cards ...");
     }
@@ -377,17 +378,15 @@ public class GreetingCards {
     }
 }
 ```
-
-- This class is annotated with `Path` which sets the path for this resource as
-  `/cards`.
-- The `@RequestScoped` annotation defines that this bean is request scoped. The
-  request scope is active only for the duration of one web service invocation,
-  and it is destroyed at the end of that invocation.
-- The annotation `@Counted` will register a `Counter` metric for this method,
-  creating it if needed. The counter is incremented each time the anyCards
-  method is called. The `name` attribute is optional.
-
-Build and run the application, then invoke the application endpoints below:
+1. This class is annotated with `Path` which sets the path for this resource as
+   `/cards`.
+2. The `@RequestScoped` annotation defines that this bean is request scoped. The
+   request scope is active only for the duration of one web service invocation,
+   and it is destroyed at the end of that invocation.
+3. The annotation `@Counted` will register a `Counter` metric for this method,
+   creating it if needed. The counter is incremented each time the anyCards
+   method is called. The `name` attribute is optional.
+<!--@mdc :: -->
 
 ```shell [Terminal]
 curl http://localhost:8080/cards
@@ -395,13 +394,14 @@ curl http://localhost:8080/cards
 curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=application'
 ```
 
+<!--@mdc ::code-callout -->
 ```json [Response (partial)]
 {
-  "io.helidon.examples.quickstart.mp.GreetingCards.any-card":2 
+  "io.helidon.examples.quickstart.mp.GreetingCards.any-card":2 // <1>
 }
 ```
-
-- The any-card count is two, since you invoked the endpoint twice.
+1. The any-card count is two, since you invoked the endpoint twice.
+<!--@mdc :: -->
 
 > [!NOTE]
 > Notice the counter is fully qualified. You can remove the package prefix by
@@ -420,6 +420,7 @@ metrics different names as shown below.
 
 Replace the GreetingCards class with the following code:
 
+<!--@mdc ::code-callout -->
 ```java
 @Path("/cards")
 @RequestScoped
@@ -429,8 +430,8 @@ public class GreetingCards {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Counted(name = "cardCount", absolute = true) 
-    @Timed(name = "cardTimer", absolute = true, unit = MetricUnits.MILLISECONDS) 
+    @Counted(name = "cardCount", absolute = true) //<1>
+    @Timed(name = "cardTimer", absolute = true, unit = MetricUnits.MILLISECONDS) //<2>
     public JsonObject anyCard() {
         return createResponse("Here are some random cards ...");
     }
@@ -440,12 +441,10 @@ public class GreetingCards {
     }
 }
 ```
-
-- Specify a custom name for the `Counter` metric and set `absolute=true` to
-  remove the path prefix from the name.
-- Add the `@Timed` annotation to get a `Timer` metric.
-
-Build and run the application, then invoke the application endpoints below:
+1. Specify a custom name for the `Counter` metric and set `absolute=true` to
+   remove the path prefix from the name.
+2. Add the `@Timed` annotation to get a `Timer` metric.
+<!--@mdc :: -->
 
 ```shell [Terminal]
 curl http://localhost:8080/cards
@@ -478,7 +477,7 @@ metric annotation as demonstrated below.
 
 Replace the GreetingCards class with the following code:
 
-<!--@mdc ::code-collapse -->
+<!--@mdc ::code-callout{collapsed} -->
 ```java
 @Path("/cards")
 @RequestScoped
@@ -496,7 +495,7 @@ public class GreetingCards {
     @GET
     @Path("/birthday")
     @Produces(MediaType.APPLICATION_JSON)
-    @Counted(name = "specialEventCard", absolute = true)  
+    @Counted(name = "specialEventCard", absolute = true)  // <1>
     public JsonObject birthdayCard() throws InterruptedException {
         return createResponse("Here are some birthday cards ...");
     }
@@ -504,7 +503,7 @@ public class GreetingCards {
     @GET
     @Path("/wedding")
     @Produces(MediaType.APPLICATION_JSON)
-    @Counted(name = "specialEventCard", absolute = true)  
+    @Counted(name = "specialEventCard", absolute = true)  // <2>
     public JsonObject weddingCard() throws InterruptedException {
         return createResponse("Here are some wedding cards ...");
     }
@@ -514,13 +513,10 @@ public class GreetingCards {
     }
 }
 ```
+1. The `/birthday` endpoint uses a `Counter` metric, named `specialEventCard`.
+2. The `/wedding` endpoint uses the same `Counter` metric, named
+   `specialEventCard`.
 <!--@mdc :: -->
-
-- The `/birthday` endpoint uses a `Counter` metric, named `specialEventCard`.
-- The `/wedding` endpoint uses the same `Counter` metric, named
-  `specialEventCard`.
-
-Build and run the application, then invoke the following endpoints:
 
 ```shell [Terminal]
 curl  http://localhost:8080/cards/wedding
@@ -529,15 +525,16 @@ curl  http://localhost:8080/cards
 curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=application'
 ```
 
+<!--@mdc ::code-callout -->
 ```json [Response (partial)]
 {
   "anyCard": 1,
-  "specialEventCard": 2 
+  "specialEventCard": 2 // <1>
 }
 ```
-
-- Notice that `specialEventCard` count is two, since you accessed
-  `/cards/wedding` and `/cards/birthday`.
+1. Notice that `specialEventCard` count is two, since you accessed
+   `/cards/wedding` and `/cards/birthday`.
+<!--@mdc :: -->
 
 #### Class Level Metrics
 
@@ -549,17 +546,18 @@ demonstrate the combined output of all three metrics.
 
 Replace the GreetingCards class with the following code:
 
+<!--@mdc ::code-callout -->
 ```java
 @Path("/cards")
 @RequestScoped
-@Counted(name = "totalCards") 
+@Counted(name = "totalCards") // <1>
 public class GreetingCards {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Counted(absolute = true) 
+    @Counted(absolute = true) // <2>
     public JsonObject anyCard() throws InterruptedException {
         return createResponse("Here are some random cards ...");
     }
@@ -567,7 +565,7 @@ public class GreetingCards {
     @Path("/birthday")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Counted(absolute = true) 
+    @Counted(absolute = true) // <3>
     public JsonObject birthdayCard() throws InterruptedException {
         return createResponse("Here are some birthday cards ...");
     }
@@ -577,13 +575,10 @@ public class GreetingCards {
     }
 }
 ```
-
-- This class is annotated with `@Counted`, which aggregates count data from all
-  the method that have a `Count` annotation.
-- Use `absolute=true` to remove path prefix for method-level annotations.
-- Add a method with a `Counter` metric to get birthday cards.
-
-Build and run the application, then invoke the following endpoints:
+1. This class is annotated with `@Counted`, which aggregates count data from all the method that have a `Count` annotation.
+2. Use `absolute=true` to remove path prefix for method-level annotations.
+3. Add a method with a `Counter` metric to get birthday cards.
+<!--@mdc :: -->
 
 ```shell [Terminal]
 curl http://localhost:8080/cards
@@ -591,16 +586,17 @@ curl http://localhost:8080/cards/birthday
 curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=application'
 ```
 
+<!--@mdc ::code-callout -->
 ```json [Response (partial)]
 {
   "anyCard": 1,
   "birthdayCard": 1,
-  "io.helidon.examples.quickstart.mp.totalCards.GreetingCards": 2 
+  "io.helidon.examples.quickstart.mp.totalCards.GreetingCards": 2 // <1>
 }
 ```
-
-- The `totalCards` count is a total of all the method-level `Counter` metrics.
-  Class level metric names are always fully qualified.
+1. The `totalCards` count is a total of all the method-level `Counter` metrics.
+   Class level metric names are always fully qualified.
+<!--@mdc :: -->
 
 #### Field Level Metrics
 
@@ -613,7 +609,7 @@ cache hits.
 
 Replace the GreetingCards class with the following code:
 
-<!--@mdc ::code-collapse -->
+<!--@mdc ::code-callout{collapsed} -->
 ```java
 @Path("/cards")
 @RequestScoped
@@ -623,14 +619,14 @@ public class GreetingCards {
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
 
     @Inject
-    @Metric(name = "cacheHits", absolute = true) 
+    @Metric(name = "cacheHits", absolute = true) // <1>
     private Counter cacheHits;
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Counted(absolute = true)
     public JsonObject anyCard() throws InterruptedException {
-        updateStats(); 
+        updateStats(); // <2>
         return createResponse("Here are some random cards ...");
     }
 
@@ -639,7 +635,7 @@ public class GreetingCards {
     @Produces(MediaType.APPLICATION_JSON)
     @Counted(absolute = true)
     public JsonObject birthdayCard() throws InterruptedException {
-        updateStats();  
+        updateStats();  // <3>
         return createResponse("Here are some birthday cards ...");
     }
 
@@ -649,19 +645,16 @@ public class GreetingCards {
 
     private void updateStats() {
         if (new Random().nextInt(3) == 1) {
-            cacheHits.inc(); 
+            cacheHits.inc(); // <4>
         }
     }
 }
 ```
+1. A `Counter` metric field, `cacheHits`, is automatically injected by Helidon.
+2. Call `updateStats()` to update the cache hits.
+3. Call `updateStats()` to update the cache hits.
+4. Randomly increment the `cacheHits` counter.
 <!--@mdc :: -->
-
-- A `Counter` metric field, `cacheHits`, is automatically injected by Helidon.
-- Call `updateStats()` to update the cache hits.
-- Call `updateStats()` to update the cache hits.
-- Randomly increment the `cacheHits` counter.
-
-Build and run the application, then invoke the following endpoints:
 
 ```shell [Terminal]
 curl http://localhost:8080/cards
@@ -672,16 +665,17 @@ curl http://localhost:8080/cards/birthday
 curl -H "Accept: application/json"  'http://localhost:8080/metrics?scope=application'
 ```
 
+<!--@mdc ::code-callout -->
 ```json [Response (partial)]
 {
   "anyCard": 2,
   "birthdayCard": 3,
-  "cacheHits": 2, 
+  "cacheHits": 2, // <1>
   "io.helidon.examples.quickstart.mp.totalCards.GreetingCards": 5
 }
 ```
-
-- The cache was hit two times out of five queries.
+1. The cache was hit two times out of five queries.
+<!--@mdc :: -->
 
 #### Gauge Metric
 
@@ -695,31 +689,30 @@ up-time.
 
 Create a new GreetingCardsAppMetrics class with the following code:
 
+<!--@mdc ::code-callout -->
 ```java
-@ApplicationScoped 
+@ApplicationScoped // <1>
 public class GreetingCardsAppMetrics {
 
-    private AtomicLong startTime = new AtomicLong(0); 
+    private AtomicLong startTime = new AtomicLong(0); // <2>
 
     public void onStartUp(@Observes @Initialized(ApplicationScoped.class) Object init) {
-        startTime = new AtomicLong(System.currentTimeMillis()); 
+        startTime = new AtomicLong(System.currentTimeMillis()); // <3>
     }
 
     @Gauge(unit = "TimeSeconds")
     public long appUpTimeSeconds() {
-        return Duration.ofMillis(System.currentTimeMillis() - startTime.get()).getSeconds();  
+        return Duration.ofMillis(System.currentTimeMillis() - startTime.get()).getSeconds();  // <4>
     }
 }
 ```
-
-- This managed object must be application scoped to properly register and use
-  the `Gauge` metric.
-- Declare an `AtomicLong` field to hold the start time of the application.
-- Initialize the application start time.
-- Return the application `appUpTimeSeconds` metric, which will be included in
-  the application metrics.
-
-Update the GreetingCards class with the following code to simplify the metrics
+1. This managed object must be application scoped to properly register and use
+   the `Gauge` metric.
+2. Declare an `AtomicLong` field to hold the start time of the application.
+3. Initialize the application start time.
+4. Return the application `appUpTimeSeconds` metric, which will be included in
+   the application metrics.
+<!--@mdc :: -->
 output:
 
 ```java
@@ -748,14 +741,15 @@ Build and run the application, then invoke the application metrics endpoint:
 curl -H "Accept: application/json"  http://localhost:8080/metrics/application
 ```
 
+<!--@mdc ::code-callout -->
 ```json [Response]
 {
   "cardCount": 0,
-  "io.helidon.examples.quickstart.mp.GreetingCardsAppMetrics.appUpTimeSeconds": 6 
+  "io.helidon.examples.quickstart.mp.GreetingCardsAppMetrics.appUpTimeSeconds": 6 // <1>
 }
 ```
-
-- The application has been running for 6 seconds.
+1. The application has been running for 6 seconds.
+<!--@mdc :: -->
 
 ### Integration with Kubernetes and Prometheus
 
@@ -773,16 +767,16 @@ docker build -t helidon-metrics-mp .
 Create the Kubernetes YAML specification, named `metrics.yaml`, with the
 following content:
 
-<!--@mdc ::code-collapse -->
+<!--@mdc ::code-callout{collapsed} -->
 ```yaml [metrics.yaml]
 kind: Service
 apiVersion: v1
 metadata:
-  name: helidon-metrics 
+  name: helidon-metrics # <1>
   labels:
     app: helidon-metrics
   annotations:
-    prometheus.io/scrape: "true" 
+    prometheus.io/scrape: "true" # <2>
 spec:
   type: NodePort
   selector:
@@ -797,7 +791,7 @@ apiVersion: apps/v1
 metadata:
   name: helidon-metrics
 spec:
-  replicas: 1 
+  replicas: 1 # <3>
   selector:
     matchLabels:
       app: helidon-metrics
@@ -814,12 +808,11 @@ spec:
           ports:
             - containerPort: 8080
 ```
+1. A service of type `NodePort` that serves the default routes on port `8080`.
+2. An annotation that will allow Prometheus to discover and scrape the
+   application pod.
+3. A deployment with one replica of a pod.
 <!--@mdc :: -->
-
-- A service of type `NodePort` that serves the default routes on port `8080`.
-- An annotation that will allow Prometheus to discover and scrape the
-  application pod.
-- A deployment with one replica of a pod.
 
 Create and deploy the application into Kubernetes:
 
@@ -833,12 +826,13 @@ Get the service information:
 kubectl get service/helidon-metrics
 ```
 
+<!--@mdc ::code-callout -->
 ```shell [Terminal]
 NAME             TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
-helidon-metrics   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s 
+helidon-metrics   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s # <1>
 ```
-
-- A service of type `NodePort` that serves the default routes on port `31143`.
+1. A service of type `NodePort` that serves the default routes on port `31143`.
+<!--@mdc :: -->
 
 Verify the metrics endpoint using port 30116, your port will likely be
 different:

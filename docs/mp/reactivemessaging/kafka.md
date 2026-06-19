@@ -23,13 +23,14 @@ Dependencies](../../managing-dependencies.md)).
 
 Example of connector config:
 
+<!--@mdc ::code-callout -->
 ```yaml
 mp.messaging:
 
   incoming.from-kafka:
     connector: helidon-kafka
     topic: messaging-test-topic-1
-    auto.offset.reset: latest 
+    auto.offset.reset: latest # <1>
     enable.auto.commit: true
     group.id: example-group-id
 
@@ -39,17 +40,17 @@ mp.messaging:
 
   connector:
     helidon-kafka:
-      bootstrap.servers: localhost:9092 
+      bootstrap.servers: localhost:9092 # <2>
       key.serializer: org.apache.kafka.common.serialization.StringSerializer
       value.serializer: org.apache.kafka.common.serialization.StringSerializer
       key.deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value.deserializer: org.apache.kafka.common.serialization.StringDeserializer
 ```
-
-- Kafka client consumer’s property auto.offset.reset configuration for
-  `from-kafka` channel only
-- Kafka client’s property [bootstrap.servers][bootstrap-server] configuration
-  for all channels using the connector
+1. Kafka client consumer’s property auto.offset.reset configuration for
+   `from-kafka` channel only
+2. Kafka client’s property [bootstrap.servers][bootstrap-server] configuration
+   for all channels using the connector
+<!--@mdc :: -->
 
 > [!TIP]
 > Besides the following configuration options, any property from

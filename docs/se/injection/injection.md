@@ -726,22 +726,21 @@ effectively bypass the original method execution.
 
 Sample Interceptor interface implementation:
 
+<!--@mdc ::code-callout -->
 ```java
 @Service.Singleton
-@Service.NamedByType(Traced.class) 
+@Service.NamedByType(Traced.class) //<1>
 class MyServiceInterceptor implements Interception.Interceptor {
     @Override
     public <V> V proceed(InterceptionContext ctx, Chain<V> chain, Object... args) throws Exception {
         //Do something
-        return chain.proceed(args); 
+        return chain.proceed(args); //<2>
     }
 }
 ```
-
-- Binds this Interceptor to process elements annotated with `@Traced`
-- Passing interceptor processing to another interceptor in the chain
-
-### Delegate annotation
+1. Binds this Interceptor to process elements annotated with `@Traced`
+2. Passing interceptor processing to another interceptor in the chain
+<!--@mdc :: -->
 
 The [`@Interception.Delegate`][interception-del] annotation enables interception
 for classes that aren’t created through the service registry but are instead

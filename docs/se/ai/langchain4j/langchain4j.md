@@ -90,6 +90,7 @@ Once you have configured named model, like `cheaper-model` on the example above,
 you can reference it from AiServices and Agents via `@Ai.ChatModel` or
 `@Ai.StreamingChatModel` annotations by its name:
 
+<!--@mdc ::code-callout -->
 ```java
 @Ai.Service
 @Ai.ChatModel("cheaper-model") //<1>
@@ -101,8 +102,8 @@ public interface ChefAiService {
     String cookingInstructions(@V("foodName") String foodName);
 }
 ```
-
-1.  Custom name selected in the model configuration above
+1. Custom name selected in the model configuration above
+<!--@mdc :: -->
 
 Providers available out of the box:
 
@@ -138,9 +139,10 @@ suitable for creating and registering other classes.
 
 The example below demonstrates a supplier factory for `MistralAiChatModel`.
 
+<!--@mdc ::code-callout -->
 ```java
 @Service.Singleton
-@Service.Named("custom-chat-model") //(1)
+@Service.Named("custom-chat-model") //<1>
 class ChatModelFactory implements Supplier<ChatModel> {
     @Override
     public ChatModel get() {
@@ -151,15 +153,14 @@ class ChatModelFactory implements Supplier<ChatModel> {
     }
 }
 ```
-
-1.  Custom name of the resulting declarative service bean referencable from Ai
-    Services or Agents
-
-> [!NOTE]
+1. Custom name of the resulting declarative service bean referencable from Ai
+   Services or Agents
+<!--@mdc :: -->
 > Supplier factories can be **standalone** or **static inner** classes.
 
 To use such a manually created model, reference it by name.
 
+<!--@mdc ::code-callout -->
 ```java
 @Ai.Service
 @Ai.ChatModel("custom-chat-model") //<1>
@@ -171,8 +172,8 @@ public interface ChefAiService {
     String cookingInstructions(@V("foodName") String foodName);
 }
 ```
-
-1.  Custom name selected in the supplier factory above
+1. Custom name selected in the supplier factory above
+<!--@mdc :: -->
 
 ## Configuration
 
@@ -342,32 +343,31 @@ public interface NamedChatAiService {
 }
 ```
 
+<!--@mdc ::code-callout -->
 ```java
 @Service.Singleton
 public class ChatEndpoint {
     private final ChatAiService defaultChatService;
     private final NamedChatAiService namedChatService;
 
-    ChatEndpoint(ChatAiService defaultChatService, //(1)
-                 @Service.Named("chat-assistant") NamedChatAiService namedChatService) { //(2)
+    ChatEndpoint(ChatAiService defaultChatService, //<1>
+                 @Service.Named("chat-assistant") NamedChatAiService namedChatService) { //<2>
         this.defaultChatService = defaultChatService;
         this.namedChatService = namedChatService;
     }
 }
 ```
-
-1.  Injection by type for unnamed/default AI Service bean.
-2.  Qualified injection for explicitly named AI Service bean.
-
+1. Injection by type for unnamed/default AI Service bean.
+2. Qualified injection for explicitly named AI Service bean.
+<!--@mdc :: -->
+<!--@mdc ::code-callout -->
 ```java
-ChatAiService defaultService = Services.get(ChatAiService.class); //(1)
-NamedChatAiService namedService = Services.getNamed(NamedChatAiService.class, "chat-assistant"); //(2)
+ChatAiService defaultService = Services.get(ChatAiService.class); //<1>
+NamedChatAiService namedService = Services.getNamed(NamedChatAiService.class, "chat-assistant"); //<2>
 ```
-
-1.  Programmatic lookup by type.
-2.  Programmatic lookup by declarative bean name.
-
-Named AI services can be configured under `langchain4j.services`, where values
+1. Programmatic lookup by type.
+2. Programmatic lookup by declarative bean name.
+<!--@mdc :: -->
 in configuration override annotation values.
 
 ### Agents
@@ -408,31 +408,30 @@ declarative service bean names in Helidon. Use stable, descriptive names because
 these names are used for configuration (`langchain4j.agents.<name>`), injection,
 and programmatic lookup.
 
+<!--@mdc ::code-callout -->
 ```java
 @Service.Singleton
 public class CliCoordinator {
     private final CliExpert cliExpert;
 
-    CliCoordinator(@Service.Named("cli-expert") CliExpert cliExpert) { //(1)
+    CliCoordinator(@Service.Named("cli-expert") CliExpert cliExpert) { //<1>
         this.cliExpert = cliExpert;
     }
 }
 ```
-
-1.  The qualifier value must match the agent name from
-    `@Ai.Agent("cli-expert")`. This is the declarative style: `CliCoordinator`
-    is a Helidon declarative bean and the named agent is injected by the service
-    registry.
-
+1. The qualifier value must match the agent name from
+   `@Ai.Agent("cli-expert")`. This is the declarative style: `CliCoordinator`
+   is a Helidon declarative bean and the named agent is injected by the service
+   registry.
+<!--@mdc :: -->
+<!--@mdc ::code-callout -->
 ```java
-CliExpert cliExpert = Services.getNamed(CliExpert.class, "cli-expert"); //(1)
+CliExpert cliExpert = Services.getNamed(CliExpert.class, "cli-expert"); //<1>
 String answer = cliExpert.answer("How do I generate a Helidon SE project?");
 ```
-
-1.  This is programmatic lookup: fetch the named agent directly from Helidon’s
-    service registry at runtime.
-
-Agents can be configured or overridden using `langchain4j.agents.<agent-name>`
+1. This is programmatic lookup: fetch the named agent directly from Helidon’s
+   service registry at runtime.
+<!--@mdc :: -->
 entries, for example to replace a chat model or adjust an output key.
 
 ![LangChain4j agents in Helidon](../../../images/lc4j/agents.svg)

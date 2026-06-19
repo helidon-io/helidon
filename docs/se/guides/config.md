@@ -100,13 +100,12 @@ a default `Config` object. See the following code from the project you created.
 
 View Main#main:
 
+<!--@mdc ::code-callout -->
 ```java
-Config config = Config.create(); 
+Config config = Config.create(); // <1>
 ```
-
-- The `Config` object is created with default settings.
-
-### Source Precedence for Default Configuration
+1. The `Config` object is created with default settings.
+<!--@mdc :: -->
 
 In order to properly configure your application using configuration sources, you
 need to understand the precedence rules that Helidon uses to merge your
@@ -159,11 +158,15 @@ curl http://localhost:8080/greet
 
 The new `app.greeting` value in `application.yaml` is used.
 
+<!--@mdc ::code-callout -->
 ```json [application.yaml]
 {
-  "message": "HelloFrom-application.yaml World!"
+  "message": "HelloFrom-application.yaml World!" // <1>
 }
 ```
+1. The file `application.yaml` was used to get the greeting since it now has
+   precedence over `config.properties`.
+<!--@mdc :: -->
 
 ##### Environment Variable Override
 
@@ -267,37 +270,37 @@ app.greeting=HelloFrom-config.properties
 Update the Main class, Replace the Config.create() call with buildConfig(), and
 add buildConfig method:
 
+<!--@mdc ::code-callout -->
 ```java
 private static Config buildConfig() {
     return Config.builder()
-            .disableEnvironmentVariablesSource() 
+            .disableEnvironmentVariablesSource() // <1>
             .sources(
-                    classpath("config.properties"), 
-                    classpath("application.yaml")) 
+                    classpath("config.properties"), // <2>
+                    classpath("application.yaml")) // <3>
             .build();
 }
 ```
-
-- Disable the environment variables as a source.
-- Specify the new config.properties resource that is in the `classpath`.
-- You must specify the existing `application.yaml` or Helidon will not use it as
-  a configuration source even though it is considered a default source.
-
-Build and run the application (without the system property). Invoke the
+1. Disable the environment variables as a source.
+2. Specify the new config.properties resource that is in the `classpath`.
+3. You must specify the existing `application.yaml` or Helidon will not use it as
+   a configuration source even though it is considered a default source.
+<!--@mdc :: -->
 endpoint:
 
 ```shell [Terminal]
 curl http://localhost:8080/greet
 ```
 
+<!--@mdc ::code-callout -->
 ```json [Response]
 {
-  "message": "HelloFrom-config.properties World!" 
+  "message": "HelloFrom-config.properties World!" // <1>
 }
 ```
-
-- The greeting was picked up from `config.properties`, overriding the value in
-  `application.yaml`.
+1. The greeting was picked up from `config.properties`, overriding the value in
+   `application.yaml`.
+<!--@mdc :: -->
 
 > [!NOTE]
 > It is important to remember that configuration from all sources is merged
@@ -310,33 +313,31 @@ Swap the source order and run the test again.
 
 Update the Main class and replace the buildConfig method:
 
+<!--@mdc ::code-callout -->
 ```java
 return Config.builder()
         .disableEnvironmentVariablesSource()
         .sources(
-                classpath("application.yaml"), 
+                classpath("application.yaml"), // <1>
                 classpath("config.properties"))
         .build();
 ```
-
-- Swap the source order, putting `application.yaml` first.
-
-Build and run the application, then invoke the endpoint:
+1. Swap the source order, putting `application.yaml` first.
+<!--@mdc :: -->
 
 ```shell [Terminal]
 curl http://localhost:8080/greet
 ```
 
+<!--@mdc ::code-callout -->
 ```json [Response]
 {
-  "message": "HelloFrom-application.yaml World!" 
+  "message": "HelloFrom-application.yaml World!" // <1>
 }
 ```
-
-- The file `application.yaml` was used to get the greeting since it now has
-  precedence over `config.properties`.
-
-### External File Sources
+1. The file `application.yaml` was used to get the greeting since it now has
+   precedence over `config.properties`.
+<!--@mdc :: -->
 
 You can move all or part of your configuration to external files, making them
 optional or mandatory. The obvious advantage to this approach is that you do not
@@ -360,30 +361,30 @@ app.greeting=HelloFrom-config-file.properties
 
 Update the Main class and replace the buildConfig method:
 
+<!--@mdc ::code-callout -->
 ```java
 return Config.builder()
         .sources(
-                file("config-file.properties"), 
+                file("config-file.properties"), // <1>
                 classpath("application.yaml"))
         .build();
 ```
-
-- Add a mandatory configuration file.
-
-Build and run the application, then invoke the endpoint:
+1. Add a mandatory configuration file.
+<!--@mdc :: -->
 
 ```shell [Terminal]
 curl http://localhost:8080/greet
 ```
 
+<!--@mdc ::code-callout -->
 ```json [Response]
 {
-  "message": "HelloFrom-config-file.properties World!" 
+  "message": "HelloFrom-config-file.properties World!" // <1>
 }
 ```
-
-- The configuration property from the file `config-file.properties` takes
-  precedence.
+1. The configuration property from the file `config-file.properties` takes
+   precedence.
+<!--@mdc :: -->
 
 > [!NOTE]
 > If you want the configuration file to be optional, you must use the `optional`
@@ -393,17 +394,16 @@ curl http://localhost:8080/greet
 
 Update the Main class and replace the buildConfig method:
 
+<!--@mdc ::code-callout -->
 ```java
 return Config.builder()
-        .sources(
-                file("missing-file"), 
-                classpath("application.yaml"))
-        .build();
+    .sources(
+            file("missing-file"), // <1>
+            classpath("application.yaml"))
+    .build();
 ```
-
-- Specify a file that doesn’t exist.
-
-Build then start the application and you will see the following output:
+1. Specify a file that doesn’t exist.
+<!--@mdc :: -->
 
 ```shell [Terminal]
 Exception in thread "main" io.helidon.config.ConfigException: Cannot load data from mandatory source FileConfig[missing-file]. File `missing-file` not found.
@@ -411,9 +411,16 @@ Exception in thread "main" io.helidon.config.ConfigException: Cannot load data f
 
 To fix this, use the `optional` method as shown below, then rerun the test.
 
-    file("missing-file").optional(), 
-
-- The `missing-file` configuration file is now optional.
+<!--@mdc ::code-callout -->
+```java
+return Config.builder()
+    .sources(
+        file("missing-file").optional(), // <1>
+        classpath("application.yaml"))
+    .build();
+```
+1. The `missing-file` configuration file is now optional.
+<!--@mdc :: -->
 
 ### Directory Source
 
@@ -430,30 +437,30 @@ HelloFromFileInDirectoryConf
 
 Update the Main class and replace the buildConfig method:
 
+<!--@mdc ::code-callout -->
 ```java
 return Config.builder()
-    .sources(
-        directory("conf"),
-        classpath("config.properties").optional(),
-        classpath("application.yaml"))
-    .build();
+        .sources(
+                directory("conf"), // <1>
+                classpath("config.properties").optional(),
+                classpath("application.yaml"))
+        .build();
 ```
-
-- Add a mandatory configuration directory.
-
-Build and run the application, then invoke the endpoint and check the response:
+1. Add a mandatory configuration directory.
+<!--@mdc :: -->
 
 ```shell [Terminal]
 curl http://localhost:8080/greet
 ```
 
+<!--@mdc ::code-callout -->
 ```json [Response]
 {
-  "message": "HelloFromFileInDirectoryConf World!" 
+  "message": "HelloFromFileInDirectoryConf World!" // <1>
 }
 ```
-
-- The greeting was fetched from the file named `app.greeting`.
+1. The greeting was fetched from the file named `app.greeting`.
+<!--@mdc :: -->
 
 #### Exceeding Three Sources
 
@@ -462,18 +469,17 @@ below.
 
 Update the Main class and replace the buildConfig method:
 
+<!--@mdc ::code-callout -->
 ```java
 return Config.builder()
-        .addSource(directory("conf"))  
+        .addSource(directory("conf"))  // <1>
         .addSource(file("config-file.properties"))
         .addSource(classpath("config.properties").optional())
         .addSource(classpath("application.yaml"))
         .build();
 ```
-
-- Add each config source using the `addSource` method.
-
-Build and run the application, then invoke the endpoint:
+1. Add each config source using the `addSource` method.
+<!--@mdc :: -->
 
 ```shell [Terminal]
 curl http://localhost:8080/greet
@@ -501,61 +507,61 @@ Profile file can use any supported format, following example is using `YAML`.
 Create a file named `config-profile.yaml` in the helidon-quickstart-se directory
 with the following contents:
 
+<!--@mdc ::code-callout -->
 ```yaml [config-profile.yaml]
 sources:
-  - type: "classpath" 
+  - type: "classpath" # <1>
     properties:
-      resource: "application.yaml" 
+      resource: "application.yaml" # <2>
 ```
-
-- The source type.
-- The name of the mandatory configuration resource.
+1. The source type.
+2. The name of the mandatory configuration resource.
+<!--@mdc :: -->
 
 Update the Main class and replace the buildConfig method:
 
+<!--@mdc ::code-callout -->
 ```java
-return Config.create(); 
+return Config.create(); // <1>
 ```
-
-- Will use `config-profile.yaml` by default
-
-Build and run the application, then invoke the endpoint:
+1. Will use `config-profile.yaml` by default
+<!--@mdc :: -->
 
 ```shell [Terminal]
 curl http://localhost:8080/greet
 ```
 
+<!--@mdc ::code-callout -->
 ```json [Response]
 {
-  "message": "HelloFrom-application.yaml World!" 
+  "message": "HelloFrom-application.yaml World!" // <1>
 }
 ```
-
-- The `application.yaml` resource file was used to get the greeting.
-
-The source precedence order in a profile file is the order of appearance in the
+1. The `application.yaml` resource file was used to get the greeting.
+<!--@mdc :: -->
 file. This is demonstrated below where the `config-file.properties` has the
 highest order of precedence.
 
 Replace the contents of the `config-profile.yaml` file:
 
+<!--@mdc ::code-callout -->
 ```yaml [config-profile.yaml]
 sources:
-  - type: "file" 
+  - type: "file" # <1>
     properties:
-      path: "./config-file.properties" 
+      path: "./config-file.properties" # <2>
   - type: "classpath"
     properties:
       resource: "application.yaml"
   - type: "file"
     properties:
       path: "optional-config-file"
-      optional: true 
+      optional: true # <3>
 ```
-
-- The source type specifies a file.
-- The name of the mandatory configuration file.
-- Specify that the `optional-config-file` file is optional.
+1. The source type specifies a file.
+2. The name of the mandatory configuration file.
+3. Specify that the `optional-config-file` file is optional.
+<!--@mdc :: -->
 
 Restart the application, then invoke the endpoint:
 
@@ -563,23 +569,23 @@ Restart the application, then invoke the endpoint:
 curl http://localhost:8080/greet
 ```
 
+<!--@mdc ::code-callout -->
 ```json [Response]
 {
-  "message": "HelloFrom-config-file.properties World!" 
+  "message": "HelloFrom-config-file.properties World!" // <1>
 }
 ```
-
-- The `config-file.properties` source now takes precedence.
-
-When using a profile file, you need to explicitly include both environment
+1. The `config-file.properties` source now takes precedence.
+<!--@mdc :: -->
 variables and system properties as a source if you want to use them.
 
 Replace the contents of the `config-profile.yaml` file:
 
+<!--@mdc ::code-callout -->
 ```yaml [config-profile.yaml]
 sources:
-  - type: "environment-variables" 
-  - type: "system-properties" 
+  - type: "environment-variables" # <1>
+  - type: "system-properties" # <2>
   - type: "classpath"
     properties:
       resource: "application.yaml"
@@ -587,9 +593,9 @@ sources:
     properties:
       path: "./config-file.properties"
 ```
-
-- Environment variables are now used as a source.
-- System properties are now used as a source.
+1. Environment variables are now used as a source.
+2. System properties are now used as a source.
+<!--@mdc :: -->
 
 You can re-run the previous tests that exercised environment variables and
 system properties. Swap the two types to see the precedence change. Be sure to
@@ -616,23 +622,21 @@ the `GreetFeature` class. The key can be composite as shown below:
 
 View the GreetService constructor:
 
+<!--@mdc ::code-callout -->
 ```java
-greeting.set(Config.global().get("app.greeting").asString().orElse("Ciao")); 
+greeting.set(Config.global().get("app").get("greeting").asString().orElse("Ciao")); // <1>
 ```
-
-- Get the `app.greeting` node using a composite key.
-
-You can also access the same greeting by navigating the nodes.
+1. Get the `app.greeting` node using a composite key.
+<!--@mdc :: -->
 
 Replace the GreetService constructor with the following code:
 
+<!--@mdc ::code-callout -->
 ```java
-greeting.set(Config.global().get("app").get("greeting").asString().orElse("Ciao")); 
+greeting.set(Config.global().get("app.greeting").asString().orElse("Ciao")); // <1>
 ```
-
-- Get the `app` node, then get the child node, `greeting`.
-
-Build and run the application, then invoke the endpoint:
+1. Get the `app.greeting` node using a composite key.
+<!--@mdc :: -->
 
 ```shell [Terminal]
 curl http://localhost:8080/greet
@@ -674,21 +678,20 @@ app:
 Update the `GreetService.java` file and replace the GreetService constructor
 with the following:
 
+<!--@mdc ::code-callout -->
 ```java [GreetService.java]
 List<Config> appGreetings = Config.global()
         .get("app")
-        .traverse()  
-        .filter(node -> node.name().equals("greeting")) 
-        .toList(); 
+        .traverse()  // <1>
+        .filter(node -> node.name().equals("greeting")) // <2>
+        .toList(); // <3>
 
 greeting.set(appGreetings.get(0).asString().get());
 ```
-
-- Traverse the entire subtree of the `app` node.
-- Include only nodes that have the name `greeting`.
-- Add the `greeting` node to the collection.
-
-Build and run the application, then invoke the endpoint:
+1. Traverse the entire subtree of the `app` node.
+2. Include only nodes that have the name `greeting`.
+3. Add the `greeting` node to the collection.
+<!--@mdc :: -->
 
 ```shell [Terminal]
 curl http://localhost:8080/greet
@@ -726,17 +729,16 @@ sources:
 
 Update the GreetService class and replace the GreetService constructor:
 
+<!--@mdc ::code-callout -->
 ```java
-Config greetingConfig = Config.global().get("app.greeting"); 
+Config greetingConfig = Config.global().get("app.greeting"); // <1>
 greeting.set(greetingConfig.asString().orElse("Ciao"));
-greetingConfig.onChange(cfg -> greeting.set(cfg.asString().orElse("Ciao"))); 
+greetingConfig.onChange(cfg -> greeting.set(cfg.asString().orElse("Ciao"))); // <2>
 ```
-
-- Get the greeting `Config` node.
-- Register a listener that will get called by Helidon when the configuration
-  changes. The listener will update the greeting with the new value.
-
-Build and run the application, then invoke the endpoint:
+1. Get the greeting `Config` node.
+2. Register a listener that will get called by Helidon when the configuration
+   changes. The listener will update the greeting with the new value.
+<!--@mdc :: -->
 
 ```shell [Terminal]
 curl http://localhost:8080/greet
@@ -760,13 +762,14 @@ After a few seconds, check the response:
 curl http://localhost:8080/greet
 ```
 
+<!--@mdc ::code-callout -->
 ```json [Response]
 {
-  "message": "Updated HelloFrom-config-file.properties World!" 
+  "message": "Updated HelloFrom-config-file.properties World!" // <1>
 }
 ```
-
-- The application reacted to the change and updated the greeting.
+1. The application reacted to the change and updated the greeting.
+<!--@mdc :: -->
 
 ## Integration with Kubernetes
 
@@ -785,20 +788,19 @@ app:
 
 Update the Main class and replace the buildConfig method:
 
+<!--@mdc ::code-callout -->
 ```java
 return Config.builder()
         .sources(
-                file("/etc/config/config-file.properties").optional(), 
-                classpath("application.yaml")) 
+                file("/etc/config/config-file.properties").optional(), // <1>
+                classpath("application.yaml")) // <2>
         .build();
 ```
-
-- The `app.greeting` value will be fetched from
-  `/etc/config/config-file.properties` within the container.
-- The server port is specified in `application.yaml` within the
-  `helidon-quickstart-se.jar`.
-
-Replace the GreetService constructor with the following code:
+1. The `app.greeting` value will be fetched from
+   `/etc/config/config-file.properties` within the container.
+2. The server port is specified in `application.yaml` within the
+   `helidon-quickstart-se.jar`.
+<!--@mdc :: -->
 
 ```java
 greeting.set(Config.global().get("app.greeting").asString().orElse("Ciao"));
@@ -810,14 +812,15 @@ Build and run the application, then invoke the endpoint:
 curl http://localhost:8080/greet
 ```
 
+<!--@mdc ::code-callout -->
 ```json [Response]
 {
-  "message": "Hello World!" 
+  "message": "Hello World!" // <1>
 }
 ```
-
-- The greeting came from `application.yaml` since
-  `/etc/config/config-file.properties` doesn’t exist.
+1. The greeting came from `application.yaml` since
+   `/etc/config/config-file.properties` doesn’t exist.
+<!--@mdc :: -->
 
 Stop the application and build the docker image:
 
@@ -839,28 +842,29 @@ kubectl get configmap helidon-configmap -o yaml
 
 Output (partial):
 
+<!--@mdc ::code-callout -->
 ```yaml
 apiVersion: v1
 data:
-  config-file.properties: |    
+  config-file.properties: |   # <1> <2>
     app.greeting=Updated HelloFrom-config-file.properties
 kind: ConfigMap
 # ...
 ```
-
-- The file `config-file.properties` will be created within the Kubernetes
-  container.
-- The `config-file.properties` file will have this single property defined.
+1. The file `config-file.properties` will be created within the Kubernetes
+   container.
+2. The `config-file.properties` file will have this single property defined.
+<!--@mdc :: -->
 
 Create the Kubernetes YAML specification, named `k8s-config.yaml`, with the
 following contents:
 
-<!--@mdc ::code-collapse -->
+<!--@mdc ::code-callout{collapsed} -->
 ```yaml [k8s-config.yaml]
 kind: Service
 apiVersion: v1
 metadata:
-  name: helidon-config 
+  name: helidon-config # <1>
   labels:
     app: helidon-config
 spec:
@@ -877,7 +881,7 @@ apiVersion: apps/v1
 metadata:
   name: helidon-config
 spec:
-  replicas: 1 
+  replicas: 1 # <2>
   selector:
     matchLabels:
       app: helidon-config
@@ -895,21 +899,20 @@ spec:
             - containerPort: 8080
           volumeMounts:
             - name: config-volume
-              mountPath: /etc/config 
+              mountPath: /etc/config # <3>
       volumes:
         - name: config-volume
           configMap:
             # Provide the name of the ConfigMap containing the files you want
             # to add to the container
-            name:  helidon-configmap 
+            name:  helidon-configmap # <4>
 ```
+1. A service of type `NodePort` that serves the default routes on port `8080`.
+2. A deployment with one replica of a pod.
+3. Mount the ConfigMap as a volume at `/etc/config`. This is where Kubernetes
+   will create `config-file.properties`.
+4. Specify the ConfigMap which contains the configuration data.
 <!--@mdc :: -->
-
-- A service of type `NodePort` that serves the default routes on port `8080`.
-- A deployment with one replica of a pod.
-- Mount the ConfigMap as a volume at `/etc/config`. This is where Kubernetes
-  will create `config-file.properties`.
-- Specify the ConfigMap which contains the configuration data.
 
 Create and deploy the application into Kubernetes:
 
@@ -923,12 +926,13 @@ Get the service information:
 kubectl get service/helidon-config
 ```
 
+<!--@mdc ::code-callout -->
 ```shell [Terminal]
 NAME             TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
-helidon-config   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s 
+helidon-config   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s # <1>
 ```
-
-- A service of type `NodePort` that serves the default routes on port `31143`.
+1. A service of type `NodePort` that serves the default routes on port `31143`.
+<!--@mdc :: -->
 
 Verify the configuration endpoint using port 31143, your port will likely be
 different:
@@ -937,16 +941,15 @@ different:
 curl http://localhost:31143/greet
 ```
 
+<!--@mdc ::code-callout -->
 ```json [Response]
 {
-  "message": "Updated HelloFrom-config-file.properties World!" 
+  "message": "Updated HelloFrom-config-file.properties World!" // <1>
 }
 ```
-
-- The greeting value from `/etc/config/config-file.properties` within the
-  container was used.
-
-You can now delete the Kubernetes resources that were just created during this
+1. The greeting value from `/etc/config/config-file.properties` within the
+   container was used.
+<!--@mdc :: -->
 example.
 
 Delete the Kubernetes resources:

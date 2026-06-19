@@ -8,9 +8,9 @@ include them and use them in your project. In each case you need to add module
 dependencies to your project and, in some cases, write your application
 accordingly.
 
-## Additional Config Formats and Parsers
+## Additional Formats
 
-### Automatic Media Type and File Type Handling
+### File Type Handling
 
 With each of the parsers described here, your application can either
 
@@ -49,52 +49,42 @@ The YAML parser handles the following media type:
 
 Automatic selection:
 
+<!--@mdc ::code-callout -->
 ```java
-void snippet_1() {
-    Config config = Config.create(classpath("application.yaml")); 
+Config config = Config.create(classpath("application.yaml")); // <1>
 ```
+1. The config system automatically maps the file type `.yaml` to the media type
+   `application/x-yaml` which the Helidon YAML parser matches.
+<!--@mdc :: -->
 
-- The config system automatically maps the file type `.yaml` to the media type
-  `application/x-yaml` which the Helidon YAML parser matches.
-
-YAML parser specified - no file type on source:
-
+<!--@mdc ::code-callout -->
 ```java
-Config config = Config.create(classpath("my-config") 
-                                      .parser(YamlConfigParser.create())); 
+Config config = Config.create(classpath("my-config") // <1>
+    .parser(YamlConfigParser.create())); // <2>
 ```
+1. The media type of the source `my-config` is unknown, so the config system cannot choose a parser automatically.
+2. The config system will parse the resource `my-config` on the runtime classpath using the YAML parser instance created by the `YamlConfigParser`. The `create()` method creates a config parser with default behavior.
+<!--@mdc :: -->
 
-- The media type of the source `my-config` is unknown, so the config system
-  cannot choose a parser automatically.
-- The config system will parse the resource `my-config` on the runtime classpath
-  using the YAML parser instance created by the
-  [`YamlConfigParser`][yamlconfigparser]. The `create()` method creates a config
-  parser with default behavior.
-
-Media type specified:
-
+<!--@mdc ::code-callout -->
 ```java
-Config config = Config.create(classpath("my-config") 
-                                      .mediaType(MediaTypes.APPLICATION_X_YAML)); 
+Config config = Config.create(classpath("my-config") // <1>
+    .mediaType(MediaTypes.APPLICATION_X_YAML)); // <2>
 ```
+1. The media type of the source `my-config` is unknown, so the config system cannot choose a parser automatically.
+2. Specifying the media type for the config source allows the config system to use its matching algorithm with the available parsers to choose a parser for that type.
+<!--@mdc :: -->
 
-- The media type of the source `my-config` is unknown, so the config system
-  cannot choose a parser automatically.
-- Specifying the media type for the config source allows the config system to
-  use its matching algorithm with the available parsers to choose a parser for
-  that type.
-
-YAML parser specified because parser services disabled:
-
+<!--@mdc ::code-callout -->
 ```java
 Config config = Config.builder(classpath("application.yaml"))
-        .disableParserServices() 
-        .addParser(YamlConfigParser.create()) 
-        .build();
+    .disableParserServices() // <1>
+    .addParser(YamlConfigParser.create()) // <2>
+    .build();
 ```
-
-- Disables automatic parser lookup and registration.
-- Explicit registration of the YAML parser is therefore required.
+1. Disables automatic parser lookup and registration.
+2. Explicit registration of the YAML parser is therefore required.
+<!--@mdc :: -->
 
 ### HOCON/JSON
 
@@ -122,74 +112,78 @@ The parser handles the following media types:
 
 Automatic selection:
 
+<!--@mdc ::code-callout -->
 ```java
-Config config = Config.create(classpath("application.conf")); 
+Config config = Config.create(classpath("application.conf")); // <1>
 ```
+1. The config system automatically maps the file type `.conf` to the media type
+   `application/hocon` which the Helidon HOCON parser matches.
+<!--@mdc :: -->
 
-- The config system automatically maps the file type `.conf` to the media type
-  `application/hocon` which the Helidon HOCON parser matches.
-
-The same module and parser supports file type `.json` and the media type
-`application/json`.
+The same module and parser supports file type `.json` and the media type `application/json`.
 
 HOCON parser specified - no file type on source:
 
+<!--@mdc ::code-callout -->
 ```java
-Config config = Config.create(classpath("my-config") 
-                                      .parser(HoconConfigParser.create())); 
+Config config = Config.create(classpath("my-config") // <1>
+    .parser(HoconConfigParser.create())); // <2>
 ```
-
-- the media type of the source `my-config` is unknown, so the config system
-  cannot choose a parser automatically.
-- The config system will parse the resource `my-config` using the HOCON parser
-  created by the [HoconConfigParser][hoconconfigparse]. The `create()` method
-  creates a config parser with default behavior.
+1. the media type of the source `my-config` is unknown, so the config system
+   cannot choose a parser automatically.
+2. The config system will parse the resource `my-config` using the HOCON parser
+   created by the [HoconConfigParser][hoconconfigparse]. The `create()` method
+   creates a config parser with default behavior.
+<!--@mdc :: -->
 
 Media type specified:
 
+<!--@mdc ::code-callout -->
 ```java
-Config config = Config.create(classpath("my-config") 
-                                      .mediaType(MediaTypes.APPLICATION_HOCON)); 
+Config config = Config.create(classpath("my-config") // <1>
+    .mediaType(MediaTypes.APPLICATION_HOCON)); // <2>
 ```
-
-- The media type of the source `my-config` is unknown, so the config system
-  cannot choose a parser automatically.
-- Specifying the media type for the config source allows the config system to
-  use its matching algorithm with the available parsers to choose a parser for
-  that type.
+1. The media type of the source `my-config` is unknown, so the config system
+   cannot choose a parser automatically.
+2. Specifying the media type for the config source allows the config system to
+   use its matching algorithm with the available parsers to choose a parser for
+   that type.
+<!--@mdc :: -->
 
 HOCON parser specified because parser services disabled:
 
+<!--@mdc ::code-callout -->
 ```java
 Config config = Config.builder(classpath("application.conf"))
-        .disableParserServices() 
-        .addParser(HoconConfigParser.create()) 
-        .build();
+    .disableParserServices() // <1>
+    .addParser(HoconConfigParser.create()) // <2>
+    .build();
 ```
-
-- Disables automatic parser lookup and registration.
-- Explicit registration of the HOCON parser is therefore required.
+1. Disables automatic parser lookup and registration.
+2. Explicit registration of the HOCON parser is therefore required.
+<!--@mdc :: -->
 
 Customized HOCON parser:
 
+<!--@mdc ::code-callout -->
 ```java
 Config config = Config.builder(classpath("application.conf"))
-        .disableParserServices()
-        .addParser(HoconConfigParser.builder() 
-                           .resolvingEnabled(false) 
-                           .build()) 
-        .build();
+    .disableParserServices()
+    .addParser(HoconConfigParser.builder() // <1>
+        .resolvingEnabled(false) // <2>
+        .build()) // <3>
+    .build();
 ```
+1. Creates new instance of the parser builder.
+2. Disables resolution of substitutions. (See the [HOCON
+   documentation][hocon-documentat].)
+3. Builds a new instance of the HOCON config parser.
+<!--@mdc :: -->
 
-- Creates new instance of the parser builder.
-- Disables resolution of substitutions. (See the [HOCON
-  documentation][hocon-documentat].)
-- Builds a new instance of the HOCON config parser.
-
-You can also specify [`ConfigResolveOptions`][configresolveopt] using the
+You can also specify `ConfigResolveOptions` using the
 `HoconConfigParser.builder().resolveOptions` method.
 
-## Additional Config Source Types
+## Additional Sources
 
 ### Etcd
 
@@ -216,22 +210,23 @@ To read configuration from an Etcd source, your application uses the
 
 Use Etcd config source:
 
+<!--@mdc ::code-callout -->
 ```java
 Config config = Config.create(
-        EtcdConfigSource 
-                .create(URI.create("http://my-etcd:2379"), 
-                        "/config.yaml", 
-                        EtcdConfigSourceBuilder.EtcdApi.v3)); 
+        EtcdConfigSource // <1>
+                .create(URI.create("http://my-etcd:2379"), // <2>
+                        "/config.yaml", // <3>
+                        EtcdConfigSourceBuilder.EtcdApi.v3)); // <4>
 ```
+1. Use the factory method `EtcdConfigSource.create` to create the
+   `EtcdConfigSource`.
+2. Specify the Etcd endpoint address.
+3. Specify the Etcd key of the configuration document.
+4. Version of the Etcd API to use; `v3` is supported. `v2` is deprecated.
+<!--@mdc :: -->
 
-- Use the factory method `EtcdConfigSource.create` to create the
-  `EtcdConfigSource`.
-- Specify the Etcd endpoint address.
-- Specify the Etcd key of the configuration document.
-- Version of the Etcd API to use; `v3` is supported. `v2` is deprecated.
-
-The config system will use the [YAML parser](#using-the-yaml-parser)
-automatically in this example because the file type of the key is `.yaml`.
+The config system will use the YAML [parser](#yaml) automatically in this
+example because the file type of the key is `.yaml`.
 
 The `EtcdConfigSourceBuilder` class extends
 [`AbstractConfigSourceBuilder`][abstractconfigso] and so supports the usual
@@ -244,6 +239,7 @@ source.
 
 Use Etcd config source:
 
+<!--@mdc ::code-callout -->
 ```java
 Config config = Config.create(
         EtcdConfigSource
@@ -251,12 +247,10 @@ Config config = Config.create(
                 .uri(URI.create("http://my-etcd:2379"))
                 .key("/config.yaml")
                 .api(EtcdConfigSourceBuilder.EtcdApi.v3)
-                .changeWatcher(EtcdWatcher.create())); 
+                .changeWatcher(EtcdWatcher.create())); // <1>
 ```
-
-- Use the etcd-specific change watcher strategy.
-
-#### Loading Meta-configuration via Etcd
+1. Use the etcd-specific change watcher strategy.
+<!--@mdc :: -->
 
 To read meta-configuration from an Etcd source set the following required
 properties for the source:
@@ -279,21 +273,22 @@ Config config = Config.create(classpath("config-meta-etcd.yaml"));
 
 Meta-config `config-meta-etcd.yaml` for the etcd source:
 
+<!--@mdc ::code-callout -->
 ```YAML [config-meta-etcd.yaml]
 sources:
-    - type: "etcd"                                                 
+    - type: "etcd"                                                 # <1>
       properties:
-          uri: "http://my-etcd:2379"                               
-          key: "/config.yaml"                                      
-          api: "v3"                                                
+          uri: "http://my-etcd:2379"                               # <2>
+          key: "/config.yaml"                                      # <2>
+          api: "v3"                                                # <2>
           change-watcher:
-              type: "etcd"                                         
+              type: "etcd"                                         # <3>
 ```
-
-- `etcd` config source type
-- Etcd source-specific (mandatory) `properties`: `uri`, `key` and `api`.
-- Watcher strategy `EtcdWatcher` is automatically initialized by specified
-  mandatory `properties`.
+1. `etcd` config source type
+2. Etcd source-specific (mandatory) `properties`: `uri`, `key` and `api`.
+3. Watcher strategy `EtcdWatcher` is automatically initialized by specified
+   mandatory `properties`.
+<!--@mdc :: -->
 
 ### git
 
@@ -320,23 +315,24 @@ To read configuration from a git source, your application uses the
 
 Use git config source:
 
+<!--@mdc ::code-callout -->
 ```java
 Config config = Config.create(
-        GitConfigSource
-                .builder() 
-                .uri(URI.create("https://github.com/okosatka/test-config.git")) 
-                .directory(Paths.get("/config")) 
-                .branch("dev")); 
+    GitConfigSource
+        .builder() // <1>
+        .uri(URI.create("https://github.com/okosatka/test-config.git")) // <2>
+        .directory(Paths.get("/config")) // <3>
+        .branch("dev")); // <4>
 ```
+1. Use the factory method `GitConfigSource.builder` to initialize the builder.
+2. Specify the git repository URI.
+3. Specify a directory where the git repository is already cloned, or it will be
+   cloned.
+4. Specify the git branch.
+<!--@mdc :: -->
 
-- Use the factory method `GitConfigSource.builder` to initialize the builder.
-- Specify the git repository URI.
-- Specify a directory where the git repository is already cloned, or it will be
-  cloned.
-- Specify the git branch.
-
-Note that the config system will use the [HOCON
-parser](#using-the-hoconjson-parser) in this example because the file type is
+Note that the config system will use the HOCON [parser](
+#using-the-hoconjson-parser) in this example because the file type is
 `.conf`. Recall that for this to work the HOCON config module must be on
 module-path or classpath.
 
@@ -350,16 +346,17 @@ associating the `regular` built-in polling strategy with the source.
 
 Use of git config source with polling strategy:
 
+<!--@mdc ::code-callout -->
 ```java
 Config config = Config.create(
-        GitConfigSource.builder()
-                .uri(URI.create("https://github.com/okosatka/test-config.git"))
-                .pollingStrategy(PollingStrategies.regular(Duration.ofMinutes(
-                        5)))); 
+    GitConfigSource.builder()
+        .uri(URI.create("https://github.com/okosatka/test-config.git"))
+        .pollingStrategy(PollingStrategies.regular(Duration.ofMinutes(
+            5)))); // <1>
 ```
-
-- Use `PollingStrategies.regular(Duration duration)` to monitor for config
-  changes.
+1. Use `PollingStrategies.regular(Duration duration)` to monitor for config
+   changes.
+<!--@mdc :: -->
 
 You can also implement your own polling strategy by implementing
 [`PollingStrategy`][pollingstrategy]. See the [mutability
@@ -393,24 +390,25 @@ Config config = Config.create(classpath("config-meta-git.yaml"));
 
 Meta-config `config-meta-git.yaml` for the git source:
 
+<!--@mdc ::code-callout -->
 ```YAML [config-meta-git.yaml]
 sources:
-    - type: "git" 
+    - type: "git" # <1>
       properties:
-          path: "application.conf" 
-          uri: "https://github.com/okosatka/test-config.git" 
-          directory: "/config" 
-          branch: "dev" 
+          path: "application.conf" # <2>
+          uri: "https://github.com/okosatka/test-config.git" # <2>
+          directory: "/config" # <2>
+          branch: "dev" # <2>
           polling-strategy:
-              type: "regular" 
+              type: "regular" # <3>
               properties:
-                  interval: "PT5M" 
+                  interval: "PT5M" # <3>
 ```
-
-- `git` config source type
-- git source-specific properties: `path`, `uri`, `directory` and `branch`.
-- Polling strategy `regular` with an interval, in `Duration` format, of 5
-  minutes in this example.
+1. `git` config source type
+2. git source-specific properties: `path`, `uri`, `directory` and `branch`.
+3. Polling strategy `regular` with an interval, in `Duration` format, of 5
+   minutes in this example.
+<!--@mdc :: -->
 
 [disableparserser]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/Config.Builder.html#disableParserServices--
 [yamlconfigparser]: https://helidon.io/docs/v4/apidocs/io.helidon.config.yaml/io/helidon/config/yaml/YamlConfigParser.html

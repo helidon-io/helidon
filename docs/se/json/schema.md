@@ -73,17 +73,16 @@ a class containing the schema definition. This approach keeps your schema
 definitions close to your data model and ensures schemas are generated
 automatically without manual coding.
 
+<!--@mdc ::code-callout -->
 ```java
-@JsonSchema.Schema 
+@JsonSchema.Schema // <1>
 @JsonSchema.Description("Example JSON Schema")
 public record ExampleSchema(@JsonSchema.Integer.Minimum(0) int exampleProperty) {
 }
 ```
-
-- Schema defining annotation. Without this annotation the class/record will not
-  be processed as a JSON schema
-
-In addition, the following section must be added to the `build` of the Maven
+1. Schema defining annotation. Without this annotation the class/record will not
+   be processed as a JSON schema
+<!--@mdc :: -->
 `pom.xml` to enable annotation processors that generate the necessary code:
 
 ```xml [pom.xml]

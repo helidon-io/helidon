@@ -122,44 +122,44 @@ application to use Helidon SE integration with Micrometer:
 
 Initialize Micrometer support:
 
+<!--@mdc ::code-callout -->
 ```java
-MicrometerFeature micrometerFeature = MicrometerFeature.create();
+MicrometerFeature micrometerFeature = MicrometerFeature.create(); // <1>
 
 HttpRouting.builder()
-        .addFeature(micrometerFeature)
-        .register("/myapp", new MyService(micrometerFeature.registry()))
+        .addFeature(micrometerFeature) // <2>
+        .register("/myapp", new MyService(micrometerFeature.registry())) // <3>
         .build();
 ```
-
-- Create the `MicrometerSupport` instance, using the default built-in Prometheus
-  meter registry.
-- Register the `MicrometerSupport` instance as a service; by default,
-  `MicrometerSupport` exposes the endpoint as `/micrometer`.
-- Pass the `MicrometerSupport` object’s meter registry to your service for use
-  in creating and updating meters.
-
-### Create and Update Meters in Your Application Service
+1. Create the `MicrometerSupport` instance, using the default built-in Prometheus
+   meter registry.
+2. Register the `MicrometerSupport` instance as a service; by default,
+   `MicrometerSupport` exposes the endpoint as `/micrometer`.
+3. Pass the `MicrometerSupport` object’s meter registry to your service for use
+   in creating and updating meters.
+<!--@mdc :: -->
 
 Define and use a Counter:
 
+<!--@mdc ::code-callout -->
 ```java
 class MyService implements HttpService {
 
     final Counter requestCounter;
 
     MyService(MeterRegistry registry) {
-        requestCounter = registry.counter("allRequests");
+        requestCounter = registry.counter("allRequests"); // <1>
     }
 
     @Override
     public void routing(HttpRules rules) {
         rules
-                .any(this::countRequests)
+                .any(this::countRequests) // <2>
                 .get("/", this::myGet);
     }
 
     void countRequests(ServerRequest request, ServerResponse response) {
-        requestCounter.increment();
+        requestCounter.increment(); // <3>
         response.next();
     }
 
@@ -169,14 +169,12 @@ class MyService implements HttpService {
 
 }
 ```
-
-- Use the Micrometer meter registry to create the request counter.
-- Add routing for any request to invoke the method which counts requests by
-  updating the counter.
-- Update the counter and then delegate the rest of the request processing to the
-  next handler in the chain.
-
-The example above enrolls the built-in Prometheus meter registry with the
+1. Use the Micrometer meter registry to create the request counter.
+2. Add routing for any request to invoke the method which counts requests by
+   updating the counter.
+3. Update the counter and then delegate the rest of the request processing to the
+   next handler in the chain.
+<!--@mdc :: -->
 default Prometheus registry configuration. You can change the default setup for
 built-in registries, and you can enroll other meter registries your application
 creates itself.
@@ -207,19 +205,18 @@ The builder lets you:
 Overriding defaults for built-in meter registries using
 MicrometerSupport.Builder:
 
+<!--@mdc ::code-callout -->
 ```java
 MeterRegistryFactory meterRegistryFactory = MeterRegistryFactory.builder()
-        .enrollBuiltInRegistry(BuiltInRegistryType.PROMETHEUS, myPrometheusConfig)
+        .enrollBuiltInRegistry(BuiltInRegistryType.PROMETHEUS, myPrometheusConfig) // <1>
         .build();
 MicrometerFeature micrometerFeature = MicrometerFeature.builder()
         .meterRegistryFactorySupplier(meterRegistryFactory)
         .build();
 ```
-
-- Enroll the `PROMETHEUS` built-in registry type with your meter registry
-  configuration.
-
-#### Using Configuration
+1. Enroll the `PROMETHEUS` built-in registry type with your meter registry
+   configuration.
+<!--@mdc :: -->
 
 To use configuration to control the selection and behavior of Helidon’s built-in
 Micrometer meter registries, include in your configuration (such as
@@ -286,26 +283,28 @@ To create additional types of registries and enroll them with
 
     Creating and enrolling your own Micrometer meter registry:
 
+    <!--@mdc ::code-callout -->
     ```java
-    PrometheusMeterRegistry myRegistry = new PrometheusMeterRegistry(myPrometheusConfig);
-    MeterRegistryFactory meterRegistryFactory = MeterRegistryFactory.builder()
-        .enrollRegistry(myRegistry, request -> {
-            return request
-                    .headers()
-                    .bestAccepted(MediaTypes.TEXT_PLAIN)
-                    .map(mt -> (req, resp) -> resp.send(myRegistry.scrape()));
+    PrometheusMeterRegistry registry =
+        new PrometheusMeterRegistry(config); // <1>
+    MeterRegistryFactory factory = MeterRegistryFactory.builder()
+        .enrollRegistry(registry, request -> {
+            return request // <2>
+                .headers()
+                .bestAccepted(MediaTypes.TEXT_PLAIN)
+                .map(mt -> (req, resp) -> resp.send(myRegistry.scrape())); // <3>
         })
         .build();
-    MicrometerFeature micrometerFeature = MicrometerFeature.builder()
-        .meterRegistryFactorySupplier(meterRegistryFactory)
+    MicrometerFeature feature = MicrometerFeature.builder()
+        .meterRegistryFactorySupplier(factory)
         .build();
     ```
-
-    - Create the meter registry. This example uses a Prometheus registry, but it
+    1. Create the meter registry. This example uses a Prometheus registry, but it
       can be any extension of `MeterRegistry`.
-    - Provide the function that checks if the [`ServerRequest`][serverrequest]
-    - A very simple in-line `Handler` that sets the response entity from the
+    2. Provide the function that checks if the [`ServerRequest`][serverrequest]
+    3. A very simple in-line `Handler` that sets the response entity from the
       Prometheus registry’s `scrape()` method.
+    <!--@mdc :: -->
 
 ## Accessing the Helidon Micrometer Endpoint
 

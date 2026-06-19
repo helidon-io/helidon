@@ -166,40 +166,39 @@ application.
 
 The `GreetResource` is defined in the `GreetResource.java` class as shown below:
 
+<!--@mdc ::code-callout -->
 ```java [src/main/java/io/helidon/examples/GreetResource.java]
-@Path("/greet") 
-@RequestScoped 
+@Path("/greet") // <1>
+@RequestScoped // <2>
 public class GreetResource {
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public JsonObject getDefaultMessage() { 
+    public JsonObject getDefaultMessage() { // <3>
         return JSON.createObjectBuilder()
                 .add("message", "Hello World")
-                .build(); 
+                .build(); // <4>
     }
 
 }
 ```
-
-- This class is annotated with `Path` which sets the path for this resource as
-  `/greet`.
-- The `RequestScoped` annotation defines that this bean is request scoped. The
-  request scope is active only for the duration of one web service invocation,
-  and it is destroyed at the end of that invocation. You can learn more about
-  scopes and contexts, and how they are used from the
-  [Specification][specification].
-- A `public JsonObject getDefaultMessage()` method is defined which is annotated
-  with `GET`, meaning it will accept the HTTP GET method. It is also annotated
-  with `Produces(MediaType.APPLICATION_JSON)` which declares that this method
-  will return JSON data.
-- The method body creates a JSON object containing a single object named
-  "message" with the content "Hello World". This method will be expanded and
-  improved later in the tutorial.
-
-> [!TIP]
+1. This class is annotated with `Path` which sets the path for this resource as
+   `/greet`.
+2. The `RequestScoped` annotation defines that this bean is request scoped. The
+   request scope is active only for the duration of one web service invocation,
+   and it is destroyed at the end of that invocation. You can learn more about
+   scopes and contexts, and how they are used from the
+   [Specification][specification].
+3. A `public JsonObject getDefaultMessage()` method is defined which is annotated
+   with `GET`, meaning it will accept the HTTP GET method. It is also annotated
+   with `Produces(MediaType.APPLICATION_JSON)` which declares that this method
+   will return JSON data.
+4. The method body creates a JSON object containing a single object named
+   "message" with the content "Hello World". This method will be expanded and
+   improved later in the tutorial.
+<!--@mdc :: -->
 > So far this is just a JAX-RS application, with no Helidon or MicroProfile
 > specific code in it. There are many JAX-RS tutorials available if you want to
 > learn more about this kind of application.
@@ -207,11 +206,12 @@ public class GreetResource {
 A main class is also required to start up the server and run the application. If
 you don’t use Helidon’s built-in main class you can define your own:
 
+<!--@mdc ::code-callout -->
 ```java [src/main/java/io/helidon/examples/Main.java]
 public final class Main {
 
     private Main() {
-    } 
+    } // <1>
 
     public static void main(final String[] args) throws IOException {
         Server server = startServer();
@@ -219,26 +219,26 @@ public final class Main {
     }
 
     static Server startServer() {
-        return Server.create().start(); 
+        return Server.create().start(); // <2>
     }
 
 }
 ```
+1. Notice that this class has an empty no-args constructor to make sure this
+   class cannot be instantiated.
+2. The MicroProfile server is started with the default configuration.
+<!--@mdc :: -->
 
 In this class, a `main` method is defined which starts the Helidon MP server and
 prints out a message with the listen address.
 
-- Notice that this class has an empty no-args constructor to make sure this
-  class cannot be instantiated.
-- The MicroProfile server is started with the default configuration.
-
-Helidon MP applications also require a `beans.xml` resource file to tell Helidon
 to use the annotations discussed above to discover Java beans in the
 application.
 
 Create a `beans.xml` in the `src/main/resources/META-INF` directory with the
 following content:
 
+<!--@mdc ::code-callout -->
 ```xml [src/main/resources/META-INF/beans.xml]
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://xmlns.jcp.org/xml/ns/javaee"
@@ -246,14 +246,12 @@ following content:
        xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee
                            http://xmlns.jcp.org/xml/ns/javaee/beans_2_0.xsd"
        version="2.0"
-       bean-discovery-mode="annotated"> 
+       bean-discovery-mode="annotated"> <!-- (1) -->
 </beans>
 ```
-
-- The `bean-discovery-mode` tells Helidon to look for the annotations to
-  discover Java beans in the application.
-
-## Build the Application
+1. The `bean-discovery-mode` tells Helidon to look for the annotations to
+   discover Java beans in the application.
+<!--@mdc :: -->
 
 Helidon MP applications are packaged into a JAR file and the dependencies are
 copied into a `libs` directory.
@@ -334,12 +332,13 @@ Add a new "provider" class to read this property and make it available to the
 application. The class will be called `GreetingProvider.java` and have the
 following content:
 
+<!--@mdc ::code-callout -->
 ```java [src/main/java/io/helidon/examples/GreetingProvider.java]
-@ApplicationScoped 
+@ApplicationScoped // <1>
 public class GreetingProvider {
-    private final AtomicReference<String> message = new AtomicReference<>(); 
+    private final AtomicReference<String> message = new AtomicReference<>(); // <2>
 
-    @Inject 
+    @Inject // <3>
     public GreetingProvider(@ConfigProperty(name = "app.greeting") String message) {
         this.message.set(message);
     }
@@ -353,25 +352,24 @@ public class GreetingProvider {
     }
 }
 ```
-
-- This class also has the `ApplicationScoped` annotation, so it will persist for
-  the life of the application.
-- The class contains an `AtomicReference` to a `String` where the greeting will
-  be stored. The `AtomicReference` provides lock-free thread-safe access to the
-  underlying `String`.
-- The `public GreetingProvider(...)` constructor is annotated with `Inject`
-  which tells Helidon to use Contexts and Dependency Injection to provide the
-  needed values. In this case, the `String message` is annotated with
-  `ConfigProperty(name = "app.greeting")` so Helidon will inject the property
-  from the configuration file with the key `app.greeting`. This method
-  demonstrates how to read configuration information into the application. A
-  getter and setter are also included in this class.
-
-The `GreetResource` must be updated to use this value instead of the hard coded
+1. This class also has the `ApplicationScoped` annotation, so it will persist for
+   the life of the application.
+2. The class contains an `AtomicReference` to a `String` where the greeting will
+   be stored. The `AtomicReference` provides lock-free thread-safe access to the
+   underlying `String`.
+3. The `public GreetingProvider(...)` constructor is annotated with `Inject`
+   which tells Helidon to use Contexts and Dependency Injection to provide the
+   needed values. In this case, the `String message` is annotated with
+   `ConfigProperty(name = "app.greeting")` so Helidon will inject the property
+   from the configuration file with the key `app.greeting`. This method
+   demonstrates how to read configuration information into the application. A
+   getter and setter are also included in this class.
+<!--@mdc :: -->
 response. Make the following updates to that class:
 
 Updated GreetResource class:
 
+<!--@mdc ::code-callout -->
 ```java
 @Path("/greet")
 @RequestScoped
@@ -380,7 +378,7 @@ public class GreetResource {
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
     private final GreetingProvider greetingProvider;
 
-    @Inject 
+    @Inject // <1>
     public GreetResource(GreetingProvider greetingConfig) {
         this.greetingProvider = greetingConfig;
     }
@@ -388,10 +386,10 @@ public class GreetResource {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public JsonObject getDefaultMessage() {
-        return createResponse("World"); 
+        return createResponse("World"); // <2>
     }
 
-    private JsonObject createResponse(String who) { 
+    private JsonObject createResponse(String who) { // <3>
         String msg = String.format("%s %s!", greetingProvider.getMessage(), who);
         return JSON.createObjectBuilder()
                 .add("message", msg)
@@ -399,15 +397,13 @@ public class GreetResource {
     }
 }
 ```
-
-- This updated class adds a `GreetingProvider` and uses constructor injection to
-  get the value from the configuration file.
-- The logic to create the response message is refactored into a `createResponse`
-  method and the `getDefaultMessage()` method is updated to use this new method.
-- In `createResponse()` the message is obtained from the `GreetingProvider`
-  which in turn got it from the configuration files.
-
-Rebuild and run the application. Notice that it now uses the greeting from the
+1. This updated class adds a `GreetingProvider` and uses constructor injection to
+   get the value from the configuration file.
+2. The logic to create the response message is refactored into a `createResponse`
+   method and the `getDefaultMessage()` method is updated to use this new method.
+3. In `createResponse()` the message is obtained from the `GreetingProvider`
+   which in turn got it from the configuration files.
+<!--@mdc :: -->
 configuration file. Change the configuration file and restart the application,
 notice that it uses the changed value.
 
@@ -425,11 +421,12 @@ Here are the two new methods to add to `GreetResource.java`:
 
 New methods for `GreetResource.java`:
 
+<!--@mdc ::code-callout -->
 ```java [GreetResource.java]
 @Path("/{name}")
 @GET
 @Produces(MediaType.APPLICATION_JSON)
-public JsonObject getMessage(@PathParam("name") String name) { 
+public JsonObject getMessage(@PathParam("name") String name) { // <1>
     return createResponse(name);
 }
 
@@ -437,7 +434,7 @@ public JsonObject getMessage(@PathParam("name") String name) {
 @PUT
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
-public Response updateGreeting(JsonObject jsonObject) { 
+public Response updateGreeting(JsonObject jsonObject) { // <2>
 
     if (!jsonObject.containsKey("greeting")) {
         JsonObject entity = Json.createObjectBuilder()
@@ -452,19 +449,17 @@ public Response updateGreeting(JsonObject jsonObject) {
     return Response.status(Response.Status.NO_CONTENT).build();
 }
 ```
-
-- The first of these two methods implements a new HTTP GET service that returns
-  JSON, and it has a path parameter. The `Path` annotation defines the next part
-  of the path to be a parameter named `name`. In the method arguments the
-  `PathParam("name")` annotation on `String name` has the effect of passing the
-  parameter from the URL into this method as `name`.
-- The second method implements a new HTTP PUT service which produces and
-  consumes JSON, note the `Consumes` and `PUT` annotations. It also defines a
-  path of "/greeting". Notice that the method argument is a `JsonObject`. Inside
-  the method body there is code to check for the expected JSON, extract the
-  value and update the message in the `GreetingProvider`.
-
-Rebuild and run the application. Test the new services using curl commands
+1. The first of these two methods implements a new HTTP GET service that returns
+   JSON, and it has a path parameter. The `Path` annotation defines the next part
+   of the path to be a parameter named `name`. In the method arguments the
+   `PathParam("name")` annotation on `String name` has the effect of passing the
+   parameter from the URL into this method as `name`.
+2. The second method implements a new HTTP PUT service which produces and
+   consumes JSON, note the `Consumes` and `PUT` annotations. It also defines a
+   path of "/greeting". Notice that the method argument is a `JsonObject`. Inside
+   the method body there is code to check for the expected JSON, extract the
+   value and update the message in the `GreetingProvider`.
+<!--@mdc :: -->
 similar to those shown below:
 
 Testing the new services:
@@ -495,23 +490,24 @@ content:
 
 Example `logging.properties` file:
 
+<!--@mdc ::code-callout -->
 ```properties [logging.properties]
 # Send messages to the console
-handlers=io.helidon.logging.jul.HelidonConsoleHandler 
+handlers=io.helidon.logging.jul.HelidonConsoleHandler # <1>
 
 # HelidonConsoleHandler uses a SimpleFormatter subclass that replaces "!thread!" with the current thread
-java.util.logging.SimpleFormatter.format=%1$tY.%1$tm.%1$td %1$tH:%1$tM:%1$tS %4$s %3$s !thread!: %5$s%6$s%n 
+java.util.logging.SimpleFormatter.format=%1$tY.%1$tm.%1$td %1$tH:%1$tM:%1$tS %4$s %3$s !thread!: %5$s%6$s%n # <2>
 
 # Global logging level. Can be overridden by specific loggers
-.level=INFO 
+.level=INFO # <3>
 ```
-
-- The Helidon console logging handler is configured. This handler writes to
-  `System.out`, does not filter by level and uses a custom `SimpleFormatter`
-  that supports thread names.
-- The format string is set using the standard options to include the timestamp,
-  thread name and message.
-- The global logging level is set to `INFO`.
+1. The Helidon console logging handler is configured. This handler writes to
+   `System.out`, does not filter by level and uses a custom `SimpleFormatter`
+   that supports thread names.
+2. The format string is set using the standard options to include the timestamp,
+   thread name and message.
+3. The global logging level is set to `INFO`.
+<!--@mdc :: -->
 
 The Helidon MicroProfile server will detect the new `logging.properties` file
 and configure the LogManager for you.
@@ -593,18 +589,17 @@ resource with one of the metric annotations as shown in the example below:
 
 Updated `GreetResource.java` with custom metrics:
 
+<!--@mdc ::code-callout -->
 ```java [GreetResource.java]
 @GET
 @Produces(MediaType.APPLICATION_JSON)
-@Timed 
+@Timed // <1>
 public JsonObject getDefaultMessage() {
     return createResponse("World");
 }
 ```
-
-- The `Timed` annotation is added to the `getDefaultMessage()` method.
-
-Rebuild and run the application. Make some calls to the endpoint
+1. The `Timed` annotation is added to the `getDefaultMessage()` method.
+<!--@mdc :: -->
 (<http://localhost:8080/greet>) so there will be some data to report. Then
 obtain the application metrics as follows:
 
@@ -703,91 +698,92 @@ curl -i  -X GET http://localhost:8080/health/live
 Helidon allows the addition of custom health checks to applications. Create a
 new class `GreetHealthcheck.java` with the following content:
 
+<!--@mdc ::code-callout -->
 ```java [src/main/java/io/helidon/examples/GreetHealthcheck.java]
-@Liveness 
-@ApplicationScoped 
+@Liveness // <1>
+@ApplicationScoped // <2>
 public class GreetHealthcheck implements HealthCheck {
 
     private GreetingProvider provider;
 
-    @Inject 
+    @Inject // <3>
     public GreetHealthcheck(GreetingProvider provider) {
         this.provider = provider;
     }
 
     @Override
-    public HealthCheckResponse call() { 
+    public HealthCheckResponse call() { // <4>
         String message = provider.getMessage();
-        return HealthCheckResponse.named("greeting") 
+        return HealthCheckResponse.named("greeting") // <5>
                 .status("Hello".equals(message))
                 .withData("greeting", message)
                 .build();
     }
 }
 ```
-
-- This class has the MicroProfile `Liveness` annotation which tells Helidon that
-  this class provides a custom health check. You can learn more about the
-  available annotations in the [MicroProfile Health Protocol and
-  Wireformat][microprofile-hea] document.
-- This class also has the `ApplicationScoped` annotation, as seen previously.
-- The `GreetingProvider` is injected using Context and Dependency Service. This
-  example will use the greeting to determine whether the application is healthy,
-  this is a contrived example for demonstration purposes.
-- Health checks must implement the `HealthCheck` functional interface, which
-  includes the method `HealthCheckResponse call()`. Helidon will invoke the
-  `call()` method to verify the healthiness of the application.
-- In this example, the application is deemed to be healthy if the
-  `GreetingProvider,getMessage()` method returns the string `"Hello"` and
-  unhealthy otherwise.
-
-Rebuild the application, make sure that the `mp.conf` has the `greeting` set to
+1. This class has the MicroProfile `Liveness` annotation which tells Helidon that
+   this class provides a custom health check. You can learn more about the
+   available annotations in the [MicroProfile Health Protocol and
+   Wireformat][microprofile-hea] document.
+2. This class also has the `ApplicationScoped` annotation, as seen previously.
+3. The `GreetingProvider` is injected using Context and Dependency Service. This
+   example will use the greeting to determine whether the application is healthy,
+   this is a contrived example for demonstration purposes.
+4. Health checks must implement the `HealthCheck` functional interface, which
+   includes the method `HealthCheckResponse call()`. Helidon will invoke the
+   `call()` method to verify the healthiness of the application.
+5. In this example, the application is deemed to be healthy if the
+   `GreetingProvider,getMessage()` method returns the string `"Hello"` and
+   unhealthy otherwise.
+<!--@mdc :: -->
 something other than `"Hello"` and then run the application and check the
 health:
 
 Custom health check reporting unhealthy state:
 
+<!--@mdc ::code-callout -->
 ```shell [Terminal]
 curl -i -X GET http://localhost:8080/health/live
-HTTP/1.1 503 Service Unavailable 
+HTTP/1.1 503 Service Unavailable <1>
 Content-Type: application/json
 Date: Fri, 23 Aug 2019 10:07:23 -0400
 transfer-encoding: chunked
 connection: keep-alive
 
-{"outcome":"DOWN","status":"DOWN","checks":[{"name":"deadlock","state":"UP","status":"UP"},{"name":"diskSpace","state":"UP","status":"UP","data":{"free":"381.08 GB","freeBytes":409182306304,"percentFree":"43.37%","total":"878.70 GB","totalBytes":943491723264}},{"name":"greeting","state":"DOWN","status":"DOWN","data":{"greeting":"Hey"}},{"name":"heapMemory","state":"UP","status":"UP","data":{"free":"243.81 MB","freeBytes":255651048,"max":"3.46 GB","maxBytes":3715629056,"percentFree":"98.58%","total":"294.00 MB","totalBytes":308281344}}]} 
+{"outcome":"DOWN","status":"DOWN","checks":[{"name":"deadlock","state":"UP","status":"UP"},{"name":"diskSpace","state":"UP","status":"UP","data":{"free":"381.08 GB","freeBytes":409182306304,"percentFree":"43.37%","total":"878.70 GB","totalBytes":943491723264}},{"name":"greeting","state":"DOWN","status":"DOWN","data":{"greeting":"Hey"}},{"name":"heapMemory","state":"UP","status":"UP","data":{"free":"243.81 MB","freeBytes":255651048,"max":"3.46 GB","maxBytes":3715629056,"percentFree":"98.58%","total":"294.00 MB","totalBytes":308281344}}]} <2>
 ```
-
-- The HTTP return code is now 503 Service Unavailable.
-- The status is reported as "DOWN" and the custom check is included in the
-  output.
+1. The HTTP return code is now 503 Service Unavailable.
+2. The status is reported as "DOWN" and the custom check is included in the
+   output.
+<!--@mdc :: -->
 
 Now update the greeting to `"Hello"` using the following request, and then check
 health again:
 
 Update the greeting and check health again:
 
+<!--@mdc ::code-callout -->
 ```shell [Terminal]
 # update greeting
 curl -i -X PUT -H "Content-Type: application/json" -d '{"greeting": "Hello"}' http://localhost:8080/greet/greeting
-HTTP/1.1 204 No Content 
+HTTP/1.1 204 No Content <1>
 Date: Thu, 22 Aug 2019 13:29:57 -0400
 connection: keep-alive
 
 # check health
 curl -i -X GET http://localhost:8080/health/live
-HTTP/1.1 200 OK 
+HTTP/1.1 200 OK <2>
 Content-Type: application/json
 Date: Fri, 23 Aug 2019 10:08:09 -0400
 connection: keep-alive
 content-length: 536
 
-{"outcome":"UP","status":"UP","checks":[{"name":"deadlock","state":"UP","status":"UP"},{"name":"diskSpace","state":"UP","status":"UP","data":{"free":"381.08 GB","freeBytes":409179811840,"percentFree":"43.37%","total":"878.70 GB","totalBytes":943491723264}},{"name":"greeting","state":"UP","status":"UP","data":{"greeting":"Hello"}},{"name":"heapMemory","state":"UP","status":"UP","data":{"free":"237.25 MB","freeBytes":248769720,"max":"3.46 GB","maxBytes":3715629056,"percentFree":"98.40%","total":"294.00 MB","totalBytes":308281344}}]} 
+{"outcome":"UP","status":"UP","checks":[{"name":"deadlock","state":"UP","status":"UP"},{"name":"diskSpace","state":"UP","status":"UP","data":{"free":"381.08 GB","freeBytes":409179811840,"percentFree":"43.37%","total":"878.70 GB","totalBytes":943491723264}},{"name":"greeting","state":"UP","status":"UP","data":{"greeting":"Hello"}},{"name":"heapMemory","state":"UP","status":"UP","data":{"free":"237.25 MB","freeBytes":248769720,"max":"3.46 GB","maxBytes":3715629056,"percentFree":"98.40%","total":"294.00 MB","totalBytes":308281344}}]} <3>
 ```
-
-- The PUT returns an HTTP 204.
-- The health check now returns an HTTP 200.
-- The status is now reported as "UP" and the details are provided in the checks.
+1. The PUT returns an HTTP 204.
+2. The health check now returns an HTTP 200.
+3. The status is now reported as "UP" and the details are provided in the checks.
+<!--@mdc :: -->
 
 Learn more about health checks in the [Health Check Guide](health.md).
 
@@ -799,8 +795,9 @@ installed and running on your system.
 
 Add a new `Dockerfile` in the project root directory with the following content:
 
+<!--@mdc ::code-callout{collapsed} -->
 ```dockerfile [Dockerfile]
-FROM container-registry.oracle.com/java/openjdk:21 as build 
+FROM container-registry.oracle.com/java/openjdk:21 as build <1>
 
 # Install maven
 WORKDIR /usr/share
@@ -814,33 +811,33 @@ RUN set -x && \
 WORKDIR /helidon
 
 ADD pom.xml .
-RUN mvn package -DskipTests 
+RUN mvn package -DskipTests <2>
 
 ADD src src
-RUN mvn package -DskipTests 
+RUN mvn package -DskipTests <3>
 RUN echo "done!"
 
 FROM container-registry.oracle.com/java/openjdk:21
 WORKDIR /helidon
 
-COPY --from=build /helidon/target/helidon-mp-tutorial.jar ./ 
+COPY --from=build /helidon/target/helidon-mp-tutorial.jar ./ <4>
 COPY --from=build /helidon/target/libs ./libs
 
-CMD ["java", "-jar", "helidon-mp-tutorial.jar"] 
+CMD ["java", "-jar", "helidon-mp-tutorial.jar"] <5>
 EXPOSE 8080
 ```
-
-- This Dockerfile uses Docker’s multi-stage build feature. The `FROM` keyword
-  creates the first stage. In this stage, the base container has the build tools
-  needed to build the application. These are not required to run the
-  application, so the second stage uses a smaller container.
-- Add the `pom.xml` and running an "empty" maven build will download all the
-  dependencies and plugins in this layer. This will make future builds faster
-  because they will use this cached layer rather than downloading everything
-  again.
-- Add the source code and do the real build.
-- Copy the binary and libraries from the first stage.
-- Set the initial command and expose port 8080.
+1. This Dockerfile uses Docker’s multi-stage build feature. The `FROM` keyword
+   creates the first stage. In this stage, the base container has the build tools
+   needed to build the application. These are not required to run the
+   application, so the second stage uses a smaller container.
+2. Add the `pom.xml` and running an "empty" maven build will download all the
+   dependencies and plugins in this layer. This will make future builds faster
+   because they will use this cached layer rather than downloading everything
+   again.
+3. Add the source code and do the real build.
+4. Copy the binary and libraries from the first stage.
+5. Set the initial command and expose port 8080.
+<!--@mdc :: -->
 
 To create the Docker image, use the following command:
 
@@ -891,17 +888,17 @@ is the deployment and a service.
 Create a file called `app.yaml` in the project’s root directory with the
 following content:
 
-<!--@mdc ::code-collapse -->
+<!--@mdc ::code-callout{collapsed} -->
 ```yaml [app.yaml]
 ---
-kind: Service 
+kind: Service # <1>
 apiVersion: v1
 metadata:
   name: helidon-mp-tutorial
   labels:
     app: helidon-mp-tutorial
 spec:
-  type: NodePort 
+  type: NodePort # <2>
   selector:
     app: helidon-mp-tutorial
   ports:
@@ -909,12 +906,12 @@ spec:
       targetPort: 8080
       name: http
 ---
-kind: Deployment 
+kind: Deployment # <3>
 apiVersion: apps/v1
 metadata:
   name: helidon-mp-tutorial
 spec:
-  replicas: 1 
+  replicas: 1 # <4>
   selector:
     matchLabels:
       app: helidon-mp-tutorial
@@ -926,22 +923,21 @@ spec:
     spec:
       containers:
         - name: helidon-mp-tutorial
-          image: helidon-mp-tutorial 
+          image: helidon-mp-tutorial # <5>
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
 ```
+1. Define a Service to provide access to the application.
+2. Define a NodePort to expose the application outside the Kubernetes cluster.
+3. Define a Deployment of the application.
+4. Define how many replicas of the application to run.
+5. Define the Docker image to use - this must be the one that was built in the
+   previous step. If the image was built on a different machine to the one where
+   Kubernetes is running, or if Kubernetes is running on multiple machines
+   (worker nodes) then the image must either be manually copied to each node or
+   otherwise pushed to a Docker registry that is accessible to the worker nodes.
 <!--@mdc :: -->
-
-- Define a Service to provide access to the application.
-- Define a NodePort to expose the application outside the Kubernetes cluster.
-- Define a Deployment of the application.
-- Define how many replicas of the application to run.
-- Define the Docker image to use - this must be the one that was built in the
-  previous step. If the image was built on a different machine to the one where
-  Kubernetes is running, or if Kubernetes is running on multiple machines
-  (worker nodes) then the image must either be manually copied to each node or
-  otherwise pushed to a Docker registry that is accessible to the worker nodes.
 
 This Kubernetes YAML file can be used to deploy the application to Kubernetes:
 

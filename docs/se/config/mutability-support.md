@@ -78,26 +78,27 @@ methods on the [`PollingStrategies`][pollingstrategie] class:
 This example builds a `Config` object from three sources, each set up with a
 different polling strategy:
 
-Build a Config with a different PollingStrategy for each config source:
+Build a Config with a different `PollingStrategy` for each config source:
 
+<!--@mdc ::code-callout -->
 ```java
 Config config = Config.create(
-        ConfigSources.file("conf/dev.properties")
-                .pollingStrategy(PollingStrategies.regular(Duration.ofSeconds(2))) 
-                .optional(),
-        ConfigSources.file("conf/config.properties")
-                .changeWatcher(FileSystemWatcher.create()) 
-                .optional(),
-        ConfigSources.file("my.properties")
-                .pollingStrategy(PollingStrategies::nop)); 
+    ConfigSources.file("conf/dev.properties")
+        .pollingStrategy(PollingStrategies.regular(Duration.ofSeconds(2))) // <1>
+        .optional(),
+    ConfigSources.file("conf/config.properties")
+        .changeWatcher(FileSystemWatcher.create()) // <2>
+        .optional(),
+    ConfigSources.file("my.properties")
+        .pollingStrategy(PollingStrategies::nop)); // <3>
 ```
-
-- Optional `file` source `conf/dev.properties` will be checked for changes every
-  `2` seconds.
-- Optional `file` source `conf/config.properties` will be watched by the Java
-  `WatchService` for changes on filesystem.
-- The `file` resource `my.properties` will not be checked for changes.
-  `PollingStrategies.nop()` polling strategy is default.
+1. Optional `file` source `conf/dev.properties` will be checked for changes every
+   `2` seconds.
+2. Optional `file` source `conf/config.properties` will be watched by the Java
+   `WatchService` for changes on filesystem.
+3. The `file` resource `my.properties` will not be checked for changes.
+   `PollingStrategies.nop()` polling strategy is default.
+<!--@mdc :: -->
 
 The polling strategies internally inform the config system when they detect
 changes in the monitored config sources (except that the `nop` strategy does
@@ -118,20 +119,19 @@ You register a function that runs when a change occurs by using the
 
 Subscribe on greeting property changes via onChange method:
 
+<!--@mdc ::code-callout -->
 ```java
-config.get("greeting") 
-        .onChange(changedNode -> { 
-            System.out.println("Node " + changedNode.key() + " has changed!");
-        });
+config.get("greeting") // <1>
+    .onChange(changedNode -> { // <2>
+        System.out.println("Node " + changedNode.key() + " has changed!");
+    });
 ```
-
-- Navigate to the `Config` node on which you want to register.
-- Invoke the `onChange` method, passing a consumer (`Consumer<Config>`). The
-  config system invokes that consumer each time the subtree rooted at the
-  `greeting` node changes. The `changedNode` is a new instance of `Config`
-  representing the updated subtree rooted at `greeting`.
-
-## Accessing Always-current Values
+1. Navigate to the `Config` node on which you want to register.
+2. Invoke the `onChange` method, passing a consumer (`Consumer<Config>`). The
+   config system invokes that consumer each time the subtree rooted at the
+   `greeting` node changes. The `changedNode` is a new instance of `Config`
+   representing the updated subtree rooted at `greeting`.
+<!--@mdc :: -->
 
 Some applications do not need to respond to change as they happen. Instead, it’s
 sufficient that they simply have access to the current value for a particular
@@ -142,22 +142,23 @@ method. These supplier methods return `Supplier<XXX>`, and when your application
 invokes the supplier’s `get` method the config system returns the *then-current
 value* as stored in the config source.
 
-Access greeting property as Supplier<String>:
+Access greeting property as `Supplier<String>`:
 
+<!--@mdc ::code-callout -->
 ```java
 // Construct a Config with the appropriate PollingStrategy on each config source.
 
-Supplier<String> greetingSupplier = config.get("greeting") 
-        .asString().supplier(); 
+Supplier<String> greetingSupplier = config.get("greeting") // <1>
+        .asString().supplier(); // <2>
 
-System.out.println("Always actual greeting value: " + greetingSupplier.get()); 
+System.out.println("Always actual greeting value: " + greetingSupplier.get()); // <3>
 ```
-
-- Navigate to the `Config` node for which you want access to the always-current
-  value.
-- Retrieve and store the returned supplier for later use.
-- Invoke the supplier’s `get()` method to retrieve the current value of the
-  node.
+1. Navigate to the `Config` node for which you want access to the always-current
+   value.
+2. Retrieve and store the returned supplier for later use.
+3. Invoke the supplier’s `get()` method to retrieve the current value of the
+   node.
+<!--@mdc :: -->
 
 > [!IMPORTANT]
 > Supplier support requires that you create the `Config` object from config

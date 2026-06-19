@@ -48,58 +48,61 @@ lc4j-in-process` is created as a named singleton declarative service bean in the
 Helidon service registry. This is how `foo-bar-embedding-model` becomes
 available for content retrievers and direct injection.
 
+<!--@mdc ::code-callout -->
 ```yaml [application.yaml]
 langchain4j:
 
   models:
-    foo-bar-embedding-model: 
+    foo-bar-embedding-model: # <1>
       provider: lc4j-in-process
-      type: all_minilm_l6_v2_q 
+      type: all_minilm_l6_v2_q # <2>
 
   content-retrievers:
     foo-bar-content-retriever:
       provider: lc4j-content-retriever
-      embedding-model: foo-bar-embedding-model 
+      embedding-model: foo-bar-embedding-model # <3>
       embedding-store: foo-bar-inmemory-embedding-store
 ```
-
-- Creates a named embedding model singleton bean (`foo-bar-embedding-model`) in
-  Helidon.
-- Sets provider defaults for in-process embedding model creation.
-- Uses the named in-process embedding model from the service registry.
+1. Creates a named embedding model singleton bean (`foo-bar-embedding-model`) in
+   Helidon.
+2. Sets provider defaults for in-process embedding model creation.
+3. Uses the named in-process embedding model from the service registry.
+<!--@mdc :: -->
 
 For `type: custom`, configure model and tokenizer paths and pooling mode:
 
+<!--@mdc ::code-callout -->
 ```yaml [application.yaml]
 langchain4j:
   models:
     foo-bar-content-retriever:
       provider: lc4j-in-process
-      type: custom 
-      path-to-model: "/models/custom-embeddings/model.onnx" 
-      path-to-tokenizer: "/models/custom-embeddings/tokenizer.json" 
-      pooling-mode: mean 
+      type: custom # <1>
+      path-to-model: "/models/custom-embeddings/model.onnx" # <2>
+      path-to-tokenizer: "/models/custom-embeddings/tokenizer.json" # <3>
+      pooling-mode: mean # <4>
 ```
-
-- Uses user-provided ONNX model.
-- Required for custom type.
-- Required for custom type.
-- Required for custom type; maps to LangChain4j pooling mode.
+1. Uses user-provided ONNX model.
+2. Required for custom type.
+3. Required for custom type.
+4. Required for custom type; maps to LangChain4j pooling mode.
+<!--@mdc :: -->
 
 If `type: custom` is selected but any of `path-to-model`, `path-to-tokenizer`,
 or `pooling-mode` is missing, Helidon fails startup with a configuration
 exception.
 
+<!--@mdc ::code-callout -->
 ```java
 @Service.Singleton
 public class EmbeddingModelConsumer {
-    EmbeddingModelConsumer(@Service.Named("foo-bar-embedding-model") EmbeddingModel embeddingModel) { 
+    EmbeddingModelConsumer(@Service.Named("foo-bar-embedding-model") EmbeddingModel embeddingModel) { //<1>
     }
 }
 ```
-
-- Injects the named in-process embedding model bean directly into another
-  Helidon declarative service.
+1. Injects the named in-process embedding model bean directly into another
+   Helidon declarative service.
+<!--@mdc :: -->
 
 Configuration properties:
 

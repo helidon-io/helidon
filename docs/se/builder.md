@@ -99,50 +99,52 @@ the resulting prototype provides a fluent API for constructing instances.
 
 This example demonstrates generating a prototype from the blueprint below.
 
+<!--@mdc ::code-callout -->
 ```java
-@Prototype.Blueprint                   
-interface ServiceConfigBlueprint {     
-    String name();                     
+@Prototype.Blueprint                   // <1>
+interface ServiceConfigBlueprint {     // <2>
+    String name();                     // <3>
     int pageSize();
 }
 ```
-
-- Marks the interface as a blueprint for code generation.
-- Must be package-private and named with a `Blueprint` suffix. The prototype’s
-  name will be `ServiceConfig`.
-- Getter method for field `name`.
+1. Marks the interface as a blueprint for code generation.
+2. Must be package-private and named with a `Blueprint` suffix. The prototype’s
+   name will be `ServiceConfig`.
+3. Getter method for field `name`.
+<!--@mdc :: -->
 
 After building the project, a prototype `ServiceConfig` will be generated.
 
 Example of the generated prototype:
 
+<!--@mdc ::code-callout -->
 ```java
 @Generated(value = "io.helidon.builder.codegen.BuilderCodegen",
-           trigger = "com.example.ServiceConfigBlueprint")                           
-public interface ServiceConfig extends ServiceConfigBlueprint, Prototype.Api {       
-    static ServiceConfig.Builder builder() { /* ... */ }                             
+           trigger = "com.example.ServiceConfigBlueprint")                           // <1>
+public interface ServiceConfig extends ServiceConfigBlueprint, Prototype.Api {       // <2>
+    static ServiceConfig.Builder builder() { /* ... */ }                             // <3>
 
-    static ServiceConfig.Builder builder(ServiceConfig instance) { /* ... */ }       
+    static ServiceConfig.Builder builder(ServiceConfig instance) { /* ... */ }       // <4>
 
-    static ServiceConfig create() { /* ... */ }                                      
+    static ServiceConfig create() { /* ... */ }                                      // <5>
 
     class Builder extends ServiceConfig.BuilderBase<ServiceConfig.Builder, ServiceConfig>
-        implements io.helidon.common.Builder<ServiceConfig.Builder, ServiceConfig> { 
+        implements io.helidon.common.Builder<ServiceConfig.Builder, ServiceConfig> { // <6>
         // ...
     }
 
     // ...
 }
 ```
-
-- Marker annotation specifying that this interface was generated.
-- Generated interface extending the given blueprint. The interface name is a
-  blueprint name with "Blueprint" suffix removed.
-- Static method returning a generated builder.
-- Static method returning a generated builder initialized with the field value
-  from given instance.
-- Factory method creating an instance with default values.
-- Generated builder.
+1. Marker annotation specifying that this interface was generated.
+2. Generated interface extending the given blueprint. The interface name is a
+   blueprint name with "Blueprint" suffix removed.
+3. Static method returning a generated builder.
+4. Static method returning a generated builder initialized with the field value
+   from given instance.
+5. Factory method creating an instance with default values.
+6. Generated builder.
+<!--@mdc :: -->
 
 The generated `ServiceConfig` can be used as follows:
 
@@ -181,24 +183,25 @@ using Helidon Config.
 
 Blueprint Definition:
 
+<!--@mdc ::code-callout -->
 ```java
 @Prototype.Blueprint
-@Prototype.Configured("service")      
+@Prototype.Configured("service")      // <1>
 interface ServiceConfigBlueprint {
-    @Option.Configured                
+    @Option.Configured                // <2>
     String name();
 
     @Option.Configured
-    @Option.DefaultInt(50)            
+    @Option.DefaultInt(50)        // <3>
     int pageSize();
 }
 ```
-
-- Specifies that this blueprint can be configured with the root key `service` in
-  the configuration.
-- Marks the field `name` as configurable. By default, the configuration key is
-  derived from the method name in dash-separated format.
-- Sets a default value for `pageSize` if it is not defined in the configuration.
+1. Specifies that this blueprint can be configured with the root key `service` in
+   the configuration.
+2. Marks the field `name` as configurable. By default, the configuration key is
+   derived from the method name in dash-separated format.
+3. Sets a default value for `pageSize` if it is not defined in the configuration.
+<!--@mdc :: -->
 
 The generated prototype includes a `create` method that accepts a `Config`
 instance:
@@ -287,33 +290,35 @@ The following example demonstrates creating a `Service` runtime type from a
 
 Runtime type implementation:
 
+<!--@mdc ::code-callout -->
 ```java
-public class Service implements RuntimeType.Api<ServiceConfig> {             
-    public static ServiceConfig.Builder builder() {                          
+public class Service implements RuntimeType.Api<ServiceConfig> {             // <1>
+    public static ServiceConfig.Builder builder() {                          // <2>
         return ServiceConfig.builder();
     }
 
-    public static Service create(ServiceConfig serviceConfig) {              
+    public static Service create(ServiceConfig serviceConfig) {              // <3>
         rreturn new ServiceImpl(serviceConfig);
     }
 
-    public static Service create(Consumer<ServiceConfig.Builder> consumer) { 
+    public static Service create(Consumer<ServiceConfig.Builder> consumer) { // <4>
         return builder().update(consumer).build();
     }
 }
 ```
-
-- Implements the RuntimeType.Api\<ServiceConfig\> interface.
-- Provides a builder for the runtime type.
-- Creates a runtime object from a prototype.
-- Creates a runtime object from a consumer-configured prototype builder.
+1. Implements the RuntimeType.Api\<ServiceConfig\> interface.
+2. Provides a builder for the runtime type.
+3. Creates a runtime object from a prototype.
+4. Creates a runtime object from a consumer-configured prototype builder.
+<!--@mdc :: -->
 
 Blueprint definition:
 
+<!--@mdc ::code-callout -->
 ```java
 @Prototype.Blueprint
 @Prototype.Configured("service")
-interface ServiceConfigBlueprint extends Prototype.Factory<Service> { 
+interface ServiceConfigBlueprint extends Prototype.Factory<Service> { // <1>
     @Option.Configured
     String name();
 
@@ -322,9 +327,9 @@ interface ServiceConfigBlueprint extends Prototype.Factory<Service> {
     int pageSize();
 }
 ```
-
-- Extending `Prototype.Factory<Service>` enables creating `Service` runtime
-  objects.
+1. Extending `Prototype.Factory<Service>` enables creating `Service` runtime
+   objects.
+<!--@mdc :: -->
 
 Usage:
 

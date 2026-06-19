@@ -202,27 +202,31 @@ You must specify the following options:
 </thead>
 <tbody>
 <tr>
-<td><code>--inputSpec</code></td>
+<td><code>--input<wbr>Spec</code></td>
 <td><code>-i</code></td>
-<td><code>&lt;inputSpec&gt;</code></td>
+<td><code>&lt;input<wbr>Spec&gt;</code></td>
 <td>Path to the OpenAPI document defining the REST API</td>
 <td></td>
 </tr>
 <tr>
-<td><code>--generatorName</code></td>
-<td><code>-g</code></td>
-<td><code>&lt;generatorName&gt;</code></td>
-<td>Generator you want to use (<code>java-helidon-server</code> or <code>java-helidon-client</code>)</td>
-<td><code>java-helidon-server</code><br />
-<code>java-helidon-client</code></td>
+<td rowspan="2"><code>--generator<wbr>Name</code></td>
+<td rowspan="2"><code>-g</code></td>
+<td rowspan="2"><code>&lt;generator<wbr>Name&gt;</code></td>
+<td rowspan="2">Generator you want to use</td>
+<td><code>java-helidon-server</code></td>
 </tr>
 <tr>
-<td><code>--library</code></td>
-<td> </td>
-<td><code>&lt;library&gt;</code></td>
-<td>Library you want to use</td>
-<td><code>mp</code><br />
-<code>se</code></td>
+<td><code>java-helidon-client</code></td>
+</tr>
+<tr>
+<td rowspan="2"><code>--library</code></td>
+<td rowspan="2"></td>
+<td rowspan="2"><code>&lt;library&gt;</code></td>
+<td rowspan="2">Library you want to use</td>
+<td><code>mp</code></td>
+</tr>
+<tr>
+<td><code>se</code></td>
 </tr>
 </tbody>
 </table>
@@ -245,41 +249,49 @@ Recommended OpenAPI Generator Additional Properties:
 </thead>
 <tbody>
 <tr>
-<td><code>apiPackage</code></td>
-<td>Name of the package for generated API interfaces/classes</td>
-<td><code>org.openapitools.server.api</code> or<br />
-<code>org.openapitools.client.api</code></td>
+<td rowspan="2"><code>api<wbr>Package</code></td>
+<td rowspan="2">Name of the package for generated API interfaces/classes</td>
+<td><code>org.openapitools.server.api</code></td>
 </tr>
 <tr>
-<td><code>modelPackage</code></td>
-<td>Name of the package for generated model (POJO) classes</td>
-<td><code>org.openapitools.server.model</code> or<br />
-<code>org.openapitools.client.model</code></td>
+<td><code>org.<wbr>openapitools.<wbr>client.<wbr>api</code></td>
 </tr>
 <tr>
-<td><code>invokerPackage</code></td>
-<td>Name of the package for generated driver classes</td>
-<td><code>org.openapitools.server</code> or<br />
-<code>org.openapitools.client</code></td>
+<td rowspan="2"><code>model<wbr>Package</code></td>
+<td rowspan="2">Name of the package for generated model (POJO) classes</td>
+<td><code>org.<wbr>openapitools.<wbr>server.<wbr>model</code></td>
+</tr>
+<tr>
+<td><code>org.<wbr>openapitools.<wbr>client.<wbr>model</code></td>
+</tr>
+<tr>
+<td rowspan="2"><code>invoker<wbr>Package</code></td>
+<td rowspan="2">Name of the package for generated driver classes</td>
+<td><code>org.<wbr>openapitools.<wbr>server</code></td>
+</tr>
+<tr>
+<td><code>org.<wbr>openapitools.<wbr>client</code></td>
 </tr>
 <tr>
 <td><code>groupId</code></td>
 <td>Group ID in the generated <code>pom.xml</code></td>
-<td><code>org.openapitools</code></td>
+<td><code>org.<wbr>openapitools</code></td>
 </tr>
 <tr>
-<td><code>artifactId</code></td>
-<td>Artifact ID in the generated <code>pom.xml</code></td>
-<td><code>openapi-java-server</code> or<br />
-<code>openapi-java-client</code></td>
+<td rowspan="2"><code>artifactId</code></td>
+<td rowspan="2">Artifact ID in the generated <code>pom.xml</code></td>
+<td><code>openapi-java-server</code></td>
 </tr>
 <tr>
-<td><code>artifactVersion</code></td>
+<td><code>openapi-java-client</code></td>
+</tr>
+<tr>
+<td><code>artifact<wbr>Version</code></td>
 <td>Artifact version in the generated <code>pom.xml</code></td>
 <td><code>1.0.0</code></td>
 </tr>
 <tr>
-<td><code>useAbstractClass</code></td>
+<td><code>use<wbr>Abstract<wbr>Class</code></td>
 <td>Generate server abstract classes instead of interfaces. Setting to <code>true</code> generates significantly more helpful code.</td>
 <td><code>false</code></td>
 </tr>
@@ -303,15 +315,18 @@ Recommended OpenAPI Generator Plug-in Options:
 <tbody>
 <tr>
 <td><code>&lt;output&gt;</code></td>
-<td>Directory where the generator should place files.<br />
-+ We strongly recommend <code>&lt;output&gt;target/generated-sources&lt;/output&gt;</code> or a subdirectory below there.</td>
-<td><code>.</code><br />
-(current directory)</td>
+<td>
+Directory where the generator should place files. We strongly recommend
+<code>&lt;output&gt;target/<wbr>generated-sources&lt;/output&gt;</code>
+</td>
+<td><code>.</code></td>
 </tr>
 <tr>
-<td><code>&lt;addCompileSourceRoot&gt;</code></td>
-<td>Whether Maven should include the output directory as a source root (that is, include it automatically in the build).<br />
-+ We advise <code>&lt;addCompileSourceRoot&gt;true&lt;/addCompileSourceRoot&gt;</code>.</td>
+<td><code>&lt;add<wbr>Compile<wbr>SourceRoot&gt;</code></td>
+<td>
+Whether Maven should include the output directory as a source root (that is, include it automatically in the build).
+We advise <code>&lt;add<wbr>Compile<wbr>Source<wbr>Root&gt;true&lt;/add<wbr>Compile<wbr>Source<wbr>Root&gt;</code>
+</td>
 <td><code>false</code></td>
 </tr>
 </tbody>
@@ -337,31 +352,33 @@ Common OpenAPI Generator Additional Properties:
 </thead>
 <tbody>
 <tr>
-<td><code>helidonVersion</code></td>
+<td><code>helidon<wbr>Version</code></td>
 <td>Version of Helidon for which to generate the files</td>
-<td> </td>
-<td>Latest published Helidon release *</td>
-<td>Affects:
-<ul>
-<li>Helidon version for the <code>&lt;parent&gt;</code></li>
-<li>Dependencies (<code>javax</code> vs. <code>jakarta</code>)</li>
-<li><code>java import</code> statements in generated code (<code>javax</code> vs. <code>jakarta</code>)</li>
-<li>Which Helidon APIs are used (3.x vs. 4.x, for example)</li>
-</ul></td>
-</tr>
-<tr>
-<td><code>fullProject</code></td>
-<td>Whether to generate all the normal files or only API files</td>
-<td><code>true</code>/<code>false</code></td>
-<td><code>false</code></td>
-<td>The "API files" include files developers do not normally modify after they are generated: the interfaces or classes for the declared API and the model classes.</td>
-</tr>
-<tr>
-<td><code>serializationLibrary</code></td>
-<td>which Java library to use for serializing JSON</td>
-<td><code>jsonb</code>, <code>jackson</code></td>
-<td><code>jackson</code></td>
 <td></td>
+<td>Latest published Helidon release *</td>
+<td>
+Affects the APIs which are used, Helidon 3.x vs Helidon 4.x or  <code>javax</code> vs. <code>jakarta</code>
+</td>
+</tr>
+<tr>
+<td rowspan="2"><code>full<wbr>Project</code></td>
+<td rowspan="2">Whether to generate all the normal files or only API files</td>
+<td><code>true</code></td>
+<td rowspan="2"><code>false</code></td>
+<td rowspan="2">The "API files" include files developers do not normally modify after they are generated: the interfaces or classes for the declared API and the model classes.</td>
+</tr>
+<tr>
+<td><code>false</code></td>
+</tr>
+<tr>
+<td rowspan="2"><code>serialization<wbr>Library</code></td>
+<td rowspan="2">Which Java library to use for serializing JSON</td>
+<td><code>jsonb</code></td>
+<td rowspan="2"><code>jackson</code></td>
+<td rowspan="2"></td>
+</tr>
+<tr>
+<td><code>jackson</code></td>
 </tr>
 </tbody>
 </table>
@@ -560,6 +577,7 @@ above for generating server files:
 
 Creating or updating a client project using the OpenAPI Maven plug-in:
 
+<!--@mdc ::code-callout{collapsed} -->
 ```xml [pom.xml]
 <plugin>
   <groupId>org.openapitools</groupId>
@@ -573,7 +591,7 @@ Creating or updating a client project using the OpenAPI Maven plug-in:
         <inputSpec>${project.basedir}/src/main/resources/petstore.yaml</inputSpec>
         <generatorName>java-helidon-client</generatorName>
         <library>mp</library>
-        <output>${project.build.directory}/generated-sources/client</output>
+        <output>${project.build.directory}/generated-sources/client</output> <!-- (1) -->
         <addCompileSourceRoot>true</addCompileSourceRoot>
         <configOptions>
           <groupId>io.helidon.examples</groupId>
@@ -591,9 +609,9 @@ Creating or updating a client project using the OpenAPI Maven plug-in:
   </executions>
 </plugin>
 ```
-
-- Specifies that the generated files should reside in the
+1. Specifies that the generated files should reside in the
   `target/generated-sources/client` directory.
+<!--@mdc :: -->
 
 #### Using the Online Generator
 
@@ -667,31 +685,30 @@ interface.
 
 Using the generated PetApi returned from a separate service:
 
+<!--@mdc ::code-callout -->
 ```java
-@Path("/exampleServiceCallingService") 
+@Path("/exampleServiceCallingService") // <1>
 public class ExampleOpenApiGenClientResource {
-    @Inject 
-    @RestClient 
-    private PetApi petApi; 
+    @Inject // <2>
+    @RestClient // <3>
+    private PetApi petApi; // <4>
 
     @GET
     @Path("/getPet/{petId}")
     @Produces(MediaType.APPLICATION_JSON)
     public Pet getPetUsingId(@PathParam("petId") Long petId) throws ApiException {
-        Pet pet = petApi.getPetById(petId); 
+        Pet pet = petApi.getPetById(petId); // <5>
         return pet;
     }
 }
 ```
-
-- Uses a bean-defining annotation so CDI can inject into this class.
-- Requests that CDI inject the following field.
-- Identifies to Helidon MP that the following field is a REST client.
-- Declares the field using the generated `PetApi` type.
-- Invokes the remote service using the injected field and the parameter from the
-  incoming request.
-
-## References
+1. Uses a bean-defining annotation so CDI can inject into this class.
+2. Requests that CDI inject the following field.
+3. Identifies to Helidon MP that the following field is a REST client.
+4. Declares the field using the generated `PetApi` type.
+5. Invokes the remote service using the injected field and the parameter from the
+   incoming request.
+<!--@mdc :: -->
 
 - [OpenAPI Generator Official Website](https://openapi-generator.tech)
 - [OpenAPI Generator GitHub Repository][openapi-generato]

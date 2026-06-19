@@ -119,6 +119,7 @@ Helidon MP QuickStart application to track (by time and invocation count) all
 
 Adding Micrometer annotations to JAX-RS resource GET methods:
 
+<!--@mdc ::code-callout -->
 ```java
 private static final String PERSONALIZED_GETS_COUNTER_NAME = "personalizedGets";
 private static final String PERSONALIZED_GETS_COUNTER_DESCRIPTION = "Counts personalized GET operations";
@@ -127,7 +128,7 @@ private static final String GETS_TIMER_DESCRIPTION = "Tracks all GET operations"
 
 @GET
 @Produces(MediaType.APPLICATION_JSON)
-@Timed(value = GETS_TIMER_NAME, description = GETS_TIMER_DESCRIPTION, histogram = true) 
+@Timed(value = GETS_TIMER_NAME, description = GETS_TIMER_DESCRIPTION, histogram = true) // <1>
 public JsonObject getDefaultMessage() {
     return createResponse("World");
 }
@@ -135,18 +136,16 @@ public JsonObject getDefaultMessage() {
 @Path("/{name}")
 @GET
 @Produces(MediaType.APPLICATION_JSON)
-@Counted(value = PERSONALIZED_GETS_COUNTER_NAME, description = PERSONALIZED_GETS_COUNTER_DESCRIPTION) 
-@Timed(value = GETS_TIMER_NAME, description = GETS_TIMER_DESCRIPTION, histogram = true) 
+@Counted(value = PERSONALIZED_GETS_COUNTER_NAME, description = PERSONALIZED_GETS_COUNTER_DESCRIPTION) // <2>
+@Timed(value = GETS_TIMER_NAME, description = GETS_TIMER_DESCRIPTION, histogram = true) // <1>
 public JsonObject getMessage(@PathParam("name") String name) {
     return createResponse(name);
 }
 ```
-
-- Use `@Timed` to time and count both `GET` methods.
-- Use `@Counted` to count the accesses to the `GET` method that returns a
-  personalized greeting.
-
-### Using the Helidon-provided Micrometer `MeterRegistry` from Code
+1. Use `@Timed` to time and count both `GET` methods.
+2. Use `@Counted` to count the accesses to the `GET` method that returns a
+   personalized greeting.
+<!--@mdc :: -->
 
 In addition to annotating your methods, you can create, look up, and update
 metrics explicitly in your code.

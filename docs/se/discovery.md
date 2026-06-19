@@ -24,16 +24,17 @@ To enable Helidon Discovery, add the following dependency to your project’s
 
 `pom.xml`
 
+<!--@mdc ::code-callout -->
 ```xml [pom.xml]
-<dependency>
-  <groupId>io.helidon.discovery</groupId>
-  <artifactId>helidon-discovery</artifactId> <!--(1)-->
-</dependency>
+<dependencies>
+    <dependency>
+        <groupId>io.helidon.discovery</groupId>
+        <artifactId>helidon-discovery</artifactId> <!-- (1) -->
+    </dependency>
+</dependencies>
 ```
-
-1.  Helidon Discovery API dependency.
-
-Discovery is implemented by one or more
+1. Helidon Discovery API dependency.
+<!--@mdc :: -->
 
 [discovery providers](#providers). Generally you will choose a single provider
 and include its relevant dependencies on your runtime classpath as well. See the
@@ -64,6 +65,7 @@ You can acquire a [`io.helidon.discovery.Discovery` object][io-helidon-disco] by
 
 Acquiring a `Discovery` object using Helidon Inject
 
+<!--@mdc ::code-callout -->
 ```java
 import java.util.Objects;
 import io.helidon.discovery.Discovery;
@@ -73,22 +75,22 @@ public class MyClass {
 
     private final Discovery discovery;
 
-    @Service.Inject // (1)
-    public MyClass(Discovery discovery) { // (2)
-        this.discovery = Objects.requireNonNull(discovery, "discovery"); // (3)
+    @Service.Inject // <1>
+    public MyClass(Discovery discovery) { // <2>
+        this.discovery = Objects.requireNonNull(discovery, "discovery"); // <3>
     }
 
 }
 ```
-
-1.  Use the [`io.helidon.service.registry.Service.Inject`
-    annotation][io-helidon-servi] to indicate that this constructor has an
-    [injection point][helidon-inject].
-2.  Here, the `discovery` constructor parameter is the injection point and will
-    receive a non-`null` [instance of
-    `io.helidon.discovery.Discovery`][io-helidon-disco].
-3.  The constructor explicitly assigns the injected reference to the `discovery`
-    instance field.
+1. Use the [`io.helidon.service.registry.Service.Inject`
+   annotation][io-helidon-servi] to indicate that this constructor has an
+   [injection point][helidon-inject].
+2. Here, the `discovery` constructor parameter is the injection point and will
+   receive a non-`null` [instance of
+   `io.helidon.discovery.Discovery`][io-helidon-disco].
+3. The constructor explicitly assigns the injected reference to the `discovery`
+   instance field.
+<!--@mdc :: -->
 
 #### `Discovery` Acquisition Using the Helidon [Service Registry][service-registry]
 
@@ -98,6 +100,7 @@ You can acquire a [`io.helidon.discovery.Discovery` object][io-helidon-disco] by
 
 Acquiring a `Discovery` object using the Helidon Service Registry
 
+<!--@mdc ::code-callout -->
 ```java
 import io.helidon.discovery.Discovery;
 import io.helidon.service.registry.Services;
@@ -107,16 +110,16 @@ public class MyOtherClass {
     private final Discovery discovery;
 
     public MyOtherClass() {
-        this.discovery = Services.get(Discovery.class); // (1)
+        this.discovery = Services.get(Discovery.class); // <1>
     }
 
 }
 ```
-
-1.  Use the [`io.helidon.service.registry.Services#get(Class)`
-    method][io-helidon-servi-3] to acquire an instance of the
-    [`io.helidon.discovery.Discovery` class][io-helidon-disco], and assign it to
-    an instance field.
+1. Use the [`io.helidon.service.registry.Services#get(Class)`
+   method][io-helidon-servi-3] to acquire an instance of the
+   [`io.helidon.discovery.Discovery` class][io-helidon-disco], and assign it to
+   an instance field.
+<!--@mdc :: -->
 
 ### Discovering URIs
 
@@ -135,32 +138,33 @@ last in the set:
 
 Discovering URIs
 
+<!--@mdc ::code-callout -->
 ```java
 import java.net.URI;
 import java.util.SequencedSet;
 import io.helidon.discovery.DiscoveredUri;
 import io.helidon.discovery.Discovery;
 
-SequencedSet<DiscoveredUri> uris = // (1)
-    discovery.uris("EXAMPLE", // (2)
-                   URI.create("http://example.com/")); // (3)
-URI uri = uris.getFirst().uri(); // (4)
+SequencedSet<DiscoveredUri> uris = // <1>
+    discovery.uris("EXAMPLE", // <2>
+                   URI.create("http://example.com/")); // <3>
+URI uri = uris.getFirst().uri(); // <4>
 ```
-
-1.  URIs that are discovered are represented as a [`SequencedSet`][sequencedset]
-    of [`io.helidon.discovery.DiscoveredUri` instances][io-helidon-disco-2].
-    This is the *discovered set*. In general, the first element in the set is
-    the [discovered URI][io-helidon-disco-2] that is the most *suitable*, as
-    determined by the Discovery provider. (The last element is a
-    [`DiscoveredUri`][io-helidon-disco-2] whose [`uri()` method][uri-method]
-    yields a [`URI`][uri] that is identical or equal to the [`URI`][uri] that
-    was supplied as the default value.)
-2.  `EXAMPLE` is the discovery name for which URIs are being sought.
-3.  This [`URI`][uri] is a default value in case the Discovery provider finds no
-    URIs, or encounters an error. A [`DiscoveredUri`][io-helidon-disco-2]
-    representing it will appear last in the discovered set.
-4.  This [`URI`][uri] is the most suitable one for use, and may or may not be
-    equal to the supplied default value.
+1. URIs that are discovered are represented as a [`SequencedSet`][sequencedset]
+   of [`io.helidon.discovery.DiscoveredUri` instances][io-helidon-disco-2].
+   This is the *discovered set*. In general, the first element in the set is
+   the [discovered URI][io-helidon-disco-2] that is the most *suitable*, as
+   determined by the Discovery provider. (The last element is a
+   [`DiscoveredUri`][io-helidon-disco-2] whose [`uri()` method][uri-method]
+   yields a [`URI`][uri] that is identical or equal to the [`URI`][uri] that
+   was supplied as the default value.)
+2. `EXAMPLE` is the discovery name for which URIs are being sought.
+3. This [`URI`][uri] is a default value in case the Discovery provider finds no
+   URIs, or encounters an error. A [`DiscoveredUri`][io-helidon-disco-2]
+   representing it will appear last in the discovered set.
+4. This [`URI`][uri] is the most suitable one for use, and may or may not be
+   equal to the supplied default value.
+<!--@mdc :: -->
 
 ## Providers
 
@@ -186,20 +190,21 @@ Dependencies](../managing-dependencies.md)).
 
 `pom.xml`
 
+<!--@mdc ::code-callout -->
 ```xml [pom.xml]
-<dependency>
-  <groupId>io.helidon.discovery.providers</groupId>
-  <artifactId>helidon-discovery-providers-eureka</artifactId> <!--(1)-->
-  <scope>runtime</scope> <!--(2)-->
-</dependency>
+<dependencies>
+    <dependency>
+        <groupId>io.helidon.discovery.providers</groupId>
+        <artifactId>helidon-discovery-providers-eureka</artifactId> <!-- (1) -->
+        <scope>runtime</scope> <!-- (2) -->
+    </dependency>
+</dependencies>
 ```
-
-1.  Helidon Eureka Discovery provider dependency.
-2.  The scope for the provider. Use `runtime` if you have no interest in
-    provider-specific classes and methods (the most common case). Use `compile`
-    if you plan to call provider-specific methods.
-
-#### Configuration
+1. Helidon Eureka Discovery provider dependency.
+2. The scope for the provider. Use `runtime` if you have no interest in
+   provider-specific classes and methods (the most common case). Use `compile`
+   if you plan to call provider-specific methods.
+<!--@mdc :: -->
 
 The Helidon Eureka Discovery provider can be configured using [Helidon
 Config](config/introduction.md). Examples shown below are in YAML, but are
@@ -224,19 +229,20 @@ To do this, you specify attributes about the internal [HTTP
 client](webclient.md) it uses, specifically its [`base-uri`
 property][base-uri-propert]:
 
+<!--@mdc ::code-callout -->
 ```yaml [application.yaml]
-discovery: #(1)
-  eureka: #(2)
-    client: #(3)
-      base-uri: "http://example.com:8761/eureka" #(4)
+discovery: #<1>
+  eureka: #<2>
+    client: #<3>
+      base-uri: "http://example.com:8761/eureka" #<4>
 ```
-
-1.  `discovery` is the topmost key of the provider’s logical configuration tree.
-2.  `eureka` is the configuration name of the Helidon Eureka Discovery provider.
-3.  `client` identifies [HTTP client configuration][base-uri-propert].
-4.  `base-uri` is a [property of the HTTP client][base-uri-propert] identifying
-    the location of a Netflix Eureka server (version 2.0.5 or later). Eureka
-    servers are normally hosted on port `8761`.
+1. `discovery` is the topmost key of the provider’s logical configuration tree.
+2. `eureka` is the configuration name of the Helidon Eureka Discovery provider.
+3. `client` identifies [HTTP client configuration][base-uri-propert].
+4. `base-uri` is a [property of the HTTP client][base-uri-propert] identifying
+   the location of a Netflix Eureka server (version 2.0.5 or later). Eureka
+   servers are normally hosted on port `8761`.
+<!--@mdc :: -->
 
 ##### Configuring Caching
 
@@ -247,51 +253,53 @@ default. You can configure, among [other things][other-things]:
 - how often the cache refreshes
 - whether the cache is computed or fully replaced
 
+<!--@mdc ::code-callout{collapsed} -->
 ```yaml [application.yaml]
-discovery: #(1)
-  eureka: #(2)
-    cache: #(3)
-      compute-changes: true # (4)
-      defer-sync: false # (5)
-      enabled: true # (6)
-      fetch-thread-name: "Eureka registry fetch thread" # (7)
-      sync-interval: "PT30S" # (8)
+discovery: #<1>
+  eureka: #<2>
+    cache: #<3>
+      compute-changes: true # <4>
+      defer-sync: false # <5>
+      enabled: true # <6>
+      fetch-thread-name: "Eureka registry fetch thread" # <7>
+      sync-interval: "PT30S" # <8>
 ```
-
-1.  `discovery` is the topmost key of the provider’s logical configuration tree.
-2.  `eureka` is the configuration name of the Helidon Eureka Discovery provider.
-3.  `cache` identifies configuration related to the local cache of
-    Eureka-supplied information.
-4.  `compute-changes` controls how the cache’s content is determined: if `true`,
-    by applying a series of changes against an initial state; if `false`, by
-    replacing the contents of the cache with a new copy. `true` by default.
-5.  `defer-sync` controls whether the cache should be synchronized as late as
-    possible (`true`), or as early as possible (`false`). `false` by default.
-6.  `enabled` controls whether the cache is enabled. If `false`, then none of
-    the other configuration items in the `cache` tree are relevant, and every
-    invocation of the [`Discovery#uris(String, URI)` method][uris-string-uri]
-    will result in a network call.
-7.  `fetch-thread-name` contains the name of the thread that synchronizes the
-    cache. `Eureka registry fetch thread` by default.
-8.  `sync-interval` controls the time between synchronizations of the cache.
-    `PT30S` (30 seconds) by default.
+1. `discovery` is the topmost key of the provider’s logical configuration tree.
+2. `eureka` is the configuration name of the Helidon Eureka Discovery provider.
+3. `cache` identifies configuration related to the local cache of
+   Eureka-supplied information.
+4. `compute-changes` controls how the cache’s content is determined: if `true`,
+   by applying a series of changes against an initial state; if `false`, by
+   replacing the contents of the cache with a new copy. `true` by default.
+5. `defer-sync` controls whether the cache should be synchronized as late as
+   possible (`true`), or as early as possible (`false`). `false` by default.
+6. `enabled` controls whether the cache is enabled. If `false`, then none of
+   the other configuration items in the `cache` tree are relevant, and every
+   invocation of the [`Discovery#uris(String, URI)` method][uris-string-uri]
+   will result in a network call.
+7. `fetch-thread-name` contains the name of the thread that synchronizes the
+   cache. `Eureka registry fetch thread` by default.
+8. `sync-interval` controls the time between synchronizations of the cache.
+   `PT30S` (30 seconds) by default.
+<!--@mdc :: -->
 
 ##### Configuring IP Address vs. Hostname
 
 The Helidon Eureka Discovery provider can be configured to prefer IP addresses
 in URIs when possible (instead of hostnames).
 
+<!--@mdc ::code-callout -->
 ```yaml [application.yaml]
-discovery: # (1)
-  eureka: # (2)
-    preferIpAddress: false # (3)
+discovery: # <1>
+  eureka: # <2>
+    preferIpAddress: false # <3>
 ```
-
-1.  `discovery` is the topmost key of the provider’s logical configuration tree.
-2.  `eureka` is the configuration name of the Helidon Eureka Discovery provider.
-3.  `preferIpAddress` controls whether the host component of a URI should use an
-    IP address, when possible (`true`), or a hostname (`false`). `false` by
-    default.
+1. `discovery` is the topmost key of the provider’s logical configuration tree.
+2. `eureka` is the configuration name of the Helidon Eureka Discovery provider.
+3. `preferIpAddress` controls whether the host component of a URI should use an
+   IP address, when possible (`true`), or a hostname (`false`). `false` by
+   default.
+<!--@mdc :: -->
 
 ##### Disabling the Provider
 
@@ -300,17 +308,18 @@ Discovery provider entirely. (When any Discovery provider is disabled, only
 default values supplied to the [`Discovery#uris(String, URI)`
 method][uris-string-uri] will be returned.)
 
+<!--@mdc ::code-callout -->
 ```yaml [application.yaml]
-discovery: # (1)
-  eureka: # (2)
-    enabled: false # (3)
+discovery: # <1>
+  eureka: # <2>
+    enabled: false # <3>
 ```
-
-1.  `discovery` is the topmost key of the provider’s logical configuration tree.
-2.  `eureka` is the configuration name of the Helidon Eureka Discovery provider.
-3.  `enabled` controls whether the provider is enabled at all (`true`) or
-    completely disabled (`false`), in which case all other configuration
-    pertaining to it is irrelevant. `true` by default.
+1. `discovery` is the topmost key of the provider’s logical configuration tree.
+2. `eureka` is the configuration name of the Helidon Eureka Discovery provider.
+3. `enabled` controls whether the provider is enabled at all (`true`) or
+   completely disabled (`false`), in which case all other configuration
+   pertaining to it is irrelevant. `true` by default.
+<!--@mdc :: -->
 
 #### Related Documentation
 
@@ -332,30 +341,29 @@ Dependencies](../managing-dependencies.md)):
 
 `pom.xml`
 
+<!--@mdc ::code-callout -->
 ```xml [pom.xml]
 <dependencies>
-  <dependency>
-    <groupId>io.helidon.webclient</groupId>
-    <artifactId>helidon-webclient-discovery</artifactId> <!--(1)-->
-    <scope>runtime</scope> <!--(2)-->
-  </dependency>
-  <dependency>
-    <groupId>io.helidon.discovery.providers</groupId>
-    <artifactId>helidon-discovery-providers-eureka</artifactId> <!--(3)-->
-    <scope>runtime</scope> <!--(4)-->
-  </dependency>
+    <dependency>
+        <groupId>io.helidon.webclient</groupId>
+        <artifactId>helidon-webclient-discovery</artifactId> <!-- (1) -->
+        <scope>runtime</scope> <!-- (2) -->
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.discovery.providers</groupId>
+        <artifactId>helidon-discovery-providers-eureka</artifactId> <!-- (3) -->
+        <scope>runtime</scope> <!-- (4) -->
+    </dependency>
 </dependencies>
 ```
-
-1.  Helidon Web Client Discovery integration dependency.
-2.  The scope for the integration. `runtime` since the integration is never
-    required at compile time.
-3.  Helidon [Eureka Discovery provider](#eureka) dependency (for example).
-4.  The scope for the provider. Use `runtime` if you have no interest in
-    provider-specific classes and methods (the most common case). Use `compile`
-    if you plan to call provider-specific methods.
-
-The behavior of the Web Client Discovery integration is [fully specified and
+1. Helidon Web Client Discovery integration dependency.
+2. The scope for the integration. `runtime` since the integration is never
+   required at compile time.
+3. Helidon [Eureka Discovery provider](#eureka) dependency (for example).
+4. The scope for the provider. Use `runtime` if you have no interest in
+   provider-specific classes and methods (the most common case). Use `compile`
+   if you plan to call provider-specific methods.
+<!--@mdc :: -->
 documented][fully-specified].
 
 ### Configuration
@@ -368,14 +376,15 @@ Because the Helidon Web Client Discovery integration is fundamentally a [Web
 Client Service][web-client-servi], you configure it under a Web Client’s
 `services` configuration node:
 
+<!--@mdc ::code-callout -->
 ```yaml [application.yaml]
 webclient:
   services:
-    discovery: # (1)
+    discovery: # <1>
 ```
-
-1.  Indicates that the Web Client Discovery integration should apply to this Web
-    Client configuration. More configuration is required; see below.
+1. Indicates that the Web Client Discovery integration should apply to this Web
+   Client configuration. More configuration is required; see below.
+<!--@mdc :: -->
 
 You also configure the Discovery provider in use following its documentation.
 See, for example, [Eureka configuration](#configuration).
@@ -386,22 +395,23 @@ To mark URIs requested by a Web Client as subject to discovery, and to use
 discovery names appropriate for them, you need to configure *prefix URIs*. URIs
 that match no prefix will not be subject to discovery:
 
+<!--@mdc ::code-callout -->
 ```yaml [application.yaml]
 webclient:
   services:
     discovery:
       prefix-uris:
-        EXAMPLE: "https://example.com:443/" # (1)
-        TEST: "https://test.example.com:443/" # (2) (3)
+        EXAMPLE: "https://example.com:443/" # <1>
+        TEST: "https://test.example.com:443/" # <2> <3>
 ```
-
-1.  Indicates that URIs starting with [example prefix URI][example-prefix-uri]
-    will be subject to discovery, using the discovery name of `EXAMPLE`
-2.  Indicates that URIs starting with [test prefix URI][test-prefix-uri] will be
-    subject to discovery, using the discovery name of `TEST`
-3.  URIs that begin with text other than
-    [example prefix URI][example-prefix-uri] or
-    [test prefix URI][test-prefix-uri] will not be subject to discovery
+1. Indicates that URIs starting with [example prefix URI][example-prefix-uri]
+   will be subject to discovery, using the discovery name of `EXAMPLE`
+2. Indicates that URIs starting with [test prefix URI][test-prefix-uri] will be
+   subject to discovery, using the discovery name of `TEST`
+3. URIs that begin with text other than
+   [example prefix URI][example-prefix-uri] or
+   [test prefix URI][test-prefix-uri] will not be subject to discovery
+<!--@mdc :: -->
 
 ## References
 

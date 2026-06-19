@@ -26,15 +26,14 @@ Dependencies](../../managing-dependencies.md)).
 
 Basic usage:
 
+<!--@mdc ::code-callout -->
 ```java
-@HelidonTest 
+@HelidonTest // <1>
 class MyTest {
 }
 ```
-
-- Enable the test class
-
-> [!NOTE]
+1. Enable the test class
+<!--@mdc :: -->
 > By default, a MicroProfile Config profile named "test" is defined.
 >
 > It can be changed via:
@@ -69,37 +68,35 @@ CDI discovery can be disabled using [`@DisableDiscovery`][disablediscovery].
 
 Disable discovery:
 
+<!--@mdc ::code-callout -->
 ```java
-@DisableDiscovery 
-@AddBean(MyBean.class) 
+@DisableDiscovery // <1>
+@AddBean(MyBean.class) // <2>
 @HelidonTest
 class MyTest {
 }
 ```
-
-- Disable CDI discovery
-- Add a bean class
-
-When disabling discovery, it can be difficult to identify the CDI extensions
+1. Disable CDI discovery
+2. Add a bean class
+<!--@mdc :: -->
 needed to activate the desired features.
 
 JAXRS (Jersey) support can be added easily using [`@AddJaxRs`][addjaxrs].
 
 Add JAX-RS (Jersey):
 
+<!--@mdc ::code-callout -->
 ```java
 @DisableDiscovery
-@AddJaxRs 
-@AddBean(MyResource.class) 
+@AddJaxRs // <1>
+@AddBean(MyResource.class) // <2>
 @HelidonTest
 class MyTest {
 }
 ```
-
-- Add JAX-RS (Jersey) support
-- Add a resource class to the CDI container
-
-Note the following Helidon CDI extensions:
+1. Add JAX-RS (Jersey) support
+2. Add a resource class to the CDI container
+<!--@mdc :: -->
 
 | Extension                                | Note                                      |
 |------------------------------------------|-------------------------------------------|
@@ -119,45 +116,43 @@ However, test methods can also require a dedicated CDI container:
 
 Reset the CDI container between methods:
 
+<!--@mdc ::code-callout -->
 ```java
 @HelidonTest(resetPerTest = true)
 class MyTest {
 
     @Test
-    void testOne() { 
+    void testOne() { // <1>
     }
 
     @Test
-    void testTwo() { 
+    void testTwo() { // <2>
     }
 }
 ```
+1. `testOne` executes in a dedicated CDI container
+2. `testTwo` also executes in a dedicated CDI container
+<!--@mdc :: -->
 
-- `testOne` executes in a dedicated CDI container
-- `testTwo` also executes in a dedicated CDI container
-
-Customize the CDI container per method:
-
+<!--@mdc ::code-callout -->
 ```java
 @HelidonTest
 class MyTest {
 
     @Test
-    void testOne() { 
+    void testOne() { // <1>
     }
 
     @Test
     @DisableDiscovery
     @AddBean(MyBean.class)
-    void testTwo() { 
+    void testTwo() { // <2>
     }
 }
 ```
-
-- `testOne` executes in the shared CDI container
-- `testTwo` executes in a dedicated CDI container
-
-### Configuration
+1. `testOne` executes in the shared CDI container
+2. `testTwo` executes in a dedicated CDI container
+<!--@mdc :: -->
 
 The test configuration can be set up in two exclusive ways:
 
@@ -490,12 +485,13 @@ The following example demonstrates how to enable the use of
 
 Config Injection Example:
 
+<!--@mdc ::code-callout{collapsed} -->
 ```java
 @HelidonTest
-@DisableDiscovery 
-@AddBean(MyBean.class) 
-@AddExtension(ConfigCdiExtension.class) 
-@AddConfig(key = "app.greeting", value = "TestHello") 
+@DisableDiscovery // <1>
+@AddBean(MyBean.class) // <2>
+@AddExtension(ConfigCdiExtension.class) // <3>
+@AddConfig(key = "app.greeting", value = "TestHello") // <4>
 class MyTest {
     @Inject
     MyBean myBean;
@@ -510,7 +506,7 @@ class MyTest {
 @ApplicationScoped
 class MyBean {
 
-    @ConfigProperty(name = "app.greeting") 
+    @ConfigProperty(name = "app.greeting") // <5>
     String greeting;
 
     String greeting() {
@@ -518,25 +514,24 @@ class MyBean {
     }
 }
 ```
-
-- CDI discovery is disabled
-- Add `MyBean` to the CDI container
-- Add [`ConfigCdiExtension`][configcdiextensi] to the CDI container
-- Define test configuration
-- Inject the configuration
-
-### Request Scope Example
+1. CDI discovery is disabled
+2. Add `MyBean` to the CDI container
+3. Add [`ConfigCdiExtension`][configcdiextensi] to the CDI container
+4. Define test configuration
+5. Inject the configuration
+<!--@mdc :: -->
 
 The following example demonstrates how to use [`@RequestScoped`][requestscoped]
 with JAXRS without CDI discovery.
 
 Request Scope Example:
 
+<!--@mdc ::code-callout -->
 ```java
 @HelidonTest
-@DisableDiscovery 
-@AddJaxRs 
-@AddBean(MyResource.class) 
+@DisableDiscovery // <1>
+@AddJaxRs // <2>
+@AddBean(MyResource.class) // <3>
 class MyTest {
 
     @Inject
@@ -559,12 +554,10 @@ class MyResource {
     }
 }
 ```
-
-- CDI discovery is disabled
-- Add JAXRS (Jersey) support
-- Add `MyResource` to the CDI container
-
-## Mock Support
+1. CDI discovery is disabled
+2. Add JAXRS (Jersey) support
+3. Add `MyResource` to the CDI container
+<!--@mdc :: -->
 
 Mocking in Helidon MP is all about replacing CDI beans with instrumented mock
 classes.
@@ -593,14 +586,14 @@ your test, and customize it in the test method.
 
 Mocking using @MockBean:
 
-<!--@mdc ::code-collapse -->
+<!--@mdc ::code-callout{collapsed} -->
 ```java
 @HelidonTest
 @AddBean(MyResource.class)
 @AddBean(MyService.class)
 class MyTest {
 
-    @MockBean(answer = Answers.CALLS_REAL_METHODS) 
+    @MockBean(answer = Answers.CALLS_REAL_METHODS) // <1>
     MyService myService;
 
     @Inject
@@ -608,7 +601,7 @@ class MyTest {
 
     @Test
     void testService() {
-        Mockito.when(myService.test()).thenReturn("Mocked"); 
+        Mockito.when(myService.test()).thenReturn("Mocked"); // <2>
         String response = target.path("/test").request().get(String.class);
         assertThat(response, is("Mocked"));
     }
@@ -634,22 +627,19 @@ class MyService {
     }
 }
 ```
+1. Instrument `MyService` using `Answers.CALLS_REAL_METHODS`
+2. Customize the behavior
 <!--@mdc :: -->
-
-- Instrument `MyService` using `Answers.CALLS_REAL_METHODS`
-- Customize the behavior
-
-### Using CDI Alternative
 
 [`@Alternative`][alternative] can be used to replace a CDI bean with an
 instrumented instance.
 
 Mocking using CDI Alternative:
 
-<!--@mdc ::code-collapse -->
+<!--@mdc ::code-callout{collapsed} -->
 ```java
 @HelidonTest
-@Priority(1) 
+@Priority(1) // <3>
 class MyTest {
 
     @Inject
@@ -659,18 +649,18 @@ class MyTest {
 
     @BeforeEach
     void initMock() {
-        myService = Mockito.mock(MyService.class, Answers.CALLS_REAL_METHODS); 
+        myService = Mockito.mock(MyService.class, Answers.CALLS_REAL_METHODS); // <1>
     }
 
     @Produces
-    @Alternative 
+    @Alternative // <2>
     MyService mockService() {
         return myService;
     }
 
     @Test
     void testService() {
-        Mockito.when(myService.test()).thenReturn("Mocked"); 
+        Mockito.when(myService.test()).thenReturn("Mocked"); // <4>
         Response response = target.path("/test").request().get();
         assertThat(response, is("Mocked"));
     }
@@ -696,14 +686,11 @@ class MyService {
     }
 }
 ```
+1. Create the mock instance in the test class
+2. Create a CDI producer method annotated with `@Alternative`
+3. Set priority to 1 (required by `@Alternative`)
+4. Customize the behavior
 <!--@mdc :: -->
-
-- Create the mock instance in the test class
-- Create a CDI producer method annotated with `@Alternative`
-- Set priority to 1 (required by `@Alternative`)
-- Customize the behavior
-
-## Virtual Threads
 
 Virtual Threads pinning can be detected during tests.
 
@@ -730,15 +717,14 @@ Pinning threshold can be changed with:
 
 Configure pinning threshold:
 
+<!--@mdc ::code-callout -->
 ```java
-@HelidonTest(pinningDetection = true, pinningThreshold = 50) 
+@HelidonTest(pinningDetection = true, pinningThreshold = 50) // <1>
 class MyTest {
 }
 ```
-
-- Change pinning threshold from default(20) to 50 milliseconds.
-
-When pinning is detected, the test fails with a stacktrace pointing at the
+1. Change pinning threshold from default(20) to 50 milliseconds.
+<!--@mdc :: -->
 culprit.
 
 ## Additional Information

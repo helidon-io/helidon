@@ -203,29 +203,28 @@ public class MyBatchlet extends AbstractBatchlet {
 
 Add this code to your job descriptor.xml file:
 
+<!--@mdc ::code-callout -->
 ```xml [descriptor.xml]
 <job id="myJob" xmlns="https://jakarta.ee/xml/ns/jakartaee"
                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                 xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee https://jakarta.ee/xml/ns/jakartaee/jobXML_2_0.xsd"
                 version="2.0">
     <step id="step1" next="step2">
-        <chunk item-count="3"> 
+        <chunk item-count="3"> <!-- (1) -->
             <reader ref="io.helidon.examples.jbatch.jobs.MyItemReader"/>
             <processor ref="io.helidon.examples.jbatch.jobs.MyItemProcessor"/>
             <writer ref="io.helidon.examples.jbatch.jobs.MyItemWriter"/>
         </chunk>
     </step>
-    <step id="step2"> 
+    <step id="step2"> <!-- (2) -->
         <batchlet ref="io.helidon.examples.jbatch.jobs.MyBatchlet"/>
     </step>
 </job>
 ```
-
-- The first step of the job includes `MyItemReader`, `MyItemProcessor` and
-  `MyItemWriter`.
-- The second step of the job includes `MyBatchlet`.
-
-> [!NOTE]
+1. The first step of the job includes `MyItemReader`, `MyItemProcessor` and
+   `MyItemWriter`.
+2. The second step of the job includes `MyBatchlet`.
+<!--@mdc :: -->
 > You must specify the fully qualified names in the `ref` properties, like
 > `jobs.io.helidon.examples.jbatch.MyItemReader`, otherwise it will not work.
 

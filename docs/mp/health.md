@@ -127,11 +127,12 @@ path.
 Create a file named `microprofile-config.properties` in the resources/META-INF
 directory with the following contents:
 
+<!--@mdc ::code-callout -->
 ```properties [microprofile-config.properties]
-health.endpoint=/myhealth  
+health.endpoint=/myhealth  #<1>
 ```
-
-- The `endpoint` setting specifies the root path for the health endpoint.
+1. The `endpoint` setting specifies the root path for the health endpoint.
+<!--@mdc :: -->
 
 ### Built-In Health Checks
 
@@ -280,27 +281,26 @@ health check.
 
 Create a new GreetLivenessCheck class with the following content:
 
+<!--@mdc ::code-callout -->
 ```java
-@Liveness 
-@ApplicationScoped 
+@Liveness // <1>
+@ApplicationScoped // <2>
 public class GreetLivenessCheck implements HealthCheck {
 
     @Override
     public HealthCheckResponse call() {
-        return HealthCheckResponse.named("LivenessCheck")  
+        return HealthCheckResponse.named("LivenessCheck")  // <3>
                 .up()
                 .withData("time", System.currentTimeMillis())
                 .build();
     }
 }
 ```
-
-- Annotation indicating this is a liveness health check.
-- Annotation indicating this is a bean instantiated once per application (in
-  Helidon this means just once per runtime).
-- Build the HealthCheckResponse with status `UP` and the current time.
-
-Build and run the application, then verify the custom liveness health endpoint:
+1. Annotation indicating this is a liveness health check.
+2. Annotation indicating this is a bean instantiated once per application (in
+   Helidon this means just once per runtime).
+3. Build the HealthCheckResponse with status `UP` and the current time.
+<!--@mdc :: -->
 
 ```shell [Terminal]
 curl http://localhost:8080/health/live
@@ -329,15 +329,16 @@ ready.
 
 Create a new GreetReadinessCheck class with the following content:
 
+<!--@mdc ::code-callout -->
 ```java
-@Readiness 
+@Readiness // <1>
 @ApplicationScoped
 public class GreetReadinessCheck implements HealthCheck {
     private final AtomicLong readyTime = new AtomicLong(0);
 
     @Override
     public HealthCheckResponse call() {
-        return HealthCheckResponse.named("ReadinessCheck")  
+        return HealthCheckResponse.named("ReadinessCheck")  // <2>
                 .status(isReady())
                 .withData("time", readyTime.get())
                 .build();
@@ -345,22 +346,19 @@ public class GreetReadinessCheck implements HealthCheck {
 
     public void onStartUp(
             @Observes @Initialized(ApplicationScoped.class) Object init) {
-        readyTime.set(System.currentTimeMillis()); 
+        readyTime.set(System.currentTimeMillis()); // <3>
     }
 
-    private boolean isReady() { 
+    private boolean isReady() { // <4>
         return Duration.ofMillis(System.currentTimeMillis() - readyTime.get()).getSeconds() >= 5;
     }
 }
 ```
-
-- Annotation indicating that this is a readiness health check.
-- Build the `HealthCheckResponse` with status `UP` after five seconds, else
-  `DOWN`.
-- Record the time at startup.
-- Become ready after 5 seconds.
-
-Build and run the application. Issue the curl command with -v within five
+1. Annotation indicating that this is a readiness health check.
+2. Build the `HealthCheckResponse` with status `UP` after five seconds, else `DOWN`.
+3. Record the time at startup.
+4. Become ready after 5 seconds.
+<!--@mdc :: -->
 seconds and you will see that the application is not ready:
 
 ```shell [Terminal]
@@ -425,15 +423,16 @@ example, the server will wait eight seconds before it declares itself started.
 
 Create a new GreetStartedCheck class with the following content:
 
+<!--@mdc ::code-callout -->
 ```java
-@Startup 
+@Startup // <1>
 @ApplicationScoped
 public class GreetStartedCheck implements HealthCheck {
     private final AtomicLong readyTime = new AtomicLong(0);
 
     @Override
     public HealthCheckResponse call() {
-        return HealthCheckResponse.named("StartedCheck")  
+        return HealthCheckResponse.named("StartedCheck")  // <2>
                 .status(isStarted())
                 .withData("time", readyTime.get())
                 .build();
@@ -441,23 +440,21 @@ public class GreetStartedCheck implements HealthCheck {
 
     public void onStartUp(
             @Observes @Initialized(ApplicationScoped.class) Object init) {
-        readyTime.set(System.currentTimeMillis()); 
+        readyTime.set(System.currentTimeMillis()); // <3>
     }
 
-    private boolean isStarted() { 
+    private boolean isStarted() { // <4>
         return Duration.ofMillis(System.currentTimeMillis() - readyTime.get()).getSeconds() >= 8;
     }
 }
 ```
-
-- Annotation indicating that this is a startup health check.
-- Build the `HealthCheckResponse` with status `UP` after eight seconds, else
-  `DOWN`.
-- Record the time at startup of Helidon; the application will declare itself as
-  started eight seconds later.
-- Become ready after 5 seconds.
-
-Build and run the application. Issue the curl command with -v within five
+1. Annotation indicating that this is a startup health check.
+2. Build the `HealthCheckResponse` with status `UP` after eight seconds, else
+   `DOWN`.
+3. Record the time at startup of Helidon; the application will declare itself as
+   started eight seconds later.
+4. Become ready after 5 seconds.
+<!--@mdc :: -->
 seconds and you will see that the application has not yet started:
 
 ```shell [Terminal]

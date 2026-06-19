@@ -195,8 +195,9 @@ tracer at runtime.
 
 Run Jaeger within a docker container, then check the Jaeger server working:
 
+<!--@mdc ::code-callout -->
 ```shell [Terminal]
-docker run -d --name jaeger \                  
+docker run -d --name jaeger \                  <1>
   -e COLLECTOR_OTLP_ENABLED=true \
   -p 6831:6831/udp \
   -p 6832:6832/udp \
@@ -210,8 +211,8 @@ docker run -d --name jaeger \
   -p 9411:9411 \
   jaegertracing/all-in-one:1.50
 ```
-
-- Run the Jaeger docker image.
+1. Run the Jaeger docker image.
+<!--@mdc :: -->
 
 Check the Jaeger server by opening http://localhost:16686/search in a browser.
 
@@ -285,11 +286,14 @@ curl http://localhost:8081/greet
 
 Response body:
 
+<!--@mdc ::code-callout -->
 ```json
 {
-  "message": "Hello From MP-2 World!"
+  "message": "Hello From MP-2 World!" // <1>
 }
 ```
+1. Notice the greeting came from the second service.
+<!--@mdc :: -->
 
 #### Modify the first service
 
@@ -298,14 +302,14 @@ to modify the original application to call it.
 
 Replace the GreetResource class with the following code:
 
-<!--@mdc ::code-collapse -->
+<!--@mdc ::code-callout{collapsed} -->
 ```java
 @Path("/greet")
 @RequestScoped
 public class GreetResource {
 
     @Uri("http://localhost:8081/greet")
-    private WebTarget target; 
+    private WebTarget target; // <1>
 
     private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
     private final GreetingProvider greetingProvider;
@@ -322,7 +326,7 @@ public class GreetResource {
     }
 
     @GET
-    @Path("/outbound") 
+    @Path("/outbound") // <2>
     public JsonObject outbound() {
         return target.request().accept(MediaType.APPLICATION_JSON_TYPE).get(JsonObject.class);
     }
@@ -334,32 +338,29 @@ public class GreetResource {
     }
 }
 ```
+1. This is the `WebTarget` needed to send a request to the second service at port
+   `8081`.
+2. This is the new endpoint that will call the second service.
 <!--@mdc :: -->
 
-- This is the `WebTarget` needed to send a request to the second service at port
-  `8081`.
-- This is the new endpoint that will call the second service.
-
-Build and run the application, then invoke the endpoint and check the response:
-
+<!--@mdc ::code-callout -->
 ```shell [Terminal]
-curl -i http://localhost:8080/greet/outbound 
+curl -i http://localhost:8080/greet/outbound # <1>
 ```
-
-- The request went to the service on `8080`, which then invoked the service at
-  `8081` to get the greeting.
+1. The request went to the service on `8080`, which then invoked the service at
+   `8081` to get the greeting.
+<!--@mdc :: -->
 
 Response body:
 
+<!--@mdc ::code-callout -->
 ```json [Response]
 {
-  "message": "Hello From MP-2 World!" 
+  "message": "Hello From MP-2 World!" // <1>
 }
 ```
-
-- Notice the greeting came from the second service.
-
-Refresh the Jaeger UI trace listing page and notice that there is a trace across
+1. Notice the greeting came from the second service.
+<!--@mdc :: -->
 two services.
 
 <figure>
@@ -433,11 +434,12 @@ kubectl apply -f ./jaeger.yaml
 
 Create a Jaeger external server and expose it on port 9142:
 
+<!--@mdc ::code-callout -->
 ```shell [Terminal]
-kubectl expose pod jaeger --name=jaeger-external --port=16687 --target-port=16686 --type=LoadBalancer 
+kubectl expose pod jaeger --name=jaeger-external --port=16687 --target-port=16686 --type=LoadBalancer # <1>
 ```
-
-- Create a service so that you can access the Jaeger UI.
+1. Create a service so that you can access the Jaeger UI.
+<!--@mdc :: -->
 
 Navigate to http://localhost:16687/search to validate that you can access Jaeger
 running in Kubernetes. It may take a few seconds before it is ready.
@@ -447,12 +449,12 @@ running in Kubernetes. It may take a few seconds before it is ready.
 Create the Kubernetes YAML specification, named `tracing.yaml`, with the
 following contents:
 
-<!--@mdc ::code-collapse -->
+<!--@mdc ::code-callout{collapsed} -->
 ```yaml [tracing.yaml]
 kind: Service
 apiVersion: v1
 metadata:
-  name: helidon-tracing 
+  name: helidon-tracing # <1>
   labels:
     app: helidon-tracing
 spec:
@@ -469,7 +471,7 @@ apiVersion: apps/v1
 metadata:
   name: helidon-tracing
 spec:
-  replicas: 1 
+  replicas: 1 # <2>
   selector:
     matchLabels:
       app: helidon-tracing
@@ -486,10 +488,9 @@ spec:
           ports:
             - containerPort: 8080
 ```
+1. A service of type `NodePort` that serves the default routes on port `8080`.
+2. A deployment with one replica of a pod.
 <!--@mdc :: -->
-
-- A service of type `NodePort` that serves the default routes on port `8080`.
-- A deployment with one replica of a pod.
 
 Create and deploy the application into Kubernetes:
 
@@ -505,12 +506,13 @@ Get the application service information:
 kubectl get service/helidon-tracing
 ```
 
+<!--@mdc ::code-callout -->
 ```log [Output]
 NAME             TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
-helidon-tracing   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s 
+helidon-tracing   NodePort   10.99.159.2   <none>        8080:31143/TCP   8s # <1>
 ```
-
-- A service of type `NodePort` that serves the default routes on port `31143`.
+1. A service of type `NodePort` that serves the default routes on port `31143`.
+<!--@mdc :: -->
 
 Verify the tracing endpoint using port 31143, your port will likely be
 different:
@@ -690,18 +692,19 @@ See [Configuration options][io-helidon-traci-4].
 
 ### Configuration Example
 
+<!--@mdc ::code-callout -->
 ```properties [microprofile-config.properties]
-tracing.service=helidon-otel-tracing-example
-tracing.global=false
-tracing.int-tags.0.example=1
-tracing.tags.0.direction=north
+tracing.service=helidon-otel-tracing-example # <1>
+tracing.global=false                         # <2>
+tracing.int-tags.0.example=1                 # <3>
+tracing.tags.0.direction=north               # <4>
 ```
-
-- Specifies the OpenTelemetry service name.
-- Indicates the configured tracer *should not* be made the global tracer
-  (defaults to `true`).
-- Assigns an integer-valued tag `example` the value `1`.
-- Assigns a string-valued tag `direction` the value `north`.
+1. Specifies the OpenTelemetry service name.
+2. Indicates the configured tracer *should not* be made the global tracer
+   (defaults to `true`).
+3. Assigns an integer-valued tag `example` the value `1`.
+4. Assigns a string-valued tag `direction` the value `north`.
+<!--@mdc :: -->
 
 By default, Helidon tracing support for OpenTelemetry uses OpenTelemetry’s OTLP
 gRPC exporter. Alternatively, you can choose to use OpenTelemetry’s HTTP

@@ -20,16 +20,15 @@ boolean but the same pattern applies to many data types listed in the Javadoc.
 
 Assume a local variable has been assigned something like
 
+<!--@mdc ::code-callout -->
 ```java
 Config configNode = config.get("someKey");
-ConfigValue<Boolean> value = configNode.asBoolean(); 
-ConfigValue<Boolean> value2 = configNode.as(Boolean.class); 
+ConfigValue<Boolean> value = configNode.asBoolean(); // <1>
+ConfigValue<Boolean> value2 = configNode.as(Boolean.class); // <2>
 ```
-
-- Shorthand method
-- Generic method (for any type)
-
-Built-in conversions to simple types:
+1. Shorthand method
+2. Generic method (for any type)
+<!--@mdc :: -->
 
 <table>
 <thead>
@@ -41,25 +40,25 @@ Built-in conversions to simple types:
 <tbody>
 <tr>
 <td rowspan="2" style="vertical-align: middle"><code>boolean</code></td>
-<td><code>boolean b = value.get();</code> <sup>2</sup></td>
+<td><code>boolean b = value.<wbr>get();</code> <sup>2</sup></td>
 </tr>
 <tr>
-<td><code>boolean defaultedB = value.orElse(true);</code> <sup>3</sup></td>
+<td><code>boolean defaultedB = value.<wbr>orElse(<wbr>true)<wbr>;</code> <sup>3</sup></td>
 </tr>
 <tr>
-<td><code>Optional&lt;Boolean&gt;</code></td>
+<td><code>Optional&lt;<wbr>Boolean&gt;</code></td>
 <td>ConfigValue already has all methods of an Optional. If actual optional is needed: <code>Optional&lt;Boolean&gt; b = value.asOptional();</code> <sup>4</sup></td>
 </tr>
 <tr>
-<td rowspan="2" style="vertical-align: middle"><code>Supplier&lt;Boolean&gt;</code></td>
-<td><code>Boolean b = value.supplier().get();</code></td>
+<td rowspan="2" style="vertical-align: middle"><code>Supplier&lt;<wbr>Boolean&gt;</code></td>
+<td><code>Boolean b = value.<wbr>supplier().<wbr>get();</code></td>
 </tr>
 <tr>
-<td><code>boolean defaultedB = value.supplier(true).get();</code></td>
+<td><code>boolean defaultedB = value.<wbr>supplier(<wbr>true).<wbr>get();</code></td>
 </tr>
 <tr>
-<td><code>Supplier&lt;Optional&lt;Boolean&gt;&gt;</code></td>
-<td><code>Boolean b = value.optionalSupplier().get().orElse(Boolean.TRUE);</code></td>
+<td><code>Supplier&lt;<wbr>Optional&lt;<wbr>Boolean&gt;&gt;</code></td>
+<td><code>Boolean b = value.<wbr>optional<wbr>Supplier()<wbr>.get()<wbr>.orElse(<wbr>Boolean.<wbr>TRUE);</code></td>
 </tr>
 </tbody>
 </table>
@@ -136,6 +135,7 @@ feature. The example code builds a simple `Config` tree itself which contains
 simple test data; normally your application would load the config from a file or
 some other location.
 
+<!--@mdc ::code-callout -->
 ```java
 enum Color {RED, YELLOW, BLUE_GREEN}
 
@@ -145,30 +145,29 @@ Config config = Config.just(ConfigSources.create(Map.of(
         "warning", "YELLOW"
 )));
 
-Color house = config.get("house.tint") 
-        .as(Color.class) 
-        .get(); 
+Color house = config.get("house.tint") // <1>
+        .as(Color.class)  // <2>
+        .get(); // <3>
 Color car = config.get("car.color")
         .as(Color.class)
-        .get(); 
+        .get(); // <4>
 Color warning = config.get("warning")
         .as(Color.class)
-        .get(); 
+        .get(); // <5>
 ```
+1. Retrieve the `Config` object corresponding to the key `house.tint`.
+2. Indicate that, when the value in that `Config` object is converted, Helidon
+   should convert it to a `Color` `enum` value.
+3. Convert and retrieve the value.
+   The conversion triggered by invoking `get()` matches the string
+   `blue-green`--expressed in lower case and with a hyphen — to
+   `Color.BLUE_GREEN` using the conversion rules described earlier.
 
-- Retrieve the `Config` object corresponding to the key `house.tint`.
-- Indicate that, when the value in that `Config` object is converted, Helidon
-  should convert it to a `Color` `enum` value.
-- Convert and retrieve the value.
-
-  The conversion triggered by invoking `get()` matches the string
-  `blue-green`--expressed in lower case and with a hyphen — to
-  `Color.BLUE_GREEN` using the conversion rules described earlier.
-
-- The config key `car.color` locates the mixed-case string `Red` which the
-  converter matches to `Color.RED`.
-- The config key `warning` locates `YELLOW` which the converter matches exactly
-  to `Color.YELLOW`.
+4. The config key `car.color` locates the mixed-case string `Red` which the
+   converter matches to `Color.RED`.
+5. The config key `warning` locates `YELLOW` which the converter matches exactly
+   to `Color.YELLOW`.
+<!--@mdc :: -->
 
 ### Why use heuristics in matching strings to `enum` values?
 
@@ -524,7 +523,7 @@ introduction.
 
 Java bean to load app properties into via setters:
 
-<!--@mdc ::code-collapse -->
+<!--@mdc ::code-callout{collapsed} -->
 ```java
 public class AppConfig {
     private Instant timestamp;
@@ -532,10 +531,10 @@ public class AppConfig {
     private int pageSize;
     private List<Integer> basicRange;
 
-    public AppConfig() { 
+    public AppConfig() { // <1>
     }
 
-    public void setGreeting(String greeting) { 
+    public void setGreeting(String greeting) { // <2>
         this.greeting = greeting;
     }
 
@@ -543,8 +542,8 @@ public class AppConfig {
         return greeting;
     }
 
-    @Value(key = "page-size", 
-           withDefault = "10") 
+    @Value(key = "page-size", // <3>
+           withDefault = "10") // <4>
     public void setPageSize(int pageSize) {
         this.pageSize = pageSize;
     }
@@ -553,8 +552,8 @@ public class AppConfig {
         return pageSize;
     }
 
-    @Value(key = "basic-range", 
-           withDefaultSupplier = BasicRangeSupplier.class) 
+    @Value(key = "basic-range", // <5>
+           withDefaultSupplier = BasicRangeSupplier.class) // <6>
     public void setBasicRange(List<Integer> basicRange) {
         this.basicRange = basicRange;
     }
@@ -563,7 +562,7 @@ public class AppConfig {
         return basicRange;
     }
 
-    @Transient 
+    @Transient // <7>
     public void setTimestamp(Instant timestamp) {
         this.timestamp = timestamp;
     }
@@ -573,7 +572,7 @@ public class AppConfig {
     }
 
     public static class BasicRangeSupplier
-            implements Supplier<List<Integer>> { 
+            implements Supplier<List<Integer>> { // <8>
         @Override
         public List<Integer> get() {
             return List.of(-10, 10);
@@ -581,32 +580,30 @@ public class AppConfig {
     }
 }
 ```
+1. Public no-parameter constructor.
+2. Property `greeting` is not customized and will be set from the config node
+   with the key `greeting`, if present in the config.
+3. Property `pageSize` is matched to the config key `page-size`.
+4. If the `page-size` config node does not exist, the `pageSize` bean property
+   defaults to `10`.
+5. Property `basicRange` is matched to the config key `basic-range`.
+6. If the `basic-range` config node does not exist, a `BasicRangeSupplier`
+   instance will provide the default value.
+7. The `timestamp` bean property is never set, even if the config contains a node
+   with the key `timestamp`.
+8. `BasicRangeSupplier` is used to supply the `List<Integer>` default value.
 <!--@mdc :: -->
-
-- Public no-parameter constructor.
-- Property `greeting` is not customized and will be set from the config node
-  with the key `greeting`, if present in the config.
-- Property `pageSize` is matched to the config key `page-size`.
-- If the `page-size` config node does not exist, the `pageSize` bean property
-  defaults to `10`.
-- Property `basicRange` is matched to the config key `basic-range`.
-- If the `basic-range` config node does not exist, a `BasicRangeSupplier`
-  instance will provide the default value.
-- The `timestamp` bean property is never set, even if the config contains a node
-  with the key `timestamp`.
-- `BasicRangeSupplier` is used to supply the `List<Integer>` default value.
-
-Here is an example of code loading config and mapping part of it to the
 `AppConfig` bean above.
 
 Map app config node into AppConfig class:
 
+<!--@mdc ::code-callout -->
 ```java
 Config config = Config.create(classpath("application.conf"));
 
 AppConfig app = config.get("app")
         .as(AppConfig.class)
-        .get(); 
+        .get(); // <1>
 
 //assert that all values are loaded from file
 assert app.getGreeting().equals("Hello");
@@ -616,15 +613,13 @@ assert app.getBasicRange().size() == 2
        && app.getBasicRange().get(1) == 20;
 
 //assert that Transient property is not set
-assert app.getTimestamp() == null; 
+assert app.getTimestamp() == null; // <2>
 ```
-
-- The config system finds no registered `ConfigMapper` for `AppConfig` and so
-  applies the JavaBean pattern to convert the config to an `AppConfig` instance.
-- Because the bean property `timestamp` was marked as transient, the config
-  system did not set it.
-
-### Builder as JavaBean
+1. The config system finds no registered `ConfigMapper` for `AppConfig` and so
+   applies the JavaBean pattern to convert the config to an `AppConfig` instance.
+2. Because the bean property `timestamp` was marked as transient, the config
+   system did not set it.
+<!--@mdc :: -->
 
 If the target class includes the public static method `builder()` that returns
 any object, then the config system will make sure that the return type has a
@@ -640,9 +635,9 @@ You can augment the target class with the public static `builder()` method:
 
 JavaBean for app properties, via a Builder:
 
-<!--@mdc ::code-collapse -->
+<!--@mdc ::code-callout{collapsed} -->
 ```java
-public static class Builder { 
+public static class Builder { // <1>
 
     private String greeting;
     private int pageSize;
@@ -651,40 +646,37 @@ public static class Builder {
     private Builder() {
     }
 
-    public Builder setGreeting(String greeting) { 
+    public Builder setGreeting(String greeting) { // <2>
         this.greeting = greeting;
         return this;
     }
 
     @Value(key = "page-size", withDefault = "10")
-    public Builder setPageSize(int pageSize) { 
+    public Builder setPageSize(int pageSize) { // <3>
         this.pageSize = pageSize;
         return this;
     }
 
     @Value(key = "basic-range", withDefaultSupplier = BasicRangeSupplier.class)
-    public Builder setBasicRange(List<Integer> basicRange) { 
+    public Builder setBasicRange(List<Integer> basicRange) { // <4>
         this.basicRange = basicRange;
         return this;
     }
 
-    public AppConfig build() { 
+    public AppConfig build() { // <4>
         return new AppConfig(this);
     }
 }
 ```
+1. The builder’s property `greeting` is not customized and is set from config
+   node with `greeting` key, if one exists.
+2. The builder’s property `pageSize` maps to the config key `page-size` and
+   defaults to `10` if absent.
+3. The builder’s property `basicRange` maps to the config key `basic-range` and
+   uses a `BasicRangeSupplier` instance to get a default value if needed.
+4. Finally, the config system invokes the builder’s public method `build()`,
+   creating the new instance of `AppConfig` for use by the application.
 <!--@mdc :: -->
-
-- The builder’s property `greeting` is not customized and is set from config
-  node with `greeting` key, if one exists.
-- The builder’s property `pageSize` maps to the config key `page-size` and
-  defaults to `10` if absent.
-- The builder’s property `basicRange` maps to the config key `basic-range` and
-  uses a `BasicRangeSupplier` instance to get a default value if needed.
-- Finally, the config system invokes the builder’s public method `build()`,
-  creating the new instance of `AppConfig` for use by the application.
-
-### Target Class with Annotated Factory Method or Constructor
 
 Another option is to annotate the parameters to a *factory method* or to a
 constructor on the target class. You can add a *factory method* to the target
@@ -701,32 +693,32 @@ corresponding config key.
 
 Target Class with Factory Method from:
 
+<!--@mdc ::code-callout -->
 ```java
 public static AppConfig from(
-        @Value(key = "greeting") String greeting, 
-        @Value(key = "page-size", withDefault = "10") int pageSize, 
+        @Value(key = "greeting") String greeting, // <1>
+        @Value(key = "page-size", withDefault = "10") int pageSize, // <2>
         @Value(key = "basic-range", withDefaultSupplier = BasicRangeSupplier.class) List<Integer> basicRange) {
     return new AppConfig(greeting, pageSize, basicRange);
 }
 ```
-
-- The config system invokes the factory method `from(...)`, passing arguments it
-  has fetched from the correspondingly-named config subtrees. The factory method
-  returns the new initialized `AppConfig` instance. Note the consistent use of
-  `@Value(key = "...")` on each parameter.
-- Because the property `greeting` does not specify a default value the property
-  is **mandatory** and must appear in the configuration source. Otherwise, the
-  config system throws a `ConfigMappingException`.
-
-Alternatively, you can use an annotated constructor instead of a static factory
+1. The config system invokes the factory method `from(...)`, passing arguments it
+   has fetched from the correspondingly-named config subtrees. The factory method
+   returns the new initialized `AppConfig` instance. Note the consistent use of
+   `@Value(key = "...")` on each parameter.
+2. Because the property `greeting` does not specify a default value the property
+   is **mandatory** and must appear in the configuration source. Otherwise, the
+   config system throws a `ConfigMappingException`.
+<!--@mdc :: -->
 method. Revising the example above, make the constructor public, annotate its
 parameters, and remove the now-unneeded `from` factory method.
 
 Target Class with Annotated Public Constructor:
 
+<!--@mdc ::code-callout -->
 ```java
-public AppConfig( 
-                  @Value(key = "greeting") 
+public AppConfig( // <1>
+                  @Value(key = "greeting") // <2>
                   String greeting,
                   @Value(key = "page-size",
                          withDefault = "10")
@@ -739,12 +731,10 @@ public AppConfig(
     this.basicRange = basicRange;
 }
 ```
-
-- Constructor is `public`.
-- Each parameter has the `ConfigValue` annotation to at least specify the config
-  key name.
-
-When the application invokes `config.as(AppConfig.class)`, the config system
+1. Constructor is `public`.
+2. Each parameter has the `ConfigValue` annotation to at least specify the config
+   key name.
+<!--@mdc :: -->
 locates the public annotated constructor and invokes it, passing as arguments
 the data it fetches from the configuration matching the annotation `key` names
 with the configuration keys.

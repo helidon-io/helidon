@@ -134,27 +134,26 @@ health check.
 
 Create a new GreetLivenessCheck class with the following content:
 
+<!--@mdc ::code-callout -->
 ```java
-@Liveness 
-@ApplicationScoped 
+@Liveness // <1>
+@ApplicationScoped // <2>
 public class GreetLivenessCheck implements HealthCheck {
 
     @Override
     public HealthCheckResponse call() {
-        return HealthCheckResponse.named("LivenessCheck")  
+        return HealthCheckResponse.named("LivenessCheck")  // <3>
                 .up()
                 .withData("time", System.currentTimeMillis())
                 .build();
     }
 }
 ```
-
-- Annotation indicating this is a liveness health check.
-- Annotation indicating there is a single liveness `HealthCheck` object during
-  the lifetime of the application.
-- Build the HealthCheckResponse with status `UP` and the current time.
-
-Build and run the application, then verify the custom liveness health endpoint:
+1. Annotation indicating this is a liveness health check.
+2. Annotation indicating there is a single liveness `HealthCheck` object during
+   the lifetime of the application.
+3. Build the HealthCheckResponse with status `UP` and the current time.
+<!--@mdc :: -->
 
 ```shell [Terminal]
 curl http://localhost:8080/health/live
@@ -183,15 +182,16 @@ ready.
 
 Create a new GreetReadinessCheck class with the following content:
 
+<!--@mdc ::code-callout{collapsed} -->
 ```java
-@Readiness 
+@Readiness // <1>
 @ApplicationScoped
 public class GreetReadinessCheck implements HealthCheck {
     private final AtomicLong readyTime = new AtomicLong(0);
 
     @Override
     public HealthCheckResponse call() {
-        return HealthCheckResponse.named("ReadinessCheck")  
+        return HealthCheckResponse.named("ReadinessCheck")  // <2>
                 .status(isReady())
                 .withData("time", readyTime.get())
                 .build();
@@ -199,7 +199,7 @@ public class GreetReadinessCheck implements HealthCheck {
 
     public void onStartUp(
             @Observes @Initialized(ApplicationScoped.class) Object init) {
-        readyTime.set(System.currentTimeMillis()); 
+        readyTime.set(System.currentTimeMillis()); // <3>
     }
 
     /**
@@ -212,13 +212,10 @@ public class GreetReadinessCheck implements HealthCheck {
     }
 }
 ```
-
-- Annotation indicating that this is a readiness health check.
-- Build the `HealthCheckResponse` with status `UP` after five seconds, else
-  `DOWN`.
-- Record the time at startup.
-
-Build and run the application. Issue the curl command with -v within five
+1. Annotation indicating that this is a readiness health check.
+2. Build the `HealthCheckResponse` with status `UP` after five seconds, else `DOWN`.
+3. Record the time at startup.
+<!--@mdc :: -->
 seconds, and you will see that the application is not ready:
 
 ```shell [Terminal]
@@ -227,11 +224,12 @@ curl -v  http://localhost:8080/health/ready
 
 HTTP response status:
 
+<!--@mdc ::code-callout -->
 ```text
-< HTTP/1.1 503 Service Unavailable 
+< HTTP/1.1 503 Service Unavailable // <1>
 ```
-
-- The HTTP status is `503` since the application is not ready.
+1. The HTTP status is `503` since the application is not ready.
+<!--@mdc :: -->
 
 Response body:
 
@@ -258,11 +256,12 @@ curl -v http://localhost:8080/health/ready
 
 HTTP response status:
 
+<!--@mdc ::code-callout -->
 ```text
-< HTTP/1.1 200 OK 
+< HTTP/1.1 200 OK // <1>
 ```
-
-- The HTTP status is `200` indicating that the application is ready.
+1. The HTTP status is `200` indicating that the application is ready.
+<!--@mdc :: -->
 
 Response body:
 
@@ -289,15 +288,16 @@ wait eight seconds before it declares itself started.
 
 Create a new GreetStartedCheck class with the following content:
 
+<!--@mdc ::code-callout{collapsed} -->
 ```java
-@Startup 
+@Startup // <1>
 @ApplicationScoped
 public class GreetStartedCheck implements HealthCheck {
     private final AtomicLong readyTime = new AtomicLong(0);
 
     @Override
     public HealthCheckResponse call() {
-        return HealthCheckResponse.named("StartedCheck")  
+        return HealthCheckResponse.named("StartedCheck")  // <2>
                 .status(isStarted())
                 .withData("time", readyTime.get())
                 .build();
@@ -305,7 +305,7 @@ public class GreetStartedCheck implements HealthCheck {
 
     public void onStartUp(
             @Observes @Initialized(ApplicationScoped.class) Object init) {
-        readyTime.set(System.currentTimeMillis()); 
+        readyTime.set(System.currentTimeMillis()); // <3>
     }
 
     /**
@@ -318,14 +318,12 @@ public class GreetStartedCheck implements HealthCheck {
     }
 }
 ```
-
-- Annotation indicating that this is a startup health check.
-- Build the `HealthCheckResponse` with status `UP` after eight seconds, else
-  `DOWN`.
-- Record the time at startup of Helidon; the application will declare itself as
-  started eight seconds later.
-
-Build and run the application. Issue the curl command with -v within five
+1. Annotation indicating that this is a startup health check.
+2. Build the `HealthCheckResponse` with status `UP` after eight seconds, else
+   `DOWN`.
+3. Record the time at startup of Helidon; the application will declare itself as
+   started eight seconds later.
+<!--@mdc :: -->
 seconds, and you will see that the application has not yet started:
 
 ```shell [Terminal]
@@ -334,13 +332,12 @@ curl -v  http://localhost:8080/health/started
 
 HTTP response status:
 
+<!--@mdc ::code-callout -->
 ```text
-< HTTP/1.1 503 Service Unavailable 
+< HTTP/1.1 503 Service Unavailable // <1>
 ```
-
-- The HTTP status is `503` since the application has not started.
-
-Response body:
+1. The HTTP status is `503` since the application has not started.
+<!--@mdc :: -->
 
 ```json
 {
@@ -365,13 +362,12 @@ curl -v http://localhost:8080/health/started
 
 HTTP response status:
 
+<!--@mdc ::code-callout -->
 ```text
-< HTTP/1.1 200 OK 
+< HTTP/1.1 200 OK // <1>
 ```
-
-- The HTTP status is `200` indicating that the application is started.
-
-Response body:
+1. The HTTP status is `200` indicating that the application is started.
+<!--@mdc :: -->
 
 ```json
 {
@@ -476,12 +472,13 @@ The example below will change the root path.
 Create a file named `application.yaml` in the resources directory with the
 following contents:
 
+<!--@mdc ::code-callout -->
 ```yaml [application.yaml]
 health:
-  endpoint: "/myhealth" 
+  endpoint: "/myhealth" # <1>
 ```
-
-- The `endpoint` settings specifies the root path for the health endpoint.
+1. The `endpoint` settings specifies the root path for the health endpoint.
+<!--@mdc :: -->
 
 Build and run the application, then verify that the health endpoint is using the
 new /myhealth root:
@@ -498,24 +495,25 @@ The following example will change the root path and the health port.
 Update `application.yaml` to use a different port and root path for the health
 endpoint:
 
+<!--@mdc ::code-callout -->
 ```yaml [application.yaml]
 server:
-  port: 8080 
+  port: 8080 # <1>
   sockets:
-    - name: "admin" 
-      port: 8081 
+    - name: "admin" # <2>
+      port: 8081 # <3>
   features:
     observe:
-      sockets: "admin" 
+      sockets: "admin" # <4>
 health:
-  endpoint: "/myhealth" 
+  endpoint: "/myhealth"
 ```
-
-- The default port for the application.
-- The name of the new socket, it can be any name, this example uses `admin`.
-- The port for the `admin` socket.
-- The health endpoint, as part of Helidon’s observability support, uses the
-  socket `admin`.
+1. The default port for the application.
+2. The name of the new socket, it can be any name, this example uses `admin`.
+3. The port for the `admin` socket.
+4. The health endpoint, as part of Helidon’s observability support, uses the
+   socket `admin`.
+<!--@mdc :: -->
 
 Build and run the application, then verify the health endpoint using port 8081
 and /myhealth:
@@ -551,12 +549,12 @@ docker build -t helidon-quickstart-mp .
 Create the Kubernetes YAML specification, named `health.yaml`, with the
 following content:
 
-<!--@mdc ::code-collapse -->
+<!--@mdc ::code-callout{collapsed} -->
 ```yaml [health.yaml]
 kind: Service
 apiVersion: v1
 metadata:
-  name: helidon-health 
+  name: helidon-health # <1>
   labels:
     app: helidon-health
 spec:
@@ -571,7 +569,7 @@ spec:
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: helidon-health 
+  name: helidon-health # <2>
 spec:
   replicas: 1
   selector:
@@ -591,39 +589,38 @@ spec:
             - containerPort: 8080
           livenessProbe:
             httpGet:
-              path: /health/live 
+              path: /health/live # <3>
               port: 8080
-            initialDelaySeconds: 5 
+            initialDelaySeconds: 5 # <4>
             periodSeconds: 10
             timeoutSeconds: 3
             failureThreshold: 3
           readinessProbe:
             httpGet:
-              path: /health/ready 
+              path: /health/ready # <5>
               port: 8080
-            initialDelaySeconds: 5 
+            initialDelaySeconds: 5 # <6>
             periodSeconds: 2
             timeoutSeconds: 3
           startupProbe:
             httpGet:
-              path: /health/started 
+              path: /health/started # <7>
               port: 8080
-            initialDelaySeconds: 8 
+            initialDelaySeconds: 8 # <8>
             periodSeconds: 10
             timeoutSeconds: 3
             failureThreshold: 3
 ---
 ```
+1. A service of type `NodePort` that serves the default routes on port `8080`.
+2. A deployment with one replica of a pod.
+3. The HTTP endpoint for the liveness probe.
+4. The liveness probe configuration.
+5. The HTTP endpoint for the readiness probe.
+6. The readiness probe configuration.
+7. The HTTP endpoint for the startup probe.
+8. The startup probe configuration.
 <!--@mdc :: -->
-
-- A service of type `NodePort` that serves the default routes on port `8080`.
-- A deployment with one replica of a pod.
-- The HTTP endpoint for the liveness probe.
-- The liveness probe configuration.
-- The HTTP endpoint for the readiness probe.
-- The readiness probe configuration.
-- The HTTP endpoint for the startup probe.
-- The startup probe configuration.
 
 Create and deploy the application into Kubernetes:
 
@@ -637,12 +634,13 @@ Get the service information:
 kubectl get service/helidon-health
 ```
 
+<!--@mdc ::code-callout -->
 ```shell [Terminal]
 NAME             TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)          AGE
-helidon-health   NodePort   10.107.226.62   <none>        8080:30116/TCP   4s 
+helidon-health   NodePort   10.107.226.62   <none>        8080:30116/TCP   4s # <1>
 ```
-
-- A service of type `NodePort` that serves the default routes on port `30116`.
+1. A service of type `NodePort` that serves the default routes on port `30116`.
+<!--@mdc :: -->
 
 Verify the health endpoints using port '30116', your port may be different. The
 JSON response will be the same as your previous test:

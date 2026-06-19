@@ -86,22 +86,21 @@ Configuration can be set for every request type before it is sent.
 
 Customizing a request:
 
+<!--@mdc ::code-callout -->
 ```java
 client.get()
-    .uri("http://example.com")
-    .path("/path")
-    .queryParam("query", "parameter")
-    .fragment("someFragment")
-    .headers(headers -> headers.accept(MediaTypes.APPLICATION_JSON));
+        .uri("http://example.com") // <1>
+        .path("/path") // <2>
+        .queryParam("query", "parameter") // <3>
+        .fragment("someFragment") // <4>
+        .headers(headers -> headers.accept(MediaTypes.APPLICATION_JSON)); // <5>
 ```
-
-- Overrides `baseUri` from WebClient
-- Adds path to the uri
-- Adds query parameter to the request
-- Adds fragment to the request
-- Adds header to the request
-
-For more information about these optional parameters, check out
+1. Overrides `baseUri` from WebClient
+2. Adds path to the uri
+3. Adds query parameter to the request
+4. Adds fragment to the request
+5. Adds header to the request
+<!--@mdc :: -->
 [ClientRequestBase][clientrequestbas] API, which is a parent class of
 [HttpClientRequest][httpclientreques].
 
@@ -212,16 +211,15 @@ by following either of the approaches:
   followed by adding the Media Support library to the classpath.
 - Explicitly register the Custom Media Support from WebClient.
 
+<!--@mdc ::code-callout -->
 ```java
 WebClient.builder()
-    .mediaContext(it -> it
-        .addMediaSupport(CustomMediaSupport.create()))
-    .build();
+        .mediaContext(it -> it
+                .addMediaSupport(CustomMediaSupport.create())) // <1>
+        .build();
 ```
-
-- Register CustomMedia support from the WebClient.
-
-### DNS Resolving
+1. Register CustomMedia support from the WebClient.
+<!--@mdc :: -->
 
 WebClient provides three DNS resolver implementations out of the box:
 
@@ -283,21 +281,21 @@ WebClient client = WebClient.builder()
 
 ## Configuration Example
 
-<!--@mdc ::code-collapse -->
+<!--@mdc ::code-callout{collapsed} -->
 ```yaml [application.yaml]
 client:
   connect-timeout-millis: 2000
   read-timeout-millis: 2000
-  follow-redirects: true
+  follow-redirects: true # <1>
   max-redirects: 5
-  cookie-manager:
+  cookie-manager: # <2>
     automatic-store-enabled: true
     default-cookies:
       flavor3: strawberry
       flavor4: raspberry
-  default-headers:
+  default-headers: # <3>
     Accept: '"application/json", "text/plain"'
-  services:
+  services: # <4>
     metrics:
       - methods: ["PUT", "POST", "DELETE"]
         type: METER
@@ -316,17 +314,17 @@ client:
         name-format: "wc.counter.%1$s.error"
         description: "Counter of failed PUT, POST and DELETE requests"
     tracing:
-  protocol-configs:
+  protocol-configs: # <5>
     http_1_1:
       max-header-size: 20000
       validate-request-headers: true
     h2:
       prior-knowledge: true
-  proxy:
+  proxy: # <6>
     host: "hostName"
     port: 80
     no-proxy: ["localhost:8080", ".helidon.io", "192.168.1.1"]
-  tls:
+  tls: # <7>
     trust:
       keystore:
         passphrase: "password"
@@ -334,15 +332,14 @@ client:
         resource:
           resource-path: "client.p12"
 ```
+1. Client functional settings
+2. Cookie management
+3. Default client headers
+4. Client service configuration
+5. Protocol configuration
+6. Proxy configuration
+7. TLS configuration
 <!--@mdc :: -->
-
-- Client functional settings
-- Cookie management
-- Default client headers
-- Client service configuration
-- Protocol configuration
-- Proxy configuration
-- TLS configuration
 
 ## Examples
 
@@ -362,15 +359,17 @@ WebClient.builder()
 
 Alternative is to set proxy directly from the request via `HttpClientRequest`.
 
+<!--@mdc ::code-callout -->
 ```java
+Proxy proxy = Proxy.create(); // <1>
 var response = client.get("/proxiedresource")
-    .proxy(Proxy.create())
+    .proxy(Proxy.create()) // <2>
     .request();
 ```
-
-- Proxy instance configured using system settings (environment variables and
+1. Proxy instance configured using system settings (environment variables and
   system properties)
-- Configure the proxy per client request
+2. Configure the proxy per client request
+<!--@mdc :: -->
 
 Proxy can also be configured in WebClient through the `application.yaml`
 configuration file.
@@ -446,18 +445,17 @@ In the application code, load the settings from the configuration file.
 WebClient initialization using the `application.yaml` file located on the
 classpath:
 
+<!--@mdc ::code-callout -->
 ```java [application.yaml]
-Config config = Config.create();
+Config config = Config.create(); // <1>
 WebClient.builder()
-        .config(config.get("client"))
+        .config(config.get("client")) // <2>
         .build();
 ```
-
-- `application.yaml` is a default configuration source loaded when YAML support
-  is on classpath, so we can just use `Config.create()`
-- Passing the client configuration node
-
-### Adding Service to WebClient
+1. `application.yaml` is a default configuration source loaded when YAML support
+   is on classpath, so we can just use `Config.create()`
+2. Passing the client configuration node
+<!--@mdc :: -->
 
 WebClient currently supports several built-in services, namely
 
@@ -477,6 +475,7 @@ services:
 
 - `discovery` (see [its documentation][discovery])
 
+  <!--@mdc ::code-callout -->
   ```xml [pom.xml]
   <dependency>
     <groupId>io.helidon.webclient</groupId>
@@ -485,13 +484,13 @@ services:
   </dependency>
   <dependency>
     <groupId>io.helidon.discovery.providers</groupId>
-    <artifactId>helidon-discovery-providers-eureka</artifactId>
+    <artifactId>helidon-discovery-providers-eureka</artifactId> <!-- (1) -->
     <scope>runtime</scope>
   </dependency>
   ```
-
-  - Backs the `discovery` service with a [Discovery provider based on Netflix’s
+  1. Backs the `discovery` service with a [Discovery provider based on Netflix’s
     Eureka](discovery.md#eureka)
+  <!--@mdc :: -->
 
 - `metrics`
 
@@ -533,21 +532,21 @@ services:
 
 Services can be added in WebClient as shown in the code below.
 
+<!--@mdc ::code-callout -->
 ```java
 WebClientService clientService = WebClientMetrics.counter()
         .methods(Method.GET)
         .nameFormat("example.metric.%1$s.%2$s")
-        .build();
+        .build(); // <1>
 
 WebClient.builder()
-        .addService(clientService)
+        .addService(clientService) // <2>
         .build();
 ```
-
-- Creates new metric which will count all GET requests and has format of
-  `example.metric.GET.<host-name>`
-
-- Register the service in the client instance
+1. Creates new metric which will count all GET requests and has format of
+   `example.metric.GET.<host-name>`
+2. Register the service in the client instance.
+<!--@mdc :: -->
 
 ### Adding service in the config file
 
@@ -578,18 +577,17 @@ Then, in your application code, load the configuration from that file.
 WebClient initialization using the `application.yaml` file located on the
 classpath:
 
+<!--@mdc ::code-callout -->
 ```java [application.yaml]
-Config config = Config.create();
+Config config = Config.create(); // <1>
 WebClient.builder()
-    .config(config.get("client"))
-    .build();
+        .config(config.get("client")) // <2>
+        .build();
 ```
-
-- `application.yaml` is a default configuration source loaded when YAML support
-  is on classpath, so we can just use `Config.create()`
-- Passing the client configuration node
-
-## Setting Protocol configuration
+1. `application.yaml` is a default configuration source loaded when YAML support
+   is on classpath, so we can just use `Config.create()`
+2. Passing the client configuration node
+<!--@mdc :: -->
 
 Individual protocols can be customized using the `protocol-config` parameter.
 
@@ -629,17 +627,17 @@ Then, in your application code, load the configuration from that file.
 WebClient initialization using the `application.yaml` file located on the
 classpath:
 
+<!--@mdc ::code-callout -->
 ```java [application.yaml]
-Config config = Config.create();
+Config config = Config.create(); // <1>
 WebClient.builder()
-    .config(config.get("client"))
-    .build();
+        .config(config.get("client")) // <2>
+        .build();
 ```
-
-- `application.yaml` is a default configuration source loaded when YAML support
-  is on classpath, so we can just use `Config.create()`
-
-- Passing the client configuration node
+1. `application.yaml` is a default configuration source loaded when YAML support
+   is on classpath, so we can just use `Config.create()`
+2. Passing the client configuration node.
+<!--@mdc :: -->
 
 ## Configuring Telemetry
 
@@ -736,31 +734,26 @@ dependency to your pom file:
 
 Example configuration:
 
+<!--@mdc ::code-callout -->
 ```yaml [application.yaml]
 client:
   services:
     context:
       records:
-          # This looks up a `java.lang.String` context value classified `X-Helidon-Tid` and sends it as a `X-Helidon_Tid` header
-        - header: "X-Helidon-Tid"
-          # This looks up a `java.lang.String[]` context value classified with the classifier and sends it as a `X-Helidon-Cid` header, in case the value is not present, values "first" and "second" are sent instead
-        - classifier: "io.helidon.webclient.context.propagation.cid"
+        - header: "X-Helidon-Tid" # <1>
+        - classifier: "io.helidon.webclient.context.propagation.cid" # <2>
           header: "X-Helidon-Cid"
           default-value: [ "first", "second" ]
           array: true
 ```
+1. This looks up a `java.lang.String` context value classified
+   `X-Helidon-Tid` and sends it as `X-Helidon_Tid` header
+2. This looks up a `java.lang.String[]` context value classified with the
+   classifier and sends it as a `X-Helidon-Cid` header, in case the value
+   is not present, values "first" and "second" are sent instead
+<!--@mdc :: -->
 
-Full configuration reference:
-
-### io.helidon.webclient.context.WebClientContextService
-
-#### Description
-
-Configuration of WebClient transport level propagation of context values.
-
-#### Usages
-
-#### Configuration options
+### Configuration options
 
 <!--@include ../config/io.helidon.webclient.context.WebClientContextService.md#configuration-options delim=--- offset=1 collapseTables=10 -->
 See [Configuration options][io-helidon-webcl-4].

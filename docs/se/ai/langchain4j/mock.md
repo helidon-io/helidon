@@ -25,29 +25,31 @@ dependencies][helidon-integrat], you must add the following:
 To automatically create and add `MockChatModel` to the service registry add the
 following lines to `application.yaml`:
 
+<!--@mdc ::code-callout -->
 ```java
-@Ai.Service("food-service") 
-@Ai.ChatModel("production-chatgpt-model") 
+@Ai.Service("food-service") //<1>
+@Ai.ChatModel("production-chatgpt-model") //<2>
 public interface FoodExpertAiService {
 
     @SystemMessage("You are a food expert!")
     String chat(String prompt);
 }
 ```
-
-- Naming your AI service makes its configuration easily overridable from Helidon
-  config.
-- Chat model name annotation configuration is overridable by Helidon config
+1. Naming your AI service makes its configuration easily overridable from Helidon
+   config.
+2. Chat model name annotation configuration is overridable by Helidon config
+<!--@mdc :: -->
 
 To configure `MockChatModel` to be used, for example, in a test scenario you
 define your model in `application.yaml` and override a chat model name
 configured by `@Ai.ChatModel` annotation in FoodExpertAiService:
 
+<!--@mdc ::code-callout -->
 ```yaml [application.yaml]
 langchain4j:
   services:
     food-service:
-      chat-model: test-mock-model 
+      chat-model: test-mock-model #<1>
 
   providers:
     helidon-mock: {}
@@ -61,9 +63,9 @@ langchain4j:
         - pattern: .*Return this message:\s+'([^']+)'.*
           template: "The message is: $1"
 ```
-
-- Override `production-chatgpt-model` chat model in `food-service` named AI
-  service with `test-mock-model`.
+1. Override `production-chatgpt-model` chat model in `food-service` named AI
+   service with `test-mock-model`.
+<!--@mdc :: -->
 
 The final unit test would look like the following snippet.
 

@@ -369,12 +369,12 @@ of the files below; it *does not* merge all such files it can find.
 
 Default Config Files (most to the least important)
 
-| Source                   | Helidon maven artifact ID (group ID: `io.helidon.config`) | Notes                                                                            |
-|--------------------------|-----------------------------------------------------------|----------------------------------------------------------------------------------|
-| `application.yaml`       | `helidon-config-yaml`                                     | YAML format <http://yaml.org>                                                    |
-| `application.conf`       | `helidon-config-hocon`                                    | HOCON format <https://github.com/lightbend/config#using-hocon-the-json-superset> |
-| `application.json`       | `helidon-config-hocon`                                    | JSON format <https://json.org/>                                                  |
-| `application.properties` | `helidon-config`                                          | Java properties format                                                           |
+| Source                   | Helidon maven artifact ID (group ID: `io.helidon.config`) | Notes                                                                             |
+|--------------------------|-----------------------------------------------------------|-----------------------------------------------------------------------------------|
+| `application.yaml`       | `helidon-config-yaml`                                     | YAML [format](https://yaml.org)                                                   |
+| `application.conf`       | `helidon-config-hocon`                                    | HOCON [format](https://github.com/lightbend/config#using-hocon-the-json-superset) |
+| `application.json`       | `helidon-config-hocon`                                    | JSON [format](https://json.org)                                                   |
+| `application.properties` | `helidon-config`                                          | Java properties format                                                            |
 
 You can also extend the config system to handle other types of sources by
 implementing the [`ConfigSource`][configsource] interface. See the

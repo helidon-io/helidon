@@ -158,29 +158,34 @@ changing method `routing` in
 `src/main/java/io/helidon/examples/quickstart/lc4j/Main.java` like following
 example shows.
 
+<!--@mdc ::code-callout -->
 ```java
 static void routing(HttpRouting.Builder routing) {
     routing.post("/chat", (req, res) -> {
         var prompt = req.content().as(String.class);
 
-        var response = Services.get(PirateService.class) 
+        var response = Services.get(PirateService.class) // <1>
                 .chat(prompt);
 
         res.send(response);
     });
 }
 ```
-
-- Notice how we can look up the LangChain4j Ai service as Helidon declarative
+1. Notice how we can look up the LangChain4j Ai service as Helidon declarative
   superfast build time bean.
+<!--@mdc :: -->
 
 When we build and run our Helidon AI-powered quickstart:
 
-    mvn package -DskipTests && java -jar ./target/*.jar
+```shell [Terminal]
+mvn package -DskipTests && java -jar ./target/*.jar
+```
 
 We can test our pirate service with curl:
 
-    echo "Who are you?" | curl -d @- localhost:8080/chat
+```shell [Terminal]
+echo "Who was your captain?" | curl -d @- localhost:8080/chat
+```
 
 ## Prompt Template Arguments
 
@@ -216,11 +221,15 @@ static void routing(HttpRouting.Builder routing) {
 
 When we build and run our Helidon AI-powered quickstart:
 
-    mvn package -DskipTests && java -jar ./target/*.jar
+```shell [Terminal]
+mvn package -DskipTests && java -jar ./target/*.jar
+```
 
 We can test our pirate service with curl:
 
-    echo "Who was your captain?" | curl -d @- localhost:8080/chat
+```shell [Terminal]
+echo "Who was your captain?" | curl -d @- localhost:8080/chat
+```
 
 ## Custom Memory Provider
 
@@ -280,15 +289,27 @@ static void routing(HttpRouting.Builder routing) {
 }
 ```
 
-    mvn package -DskipTests && java -jar ./target/*.jar
+```shell [Terminal]
+mvn package -DskipTests && java -jar ./target/*.jar
+```
 
 We can test our pirate service with curl:
 
-    echo "Hi, I am John."          | curl -d @- -H "conversation-id: 123" localhost:8080/chat
-    Ahoy there, John
+```shell [Terminal]
+echo "Hi, I am John." | curl -d @- -H "conversation-id: 123" localhost:8080/chat
+```
 
-    echo "Do you remeber my name?" | curl -d @- -H "conversation-id: 123" localhost:8080/chat
-    Aye, John! The name be etched in me memory like a ship’s anchor in the sand.
+```log [Output]
+Ahoy there, John
+```
+
+```shell [Terminal]
+echo "Do you remeber my name?" | curl -d @- -H "conversation-id: 123" localhost:8080/chat
+```
+
+```log [Output]
+Aye, John! The name be etched in me memory like a ship’s anchor in the sand.
+```
 
 [langchain4j]: https://github.com/langchain4j/langchain4j
 [java-21]: https://www.oracle.com/technetwork/java/javase/downloads

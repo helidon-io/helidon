@@ -98,40 +98,39 @@ correct response:
 
 Basic Helidon test framework usage:
 
+<!--@mdc ::code-callout -->
 ```java
-@ServerTest 
+@ServerTest // <1>
 class MyServerTest {
 
     final Http1Client client;
 
-    MyServerTest(Http1Client client) { 
+    MyServerTest(Http1Client client) { // <2>
         this.client = client;
     }
 
-    @SetUpRoute 
+    @SetUpRoute // <3>
     static void routing(HttpRouting.Builder builder) {
         Main.routing(builder);
     }
 
     @Test
-    void testRootRoute() { 
+    void testRootRoute() { // <4>
         try (Http1ClientResponse response = client
                 .get("/greet")
-                .request()) { 
-            assertThat(response.status(), is(Status.OK_200)); 
+                .request()) { // <5>
+            assertThat(response.status(), is(Status.OK_200)); // <6>
         }
     }
 }
 ```
-
-- Use `@ServerTest` to trigger the testing framework.
-- Inject `Http1Client` for the test.
-- SetUp routing for the test.
-- Regular `JUnit` test method.
-- Call the `client` to obtain server response
-- Perform the necessary assertions.
-
-To trigger the framework to start and configure the server, annotate the testing
+1. Use `@ServerTest` to trigger the testing framework.
+2. Inject `Http1Client` for the test.
+3. SetUp routing for the test.
+4. Regular `JUnit` test method.
+5. Call the `client` to obtain server response
+6. Perform the necessary assertions.
+<!--@mdc :: -->
 class with the `@ServerTest` annotation.
 
 In this test, the `Http1Client` client is used, which means that the framework
@@ -154,41 +153,40 @@ the router.
 
 Routing test using @RoutingTest and DirectClient:
 
+<!--@mdc ::code-callout{collapsed} -->
 ```java
-@RoutingTest 
+@RoutingTest // <1>
 class MyRoutingTest {
 
     final Http1Client client;
 
-    MyRoutingTest(DirectClient client) { 
+    MyRoutingTest(DirectClient client) { // <2>
         this.client = client;
     }
 
-    @SetUpRoute 
+    @SetUpRoute // <3>
     static void routing(HttpRouting.Builder builder) {
         Main.routing(builder);
     }
 
     @Test
-    void testRootRoute() { 
+    void testRootRoute() { // <4>
         try (Http1ClientResponse response = client
                 .get("/greet")
-                .request()) { 
-            JsonObject json = response.as(JsonObject.class); 
+                .request()) { // <5>
+            JsonObject json = response.as(JsonObject.class); // <6>
             assertThat(json.getString("message"), is("Hello World!"));
         }
     }
 }
 ```
-
-- Use `@RoutingTest` to trigger the testing framework.
-- Inject `DirectClient` for the test.
-- SetUp routing for the test.
-- A regular `JUnit` test method.
-- Call the `client` to obtain server response.
-- Perform the necessary assertions.
-
-If only routing tests are required, this is a "lighter" way of testing because
+1. Use `@RoutingTest` to trigger the testing framework.
+2. Inject `DirectClient` for the test.
+3. SetUp routing for the test.
+4. A regular `JUnit` test method.
+5. Call the `client` to obtain server response.
+6. Perform the necessary assertions.
+<!--@mdc :: -->
 the framework will not configure and run the full Helidon server. This way, no
 real ports will be opened. All the communication will be done through
 `DirectClient`, which makes the tests very effective.
@@ -222,13 +220,12 @@ Pinning threshold can be changed with:
 
 Configure pinning threshold:
 
+<!--@mdc ::code-callout -->
 ```java
-@ServerTest(pinningDetection = true, pinningThreshold = 50)
+@ServerTest(pinningDetection = true, pinningThreshold = 50)// <1>
 ```
-
-- Change pinning threshold from default(20) to 50 milliseconds.
-
-When pinning is detected, test fails with stacktrace pointing to the line of
+1. Change pinning threshold from default(20) to 50 milliseconds.
+<!--@mdc :: -->
 code causing it.
 
 ## Service Registry
@@ -283,86 +280,83 @@ in Helidon unit tests.
 
 WebSocket sample test:
 
+<!--@mdc ::code-callout -->
 ```java
 @ServerTest
 class WsSocketTest {
 
     static final ServerSideListener WS_LISTENER = new ServerSideListener();
-    final WsClient wsClient; 
+    final WsClient wsClient; // <1>
 
     WsSocketTest(WsClient wsClient) {
         this.wsClient = wsClient;
     }
 
     @SetUpRoute
-    static void routing(WsRouting.Builder ws) { 
+    static void routing(WsRouting.Builder ws) { // <2>
         ws.endpoint("/testWs", WS_LISTENER);
     }
 
     @Test
-    void testWsEndpoint() { 
+    void testWsEndpoint() { // <3>
         ClientSideListener clientListener = new ClientSideListener();
-        wsClient.connect("/testWs", clientListener); 
-        assertThat(clientListener.message, is("ws")); 
+        wsClient.connect("/testWs", clientListener); // <4>
+        assertThat(clientListener.message, is("ws")); // <5>
     }
 }
 ```
+1. Declare `WsClient` and later inject it in the constructor.
+2. Using @SetUpRoute, create WebSocket routing and assign a serverside listener.
+3. Test the WebSocket endpoint using the regular @Test annotation.
+4. Create and assign the clientside listener.
+5. Check if the received message is correct.
+<!--@mdc :: -->
 
-- Declare `WsClient` and later inject it in the constructor.
-- Using @SetUpRoute, create WebSocket routing and assign a serverside listener.
-- Test the WebSocket endpoint using the regular @Test annotation.
-- Create and assign the clientside listener.
-- Check if the received message is correct.
-
-ClientSideListener helper class:
-
+<!--@mdc ::code-callout -->
 ```java
 static class ClientSideListener implements WsListener {
     volatile String message;
     volatile Throwable error;
 
     @Override
-    public void onOpen(WsSession session) { 
+    public void onOpen(WsSession session) { // <1>
         session.send("hello", true);
     }
 
     @Override
-    public void onMessage(WsSession session, String text, boolean last) { 
+    public void onMessage(WsSession session, String text, boolean last) { // <2>
         message = text;
         session.close(WsCloseCodes.NORMAL_CLOSE, "End");
     }
 
     @Override
-    public void onError(WsSession session, Throwable t) { 
+    public void onError(WsSession session, Throwable t) { // <3>
         error = t;
     }
 }
 ```
-
-- Send "Hello" when a connection is opened.
-- Save the message when received and close the connection.
-- React on an error.
-
-The WebSocket `ClientSideListener` is also a helper class that implements
+1. Send "Hello" when a connection is opened.
+2. Save the message when received and close the connection.
+3. React on an error.
+<!--@mdc :: -->
 `WsListener` and is very straightforward:
 
 ServerSideListener helper class:
 
+<!--@mdc ::code-callout -->
 ```java
 static class ServerSideListener implements WsListener {
     volatile String message;
 
     @Override
-    public void onMessage(WsSession session, String text, boolean last) { 
+    public void onMessage(WsSession session, String text, boolean last) { // <1>
         message = text;
         session.send("ws", true);
     }
 }
 ```
-
-- Send "ws" on a received message.
-
-The testing class should be annotated with `@RoutingTest` only if routing tests
+1. Send "ws" on a received message.
+<!--@mdc :: -->
 are required without real port opening. Instead of `WsClient`, use
 `DirectWsClient`.
 

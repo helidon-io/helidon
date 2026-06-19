@@ -21,12 +21,13 @@ dependencies][helidon-integrat], you must add the following:
 To automatically create and add `OracleEmbeddingStore` to the service registry
 add the following lines to `application.yaml`:
 
+<!--@mdc ::code-callout -->
 ```yaml [application.yaml]
 # Oracle UCP datasource
 data:
   sources:
     sql:
-      - name: "foo-bar-data-source" 
+      - name: "foo-bar-data-source" # <1>
         provider.ucp:
           username: "vector"
           password: "vector"
@@ -45,10 +46,10 @@ langchain4j:
       embedding-table:
         name: "foo-bar-embeddings"
 ```
-
-- Configured with
-  `io.helidon.data.sql.datasource:helidon-data-sql-datasource-ucp` see [Helidon
-  Data Repository](../../../se/data.md) for more info
+1. Configured with
+   `io.helidon.data.sql.datasource:helidon-data-sql-datasource-ucp` see [Helidon
+   Data Repository](../../../se/data.md) for more info
+<!--@mdc :: -->
 
 If `enabled` is set to `false`, the configuration is ignored, and the component
 is not created.

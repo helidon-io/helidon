@@ -575,6 +575,7 @@ above for generating server files:
 
 Creating or updating a client project using the OpenAPI Maven plug-in:
 
+<!--@mdc ::code-callout{collapsed} -->
 ```xml [pom.xml]
 <plugin>
   <groupId>org.openapitools</groupId>
@@ -588,7 +589,7 @@ Creating or updating a client project using the OpenAPI Maven plug-in:
         <inputSpec>${project.basedir}/src/main/resources/petstore.yaml</inputSpec>
         <generatorName>java-helidon-client</generatorName>
         <library>se</library>
-        <output>${project.build.directory}/generated-sources/client</output>
+        <output>${project.build.directory}/generated-sources/client</output> <!-- (1) -->
         <addCompileSourceRoot>true</addCompileSourceRoot>
         <configOptions>
           <groupId>io.helidon.examples</groupId>
@@ -606,9 +607,9 @@ Creating or updating a client project using the OpenAPI Maven plug-in:
   </executions>
 </plugin>
 ```
-
-- Specifies that the generated files should reside in the
+1. Specifies that the generated files should reside in the
   `target/generated-sources/client` directory.
+<!--@mdc :: -->
 
 #### Using the Online Generator
 
@@ -665,13 +666,16 @@ operation with a very simple method body that returns a not-yet-implemented HTTP
 status in the response. The following example shows the generated method for the
 `addPet` OpenAPI operation.
 
-The generated handleAddPet method in the PetApiImpl class:
+The generated `handleAddPet` method in the `PetApiImpl` class:
 
 ```java
 public class PetServiceImpl extends PetService {
     @Override
-    protected void handleAddPet(ServerRequest request, ServerResponse response,
-                                Pet pet) {
+    protected void handleAddPet(
+            ServerRequest request,
+            ServerResponse response,
+            Pet pet) {
+
         response.status(Status.NOT_IMPLEMENTED_501).send();
     }
 }
@@ -680,72 +684,75 @@ public class PetServiceImpl extends PetService {
 Customize the class to manage the pets and revise the method to save the new pet
 and send the correct response, as shown next.
 
-The customized handleAddPet method in the PetApiImpl class:
+The customized `handleAddPet` method in the `PetApiImpl` class:
 
+<!--@mdc ::code-callout{collapsed} -->
 ```java
 public class PetServiceImpl extends PetService {
 
-    private final Map<Long, Pet> pets = new HashMap<>();
+    private final Map<Long, Pet> pets = new HashMap<>(); // <1>
 
     @Override
-    protected void handleAddPet(ServerRequest request, ServerResponse response,
-                                Pet pet) {
-        if (pets.containsKey(pet.getId())) {
+    protected void handleAddPet(
+            ServerRequest request,
+            ServerResponse response,
+            Pet pet) {
+
+        if (pets.containsKey(pet.getId())) { // <2>
             AddPetOp.Response405.builder().send(response);
         }
-        pets.put(pet.getId(), pet);
-        AddPetOp.Response200.builder().send(response);
+        pets.put(pet.getId(), pet); // <3>
+        AddPetOp.Response200.builder().send(response); // <4>
     }
 }
 ```
-
-- Business logic: create a very simple data store - a real app would use a
-  database.
-- Business logic: make sure the pet being added does not already exist. Send the
-  invalid request status code if it does.
-- Business logic: add the pet to the data store.
-- Prepare and send the `200` response.
-
-If a response has any *required* response parameters you would pass them as
+1. Business logic: create a very simple data store - a real app would use a
+   database.
+2. Business logic: make sure the pet being added does not already exist. Send the
+   invalid request status code if it does.
+3. Business logic: add the pet to the data store.
+4. Prepare and send the `200` response.
+<!--@mdc :: -->
 parameters to the `builder` method. Add *optional* response parameters using
 other generated builder methods. The following example illustrates this for the
 `findPetsByTags` operation and its `response` output parameter.
 
 The customized findPetsByTags method in the PetApiImpl class:
 
+<!--@mdc ::code-callout{collapsed} -->
 ```java
 public class PetServiceImpl extends PetService {
 
-    private final Map<Long, Pet> pets = new HashMap<>();
+    private final Map<Long, Pet> pets = new HashMap<>(); // <1>
 
     @Override
-    protected void handleFindPetsByTags(ServerRequest request, ServerResponse response,
-                                        List<String> tags) {
+    protected void handleFindPetsByTags(
+            ServerRequest request,
+            ServerResponse response,
+            List<String> tags) { // <2>
 
         List<Pet> result = pets.values().stream()
-                .filter(pet -> pet.getTags()
-                        .stream()
+                .filter(pet -> pet.getTags().stream()
                         .anyMatch(petTag -> tags.contains(petTag.getName())))
-                .toList();
+                .toList(); // <3>
 
-        FindPetsByTagsOp.Response200.builder()
-                .response(result)
-                .send(response);
-
+        FindPetsByTagsOp.Response200.builder() // <4>
+                .response(result) // <5>
+                .send(response); // <6>
     }
 }
 ```
-
-- Uses the same data store as in the earlier example.
-- The `tags` parameter conveys the tag values to be matched in selecting pets to
+1. Uses the same data store as in the earlier example.
+2. The `tags` parameter conveys the tag values to be matched in selecting pets to
   report. Other generated code extracts the runtime argument’s value from the
   request and then automatically passes it to the method.
-- Collects all pets with any tag that matches any of the selection tags passed
+3. Collects all pets with any tag that matches any of the selection tags passed
   in.
-- Uses the generated `Response200` to prepare the response.
-- Assigns the optional `response` output parameter the list of matching `Pet`
+4. Uses the generated `Response200` to prepare the response.
+5. Assigns the optional `response` output parameter the list of matching `Pet`
   objects.
-- Send the response using the prepared response information.
+6. Send the response using the prepared response information.
+<!--@mdc :: -->
 
 Write each of the `handleXxx` methods appropriately so they implement the
 business logic you need and send the response.
@@ -789,29 +796,32 @@ the `AddPetOp` as an example.
 
     Customized AddPetOp class:
 
+    <!--@mdc ::code-callout -->
     ```java
     public class AddPetOpCustom extends PetService.AddPetOp {
-    @Override
-    protected Pet pet(ServerRequest request, ValidatorUtils.Validator validator) {
-        Pet result = request.content().hasEntity()
-                ? request.content().as(Pet.class)
-                : null;
+        @Override
+        protected Pet pet(ServerRequest request,
+                          ValidatorUtils.Validator validator) {
 
-        // Insist that pet names never start with a lower-case letter.
-        if (result != null) {
-            validator.validatePattern("pet", result.getName(), "[^a-z].*");
+            Pet result = request.content().hasEntity() // <1>
+                    ? request.content().as(Pet.class)
+                    : null;
+
+            // Insist that pet names never start with a lower-case letter.
+            if (result != null) {
+                validator.validatePattern("pet", result.getName(), "[^a-z].*"); // <2>
+            }
+            return result; // <3>
         }
-        return result;
-    }
     }
     ```
-
-    - Extracts the parameter from the request. This happens to use the same
+    1. Extracts the parameter from the request. This happens to use the same
       logic as in the generated method, but you can customize that as well if you
       need to.
-    - Apply any relevant validations. This silly but illustrative example
+    2. Apply any relevant validations. This silly but illustrative example
       rejects any pet name that starts with a lower-case letter.
-    - Return the extracted value, properly typed.
+    3. Return the extracted value, properly typed.
+    <!--@mdc :: -->
 
 3.  In the implementation class for the API (`PetServiceImpl`) override the
     `createAddPetOp` method so it returns an instance of your new subclass
@@ -821,10 +831,10 @@ the `AddPetOp` as an example.
 
     ```java
     public class PetServiceImpl extends PetService {
-    @Override
-    protected AddPetOp createAddPetOp() {
-        return new AddPetOpCustom();
-    }
+        @Override
+        protected AddPetOp createAddPetOp() {
+            return new AddPetOpCustom();
+        }
     }
     ```
 
@@ -881,21 +891,22 @@ In the simplest case, your code can get an `ApiClient` instance directly.
 
 Creating an ApiClient instance - simple case:
 
+<!--@mdc ::code-callout -->
 ```java
 public class ExampleClient {
 
-    private ApiClient apiClient;
+    private ApiClient apiClient; // <1>
 
     void init() {
-        ApiClient apiClient = ApiClient.builder().build();
+        ApiClient apiClient = ApiClient.builder().build(); // <2>
     }
 }
 ```
-
-- The same `ApiClient` instance can be reused to invoke multiple APIs handled by
+1. The same `ApiClient` instance can be reused to invoke multiple APIs handled by
   the same server.
-- Creates an `ApiClient` instance using default settings from the OpenAPI
+2. Creates an `ApiClient` instance using default settings from the OpenAPI
   document.
+<!--@mdc :: ->
 
 Your code relies fully on the automatic `WebClient`. In many cases, this
 approach works very well, especially if the OpenAPI document correctly declares

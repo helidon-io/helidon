@@ -136,33 +136,40 @@ illustrate how to use REST client metrics simply with a single runnable project.
 
 To create this REST client metrics example follow these steps.
 
-1.  Starting with the Helidon MP QuickStart example, add dependencies for both
-    the Helidon REST client component and the Helidon REST client metrics
-    component, as shown below.
+<!--@mdc ::steps -->
 
-    ```xml [pom.xml]
-    <dependency>
-      <groupId>io.helidon.microprofile.rest-client</groupId>
-      <artifactId>helidon-microprofile-rest-client</artifactId>
-    </dependency>
-    ```
+### Add Dependencies
 
-    ```xml [pom.xml]
-    <dependency>
-      <groupId>io.helidon.microprofile.rest-client-metrics</groupId>
-      <artifactId>helidon-microprofile-rest-client-metrics</artifactId>
-    </dependency>
-    ```
+Starting with the Helidon MP QuickStart example, add dependencies for both
+the Helidon REST client component and the Helidon REST client metrics
+component, as shown below.
 
-2.  Add the following REST client interface which includes MicroProfile Metrics
-    annotations to count and time various REST client method invocations.
+```xml [pom.xml]
+<dependency>
+  <groupId>io.helidon.microprofile.rest-client</groupId>
+  <artifactId>helidon-microprofile-rest-client</artifactId>
+</dependency>
+```
 
-    ```java
-    @Path("/greet")
-    @Timed(name = "timedGreet", absolute = true)
-    public interface GreetRestClient {
+```xml [pom.xml]
+<dependency>
+  <groupId>io.helidon.microprofile.rest-client-metrics</groupId>
+  <artifactId>helidon-microprofile-rest-client-metrics</artifactId>
+</dependency>
+```
 
-    @Counted
+### Add REST Client Interface
+
+Add the following REST client interface which includes MicroProfile Metrics
+annotations to count and time various REST client method invocations.
+
+<!--@mdc ::code-callout -->
+```java
+@Path("/greet")
+@Timed(name = "timedGreet", absolute = true) // <1>
+public interface GreetRestClient {
+
+    @Counted // <2>
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     GreetingMessage getDefaultMessage();
@@ -177,139 +184,144 @@ To create this REST client metrics example follow these steps.
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     Response updateGreeting(GreetingMessage message);
+}
+```
+1. Times all outbound method invocations using separate timers for each
+   method.
+2. Counts the number of times a request is sent to get the default greeting
+   message.
+<!--@mdc :: -->
+
+### Add JAXRS Resource
+
+Add a new resource class, similar to the `GreetService` resource class,
+but which delegates all incoming requests using the REST client.
+
+<!--@mdc ::code-callout{collapsed} -->
+```java
+@Path("/delegate")
+public class DelegatingResource {
+
+    private static LazyValue<GreetRestClient> greetRestClient =
+            LazyValue.create(DelegatingResource::prepareClient); // <1>
+
+    /**
+     * Return a worldly greeting message.
+     *
+     * @return {@link GreetingMessage}
+     */
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public GreetingMessage getDefaultMessage() {
+        return greetRestClient.get().getDefaultMessage(); // <2>
     }
-    ```
 
-    - Times all outbound method invocations using separate timers for each
-      method.
-    - Counts the number of times a request is sent to get the default greeting
-      message.
-   3.  Add a new resource class, similar to the `GreetService` resource class,
-       but which delegates all incoming requests using the REST client.
+    /**
+     * Return a greeting message using the name that was provided.
+     *
+     * @param name the name to greet
+     * @return {@link GreetingMessage}
+     */
+    @Path("/{name}")
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public GreetingMessage getMessage(@PathParam("name") String name) {
+        return greetRestClient.get().getMessage(name);
+    }
 
-       <!--@mdc ::code-collapse -->
-       ```java
-       @Path("/delegate")
-       public class DelegatingResource {
+    /**
+     * Set the greeting to use in future messages.
+     *
+     * @param message JSON containing the new greeting
+     * @return {@link jakarta.ws.rs.core.Response}
+     */
+    @Path("/greeting")
+    @PUT
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response updateGreeting(GreetingMessage message) {
+        return greetRestClient.get().updateGreeting(message);
+    }
 
-           private static LazyValue<GreetRestClient> greetRestClient = LazyValue.create(DelegatingResource::prepareClient);
+    private static GreetRestClient prepareClient() { // <3>
+        Config config = ConfigProvider.getConfig();
+        String serverHost = config.getOptionalValue("server.host", String.class)
+                .orElse("localhost");
+        String serverPort = config.getOptionalValue("server.port", String.class)
+                .orElse("8080");
+        return RestClientBuilder.newBuilder()
+                .baseUri(URI.create("http://" + serverHost + ":" + serverPort))
+                .build(GreetRestClient.class);
+    }
+}
+```
+1. Holds the prepared REST client for use by the delegating methods.
+2. Prepares the REST client. The example shows only one of many ways of
+  doing this step.
+3. Each delegating method invokes the corresponding REST client method and
+  returns the result from it.
 
-           /**
-            * Return a worldly greeting message.
-            *
-            * @return {@link GreetingMessage}
-            */
-           @GET
-           @Produces(MediaType.APPLICATION_JSON)
-           public GreetingMessage getDefaultMessage() {
-               return greetRestClient.get().getDefaultMessage();
-           }
+  By default, resource classes such as `DelegatingResource` are
+  instantiated for each incoming request, but generally a Helidon server
+  making outbound requests reuses the client data structures and
+  connections. To create and reuse only a single REST client instance
+  this example resource uses the Helidon `LazyValue` utility class so
+  even as the system creates multiple instances of `DelegatingResource`
+  they all reuse the same REST client.
+<!--@mdc :: -->
 
-           /**
-            * Return a greeting message using the name that was provided.
-            *
-            * @param name the name to greet
-            * @return {@link GreetingMessage}
-            */
-           @Path("/{name}")
-           @GET
-           @Produces(MediaType.APPLICATION_JSON)
-           public GreetingMessage getMessage(@PathParam("name") String name) {
-               return greetRestClient.get().getMessage(name);
-           }
+### Build and run
 
-           /**
-            * Set the greeting to use in future messages.
-            *
-            * @param message JSON containing the new greeting
-            * @return {@link jakarta.ws.rs.core.Response}
-            */
-           @Path("/greeting")
-           @PUT
-           @Consumes(MediaType.APPLICATION_JSON)
-           @Produces(MediaType.APPLICATION_JSON)
-           public Response updateGreeting(GreetingMessage message) {
-               return greetRestClient.get().updateGreeting(message);
-           }
+```shell [Terminal]
+mvn clean package
+java -jar target/helidon-quickstart-mp.jar
+```
 
-           private static GreetRestClient prepareClient() {
-               Config config = ConfigProvider.getConfig();
-               String serverHost = config.getOptionalValue("server.host", String.class).orElse("localhost");
-               String serverPort = config.getOptionalValue("server.port", String.class).orElse("8080");
-               return RestClientBuilder.newBuilder()
-                       .baseUri(URI.create("http://" + serverHost + ":" + serverPort))
-                       .build(GreetRestClient.class);
-           }
-       }
-       ```
-       <!--@mdc :: -->
+### Access the endpoints
 
-       - Holds the prepared REST client for use by the delegating methods.
-       - Prepares the REST client. The example shows only one of many ways of
-         doing this step.
-       - Each delegating method invokes the corresponding REST client method and
-         returns the result from it.
+```shell [Terminal]
+curl http://localhost:8080/delegate
+curl http://localhost:8080/delegate
+curl http://localhost:8080/delegate/Joe
+```
 
-         By default, resource classes such as `DelegatingResource` are
-         instantiated for each incoming request, but generally a Helidon server
-         making outbound requests reuses the client data structures and
-         connections. To create and reuse only a single REST client instance
-         this example resource uses the Helidon `LazyValue` utility class so
-         even as the system creates multiple instances of `DelegatingResource`
-         they all reuse the same REST client.
+### Retrieve the metrics
 
-4.  Build and run the application.
+```shell [Terminal]
+curl 'http://localhost:8080/metrics?scope=application' | grep getDefault
+```
 
-    ```shell [Terminal]
-    mvn clean package
-    java -jar target/helidon-quickstart-mp.jar
-    ```
+Look for the following counter metric:
 
-5.  Access the delegating endpoints.
+```log
+# TYPE io_helidon_examples_quickstart_mp_GreetRestClient_getDefaultMessage_total counter
+io_helidon_examples_quickstart_mp_GreetRestClient_getDefaultMessage_total{mp_scope="application",} 2.0
+```
 
-    ```shell [Terminal]
-    curl http://localhost:8080/delegate
-    curl http://localhost:8080/delegate
-    curl http://localhost:8080/delegate/Joe
-    ```
+This is the counter resulting from the `@Counted` annotation on the
+`getDefaultMessage` method of the REST client interface. The name is
+relative to the annotated method’s class and is automatically set to the
+method name because neither `name` nor `absolute` were specified with
+the annotation.
 
-6.  Retrieve the application metrics for the `getDefaultMessage` operation.
+Look for the following timer metric:
 
-    ```shell [Terminal]
-    curl 'http://localhost:8080/metrics?scope=application' | grep getDefault
-    ```
+```log
+# TYPE timedGreet_getDefaultMessage_seconds summary
+timedGreet_getDefaultMessage_seconds{mp_scope="application",quantile="0.5",} 0.003407872
+timedGreet_getDefaultMessage_seconds{mp_scope="application",quantile="0.75",} 0.092143616
+timedGreet_getDefaultMessage_seconds_count{mp_scope="application",} 2.0
+```
 
-7.  Look for two types of metrics:
-    1.  Counter:
+This excerpt shows the output for only one timer, but the full output
+includes timers for each method.
 
-        ```text
-        # TYPE io_helidon_examples_quickstart_mp_GreetRestClient_getDefaultMessage_total counter
-        io_helidon_examples_quickstart_mp_GreetRestClient_getDefaultMessage_total{mp_scope="application",} 2.0
-        ```
-
-        This is the counter resulting from the `@Counted` annotation on the
-        `getDefaultMessage` method of the REST client interface. The name is
-        relative to the annotated method’s class and is automatically set to the
-        method name because neither `name` nor `absolute` were specified with
-        the annotation.
-
-    2.  Timer:
-
-        ```text
-        # TYPE timedGreet_getDefaultMessage_seconds summary
-        timedGreet_getDefaultMessage_seconds{mp_scope="application",quantile="0.5",} 0.003407872
-        timedGreet_getDefaultMessage_seconds{mp_scope="application",quantile="0.75",} 0.092143616
-        timedGreet_getDefaultMessage_seconds_count{mp_scope="application",} 2.0
-        ```
-
-        This excerpt shows the output for only one timer, but the full output
-        includes timers for each method.
-
-        The `@Timed` annotation at the type level triggers the registration of
-        timers for each REST method in the REST client interface. The `name`
-        setting overrides the default of the type name, and the `absolute`
-        setting means the selected name *is not* relative to the fully-qualified
-        class name.
+The `@Timed` annotation at the type level triggers the registration of
+timers for each REST method in the REST client interface. The `name`
+setting overrides the default of the type name, and the `absolute`
+setting means the selected name *is not* relative to the fully-qualified
+class name.
+<!--@mdc :: -->
 
 ## Reference
 

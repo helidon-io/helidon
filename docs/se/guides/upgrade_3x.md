@@ -94,45 +94,43 @@ additional service:
 
 Helidon 2 WebSocket route registering:
 
+<!--@mdc ::code-callout -->
 ```java
 WebServer.builder(Routing.builder()
-    .register("/rest", new SomeRestService())
-    .register("/websocket", TyrusSupport.builder()
-        .register(ServerEndpointConfig.Builder
-            .create(MessageBoardEndpoint.class, "/")
-            .encoders(encoders)
-            .build())
-        .build()
-    ))
-    .port(8080)
-    .build();
+                          .register("/rest", new SomeRestService()) // <1>
+                          .register("/websocket", TyrusSupport.builder() // <2>
+                                  .register(ServerEndpointConfig.Builder
+                                                    .create(MessageBoardEndpoint.class, "/")
+                                                    .encoders(encoders)
+                                                    .build())
+                                  .build()
+                          ))
+        .port(8080)
+        .build();
 ```
-
-- Traditional REST routing service registration
-- WebSocket setup with Tyrus service
-
-In Helidon 3, WebSocket routing is defined by adding another routing:
+1. Traditional REST routing service registration
+2. WebSocket setup with Tyrus service
+<!--@mdc :: -->
 
 Helidon 3 WebSocket route registering:
 
+<!--@mdc ::code-callout -->
 ```java
 WebServer.builder()
-    .routing(r -> r
-        .register("/rest", new SomeRestService())
-    )
-    .addRouting(WebSocketRouting.builder()
-        .endpoint("/websocket", ServerEndpointConfig.Builder
-            .create(MessageBoardEndpoint.class, "/board")
-            .encoders(encoders)
-            .build())
-        .build())
-    .port(8080)
+        .routing(r -> r
+                .register("/rest", new SomeRestService()) // <1>
+        )
+        .addRouting(WebSocketRouting.builder() // <2>
+                            .endpoint("/websocket", ServerEndpointConfig.Builder
+                                    .create(MessageBoardEndpoint.class, "/board")
+                                    .encoders(encoders)
+                                    .build())
+                            .build())
+        .port(8080)
 ```
-
-- Traditional REST routing service registration
-- WebSocket routing setup
-
-## Deprecations
+1. Traditional REST routing service registration
+2. WebSocket routing setup
+<!--@mdc :: -->
 
 - The custom Helidon OCI clients have been deprecated ([see PR][see-pr]).
 

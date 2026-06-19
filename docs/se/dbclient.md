@@ -75,48 +75,48 @@ client.
 For the DB Client using JDBC implementation and H2 database, you must include
 the following dependencies in your project:
 
+<!--@mdc ::code-callout -->
 ```xml [pom.xml]
 <dependencies>
-  <dependency>
-    <groupId>io.helidon.dbclient</groupId>
-    <artifactId>helidon-dbclient</artifactId>
-  </dependency>
-  <dependency>
-    <groupId>io.helidon.dbclient</groupId>
-    <artifactId>helidon-dbclient-jdbc</artifactId>
-  </dependency>
-  <dependency>
-    <groupId>com.h2database</groupId>
-    <artifactId>h2</artifactId>
-  </dependency>
+     <dependency>
+         <groupId>io.helidon.dbclient</groupId> <!-- (1) -->
+         <artifactId>helidon-dbclient</artifactId>
+     </dependency>
+     <dependency>
+         <groupId>io.helidon.dbclient</groupId> <!-- (2) -->
+         <artifactId>helidon-dbclient-jdbc</artifactId>
+     </dependency>
+     <dependency>
+         <groupId>com.h2database</groupId> <!-- (3) -->
+         <artifactId>h2</artifactId>
+    </dependency>
 </dependencies>
 ```
-
-- Add the Helidon DB Client
-- Specify JDBC or MongoDB
-- Add the database JDBC driver (only for JDBC)
-
-### Use Helidon Config to configure the client.
+1. Add the Helidon DB Client
+2. Specify JDBC or MongoDB
+3. Add the database JDBC driver (only for JDBC)
+<!--@mdc :: -->
 
 The DB Client must be configured before you begin. In the example below we’ll
 use Helidon Config to set up JDBC-based client:
 
+<!--@mdc ::code-callout -->
 ```yaml
 db:
-  source: "jdbc" 
+  source: "jdbc" # <1>
   connection:
-    url: "jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false" 
+    url: "jdbc:mysql://127.0.0.1:3306/pokemon?useSSL=false" # <2>
     username: "user"
     password: "password"
-  statements: 
-    ping: "DO 0" 
+  statements: # <3>
+    ping: "DO 0" # <4>
     select-all-pokemons: "SELECT id, name FROM Pokemons"
 ```
-
-- Source: `jdbc` or `mongoDb`
-- Connection: database connection parameters
-- Statements: named statements to be used in application
-- A ping statement used by health check
+1. Source: `jdbc` or `mongoDb`
+2. Connection: database connection parameters
+3. Statements: named statements to be used in application
+4. A ping statement used by health check
+<!--@mdc :: -->
 
 ## Using DB Client API Methods
 

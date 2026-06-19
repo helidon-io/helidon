@@ -35,28 +35,26 @@ MockConnector mockConnector;
 
 Emitting String values a, b, c:
 
+<!--@mdc ::code-callout -->
 ```java
-mockConnector.incoming("my-incoming-channel", String.class) 
+mockConnector.incoming("my-incoming-channel", String.class) // <1>
         .emit("a", "b", "c");
 ```
-
-- Get incoming channel of given name and payload type
-
-### Asserting Data
+1. Get incoming channel of given name and payload type
+<!--@mdc :: -->
 
 Awaiting and asserting payloads with custom mapper:
 
+<!--@mdc ::code-callout -->
 ```java
 mockConnector
-        .outgoing("my-outgoing-channel", String.class) 
-        .awaitData(TIMEOUT, Message::getPayload, "a", "b", "c"); 
+        .outgoing("my-outgoing-channel", String.class) // <1>
+        .awaitData(TIMEOUT, Message::getPayload, "a", "b", "c"); // <2>
 ```
-
-- Get outgoing channel of given name and payload type
-- Request number of expected items and block the thread until items arrive then
-  assert the payloads
-
-## Configuration
+1. Get outgoing channel of given name and payload type
+2. Request number of expected items and block the thread until items arrive then
+   assert the payloads
+<!--@mdc :: -->
 
 | Key            | Default value    | Description                                                        |
 |----------------|------------------|--------------------------------------------------------------------|
@@ -71,54 +69,53 @@ Mock connector works great with built-in Helidon test support for [JUnit
 As Helidon test support makes a bean out of your test, you can inject
 MockConnector directly into it.
 
+<!--@mdc ::code-callout{collapsed} -->
 ```java
 @HelidonTest
-@DisableDiscovery 
-@AddBean(MockConnector.class) 
-@AddExtension(MessagingCdiExtension.class) 
-@AddConfig(key = "mp.messaging.incoming.test-channel-in.connector", value = MockConnector.CONNECTOR_NAME) 
-@AddConfig(key = "mp.messaging.incoming.test-channel-in.mock-data-type", value = "java.lang.Integer") 
-@AddConfig(key = "mp.messaging.incoming.test-channel-in.mock-data", value = "6,7,8") 
-@AddConfig(key = "mp.messaging.outgoing.test-channel-out.connector", value = MockConnector.CONNECTOR_NAME) 
+@DisableDiscovery // <1>
+@AddBean(MockConnector.class) // <2>
+@AddExtension(MessagingCdiExtension.class) // <3>
+@AddConfig(key = "mp.messaging.incoming.test-channel-in.connector", value = MockConnector.CONNECTOR_NAME) // <4>
+@AddConfig(key = "mp.messaging.incoming.test-channel-in.mock-data-type", value = "java.lang.Integer") // <5>
+@AddConfig(key = "mp.messaging.incoming.test-channel-in.mock-data", value = "6,7,8") // <6>
+@AddConfig(key = "mp.messaging.outgoing.test-channel-out.connector", value = MockConnector.CONNECTOR_NAME) // <7>
 public class MessagingTest {
 
     private static final Duration TIMEOUT = Duration.ofSeconds(15);
 
     @Inject
     @TestConnector
-    private MockConnector mockConnector; 
+    private MockConnector mockConnector; // <8>
 
     @Incoming("test-channel-in")
     @Outgoing("test-channel-out")
-    int multiply(int payload) {  
+    int multiply(int payload) {  // <9>
         return payload * 10;
     }
 
     @Test
     void testMultiplyChannel() {
-        mockConnector.outgoing("test-channel-out", Integer.TYPE) 
+        mockConnector.outgoing("test-channel-out", Integer.TYPE) // <10>
                 .awaitPayloads(TIMEOUT, 60, 70, 80);
     }
 }
 ```
-
-- If you want to add all the beans manually
-- Manually add MockConnector bean, so it is accessible by messaging for
-  constructing the channels
-- Messaging support in Helidon MP is provided by this CDI extension
-- Instruct messaging to use `mock-connector` as an upstream for channel
-  `test-channel-in`
-- Generate mock data of `java.lang.Integer`, String is default
-- Generate mock data
-- Instruct messaging to use `mock-connector` as a downstream for channel
-  `test-channel-out`
-- Inject mock connector so we can access publishers and subscribers registered
-  within the mock connector
-- Messaging processing method connecting together channels `test-channel-in` and
-  `test-channel-out`
-- Actual JUnit 5 test method which is going to block the thread until 3 items
-  are intercepted on `test-channel-out` channel’s downstream and assert those
-  with expected values.
-
-[junit-5]: ../testing/testing.md
+1. If you want to add all the beans manually
+2. Manually add MockConnector bean, so it is accessible by messaging for
+   constructing the channels
+3. Messaging support in Helidon MP is provided by this CDI extension
+4. Instruct messaging to use `mock-connector` as an upstream for channel
+   `test-channel-in`
+5. Generate mock data of `java.lang.Integer`, String is default
+6. Generate mock data
+7. Instruct messaging to use `mock-connector` as a downstream for channel
+   `test-channel-out`
+8. Inject mock connector so we can access publishers and subscribers registered
+   within the mock connector
+9. Messaging processing method connecting together channels `test-channel-in` and
+   `test-channel-out`
+10. Actual JUnit 5 test method which is going to block the thread until 3 items
+   are intercepted on `test-channel-out` channel’s downstream and assert those
+   with expected values.
+<!--@mdc :: -->
 [testng]: ../testing/testing-ng.md

@@ -70,28 +70,29 @@ your application can load this as configuration as follows:
 
 Using `directory` config source:
 
+<!--@mdc ::code-callout -->
 ```java
 Config secrets = Config.builder(
-                ConfigSources.directory("conf/secrets")) // (1)
-        .disableEnvironmentVariablesSource() // (2)
-        .disableSystemPropertiesSource() // (2)
+                ConfigSources.directory("conf/secrets")) // <1>
+        .disableEnvironmentVariablesSource() // <2>
+        .disableSystemPropertiesSource() // <2>
         .build();
 
-assert secrets.get("username") // (3)
+assert secrets.get("username") // <3>
         .asString()
         .get()
         .equals("jose");
-assert secrets.get("password") // (4)
+assert secrets.get("password") // <4>
         .asString()
         .get()
         .equals("^ery$ecretP&ssword");
 ```
-
-1.  Loads all files from the `conf/secrets` directory.
-2.  No need to use environment variables or system properties as sources in
-    building the `Config`.
-3.  The loaded config maps the key `username` to the value `jose`...
-4.  ...and the key `password` to `^ery$ecretP&ssword`.
+1. Loads all files from the `conf/secrets` directory.
+2. No need to use environment variables or system properties as sources in
+   building the `Config`.
+3. The loaded config maps the key `username` to the value `jose`...
+4. ...and the key `password` to `^ery$ecretP&ssword`.
+<!--@mdc :: -->
 
 Remember that your application can process the contents of a given file as
 configuration. See the [config sources](introduction.md#config-sources) section
@@ -100,57 +101,57 @@ and the [`ConfigSources.file`][configsources-fi] Javadoc.
 ### In-memory Config Sources
 
 The config system provides several ways to create a `Config` tree from data
-already in memory. See the [`ConfigSources` javadoc][configsources-ja] for
-further details. The numerous variants of the `from` method construct
-`ConfigSource` or `Builder<ConfigSource>` instances.
+already in memory. See the [`ConfigSources` Javadoc][configsources-ja] for
+further details.
 
-#### Subtree of Another `Config`
+The numerous variants of the `from` method construct `ConfigSource` or
+`Builder<ConfigSource>` instances.
+
+#### Config Subtree
 
 ```java
 Config anotherConfig = Config.create(classpath("application.conf"));
 
 Config config = Config.create(
-        ConfigSources.create(anotherConfig.get("data")));
+    ConfigSources.create(anotherConfig.get("data")));
 ```
 
-#### `Properties` Object
+#### Properties
 
 ```java
 Config config = Config.create(
-        ConfigSources.create(System.getProperties()).build()); // (1)
+    ConfigSources.create(System.getProperties()).build());
 ```
 
-#### `String` of a Given Media Type
+#### String
 
 ```java
 Config config = Config.create();
 ConfigSources.create("app.greeting = Hi", MediaTypes.create("text", "x-java-properties"));
 ```
 
-#### `Map`
+#### Map
 
+<!--@mdc ::code-callout -->
 ```java
 Config config = Config.create(
-        ConfigSources.create(Map.of("app.page-size", "20"))
-                .build()); // (1)
+    ConfigSources.create(Map.of("app.page-size", "20"))
+        .build()); // <1>
 ```
+1. `ConfigSources.create` variants for `Properties` or `Map` arguments return a `MapConfigSource.Builder` instance.
+<!--@mdc :: -->
 
 #### *ad hoc* Config Nodes
 
 ```java
 Config config = Config.create(
-        ConfigSources.create(ObjectNode.builder()
-                                     .addList("app.basic-range", ListNode.builder()
-                                             .addValue("-20")
-                                             .addValue("20")
-                                             .build())
-                                     .build()));
+    ConfigSources.create(ObjectNode.builder()
+        .addList("app.basic-range", ListNode.builder()
+             .addValue("-20")
+             .addValue("20")
+             .build())
+    .build()));
 ```
-
-1.  `ConfigSources.create` variants for `Properties` or `Map` arguments return a
-    `MapConfigSource.Builder` instance.
-
-### Multi-Source Configs and Composite Config Sources
 
 Although the examples above use a single source, you can build a single `Config`
 from multiple sources.
@@ -167,7 +168,7 @@ the [`ConfigSources.prefixed`][configsources-pr] method. The following example
 shows two YAML files as config sources and the code to load each with a
 different prefix into a single `Config` tree:
 
-File `app.conf`
+File `app.conf`:
 
 ```hocon [application.conf]
 greeting = "Hello"
@@ -188,39 +189,40 @@ providers: [
 ]
 ```
 
-Using `prefixed` config source
+Using `prefixed` config source:
 
+<!--@mdc ::code-callout -->
 ```java
 Config config = Config.create(
-        ConfigSources.prefixed("app", // (1)
-                               classpath("app.conf")), // (2)
-        ConfigSources.prefixed("data", // (3)
-                               classpath("data.conf"))); // (4)
+    ConfigSources.prefixed("app", // <1>
+        classpath("app.conf")), // <2>
+    ConfigSources.prefixed("data", // <3>
+        classpath("data.conf"))); // <4>
 
-assert config.get("app.greeting") // (5)
+assert config.get("app.greeting") // <5>
         .asString()
         .get()
         .equals("Hello");
 
-assert config.get("data.providers.0.name") // (6)
+assert config.get("data.providers.0.name") // <6>
         .asString()
         .get()
         .equals("Provider1");
 ```
+1. Specifies the prefix `app` for the associated source.
+2. `Supplier<ConfigSource>` for the file `app.conf` loaded from the current
+   `classpath`.
+3. Specifies the prefix `data` for the associated source.
+4. `Supplier<ConfigSource>` for the file `app.conf` loaded from the current
+   `classpath`.
+5. Key `app.greeting` combines the `app` prefix and the original key `greeting`
+   from the `app.conf` source.
+6. Key `data.providers.0.name` combines the `data` prefix and the original key
+   `providers.0.name` property from `data.conf` source.
+<!--@mdc :: -->
 
-1.  Specifies the prefix `app` for the associated source.
-2.  `Supplier<ConfigSource>` for the file `app.conf` loaded from the current
-    `classpath`.
-3.  Specifies the prefix `data` for the associated source.
-4.  Supplier\<ConfigSource\> for the file `app.conf` loaded from the current
-    `classpath`.
-5.  Key `app.greeting` combines the `app` prefix and the original key `greeting`
-    from the `app.conf` source.
-6.  Key `data.providers.0.name` combines the `data` prefix and the original key
-    `providers.0.name` property from `data.conf` source.
-
-This technique can be useful, for example, if multiple sources contain keys that
-might overlap; assigning different prefixes to the keys from different sources
+This technique can be useful, for example, if multiple sources contain keys
+that might overlap; assigning different prefixes to the keys from different sources
 gives your application a way to access all config elements distinctly even if
 their keys would otherwise conflict.
 
@@ -235,18 +237,19 @@ The config system provides the `FallbackMergingStrategy` which implements the
 default, "first wins" algorithm. You can write your own implementation of
 MergingStrategy interface and use it instead to provide a different algorithm.
 
-Composite config source example
+Composite config source example:
 
+<!--@mdc ::code-callout -->
 ```java
 Config config = Config.builder()
         .addSource(file("config-file.properties"))
         .addSource(classpath("application.yaml"))
-        .mergingStrategy(MergingStrategy.fallback()) // (1)
+        .mergingStrategy(MergingStrategy.fallback()) // <1>
         .build();
 ```
-
-1.  Specifies the merging strategy. This example uses the default fallback
-    merging strategy.
+1. Specifies the merging strategy. This example uses the default fallback
+   merging strategy.
+<!--@mdc :: -->
 
 ## Advanced Config Parsers
 
@@ -272,14 +275,14 @@ config source.
 By default, config source implementations use the
 `io.helidon.common.media.type.MediaTypes` API to infer the source media type
 from the source, typically (but not always) based on the file type portion of
-the file path. Helidon media type module has a predefined set of mappings as
-configured in
-`common/media-type/src/main/resources/io/helidon/common/media/type/default-media-types.properties`,
-including the Config supported formats: `.properties`, `.yaml`, `.json` and
-`.conf`. To handle other formats you can implement and register your own
-`io.helidon.common.media.type.spi.MediaTypeDetector` Java Service
-implementations. (Typically, you would also write and register a config parser
-to translate that format; see [Locating a Parser](#locating-a-parser) below.)
+the file path.
+
+Helidon media type module has a predefined set of mappings `.properties`,
+`.yaml`, `.json` and `.conf`. To handle other formats you can implement and
+register your own `io.helidon.common.media.type.spi.MediaTypeDetector` Java
+Service implementations. Typically, you would also write and register a config
+parser to translate that format; see [Locating a Parser](#locating-a-parser)
+below.
 
 ##### By Application Directive
 
@@ -288,20 +291,21 @@ source. Use this if your application knows the media type but the system might
 not be able to infer it correctly, either because no type detector would
 recognize it or because there might be more than one inferred media type.
 
-Specify `mediaType` for config source
+Specify `mediaType` for config source:
 
+<!--@mdc ::code-callout -->
 ```java
-Config config = Config.create(classpath("props") // (1)
-                                      .mediaType(MediaTypes.TEXT_PROPERTIES)); // (2)
+Config config = Config.create(classpath("props") // <1>
+    .mediaType(MediaTypes.TEXT_PROPERTIES)); // <2>
 ```
+1. The config system cannot infer the media type because there is no file type
+   in the path `props`.
+2. The developer knows the file is in Java Properties format so specifies the
+   media type explicitly.
+<!--@mdc :: -->
 
-1.  The config system cannot infer the media type because there is no file type
-    in the path `props`.
-2.  The developer knows the file is in Java Properties format so specifies the
-    media type explicitly.
-
-Note that a file type detector *could* be written to also inspect the contents
-of the file to infer the media type. The detectors provided by Helidon only
+Note that a file type detector could be written to also inspect the contents of
+the file to infer the media type. The detectors provided by Helidon only
 inspect the suffix in the name of the file.
 
 #### Locating a Parser
@@ -337,17 +341,18 @@ flexible, both by insulating it from implementation classes and by letting it
 easily take advantage of improvements in or alternatives to the parsers
 available for a given media type.
 
-Specify `parser` for config source
+Specify `parser` for config source:
 
+<!--@mdc ::code-callout -->
 ```java
-Config config = Config.create(classpath("props") // (1)
-                                      .parser(ConfigParsers.properties())); // (2)
+Config config = Config.create(classpath("props") // <1>
+                                      .parser(ConfigParsers.properties())); // <2>
 ```
-
-1.  The config system cannot infer the media type because there is no file type
-    in the path `props`.
-2.  The developer knows the file is in Java Properties format so specifies the
-    properties parser explicitly.
+1. The config system cannot infer the media type because there is no file type
+   in the path `props`.
+2. The developer knows the file is in Java Properties format so specifies the
+   properties parser explicitly.
+<!--@mdc :: -->
 
 ### Parsing a Config Value as Config
 
@@ -359,61 +364,63 @@ results from parsing that `String`.
 
 In this example, a YAML document contains a JSON document as a leaf.
 
-YAML file with included JSON formatted property
+YAML file with included JSON formatted property:
 
+<!--@mdc ::code-callout -->
 ```yaml
 secrets:
     username: "jose"
     password: "^ery$ecretP&ssword"
 
-app: > # (1)
+app: > # <1>
     {
         "greeting": "Hello",
         "page-size": 20,
         "basic-range": [ -20, 20 ]
     }
 ```
-
-1.  The property `app` is itself formatted as a JSON document.
+1. The property `app` is itself formatted as a JSON document.
+<!--@mdc :: -->
 
 #### Specify Key-to-media-type Mapping
 
-Specify JSON as media type for node
+Specify JSON as media type for node:
 
+<!--@mdc ::code-callout -->
 ```java
 Config config = Config.create(
-        classpath("application.yaml")
-                .mediaTypeMapping(key -> { // (1)
-                    return "app".equals(key.toString()) // (2)
-                            ? Optional.of(MediaTypes.APPLICATION_JSON)
-                            : Optional.empty();
-                }));
+    classpath("application.yaml")
+        .mediaTypeMapping(key -> { // <1>
+            return "app".equals(key.toString()) // <2>
+                ? Optional.of(MediaTypes.APPLICATION_JSON)
+                : Optional.empty();
+        }));
 
-assert config.get("secrets.username").asString() // (3)
+assert config.get("secrets.username").asString() // <3>
         .get().equals("jose");
-assert config.get("secrets.password").asString() // (3)
+assert config.get("secrets.password").asString() // <3>
         .get().equals("^ery$ecretP&ssword");
 
-assert config.get("app").type() == Type.OBJECT; // (4)
+assert config.get("app").type() == Type.OBJECT; // <4>
 
-assert config.get("app.greeting") // (3)
+assert config.get("app.greeting") // <3>
         .asString().get().equals("Hello");
-assert config.get("app.page-size") // (3)
+assert config.get("app.page-size") // <3>
                .asInt().get() == 20;
-assert config.get("app.basic-range.0") // (3)
+assert config.get("app.basic-range.0") // <3>
                .asInt().get() == -20;
-assert config.get("app.basic-range.1") // (3)
+assert config.get("app.basic-range.1") // <3>
                .asInt().get() == 20;
 ```
+1. The source builder’s `mediaTypeMapping` method accepts a function which
+   returns the appropriate media types (if any) for config keys.
+2. The function says to treat the `app` property value as a JSON document and
+   leave other nodes unchanged.
+3. Other properties are loaded as expected.
+4. Property `app` is now a structured object node.
+<!--@mdc :: -->
 
-1.  The source builder’s `mediaTypeMapping` method accepts a function which
-    returns the appropriate media types (if any) for config keys.
-2.  The function says to treat the `app` property value as a JSON document and
-    leave other nodes unchanged.
-3.  Other properties are loaded as expected.
-4.  Property `app` is now a structured object node.
-
-Because the function passed to `mediaTypeMapping` identifies the `app` node as a
+Because the function passed to mediaTypeMapping identifies the app node as a
 JSON document, the config system selects the config parser that is registered
 with the builder which also handles the JSON media type.
 
@@ -425,21 +432,22 @@ an object node resulting from parsing that `String` value as JSON.
 Alternatively, your application could map config keys to the specific parsers
 you want to use for parsing those keys' values.
 
-Specify JSON formatted property' parser instance
+Specify JSON formatted property' parser instance:
 
+<!--@mdc ::code-callout -->
 ```java
 Config config = Config.create(
-        classpath("application.yaml")
-                .parserMapping(key -> { // (1)
-                    return "app".equals(key.toString()) ? // (2)
-                            Optional.of(HoconConfigParser.create())
-                            : Optional.empty();
-                }));
+    classpath("application.yaml")
+        .parserMapping(key -> { // <1>
+            return "app".equals(key.toString()) ? // <2>
+                Optional.of(HoconConfigParser.create())
+                : Optional.empty();
+        }));
 ```
-
-1.  Uses the `parserMapping` method to map keys to parser instances.
-2.  Tells the config system to use the HOCON parser for translating the `String`
-    value of the `app` key. (HOCON is a superset of JSON.)
+1. Uses the `parserMapping` method to map keys to parser instances.
+2. Tells the config system to use the HOCON parser for translating the `String`
+   value of the `app` key. (HOCON is a superset of JSON.)
+<!--@mdc :: -->
 
 As before, the config system replaces the value node in the containing config
 tree with the config tree resulting from the additional parse.
@@ -456,9 +464,9 @@ config node (except the root) has a non-null key.
 For example, the following configuration file contains two object nodes with
 names `oracle` and `oracle.com`.
 
-Example `application.json` with dot character in key
+Example `application.json` with dot character in key:
 
-```json
+```json [application.json]
 {
     "oracle" : {
         "com" : true,
@@ -472,35 +480,34 @@ Example `application.json` with dot character in key
 
 Working with configuration with dot character in node name:
 
+<!--@mdc ::code-callout -->
 ```java
 Config config = Config.create(classpath("application.json"));
 
 // node `oracle`
-assert config.get("oracle.com").asBoolean().get() == true; // (1)
-assert config.get("oracle").get("com").asBoolean().get() == true; // (1)
-assert config.get("oracle.com").type() == Type.VALUE; // (2)
-assert config.get("oracle.com").name().equals("com"); // (3)
+assert config.get("oracle.com").asBoolean().get() == true; // <1>
+assert config.get("oracle").get("com").asBoolean().get() == true; // <1>
+assert config.get("oracle.com").type() == Type.VALUE; // <2>
+assert config.get("oracle.com").name().equals("com"); // <3>
 // node `oracle.com`
-assert config.get("oracle~1com.secured").asBoolean().get() == true; // (4)
-assert config.get(Key.escapeName("oracle.com")) // (5)
+assert config.get("oracle~1com.secured").asBoolean().get() == true; // <4>
+assert config.get(Key.escapeName("oracle.com")) // <5>
                .get("secured").asBoolean().get() == true;
-assert config.get(Key.escapeName("oracle.com")).type() == Type.OBJECT; // (6)
-assert config.get(Key.escapeName("oracle.com")).name().equals("oracle.com"); // (7)
+assert config.get(Key.escapeName("oracle.com")).type() == Type.OBJECT; // <6>
+assert config.get(Key.escapeName("oracle.com")).name().equals("oracle.com"); // <7>
 ```
-
-1.  Work with the first `oracle` object as usual. As always you can use the
-    fully-qualified key `oracle.com` or chain `get(key)` calls to access the
-    `com` property value.
-2.  Config node `"oracle"` / `"com"` is a leaf node (has type `VALUE`)...
-3.  ... and has the name `com` (the last token in its key).
-4.  The second object has name `oracle.com`. The code must escape the dot in the
-    node’s name using `oracle~1com`.
-5.  Or, use the utility method `Config.Key.escapeName(name)` to escape dots or
-    tildes that might be in the node’s name, in this example in `oracle.com`.
-6.  The config node `"oracle.com"` has type `OBJECT`...
-7.  ...and name `"oracle.com"`.
-
-## Filters, Overrides, and Token Substitution
+1. Work with the first `oracle` object as usual. As always you can use the
+   fully-qualified key `oracle.com` or chain `get(key)` calls to access the
+   `com` property value.
+2. Config node `"oracle"` / `"com"` is a leaf node (has type `VALUE`)...
+3. ... and has the name `com` (the last token in its key).
+4. The second object has name `oracle.com`. The code must escape the dot in the
+   node’s name using `oracle~1com`.
+5. Or, use the utility method `Config.Key.escapeName(name)` to escape dots or
+   tildes that might be in the node’s name, in this example in `oracle.com`.
+6. The config node `"oracle.com"` has type `OBJECT`...
+7. ...and name `"oracle.com"`.
+<!--@mdc :: -->
 
 When your application retrieves a config value, the config system can transform
 it before returning the value, according to *filters*, *overrides*, and
@@ -564,32 +571,32 @@ examples below). You can then use the same overrides for different environments,
 say `test` and `prod`. The configuration in each environment is then overridden
 with a different values using wildcards (see `overrides.properties` below).
 
-Initialize `Config` with Override Definition from `overrides.properties` file
+Initialize `Config` with Override Definition from `overrides.properties` file:
 
+<!--@mdc ::code-callout -->
 ```java
 Config config = Config.builder()
-        .overrides(OverrideSources.file("conf/overrides.properties")) // (1)
-        .sources(file("conf/env.yaml"), // (2)
-                 classpath("resolving-tokens.yaml")) // (3)
-        .build();
+    .overrides(OverrideSources.file("conf/overrides.properties")) // <1>
+    .sources(file("conf/env.yaml"), // <2>
+         classpath("resolving-tokens.yaml")) // <3>
+    .build();
 ```
+1. Loads *overrides* from the specified file.
+2. A deployment-specific environment configuration file.
+3. A default configuration containing token references that are resolved using
+   the environment-specific override.
+<!--@mdc :: -->
 
-1.  Loads *overrides* from the specified file.
-2.  A deployment-specific environment configuration file.
-3.  A default configuration containing token references that are resolved using
-    the environment-specific override.
+You can disable key and value token replacement separately as the following example shows.
 
-You can disable key and value token replacement separately as the following
-example shows.
-
-Disabling Key and Value Token Replacement
+Disabling Key and Value Token Replacement:
 
 ```java
 Config config = Config.builder()
-        .disableKeyResolving()
-        .disableValueResolving()
-        // other Config builder settings
-        .build();
+    .disableKeyResolving()
+    .disableValueResolving()
+    // ...
+    .build();
 ```
 
 ## Executors for Asynchronous Config Activity
@@ -616,30 +623,30 @@ separate thread pool executor.
 The following example shares the same executor for two different polling
 strategy instances.
 
-Customize polling strategy executors
+Customize polling strategy executors:
 
+<!--@mdc ::code-callout -->
 ```java
-ScheduledExecutorService executor = Executors.newScheduledThreadPool(2); // (1)
+ScheduledExecutorService executor =
+    Executors.newScheduledThreadPool(2); // <1>
 
 Config config = Config.create(
-        file("conf/dev.properties")
-                .pollingStrategy(
-                        PollingStrategies.regular(Duration.ofSeconds(2)) // (2)
-                                .executor(executor)), // (3)
-        file("conf/config.properties")
-                .pollingStrategy(
-                        PollingStrategies.regular(Duration.ofSeconds(5)) // (2)
-                                .executor(executor))); // (4)
+    file("conf/dev.properties")
+        .pollingStrategy(
+            PollingStrategies.regular(Duration.ofSeconds(2)) // <2>
+                .executor(executor)), // <3>
+    file("conf/config.properties")
+        .pollingStrategy(
+            PollingStrategies.regular(Duration.ofSeconds(5)) // <2>
+                .executor(executor))); // <4>
 ```
-
-1.  Prepares a thread pool executor with core pool size set `2`.
-2.  Selects the built-in periodic polling strategy.
-3.  Tells the config system to use the specific executor to poll the
-    `dev.properties` config source.
-4.  Tells the config system to use the specific executor to poll the
-    `config.properties` config source.
-
-### Executors for Source Change Events
+1. Prepares a thread pool executor with core pool size set `2`.
+2. Selects the built-in periodic polling strategy.
+3. Tells the config system to use the specific executor to poll the
+   `dev.properties` config source.
+4. Tells the config system to use the specific executor to poll the
+   `config.properties` config source.
+<!--@mdc :: -->
 
 Recall that when a change watcher detects a change in a source, it informs
 interested parties of the changes. By default, each `Config.Builder` arranges
@@ -650,32 +657,32 @@ for actually reloading the source.
 Your application can invoke the system watcher builder’s `executor` method to
 tell the builder to use a different `Executor`.
 
-Customize config and override sources' executors
+Customize config and override sources executors:
 
+<!--@mdc ::code-callout -->
 ```java
-ScheduledExecutorService executor = Executors.newScheduledThreadPool(2); // (1)
+ScheduledExecutorService executor =
+    Executors.newScheduledThreadPool(2); // <1>
 
 Config config = Config.builder()
-        .overrides(OverrideSources
-                           .file("conf/overrides.properties")
-                           .changeWatcher(FileSystemWatcher.builder()
-                                                  .executor(executor) // (2)
-                                                  .build()))
-        .sources(file("conf/env.yaml")
-                         .changeWatcher(FileSystemWatcher.builder()
-                                                .executor(executor) // (3)
-                                                .build()))
-        .build();
+    .overrides(OverrideSources
+       .file("conf/overrides.properties")
+       .changeWatcher(FileSystemWatcher.builder()
+          .executor(executor) // <2>
+          .build()))
+    .sources(file("conf/env.yaml")
+    .changeWatcher(FileSystemWatcher.builder()
+        .executor(executor) // <3>
+        .build()))
+    .build();
 ```
-
-1.  Prepares a thread pool executor to be shared by selected sources.
-2.  Tells the builder that the resulting overrides source should use the
-    specified `Executor` for notifying interested parties of changes and for
-    reloading the override source.
-3.  Uses the same `Executor` and event buffer size for the config source as for
-    the override source above.
-
-### Retry Policy Custom Executor
+1. Prepares a thread pool executor to be shared by selected sources.
+2. Tells the builder that the resulting overrides source should use the
+   specified `Executor` for notifying interested parties of changes and for
+   reloading the override source.
+3. Uses the same `Executor` and event buffer size for the config source as for
+   the override source above.
+<!--@mdc :: -->
 
 You can control which executor a retry policy should use for its work. The
 `RetryPolicies.repeat(int retries)` method returns a
@@ -685,32 +692,34 @@ retry policy builder’s `executorService` method to specify which
 delayed retries. By default, the config system uses a separate thread pool
 executor for each retry policy instance.
 
-Customize retry policy executors
+Customize retry policy executors:
 
+<!--@mdc ::code-callout -->
 ```java
-ScheduledExecutorService executor = Executors.newScheduledThreadPool(2, myThreadFactory); // (1)
+ScheduledExecutorService executor =
+    Executors.newScheduledThreadPool(2, myThreadFactory); // <1>
 
 Config config = Config.create(
-        file("conf/dev.properties")
-                .optional() // (2)
-                .retryPolicy(RetryPolicies.repeat(2) // (3)
-                                     .executorService(executor))); // (4)
+    file("conf/dev.properties")
+        .optional() // <2>
+        .retryPolicy(RetryPolicies.repeat(2) // <3>
+             .executorService(executor))); // <4>
 ```
+1. Prepares a thread pool executor with core pool size set to `2` and a custom
+   `java.util.concurrent.ThreadFactory`.
+2. When the source is flagged as `optional()`, the loading attempt will be
+   repeated as the retry policy defines, but an overall failure will *not* lead
+   to failing the initial load or preventing the source from being polled if so
+   configured.
+3. Uses the built-in *repeating* implementation of `RetryPolicy` that can be
+   used with any config source, but typically for ones that might suffer brief,
+   intermittent outages.
+4. Specifies the executor to use for loading and retries.
+<!--@mdc :: -->
 
-1.  Prepares a thread pool executor with core pool size set to `2` and a custom
-    `java.util.concurrent.ThreadFactory`.
-2.  When the source is flagged as `optional()`, the loading attempt will be
-    repeated as the retry policy defines, but an overall failure will *not* lead
-    to failing the initial load or preventing the source from being polled if so
-    configured.
-3.  Uses the built-in *repeating* implementation of `RetryPolicy` that can be
-    used with any config source, but typically for ones that might suffer brief,
-    intermittent outages.
-4.  Specifies the executor to use for loading and retries.
-
-[configsources-fi]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/ConfigSources.html#file-java.lang.String-
 [configsources-ja]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/ConfigSources.html
 [configsources-pr]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/ConfigSources.html#prefixed(java.lang.String,java.util.function.Supplier)
+[configsources-fi]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/ConfigSources.html#file(java.lang.String)
 [hierarchical-fea]: hierarchical-features.md#access-by-key
 [filters]: extensions.md#configfilter-spi
 [value-resolving]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/ConfigFilters.html#valueResolving--

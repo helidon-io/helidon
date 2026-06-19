@@ -36,22 +36,23 @@ The following annotations are used to work with Helidon MP gRPC clients:
 For a gRPC client to connect to a server, it requires a channel. Channels are
 configured in the `grpc` section of the Helidon application configuration. The
 examples below use an `application.yaml` file but there are many other ways to
-to configure Helidon. See [Configuration in
+configure Helidon. See [Configuration in
 Helidon](../../mp/config/introduction.md) for more information.
 
-```yaml
+<!--@mdc ::code-callout -->
+```yaml [application.yaml]
 grpc:
   client:
-    channels:
-      - name: "string-channel"
-        host: localhost
-        port: 8080
+    channels:  # <1>
+      - name: "string-channel"  # <2>
+        host: localhost  # <3>
+        port: 8080  # <4>
 ```
-
-- Channels are configured in the `channels` section under `grpc.client`.
-- The name of the channel as referred to in the application code.
-- The host name for the channel (defaults to localhost).
-- The port number for the channel (defaults to 1408).
+1. Channels are configured in the `channels` section under `grpc.client`.
+2. The name of the channel as referred to in the application code.
+3. The host name for the channel (defaults to localhost).
+4. The port number for the channel (defaults to 1408).
+<!--@mdc :: -->
 
 While most client applications only connect to a single server, it is possible
 to configure multiple (an array of) named channels if the client needs to
@@ -115,25 +116,24 @@ client requires. For example, suppose we have a simple service that has a unary
 method to convert a string to uppercase. To write a client for this service, all
 that is required is an interface as shown next:
 
+<!--@mdc ::code-callout -->
 ```java
 @ApplicationScoped
-@Grpc.GrpcService("StringService")
-@Grpc.GrpcChannel("string-channel")
+@Grpc.GrpcService("StringService")  // <1>
+@Grpc.GrpcChannel("string-channel")  // <2>
 interface StringServiceClient {
 
     @Grpc.Unary
     String upper(String s);
 }
 ```
-
-- The `@Grpc.GrpcService` annotation is necessary to provide the name of the
-  gRPC service when it differs from the interface name, as it is the case in
-  this example.
-- The `@Grpc.GrpcChannel` annotation is the qualifier that supplies the channel
-  name. This is the same name as used in the channel configuration in the
-  examples provided in the [Configuration section](#configuration).
-
-There is no need to write any code to implement the client. The Helidon MP gRPC
+1. The `@Grpc.GrpcService` annotation is necessary to provide the name of the
+   gRPC service when it differs from the interface name, as it is the case in
+   this example.
+2. The `@Grpc.GrpcChannel` annotation is the qualifier that supplies the channel
+   name. This is the same name as used in the channel configuration in the
+   examples provided in the [Configuration section](#configuration).
+<!--@mdc :: -->
 API will create a dynamic proxy for the interface using the information from the
 annotations and method signatures.
 
@@ -160,21 +160,20 @@ the client service interface in the application class that requires the client.
 The field is then annotated so that CDI will inject the client proxy into the
 field.
 
+<!--@mdc ::code-callout -->
 ```java
 @ApplicationScoped
 public class MyAppBean {
 
-    @Inject
-    @Grpc.GrpcProxy
+    @Inject  // <1>
+    @Grpc.GrpcProxy  // <2>
     private StringServiceClient stringServiceClient;
 }
 ```
-
-- The `@Inject` annotation tells CDI to inject the client implementation.
-- The `@Grpc.GrpcProxy` annotation is used by the CDI container to match the
-  injection point to the gRPC MP API provider.
-
-When the CDI container instantiates `MyAppBean`, it will inject a dynamic proxy
+1. The `@Inject` annotation tells CDI to inject the client implementation.
+2. The `@Grpc.GrpcProxy` annotation is used by the CDI container to match the
+   injection point to the gRPC MP API provider.
+<!--@mdc :: -->
 into the `stringServiceClient` field, and then provide the necessary logic for
 the proxy methods to convert a method call into a gRPC call.
 
@@ -190,18 +189,17 @@ Helidon gRPC client API has CDI producers to inject `io.grpc.Channel` instances.
 For example, a class might have an injectable `io.grpc.Channel` field as
 follows:
 
+<!--@mdc ::code-callout -->
 ```java
-@Inject
-@Grpc.GrpcChannel("string-channel")
+@Inject  // <1>
+@Grpc.GrpcChannel("string-channel")  // <2>
 private Channel channel;
 ```
-
-- The `@Inject` annotation tells CDI to inject the channel.
-- The `@Grpc.GrpcChannel` annotation supplies the channel name. This is the same
-  name as used in the channel configuration in the examples provided in the
-  [Configuration section](#configuration).
-
-An injected channel can be used, for example, when directly instantiating
+1. The `@Inject` annotation tells CDI to inject the channel.
+2. The `@Grpc.GrpcChannel` annotation supplies the channel name. This is the same
+   name as used in the channel configuration in the examples provided in the
+   [Configuration section](#configuration).
+<!--@mdc :: -->
 `protoc` generated stubs.
 
 ## Examples

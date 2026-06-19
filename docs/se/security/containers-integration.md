@@ -23,42 +23,41 @@ There are two steps to configure security with WebServer:
 
 Example using builders:
 
+<!--@mdc ::code-callout -->
 ```java
 WebServer.builder()
-    .addFeature(SecurityFeature.builder()
-        .security(security)
-        .defaults(SecurityFeature.authenticate())
-        .build())
-    .routing(r -> r
-        .get("/service1", SecurityFeature.rolesAllowed("user"), this::processService1Request))
-    .build();
+        .addFeature(SecurityFeature.builder() // <1>
+                            .security(security)
+                            .defaults(SecurityFeature.authenticate())
+                            .build())
+        .routing(r -> r
+                .get("/service1", SecurityFeature.rolesAllowed("user"), this::processService1Request)) // <2>
+        .build();
 ```
+1. Register the security feature in the web server, enforce authentication by
+   default
+2. Protect this route with authentication (from defaults) and role "user"
+<!--@mdc :: -->
 
-- Register the security feature in the web server, enforce authentication by
-  default
-- Protect this route with authentication (from defaults) and role "user"
-
-Example using configuration:
-
+<!--@mdc ::code-callout -->
 ```java
 WebServer.builder()
         // This is step 1 - register security instance with web server processing
         // security - instance of security either from config or from a builder
         // securityDefaults - default enforcement for each route that has a security definition
-        .addFeature(SecurityFeature.create(builder -> builder.config(config))) 
+        .addFeature(SecurityFeature.create(builder -> builder.config(config))) // <1>
         .routing(r -> r
-                .get("/service1", this::processService1Request)) 
+                .get("/service1", this::processService1Request)) // <2>
         .build();
 ```
+1. Helper method to load both security and web server security from configuration
+2. Security for this route is defined in the configuration
+<!--@mdc :: -->
 
-- Helper method to load both security and web server security from configuration
-- Security for this route is defined in the configuration
-
-Example using configuration (YAML):
-
+<!--@mdc ::code-callout -->
 ```yaml
 security:
-  web-server: 
+  web-server: # <1>
       defaults:
         # defaults for paths configured in the section below
         authenticate: true
@@ -68,8 +67,8 @@ security:
           roles-allowed: ["user"]
           # "authenticate: true" is implicit, as it is configured in defaults above
 ```
-
-- Configuration of integration with web server
+1. Configuration of integration with web server
+<!--@mdc :: -->
 
 Note: `defaults` section in configuration is related to paths on WebServer
 configured below in `paths` section, it will not apply to any other path on the
@@ -98,36 +97,35 @@ customized in Helidon SE).
 
 The following shows an example we will explain in detail:
 
+<!--@mdc ::code-callout -->
 ```yaml [application.yaml]
 security:
   providers:
-    - abac: 
-    - provider-key: 
+    - abac: # <1>
+    - provider-key: # <2>
   web-server:
     defaults:
-      authenticate: true 
+      authenticate: true # <3>
     paths:
-      - path: "/metrics/*" 
+      - path: "/metrics/*" # <4>
         roles-allowed: "admin"
-      - path: "/health/*" 
+      - path: "/health/*" # <5>
         roles-allowed: "monitor"
-      - path: "/openapi/*" 
+      - path: "/openapi/*" # <6>
         abac:
           scopes: ["openapi"]
-      - path: "/static/*" 
+      - path: "/static/*" # <7>
         roles-allowed: ["user", "monitor"]
 ```
-
-- Attribute based access control provider that checks roles and scopes
-- The provider(s) used in your application, such as `oidc`
-- Default configuration for paths configured below in `paths` section
-- Protection of `/metrics` and all nested paths with `admin` role required
-- Protection of `/health` and all nested paths with `monitor` role required
-- Protection of `/openapi` and all nested paths with `openapi` scope required
-- Protection of static content configured on `/static` path with either `user`
-  or `monitor` role required
-
-If you need to use a properties file, such as `microprofile-config.properties`,
+1. Attribute based access control provider that checks roles and scopes
+2. The provider(s) used in your application, such as `oidc`
+3. Default configuration for paths configured below in `paths` section
+4. Protection of `/metrics` and all nested paths with `admin` role required
+5. Protection of `/health` and all nested paths with `monitor` role required
+6. Protection of `/openapi` and all nested paths with `openapi` scope required
+7. Protection of static content configured on `/static` path with either `user`
+   or `monitor` role required
+<!--@mdc :: -->
 you can convert the file by using index based numbers for arrays, such as:
 
 ```properties [microprofile-config.properties]

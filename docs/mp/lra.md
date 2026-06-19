@@ -359,18 +359,19 @@ Optional configuration options:
 
 Example of LRA configuration:
 
+<!--@mdc ::code-callout -->
 ```yaml
 mp.lra:
-  coordinator.url: http://localhost:8070/lra-coordinator 
-  propagation.active: true 
-  participant.url: https://coordinator.visible.host:443/awesomeapp 
+  coordinator.url: http://localhost:8070/lra-coordinator <1>
+  propagation.active: true <2>
+  participant.url: https://coordinator.visible.host:443/awesomeapp <3>
 ```
-
-- Url of coordinator
-- Propagate LRA headers `LRA_HTTP_CONTEXT_HEADER` and
-  `LRA_HTTP_PARENT_CONTEXT_HEADER` through non-LRA endpoints
-- Url of the LRA enabled service overrides standard base uri, so coordinator can
-  call load-balancer instead of the service
+1. Url of coordinator
+2. Propagate LRA headers `LRA_HTTP_CONTEXT_HEADER` and
+   `LRA_HTTP_PARENT_CONTEXT_HEADER` through non-LRA endpoints
+3. Url of the LRA enabled service overrides standard base uri, so coordinator can
+   call load-balancer instead of the service
+<!--@mdc :: -->
 
 For more information continue to [MicroProfile Long Running Actions
 specification][microprofile-lon].
@@ -389,53 +390,47 @@ compensate for cancelled LRA transaction.
 
 Example of simple LRA participant:
 
-<!--@mdc ::code-collapse -->
+<!--@mdc ::code-callout{collapsed} -->
 ```java
 @PUT
-@LRA(LRA.Type.REQUIRES_NEW)
+@LRA(LRA.Type.REQUIRES_NEW) // <1>
 @Path("start-example")
-public Response startExample(
-        @HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId,
-        String data) {
+public Response startExample(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId, //<2>
+                             String data) {
     if (data.contains("BOOM")) {
-        throw new RuntimeException("BOOM 💥");
+        throw new RuntimeException("BOOM 💥"); // <3>
     }
 
     LOGGER.info("Data " + data + " processed 🏭");
-    return Response.ok().build();
+    return Response.ok().build(); // <4>
 }
 
 @PUT
-@Complete 
+@Complete // <5>
 @Path("complete-example")
-public Response completeExample(
-        @HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId) {
+public Response completeExample(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId) {
     LOGGER.log(Level.INFO, "LRA ID: {0} completed 🎉", lraId);
     return LRAResponse.completed();
 }
 
 @PUT
-@Compensate 
+@Compensate // <6>
 @Path("compensate-example")
-public Response compensateExample(
-        @HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId) {
+public Response compensateExample(@HeaderParam(LRA_HTTP_CONTEXT_HEADER) URI lraId) {
     LOGGER.log(Level.SEVERE, "LRA ID: {0} compensated 🦺", lraId);
     return LRAResponse.compensated();
 }
 ```
+1. This JAX-RS PUT method will start new LRA transactions and join it before
+   method body gets executed
+2. LRA ID assigned by coordinator to this LRA transaction
+3. When method execution finishes exceptionally, cancel signal for this
+   particular LRA is sent to coordinator
+4. When method execution finishes successfully, complete signal for this
+   particular LRA is sent to coordinator
+5. Method which will be called by coordinator when LRA is completed
+6. Method which will be called by coordinator when LRA is canceled
 <!--@mdc :: -->
-
-- This JAX-RS PUT method will start new LRA transactions and join it before
-  method body gets executed
-- LRA ID assigned by coordinator to this LRA transaction
-- When method execution finishes exceptionally, cancel signal for this
-  particular LRA is sent to coordinator
-- When method execution finishes successfully, complete signal for this
-  particular LRA is sent to coordinator
-- Method which will be called by coordinator when LRA is completed
-- Method which will be called by coordinator when LRA is canceled
-
-## Testing
 
 Testing of JAX-RS resources with LRA can be challenging as LRA participant
 running in parallel with the test is needed.
@@ -501,17 +496,18 @@ Helidon test with enabled CDI discovery can look like this.
 
 HelidonTest with LRA test support:
 
+<!--@mdc ::code-callout{collapsed} -->
 ```java
 @HelidonTest
-//@AddBean(WithdrawResource.class) 
-@AddBean(TestLraCoordinator.class) 
+//@AddBean(WithdrawResource.class) //<1>
+@AddBean(TestLraCoordinator.class) //<2>
 public class LraTest {
 
     @Inject
     private WithdrawResource withdrawTestResource;
 
     @Inject
-    private TestLraCoordinator coordinator; 
+    private TestLraCoordinator coordinator; //<3>
 
     @Inject
     private WebTarget target;
@@ -524,22 +520,20 @@ public class LraTest {
                 .put(Entity.entity("test", MediaType.TEXT_PLAIN_TYPE))) {
             assertThat(res.getStatus(), is(200));
             String lraId = res.getHeaderString(LRA.LRA_HTTP_CONTEXT_HEADER);
-            Lra lra = coordinator.lra(lraId); 
-            assertThat(lra.status(), is(LRAStatus.Closed)); 
+            Lra lra = coordinator.lra(lraId); //<4>
+            assertThat(lra.status(), is(LRAStatus.Closed)); //<5>
             assertThat(withdrawTestResource.getCompletedLras(), contains(lraId));
         }
     }
 }
 ```
-
-- Resource is discovered automatically
-- Test coordinator needs to be added manually
-- Injecting test coordinator to access state of LRA managed by coordinator
-  mid-test
-- Retrieving LRA managed by coordinator by LraId
-- Asserting LRA state in coordinator
-
-LRA testing feature has the following default configuration:
+1. Resource is discovered automatically
+2. Test coordinator needs to be added manually
+3. Injecting test coordinator to access state of LRA managed by coordinator
+   mid-test
+4. Retrieving LRA managed by coordinator by LraId
+5. Asserting LRA state in coordinator
+<!--@mdc :: -->
 
 - port: `0` - coordinator is started on random port(Helidon LRA participant is
   capable to discover test coordinator automatically)
@@ -558,24 +552,23 @@ Example: `-Dhelidon.lra.coordinator.test-socket.index=20`.
 
 HelidonTest override LRA test feature default settings:
 
+<!--@mdc ::code-callout -->
 ```java
 @HelidonTest
 @AddBean(TestLraCoordinator.class)
-@AddConfig(key = "server.sockets.500.port", value = "8070") 
-@AddConfig(key = "server.sockets.500.host", value = "custom.bind.name") 
-@AddConfig(key = "helidon.lra.coordinator.persistence", value = "true") 
-@AddConfig(key = "helidon.lra.participant.use-build-time-index", value = "true") 
+@AddConfig(key = "server.sockets.500.port", value = "8070") //<1>
+@AddConfig(key = "server.sockets.500.host", value = "custom.bind.name") //<2>
+@AddConfig(key = "helidon.lra.coordinator.persistence", value = "true") //<3>
+@AddConfig(key = "helidon.lra.participant.use-build-time-index", value = "true") //<4>
 public class LraCustomConfigTest {
 }
 ```
-
-- Start test LRA coordinator always on the same port 8070(default is random
-  port)
-- Test LRA coordinator socket bind address (default is localhost)
-- Persist LRA managed by coordinator(default is false)
-- Use build time Jandex index(default is false)
-
-When CDI bean auto-discovery is not desired, LRA and Config CDI extensions needs
+1. Start test LRA coordinator always on the same port 8070(default is random
+   port)
+2. Test LRA coordinator socket bind address (default is localhost)
+3. Persist LRA managed by coordinator(default is false)
+4. Use build time Jandex index(default is false)
+<!--@mdc :: -->
 to be added manually.
 
 HelidonTest setup with disabled discovery:
@@ -636,6 +629,7 @@ needs to be enabled.
 
 Configure MicroTx for development:
 
+<!--@mdc ::code-callout -->
 ```yaml
 tmmAppName: tcs
 tmmConfiguration:
@@ -657,10 +651,10 @@ tmmConfiguration:
   serveTLS:
     enabled: false
   narayanaLraCompatibilityMode:
-    enabled: true 
+    enabled: true #<1>
 ```
-
-- Enable Narayana compatibility mode
+1. Enable Narayana compatibility mode
+<!--@mdc :: -->
 
 ### Helidon Coordinator
 

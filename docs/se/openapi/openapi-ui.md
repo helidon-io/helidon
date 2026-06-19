@@ -125,19 +125,18 @@ as above by any UI settings you have in your configuration.
 
 Create OpenApiFeature with automatic UI:
 
+<!--@mdc ::code-callout -->
 ```java
 WebServer server = WebServer.builder()
         .config(config.get("server"))
-        .addFeature(OpenApiFeature.create(config.get("openapi")))
+        .addFeature(OpenApiFeature.create(config.get("openapi"))) // <1>
         .routing(Main::routing)
         .build()
         .start();
 ```
-
-- Add the OpenAPI feature to the server, configured using the `openapi` section
-  of the configuration.
-
-If your code invokes the `OpenApiFeature.Builder` `config` method, Helidon
+1. Add the OpenAPI feature to the server, configured using the `openapi` section
+   of the configuration.
+<!--@mdc :: -->
 automatically applies the `ui` section of the `openapi` configuration to the UI.
 
 ### Customizing the UI Behavior
@@ -156,14 +155,15 @@ explicit programmatic settings.
 
 Create OpenApiUi and OpenAPISupport instances:
 
+<!--@mdc ::code-callout -->
 ```java
-Config openApiConfig = config.get("openapi");
+Config openApiConfig = config.get("openapi"); // <1>
 WebServer server = WebServer.builder()
         .config(config.get("server"))
-        .addFeature(OpenApiFeature.builder()
-                            .addService(OpenApiUi.builder()
-                                                .webContext("my-ui")
-                                                .config(openApiConfig.get("ui"))
+        .addFeature(OpenApiFeature.builder() // <2>
+                            .addService(OpenApiUi.builder() // <3>
+                                                .webContext("my-ui") // <4>
+                                                .config(openApiConfig.get("ui")) // <5>
                                                 .build())
                             .config(openApiConfig)
                             .build())
@@ -171,14 +171,12 @@ WebServer server = WebServer.builder()
         .build()
         .start();
 ```
-
-- Extract the `openapi` config.
-- Begin setting up the `OpenApiFeature` builder.
-- Create the UI builder.
-- Set UI behavior programmatically.
-- Set additional UI behavior based on UI configuration.
-
-The order in which your code invokes the methods on `OpenApiUi.Builder` and
+1. Extract the `openapi` config.
+2. Begin setting up the `OpenApiFeature` builder.
+3. Create the UI builder.
+4. Set UI behavior programmatically.
+5. Set additional UI behavior based on UI configuration.
+<!--@mdc :: -->
 `OpenApiFeature.Builder` determines the outcome. For instance, the example above
 adds the UI service to the `OpenApiFeature.Builder` *before* applying
 configuration to the `OpenApiFeature.Builder`. If the configuration contains a
@@ -207,65 +205,59 @@ as `application.yaml`.
 See [Configuration options][io-helidon-integ].
 <!--/include-->
 
-
 The default UI `web-context` value is the web context for your `OpenApiFeature`
 service with the added suffix `/ui`. If you use the default web context for both
 `OpenApiFeature` and the UI, the UI responds at `/openapi/ui`.
 
-You can use configuration to affect the UI path in these ways:
+Recall that you can [configure the Helidon OpenAPI
+component][configure-the-he] to change where it serves the OpenAPI document.
 
-- Configure the OpenAPI endpoint path (the `/openapi` part).
+Configure OpenAPI behavior:
 
-  Recall that you can [configure the Helidon OpenAPI
-  component][configure-the-he] to change where it serves the OpenAPI document.
+```yaml [application.yaml]
+server:
+port: 8080
+host: 0.0.0.0
+features:
+openapi:
+  web-context: /myopenapi
+```
 
-  Configure OpenAPI behavior:
+- The `port` and `host` settings are for the server as a whole, not
+specifically for OpenAPI.
+- The `openapi` subsection within `features` contains OpenAPI settings.
+- Changes the endpoint for returning the OpenAPI document from the default
+`/openapi` to `/myopenapi`.
 
-  ```yaml
-  server:
-  port: 8080
-  host: 0.0.0.0
-  features:
-    openapi:
-      web-context: /myopenapi
-  ```
+In this case, the path for the UI component is your customized OpenAPI path
+with `/ui` as a suffix. With the example above, the UI responds at
+`/myopenapi/ui` and Helidon uses standard content negotiation at
+`/myopenapi` to return either the OpenAPI document or the UI.
 
-  - The `port` and `host` settings are for the server as a whole, not
-    specifically for OpenAPI.
-  - The `openapi` subsection within `features` contains OpenAPI settings.
-  - Changes the endpoint for returning the OpenAPI document from the default
-    `/openapi` to `/myopenapi`.
-
-    In this case, the path for the UI component is your customized OpenAPI path
-    with `/ui` as a suffix. With the example above, the UI responds at
-    `/myopenapi/ui` and Helidon uses standard content negotiation at
-    `/myopenapi` to return either the OpenAPI document or the UI.
-
-- Separately, configure the entire web context path for the UI independently
+Separately, configure the entire web context path for the UI independently
   of the web context for OpenAPI.
 
-  Configuring the OpenAPI UI web context:
+Configuring the OpenAPI UI web context:
 
-  ```yaml
-  server:
+<!--@mdc ::code-callout -->
+```yaml [application.yaml]
+server:
   port: 8080
   host: 0.0.0.0
   features:
     openapi:
       services:
-        ui:
-          web-context: /my-ui
-  ```
+        ui:                     <1>
+          web-context: /my-ui   <2>
+```
+1. Introduces OpenAPI UI settings
+2. Specifies an alternate path for the UI
+<!--@mdc :: -->
+> The `server.features.openapi.services.ui.web-context` setting assigns the
+> *entire* web-context for the UI, not the suffix appended to the
+> `OpenApiFeature` endpoint.
 
-  - Introduces OpenAPI UI settings
-  - Specifies an alternate path for the UI
-
-    > [!NOTE]
-    > The `server.features.openapi.services.ui.web-context` setting assigns the
-    > *entire* web-context for the UI, not the suffix appended to the
-    > `OpenApiFeature` endpoint.
-
-    With this configuration, the UI responds at `/my-ui` regardless of the path for OpenAPI itself.
+With this configuration, the UI responds at `/my-ui` regardless of the path for OpenAPI itself.
 
 The SmallRye OpenAPI UI component accepts several options, but they are of
 minimal use to application developers, and they must be passed to the SmallRye
@@ -285,7 +277,7 @@ configuration.
 
 [Helidon OpenAPI SE documentation](../../se/openapi/openapi.md)
 
-[SmallRye OpenAPI UI GitHub site][openapi-user-int]
+[SmallRye OpenAPI UI on GitHub][openapi-user-int]
 
 [openapi-user-int]: https://github.com/smallrye/smallrye-open-api/tree/3.3.4/ui/open-api-ui
 [openapiuiconfig]: https://helidon.io/docs/v4/apidocs/io.helidon.integrations.openapi.ui/io/helidon/integrations/openapi/ui/OpenApiUiConfig.Builder.html

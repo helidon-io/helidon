@@ -283,6 +283,7 @@ be easily used to configure the web server without modifying application code.
 
 Create `application.yaml` file and add the following line:
 
+<!--@mdc ::code-callout -->
 ```yaml [application.yaml]
 security:
   providers:
@@ -291,17 +292,17 @@ security:
     - oidc:
         redirect-uri: "/oidc/redirect"
         audience: "account"
-        client-id: "myClientID" 
+        client-id: "myClientID" # <1>
         header-use: true
-        client-secret: "changeit" 
-        identity-uri: "http://localhost:8080/realms/myRealm" 
-        frontend-uri: "http://localhost:7987" 
+        client-secret: "changeit" # <2>
+        identity-uri: "http://localhost:8080/realms/myRealm" # <3>
+        frontend-uri: "http://localhost:7987" # <4>
 ```
-
-- `client-id` must be the same as the one configure in keycloak.
-- The client secret generate by Keycloak during `Create a client` section.
-- `identity-uri` is used to redirect the user to keycloak.
-- `frontend-uri` will direct you back to the application.
+1. `client-id` must be the same as the one configure in keycloak.
+2. The client secret generate by Keycloak during `Create a client` section.
+3. `identity-uri` is used to redirect the user to keycloak.
+4. `frontend-uri` will direct you back to the application.
+<!--@mdc :: -->
 
 The client secret is the one generate into Keycloak Client Credentials. It must
 be copy past into `client-id` variable from application.yaml.

@@ -43,25 +43,24 @@ Unlike the HTTP server—which routes requests based on path expressions and HTT
 verbs—the gRPC server routes requests by service and method names. This
 simplifies routing configuration: all you need to do is register your services.
 
+<!--@mdc ::code-callout -->
 ```java
 private static GrpcRouting.Builder createRouting(Config config) {
     return GrpcRouting.builder()
-            .service(new GreetService(config)) 
-            .service(new EchoService())        
-            .service(new MathService())        
-            .unary(Strings.getDescriptor(),    
+            .service(new GreetService(config)) // <1>
+            .service(new EchoService())        // <2>
+            .service(new MathService())        // <3>
+            .unary(Strings.getDescriptor(),    // <4>
                    "StringService",
                    "Upper",
                    Main::grpcUpper);
 }
 ```
-
-- Register `GreetFeature` instance.
-- Register `EchoService` instance.
-- Register `MathService` instance.
-- Register a custom unary gRPC route
-
-Both standard gRPC services that implement the `io.grpc.BindableService`
+1. Register `GreetFeature` instance.
+2. Register `EchoService` instance.
+3. Register `MathService` instance.
+4. Register a custom unary gRPC route
+<!--@mdc :: -->
 interface (typically created by extending generated server-side stubs and
 overriding their methods) and Helidon gRPC services that implement the
 io.helidon.grpc.server.GrpcService interface can be registered.
@@ -121,16 +120,17 @@ base class and instead implement the service using the Helidon gRPC framework.
 
 The service implementation will be very similar to our original implementation:
 
+<!--@mdc ::code-callout -->
 ```java
 class EchoService implements GrpcService {
     @Override
     public Descriptors.FileDescriptor proto() {
-        return Echo.getDescriptor(); 
+        return Echo.getDescriptor(); // <1>
     }
 
     @Override
     public void update(Routing routing) {
-        routing.unary("Echo", this::echo); 
+        routing.unary("Echo", this::echo); // <2>
     }
 
     /**
@@ -139,24 +139,22 @@ class EchoService implements GrpcService {
      * @param request  the echo request containing the message to echo
      * @param observer the response observer
      */
-    public void echo(Echo.EchoRequest request, StreamObserver<Echo.EchoResponse> observer) {  
-        String message = request.getMessage();  
-        Echo.EchoResponse response = Echo.EchoResponse.newBuilder().setMessage(message).build();  
-        complete(observer, response);  
+    public void echo(Echo.EchoRequest request, StreamObserver<Echo.EchoResponse> observer) {  // <3>
+        String message = request.getMessage();  // <4>
+        Echo.EchoResponse response = Echo.EchoResponse.newBuilder().setMessage(message).build();  // <5>
+        complete(observer, response);  // <6>
     }
 }
 ```
-
-- Specify the proto descriptor in order to provide the necessary type
-  information and enable Protobuf marshaling.
-- Define the unary method `Echo` and map it to the `this::echo` handler.
-- Create a handler for the `Echo` method, using Protobuf message types for
-  request and response.
-- Extract the message string from the request.
-- Create the response containing the extracted message.
-- Send the response back to the client by completing the response observer.
-
-> [!NOTE]
+1. Specify the proto descriptor in order to provide the necessary type
+   information and enable Protobuf marshaling.
+2. Define the unary method `Echo` and map it to the `this::echo` handler.
+3. Create a handler for the `Echo` method, using Protobuf message types for
+   request and response.
+4. Extract the message string from the request.
+5. Create the response containing the extracted message.
+6. Send the response back to the client by completing the response observer.
+<!--@mdc :: -->
 > The `complete` method shown in the example above is just one of many helper
 > methods available in the `ResponseHelper` class. See the full list
 > [here][here].
@@ -248,11 +246,12 @@ protocol.
 To register a routing with Helidon WebServer, simply add the routing to the
 listener (WebServer configuration is itself the default listener configuration)
 
+<!--@mdc ::code-callout -->
 ```java
 WebServer.builder()
         .port(8080)
-        .routing(httpRouting -> httpRouting.get("/greet", (req, res) -> res.send("Hi!"))) 
-        .addRouting(GrpcRouting.builder()  
+        .routing(httpRouting -> httpRouting.get("/greet", (req, res) -> res.send("Hi!"))) // <1>
+        .addRouting(GrpcRouting.builder()  // <2>
                             .unary(Strings.getDescriptor(),
                                    "StringService",
                                    "Upper",
@@ -260,11 +259,9 @@ WebServer.builder()
         .build()
         .start();
 ```
-
-- Configure HTTP routing of the server
-- Configure gRPC routing of the server
-
-### Configuring the gRPC Reflection Service
+1. Configure HTTP routing of the server
+2. Configure gRPC routing of the server
+<!--@mdc :: -->
 
 When a gRPC client interacts with a server, it must have access to the
 corresponding `.proto` file to understand the available services, methods, and

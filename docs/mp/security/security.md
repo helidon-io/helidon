@@ -60,34 +60,35 @@ customized in Helidon SE).
 
 The following shows an example we will explain in detail:
 
+<!--@mdc ::code-callout -->
 ```yaml [application.yaml]
 security:
   providers:
-    - abac: 
-    - provider-key: 
+    - abac: # <1>
+    - provider-key: # <2>
   web-server:
     defaults:
-      authenticate: true 
+      authenticate: true # <3>
     paths:
-      - path: "/metrics/*" 
+      - path: "/metrics/*" # <4>
         roles-allowed: "admin"
-      - path: "/health/*" 
+      - path: "/health/*" # <5>
         roles-allowed: "monitor"
-      - path: "/openapi/*" 
+      - path: "/openapi/*" # <6>
         abac:
           scopes: ["openapi"]
-      - path: "/static/*" 
+      - path: "/static/*" # <7>
         roles-allowed: ["user", "monitor"]
 ```
-
-- Attribute based access control provider that checks roles and scopes
-- The provider(s) used in your application, such as `oidc`
-- Default configuration for paths configured below in `paths` section
-- Protection of `/metrics` and all nested paths with `admin` role required
-- Protection of `/health` and all nested paths with `monitor` role required
-- Protection of `/openapi` and all nested paths with `openapi` scope required
-- Protection of static content configured on `/static` path with either `user`
-  or `monitor` role required
+1. Attribute based access control provider that checks roles and scopes
+2. The provider(s) used in your application, such as `oidc`
+3. Default configuration for paths configured below in `paths` section
+4. Protection of `/metrics` and all nested paths with `admin` role required
+5. Protection of `/health` and all nested paths with `monitor` role required
+6. Protection of `/openapi` and all nested paths with `openapi` scope required
+7. Protection of static content configured on `/static` path with either `user`
+   or `monitor` role required
+<!--@mdc :: -->
 
 If you need to use a properties file, such as `microprofile-config.properties`,
 you can convert the file by using index based numbers for arrays, such as:

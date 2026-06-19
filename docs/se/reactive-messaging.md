@@ -206,6 +206,7 @@ include two mandatory attributes:
 
 Example connector accessing configuration:
 
+<!--@mdc ::code-callout -->
 ```java
 @Connector("example-connector")
 public class ExampleConnector implements IncomingConnectorFactory {
@@ -213,7 +214,7 @@ public class ExampleConnector implements IncomingConnectorFactory {
     @Override
     public PublisherBuilder<? extends Message<?>> getPublisherBuilder(Config config) {
 
-        String firstPropValue = config.getValue("first-test-prop", String.class); 
+        String firstPropValue = config.getValue("first-test-prop", String.class); // <1>
         String secondPropValue = config.getValue("second-test-prop", String.class);
 
         return ReactiveStreams.of(firstPropValue, secondPropValue)
@@ -221,10 +222,8 @@ public class ExampleConnector implements IncomingConnectorFactory {
     }
 }
 ```
-
-- Config context is merged from channel and connector contexts
-
-###### Explicit Config for Messaging Connector
+1. Config context is merged from channel and connector contexts
+<!--@mdc :: -->
 
 An explicit config for channel’s publisher is possible with
 `Channel.Builder#publisherConfig(Config config)` and for a subscriber with the
@@ -235,11 +234,12 @@ Connector.
 
 Example consuming from Kafka connector with explicit config:
 
+<!--@mdc ::code-callout -->
 ```java
 String kafkaServer = config.get("app.kafka.bootstrap.servers").asString().get();
 String topic = config.get("app.kafka.topic").asString().get();
 
-Channel<String> fromKafka = Channel.<String>builder()  
+Channel<String> fromKafka = Channel.<String>builder() // <1><2>
         .name("from-kafka")
         .publisherConfig(KafkaConnector.configBuilder()
                                  .bootstrapServers(kafkaServer)
@@ -252,8 +252,7 @@ Channel<String> fromKafka = Channel.<String>builder()
                                  .build())
         .build();
 
-KafkaConnector kafkaConnector = KafkaConnector.create(); 
-
+KafkaConnector kafkaConnector = KafkaConnector.create(); // <3>
 Messaging messaging = Messaging.builder()
         .connector(kafkaConnector)
         .listener(fromKafka, payload -> {
@@ -262,14 +261,12 @@ Messaging messaging = Messaging.builder()
         .build()
         .start();
 ```
-
-- Prepare channel for connecting kafka connector with specific publisher
-  configuration → listener,
-- Channel → connector mapping is automatic when using
-  `KafkaConnector.configBuilder()`
-- Prepare Kafka connector, can be used by any channel
-
-###### Implicit Config for Messaging Connector
+1. Prepare channel for connecting kafka connector with specific publisher
+   configuration → listener,
+2. Channel → connector mapping is automatic when using
+   `KafkaConnector.configBuilder()`
+3. Prepare Kafka connector, can be used by any channel
+<!--@mdc :: -->
 
 Implicit config without any hard-coding is possible with [Helidon
 Config](config/introduction.md) following notation of [MicroProfile Reactive
@@ -277,15 +274,16 @@ Messaging][microprofile-rea-2].
 
 Example of channel to connector mapping config with custom properties:
 
+<!--@mdc ::code-callout -->
 ```yaml
-mp.messaging.incoming.from-connector-channel.connector: example-connector
-mp.messaging.incoming.from-connector-channel.first-test-prop: foo
-mp.messaging.connector.example-connector.second-test-prop: bar
+mp.messaging.incoming.from-connector-channel.connector: example-connector<1>
+mp.messaging.incoming.from-connector-channel.first-test-prop: foo<2>
+mp.messaging.connector.example-connector.second-test-prop: bar<3>
 ```
-
-- Channel → Connector mapping
-- Channel configuration properties
-- Connector configuration properties
+1. Channel → Connector mapping
+2. Channel configuration properties
+3. Connector configuration properties
+<!--@mdc :: -->
 
 Example consuming from connector:
 
@@ -330,11 +328,12 @@ Connecting streams to Kafka with Reactive Messaging couldn’t be easier.
 
 Example of consuming from Kafka:
 
+<!--@mdc ::code-callout -->
 ```java
 String kafkaServer = config.get("app.kafka.bootstrap.servers").asString().get();
 String topic = config.get("app.kafka.topic").asString().get();
 
-Channel<String> fromKafka = Channel.<String>builder() 
+Channel<String> fromKafka = Channel.<String>builder() // <1><2>
         .name("from-kafka")
         .publisherConfig(KafkaConnector.configBuilder()
                                  .bootstrapServers(kafkaServer)
@@ -347,7 +346,7 @@ Channel<String> fromKafka = Channel.<String>builder()
                                  .build())
         .build();
 
-KafkaConnector kafkaConnector = KafkaConnector.create(); 
+KafkaConnector kafkaConnector = KafkaConnector.create(); // <3>
 Messaging messaging = Messaging.builder()
         .connector(kafkaConnector)
         .listener(fromKafka, payload -> {
@@ -356,20 +355,19 @@ Messaging messaging = Messaging.builder()
         .build()
         .start();
 ```
+1. Prepare a channel for connecting kafka connector with specific publisher
+   configuration → listener
+2. Channel → connector mapping is automatic when using
+   KafkaConnector.configBuilder()
+3. Prepare Kafka connector, can be used by any channel
+<!--@mdc :: -->
 
-- Prepare a channel for connecting kafka connector with specific publisher
-  configuration → listener
-- Channel → connector mapping is automatic when using
-  KafkaConnector.configBuilder()
-- Prepare Kafka connector, can be used by any channel
-
-Example of producing to Kafka:
-
+<!--@mdc ::code-callout -->
 ```java
 String kafkaServer = config.get("app.kafka.bootstrap.servers").asString().get();
 String topic = config.get("app.kafka.topic").asString().get();
 
-Channel<String> toKafka = Channel.<String>builder()  
+Channel<String> toKafka = Channel.<String>builder() // <1> <2>
         .subscriberConfig(KafkaConnector.configBuilder()
                                   .bootstrapServers(kafkaServer)
                                   .topic(topic)
@@ -378,7 +376,7 @@ Channel<String> toKafka = Channel.<String>builder()
                                   .build())
         .build();
 
-KafkaConnector kafkaConnector = KafkaConnector.create(); 
+KafkaConnector kafkaConnector = KafkaConnector.create(); // <3>
 
 Messaging messaging = Messaging.builder()
         .publisher(toKafka, Multi.just("test1", "test2").map(Message::of))
@@ -386,24 +384,23 @@ Messaging messaging = Messaging.builder()
         .build()
         .start();
 ```
-
-- Prepare a channel for connecting kafka connector with specific publisher
-  configuration → listener
-- Channel → connector mapping is automatic when using
-  KafkaConnector.configBuilder()
-- Prepare Kafka connector, can be used by any channel
-
-##### Implicit Helidon Config for Kafka Connector
+1. Prepare a channel for connecting kafka connector with specific publisher
+   configuration → listener
+2. Channel → connector mapping is automatic when using
+   KafkaConnector.configBuilder()
+3. Prepare Kafka connector, can be used by any channel
+<!--@mdc :: -->
 
 Example of connector config:
 
+<!--@mdc ::code-callout -->
 ```yaml [application.yaml]
 mp.messaging:
 
   incoming.from-kafka:
     connector: helidon-kafka
     topic: messaging-test-topic-1
-    auto.offset.reset: latest 
+    auto.offset.reset: latest # <1>
     enable.auto.commit: true
     group.id: example-group-id
 
@@ -413,24 +410,25 @@ mp.messaging:
 
   connector:
     helidon-kafka:
-      bootstrap.servers: localhost:9092 
+      bootstrap.servers: localhost:9092 # <2>
       key.serializer: org.apache.kafka.common.serialization.StringSerializer
       value.serializer: org.apache.kafka.common.serialization.StringSerializer
       key.deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value.deserializer: org.apache.kafka.common.serialization.StringDeserializer
 ```
-
-- Kafka client consumer’s property auto.offset.reset configuration for
-  `from-kafka` channel only
-- Kafka client’s property [bootstrap.servers][bootstrap-server] configuration
-  for all channels using the connector
+1. Kafka client consumer’s property auto.offset.reset configuration for
+   `from-kafka` channel only
+2. Kafka client’s property [bootstrap.servers][bootstrap-server] configuration
+   for all channels using the connector
+<!--@mdc :: -->
 
 Example of consuming from Kafka:
 
+<!--@mdc ::code-callout -->
 ```java
 Channel<String> fromKafka = Channel.create("from-kafka");
 
-KafkaConnector kafkaConnector = KafkaConnector.create(); 
+KafkaConnector kafkaConnector = KafkaConnector.create(); // <1>
 
 Messaging messaging = Messaging.builder()
         .config(config)
@@ -441,15 +439,14 @@ Messaging messaging = Messaging.builder()
         .build()
         .start();
 ```
+1. Prepare Kafka connector, can be used by any channel
+<!--@mdc :: -->
 
-- Prepare Kafka connector, can be used by any channel
-
-Example of producing to Kafka:
-
+<!--@mdc ::code-callout -->
 ```java
 Channel<String> toKafka = Channel.create("to-kafka");
 
-KafkaConnector kafkaConnector = KafkaConnector.create(); 
+KafkaConnector kafkaConnector = KafkaConnector.create(); // <1>
 
 Messaging messaging = Messaging.builder()
         .config(config)
@@ -458,10 +455,8 @@ Messaging messaging = Messaging.builder()
         .build()
         .start();
 ```
-
-- Prepare Kafka connector, can be used by any channel
-
-Don’t forget to check out the examples with pre-configured Kafka docker image,
+1. Prepare Kafka connector, can be used by any channel
+<!--@mdc :: -->
 for easy testing:
 
 - [Helidon messaging examples][helidon-messagin]
@@ -485,8 +480,9 @@ Connecting streams to JMS with Reactive Messaging couldn’t be easier.
 
 Example of consuming from JMS:
 
+<!--@mdc ::code-callout -->
 ```java
-Channel<String> fromJms = Channel.<String>builder() 
+Channel<String> fromJms = Channel.<String>builder()// <1> <2>
         .name("from-jms")
         .publisherConfig(JmsConnector.configBuilder()
                                  .jndiInitialFactory(ActiveMQInitialContextFactory.class)
@@ -496,7 +492,7 @@ Channel<String> fromJms = Channel.<String>builder()
                                  .build())
         .build();
 
-JmsConnector jmsConnector = JmsConnector.create(); 
+JmsConnector jmsConnector = JmsConnector.create(); // <3>
 
 Messaging messaging = Messaging.builder()
         .connector(jmsConnector)
@@ -506,17 +502,16 @@ Messaging messaging = Messaging.builder()
         .build()
         .start();
 ```
+1. Prepare a channel for connecting jms connector with specific publisher
+   configuration → listener
+2. Channel → connector mapping is automatic when using
+   JmsConnector.configBuilder()
+3. Prepare JMS connector, can be used by any channel
+<!--@mdc :: -->
 
-- Prepare a channel for connecting jms connector with specific publisher
-  configuration → listener
-- Channel → connector mapping is automatic when using
-  JmsConnector.configBuilder()
-- Prepare JMS connector, can be used by any channel
-
-Example of producing to JMS:
-
+<!--@mdc ::code-callout -->
 ```java
-Channel<String> toJms = Channel.<String>builder()  
+Channel<String> toJms = Channel.<String>builder() // <1> <2>
         .subscriberConfig(JmsConnector.configBuilder()
                                   .jndiInitialFactory(ActiveMQInitialContextFactory.class)
                                   .jndiProviderUrl("tcp://127.0.0.1:61616")
@@ -525,7 +520,7 @@ Channel<String> toJms = Channel.<String>builder()
                                   .build()
         ).build();
 
-JmsConnector jmsConnector = JmsConnector.create(); 
+JmsConnector jmsConnector = JmsConnector.create(); // <3>
 
 Messaging messaging = Messaging.builder()
         .publisher(toJms, Multi.just("test1", "test2").map(Message::of))
@@ -533,14 +528,12 @@ Messaging messaging = Messaging.builder()
         .build()
         .start();
 ```
-
-- Prepare a channel for connecting jms connector with specific publisher
-  configuration → listener
-- Channel → connector mapping is automatic when using
-  JmsConnector.configBuilder()
-- Prepare JMS connector, can be used by any channel
-
-##### Implicit Helidon Config for JMS Connector
+1. Prepare a channel for connecting jms connector with specific publisher
+   configuration → listener
+2. Channel → connector mapping is automatic when using
+   JmsConnector.configBuilder()
+3. Prepare JMS connector, can be used by any channel
+<!--@mdc :: -->
 
 Example of connector config:
 
@@ -569,10 +562,11 @@ mp.messaging:
 
 Example of consuming from JMS:
 
+<!--@mdc ::code-callout -->
 ```java
 Channel<String> fromJms = Channel.create("from-jms");
 
-JmsConnector jmsConnector = JmsConnector.create(); 
+JmsConnector jmsConnector = JmsConnector.create(); // <1>
 
 Messaging messaging = Messaging.builder()
         .config(config)
@@ -583,15 +577,14 @@ Messaging messaging = Messaging.builder()
         .build()
         .start();
 ```
+1. Prepare JMS connector, can be used by any channel
+<!--@mdc :: -->
 
-- Prepare JMS connector, can be used by any channel
-
-Example of producing to JMS:
-
+<!--@mdc ::code-callout -->
 ```java
 Channel<String> toJms = Channel.create("to-jms");
 
-JmsConnector jmsConnector = JmsConnector.create(); 
+JmsConnector jmsConnector = JmsConnector.create(); // <1>
 
 Messaging messaging = Messaging.builder()
         .config(config)
@@ -600,10 +593,8 @@ Messaging messaging = Messaging.builder()
         .build()
         .start();
 ```
-
-- Prepare JMS connector, can be used by any channel
-
-Don’t forget to check out the examples with pre-configured ActiveMQ docker
+1. Prepare JMS connector, can be used by any channel
+<!--@mdc :: -->
 image, for easy testing:
 
 - [Helidon Messaging Examples][helidon-messagin]
@@ -625,17 +616,17 @@ Maven dependency:
 
 Example of producing to and consuming from Oracle AQ:
 
-<!--@mdc ::code-collapse -->
+<!--@mdc ::code-callout{collapsed} -->
 ```java
-PoolDataSource pds = PoolDataSourceFactory.getPoolDataSource(); 
+PoolDataSource pds = PoolDataSourceFactory.getPoolDataSource(); // <1>
 pds.setConnectionFactoryClassName("oracle.jdbc.pool.OracleDataSource");
 pds.setURL(jdbcUrl);
 pds.setUser("frank");
 pds.setPassword("frank");
-AqConnector connector = AqConnector.builder() 
+AqConnector connector = AqConnector.builder() // <2>
         .dataSource("test-ds", pds)
         .build();
-Channel<String> toAq = Channel.<String>builder() 
+Channel<String> toAq = Channel.<String>builder() // <3>
         .name("toAq")
         .subscriberConfig(AqConnector.configBuilder()
                                   .queue("example_queue_1")
@@ -643,7 +634,7 @@ Channel<String> toAq = Channel.<String>builder()
                                   .build())
         .build();
 
-Channel<String> fromAq = Channel.<String>builder() 
+Channel<String> fromAq = Channel.<String>builder() // <4>
         .name("fromAq")
         .publisherConfig(AqConnector.configBuilder()
                                  .queue("example_queue_1")
@@ -651,29 +642,26 @@ Channel<String> fromAq = Channel.<String>builder()
                                  .build())
         .build();
 
-Messaging.builder() 
+Messaging.builder() // <5>
         .connector(connector)
         .publisher(toAq,
                    Multi.just("Hello", "world", "from", "Oracle", "DB!")
-                           .map(Message::of)) 
-        .listener(fromAq, s -> System.out.println("Message received: " + s)) 
+                           .map(Message::of)) // <6>
+        .listener(fromAq, s -> System.out.println("Message received: " + s)) // <7>
         .build()
         .start();
 ```
+1. Prepare Oracle UCP
+2. Setup AQ connector and provide datasource with an identifier `test-ds`
+3. Setup channel for sending messages to queue `example_queue_1` with datasource
+   `test-ds`
+4. Setup channel for receiving messages from queue `example_queue_1` with
+   datasource `test-ds`
+5. Register connector and channels
+6. Add a publisher for several test messages to publish them to `example_queue_1`
+   immediately
+7. Subscribe callback for any message coming from `example_queue_1`
 <!--@mdc :: -->
-
-- Prepare Oracle UCP
-- Setup AQ connector and provide datasource with an identifier `test-ds`
-- Setup channel for sending messages to queue `example_queue_1` with datasource
-  `test-ds`
-- Setup channel for receiving messages from queue `example_queue_1` with
-  datasource `test-ds`
-- Register connector and channels
-- Add a publisher for several test messages to publish them to `example_queue_1`
-  immediately
-- Subscribe callback for any message coming from `example_queue_1`
-
-## Configuration
 
 - [Configuration for Messaging Connector][configuration-fo]
 - [Explicit Configuration with Config Builder for Kafka

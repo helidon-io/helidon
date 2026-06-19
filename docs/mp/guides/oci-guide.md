@@ -368,70 +368,72 @@ connection properties:
 
 Example of an `application.yaml` configured for OCI Streaming:
 
+<!--@mdc ::code-callout -->
 ```yaml [application.yaml]
 oci:
- tenant: helidon-app-example 
- user: email@domain.com 
- token: oci-auth-token 
- test-stream: 
+ tenant: helidon-app-example # <1>
+ user: email@domain.com # <2>
+ token: oci-auth-token # <3>
+ test-stream: # <4>
    name: TestStream
    endpoint: cell-1.streaming.us-phoenix-1.oci.oraclecloud.com
    port: 9092
    streampool-ocid: ocid1.streampool.oci1.phoenix.amaaaaaamevwycaap72ouurhfjrakuccakjpse5kenpkm5oikbgaadtq6byq
 ```
-
-- The name of the OCI tenancy.
-- The OCI account username.
-- The OCI authentication token. See [Getting an Auth Token][getting-an-auth] in
-  OCI documentation.
-- The details of the stream which you saved earlier. The `port` should be the
-  standard Kafka port number `9092`.
+1. The name of the OCI tenancy.
+2. The OCI account username.
+3. The OCI authentication token. See [Getting an Auth Token][getting-an-auth] in
+   OCI documentation.
+4. The details of the stream which you saved earlier. The `port` should be the
+   standard Kafka port number `9092`.
+<!--@mdc :: -->
 
 Then, still in `/server/src/main/resources/application.yaml`, configure
 messaging channels to use Helidon’s Kafka connector.
 
 Example of a configuration for the helidon-kafka connector:
 
+<!--@mdc ::code-callout{collapsed} -->
 ```yaml
 mp.messaging:
 
   incoming.from-stream:
     connector: helidon-kafka
-    topic: TestStream 
+    topic: TestStream # <1>
     auto.offset.reset: latest
     enable.auto.commit: true
-    group.id: example-group-id 
+    group.id: example-group-id # <2>
 
   outgoing.to-stream:
     connector: helidon-kafka
-    topic: TestStream 
+    topic: TestStream # <1>
 
   connector:
      helidon-kafka:
-       bootstrap.servers: ocid1.streampool.oci1.phoenix.amaaaaaamevwycaap72ouurhfjrakuccakjpse5kenpkm5oikbgaadtq6byq:9092 
+       bootstrap.servers: ocid1.streampool.oci1.phoenix.amaaaaaamevwycaap72ouurhfjrakuccakjpse5kenpkm5oikbgaadtq6byq:9092 # <3>
        sasl.mechanism: PLAIN
        security.protocol: SASL_SSL
        sasl.jaas.config:  >-
          org.apache.kafka.common.security.plain.PlainLoginModule
          required
-         username="helidon-app-example/person@domain.com/ocid1.streampool.oci1.phoenix.amaaaaaamevwycaap72ouurhfjrakuccakjpse5kenpkm5oikbgaadtq6byq" 
-         password="oci-auth-token"; 
+         username="helidon-app-example/person@domain.com/ocid1.streampool.oci1.phoenix.amaaaaaamevwycaap72ouurhfjrakuccakjpse5kenpkm5oikbgaadtq6byq" # <4>
+         password="oci-auth-token"; # <5>
 
        key.serializer: org.apache.kafka.common.serialization.StringSerializer
        value.serializer: org.apache.kafka.common.serialization.StringSerializer
        key.deserializer: org.apache.kafka.common.serialization.StringDeserializer
        value.deserializer: org.apache.kafka.common.serialization.StringDeserializer
 ```
-
-- The OCI stream name (which should match the value that you defined earlier in
-  application.yaml).
-- The ID for the stream group
-- Kafka client’s property [bootstrap.servers][bootstrap-server] configuration
-  for all channels using the connector, using the following structure
-  `<oci.test-stream.endpoint>:<oci.test-stream.port>`.
-- A username in this structure:
-  `<oci.tenant>/<oci.user>/<oci.test-stream.streampool-ocid>`.
-- The OCI authentication token.
+1. The OCI stream name (which should match the value that you defined earlier in
+   application.yaml).
+2. The ID for the stream group
+3. Kafka client’s property [bootstrap.servers][bootstrap-server] configuration
+   for all channels using the connector, using the following structure
+   `<oci.test-stream.endpoint>:<oci.test-stream.port>`.
+4. A username in this structure:
+   `<oci.tenant>/<oci.user>/<oci.test-stream.streampool-ocid>`.
+5. The OCI authentication token.
+<!--@mdc :: -->
 
 After you configure the `helidon-kafka` connector, you can use it on messaging
 channels to integrate with the OCI Streaming service.

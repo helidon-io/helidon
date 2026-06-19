@@ -107,61 +107,58 @@ static HealthCheckResponse slowStartLivenessResponse() {
 
 Registering a health check using a method reference:
 
+<!--@mdc ::code-callout -->
 ```java
 ObserveFeature observe = ObserveFeature.builder()
-    .config(config.get("server.features.observe")) 
-    .addObserver(HealthObserver.builder() 
-        .useSystemServices(true) 
-        .addCheck(
-            Main::slowStartLivenessResponse, 
-            HealthCheckType.LIVENESS, 
-            "live-after-8-seconds") 
-        .build())
-    .build();
+        .config(config.get("server.features.observe")) // <1>
+        .addObserver(HealthObserver.builder() // <2>
+                             .useSystemServices(true) // <3>
+                             .addCheck(Main::slowStartLivenessResponse, // <4>
+                                       HealthCheckType.LIVENESS, // <5>
+                                       "live-after-8-seconds") // <6>
+                             .build())
+        .build();
 ```
-
-- Apply configuration to auto-discovered observers (e.g., health, metrics).
-- Augment the web server by adding the `ObserveFeature` containing the
-  `HealthObserver`. This replaces the auto-discovered health observer.
-- Include the Helidon-supplied health checks.
-- Add the custom health check, passing a reference to the method which returns
-  the health check responses.
-- Set the type of the custom health check.
-- Set the name of the custom health check.
-
-#### Option 2: Using an in-line lambda expression
+1. Apply configuration to auto-discovered observers (e.g., health, metrics).
+2. Augment the web server by adding the `ObserveFeature` containing the
+   `HealthObserver`. This replaces the auto-discovered health observer.
+3. Include the Helidon-supplied health checks.
+4. Add the custom health check, passing a reference to the method which returns
+   the health check responses.
+5. Set the type of the custom health check.
+6. Set the name of the custom health check.
+<!--@mdc :: -->
 
 If the logic for computing the health check response is fairly simple, express
 it as an in-line lambda when you register the health check.
 
 Registering a health check using an in-line lambda expression:
 
+<!--@mdc ::code-callout -->
 ```java
 ObserveFeature observe = ObserveFeature.builder()
-    .config(config.get("server.features.observe"))
-    .addObserver(HealthObserver.builder() 
-        .useSystemServices(true) // Include Helidon-provided health checks.
-        .addCheck(() -> HealthCheckResponse.builder() 
-                .status(System.currentTimeMillis() - serverStartTime >= 8000) 
-                .detail("time", System.currentTimeMillis()) 
-                .build(), 
-            HealthCheckType.READINESS, 
-            "live-after-8-seconds") 
-        .build())
-    .build();
+        .config(config.get("server.features.observe"))
+        .addObserver(HealthObserver.builder() // <1>
+                             .useSystemServices(true) // Include Helidon-provided health checks.
+                             .addCheck(() -> HealthCheckResponse.builder() // <2>
+                                               .status(System.currentTimeMillis() - serverStartTime >= 8000) // <3>
+                                               .detail("time", System.currentTimeMillis()) // <4>
+                                               .build(), // <5>
+                                       HealthCheckType.READINESS, // <6>
+                                       "live-after-8-seconds") // <7>
+                             .build())
+        .build();
 ```
-
-- Augment the web server by adding the `ObserveFeature` containing the
-  `HealthObserver`.
-- Add the custom health check passing a lambda expression supplying the health
-  check response.
-- In the lambda, set the health check response status.
-- Still in the lambda, set a detail associated with the health check response.
-- Still in the lambda, build the health check response.
-- Set the type of the custom health check.
-- Set the name of the custom health check.
-
-Note that the logic in the lambda expression runs every time Helidon probes the
+1. Augment the web server by adding the `ObserveFeature` containing the
+   `HealthObserver`.
+2. Add the custom health check passing a lambda expression supplying the health
+   check response.
+3. In the lambda, set the health check response status.
+4. Still in the lambda, set a detail associated with the health check response.
+5. Still in the lambda, build the health check response.
+6. Set the type of the custom health check.
+7. Set the name of the custom health check.
+<!--@mdc :: -->
 added health check, so the values passed to `status` and `detail` are recomputed
 every time.
 
@@ -178,55 +175,53 @@ this technique of writing a custom health check.
 
 Declaring a concrete `HealthCheck` implementation:
 
+<!--@mdc ::code-callout -->
 ```java
 /**
  * A custom readiness health check that reports UP 8 seconds after server start-up.
  */
-class SlowStartHealthCheck implements HealthCheck { 
+class SlowStartHealthCheck implements HealthCheck { // <1>
 
     @Override
     public HealthCheckType type() {
-        return HealthCheckType.READINESS; 
+        return HealthCheckType.READINESS; // <2>
     }
 
     @Override
     public HealthCheckResponse call() {
         long now = System.currentTimeMillis();
         return HealthCheckResponse.builder()
-                .detail("time", now) 
-                .status(now - serverStartTime >= 8000) 
+                .detail("time", now) // <3>
+                .status(now - serverStartTime >= 8000) // <4>
                 .build();
     }
 }
 ```
+1. Implement the `io.helidon.health.HealthCheck` interface. The default health
+   check name is the simple class name of the implementing class. Your code can
+   override the `name()` method to return a different name. (Not shown in this
+   example)
+2. The default health check type is `LIVENESS` so this implementation overrides
+   `type()` to declare a `READINESS` check.
+3. Sets a detail value `time` associated with the response to the current time.
+4. Reports `DOWN` until at least eight seconds have passed since the server
+   start-up, then reports `UP` thereafter.
+<!--@mdc :: -->
 
-- Implement the `io.helidon.health.HealthCheck` interface. The default health
-  check name is the simple class name of the implementing class. Your code can
-  override the `name()` method to return a different name. (Not shown in this
-  example)
-- The default health check type is `LIVENESS` so this implementation overrides
-  `type()` to declare a `READINESS` check.
-- Sets a detail value `time` associated with the response to the current time.
-- Reports `DOWN` until at least eight seconds have passed since the server
-  start-up, then reports `UP` thereafter.
-
-Registering a `HealthCheck` instance:
-
+<!--@mdc ::code-callout -->
 ```java
 ObserveFeature observe = ObserveFeature.builder()
-    .config(config.get("server.features.observe"))
-    .addObserver(HealthObserver.builder() 
-        .addCheck(new SlowStartHealthCheck()) 
-        .build())
-    .build();
+        .config(config.get("server.features.observe"))
+        .addObserver(HealthObserver.builder() // <1>
+                             .addCheck(new SlowStartHealthCheck()) // <2>
+                             .build())
+        .build();
 ```
-
-- Augment the web server by adding the `ObserveFeature` containing the
-  `HealthObserver`.
-- Instantiate the custom health check class and add the instance to the
-  `HealthObserver`.
-
-#### Adding Observability (including the Custom Health Checks) to Helidon
+1. Augment the web server by adding the `ObserveFeature` containing the
+   `HealthObserver`.
+2. Instantiate the custom health check class and add the instance to the
+   `HealthObserver`.
+<!--@mdc :: -->
 
 The code examples above prepare the `observe` feature instance using the
 built-in and custom health checks. To activate the health subsystem and other
@@ -235,18 +230,17 @@ feature to the webserver and start the server.
 
 Register the observe feature with the server and start it:
 
+<!--@mdc ::code-callout -->
 ```java
 WebServer server = WebServer.builder()
         .featuresDiscoverServices(false)
-        .addFeature(observe) 
+        .addFeature(observe) // <1>
         .routing(Main::routing)
         .build()
         .start();
 ```
-
-- Add the previously-prepared health observer to the server as a feature
-
-#### Triggering and Interpreting Health Check Output
+1. Add the previously-prepared health observer to the server as a feature
+<!--@mdc :: -->
 
 Health support in Helidon is part of the observability feature. `HealthObserver`
 is a Helidon-provided observability implementation that contains a collection of
@@ -394,25 +388,24 @@ application:
 
 Adding selected built-in health checks:
 
+<!--@mdc ::code-callout -->
 ```java
 WebServer server = WebServer.builder()
-    .config(config.get("server"))
-    .addFeature(ObserveFeature.create(HealthObserver.builder()
-        .useSystemServices(false) 
-        .addCheck(HealthChecks.deadlockCheck()) 
-        .addCheck(hc) 
-        .details(true)
-        .build()))
-    .routing(Main::routing)
-    .build()
-    .start();
+        .config(config.get("server"))
+        .addFeature(ObserveFeature.create(HealthObserver.builder()
+                                                  .useSystemServices(false) // <1>
+                                                  .addCheck(HealthChecks.deadlockCheck()) // <2>
+                                                  .addCheck(hc) // <3>
+                                                  .details(true)
+                                                  .build()))
+        .routing(Main::routing)
+        .build()
+        .start();
 ```
-
-- Disables automatic registration of the built-in health checks.
-- Adds the specific built-in check(s) you want.
-- Adds a custom check (in a previously-prepared variable `hc`).
-
-You can control the thresholds for built-in health checks in either of two ways:
+1. Disables automatic registration of the built-in health checks.
+2. Adds the specific built-in check(s) you want.
+3. Adds a custom check (in a previously-prepared variable `hc`).
+<!--@mdc :: -->
 
 - Create the health checks individually using their builders instead of using
   the `HealthChecks` convenience class. See the [table](#built-in-health-checks)
@@ -507,13 +500,14 @@ The event message contains only the status code.
 
 Get the events of a single pod:
 
+<!--@mdc ::code-callout -->
 ```shell [Terminal]
-POD_NAME=$(kubectl get pod -l app=acme -o jsonpath='{.items[0].metadata.name}') 
-kubectl get event --field-selector involvedObject.name=${POD_NAME} 
+POD_NAME=$(kubectl get pod -l app=acme -o jsonpath='{.items[0].metadata.name}') # <1>
+kubectl get event --field-selector involvedObject.name=${POD_NAME} # <2>
 ```
-
-- Get the effective pod name by filtering pods with the label `app=acme`.
-- Filter the events for the pod.
+1. Get the effective pod name by filtering pods with the label `app=acme`.
+2. Filter the events for the pod.
+<!--@mdc :: -->
 
 > [!TIP]
 > Create log messages in your health check implementation when setting a `DOWN`
@@ -585,52 +579,51 @@ specification is also provided for the Kubernetes service and deployment.
 
 Application code:
 
+<!--@mdc ::code-callout{collapsed} -->
 ```java
 ObserveFeature observeFeature = ObserveFeature.builder()
         .addObserver(HealthObserver.builder()
                              .useSystemServices(false)
-                             .endpoint("/health/live") 
-                             .addChecks(HealthChecks.healthChecks()) 
+                             .endpoint("/health/live") // <1>
+                             .addChecks(HealthChecks.healthChecks()) // <2>
                              .build())
         .addObserver(HealthObserver.builder()
                              .useSystemServices(false)
-                             .endpoint("/health/ready") 
-                             .addCheck(() -> HealthCheckResponse.builder() 
+                             .endpoint("/health/ready") // <3>
+                             .addCheck(() -> HealthCheckResponse.builder() // <4>
                                                .status(true)
                                                .build(),
                                        HealthCheckType.READINESS,
                                        "database")
                              .build())
-        .sockets(List.of("observe")) 
+        .sockets(List.of("observe")) // <5>
         .build();
 WebServer server = WebServer.builder()
         .putSocket("@default", socket -> socket
-                .port(8080) 
-                .routing(r -> r.any((req, res) -> res.send("It works!")))) 
+                .port(8080) // <6>
+                .routing(r -> r.any((req, res) -> res.send("It works!")))) // <7>
         .addFeature(observeFeature)
         .putSocket("observe", socket -> socket
-                .port(8081)) 
+                .port(8081)) // <8>
         .build()
         .start();
 ```
+1. The health service for the `liveness` probe is exposed at `/health/live`.
+2. Using the built-in health checks for the `liveness` probe.
+3. The health service for the `readiness` probe is exposed at `/health/ready`.
+4. Using a custom health check for a pseudo database that is always `UP`.
+5. Route the `observe` feature exclusively on the `observe` socket.
+6. The default socket uses port 8080 for the default routes.
+7. The default route: returns It works! for any request.
+8. The `observe` socket uses port 8081 for the "/observe" routes.
+<!--@mdc :: -->
 
-- The health service for the `liveness` probe is exposed at `/health/live`.
-- Using the built-in health checks for the `liveness` probe.
-- The health service for the `readiness` probe is exposed at `/health/ready`.
-- Using a custom health check for a pseudo database that is always `UP`.
-- Route the `observe` feature exclusively on the `observe` socket.
-- The default socket uses port 8080 for the default routes.
-- The default route: returns It works! for any request.
-- The `observe` socket uses port 8081 for the "/observe" routes.
-
-Kubernetes descriptor:
-
-<!--@mdc ::code-collapse -->
+<!--@mdc ::code-callout{collapsed} -->
 ```yaml [app.yaml]
 kind: Service
 apiVersion: v1
 metadata:
-  name: acme 
+  name: acme # <1>
   labels:
     app: acme
 spec:
@@ -645,7 +638,7 @@ spec:
 kind: Deployment
 apiVersion: apps/v1
 metadata:
-  name: acme 
+  name: acme # <2>
 spec:
   replicas: 1
   selector:
@@ -665,29 +658,28 @@ spec:
         - containerPort: 8080
         livenessProbe:
           httpGet:
-            path: /observe/health/live 
+            path: /observe/health/live # <3>
             port: 8081
-          initialDelaySeconds: 3 
+          initialDelaySeconds: 3 # <4>
           periodSeconds: 10
           timeoutSeconds: 3
           failureThreshold: 3
         readinessProbe:
           httpGet:
-            path: /observe/health/ready 
+            path: /observe/health/ready # <5>
             port: 8081
-          initialDelaySeconds: 10 
+          initialDelaySeconds: 10 # <6>
           periodSeconds: 30
           timeoutSeconds: 10
 ---
 ```
+1. A service of type `NodePort` that serves the default routes on port `8080`.
+2. A deployment with one replica of a pod.
+3. The HTTP endpoint for the liveness probe.
+4. The liveness probe configuration.
+5. The HTTP endpoint for the readiness probe.
+6. The readiness probe configuration.
 <!--@mdc :: -->
-
-- A service of type `NodePort` that serves the default routes on port `8080`.
-- A deployment with one replica of a pod.
-- The HTTP endpoint for the liveness probe.
-- The liveness probe configuration.
-- The HTTP endpoint for the readiness probe.
-- The readiness probe configuration.
 
 ## Additional Information
 

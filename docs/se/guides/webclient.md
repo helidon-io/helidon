@@ -127,15 +127,14 @@ improves the readability and simplicity of the code.
 
 Add WebClient instance to the main method:
 
+<!--@mdc ::code-callout -->
 ```java
 WebClient webClient = WebClient.builder()
-        .baseUri("http://localhost:8080") 
+        .baseUri("http://localhost:8080") // <1>
         .build();
 ```
-
-- The base URI of the outbound requests.
-
-By default, the Helidon quickstart application runs on localhost:8080. If for
+1. The base URI of the outbound requests.
+<!--@mdc :: -->
 some reason the host name or port number of the quickstart application is
 changed, make sure that the baseURI is also modified to reflect that change.
 Once built, the WebClient can be used to send a GET request to the greeting
@@ -143,20 +142,19 @@ application.
 
 Send a GET request to the target endpoint:
 
+<!--@mdc ::code-callout -->
 ```java
-ClientResponseTyped<String> response = webClient.get() 
-        .path("/greet") 
-        .request(String.class); 
-String entityString = response.entity(); 
+ClientResponseTyped<String> response = webClient.get() // <1>
+        .path("/greet") // <2>
+        .request(String.class); // <3>
+String entityString = response.entity(); // <4>
 System.out.println(entityString);
 ```
-
-- Create an HTTP GET request.
-- Target endpoint path.
-- Execute the request
-- Return response entity handled as a String.
-
-The path method appends `/greet` to the WebClient base URI which results to the
+1. Create an HTTP GET request.
+2. Target endpoint path.
+3. Execute the request
+4. Return response entity handled as a String.
+<!--@mdc :: -->
 request URI becoming `http://localhost:8080/greet`. The received response entity
 will be a greeting message and will be automatically handled as a String. If no
 specific type is set in the method request(), `HttpClientResponse` will be
@@ -215,18 +213,17 @@ service allowing the response methods to easily parse the JSON object.
 
 Replace String with JsonObject:
 
+<!--@mdc ::code-callout -->
 ```java
 ClientResponseTyped<JsonObject> response = webClient.get()
         .path("/greet/David")
-        .request(JsonObject.class); 
-String value = response.entity().getString("message"); 
+        .request(JsonObject.class); // <1>
+String value = response.entity().getString("message"); // <2>
 System.out.println(value);
 ```
-
-- Request a JsonObject as return value.
-- Extract the value of the JsonObject with name of `message`.
-
-In the URI, the String value following `greet` is a path parameter which allows
+1. Request a JsonObject as return value.
+2. Extract the value of the JsonObject with name of `message`.
+<!--@mdc :: -->
 the application to greet someone.
 
 Output:
@@ -241,27 +238,26 @@ and using a structure like `{"greeting" : "value"}`.
 
 Modify the application greeting:
 
+<!--@mdc ::code-callout -->
 ```java
-JsonObject entity = Json.createObjectBuilder() 
+JsonObject entity = Json.createObjectBuilder() // <1>
         .add("greeting", "Bonjour")
         .build();
-webClient.put() 
+webClient.put() // <2>
         .path("/greet/greeting")
-        .submit(entity); 
-ClientResponseTyped<JsonObject> response = webClient.get() 
+        .submit(entity); // <3>
+ClientResponseTyped<JsonObject> response = webClient.get() // <4>
         .path("/greet/David")
         .request(JsonObject.class);
-String entityString = response.entity().getString("message"); 
+String entityString = response.entity().getString("message"); // <5>
 System.out.println(entityString);
 ```
-
-- Create a JsonObject with key `greeting` and value `bonjour`.
-- Create a PUT request.
-- Submit the JsonObject created earlier.
-- Execute a GET call to verify that the greeting has been changed.
-- Retrieve the greeting message from the JSON object
-
-Executing the above code will yield this output showing that the greeting word
+1. Create a JsonObject with key `greeting` and value `bonjour`.
+2. Create a PUT request.
+3. Submit the JsonObject created earlier.
+4. Execute a GET call to verify that the greeting has been changed.
+5. Retrieve the greeting message from the JSON object
+<!--@mdc :: -->
 has been changed.
 
 Output:
@@ -298,12 +294,13 @@ how a `Counter` metric can be defined, created and monitored.
 
 Example of metric creation:
 
+<!--@mdc ::code-callout -->
 ```java
 MeterRegistry METER_REGISTRY = Metrics.globalRegistry();
 
-String metricName = "counter.GET.localhost"; 
+String metricName = "counter.GET.localhost"; // <1>
 
-Counter counter = METER_REGISTRY.getOrCreate(Counter.builder(metricName)); 
+Counter counter = METER_REGISTRY.getOrCreate(Counter.builder(metricName)); // <2>
 System.out.println(metricName + ": " + counter.count());
 
 WebClientService clientServiceMetric = WebClientMetrics.counter()
@@ -311,17 +308,15 @@ WebClientService clientServiceMetric = WebClientMetrics.counter()
         .success(true)                      // OPTIONAL
         .errors(true)                       // OPTIONAL
         .description("Metric Description")  // OPTIONAL
-        .nameFormat("counter.%1$s.%2$s") 
-        .build(); 
+        .nameFormat("counter.%1$s.%2$s") // <3>
+        .build(); // <4>
 ```
-
-- Specify the metric name.
-- From the `MeterRegistry`, create a Counter metric using the specified metric
-  name.
-- Specify how the name of the metric will be generated using the `nameFormat`.
-- Build a WebClient Metric Service that can count number of GET requests made.
-
-In this example, the metric uses a `Counter` to measure the number of `GET`
+1. Specify the metric name.
+2. From the `MeterRegistry`, create a Counter metric using the specified metric
+   name.
+3. Specify how the name of the metric will be generated using the `nameFormat`.
+4. Build a WebClient Metric Service that can count number of GET requests made.
+<!--@mdc :: -->
 requests executed on the `localhost`. The format strings in the parameter value
 of `nameFormat` method will identify how the name of a metric will get
 generated:
@@ -340,19 +335,18 @@ the created WebClient Metric Service as a parameter.
 
 Add the metric service to the WebClient:
 
+<!--@mdc ::code-callout -->
 ```java
 WebClient webClient = WebClient.builder()
         .baseUri("http://localhost:8080")
-        .addService(clientServiceMetric) 
+        .addService(clientServiceMetric) // <1>
         .build();
 
-webClient.get().path("/greet").request(); 
+webClient.get().path("/greet").request(); // <2>
 ```
-
-- Register the metric service to the webclient.
-- Send an HTTP GET request
-
-To verify that the metric is set up correctly, print the value of the Counter at
+1. Register the metric service to the webclient.
+2. Send an HTTP GET request
+<!--@mdc :: -->
 the end of the main method.
 
 Print the metric count:
@@ -399,32 +393,31 @@ identifies the http methods that will be measured.
 
 Add the metric service to the WebClient via the Configuration:
 
+<!--@mdc ::code-callout -->
 ```java
 MeterRegistry METER_REGISTRY = Metrics.globalRegistry();
 
-String counterName = "counter.GET.localhost"; 
+String counterName = "counter.GET.localhost"; // <1>
 
-Counter counter = METER_REGISTRY.getOrCreate(Counter.builder(counterName)); 
+Counter counter = METER_REGISTRY.getOrCreate(Counter.builder(counterName)); // <2>
 System.out.println(counterName + ": " + counter.count());
 
-Config config = Config.create(); 
+Config config = Config.create(); // <3>
 
 WebClient webClient = WebClient.builder()
         .baseUri("http://localhost:8080")
-        .config(config.get("client")) 
+        .config(config.get("client")) // <4>
         .build();
-webClient.get().path("/greet").request(); 
-System.out.println(counterName + ": " + counter.count()); 
+webClient.get().path("/greet").request(); // <5>
+System.out.println(counterName + ": " + counter.count()); // <6>
 ```
-
-- Choose the metric name.
-- Create counter metric from `MeterRegistry`.
-- Create a Helidon Config instance from default config file `application.yaml`.
-- Configure the WebClient using the `client` section from `application.yaml`.
-- Send an HTTP GET request
-- Print out the metric result
-
-As demonstrated, using the configuration file reduces the amount of code needed
+1. Choose the metric name.
+2. Create counter metric from `MeterRegistry`.
+3. Create a Helidon Config instance from default config file `application.yaml`.
+4. Configure the WebClient using the `client` section from `application.yaml`.
+5. Send an HTTP GET request
+6. Print out the metric result
+<!--@mdc :: -->
 in the source code. For more information about metrics, see the [Helidon Metrics
 Guide](metrics.md).
 

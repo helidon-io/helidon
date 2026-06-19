@@ -115,7 +115,7 @@ The config system supports these built-in types:
 <tr>
 <th>Type</th>
 <th>Use</th>
-<th>Related <code>ConfigSources</code> Method</th>
+<th>Related <code>Config<wbr>Sources</code> Method</th>
 <th>Required Properties</th>
 </tr>
 </thead>
@@ -123,37 +123,37 @@ The config system supports these built-in types:
 <tr>
 <td><code>system-properties</code></td>
 <td>System properties are a config source</td>
-<td><code>ConfigSources.systemProperties()</code></td>
+<td><code>Config<wbr>Sources.<wbr>system<wbr>Properties()</code></td>
 <td>n/a</td>
 </tr>
 <tr>
 <td><code>environment-variables</code></td>
 <td>Environment variables are a config source</td>
-<td><code>ConfigSources.environmentVariables()</code></td>
+<td><code>Config<wbr>Sources.<wbr>environment<wbr>Variables()</code></td>
 <td>n/a</td>
 </tr>
 <tr>
 <td><code>classpath</code></td>
 <td>Specified resource is used as a config source</td>
-<td><code>ConfigSources.classpath(String)</code></td>
+<td><code>ConfigSources.<wbr>classpath(<wbr>String)</code></td>
 <td><code>resource</code> - path to the resource to load</td>
 </tr>
 <tr>
 <td><code>file</code></td>
 <td>Specified file is used as a config source</td>
-<td><code>ConfigSources.file(Path)</code></td>
+<td><code>Config<wbr>Sources.file(<wbr>Path)</code></td>
 <td><code>path</code> - path to the file to load</td>
 </tr>
 <tr>
 <td><code>directory</code></td>
 <td>Each file in directory used as config entry, with key = file name and value = file contents</td>
-<td><code>ConfigSources.directory(String)</code></td>
+<td><code>Config<wbr>Sources.<wbr>directory(<wbr>String)</code></td>
 <td><code>path</code> - path to the directory to use</td>
 </tr>
 <tr>
 <td><code>url</code></td>
 <td>Specified URL is read as a config source</td>
-<td><code>ConfigSources.url(URL)</code></td>
+<td><code>Config<wbr>Sources.<wbr>url(<wbr>URL)</code></td>
 <td><code>url</code> - URL from which to load the config</td>
 </tr>
 <tr>
@@ -165,7 +165,7 @@ The config system supports these built-in types:
 <tr>
 <td><code>prefixed</code></td>
 <td>Associated config source is loaded with the specified prefix</td>
-<td><code>ConfigSources.prefixed(String,Supplier)</code></td>
+<td><code>Config<wbr>Sources.<wbr>prefixed(<wbr>String,<wbr>Supplier)</code></td>
 <td><ul>
 <li><code>key</code> - key of config element in associated source to load</li>
 <li><code>type</code> - associated config source specification</li>
@@ -298,9 +298,9 @@ with accompanying `properties`.
 
 Config Profile Support for Built-in Polling Strategies:
 
-| Strategy Type | Usage                                                                         | Properties                                                                                  |
-|---------------|-------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
-| `regular`     | Periodic polling - See [`PollingStrategies.regular`][pollingstrategie] method | `interval` (`Duration`) - indicating how often to poll; e.g., `PT15S` represents 15 seconds |
+| Strategy Type | Usage                                                                                         | Properties                                                                                  |
+|---------------|-----------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------|
+| `regular`     | Periodic polling - See [<code>Polling<wbr>Strategies.regular</code>][pollingstrategie] method | `interval` (`Duration`) - indicating how often to poll; e.g., `PT15S` represents 15 seconds |
 
 
 Config Profile Support for Built-in Change Watchers:
@@ -315,7 +315,7 @@ Config Profile Support for Built-in Change Watchers:
 <tbody>
 <tr>
 <td><code>file</code></td>
-<td>Filesystem monitoring - See <a href="https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/FileSystemWatcher.html"><code>FileSystemWatcher</code></a> class</td>
+<td>Filesystem monitoring - See <a href="https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/FileSystemWatcher.html"><code>File<wbr>System<wbr>Watcher</code></a> class</td>
 <td><code>initial-delay-millis</code> - delay between the start of the watcher and first check for changes
 <code>delay-millis</code> - how often do we check the watcher service for changes</td>
 </tr>
@@ -334,7 +334,7 @@ Config Profile Support for Built-in Retry Policies:
 <tbody>
 <tr>
 <td><code>repeat</code></td>
-<td>Regularly-scheduled - see <a href="https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/RetryPolicies.html#repeat(int)"><code>RetryPolicies.repeat</code></a>.</td>
+<td>Regularly-scheduled - see <a href="https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/RetryPolicies.html#repeat(int)"><code>Retry<wbr>Policies.<wbr>repeat</code></a>.</td>
 <td><code>retries</code> (<code>int</code>) - number of retries to perform<br />
 
 Optional:

@@ -290,6 +290,7 @@ be easily used to configure the web server without modifying application code.
 
 Add the following line to `application.yaml`:
 
+<!--@mdc ::code-callout -->
 ```yaml [application.yaml]
 server:
   port: 7987
@@ -297,7 +298,7 @@ server:
   features:
     security:
         # protected paths on the web server
-        paths: 
+        paths: # <1>
           - path: "/greet"
             methods: ["get"]
             authenticate: true
@@ -306,22 +307,22 @@ security:
   - abac:
       # Adds ABAC Provider - it does not require any configuration
   - oidc:
-      client-id: "myClientID" 
-      client-secret: "changeit" 
-      identity-uri: "http://localhost:8080/realms/myRealm" 
+      client-id: "myClientID" # <2>
+      client-secret: "changeit" # <3>
+      identity-uri: "http://localhost:8080/realms/myRealm" # <4>
       audience: "account"
       header-use: "true"
       # proxy-host should be defined if you operate behind a proxy, can be removed otherwise
       proxy-host: ""
-      frontend-uri: "http://localhost:7987" 
+      frontend-uri: "http://localhost:7987" # <5>
       server-type: "oidc"
 ```
-
-- `paths` section defines the protected application’s path.
-- `client-id` must be the same as the one configure in keycloak.
-- The client secret generate by Keycloak during `Create a client` section.
-- `identity-uri` is used to redirect the user to keycloak.
-- `frontend-uri` will direct you back to the application.
+1. `paths` section defines the protected application’s path.
+2. `client-id` must be the same as the one configure in keycloak.
+3. The client secret generate by Keycloak during `Create a client` section.
+4. `identity-uri` is used to redirect the user to keycloak.
+5. `frontend-uri` will direct you back to the application.
+<!--@mdc :: -->
 
 Make sure keycloak and the application are not running on the same port. The
 application port value can be changed into application.yaml.
@@ -344,14 +345,13 @@ method gather all configuration properties.
 
 Add the following to the Main#routing method:
 
+<!--@mdc ::code-callout -->
 ```java
 Config config = Config.global();
-routing.addFeature(OidcFeature.create(config));   
+routing.addFeature(OidcFeature.create(config));   // <1>
 ```
-
-- Create and register `OidcFeature`.
-
-That code is extracting security properties from application.yaml into two
+1. Create and register `OidcFeature`.
+<!--@mdc :: -->
 steps. First the Security instance is used to bootstrap security, so the
 SecurityFeature instance can integrate security into Web Server. Then,
 OidcFeature instance registers the endpoint to which OIDC redirects browser
@@ -511,6 +511,7 @@ In the test folder open the application.yaml file:
 
 Copy these properties into `application.yaml`:
 
+<!--@mdc ::code-callout{collapsed} -->
 ```yaml [application.yaml]
 app:
   greeting: "Hello"
@@ -528,8 +529,8 @@ security:
           - login: "jack"
             password: "jackIsGreat"
     - oidc:
-        client-id: "myClientID" 
-        client-secret: "Your client secret" 
+        client-id: "myClientID" # <1>
+        client-secret: "Your client secret" # <2>
         identity-uri: "http://localhost:8080/realms/myRealm"
         audience: "account"
         frontend-uri: "http://localhost:7987"
@@ -541,9 +542,9 @@ security:
         methods: ["get"]
         authenticate: true
 ```
-
-- Replace this field by your Keycloak client ID.
-- Replace this field by your Keycloak client Password.
+1. Replace this field by your Keycloak client ID.
+2. Replace this field by your Keycloak client Password.
+<!--@mdc :: -->
 
 Add the `http-basic-auth` properties in the security → providers property
 section. This configuration will be used by the tests instead of the

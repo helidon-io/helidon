@@ -103,29 +103,30 @@ For each resource you want to configure, add a section to
 
 General form of CORS configuration:
 
+<!--@mdc ::code-callout -->
 ```properties[microprofile-config.properties]
-cors.enabled= 
-cors.paths.i.path-pattern= 
-cors.paths.i.allow-headers=
-cors.paths.i.max-age= 
-cors.paths.i.allow-credentials=
-cors.paths.i.allow-origins=
-cors.paths.i.expose-headers=
-cors.paths.i.allow-methods=
-cors.paths.i.enabled= 
+cors.enabled= # <1>
+
+# <2>
+cors.paths._i_.path-pattern= # <3>
+cors.paths._i_.allow-headers=
+cors.paths._i_.max-age= # <4>
+cors.paths._i_.allow-credentials=
+cors.paths._i_.allow-origins=
+cors.paths._i_.expose-headers=
+cors.paths._i_.allow-methods=
+cors.paths._i_.enabled= # <5>
 ```
-
-- You can disable CORS processing for all resources by setting `cors.enabled` to
-  `false`. Defaults to `true`.
-- Add a block for each resource you want to configure. The index `i` is an
-  integer (0, 1, 2, etc).
-- Specify the settings as needed to define the CORS behavior you want for that
-  resource.
-- The `max-age` option is a `Duration` string, such as `PT1H` for 1 hour
-- The `enabled` setting lets you control whether the system uses that set of
-  CORS configuration. Defaults to `true`.
-
-The system uses the index `i`, not the position in the config file, to identify
+1. You can disable CORS processing for all resources by setting `cors.enabled` to
+   `false`. Defaults to `true`.
+2. Add a block for each resource you want to configure. The index `i` is an
+   integer (0, 1, 2, etc).
+3. Specify the settings as needed to define the CORS behavior you want for that
+   resource.
+4. The `max-age` option is a `Duration` string, such as `PT1H` for 1 hour
+5. The `enabled` setting lets you control whether the system uses that set of
+   CORS configuration. Defaults to `true`.
+<!--@mdc :: -->
 the settings for a particular resource.
 
 Path patterns can be any expression accepted by the [`PathMatcher`][pathmatcher]
@@ -169,12 +170,13 @@ The discussion below describes the changes in the application which:
 
 Using annotations to declare CORS behavior:
 
+<!--@mdc ::code-callout{collapsed} -->
 ```java
 @Path("/greet")
-public class GreetResource { 
+public class GreetResource { // <1>
 
     @GET
-    public JsonObject getDefaultMessage() { 
+    public JsonObject getDefaultMessage() { // <2>
         return Json.createObjectBuilder()
                 .add("message", "Hello")
                 .build();
@@ -182,75 +184,75 @@ public class GreetResource {
 
     @Path("/greeting")
     @PUT
-    public Response updateGreeting(JsonObject jsonObject) { 
+    public Response updateGreeting(JsonObject jsonObject) { // <3>
         return Response.ok().build();
     }
 
     @OPTIONS
     @Cors.Defaults
-    public void optionsForRetrievingUnnamedGreeting() { 
+    public void optionsForRetrievingUnnamedGreeting() { // <4>
     }
 
     @OPTIONS
     @Path("/greeting")
     @Cors.AllowOrigins({"http://foo.com", "http://there.com"})
     @Cors.AllowMethods(HttpMethod.PUT)
-    public void optionsForUpdatingGreeting() { 
+    public void optionsForUpdatingGreeting() { // <5>
     }
 }
 ```
-
-- Existing `GreetResource` resource class with path `/greet`.
-- Existing `@GET` method for resource `/greet`.
-- Existing `@PUT` method for resource `/greet/greeting`.
-- New `@OPTIONS` method for `/greet`. (Just like the `@GET` method
-  `getDefaultMessage`, this `@OPTIONS` method does not have a `@Path`
-  annotation; both "inherit" the class-level `@Path` setting `/greet`.) The
-  `@Cors.Defaults` annotation declares default cross-origin sharing which
-  permits sharing via all HTTP methods to all origins.
-- New `@OPTIONS` method for `/greet/greeting`. The `@Cors.AllowMethods`
-  annotations specifies sharing only via the `PUT` HTTP method, and the
-  `@Cors.AllowOrigins` specifies sharing only to the two listed origins.
-
-### Adding Configuration
+1. Existing `GreetResource` resource class with path `/greet`.
+2. Existing `@GET` method for resource `/greet`.
+3. Existing `@PUT` method for resource `/greet/greeting`.
+4. New `@OPTIONS` method for `/greet`. (Just like the `@GET` method
+   `getDefaultMessage`, this `@OPTIONS` method does not have a `@Path`
+   annotation; both "inherit" the class-level `@Path` setting `/greet`.) The
+   `@Cors.Defaults` annotation declares default cross-origin sharing which
+   permits sharing via all HTTP methods to all origins.
+5. New `@OPTIONS` method for `/greet/greeting`. The `@Cors.AllowMethods`
+   annotations specifies sharing only via the `PUT` HTTP method, and the
+   `@Cors.AllowOrigins` specifies sharing only to the two listed origins.
+<!--@mdc :: -->
 
 You could use the following configuration in place of using annotations to set
 up the same CORS behavior.
 
 Using configuration to set up the same CORS behavior:
 
+<!--@mdc ::code-callout -->
 ```properties[microprofile-config.properties]
-cors.paths.0.path-pattern=/greet 
+cors.paths.0.path-pattern=/greet # <1>
 
-cors.paths.1.path-pattern=/greet/greeting 
+cors.paths.1.path-pattern=/greet/greeting # <2>
 cors.paths.1.allow-origins=https://foo.com,https://there.com
 cors.paths.1.allow-methods=PUT
 ```
-
-- Enables default CORS settings for the `/greet` resource.
-- Sets up sharing for the `/greet/greeting` resource only via `PUT` requests and
-  only from the specified origins.
+1. Enables default CORS settings for the `/greet` resource.
+2. Sets up sharing for the `/greet/greeting` resource only via `PUT` requests and
+   only from the specified origins.
+<!--@mdc :: -->
 
 Or, alternatively, the following configuration example augments the settings
 from the `@Cors.*` annotations in the code.
 
 Using configuration to augment or override declared CORS behavior:
 
+<!--@mdc ::code-callout -->
 ```properties[microprofile-config.properties]
-cors.paths.0.path-pattern=/greet 
+cors.paths.0.path-pattern=/greet # <1>
 cors.paths.0.allow-methods=GET
 cors.paths.0.allow-origins=https://here.com,https://foo.com,https://there.com
 
-cors.paths.1.path-pattern=/greet/greeting 
+cors.paths.1.path-pattern=/greet/greeting # <2>
 cors.paths.1.allow-methods=PUT
 cors.paths.1.allow-origins=https://foo.com
 ```
-
-- Changes the declared settings to restrict cross-origin use of `/greet` to only
-  `GET` and only from `foo.com` and `there.com`.
-- Changes the settings for `/greet/greeting` from what they were declared; with
-  this configuration, only the origin `foo.com` is permitted. (The declared
-  setting also allowed `there.com`).
+1. Changes the declared settings to restrict cross-origin use of `/greet` to only
+   `GET` and only from `foo.com` and `there.com`.
+2. Changes the settings for `/greet/greeting` from what they were declared; with
+   this configuration, only the origin `foo.com` is permitted. (The declared
+   setting also allowed `there.com`).
+<!--@mdc :: -->
 
 ## Additional Information
 

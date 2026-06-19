@@ -66,8 +66,9 @@ directly:
 
 Security direct usage:
 
+<!--@mdc ::code-callout -->
 ```java
-SecurityContext context = security.contextBuilder(UUID.randomUUID().toString()) 
+SecurityContext context = security.contextBuilder(UUID.randomUUID().toString()) // <1>
         .env(SecurityEnvironment.builder()
                      .method("get")
                      .path("/test")
@@ -76,7 +77,7 @@ SecurityContext context = security.contextBuilder(UUID.randomUUID().toString())
                      .build())
         .build();
 
-AuthenticationResponse response = context.atnClientBuilder().submit(); 
+AuthenticationResponse response = context.atnClientBuilder().submit(); // <2>
 if (response.status().isSuccess()) {
     System.out.println(response.user());
     System.out.println(response.service());
@@ -84,36 +85,32 @@ if (response.status().isSuccess()) {
     System.out.println("Authentication failed: " + response.description());
 }
 ```
-
-- Create a security context
-- Use the context to authenticate a request
-
-### Builder Pattern
+1. Create a security context
+2. Use the context to authenticate a request
+<!--@mdc :: -->
 
 Security through a builder:
 
+<!--@mdc ::code-callout -->
 ```java
 Security security = Security.builder()
-        .addProvider(HttpBasicAuthProvider.builder()) 
+        .addProvider(HttpBasicAuthProvider.builder()) // <1>
         .build();
 ```
-
-- Create a provider instance based on the provider documentation
-
-### Configuration Pattern
+1. Create a provider instance based on the provider documentation
+<!--@mdc :: -->
 
 See [Secure config](tools.md) for details about encrypting passwords in
 configuration files.
 
 Security from configuration:
 
+<!--@mdc ::code-callout -->
 ```java
-Security security = Security.create(config); 
+Security security = Security.create(config); // <1>
 ```
-
-- Uses `io.helidon.Config`
-
-As mentioned above, security features are implemented through providers, which
+1. Uses `io.helidon.Config`
+<!--@mdc :: -->
 are configured under key `security.providers`. Each element of the list is one
 security provider. The key of the provider must match its config key (as
 documented in [Security Providers](providers.md) for each supported provider).
@@ -161,16 +158,17 @@ provider must match.
 
 Security from configuration and builder:
 
+<!--@mdc ::code-callout -->
 ```java
-Security security1 = Security.builder(config) 
+Security security1 = Security.builder(config) // <1>
         .addProvider(HttpBasicAuthProvider.builder())
         .build();
 
-Security security2 = Security.builder() 
+Security security2 = Security.builder() // <2>
         .addProvider(HttpBasicAuthProvider.builder())
         .config(config)
         .build();
 ```
-
-- Uses io.helidon.Config
-- Or reverse order
+1. Uses io.helidon.Config
+2. Or reverse order
+<!--@mdc :: -->

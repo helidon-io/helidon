@@ -116,43 +116,43 @@ Accessing and using these objects can be done as follows. For span:
 
 Span sample:
 
+<!--@mdc ::code-callout -->
 ```java
 @ApplicationScoped
 class HelidonBean {
 
-    @WithSpan 
+    @WithSpan // <1>
     void doSomethingWithinSpan() {
         // do something here
     }
 
-    @WithSpan("name") 
+    @WithSpan("name") // <2>
     void complexSpan(@SpanAttribute(value = "arg") String arg) {
         // do something here
     }
 }
 ```
-
-- Simple `@WithSpan` annotation usage.
-- Additional attributes can be set on a method.
-
-### Working With Tracers
+1. Simple `@WithSpan` annotation usage.
+2. Additional attributes can be set on a method.
+<!--@mdc :: -->
 
 You can inject OpenTelemetry `Tracer` using the regular `@Inject` annotation and
 use `SpanBuilder` to manually create, star and stop spans.
 
 SpanBuilder usage:
 
+<!--@mdc ::code-callout -->
 ```java
 @Path("/")
 public class HelidonEndpoint {
 
     @Inject
-    Tracer tracer; 
+    Tracer tracer; // <1>
 
     @GET
     @Path("/span")
     public Response span() {
-        Span span = tracer.spanBuilder("new") 
+        Span span = tracer.spanBuilder("new") // <2>
                 .setSpanKind(SpanKind.CLIENT)
                 .setAttribute("someAttribute", "someValue")
                 .startSpan();
@@ -163,23 +163,22 @@ public class HelidonEndpoint {
     }
 }
 ```
-
-- Inject `Tracer`.
-- Use `Tracer.spanBuilder` to create and start new `Span`.
-
-Helidon MicroProfile Telemetry is integrated with [Helidon Tracing
+1. Inject `Tracer`.
+2. Use `Tracer.spanBuilder` to create and start new `Span`.
+<!--@mdc :: -->
 API](tracing.md). This means that both APIs can be mixed, and all parent
 hierarchies will be kept. In the case below, `@WithSpan` annotated method is
 mixed with manually created `io.helidon.tracing.Span`:
 
 Inject Helidon Tracer:
 
+<!--@mdc ::code-callout -->
 ```java
 private io.helidon.tracing.Tracer helidonTracerInjected;
 
 @Inject
 GreetResource(io.helidon.tracing.Tracer helidonTracerInjected) {
-    this.helidonTracerInjected = helidonTracerInjected; 
+    this.helidonTracerInjected = helidonTracerInjected; // <1>
 }
 
 @GET
@@ -187,7 +186,7 @@ GreetResource(io.helidon.tracing.Tracer helidonTracerInjected) {
 @Produces(MediaType.APPLICATION_JSON)
 @WithSpan("mixed_parent_injected")
 public GreetingMessage mixedSpanInjected() {
-    io.helidon.tracing.Span mixedSpan = helidonTracerInjected.spanBuilder("mixed_injected") 
+    io.helidon.tracing.Span mixedSpan = helidonTracerInjected.spanBuilder("mixed_injected") // <2>
             .kind(io.helidon.tracing.Span.Kind.SERVER)
             .tag("attribute", "value")
             .start();
@@ -196,12 +195,10 @@ public GreetingMessage mixedSpanInjected() {
     return new GreetingMessage("Mixed Span Injected" + mixedSpan);
 }
 ```
-
-- Inject `io.helidon.tracing.Tracer`.
-- Use the injected tracer to create `io.helidon.tracing.Span` using the
-  `spanBuilder()` method.
-
-The span is then started and ended manually. Span parent relations will be
+1. Inject `io.helidon.tracing.Tracer`.
+2. Use the injected tracer to create `io.helidon.tracing.Span` using the
+   `spanBuilder()` method.
+<!--@mdc :: -->
 preserved. This means that span named "mixed_injected" with have parent span
 named "mixed_parent_injected", which will have parent span named
 "mixed_injected".
@@ -210,14 +207,15 @@ Another option is to use the Global Tracer:
 
 Obtain the Global tracer:
 
+<!--@mdc ::code-callout -->
 ```java
 @GET
 @Path("mixed")
 @Produces(MediaType.APPLICATION_JSON)
 @WithSpan("mixed_parent")
 public GreetingMessage mixedSpan() {
-    io.helidon.tracing.Tracer helidonTracer = io.helidon.tracing.Tracer.global(); 
-    io.helidon.tracing.Span mixedSpan = helidonTracer.spanBuilder("mixed") 
+    io.helidon.tracing.Tracer helidonTracer = io.helidon.tracing.Tracer.global(); // <1>
+    io.helidon.tracing.Span mixedSpan = helidonTracer.spanBuilder("mixed") // <2>
             .kind(io.helidon.tracing.Span.Kind.SERVER)
             .tag("attribute", "value")
             .start();
@@ -226,11 +224,9 @@ public GreetingMessage mixedSpan() {
     return new GreetingMessage("Mixed Span" + mixedSpan);
 }
 ```
-
-- Obtain tracer using the `io.helidon.tracing.Tracer.global()` method;
-- Use the created tracer to create a span.
-
-The span is then started and ended manually. Span parent relations will be
+1. Obtain tracer using the `io.helidon.tracing.Tracer.global()` method;
+2. Use the created tracer to create a span.
+<!--@mdc :: -->
 preserved.
 
 ### Working With Spans
@@ -240,61 +236,59 @@ be obtained using the static method `Span.current()`.
 
 Inject the current span:
 
+<!--@mdc ::code-callout -->
 ```java
 @Path("/")
 public class HelidonEndpoint {
     @Inject
-    Span span; 
+    Span span; // <1>
 
     @GET
     @Path("/current")
     public Response currentSpan() {
-        return Response.ok(span).build(); 
+        return Response.ok(span).build(); // <2>
     }
 
     @GET
     @Path("/current/static")
     public Response currentSpanStatic() {
-        return Response.ok(Span.current()).build(); 
+        return Response.ok(Span.current()).build(); // <3>
     }
 }
 ```
-
-- Inject the current span.
-- Use the injected span.
-- Use `Span.current()` to access the current span.
-
-### Working With Baggage
+1. Inject the current span.
+2. Use the injected span.
+3. Use `Span.current()` to access the current span.
+<!--@mdc :: -->
 
 The same functionality is available for the `Baggage` API:
 
 Inject the current baggage:
 
+<!--@mdc ::code-callout -->
 ```java
 @Path("/")
 public class HelidonEndpoint {
     @Inject
-    Baggage baggage; 
+    Baggage baggage; // <1>
 
     @GET
     @Path("/current")
     public Response currentBaggage() {
-        return Response.ok(baggage.getEntryValue("baggageKey")).build(); 
+        return Response.ok(baggage.getEntryValue("baggageKey")).build(); // <2>
     }
 
     @GET
     @Path("/current/static")
     public Response currentBaggageStatic() {
-        return Response.ok(Baggage.current().getEntryValue("baggageKey")).build(); 
+        return Response.ok(Baggage.current().getEntryValue("baggageKey")).build(); // <3>
     }
 }
 ```
-
-- Inject the current baggage.
-- Use the injected baggage.
-- Use `Baggage.current()` to access the current baggage.
-
-### Responding to Span Lifecycle Events
+1. Inject the current baggage.
+2. Use the injected baggage.
+3. Use `Baggage.current()` to access the current baggage.
+<!--@mdc :: -->
 
 Applications and libraries can register listeners to be notified at several
 moments during the lifecycle of every Helidon span:
@@ -481,35 +475,35 @@ the browser in the Jaeger UI under <http://localhost:16686/>
 Together with Helidon Telemetry dependency, an OpenTelemetry Exporter dependency
 should be added to project’s pom.xml file.
 
+<!--@mdc ::code-callout -->
 ```xml [pom.xml]
 <dependencies>
-  <dependency>
-    <groupId>io.helidon.microprofile.telemetry</groupId>
-    <artifactId>helidon-microprofile-telemetry</artifactId>
-  </dependency>
-  <dependency>
-    <groupId>io.opentelemetry</groupId>
-    <artifactId>opentelemetry-exporter-jaeger</artifactId>
-  </dependency>
+    <dependency>
+        <groupId>io.helidon.microprofile.telemetry</groupId>
+        <artifactId>helidon-microprofile-telemetry</artifactId> <!-- (1) -->
+    </dependency>
+    <dependency>
+        <groupId>io.opentelemetry</groupId>
+        <artifactId>opentelemetry-exporter-jaeger</artifactId>  <!-- (2) -->
+    </dependency>
 </dependencies>
 ```
-
-- Helidon Telemetry dependency.
-- OpenTelemetry Jaeger exporter.
-
-Add these lines to `META-INF/microprofile-config.properties`:
+1. Helidon Telemetry dependency.
+2. OpenTelemetry Jaeger exporter.
+<!--@mdc :: -->
 
 MicroProfile Telemetry properties:
 
+<!--@mdc ::code-callout -->
 ```properties
-otel.sdk.disabled=false     
-otel.traces.exporter=jaeger 
-otel.service.name=greeting-service 
+otel.sdk.disabled=false     <1>
+otel.traces.exporter=jaeger <2>
+otel.service.name=greeting-service <3>
 ```
-
-- Enable MicroProfile Telemetry.
-- Set exporter to Jaeger.
-- Name of our service.
+1. Enable MicroProfile Telemetry.
+2. Set exporter to Jaeger.
+3. Name of our service.
+<!--@mdc :: -->
 
 Here we enable MicroProfile Telemetry, set tracer to "jaeger" and give a name,
 which will be used to identify our service in the tracer.
@@ -530,21 +524,20 @@ which will be used to identify our service in the tracer.
 To create simple services, use `@WithSpan` and `Tracer` to create span and let
 MicroProfile OpenTelemetry handle them.
 
+<!--@mdc ::code-callout -->
 ```java
 @Path("/greet")
 public class GreetResource {
 
     @GET
-    @WithSpan("default") 
+    @WithSpan("default") // <1>
     public String getDefaultMessage() {
         return "Hello World";
     }
 }
 ```
-
-- Use of `@WithSpan` with name "default".
-
-Now let’s call the Greeting endpoint:
+1. Use of `@WithSpan` with name "default".
+<!--@mdc :: -->
 
 ```shell [Terminal]
 curl localhost:8080/greet
@@ -559,33 +552,32 @@ Next, launch the Jaeger UI at <http://localhost:16686/>. The expected output is:
 
 Custom method:
 
+<!--@mdc ::code-callout -->
 ```java
 @Inject
-private Tracer tracer; 
+private Tracer tracer; // <1>
 
 @GET
 @Path("custom")
 @Produces(MediaType.APPLICATION_JSON)
-@WithSpan 
+@WithSpan // <2>
 public JsonObject useCustomSpan() {
-    Span span = tracer.spanBuilder("custom") 
+    Span span = tracer.spanBuilder("custom") // <3>
             .setSpanKind(SpanKind.INTERNAL)
             .setAttribute("attribute", "value")
             .startSpan();
-    span.end(); 
+    span.end(); // <4>
 
     return Json.createObjectBuilder()
             .add("Custom Span", span.toString())
             .build();
 }
 ```
-
-- Inject OpenTelemetry `Tracer`.
-- Create a span around the method `useCustomSpan()`.
-- Create a custom `INTERNAL` span and start it.
-- End the custom span.
-
-Let us call the custom endpoint:
+1. Inject OpenTelemetry `Tracer`.
+2. Create a span around the method `useCustomSpan()`.
+3. Create a custom `INTERNAL` span and start it.
+4. End the custom span.
+<!--@mdc :: -->
 
 ```shell [Terminal]
 curl localhost:8080/greeting/custom
@@ -604,39 +596,37 @@ annotated with `@WithSpan` annotation.
 
 Outbound method:
 
+<!--@mdc ::code-callout -->
 ```java
 @Uri("http://localhost:8081/secondary")
-private WebTarget target; 
+private WebTarget target; // <1>
 
 @GET
 @Path("/outbound")
-@WithSpan("outbound") 
+@WithSpan("outbound") // <2>
 public String outbound() {
-    return target.request().accept(MediaType.TEXT_PLAIN).get(String.class); 
+    return target.request().accept(MediaType.TEXT_PLAIN).get(String.class); // <3>
 }
 ```
-
-- Inject `WebTarget` pointing to Secondary service.
-- Wrap method using `WithSpan`.
-- Call the secondary service.
-
-The secondary service is basic; it has only one method, which is also annotated
+1. Inject `WebTarget` pointing to Secondary service.
+2. Wrap method using `WithSpan`.
+3. Call the secondary service.
+<!--@mdc :: -->
 with `@WithSpan`.
 
 Secondary service:
 
+<!--@mdc ::code-callout -->
 ```java
 @GET
-@WithSpan 
+@WithSpan // <1>
 public String getSecondaryMessage() {
-    return "Secondary"; 
+    return "Secondary"; // <2>
 }
 ```
-
-- Wrap method in a span.
-- Return a string.
-
-Let us call the *Outbound* endpoint:
+1. Wrap method in a span.
+2. Return a string.
+<!--@mdc :: -->
 
 ```shell [Terminal]
 curl localhost:8080/greet/outbound

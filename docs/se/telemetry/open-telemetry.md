@@ -606,34 +606,34 @@ OpenTelemetry applies the defaults described in the next table.
 The following example illustrates some of the ways you can configure
 OpenTelemetry metrics behavior. It is neither complete nor typical.
 
-<!--@mdc ::code-collapse -->
+<!--@mdc ::code-callout{collapsed} -->
 ```yaml
 telemetry:
   service: "test-telemetry"
   signals:
-    metrics:                                          
+    metrics:                                          # <1>
       exporters:
-        - name: exp-1                                 
+        - name: exp-1                                 # <2>
           type: otlp
           endpoint: "http://host:1234"
-          temporality-preference: cumulative          
-          default-histogram-aggregation:              
+          temporality-preference: cumulative          # <3>
+          default-histogram-aggregation:              # <4>
             type: base2-exponential-bucket-histogram
             max-buckets: 152
             max-scale: 19
-        - name: exp-2                                 
+        - name: exp-2                                 # <5>
           type: otlp
           protocol: grpc
-          temporality-preference: delta               
-          default-histogram-aggregation:              
+          temporality-preference: delta               # <6>
+          default-histogram-aggregation:              # <7>
             type: explicit-bucket-histogram
             bucket-boundaries: [3,5,7]
       readers:
-        - type: periodic                              
+        - type: periodic                              # <8>
           exporter: exp-1
           interval: PT6S
       views:
-        - name: sum-view                              
+        - name: sum-view                              # <9>
           aggregation:
             type: sum
           description: "Sum view"
@@ -642,22 +642,21 @@ telemetry:
             type: counter
             meter-name: my-counter
 ```
+1. Introduces the metrics configuration.
+2. Introduces the first metric exporter (with name `exp-1`).
+3. Indicates to accumulate measurement values since the previous transmission.
+4. Prescribes to aggregate histograms for transmission using the OpenTelemetry
+   `BASE2_EXPONENTIAL_BUCKET_HISTOGRAM` technique with the specified maximum
+   number of buckets and maximum scale.
+5. Introduces the second metric exporter (with name `exp-2`).
+6. Indicates to transmit deltas since the last transmission.
+7. Prescribes to aggregate histograms using a histogram with the given explicit
+   bucket boundary values.
+8. Declares a single metric reader of the OpenTelemetry `PERIODIC` types
+   gathering data each 6 seconds.
+9. Declares a single view to influence the transmission of the `my-counter`
+   counter data.
 <!--@mdc :: -->
-
-- Introduces the metrics configuration.
-- Introduces the first metric exporter (with name `exp-1`).
-- Indicates to accumulate measurement values since the previous transmission.
-- Prescribes to aggregate histograms for transmission using the OpenTelemetry
-  `BASE2_EXPONENTIAL_BUCKET_HISTOGRAM` technique with the specified maximum
-  number of buckets and maximum scale.
-- Introduces the second metric exporter (with name `exp-2`).
-- Indicates to transmit deltas since the last transmission.
-- Prescribes to aggregate histograms using a histogram with the given explicit
-  bucket boundary values.
-- Declares a single metric reader of the OpenTelemetry `PERIODIC` types
-  gathering data each 6 seconds.
-- Declares a single view to influence the transmission of the `my-counter`
-  counter data.
 
 ### Metric Exporters
 
@@ -777,34 +776,35 @@ OpenTelemetry applies the following defaults:
 The following example illustrates some of the ways you can configure
 OpenTelemetry logger behavior. It is neither complete nor typical.
 
+<!--@mdc ::code-callout -->
 ```yaml [application.yaml]
 telemetry:
   service: test-tel-logging
   global: false
   signals:
-    logging:                              
-      minimum-severity: TRACE             
-      log-limits:                         
+    logging:                              # <1>
+      minimum-severity: TRACE             # <2>
+      log-limits:                         # <3>
         max-attribute-value-length: 20
         max-number-of-attributes: 14
-      processors:                         
+      processors:                         # <4>
         - type: batch
           schedule-delay: PT10S
           max-queue-size: 15
           max-export-batch-size: 5
           timeout: PT30S
         - type: simple
-      exporters:                          
+      exporters:                          # <5>
         - name: exp-1
           endpoint: "http://host:1234"
 ```
-
-- Introduces the logger configuration.
-- Sets the minimum log level severity to of log messages to send to the backend
-  system.
-- Configures limits related to attributes that accompany log messages.
-- Prescribes the logger processors.
-- Prescribes the logger exporters.
+1. Introduces the logger configuration.
+2. Sets the minimum log level severity to of log messages to send to the backend
+   system.
+3. Configures limits related to attributes that accompany log messages.
+4. Prescribes the logger processors.
+5. Prescribes the logger exporters.
+<!--@mdc :: -->
 
 ## References
 

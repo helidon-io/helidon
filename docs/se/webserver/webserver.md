@@ -50,17 +50,16 @@ Then, in your application code, load the configuration from that file.
 WebServer initialization using the `application.yaml` file located on the
 classpath:
 
+<!--@mdc ::code-callout -->
 ```java [application.yaml]
-Config config = Config.create();
+Config config = Config.create(); // <1>
 WebServer.builder()
-        .config(config.get("server"));
+        .config(config.get("server")); // <2>
 ```
-
-- `application.yaml` is a default configuration source loaded when YAML support
-  is on classpath, so we can just use `Config.create()`
-- Server expects the configuration tree located on the node of `server`
-
-### Configuring TLS
+1. `application.yaml` is a default configuration source loaded when YAML support
+   is on classpath, so we can just use `Config.create()`
+2. Server expects the configuration tree located on the node of `server`
+<!--@mdc :: -->
 
 Configure TLS either programmatically, or by the Helidon configuration
 framework.
@@ -89,6 +88,7 @@ It is also possible to configure TLS via the config file.
 
 WebServer TLS configuration file `application.yaml`:
 
+<!--@mdc ::code-callout -->
 ```yaml [application.yaml]
 server:
   tls:
@@ -99,35 +99,34 @@ server:
         trust-store: true
         resource:
           # load from classpath
-          resource-path: "keystore.p12"
+          resource-path: "keystore.p12" # <1>
     # Keystore with private key and server certificate
     private-key:
       keystore:
         passphrase: "password"
         resource:
           # load from file system
-          path: "/path/to/keystore.p12"
+          path: "/path/to/keystore.p12" # <2>
 ```
-
-- File loaded from classpath.
-- File loaded from file system.
+1. File loaded from classpath.
+2. File loaded from file system.
+<!--@mdc :: -->
 
 Then, in your application code, load the configuration from that file.
 
 WebServer initialization using the `application.yaml` file located on the
 classpath:
 
+<!--@mdc ::code-callout -->
 ```java [application.yaml]
-Config config = Config.create();
+Config config = Config.create(); // <1>
 WebServer.builder()
-        .config(config.get("server"));
+        .config(config.get("server")); // <2>
 ```
-
-- `application.yaml` is a default configuration source loaded when YAML support
-  is on classpath, so we can just use `Config.create()`
-- Server expects the configuration tree located on the node of `server`
-
-Or you can only create WebServerTls instance based on the config file.
+1. `application.yaml` is a default configuration source loaded when YAML support
+   is on classpath, so we can just use `Config.create()`
+2. Server expects the configuration tree located on the node of `server`
+<!--@mdc :: -->
 
 WebServerTls instance based on `application.yaml` file located on the classpath:
 
@@ -182,17 +181,16 @@ Configure HTTP request routing using `HttpRouting.Builder`.
 
 Using HttpRouting.Builder to specify how HTTP requests are handled:
 
+<!--@mdc ::code-callout -->
 ```java
 WebServer.builder()
         .routing(it -> it
-                .get("/hello", (req, res) -> res.send("Hello World!")))
-        .build();
+                .get("/hello", (req, res) -> res.send("Hello World!"))) // <1>
+        .build(); // <2>
 ```
-
-- Handle all GETs to `/hello` path. Send the `Hello World!` string.
-- Create a server instance with the provided routing
-
-### HTTP Method Routing
+1. Handle all GETs to `/hello` path. Send the `Hello World!` string.
+2. Create a server instance with the provided routing
+<!--@mdc :: -->
 
 `HttpRouting.Builder` lets you specify how to handle each HTTP method. For
 example:
@@ -258,20 +256,19 @@ To have more control over selecting which requests should be handled by a
 specific route, you can use the `io.helidon.webserver.http.HttpRoute` interface
 using its `Builder`.
 
+<!--@mdc ::code-callout -->
 ```java
 routing.route(HttpRoute.builder()
                       .path("/hello")
-                      .methods(Method.POST, Method.PUT)
+                      .methods(Method.POST, Method.PUT) // <1>
                       .handler((req, res) -> {
                           String requestEntity = req.content().as(String.class);
-                          res.send(requestEntity);
+                          res.send(requestEntity); // <2>
                       }));
 ```
-
-- The route is specified for `GET` and `POST` requests
-- The handler consumes the request payload and echoes it back
-
-### Organizing Code into Services
+1. The route is specified for `GET` and `POST` requests
+2. The handler consumes the request payload and echoes it back
+<!--@mdc :: -->
 
 By implementing the `io.helidon.webserver.http.HttpService` interface you can
 organize your code into one or more services, each with its own path prefix and
@@ -375,33 +372,36 @@ are two options:
 
 - call `res.next()`
 
+  <!--@mdc ::code-callout -->
   ```java
-  rules.any("/hello", (req, res) -> {
-    // filtering logic
-    res.next();
+  rules.any("/hello", (req, res) -> { // <1>
+      // filtering logic // <2>
+      res.next(); // <3>
   });
   ```
+  1. handler for any HTTP method using the `/hello` path
+  2. business logic implementation
+  3. forward the current request to the downstream handler
+  <!--@mdc ::-->
 
-  - handler for any HTTP method using the `/hello` path
-  - business logic implementation
-  - forward the current request to the downstream handler
 - throw an exception to forward to [error handling](#error-handling)
 
+  <!--@mdc ::code-callout -->
   ```java
-  rules.any("/hello", (req, res) -> {
-    // filtering logic (e.g., validating parameters)
-    if (userParametersOk()) {
-        res.next();
-    } else {
-        throw new IllegalArgumentException("Invalid parameters.");
-    }
+  rules.any("/hello", (req, res) -> { // <1>
+      // filtering logic (e.g., validating parameters) // <2>
+      if (userParametersOk()) {
+          res.next(); // <3>
+      } else {
+          throw new IllegalArgumentException("Invalid parameters."); // <4>
+      }
   });
   ```
-
-  - handler for any HTTP method using the `/hello` path
-  - custom logic
-  - forward the current request to the downstream handler
-  - forward the request to the error handler
+  1. handler for any HTTP method using the `/hello` path
+  2. custom logic
+  3. forward the current request to the downstream handler
+  4. forward the request to the error handler
+  <!--@mdc ::-->
 
 ### Sending a Response
 
@@ -413,37 +413,35 @@ To complete the request handling, you must send a response by calling the
 > request is started in; as we run in Virtual Threads, you can simply wait for
 > any asynchronous tasks that must complete before sending a response
 
+<!--@mdc ::code-callout -->
 ```java
-rules.get("/hello", (req, res) -> {
+rules.get("/hello", (req, res) -> { // <1>
     // terminating logic
     res.status(Status.ACCEPTED_202)
-            .send("Saved!");
+            .send("Saved!"); // <2>
 });
 ```
-
-- handler that terminates the request handling for any HTTP method using the
-  `/hello` path
-- send the response
-
-## Protocol-Specific Routing
+1. handler that terminates the request handling for any HTTP method using the
+   `/hello` path
+2. send the response
+<!--@mdc :: -->
 
 Handling routes based on the protocol version is possible by registering
 specific routes on routing builder.
 
 Routing based on HTTP version:
 
+<!--@mdc ::code-callout -->
 ```java
-rules.get("/any-version", (req, res) -> res.send("HTTP Version " + req.prologue().protocolVersion()))
-        .route(Http1Route.route(Method.GET, "/version-specific", (req, res) -> res.send("HTTP/1.1 route")))
-        .route(Http2Route.route(Method.GET, "/version-specific", (req, res) -> res.send("HTTP/2 route")));
+rules.get("/any-version", (req, res) -> res.send("HTTP Version " + req.prologue().protocolVersion())) // <1>
+    .route(Http1Route.route(Method.GET, "/version-specific", (req, res) -> res.send("HTTP/1.1 route"))) // <2>
+    .route(Http2Route.route(Method.GET, "/version-specific", (req, res) -> res.send("HTTP/2 route"))); // <3>
 ```
-
-- An HTTP route registered on `/any-version` path that prints the version of
-  HTTP protocol
-- An HTTP/1.1 route registered on `/version-specific` path
-- An HTTP/2 route registered on `/version-specific` path
-
-While `Http1Route` for Http/1 is always available with Helidon webserver, other
+1. An HTTP route registered on `/any-version` path that prints the version of
+   HTTP protocol
+2. An HTTP/1.1 route registered on `/version-specific` path
+3. An HTTP/2 route registered on `/version-specific` path
+<!--@mdc :: -->
 routes like `Http2Route` for [HTTP/2](#http2-support) needs to be added as
 additional dependency.
 
@@ -487,6 +485,7 @@ To set up requested URI discovery on the default socket for your server, use the
 
 Requested URI set-up for the default server socket:
 
+<!--@mdc ::code-callout{collapsed} -->
 ```java
 import io.helidon.common.configurable.AllowList;
 import jakarta.json.Json;
@@ -499,22 +498,22 @@ import static io.helidon.http.RequestedUriDiscoveryContext.RequestedUriDiscovery
 AllowList trustedProxies = AllowList.builder()
         .addAllowedPattern(Pattern.compile("lb.+\\.mycorp\\.com"))
         .addDenied("lbtest.mycorp.com")
-        .build();
+        .build(); // <1>
 
 WebServer.builder()
         .requestedUriDiscoveryContext(it -> it
-                .addDiscoveryType(FORWARDED)
+                .addDiscoveryType(FORWARDED) // <2>
                 .addDiscoveryType(X_FORWARDED)
-                .trustedProxies(trustedProxies));
+                .trustedProxies(trustedProxies)); // <3>
 ```
-
-- Create the `AllowList` describing the intermediate networks nodes to trust and
+1. Create the `AllowList` describing the intermediate networks nodes to trust and
   not trust. Presumably the `lbxxx.mycorp.com` nodes are trusted load balancers
   except for the test load balancer `lbtest`, and no other nodes are trusted.
   `AllowList` accepts prefixes, suffixes, predicates, regex patterns, and exact
   matches. See the [`AllowList`][allowlist] Javadoc for complete information.
-- Use `Forwarded` first, then try `X-Forwarded-*` on each request.
-- Set the `AllowList` for trusted intermediaries.
+2. Use `Forwarded` first, then try `X-Forwarded-*` on each request.
+3. Set the `AllowList` for trusted intermediaries.
+<!--@mdc :: -->
 
 If you build your server with additional sockets, you can control requested URI
 discovery separately for each.
@@ -565,18 +564,17 @@ See the [`UriInfo`][uriinfo] Javadoc for more information.
 You may register an error handler for a specific `Throwable` in a
 `HttpRouting.Builder` method.
 
+<!--@mdc ::code-callout -->
 ```java
-routing.error(MyException.class, (req, res, ex) -> {
+routing.error(MyException.class, (req, res, ex) -> { // <1>
     // handle the error, set the HTTP status code
-    res.send(errorDescriptionObject);
+    res.send(errorDescriptionObject); // <2>
 });
 ```
-
-- Registers an error handler that handles `MyException` that are thrown from the
-  upstream handlers
-- Finishes the request handling by sending a response
-
-Error handlers are called when
+1. Registers an error handler that handles `MyException` that are thrown from the
+   upstream handlers
+2. Finishes the request handling by sending a response
+<!--@mdc :: -->
 
 - an exception is thrown from a handler
 
@@ -885,26 +883,25 @@ To register static content based on a file system (`/pictures`), and classpath
 
 server feature using WebServerConfig.Builder:
 
+<!--@mdc ::code-callout -->
 ```java
-builder.addFeature(StaticContentFeature.builder()
-                           .addPath(p -> p.location(Paths.get("/some/WEB/pics"))
-                                   .context("/pictures"))
-                           .addClasspath(cl -> cl.location("/static-content")
-                                   .welcome("index.html")
-                                   .context("/"))
+builder.addFeature(StaticContentFeature.builder() // <1>
+                           .addPath(p -> p.location(Paths.get("/some/WEB/pics")) // <2>
+                                   .context("/pictures")) // <3>
+                           .addClasspath(cl -> cl.location("/static-content") // <4>
+                                   .welcome("index.html") // <5>
+                                   .context("/")) // <6>
                            .build());
 ```
-
-- Create a new `StaticContentFeature` to register with the web server (will be
-  served on all sockets by default)
-- Add path location served from `/some/WEB/pics` absolute path
-- Associate the path location with server context `/pictures`
-- Add classpath location to serve resources from the contextual `ClassLoader`
-  from location `/static-content`
-- `index.html` is the file that is returned if a directory is requested
-- serve the classpath content on root context `/`
-
-Static content can also be registered using the configuration of server feature.
+1. Create a new `StaticContentFeature` to register with the web server (will be
+   served on all sockets by default)
+2. Add path location served from `/some/WEB/pics` absolute path
+3. Associate the path location with server context `/pictures`
+4. Add classpath location to serve resources from the contextual `ClassLoader`
+   from location `/static-content`
+5. `index.html` is the file that is returned if a directory is requested
+6. serve the classpath content on root context `/`
+<!--@mdc :: -->
 
 If you use `Config` with your webserver setup, you can register the same static
 content using configuration:
@@ -954,7 +951,7 @@ The following table lists JSON media supports:
 | **[Jackson][jackson]** | JacksonSupport | `io.helidon.http.media:helidon-http-media-jackson` | Any \*                  |
 | **[Gson][gson]**       | GsonSupport    | `io.helidon.http.media:helidon-http-media-gson`    | Any \*                  |
 
-- JSON-B and Jackson have lower weight, so they are used only when no other
+JSON-B and Jackson have lower weight, so they are used only when no other
   media type matched the object being written or read
 
 #### JSON-P Support
@@ -977,26 +974,24 @@ To enable JSON Support add the following dependency to your project’s `pom.xml
 
 Handler that receives and returns JSON objects:
 
+<!--@mdc ::code-callout -->
 ```java
-static final JsonBuilderFactory JSON_FACTORY = Json.createBuilderFactory(Map.of());
+static final JsonBuilderFactory JSON_FACTORY = Json.createBuilderFactory(Map.of()); // <1>
 
 rules.post("/hello", (req, res) -> {
-    JsonObject requestEntity = req.content().as(JsonObject.class);
-    JsonObject responseEntity = JSON_FACTORY.createObjectBuilder()
+    JsonObject requestEntity = req.content().as(JsonObject.class); // <2>
+    JsonObject responseEntity = JSON_FACTORY.createObjectBuilder() // <3>
             .add("message", "Hello " + requestEntity.getString("name"))
             .build();
-    res.send(responseEntity);
+    res.send(responseEntity); // <4>
 });
 ```
-
-- Using a `JsonBuilderFactory` is more efficient than
+1. Using a `JsonBuilderFactory` is more efficient than
   `Json.createObjectBuilder()`
-
-- Get the request entity as `JsonObject`
-
-- Create a new `JsonObject` for the response entity
-
-- Send `JsonObject` in response
+2. Get the request entity as `JsonObject`
+3. Create a new `JsonObject` for the response entity
+4. Send `JsonObject` in response
+<!--@mdc :: -->
 
 Example of posting JSON to sayHello endpoint:
 
@@ -1005,9 +1000,7 @@ curl --noproxy '*' -X POST -H "Content-Type: application/json" \
     http://localhost:8080/sayhello -d '{"name":"Joe"}'
 ```
 
-Response body:
-
-```json
+```json [Response]
 {"message":"Hello Joe"}
 ```
 
@@ -1089,16 +1082,15 @@ Then you can set up a `Handler` like this:
 
 A Handler that works with Java objects instead of raw JSON:
 
+<!--@mdc ::code-callout -->
 ```java
 rules.post("/echo", (req, res) -> {
-    res.send(req.content().as(Person.class));
+    res.send(req.content().as(Person.class)); // <1>
 });
 ```
-
-- This handler consumes a `Person` instance and simply echoes it back. Note that
-  there is not working with raw JSON here.
-
-Example of posting JSON to the /echo endpoint:
+1. This handler consumes a `Person` instance and simply echoes it back. Note that
+   there is not working with raw JSON here.
+<!--@mdc :: -->
 
 ```shell [Terminal]
 curl --noproxy '*' -X POST -H "Content-Type: application/json" \
@@ -1179,16 +1171,15 @@ Then you can set up a `Handler` like this:
 
 A Handler that works with Java objects instead of raw JSON:
 
+<!--@mdc ::code-callout -->
 ```java
 rules.post("/echo", (req, res) -> {
-    res.send(req.content().as(Person.class));
+    res.send(req.content().as(Person.class)); // <1>
 });
 ```
-
-- This handler consumes a `Person` instance and simply echoes it back. Note that
-  there is no working with raw JSON here.
-
-Example of posting JSON to the /echo endpoint:
+1. This handler consumes a `Person` instance and simply echoes it back. Note that
+   there is no working with raw JSON here.
+<!--@mdc :: -->
 
 ```shell [Terminal]
 curl --noproxy '*' -X POST -H "Content-Type: application/json" \
@@ -1274,16 +1265,15 @@ Then you can set up a `Handler` like this:
 
 A Handler that works with Java objects instead of raw JSON:
 
+<!--@mdc ::code-callout -->
 ```java
 rules.post("/echo", (req, res) -> {
-    res.send(req.content().as(Person.class));
+    res.send(req.content().as(Person.class)); // <1>
 });
 ```
-
-- This handler consumes a `Person` instance and simply echoes it back. Note that
-  there is no working with raw JSON here.
-
-Example of posting JSON to the /echo endpoint:
+1. This handler consumes a `Person` instance and simply echoes it back. Note that
+   there is no working with raw JSON here.
+<!--@mdc :: -->
 
 ```shell [Terminal]
 curl --noproxy '*' -X POST -H "Content-Type: application/json" \
@@ -1454,29 +1444,26 @@ rules.get("/", (req, res) -> {
 Here is the code for a minimalist web application that runs on a random free
 port:
 
+<!--@mdc ::code-callout -->
 ```java
 public static void main(String[] args) {
     WebServer webServer = WebServer.builder()
-            .routing(it -> it.any((req, res) -> res.send("It works!")))
-            .build()
-            .start();
+            .routing(it -> it.any((req, res) -> res.send("It works!"))) // <1>
+            .build() // <2>
+            .start(); // <3>
 
-    System.out.println("Server started at: http://localhost:" + webServer.port());
+    System.out.println("Server started at: http://localhost:" + webServer.port()); // <4>
 }
 ```
-
-- For any kind of request, at any path, respond with `It works!`.
-
-- Build the server with the provided configuration
-
-- Start the server (and wait for it to open the port).
-
-- The server is bound to a random free port.
+1. For any kind of request, at any path, respond with `It works!`.
+2. Build the server with the provided configuration.
+3. Start the server (and wait for it to open the port).
+4. The server is bound to a random free port.
+<!--@mdc :: -->
 
 ## Reference
 
 - [Helidon WebServer Javadoc][helidon-webserve]
-
 - [Helidon WebServer Static Content Javadoc][helidon-webserve-2]
 - [Helidon JSON-B Support Javadoc][helidon-json-b-s]
 - [Helidon JSON-P Support Javadoc][helidon-json-p-s]

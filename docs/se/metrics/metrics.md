@@ -188,19 +188,18 @@ The following example sets up an OTLP publisher to transmit metrics data every
 
 Example OTLP publisher settings:
 
+<!--@mdc ::code-callout -->
 ```yaml
 metrics:
-  publishers:         
-    otlp:  
+  publishers:         # <1>
+    otlp:  # <2>
       interval: PT30S
       url: 'http://somehost.com:4318/v1/metrics'
 ```
-
-- Introduces the configured publishers.
-- Configures an OTLP publisher to transmit every 30 seconds to the given
-  endpoint.
-
-## Prometheus Publisher
+1. Introduces the configured publishers.
+2. Configures an OTLP publisher to transmit every 30 seconds to the given
+   endpoint.
+<!--@mdc :: -->
 
 If you configure a Prometheus publisher or rely on the inferred one, Helidon can
 make the metrics data available in the Prometheus/OpenMetrics format. (To serve
@@ -448,22 +447,23 @@ following example.
 
 JSON metrics output structured by scope (partial):
 
+<!--@mdc ::code-callout -->
 ```json
 {
-  "application": {  
+  "application": {  <1>
     "getTimer": {
       "type": "timer",
       "unit": "seconds",
       "description": "Timer for getting the default greeting"
     }
   },
-  "vendor": {       
+  "vendor": {       <1>
     "requests.count": {
       "type": "counter",
       "description": "Each request (regardless of HTTP method) will increase this counter"
     }
   },
-  "base": {         
+  "base": {         <1>
     "cpu.systemLoadAverage": {
       "type": "gauge",
       "description": "Displays the system load average for the last minute."
@@ -475,10 +475,8 @@ JSON metrics output structured by scope (partial):
   }
 }
 ```
-
-- Note the `application`, `vendor`, and `base` sections.
-
-If an HTTP request [selects by scope](#metrics-endpoint), the output omits the
+1. Note the `application`, `vendor`, and `base` sections.
+<!--@mdc :: -->
 extra level of structure that identifies the scope as shown in the following
 example.
 
@@ -833,6 +831,7 @@ the measurements; if not set, Helidon measures requests on all sockets.
 
 Including and Excluding Endpoints from Automatic Measurement:
 
+<!--@mdc ::code-callout -->
 ```yaml [application.yaml]
 server:
   features:
@@ -841,18 +840,18 @@ server:
         metrics:
           auto-http-metrics:
             paths:
-              - path: "/greet"              
+              - path: "/greet"              # <1>
                 methods: ["GET","HEAD"]
-              - path: "/greet/{name}"       
+              - path: "/greet/{name}"       # <2>
                 enabled: false
-            sockets: ["@default","private"] 
+            sockets: ["@default","private"] # <3>
 ```
-
-- Measure `/greet` for only `GET` and `HEAD` requests.
-- Do not measure the personalized greeting requests.
-- Measure only endpoints on the default socket and the socket named `private`.
-  Endpoints on other sockets (such as if you had an `admin` socket) are not
-  measured.
+1. Measure `/greet` for only `GET` and `HEAD` requests.
+2. Do not measure the personalized greeting requests.
+3. Measure only endpoints on the default socket and the socket named `private`.
+   Endpoints on other sockets (such as if you had an `admin` socket) are not
+   measured.
+<!--@mdc :: -->
 
 The [AutoHttpMetricsConfig documentation][autohttpmetricsc] describes the
 configuration more fully.
@@ -875,17 +874,17 @@ the number of times any of the service endpoints is accessed.
 
 Define and use a Counter:
 
-<!--@mdc ::code-collapse -->
+<!--@mdc ::code-callout{collapsed} -->
 ```java
 public class GreetService implements HttpService {
 
-    private final Counter accessCtr = Metrics.globalRegistry() 
-            .getOrCreate(Counter.builder("accessctr")); 
+    private final Counter accessCtr = Metrics.globalRegistry() // <1>
+            .getOrCreate(Counter.builder("accessctr")); // <2>
 
     @Override
     public void routing(HttpRules rules) {
         rules
-                .any(this::countAccess) 
+                .any(this::countAccess) // <3>
                 .get("/", this::getDefaultMessageHandler)
                 .get("/{name}", this::getMessageHandler)
                 .put("/greeting", this::updateGreetingHandler);
@@ -895,7 +894,7 @@ public class GreetService implements HttpService {
     void countAccess(ServerRequest request,
                      ServerResponse response) {
 
-        accessCtr.increment(); 
+        accessCtr.increment(); // <4>
         response.next();
     }
 
@@ -915,14 +914,11 @@ public class GreetService implements HttpService {
     }
 }
 ```
+1. Get the global meter registry.
+2. Create (or find) a counter named "accessctr" in the global registry.
+3. Route every request to the `countAccess` method.
+4. Increment the access counter for every request.
 <!--@mdc :: -->
-
-- Get the global meter registry.
-- Create (or find) a counter named "accessctr" in the global registry.
-- Route every request to the `countAccess` method.
-- Increment the access counter for every request.
-
-Perform the following steps to see the new counter in action.
 
 Build and run the application:
 
@@ -933,18 +929,21 @@ java -jar target/helidon-quickstart-se.jar
 
 Retrieve application metrics:
 
+<!--@mdc ::code-callout -->
 ```shell [Terminal]
-curl 'http://localhost:8080/observe/metrics?scope=application' 
+curl 'http://localhost:8080/observe/metrics?scope=application' # <1>
 ```
+1. Access the metrics endpoint, selecting only application meters.
+<!--@mdc :: -->
 
+<!--@mdc ::code-callout -->
 ```text [Response]
 # HELP accessctr_total
 # TYPE accessctr_total counter
-accessctr_total{scope="application",} 0.0 
+accessctr_total{scope="application",} 0.0 # <2>
 ```
-
-- Access the metrics endpoint, selecting only application meters.
-- Note the counter is zero; we have not accessed a service endpoint yet.
+2. Note the counter is zero; we have not accessed a service endpoint yet.
+<!--@mdc :: -->
 
 Access a service endpoint to retrieve a greeting:
 
@@ -962,14 +961,15 @@ Retrieve application metrics again:
 curl 'http://localhost:8080/observe/metrics?scope=application'
 ```
 
+<!--@mdc ::code-callout -->
 ```text [Response]
 # HELP accessctr_total
 # TYPE accessctr_total counter
-accessctr_total{scope="application",} 1.0 
+accessctr_total{scope="application",} 1.0 # <1>
 ```
-
-- The counter now reports 1, reflecting our earlier access to the `/greet`
-  endpoint.
+1. The counter now reports 1, reflecting our earlier access to the `/greet`
+   endpoint.
+<!--@mdc :: -->
 
 ## Configuration Examples
 

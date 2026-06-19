@@ -89,11 +89,12 @@ endpoints and information about them via CDI at app start-up.
 Here is one of the endpoints, annotated for OpenAPI, from the example mentioned
 earlier:
 
+<!--@mdc ::code-callout -->
 ```java
 @GET
-@Operation(summary = "Returns a generic greeting", 
+@Operation(summary = "Returns a generic greeting", // <1>
            description = "Greets the user generically")
-@APIResponse(description = "Simple JSON containing the greeting", 
+@APIResponse(description = "Simple JSON containing the greeting", // <2>
              content = @Content(mediaType = "application/json",
                                 schema = @Schema(implementation = GreetingMessage.class)))
 @Produces(MediaType.APPLICATION_JSON)
@@ -103,12 +104,10 @@ public JsonObject getDefaultMessage() {
             .build();
 }
 ```
-
-- `@Operation` gives information about this endpoint.
-- `@APIResponse` describes the HTTP response and declares its media type and
-  contents.
-
-You can also define any request parameters the endpoint expects, although this
+1. `@Operation` gives information about this endpoint.
+2. `@APIResponse` describes the HTTP response and declares its media type and
+   contents.
+<!--@mdc :: -->
 endpoint uses none.
 
 This excerpt shows only a few annotations for illustration. The [Helidon MP
@@ -206,12 +205,13 @@ might change the original QuickStart service to adopt OpenAPI.
 This example shows a simple greeting application, similar to the one from the
 Helidon MP QuickStart, enhanced with OpenAPI support.
 
+<!--@mdc ::code-callout -->
 ```java
 @Path("/greeting")
 @PUT
 @Operation(summary = "Set the greeting prefix",
-           description = "Permits the client to set the prefix part of the greeting (\"Hello\")") 
-@RequestBody( 
+           description = "Permits the client to set the prefix part of the greeting (\"Hello\")") // <1>
+@RequestBody( //<2>
               name = "greeting",
               description = "Conveys the new greeting prefix to use in building greetings",
               content = @Content(
@@ -227,13 +227,11 @@ public Response updateGreeting(JsonObject jsonObject) {
     return Response.ok().build();
 }
 ```
-
-- With `@Operation` annotation we document the current method.
-- With `@RequestBody` annotation we document the content produced. Internal
-  annotations `@Content`, `@Schema` and `@ExampleObjects` are used to give more
-  details about the returned data.
-
-If we want to hide a specific path an `OASFilter` is used.
+1. With `@Operation` annotation we document the current method.
+2. With `@RequestBody` annotation we document the content produced. Internal
+   annotations `@Content`, `@Schema` and `@ExampleObjects` are used to give more
+   details about the returned data.
+<!--@mdc :: -->
 
 The OASFilter interface allows application developers to receive callbacks for
 various key OpenAPI elements. The interface has a default implementation for
@@ -393,32 +391,31 @@ you use the plug-in.
 The example below tailors the Jandex plug-in configuration to scan not only the
 current project but another dependency and to index a specific type from it.
 
+<!--@mdc ::code-callout -->
 ```xml [pom.xml]
 <execution>
-  <id>make-index</id>
-  <configuration>
-    <fileSets>
-      <fileSet>
-        <dependency>
-          <groupId>jakarta.ws.rs</groupId>
-          <artifactId>jakarta.ws.rs-api</artifactId>
-        </dependency>
-        <includes>
-          <include>**/MediaType.class</include>
-        </includes>
-      </fileSet>
-    </fileSets>
-  </configuration>
+    <id>make-index</id>
+    <configuration> <!-- (1) -->
+        <fileSets>
+            <fileSet>
+                <dependency> <!-- (2) -->
+                    <groupId>jakarta.ws.rs</groupId>
+                    <artifactId>jakarta.ws.rs-api</artifactId>
+                </dependency>
+                <includes> <!-- (3) -->
+                    <include>**/MediaType.class</include>
+                </includes>
+            </fileSet>
+        </fileSets>
+    </configuration>
 </execution>
 ```
-
-- Augments the default configuration.
-- Adds a `fileSet` in the form of a `dependency` that is already declared in
-  your project.
-- Selects the type or types from the `fileSet` you want to include in the
-  generated index.
-
-You can add more than one dependency and scan for more than a single type. See
+1. Augments the default configuration.
+2. Adds a `fileSet` in the form of a `dependency` that is already declared in
+   your project.
+3. Selects the type or types from the `fileSet` you want to include in the
+   generated index.
+<!--@mdc :: -->
 the [Helidon MP OpenAPI expanded Jandex example][helidon-mp-opena-2] for more
 information and a complete project that indexes a dependency.
 

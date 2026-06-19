@@ -334,6 +334,7 @@ can be found in specification [Message acknowledgement][message-acknowle].
 
 Example of manual acknowledgment:
 
+<!--@mdc ::code-callout -->
 ```java
 @Outgoing("consume-and-ack")
 public Publisher<Message<String>> streamOfMessages() {
@@ -346,34 +347,31 @@ public Publisher<Message<String>> streamOfMessages() {
 @Incoming("consume-and-ack")
 @Acknowledgment(Acknowledgment.Strategy.MANUAL)
 public CompletionStage<Void> receiveAndAckMessage(Message<String> msg) {
-    return msg.ack();
+    return msg.ack(); //<1>
 }
 ```
+1. Calling ack() will print "This particular message was acked!" to System.out
+<!--@mdc :: -->
 
-- Calling ack() will print "This particular message was acked!" to System.out
-
-Example of manual acknowledgment:
-
+<!--@mdc ::code-callout -->
 ```java
-@Outgoing("consume-and-ack")
-public Publisher<Message<String>> streamOfMessages() {
-    return ReactiveStreams.of(Message.of("This is Payload", () -> {
-        System.out.println("This particular message was acked!");
-        return CompletableFuture.completedFuture(null);
-    })).buildRs();
-}
+    @Outgoing("consume-and-ack")
+    public Publisher<Message<String>> streamOfMessages() {
+        return ReactiveStreams.of(Message.of("This is Payload", () -> {
+            System.out.println("This particular message was acked!");
+            return CompletableFuture.completedFuture(null);
+        })).buildRs();
+    }
 
-@Incoming("consume-and-ack")
-@Acknowledgment(Acknowledgment.Strategy.MANUAL)
-public CompletionStage<Void> receiveAndAckMessage(Message<String> msg) {
-    return msg.ack();
-}
+    @Incoming("consume-and-ack")
+    @Acknowledgment(Acknowledgment.Strategy.MANUAL)
+    public CompletionStage<Void> receiveAndAckMessage(Message<String> msg) {
+        return msg.ack(); //<1>
+    }
 }
 ```
-
-- Calling ack() will print "This particular message was acked!" to System.out
-
-Example of explicit pre-process acknowledgment:
+1. Calling ack() will print "This particular message was acked!" to System.out
+<!--@mdc :: -->
 
 ```java
 @Outgoing("consume-and-ack")
@@ -456,15 +454,16 @@ The channel must be configured to use connector as its upstream or downstream.
 
 Example of channel to connector mapping config:
 
+<!--@mdc ::code-callout -->
 ```yaml
-mp.messaging.outgoing.to-connector-channel.connector: example-connector
-mp.messaging.incoming.from-connector-channel.connector: example-connector
+mp.messaging.outgoing.to-connector-channel.connector: example-connector #<1>
+mp.messaging.incoming.from-connector-channel.connector: example-connector #<2>
 ```
-
-- Use connector `example-connector` as a downstream for channel
-  `to-connector-channel` to consume the messages from the channel
-- Use connector `example-connector` as an upstream for channel
-  `to-connector-channel` to produce messages to the channel
+1. Use connector `example-connector` as a downstream for channel
+   `to-connector-channel` to consume the messages from the channel
+2. Use connector `example-connector` as an upstream for channel
+   `to-connector-channel` to produce messages to the channel
+<!--@mdc :: -->
 
 Example producing to connector:
 
@@ -502,6 +501,7 @@ Connector specific config (1) merged together with global connector config (2).
 
 Example connector accessing configuration:
 
+<!--@mdc ::code-callout -->
 ```java
 @ApplicationScoped
 @Connector("example-connector")
@@ -510,30 +510,29 @@ public class ExampleConnector implements IncomingConnectorFactory {
     @Override
     public PublisherBuilder<? extends Message<?>> getPublisherBuilder(final Config config) {
 
-        String firstPropValue = config.getValue("channel-specific-prop", String.class);
+        String firstPropValue = config.getValue("channel-specific-prop", String.class); // <1>
         String secondPropValue = config.getValue("connector-specific-prop", String.class);
-        String channelName = config.getValue("channel-name", String.class);
+        String channelName = config.getValue("channel-name", String.class); // <2>
 
         return ReactiveStreams.of(firstPropValue, secondPropValue)
                 .map(Message::of);
     }
 }
 ```
+1. Config context is merged from channel and connector contexts
+2. Name of the channel requesting publisher as it’s upstream from this connector
+<!--@mdc :: -->
 
-- Config context is merged from channel and connector contexts
-- Name of the channel requesting publisher as it’s upstream from this connector
-
-Example of channel to connector mapping config with custom properties:
-
+<!--@mdc ::code-callout -->
 ```yaml
-mp.messaging.incoming.from-connector-channel.connector: example-connector
-mp.messaging.incoming.from-connector-channel.channel-specific-prop: foo
-mp.messaging.connector.example-connector.connector-specific-prop: bar
+mp.messaging.incoming.from-connector-channel.connector: example-connector<1>
+mp.messaging.incoming.from-connector-channel.channel-specific-prop: foo<2>
+mp.messaging.connector.example-connector.connector-specific-prop: bar<3>
 ```
-
-- Channel / Connector mapping
-- Channel configuration properties
-- Connector configuration properties
+1. Channel / Connector mapping
+2. Channel configuration properties
+3. Connector configuration properties
+<!--@mdc :: -->
 
 Example consuming from connector:
 

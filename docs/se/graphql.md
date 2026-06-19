@@ -88,19 +88,57 @@ The following is a description of each of these steps:
 The following configuration keys can be used to set up integration with
 WebServer:
 
-| key                        | default value     | description                                                                 |
-|----------------------------|-------------------|-----------------------------------------------------------------------------|
-| `graphql.web-context`      | `/graphql`        | Context that serves the GraphQL endpoint.                                   |
-| `graphql.schema-uri`       | `/schema.graphql` | URI that serves the schema (under web context)                              |
-| `graphql.executor-service` |                   | Configuration of `ServerThreadPoolSupplier` used to set up executor service |
+<table>
+<thead>
+<th>Key</th>
+<th>Default Value</th>
+<th>Description</th>
+</thead>
+<tr>
+<td><code>graphql.<wbr>web-context</code></td>
+<td><code>/graphql</code></td>
+<td>Context that serves the GraphQL endpoint</td>
+</tr>
+<tr>
+<td><code>graphql.<wbr>schema-uri</code></td>
+<td><code>/schema.<wbr>graphql</code></td>
+<td>URI that serves the schema (under web context)</td>
+</tr>
+<tr>
+<td><code>graphql.<wbr>executor-service</code></td>
+<td></td>
+<td>Configuration of `Server<wbr>ThreadPool<wbr>Supplier` used to set up executor service</td>
+</tr>
+</table>
 
 The following configuration keys can be used to set up GraphQL invocation:
 
-| key                             | default value  | description                                                                                                  |
-|---------------------------------|----------------|--------------------------------------------------------------------------------------------------------------|
-| `graphql.default-error-message` | `Server Error` | Error message to send to caller in case of error                                                             |
-| `graphql.exception-white-list`  |                | Array of checked exception classes that should return default error message                                  |
-| `graphql.exception-black-list`  |                | Array of unchecked exception classes that should return message to caller (instead of default error message) |
+<table>
+<thead>
+<th>Key</th>
+<th>Default Value</th>
+<th>Description</th>
+</thead>
+<tr>
+<td><code>graphql.<wbr>default-error-message</code></td>
+<td><code>Server Error</code></td>
+<td>Error message to send to caller in case of error</td>
+</tr>
+<tr>
+<td><code>graphql.<wbr>exception-white-list</code></td>
+<td></td>
+<td>
+Array of checked exception classes that should return default error message
+</td>
+</tr>
+<tr>
+<td><code>graphql.<wbr>exception-black-list</code></td>
+<td></td>
+<td>
+Array of unchecked exception classes that should return message to caller
+(instead of default error message)</td>
+</tr>
+</table>
 
 ## Examples
 
@@ -110,16 +148,22 @@ endpoints:
 1.  Hello world endpoint
 
     ```shell [Terminal]
-    curl -X POST http://127.0.0.1:PORT/graphql -d '{"query":"query { hello }"}'
+    curl -X POST http://127.0.0.1:PORT/graphql \
+      -d '{"query":"query { hello }"}'
+    ```
 
+    ```json [Response]
     "data":{"hello":"world"}}
     ```
 
 2.  Hello in different languages
 
     ```shell [Terminal]
-    curl -X POST http://127.0.0.1:PORT/graphql -d '{"query":"query { helloInDifferentLanguages }"}'
+    curl -X POST http://127.0.0.1:PORT/graphql \
+      -d '{"query":"query { helloInDifferentLanguages }"}'
+    ```
 
+    ```json [Response]
     {"data":{"helloInDifferentLanguages":["Bonjour","Hola","Zdravstvuyte","Nǐn hǎo","Salve","Gudday","Konnichiwa","Guten Tag"]}}
     ```
 

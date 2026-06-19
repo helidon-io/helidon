@@ -109,11 +109,11 @@ This includes both connection information and enables Neo4j metrics propagation.
 
 Finally, we are able to use the `Neo4j` driver.
 
-<!--@mdc ::code-collapse -->
+<!--@mdc ::code-callout{collapsed} -->
 ```java
-record MovieRepository(Driver driver) { 
+record MovieRepository(Driver driver) { // <1>
 
-    List<Movie> findAll() { 
+    List<Movie> findAll() { // <2>
         try (var session = driver.session()) {
             var query = """
                         match (m:Movie)
@@ -145,12 +145,9 @@ record MovieRepository(Driver driver) {
     }
 }
 ```
+1. Constructor with `Neo4j` driver parameter
+2. Use `Neo4j` driver to extract all Movies
 <!--@mdc :: -->
-
-- Constructor with `Neo4j` driver parameter
-- Use `Neo4j` driver to extract all Movies
-
-Movies can now be returned as JSON objects:
 
 ```java
 record MovieService(MovieRepository movieRepository) implements HttpService {
@@ -169,36 +166,35 @@ record MovieService(MovieRepository movieRepository) implements HttpService {
 To use the service, as well as to add metrics and health support the following
 routing should be created:
 
+<!--@mdc ::code-callout -->
 ```java
 Neo4j neo4j = Neo4j.create(config.get("neo4j"));
-Driver driver = neo4j.driver(); 
+Driver driver = neo4j.driver(); // <1>
 
 Neo4jMetricsSupport.builder()
         .driver(driver)
         .build()
-        .initialize(); 
+        .initialize(); // <2>
 
 ObserveFeature observeFeature = ObserveFeature.builder()
         .addObserver(HealthObserver.builder()
                              .addCheck(Neo4jHealthCheck.create(driver))
                              .build())
-        .build(); 
+        .build(); // <3>
 
 WebServer server = WebServer.builder()
         .addFeature(observeFeature)
-        .routing(it -> it.register(new MovieService(new MovieRepository(driver)))) 
+        .routing(it -> it.register(new MovieService(new MovieRepository(driver)))) // <4>
         .build()
         .start();
 
 System.out.println("WEB server is up! http://localhost:" + server.port() + "/api/movies");
 ```
-
-- Use of `Neo4j` support object to initialise and configure the driver.
-- Use of `Neo4jMetricsSupport` to add *Neo4j* metrics to `/metrics` output.
-- Use of `Neo4jHealthCheck` to add *Neo4j* health support.
-- Register `MovieService` in *Routing*.
-
-Now build and run.
+1. Use of `Neo4j` support object to initialise and configure the driver.
+2. Use of `Neo4jMetricsSupport` to add *Neo4j* metrics to `/metrics` output.
+3. Use of `Neo4jHealthCheck` to add *Neo4j* health support.
+4. Register `MovieService` in *Routing*.
+<!--@mdc :: -->
 
 ```shell [Terminal]
 mvn package

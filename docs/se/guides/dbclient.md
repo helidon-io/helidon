@@ -121,15 +121,14 @@ few steps to quickly download and set it up:
 
 Replace <version> with your current H2 version:
 
+<!--@mdc ::code-callout -->
 ```shell [Terminal]
-java -cp h2-<version>.jar org.h2.tools.Shell -url dbc:h2:~/test -user sa -password "" -sql ""
-java -jar h2-<version>.jar -webAllowOthers -tcpAllowOthers -web -tcp
+java -cp h2-{latest-version}.jar org.h2.tools.Shell -url dbc:h2:~/test -user sa -password "" -sql "" # <1>
+java -jar h2-{latest-version}.jar -webAllowOthers -tcpAllowOthers -web -tcp # <2>
 ```
-
-- Pre-create the database (optional if the file `~/test` already exists)
-- Start the database
-
-### Connect to the Database
+1. Pre-create the database (optional if the file `~/test` already exists)
+2. Start the database
+<!--@mdc :: -->
 
 Open the console at <http://127.0.0.1:8082> in your favorite browser. It
 displays a login window. Select `Generic H2` from `Saved Settings`. The
@@ -175,60 +174,57 @@ add the following Helidon dependencies required to use the DB Client:
 
 Copy these dependencies to pom.xml:
 
-<!--@mdc ::code-collapse -->
+<!--@mdc ::code-callout{collapsed} -->
 ```xml [pom.xml]
 <dependencies>
-  <!-- ... -->
-  <dependency>
-    <groupId>io.helidon.dbclient</groupId>
-    <artifactId>helidon-dbclient</artifactId>
-  </dependency>
-  <dependency>
-    <groupId>io.helidon.dbclient</groupId>
-    <artifactId>helidon-dbclient-jdbc</artifactId>
-  </dependency>
-  <dependency>
-    <groupId>io.helidon.dbclient</groupId>
-    <artifactId>helidon-dbclient-hikari</artifactId>
-  </dependency>
-  <dependency>
-    <groupId>io.helidon.integrations.db</groupId>
-    <artifactId>h2</artifactId>
-  </dependency>
-  <dependency>
-    <groupId>org.slf4j</groupId>
-    <artifactId>slf4j-jdk14</artifactId>
-  </dependency>
-  <dependency>
-    <groupId>io.helidon.dbclient</groupId>
-    <artifactId>helidon-dbclient-health</artifactId>
-  </dependency>
-  <dependency>
-    <groupId>io.helidon.dbclient</groupId>
-    <artifactId>helidon-dbclient-metrics</artifactId>
-  </dependency>
-  <dependency>
-    <groupId>io.helidon.dbclient</groupId>
-    <artifactId>helidon-dbclient-metrics-hikari</artifactId>
-  </dependency>
-  <dependency>
-    <groupId>io.helidon.dbclient</groupId>
-    <artifactId>helidon-dbclient-jsonp</artifactId>
-  </dependency>
-  <!-- ... -->
+    <!-- ... -->
+    <dependency>
+        <groupId>io.helidon.dbclient</groupId>
+        <artifactId>helidon-dbclient</artifactId> <!-- (1) -->
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.dbclient</groupId>
+        <artifactId>helidon-dbclient-jdbc</artifactId> <!-- (2) -->
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.dbclient</groupId>
+        <artifactId>helidon-dbclient-hikari</artifactId> <!-- (3) -->
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.integrations.db</groupId>
+        <artifactId>h2</artifactId> <!-- (4) -->
+    </dependency>
+    <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-jdk14</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.dbclient</groupId>
+        <artifactId>helidon-dbclient-health</artifactId> <!-- (5) -->
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.dbclient</groupId>
+        <artifactId>helidon-dbclient-metrics</artifactId> <!-- (6) -->
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.dbclient</groupId>
+        <artifactId>helidon-dbclient-metrics-hikari</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>io.helidon.dbclient</groupId>
+        <artifactId>helidon-dbclient-jsonp</artifactId> <!-- (7) -->
+    </dependency>
+    <!-- ... -->
 </dependencies>
 ```
+1. DB Client API dependency.
+2. Using JDBC driver for this example.
+3. Using HikariCP as a connection pool.
+4. H2 driver dependency.
+5. Support for health check.
+6. Support for metrics.
+7. Support for Jsonp.
 <!--@mdc :: -->
-
-- DB Client API dependency.
-- Using JDBC driver for this example.
-- Using HikariCP as a connection pool.
-- H2 driver dependency.
-- Support for health check.
-- Support for metrics.
-- Support for Jsonp.
-
-### Configure the DB Client
 
 To configure the application, Helidon uses the `application.yaml`. The DB Client
 configuration can be joined in the same file and is located here:
@@ -236,14 +232,15 @@ configuration can be joined in the same file and is located here:
 
 Copy these properties into `application.yaml`:
 
+<!--@mdc ::code-callout -->
 ```yaml [application.yaml]
 db:
-  source: jdbc 
-  connection: 
+  source: jdbc # <1>
+  connection: # <2>
     url: "jdbc:h2:tcp://localhost:9092/~/test"
     username: "sa"
     password:
-  statements: 
+  statements: # <3>
     health-check: "SELECT 0"
     create-table: "CREATE TABLE IF NOT EXISTS LIBRARY (NAME VARCHAR NOT NULL, INFO VARCHAR NOT NULL)"
     insert-book: "INSERT INTO LIBRARY (NAME, INFO) VALUES (:name, :info)"
@@ -254,30 +251,31 @@ db:
     statementName: "health-check"
   services:
     metrics:
-      - type: COUNTER 
+      - type: COUNTER # <4>
         statement-names: [ "select-book" ]
 ```
-
-- Source property support two values: jdbc and mongo.
-- Connection detail we used to set up H2.
-- SQL statements to manage the database.
-- Add a counter for metrics only for the `select-book` statement.
+1. Source property support two values: jdbc and mongo.
+2. Connection detail we used to set up H2.
+3. SQL statements to manage the database.
+4. Add a counter for metrics only for the `select-book` statement.
+<!--@mdc :: -->
 
 Copy these properties into `application-test.yaml`:
 
+<!--@mdc ::code-callout -->
 ```yaml [application-test.yaml]
 db:
   connection:
-    url: "jdbc:h2:mem:test" 
+    url: "jdbc:h2:mem:test" # <1>
 ```
-
-- Override the JDBC URL to use an in-memory database for the tests
+1. Override the JDBC URL to use an in-memory database for the tests
+<!--@mdc :: -->
 
 ### Set Up Helidon DB Client
 
 Update Main#main:
 
-<!--@mdc ::code-collapse -->
+<!--@mdc ::code-callout{collapsed} -->
 ```java
 public static void main(String[] args) {
 
@@ -286,23 +284,23 @@ public static void main(String[] args) {
 
     Config config = Config.global();
 
-    DbClient dbClient = DbClient.create(config.get("db")); 
-    Contexts.globalContext().register(dbClient); 
+    DbClient dbClient = DbClient.create(config.get("db")); // <1>
+    Contexts.globalContext().register(dbClient); // <2>
 
     HealthObserver healthObserver = HealthObserver.builder()
             .useSystemServices(false)
             .details(true)
-            .addCheck(DbClientHealthCheck.create(dbClient, config.get("db.health-check"))) 
+            .addCheck(DbClientHealthCheck.create(dbClient, config.get("db.health-check"))) // <3>
             .build();
 
     ObserveFeature observe = ObserveFeature.builder()
             .config(config.get("server.features.observe"))
-            .addObserver(healthObserver) 
+            .addObserver(healthObserver) // <4>
             .build();
 
     WebServer server = WebServer.builder()
             .config(config.get("server"))
-            .addFeature(observe) 
+            .addFeature(observe) // <5>
             .routing(Main::routing)
             .build()
             .start();
@@ -310,31 +308,29 @@ public static void main(String[] args) {
     System.out.println("WEB server is up! http://localhost:" + server.port() + "/simple-greet");
 }
 ```
+1. Create the DbClient instance
+2. Register it in the global context
+3. Create an instance of HealthObserver to register a DbClientHealthCheck
+4. Add the `HealthObserver` to the `ObserveFeature`
+5. Register the ObserveFeature on the server
 <!--@mdc :: -->
-
-- Create the DbClient instance
-- Register it in the global context
-- Create an instance of HealthObserver to register a DbClientHealthCheck
-- Add the `HealthObserver` to the `ObserveFeature`
-- Register the ObserveFeature on the server
-
-### Create the Library service
 
 Create LibraryService class into `io.helidon.examples.quickstart.se` package.
 
 LibraryService class looks like this:
 
+<!--@mdc ::code-callout -->
 ```java
 public class LibraryService implements HttpService {
 
-    private final DbClient dbClient;    
+    private final DbClient dbClient;    // <1>
 
     LibraryService() {
         dbClient = Contexts.globalContext()
                 .get(DbClient.class)
-                .orElseGet(this::newDbClient); 
+                .orElseGet(this::newDbClient); // <2>
         dbClient.execute()
-                .namedDml("create-table"); 
+                .namedDml("create-table"); // <3>
     }
 
     private DbClient newDbClient() {
@@ -347,34 +343,31 @@ public class LibraryService implements HttpService {
     }
 }
 ```
-
-- Declare the DB Client instance
-- Initialize the DB Client instance using global config
-- Initialize the database schema
-
-As the LibraryService implements `io.helidon.webserver.HttpService`, the
+1. Declare the DB Client instance
+2. Initialize the DB Client instance using global config
+3. Initialize the database schema
+<!--@mdc :: -->
 `routing(HttpRules)` method has to be implemented. It defines application
 endpoints and Http request which can be reached by clients.
 
 Add update method to LibraryService:
 
+<!--@mdc ::code-callout -->
 ```java
 @Override
 public void routing(HttpRules rules) {
     rules
-            .get("/{name}", this::getBook)      
-            .put("/{name}", this::addBook)      
-            .delete("/{name}", this::deleteBook)   
-            .get("/json/{name}", this::getJsonBook); 
+            .get("/{name}", this::getBook)      // <1>
+            .put("/{name}", this::addBook)      // <2>
+            .delete("/{name}", this::deleteBook)   // <3>
+            .get("/json/{name}", this::getJsonBook); // <4>
 }
 ```
-
-- Return information about the required book from the database.
-- Add a book to the library.
-- Remove a book from the library.
-- Return the book information in Json format.
-
-To summarize, there is one endpoint that can manipulate books. The number of
+1. Return information about the required book from the database.
+2. Add a book to the library.
+3. Remove a book from the library.
+4. Return the book information in Json format.
+<!--@mdc :: -->
 endpoints and application features can be changed from these rules by creating
 or modifying methods. `{name}` is a path parameter for the book name. The
 architecture of the application is defined, so the next step is to create these
@@ -382,29 +375,28 @@ features.
 
 Add getBook to the LibraryService:
 
+<!--@mdc ::code-callout -->
 ```java
 private void getBook(ServerRequest request,
                      ServerResponse response) {
 
     String bookName = request.path()
             .pathParameters()
-            .get("name"); 
+            .get("name"); // <1>
 
     String bookInfo = dbClient.execute()
-            .namedGet("select-book", bookName)   
+            .namedGet("select-book", bookName)   // <2>
             .map(row -> row.column("INFO").asString().get())
             .orElseThrow(() -> new NotFoundException(
-                    "Book not found: " + bookName)); 
-    response.send(bookInfo); 
+                    "Book not found: " + bookName)); // <3>
+    response.send(bookInfo); // <4>
 }
 ```
-
-- Get the book name from the path in the URL.
-- Helidon DB Client executes the `select-book` SQL script from application.yaml.
-- Sends 404 HTTP status if no book was found for the given name.
-- Sends book information to the client.
-
-The `getBook` method reach the book from the database and send the information
+1. Get the book name from the path in the URL.
+2. Helidon DB Client executes the `select-book` SQL script from application.yaml.
+3. Sends 404 HTTP status if no book was found for the given name.
+4. Sends book information to the client.
+<!--@mdc :: -->
 to the client. The name of the book is located into the url path. If the book is
 not present in the database, an HTTP 404 is sent back. The `execute()` method is
 called on the dbClient instance to execute one statement. Nevertheless, it is
@@ -444,6 +436,7 @@ method send the whole row of the database as a `JsonObject`.
 
 Add addBook to the LibraryService:
 
+<!--@mdc ::code-callout -->
 ```java
 private void addBook(ServerRequest request,
                      ServerResponse response) {
@@ -455,18 +448,16 @@ private void addBook(ServerRequest request,
     String newValue = request.content().as(String.class);
     dbClient.execute()
             .createNamedInsert("insert-book")
-            .addParam("name", bookName) 
+            .addParam("name", bookName) // <1>
             .addParam("info", newValue)
             .execute();
-    response.status(Status.CREATED_201).send(); 
+    response.status(Status.CREATED_201).send(); // <2>
 }
 ```
-
-- The SQL statement requires the book name and its information. They are
-  provided with `addParam` method.
-- A new book was added to library, so an HTTP 201 code is returned.
-
-When a user adds a new book, it uses HTTP PUT method where the book name is in
+1. The SQL statement requires the book name and its information. They are
+   provided with `addParam` method.
+2. A new book was added to library, so an HTTP 201 code is returned.
+<!--@mdc :: -->
 the URL and the information in the request content. To catch this content, the
 information is retrieved as a string and then the DB Client execute the
 `insert-book` script to add the book to the library. It requires two parameters,
@@ -475,6 +466,7 @@ the book name and information which are passed to the dbClient thanks to
 
 Add deleteBook to LibraryService:
 
+<!--@mdc ::code-callout -->
 ```java
 private void deleteBook(ServerRequest request,
                         ServerResponse response) {
@@ -483,34 +475,31 @@ private void deleteBook(ServerRequest request,
             .pathParameters()
             .get("name");
 
-    dbClient.execute().namedDelete("delete-book", bookName); 
-    response.status(Status.NO_CONTENT_204).send(); 
+    dbClient.execute().namedDelete("delete-book", bookName); // <1>
+    response.status(Status.NO_CONTENT_204).send(); // <2>
 }
 ```
-
-- Execute SQL script from application.yaml to remove a book from the library by
-  its name.
-- The required book was removed, so an HTTP 204 is sent.
-
-To remove a book from the library, use the "delete-book" script in the way than
+1. Execute SQL script from application.yaml to remove a book from the library by
+   its name.
+2. The required book was removed, so an HTTP 204 is sent.
+<!--@mdc :: -->
 previously. If the book is removed successfully, an HTTP 204 is sent back.
 
 ### Set Up Routing
 
 Modify the routing method in `Main.java`:
 
+<!--@mdc ::code-callout -->
 ```java [Main.java]
 static void routing(HttpRouting.Builder routing) {
     routing
             .register("/greet", new GreetService())
-            .register("/library", new LibraryService()) 
+            .register("/library", new LibraryService()) // <1>
             .get("/simple-greet", (req, res) -> res.send("Hello World!"));
 }
 ```
-
-- Register the LibraryService to the Routing.
-
-The library service does not yet exist, but you’ll create it in the next step of
+1. Register the LibraryService to the Routing.
+<!--@mdc :: -->
 the guide.
 
 ## Build and Run the Library Application

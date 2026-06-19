@@ -94,27 +94,28 @@ In addition to these features, Vault itself can be authenticated as follows:
 
 - Token authentication - token is configured when connecting to Vault
 
-<!-- -->
-
+    ```yaml [application.yaml]
     vault.address=http://localhost:8200
     vault.token=my-token
+    ```
 
 - AppRole authentication - AppRole ID and secret ID are configured, integration
   exchanges these for a temporary token that is used to connect to Vault
 
-<!-- -->
-
+    ```yaml [application.yaml]
     vault.auth.app-role.role-id=app-role-id
     vault.auth.app-role.secret-id=app-role-secret-id
+    ```
 
 - K8s authentication - the k8s JWT token is discovered on current node and used
   to obtain a temporary token that is used to connect to Vault
 
-<!-- -->
-
-    vault.auth.k8s.token-role=my-role 
-
-- The token role must be configured in Vault
+    <!--@mdc ::code-callout -->
+    ```yaml [application.yaml]
+    vault.auth.k8s.token-role=my-role # <1>
+    ```
+    1. The token role must be configured in Vault
+    <!--@mdc :: -->
 
 ### Extensibility
 
@@ -164,7 +165,7 @@ class TransitResource {
 
 Cubbyhole example:
 
-<!--@mdc ::code-collapse -->
+<!--@mdc ::code-callout{collapsed} -->
 ```java
 @Path("/cubbyhole")
 public class CubbyholeResource {
@@ -177,7 +178,7 @@ public class CubbyholeResource {
 
     @POST
     @Path("/secrets/{path: .*}")
-    public Response createSecret(@PathParam("path") String path, String secret) { 
+    public Response createSecret(@PathParam("path") String path, String secret) { // <1>
         CreateCubbyhole.Response response = secrets.create(path, Map.of("secret", secret));
 
         return Response.ok()
@@ -190,7 +191,7 @@ public class CubbyholeResource {
 
     @DELETE
     @Path("/secrets/{path: .*}")
-    public Response deleteSecret(@PathParam("path") String path) { 
+    public Response deleteSecret(@PathParam("path") String path) { // <2>
         DeleteCubbyhole.Response response = secrets.delete(path);
 
         return Response.ok()
@@ -203,7 +204,7 @@ public class CubbyholeResource {
 
     @GET
     @Path("/secrets/{path: .*}")
-    public Response getSecret(@PathParam("path") String path) { 
+    public Response getSecret(@PathParam("path") String path) { // <3>
         Optional<Secret> secret = secrets.get(path);
 
         if (secret.isPresent()) {
@@ -217,17 +218,14 @@ public class CubbyholeResource {
     }
 }
 ```
+1. Create a secret from request entity, the name of the value is `secret`.
+2. Delete the secret on a specified path.
+3. Get the secret on a specified path.
 <!--@mdc :: -->
-
-- Create a secret from request entity, the name of the value is `secret`.
-- Delete the secret on a specified path.
-- Get the secret on a specified path.
-
-### KV1 secrets
 
 Key/Value version 1 secrets engine operations:
 
-<!--@mdc ::code-collapse -->
+<!--@mdc ::code-callout{collapsed} -->
 ```java
 @Path("/kv1")
 public class Kv1Resource {
@@ -242,7 +240,7 @@ public class Kv1Resource {
 
     @Path("/engine")
     @GET
-    public Response enableEngine() { 
+    public Response enableEngine() { // <1>
         EnableEngine.Response response = sys.enableEngine(Kv1Secrets.ENGINE);
 
         return Response.ok()
@@ -253,7 +251,7 @@ public class Kv1Resource {
 
     @Path("/engine")
     @DELETE
-    public Response disableEngine() { 
+    public Response disableEngine() { // <2>
         DisableEngine.Response response = sys.disableEngine(Kv1Secrets.ENGINE);
         return Response.ok()
                 .entity("Key/value version 1 secret engine is now disabled."
@@ -263,7 +261,7 @@ public class Kv1Resource {
 
     @POST
     @Path("/secrets/{path: .*}")
-    public Response createSecret(@PathParam("path") String path, String secret) { 
+    public Response createSecret(@PathParam("path") String path, String secret) { // <3>
         CreateKv1.Response response = secrets.create(path, Map.of("secret", secret));
 
         return Response.ok()
@@ -276,7 +274,7 @@ public class Kv1Resource {
 
     @DELETE
     @Path("/secrets/{path: .*}")
-    public Response deleteSecret(@PathParam("path") String path) { 
+    public Response deleteSecret(@PathParam("path") String path) { // <4>
         DeleteKv1.Response response = secrets.delete(path);
 
         return Response.ok()
@@ -289,7 +287,7 @@ public class Kv1Resource {
 
     @GET
     @Path("/secrets/{path: .*}")
-    public Response getSecret(@PathParam("path") String path) { 
+    public Response getSecret(@PathParam("path") String path) { // <5>
         Optional<Secret> secret = secrets.get(path);
 
         if (secret.isPresent()) {
@@ -303,19 +301,16 @@ public class Kv1Resource {
     }
 }
 ```
+1. Enable the secrets engine on the default path.
+2. Disable the secrets engine on the default path.
+3. Create a secret from request entity, the name of the value is `secret`.
+4. Delete the secret on a specified path.
+5. Get the secret on a specified path.
 <!--@mdc :: -->
-
-- Enable the secrets engine on the default path.
-- Disable the secrets engine on the default path.
-- Create a secret from request entity, the name of the value is `secret`.
-- Delete the secret on a specified path.
-- Get the secret on a specified path.
-
-### KV2 secrets
 
 Key/Value version 2 secrets engine operations:
 
-<!--@mdc ::code-collapse -->
+<!--@mdc ::code-callout{collapsed} -->
 ```java
 @Path("/kv2")
 public class Kv2Resource {
@@ -329,7 +324,7 @@ public class Kv2Resource {
 
     @POST
     @Path("/secrets/{path: .*}")
-    public Response createSecret(@PathParam("path") String path, String secret) { 
+    public Response createSecret(@PathParam("path") String path, String secret) { // <1>
         CreateKv2.Response response = secrets.create(path, Map.of("secret", secret));
         return Response.ok()
                 .entity(String.format(
@@ -341,7 +336,7 @@ public class Kv2Resource {
 
     @DELETE
     @Path("/secrets/{path: .*}")
-    public Response deleteSecret(@PathParam("path") String path) { 
+    public Response deleteSecret(@PathParam("path") String path) { // <2>
         DeleteAllKv2.Response response = secrets.deleteAll(path);
         return Response.ok()
                 .entity(String.format(
@@ -353,7 +348,7 @@ public class Kv2Resource {
 
     @GET
     @Path("/secrets/{path: .*}")
-    public Response getSecret(@PathParam("path") String path) { 
+    public Response getSecret(@PathParam("path") String path) { // <3>
 
         Optional<Kv2Secret> secret = secrets.get(path);
 
@@ -371,17 +366,14 @@ public class Kv2Resource {
     }
 }
 ```
+1. Create a secret from request entity, the name of the value is `secret`.
+2. Delete the secret on a specified path.
+3. Get the secret on a specified path.
 <!--@mdc :: -->
-
-- Create a secret from request entity, the name of the value is `secret`.
-- Delete the secret on a specified path.
-- Get the secret on a specified path.
-
-### Transit secrets
 
 Transit secrets engine operations:
 
-<!--@mdc ::code-collapse -->
+<!--@mdc ::code-callout{collapsed} -->
 ```java
 @Path("/transit")
 public class TransitResource {
@@ -399,7 +391,7 @@ public class TransitResource {
 
     @Path("/engine")
     @GET
-    public Response enableEngine() { 
+    public Response enableEngine() { // <1>
         EnableEngine.Response response = sys.enableEngine(TransitSecrets.ENGINE);
 
         return Response.ok()
@@ -410,7 +402,7 @@ public class TransitResource {
 
     @Path("/engine")
     @DELETE
-    public Response disableEngine() { 
+    public Response disableEngine() { // <2>
         DisableEngine.Response response = sys.disableEngine(TransitSecrets.ENGINE);
         return Response.ok()
                 .entity("Transit secret engine is now disabled."
@@ -420,7 +412,7 @@ public class TransitResource {
 
     @Path("/keys")
     @GET
-    public Response createKeys() { 
+    public Response createKeys() { // <3>
         secrets.createKey(CreateKey.Request.builder()
                                   .name(ENCRYPTION_KEY));
 
@@ -435,7 +427,7 @@ public class TransitResource {
 
     @Path("/keys")
     @DELETE
-    public Response deleteKeys() { 
+    public Response deleteKeys() { // <4>
         // we must first enable deletion of the key (by default it cannot be deleted)
         secrets.updateKeyConfig(UpdateKeyConfig.Request.builder()
                                         .name(ENCRYPTION_KEY)
@@ -455,7 +447,7 @@ public class TransitResource {
 
     @Path("/encrypt/{secret: .*}")
     @GET
-    public String encryptSecret(@PathParam("secret") String secret) { 
+    public String encryptSecret(@PathParam("secret") String secret) { // <5>
         return secrets.encrypt(Encrypt.Request.builder()
                                        .encryptionKeyName(ENCRYPTION_KEY)
                                        .data(Base64Value.create(secret)))
@@ -465,7 +457,7 @@ public class TransitResource {
 
     @Path("/decrypt/{cipherText: .*}")
     @GET
-    public String decryptSecret(@PathParam("cipherText") String cipherText) { 
+    public String decryptSecret(@PathParam("cipherText") String cipherText) { // <6>
         return secrets.decrypt(Decrypt.Request.builder()
                                        .encryptionKeyName(ENCRYPTION_KEY)
                                        .cipherText(cipherText))
@@ -475,7 +467,7 @@ public class TransitResource {
 
     @Path("/hmac/{text}")
     @GET
-    public String hmac(@PathParam("text") String text) { 
+    public String hmac(@PathParam("text") String text) { // <7>
         return secrets.hmac(Hmac.Request.builder()
                                     .hmacKeyName(ENCRYPTION_KEY)
                                     .data(Base64Value.create(text)))
@@ -484,7 +476,7 @@ public class TransitResource {
 
     @Path("/sign/{text}")
     @GET
-    public String sign(@PathParam("text") String text) { 
+    public String sign(@PathParam("text") String text) { // <8>
         return secrets.sign(Sign.Request.builder()
                                     .signatureKeyName(SIGNATURE_KEY)
                                     .data(Base64Value.create(text)))
@@ -494,7 +486,7 @@ public class TransitResource {
     @Path("/verify/hmac/{secret}/{hmac: .*}")
     @GET
     public String verifyHmac(@PathParam("secret") String secret,
-                             @PathParam("hmac") String hmac) { 
+                             @PathParam("hmac") String hmac) { // <9>
         boolean isValid = secrets.verify(Verify.Request.builder()
                                                  .digestKeyName(ENCRYPTION_KEY)
                                                  .data(Base64Value.create(secret))
@@ -507,7 +499,7 @@ public class TransitResource {
     @Path("/verify/sign/{secret}/{signature: .*}")
     @GET
     public String verifySignature(@PathParam("secret") String secret,
-                                  @PathParam("signature") String signature) { 
+                                  @PathParam("signature") String signature) { // <10>
         boolean isValid = secrets.verify(Verify.Request.builder()
                                                  .digestKeyName(SIGNATURE_KEY)
                                                  .data(Base64Value.create(secret))
@@ -518,25 +510,26 @@ public class TransitResource {
     }
 }
 ```
+1. Enable the secrets engine on the default path.
+2. Disable the secrets engine on the default path.
+3. Create the encrypting and signature keys.
+4. Delete the encryption and signature keys.
+5. Encrypt a secret.
+6. Decrypt a secret.
+7. Create an HMAC for text.
+8. Create a signature for text.
+9. Verify HMAC.
+10. Verify signature.
 <!--@mdc :: -->
-
-- Enable the secrets engine on the default path.
-- Disable the secrets engine on the default path.
-- Create the encrypting and signature keys.
-- Delete the encryption and signature keys.
-- Encrypt a secret.
-- Decrypt a secret.
-- Create an HMAC for text.
-- Create a signature for text.
-- Verify HMAC.
-- Verify signature.
-
-## Local Testing
 
 Vault is available as a docker image, so to test locally, you can simply:
 
 ```shell [Terminal]
-docker run -e VAULT_DEV_ROOT_TOKEN_ID=my-token -d --name=vault -p8200:8200 vault
+docker run -d \
+  -e VAULT_DEV_ROOT_TOKEN_ID=my-token \
+  --name=vault \
+  -p 8200:8200 \
+  vault
 ```
 
 This will create a Vault docker image, run it in background and open it on

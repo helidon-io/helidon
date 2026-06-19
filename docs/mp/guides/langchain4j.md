@@ -152,12 +152,13 @@ public interface PirateService {
 Next step is to add new Http POST JAX-RS resource, create new public class
 `PirateResource` like following example shows.
 
+<!--@mdc ::code-callout -->
 ```java
 @Path("/chat")
 public class PirateResource {
 
     @Inject
-    PirateService pirateService; 
+    PirateService pirateService; // <1>
 
     @POST
     public String chat(String message) {
@@ -165,17 +166,21 @@ public class PirateResource {
     }
 }
 ```
-
-- Notice how we can inject the LangChain4j Ai service as Helidon declarative
+1. Notice how we can inject the LangChain4j Ai service as Helidon declarative
   superfast build time bean directly in JAX-RS resource.
+<!--@mdc :: -->
 
 When we build and run our Helidon AI-powered quickstart:
 
-    mvn package -DskipTests && java -jar ./target/*.jar
+```shell [Terminal]
+mvn package -DskipTests && java -jar ./target/*.jar
+```
 
 We can test our pirate service with curl:
 
-    echo "Who are you?" | curl -d @- localhost:8080/chat
+```shell [Terminal]
+echo "Who are you?" | curl -d @- localhost:8080/chat
+```
 
 ## Prompt Template Arguments
 
@@ -214,11 +219,15 @@ public class PirateResource {
 
 When we build and run our Helidon AI-powered quickstart:
 
-    mvn package -DskipTests && java -jar ./target/*.jar
+```shell [Terminal]
+mvn package -DskipTests && java -jar ./target/*.jar
+```
 
 We can test our pirate service with curl:
 
-    echo "Who was your captain?" | curl -d @- localhost:8080/chat
+```shell [Terminal]
+echo "Who was your captain?" | curl -d @- localhost:8080/chat
+```
 
 ## Custom Memory Provider
 
@@ -229,7 +238,8 @@ memory works per conversation ID.
 ```java
 @Service.Singleton
 @Service.Named(PirateMemoryProvider.NAME)
-public class PirateMemoryProvider implements Supplier<ChatMemoryProvider> {
+public class PirateMemoryProvider
+        implements Supplier<ChatMemoryProvider> {
 
     static final String NAME = "pirate-memory";
 
@@ -238,7 +248,8 @@ public class PirateMemoryProvider implements Supplier<ChatMemoryProvider> {
         return memoryId -> MessageWindowChatMemory.builder()
                 .maxMessages(10)
                 .id(memoryId)
-                .chatMemoryStore(new InMemoryChatMemoryStore()).build();
+                .chatMemoryStore(new InMemoryChatMemoryStore())
+                .build();
     }
 }
 ```
@@ -271,22 +282,36 @@ public class PirateResource {
     PirateService pirateService;
 
     @POST
-    public String chat(@HeaderParam("conversation-id") String conversationId,
-                       String message) {
+    public String chat(
+        @HeaderParam("conversation-id") String conversationId,
+            String message) {
+
         return pirateService.chat(conversationId, "Frank", message);
     }
 }
 ```
 
-    mvn package -DskipTests && java -jar ./target/*.jar
+```shell [Terminal]
+mvn package -DskipTests && java -jar ./target/*.jar
+```
 
 We can test our pirate service with curl:
 
-    echo "Hi, I am John."          | curl -d @- -H "conversation-id: 123" localhost:8080/chat
-    Ahoy there, John
+```shell [Terminal]
+echo "Hi, I am John." | curl -d @- -H "conversation-id: 123" localhost:8080/chat
+```
 
-    echo "Do you remeber my name?" | curl -d @- -H "conversation-id: 123" localhost:8080/chat
-    Aye, John! The name be etched in me memory like a ship’s anchor in the sand.
+```log [Output]
+Ahoy there, John
+```
+
+```shell [Terminal]
+echo "Do you remeber my name?" | curl -d @- -H "conversation-id: 123" localhost:8080/chat
+```
+
+```log [Output]
+Aye, John! The name be etched in me memory like a ship’s anchor in the sand.
+```
 
 [langchain4j]: https://github.com/langchain4j/langchain4j
 [java-21]: https://www.oracle.com/technetwork/java/javase/downloads

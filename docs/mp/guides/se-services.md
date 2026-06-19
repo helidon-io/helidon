@@ -64,20 +64,19 @@ public class CoolingService implements HttpService, Handler {
 
 It’s easy to use it with Helidon SE:
 
+<!--@mdc ::code-callout -->
 ```java
 WebServer.builder()
         .routing(it -> it
-                .register("/cool", new CoolingService())) 
+                .register("/cool", new CoolingService())) // <1>
         .config(config)
         .mediaContext(it -> it
                 .addMediaSupport(JsonpSupport.create()))
         .build()
         .start();
 ```
-
-- register service with routing path
-
-And not much harder to use it with Helidon MP:
+1. register service with routing path
+<!--@mdc :: -->
 
 ```java
 @ApplicationScoped

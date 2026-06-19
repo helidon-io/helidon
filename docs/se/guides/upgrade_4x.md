@@ -68,56 +68,58 @@ further server operations had to wait. For example:
 
 Start Helidon SE 3.x server:
 
+<!--@mdc ::code-callout -->
 ```java
-Config config = Config.create();
+static Single<WebServer> startServer() {
+    Config config = Config.create();
 
-WebServer server = WebServer.builder(createRouting(config))
-        .config(config.get("server"))
-        .addMediaSupport(JsonpSupport.create())
-        .build();
+    WebServer server = WebServer.builder(createRouting(config))
+            .config(config.get("server"))
+            .addMediaSupport(JsonpSupport.create())
+            .build();
 
-Single<WebServer> webserver = server.start();
+    Single<WebServer> webserver = server.start(); // <1>
 
-webserver.thenAccept(it -> {
-    System.out.println("WEB server is up! http://localhost:"
-        + it.port() + "/greet");
-    it.whenShutdown().thenRun(() ->
-        System.out.println("WEB server is DOWN. Good bye!"));
-})
-.exceptionallyAccept(ex -> {
-    System.err.println("Startup failed: " + ex.getMessage());
-    ex.printStackTrace(System.err);
-});
+    webserver.thenAccept(ws -> { // <2>
+                System.out.println("WEB server is up! http://localhost:" + ws.port() + "/greet");
+                ws.whenShutdown().thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
+            })
+            .exceptionallyAccept(t -> { // <3>
+                System.err.println("Startup failed: " + t.getMessage());
+                t.printStackTrace(System.err);
+            });
+
+    return webserver;
+}
 ```
-
-- Server is started in an asynchronous way. A `Single` object is returned.
-- Wait for the server to start and print the message in an asynchronous way.
-- Gracefully handle exceptions if they occur during the initialization process.
-
-In Helidon 4.x, you can create and configure a server and then wait for it to
+1. Server is started in an asynchronous way. A `Single` object is returned.
+2. Wait for the server to start and print the message in an asynchronous way.
+3. Gracefully handle exceptions if they occur during the initialization process.
+<!--@mdc :: -->
 start. If any exceptions happen, they are handled the traditional way using
 available language constructions. For example:
 
 Start Helidon SE 4.x server:
 
+<!--@mdc ::code-callout -->
 ```java
-Config config = Config.global();
+public static void main(String[] args) {
 
-WebServer server = WebServer.builder()
-        .config(config.get("server"))
-        .routing(Main::routing)
-        .build()
-        .start();
+    Config config = Config.global();
 
-System.out.println("WEB server is up! http://localhost:"
-    + server.port() + "/greet");
+    WebServer server = WebServer.builder() // <1>
+            .config(config.get("server"))
+            .routing(Main::routing)
+            .build()
+            .start(); // <2>
+
+    System.out.println("WEB server is up! http://localhost:" + server.port() + "/greet"); // <3>
+}
 ```
-
-- Configure the server.
-- Start the server. No reactive objects returned.
-- Print a message when the server is started.
-
-### Additional Server Lifecycle Tasks
+1. Configure the server.
+2. Start the server. No reactive objects returned.
+3. Print a message when the server is started.
+<!--@mdc :: -->
 
 In Helidon 3.x, if you provided code to run after WebServer startup and after
 WebServer shutdown, you needed to use asynchronous constructs, like so:
@@ -184,44 +186,42 @@ User-defined services were also registered the same way. For example:
 
 Routing in Helidon SE 3.x server:
 
+<!--@mdc ::code-callout -->
 ```java
 private static Routing createRouting(Config config) {
 
-    MetricsSupport metrics = MetricsSupport.create();
+    MetricsSupport metrics = MetricsSupport.create(); // <1>
     HealthSupport health = HealthSupport.builder()
             .addLiveness(HealthChecks.healthChecks())
             .build();
 
-    GreetService greetService = new GreetService(config);
+    GreetService greetService = new GreetService(config); // <2>
 
     return Routing.builder()
-            .register(health)
+            .register(health) // <3>
             .register(metrics)
-            .register("/greet", greetService)
+            .register("/greet", greetService) // <4>
             .build();
 }
 ```
-
-- Create and configure `Metrics` and `Health` support.
-- Create a regular Helidon Service.
-- Register `Metrics` and `Health` support as Helidon Services.
-- Register the regular Greeting service.
-
-In Helidon 4.x, the Metrics and Health features are automatically discovered
+1. Create and configure `Metrics` and `Health` support.
+2. Create a regular Helidon Service.
+3. Register `Metrics` and `Health` support as Helidon Services.
+4. Register the regular Greeting service.
+<!--@mdc :: -->
 and, assuming you added the dependencies to your project, the routing is
 configured in the following way:
 
 Routing in Helidon SE 4.x server:
 
+<!--@mdc ::code-callout -->
 ```java
 static void routing(HttpRouting.Builder routing) {
-    routing.register("/greet", new GreetService());
+    routing.register("/greet", new GreetService()); // <1>
 }
 ```
-
-- Register Greeting service as in previous versions of Helidon.
-
-If you want to add these features to the server programmatically, you would use
+1. Register Greeting service as in previous versions of Helidon.
+<!--@mdc :: -->
 `WebServer.builder().addFeature()` method instead.
 
 `Feature` encapsulates a set of endpoints, services and/or filters. It is
@@ -307,67 +307,59 @@ In previous versions, a service looked like this:
 
 Helidon SE 3.x Service:
 
+<!--@mdc ::code-callout -->
 ```java
 public class GreetService implements Service {
 
     @Override
-    public void update(Routing.Rules rules) {
+    public void update(Routing.Rules rules) { // <1>
         rules
-          .get("/", this::getDefaultMessageHandler)
-          .get("/{name}", this::getMessageHandler)
-          .put("/greeting", this::updateGreetingHandler);
+                .get("/", this::getDefaultMessageHandler)
+                .get("/{name}", this::getMessageHandler)
+                .put("/greeting", this::updateGreetingHandler);
     }
 
-    private void getDefaultMessageHandler(
-            ServerRequest request, ServerResponse response) {
-
+    private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) { // <2>
         sendResponse(response, "World");
     }
 
     // other methods omitted
 }
 ```
-
-- Use the `update()` method to set up routing.
-- Handle a `Request` and return a `Response`.
-
-In Helidon 4.x, the same service looks like this:
+1. Use the `update()` method to set up routing.
+2. Handle a `Request` and return a `Response`.
+<!--@mdc :: -->
 
 Helidon SE 4.x Service:
 
+<!--@mdc ::code-callout -->
 ```java
-public class GreetService implements HttpService {
+public class GreetService implements HttpService { // <1>
 
     @Override
-    public void routing(HttpRules rules) {
+    public void routing(HttpRules rules) { // <2>
         rules.get("/", this::getDefaultMessageHandler)
                 .get("/{name}", this::getMessageHandler)
                 .put("/greeting", this::updateGreetingHandler);
     }
 
-    private void getDefaultMessageHandler(
-            ServerRequest request, ServerResponse response) {
-
+    private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) { // <3>
         sendResponse(response, "World");
     }
 
-    private void getMessageHandler(
-            ServerRequest request, ServerResponse response) {
+    private void getMessageHandler(ServerRequest request, ServerResponse response) {
         // ...
     }
 
-    private void updateGreetingHandler(
-            ServerRequest request, ServerResponse response) {
+    private void updateGreetingHandler(ServerRequest request, ServerResponse response) { // <3>
         // ...
     }
 }
 ```
-
-- Implement `HttpService` for the `GreetingService`.
-- Use `routing(HttpRules rules)` to set up routing.
-- Handle a `Request` and return a `Response`.
-
-Learn more about `HttpService` and `Routing` at [Helidon SE
+1. Implement `HttpService` for the `GreetingService`.
+2. Use `routing(HttpRules rules)` to set up routing.
+3. Handle a `Request` and return a `Response`.
+<!--@mdc :: -->
 WebServer](../webserver/webserver.md).
 
 ## Other Changes
