@@ -137,9 +137,12 @@ include::{sourcedir}/se/GraphQlSnippets.java[tag=snippet_4, indent=0]
 
 Java classes, records, interfaces, and enums must be annotated with `@GraphQl.Entity` before they contribute SDL object or enum
 definitions. GraphQL input objects are generated from records annotated with `@GraphQl.Entity`. Built-in GraphQL scalar types
-do not need this marker. Automatic entity fields support only GraphQL schema annotations; use an explicit
-`@GraphQlServer.Field` resolver when a field needs annotation-driven runtime behavior. Use `@GraphQl.Scalar` with a matching
-`GraphQlScalar` service for custom scalar Java types.
+do not need this marker. The initial declarative generator supports `String`, `int`/`Integer`, `double`/`Double`, and
+`boolean`/`Boolean` as built-in scalar Java types. A `List<T>` field or argument must declare exactly one concrete element
+type; wildcards and generic element variables are rejected. Other Java scalar types, such as `Long`, `Float`,
+`BigDecimal`, maps, or optional values, require `@GraphQl.Scalar` with a matching `GraphQlScalar` service.
+Automatic entity fields support only GraphQL schema annotations; use an explicit `@GraphQlServer.Field` resolver when a
+field needs annotation-driven runtime behavior.
 
 Declarative resolver parameters can bind:
 
@@ -152,6 +155,8 @@ Declarative resolver parameters can bind:
 By default, generated GraphQL endpoints use `/graphql`, and the generated schema is available under
 `/graphql/schema.graphql`. You can override the listener, web context, and schema URI with `@GraphQlServer.Listener`,
 `@GraphQlServer.Context`, and `@GraphQlServer.SchemaUri`.
+Endpoints that share the same listener and web context are generated into one GraphQL route, so they must be in the same
+Java package, must declare the same endpoint-level request metadata annotations, and must not use conflicting schema URIs.
 
 == Configuration
 

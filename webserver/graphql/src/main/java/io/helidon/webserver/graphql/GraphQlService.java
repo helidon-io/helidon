@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.graphql;
 
+import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -41,6 +42,7 @@ import io.helidon.graphql.server.GraphQlConstants;
 import io.helidon.graphql.server.InvocationHandler;
 import io.helidon.json.JsonArray;
 import io.helidon.json.JsonBoolean;
+import io.helidon.json.JsonGenerator;
 import io.helidon.json.JsonNull;
 import io.helidon.json.JsonNumber;
 import io.helidon.json.JsonObject;
@@ -168,7 +170,7 @@ public class GraphQlService implements HttpService {
 
         res.headers().contentType(MediaTypes.APPLICATION_JSON);
         Map<String, Object> result = invocationHandler.execute(query, operationName, variables, requestContext(req));
-        res.send(toJsonObject(result).toString());
+        res.send(toJsonBytes(result));
     }
 
     private Map<String, Object> requestContext(ServerRequest req) {
@@ -244,38 +246,51 @@ public class GraphQlService implements HttpService {
         return value;
     }
 
-    private static JsonObject toJsonObject(Map<?, ?> map) {
-        JsonObject.Builder builder = JsonObject.builder();
-        map.forEach((key, value) -> builder.set(String.valueOf(key), toJsonValue(value)));
-        return builder.build();
+    private static byte[] toJsonBytes(Map<String, Object> result) {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        try (JsonGenerator generator = JsonGenerator.create(outputStream)) {
+            writeJsonObject(generator, result);
+        }
+        return outputStream.toByteArray();
     }
 
-    private static JsonValue toJsonValue(Object value) {
-        return switch (value) {
-        case null -> JsonNull.instance();
-        case JsonValue jsonValue -> jsonValue;
-        case String string -> JsonString.create(string);
-        case Character character -> JsonString.create(character.toString());
-        case Boolean bool -> JsonBoolean.create(bool);
-        case BigDecimal bigDecimal -> JsonNumber.create(bigDecimal);
-        case BigInteger bigInteger -> JsonNumber.create(new BigDecimal(bigInteger));
-        case Byte number -> JsonNumber.create(number.longValue());
-        case Short number -> JsonNumber.create(number.longValue());
-        case Integer number -> JsonNumber.create(number.longValue());
-        case Long number -> JsonNumber.create(number);
-        case Float number -> JsonNumber.create(number.doubleValue());
-        case Double number -> JsonNumber.create(number);
-        case Number number -> JsonNumber.create(new BigDecimal(number.toString()));
-        case Map<?, ?> map -> toJsonObject(map);
-        case Iterable<?> iterable -> toJsonArray(iterable);
+    private static void writeJsonObject(JsonGenerator generator, Map<?, ?> map) {
+        generator.writeObjectStart();
+        for (Map.Entry<?, ?> entry : map.entrySet()) {
+            generator.writeKey(String.valueOf(entry.getKey()));
+            writeJsonValue(generator, entry.getValue());
+        }
+        generator.writeObjectEnd();
+    }
+
+    private static void writeJsonArray(JsonGenerator generator, Iterable<?> iterable) {
+        generator.writeArrayStart();
+        for (Object value : iterable) {
+            writeJsonValue(generator, value);
+        }
+        generator.writeArrayEnd();
+    }
+
+    private static void writeJsonValue(JsonGenerator generator, Object value) {
+        switch (value) {
+        case null -> generator.writeNull();
+        case JsonValue jsonValue -> generator.write(jsonValue);
+        case String string -> generator.write(string);
+        case Character character -> generator.write(character);
+        case Boolean bool -> generator.write(bool);
+        case BigDecimal bigDecimal -> generator.write(bigDecimal);
+        case BigInteger bigInteger -> generator.write(bigInteger);
+        case Byte number -> generator.write(number);
+        case Short number -> generator.write(number);
+        case Integer number -> generator.write(number);
+        case Long number -> generator.write(number);
+        case Float number -> generator.write(number);
+        case Double number -> generator.write(number);
+        case Number number -> generator.write(new BigDecimal(number.toString()));
+        case Map<?, ?> map -> writeJsonObject(generator, map);
+        case Iterable<?> iterable -> writeJsonArray(generator, iterable);
         default -> throw new IllegalArgumentException("Unsupported GraphQL result type: " + value.getClass().getName());
-        };
-    }
-
-    private static JsonArray toJsonArray(Iterable<?> iterable) {
-        List<JsonValue> values = new ArrayList<>();
-        iterable.forEach(value -> values.add(toJsonValue(value)));
-        return JsonArray.create(values);
+        }
     }
 
     /**

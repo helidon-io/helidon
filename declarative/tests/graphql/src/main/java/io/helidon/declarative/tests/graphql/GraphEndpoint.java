@@ -106,6 +106,11 @@ class GraphEndpoint {
     }
 
     @GraphQl.Query
+    String structured(@GraphQl.Argument("value") StructuredValue value) {
+        return value == null ? "null" : StructuredValueScalar.describe(value.value());
+    }
+
+    @GraphQl.Query
     boolean contextAvailable(Context context,
                              ExecutionContext executionContext,
                              DataFetchingEnvironment environment) {

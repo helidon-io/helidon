@@ -73,15 +73,9 @@ import static io.helidon.codegen.CodegenUtil.toConstantName;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerAnnotations.hasNonNull;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerAnnotations.requestMetadataAnnotations;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerAnnotations.validateAutomaticFieldAnnotations;
-import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.COERCED_VARIABLES;
-import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.COERCING;
-import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.COERCING_PARSE_LITERAL_EXCEPTION;
-import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.COERCING_PARSE_VALUE_EXCEPTION;
-import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.COERCING_SERIALIZE_EXCEPTION;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.COMMON_CONTEXT;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.DATA_FETCHING_ENVIRONMENT;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_ARGUMENT;
-import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_CONTEXT;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_DEFAULT_VALUE;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_DESCRIPTION;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_ENTITY;
@@ -94,7 +88,6 @@ import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegen
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_QUERY;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_SCALAR;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_SCALAR_SPI;
-import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_SCALAR_TYPE;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_SCHEMA;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_SERVER_CONTEXT;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_SERVER_ENDPOINT;
@@ -103,7 +96,6 @@ import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegen
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_SERVER_SCHEMA_URI;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_SERVER_SOURCE;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_SERVICE;
-import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_VALUE;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.HTTP_ENTRY_POINTS;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.INVOCATION_HANDLER;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.RUNTIME_WIRING;
@@ -120,6 +112,7 @@ import static io.helidon.declarative.codegen.graphql.server.GraphQlServerInputVa
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerInputValues.enumInputTypes;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerInputValues.listInputTypes;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerInputValues.valueExpression;
+import static io.helidon.declarative.codegen.graphql.server.GraphQlServerScalarMethods.addScalarMethods;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerTypes.appendArguments;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerTypes.appendEnum;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerTypes.appendInput;
@@ -184,16 +177,22 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         String context = Annotations.findFirst(GRAPHQL_SERVER_CONTEXT, typeAnnotations)
                 .flatMap(Annotation::stringValue)
                 .filter(not(String::isBlank))
+                .map(GraphQlServerExtension::normalizePath)
                 .orElse(DEFAULT_CONTEXT);
         String schemaUri = Annotations.findFirst(GRAPHQL_SERVER_SCHEMA_URI, typeAnnotations)
                 .flatMap(Annotation::stringValue)
                 .filter(not(String::isBlank))
+                .map(GraphQlServerExtension::normalizePath)
                 .orElse(DEFAULT_SCHEMA_URI);
 
         return new EndpointDeclaration(typeInfo,
-                                       typeAnnotations,
-                                       new GroupKey(listener, context),
-                                       schemaUri);
+                                        typeAnnotations,
+                                        new GroupKey(listener, context),
+                                        schemaUri);
+    }
+
+    private static String normalizePath(String path) {
+        return path.startsWith("/") ? path : "/" + path;
     }
 
     private GraphQlGroup toGroup(RegistryRoundContext roundContext, List<EndpointDeclaration> declarations) {
@@ -1084,94 +1083,6 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                         "environment.getArgument(\"" + argument.graphQlName() + "\")");
     }
 
-    private void addScalarMethods(ClassModel.Builder classModel) {
-        classModel.addMethod(method -> method
-                .accessModifier(AccessModifier.PRIVATE)
-                .returnType(GRAPHQL_SCALAR_TYPE)
-                .name("graphQlScalar")
-                .addParameter(param -> param
-                        .type(TypeNames.STRING)
-                        .name("name"))
-                .addParameter(param -> param
-                        .type(TypeName.builder(TypeName.create(Class.class))
-                                      .addTypeArgument(TypeNames.WILDCARD)
-                                      .build())
-                        .name("type"))
-                .addContentLine("var matchingScalars = scalars.stream()")
-                .increaseContentPadding()
-                .addContentLine(".filter(scalar -> scalar.name().equals(name) && scalar.type().equals(type))")
-                .addContentLine(".toList();")
-                .decreaseContentPadding()
-                .addContentLine("if (matchingScalars.size() == 1) {")
-                .increaseContentPadding()
-                .addContentLine("return graphQlScalarType(matchingScalars.getFirst());")
-                .decreaseContentPadding()
-                .addContentLine("}")
-                .addContentLine("if (matchingScalars.isEmpty()) {")
-                .increaseContentPadding()
-                .addContentLine("throw new IllegalStateException(\"Missing GraphQL scalar provider for scalar '\"")
-                .increaseContentPadding()
-                .addContentLine("+ name + \"' and Java type '\" + type.getName() + \"'.\");")
-                .decreaseContentPadding()
-                .decreaseContentPadding()
-                .addContentLine("}")
-                .addContentLine("throw new IllegalStateException(\"Multiple GraphQL scalar providers found for scalar '\"")
-                .increaseContentPadding()
-                .addContentLine("+ name + \"' and Java type '\" + type.getName() + \"'.\");")
-                .decreaseContentPadding());
-
-        classModel.addMethod(method -> method
-                .accessModifier(AccessModifier.PRIVATE)
-                .isStatic(true)
-                .returnType(GRAPHQL_SCALAR_TYPE)
-                .name("graphQlScalarType")
-                .addParameter(param -> param
-                        .type(GRAPHQL_SCALAR_SPI)
-                        .name("scalar"))
-                .addContent("var builder = ")
-                .addContent(GRAPHQL_SCALAR_TYPE)
-                .addContentLine(".newScalar()")
-                .increaseContentPadding()
-                .addContentLine(".name(scalar.name())")
-                .addContent(".coercing(new ")
-                .addContent(COERCING)
-                .addContentLine("<Object, Object>() {")
-                .increaseContentPadding()
-                .update(this::addScalarCoercingMethods)
-                .decreaseContentPadding()
-                .addContentLine("});")
-                .decreaseContentPadding()
-                .addContentLine("if (!scalar.description().isBlank()) {")
-                .increaseContentPadding()
-                .addContentLine("builder.description(scalar.description());")
-                .decreaseContentPadding()
-                .addContentLine("}")
-                .addContentLine("return builder.build();"));
-
-        classModel.addMethod(method -> method
-                .accessModifier(AccessModifier.PRIVATE)
-                .isStatic(true)
-                .returnType(TypeNames.OBJECT)
-                .name("scalarLiteralValue")
-                .addParameter(param -> param
-                        .type(TypeName.builder(GRAPHQL_VALUE)
-                                      .addTypeArgument(TypeNames.WILDCARD)
-                                      .build())
-                        .name("value"))
-                .addContentLine("return switch (value) {")
-                .increaseContentPadding()
-                .addContentLine("case graphql.language.StringValue stringValue -> stringValue.getValue();")
-                .addContentLine("case graphql.language.IntValue intValue -> intValue.getValue();")
-                .addContentLine("case graphql.language.FloatValue floatValue -> floatValue.getValue();")
-                .addContentLine("case graphql.language.BooleanValue booleanValue -> booleanValue.isValue();")
-                .addContentLine("case graphql.language.EnumValue enumValue -> enumValue.getName();")
-                .addContent("default -> throw new ")
-                .addContent(COERCING_PARSE_LITERAL_EXCEPTION)
-                .addContentLine("(\"Unsupported GraphQL scalar literal: \" + value.getClass().getName());")
-                .decreaseContentPadding()
-                .addContentLine("};"));
-    }
-
     private void addContextParameterMethods(ClassModel.Builder classModel, List<Operation> operations) {
         boolean usesHelidonContext = usesParameter(operations, ResolverParameterKind.HELIDON_CONTEXT)
                 || usesParameter(operations, ResolverParameterKind.SECURITY_CONTEXT);
@@ -1246,83 +1157,6 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         return operations.stream()
                 .flatMap(operation -> operation.parameters().stream())
                 .anyMatch(parameter -> parameter.kind() == kind);
-    }
-
-    private void addScalarCoercingMethods(io.helidon.codegen.classmodel.Method.Builder method) {
-        method.addContentLine("@Override")
-                .addContent("public Object serialize(Object dataFetcherResult, ")
-                .addContent(GRAPHQL_CONTEXT)
-                .addContentLine(" graphQLContext, java.util.Locale locale) {")
-                .increaseContentPadding()
-                .addContentLine("try {")
-                .increaseContentPadding()
-                .addContentLine("return dataFetcherResult == null")
-                .increaseContentPadding()
-                .addContentLine("? null")
-                .addContentLine(": java.util.Objects.requireNonNull(scalar.serialize(dataFetcherResult));")
-                .decreaseContentPadding()
-                .decreaseContentPadding()
-                .addContentLine("} catch (RuntimeException e) {")
-                .increaseContentPadding()
-                .addContent("throw new ")
-                .addContent(COERCING_SERIALIZE_EXCEPTION)
-                .addContentLine("(\"Failed to serialize GraphQL scalar '\" + scalar.name() + \"'.\", e);")
-                .decreaseContentPadding()
-                .addContentLine("}")
-                .decreaseContentPadding()
-                .addContentLine("}")
-                .addContentLine()
-                .addContentLine("@Override")
-                .addContent("public Object parseValue(Object input, ")
-                .addContent(GRAPHQL_CONTEXT)
-                .addContentLine(" graphQLContext, java.util.Locale locale) {")
-                .increaseContentPadding()
-                .addContentLine("try {")
-                .increaseContentPadding()
-                .addContentLine("return input == null")
-                .increaseContentPadding()
-                .addContentLine("? null")
-                .addContentLine(": java.util.Objects.requireNonNull(scalar.parseValue(input));")
-                .decreaseContentPadding()
-                .decreaseContentPadding()
-                .addContentLine("} catch (RuntimeException e) {")
-                .increaseContentPadding()
-                .addContent("throw new ")
-                .addContent(COERCING_PARSE_VALUE_EXCEPTION)
-                .addContentLine("(\"Failed to parse GraphQL scalar '\" + scalar.name() + \"'.\", e);")
-                .decreaseContentPadding()
-                .addContentLine("}")
-                .decreaseContentPadding()
-                .addContentLine("}")
-                .addContentLine()
-                .addContentLine("@Override")
-                .addContent("public Object parseLiteral(")
-                .addContent(TypeName.builder(GRAPHQL_VALUE)
-                                    .addTypeArgument(TypeNames.WILDCARD)
-                                    .build())
-                .addContent(" input, ")
-                .addContent(COERCED_VARIABLES)
-                .addContent(" variables, ")
-                .addContent(GRAPHQL_CONTEXT)
-                .addContentLine(" graphQLContext, java.util.Locale locale) {")
-                .increaseContentPadding()
-                .addContentLine("try {")
-                .increaseContentPadding()
-                .addContentLine("return input == null")
-                .increaseContentPadding()
-                .addContentLine("? null")
-                .addContentLine(": java.util.Objects.requireNonNull(scalar.parseLiteral(scalarLiteralValue(input)));")
-                .decreaseContentPadding()
-                .decreaseContentPadding()
-                .addContentLine("} catch (RuntimeException e) {")
-                .increaseContentPadding()
-                .addContent("throw new ")
-                .addContent(COERCING_PARSE_LITERAL_EXCEPTION)
-                .addContentLine("(\"Failed to parse GraphQL scalar literal '\" + scalar.name() + \"'.\", e);")
-                .decreaseContentPadding()
-                .addContentLine("}")
-                .decreaseContentPadding()
-                .addContentLine("}");
     }
 
     private String schema(GraphQlGroup group) {
@@ -1841,9 +1675,10 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                                            typeInfo.originatingElementValue());
             }
             TypeName previous = graphQlNames.putIfAbsent(graphQlName, typeInfo.typeName());
-            if (previous != null && !previous.equals(typeInfo.typeName())) {
+            if (previous != null) {
                 throw new CodegenException("Duplicate GraphQL type name '" + graphQlName + "' for "
-                                                   + previous.fqName() + " and " + typeInfo.typeName().fqName() + ".",
+                                                   + previous.fqName() + " and " + typeInfo.typeName().fqName()
+                                                   + ". GraphQL output and input types share one schema namespace.",
                                            typeInfo.originatingElementValue());
             }
         }

@@ -56,7 +56,8 @@ public final class GraphQlEntryPoint {
          *        (DataFetchingEnvironment)}
          * @param environment GraphQL Java data fetching environment; the GraphQL context contains
          *        {@link ExecutionContext#HELIDON_CONTEXT_KEY} and {@link ExecutionContext#EXECUTION_CONTEXT_KEY}
-         * @return resolver result
+         * @return resolver result; follows GraphQL Java resolver semantics, so {@code null} is a valid result for nullable
+         *         GraphQL fields
          * @throws java.lang.Exception in case the invocation fails, or the interceptor needs to stop processing with an
          *         exception
          */
@@ -77,7 +78,8 @@ public final class GraphQlEntryPoint {
              * Invoke the next interceptor in the chain.
              *
              * @param environment GraphQL Java data fetching environment
-             * @return resolver result
+             * @return resolver result; follows GraphQL Java resolver semantics, so {@code null} is a valid result for nullable
+             *         GraphQL fields
              * @throws java.lang.Exception in case the invocation fails, this should not be handled by most interceptors
              */
             Object proceed(DataFetchingEnvironment environment) throws Exception;

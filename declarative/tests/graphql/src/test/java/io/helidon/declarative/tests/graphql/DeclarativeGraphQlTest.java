@@ -78,11 +78,13 @@ class DeclarativeGraphQlTest {
             assertThat(schema, containsString("statusName(status: BookStatus): String"));
             assertThat(schema, containsString("statusNames(statuses: [BookStatus]): String"));
             assertThat(schema, containsString("isbnValues(isbns: [ISBN]): String"));
+            assertThat(schema, containsString("structured(value: STRUCTURED): String"));
             assertThat(schema, containsString("contextAvailable: Boolean!"));
             assertThat(schema, containsString("securedMessage: String"));
             assertThat(schema, containsString("type Mutation"));
             assertThat(schema, containsString("update(enabled: Boolean!): Boolean!"));
             assertThat(schema, containsString("scalar ISBN"));
+            assertThat(schema, containsString("scalar STRUCTURED"));
             assertThat(schema, containsString("\"Book result\""));
             assertThat(schema, containsString("title: String!"));
             assertThat(schema, containsString("state: BookStatus"));
@@ -283,6 +285,29 @@ class DeclarativeGraphQlTest {
         assertThat(data.stringValue("literalStatus").orElseThrow(), is("OUT"));
         assertThat(data.stringValue("literalStatuses").orElseThrow(), is("[AVAILABLE, OUT]"));
         assertThat(data.stringValue("literalIsbns").orElseThrow(), is("[9780441172719]"));
+    }
+
+    @Test
+    void testStructuredScalarLiterals() {
+        JsonObject data = graphQl("""
+                                          {
+                                            "query": "query($value: STRUCTURED) { literalStructured: structured(value: {title: \\"Dune\\", tags: [\\"classic\\", null], details: {score: 5}}) variableStructured: structured(value: $value) nullStructured: structured(value: null) }",
+                                            "variables": {
+                                              "value": {
+                                                "title": "Dune",
+                                                "tags": ["classic", null],
+                                                "details": {
+                                                  "score": 5
+                                                }
+                                              }
+                                            }
+                                          }
+                                          """);
+
+        String expected = "{details={score=5}, tags=[classic, null], title=Dune}";
+        assertThat(data.stringValue("literalStructured").orElseThrow(), is(expected));
+        assertThat(data.stringValue("variableStructured").orElseThrow(), is(expected));
+        assertThat(data.stringValue("nullStructured").orElseThrow(), is("null"));
     }
 
     @Test

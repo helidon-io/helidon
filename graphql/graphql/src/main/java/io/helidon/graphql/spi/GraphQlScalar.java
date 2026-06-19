@@ -77,9 +77,11 @@ public interface GraphQlScalar {
     /**
      * Convert a GraphQL literal value to a Java value.
      * <p>
-     * GraphQL integrations handle {@code null} values before invoking this method.
+     * GraphQL integrations handle {@code null} values before invoking this method. String, integer, floating point,
+     * boolean, and enum literals are provided as scalar Java values. List literals are provided as {@link java.util.List}
+     * values and input object literals are provided as {@link java.util.Map} values.
      *
-     * @param value GraphQL literal value converted to a Java scalar value, never {@code null}
+     * @param value GraphQL literal value converted to a Java value, never {@code null}
      * @return Java value, never {@code null}
      */
     default Object parseLiteral(Object value) {

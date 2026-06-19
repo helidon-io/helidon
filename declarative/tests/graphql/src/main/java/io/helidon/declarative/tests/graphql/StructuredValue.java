@@ -14,15 +14,10 @@
  * limitations under the License.
  */
 
-/**
- * Shared GraphQL API types for Helidon client and server integrations.
- */
-module io.helidon.graphql {
+package io.helidon.declarative.tests.graphql;
 
-    requires io.helidon.common;
-    requires static io.helidon.service.registry;
+import io.helidon.graphql.GraphQl;
 
-    exports io.helidon.graphql;
-    exports io.helidon.graphql.spi;
-
+@GraphQl.Scalar("STRUCTURED")
+record StructuredValue(Object value) {
 }

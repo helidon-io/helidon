@@ -374,8 +374,12 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("new Coercing<Object, Object>()"));
         assertThat(generated, containsString("scalar.serialize(dataFetcherResult)"));
         assertThat(generated, containsString("scalar.parseValue(input)"));
-        assertThat(generated, containsString("scalar.parseLiteral(scalarLiteralValue(input))"));
+        assertThat(generated, containsString("Object literalValue = input == null ? null : "
+                                                     + "scalarLiteralValue(input, variables);"));
+        assertThat(generated, containsString("scalar.parseLiteral(literalValue)"));
         assertThat(generated, containsString("scalarLiteralValue("));
+        assertThat(generated, containsString("case graphql.language.ArrayValue arrayValue"));
+        assertThat(generated, containsString("case graphql.language.ObjectValue objectValue"));
         assertThat(generated, containsString("private static Object inputValue(Object value, Class<?> type, String graphQlType)"));
         assertThat(generated, containsString("if (type.isInstance(value))"));
         assertThat(generated, containsString("Expected GraphQL \" + graphQlType"));
@@ -652,6 +656,69 @@ class GraphQlServerCodegenTest {
     }
 
     @Test
+    void endpointsWithEquivalentRoutePathsShareGeneratedFeature() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-normalized-routes-v2"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        @GraphQlServer.Context("graphql")
+                        @GraphQlServer.SchemaUri("schema.graphql")
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            String hello() {
+                                return "hello";
+                            }
+                        }
+                        """)
+                .addSource("LibraryEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class LibraryEndpoint {
+                            @GraphQl.Query
+                            String library() {
+                                return "library";
+                            }
+                        }
+                        """)
+                .addSource("Main.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.GenerateBinding
+                        class Main {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        var generatedSources = Files.walk(result.sourceOutput())
+                .filter(it -> it.getFileName().toString().endsWith("__GraphQlFeature.java"))
+                .toList();
+        assertThat(generatedSources.size(), is(1));
+
+        String generated = Files.readString(generatedSources.getFirst(), StandardCharsets.UTF_8);
+        assertThat(generated, containsString(".webContext(\"/graphql\")"));
+        assertThat(generated, containsString(".schemaUri(\"/schema.graphql\")"));
+        assertThat(generated.split("routing.register", -1).length - 1, is(1));
+    }
+
+    @Test
     void endpointsWithDifferentContextsGenerateSeparateFeatures() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
@@ -756,6 +823,50 @@ class GraphQlServerCodegenTest {
         String diagnostics = String.join("\n", result.diagnostics());
         assertThat(diagnostics, result.success(), is(false));
         assertThat(diagnostics, containsString("Conflicting GraphQL schema URI"));
+    }
+
+    @Test
+    void outputAndInputTypeNameCollisionFailsCodegen() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-input-output-name-conflict"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            BookInput book() {
+                                return new BookInput("Dune");
+                            }
+
+                            @GraphQl.Query
+                            String search(BookInput criteria) {
+                                return criteria.title();
+                            }
+                        }
+                        """)
+                .addSource("BookInput.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Entity
+                        record BookInput(String title) {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("Duplicate GraphQL type name 'BookInput'"));
+        assertThat(diagnostics, containsString("GraphQL output and input types share one schema namespace"));
     }
 
     @Test
