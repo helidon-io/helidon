@@ -71,12 +71,16 @@ class DeclarativeGrpcTest {
     private static final String USERNAME = "tomas";
     private static final String ADMIN = "admin";
     private static final String USER = "user";
+    private static final String CLIENT_ATTEMPT_STARTED = "grpc.client.attempt.started";
     private static final char[] PASSWORD = "changeit".toCharArray();
 
     private final ManagedChannel channel;
     private final GreetingServiceGrpc.GreetingServiceBlockingStub blockingStub;
     private final GreetingServiceGrpc.GreetingServiceStub asyncStub;
     private final GreetingClient greetingClient;
+    private final ConfiguredGreetingClient configuredGreetingClient;
+    private final NamedRegistryGreetingClient namedRegistryGreetingClient;
+    private final DefaultRegistryGreetingClient defaultRegistryGreetingClient;
     private final TestSpanExporter exporter;
 
     @SetUpServer
@@ -84,13 +88,21 @@ class DeclarativeGrpcTest {
         builder.addFeature(GrpcReflectionFeature.builder().enabled(true).build());
     }
 
-    DeclarativeGrpcTest(WebServer server, TestTracerFactory tracerFactory, @GrpcClient.Client GreetingClient greetingClient) {
+    DeclarativeGrpcTest(WebServer server,
+                        TestTracerFactory tracerFactory,
+                        @GrpcClient.Client GreetingClient greetingClient,
+                        @GrpcClient.Client ConfiguredGreetingClient configuredGreetingClient,
+                        @GrpcClient.Client NamedRegistryGreetingClient namedRegistryGreetingClient,
+                        @GrpcClient.Client DefaultRegistryGreetingClient defaultRegistryGreetingClient) {
         this.channel = ManagedChannelBuilder.forAddress("localhost", server.port())
                 .usePlaintext()
                 .build();
         this.blockingStub = GreetingServiceGrpc.newBlockingStub(channel);
         this.asyncStub = GreetingServiceGrpc.newStub(channel);
         this.greetingClient = greetingClient;
+        this.configuredGreetingClient = configuredGreetingClient;
+        this.namedRegistryGreetingClient = namedRegistryGreetingClient;
+        this.defaultRegistryGreetingClient = defaultRegistryGreetingClient;
         this.exporter = tracerFactory.exporter();
     }
 
@@ -114,6 +126,31 @@ class DeclarativeGrpcTest {
         var response = greetingClient.greet(request("Declarative"));
 
         assertThat(response.getMessage(), is("Hello Declarative"));
+    }
+
+    @Test
+    void testDeclarativeClientUsesConfiguredGrpcClientBeforeRegistry() {
+        MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry();
+        long clientCounterBefore = clientAttemptStartedCount(meterRegistry);
+
+        var response = configuredGreetingClient.greet(request("Configured"));
+
+        assertThat(response.getMessage(), is("Hello Configured"));
+        assertThat(clientAttemptStartedCount(meterRegistry), is(clientCounterBefore + 1));
+    }
+
+    @Test
+    void testDeclarativeClientUsesNamedRegistryGrpcClient() {
+        var response = namedRegistryGreetingClient.greet(request("Named Registry"));
+
+        assertThat(response.getMessage(), is("Named registry: Named Registry"));
+    }
+
+    @Test
+    void testDeclarativeClientUsesDefaultRegistryGrpcClientBeforeFallback() {
+        var response = defaultRegistryGreetingClient.greet(request("Default Registry"));
+
+        assertThat(response.getMessage(), is("Default registry: Default Registry"));
     }
 
     @Test
@@ -433,6 +470,17 @@ class DeclarativeGrpcTest {
         return meterRegistry.timer(name, tags)
                 .map(Timer::count)
                 .orElse(0L);
+    }
+
+    private static long clientAttemptStartedCount(MeterRegistry meterRegistry) {
+        return meterRegistry.meters()
+                .stream()
+                .filter(Counter.class::isInstance)
+                .filter(it -> it.id().name().equals(CLIENT_ATTEMPT_STARTED))
+                .filter(it -> "GreetingService/Greet".equals(it.id().tagsMap().get("grpc.method")))
+                .map(Counter.class::cast)
+                .mapToLong(Counter::count)
+                .sum();
     }
 
     private static SpanData span(List<SpanData> spans, String name) {

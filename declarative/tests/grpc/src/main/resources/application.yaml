@@ -28,6 +28,13 @@ grpc:
     validation:
       enabled: true
 
+declarative:
+  grpc:
+    clients:
+      configured:
+        client:
+          enable-metrics: true
+
 security:
   providers:
     - abac:

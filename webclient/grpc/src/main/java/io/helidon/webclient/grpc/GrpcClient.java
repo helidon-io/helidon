@@ -141,26 +141,28 @@ public interface GrpcClient extends RuntimeType.Api<GrpcClientConfig> {
      *    <tr>
      *      <th>{@code client}</th>
      *      <th>&nbsp;</th>
-     *      <th>Backing {@link GrpcClient} configuration. Base URI is always overridden by {@link #value()}.</th>
+     *      <th>Backing {@link GrpcClient} configuration. The endpoint URI is applied after this configuration.</th>
      *    </tr>
      * </table>
      *
      * In case key {@code client} node exists under the configuration node of this API, a new client will be created for
-     * this instance (this always wins).
+     * this instance, using {@link #value()} as its base URI (this always wins).
      * In case the {@link #clientName()} is defined, and an instance of that name is available in registry, it will be
-     * used for this instance.
-     * Then we use an unnamed client instance from the registry (if any).
-     * The last resort is to create a new client that would be used for this API.
+     * used for this instance. If the named client is not available, a new client will be created with {@link #value()}
+     * as its base URI.
+     * When {@link #clientName()} is not defined, we use an unnamed client instance from the registry (if any).
+     * The last resort is to create a new client with {@link #value()} as its base URI.
      */
     @Target(ElementType.TYPE)
     @Retention(RetentionPolicy.CLASS)
     @Documented
     @interface Endpoint {
         /**
-         * Target URI of the gRPC endpoint.
+         * Target URI of the generated backing gRPC client.
          * <p>
          * Supports configuration references, such as {@code "http://localhost:${server.port}"}.
-         * This value overrides any base URI configured for the backing client.
+         * This value is used as the base URI when the generated client creates a backing {@link GrpcClient}.
+         * Registry-provided clients keep their own base URI.
          *
          * @return target URI
          */

@@ -80,6 +80,7 @@ The following features are currently implemented:
 - <<Dec-Config, Configuration>>
 - <<Dec-HTTP-Server, HTTP Server Endpoint>>
 - <<Dec-HTTP-Client, Typed HTTP Client>>
+- <<Dec-GRPC-Client, Typed gRPC Client>>
 - <<Dec-FT, Fault Tolerance>>
 - <<Dec-Scheduling, Scheduling>>
 - <<Dec-Validation, Validation>>
@@ -262,6 +263,62 @@ include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_3, indent=0]
 include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_20, indent=0]
 ----
 
+=== Typed gRPC Client [[Dec-GRPC-Client]]
+
+To create a typed gRPC client, create an interface annotated with `GrpcClient.Endpoint` and `Grpc.GrpcService`, and at
+least one method annotated with one of the gRPC method annotations.
+
+Annotations on endpoint type:
+
+- link:{grpc-client-javadoc-base-url}/io/helidon/webclient/grpc/GrpcClient.Endpoint.html[`io.helidon.webclient.grpc.GrpcClient.Endpoint`] - required annotation
+- link:{grpc-api-javadoc-base-url}/io/helidon/grpc/api/Grpc.GrpcService.html[`io.helidon.grpc.api.Grpc.GrpcService`] - gRPC service name
+
+Annotations on endpoint methods:
+
+- link:{grpc-api-javadoc-base-url}/io/helidon/grpc/api/Grpc.Unary.html[`io.helidon.grpc.api.Grpc.Unary`] - unary gRPC method
+- link:{grpc-api-javadoc-base-url}/io/helidon/grpc/api/Grpc.ServerStreaming.html[`io.helidon.grpc.api.Grpc.ServerStreaming`] - server-streaming gRPC method
+- link:{grpc-api-javadoc-base-url}/io/helidon/grpc/api/Grpc.ClientStreaming.html[`io.helidon.grpc.api.Grpc.ClientStreaming`] - client-streaming gRPC method
+- link:{grpc-api-javadoc-base-url}/io/helidon/grpc/api/Grpc.Bidirectional.html[`io.helidon.grpc.api.Grpc.Bidirectional`] - bidirectional streaming gRPC method
+
+To inject a typed gRPC client, use the annotated interface with the `@GrpcClient.Client` qualifier.
+
+[source,java]
+----
+@Service.Inject
+MyService(@GrpcClient.Client GreetingClient client) {
+}
+----
+
+The `GrpcClient.Endpoint.value()` defines the target URI for generated backing clients and supports configuration
+expressions, such as `${grpc.service.uri:http://localhost:8080}`. When declarative code generation creates a new
+backing `GrpcClient`, it applies this URI after any client configuration. Registry-provided clients keep their own
+base URI.
+
+The base of configuration for a declarative gRPC client is the fully qualified name of the annotated interface. This key
+can be modified using the `configKey` property of the `@GrpcClient.Endpoint` annotation.
+
+Configuration options under this key:
+
+[cols="1,1,3"]
+|===
+|Key |Default |Description
+
+|`client`
+|none
+|Configuration options of Helidon `GrpcClient`. If this node exists, the generated client creates a dedicated
+`GrpcClient` instance and does not use a registry-provided client.
+|===
+
+Client resolution order:
+
+1. If `<configKey>.client` exists, create a dedicated `GrpcClient` from that configuration and apply
+   `GrpcClient.Endpoint.value()` as its base URI.
+2. Otherwise, if `GrpcClient.Endpoint.clientName()` is set and a matching named `GrpcClient` exists in the service
+   registry, use that registry client.
+3. Otherwise, if `GrpcClient.Endpoint.clientName()` is set and no matching named `GrpcClient` exists, create a new
+   `GrpcClient` using the endpoint URI from `GrpcClient.Endpoint.value()`.
+4. Otherwise, if an unnamed `GrpcClient` exists in the service registry, use that registry client.
+5. Otherwise, create a new `GrpcClient` using the endpoint URI from `GrpcClient.Endpoint.value()`.
 
 === Fault Tolerance [[Dec-FT]]
 

@@ -26,7 +26,8 @@ import io.helidon.webclient.grpc.GrpcClient;
 /**
  * Typed declarative gRPC client for the greeting service.
  */
-@GrpcClient.Endpoint("http://localhost:${test.server.port}")
+@GrpcClient.Endpoint(value = ClientConfigGreetingClients.SERVER_URI,
+                     clientName = ClientConfigGreetingClients.MISSING_CLIENT)
 @Grpc.GrpcService("GreetingService")
 public interface GreetingClient {
     /**

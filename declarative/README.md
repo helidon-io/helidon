@@ -246,6 +246,63 @@ requests.
 
 The implementation uses constants wherever possible (header names, header values, media types etc.).
 
+## gRPC Declarative Client
+
+Defines a typed gRPC client API. Each method represents a gRPC method on the named service.
+
+### Declaration
+
+Declaration must be done on an interface.
+
+Annotations on type:
+
+- `@GrpcClient.Endpoint` - required annotation to generate a typed gRPC client
+- `@Grpc.GrpcService` - gRPC service name
+
+Annotations on the interface method(s):
+
+- `@Grpc.Unary` - unary gRPC method
+- `@Grpc.ServerStreaming` - server-streaming gRPC method
+- `@Grpc.ClientStreaming` - client-streaming gRPC method
+- `@Grpc.Bidirectional` - bidirectional streaming gRPC method
+
+To use a declarative gRPC client, inject the annotated interface using the `@GrpcClient.Client` qualifier:
+
+```java
+@Service.Inject
+MyClass(@GrpcClient.Client MyGrpcClient grpcClient) {
+}
+```
+
+### Configuration
+
+The `@GrpcClient.Endpoint.value()` property defines the target URI for generated backing clients and supports
+configuration expressions, such as `http://localhost:${test.server.port}`. Registry-provided clients keep their own
+base URI.
+
+The base of configuration for a declarative gRPC client is the fully qualified name of the annotated interface. This key
+can be modified using `configKey` property of the `@GrpcClient.Endpoint` annotation.
+
+There is one key that can be defined under this key:
+
+- `client` - configuration options of Helidon `GrpcClient`
+
+Client resolution order:
+
+1. If `<configKey>.client` exists, create a dedicated `GrpcClient` from that configuration and apply
+   `@GrpcClient.Endpoint.value()` as its base URI.
+2. Otherwise, if `@GrpcClient.Endpoint.clientName()` is defined and exists in the registry, use that named `GrpcClient`.
+3. Otherwise, if `@GrpcClient.Endpoint.clientName()` is defined and no matching named `GrpcClient` exists, create a new
+   `GrpcClient` using `@GrpcClient.Endpoint.value()`.
+4. Otherwise, if an unnamed `GrpcClient` exists in the registry, use it.
+5. Otherwise, create a new `GrpcClient` using `@GrpcClient.Endpoint.value()`.
+
+### Implementation
+
+A class named `AnnotatedInterfaceName__GrpcClient` will be generated for types annotated with `@GrpcClient.Endpoint`.
+This class will implement all of the interface methods, and it will use a configured or registry-provided instance of
+Helidon `GrpcClient` to invoke all requests.
+
 ## Scheduling
 
 Annotated method(s) of a service will be invoked with the schedule defined by the annotation.
