@@ -107,6 +107,7 @@ class GrpcServerExtension implements RegistryCodegenExtension {
     }
 
     private Optional<GrpcProtoMethod> findProtoMethod(TypeInfo serverEndpoint) {
+        List<TypedElementInfo> protoMethods = new ArrayList<>();
         for (TypedElementInfo method : serverEndpoint.elementInfo()) {
             if (!ElementInfoPredicates.isMethod(method) || ElementInfoPredicates.isPrivate(method)) {
                 continue;
@@ -115,23 +116,33 @@ class GrpcServerExtension implements RegistryCodegenExtension {
             if (Annotations.findFirst(GRPC_PROTO, annotations).isEmpty()) {
                 continue;
             }
-            if (!explicitGrpcMethodAnnotations(method).isEmpty()) {
-                throw new CodegenException("@Grpc.Proto method on "
-                                                   + serverEndpoint.typeName().fqName()
-                                                   + " must not declare a gRPC method annotation.",
-                                           method.originatingElementValue());
-            }
-            if (!method.parameterArguments().isEmpty() || !method.typeName().equals(PROTO_FILE_DESCRIPTOR)) {
-                throw new CodegenException("@Grpc.Proto method on "
-                                                   + serverEndpoint.typeName().fqName()
-                                                   + " must return "
-                                                   + PROTO_FILE_DESCRIPTOR.fqName()
-                                                   + " and have no parameters.",
-                                           method.originatingElementValue());
-            }
-            return Optional.of(new GrpcProtoMethod(method, ElementInfoPredicates.isStatic(method)));
+            protoMethods.add(method);
         }
-        return Optional.empty();
+        if (protoMethods.isEmpty()) {
+            return Optional.empty();
+        }
+        if (protoMethods.size() > 1) {
+            throw new CodegenException("Declarative gRPC service "
+                                               + serverEndpoint.typeName().fqName()
+                                               + " must declare exactly one @Grpc.Proto method.",
+                                       serverEndpoint.originatingElementValue());
+        }
+        TypedElementInfo method = protoMethods.getFirst();
+        if (!explicitGrpcMethodAnnotations(method).isEmpty()) {
+            throw new CodegenException("@Grpc.Proto method on "
+                                               + serverEndpoint.typeName().fqName()
+                                               + " must not declare a gRPC method annotation.",
+                                       method.originatingElementValue());
+        }
+        if (!method.parameterArguments().isEmpty() || !method.typeName().equals(PROTO_FILE_DESCRIPTOR)) {
+            throw new CodegenException("@Grpc.Proto method on "
+                                               + serverEndpoint.typeName().fqName()
+                                               + " must return "
+                                               + PROTO_FILE_DESCRIPTOR.fqName()
+                                               + " and have no parameters.",
+                                       method.originatingElementValue());
+        }
+        return Optional.of(new GrpcProtoMethod(method, ElementInfoPredicates.isStatic(method)));
     }
 
     private Optional<GrpcMethod> toGrpcMethod(TypeInfo serverEndpoint, TypedElementInfo method) {

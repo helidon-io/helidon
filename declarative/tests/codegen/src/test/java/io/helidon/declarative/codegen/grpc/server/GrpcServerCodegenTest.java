@@ -314,6 +314,30 @@ class GrpcServerCodegenTest {
     }
 
     @Test
+    void grpcServiceRejectsMultipleProtoMethods() {
+        var result = compileGrpcService("grpc-server-multiple-proto", """
+                @Grpc.Proto
+                Descriptors.FileDescriptor proto() {
+                    return null;
+                }
+
+                @Grpc.Proto
+                Descriptors.FileDescriptor duplicateProto() {
+                    return null;
+                }
+
+                @Grpc.Unary("SayHello")
+                GreetingReply sayHello(GreetingRequest request) {
+                    return new GreetingReply();
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "Declarative gRPC service com.example.GreetingGrpc "
+                                       + "must declare exactly one @Grpc.Proto method.");
+    }
+
+    @Test
     void grpcServiceRequiresGrpcMethod() {
         var result = compileGrpcService("grpc-server-no-methods", """
                 @Grpc.Proto
