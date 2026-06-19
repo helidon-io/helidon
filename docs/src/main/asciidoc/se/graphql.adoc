@@ -30,6 +30,7 @@ include::{rootdir}/includes/se.adoc[]
 - <<Overview, Overview>>
 - <<Maven Coordinates, Maven Coordinates>>
 - <<API, API>>
+- <<Declarative API, Declarative API>>
 - <<Configuration, Configuration>>
 - <<Examples, Examples>>
 - <<Additional Information, Additional Information>>
@@ -82,6 +83,73 @@ The following is a description of each of these steps:
 <2> Create a `DataFetcher` to return a list of hellos in different languages.
 <3> Wire up the `DataFetcher` s.
 <4> Generate the GraphQL schema.
+
+== Declarative API
+
+Helidon Declarative can generate the GraphQL schema, GraphQL Java runtime wiring, and WebServer registration from annotated
+Service Registry classes. Use declarative GraphQL when the schema should be derived from Java resolver methods and Java schema
+types at build time.
+
+Declarative GraphQL applications use the normal declarative application startup described in
+xref:injection/declarative.adoc#Overview[Helidon Declarative]. Add the GraphQL modules, WebServer, and Service Registry to
+your application:
+
+[source,xml]
+----
+<dependency>
+  <groupId>io.helidon.graphql</groupId>
+  <artifactId>helidon-graphql</artifactId>
+</dependency>
+<dependency>
+  <groupId>io.helidon.graphql</groupId>
+  <artifactId>helidon-graphql-server</artifactId>
+</dependency>
+<dependency>
+  <groupId>io.helidon.webserver</groupId>
+  <artifactId>helidon-webserver</artifactId>
+</dependency>
+<dependency>
+  <groupId>io.helidon.webserver</groupId>
+  <artifactId>helidon-webserver-graphql</artifactId>
+</dependency>
+<dependency>
+  <groupId>io.helidon.service</groupId>
+  <artifactId>helidon-service-registry</artifactId>
+</dependency>
+----
+
+Configure the Helidon annotation processors as described in xref:injection/declarative.adoc#Usage[Declarative Usage], then
+start the generated application binding:
+
+[source,java]
+----
+include::{sourcedir}/se/GraphQlSnippets.java[tag=snippet_3, indent=0]
+----
+
+Annotate a Service Registry singleton with `@GraphQlServer.Endpoint`. Resolver methods annotated with `@GraphQl.Query` and
+`@GraphQl.Mutation` become top-level GraphQL fields. Methods annotated with `@GraphQlServer.Field` become child field
+resolvers on generated object types.
+
+[source,java]
+----
+include::{sourcedir}/se/GraphQlSnippets.java[tag=snippet_4, indent=0]
+----
+
+Java classes, records, interfaces, and enums must be annotated with `@GraphQl.Entity` before they contribute SDL object, input,
+or enum definitions. Built-in GraphQL scalar types do not need this marker. Use `@GraphQl.Scalar` with a matching
+`GraphQlScalar` service for custom scalar Java types.
+
+Declarative resolver parameters can bind:
+
+- GraphQL arguments, using `@GraphQl.Argument` when the Java parameter name should not be used.
+- Child resolver source objects, using `@GraphQlServer.Source` when the source parameter cannot be inferred.
+- `graphql.schema.DataFetchingEnvironment`.
+- Helidon `Context`, GraphQL `ExecutionContext`, and `SecurityContext` propagated from the current request.
+- Custom resolver-only parameters through the GraphQL parameter codegen SPI.
+
+By default, generated GraphQL endpoints use `/graphql`, and the generated schema is available under
+`/graphql/schema.graphql`. You can override the listener, web context, and schema URI with `@GraphQlServer.Listener`,
+`@GraphQlServer.Context`, and `@GraphQlServer.SchemaUri`.
 
 == Configuration
 
