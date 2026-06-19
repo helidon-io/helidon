@@ -139,8 +139,9 @@ Java classes, records, interfaces, and enums must be annotated with `@GraphQl.En
 definitions. GraphQL input objects are generated from records annotated with `@GraphQl.Entity`. Built-in GraphQL scalar types
 do not need this marker. The initial declarative generator supports `String`, `int`/`Integer`, `double`/`Double`, and
 `boolean`/`Boolean` as built-in scalar Java types. A `List<T>` field or argument must declare exactly one concrete element
-type; wildcards and generic element variables are rejected. Other Java scalar types, such as `Long`, `Float`,
-`BigDecimal`, maps, or optional values, require `@GraphQl.Scalar` with a matching `GraphQlScalar` service.
+type; wildcards and generic element variables are rejected. Other domain scalar values require an application-owned Java type
+annotated with `@GraphQl.Scalar` and a matching `GraphQlScalar` service. JDK types such as `Long`, `Float`, and
+`BigDecimal`, container types such as maps, and optional values are not supported directly by the initial generator.
 Automatic entity fields support only GraphQL schema annotations; use an explicit `@GraphQlServer.Field` resolver when a
 field needs annotation-driven runtime behavior.
 Generated GraphQL names must match the GraphQL `Name` grammar, `[_A-Za-z][_0-9A-Za-z]*`, and must not start with `__`,
