@@ -22,10 +22,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import io.helidon.common.context.Context;
 import io.helidon.graphql.GraphQl;
 import io.helidon.graphql.server.ExecutionContext;
+import io.helidon.metrics.api.Metrics;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.abac.role.RoleValidator;
 import io.helidon.security.annotations.Authenticated;
 import io.helidon.security.annotations.Authorized;
+import io.helidon.tracing.Span;
+import io.helidon.tracing.Tracing;
 import io.helidon.validation.Validation;
 import io.helidon.webserver.graphql.GraphQlServer;
 
@@ -36,8 +39,15 @@ class GraphEndpoint {
     private final AtomicBoolean enabled = new AtomicBoolean();
 
     @GraphQl.Query
+    @Metrics.Counted(value = "graphql-metered-hello", absoluteName = true)
     String hello(@GraphQl.Argument("name") String name) {
         return "Hello " + name;
+    }
+
+    @GraphQl.Query
+    @Tracing.Traced(value = "graphql-traced-hello", kind = Span.Kind.SERVER)
+    String tracedHello(@GraphQl.Argument("name") @Tracing.ParamTag String name) {
+        return "Traced " + name;
     }
 
     @GraphQl.Query

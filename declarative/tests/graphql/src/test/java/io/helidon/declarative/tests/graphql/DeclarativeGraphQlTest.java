@@ -16,10 +16,14 @@
 
 package io.helidon.declarative.tests.graphql;
 
+import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Status;
 import io.helidon.json.JsonObject;
 import io.helidon.json.JsonValueType;
@@ -27,21 +31,27 @@ import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.testing.junit5.ServerTest;
 
+import io.opentelemetry.api.common.Attributes;
+import io.opentelemetry.api.trace.SpanKind;
+import io.opentelemetry.sdk.trace.data.SpanData;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @SuppressWarnings("helidon:api:preview")
 @ServerTest
 class DeclarativeGraphQlTest {
     private final Http1Client client;
+    private final TestSpanExporter spanExporter;
 
-    DeclarativeGraphQlTest(Http1Client client) {
+    DeclarativeGraphQlTest(Http1Client client, TestTracerFactory tracerFactory) {
         this.client = client;
+        this.spanExporter = tracerFactory.exporter();
     }
 
     @BeforeEach
@@ -58,6 +68,7 @@ class DeclarativeGraphQlTest {
 
             assertThat(schema, containsString("type Query"));
             assertThat(schema, containsString("hello(name: String): String"));
+            assertThat(schema, containsString("tracedHello(name: String): String"));
             assertThat(schema, containsString("catalogName: String"));
             assertThat(schema, containsString("validatedGreeting(name: String = \"Reader\"): String"));
             assertThat(schema, containsString("book: Book"));
@@ -120,6 +131,84 @@ class DeclarativeGraphQlTest {
                    hasItems(CatalogEndpoint.class.getName() + ".graphQlSchema()",
                             CatalogEndpoint.class.getName() + ".graphQlPost()",
                             CatalogEndpoint.class.getName() + ".graphQlGet()"));
+    }
+
+    @Test
+    void testResolverMetrics() {
+        int before = metricCount("graphql-metered-hello");
+
+        JsonObject data = graphQl("""
+                                          {
+                                            "query": "{ hello(name: \\"Metrics\\") }"
+                                          }
+                                          """);
+
+        assertThat(data.stringValue("hello").orElseThrow(), is("Hello Metrics"));
+        assertThat(metricCount("graphql-metered-hello"), is(before + 1));
+    }
+
+    private int metricCount(String name) {
+        try (Http1ClientResponse response = client.get("/observe/metrics")
+                .header(HeaderValues.ACCEPT_JSON)
+                .request()) {
+            assertThat(response.status(), is(Status.OK_200));
+            return response.as(JsonObject.class)
+                    .objectValue("application")
+                    .flatMap(it -> it.numberValue(name))
+                    .map(BigDecimal::intValue)
+                    .orElse(0);
+        }
+    }
+
+    @Test
+    void testResolverTracing() {
+        spanExporter.clear();
+
+        JsonObject data = graphQl("""
+                                          {
+                                            "query": "{ tracedHello(name: \\"Trace\\") }"
+                                          }
+                                          """);
+
+        assertThat(data.stringValue("tracedHello").orElseThrow(), is("Traced Trace"));
+
+        var spans = spanExporter.spanData("graphql-traced-hello");
+        spanExporter.clear();
+        SpanData httpRequest = null;
+        SpanData contentWrite = null;
+        SpanData tracedResolver = null;
+
+        for (SpanData span : spans) {
+            switch (span.getName()) {
+            case "HTTP Request":
+                httpRequest = span;
+                break;
+            case "content-write":
+                contentWrite = span;
+                break;
+            case "graphql-traced-hello":
+                tracedResolver = span;
+                break;
+            default:
+                break;
+            }
+        }
+
+        Set<String> names = spans.stream()
+                .map(SpanData::getName)
+                .collect(Collectors.toSet());
+        assertThat("Found names: " + names + ", missing HTTP request span", httpRequest, notNullValue());
+        assertThat("Found names: " + names + ", missing content write span", contentWrite, notNullValue());
+        assertThat("Found names: " + names + ", missing GraphQL resolver span", tracedResolver, notNullValue());
+
+        String traceId = httpRequest.getTraceId();
+        String parentSpanId = httpRequest.getSpanId();
+        assertThat(contentWrite.getTraceId(), is(traceId));
+        assertThat(contentWrite.getParentSpanId(), is(parentSpanId));
+        assertThat(tracedResolver.getTraceId(), is(traceId));
+        assertThat(tracedResolver.getParentSpanId(), is(parentSpanId));
+        assertThat(tracedResolver.getKind(), is(SpanKind.SERVER));
+        assertAttribute(tracedResolver.getAttributes(), "name", "Trace");
     }
 
     @Test
@@ -327,5 +416,16 @@ class DeclarativeGraphQlTest {
     private static String basic(String username, String password) {
         String credentials = username + ":" + password;
         return "Basic " + Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8));
+    }
+
+    private static void assertAttribute(Attributes attributes, String key, String value) {
+        var found = attributes.asMap().entrySet()
+                .stream()
+                .filter(entry -> entry.getKey().getKey().equals(key))
+                .filter(entry -> entry.getValue().equals(value))
+                .findAny();
+        assertThat("Expected to find " + key + "=" + value + ", but got: " + attributes,
+                   found.isPresent(),
+                   is(true));
     }
 }
