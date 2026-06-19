@@ -16,6 +16,8 @@
 
 syntax = "proto3";
 
+package io.helidon.declarative.tests.grpc;
+
 option java_package = "io.helidon.declarative.tests.grpc";
 option java_outer_classname = "DeclarativeGrpcProto";
 
@@ -29,6 +31,7 @@ service GreetingService {
   rpc PermitAllGreet (GreetingRequest) returns (GreetingReply) {}
   rpc DenyAllGreet (GreetingRequest) returns (GreetingReply) {}
   rpc RoleValidatorGreet (GreetingRequest) returns (GreetingReply) {}
+  rpc ScopeGreet (GreetingRequest) returns (GreetingReply) {}
   rpc AuditedGreet (GreetingRequest) returns (GreetingReply) {}
   rpc Split (GreetingRequest) returns (stream GreetingReply) {}
   rpc Join (stream GreetingRequest) returns (GreetingReply) {}

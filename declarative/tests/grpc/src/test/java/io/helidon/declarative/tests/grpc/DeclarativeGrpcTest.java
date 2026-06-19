@@ -185,9 +185,10 @@ class DeclarativeGrpcTest {
         MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry();
         List<Tag> methodTags = List.of(Tag.create("transport", "grpc"), Tag.create("scope", "application"));
         List<Tag> methodTimerTags = List.of(Tag.create("scope", "application"));
-        List<Tag> grpcMethodTags = List.of(Tag.create("grpc.method", "GreetingService/Greet"),
+        String grpcGreetMethod = ClientConfigGreetingClients.SERVICE_NAME + "/Greet";
+        List<Tag> grpcMethodTags = List.of(Tag.create("grpc.method", grpcGreetMethod),
                                            Tag.create("scope", "vendor"));
-        List<Tag> grpcDurationTags = List.of(Tag.create("grpc.method", "GreetingService/Greet"),
+        List<Tag> grpcDurationTags = List.of(Tag.create("grpc.method", grpcGreetMethod),
                                              Tag.create("grpc.status", "OK"),
                                              Tag.create("scope", "vendor"));
         long methodCounterBefore = counterCount(meterRegistry, "GreetingEndpoint.greet", methodTags);
@@ -213,7 +214,7 @@ class DeclarativeGrpcTest {
         assertThat(response.getMessage(), is("Hello Tracing"));
         var spans = exporter.spanData(2);
         exporter.clear();
-        SpanData grpcSpan = span(spans, "GreetingService/Greet");
+        SpanData grpcSpan = span(spans, grpcGreetMethod());
         SpanData methodSpan = span(spans, "grpc-greet-method");
 
         assertThat("gRPC span", grpcSpan, notNullValue());
@@ -234,9 +235,11 @@ class DeclarativeGrpcTest {
                 .stream()
                 .map(ServiceResponse::getName)
                 .collect(Collectors.toSet());
-        assertThat(serviceNames.toString(), serviceNames.contains("GreetingService"), is(true));
+        assertThat(serviceNames.toString(), serviceNames.contains(ClientConfigGreetingClients.SERVICE_NAME), is(true));
 
-        for (String symbol : List.of("GreetingService", "GreetingService.Greet", "GreetingRequest")) {
+        for (String symbol : List.of(ClientConfigGreetingClients.SERVICE_NAME,
+                                     ClientConfigGreetingClients.SERVICE_NAME + ".Greet",
+                                     "io.helidon.declarative.tests.grpc.GreetingRequest")) {
             ServerReflectionResponse response = reflectionResponse(ServerReflectionRequest.newBuilder()
                                                                          .setFileContainingSymbol(symbol)
                                                                          .build());
@@ -251,6 +254,7 @@ class DeclarativeGrpcTest {
         DescriptorProtos.FileDescriptorProto descriptor =
                 DescriptorProtos.FileDescriptorProto.parseFrom(fileResponse.getFileDescriptorProto(0));
         assertThat(descriptor.getName(), is("greeting.proto"));
+        assertThat(descriptor.getPackage(), is("io.helidon.declarative.tests.grpc"));
         assertThat(descriptor.getService(0).getName(), is("GreetingService"));
     }
 
@@ -352,6 +356,19 @@ class DeclarativeGrpcTest {
                 .roleValidatorGreet(request);
 
         assertThat(response.getMessage(), is("Hello Tomas"));
+    }
+
+    @Test
+    void testScopeProtectedUnary() {
+        var request = request("Tomas");
+
+        var unauthenticated = assertThrows(StatusRuntimeException.class,
+                                           () -> blockingStub.scopeGreet(request));
+        assertThat(unauthenticated.getStatus().getCode(), is(Code.UNAUTHENTICATED));
+
+        var missingScope = assertThrows(StatusRuntimeException.class,
+                                        () -> authenticatedBlockingStub(ADMIN).scopeGreet(request));
+        assertThat(missingScope.getStatus().getCode(), is(Code.PERMISSION_DENIED));
     }
 
     @Test
@@ -477,10 +494,14 @@ class DeclarativeGrpcTest {
                 .stream()
                 .filter(Counter.class::isInstance)
                 .filter(it -> it.id().name().equals(CLIENT_ATTEMPT_STARTED))
-                .filter(it -> "GreetingService/Greet".equals(it.id().tagsMap().get("grpc.method")))
+                .filter(it -> grpcGreetMethod().equals(it.id().tagsMap().get("grpc.method")))
                 .map(Counter.class::cast)
                 .mapToLong(Counter::count)
                 .sum();
+    }
+
+    private static String grpcGreetMethod() {
+        return ClientConfigGreetingClients.SERVICE_NAME + "/Greet";
     }
 
     private static SpanData span(List<SpanData> spans, String name) {

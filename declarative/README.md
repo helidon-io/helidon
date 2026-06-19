@@ -257,7 +257,7 @@ Declaration must be done on an interface.
 Annotations on type:
 
 - `@GrpcClient.Endpoint` - required annotation to generate a typed gRPC client
-- `@Grpc.GrpcService` - gRPC service name
+- `@Grpc.GrpcService` - gRPC service name; use the fully-qualified service name when the proto declares a package
 
 Annotations on the interface method(s):
 

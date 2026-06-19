@@ -42,6 +42,7 @@ import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_ME
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_PROTO;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_SERVICE;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.PROTO_FILE_DESCRIPTOR;
+import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.SECURITY_ABAC_ANNOTATION;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.SECURITY_AUDITED;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.SECURITY_AUTHENTICATED;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.SECURITY_AUTHORIZED;
@@ -269,6 +270,8 @@ class GrpcServerExtension implements RegistryCodegenExtension {
                 hasRoleValidatorRoles = true;
             }
         }
+        boolean hasAbacAnnotation = annotations.stream()
+                .anyMatch(it -> it.hasMetaAnnotation(SECURITY_ABAC_ANNOTATION));
 
         if (authorized.flatMap(it -> it.booleanValue("explicit")).orElse(false)) {
             throw new CodegenException("Declarative gRPC does not support @Authorized(explicit = true): " + target,
@@ -283,6 +286,7 @@ class GrpcServerExtension implements RegistryCodegenExtension {
                 || hasDenyAll
                 || hasPermitAll
                 || hasRoleValidatorRoles
+                || hasAbacAnnotation
                 || !rolesAllowed.isEmpty();
 
         if (!securityLevel) {
@@ -295,7 +299,7 @@ class GrpcServerExtension implements RegistryCodegenExtension {
         if (hasDenyAll || hasPermitAll) {
             authenticate = Optional.of(false);
             authorize = Optional.of(true);
-        } else if (hasRoleValidatorRoles) {
+        } else if (hasRoleValidatorRoles || hasAbacAnnotation) {
             if (authenticate.isEmpty()) {
                 authenticate = Optional.of(true);
             }

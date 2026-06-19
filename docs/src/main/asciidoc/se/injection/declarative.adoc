@@ -271,7 +271,7 @@ least one method annotated with one of the gRPC method annotations.
 Annotations on endpoint type:
 
 - link:{grpc-client-javadoc-base-url}/io/helidon/webclient/grpc/GrpcClient.Endpoint.html[`io.helidon.webclient.grpc.GrpcClient.Endpoint`] - required annotation
-- link:{grpc-api-javadoc-base-url}/io/helidon/grpc/api/Grpc.GrpcService.html[`io.helidon.grpc.api.Grpc.GrpcService`] - gRPC service name
+- link:{grpc-api-javadoc-base-url}/io/helidon/grpc/api/Grpc.GrpcService.html[`io.helidon.grpc.api.Grpc.GrpcService`] - gRPC service name; use the fully-qualified service name when the proto declares a package
 
 Annotations on endpoint methods:
 

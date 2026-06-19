@@ -27,6 +27,7 @@ import io.helidon.declarative.tests.grpc.DeclarativeGrpcProto.GreetingRequest;
 import io.helidon.grpc.api.Grpc;
 import io.helidon.metrics.api.Metrics;
 import io.helidon.security.abac.role.RoleValidator;
+import io.helidon.security.abac.scope.ScopeValidator;
 import io.helidon.security.annotations.Authenticated;
 import io.helidon.security.annotations.Audited;
 import io.helidon.security.annotations.Authorized;
@@ -41,7 +42,7 @@ import jakarta.annotation.security.DenyAll;
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 
-@Grpc.GrpcService("GreetingService")
+@Grpc.GrpcService(ClientConfigGreetingClients.SERVICE_NAME)
 @Service.Singleton
 class GreetingEndpoint {
     @Grpc.Proto
@@ -104,6 +105,12 @@ class GreetingEndpoint {
     @Grpc.Unary("RoleValidatorGreet")
     @RoleValidator.Roles("admin")
     GreetingReply roleValidatorGreet(GreetingRequest request) {
+        return reply(request.getName());
+    }
+
+    @Grpc.Unary("ScopeGreet")
+    @ScopeValidator.Scope("admin")
+    GreetingReply scopeGreet(GreetingRequest request) {
         return reply(request.getName());
     }
 

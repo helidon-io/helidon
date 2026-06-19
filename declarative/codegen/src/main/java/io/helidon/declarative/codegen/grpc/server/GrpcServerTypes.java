@@ -34,6 +34,8 @@ final class GrpcServerTypes {
     static final TypeName SECURITY_PERMIT_ALL = TypeName.create("jakarta.annotation.security.PermitAll");
     static final TypeName SECURITY_ROLE_PERMIT_ALL =
             TypeName.create("io.helidon.security.abac.role.RoleValidator.PermitAll");
+    static final TypeName SECURITY_ABAC_ANNOTATION =
+            TypeName.create("io.helidon.security.providers.abac.AbacAnnotation");
     static final TypeName SECURITY_ROLES = TypeName.create("io.helidon.security.abac.role.RoleValidator.Roles");
     static final TypeName SECURITY_ROLES_CONTAINER =
             TypeName.create("io.helidon.security.abac.role.RoleValidator.RolesContainer");

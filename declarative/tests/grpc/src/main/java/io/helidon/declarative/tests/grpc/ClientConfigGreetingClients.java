@@ -30,6 +30,7 @@ import io.helidon.webserver.grpc.GrpcRouting;
 import io.grpc.stub.StreamObserver;
 
 final class ClientConfigGreetingClients {
+    static final String SERVICE_NAME = "io.helidon.declarative.tests.grpc.GreetingService";
     static final String CONFIG_KEY = "declarative.grpc.clients.configured";
     static final String SERVER_URI = "http://localhost:${test.server.port}";
     static final String INVALID_URI = "http://localhost:1";
@@ -44,7 +45,7 @@ final class ClientConfigGreetingClients {
 @GrpcClient.Endpoint(value = ClientConfigGreetingClients.SERVER_URI,
                      configKey = ClientConfigGreetingClients.CONFIG_KEY,
                      clientName = ClientConfigGreetingClients.BROKEN_CLIENT)
-@Grpc.GrpcService("GreetingService")
+@Grpc.GrpcService(ClientConfigGreetingClients.SERVICE_NAME)
 interface ConfiguredGreetingClient {
     @Grpc.Unary("Greet")
     GreetingReply greet(GreetingRequest request);
@@ -52,14 +53,14 @@ interface ConfiguredGreetingClient {
 
 @GrpcClient.Endpoint(value = ClientConfigGreetingClients.INVALID_URI,
                      clientName = ClientConfigGreetingClients.NAMED_CLIENT)
-@Grpc.GrpcService("GreetingService")
+@Grpc.GrpcService(ClientConfigGreetingClients.SERVICE_NAME)
 interface NamedRegistryGreetingClient {
     @Grpc.Unary("Greet")
     GreetingReply greet(GreetingRequest request);
 }
 
 @GrpcClient.Endpoint(ClientConfigGreetingClients.INVALID_URI)
-@Grpc.GrpcService("GreetingService")
+@Grpc.GrpcService(ClientConfigGreetingClients.SERVICE_NAME)
 interface DefaultRegistryGreetingClient {
     @Grpc.Unary("Greet")
     GreetingReply greet(GreetingRequest request);
@@ -104,7 +105,7 @@ class TestGrpcClientFactory implements Service.ServicesFactory<GrpcClient> {
         return WebServer.builder()
                 .addRouting(GrpcRouting.builder()
                                     .unary(DeclarativeGrpcProto.getDescriptor(),
-                                           "GreetingService",
+                                           ClientConfigGreetingClients.SERVICE_NAME,
                                            "Greet",
                                            (GreetingRequest request, StreamObserver<GreetingReply> observer) -> {
                                                observer.onNext(GreetingReply.newBuilder()

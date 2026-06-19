@@ -21,9 +21,11 @@ import java.util.NoSuchElementException;
 import java.util.function.Supplier;
 
 import io.helidon.config.Config;
+import io.helidon.service.registry.Service;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.spi.ServerFeature;
 
+@Service.Singleton
 class GrpcServerFeature implements ServerFeature {
     private static final String TYPE = "grpc-route-registration";
     private static final System.Logger LOGGER = System.getLogger(GrpcServerFeature.class.getName());
@@ -32,7 +34,7 @@ class GrpcServerFeature implements ServerFeature {
     private final boolean enabled;
 
     GrpcServerFeature(Config config, Supplier<List<GrpcRouteRegistration>> routes) {
-        this.enabled = config.get("enabled").asBoolean().orElse(true);
+        this.enabled = config.get("server.features." + TYPE + ".enabled").asBoolean().orElse(true);
         this.routes = routes;
     }
 

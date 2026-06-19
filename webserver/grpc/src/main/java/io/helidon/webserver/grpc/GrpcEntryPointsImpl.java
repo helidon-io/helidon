@@ -41,6 +41,7 @@ import io.grpc.Status;
 @SuppressWarnings("deprecation")
 @Service.Singleton
 class GrpcEntryPointsImpl implements GrpcEntryPoint.EntryPoints {
+    private static final System.Logger LOGGER = System.getLogger(GrpcEntryPointsImpl.class.getName());
     private static final ServerInterceptor NOOP = new NoopServerInterceptor();
 
     private final boolean noInterceptors;
@@ -134,7 +135,8 @@ class GrpcEntryPointsImpl implements GrpcEntryPoint.EntryPoints {
             } catch (RuntimeException e) {
                 throw e;
             } catch (Exception e) {
-                call.close(Status.INTERNAL.withCause(e).withDescription(e.getMessage()), new Metadata());
+                LOGGER.log(System.Logger.Level.DEBUG, "gRPC entry point interceptor failed", e);
+                call.close(Status.INTERNAL.withCause(e), new Metadata());
                 return new ServerCall.Listener<>() {
                 };
             }

@@ -681,7 +681,12 @@ public class GrpcServiceDescriptor {
             }
 
             // find service and method
-            Descriptors.ServiceDescriptor svc = proto.findServiceByName(name);
+            String serviceName = name;
+            String protoPackage = proto.getPackage();
+            if (!protoPackage.isEmpty() && serviceName.startsWith(protoPackage + ".")) {
+                serviceName = serviceName.substring(protoPackage.length() + 1);
+            }
+            Descriptors.ServiceDescriptor svc = proto.findServiceByName(serviceName);
             if (svc == null) {
                 throw new IllegalArgumentException("Unable to find service " + name);
             }

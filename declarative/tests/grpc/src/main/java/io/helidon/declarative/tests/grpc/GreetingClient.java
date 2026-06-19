@@ -28,7 +28,7 @@ import io.helidon.webclient.grpc.GrpcClient;
  */
 @GrpcClient.Endpoint(value = ClientConfigGreetingClients.SERVER_URI,
                      clientName = ClientConfigGreetingClients.MISSING_CLIENT)
-@Grpc.GrpcService("GreetingService")
+@Grpc.GrpcService(ClientConfigGreetingClients.SERVICE_NAME)
 public interface GreetingClient {
     /**
      * Invoke the unary greeting RPC.

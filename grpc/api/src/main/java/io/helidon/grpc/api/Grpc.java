@@ -34,6 +34,10 @@ public interface Grpc {
 
     /**
      * An annotation used to mark a class as representing a gRPC service.
+     * <p>
+     * The value is the gRPC service name used on the wire. If the proto file declares
+     * a {@code package}, use the fully-qualified service name, such as
+     * {@code example.greeter.GreetingService}.
      */
     @Target({ElementType.TYPE, ElementType.FIELD, ElementType.CONSTRUCTOR})
     @Retention(RetentionPolicy.RUNTIME)
