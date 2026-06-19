@@ -30,7 +30,7 @@ include::{rootdir}/includes/se.adoc[]
 - <<Overview, Overview>>
 - <<Maven Coordinates, Maven Coordinates>>
 - <<API, API>>
-- <<Declarative API, Declarative API>>
+- <<GraphQL-Declarative-API, Declarative API>>
 - <<Configuration, Configuration>>
 - <<Examples, Examples>>
 - <<Additional Information, Additional Information>>
@@ -84,7 +84,7 @@ The following is a description of each of these steps:
 <3> Wire up the `DataFetcher` s.
 <4> Generate the GraphQL schema.
 
-== Declarative API
+== Declarative API [[GraphQL-Declarative-API]]
 
 Helidon Declarative can generate the GraphQL schema, GraphQL Java runtime wiring, and WebServer registration from annotated
 Service Registry classes. Use declarative GraphQL when the schema should be derived from Java resolver methods and Java schema

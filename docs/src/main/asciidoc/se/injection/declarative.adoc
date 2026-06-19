@@ -99,6 +99,7 @@ The following features are currently implemented:
 - <<Dec-Tracing, Tracing>>
 - <<Dec-WebSocket-Server, WebSocket Server>>
 - <<Dec-WebSocket-Client, WebSocket Client>>
+- <<Dec-GraphQL-Server, GraphQL Server>>
 - <<Dec-CORS, WebServer CORS>>
 - <<Dec-Health, Health Checks>>
 
@@ -869,6 +870,51 @@ include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_16, indent=0]
 ----
 include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_17, indent=0]
 ----
+
+=== GraphQL Server [[Dec-GraphQL-Server]]
+
+To create a GraphQL endpoint, annotate a class with `@GraphQlServer.Endpoint`, add at least one method annotated with
+`@GraphQl.Query`, and annotate Java schema types with `@GraphQl.Entity`. Declarative GraphQL generates the SDL, GraphQL
+Java runtime wiring, and WebServer registration at build time.
+
+Supported method parameters (no annotation required):
+
+- `graphql.schema.DataFetchingEnvironment`
+- link:{context-javadoc-base-url}/io/helidon/common/context/Context.html[`io.helidon.common.context.Context`]
+- link:{javadoc-base-url}/io.helidon.graphql.server/io/helidon/graphql/server/ExecutionContext.html[`io.helidon.graphql.server.ExecutionContext`]
+- link:{security-javadoc-base-url}/io/helidon/security/SecurityContext.html[`io.helidon.security.SecurityContext`] - in case `helidon-security` module is on the classpath
+
+Annotations on endpoint type:
+
+- link:{javadoc-base-url}/io.helidon.webserver.graphql/io/helidon/webserver/graphql/GraphQlServer.Endpoint.html[`io.helidon.webserver.graphql.GraphQlServer.Endpoint`] - required annotation
+- link:{javadoc-base-url}/io.helidon.webserver.graphql/io/helidon/webserver/graphql/GraphQlServer.Listener.html[`io.helidon.webserver.graphql.GraphQlServer.Listener`] - to define the named listener this should be served on (named port/socket)
+- link:{javadoc-base-url}/io.helidon.webserver.graphql/io/helidon/webserver/graphql/GraphQlServer.Context.html[`io.helidon.webserver.graphql.GraphQlServer.Context`] - GraphQL web context, defaults to `/graphql`
+- link:{javadoc-base-url}/io.helidon.webserver.graphql/io/helidon/webserver/graphql/GraphQlServer.SchemaUri.html[`io.helidon.webserver.graphql.GraphQlServer.SchemaUri`] - schema endpoint URI under the GraphQL web context
+
+Annotations on resolver methods:
+
+- link:{javadoc-base-url}/io.helidon.graphql/io/helidon/graphql/GraphQl.Query.html[`io.helidon.graphql.GraphQl.Query`] - top-level query field
+- link:{javadoc-base-url}/io.helidon.graphql/io/helidon/graphql/GraphQl.Mutation.html[`io.helidon.graphql.GraphQl.Mutation`] - top-level mutation field
+- link:{javadoc-base-url}/io.helidon.webserver.graphql/io/helidon/webserver/graphql/GraphQlServer.Field.html[`io.helidon.webserver.graphql.GraphQlServer.Field`] - child field resolver
+
+Annotations on schema types, fields, and resolver parameters:
+
+- link:{javadoc-base-url}/io.helidon.graphql/io/helidon/graphql/GraphQl.Entity.html[`io.helidon.graphql.GraphQl.Entity`] - required marker for Java classes, records, interfaces, and enums that contribute SDL
+- link:{javadoc-base-url}/io.helidon.graphql/io/helidon/graphql/GraphQl.Argument.html[`io.helidon.graphql.GraphQl.Argument`] - GraphQL argument name
+- link:{javadoc-base-url}/io.helidon.graphql/io/helidon/graphql/GraphQl.Name.html[`io.helidon.graphql.GraphQl.Name`] - GraphQL name override
+- link:{javadoc-base-url}/io.helidon.graphql/io/helidon/graphql/GraphQl.Description.html[`io.helidon.graphql.GraphQl.Description`] - GraphQL description
+- link:{javadoc-base-url}/io.helidon.graphql/io/helidon/graphql/GraphQl.DefaultValue.html[`io.helidon.graphql.GraphQl.DefaultValue`] - GraphQL default value literal for an argument
+- link:{javadoc-base-url}/io.helidon.graphql/io/helidon/graphql/GraphQl.NonNull.html[`io.helidon.graphql.GraphQl.NonNull`] - non-null schema element
+- link:{javadoc-base-url}/io.helidon.graphql/io/helidon/graphql/GraphQl.Ignore.html[`io.helidon.graphql.GraphQl.Ignore`] - exclude a Java member from SDL
+- link:{javadoc-base-url}/io.helidon.graphql/io/helidon/graphql/GraphQl.Scalar.html[`io.helidon.graphql.GraphQl.Scalar`] - custom scalar Java type
+- link:{javadoc-base-url}/io.helidon.webserver.graphql/io/helidon/webserver/graphql/GraphQlServer.Source.html[`io.helidon.webserver.graphql.GraphQlServer.Source`] - child resolver source object
+
+GraphQL resolver methods are Service Registry entry points. Standard declarative entry-point features, including security
+annotations and validation interceptors, can participate in resolver invocation. The generated WebServer route is also
+wrapped as an HTTP entry point for route-level security.
+
+See xref:../graphql.adoc#GraphQL-Declarative-API[GraphQL Declarative API] for dependencies, startup, examples, custom scalars,
+and resolver parameter extension points.
 
 === WebServer CORS [[Dec-CORS]]
 
