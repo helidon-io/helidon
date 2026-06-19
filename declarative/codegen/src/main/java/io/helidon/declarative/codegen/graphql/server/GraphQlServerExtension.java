@@ -346,6 +346,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                                method.originatingElementValue());
 
         List<ResolverParameter> parameters = resolverParameters(schemaTypes, endpoint, method, kind, Optional.empty());
+        validateArgumentNames(endpoint, method, kind, graphQlName, parameters);
 
         Operation operation = new Operation(kind,
                                             endpoint,
@@ -379,6 +380,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         String schemaType = schemaTypes.outputType(method.typeName(),
                                                    method.typeName().primitive() || hasNonNull(annotations),
                                                    method.originatingElementValue());
+        validateArgumentNames(endpoint, method, OperationKind.FIELD, graphQlName, parameters);
 
         Operation operation = new Operation(OperationKind.FIELD,
                                             endpoint,
@@ -457,6 +459,28 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                                             ResolverParameterKind.ARGUMENT));
         }
         return List.copyOf(result);
+    }
+
+    private static void validateArgumentNames(TypeInfo endpoint,
+                                              TypedElementInfo method,
+                                              OperationKind kind,
+                                              String fieldName,
+                                              List<ResolverParameter> parameters) {
+        Map<String, Argument> arguments = new LinkedHashMap<>();
+        for (ResolverParameter parameter : parameters) {
+            if (parameter.argument().isEmpty()) {
+                continue;
+            }
+
+            Argument argument = parameter.argument().orElseThrow();
+            Argument previous = arguments.putIfAbsent(argument.graphQlName(), argument);
+            if (previous != null) {
+                throw new CodegenException("Duplicate GraphQL argument '" + argument.graphQlName() + "' for "
+                                                   + kind.label() + " field '" + fieldName + "' in resolver "
+                                                   + endpoint.typeName().fqName() + "." + method.elementName(),
+                                           argument.parameter().originatingElementValue());
+            }
+        }
     }
 
     private GraphQlParameterContext parameterContext(TypeInfo endpoint,
@@ -1558,11 +1582,20 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         }
 
         private List<EnumValue> enumValues(TypeInfo typeInfo) {
-            return typeInfo.elementInfo()
+            Map<String, EnumValue> values = new LinkedHashMap<>();
+            typeInfo.elementInfo()
                     .stream()
                     .filter(it -> it.kind() == ElementKind.ENUM_CONSTANT)
-                    .map(this::enumValue)
-                    .toList();
+                    .forEach(it -> {
+                        EnumValue value = enumValue(it);
+                        EnumValue previous = values.putIfAbsent(value.graphQlName(), value);
+                        if (previous != null) {
+                            throw new CodegenException("Duplicate GraphQL enum value '" + value.graphQlName()
+                                                               + "' in enum " + typeInfo.typeName().fqName(),
+                                                       it.originatingElementValue());
+                        }
+                    });
+            return List.copyOf(values.values());
         }
 
         private EnumValue enumValue(TypedElementInfo enumConstant) {

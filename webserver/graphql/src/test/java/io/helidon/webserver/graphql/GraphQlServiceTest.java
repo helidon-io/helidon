@@ -57,6 +57,7 @@ import static org.mockito.Mockito.mock;
 @ServerTest
 class GraphQlServiceTest {
     private static final RecordingEntryPoints ENTRY_POINTS = new RecordingEntryPoints();
+    private static final AtomicInteger MUTATIONS = new AtomicInteger();
 
     private final Http1Client client;
 
@@ -76,6 +77,7 @@ class GraphQlServiceTest {
     @BeforeEach
     void resetEntryPoints() {
         ENTRY_POINTS.reset();
+        MUTATIONS.set(0);
     }
 
     @Test
@@ -171,6 +173,17 @@ class GraphQlServiceTest {
     }
 
     @Test
+    void getMutationIsRejected() {
+        try (Http1ClientResponse response = client.get("/graphql")
+                .queryParam("query", "mutation { update(enabled: true) }")
+                .request()) {
+            assertThat(response.status(), is(Status.METHOD_NOT_ALLOWED_405));
+        }
+
+        assertThat(MUTATIONS.get(), is(0));
+    }
+
+    @Test
     void testListAndNullResponseValues() {
         try (Http1ClientResponse response = client.post("/graphql")
                 .submit("{\"query\": \"{numbers nothing}\"}")) {
@@ -220,6 +233,9 @@ class GraphQlServiceTest {
                     scaled(value: Float): Float
                     sum(values: [Int]): Int
                 }
+                type Mutation {
+                    update(enabled: Boolean): Boolean
+                }
                 input NestedInput {
                     label: String
                     values: [Int]
@@ -253,6 +269,10 @@ class GraphQlServiceTest {
                                     .contextValue(ExecutionContext.HELIDON_CONTEXT_KEY, Context.class)
                                     .orElseThrow();
                         }))
+                .type("Mutation", builder -> builder.dataFetcher("update", environment -> {
+                    MUTATIONS.incrementAndGet();
+                    return environment.getArgument("enabled");
+                }))
                 .build();
 
         SchemaGenerator schemaGenerator = new SchemaGenerator();

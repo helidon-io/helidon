@@ -24,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
@@ -40,6 +41,7 @@ import io.helidon.config.Config;
 import io.helidon.graphql.server.ExecutionContext;
 import io.helidon.graphql.server.GraphQlConstants;
 import io.helidon.graphql.server.InvocationHandler;
+import io.helidon.http.Status;
 import io.helidon.json.JsonArray;
 import io.helidon.json.JsonBoolean;
 import io.helidon.json.JsonGenerator;
@@ -59,6 +61,10 @@ import io.helidon.webserver.http.SecureHandler;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
 
+import graphql.language.Document;
+import graphql.language.OperationDefinition;
+import graphql.parser.InvalidSyntaxException;
+import graphql.parser.Parser;
 import graphql.schema.GraphQLSchema;
 
 /**
@@ -154,6 +160,12 @@ public class GraphQlService implements HttpService {
                 .map(this::toVariableMap)
                 .orElseGet(Map::of);
 
+        if (mutationOperation(query, operationName)) {
+            res.status(Status.METHOD_NOT_ALLOWED_405)
+                    .send();
+            return;
+        }
+
         processRequest(req, res, query, operationName, variables);
     }
 
@@ -175,6 +187,32 @@ public class GraphQlService implements HttpService {
 
     private Map<String, Object> requestContext(ServerRequest req) {
         return Map.of(ExecutionContext.HELIDON_CONTEXT_KEY, req.context());
+    }
+
+    private static boolean mutationOperation(String query, String operationName) {
+        Document document;
+        try {
+            document = Parser.parse(query);
+        } catch (InvalidSyntaxException e) {
+            return false;
+        }
+
+        return operationDefinition(document, operationName)
+                .map(OperationDefinition::getOperation)
+                .filter(OperationDefinition.Operation.MUTATION::equals)
+                .isPresent();
+    }
+
+    private static Optional<OperationDefinition> operationDefinition(Document document, String operationName) {
+        if (operationName != null) {
+            return document.getOperationDefinition(operationName);
+        }
+
+        List<OperationDefinition> definitions = document.getDefinitionsOfType(OperationDefinition.class);
+        if (definitions.size() == 1) {
+            return Optional.of(definitions.getFirst());
+        }
+        return Optional.empty();
     }
 
     private static String stringValue(JsonObject object, String name) {

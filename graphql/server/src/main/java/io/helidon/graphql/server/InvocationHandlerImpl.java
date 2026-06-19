@@ -200,24 +200,27 @@ class InvocationHandlerImpl implements InvocationHandler {
         return resultMap;
     }
 
+    private static List<Object> path(GraphQLError error) {
+        List<Object> path = error.getPath();
+        if (path == null) {
+            return List.of();
+        }
+        return List.copyOf(path);
+    }
+
     private void addError(Map<String, Object> resultMap,
                           GraphQLError error,
                           Throwable cause) {
 
         int line = -1;
         int column = -1;
-        String path = null;
+        List<Object> path = path(error);
 
         List<SourceLocation> locations = error.getLocations();
         if (locations != null && locations.size() > 0) {
             SourceLocation sourceLocation = locations.get(0);
             line = sourceLocation.getLine();
             column = sourceLocation.getColumn();
-        }
-
-        List<Object> listPath = error.getPath();
-        if (listPath != null && listPath.size() > 0) {
-            path = listPath.get(0).toString();
         }
 
         if (cause instanceof GraphQLException) {
@@ -239,18 +242,13 @@ class InvocationHandlerImpl implements InvocationHandler {
 
         int line = -1;
         int column = -1;
-        String path = null;
+        List<Object> path = path(error);
 
         List<SourceLocation> locations = error.getLocations();
         if (locations != null && locations.size() > 0) {
             SourceLocation sourceLocation = locations.get(0);
             line = sourceLocation.getLine();
             column = sourceLocation.getColumn();
-        }
-
-        List<Object> listPath = error.getPath();
-        if (listPath != null && listPath.size() > 0) {
-            path = listPath.get(0).toString();
         }
 
         addErrorPayload(resultMap, fixMessage(error.getMessage()), path, line, column, error.getExtensions());
@@ -334,11 +332,16 @@ class InvocationHandlerImpl implements InvocationHandler {
                           String originalMessage) {
 
         Object data = resultMap.get(DATA);
-        String path = null;
+        List<Object> path = List.of();
 
         if (data instanceof Map) {
             Map<String, Object> dataMap = (Map<String, Object>) data;
-            path = dataMap.keySet().stream().findFirst().orElse(null);
+            path = dataMap.keySet()
+                    .stream()
+                    .findFirst()
+                    .map(it -> (Object) it)
+                    .map(List::of)
+                    .orElseGet(List::of);
         }
 
         if (cause instanceof GraphQLException) {
@@ -350,14 +353,14 @@ class InvocationHandlerImpl implements InvocationHandler {
         }
     }
 
-    private void addErrorPayload(Map<String, Object> resultMap, String checkedMessage, String path) {
+    private void addErrorPayload(Map<String, Object> resultMap, String checkedMessage, List<Object> path) {
         addErrorPayload(resultMap, checkedMessage, path, -1, -1, Map.of());
     }
 
     @SuppressWarnings("unchecked")
     private void addErrorPayload(Map<String, Object> resultMap,
                                  String message,
-                                 String path,
+                                 List<Object> path,
                                  int line,
                                  int column,
                                  Map<String, Object> extensions) {
@@ -378,8 +381,8 @@ class InvocationHandlerImpl implements InvocationHandler {
             newErrorMap.put(EXTENSIONS, extensions);
         }
 
-        if (path != null) {
-            newErrorMap.put(PATH, List.of(path));
+        if (!path.isEmpty()) {
+            newErrorMap.put(PATH, path);
         }
 
         errorList.add(newErrorMap);

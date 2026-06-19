@@ -1709,6 +1709,78 @@ class GraphQlServerCodegenTest {
     }
 
     @Test
+    void duplicateArgumentNameFailsCodegen() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-argument-duplicate"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            String book(@GraphQl.Argument("id") String first,
+                                        @GraphQl.Argument("id") String second) {
+                                return first + second;
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("Duplicate GraphQL argument 'id'"));
+    }
+
+    @Test
+    void duplicateEnumValueNameFailsCodegen() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-enum-value-duplicate"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            BookStatus status() {
+                                return BookStatus.AVAILABLE;
+                            }
+                        }
+                        """)
+                .addSource("BookStatus.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Entity
+                        enum BookStatus {
+                            @GraphQl.Name("AVAILABLE")
+                            AVAILABLE,
+                            @GraphQl.Name("AVAILABLE")
+                            READY
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("Duplicate GraphQL enum value 'AVAILABLE'"));
+    }
+
+    @Test
     void childFieldConflictingNamesFailCodegen() {
         var result = TestCompiler.builder()
                 .currentRelease()

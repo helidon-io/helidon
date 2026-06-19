@@ -16,6 +16,7 @@
 
 package io.helidon.graphql.server;
 
+import java.util.List;
 import java.util.Map;
 
 import graphql.schema.GraphQLSchema;
@@ -42,6 +43,22 @@ class InvocationHandlerObjectResultTest {
         assertThat(book.get("status"), is("AVAILABLE"));
     }
 
+    @SuppressWarnings("unchecked")
+    @Test
+    void nestedResolverErrorUsesFullPath() {
+        InvocationHandler handler = InvocationHandler.create(schema());
+
+        Map<String, Object> result = handler.execute("{book { title summary }}");
+
+        Map<String, Object> data = (Map<String, Object>) result.get("data");
+        Map<String, Object> book = (Map<String, Object>) data.get("book");
+        assertThat(book.get("title"), is("Dune"));
+        assertThat(book.get("summary"), is((Object) null));
+
+        List<Map<String, Object>> errors = (List<Map<String, Object>>) result.get("errors");
+        assertThat(errors.getFirst().get("path"), is(List.of("book", "summary")));
+    }
+
     private static GraphQLSchema schema() {
         TypeDefinitionRegistry typeDefinitionRegistry = new SchemaParser()
                 .parse("""
@@ -51,6 +68,7 @@ class InvocationHandlerObjectResultTest {
 
                                type Book {
                                  title: String!
+                                 summary: String
                                  status: BookStatus
                                }
 
@@ -63,6 +81,9 @@ class InvocationHandlerObjectResultTest {
                 .type("Query", builder -> builder.dataFetcher("book", _ -> new Book("Dune", BookStatus.AVAILABLE)))
                 .type("Book", builder -> builder
                         .dataFetcher("title", environment -> ((Book) environment.getSource()).title())
+                        .dataFetcher("summary", _ -> {
+                            throw new IllegalStateException("Summary unavailable.");
+                        })
                         .dataFetcher("status", environment -> ((Book) environment.getSource()).status()))
                 .build();
         return new SchemaGenerator().makeExecutableSchema(typeDefinitionRegistry, runtimeWiring);
