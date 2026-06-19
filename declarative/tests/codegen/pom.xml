@@ -112,6 +112,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>io.helidon.security.abac</groupId>
+            <artifactId>helidon-security-abac-role</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
             <scope>test</scope>

@@ -34,6 +34,7 @@ import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_RO
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_SECURITY;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_SERVICE_DESCRIPTOR;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.PROTO_FILE_DESCRIPTOR;
+import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.SECURITY_LEVEL;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.STREAM_OBSERVER;
 
 class GrpcServerRegistrationGenerator {
@@ -113,7 +114,7 @@ class GrpcServerRegistrationGenerator {
                 .decreaseContentPadding()
                 .decreaseContentPadding();
 
-        addSecurity(endpoint.security(), constructor);
+        addSecurity(endpoint.security(), constructor, endpointType, descriptorType, null);
         if (!endpoint.security().isEmpty()) {
             constructor.addContentLine(".configure(builder);");
         }
@@ -148,7 +149,7 @@ class GrpcServerRegistrationGenerator {
                     .decreaseContentPadding()
                     .decreaseContentPadding()
                     .decreaseContentPadding();
-            addSecurity(method.security(), constructor);
+            addSecurity(method.security(), constructor, endpointType, descriptorType, method);
             if (!method.security().isEmpty()) {
                 constructor.addContentLine(".configure(rules);");
             }
@@ -171,7 +172,11 @@ class GrpcServerRegistrationGenerator {
         }
     }
 
-    private static void addSecurity(GrpcSecurityDefinition security, Constructor.Builder constructor) {
+    private static void addSecurity(GrpcSecurityDefinition security,
+                                    Constructor.Builder constructor,
+                                    TypeName endpointType,
+                                    TypeName descriptorType,
+                                    GrpcMethod grpcMethod) {
         if (security.isEmpty()) {
             return;
         }
@@ -202,6 +207,37 @@ class GrpcServerRegistrationGenerator {
             }
             constructor.addContent(")");
         }
+        security.audit().ifPresent(audit -> constructor.addContent(audit ? ".audit()" : ".skipAudit()"));
+        security.auditEventType().ifPresent(eventType -> constructor.addContent(".auditEventType(")
+                .addContentLiteral(eventType)
+                .addContent(")"));
+        security.auditMessageFormat().ifPresent(messageFormat -> constructor.addContent(".auditMessageFormat(")
+                .addContentLiteral(messageFormat)
+                .addContent(")"));
+        if (security.securityLevel()) {
+            addSecurityLevel(constructor, endpointType, descriptorType, grpcMethod);
+        }
+    }
+
+    private static void addSecurityLevel(Constructor.Builder constructor,
+                                         TypeName endpointType,
+                                         TypeName descriptorType,
+                                         GrpcMethod grpcMethod) {
+        constructor.addContent(".securityLevel(")
+                .addContent(SECURITY_LEVEL)
+                .addContent(".builder().type(")
+                .addContent(endpointType)
+                .addContent(".class).classAnnotations(")
+                .addContent(descriptorType)
+                .addContent(".ANNOTATIONS)");
+        if (grpcMethod != null) {
+            constructor.addContent(".methodName(")
+                    .addContentLiteral(grpcMethod.method().elementName())
+                    .addContent(").methodAnnotations(")
+                    .addContent(toConstantName("METHOD_" + grpcMethod.uniqueName()))
+                    .addContent(".annotations())");
+        }
+        constructor.addContent(".build())");
     }
 
     private static void addDescriptorMethod(ClassModel.Builder classModel) {

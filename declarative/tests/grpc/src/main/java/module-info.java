@@ -23,6 +23,7 @@ module io.helidon.declarative.tests.grpc {
     requires io.helidon.grpc.api;
     requires io.helidon.http;
     requires io.helidon.logging.common;
+    requires io.helidon.metrics;
     requires io.helidon.metrics.api;
     requires io.helidon.security;
     requires io.helidon.security.abac.role;
@@ -33,6 +34,7 @@ module io.helidon.declarative.tests.grpc {
     requires io.helidon.webserver;
     requires io.helidon.webserver.grpc;
     requires io.helidon.webserver.grpc.security;
+    requires io.helidon.webserver.grpc.tracing;
     requires io.helidon.webserver.grpc.validation;
 
     requires com.google.protobuf;

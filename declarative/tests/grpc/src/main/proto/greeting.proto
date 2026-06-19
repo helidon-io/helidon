@@ -26,6 +26,10 @@ service GreetingService {
   rpc SecureGreet (GreetingRequest) returns (GreetingReply) {}
   rpc AuthorizedGreet (GreetingRequest) returns (GreetingReply) {}
   rpc AdminGreet (GreetingRequest) returns (GreetingReply) {}
+  rpc PermitAllGreet (GreetingRequest) returns (GreetingReply) {}
+  rpc DenyAllGreet (GreetingRequest) returns (GreetingReply) {}
+  rpc RoleValidatorGreet (GreetingRequest) returns (GreetingReply) {}
+  rpc AuditedGreet (GreetingRequest) returns (GreetingReply) {}
   rpc Split (GreetingRequest) returns (stream GreetingReply) {}
   rpc Join (stream GreetingRequest) returns (GreetingReply) {}
   rpc Chat (stream GreetingRequest) returns (stream GreetingReply) {}

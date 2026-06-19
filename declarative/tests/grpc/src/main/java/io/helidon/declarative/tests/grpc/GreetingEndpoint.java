@@ -25,13 +25,20 @@ import java.util.StringJoiner;
 import io.helidon.declarative.tests.grpc.DeclarativeGrpcProto.GreetingReply;
 import io.helidon.declarative.tests.grpc.DeclarativeGrpcProto.GreetingRequest;
 import io.helidon.grpc.api.Grpc;
+import io.helidon.metrics.api.Metrics;
+import io.helidon.security.abac.role.RoleValidator;
 import io.helidon.security.annotations.Authenticated;
+import io.helidon.security.annotations.Audited;
 import io.helidon.security.annotations.Authorized;
 import io.helidon.service.registry.Service;
+import io.helidon.tracing.Span;
+import io.helidon.tracing.Tracing;
 import io.helidon.validation.Validation;
 
 import com.google.protobuf.Descriptors;
 import io.grpc.stub.StreamObserver;
+import jakarta.annotation.security.DenyAll;
+import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 
 @Grpc.GrpcService("GreetingService")
@@ -43,6 +50,11 @@ class GreetingEndpoint {
     }
 
     @Grpc.Unary("Greet")
+    @Metrics.Counted(tags = @Metrics.Tag(key = "transport", value = "grpc"))
+    @Metrics.Timed(value = "grpc-greet", absoluteName = true)
+    @Tracing.Traced(value = "grpc-greet-method",
+                    kind = Span.Kind.SERVER,
+                    tags = @Tracing.Tag(key = "transport", value = "grpc"))
     GreetingReply greet(GreetingRequest request) {
         return reply(request.getName());
     }
@@ -74,6 +86,30 @@ class GreetingEndpoint {
     @Grpc.Unary("AdminGreet")
     @RolesAllowed("admin")
     GreetingReply adminGreet(GreetingRequest request) {
+        return reply(request.getName());
+    }
+
+    @Grpc.Unary("PermitAllGreet")
+    @PermitAll
+    GreetingReply permitAllGreet(GreetingRequest request) {
+        return reply(request.getName());
+    }
+
+    @Grpc.Unary("DenyAllGreet")
+    @DenyAll
+    GreetingReply denyAllGreet(GreetingRequest request) {
+        return reply(request.getName());
+    }
+
+    @Grpc.Unary("RoleValidatorGreet")
+    @RoleValidator.Roles("admin")
+    GreetingReply roleValidatorGreet(GreetingRequest request) {
+        return reply(request.getName());
+    }
+
+    @Grpc.Unary("AuditedGreet")
+    @Audited("declarativeGrpc")
+    GreetingReply auditedGreet(GreetingRequest request) {
         return reply(request.getName());
     }
 

@@ -26,9 +26,17 @@ final class GrpcServerTypes {
     static final TypeName GRPC_ROUTE_REGISTRATION = TypeName.create("io.helidon.webserver.grpc.GrpcRouteRegistration");
     static final TypeName GRPC_SECURITY = TypeName.create("io.helidon.webserver.grpc.security.GrpcSecurity");
     static final TypeName GRPC_SERVICE_DESCRIPTOR = TypeName.create("io.helidon.webserver.grpc.GrpcServiceDescriptor");
+    static final TypeName SECURITY_LEVEL = TypeName.create("io.helidon.security.SecurityLevel");
     static final TypeName SECURITY_AUTHENTICATED = TypeName.create("io.helidon.security.annotations.Authenticated");
     static final TypeName SECURITY_AUTHORIZED = TypeName.create("io.helidon.security.annotations.Authorized");
+    static final TypeName SECURITY_AUDITED = TypeName.create("io.helidon.security.annotations.Audited");
+    static final TypeName SECURITY_DENY_ALL = TypeName.create("jakarta.annotation.security.DenyAll");
+    static final TypeName SECURITY_PERMIT_ALL = TypeName.create("jakarta.annotation.security.PermitAll");
+    static final TypeName SECURITY_ROLE_PERMIT_ALL =
+            TypeName.create("io.helidon.security.abac.role.RoleValidator.PermitAll");
     static final TypeName SECURITY_ROLES = TypeName.create("io.helidon.security.abac.role.RoleValidator.Roles");
+    static final TypeName SECURITY_ROLES_CONTAINER =
+            TypeName.create("io.helidon.security.abac.role.RoleValidator.RolesContainer");
     static final TypeName SECURITY_ROLES_ALLOWED = TypeName.create("jakarta.annotation.security.RolesAllowed");
     static final TypeName PROTO_FILE_DESCRIPTOR = TypeName.create("com.google.protobuf.Descriptors.FileDescriptor");
     static final TypeName STREAM_OBSERVER = TypeName.create("io.grpc.stub.StreamObserver");

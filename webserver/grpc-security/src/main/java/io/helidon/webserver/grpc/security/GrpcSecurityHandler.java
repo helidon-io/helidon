@@ -37,6 +37,7 @@ import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.ClassToInstanceStore;
 import io.helidon.security.SecurityClientBuilder;
 import io.helidon.security.SecurityContext;
+import io.helidon.security.SecurityLevel;
 import io.helidon.security.SecurityRequest;
 import io.helidon.security.SecurityRequestBuilder;
 import io.helidon.security.SecurityResponse;
@@ -81,6 +82,7 @@ public final class GrpcSecurityHandler implements ServerInterceptor,
 
     private final GrpcSecurityHandlerConfig config;
     private final Optional<Set<String>> rolesAllowed;
+    private final List<SecurityLevel> securityLevels;
     private final Optional<ClassToInstanceStore<Object>> customObjects;
     private final Optional<String> explicitAuthenticator;
     private final Optional<String> explicitAuthorizer;
@@ -103,6 +105,7 @@ public final class GrpcSecurityHandler implements ServerInterceptor,
             this.rolesAllowed = Optional.of(rolesAllowedSet);
         }
 
+        this.securityLevels = config.securityLevels();
         this.customObjects = config.customObjects()
                 .map(it -> {
                     ClassToInstanceStore<Object> ctis = ClassToInstanceStore.create();
@@ -236,6 +239,17 @@ public final class GrpcSecurityHandler implements ServerInterceptor,
     }
 
     /**
+     * Add a security level discovered from endpoint annotations.
+     *
+     * @param securityLevel security level
+     * @return new handler
+     */
+    public GrpcSecurityHandler securityLevel(SecurityLevel securityLevel) {
+        Objects.requireNonNull(securityLevel);
+        return builder().from(prototype()).addSecurityLevel(securityLevel).build();
+    }
+
+    /**
      * Allow anonymous access when authentication fails.
      *
      * @return new handler
@@ -351,6 +365,9 @@ public final class GrpcSecurityHandler implements ServerInterceptor,
 
     private void update(GrpcSecurityHandlerConfig.Builder builder) {
         rolesAllowed.ifPresent(builder::rolesAllowed);
+        if (!securityLevels.isEmpty()) {
+            builder.securityLevels(securityLevels);
+        }
         explicitAuthenticator.ifPresent(builder::authenticator);
         explicitAuthorizer.ifPresent(builder::authorizer);
         authenticate.ifPresent(builder::authenticate);
@@ -387,6 +404,7 @@ public final class GrpcSecurityHandler implements ServerInterceptor,
 
         securityContext.endpointConfig(securityContext.endpointConfig()
                                                .derive()
+                                               .securityLevels(securityLevels)
                                                .configMap(configMap)
                                                .customObjects(customObjects.orElseGet(ClassToInstanceStore::create))
                                                .build());

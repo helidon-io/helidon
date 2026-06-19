@@ -24,13 +24,21 @@ record GrpcSecurityDefinition(Optional<Boolean> authenticate,
                               Optional<String> authenticator,
                               Optional<Boolean> authorize,
                               Optional<String> authorizer,
-                              List<String> rolesAllowed) {
+                              List<String> rolesAllowed,
+                              Optional<Boolean> audit,
+                              Optional<String> auditEventType,
+                              Optional<String> auditMessageFormat,
+                              boolean securityLevel) {
     private static final GrpcSecurityDefinition EMPTY = new GrpcSecurityDefinition(Optional.empty(),
                                                                                   false,
                                                                                   Optional.empty(),
                                                                                   Optional.empty(),
                                                                                   Optional.empty(),
-                                                                                  List.of());
+                                                                                  List.of(),
+                                                                                  Optional.empty(),
+                                                                                  Optional.empty(),
+                                                                                  Optional.empty(),
+                                                                                  false);
 
     static GrpcSecurityDefinition empty() {
         return EMPTY;
@@ -42,6 +50,10 @@ record GrpcSecurityDefinition(Optional<Boolean> authenticate,
                 && authenticator.isEmpty()
                 && authorize.isEmpty()
                 && authorizer.isEmpty()
-                && rolesAllowed.isEmpty();
+                && rolesAllowed.isEmpty()
+                && audit.isEmpty()
+                && auditEventType.isEmpty()
+                && auditMessageFormat.isEmpty()
+                && !securityLevel;
     }
 }

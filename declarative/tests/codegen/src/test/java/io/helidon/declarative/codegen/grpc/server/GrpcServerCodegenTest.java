@@ -30,7 +30,10 @@ import io.helidon.common.GenericType;
 import io.helidon.common.types.Annotation;
 import io.helidon.config.NamedService;
 import io.helidon.grpc.api.Grpc;
+import io.helidon.security.SecurityLevel;
+import io.helidon.security.abac.role.RoleValidator;
 import io.helidon.security.annotations.Authenticated;
+import io.helidon.security.annotations.Audited;
 import io.helidon.security.annotations.Authorized;
 import io.helidon.service.registry.Dependency;
 import io.helidon.service.registry.Interception;
@@ -46,6 +49,8 @@ import com.google.protobuf.Descriptors;
 import io.grpc.MethodDescriptor;
 import io.grpc.ServerInterceptor;
 import io.grpc.stub.StreamObserver;
+import jakarta.annotation.security.DenyAll;
+import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 import org.junit.jupiter.api.Test;
 
@@ -66,11 +71,16 @@ class GrpcServerCodegenTest {
             GrpcRouteRegistration.class,
             GrpcServiceDescriptor.class,
             Authenticated.class,
+            Audited.class,
             Authorized.class,
             MethodDescriptor.class,
             NamedService.class,
             Prototype.class,
+            RoleValidator.class,
             RolesAllowed.class,
+            DenyAll.class,
+            PermitAll.class,
+            SecurityLevel.class,
             ServerInterceptor.class,
             Service.class,
             ServiceDescriptor.class,
@@ -98,11 +108,15 @@ class GrpcServerCodegenTest {
 
                         import io.grpc.stub.StreamObserver;
                         import io.helidon.grpc.api.Grpc;
+                        import io.helidon.security.abac.role.RoleValidator;
                         import io.helidon.security.annotations.Authenticated;
+                        import io.helidon.security.annotations.Audited;
                         import io.helidon.security.annotations.Authorized;
                         import io.helidon.service.registry.Interception;
                         import io.helidon.service.registry.Service;
                         import io.helidon.validation.Validation;
+                        import jakarta.annotation.security.DenyAll;
+                        import jakarta.annotation.security.PermitAll;
                         import jakarta.annotation.security.RolesAllowed;
 
                         @Grpc.GrpcService("Greeting")
@@ -139,6 +153,30 @@ class GrpcServerCodegenTest {
                             @Grpc.Unary("AdminHello")
                             @RolesAllowed("admin")
                             GreetingReply adminHello(GreetingRequest request) {
+                                return new GreetingReply();
+                            }
+
+                            @Grpc.Unary("PermitAllHello")
+                            @PermitAll
+                            GreetingReply permitAllHello(GreetingRequest request) {
+                                return new GreetingReply();
+                            }
+
+                            @Grpc.Unary("DenyAllHello")
+                            @DenyAll
+                            GreetingReply denyAllHello(GreetingRequest request) {
+                                return new GreetingReply();
+                            }
+
+                            @Grpc.Unary("RoleValidatorHello")
+                            @RoleValidator.Roles("admin")
+                            GreetingReply roleValidatorHello(GreetingRequest request) {
+                                return new GreetingReply();
+                            }
+
+                            @Grpc.Unary("AuditedHello")
+                            @Audited("declarativeGrpc")
+                            GreetingReply auditedHello(GreetingRequest request) {
                                 return new GreetingReply();
                             }
 
@@ -203,14 +241,27 @@ class GrpcServerCodegenTest {
         assertThat(registration, containsString(".clientStreaming(\"CollectHello\", this::collectHello"));
         assertThat(registration, containsString(".bidirectional(\"ChatHello\", this::chatHello"));
         assertThat(registration, containsString("entryPoints.interceptor("));
-        assertThat(registration, containsString("GrpcSecurity.enforce().authenticate().configure(rules);"));
-        assertThat(registration, containsString("GrpcSecurity.enforce().authorize().configure(rules);"));
-        assertThat(registration, containsString("GrpcSecurity.enforce().rolesAllowed(\"admin\").configure(rules);"));
+        assertThat(registration, containsString("GrpcSecurity.enforce().authenticate().securityLevel("));
+        assertThat(registration, containsString("GrpcSecurity.enforce().authorize().securityLevel("));
+        assertThat(registration, containsString("GrpcSecurity.enforce().rolesAllowed(\"admin\").securityLevel("));
+        assertThat(registration, containsString("GrpcSecurity.enforce().skipAuthentication().authorize().securityLevel("));
+        assertThat(registration, containsString("GrpcSecurity.enforce().authenticate().authorize().securityLevel("));
+        assertThat(registration, containsString("GrpcSecurity.enforce().audit().auditEventType(\"declarativeGrpc\")"));
+        assertThat(registration, containsString(".auditMessageFormat(\"%3$s %1$s \\\"%2$s\\\" %5$s %6$s "
+                                                        + "requested by %4$s\")"));
+        assertThat(registration, containsString("SecurityLevel.builder().type(GreetingGrpc.class)"
+                                                        + ".classAnnotations(GreetingGrpc__ServiceDescriptor.ANNOTATIONS)"));
+        assertThat(registration, containsString(".methodName(\"sayHello\")"
+                                                        + ".methodAnnotations(METHOD_SAY_HELLO.annotations()).build()"));
         assertThat(registration, containsString("private static final TypedElementInfo METHOD_SAY_HELLO"));
         assertThat(registration, containsString("private static final TypedElementInfo METHOD_VALIDATED_HELLO"));
         assertThat(registration, containsString("private static final TypedElementInfo METHOD_INTERCEPTED_HELLO"));
         assertThat(registration, containsString("private static final TypedElementInfo METHOD_AUTHORIZE_HELLO"));
         assertThat(registration, containsString("private static final TypedElementInfo METHOD_ADMIN_HELLO"));
+        assertThat(registration, containsString("private static final TypedElementInfo METHOD_PERMIT_ALL_HELLO"));
+        assertThat(registration, containsString("private static final TypedElementInfo METHOD_DENY_ALL_HELLO"));
+        assertThat(registration, containsString("private static final TypedElementInfo METHOD_ROLE_VALIDATOR_HELLO"));
+        assertThat(registration, containsString("private static final TypedElementInfo METHOD_AUDITED_HELLO"));
         assertThat(registration, containsString("private static final TypedElementInfo METHOD_STREAM_HELLO"));
         assertThat(registration, containsString("private static final TypedElementInfo METHOD_COLLECT_HELLO"));
         assertThat(registration, containsString("private static final TypedElementInfo METHOD_CHAT_HELLO"));
@@ -422,8 +473,28 @@ class GrpcServerCodegenTest {
                 """);
 
         assertCompilationFails(result,
-                               "Declarative gRPC server supports only unary, server streaming, client streaming, "
-                                       + "and bidirectional streaming methods in this version. Method unknown() uses UNKNOWN.");
+                                       "Declarative gRPC server supports only unary, server streaming, client streaming, "
+                                               + "and bidirectional streaming methods in this version. Method unknown() uses UNKNOWN.");
+    }
+
+    @Test
+    void grpcMethodRejectsExplicitAuthorization() {
+        var result = compileGrpcService("grpc-server-explicit-authorized", """
+                @Grpc.Proto
+                Descriptors.FileDescriptor proto() {
+                    return null;
+                }
+
+                @Grpc.Unary("SayHello")
+                @Authorized(explicit = true)
+                GreetingReply sayHello(GreetingRequest request) {
+                    return new GreetingReply();
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "Declarative gRPC does not support @Authorized(explicit = true): "
+                                       + "com.example.GreetingGrpc.sayHello()");
     }
 
     private static TestCompiler.Result compileGrpcService(String workDir, String serviceBody) {
@@ -442,6 +513,7 @@ class GrpcServerCodegenTest {
                         import io.grpc.MethodDescriptor;
                         import io.grpc.stub.StreamObserver;
                         import io.helidon.grpc.api.Grpc;
+                        import io.helidon.security.annotations.Authorized;
                         import io.helidon.service.registry.Service;
 
                         @Grpc.GrpcService("Greeting")

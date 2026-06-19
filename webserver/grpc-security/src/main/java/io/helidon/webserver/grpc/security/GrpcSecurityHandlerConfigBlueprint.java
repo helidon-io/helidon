@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.grpc.security;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -23,6 +24,7 @@ import io.helidon.builder.api.Option;
 import io.helidon.builder.api.Prototype;
 import io.helidon.config.Config;
 import io.helidon.security.ClassToInstanceStore;
+import io.helidon.security.SecurityLevel;
 
 /**
  * Configuration of a {@link io.helidon.webserver.grpc.security.GrpcSecurityHandler}.
@@ -39,6 +41,14 @@ interface GrpcSecurityHandlerConfigBlueprint extends Prototype.Factory<GrpcSecur
     @Option.Configured
     @Option.Singular("roleAllowed")
     Set<String> rolesAllowed();
+
+    /**
+     * Security levels discovered from endpoint annotations.
+     *
+     * @return security levels
+     */
+    @Option.Singular
+    List<SecurityLevel> securityLevels();
 
     /**
      * Use a named authenticator.

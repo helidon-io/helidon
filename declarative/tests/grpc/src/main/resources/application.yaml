@@ -14,9 +14,16 @@
 # limitations under the License.
 #
 
+server:
+  protocols:
+    grpc:
+      enable-metrics: true
+
 grpc:
   grpc-services:
     security:
+      enabled: true
+    tracing:
       enabled: true
     validation:
       enabled: true
