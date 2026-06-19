@@ -79,8 +79,8 @@ public interface InvocationHandler {
      * @param contextValues context values to use for this execution
      * @return GraphQL result
      */
-    default Map<String, Object> execute(String query, Map<String, Object> contextValues) {
-        return execute(query, Map.of(), contextValues);
+    default Map<String, Object> executeWithContext(String query, Map<String, Object> contextValues) {
+        return executeWithContext(query, Map.of(), contextValues);
     }
 
     /**
@@ -92,12 +92,13 @@ public interface InvocationHandler {
      * @param contextValues context values to use for this execution
      * @return GraphQL result
      */
-    default Map<String, Object> execute(String query,
-                                        Map<String, Object> variables,
-                                        Map<String, Object> contextValues) {
+    default Map<String, Object> executeWithContext(String query,
+                                                   Map<String, Object> variables,
+                                                   Map<String, Object> contextValues) {
         Objects.requireNonNull(query);
         Objects.requireNonNull(variables);
         Objects.requireNonNull(contextValues);
+        requireContextFreeFallback(contextValues);
         return execute(query, (String) null, variables);
     }
 
@@ -121,14 +122,15 @@ public interface InvocationHandler {
      * @param contextValues context values to use for this execution
      * @return GraphQL result
      */
-    default Map<String, Object> execute(String query,
-                                        String operationName,
-                                        Map<String, Object> variables,
-                                        Map<String, Object> contextValues) {
+    default Map<String, Object> executeWithContext(String query,
+                                                   String operationName,
+                                                   Map<String, Object> variables,
+                                                   Map<String, Object> contextValues) {
         Objects.requireNonNull(query);
         Objects.requireNonNull(operationName);
         Objects.requireNonNull(variables);
         Objects.requireNonNull(contextValues);
+        requireContextFreeFallback(contextValues);
         return execute(query, operationName, variables);
     }
 
@@ -159,6 +161,12 @@ public interface InvocationHandler {
      * @return whitelisted exception class set
      */
     Set<String> whitelistedExceptions();
+
+    private static void requireContextFreeFallback(Map<String, Object> contextValues) {
+        if (!contextValues.isEmpty()) {
+            throw new UnsupportedOperationException("This invocation handler does not support GraphQL context values.");
+        }
+    }
 
     /**
      * Handler used to update the {@link ExecutionContext} before GraphQL execution.

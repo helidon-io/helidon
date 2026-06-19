@@ -203,8 +203,8 @@ public class GraphQlService implements HttpService {
 
         res.headers().contentType(MediaTypes.APPLICATION_JSON);
         Map<String, Object> result = operationName == null
-                ? invocationHandler.execute(query, variables, contextValues)
-                : invocationHandler.execute(query, operationName, variables, contextValues);
+                ? invocationHandler.executeWithContext(query, variables, contextValues)
+                : invocationHandler.executeWithContext(query, operationName, variables, contextValues);
         res.send(toJsonBytes(result));
     }
 

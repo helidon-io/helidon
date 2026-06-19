@@ -17,7 +17,6 @@
 package io.helidon.webserver.security;
 
 import java.lang.System.Logger.Level;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +24,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Set;
-import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -87,8 +86,7 @@ class HttpSecurityInterceptor implements Interception.EntryPointInterceptor {
     private final ReentrantReadWriteLock typeSecurityDefinitionLock = new ReentrantReadWriteLock();
     private final Map<Signature, HttpSecurityDefinition> methodSecurityDefinitions = new HashMap<>();
     private final ReentrantReadWriteLock methodSecurityDefinitionLock = new ReentrantReadWriteLock();
-    private final Set<InterceptionContext> noSecurityGenericContexts = Collections.newSetFromMap(new WeakHashMap<>());
-    private final ReentrantReadWriteLock noSecurityGenericContextLock = new ReentrantReadWriteLock();
+    private final Set<InterceptionContext> noSecurityGenericContexts = ConcurrentHashMap.newKeySet();
 
     HttpSecurityInterceptor(Security security,
                             Config config,
@@ -286,21 +284,11 @@ class HttpSecurityInterceptor implements Interception.EntryPointInterceptor {
     }
 
     private boolean noGenericSecurity(InterceptionContext ctx) {
-        noSecurityGenericContextLock.writeLock().lock();
-        try {
-            return noSecurityGenericContexts.contains(ctx);
-        } finally {
-            noSecurityGenericContextLock.writeLock().unlock();
-        }
+        return noSecurityGenericContexts.contains(ctx);
     }
 
     private void rememberNoGenericSecurity(InterceptionContext ctx) {
-        noSecurityGenericContextLock.writeLock().lock();
-        try {
-            noSecurityGenericContexts.add(ctx);
-        } finally {
-            noSecurityGenericContextLock.writeLock().unlock();
-        }
+        noSecurityGenericContexts.add(ctx);
     }
 
     private void processSecurity(ServerRequest req,
@@ -685,7 +673,7 @@ class HttpSecurityInterceptor implements Interception.EntryPointInterceptor {
     }
 
     private void abortEntryPoint(SecurityResponse response) {
-        throw new SecurityException(securityFailureMessage(response), response.throwable().orElse(null));
+        throw new SecurityException(securityFailureMessage(response));
     }
 
     private String securityFailureMessage(SecurityResponse response) {

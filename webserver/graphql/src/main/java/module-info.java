@@ -33,9 +33,9 @@ module io.helidon.webserver.graphql {
     requires io.helidon.common;
     requires io.helidon.config;
     requires io.helidon.graphql;
-    requires io.helidon.graphql.server;
+    requires transitive io.helidon.graphql.server;
     requires io.helidon.json;
-    requires io.helidon.service.registry;
+    requires transitive io.helidon.service.registry;
 
     requires static io.helidon.common.features.api;
 

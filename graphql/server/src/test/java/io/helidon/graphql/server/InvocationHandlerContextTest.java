@@ -83,10 +83,10 @@ class InvocationHandlerContextTest {
                 .schema(schema(InvocationHandlerContextTest::graphQlContextValue))
                 .build();
 
-        Map<String, Object> result = handler.execute("{value}",
-                                                     Map.of(),
-                                                     Map.of(ExecutionContext.HELIDON_CONTEXT_KEY, context,
-                                                            "requestId", 92L));
+        Map<String, Object> result = handler.executeWithContext("{value}",
+                                                                Map.of(),
+                                                                Map.of(ExecutionContext.HELIDON_CONTEXT_KEY, context,
+                                                                       "requestId", 92L));
 
         assertThat(((Map<?, ?>) result.get("data")).get("value"), is(context.id() + ":92:true"));
     }

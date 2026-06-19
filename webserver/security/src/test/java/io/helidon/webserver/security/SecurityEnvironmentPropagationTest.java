@@ -44,6 +44,7 @@ import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.SecurityEnvironment;
+import io.helidon.security.SecurityResponse;
 import io.helidon.security.spi.AuditProvider;
 import io.helidon.service.registry.Interception;
 import io.helidon.service.registry.InterceptionContext;
@@ -56,6 +57,7 @@ import io.helidon.webserver.http.ServerResponse;
 import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.mock;
@@ -255,6 +257,43 @@ class SecurityEnvironmentPropagationTest {
                                                                                "environment")));
         assertThat(thrown.getMessage(), is("Security did not allow this request to proceed"));
         assertThat(context.get(SecurityContext.class).orElseThrow(), is(securityContext));
+    }
+
+    @Test
+    void testGenericSecurityFailureDoesNotExposeProviderCause() throws Exception {
+        Security security = Security.builder()
+                .addAuthorizationProvider(_ -> AuthorizationResponse.builder()
+                        .status(SecurityResponse.SecurityStatus.FAILURE)
+                        .description("provider private description")
+                        .throwable(new Exception("provider private cause"))
+                        .build())
+                .build();
+        SecurityContext securityContext = security.contextBuilder("graphql")
+                .env(SecurityEnvironment.builder(security.serverTime())
+                             .method("POST")
+                             .path("/graphql")
+                             .targetUri(URI.create("http://localhost/graphql"))
+                             .build())
+                .build();
+        Context context = Context.create();
+        context.register(securityContext);
+        HttpSecurityInterceptor interceptor = new HttpSecurityInterceptor(security,
+                                                                         Config.empty(),
+                                                                         List.of(),
+                                                                         List.of());
+        InterceptionContext interceptionContext = interceptionContext(SecurityEnvironmentPropagationTest.class,
+                                                                      "securedResolver",
+                                                                      Annotation.create(AUTHORIZED));
+
+        SecurityException thrown = org.junit.jupiter.api.Assertions.assertThrows(
+                SecurityException.class,
+                () -> Contexts.runInContextWithThrow(context,
+                                                     () -> interceptor.proceed(interceptionContext,
+                                                                               _ -> "secret",
+                                                                               "environment")));
+
+        assertThat(thrown.getMessage(), is("Security did not allow this request to proceed"));
+        assertThat(thrown.getCause(), is(nullValue()));
     }
 
     @Test

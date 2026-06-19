@@ -126,17 +126,17 @@ class InvocationHandlerImpl implements InvocationHandler {
     }
 
     @Override
-    public Map<String, Object> execute(String query,
-                                       Map<String, Object> variables,
-                                       Map<String, Object> contextValues) {
+    public Map<String, Object> executeWithContext(String query,
+                                                  Map<String, Object> variables,
+                                                  Map<String, Object> contextValues) {
         return executeInternal(query, null, variables, contextValues);
     }
 
     @Override
-    public Map<String, Object> execute(String query,
-                                       String operationName,
-                                       Map<String, Object> variables,
-                                       Map<String, Object> contextValues) {
+    public Map<String, Object> executeWithContext(String query,
+                                                  String operationName,
+                                                  Map<String, Object> variables,
+                                                  Map<String, Object> contextValues) {
         Objects.requireNonNull(operationName);
         return executeInternal(query, operationName, variables, contextValues);
     }

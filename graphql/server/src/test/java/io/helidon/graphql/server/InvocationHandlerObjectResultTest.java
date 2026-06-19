@@ -69,9 +69,9 @@ class InvocationHandlerObjectResultTest {
         InvocationHandler handler = InvocationHandler.create(schema());
         Document document = Parser.parse("{book { title }}");
 
-        Map<String, Object> result = handler.execute("not a query",
-                                                     Map.of(),
-                                                     Map.of(PARSED_DOCUMENT, document));
+        Map<String, Object> result = handler.executeWithContext("not a query",
+                                                                Map.of(),
+                                                                Map.of(PARSED_DOCUMENT, document));
 
         Map<String, Object> data = (Map<String, Object>) result.get("data");
         Map<String, Object> book = (Map<String, Object>) data.get("book");
@@ -84,9 +84,9 @@ class InvocationHandlerObjectResultTest {
         InvocationHandler handler = InvocationHandler.create(schema());
         Document document = Parser.parse("{book { unknown }}");
 
-        Map<String, Object> result = handler.execute("{book { title }}",
-                                                     Map.of(),
-                                                     Map.of(PARSED_DOCUMENT, document));
+        Map<String, Object> result = handler.executeWithContext("{book { title }}",
+                                                                Map.of(),
+                                                                Map.of(PARSED_DOCUMENT, document));
 
         List<Map<String, Object>> errors = (List<Map<String, Object>>) result.get("errors");
         assertThat(errors.getFirst().get("message").toString(), containsString("Field 'unknown'"));
