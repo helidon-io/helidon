@@ -53,6 +53,7 @@ class GraphEndpoint {
                         BookStatus.AVAILABLE,
                         new Isbn("9780441172719"),
                         List.of("classic", "desert"),
+                        List.of(new Isbn("9780441172720"), new Isbn("9780441172721")),
                         "hidden");
     }
 
@@ -70,7 +71,10 @@ class GraphEndpoint {
     String filteredTitle(@GraphQl.Argument("search") @GraphQl.NonNull BookSearch search) {
         return search.phrase() + ": " + search.minimumScore() + ": " + search.includeUnavailable()
                 + ": " + search.status()
-                + ": " + search.tags() + ": " + search.statuses();
+                + ": " + search.tags()
+                + ": " + search.statuses()
+                + ": " + isbnValues(search.isbns())
+                + ": " + filterValues(search.filters());
     }
 
     @GraphQl.Query
@@ -81,6 +85,14 @@ class GraphEndpoint {
     @GraphQl.Query
     String statusNames(@GraphQl.Argument("statuses") List<BookStatus> statuses) {
         return statuses.toString();
+    }
+
+    @GraphQl.Query
+    String isbnValues(@GraphQl.Argument("isbns") List<Isbn> isbns) {
+        return isbns.stream()
+                .map(Isbn::value)
+                .toList()
+                .toString();
     }
 
     @GraphQl.Query
@@ -106,8 +118,10 @@ class GraphEndpoint {
     }
 
     @GraphQlServer.Field
-    String summary(@GraphQlServer.Source Book book, @GraphQl.Argument("prefix") String prefix) {
-        return prefix + ": " + book.title();
+    String summary(@GraphQlServer.Source Book book,
+                   @GraphQl.Argument("prefix") String prefix,
+                   @GraphQl.Argument("tags") List<String> tags) {
+        return prefix + ": " + book.title() + ": " + tags;
     }
 
     @GraphQl.Query
@@ -119,5 +133,12 @@ class GraphEndpoint {
     boolean update(@GraphQl.Argument("enabled") boolean enabled) {
         this.enabled.set(enabled);
         return enabled;
+    }
+
+    private static String filterValues(List<BookFilter> filters) {
+        return filters.stream()
+                .map(filter -> filter.field() + "=" + filter.value())
+                .toList()
+                .toString();
     }
 }

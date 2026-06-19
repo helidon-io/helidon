@@ -1693,6 +1693,9 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                                                            element.originatingElementValue());
                 return new InputSchemaFieldType(valueType.graphQlName(), valueType);
             } catch (CodegenException e) {
+                if (listShapeError(e)) {
+                    throw e;
+                }
                 throw unsupportedInputFieldType(inputType, element);
             }
         }
@@ -1746,6 +1749,10 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                                        originatingElement);
         }
         return elementType;
+    }
+
+    private static boolean listShapeError(CodegenException e) {
+        return e.getMessage().startsWith("GraphQL list type ");
     }
 
     private static String scalarName(TypeInfo typeInfo, Set<Annotation> annotations) {

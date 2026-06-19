@@ -26,5 +26,6 @@ record Book(@GraphQl.NonNull String title,
             @GraphQl.Name("state") BookStatus status,
             Isbn isbn,
             List<String> tags,
+            List<Isbn> relatedIsbns,
             @GraphQl.Ignore String internal) {
 }

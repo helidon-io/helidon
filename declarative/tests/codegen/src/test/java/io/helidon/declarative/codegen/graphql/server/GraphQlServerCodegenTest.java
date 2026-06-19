@@ -136,7 +136,7 @@ class GraphQlServerCodegenTest {
                             @GraphQl.Query
                             Book book() {
                                 return new Book("Dune", BookStatus.AVAILABLE, new Isbn("9780441172719"),
-                                                List.of("classic", "desert"), "hidden");
+                                                List.of("classic", "desert"), List.of(new Isbn("9780441172720")), "hidden");
                             }
 
                             @GraphQl.Query
@@ -147,6 +147,11 @@ class GraphQlServerCodegenTest {
                             @GraphQl.Query
                             String statusNames(@GraphQl.Argument("statuses") List<BookStatus> statuses) {
                                 return statuses.toString();
+                            }
+
+                            @GraphQl.Query
+                            String isbns(@GraphQl.Argument("values") List<Isbn> values) {
+                                return values.toString();
                             }
 
                             @GraphQl.Query
@@ -180,7 +185,8 @@ class GraphQlServerCodegenTest {
                             @GraphQlServer.Field
                             @GraphQl.Description("Book summary")
                             String summary(@GraphQlServer.Source Book book,
-                                           @GraphQl.Argument("prefix") String prefix) {
+                                           @GraphQl.Argument("prefix") String prefix,
+                                           @GraphQl.Argument("tags") List<String> tags) {
                                 return prefix + ": " + book.title();
                             }
 
@@ -203,6 +209,7 @@ class GraphQlServerCodegenTest {
                                     @GraphQl.Name("state") BookStatus status,
                                     Isbn isbn,
                                     List<String> tags,
+                                    List<Isbn> relatedIsbns,
                                     @GraphQl.Ignore String internal) {
                         }
                         """)
@@ -219,7 +226,19 @@ class GraphQlServerCodegenTest {
                                           int minimumScore,
                                           @GraphQl.NonNull BookStatus status,
                                           List<String> tags,
-                                          List<BookStatus> statuses) {
+                                          List<BookStatus> statuses,
+                                          List<Isbn> isbns,
+                                          List<BookFilter> filters) {
+                        }
+                        """)
+                .addSource("BookFilter.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Entity
+                        record BookFilter(@GraphQl.NonNull String field,
+                                          @GraphQl.NonNull String value) {
                         }
                         """)
                 .addSource("Isbn.java", """
@@ -303,6 +322,7 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("search(criteria: BookSearchInput!): String"));
         assertThat(generated, containsString("statusName(status: BookStatus): String"));
         assertThat(generated, containsString("statusNames(statuses: [BookStatus]): String"));
+        assertThat(generated, containsString("isbns(values: [ISBN]): String"));
         assertThat(generated, containsString("book: Book"));
         assertThat(generated, containsString("recommendedBooks: [Book]"));
         assertThat(generated, containsString("author: AuthorDto"));
@@ -319,8 +339,9 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("state: BookStatus"));
         assertThat(generated, containsString("isbn: ISBN"));
         assertThat(generated, containsString("tags: [String]"));
+        assertThat(generated, containsString("relatedIsbns: [ISBN]"));
         assertThat(generated, containsString("Book summary"));
-        assertThat(generated, containsString("summary(prefix: String): String"));
+        assertThat(generated, containsString("summary(prefix: String, tags: [String]): String"));
         assertThat(generated, containsString("score: Int!"));
         assertThat(generated, not(containsString("internal:")));
         assertThat(generated, containsString("enum BookStatus"));
@@ -337,6 +358,11 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("status: BookStatus!"));
         assertThat(generated, containsString("tags: [String]"));
         assertThat(generated, containsString("statuses: [BookStatus]"));
+        assertThat(generated, containsString("isbns: [ISBN]"));
+        assertThat(generated, containsString("filters: [BookFilterInput]"));
+        assertThat(generated, containsString("input BookFilterInput"));
+        assertThat(generated, containsString("field: String!"));
+        assertThat(generated, containsString("value: String!"));
         assertThat(generated, containsString("builder.type(\"Book\""));
         assertThat(generated, containsString(".dataFetcher(\"title\", environment -> ((Book) environment.getSource()).title())"));
         assertThat(generated, containsString(".dataFetcher(\"state\", environment -> ((Book) environment.getSource()).status())"));
@@ -351,12 +377,16 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("(Isbn) environment.getArgument(\"value\")"));
         assertThat(generated, containsString("enum_com_example_BookStatus(environment.getArgument(\"status\"))"));
         assertThat(generated, containsString("list_java_util_List_com_example_BookStatus_(environment.getArgument(\"statuses\"))"));
+        assertThat(generated, containsString("list_java_util_List_com_example_Isbn_(environment.getArgument(\"values\"))"));
         assertThat(generated, containsString("private static List<BookStatus> list_java_util_List_com_example_BookStatus_(Object value)"));
+        assertThat(generated, containsString("private static List<Isbn> list_java_util_List_com_example_Isbn_(Object value)"));
         assertThat(generated, containsString("result.add(enum_com_example_BookStatus(it));"));
+        assertThat(generated, containsString("result.add((Isbn) it);"));
         assertThat(generated, containsString("input_com_example_BookSearch(environment.getArgument(\"criteria\"))"));
         assertThat(generated, containsString("private static BookStatus enum_com_example_BookStatus(Object value)"));
         assertThat(generated, containsString("case \"OUT_OF_PRINT\" -> BookStatus.OUT;"));
         assertThat(generated, containsString("private static BookSearch input_com_example_BookSearch(Object value)"));
+        assertThat(generated, containsString("private static BookFilter input_com_example_BookFilter(Object value)"));
         assertThat(generated, containsString("var input = (java.util.Map<String, Object>) value;"));
         assertThat(generated, containsString("return new BookSearch("));
         assertThat(generated, containsString("(String) input.get(\"phrase\")"));
@@ -364,6 +394,9 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("enum_com_example_BookStatus(input.get(\"status\"))"));
         assertThat(generated, containsString("list_java_util_List_java_lang_String_(input.get(\"tags\"))"));
         assertThat(generated, containsString("list_java_util_List_com_example_BookStatus_(input.get(\"statuses\"))"));
+        assertThat(generated, containsString("list_java_util_List_com_example_Isbn_(input.get(\"isbns\"))"));
+        assertThat(generated, containsString("list_java_util_List_com_example_BookFilter_(input.get(\"filters\"))"));
+        assertThat(generated, containsString("result.add(input_com_example_BookFilter(it));"));
         assertThat(generated, containsString("helidonContext(environment)"));
         assertThat(generated, containsString("graphQlExecutionContext(environment)"));
         assertThat(generated, containsString("securityContext(environment)"));
@@ -375,6 +408,7 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("this.endpoint_0.summary("));
         assertThat(generated, containsString("((Book) environment.getSource())"));
         assertThat(generated, containsString("(String) environment.getArgument(\"prefix\")"));
+        assertThat(generated, containsString("list_java_util_List_java_lang_String_(environment.getArgument(\"tags\"))"));
         assertThat(generated, containsString("builder.type(\"AuthorDto\""));
         assertThat(generated, containsString(".dataFetcher(\"name\", environment -> ((AuthorDto) environment.getSource()).getName())"));
         assertThat(generated, containsString(".dataFetcher(\"active\", environment -> ((AuthorDto) environment.getSource()).isActive())"));
@@ -851,6 +885,148 @@ class GraphQlServerCodegenTest {
     }
 
     @Test
+    void rawListArgumentFailsCodegen() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-raw-list-argument"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import java.util.List;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            String invalid(List values) {
+                                return values.toString();
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("must declare exactly one type argument"));
+    }
+
+    @Test
+    void wildcardListArgumentFailsCodegen() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-wildcard-list-argument"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import java.util.List;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            String invalid(List<?> values) {
+                                return values.toString();
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("must use a concrete element type"));
+    }
+
+    @Test
+    void rawListInputFieldFailsCodegen() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-raw-list-input-field"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            String search(BookSearch search) {
+                                return search.values().toString();
+                            }
+                        }
+                        """)
+                .addSource("BookSearch.java", """
+                        package com.example;
+
+                        import java.util.List;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Entity
+                        record BookSearch(List values) {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("must declare exactly one type argument"));
+    }
+
+    @Test
+    void wildcardListInputFieldFailsCodegen() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-wildcard-list-input-field"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            String search(BookSearch search) {
+                                return search.values().toString();
+                            }
+                        }
+                        """)
+                .addSource("BookSearch.java", """
+                        package com.example;
+
+                        import java.util.List;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Entity
+                        record BookSearch(List<?> values) {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("must use a concrete element type"));
+    }
+
+    @Test
     void childFieldWithoutSourceParameterFailsCodegen() {
         var result = TestCompiler.builder()
                 .currentRelease()
@@ -891,6 +1067,96 @@ class GraphQlServerCodegenTest {
         String diagnostics = String.join("\n", result.diagnostics());
         assertThat(diagnostics, result.success(), is(false));
         assertThat(diagnostics, containsString("must declare exactly one source parameter"));
+    }
+
+    @Test
+    void childFieldRawListArgumentFailsCodegen() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-field-raw-list-argument"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import java.util.List;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            Book book() {
+                                return new Book("Dune");
+                            }
+
+                            @GraphQlServer.Field
+                            String summary(@GraphQlServer.Source Book book, List values) {
+                                return values.toString();
+                            }
+                        }
+                        """)
+                .addSource("Book.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Entity
+                        record Book(String title) {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("must declare exactly one type argument"));
+    }
+
+    @Test
+    void childFieldWildcardListArgumentFailsCodegen() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-field-wildcard-list-argument"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import java.util.List;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            Book book() {
+                                return new Book("Dune");
+                            }
+
+                            @GraphQlServer.Field
+                            String summary(@GraphQlServer.Source Book book, List<?> values) {
+                                return values.toString();
+                            }
+                        }
+                        """)
+                .addSource("Book.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Entity
+                        record Book(String title) {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("must use a concrete element type"));
     }
 
     @Test

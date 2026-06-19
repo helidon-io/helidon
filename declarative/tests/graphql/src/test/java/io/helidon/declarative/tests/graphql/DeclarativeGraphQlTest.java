@@ -66,6 +66,7 @@ class DeclarativeGraphQlTest {
             assertThat(schema, containsString("filteredTitle(search: BookSearchInput!): String"));
             assertThat(schema, containsString("statusName(status: BookStatus): String"));
             assertThat(schema, containsString("statusNames(statuses: [BookStatus]): String"));
+            assertThat(schema, containsString("isbnValues(isbns: [ISBN]): String"));
             assertThat(schema, containsString("contextAvailable: Boolean!"));
             assertThat(schema, containsString("securedMessage: String"));
             assertThat(schema, containsString("type Mutation"));
@@ -76,7 +77,8 @@ class DeclarativeGraphQlTest {
             assertThat(schema, containsString("state: BookStatus"));
             assertThat(schema, containsString("isbn: ISBN"));
             assertThat(schema, containsString("tags: [String]"));
-            assertThat(schema, containsString("summary(prefix: String): String"));
+            assertThat(schema, containsString("relatedIsbns: [ISBN]"));
+            assertThat(schema, containsString("summary(prefix: String, tags: [String]): String"));
             assertThat(schema, containsString("enum BookStatus"));
             assertThat(schema, containsString("\"Currently available\""));
             assertThat(schema, containsString("OUT_OF_PRINT"));
@@ -87,6 +89,11 @@ class DeclarativeGraphQlTest {
             assertThat(schema, containsString("status: BookStatus!"));
             assertThat(schema, containsString("tags: [String]"));
             assertThat(schema, containsString("statuses: [BookStatus]"));
+            assertThat(schema, containsString("isbns: [ISBN]"));
+            assertThat(schema, containsString("filters: [BookFilterInput]"));
+            assertThat(schema, containsString("input BookFilterInput"));
+            assertThat(schema, containsString("field: String!"));
+            assertThat(schema, containsString("value: String!"));
         }
     }
 
@@ -119,7 +126,7 @@ class DeclarativeGraphQlTest {
     void testQueryAndObjectResult() {
         JsonObject data = graphQl("""
                                           {
-                                            "query": "query($isbn: ISBN!) { hello(name: \\"Helidon\\") catalogName validatedGreeting contextAvailable titleByIsbn(isbn: $isbn) literalTitle: titleByIsbn(isbn: \\"9780441172719\\") book { title state isbn tags summary(prefix: \\"Read\\") } recommendedBooks { title } }",
+                                            "query": "query($isbn: ISBN!) { hello(name: \\"Helidon\\") catalogName validatedGreeting contextAvailable titleByIsbn(isbn: $isbn) literalTitle: titleByIsbn(isbn: \\"9780441172719\\") book { title state isbn tags relatedIsbns summary(prefix: \\"Read\\", tags: [\\"classic\\"]) } recommendedBooks { title } }",
                                             "variables": { "isbn": "9780441172719" }
                                           }
                                           """);
@@ -136,7 +143,11 @@ class DeclarativeGraphQlTest {
         assertThat(book.stringValue("isbn").orElseThrow(), is("9780441172719"));
         assertThat(book.arrayValue("tags").orElseThrow().get(0).orElseThrow().asString().value(), is("classic"));
         assertThat(book.arrayValue("tags").orElseThrow().get(1).orElseThrow().asString().value(), is("desert"));
-        assertThat(book.stringValue("summary").orElseThrow(), is("Read: Dune"));
+        assertThat(book.arrayValue("relatedIsbns").orElseThrow().get(0).orElseThrow().asString().value(),
+                   is("9780441172720"));
+        assertThat(book.arrayValue("relatedIsbns").orElseThrow().get(1).orElseThrow().asString().value(),
+                   is("9780441172721"));
+        assertThat(book.stringValue("summary").orElseThrow(), is("Read: Dune: [classic]"));
         assertThat(book.value("internal").isEmpty(), is(true));
         assertThat(data.arrayValue("recommendedBooks").orElseThrow()
                            .get(0)
@@ -150,28 +161,39 @@ class DeclarativeGraphQlTest {
     void testInputObjectArgument() {
         JsonObject data = graphQl("""
                                           {
-                                            "query": "query($search: BookSearchInput!, $status: BookStatus!, $statuses: [BookStatus]) { filteredTitle(search: $search) statusName(status: $status) statusNames(statuses: $statuses) literalStatus: statusName(status: OUT_OF_PRINT) literalStatuses: statusNames(statuses: [AVAILABLE, OUT_OF_PRINT]) }",
+                                            "query": "query($search: BookSearchInput!, $status: BookStatus!, $statuses: [BookStatus], $isbns: [ISBN]) { filteredTitle(search: $search) statusName(status: $status) statusNames(statuses: $statuses) isbnValues(isbns: $isbns) literalStatus: statusName(status: OUT_OF_PRINT) literalStatuses: statusNames(statuses: [AVAILABLE, OUT_OF_PRINT]) literalIsbns: isbnValues(isbns: [\\"9780441172719\\"]) }",
                                             "variables": {
                                               "status": "OUT_OF_PRINT",
                                               "statuses": ["AVAILABLE", "OUT_OF_PRINT"],
+                                              "isbns": ["9780441172719", "9780441172720"],
                                               "search": {
                                                 "phrase": "Dune",
                                                 "minimumScore": 5,
                                                 "includeUnavailable": false,
                                                 "status": "OUT_OF_PRINT",
                                                 "tags": ["classic", "desert"],
-                                                "statuses": ["AVAILABLE", "OUT_OF_PRINT"]
+                                                "statuses": ["AVAILABLE", "OUT_OF_PRINT"],
+                                                "isbns": ["9780441172719", "9780441172720"],
+                                                "filters": [
+                                                  {
+                                                    "field": "planet",
+                                                    "value": "Arrakis"
+                                                  }
+                                                ]
                                               }
                                             }
                                           }
                                           """);
 
         assertThat(data.stringValue("filteredTitle").orElseThrow(),
-                   is("Dune: 5: false: OUT: [classic, desert]: [AVAILABLE, OUT]"));
+                   is("Dune: 5: false: OUT: [classic, desert]: [AVAILABLE, OUT]: "
+                              + "[9780441172719, 9780441172720]: [planet=Arrakis]"));
         assertThat(data.stringValue("statusName").orElseThrow(), is("OUT"));
         assertThat(data.stringValue("statusNames").orElseThrow(), is("[AVAILABLE, OUT]"));
+        assertThat(data.stringValue("isbnValues").orElseThrow(), is("[9780441172719, 9780441172720]"));
         assertThat(data.stringValue("literalStatus").orElseThrow(), is("OUT"));
         assertThat(data.stringValue("literalStatuses").orElseThrow(), is("[AVAILABLE, OUT]"));
+        assertThat(data.stringValue("literalIsbns").orElseThrow(), is("[9780441172719]"));
     }
 
     @Test
