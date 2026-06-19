@@ -23,6 +23,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.ServiceLoader;
 import java.util.Set;
 
 import io.helidon.codegen.CodegenException;
@@ -31,6 +32,7 @@ import io.helidon.codegen.ElementInfoPredicates;
 import io.helidon.codegen.TypeHierarchy;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.Constructor;
+import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
@@ -61,6 +63,7 @@ import io.helidon.declarative.codegen.graphql.server.GraphQlServerTypes.SchemaFi
 import io.helidon.declarative.codegen.graphql.server.GraphQlServerTypes.SchemaType;
 import io.helidon.declarative.codegen.graphql.server.GraphQlServerTypes.SourceParameter;
 import io.helidon.declarative.codegen.graphql.server.GraphQlServerTypes.ValueSchemaType;
+import io.helidon.declarative.codegen.graphql.server.spi.GraphQlParameterCodegenProvider;
 import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.RegistryRoundContext;
 import io.helidon.service.codegen.ServiceCodegenTypes;
@@ -137,9 +140,17 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                                                                               SECURITY_AUTHORIZED);
 
     private final RegistryCodegenContext ctx;
+    private final List<GraphQlParameterCodegenProvider> paramProviders;
 
     GraphQlServerExtension(RegistryCodegenContext ctx) {
         this.ctx = ctx;
+        this.paramProviders = loadParamProviders(GraphQlServerExtension.class.getClassLoader());
+    }
+
+    static List<GraphQlParameterCodegenProvider> loadParamProviders(ClassLoader classLoader) {
+        return HelidonServiceLoader.builder(ServiceLoader.load(GraphQlParameterCodegenProvider.class, classLoader))
+                .build()
+                .asList();
     }
 
     @Override
@@ -345,7 +356,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                                method.typeName().primitive() || hasNonNull(annotations),
                                method.originatingElementValue());
 
-        List<ResolverParameter> parameters = resolverParameters(schemaTypes, endpoint, method, Optional.empty());
+        List<ResolverParameter> parameters = resolverParameters(schemaTypes, endpoint, method, kind, Optional.empty());
 
         Operation operation = new Operation(kind,
                                             endpoint,
@@ -370,7 +381,11 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                                   List<Operation> fieldResolvers) {
 
         SourceParameter source = sourceParameter(schemaTypes.roundContext, endpoint, method);
-        List<ResolverParameter> parameters = resolverParameters(schemaTypes, endpoint, method, Optional.of(source));
+        List<ResolverParameter> parameters = resolverParameters(schemaTypes,
+                                                                endpoint,
+                                                                method,
+                                                                OperationKind.FIELD,
+                                                                Optional.of(source));
         String graphQlName = fieldName(endpoint, method, annotations, fieldAnnotation);
         String schemaType = schemaTypes.outputType(method.typeName(),
                                                    method.typeName().primitive() || hasNonNull(annotations),
@@ -391,15 +406,29 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
     private List<ResolverParameter> resolverParameters(SchemaTypes schemaTypes,
                                                        TypeInfo endpoint,
                                                        TypedElementInfo method,
+                                                       OperationKind kind,
                                                        Optional<SourceParameter> source) {
         List<ResolverParameter> result = new ArrayList<>();
         List<TypedElementInfo> parameters = method.parameterArguments();
         for (int i = 0; i < parameters.size(); i++) {
             TypedElementInfo parameter = parameters.get(i);
+            Set<Annotation> parameterAnnotations = new HashSet<>(TypeHierarchy.hierarchyAnnotations(ctx,
+                                                                                                     endpoint,
+                                                                                                     method,
+                                                                                                     parameter,
+                                                                                                     i));
+            GraphQlParameterContext parameterContext = parameterContext(endpoint,
+                                                                        method,
+                                                                        parameter,
+                                                                        i,
+                                                                        parameterAnnotations,
+                                                                        kind);
             if (source.isPresent() && source.orElseThrow().index() == i) {
                 result.add(new ResolverParameter(parameter,
                                                 Optional.empty(),
                                                 Optional.of(source.orElseThrow().typeInfo()),
+                                                Optional.empty(),
+                                                parameterContext,
                                                 ResolverParameterKind.SOURCE));
                 continue;
             }
@@ -409,15 +438,24 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                 result.add(new ResolverParameter(parameter,
                                                 Optional.empty(),
                                                 Optional.empty(),
+                                                Optional.empty(),
+                                                parameterContext,
                                                 specialParameter.orElseThrow()));
                 continue;
             }
 
-            Set<Annotation> parameterAnnotations = new HashSet<>(TypeHierarchy.hierarchyAnnotations(ctx,
-                                                                                                     endpoint,
-                                                                                                     method,
-                                                                                                     parameter,
-                                                                                                     i));
+            Optional<GraphQlParameterCodegenProvider> parameterProvider = parameterProvider(parameterContext);
+            if (Annotations.findFirst(GRAPHQL_ARGUMENT, parameterAnnotations).isEmpty()
+                    && parameterProvider.isPresent()) {
+                result.add(new ResolverParameter(parameter,
+                                                Optional.empty(),
+                                                Optional.empty(),
+                                                parameterProvider,
+                                                parameterContext,
+                                                ResolverParameterKind.CUSTOM));
+                continue;
+            }
+
             result.add(new ResolverParameter(parameter,
                                             Optional.of(toArgument(schemaTypes,
                                                                   endpoint,
@@ -425,9 +463,59 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                                                                   parameter,
                                                                   parameterAnnotations)),
                                             Optional.empty(),
+                                            Optional.empty(),
+                                            parameterContext,
                                             ResolverParameterKind.ARGUMENT));
         }
         return List.copyOf(result);
+    }
+
+    private GraphQlParameterContext parameterContext(TypeInfo endpoint,
+                                                     TypedElementInfo method,
+                                                     TypedElementInfo parameter,
+                                                     int paramIndex,
+                                                     Set<Annotation> annotations,
+                                                     OperationKind kind) {
+        return new GraphQlParameterContextImpl(Set.copyOf(annotations),
+                                               parameter.typeName(),
+                                               endpoint.typeName(),
+                                               method.elementName(),
+                                               ctx.uniqueName(endpoint, method),
+                                               parameter.elementName(),
+                                               paramIndex,
+                                               resolverKind(kind));
+    }
+
+    private static GraphQlResolverKind resolverKind(OperationKind kind) {
+        return switch (kind) {
+        case QUERY -> GraphQlResolverKind.QUERY;
+        case MUTATION -> GraphQlResolverKind.MUTATION;
+        case FIELD -> GraphQlResolverKind.FIELD;
+        };
+    }
+
+    private Optional<GraphQlParameterCodegenProvider> parameterProvider(GraphQlParameterContext parameterContext) {
+        for (GraphQlParameterCodegenProvider provider : paramProviders) {
+            try {
+                if (provider.supports(parameterContext)) {
+                    return Optional.of(provider);
+                }
+            } catch (Exception e) {
+                throw new CodegenException("Failed to process GraphQL resolver parameter '"
+                                                   + parameterContext.parameterType().resolvedName()
+                                                   + " " + parameterContext.paramName()
+                                                   + "' that is " + (parameterContext.paramIndex() + 1)
+                                                   + " parameter of method "
+                                                   + parameterContext.endpointType().fqName()
+                                                   + "." + parameterContext.methodName()
+                                                   + ", as the parameter handler ("
+                                                   + provider.getClass().getName()
+                                                   + ") threw an exception: "
+                                                   + e.getMessage(),
+                                           e);
+            }
+        }
+        return Optional.empty();
     }
 
     private SourceParameter sourceParameter(RegistryRoundContext roundContext, TypeInfo endpoint, TypedElementInfo method) {
@@ -450,6 +538,15 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
             }
 
             if (Annotations.findFirst(GRAPHQL_ARGUMENT, annotations).isPresent()) {
+                continue;
+            }
+            if (Annotations.findFirst(GRAPHQL_SERVER_SOURCE, annotations).isEmpty()
+                    && parameterProvider(parameterContext(endpoint,
+                                                          method,
+                                                          parameter,
+                                                          i,
+                                                          annotations,
+                                                          OperationKind.FIELD)).isPresent()) {
                 continue;
             }
 
@@ -900,10 +997,11 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                                 .type(DATA_FETCHING_ENVIRONMENT)
                                 .name("environment"))
                         .addThrows(TypeName.create(Exception.class))
-                        .update(it -> resolverBody(it, operation, endpointFields))));
+                        .update(it -> resolverBody(classModel, it, operation, endpointFields))));
     }
 
-    private void resolverBody(io.helidon.codegen.classmodel.Method.Builder method,
+    private void resolverBody(ClassModel.Builder classModel,
+                              io.helidon.codegen.classmodel.Method.Builder method,
                               Operation operation,
                               Map<TypeName, String> endpointFields) {
         method.addContent("return this.")
@@ -917,7 +1015,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
             return;
         }
         if (parameters.size() == 1) {
-            resolverParameterValue(method, parameters.getFirst());
+            resolverParameterValue(classModel, method, parameters.getFirst());
             method.addContentLine(");");
             return;
         }
@@ -926,7 +1024,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                 .increaseContentPadding()
                 .increaseContentPadding();
         for (int i = 0; i < parameters.size(); i++) {
-            resolverParameterValue(method, parameters.get(i));
+            resolverParameterValue(classModel, method, parameters.get(i));
             if (i + 1 == parameters.size()) {
                 method.addContentLine(");");
             } else {
@@ -937,7 +1035,9 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                 .decreaseContentPadding();
     }
 
-    private void resolverParameterValue(io.helidon.codegen.classmodel.Method.Builder method, ResolverParameter parameter) {
+    private void resolverParameterValue(ClassModel.Builder classModel,
+                                        io.helidon.codegen.classmodel.Method.Builder method,
+                                        ResolverParameter parameter) {
         switch (parameter.kind()) {
         case SOURCE:
             method.addContent("((")
@@ -959,6 +1059,29 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         case ARGUMENT:
             argumentValue(method, parameter.argument().orElseThrow());
             return;
+        case CUSTOM:
+            try {
+                parameter.provider()
+                        .orElseThrow()
+                        .codegen(new GraphQlParameterCodegenContextImpl(parameter.context(),
+                                                                        classModel,
+                                                                        method,
+                                                                        "environment"));
+                return;
+            } catch (Exception e) {
+                throw new CodegenException("Failed to code generate GraphQL resolver parameter '"
+                                                   + parameter.context().parameterType().resolvedName()
+                                                   + " " + parameter.context().paramName()
+                                                   + "' that is " + (parameter.context().paramIndex() + 1)
+                                                   + " parameter of method "
+                                                   + parameter.context().endpointType().fqName()
+                                                   + "." + parameter.context().methodName()
+                                                   + ", as the parameter handler ("
+                                                   + parameter.provider().orElseThrow().getClass().getName()
+                                                   + ") threw an exception: "
+                                                   + e.getMessage(),
+                                           e);
+            }
         default:
             throw new IllegalStateException("Unsupported GraphQL resolver parameter kind: " + parameter.kind());
         }

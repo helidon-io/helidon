@@ -26,6 +26,7 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.declarative.codegen.graphql.server.spi.GraphQlParameterCodegenProvider;
 
 final class GraphQlServerTypes {
     private GraphQlServerTypes() {
@@ -122,6 +123,8 @@ final class GraphQlServerTypes {
     record ResolverParameter(TypedElementInfo parameter,
                              Optional<Argument> argument,
                              Optional<TypeInfo> sourceType,
+                             Optional<GraphQlParameterCodegenProvider> provider,
+                             GraphQlParameterContext context,
                              ResolverParameterKind kind) {
     }
 
@@ -131,7 +134,8 @@ final class GraphQlServerTypes {
         ENVIRONMENT,
         HELIDON_CONTEXT,
         EXECUTION_CONTEXT,
-        SECURITY_CONTEXT
+        SECURITY_CONTEXT,
+        CUSTOM
     }
 
     record SourceParameter(int index,

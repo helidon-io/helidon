@@ -17,6 +17,7 @@
 package io.helidon.declarative.codegen.graphql.server;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,6 +30,7 @@ import io.helidon.common.Generated;
 import io.helidon.common.context.Context;
 import io.helidon.common.types.Annotation;
 import io.helidon.config.Config;
+import io.helidon.declarative.codegen.graphql.server.spi.GraphQlParameterCodegenProvider;
 import io.helidon.graphql.GraphQl;
 import io.helidon.graphql.server.ExecutionContext;
 import io.helidon.graphql.server.InvocationHandler;
@@ -412,6 +414,76 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("builder.type(\"AuthorDto\""));
         assertThat(generated, containsString(".dataFetcher(\"name\", environment -> ((AuthorDto) environment.getSource()).getName())"));
         assertThat(generated, containsString(".dataFetcher(\"active\", environment -> ((AuthorDto) environment.getSource()).isActive())"));
+    }
+
+    @Test
+    void customParameterProviderBindsResolverParameters() throws IOException {
+        Path servicesFile = registerTestGraphQlParameterProvider();
+        try {
+            var result = TestCompiler.builder()
+                    .currentRelease()
+                    .addClasspath(GRAPHQL_CLASSPATH)
+                    .addProcessor(AptProcessor::new)
+                    .workDir(Path.of("target/test-compiler/graphql-server-custom-parameter-provider"))
+                    .addSource("GraphEndpoint.java", """
+                            package com.example;
+
+                            import io.helidon.graphql.GraphQl;
+                            import io.helidon.webserver.graphql.GraphQlServer;
+
+                            @GraphQlServer.Endpoint
+                            class GraphEndpoint {
+                                @GraphQl.Query
+                                String fieldName(RequestInfo requestInfo) {
+                                    return requestInfo.value();
+                                }
+
+                                @GraphQl.Query
+                                Book book() {
+                                    return new Book("Dune");
+                                }
+
+                                @GraphQlServer.Field
+                                String summary(Book book, RequestInfo requestInfo, @GraphQl.Argument("prefix") String prefix) {
+                                    return prefix + ": " + book.title() + ": " + requestInfo.value();
+                                }
+                            }
+                            """)
+                    .addSource("Book.java", """
+                            package com.example;
+
+                            import io.helidon.graphql.GraphQl;
+
+                            @GraphQl.Entity
+                            record Book(String title) {
+                            }
+                            """)
+                    .addSource("RequestInfo.java", """
+                            package com.example;
+
+                            record RequestInfo(String value) {
+                            }
+                            """)
+                    .build()
+                    .compile();
+
+            String diagnostics = String.join("\n", result.diagnostics());
+            assertThat(diagnostics, result.success(), is(true));
+
+            String generated = Files.readString(result.sourceOutput()
+                                                        .resolve("com/example/GraphEndpoint__GraphQlFeature.java"),
+                                                StandardCharsets.UTF_8);
+            assertThat(generated, containsString("fieldName: String"));
+            assertThat(generated, not(containsString("fieldName(requestInfo:")));
+            assertThat(generated, containsString("summary(prefix: String): String"));
+            assertThat(generated, not(containsString("summary(requestInfo:")));
+            assertThat(generated, containsString("new com.example.RequestInfo(environment.getField().getName() + \":QUERY\")"));
+            assertThat(generated, containsString("new com.example.RequestInfo(environment.getField().getName() + \":FIELD\")"));
+            assertThat(generated, containsString("((Book) environment.getSource())"));
+            assertThat(generated, containsString("(String) environment.getArgument(\"prefix\")"));
+        } finally {
+            Files.deleteIfExists(servicesFile);
+        }
     }
 
     @Test
@@ -1288,5 +1360,27 @@ class GraphQlServerCodegenTest {
         String diagnostics = String.join("\n", result.diagnostics());
         assertThat(diagnostics, result.success(), is(false));
         assertThat(diagnostics, containsString("can only use one of @GraphQl.Query, @GraphQl.Mutation"));
+    }
+
+    private static Path registerTestGraphQlParameterProvider() throws IOException {
+        Path testClasses = testClasses();
+        Path servicesFile = testClasses.resolve("META-INF/services/")
+                .resolve(GraphQlParameterCodegenProvider.class.getName());
+        Files.createDirectories(servicesFile.getParent());
+        Files.writeString(servicesFile,
+                          TestGraphQlParameterCodegenProvider.class.getName() + "\n",
+                          StandardCharsets.UTF_8);
+        return servicesFile;
+    }
+
+    private static Path testClasses() throws IOException {
+        try {
+            return Path.of(TestGraphQlParameterCodegenProvider.class.getProtectionDomain()
+                                   .getCodeSource()
+                                   .getLocation()
+                                   .toURI());
+        } catch (URISyntaxException e) {
+            throw new IOException("Failed to resolve test classpath", e);
+        }
     }
 }
