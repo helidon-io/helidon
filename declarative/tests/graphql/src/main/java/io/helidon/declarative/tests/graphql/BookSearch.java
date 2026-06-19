@@ -16,11 +16,15 @@
 
 package io.helidon.declarative.tests.graphql;
 
+import java.util.List;
+
 import io.helidon.graphql.GraphQl;
 
 @GraphQl.Entity
 record BookSearch(@GraphQl.NonNull String phrase,
                   int minimumScore,
                   boolean includeUnavailable,
-                  @GraphQl.NonNull BookStatus status) {
+                  @GraphQl.NonNull BookStatus status,
+                  List<String> tags,
+                  List<BookStatus> statuses) {
 }

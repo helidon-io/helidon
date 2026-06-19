@@ -60,6 +60,7 @@ import io.helidon.declarative.codegen.graphql.server.GraphQlServerTypes.ScalarSc
 import io.helidon.declarative.codegen.graphql.server.GraphQlServerTypes.SchemaField;
 import io.helidon.declarative.codegen.graphql.server.GraphQlServerTypes.SchemaType;
 import io.helidon.declarative.codegen.graphql.server.GraphQlServerTypes.SourceParameter;
+import io.helidon.declarative.codegen.graphql.server.GraphQlServerTypes.ValueSchemaType;
 import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.RegistryRoundContext;
 import io.helidon.service.codegen.ServiceCodegenTypes;
@@ -109,6 +110,12 @@ import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegen
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.SERVER_HTTP_FEATURE;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.SERVER_HTTP_ROUTING_BUILDER;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.TYPE_DEFINITION_REGISTRY;
+import static io.helidon.declarative.codegen.graphql.server.GraphQlServerInputValues.addEnumInputMethods;
+import static io.helidon.declarative.codegen.graphql.server.GraphQlServerInputValues.addInputObjectMethods;
+import static io.helidon.declarative.codegen.graphql.server.GraphQlServerInputValues.addListInputMethods;
+import static io.helidon.declarative.codegen.graphql.server.GraphQlServerInputValues.enumInputTypes;
+import static io.helidon.declarative.codegen.graphql.server.GraphQlServerInputValues.listInputTypes;
+import static io.helidon.declarative.codegen.graphql.server.GraphQlServerInputValues.valueExpression;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerTypes.appendArguments;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerTypes.appendEnum;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerTypes.appendInput;
@@ -543,28 +550,10 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                                 TypedElementInfo method,
                                 TypedElementInfo parameter,
                                 Set<Annotation> annotations) {
-        Optional<String> scalarType = schemaTypes.scalarType(parameter.typeName(), parameter.originatingElementValue());
-        Optional<EnumSchemaType> enumType;
-        Optional<InputSchemaType> inputType;
-        String graphQlType;
-        if (scalarType.isPresent()) {
-            enumType = Optional.empty();
-            inputType = Optional.empty();
-            graphQlType = scalarType.orElseThrow();
-        } else if (schemaTypes.enumType(parameter.typeName()).isPresent()) {
-            EnumSchemaType schemaType = schemaTypes.enumType(parameter.typeName()).orElseThrow();
-            enumType = Optional.of(schemaType);
-            inputType = Optional.empty();
-            graphQlType = schemaType.graphQlName();
-        } else {
-            InputSchemaType schemaType = schemaTypes.inputType(parameter.typeName(),
+        ValueSchemaType valueType = schemaTypes.inputValueType(parameter.typeName(),
                                                                endpoint,
                                                                method,
                                                                parameter.originatingElementValue());
-            enumType = Optional.empty();
-            inputType = Optional.of(schemaType);
-            graphQlType = schemaType.graphQlName();
-        }
         String graphQlName = Annotations.findFirst(GRAPHQL_ARGUMENT, annotations)
                 .flatMap(Annotation::stringValue)
                 .filter(not(String::isBlank))
@@ -574,15 +563,14 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                 .filter(not(String::isBlank));
         boolean nonNull = parameter.typeName().primitive()
                 || Annotations.findFirst(GRAPHQL_NON_NULL, annotations).isPresent();
-        String schemaType = nonNull ? graphQlType + "!" : graphQlType;
+        String schemaType = nonNull ? valueType.graphQlName() + "!" : valueType.graphQlName();
         return new Argument(parameter,
                             graphQlName,
                             List.copyOf(annotations),
                             defaultValue,
                             nonNull,
                             schemaType,
-                            enumType,
-                            inputType);
+                            valueType);
     }
 
     private void process(RegistryRoundContext roundContext, GraphQlGroup group) {
@@ -664,6 +652,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         addScalarMethods(classModel);
         addContextParameterMethods(classModel, group.operations());
         addEnumInputMethods(classModel, enumInputTypes(group.operations(), group.schemaTypes().inputTypes()));
+        addListInputMethods(classModel, listInputTypes(group.operations(), group.schemaTypes().inputTypes()));
         addInputObjectMethods(classModel, group.schemaTypes().inputTypes());
         addResolverMethods(classModel, group, endpointFields);
 
@@ -976,157 +965,9 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
     }
 
     private void argumentValue(io.helidon.codegen.classmodel.Method.Builder method, Argument argument) {
-        if (argument.enumType().isPresent()) {
-            method.addContent(enumInputMethodName(argument.enumType().orElseThrow()))
-                    .addContent("(environment.getArgument(")
-                    .addContentLiteral(argument.graphQlName())
-                    .addContent("))");
-            return;
-        }
-        if (argument.inputType().isPresent()) {
-            method.addContent(inputObjectMethodName(argument.inputType().orElseThrow()))
-                    .addContent("(environment.getArgument(")
-                    .addContentLiteral(argument.graphQlName())
-                    .addContent("))");
-            return;
-        }
-
-        TypeName type = argument.parameter().typeName();
-        TypeName boxed = type.boxed();
-        if (boxed.equals(TypeNames.BOXED_INT)
-                || boxed.equals(TypeNames.BOXED_DOUBLE)
-                || boxed.equals(TypeNames.BOXED_BOOLEAN)
-                || boxed.equals(TypeNames.STRING)) {
-            method.addContent("(")
-                    .addContent(boxed)
-                    .addContent(") environment.getArgument(")
-                    .addContentLiteral(argument.graphQlName())
-                    .addContent(")");
-            return;
-        }
-        method.addContent("(")
-                .addContent(boxed)
-                .addContent(") environment.getArgument(")
-                .addContentLiteral(argument.graphQlName())
-                .addContent(")");
-    }
-
-    private static List<EnumSchemaType> enumInputTypes(List<Operation> operations, List<InputSchemaType> inputTypes) {
-        Map<TypeName, EnumSchemaType> result = new LinkedHashMap<>();
-        for (Operation operation : operations) {
-            for (Argument argument : operation.arguments()) {
-                argument.enumType().ifPresent(it -> result.putIfAbsent(it.javaType(), it));
-            }
-        }
-        for (InputSchemaType inputType : inputTypes) {
-            for (InputSchemaField field : inputType.fields()) {
-                field.enumType().ifPresent(it -> result.putIfAbsent(it.javaType(), it));
-            }
-        }
-        return List.copyOf(result.values());
-    }
-
-    private void addEnumInputMethods(ClassModel.Builder classModel, List<EnumSchemaType> enumTypes) {
-        for (EnumSchemaType enumType : enumTypes) {
-            classModel.addMethod(method -> {
-                method.accessModifier(AccessModifier.PRIVATE)
-                        .isStatic(true)
-                        .returnType(enumType.javaType())
-                        .name(enumInputMethodName(enumType))
-                        .addParameter(param -> param
-                                .type(TypeNames.OBJECT)
-                                .name("value"))
-                        .addContentLine("if (value == null) {")
-                        .increaseContentPadding()
-                        .addContentLine("return null;")
-                        .decreaseContentPadding()
-                        .addContentLine("}")
-                        .addContent("if (value instanceof ")
-                        .addContent(enumType.javaType())
-                        .addContentLine(" enumValue) {")
-                        .increaseContentPadding()
-                        .addContentLine("return enumValue;")
-                        .decreaseContentPadding()
-                        .addContentLine("}")
-                        .addContentLine("return switch ((String) value) {")
-                        .increaseContentPadding();
-                for (EnumValue value : enumType.values()) {
-                    method.addContent("case ")
-                            .addContentLiteral(value.graphQlName())
-                            .addContent(" -> ")
-                            .addContent(enumType.javaType())
-                            .addContent(".")
-                            .addContent(value.javaName())
-                            .addContentLine(";");
-                }
-                method.addContent("default -> throw new IllegalArgumentException(\"Unsupported GraphQL enum value \" + value")
-                        .addContent(" + \" for ")
-                        .addContent(enumType.javaType().fqName())
-                        .addContentLine("\");")
-                        .decreaseContentPadding()
-                        .addContentLine("};");
-            });
-        }
-    }
-
-    private void addInputObjectMethods(ClassModel.Builder classModel, List<InputSchemaType> inputTypes) {
-        for (InputSchemaType inputType : inputTypes) {
-            classModel.addMethod(method -> {
-                method.accessModifier(AccessModifier.PRIVATE)
-                        .isStatic(true)
-                        .addAnnotation(Annotation.create(SuppressWarnings.class, "unchecked"))
-                        .returnType(inputType.javaType())
-                        .name(inputObjectMethodName(inputType))
-                        .addParameter(param -> param
-                                .type(TypeNames.OBJECT)
-                                .name("value"))
-                        .addContentLine("if (value == null) {")
-                        .increaseContentPadding()
-                        .addContentLine("return null;")
-                        .decreaseContentPadding()
-                        .addContentLine("}")
-                        .addContentLine("var input = (java.util.Map<String, Object>) value;")
-                        .addContent("return new ")
-                        .addContent(inputType.javaType())
-                        .addContentLine("(")
-                        .increaseContentPadding()
-                        .increaseContentPadding();
-                List<InputSchemaField> fields = inputType.fields();
-                for (int i = 0; i < fields.size(); i++) {
-                    inputFieldValue(method, fields.get(i));
-                    if (i + 1 == fields.size()) {
-                        method.addContentLine(");");
-                    } else {
-                        method.addContentLine(",");
-                    }
-                }
-                method.decreaseContentPadding()
-                        .decreaseContentPadding();
-            });
-        }
-    }
-
-    private void inputFieldValue(io.helidon.codegen.classmodel.Method.Builder method, InputSchemaField field) {
-        if (field.enumType().isPresent()) {
-            method.addContent(enumInputMethodName(field.enumType().orElseThrow()))
-                    .addContent("(input.get(")
-                    .addContentLiteral(field.graphQlName())
-                    .addContent("))");
-            return;
-        }
-        if (field.inputType().isPresent()) {
-            method.addContent(inputObjectMethodName(field.inputType().orElseThrow()))
-                    .addContent("(input.get(")
-                    .addContentLiteral(field.graphQlName())
-                    .addContent("))");
-            return;
-        }
-
-        method.addContent("(")
-                .addContent(field.element().typeName().boxed())
-                .addContent(") input.get(")
-                .addContentLiteral(field.graphQlName())
-                .addContent(")");
+        valueExpression(method,
+                        argument.valueType(),
+                        "environment.getArgument(\"" + argument.graphQlName() + "\")");
     }
 
     private void addScalarMethods(ClassModel.Builder classModel) {
@@ -1514,6 +1355,11 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         }
 
         private String outputType(TypeName type, Object originatingElement) {
+            if (type.isList()) {
+                TypeName elementType = listElementType(type, originatingElement);
+                return "[" + outputType(elementType, originatingElement) + "]";
+            }
+
             Optional<String> scalar = scalarType(type, originatingElement);
             if (scalar.isPresent()) {
                 return scalar.get();
@@ -1534,26 +1380,49 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
             throw unsupportedOutputType(type, originatingElement);
         }
 
-        private InputSchemaType inputType(TypeName type,
-                                          TypeInfo endpoint,
-                                          TypedElementInfo method,
-                                          Object originatingElement) {
+        private ValueSchemaType inputValueType(TypeName type,
+                                               TypeInfo endpoint,
+                                               TypedElementInfo method,
+                                               Object originatingElement) {
+            if (type.isList()) {
+                TypeName elementType = listElementType(type, originatingElement);
+                ValueSchemaType elementSchemaType = inputValueType(elementType, endpoint, method, originatingElement);
+                return new ValueSchemaType(type,
+                                           "[" + elementSchemaType.graphQlName() + "]",
+                                           Optional.empty(),
+                                           Optional.empty(),
+                                           Optional.of(elementSchemaType));
+            }
+
+            Optional<String> scalar = scalarType(type, originatingElement);
+            if (scalar.isPresent()) {
+                return new ValueSchemaType(type.boxed(),
+                                           scalar.orElseThrow(),
+                                           Optional.empty(),
+                                           Optional.empty(),
+                                           Optional.empty());
+            }
+
             TypeInfo typeInfo = roundContext.typeInfo(type.boxed())
                     .or(() -> roundContext.typeInfo(type))
                     .orElseThrow(() -> unsupportedArgumentType(endpoint, method, type, originatingElement));
-            if (typeInfo.kind() != ElementKind.RECORD) {
-                throw unsupportedInputType(typeInfo, originatingElement);
+            if (typeInfo.kind() == ElementKind.ENUM) {
+                EnumSchemaType enumType = enumType(typeInfo);
+                return new ValueSchemaType(typeInfo.typeName(),
+                                           enumType.graphQlName(),
+                                           Optional.of(enumType),
+                                           Optional.empty(),
+                                           Optional.empty());
             }
-            return inputType(typeInfo);
-        }
-
-        private Optional<EnumSchemaType> enumType(TypeName type) {
-            Optional<TypeInfo> typeInfo = roundContext.typeInfo(type.boxed())
-                    .or(() -> roundContext.typeInfo(type));
-            if (typeInfo.isPresent() && typeInfo.orElseThrow().kind() == ElementKind.ENUM) {
-                return Optional.of(enumType(typeInfo.orElseThrow()));
+            if (typeInfo.kind() == ElementKind.RECORD) {
+                InputSchemaType inputType = inputType(typeInfo);
+                return new ValueSchemaType(typeInfo.typeName(),
+                                           inputType.graphQlName(),
+                                           Optional.empty(),
+                                           Optional.of(inputType),
+                                           Optional.empty());
             }
-            return Optional.empty();
+            throw unsupportedInputType(typeInfo, originatingElement);
         }
 
         private InputSchemaType inputType(TypeInfo typeInfo) {
@@ -1799,7 +1668,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                                            element.originatingElementValue());
             }
             String graphQlName = graphQlName(annotations, defaultName);
-            InputSchemaFieldType fieldType = inputFieldType(element);
+            InputSchemaFieldType fieldType = inputFieldType(typeInfo, element);
             String schemaType = element.typeName().primitive() || hasNonNull(annotations)
                     ? fieldType.graphQlName() + "!"
                     : fieldType.graphQlName();
@@ -1808,8 +1677,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                                                                                 graphQlName,
                                                                                 schemaType,
                                                                                 description(annotations),
-                                                                                fieldType.enumType(),
-                                                                                fieldType.inputType()));
+                                                                                fieldType.valueType()));
             if (previous != null) {
                 throw new CodegenException("Duplicate GraphQL input field '" + graphQlName + "' in type "
                                                    + typeInfo.typeName().fqName(),
@@ -1817,24 +1685,16 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
             }
         }
 
-        private InputSchemaFieldType inputFieldType(TypedElementInfo element) {
-            Optional<String> scalar = scalarType(element.typeName(), element.originatingElementValue());
-            if (scalar.isPresent()) {
-                return new InputSchemaFieldType(scalar.orElseThrow(), Optional.empty(), Optional.empty());
+        private InputSchemaFieldType inputFieldType(TypeInfo inputType, TypedElementInfo element) {
+            try {
+                ValueSchemaType valueType = inputValueType(element.typeName(),
+                                                           null,
+                                                           null,
+                                                           element.originatingElementValue());
+                return new InputSchemaFieldType(valueType.graphQlName(), valueType);
+            } catch (CodegenException e) {
+                throw unsupportedInputFieldType(inputType, element);
             }
-
-            TypeInfo typeInfo = roundContext.typeInfo(element.typeName().boxed())
-                    .or(() -> roundContext.typeInfo(element.typeName()))
-                    .orElseThrow(() -> unsupportedInputFieldType(element));
-            if (typeInfo.kind() == ElementKind.ENUM) {
-                EnumSchemaType enumType = enumType(typeInfo);
-                return new InputSchemaFieldType(enumType.graphQlName(), Optional.of(enumType), Optional.empty());
-            }
-            if (typeInfo.kind() == ElementKind.RECORD) {
-                InputSchemaType inputType = inputType(typeInfo);
-                return new InputSchemaFieldType(inputType.graphQlName(), Optional.empty(), Optional.of(inputType));
-            }
-            throw unsupportedInputFieldType(element);
         }
 
         private void putField(TypeInfo typeInfo,
@@ -1873,12 +1733,19 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         return baseName.endsWith("Input") ? baseName : baseName + "Input";
     }
 
-    private static String inputObjectMethodName(InputSchemaType inputType) {
-        return "input_" + inputType.javaType().fqName().replace('.', '_').replace('$', '_');
-    }
-
-    private static String enumInputMethodName(EnumSchemaType enumType) {
-        return "enum_" + enumType.javaType().fqName().replace('.', '_').replace('$', '_');
+    private static TypeName listElementType(TypeName type, Object originatingElement) {
+        if (type.typeArguments().size() != 1) {
+            throw new CodegenException("GraphQL list type " + type.resolvedName()
+                                               + " must declare exactly one type argument.",
+                                       originatingElement);
+        }
+        TypeName elementType = type.typeArguments().getFirst();
+        if (elementType.wildcard() || elementType.generic()) {
+            throw new CodegenException("GraphQL list type " + type.resolvedName()
+                                               + " must use a concrete element type.",
+                                       originatingElement);
+        }
+        return elementType;
     }
 
     private static String scalarName(TypeInfo typeInfo, Set<Annotation> annotations) {
@@ -1913,9 +1780,9 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
     private CodegenException unsupportedOutputType(TypeName type, Object originatingElement) {
         return new CodegenException("Return or field type " + type.fqName()
                                             + " is not supported by the declarative GraphQL generator. Supported output types "
-                                            + "are String, int/Integer, double/Double, boolean/Boolean, Java types annotated "
-                                            + "with @GraphQl.Scalar, and Java enums/classes/records/interfaces annotated "
-                                            + "with @GraphQl.Entity.",
+                                            + "are String, int/Integer, double/Double, boolean/Boolean, List<T>, Java types "
+                                            + "annotated with @GraphQl.Scalar, and Java enums/classes/records/interfaces "
+                                            + "annotated with @GraphQl.Entity.",
                                     originatingElement);
     }
 
@@ -1932,7 +1799,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                     .append(".")
                     .append(method.elementName());
         }
-        message.append(". Supported argument types are String, int/Integer, double/Double, boolean/Boolean, and Java "
+        message.append(". Supported argument types are String, int/Integer, double/Double, boolean/Boolean, List<T>, Java "
                                + "enums annotated with @GraphQl.Entity, Java types annotated with @GraphQl.Scalar, "
                                + "plus Java records annotated with "
                                + "@GraphQl.Entity for GraphQL input objects.");
@@ -1946,10 +1813,12 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                                     originatingElement);
     }
 
-    private static CodegenException unsupportedInputFieldType(TypedElementInfo field) {
+    private static CodegenException unsupportedInputFieldType(TypeInfo inputType, TypedElementInfo field) {
         return new CodegenException("GraphQL input field type " + field.typeName().fqName()
-                                            + " is not supported by the declarative GraphQL generator. Supported input "
-                                            + "field types are String, int/Integer, double/Double, boolean/Boolean, Java "
+                                            + " is not supported by the declarative GraphQL generator for "
+                                            + inputType.typeName().fqName() + "." + field.elementName()
+                                            + ". Supported input field types are String, int/Integer, double/Double, "
+                                            + "boolean/Boolean, List<T>, Java "
                                             + "enums annotated with @GraphQl.Entity, Java types annotated with "
                                             + "@GraphQl.Scalar, and nested Java records annotated "
                                             + "with @GraphQl.Entity.",

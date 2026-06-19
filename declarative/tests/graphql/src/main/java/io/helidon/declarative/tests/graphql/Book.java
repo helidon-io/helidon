@@ -16,6 +16,8 @@
 
 package io.helidon.declarative.tests.graphql;
 
+import java.util.List;
+
 import io.helidon.graphql.GraphQl;
 
 @GraphQl.Entity
@@ -23,5 +25,6 @@ import io.helidon.graphql.GraphQl;
 record Book(@GraphQl.NonNull String title,
             @GraphQl.Name("state") BookStatus status,
             Isbn isbn,
+            List<String> tags,
             @GraphQl.Ignore String internal) {
 }

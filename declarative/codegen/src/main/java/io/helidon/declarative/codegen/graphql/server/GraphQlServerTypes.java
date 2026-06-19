@@ -145,8 +145,7 @@ final class GraphQlServerTypes {
                     Optional<String> defaultValue,
                     boolean nonNull,
                     String schemaType,
-                    Optional<EnumSchemaType> enumType,
-                    Optional<InputSchemaType> inputType) {
+                    ValueSchemaType valueType) {
     }
 
     interface SchemaType {
@@ -191,13 +190,21 @@ final class GraphQlServerTypes {
                             String graphQlName,
                             String schemaType,
                             Optional<String> description,
-                            Optional<EnumSchemaType> enumType,
-                            Optional<InputSchemaType> inputType) {
+                            ValueSchemaType valueType) {
     }
 
     record InputSchemaFieldType(String graphQlName,
-                                Optional<EnumSchemaType> enumType,
-                                Optional<InputSchemaType> inputType) {
+                                ValueSchemaType valueType) {
+    }
+
+    record ValueSchemaType(TypeName javaType,
+                           String graphQlName,
+                           Optional<EnumSchemaType> enumType,
+                           Optional<InputSchemaType> inputType,
+                           Optional<ValueSchemaType> elementType) {
+        boolean list() {
+            return elementType.isPresent();
+        }
     }
 
     record EnumValue(String javaName,

@@ -16,6 +16,7 @@
 
 package io.helidon.declarative.tests.graphql;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.helidon.common.context.Context;
@@ -48,7 +49,16 @@ class GraphEndpoint {
 
     @GraphQl.Query
     Book book() {
-        return new Book("Dune", BookStatus.AVAILABLE, new Isbn("9780441172719"), "hidden");
+        return new Book("Dune",
+                        BookStatus.AVAILABLE,
+                        new Isbn("9780441172719"),
+                        List.of("classic", "desert"),
+                        "hidden");
+    }
+
+    @GraphQl.Query
+    List<Book> recommendedBooks() {
+        return List.of(book());
     }
 
     @GraphQl.Query
@@ -58,12 +68,19 @@ class GraphEndpoint {
 
     @GraphQl.Query
     String filteredTitle(@GraphQl.Argument("search") @GraphQl.NonNull BookSearch search) {
-        return search.phrase() + ": " + search.minimumScore() + ": " + search.includeUnavailable() + ": " + search.status();
+        return search.phrase() + ": " + search.minimumScore() + ": " + search.includeUnavailable()
+                + ": " + search.status()
+                + ": " + search.tags() + ": " + search.statuses();
     }
 
     @GraphQl.Query
     String statusName(@GraphQl.Argument("status") BookStatus status) {
         return status.name();
+    }
+
+    @GraphQl.Query
+    String statusNames(@GraphQl.Argument("statuses") List<BookStatus> statuses) {
+        return statuses.toString();
     }
 
     @GraphQl.Query

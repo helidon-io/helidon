@@ -61,9 +61,11 @@ class DeclarativeGraphQlTest {
             assertThat(schema, containsString("catalogName: String"));
             assertThat(schema, containsString("validatedGreeting(name: String = \"Reader\"): String"));
             assertThat(schema, containsString("book: Book"));
+            assertThat(schema, containsString("recommendedBooks: [Book]"));
             assertThat(schema, containsString("titleByIsbn(isbn: ISBN): String"));
             assertThat(schema, containsString("filteredTitle(search: BookSearchInput!): String"));
             assertThat(schema, containsString("statusName(status: BookStatus): String"));
+            assertThat(schema, containsString("statusNames(statuses: [BookStatus]): String"));
             assertThat(schema, containsString("contextAvailable: Boolean!"));
             assertThat(schema, containsString("securedMessage: String"));
             assertThat(schema, containsString("type Mutation"));
@@ -73,6 +75,7 @@ class DeclarativeGraphQlTest {
             assertThat(schema, containsString("title: String!"));
             assertThat(schema, containsString("state: BookStatus"));
             assertThat(schema, containsString("isbn: ISBN"));
+            assertThat(schema, containsString("tags: [String]"));
             assertThat(schema, containsString("summary(prefix: String): String"));
             assertThat(schema, containsString("enum BookStatus"));
             assertThat(schema, containsString("\"Currently available\""));
@@ -82,6 +85,8 @@ class DeclarativeGraphQlTest {
             assertThat(schema, containsString("minimumScore: Int!"));
             assertThat(schema, containsString("includeUnavailable: Boolean!"));
             assertThat(schema, containsString("status: BookStatus!"));
+            assertThat(schema, containsString("tags: [String]"));
+            assertThat(schema, containsString("statuses: [BookStatus]"));
         }
     }
 
@@ -114,7 +119,7 @@ class DeclarativeGraphQlTest {
     void testQueryAndObjectResult() {
         JsonObject data = graphQl("""
                                           {
-                                            "query": "query($isbn: ISBN!) { hello(name: \\"Helidon\\") catalogName validatedGreeting contextAvailable titleByIsbn(isbn: $isbn) literalTitle: titleByIsbn(isbn: \\"9780441172719\\") book { title state isbn summary(prefix: \\"Read\\") } }",
+                                            "query": "query($isbn: ISBN!) { hello(name: \\"Helidon\\") catalogName validatedGreeting contextAvailable titleByIsbn(isbn: $isbn) literalTitle: titleByIsbn(isbn: \\"9780441172719\\") book { title state isbn tags summary(prefix: \\"Read\\") } recommendedBooks { title } }",
                                             "variables": { "isbn": "9780441172719" }
                                           }
                                           """);
@@ -129,30 +134,44 @@ class DeclarativeGraphQlTest {
         assertThat(book.stringValue("title").orElseThrow(), is("Dune"));
         assertThat(book.stringValue("state").orElseThrow(), is("AVAILABLE"));
         assertThat(book.stringValue("isbn").orElseThrow(), is("9780441172719"));
+        assertThat(book.arrayValue("tags").orElseThrow().get(0).orElseThrow().asString().value(), is("classic"));
+        assertThat(book.arrayValue("tags").orElseThrow().get(1).orElseThrow().asString().value(), is("desert"));
         assertThat(book.stringValue("summary").orElseThrow(), is("Read: Dune"));
         assertThat(book.value("internal").isEmpty(), is(true));
+        assertThat(data.arrayValue("recommendedBooks").orElseThrow()
+                           .get(0)
+                           .orElseThrow()
+                           .asObject()
+                           .stringValue("title")
+                           .orElseThrow(), is("Dune"));
     }
 
     @Test
     void testInputObjectArgument() {
         JsonObject data = graphQl("""
                                           {
-                                            "query": "query($search: BookSearchInput!, $status: BookStatus!) { filteredTitle(search: $search) statusName(status: $status) literalStatus: statusName(status: OUT_OF_PRINT) }",
+                                            "query": "query($search: BookSearchInput!, $status: BookStatus!, $statuses: [BookStatus]) { filteredTitle(search: $search) statusName(status: $status) statusNames(statuses: $statuses) literalStatus: statusName(status: OUT_OF_PRINT) literalStatuses: statusNames(statuses: [AVAILABLE, OUT_OF_PRINT]) }",
                                             "variables": {
                                               "status": "OUT_OF_PRINT",
+                                              "statuses": ["AVAILABLE", "OUT_OF_PRINT"],
                                               "search": {
                                                 "phrase": "Dune",
                                                 "minimumScore": 5,
                                                 "includeUnavailable": false,
-                                                "status": "OUT_OF_PRINT"
+                                                "status": "OUT_OF_PRINT",
+                                                "tags": ["classic", "desert"],
+                                                "statuses": ["AVAILABLE", "OUT_OF_PRINT"]
                                               }
                                             }
                                           }
                                           """);
 
-        assertThat(data.stringValue("filteredTitle").orElseThrow(), is("Dune: 5: false: OUT"));
+        assertThat(data.stringValue("filteredTitle").orElseThrow(),
+                   is("Dune: 5: false: OUT: [classic, desert]: [AVAILABLE, OUT]"));
         assertThat(data.stringValue("statusName").orElseThrow(), is("OUT"));
+        assertThat(data.stringValue("statusNames").orElseThrow(), is("[AVAILABLE, OUT]"));
         assertThat(data.stringValue("literalStatus").orElseThrow(), is("OUT"));
+        assertThat(data.stringValue("literalStatuses").orElseThrow(), is("[AVAILABLE, OUT]"));
     }
 
     @Test

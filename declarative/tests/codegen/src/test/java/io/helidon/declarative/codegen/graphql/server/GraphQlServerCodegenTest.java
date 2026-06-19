@@ -103,6 +103,8 @@ class GraphQlServerCodegenTest {
                 .addSource("GraphEndpoint.java", """
                         package com.example;
 
+                        import java.util.List;
+
                         import io.helidon.common.context.Context;
                         import io.helidon.graphql.GraphQl;
                         import io.helidon.graphql.server.ExecutionContext;
@@ -133,7 +135,18 @@ class GraphQlServerCodegenTest {
 
                             @GraphQl.Query
                             Book book() {
-                                return new Book("Dune", BookStatus.AVAILABLE, new Isbn("9780441172719"), "hidden");
+                                return new Book("Dune", BookStatus.AVAILABLE, new Isbn("9780441172719"),
+                                                List.of("classic", "desert"), "hidden");
+                            }
+
+                            @GraphQl.Query
+                            List<Book> recommendedBooks() {
+                                return List.of(book());
+                            }
+
+                            @GraphQl.Query
+                            String statusNames(@GraphQl.Argument("statuses") List<BookStatus> statuses) {
+                                return statuses.toString();
                             }
 
                             @GraphQl.Query
@@ -180,6 +193,8 @@ class GraphQlServerCodegenTest {
                 .addSource("Book.java", """
                         package com.example;
 
+                        import java.util.List;
+
                         import io.helidon.graphql.GraphQl;
 
                         @GraphQl.Entity
@@ -187,11 +202,14 @@ class GraphQlServerCodegenTest {
                         record Book(@GraphQl.NonNull String title,
                                     @GraphQl.Name("state") BookStatus status,
                                     Isbn isbn,
+                                    List<String> tags,
                                     @GraphQl.Ignore String internal) {
                         }
                         """)
                 .addSource("BookSearch.java", """
                         package com.example;
+
+                        import java.util.List;
 
                         import io.helidon.graphql.GraphQl;
 
@@ -199,7 +217,9 @@ class GraphQlServerCodegenTest {
                         @GraphQl.Description("Book search input")
                         record BookSearch(@GraphQl.NonNull String phrase,
                                           int minimumScore,
-                                          @GraphQl.NonNull BookStatus status) {
+                                          @GraphQl.NonNull BookStatus status,
+                                          List<String> tags,
+                                          List<BookStatus> statuses) {
                         }
                         """)
                 .addSource("Isbn.java", """
@@ -282,7 +302,9 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("hello(name: String): String"));
         assertThat(generated, containsString("search(criteria: BookSearchInput!): String"));
         assertThat(generated, containsString("statusName(status: BookStatus): String"));
+        assertThat(generated, containsString("statusNames(statuses: [BookStatus]): String"));
         assertThat(generated, containsString("book: Book"));
+        assertThat(generated, containsString("recommendedBooks: [Book]"));
         assertThat(generated, containsString("author: AuthorDto"));
         assertThat(generated, containsString("bookIsbn(value: ISBN): ISBN"));
         assertThat(generated, containsString("contextSummary: String"));
@@ -296,6 +318,7 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("title: String!"));
         assertThat(generated, containsString("state: BookStatus"));
         assertThat(generated, containsString("isbn: ISBN"));
+        assertThat(generated, containsString("tags: [String]"));
         assertThat(generated, containsString("Book summary"));
         assertThat(generated, containsString("summary(prefix: String): String"));
         assertThat(generated, containsString("score: Int!"));
@@ -312,6 +335,8 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("phrase: String!"));
         assertThat(generated, containsString("minimumScore: Int!"));
         assertThat(generated, containsString("status: BookStatus!"));
+        assertThat(generated, containsString("tags: [String]"));
+        assertThat(generated, containsString("statuses: [BookStatus]"));
         assertThat(generated, containsString("builder.type(\"Book\""));
         assertThat(generated, containsString(".dataFetcher(\"title\", environment -> ((Book) environment.getSource()).title())"));
         assertThat(generated, containsString(".dataFetcher(\"state\", environment -> ((Book) environment.getSource()).status())"));
@@ -325,6 +350,9 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("scalarLiteralValue("));
         assertThat(generated, containsString("(Isbn) environment.getArgument(\"value\")"));
         assertThat(generated, containsString("enum_com_example_BookStatus(environment.getArgument(\"status\"))"));
+        assertThat(generated, containsString("list_java_util_List_com_example_BookStatus_(environment.getArgument(\"statuses\"))"));
+        assertThat(generated, containsString("private static List<BookStatus> list_java_util_List_com_example_BookStatus_(Object value)"));
+        assertThat(generated, containsString("result.add(enum_com_example_BookStatus(it));"));
         assertThat(generated, containsString("input_com_example_BookSearch(environment.getArgument(\"criteria\"))"));
         assertThat(generated, containsString("private static BookStatus enum_com_example_BookStatus(Object value)"));
         assertThat(generated, containsString("case \"OUT_OF_PRINT\" -> BookStatus.OUT;"));
@@ -334,6 +362,8 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("(String) input.get(\"phrase\")"));
         assertThat(generated, containsString("(Integer) input.get(\"minimumScore\")"));
         assertThat(generated, containsString("enum_com_example_BookStatus(input.get(\"status\"))"));
+        assertThat(generated, containsString("list_java_util_List_java_lang_String_(input.get(\"tags\"))"));
+        assertThat(generated, containsString("list_java_util_List_com_example_BookStatus_(input.get(\"statuses\"))"));
         assertThat(generated, containsString("helidonContext(environment)"));
         assertThat(generated, containsString("graphQlExecutionContext(environment)"));
         assertThat(generated, containsString("securityContext(environment)"));
