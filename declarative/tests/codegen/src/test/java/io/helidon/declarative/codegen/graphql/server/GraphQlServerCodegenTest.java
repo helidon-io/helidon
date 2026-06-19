@@ -376,23 +376,32 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("scalar.parseValue(input)"));
         assertThat(generated, containsString("scalar.parseLiteral(scalarLiteralValue(input))"));
         assertThat(generated, containsString("scalarLiteralValue("));
-        assertThat(generated, containsString("(Isbn) environment.getArgument(\"value\")"));
+        assertThat(generated, containsString("private static Object inputValue(Object value, Class<?> type, String graphQlType)"));
+        assertThat(generated, containsString("if (type.isInstance(value))"));
+        assertThat(generated, containsString("Expected GraphQL \" + graphQlType"));
+        assertThat(generated, containsString("(Isbn) inputValue(environment.getArgument(\"value\"), Isbn.class, \"ISBN\")"));
         assertThat(generated, containsString("enum_com_example_BookStatus(environment.getArgument(\"status\"))"));
         assertThat(generated, containsString("list_java_util_List_com_example_BookStatus_(environment.getArgument(\"statuses\"))"));
         assertThat(generated, containsString("list_java_util_List_com_example_Isbn_(environment.getArgument(\"values\"))"));
         assertThat(generated, containsString("private static List<BookStatus> list_java_util_List_com_example_BookStatus_(Object value)"));
         assertThat(generated, containsString("private static List<Isbn> list_java_util_List_com_example_Isbn_(Object value)"));
+        assertThat(generated, containsString("Expected GraphQL list value for [BookStatus] to be List"));
+        assertThat(generated, containsString("Expected GraphQL list value for [ISBN] to be List"));
         assertThat(generated, containsString("result.add(enum_com_example_BookStatus(it));"));
-        assertThat(generated, containsString("result.add((Isbn) it);"));
+        assertThat(generated, containsString("result.add((Isbn) inputValue(it, Isbn.class, \"ISBN\"));"));
         assertThat(generated, containsString("input_com_example_BookSearch(environment.getArgument(\"criteria\"))"));
         assertThat(generated, containsString("private static BookStatus enum_com_example_BookStatus(Object value)"));
+        assertThat(generated, containsString("Expected GraphQL enum value for BookStatus to be String"));
+        assertThat(generated, containsString("return switch (enumName)"));
         assertThat(generated, containsString("case \"OUT_OF_PRINT\" -> BookStatus.OUT;"));
         assertThat(generated, containsString("private static BookSearch input_com_example_BookSearch(Object value)"));
         assertThat(generated, containsString("private static BookFilter input_com_example_BookFilter(Object value)"));
-        assertThat(generated, containsString("var input = (java.util.Map<String, Object>) value;"));
+        assertThat(generated, containsString("if (!(value instanceof java.util.Map<?, ?> input))"));
+        assertThat(generated, containsString("Expected GraphQL input object value for BookSearchInput to be Map"));
+        assertThat(generated, containsString("Expected GraphQL input object value for BookFilterInput to be Map"));
         assertThat(generated, containsString("return new BookSearch("));
-        assertThat(generated, containsString("(String) input.get(\"phrase\")"));
-        assertThat(generated, containsString("(Integer) input.get(\"minimumScore\")"));
+        assertThat(generated, containsString("(String) inputValue(input.get(\"phrase\"), String.class, \"String\")"));
+        assertThat(generated, containsString("(Integer) inputValue(input.get(\"minimumScore\"), Integer.class, \"Int\")"));
         assertThat(generated, containsString("enum_com_example_BookStatus(input.get(\"status\"))"));
         assertThat(generated, containsString("list_java_util_List_java_lang_String_(input.get(\"tags\"))"));
         assertThat(generated, containsString("list_java_util_List_com_example_BookStatus_(input.get(\"statuses\"))"));
@@ -409,7 +418,7 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString(".dataFetcher(\"score\", fetcher_"));
         assertThat(generated, containsString("this.endpoint_0.summary("));
         assertThat(generated, containsString("((Book) environment.getSource())"));
-        assertThat(generated, containsString("(String) environment.getArgument(\"prefix\")"));
+        assertThat(generated, containsString("(String) inputValue(environment.getArgument(\"prefix\"), String.class, \"String\")"));
         assertThat(generated, containsString("list_java_util_List_java_lang_String_(environment.getArgument(\"tags\"))"));
         assertThat(generated, containsString("builder.type(\"AuthorDto\""));
         assertThat(generated, containsString(".dataFetcher(\"name\", environment -> ((AuthorDto) environment.getSource()).getName())"));
@@ -549,7 +558,7 @@ class GraphQlServerCodegenTest {
             assertThat(generated, containsString("new com.example.RequestInfo(environment.getField().getName() + \":QUERY\")"));
             assertThat(generated, containsString("new com.example.RequestInfo(environment.getField().getName() + \":FIELD\")"));
             assertThat(generated, containsString("((Book) environment.getSource())"));
-            assertThat(generated, containsString("(String) environment.getArgument(\"prefix\")"));
+            assertThat(generated, containsString("(String) inputValue(environment.getArgument(\"prefix\"), String.class, \"String\")"));
         } finally {
             Files.deleteIfExists(servicesFile);
         }

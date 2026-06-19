@@ -231,6 +231,27 @@ class DeclarativeGraphQlTest {
     }
 
     @Test
+    void testScalarArgumentWrongProviderTypeFailure() {
+        JsonObject json = graphQlResponse("""
+                                                  {
+                                                    "query": "query($isbn: ISBN!) { hello(name: \\"Helidon\\") titleByIsbn(isbn: $isbn) }",
+                                                    "variables": {
+                                                      "isbn": "wrong-provider-type"
+                                                    }
+                                                  }
+                                                  """);
+
+        JsonObject data = json.objectValue("data").orElseThrow();
+        assertThat(data.stringValue("hello").orElseThrow(), is("Hello Helidon"));
+        assertThat(data.value("titleByIsbn").orElseThrow().type(), is(JsonValueType.NULL));
+        String errors = json.arrayValue("errors").orElseThrow().toString();
+        assertThat(errors, containsString("Expected GraphQL ISBN value to be "
+                                                  + Isbn.class.getName()
+                                                  + ", but got java.lang.String."));
+        assertThat(errors, containsString("titleByIsbn"));
+    }
+
+    @Test
     void testResolverAuthenticationFailure() {
         JsonObject json = graphQlResponse("""
                                                   {

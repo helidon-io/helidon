@@ -116,6 +116,7 @@ import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegen
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerInputValues.addEnumInputMethods;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerInputValues.addInputObjectMethods;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerInputValues.addListInputMethods;
+import static io.helidon.declarative.codegen.graphql.server.GraphQlServerInputValues.addScalarInputValueMethod;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerInputValues.enumInputTypes;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerInputValues.listInputTypes;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerInputValues.valueExpression;
@@ -737,6 +738,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         addRuntimeWiringMethod(classModel, group);
         addScalarMethods(classModel);
         addContextParameterMethods(classModel, group.operations());
+        addScalarInputValueMethod(classModel);
         addEnumInputMethods(classModel, enumInputTypes(group.operations(), group.schemaTypes().inputTypes()));
         addListInputMethods(classModel, listInputTypes(group.operations(), group.schemaTypes().inputTypes()));
         addInputObjectMethods(classModel, group.schemaTypes().inputTypes());

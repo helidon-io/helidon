@@ -43,6 +43,9 @@ class IsbnScalar implements GraphQlScalar {
 
     @Override
     public Object parseValue(Object value) {
+        if ("wrong-provider-type".equals(value)) {
+            return value;
+        }
         return new Isbn((String) value);
     }
 }

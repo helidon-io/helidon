@@ -23,7 +23,6 @@ import java.util.Map;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.Method;
 import io.helidon.common.types.AccessModifier;
-import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.declarative.codegen.graphql.server.GraphQlServerTypes.Argument;
@@ -35,7 +34,40 @@ import io.helidon.declarative.codegen.graphql.server.GraphQlServerTypes.Operatio
 import io.helidon.declarative.codegen.graphql.server.GraphQlServerTypes.ValueSchemaType;
 
 final class GraphQlServerInputValues {
+    private static final String INPUT_VALUE_METHOD = "inputValue";
+
     private GraphQlServerInputValues() {
+    }
+
+    static void addScalarInputValueMethod(ClassModel.Builder classModel) {
+        classModel.addMethod(method -> method.accessModifier(AccessModifier.PRIVATE)
+                .isStatic(true)
+                .returnType(TypeNames.OBJECT)
+                .name(INPUT_VALUE_METHOD)
+                .addParameter(param -> param
+                        .type(TypeNames.OBJECT)
+                        .name("value"))
+                .addParameter(param -> param
+                        .type(TypeNames.CLASS_WILDCARD)
+                        .name("type"))
+                .addParameter(param -> param
+                        .type(TypeNames.STRING)
+                        .name("graphQlType"))
+                .addContentLine("if (value == null) {")
+                .increaseContentPadding()
+                .addContentLine("return null;")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContentLine("if (type.isInstance(value)) {")
+                .increaseContentPadding()
+                .addContentLine("return value;")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContentLine("throw new IllegalArgumentException(\"Expected GraphQL \" + graphQlType")
+                .increaseContentPadding()
+                .addContentLine("+ \" value to be \" + type.getName()")
+                .addContentLine("+ \", but got \" + value.getClass().getName() + \".\");")
+                .decreaseContentPadding());
     }
 
     static List<EnumSchemaType> enumInputTypes(List<Operation> operations, List<InputSchemaType> inputTypes) {
@@ -75,7 +107,17 @@ final class GraphQlServerInputValues {
                         .addContentLine("return enumValue;")
                         .decreaseContentPadding()
                         .addContentLine("}")
-                        .addContentLine("return switch ((String) value) {")
+                        .addContentLine("if (!(value instanceof String enumName)) {")
+                        .increaseContentPadding()
+                        .addContent("throw new IllegalArgumentException(\"Expected GraphQL enum value for ")
+                        .addContent(enumType.graphQlName())
+                        .addContentLine(" to be String, but got \"")
+                        .increaseContentPadding()
+                        .addContentLine("+ value.getClass().getName() + \".\");")
+                        .decreaseContentPadding()
+                        .decreaseContentPadding()
+                        .addContentLine("}")
+                        .addContentLine("return switch (enumName) {")
                         .increaseContentPadding();
                 for (EnumValue value : enumType.values()) {
                     method.addContent("case ")
@@ -86,9 +128,9 @@ final class GraphQlServerInputValues {
                             .addContent(value.javaName())
                             .addContentLine(";");
                 }
-                method.addContent("default -> throw new IllegalArgumentException(\"Unsupported GraphQL enum value \" + value")
+                method.addContent("default -> throw new IllegalArgumentException(\"Unsupported GraphQL enum value \" + enumName")
                         .addContent(" + \" for ")
-                        .addContent(enumType.javaType().fqName())
+                        .addContent(enumType.graphQlName())
                         .addContentLine("\");")
                         .decreaseContentPadding()
                         .addContentLine("};");
@@ -126,7 +168,16 @@ final class GraphQlServerInputValues {
                         .addContentLine("return null;")
                         .decreaseContentPadding()
                         .addContentLine("}")
-                        .addContentLine("var list = (java.util.List<?>) value;")
+                        .addContentLine("if (!(value instanceof java.util.List<?> list)) {")
+                        .increaseContentPadding()
+                        .addContent("throw new IllegalArgumentException(\"Expected GraphQL list value for ")
+                        .addContent(listType.graphQlName())
+                        .addContentLine(" to be List, but got \"")
+                        .increaseContentPadding()
+                        .addContentLine("+ value.getClass().getName() + \".\");")
+                        .decreaseContentPadding()
+                        .decreaseContentPadding()
+                        .addContentLine("}")
                         .addContent("var result = new java.util.ArrayList<")
                         .addContent(listType.elementType().orElseThrow().javaType())
                         .addContentLine(">(list.size());")
@@ -147,7 +198,6 @@ final class GraphQlServerInputValues {
             classModel.addMethod(method -> {
                 method.accessModifier(AccessModifier.PRIVATE)
                         .isStatic(true)
-                        .addAnnotation(Annotation.create(SuppressWarnings.class, "unchecked"))
                         .returnType(inputType.javaType())
                         .name(inputObjectMethodName(inputType))
                         .addParameter(param -> param
@@ -158,7 +208,16 @@ final class GraphQlServerInputValues {
                         .addContentLine("return null;")
                         .decreaseContentPadding()
                         .addContentLine("}")
-                        .addContentLine("var input = (java.util.Map<String, Object>) value;")
+                        .addContentLine("if (!(value instanceof java.util.Map<?, ?> input)) {")
+                        .increaseContentPadding()
+                        .addContent("throw new IllegalArgumentException(\"Expected GraphQL input object value for ")
+                        .addContent(inputType.graphQlName())
+                        .addContentLine(" to be Map, but got \"")
+                        .increaseContentPadding()
+                        .addContentLine("+ value.getClass().getName() + \".\");")
+                        .decreaseContentPadding()
+                        .decreaseContentPadding()
+                        .addContentLine("}")
                         .addContent("return new ")
                         .addContent(inputType.javaType())
                         .addContentLine("(")
@@ -205,7 +264,14 @@ final class GraphQlServerInputValues {
         method.addContent("(")
                 .addContent(valueType.javaType().boxed())
                 .addContent(") ")
-                .addContent(source);
+                .addContent(INPUT_VALUE_METHOD)
+                .addContent("(")
+                .addContent(source)
+                .addContent(", ")
+                .addContent(valueType.javaType().boxed())
+                .addContent(".class, ")
+                .addContentLiteral(valueType.graphQlName())
+                .addContent(")");
     }
 
     private static void collectEnumInputTypes(Map<TypeName, EnumSchemaType> result, ValueSchemaType valueType) {
