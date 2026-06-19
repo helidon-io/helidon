@@ -134,6 +134,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                                                                   "Float",
                                                                   "Boolean",
                                                                   "ID");
+    private static final Set<String> RESERVED_ENUM_VALUE_NAMES = Set.of("true", "false", "null");
     private static final TypeName LIST_OF_GRAPHQL_SCALARS = TypeName.builder(TypeNames.LIST)
             .addTypeArgument(GRAPHQL_SCALAR_SPI)
             .build();
@@ -951,6 +952,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                     .addContentLine(".newRuntimeWiring();");
 
             addScalarWiring(method, group.schemaTypes().scalarTypes());
+            addEnumWiring(method, group.schemaTypes().enumTypes());
             addDataFetcherVariables(method, group);
             addWiring(method, "Query", group.queries());
             addWiring(method, "Mutation", group.mutations());
@@ -967,6 +969,35 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                     .addContent(", ")
                     .addContent(scalarType.javaType())
                     .addContentLine(".class));");
+        }
+    }
+
+    private void addEnumWiring(io.helidon.codegen.classmodel.Method.Builder method, List<EnumSchemaType> enumTypes) {
+        for (EnumSchemaType enumType : enumTypes) {
+            method.addContent("builder.type(")
+                    .addContentLiteral(enumType.graphQlName())
+                    .addContentLine(", type -> type")
+                    .increaseContentPadding()
+                    .increaseContentPadding()
+                    .addContentLine(".enumValues(enumName -> switch (enumName) {")
+                    .increaseContentPadding();
+            for (EnumValue value : enumType.values()) {
+                method.addContent("case ")
+                        .addContentLiteral(value.graphQlName())
+                        .addContent(" -> ")
+                        .addContent(enumType.javaType())
+                        .addContent(".")
+                        .addContent(value.javaName())
+                        .addContentLine(";");
+            }
+            method.addContent("default -> throw new IllegalArgumentException(\"Unsupported GraphQL enum value \" + enumName")
+                    .addContent(" + \" for ")
+                    .addContent(enumType.graphQlName())
+                    .addContentLine("\");")
+                    .decreaseContentPadding()
+                    .addContentLine("}));")
+                    .decreaseContentPadding()
+                    .decreaseContentPadding();
         }
     }
 
@@ -1318,6 +1349,14 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         return name;
     }
 
+    private static void validateEnumValueName(String name, Object originatingElement) {
+        if (RESERVED_ENUM_VALUE_NAMES.contains(name)) {
+            throw new CodegenException("GraphQL enum value '" + name
+                                               + "' must not be true, false, or null.",
+                                       originatingElement);
+        }
+    }
+
     private static boolean isGraphQlName(String name) {
         if (name.isEmpty() || !isGraphQlNameStart(name.charAt(0))) {
             return false;
@@ -1393,6 +1432,14 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                     .stream()
                     .filter(ScalarSchemaType.class::isInstance)
                     .map(ScalarSchemaType.class::cast)
+                    .toList();
+        }
+
+        private List<EnumSchemaType> enumTypes() {
+            return types.values()
+                    .stream()
+                    .filter(EnumSchemaType.class::isInstance)
+                    .map(EnumSchemaType.class::cast)
                     .toList();
         }
 
@@ -1676,11 +1723,11 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
 
         private EnumValue enumValue(TypedElementInfo enumConstant) {
             Set<Annotation> annotations = new HashSet<>(enumConstant.annotations());
-            return new EnumValue(enumConstant.elementName(),
-                                 graphQlName(annotations,
+            String graphQlName = graphQlName(annotations,
                                              enumConstant.elementName(),
-                                             enumConstant.originatingElementValue()),
-                                 description(annotations));
+                                             enumConstant.originatingElementValue());
+            validateEnumValueName(graphQlName, enumConstant.originatingElementValue());
+            return new EnumValue(enumConstant.elementName(), graphQlName, description(annotations));
         }
 
         private List<SchemaField> objectFields(TypeInfo typeInfo) {

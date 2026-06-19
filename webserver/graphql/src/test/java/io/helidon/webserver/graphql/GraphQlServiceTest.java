@@ -17,6 +17,7 @@
 package io.helidon.webserver.graphql;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -43,9 +44,12 @@ import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 
+import graphql.GraphQLContext;
 import graphql.GraphqlErrorBuilder;
 import graphql.execution.DataFetcherResult;
+import graphql.schema.Coercing;
 import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLScalarType;
 import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.SchemaGenerator;
 import graphql.schema.idl.SchemaParser;
@@ -137,8 +141,9 @@ class GraphQlServiceTest {
 
     @Test
     void testVariables() {
-        String query = "query($input: NestedInput, $values: [Int], $decimal: Float) {"
+        String query = "query($input: NestedInput, $values: [Int], $decimal: Float, $long: ANY, $big: ANY) {"
                 + " nested(input: $input) sum(values: $values) scaled(value: $decimal)"
+                + " longValue: numberType(value: $long) bigValue: numberType(value: $big)"
                 + " }";
         try (Http1ClientResponse response = client.post("/graphql")
                 .submit("""
@@ -151,7 +156,9 @@ class GraphQlServiceTest {
                                       "missing": null
                                     },
                                     "values": [3, 4, 5],
-                                    "decimal": 1.0
+                                    "decimal": 1.0,
+                                    "long": 3000000000,
+                                    "big": 9223372036854775808
                                   }
                                 }
                                 """.formatted(query))) {
@@ -163,6 +170,8 @@ class GraphQlServiceTest {
                        is("post:2:true"));
             assertThat("POST sum", data.intValue("sum").orElseThrow(), is(12));
             assertThat("POST decimal", data.doubleValue("scaled").orElseThrow(), is(1.0));
+            assertThat("POST long", data.stringValue("longValue").orElseThrow(), is("Long:3000000000"));
+            assertThat("POST big", data.stringValue("bigValue").orElseThrow(), is("BigInteger:9223372036854775808"));
         }
 
         try (Http1ClientResponse response = client.get("/graphql")
@@ -265,12 +274,14 @@ class GraphQlServiceTest {
                     requestContextAvailable: Boolean
                     echo(message: String): String
                     nested(input: NestedInput): String
+                    numberType(value: ANY): String
                     numbers: [Int]
                     nothing: String
                     extensionObject: String
                     scaled(value: Float): Float
                     sum(values: [Int]): Int
                 }
+                scalar ANY
                 type Mutation {
                     update(enabled: Boolean): Boolean
                 }
@@ -285,12 +296,17 @@ class GraphQlServiceTest {
         TypeDefinitionRegistry typeDefinitionRegistry = schemaParser.parse(schema);
 
         RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring()
+                .scalar(anyScalar())
                 .type("Query", builder -> builder.dataFetcher("hello", _ -> "world")
                         .dataFetcher("echo", environment -> environment.getArgument("message"))
                         .dataFetcher("nested", environment -> {
                             Map<String, Object> input = environment.getArgument("input");
                             List<?> values = (List<?>) input.get("values");
                             return input.get("label") + ":" + values.size() + ":" + input.containsKey("missing");
+                        })
+                        .dataFetcher("numberType", environment -> {
+                            Object value = environment.getArgument("value");
+                            return value.getClass().getSimpleName() + ":" + value;
                         })
                         .dataFetcher("numbers", _ -> List.of(1, 2, 3))
                         .dataFetcher("nothing", _ -> null)
@@ -322,6 +338,23 @@ class GraphQlServiceTest {
 
         SchemaGenerator schemaGenerator = new SchemaGenerator();
         return schemaGenerator.makeExecutableSchema(typeDefinitionRegistry, runtimeWiring);
+    }
+
+    private static GraphQLScalarType anyScalar() {
+        return GraphQLScalarType.newScalar()
+                .name("ANY")
+                .coercing(new Coercing<Object, Object>() {
+                    @Override
+                    public Object serialize(Object dataFetcherResult, GraphQLContext graphQLContext, Locale locale) {
+                        return dataFetcherResult;
+                    }
+
+                    @Override
+                    public Object parseValue(Object input, GraphQLContext graphQLContext, Locale locale) {
+                        return input;
+                    }
+                })
+                .build();
     }
 
     @Json.Entity

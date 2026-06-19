@@ -60,7 +60,7 @@ class GraphEndpoint {
     @GraphQl.Query
     Book book() {
         return new Book("Dune",
-                        BookStatus.AVAILABLE,
+                        BookStatus.OUT,
                         new Isbn("9780441172719"),
                         List.of("classic", "desert"),
                         List.of(new Isbn("9780441172720"), new Isbn("9780441172721")),
@@ -90,6 +90,11 @@ class GraphEndpoint {
     @GraphQl.Query
     String statusName(@GraphQl.Argument("status") BookStatus status) {
         return status.name();
+    }
+
+    @GraphQl.Query
+    BookStatus renamedStatus() {
+        return BookStatus.OUT;
     }
 
     @GraphQl.Query

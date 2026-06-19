@@ -136,6 +136,11 @@ class GraphQlServerCodegenTest {
                             }
 
                             @GraphQl.Query
+                            BookStatus renamedStatus() {
+                                return BookStatus.OUT;
+                            }
+
+                            @GraphQl.Query
                             Book book() {
                                 return new Book("Dune", BookStatus.AVAILABLE, new Isbn("9780441172719"),
                                                 List.of("classic", "desert"), List.of(new Isbn("9780441172720")), "hidden");
@@ -323,6 +328,7 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("hello(name: String): String"));
         assertThat(generated, containsString("search(criteria: BookSearchInput!): String"));
         assertThat(generated, containsString("statusName(status: BookStatus): String"));
+        assertThat(generated, containsString("renamedStatus: BookStatus"));
         assertThat(generated, containsString("statusNames(statuses: [BookStatus]): String"));
         assertThat(generated, containsString("isbns(values: [ISBN]): String"));
         assertThat(generated, containsString("book: Book"));
@@ -350,6 +356,9 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("Currently available"));
         assertThat(generated, containsString("AVAILABLE"));
         assertThat(generated, containsString("OUT_OF_PRINT"));
+        assertThat(generated, containsString("builder.type(\"BookStatus\""));
+        assertThat(generated, containsString(".enumValues(enumName -> switch (enumName)"));
+        assertThat(generated, containsString("case \"OUT_OF_PRINT\" -> BookStatus.OUT;"));
         assertThat(generated, containsString("type AuthorDto"));
         assertThat(generated, containsString("name: String"));
         assertThat(generated, containsString("active: Boolean!"));
@@ -1858,6 +1867,46 @@ class GraphQlServerCodegenTest {
         String diagnostics = String.join("\n", result.diagnostics());
         assertThat(diagnostics, result.success(), is(false));
         assertThat(diagnostics, containsString("Duplicate GraphQL enum value 'AVAILABLE'"));
+    }
+
+    @Test
+    void reservedEnumValueLiteralFailsCodegen() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-enum-value-reserved-literal"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            BookStatus status() {
+                                return BookStatus.AVAILABLE;
+                            }
+                        }
+                        """)
+                .addSource("BookStatus.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Entity
+                        enum BookStatus {
+                            @GraphQl.Name("true")
+                            AVAILABLE
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("GraphQL enum value 'true' must not be true, false, or null."));
     }
 
     @Test

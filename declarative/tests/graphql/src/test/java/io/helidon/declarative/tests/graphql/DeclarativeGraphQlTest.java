@@ -77,6 +77,7 @@ class DeclarativeGraphQlTest {
             assertThat(schema, containsString("titleByIsbn(isbn: ISBN): String"));
             assertThat(schema, containsString("filteredTitle(search: BookSearchInput!): String"));
             assertThat(schema, containsString("statusName(status: BookStatus): String"));
+            assertThat(schema, containsString("renamedStatus: BookStatus"));
             assertThat(schema, containsString("statusNames(statuses: [BookStatus]): String"));
             assertThat(schema, containsString("isbnValues(isbns: [ISBN]): String"));
             assertThat(schema, containsString("structured(value: STRUCTURED): String"));
@@ -218,7 +219,7 @@ class DeclarativeGraphQlTest {
     void testQueryAndObjectResult() {
         JsonObject data = graphQl("""
                                           {
-                                            "query": "query($isbn: ISBN!) { hello(name: \\"Helidon\\") catalogName validatedGreeting contextAvailable titleByIsbn(isbn: $isbn) literalTitle: titleByIsbn(isbn: \\"9780441172719\\") book { title state isbn tags relatedIsbns summary(prefix: \\"Read\\", tags: [\\"classic\\"]) } recommendedBooks { title } }",
+                                            "query": "query($isbn: ISBN!) { hello(name: \\"Helidon\\") catalogName validatedGreeting contextAvailable titleByIsbn(isbn: $isbn) literalTitle: titleByIsbn(isbn: \\"9780441172719\\") renamedStatus book { title state isbn tags relatedIsbns summary(prefix: \\"Read\\", tags: [\\"classic\\"]) } recommendedBooks { title } }",
                                             "variables": { "isbn": "9780441172719" }
                                           }
                                           """);
@@ -229,9 +230,10 @@ class DeclarativeGraphQlTest {
         assertThat(data.booleanValue("contextAvailable").orElseThrow(), is(true));
         assertThat(data.stringValue("titleByIsbn").orElseThrow(), is("Dune: 9780441172719"));
         assertThat(data.stringValue("literalTitle").orElseThrow(), is("Dune: 9780441172719"));
+        assertThat(data.stringValue("renamedStatus").orElseThrow(), is("OUT_OF_PRINT"));
         JsonObject book = data.objectValue("book").orElseThrow();
         assertThat(book.stringValue("title").orElseThrow(), is("Dune"));
-        assertThat(book.stringValue("state").orElseThrow(), is("AVAILABLE"));
+        assertThat(book.stringValue("state").orElseThrow(), is("OUT_OF_PRINT"));
         assertThat(book.stringValue("isbn").orElseThrow(), is("9780441172719"));
         assertThat(book.arrayValue("tags").orElseThrow().get(0).orElseThrow().asString().value(), is("classic"));
         assertThat(book.arrayValue("tags").orElseThrow().get(1).orElseThrow().asString().value(), is("desert"));

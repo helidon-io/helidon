@@ -308,15 +308,14 @@ public class GraphQlService implements HttpService {
     private static Object toJavaNumber(JsonNumber number) {
         BigDecimal value = number.bigDecimalValue();
         if (value.scale() <= 0) {
-            try {
-                return value.intValueExact();
-            } catch (ArithmeticException e) {
-                try {
-                    return value.longValueExact();
-                } catch (ArithmeticException ignored) {
-                    return value.toBigIntegerExact();
-                }
+            BigInteger integer = value.toBigIntegerExact();
+            if (integer.bitLength() < Integer.SIZE) {
+                return integer.intValue();
             }
+            if (integer.bitLength() < Long.SIZE) {
+                return integer.longValue();
+            }
+            return integer;
         }
         return value;
     }

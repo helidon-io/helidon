@@ -122,7 +122,7 @@ class InvocationHandlerImpl implements InvocationHandler {
 
     @Override
     public Map<String, Object> execute(String query, String operationName, Map<String, Object> variables) {
-        return executeInternal(query, operationName, variables, Map.of());
+        return executeInternal(query, operationName, variables == null ? Map.of() : variables, Map.of());
     }
 
     @Override

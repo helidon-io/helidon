@@ -118,7 +118,7 @@ public interface InvocationHandler {
      *
      * @param query query string
      * @param operationName operation name
-     * @param variables variables to use (optional)
+     * @param variables variables to use
      * @param contextValues context values to use for this execution
      * @return GraphQL result
      */

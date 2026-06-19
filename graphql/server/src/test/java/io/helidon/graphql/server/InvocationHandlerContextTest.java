@@ -77,6 +77,17 @@ class InvocationHandlerContextTest {
     }
 
     @Test
+    void legacyExecuteAcceptsNullVariables() {
+        InvocationHandler handler = InvocationHandler.builder()
+                .schema(schema(InvocationHandlerContextTest::authorizationValue))
+                .build();
+
+        Map<String, Object> result = handler.execute("{value}", null, null);
+
+        assertThat(((Map<?, ?>) result.get("data")).get("value"), is("missing"));
+    }
+
+    @Test
     void requestContextValuesAreAvailableToGraphQlJavaContext() {
         Context context = Context.create();
         InvocationHandler handler = InvocationHandler.builder()

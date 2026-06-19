@@ -913,6 +913,11 @@ GraphQL resolver methods are Service Registry entry points. Standard declarative
 annotations and validation interceptors, can participate in resolver invocation. The generated WebServer route is also
 wrapped as an HTTP entry point for route-level security.
 
+Security annotations on the GraphQL endpoint type protect the generated WebServer route before GraphQL execution starts.
+Authentication and authorization failures in this phase use normal HTTP security responses, such as `401` or `403`.
+Security annotations on resolver methods protect individual GraphQL fields. Resolver-level failures are returned as GraphQL
+field errors in the response body, so sibling fields can still complete and the HTTP response commonly remains `200`.
+
 See xref:../graphql.adoc#GraphQL-Declarative-API[GraphQL Declarative API] for dependencies, startup, examples, custom scalars,
 and resolver parameter extension points.
 
