@@ -117,6 +117,33 @@ class DeclarativeGrpcTest {
     }
 
     @Test
+    void testDeclarativeServerStreamingClient() {
+        var responses = greetingClient.split(request("Declarative,Streaming"));
+        var replies = new ArrayList<DeclarativeGrpcProto.GreetingReply>();
+        responses.forEachRemaining(replies::add);
+
+        assertThat(replies,
+                   contains(reply("Hello Declarative"), reply("Hello Streaming")));
+    }
+
+    @Test
+    void testDeclarativeClientStreamingClient() {
+        var response = greetingClient.join(List.of(request("Declarative"), request("Streaming")).iterator());
+
+        assertThat(response, is(reply("Hello Declarative, Streaming")));
+    }
+
+    @Test
+    void testDeclarativeBidirectionalStreamingClient() {
+        var responses = greetingClient.chat(List.of(request("Declarative"), request("Streaming")).iterator());
+        var replies = new ArrayList<DeclarativeGrpcProto.GreetingReply>();
+        responses.forEachRemaining(replies::add);
+
+        assertThat(replies,
+                   contains(reply("Hello Declarative"), reply("Hello Streaming")));
+    }
+
+    @Test
     void testUnaryMethodMetrics() {
         MeterRegistry meterRegistry = MetricsFactory.getInstance().globalRegistry();
         List<Tag> methodTags = List.of(Tag.create("transport", "grpc"), Tag.create("scope", "application"));
