@@ -238,6 +238,8 @@ class GrpcServerCodegenTest {
         assertThat(registration, containsString("implements GrpcRouteRegistration"));
         assertThat(registration, containsString("private final GreetingGrpc endpoint;"));
         assertThat(registration, containsString("GrpcServiceDescriptor.builder(GreetingGrpc.class, \"Greeting\")"));
+        assertThat(registration, containsString("private static final List<Annotation> CLASS_ANNOTATIONS"));
+        assertThat(registration, containsString("var annotations = CLASS_ANNOTATIONS;"));
         assertThat(registration, containsString("var declarative__proto = proto();"));
         assertThat(registration, containsString(".proto(declarative__proto)"));
         assertThat(registration, containsString("validateProtoMethod(declarative__proto, \"Greeting\", \"SayHello\", "
@@ -261,17 +263,17 @@ class GrpcServerCodegenTest {
         assertThat(registration, containsString("if (entryPoints.hasInterceptors()) {"));
         assertThat(registration, containsString("entryPoints.interceptor("));
         assertThat(registration, containsString("GrpcSecurity.enforce().authenticate().securityLevel("));
-        assertThat(registration, containsString(".classAnnotations(GreetingGrpc__ServiceDescriptor.ANNOTATIONS)"
-                                                        + ".build()).configure(builder);"));
+        assertThat(registration, containsString(".classAnnotations(CLASS_ANNOTATIONS).build()).configure(builder);"));
         assertThat(registration, containsString("GrpcSecurity.enforce().authorize().securityLevel("));
         assertThat(registration, containsString("GrpcSecurity.enforce().rolesAllowed(\"admin\").securityLevel("));
-        assertThat(registration, containsString("GrpcSecurity.enforce().skipAuthentication().authorize().securityLevel("));
+        assertThat(registration, containsString("GrpcSecurity.enforce().skipAuthentication().authorize().clearRolesAllowed()"
+                                                        + ".securityLevel("));
         assertThat(registration, containsString("GrpcSecurity.enforce().authenticate().authorize().securityLevel("));
         assertThat(registration, containsString("GrpcSecurity.enforce().audit().auditEventType(\"declarativeGrpc\")"));
         assertThat(registration, containsString(".auditMessageFormat(\"%3$s %1$s \\\"%2$s\\\" %5$s %6$s "
                                                         + "requested by %4$s\")"));
         assertThat(registration, containsString("SecurityLevel.builder().type(GreetingGrpc.class)"
-                                                        + ".classAnnotations(GreetingGrpc__ServiceDescriptor.ANNOTATIONS)"));
+                                                        + ".classAnnotations(CLASS_ANNOTATIONS)"));
         assertThat(registration, containsString(".methodName(\"sayHello\")"
                                                         + ".methodAnnotations(METHOD_SAY_HELLO.annotations()).build()"));
         assertThat(registration, containsString("private static final TypedElementInfo METHOD_SAY_HELLO"));
@@ -331,6 +333,65 @@ class GrpcServerCodegenTest {
         assertCompilationFails(result,
                                "Declarative gRPC service com.example.GreetingGrpc must declare a @Grpc.Proto method "
                                        + "returning com.google.protobuf.Descriptors.FileDescriptor.");
+    }
+
+    @Test
+    void grpcServiceUsesClassNameWhenServiceNameIsBlank() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/grpc-server-default-service-name"))
+                .addSource("Greeting.java", """
+                        package com.example;
+
+                        import com.google.protobuf.Descriptors;
+
+                        import io.helidon.grpc.api.Grpc;
+                        import io.helidon.service.registry.Service;
+
+                        @Grpc.GrpcService
+                        @Service.Singleton
+                        class Greeting {
+                            @Grpc.Proto
+                            Descriptors.FileDescriptor proto() {
+                                return null;
+                            }
+
+                            @Grpc.Unary("SayHello")
+                            GreetingReply sayHello(GreetingRequest request) {
+                                return new GreetingReply();
+                            }
+                        }
+
+                        class GreetingRequest {
+                        }
+
+                        class GreetingReply {
+                        }
+                        """)
+                .addSource("Main.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.GenerateBinding
+                        class Main {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        Path generatedRegistration = result.sourceOutput().resolve("com/example/Greeting__GrpcRegistration.java");
+        assertThat("Generated source should exist: " + generatedRegistration, Files.exists(generatedRegistration), is(true));
+
+        String registration = Files.readString(generatedRegistration, StandardCharsets.UTF_8);
+        assertThat(registration, containsString("GrpcServiceDescriptor.builder(Greeting.class, \"Greeting\")"));
+        assertThat(registration, containsString("validateProtoMethod(declarative__proto, \"Greeting\", \"SayHello\", "
+                                                        + "false, false);"));
     }
 
     @Test
@@ -484,6 +545,35 @@ class GrpcServerCodegenTest {
     }
 
     @Test
+    void grpcMethodRejectsConflictingInheritedMethodAnnotations() {
+        var result = compileGrpcService("grpc-server-inherited-multiple-method-annotations",
+                                        """
+                                                interface GreetingContract {
+                                                    @Grpc.Unary("SayHello")
+                                                    void sayHello(GreetingRequest request,
+                                                                  StreamObserver<GreetingReply> responseObserver);
+                                                }
+                                                """,
+                                        "implements GreetingContract",
+                                        """
+                                                @Grpc.Proto
+                                                Descriptors.FileDescriptor proto() {
+                                                    return null;
+                                                }
+
+                                                @Override
+                                                @Grpc.ServerStreaming("SayHello")
+                                                public void sayHello(GreetingRequest request,
+                                                                     StreamObserver<GreetingReply> responseObserver) {
+                                                }
+                                                """);
+
+        assertCompilationFails(result,
+                               "Declarative gRPC server method com.example.GreetingGrpc.sayHello() "
+                                       + "must declare exactly one gRPC method annotation.");
+    }
+
+    @Test
     void grpcProtoMethodRejectsMethodAnnotation() {
         var result = compileGrpcService("grpc-server-proto-method-annotation", """
                 @Grpc.Proto
@@ -543,6 +633,13 @@ class GrpcServerCodegenTest {
     }
 
     private static TestCompiler.Result compileGrpcService(String workDir, String serviceBody) {
+        return compileGrpcService(workDir, "", "", serviceBody);
+    }
+
+    private static TestCompiler.Result compileGrpcService(String workDir,
+                                                          String supportingTypes,
+                                                          String serviceDeclaration,
+                                                          String serviceBody) {
         return TestCompiler.builder()
                 .currentRelease()
                 .addClasspath(CLASSPATH)
@@ -561,9 +658,11 @@ class GrpcServerCodegenTest {
                         import io.helidon.security.annotations.Authorized;
                         import io.helidon.service.registry.Service;
 
+                        %s
+
                         @Grpc.GrpcService("Greeting")
                         @Service.Singleton
-                        class GreetingGrpc {
+                        class GreetingGrpc %s {
                         %s
                         }
 
@@ -572,7 +671,7 @@ class GrpcServerCodegenTest {
 
                         class GreetingReply {
                         }
-                        """.formatted(serviceBody.indent(4)))
+                        """.formatted(supportingTypes, serviceDeclaration, serviceBody.indent(4)))
                 .addSource("Main.java", """
                         package com.example;
 

@@ -123,6 +123,21 @@ class GrpcSecurityHandlerTest {
     }
 
     @Test
+    void testCombiningClearsAttachedRolesWhenConfigured() {
+        GrpcSecurityHandler attachedHandler = GrpcSecurityHandler.builder()
+                .rolesAllowed(Set.of("admin"))
+                .build();
+        GrpcSecurityHandler configHandler = GrpcSecurityHandler.create()
+                .clearRolesAllowed()
+                .authorize();
+
+        GrpcSecurityHandler combined = configHandler.combine(attachedHandler);
+
+        assertThat(combined.prototype().rolesAllowed(), is(Set.of()));
+        assertThat(combined.prototype().authorize(), is(Optional.of(true)));
+    }
+
+    @Test
     void testProgrammaticServiceAndMethodHandlersAreLayered() {
         GrpcSecurity security = GrpcSecurity.create(Security.builder().build());
         GrpcSecurityHandler serviceHandler = GrpcSecurityHandler.builder()

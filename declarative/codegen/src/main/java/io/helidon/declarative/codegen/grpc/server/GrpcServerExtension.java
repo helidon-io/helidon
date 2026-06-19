@@ -53,6 +53,7 @@ import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.SECURIT
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.SECURITY_ROLES_CONTAINER;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.SECURITY_ROLE_PERMIT_ALL;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.STREAM_OBSERVER;
+import static java.util.function.Predicate.not;
 
 class GrpcServerExtension implements RegistryCodegenExtension {
     static final TypeName GENERATOR = TypeName.create(GrpcServerExtension.class);
@@ -95,11 +96,14 @@ class GrpcServerExtension implements RegistryCodegenExtension {
                                                                 + PROTO_FILE_DESCRIPTOR.fqName() + ".",
                                                         serverEndpoint.originatingElementValue()));
         List<Annotation> typeAnnotations = TypeHierarchy.hierarchyAnnotations(ctx, serverEndpoint);
-        Annotation serviceAnnotation = serverEndpoint.findAnnotation(GRPC_SERVICE)
+        Annotation serviceAnnotation = Annotations.findFirst(GRPC_SERVICE, typeAnnotations)
                 .orElseThrow(() -> new CodegenException("Missing " + GRPC_SERVICE.fqName(),
                                                         serverEndpoint.originatingElementValue()));
         return new GrpcEndpoint(serverEndpoint,
-                                serviceAnnotation.stringValue().orElse(""),
+                                List.copyOf(typeAnnotations),
+                                serviceAnnotation.stringValue()
+                                        .filter(not(String::isBlank))
+                                        .orElse(endpointType.className()),
                                 protoMethod,
                                 security(typeAnnotations,
                                          serverEndpoint.typeName().fqName(),
@@ -129,7 +133,8 @@ class GrpcServerExtension implements RegistryCodegenExtension {
                                        serverEndpoint.originatingElementValue());
         }
         TypedElementInfo method = protoMethods.getFirst();
-        if (!explicitGrpcMethodAnnotations(method).isEmpty()) {
+        List<Annotation> annotations = TypeHierarchy.hierarchyAnnotations(ctx, serverEndpoint, method);
+        if (!grpcMethodAnnotations(method, annotations).isEmpty()) {
             throw new CodegenException("@Grpc.Proto method on "
                                                + serverEndpoint.typeName().fqName()
                                                + " must not declare a gRPC method annotation.",
@@ -158,7 +163,7 @@ class GrpcServerExtension implements RegistryCodegenExtension {
             return Optional.empty();
         }
 
-        List<Annotation> grpcMethodAnnotations = explicitGrpcMethodAnnotations(method);
+        List<Annotation> grpcMethodAnnotations = grpcMethodAnnotations(method, annotations);
         if (grpcMethodAnnotations.size() > 1) {
             throw new CodegenException("Declarative gRPC server method "
                                                + serverEndpoint.typeName().fqName() + "." + method.elementName()
@@ -247,11 +252,18 @@ class GrpcServerExtension implements RegistryCodegenExtension {
         return methodType;
     }
 
-    private static List<Annotation> explicitGrpcMethodAnnotations(TypedElementInfo method) {
-        return method.annotations()
+    private static List<Annotation> grpcMethodAnnotations(TypedElementInfo method, List<Annotation> annotations) {
+        List<Annotation> result = new ArrayList<>();
+        method.annotations()
                 .stream()
-                .filter(it -> it.typeName().equals(GRPC_METHOD) || it.hasMetaAnnotation(GRPC_METHOD))
-                .toList();
+                .filter(it -> it.typeName().equals(GRPC_METHOD))
+                .forEach(result::add);
+        annotations
+                .stream()
+                .filter(it -> !it.typeName().equals(GRPC_METHOD))
+                .filter(it -> it.hasMetaAnnotation(GRPC_METHOD))
+                .forEach(result::add);
+        return result;
     }
 
     private static String methodName(TypedElementInfo method, List<Annotation> annotations) {
@@ -326,6 +338,7 @@ class GrpcServerExtension implements RegistryCodegenExtension {
                                           authorize,
                                           authorized.flatMap(it -> it.stringValue("provider")).filter(it -> !it.isBlank()),
                                           List.copyOf(rolesAllowed),
+                                          hasDenyAll || hasPermitAll,
                                           audited.map(_ -> true),
                                           audited.flatMap(Annotation::stringValue).filter(it -> !it.isBlank()),
                                           audited.flatMap(it -> it.stringValue("messageFormat")).filter(it -> !it.isBlank()),

@@ -76,6 +76,7 @@ class DeclarativeGrpcTest {
 
     private final ManagedChannel channel;
     private final GreetingServiceGrpc.GreetingServiceBlockingStub blockingStub;
+    private final DefaultSecuredGreetingServiceGrpc.DefaultSecuredGreetingServiceBlockingStub defaultSecuredBlockingStub;
     private final GreetingServiceGrpc.GreetingServiceStub asyncStub;
     private final GreetingClient greetingClient;
     private final ConfiguredGreetingClient configuredGreetingClient;
@@ -98,6 +99,7 @@ class DeclarativeGrpcTest {
                 .usePlaintext()
                 .build();
         this.blockingStub = GreetingServiceGrpc.newBlockingStub(channel);
+        this.defaultSecuredBlockingStub = DefaultSecuredGreetingServiceGrpc.newBlockingStub(channel);
         this.asyncStub = GreetingServiceGrpc.newStub(channel);
         this.greetingClient = greetingClient;
         this.configuredGreetingClient = configuredGreetingClient;
@@ -327,6 +329,26 @@ class DeclarativeGrpcTest {
     }
 
     @Test
+    void testPermitAllOverridesServiceRoles() {
+        var request = request("Tomas");
+
+        var unauthenticated = assertThrows(StatusRuntimeException.class,
+                                           () -> defaultSecuredBlockingStub.adminDefaultGreet(request));
+        assertThat(unauthenticated.getStatus().getCode(), is(Code.UNAUTHENTICATED));
+
+        var wrongRole = assertThrows(StatusRuntimeException.class,
+                                     () -> authenticatedDefaultSecuredBlockingStub(USER).adminDefaultGreet(request));
+        assertThat(wrongRole.getStatus().getCode(), is(Code.PERMISSION_DENIED));
+
+        var adminResponse = authenticatedDefaultSecuredBlockingStub(ADMIN)
+                .adminDefaultGreet(request);
+        assertThat(adminResponse.getMessage(), is("Default secured hello Tomas"));
+
+        var permitAllResponse = defaultSecuredBlockingStub.permitAllDefaultGreet(request);
+        assertThat(permitAllResponse.getMessage(), is("Default secured hello Tomas"));
+    }
+
+    @Test
     void testPermitAllUnary() {
         var response = blockingStub.permitAllGreet(request("Tomas"));
 
@@ -475,6 +497,15 @@ class DeclarativeGrpcTest {
         headers.put(Metadata.Key.of("authorization", Metadata.ASCII_STRING_MARSHALLER),
                     "Basic " + Base64.getEncoder().encodeToString(token.getBytes(StandardCharsets.UTF_8)));
         return blockingStub.withInterceptors(MetadataUtils.newAttachHeadersInterceptor(headers));
+    }
+
+    private DefaultSecuredGreetingServiceGrpc.DefaultSecuredGreetingServiceBlockingStub authenticatedDefaultSecuredBlockingStub(
+            String username) {
+        String token = username + ":" + new String(PASSWORD);
+        Metadata headers = new Metadata();
+        headers.put(Metadata.Key.of("authorization", Metadata.ASCII_STRING_MARSHALLER),
+                    "Basic " + Base64.getEncoder().encodeToString(token.getBytes(StandardCharsets.UTF_8)));
+        return defaultSecuredBlockingStub.withInterceptors(MetadataUtils.newAttachHeadersInterceptor(headers));
     }
 
     private static long counterCount(MeterRegistry meterRegistry, String name, List<Tag> tags) {

@@ -20,12 +20,12 @@
 module io.helidon.webserver.grpc.validation {
     requires static io.helidon.config.metadata;
 
-    requires io.grpc;
     requires io.helidon.grpc.core;
     requires io.helidon.validation;
 
     requires transitive io.helidon.builder.api;
     requires transitive io.helidon.config;
+    requires transitive io.grpc;
     requires transitive io.helidon.webserver.grpc;
 
     exports io.helidon.webserver.grpc.validation;

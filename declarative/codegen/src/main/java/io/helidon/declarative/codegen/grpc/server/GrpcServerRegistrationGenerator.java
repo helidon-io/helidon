@@ -16,10 +16,14 @@
 
 package io.helidon.declarative.codegen.grpc.server;
 
+import java.util.Iterator;
+import java.util.List;
+
 import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.Constructor;
 import io.helidon.common.types.AccessModifier;
+import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
@@ -39,6 +43,10 @@ import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.SECURIT
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.STREAM_OBSERVER;
 
 class GrpcServerRegistrationGenerator {
+    private static final TypeName LIST_OF_ANNOTATIONS = TypeName.builder(TypeNames.LIST)
+            .addTypeArgument(TypeNames.ANNOTATION)
+            .build();
+
     private GrpcServerRegistrationGenerator() {
     }
 
@@ -78,6 +86,7 @@ class GrpcServerRegistrationGenerator {
                 .isFinal(true)
                 .type(GRPC_SERVICE_DESCRIPTOR)
                 .name("descriptor"));
+        addClassAnnotationsField(classModel, endpoint);
         addMethodInfoFields(classModel, endpoint);
         classModel.addConstructor(constructor(ctx, endpoint, endpointFieldType));
         addDescriptorMethod(classModel);
@@ -103,9 +112,7 @@ class GrpcServerRegistrationGenerator {
                 .addContent("var descriptor = ")
                 .addContent(descriptorType)
                 .addContentLine(".INSTANCE;")
-                .addContent("var annotations = ")
-                .addContent(descriptorType)
-                .addContentLine(".ANNOTATIONS;")
+                .addContentLine("var annotations = CLASS_ANNOTATIONS;")
                 .addContentLine("var declarative__proto = proto();")
                 .addContent("var builder = ")
                 .addContent(GRPC_SERVICE_DESCRIPTOR)
@@ -120,7 +127,7 @@ class GrpcServerRegistrationGenerator {
                 .decreaseContentPadding()
                 .decreaseContentPadding();
 
-        addSecurity(endpoint.security(), constructor, endpointType, descriptorType, null);
+        addSecurity(endpoint.security(), constructor, endpointType, null);
         if (!endpoint.security().isEmpty()) {
             constructor.addContentLine(".configure(builder);");
         }
@@ -171,7 +178,7 @@ class GrpcServerRegistrationGenerator {
                     .decreaseContentPadding()
                     .decreaseContentPadding()
                     .addContentLine("}");
-            addSecurity(method.security(), constructor, endpointType, descriptorType, method);
+            addSecurity(method.security(), constructor, endpointType, method);
             if (!method.security().isEmpty()) {
                 constructor.addContentLine(".configure(rules);");
             }
@@ -197,7 +204,6 @@ class GrpcServerRegistrationGenerator {
     private static void addSecurity(GrpcSecurityDefinition security,
                                     Constructor.Builder constructor,
                                     TypeName endpointType,
-                                    TypeName descriptorType,
                                     GrpcMethod grpcMethod) {
         if (security.isEmpty()) {
             return;
@@ -229,6 +235,9 @@ class GrpcServerRegistrationGenerator {
             }
             constructor.addContent(")");
         }
+        if (security.clearRolesAllowed()) {
+            constructor.addContent(".clearRolesAllowed()");
+        }
         security.audit().ifPresent(audit -> constructor.addContent(audit ? ".audit()" : ".skipAudit()"));
         security.auditEventType().ifPresent(eventType -> constructor.addContent(".auditEventType(")
                 .addContentLiteral(eventType)
@@ -237,21 +246,18 @@ class GrpcServerRegistrationGenerator {
                 .addContentLiteral(messageFormat)
                 .addContent(")"));
         if (security.securityLevel()) {
-            addSecurityLevel(constructor, endpointType, descriptorType, grpcMethod);
+            addSecurityLevel(constructor, endpointType, grpcMethod);
         }
     }
 
     private static void addSecurityLevel(Constructor.Builder constructor,
                                          TypeName endpointType,
-                                         TypeName descriptorType,
                                          GrpcMethod grpcMethod) {
         constructor.addContent(".securityLevel(")
                 .addContent(SECURITY_LEVEL)
                 .addContent(".builder().type(")
                 .addContent(endpointType)
-                .addContent(".class).classAnnotations(")
-                .addContent(descriptorType)
-                .addContent(".ANNOTATIONS)");
+                .addContent(".class).classAnnotations(CLASS_ANNOTATIONS)");
         if (grpcMethod != null) {
             constructor.addContent(".methodName(")
                     .addContentLiteral(grpcMethod.method().elementName())
@@ -260,6 +266,27 @@ class GrpcServerRegistrationGenerator {
                     .addContent(".annotations())");
         }
         constructor.addContent(".build())");
+    }
+
+    private static void addClassAnnotationsField(ClassModel.Builder classModel, GrpcEndpoint endpoint) {
+        classModel.addField(field -> field
+                .accessModifier(AccessModifier.PRIVATE)
+                .isStatic(true)
+                .isFinal(true)
+                .type(LIST_OF_ANNOTATIONS)
+                .name("CLASS_ANNOTATIONS")
+                .addContent(List.class)
+                .addContent(".of(")
+                .update(it -> {
+                    Iterator<Annotation> iterator = endpoint.annotations().iterator();
+                    while (iterator.hasNext()) {
+                        it.addContentCreate(iterator.next());
+                        if (iterator.hasNext()) {
+                            it.addContent(", ");
+                        }
+                    }
+                })
+                .addContent(")"));
     }
 
     private static void addDescriptorMethod(ClassModel.Builder classModel) {

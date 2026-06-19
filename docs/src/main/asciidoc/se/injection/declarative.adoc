@@ -273,7 +273,8 @@ feature.
 
 Annotations on endpoint type:
 
-- link:{grpc-api-javadoc-base-url}/io/helidon/grpc/api/Grpc.GrpcService.html[`io.helidon.grpc.api.Grpc.GrpcService`] - gRPC service name; use the fully-qualified service name when the proto declares a package
+- link:{grpc-api-javadoc-base-url}/io/helidon/grpc/api/Grpc.GrpcService.html[`io.helidon.grpc.api.Grpc.GrpcService`] - gRPC service name; use the fully-qualified service name when the proto declares a package.
+  If not set, the service class simple name is used.
 - `io.helidon.service.registry.Service.Singleton` - normal service registry scope for the endpoint implementation
 
 The endpoint must declare exactly one `@Grpc.Proto` method. The method must have no parameters and return

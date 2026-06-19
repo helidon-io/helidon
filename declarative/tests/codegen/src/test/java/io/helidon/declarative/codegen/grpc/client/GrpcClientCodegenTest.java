@@ -364,6 +364,28 @@ class GrpcClientCodegenTest {
                                        + "must declare exactly one gRPC method annotation.");
     }
 
+    @Test
+    void grpcClientRejectsConflictingInheritedMethodAnnotations() {
+        var result = compileGrpcClient("grpc-client-inherited-multiple-method-annotations", """
+                interface GreetingContract {
+                    @Grpc.Unary("Greet")
+                    void greet(GreetingRequest request, StreamObserver<GreetingReply> responseObserver);
+                }
+
+                @GrpcClient.Endpoint("http://localhost:8080")
+                @Grpc.GrpcService("GreetingService")
+                interface GreetingClient extends GreetingContract {
+                    @Override
+                    @Grpc.ServerStreaming("Greet")
+                    void greet(GreetingRequest request, StreamObserver<GreetingReply> responseObserver);
+                }
+                """);
+
+        assertCompilationFails(result,
+                               "Declarative gRPC client method com.example.GreetingClient.greet() "
+                                       + "must declare exactly one gRPC method annotation.");
+    }
+
     private static TestCompiler.Result compileGrpcClient(String workDir, String clientType) {
         return TestCompiler.builder()
                 .currentRelease()

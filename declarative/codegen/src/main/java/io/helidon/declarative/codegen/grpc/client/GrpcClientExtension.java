@@ -216,7 +216,8 @@ class GrpcClientExtension implements RegistryCodegenExtension {
     }
 
     private Optional<GrpcMethod> toClientMethod(TypeInfo typeInfo, TypedElementInfo method) {
-        List<Annotation> grpcMethodAnnotations = explicitGrpcMethodAnnotations(method);
+        List<Annotation> annotations = TypeHierarchy.hierarchyAnnotations(ctx, typeInfo, method);
+        List<Annotation> grpcMethodAnnotations = grpcMethodAnnotations(method, annotations);
         if (grpcMethodAnnotations.size() > 1) {
             throw new CodegenException("Declarative gRPC client method "
                                                + typeInfo.typeName().fqName() + "." + method.elementName()
@@ -224,7 +225,6 @@ class GrpcClientExtension implements RegistryCodegenExtension {
                                        method.originatingElementValue());
         }
 
-        List<Annotation> annotations = TypeHierarchy.hierarchyAnnotations(ctx, typeInfo, method);
         Optional<Annotation> maybeGrpcMethod = DeclarativeUtils.findMetaAnnotated(annotations, GRPC_METHOD);
         if (maybeGrpcMethod.isEmpty()) {
             throw new CodegenException("Declarative gRPC client method "
@@ -432,11 +432,18 @@ class GrpcClientExtension implements RegistryCodegenExtension {
         };
     }
 
-    private static List<Annotation> explicitGrpcMethodAnnotations(TypedElementInfo method) {
-        return method.annotations()
+    private static List<Annotation> grpcMethodAnnotations(TypedElementInfo method, List<Annotation> annotations) {
+        List<Annotation> result = new ArrayList<>();
+        method.annotations()
                 .stream()
-                .filter(it -> it.typeName().equals(GRPC_METHOD) || it.hasMetaAnnotation(GRPC_METHOD))
-                .toList();
+                .filter(it -> it.typeName().equals(GRPC_METHOD))
+                .forEach(result::add);
+        annotations
+                .stream()
+                .filter(it -> !it.typeName().equals(GRPC_METHOD))
+                .filter(it -> it.hasMetaAnnotation(GRPC_METHOD))
+                .forEach(result::add);
+        return result;
     }
 
     private static String methodName(TypedElementInfo method, List<Annotation> annotations) {

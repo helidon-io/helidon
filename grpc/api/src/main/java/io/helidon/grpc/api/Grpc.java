@@ -37,7 +37,8 @@ public interface Grpc {
      * <p>
      * The value is the gRPC service name used on the wire. If the proto file declares
      * a {@code package}, use the fully-qualified service name, such as
-     * {@code example.greeter.GreetingService}.
+     * {@code example.greeter.GreetingService}. Server descriptors use the service
+     * class simple name when the value is not set.
      */
     @Target({ElementType.TYPE, ElementType.FIELD, ElementType.CONSTRUCTOR})
     @Retention(RetentionPolicy.RUNTIME)
@@ -46,6 +47,8 @@ public interface Grpc {
     @interface GrpcService {
         /**
          * Obtain the service name.
+         * <p>
+         * Server descriptors use the service class simple name when the value is not set.
          *
          * @return the service name
          */

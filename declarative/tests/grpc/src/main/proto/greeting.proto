@@ -38,6 +38,11 @@ service GreetingService {
   rpc Chat (stream GreetingRequest) returns (stream GreetingReply) {}
 }
 
+service DefaultSecuredGreetingService {
+  rpc AdminDefaultGreet (GreetingRequest) returns (GreetingReply) {}
+  rpc PermitAllDefaultGreet (GreetingRequest) returns (GreetingReply) {}
+}
+
 message GreetingRequest {
   string name = 1;
 }

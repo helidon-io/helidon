@@ -18,9 +18,11 @@ package io.helidon.declarative.codegen.grpc.server;
 
 import java.util.List;
 
+import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeInfo;
 
 record GrpcEndpoint(TypeInfo type,
+                    List<Annotation> annotations,
                     String serviceName,
                     GrpcProtoMethod protoMethod,
                     GrpcSecurityDefinition security,

@@ -25,6 +25,7 @@ record GrpcSecurityDefinition(Optional<Boolean> authenticate,
                               Optional<Boolean> authorize,
                               Optional<String> authorizer,
                               List<String> rolesAllowed,
+                              boolean clearRolesAllowed,
                               Optional<Boolean> audit,
                               Optional<String> auditEventType,
                               Optional<String> auditMessageFormat,
@@ -35,6 +36,7 @@ record GrpcSecurityDefinition(Optional<Boolean> authenticate,
                                                                                   Optional.empty(),
                                                                                   Optional.empty(),
                                                                                   List.of(),
+                                                                                  false,
                                                                                   Optional.empty(),
                                                                                   Optional.empty(),
                                                                                   Optional.empty(),
@@ -51,6 +53,7 @@ record GrpcSecurityDefinition(Optional<Boolean> authenticate,
                 && authorize.isEmpty()
                 && authorizer.isEmpty()
                 && rolesAllowed.isEmpty()
+                && !clearRolesAllowed
                 && audit.isEmpty()
                 && auditEventType.isEmpty()
                 && auditMessageFormat.isEmpty()

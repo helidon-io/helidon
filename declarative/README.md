@@ -256,7 +256,8 @@ Declaration must be done on a service registry service.
 
 Annotations on type:
 
-- `@Grpc.GrpcService` - gRPC service name; use the fully-qualified service name when the proto declares a package
+- `@Grpc.GrpcService` - gRPC service name; use the fully-qualified service name when the proto declares a package.
+  If not set, the service class simple name is used.
 - `@Service.Singleton` - typical service registry scope for the endpoint implementation
 
 The endpoint must declare one `@Grpc.Proto` method returning `Descriptors.FileDescriptor` with no parameters.

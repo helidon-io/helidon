@@ -43,6 +43,13 @@ interface GrpcSecurityHandlerConfigBlueprint extends Prototype.Factory<GrpcSecur
     Set<String> rolesAllowed();
 
     /**
+     * Whether role constraints from a less specific handler should be cleared when handlers are combined.
+     *
+     * @return whether to clear inherited role constraints
+     */
+    boolean clearInheritedRolesAllowed();
+
+    /**
      * Security levels discovered from endpoint annotations.
      *
      * @return security levels

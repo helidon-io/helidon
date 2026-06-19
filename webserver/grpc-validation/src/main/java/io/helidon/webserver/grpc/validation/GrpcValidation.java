@@ -122,40 +122,72 @@ public final class GrpcValidation implements ServerInterceptor, GrpcServerServic
 
         @Override
         public void onMessage(ReqT message) {
-            invoke(() -> super.onMessage(message));
-        }
-
-        @Override
-        public void onHalfClose() {
-            invoke(super::onHalfClose);
-        }
-
-        @Override
-        public void onCancel() {
-            invoke(super::onCancel);
-        }
-
-        @Override
-        public void onComplete() {
-            invoke(super::onComplete);
-        }
-
-        @Override
-        public void onReady() {
-            invoke(super::onReady);
-        }
-
-        private void invoke(Runnable runnable) {
             if (closed.get()) {
                 return;
             }
 
             try {
-                runnable.run();
+                super.onMessage(message);
             } catch (ValidationException e) {
-                if (closed.compareAndSet(false, true)) {
-                    call.close(status(e), new Metadata());
-                }
+                close(e);
+            }
+        }
+
+        @Override
+        public void onHalfClose() {
+            if (closed.get()) {
+                return;
+            }
+
+            try {
+                super.onHalfClose();
+            } catch (ValidationException e) {
+                close(e);
+            }
+        }
+
+        @Override
+        public void onCancel() {
+            if (closed.get()) {
+                return;
+            }
+
+            try {
+                super.onCancel();
+            } catch (ValidationException e) {
+                close(e);
+            }
+        }
+
+        @Override
+        public void onComplete() {
+            if (closed.get()) {
+                return;
+            }
+
+            try {
+                super.onComplete();
+            } catch (ValidationException e) {
+                close(e);
+            }
+        }
+
+        @Override
+        public void onReady() {
+            if (closed.get()) {
+                return;
+            }
+
+            try {
+                super.onReady();
+            } catch (ValidationException e) {
+                close(e);
+            }
+        }
+
+        private void close(ValidationException exception) {
+            if (closed.compareAndSet(false, true)) {
+                call.close(status(exception), new Metadata());
             }
         }
     }
