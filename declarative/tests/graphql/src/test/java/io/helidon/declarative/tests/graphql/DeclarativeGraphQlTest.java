@@ -62,6 +62,7 @@ class DeclarativeGraphQlTest {
             assertThat(schema, containsString("validatedGreeting(name: String = \"Reader\"): String"));
             assertThat(schema, containsString("book: Book"));
             assertThat(schema, containsString("titleByIsbn(isbn: ISBN): String"));
+            assertThat(schema, containsString("filteredTitle(search: BookSearchInput!): String"));
             assertThat(schema, containsString("contextAvailable: Boolean!"));
             assertThat(schema, containsString("securedMessage: String"));
             assertThat(schema, containsString("type Mutation"));
@@ -75,6 +76,10 @@ class DeclarativeGraphQlTest {
             assertThat(schema, containsString("enum BookStatus"));
             assertThat(schema, containsString("\"Currently available\""));
             assertThat(schema, containsString("OUT_OF_PRINT"));
+            assertThat(schema, containsString("input BookSearchInput"));
+            assertThat(schema, containsString("phrase: String!"));
+            assertThat(schema, containsString("minimumScore: Int!"));
+            assertThat(schema, containsString("includeUnavailable: Boolean!"));
         }
     }
 
@@ -124,6 +129,24 @@ class DeclarativeGraphQlTest {
         assertThat(book.stringValue("isbn").orElseThrow(), is("9780441172719"));
         assertThat(book.stringValue("summary").orElseThrow(), is("Read: Dune"));
         assertThat(book.value("internal").isEmpty(), is(true));
+    }
+
+    @Test
+    void testInputObjectArgument() {
+        JsonObject data = graphQl("""
+                                          {
+                                            "query": "query($search: BookSearchInput!) { filteredTitle(search: $search) }",
+                                            "variables": {
+                                              "search": {
+                                                "phrase": "Dune",
+                                                "minimumScore": 5,
+                                                "includeUnavailable": false
+                                              }
+                                            }
+                                          }
+                                          """);
+
+        assertThat(data.stringValue("filteredTitle").orElseThrow(), is("Dune: 5: false"));
     }
 
     @Test

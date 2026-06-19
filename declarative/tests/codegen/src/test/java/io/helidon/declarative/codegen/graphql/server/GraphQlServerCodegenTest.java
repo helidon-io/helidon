@@ -122,6 +122,11 @@ class GraphQlServerCodegenTest {
                             }
 
                             @GraphQl.Query
+                            String search(@GraphQl.Argument("criteria") @GraphQl.NonNull BookSearch criteria) {
+                                return criteria.phrase() + ":" + criteria.minimumScore();
+                            }
+
+                            @GraphQl.Query
                             Book book() {
                                 return new Book("Dune", BookStatus.AVAILABLE, new Isbn("9780441172719"), "hidden");
                             }
@@ -178,6 +183,17 @@ class GraphQlServerCodegenTest {
                                     @GraphQl.Name("state") BookStatus status,
                                     Isbn isbn,
                                     @GraphQl.Ignore String internal) {
+                        }
+                        """)
+                .addSource("BookSearch.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Entity
+                        @GraphQl.Description("Book search input")
+                        record BookSearch(@GraphQl.NonNull String phrase,
+                                          int minimumScore) {
                         }
                         """)
                 .addSource("Isbn.java", """
@@ -258,6 +274,7 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("entryPoints.dataFetcher("));
         assertThat(generated, containsString("type Query"));
         assertThat(generated, containsString("hello(name: String): String"));
+        assertThat(generated, containsString("search(criteria: BookSearchInput!): String"));
         assertThat(generated, containsString("book: Book"));
         assertThat(generated, containsString("author: AuthorDto"));
         assertThat(generated, containsString("bookIsbn(value: ISBN): ISBN"));
@@ -283,6 +300,10 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("type AuthorDto"));
         assertThat(generated, containsString("name: String"));
         assertThat(generated, containsString("active: Boolean!"));
+        assertThat(generated, containsString("Book search input"));
+        assertThat(generated, containsString("input BookSearchInput"));
+        assertThat(generated, containsString("phrase: String!"));
+        assertThat(generated, containsString("minimumScore: Int!"));
         assertThat(generated, containsString("builder.type(\"Book\""));
         assertThat(generated, containsString(".dataFetcher(\"title\", environment -> ((Book) environment.getSource()).title())"));
         assertThat(generated, containsString(".dataFetcher(\"state\", environment -> ((Book) environment.getSource()).status())"));
@@ -295,6 +316,12 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("scalar.parseLiteral(scalarLiteralValue(input))"));
         assertThat(generated, containsString("scalarLiteralValue("));
         assertThat(generated, containsString("(Isbn) environment.getArgument(\"value\")"));
+        assertThat(generated, containsString("input_com_example_BookSearch(environment.getArgument(\"criteria\"))"));
+        assertThat(generated, containsString("private static BookSearch input_com_example_BookSearch(Object value)"));
+        assertThat(generated, containsString("var input = (java.util.Map<String, Object>) value;"));
+        assertThat(generated, containsString("return new BookSearch("));
+        assertThat(generated, containsString("(String) input.get(\"phrase\")"));
+        assertThat(generated, containsString("(Integer) input.get(\"minimumScore\")"));
         assertThat(generated, containsString("helidonContext(environment)"));
         assertThat(generated, containsString("graphQlExecutionContext(environment)"));
         assertThat(generated, containsString("securityContext(environment)"));
@@ -706,6 +733,79 @@ class GraphQlServerCodegenTest {
         String diagnostics = String.join("\n", result.diagnostics());
         assertThat(diagnostics, result.success(), is(false));
         assertThat(diagnostics, containsString("must be annotated with @GraphQl.Entity"));
+    }
+
+    @Test
+    void missingGraphQlEntityOnInputObjectArgumentFailsCodegen() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-missing-input-entity"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            String search(BookSearch criteria) {
+                                return criteria.phrase();
+                            }
+                        }
+                        """)
+                .addSource("BookSearch.java", """
+                        package com.example;
+
+                        record BookSearch(String phrase) {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("must be annotated with @GraphQl.Entity"));
+    }
+
+    @Test
+    void ignoredInputObjectRecordComponentFailsCodegen() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-ignored-input-component"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            String search(BookSearch criteria) {
+                                return criteria.phrase();
+                            }
+                        }
+                        """)
+                .addSource("BookSearch.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Entity
+                        record BookSearch(@GraphQl.Ignore String phrase) {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("@GraphQl.Ignore cannot be used on GraphQL input record component"));
     }
 
     @Test

@@ -57,6 +57,11 @@ class GraphEndpoint {
     }
 
     @GraphQl.Query
+    String filteredTitle(@GraphQl.Argument("search") @GraphQl.NonNull BookSearch search) {
+        return search.phrase() + ": " + search.minimumScore() + ": " + search.includeUnavailable();
+    }
+
+    @GraphQl.Query
     boolean contextAvailable(Context context,
                              ExecutionContext executionContext,
                              DataFetchingEnvironment environment) {
