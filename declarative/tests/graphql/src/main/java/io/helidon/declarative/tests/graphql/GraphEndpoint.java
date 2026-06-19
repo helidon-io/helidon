@@ -58,7 +58,12 @@ class GraphEndpoint {
 
     @GraphQl.Query
     String filteredTitle(@GraphQl.Argument("search") @GraphQl.NonNull BookSearch search) {
-        return search.phrase() + ": " + search.minimumScore() + ": " + search.includeUnavailable();
+        return search.phrase() + ": " + search.minimumScore() + ": " + search.includeUnavailable() + ": " + search.status();
+    }
+
+    @GraphQl.Query
+    String statusName(@GraphQl.Argument("status") BookStatus status) {
+        return status.name();
     }
 
     @GraphQl.Query

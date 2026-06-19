@@ -21,5 +21,6 @@ import io.helidon.graphql.GraphQl;
 @GraphQl.Entity
 record BookSearch(@GraphQl.NonNull String phrase,
                   int minimumScore,
-                  boolean includeUnavailable) {
+                  boolean includeUnavailable,
+                  @GraphQl.NonNull BookStatus status) {
 }

@@ -123,7 +123,12 @@ class GraphQlServerCodegenTest {
 
                             @GraphQl.Query
                             String search(@GraphQl.Argument("criteria") @GraphQl.NonNull BookSearch criteria) {
-                                return criteria.phrase() + ":" + criteria.minimumScore();
+                                return criteria.phrase() + ":" + criteria.minimumScore() + ":" + criteria.status();
+                            }
+
+                            @GraphQl.Query
+                            String statusName(@GraphQl.Argument("status") BookStatus status) {
+                                return status.name();
                             }
 
                             @GraphQl.Query
@@ -193,7 +198,8 @@ class GraphQlServerCodegenTest {
                         @GraphQl.Entity
                         @GraphQl.Description("Book search input")
                         record BookSearch(@GraphQl.NonNull String phrase,
-                                          int minimumScore) {
+                                          int minimumScore,
+                                          @GraphQl.NonNull BookStatus status) {
                         }
                         """)
                 .addSource("Isbn.java", """
@@ -275,6 +281,7 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("type Query"));
         assertThat(generated, containsString("hello(name: String): String"));
         assertThat(generated, containsString("search(criteria: BookSearchInput!): String"));
+        assertThat(generated, containsString("statusName(status: BookStatus): String"));
         assertThat(generated, containsString("book: Book"));
         assertThat(generated, containsString("author: AuthorDto"));
         assertThat(generated, containsString("bookIsbn(value: ISBN): ISBN"));
@@ -304,6 +311,7 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("input BookSearchInput"));
         assertThat(generated, containsString("phrase: String!"));
         assertThat(generated, containsString("minimumScore: Int!"));
+        assertThat(generated, containsString("status: BookStatus!"));
         assertThat(generated, containsString("builder.type(\"Book\""));
         assertThat(generated, containsString(".dataFetcher(\"title\", environment -> ((Book) environment.getSource()).title())"));
         assertThat(generated, containsString(".dataFetcher(\"state\", environment -> ((Book) environment.getSource()).status())"));
@@ -316,12 +324,16 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("scalar.parseLiteral(scalarLiteralValue(input))"));
         assertThat(generated, containsString("scalarLiteralValue("));
         assertThat(generated, containsString("(Isbn) environment.getArgument(\"value\")"));
+        assertThat(generated, containsString("enum_com_example_BookStatus(environment.getArgument(\"status\"))"));
         assertThat(generated, containsString("input_com_example_BookSearch(environment.getArgument(\"criteria\"))"));
+        assertThat(generated, containsString("private static BookStatus enum_com_example_BookStatus(Object value)"));
+        assertThat(generated, containsString("case \"OUT_OF_PRINT\" -> BookStatus.OUT;"));
         assertThat(generated, containsString("private static BookSearch input_com_example_BookSearch(Object value)"));
         assertThat(generated, containsString("var input = (java.util.Map<String, Object>) value;"));
         assertThat(generated, containsString("return new BookSearch("));
         assertThat(generated, containsString("(String) input.get(\"phrase\")"));
         assertThat(generated, containsString("(Integer) input.get(\"minimumScore\")"));
+        assertThat(generated, containsString("enum_com_example_BookStatus(input.get(\"status\"))"));
         assertThat(generated, containsString("helidonContext(environment)"));
         assertThat(generated, containsString("graphQlExecutionContext(environment)"));
         assertThat(generated, containsString("securityContext(environment)"));

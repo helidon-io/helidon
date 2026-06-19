@@ -24,6 +24,7 @@ import java.util.Set;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 
 final class GraphQlServerTypes {
@@ -144,6 +145,7 @@ final class GraphQlServerTypes {
                     Optional<String> defaultValue,
                     boolean nonNull,
                     String schemaType,
+                    Optional<EnumSchemaType> enumType,
                     Optional<InputSchemaType> inputType) {
     }
 
@@ -158,7 +160,8 @@ final class GraphQlServerTypes {
                             Object originatingElement) implements SchemaType {
     }
 
-    record EnumSchemaType(String graphQlName,
+    record EnumSchemaType(TypeName javaType,
+                          String graphQlName,
                           Optional<String> description,
                           List<EnumValue> values) implements SchemaType {
     }
@@ -188,14 +191,147 @@ final class GraphQlServerTypes {
                             String graphQlName,
                             String schemaType,
                             Optional<String> description,
+                            Optional<EnumSchemaType> enumType,
                             Optional<InputSchemaType> inputType) {
     }
 
     record InputSchemaFieldType(String graphQlName,
+                                Optional<EnumSchemaType> enumType,
                                 Optional<InputSchemaType> inputType) {
     }
 
-    record EnumValue(String graphQlName,
+    record EnumValue(String javaName,
+                     String graphQlName,
                      Optional<String> description) {
+    }
+
+    static Optional<String> propertyName(TypedElementInfo method) {
+        String methodName = method.elementName();
+        if (isPropertyGetter(methodName)) {
+            return Optional.of(nameFromPropertyGetter(methodName));
+        }
+        if (isBooleanPropertyGetter(methodName, method.typeName())) {
+            return Optional.of(nameFromBooleanPropertyGetter(methodName));
+        }
+        return Optional.empty();
+    }
+
+    private static boolean isPropertyGetter(String methodName) {
+        return methodName.startsWith("get")
+                && methodName.length() > 3
+                && Character.isUpperCase(methodName.charAt(3))
+                && !"getClass".equals(methodName);
+    }
+
+    private static boolean isBooleanPropertyGetter(String methodName, TypeName typeName) {
+        TypeName boxed = typeName.boxed();
+        return methodName.startsWith("is")
+                && methodName.length() > 2
+                && Character.isUpperCase(methodName.charAt(2))
+                && boxed.equals(TypeNames.BOXED_BOOLEAN);
+    }
+
+    private static String nameFromPropertyGetter(String methodName) {
+        return lowerFirstProperty(methodName.substring(3));
+    }
+
+    private static String nameFromBooleanPropertyGetter(String methodName) {
+        return lowerFirstProperty(methodName.substring(2));
+    }
+
+    private static String lowerFirstProperty(String propertyName) {
+        char firstChar = propertyName.charAt(0);
+        if (propertyName.length() == 1) {
+            return String.valueOf(Character.toLowerCase(firstChar));
+        }
+        if (!Character.isUpperCase(propertyName.charAt(1))) {
+            return Character.toLowerCase(firstChar) + propertyName.substring(1);
+        }
+        return propertyName;
+    }
+
+    static void appendObject(StringBuilder result, ObjectSchemaType objectType) {
+        appendDescription(result, 0, objectType.description());
+        result.append("type ")
+                .append(objectType.graphQlName())
+                .append(" {\n");
+        for (SchemaField field : objectType.fields()) {
+            appendDescription(result, 2, field.description());
+            result.append("  ")
+                    .append(field.graphQlName());
+            appendArguments(result, field.arguments());
+            result.append(": ")
+                    .append(field.schemaType())
+                    .append('\n');
+        }
+        result.append("}\n");
+    }
+
+    static void appendInput(StringBuilder result, InputSchemaType inputType) {
+        appendDescription(result, 0, inputType.description());
+        result.append("input ")
+                .append(inputType.graphQlName())
+                .append(" {\n");
+        for (InputSchemaField field : inputType.fields()) {
+            appendDescription(result, 2, field.description());
+            result.append("  ")
+                    .append(field.graphQlName())
+                    .append(": ")
+                    .append(field.schemaType())
+                    .append('\n');
+        }
+        result.append("}\n");
+    }
+
+    static void appendEnum(StringBuilder result, EnumSchemaType enumType) {
+        appendDescription(result, 0, enumType.description());
+        result.append("enum ")
+                .append(enumType.graphQlName())
+                .append(" {\n");
+        for (EnumValue value : enumType.values()) {
+            appendDescription(result, 2, value.description());
+            result.append("  ")
+                    .append(value.graphQlName())
+                    .append('\n');
+        }
+        result.append("}\n");
+    }
+
+    static void appendScalar(StringBuilder result, ScalarSchemaType scalarType) {
+        appendDescription(result, 0, scalarType.description());
+        result.append("scalar ")
+                .append(scalarType.graphQlName())
+                .append('\n');
+    }
+
+    static void appendArguments(StringBuilder result, List<Argument> arguments) {
+        if (arguments.isEmpty()) {
+            return;
+        }
+        result.append('(');
+        for (int i = 0; i < arguments.size(); i++) {
+            Argument argument = arguments.get(i);
+            if (i > 0) {
+                result.append(", ");
+            }
+            result.append(argument.graphQlName())
+                    .append(": ")
+                    .append(argument.schemaType());
+            argument.defaultValue().ifPresent(it -> result.append(" = ").append(it));
+        }
+        result.append(')');
+    }
+
+    private static void appendDescription(StringBuilder result, int indent, Optional<String> description) {
+        description.ifPresent(it -> result.append(" ".repeat(indent))
+                .append('"')
+                .append(escapeDescription(it))
+                .append("\"\n"));
+    }
+
+    private static String escapeDescription(String description) {
+        return description.replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\n", "\\n");
     }
 }

@@ -63,6 +63,7 @@ class DeclarativeGraphQlTest {
             assertThat(schema, containsString("book: Book"));
             assertThat(schema, containsString("titleByIsbn(isbn: ISBN): String"));
             assertThat(schema, containsString("filteredTitle(search: BookSearchInput!): String"));
+            assertThat(schema, containsString("statusName(status: BookStatus): String"));
             assertThat(schema, containsString("contextAvailable: Boolean!"));
             assertThat(schema, containsString("securedMessage: String"));
             assertThat(schema, containsString("type Mutation"));
@@ -80,6 +81,7 @@ class DeclarativeGraphQlTest {
             assertThat(schema, containsString("phrase: String!"));
             assertThat(schema, containsString("minimumScore: Int!"));
             assertThat(schema, containsString("includeUnavailable: Boolean!"));
+            assertThat(schema, containsString("status: BookStatus!"));
         }
     }
 
@@ -135,18 +137,22 @@ class DeclarativeGraphQlTest {
     void testInputObjectArgument() {
         JsonObject data = graphQl("""
                                           {
-                                            "query": "query($search: BookSearchInput!) { filteredTitle(search: $search) }",
+                                            "query": "query($search: BookSearchInput!, $status: BookStatus!) { filteredTitle(search: $search) statusName(status: $status) literalStatus: statusName(status: OUT_OF_PRINT) }",
                                             "variables": {
+                                              "status": "OUT_OF_PRINT",
                                               "search": {
                                                 "phrase": "Dune",
                                                 "minimumScore": 5,
-                                                "includeUnavailable": false
+                                                "includeUnavailable": false,
+                                                "status": "OUT_OF_PRINT"
                                               }
                                             }
                                           }
                                           """);
 
-        assertThat(data.stringValue("filteredTitle").orElseThrow(), is("Dune: 5: false"));
+        assertThat(data.stringValue("filteredTitle").orElseThrow(), is("Dune: 5: false: OUT"));
+        assertThat(data.stringValue("statusName").orElseThrow(), is("OUT"));
+        assertThat(data.stringValue("literalStatus").orElseThrow(), is("OUT"));
     }
 
     @Test
