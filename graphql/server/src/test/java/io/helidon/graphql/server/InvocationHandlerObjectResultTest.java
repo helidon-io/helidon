@@ -28,6 +28,7 @@ import graphql.schema.idl.SchemaParser;
 import graphql.schema.idl.TypeDefinitionRegistry;
 import org.junit.jupiter.api.Test;
 
+import static io.helidon.graphql.server.internal.GraphQlContextKeys.PARSED_DOCUMENT;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
@@ -71,7 +72,7 @@ class InvocationHandlerObjectResultTest {
         Map<String, Object> result = handler.execute("not a query",
                                                      null,
                                                      Map.of(),
-                                                     Map.of(GraphQlConstants.PARSED_DOCUMENT_CONTEXT_KEY, document));
+                                                     Map.of(PARSED_DOCUMENT, document));
 
         Map<String, Object> data = (Map<String, Object>) result.get("data");
         Map<String, Object> book = (Map<String, Object>) data.get("book");
@@ -87,7 +88,7 @@ class InvocationHandlerObjectResultTest {
         Map<String, Object> result = handler.execute("{book { title }}",
                                                      null,
                                                      Map.of(),
-                                                     Map.of(GraphQlConstants.PARSED_DOCUMENT_CONTEXT_KEY, document));
+                                                     Map.of(PARSED_DOCUMENT, document));
 
         List<Map<String, Object>> errors = (List<Map<String, Object>>) result.get("errors");
         assertThat(errors.getFirst().get("message").toString(), containsString("Field 'unknown'"));

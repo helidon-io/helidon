@@ -27,6 +27,7 @@ import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.graphql.server.ExecutionContext;
 import io.helidon.graphql.server.InvocationHandler;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.json.JsonArray;
 import io.helidon.json.JsonNull;
@@ -178,6 +179,7 @@ class GraphQlServiceTest {
                 .queryParam("query", "mutation { update(enabled: true) }")
                 .request()) {
             assertThat(response.status(), is(Status.METHOD_NOT_ALLOWED_405));
+            assertThat(response.headers().first(HeaderNames.ALLOW).orElseThrow(), is("POST"));
         }
 
         try (Http1ClientResponse response = client.get("/graphql")
@@ -186,6 +188,7 @@ class GraphQlServiceTest {
                 .queryParam("variables", "not-json")
                 .request()) {
             assertThat(response.status(), is(Status.METHOD_NOT_ALLOWED_405));
+            assertThat(response.headers().first(HeaderNames.ALLOW).orElseThrow(), is("POST"));
         }
 
         assertThat(MUTATIONS.get(), is(0));

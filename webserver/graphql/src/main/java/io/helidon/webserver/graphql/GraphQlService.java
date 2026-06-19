@@ -41,6 +41,8 @@ import io.helidon.config.Config;
 import io.helidon.graphql.server.ExecutionContext;
 import io.helidon.graphql.server.GraphQlConstants;
 import io.helidon.graphql.server.InvocationHandler;
+import io.helidon.graphql.server.internal.GraphQlContextKeys;
+import io.helidon.http.HeaderNames;
 import io.helidon.http.Status;
 import io.helidon.json.JsonArray;
 import io.helidon.json.JsonBoolean;
@@ -163,7 +165,8 @@ public class GraphQlService implements HttpService {
         Optional<ParsedQuery> parsedQuery = parseQuery(query, operationName);
 
         if (parsedQuery.map(ParsedQuery::mutation).orElse(false)) {
-            res.status(Status.METHOD_NOT_ALLOWED_405)
+            res.header(HeaderNames.ALLOW, "POST")
+                    .status(Status.METHOD_NOT_ALLOWED_405)
                     .send();
             return;
         }
@@ -207,7 +210,7 @@ public class GraphQlService implements HttpService {
     private Map<String, Object> requestContext(ServerRequest req, Optional<ParsedQuery> parsedQuery) {
         return parsedQuery
                 .map(parsed -> Map.of(ExecutionContext.HELIDON_CONTEXT_KEY, req.context(),
-                                      GraphQlConstants.PARSED_DOCUMENT_CONTEXT_KEY, parsed.document()))
+                                      GraphQlContextKeys.PARSED_DOCUMENT, parsed.document()))
                 .orElseGet(() -> requestContext(req));
     }
 

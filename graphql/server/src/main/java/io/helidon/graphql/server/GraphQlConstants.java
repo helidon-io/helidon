@@ -79,10 +79,6 @@ public final class GraphQlConstants {
      * Default maximum query complexity.
      */
     public static final int DEFAULT_MAX_QUERY_COMPLEXITY = 1000;
-    /**
-     * Internal context key for a GraphQL Java parsed document.
-     */
-    public static final String PARSED_DOCUMENT_CONTEXT_KEY = GraphQlConstants.class.getName() + ".parsedDocument";
 
     // forbid instantiation
     private GraphQlConstants() {

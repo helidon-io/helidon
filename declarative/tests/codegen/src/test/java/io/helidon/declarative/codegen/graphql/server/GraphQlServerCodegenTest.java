@@ -649,10 +649,13 @@ class GraphQlServerCodegenTest {
                 .filter(it -> it.getFileName().toString().endsWith("__GraphQlFeature.java"))
                 .toList();
         assertThat(generatedSources.size(), is(1));
-        assertThat(generatedSources.getFirst().getFileName().toString(), is("GraphEndpoint__GraphQlFeature.java"));
+        assertThat(generatedSources.getFirst().getFileName().toString(),
+                   is("GraphQl__40_default__2f_graphql__GraphQlFeature.java"));
 
         String generated = Files.readString(generatedSources.getFirst(), StandardCharsets.UTF_8);
-        assertThat(generated, containsString("class GraphEndpoint__GraphQlFeature implements HttpFeature"));
+        assertThat(generated, containsString("class GraphQl__40_default__2f_graphql__GraphQlFeature implements HttpFeature"));
+        assertThat(generated, containsString("GraphQl__40_default__2f_graphql__GraphQlFeature__ServiceDescriptor.INSTANCE"));
+        assertThat(generated, containsString("requestAnnotations(GraphEndpoint__ServiceDescriptor.ANNOTATIONS)"));
         assertThat(generated, containsString("GraphEndpoint endpoint_0"));
         assertThat(generated, containsString("LibraryEndpoint endpoint_1"));
         assertThat(generated, containsString("this.endpoint_0.book("));
@@ -946,6 +949,83 @@ class GraphQlServerCodegenTest {
         String diagnostics = String.join("\n", result.diagnostics());
         assertThat(diagnostics, result.success(), is(false));
         assertThat(diagnostics, containsString("GraphQL name '__Book' must not start with '__'"));
+    }
+
+    @Test
+    void builtinScalarObjectNameFailsCodegen() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-builtin-object-name"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            Book book() {
+                                return new Book("Dune");
+                            }
+                        }
+                        """)
+                .addSource("Book.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Entity
+                        @GraphQl.Name("String")
+                        record Book(String title) {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("cannot use reserved type name 'String'"));
+    }
+
+    @Test
+    void builtinScalarCustomScalarNameFailsCodegen() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-builtin-scalar-name"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            Isbn isbn() {
+                                return new Isbn("9780441172719");
+                            }
+                        }
+                        """)
+                .addSource("Isbn.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Scalar("ID")
+                        record Isbn(String value) {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("cannot use reserved type name 'ID'"));
     }
 
     @Test

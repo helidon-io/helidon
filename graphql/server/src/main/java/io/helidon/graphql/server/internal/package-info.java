@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,17 +15,6 @@
  */
 
 /**
- * GraphQl server implementation.
+ * Internal GraphQL server support shared by Helidon GraphQL integration modules.
  */
-module io.helidon.graphql.server {
-
-    requires io.helidon.config;
-    requires io.helidon.common;
-    requires io.helidon.common.context;
-
-    requires transitive com.graphqljava;
-
-    exports io.helidon.graphql.server;
-    exports io.helidon.graphql.server.internal to io.helidon.webserver.graphql;
-
-}
+package io.helidon.graphql.server.internal;

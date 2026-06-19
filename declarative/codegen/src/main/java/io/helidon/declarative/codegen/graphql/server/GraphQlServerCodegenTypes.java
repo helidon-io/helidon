@@ -32,6 +32,7 @@ final class GraphQlServerCodegenTypes {
     static final TypeName GRAPHQL_SCALAR_SPI = TypeName.create("io.helidon.graphql.spi.GraphQlScalar");
 
     static final TypeName COMMON_CONTEXT = TypeName.create("io.helidon.common.context.Context");
+    static final TypeName COMMON_TYPE_NAME = TypeName.create("io.helidon.common.types.TypeName");
     static final TypeName GRAPHQL_EXECUTION_CONTEXT = TypeName.create("io.helidon.graphql.server.ExecutionContext");
     static final TypeName SECURITY_CONTEXT = TypeName.create("io.helidon.security.SecurityContext");
 

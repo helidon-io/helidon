@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
+ * Copyright (c) 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,18 +14,19 @@
  * limitations under the License.
  */
 
+package io.helidon.graphql.server.internal;
+
+import io.helidon.graphql.server.GraphQlConstants;
+
 /**
- * GraphQl server implementation.
+ * Internal GraphQL server context keys shared with WebServer GraphQL.
  */
-module io.helidon.graphql.server {
+public final class GraphQlContextKeys {
+    /**
+     * GraphQL Java parsed document key.
+     */
+    public static final String PARSED_DOCUMENT = GraphQlConstants.class.getName() + ".parsedDocument";
 
-    requires io.helidon.config;
-    requires io.helidon.common;
-    requires io.helidon.common.context;
-
-    requires transitive com.graphqljava;
-
-    exports io.helidon.graphql.server;
-    exports io.helidon.graphql.server.internal to io.helidon.webserver.graphql;
-
+    private GraphQlContextKeys() {
+    }
 }
