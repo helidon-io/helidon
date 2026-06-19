@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,10 +16,16 @@
 
 package io.helidon.webclient.grpc;
 
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.util.Collection;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
+import io.helidon.service.registry.Service;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.spi.Protocol;
 
@@ -120,4 +126,44 @@ public interface GrpcClient extends RuntimeType.Api<GrpcClientConfig> {
      * @return the configuration
      */
     GrpcClientConfig clientConfig();
+
+    /**
+     * Defines a declarative gRPC client endpoint.
+     */
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.CLASS)
+    @Documented
+    @interface Endpoint {
+        /**
+         * Target URI of the gRPC endpoint.
+         * <p>
+         * Supports configuration references, such as {@code "http://localhost:${server.port}"}.
+         *
+         * @return target URI
+         */
+        String value();
+
+        /**
+         * Configuration key used to override this client.
+         *
+         * @return configuration key
+         */
+        String configKey() default "";
+
+        /**
+         * Name of a registry-provided {@link GrpcClient} to use.
+         *
+         * @return client name
+         */
+        String clientName() default "";
+    }
+
+    /**
+     * Qualifier for generated declarative gRPC client implementations.
+     */
+    @Target({ElementType.FIELD, ElementType.PARAMETER, ElementType.TYPE})
+    @Documented
+    @Service.Qualifier
+    @interface Client {
+    }
 }

@@ -32,6 +32,7 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
+import io.helidon.webclient.grpc.GrpcClient;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.grpc.GrpcReflectionFeature;
@@ -75,6 +76,7 @@ class DeclarativeGrpcTest {
     private final ManagedChannel channel;
     private final GreetingServiceGrpc.GreetingServiceBlockingStub blockingStub;
     private final GreetingServiceGrpc.GreetingServiceStub asyncStub;
+    private final GreetingClient greetingClient;
     private final TestSpanExporter exporter;
 
     @SetUpServer
@@ -82,12 +84,13 @@ class DeclarativeGrpcTest {
         builder.addFeature(GrpcReflectionFeature.builder().enabled(true).build());
     }
 
-    DeclarativeGrpcTest(WebServer server, TestTracerFactory tracerFactory) {
+    DeclarativeGrpcTest(WebServer server, TestTracerFactory tracerFactory, @GrpcClient.Client GreetingClient greetingClient) {
         this.channel = ManagedChannelBuilder.forAddress("localhost", server.port())
                 .usePlaintext()
                 .build();
         this.blockingStub = GreetingServiceGrpc.newBlockingStub(channel);
         this.asyncStub = GreetingServiceGrpc.newStub(channel);
+        this.greetingClient = greetingClient;
         this.exporter = tracerFactory.exporter();
     }
 
@@ -104,6 +107,13 @@ class DeclarativeGrpcTest {
         var response = blockingStub.greet(request("Tomas"));
 
         assertThat(response.getMessage(), is("Hello Tomas"));
+    }
+
+    @Test
+    void testDeclarativeUnaryClient() {
+        var response = greetingClient.greet(request("Declarative"));
+
+        assertThat(response.getMessage(), is("Hello Declarative"));
     }
 
     @Test

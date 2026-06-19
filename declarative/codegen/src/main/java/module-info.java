@@ -36,6 +36,8 @@ module io.helidon.declarative.codegen {
     exports io.helidon.declarative.codegen.http.webserver.spi;
     // typed web client
     exports io.helidon.declarative.codegen.http.restclient;
+    // typed gRPC client
+    exports io.helidon.declarative.codegen.grpc.client;
     // fault tolerance (fallback, retry, circuit breaker)
     exports io.helidon.declarative.codegen.faulttolerance;
     // scheduling
@@ -53,6 +55,7 @@ module io.helidon.declarative.codegen {
             with io.helidon.declarative.codegen.faulttolerance.FtExtensionProvider,
                     io.helidon.declarative.codegen.scheduling.SchedulingExtensionProvider,
                     io.helidon.declarative.codegen.http.restclient.RestClientExtensionProvider,
+                    io.helidon.declarative.codegen.grpc.client.GrpcClientExtensionProvider,
                     io.helidon.declarative.codegen.http.webserver.RestServerExtensionProvider,
                     io.helidon.declarative.codegen.validation.ValidationExtensionProvider,
                     io.helidon.declarative.codegen.metrics.MetricsExtensionProvider,
@@ -63,5 +66,6 @@ module io.helidon.declarative.codegen {
                     io.helidon.declarative.codegen.cors.CorsExtensionProvider;
 
     provides io.helidon.codegen.spi.AnnotationMapperProvider
-            with io.helidon.declarative.codegen.http.restclient.RestClientAnnotationMapperProvider;
+            with io.helidon.declarative.codegen.http.restclient.RestClientAnnotationMapperProvider,
+                    io.helidon.declarative.codegen.grpc.client.GrpcClientAnnotationMapperProvider;
 }

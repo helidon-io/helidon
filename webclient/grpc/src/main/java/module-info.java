@@ -37,6 +37,7 @@ module io.helidon.webclient.grpc {
 
     requires io.helidon.metrics.api;
     requires io.helidon.grpc.core;
+    requires io.helidon.service.registry;
 
     exports io.helidon.webclient.grpc;
     exports io.helidon.webclient.grpc.spi;
