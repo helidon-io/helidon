@@ -129,6 +129,28 @@ public interface GrpcClient extends RuntimeType.Api<GrpcClientConfig> {
 
     /**
      * Defines a declarative gRPC client endpoint.
+     * <p>
+     * Configuration options for gRPC clients (prefixed by {@link #configKey()}):
+     * <table class="config">
+     *    <caption>gRPC Client Configuration Options</caption>
+     *    <tr>
+     *      <th>Key</th>
+     *      <th>Default Value</th>
+     *      <th>Description</th>
+     *    </tr>
+     *    <tr>
+     *      <th>{@code client}</th>
+     *      <th>&nbsp;</th>
+     *      <th>Backing {@link GrpcClient} configuration. Base URI is always overridden by {@link #value()}.</th>
+     *    </tr>
+     * </table>
+     *
+     * In case key {@code client} node exists under the configuration node of this API, a new client will be created for
+     * this instance (this always wins).
+     * In case the {@link #clientName()} is defined, and an instance of that name is available in registry, it will be
+     * used for this instance.
+     * Then we use an unnamed client instance from the registry (if any).
+     * The last resort is to create a new client that would be used for this API.
      */
     @Target(ElementType.TYPE)
     @Retention(RetentionPolicy.CLASS)
@@ -138,15 +160,16 @@ public interface GrpcClient extends RuntimeType.Api<GrpcClientConfig> {
          * Target URI of the gRPC endpoint.
          * <p>
          * Supports configuration references, such as {@code "http://localhost:${server.port}"}.
+         * This value overrides any base URI configured for the backing client.
          *
          * @return target URI
          */
         String value();
 
         /**
-         * Configuration key used to override this client.
+         * Configuration key base to use when looking up options for the backing gRPC client.
          *
-         * @return configuration key
+         * @return configuration key prefix
          */
         String configKey() default "";
 

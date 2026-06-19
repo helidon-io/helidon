@@ -173,6 +173,9 @@ class GrpcClientExtension implements RegistryCodegenExtension {
                                                         typeInfo.originatingElementValue()));
         Optional<String> clientName = endpointAnnotation.stringValue("clientName")
                 .filter(not(String::isBlank));
+        String configKey = endpointAnnotation.stringValue("configKey")
+                .filter(not(String::isBlank))
+                .orElseGet(() -> typeInfo.typeName().fqName());
         String serviceName = Annotations.findFirst(GRPC_SERVICE, typeAnnotations)
                 .flatMap(Annotation::stringValue)
                 .filter(not(String::isBlank))
@@ -209,7 +212,7 @@ class GrpcClientExtension implements RegistryCodegenExtension {
                                                + " must declare at least one gRPC method.",
                                        typeInfo.originatingElementValue());
         }
-        return new GrpcEndpoint(typeInfo, uri, serviceName, clientName, List.copyOf(methods));
+        return new GrpcEndpoint(typeInfo, uri, serviceName, configKey, clientName, List.copyOf(methods));
     }
 
     private Optional<GrpcMethod> toClientMethod(TypeInfo typeInfo, TypedElementInfo method) {
@@ -361,23 +364,36 @@ class GrpcClientExtension implements RegistryCodegenExtension {
         }
         constructor.addContentLine(".build();")
                 .decreaseContentPadding()
-                .addContentLine("var declarative__client = registryClient.get().orElseGet(() -> {")
-                .increaseContentPadding()
                 .update(it -> DelcarativeConfigSupport.assignResolveExpression(it, "config", "uri", endpoint.uri()))
+                .addContent("var declarative__clientConfig = config.get(")
+                .addContentLiteral(endpoint.configKey())
+                .addContentLine(").get(\"client\");")
+                .addContent(GRPC_CLIENT)
+                .addContentLine(" declarative__client = null;")
+                .addContentLine("if (!declarative__clientConfig.exists()) {")
+                .increaseContentPadding()
+                .addContentLine("declarative__client = registryClient.get().orElse(null);")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContentLine("if (declarative__client == null) {")
+                .increaseContentPadding()
                 .addContent("var declarative__clientBuilder = ")
                 .addContent(GRPC_CLIENT)
-                .addContentLine(".builder()")
+                .addContentLine(".builder();")
+                .addContentLine("if (declarative__clientConfig.exists()) {")
                 .increaseContentPadding()
-                .addContentLine(".baseUri(uri);")
+                .addContentLine("declarative__clientBuilder.config(declarative__clientConfig);")
                 .decreaseContentPadding()
+                .addContentLine("}")
+                .addContentLine("declarative__clientBuilder.baseUri(uri);")
                 .addContentLine("if (uri.startsWith(\"http://\")) {")
                 .increaseContentPadding()
                 .addContentLine("declarative__clientBuilder.tls(it -> it.enabled(false));")
                 .decreaseContentPadding()
                 .addContentLine("}")
-                .addContentLine("return declarative__clientBuilder.build();")
+                .addContentLine("declarative__client = declarative__clientBuilder.build();")
                 .decreaseContentPadding()
-                .addContentLine("});")
+                .addContentLine("}")
                 .addContentLine("this.serviceClient = declarative__client.serviceClient(declarative__descriptor);");
     }
 
@@ -437,6 +453,7 @@ class GrpcClientExtension implements RegistryCodegenExtension {
     private record GrpcEndpoint(TypeInfo type,
                                 String uri,
                                 String serviceName,
+                                String configKey,
                                 Optional<String> clientName,
                                 List<GrpcMethod> methods) {
     }

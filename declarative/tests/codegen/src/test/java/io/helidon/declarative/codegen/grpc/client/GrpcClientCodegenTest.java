@@ -101,7 +101,8 @@ class GrpcClientCodegenTest {
                         import io.helidon.grpc.api.Grpc;
                         import io.helidon.webclient.grpc.GrpcClient;
 
-                        @GrpcClient.Endpoint("http://localhost:8080")
+                        @GrpcClient.Endpoint(value = "http://localhost:${grpc.port}",
+                                             configKey = "grpc.clients.greeting")
                         @Grpc.GrpcService("GreetingService")
                         interface GreetingClient {
                             @Grpc.Unary("Greet")
@@ -169,8 +170,12 @@ class GrpcClientCodegenTest {
         assertThat(client, containsString("GrpcClientMethodDescriptor.bidirectional(\"GreetingService\", \"AsyncChat\")"));
         assertThat(client, containsString(".requestType(GreetingRequest.class)"));
         assertThat(client, containsString(".responseType(GreetingReply.class)"));
-        assertThat(client, containsString("ConfigBuilderSupport.resolveExpression(config, \"http://localhost:8080\")"));
-        assertThat(client, containsString(".baseUri(uri)"));
+        assertThat(client, containsString("ConfigBuilderSupport.resolveExpression(config, \"http://localhost:${grpc.port}\")"));
+        assertThat(client, containsString("var declarative__clientConfig = config.get(\"grpc.clients.greeting\").get(\"client\");"));
+        assertThat(client, containsString("GrpcClient declarative__client = null;"));
+        assertThat(client, containsString("declarative__client = registryClient.get().orElse(null);"));
+        assertThat(client, containsString("declarative__clientBuilder.config(declarative__clientConfig);"));
+        assertThat(client, containsString("declarative__clientBuilder.baseUri(uri);"));
         assertThat(client, containsString("declarative__clientBuilder.tls(it -> it.enabled(false));"));
         assertThat(client, containsString("return serviceClient.unary(\"Greet\", request);"));
         assertThat(client, containsString("serviceClient.unary(\"AsyncGreet\", request, responseObserver);"));
