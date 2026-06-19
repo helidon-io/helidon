@@ -180,6 +180,14 @@ class GraphQlServiceTest {
             assertThat(response.status(), is(Status.METHOD_NOT_ALLOWED_405));
         }
 
+        try (Http1ClientResponse response = client.get("/graphql")
+                .queryParam("query", "mutation { update(enabled: true) }")
+                .queryParam("operationName", "")
+                .queryParam("variables", "not-json")
+                .request()) {
+            assertThat(response.status(), is(Status.METHOD_NOT_ALLOWED_405));
+        }
+
         assertThat(MUTATIONS.get(), is(0));
     }
 

@@ -155,16 +155,19 @@ public class GraphQlService implements HttpService {
     private void graphQlGet(ServerRequest req, ServerResponse res) {
         UriQuery queryParams = req.query();
         String query = queryParams.first("query").orElseThrow(() -> new IllegalStateException("Query must be defined"));
-        String operationName = queryParams.first("operationName").orElse(null);
-        Map<String, Object> variables = queryParams.first("variables")
-                .map(this::toVariableMap)
-                .orElseGet(Map::of);
+        String operationName = queryParams.first("operationName")
+                .filter(it -> !it.isEmpty())
+                .orElse(null);
 
         if (mutationOperation(query, operationName)) {
             res.status(Status.METHOD_NOT_ALLOWED_405)
                     .send();
             return;
         }
+
+        Map<String, Object> variables = queryParams.first("variables")
+                .map(this::toVariableMap)
+                .orElseGet(Map::of);
 
         processRequest(req, res, query, operationName, variables);
     }
