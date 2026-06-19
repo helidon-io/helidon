@@ -70,6 +70,9 @@ import io.helidon.service.codegen.ServiceCodegenTypes;
 import io.helidon.service.codegen.spi.RegistryCodegenExtension;
 
 import static io.helidon.codegen.CodegenUtil.toConstantName;
+import static io.helidon.declarative.codegen.graphql.server.GraphQlServerAnnotations.hasNonNull;
+import static io.helidon.declarative.codegen.graphql.server.GraphQlServerAnnotations.requestMetadataAnnotations;
+import static io.helidon.declarative.codegen.graphql.server.GraphQlServerAnnotations.validateAutomaticFieldAnnotations;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.COERCED_VARIABLES;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.COERCING;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.COERCING_PARSE_LITERAL_EXCEPTION;
@@ -106,9 +109,6 @@ import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegen
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.RUNTIME_WIRING;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.SCHEMA_GENERATOR;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.SCHEMA_PARSER;
-import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.SECURITY_AUDITED;
-import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.SECURITY_AUTHENTICATED;
-import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.SECURITY_AUTHORIZED;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.SECURITY_CONTEXT;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.SERVER_HTTP_FEATURE;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.SERVER_HTTP_ROUTING_BUILDER;
@@ -135,9 +135,6 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
     private static final TypeName LIST_OF_GRAPHQL_SCALARS = TypeName.builder(TypeNames.LIST)
             .addTypeArgument(GRAPHQL_SCALAR_SPI)
             .build();
-    private static final Set<TypeName> REQUEST_SECURITY_ANNOTATIONS = Set.of(SECURITY_AUDITED,
-                                                                              SECURITY_AUTHENTICATED,
-                                                                              SECURITY_AUTHORIZED);
 
     private final RegistryCodegenContext ctx;
     private final List<GraphQlParameterCodegenProvider> paramProviders;
@@ -200,7 +197,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
 
     private GraphQlGroup toGroup(RegistryRoundContext roundContext, List<EndpointDeclaration> declarations) {
         validateGroupPackage(declarations);
-        validateGroupRequestSecurity(declarations);
+        validateGroupRequestMetadata(declarations);
         String schemaUri = schemaUri(declarations);
         SchemaTypes schemaTypes = new SchemaTypes(roundContext);
         Resolvers resolvers = new Resolvers(new ArrayList<>(),
@@ -240,32 +237,24 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                                    declarations.getFirst().typeInfo().originatingElementValue());
     }
 
-    private static void validateGroupRequestSecurity(List<EndpointDeclaration> declarations) {
+    private static void validateGroupRequestMetadata(List<EndpointDeclaration> declarations) {
         if (declarations.size() <= 1) {
             return;
         }
 
-        List<Annotation> expected = requestSecurityAnnotations(declarations.getFirst());
+        List<Annotation> expected = requestMetadataAnnotations(declarations.getFirst().annotations());
         for (EndpointDeclaration declaration : declarations) {
-            List<Annotation> actual = requestSecurityAnnotations(declaration);
+            List<Annotation> actual = requestMetadataAnnotations(declaration.annotations());
             if (!expected.equals(actual)) {
                 throw new CodegenException("Declarative GraphQL endpoint group for "
                                                    + groupDescription(declaration.groupKey())
-                                                   + " contains different endpoint-level request security annotations. "
-                                                   + "Grouped endpoints share one HTTP route, so @Authenticated, "
-                                                   + "@Authorized, and @Audited must be declared consistently on every "
-                                                   + "endpoint in the group.",
+                                                   + " contains different endpoint-level request metadata annotations. "
+                                                   + "Grouped endpoints share one HTTP route and one HTTP entry point, "
+                                                   + "so non-route endpoint annotations must be declared consistently on "
+                                                   + "every endpoint in the group.",
                                            declaration.typeInfo().originatingElementValue());
             }
         }
-    }
-
-    private static List<Annotation> requestSecurityAnnotations(EndpointDeclaration declaration) {
-        return declaration.annotations()
-                .stream()
-                .filter(it -> REQUEST_SECURITY_ANNOTATIONS.contains(it.typeName()))
-                .sorted()
-                .toList();
     }
 
     private static String schemaUri(List<EndpointDeclaration> declarations) {
@@ -1370,10 +1359,6 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         result.append("}\n");
     }
 
-    private static boolean hasNonNull(Collection<Annotation> annotations) {
-        return Annotations.findFirst(GRAPHQL_NON_NULL, annotations).isPresent();
-    }
-
     private static String graphQlName(Set<Annotation> annotations, String defaultName) {
         return Annotations.findFirst(GRAPHQL_NAME, annotations)
                 .flatMap(Annotation::stringValue)
@@ -1480,7 +1465,9 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         private String outputType(TypeName type, Object originatingElement) {
             if (type.isList()) {
                 TypeName elementType = listElementType(type, originatingElement);
-                return "[" + outputType(elementType, originatingElement) + "]";
+                return "[" + outputType(elementType,
+                                         elementType.primitive() || hasNonNull(elementType),
+                                         originatingElement) + "]";
             }
 
             Optional<String> scalar = scalarType(type, originatingElement);
@@ -1510,8 +1497,11 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
             if (type.isList()) {
                 TypeName elementType = listElementType(type, originatingElement);
                 ValueSchemaType elementSchemaType = inputValueType(elementType, endpoint, method, originatingElement);
+                String elementGraphQlName = elementType.primitive() || hasNonNull(elementType)
+                        ? elementSchemaType.graphQlName() + "!"
+                        : elementSchemaType.graphQlName();
                 return new ValueSchemaType(type,
-                                           "[" + elementSchemaType.graphQlName() + "]",
+                                           "[" + elementGraphQlName + "]",
                                            Optional.empty(),
                                            Optional.empty(),
                                            Optional.of(elementSchemaType));
@@ -1757,10 +1747,11 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                               TypedElementInfo element,
                               String defaultName,
                               String accessor) {
-            Set<Annotation> annotations = new HashSet<>(element.annotations());
+            Set<Annotation> annotations = new HashSet<>(TypeHierarchy.hierarchyAnnotations(ctx, typeInfo, element));
             if (Annotations.findFirst(GRAPHQL_IGNORE, annotations).isPresent()) {
                 return;
             }
+            validateAutomaticFieldAnnotations(typeInfo, element, annotations);
             String graphQlName = graphQlName(annotations, defaultName);
             String schemaType = outputType(element.typeName(),
                                            element.typeName().primitive() || hasNonNull(annotations),
@@ -1788,6 +1779,12 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                 throw new CodegenException("@GraphQl.Ignore cannot be used on GraphQL input record component "
                                                    + typeInfo.typeName().fqName() + "." + element.elementName()
                                                    + ". Input records must provide every constructor component.",
+                                           element.originatingElementValue());
+            }
+            if (Annotations.findFirst(GRAPHQL_DEFAULT_VALUE, annotations).isPresent()) {
+                throw new CodegenException("@GraphQl.DefaultValue cannot be used on GraphQL input record component "
+                                                   + typeInfo.typeName().fqName() + "." + element.elementName()
+                                                   + ". Default values are supported on resolver arguments only.",
                                            element.originatingElementValue());
             }
             String graphQlName = graphQlName(annotations, defaultName);

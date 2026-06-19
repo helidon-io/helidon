@@ -16,6 +16,8 @@
 
 package io.helidon.graphql.spi;
 
+import java.util.Objects;
+
 import io.helidon.common.Api;
 import io.helidon.service.registry.Service;
 
@@ -81,6 +83,6 @@ public interface GraphQlScalar {
      * @return Java value, never {@code null}
      */
     default Object parseLiteral(Object value) {
-        return parseValue(value);
+        return Objects.requireNonNull(parseValue(Objects.requireNonNull(value)), "parseLiteral result");
     }
 }

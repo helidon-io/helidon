@@ -140,7 +140,10 @@ public final class GraphQl {
     }
 
     /**
-     * Defines a default value for an argument.
+     * Defines a default value for a resolver argument.
+     * <p>
+     * The initial declarative GraphQL server generator supports this annotation on resolver parameters only. Input record
+     * component defaults are rejected during code generation.
      */
     @Target({ElementType.PARAMETER, ElementType.RECORD_COMPONENT})
     @Retention(RetentionPolicy.CLASS)

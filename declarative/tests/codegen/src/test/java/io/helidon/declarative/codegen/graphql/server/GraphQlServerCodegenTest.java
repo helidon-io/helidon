@@ -417,6 +417,75 @@ class GraphQlServerCodegenTest {
     }
 
     @Test
+    void typeUseNonNullListElementsContributeToSdl() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-list-element-non-null"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import java.util.List;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            List<@GraphQl.NonNull Book> books() {
+                                return List.of(new Book("Dune", List.of("classic")));
+                            }
+
+                            @GraphQl.Query
+                            String byTags(@GraphQl.Argument("tags") List<@GraphQl.NonNull String> tags) {
+                                return tags.toString();
+                            }
+
+                            @GraphQl.Query
+                            String search(BookSearch criteria) {
+                                return criteria.tags().toString();
+                            }
+                        }
+                        """)
+                .addSource("Book.java", """
+                        package com.example;
+
+                        import java.util.List;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Entity
+                        record Book(String title, List<@GraphQl.NonNull String> tags) {
+                        }
+                        """)
+                .addSource("BookSearch.java", """
+                        package com.example;
+
+                        import java.util.List;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Entity
+                        record BookSearch(List<@GraphQl.NonNull String> tags) {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        String generated = Files.readString(result.sourceOutput()
+                                                    .resolve("com/example/GraphEndpoint__GraphQlFeature.java"),
+                                            StandardCharsets.UTF_8);
+        assertThat(generated, containsString("books: [Book!]"));
+        assertThat(generated, containsString("byTags(tags: [String!]): String"));
+        assertThat(generated, containsString("tags: [String!]"));
+    }
+
+    @Test
     void customParameterProviderBindsResolverParameters() throws IOException {
         Path servicesFile = registerTestGraphQlParameterProvider();
         try {
@@ -681,20 +750,32 @@ class GraphQlServerCodegenTest {
     }
 
     @Test
-    void groupedEndpointsWithDifferentRequestSecurityAnnotationsFailCodegen() {
+    void groupedEndpointsWithDifferentRequestMetadataAnnotationsFailCodegen() {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .addClasspath(GRAPHQL_CLASSPATH)
                 .addProcessor(AptProcessor::new)
-                .workDir(Path.of("target/test-compiler/graphql-server-request-security-conflict"))
+                .workDir(Path.of("target/test-compiler/graphql-server-request-metadata-conflict"))
+                .addSource("RequestPolicy.java", """
+                        package com.example;
+
+                        import java.lang.annotation.ElementType;
+                        import java.lang.annotation.Retention;
+                        import java.lang.annotation.RetentionPolicy;
+                        import java.lang.annotation.Target;
+
+                        @Retention(RetentionPolicy.RUNTIME)
+                        @Target({ElementType.METHOD, ElementType.TYPE})
+                        public @interface RequestPolicy {
+                        }
+                        """)
                 .addSource("GraphEndpoint.java", """
                         package com.example;
 
                         import io.helidon.graphql.GraphQl;
-                        import io.helidon.security.annotations.Authenticated;
                         import io.helidon.webserver.graphql.GraphQlServer;
 
-                        @Authenticated
+                        @RequestPolicy
                         @GraphQlServer.Endpoint
                         class GraphEndpoint {
                             @GraphQl.Query
@@ -722,7 +803,7 @@ class GraphQlServerCodegenTest {
 
         String diagnostics = String.join("\n", result.diagnostics());
         assertThat(diagnostics, result.success(), is(false));
-        assertThat(diagnostics, containsString("different endpoint-level request security annotations"));
+        assertThat(diagnostics, containsString("different endpoint-level request metadata annotations"));
     }
 
     @Test
@@ -954,6 +1035,160 @@ class GraphQlServerCodegenTest {
         String diagnostics = String.join("\n", result.diagnostics());
         assertThat(diagnostics, result.success(), is(false));
         assertThat(diagnostics, containsString("@GraphQl.Ignore cannot be used on GraphQL input record component"));
+    }
+
+    @Test
+    void defaultValueInputObjectRecordComponentFailsCodegen() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-default-input-component"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            String search(BookSearch criteria) {
+                                return criteria.phrase();
+                            }
+                        }
+                        """)
+                .addSource("BookSearch.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Entity
+                        record BookSearch(@GraphQl.DefaultValue("\\\"Dune\\\"") String phrase) {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("@GraphQl.DefaultValue cannot be used on GraphQL input record component"));
+    }
+
+    @Test
+    void unsupportedAnnotationOnAutomaticObjectFieldFailsCodegen() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-annotated-automatic-field"))
+                .addSource("FieldPolicy.java", """
+                        package com.example;
+
+                        import java.lang.annotation.ElementType;
+                        import java.lang.annotation.Retention;
+                        import java.lang.annotation.RetentionPolicy;
+                        import java.lang.annotation.Target;
+
+                        @Retention(RetentionPolicy.RUNTIME)
+                        @Target({ElementType.METHOD, ElementType.FIELD, ElementType.RECORD_COMPONENT})
+                        public @interface FieldPolicy {
+                        }
+                        """)
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            Book book() {
+                                return new Book();
+                            }
+                        }
+                        """)
+                .addSource("Book.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Entity
+                        class Book {
+                            @FieldPolicy
+                            public String title = "Dune";
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("Automatic GraphQL fields only support GraphQL schema annotations"));
+    }
+
+    @Test
+    void inheritedUnsupportedAnnotationOnAutomaticObjectGetterFailsCodegen() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-annotated-inherited-automatic-field"))
+                .addSource("FieldPolicy.java", """
+                        package com.example;
+
+                        import java.lang.annotation.ElementType;
+                        import java.lang.annotation.Retention;
+                        import java.lang.annotation.RetentionPolicy;
+                        import java.lang.annotation.Target;
+
+                        @Retention(RetentionPolicy.RUNTIME)
+                        @Target({ElementType.METHOD, ElementType.FIELD, ElementType.RECORD_COMPONENT})
+                        public @interface FieldPolicy {
+                        }
+                        """)
+                .addSource("Titled.java", """
+                        package com.example;
+
+                        interface Titled {
+                            @FieldPolicy
+                            String getTitle();
+                        }
+                        """)
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            Book book() {
+                                return new Book();
+                            }
+                        }
+                        """)
+                .addSource("Book.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Entity
+                        class Book implements Titled {
+                            @Override
+                            public String getTitle() {
+                                return "Dune";
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("Automatic GraphQL fields only support GraphQL schema annotations"));
     }
 
     @Test

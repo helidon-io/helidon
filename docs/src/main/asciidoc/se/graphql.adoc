@@ -135,8 +135,10 @@ resolvers on generated object types.
 include::{sourcedir}/se/GraphQlSnippets.java[tag=snippet_4, indent=0]
 ----
 
-Java classes, records, interfaces, and enums must be annotated with `@GraphQl.Entity` before they contribute SDL object, input,
-or enum definitions. Built-in GraphQL scalar types do not need this marker. Use `@GraphQl.Scalar` with a matching
+Java classes, records, interfaces, and enums must be annotated with `@GraphQl.Entity` before they contribute SDL object or enum
+definitions. GraphQL input objects are generated from records annotated with `@GraphQl.Entity`. Built-in GraphQL scalar types
+do not need this marker. Automatic entity fields support only GraphQL schema annotations; use an explicit
+`@GraphQlServer.Field` resolver when a field needs annotation-driven runtime behavior. Use `@GraphQl.Scalar` with a matching
 `GraphQlScalar` service for custom scalar Java types.
 
 Declarative resolver parameters can bind:
