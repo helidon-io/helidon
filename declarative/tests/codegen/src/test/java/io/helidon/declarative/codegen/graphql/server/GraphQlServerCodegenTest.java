@@ -654,7 +654,7 @@ class GraphQlServerCodegenTest {
 
         String generated = Files.readString(generatedSources.getFirst(), StandardCharsets.UTF_8);
         assertThat(generated, containsString("class GraphQl__40_default__2f_graphql__GraphQlFeature implements HttpFeature"));
-        assertThat(generated, containsString("GraphQl__40_default__2f_graphql__GraphQlFeature__ServiceDescriptor.INSTANCE"));
+        assertThat(generated, containsString("GraphEndpoint__ServiceDescriptor.INSTANCE"));
         assertThat(generated, containsString("requestAnnotations(GraphEndpoint__ServiceDescriptor.ANNOTATIONS)"));
         assertThat(generated, containsString("GraphEndpoint endpoint_0"));
         assertThat(generated, containsString("LibraryEndpoint endpoint_1"));

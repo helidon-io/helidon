@@ -46,6 +46,10 @@
             <artifactId>helidon-json</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.helidon.json</groupId>
+            <artifactId>helidon-json-binding</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.helidon.common.features</groupId>
             <artifactId>helidon-common-features-api</artifactId>
             <optional>true</optional>
@@ -129,6 +133,11 @@
                             <version>${helidon.version}</version>
                         </path>
                         <path>
+                            <groupId>io.helidon.json</groupId>
+                            <artifactId>helidon-json-codegen</artifactId>
+                            <version>${helidon.version}</version>
+                        </path>
+                        <path>
                             <groupId>io.helidon.codegen</groupId>
                             <artifactId>helidon-codegen-helidon-copyright</artifactId>
                             <version>${helidon.version}</version>
@@ -149,6 +158,11 @@
                     <dependency>
                         <groupId>io.helidon.service</groupId>
                         <artifactId>helidon-service-codegen</artifactId>
+                        <version>${helidon.version}</version>
+                    </dependency>
+                    <dependency>
+                        <groupId>io.helidon.json</groupId>
+                        <artifactId>helidon-json-codegen</artifactId>
                         <version>${helidon.version}</version>
                     </dependency>
                     <dependency>

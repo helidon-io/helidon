@@ -766,7 +766,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                 .addContentLine("this.scalars = scalars;");
         classModel.addConstructor(constructor);
 
-        addSetupMethod(classModel, group, generatedType);
+        addSetupMethod(classModel, group);
         addSocketMethods(classModel, group);
         addSchemaMethod(classModel, group);
         addInvocationHandlerMethod(classModel);
@@ -817,8 +817,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         return result;
     }
 
-    private void addSetupMethod(ClassModel.Builder classModel, GraphQlGroup group, TypeName generatedType) {
-        TypeName routeDescriptorType = ctx.descriptorType(generatedType);
+    private void addSetupMethod(ClassModel.Builder classModel, GraphQlGroup group) {
         TypeName endpointDescriptorType = ctx.descriptorType(group.primaryEndpoint().typeInfo().typeName());
         classModel.addMethod(setup -> setup
                 .accessModifier(AccessModifier.PUBLIC)
@@ -828,7 +827,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                         .name("routing")
                         .type(SERVER_HTTP_ROUTING_BUILDER))
                 .addContent("var descriptor = ")
-                .addContent(routeDescriptorType)
+                .addContent(endpointDescriptorType)
                 .addContentLine(".INSTANCE;")
                 .addContent("var annotations = requestAnnotations(")
                 .addContent(endpointDescriptorType)

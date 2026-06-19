@@ -32,6 +32,7 @@ import io.helidon.http.Status;
 import io.helidon.json.JsonArray;
 import io.helidon.json.JsonNull;
 import io.helidon.json.JsonObject;
+import io.helidon.json.binding.Json;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.ServiceDescriptor;
 import io.helidon.webserver.http.Handler;
@@ -42,6 +43,8 @@ import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 
+import graphql.GraphqlErrorBuilder;
+import graphql.execution.DataFetcherResult;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.SchemaGenerator;
@@ -232,6 +235,29 @@ class GraphQlServiceTest {
         }
     }
 
+    @Test
+    void testErrorExtensionObjectResponseValues() {
+        try (Http1ClientResponse response = client.post("/graphql")
+                .submit("{\"query\": \"{extensionObject}\"}")) {
+            assertThat(response.status(), is(Status.OK_200));
+            JsonObject json = response.as(JsonObject.class);
+            JsonObject data = json.objectValue("data").orElseThrow();
+            JsonObject error = json.arrayValue("errors").orElseThrow()
+                    .get(0)
+                    .orElseThrow()
+                    .asObject();
+            JsonObject payload = error.objectValue("extensions")
+                    .orElseThrow()
+                    .objectValue("payload")
+                    .orElseThrow();
+
+            assertThat("Response data", data.stringValue("extensionObject").orElseThrow(), is("ok"));
+            assertThat(error.stringValue("message").orElseThrow(), is("extension object"));
+            assertThat(payload.stringValue("code").orElseThrow(), is("E-1"));
+            assertThat(payload.intValue("retryAfterSeconds").orElseThrow(), is(30));
+        }
+    }
+
     private static GraphQLSchema buildSchema() {
         String schema = """
                 type Query {
@@ -241,6 +267,7 @@ class GraphQlServiceTest {
                     nested(input: NestedInput): String
                     numbers: [Int]
                     nothing: String
+                    extensionObject: String
                     scaled(value: Float): Float
                     sum(values: [Int]): Int
                 }
@@ -267,6 +294,13 @@ class GraphQlServiceTest {
                         })
                         .dataFetcher("numbers", _ -> List.of(1, 2, 3))
                         .dataFetcher("nothing", _ -> null)
+                        .dataFetcher("extensionObject", _ -> DataFetcherResult.newResult()
+                                .data("ok")
+                                .error(GraphqlErrorBuilder.newError()
+                                               .message("extension object")
+                                               .extensions(Map.of("payload", new ExtensionPayload("E-1", 30)))
+                                               .build())
+                                .build())
                         .dataFetcher("scaled", environment -> environment.getArgument("value"))
                         .dataFetcher("sum", environment -> {
                             List<Integer> values = environment.getArgument("values");
@@ -288,6 +322,36 @@ class GraphQlServiceTest {
 
         SchemaGenerator schemaGenerator = new SchemaGenerator();
         return schemaGenerator.makeExecutableSchema(typeDefinitionRegistry, runtimeWiring);
+    }
+
+    @Json.Entity
+    static class ExtensionPayload {
+        private String code;
+        private int retryAfterSeconds;
+
+        ExtensionPayload() {
+        }
+
+        ExtensionPayload(String code, int retryAfterSeconds) {
+            this.code = code;
+            this.retryAfterSeconds = retryAfterSeconds;
+        }
+
+        public String getCode() {
+            return code;
+        }
+
+        public void setCode(String code) {
+            this.code = code;
+        }
+
+        public int getRetryAfterSeconds() {
+            return retryAfterSeconds;
+        }
+
+        public void setRetryAfterSeconds(int retryAfterSeconds) {
+            this.retryAfterSeconds = retryAfterSeconds;
+        }
     }
 
     private static final class RecordingEntryPoints implements HttpEntryPoint.EntryPoints {

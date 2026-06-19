@@ -70,7 +70,6 @@ class InvocationHandlerObjectResultTest {
         Document document = Parser.parse("{book { title }}");
 
         Map<String, Object> result = handler.execute("not a query",
-                                                     null,
                                                      Map.of(),
                                                      Map.of(PARSED_DOCUMENT, document));
 
@@ -86,7 +85,6 @@ class InvocationHandlerObjectResultTest {
         Document document = Parser.parse("{book { unknown }}");
 
         Map<String, Object> result = handler.execute("{book { title }}",
-                                                     null,
                                                      Map.of(),
                                                      Map.of(PARSED_DOCUMENT, document));
 

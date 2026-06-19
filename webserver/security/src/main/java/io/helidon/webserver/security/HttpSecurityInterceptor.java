@@ -286,11 +286,11 @@ class HttpSecurityInterceptor implements Interception.EntryPointInterceptor {
     }
 
     private boolean noGenericSecurity(InterceptionContext ctx) {
-        noSecurityGenericContextLock.readLock().lock();
+        noSecurityGenericContextLock.writeLock().lock();
         try {
             return noSecurityGenericContexts.contains(ctx);
         } finally {
-            noSecurityGenericContextLock.readLock().unlock();
+            noSecurityGenericContextLock.writeLock().unlock();
         }
     }
 

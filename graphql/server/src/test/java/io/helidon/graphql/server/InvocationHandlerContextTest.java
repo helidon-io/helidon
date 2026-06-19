@@ -84,7 +84,6 @@ class InvocationHandlerContextTest {
                 .build();
 
         Map<String, Object> result = handler.execute("{value}",
-                                                     null,
                                                      Map.of(),
                                                      Map.of(ExecutionContext.HELIDON_CONTEXT_KEY, context,
                                                             "requestId", 92L));

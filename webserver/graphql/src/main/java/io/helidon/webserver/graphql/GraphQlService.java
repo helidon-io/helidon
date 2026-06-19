@@ -53,6 +53,7 @@ import io.helidon.json.JsonObject;
 import io.helidon.json.JsonParser;
 import io.helidon.json.JsonString;
 import io.helidon.json.JsonValue;
+import io.helidon.json.binding.JsonBinding;
 import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.ServiceDescriptor;
 import io.helidon.webserver.http.Handler;
@@ -87,6 +88,7 @@ public class GraphQlService implements HttpService {
     private final Handler graphQlPost;
     private final Handler graphQlGet;
     private final Handler graphQlSchema;
+    private final JsonBinding jsonBinding;
 
     private GraphQlService(Builder builder) {
         this.context = builder.context;
@@ -97,6 +99,7 @@ public class GraphQlService implements HttpService {
         this.graphQlPost = builder.postEntryPoint.apply(this::graphQlPost);
         this.graphQlGet = builder.getEntryPoint.apply(this::graphQlGet);
         this.graphQlSchema = builder.schemaEntryPoint.apply(this::graphQlSchema);
+        this.jsonBinding = JsonBinding.create();
     }
 
     /**
@@ -199,7 +202,9 @@ public class GraphQlService implements HttpService {
                                 Map<String, Object> contextValues) {
 
         res.headers().contentType(MediaTypes.APPLICATION_JSON);
-        Map<String, Object> result = invocationHandler.execute(query, operationName, variables, contextValues);
+        Map<String, Object> result = operationName == null
+                ? invocationHandler.execute(query, variables, contextValues)
+                : invocationHandler.execute(query, operationName, variables, contextValues);
         res.send(toJsonBytes(result));
     }
 
@@ -316,7 +321,7 @@ public class GraphQlService implements HttpService {
         return value;
     }
 
-    private static byte[] toJsonBytes(Map<String, Object> result) {
+    private byte[] toJsonBytes(Map<String, Object> result) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         try (JsonGenerator generator = JsonGenerator.create(outputStream)) {
             writeJsonObject(generator, result);
@@ -324,7 +329,7 @@ public class GraphQlService implements HttpService {
         return outputStream.toByteArray();
     }
 
-    private static void writeJsonObject(JsonGenerator generator, Map<?, ?> map) {
+    private void writeJsonObject(JsonGenerator generator, Map<?, ?> map) {
         generator.writeObjectStart();
         for (Map.Entry<?, ?> entry : map.entrySet()) {
             generator.writeKey(String.valueOf(entry.getKey()));
@@ -333,7 +338,7 @@ public class GraphQlService implements HttpService {
         generator.writeObjectEnd();
     }
 
-    private static void writeJsonArray(JsonGenerator generator, Iterable<?> iterable) {
+    private void writeJsonArray(JsonGenerator generator, Iterable<?> iterable) {
         generator.writeArrayStart();
         for (Object value : iterable) {
             writeJsonValue(generator, value);
@@ -341,7 +346,7 @@ public class GraphQlService implements HttpService {
         generator.writeArrayEnd();
     }
 
-    private static void writeJsonValue(JsonGenerator generator, Object value) {
+    private void writeJsonValue(JsonGenerator generator, Object value) {
         switch (value) {
         case null -> generator.writeNull();
         case JsonValue jsonValue -> generator.write(jsonValue);
@@ -359,7 +364,7 @@ public class GraphQlService implements HttpService {
         case Number number -> generator.write(new BigDecimal(number.toString()));
         case Map<?, ?> map -> writeJsonObject(generator, map);
         case Iterable<?> iterable -> writeJsonArray(generator, iterable);
-        default -> throw new IllegalArgumentException("Unsupported GraphQL result type: " + value.getClass().getName());
+        default -> jsonBinding.serialize(generator, value);
         }
     }
 

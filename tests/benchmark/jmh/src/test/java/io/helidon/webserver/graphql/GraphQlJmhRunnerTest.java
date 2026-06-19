@@ -27,7 +27,7 @@ import org.openjdk.jmh.runner.options.TimeValue;
 class GraphQlJmhRunnerTest {
     @Test
     void run() throws RunnerException {
-        String include = System.getProperty("graphql.jmh.include", ".*GraphQlJmhBenchmark.*");
+        String include = System.getProperty("graphql.jmh.include", ".*GraphQl.*JmhBenchmark.*");
         String result = System.getProperty("graphql.jmh.result", "./target/graphql-jmh-result.json");
 
         Options options = new OptionsBuilder()

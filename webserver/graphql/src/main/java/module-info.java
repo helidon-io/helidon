@@ -39,6 +39,7 @@ module io.helidon.webserver.graphql {
 
     requires static io.helidon.common.features.api;
 
+    requires transitive io.helidon.json.binding;
     requires transitive io.helidon.webserver;
 
     exports io.helidon.webserver.graphql;

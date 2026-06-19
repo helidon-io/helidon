@@ -122,7 +122,14 @@ class InvocationHandlerImpl implements InvocationHandler {
 
     @Override
     public Map<String, Object> execute(String query, String operationName, Map<String, Object> variables) {
-        return execute(query, operationName, variables, Map.of());
+        return executeInternal(query, operationName, variables, Map.of());
+    }
+
+    @Override
+    public Map<String, Object> execute(String query,
+                                       Map<String, Object> variables,
+                                       Map<String, Object> contextValues) {
+        return executeInternal(query, null, variables, contextValues);
     }
 
     @Override
@@ -130,6 +137,17 @@ class InvocationHandlerImpl implements InvocationHandler {
                                        String operationName,
                                        Map<String, Object> variables,
                                        Map<String, Object> contextValues) {
+        Objects.requireNonNull(operationName);
+        return executeInternal(query, operationName, variables, contextValues);
+    }
+
+    private Map<String, Object> executeInternal(String query,
+                                                String operationName,
+                                                Map<String, Object> variables,
+                                                Map<String, Object> contextValues) {
+        Objects.requireNonNull(query);
+        Objects.requireNonNull(variables);
+        Objects.requireNonNull(contextValues);
         try {
             return doExecute(query, operationName, variables, contextValues);
         } catch (RuntimeException e) {
@@ -144,7 +162,6 @@ class InvocationHandlerImpl implements InvocationHandler {
                                           String operationName,
                                           Map<String, Object> variables,
                                           Map<String, Object> contextValues) {
-        Objects.requireNonNull(contextValues);
         Context commonContext = commonContext(contextValues);
         ExecutionContext context = new ExecutionContextImpl(commonContext);
         contextValues.forEach(context::setContextValue);
