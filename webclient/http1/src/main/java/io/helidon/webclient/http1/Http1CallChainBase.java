@@ -322,7 +322,6 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         int statusCode = responseStatus.code();
         if (responseStatus.family() == Status.Family.INFORMATIONAL
                 || statusCode == Status.NO_CONTENT_204.code()
-                || statusCode == Status.RESET_CONTENT_205.code()
                 || statusCode == Status.NOT_MODIFIED_304.code()) {
             return false;
         }

@@ -19,6 +19,7 @@ package io.helidon.webclient.http1;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.StandardProtocolFamily;
@@ -235,7 +236,7 @@ class Http1ClientTest {
 
     @ParameterizedTest
     @MethodSource("noBodyStatusResponses")
-    void testNoBodyStatusResponseWithoutLengthReusesConnection(Status status) {
+    void testHeaderTerminatedNoBodyStatusResponseWithoutLengthReusesConnection(Status status) {
         FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(status, false);
 
         try (Http1ClientResponse response = client.get("http://localhost:" + dummyPort + "/test")
@@ -244,6 +245,59 @@ class Http1ClientTest {
             assertThat(response.status(), is(status));
             assertThat(response.headers(), noHeader(HeaderNames.CONTENT_LENGTH));
             assertThat(response.entity().hasEntity(), is(false));
+        }
+
+        assertThat(connection.releaseCount(), is(1));
+        assertThat(connection.closeCount(), is(0));
+    }
+
+    @Test
+    void testResetContentResponseWithoutLengthClosesConnection() {
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(Status.RESET_CONTENT_205, false);
+
+        try (Http1ClientResponse response = client.get("http://localhost:" + dummyPort + "/test")
+                .connection(connection)
+                .request()) {
+            assertThat(response.status(), is(Status.RESET_CONTENT_205));
+            assertThat(response.headers(), noHeader(HeaderNames.CONTENT_LENGTH));
+        }
+
+        assertThat(connection.releaseCount(), is(0));
+        assertThat(connection.closeCount(), is(1));
+    }
+
+    @Test
+    void testResetContentResponseWithContentLengthZeroReusesConnection() {
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(Status.RESET_CONTENT_205, true);
+
+        try (Http1ClientResponse response = client.get("http://localhost:" + dummyPort + "/test")
+                .connection(connection)
+                .request()) {
+            assertThat(response.status(), is(Status.RESET_CONTENT_205));
+            assertThat(response.headers(), hasHeader(HeaderNames.CONTENT_LENGTH, "0"));
+            assertThat(response.entity().hasEntity(), is(false));
+        }
+
+        assertThat(connection.releaseCount(), is(1));
+        assertThat(connection.closeCount(), is(0));
+    }
+
+    @Test
+    void testResetContentResponseWithChunkedTerminatorReusesConnection() throws IOException {
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(Status.RESET_CONTENT_205,
+                                                                             true,
+                                                                             false,
+                                                                             List.of(HeaderValues.TRANSFER_ENCODING_CHUNKED),
+                                                                             "0\r\n\r\n".getBytes(StandardCharsets.US_ASCII));
+
+        try (Http1ClientResponse response = client.get("http://localhost:" + dummyPort + "/test")
+                .connection(connection)
+                .request()) {
+            assertThat(response.status(), is(Status.RESET_CONTENT_205));
+            assertThat(response.headers(), hasHeader(HeaderNames.TRANSFER_ENCODING, "chunked"));
+            try (InputStream entity = response.entity().inputStream()) {
+                assertThat(entity.read(), is(-1));
+            }
         }
 
         assertThat(connection.releaseCount(), is(1));
@@ -870,7 +924,6 @@ class Http1ClientTest {
     private static Stream<Arguments> noBodyStatusResponses() {
         return Stream.of(
                 arguments(Status.NO_CONTENT_204),
-                arguments(Status.RESET_CONTENT_205),
                 arguments(Status.NOT_MODIFIED_304)
         );
     }
