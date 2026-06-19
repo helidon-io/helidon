@@ -55,6 +55,11 @@ class GrpcEntryPointsImpl implements GrpcEntryPoint.EntryPoints {
     }
 
     @Override
+    public boolean hasInterceptors() {
+        return !noInterceptors;
+    }
+
+    @Override
     public ServerInterceptor interceptor(ServiceDescriptor<?> descriptor,
                                          Set<Qualifier> typeQualifiers,
                                          List<Annotation> typeAnnotations,

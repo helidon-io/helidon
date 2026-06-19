@@ -95,6 +95,17 @@ public class GrpcEntryPoint {
      */
     public interface EntryPoints {
         /**
+         * Whether gRPC entry point interceptors should be registered.
+         * <p>
+         * The default preserves compatibility for custom implementations.
+         *
+         * @return whether interceptors are available
+         */
+        default boolean hasInterceptors() {
+            return true;
+        }
+
+        /**
          * Interceptor that triggers entry point interceptors.
          *
          * @param descriptor descriptor of the invoked endpoint

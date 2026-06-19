@@ -351,7 +351,7 @@ public class GrpcRouting implements Routing {
          */
         public Builder service(GrpcServiceDescriptor service) {
             GrpcServiceDescriptor serviceDescriptor = Objects.requireNonNull(service);
-            String name = serviceDescriptor.name();
+            String name = serviceDescriptor.fullName();
             if (services.containsKey(name)) {
                 throw new IllegalArgumentException("Attempted to register service name " + name + " multiple times");
             }

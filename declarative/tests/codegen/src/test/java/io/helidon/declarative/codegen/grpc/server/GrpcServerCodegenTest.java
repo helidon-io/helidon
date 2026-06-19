@@ -240,6 +240,7 @@ class GrpcServerCodegenTest {
         assertThat(registration, containsString(".serverStreaming(\"StreamHello\", this::streamHello"));
         assertThat(registration, containsString(".clientStreaming(\"CollectHello\", this::collectHello"));
         assertThat(registration, containsString(".bidirectional(\"ChatHello\", this::chatHello"));
+        assertThat(registration, containsString("if (entryPoints.hasInterceptors()) {"));
         assertThat(registration, containsString("entryPoints.interceptor("));
         assertThat(registration, containsString("GrpcSecurity.enforce().authenticate().securityLevel("));
         assertThat(registration, containsString("GrpcSecurity.enforce().authorize().securityLevel("));

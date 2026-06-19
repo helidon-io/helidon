@@ -61,10 +61,11 @@ public final class GrpcValidation implements ServerInterceptor, GrpcServerServic
     }
 
     static GrpcValidation create(Config config, String name) {
-        return new GrpcValidation(config.get("enabled")
-                                          .asBoolean()
-                                          .orElse(true),
-                                  name);
+        return create(GrpcValidationConfig.create(config), name);
+    }
+
+    static GrpcValidation create(GrpcValidationConfig config, String name) {
+        return new GrpcValidation(config.enabled(), name);
     }
 
     @Override

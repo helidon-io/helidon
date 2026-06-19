@@ -14,22 +14,25 @@
  * limitations under the License.
  */
 
+package io.helidon.webserver.grpc.validation;
+
+import io.helidon.builder.api.Option;
+import io.helidon.builder.api.Prototype;
+import io.helidon.webserver.grpc.spi.GrpcServerServiceProvider;
+
 /**
- * Helidon WebServer gRPC Validation Support.
+ * Helidon gRPC validation configuration.
  */
-module io.helidon.webserver.grpc.validation {
-    requires static io.helidon.config.metadata;
-
-    requires io.grpc;
-    requires io.helidon.grpc.core;
-    requires io.helidon.validation;
-
-    requires transitive io.helidon.builder.api;
-    requires transitive io.helidon.config;
-    requires transitive io.helidon.webserver.grpc;
-
-    exports io.helidon.webserver.grpc.validation;
-
-    provides io.helidon.webserver.grpc.spi.GrpcServerServiceProvider
-            with io.helidon.webserver.grpc.validation.GrpcValidationProvider;
+@Prototype.Blueprint
+@Prototype.Configured(value = GrpcValidation.TYPE, root = false)
+@Prototype.Provides(GrpcServerServiceProvider.class)
+interface GrpcValidationConfigBlueprint {
+    /**
+     * Whether gRPC validation is enabled.
+     *
+     * @return whether gRPC validation is enabled
+     */
+    @Option.Configured
+    @Option.DefaultBoolean(true)
+    boolean enabled();
 }

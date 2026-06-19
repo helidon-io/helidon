@@ -136,6 +136,8 @@ class GrpcServerRegistrationGenerator {
                     .addContent(method.uniqueName())
                     .addContentLine(", rules -> {")
                     .increaseContentPadding()
+                    .addContentLine("if (entryPoints.hasInterceptors()) {")
+                    .increaseContentPadding()
                     .addContentLine("rules.intercept(")
                     .increaseContentPadding()
                     .addContentLine("entryPoints.interceptor(")
@@ -148,7 +150,8 @@ class GrpcServerRegistrationGenerator {
                     .addContentLine("));")
                     .decreaseContentPadding()
                     .decreaseContentPadding()
-                    .decreaseContentPadding();
+                    .decreaseContentPadding()
+                    .addContentLine("}");
             addSecurity(method.security(), constructor, endpointType, descriptorType, method);
             if (!method.security().isEmpty()) {
                 constructor.addContentLine(".configure(rules);");
