@@ -105,17 +105,15 @@ General form of CORS configuration:
 
 <!--@mdc ::code-callout -->
 ```properties[microprofile-config.properties]
-cors.enabled= # <1>
-
-# <2>
-cors.paths._i_.path-pattern= # <3>
-cors.paths._i_.allow-headers=
-cors.paths._i_.max-age= # <4>
-cors.paths._i_.allow-credentials=
-cors.paths._i_.allow-origins=
-cors.paths._i_.expose-headers=
-cors.paths._i_.allow-methods=
-cors.paths._i_.enabled= # <5>
+cors.enabled= # <1> <2>
+cors.paths.i.path-pattern= # <3>
+cors.paths.i.allow-headers=
+cors.paths.i.max-age= # <4>
+cors.paths.i.allow-credentials=
+cors.paths.i.allow-origins=
+cors.paths.i.expose-headers=
+cors.paths.i.allow-methods=
+cors.paths.i.enabled= # <5>
 ```
 1. You can disable CORS processing for all resources by setting `cors.enabled` to
    `false`. Defaults to `true`.
