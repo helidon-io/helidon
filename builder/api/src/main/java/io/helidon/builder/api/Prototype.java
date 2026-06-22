@@ -349,7 +349,9 @@ public final class Prototype {
 
     /**
      * Factory method that creates an option from a config instance.
-     * The config (the only parameter) must be of type {@code io.helidon.config.Config}.
+     * The method must have exactly one parameter. If the parameter is {@code io.helidon.config.Config}, the method
+     * receives the raw config node. Otherwise the config node is first mapped to the parameter type and then passed to
+     * the factory method.
      * <p>
      * The return type of the method must match the type of the option.
      * <p>
@@ -573,4 +575,3 @@ public final class Prototype {
         Extension[] value();
     }
 }
-

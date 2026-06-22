@@ -366,8 +366,8 @@ final class FactoryPrototypeInfo {
                 .methodName(referencedMethod.elementName())
                 .parameterType(paramType(collector, typeName, referencedMethod, "Config"));
 
-        referencedMethod.annotation(PROTOTYPE_FACTORY_METHOD_CONFIG)
-                .stringValue()
+        Annotation annotation = referencedMethod.annotation(PROTOTYPE_FACTORY_METHOD_CONFIG);
+        annotation.stringValue()
                 .filter(Predicate.not(String::isBlank))
                 .ifPresent(builder::optionName);
 

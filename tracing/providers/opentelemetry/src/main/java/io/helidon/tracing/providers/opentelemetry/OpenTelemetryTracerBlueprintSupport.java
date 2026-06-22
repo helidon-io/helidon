@@ -16,7 +16,6 @@
 
 package io.helidon.tracing.providers.opentelemetry;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -262,19 +261,14 @@ class OpenTelemetryTracerBlueprintSupport {
 
         /**
          * Converts a config node for propagators into a list of {@link io.opentelemetry.context.propagation.TextMapPropagator}.
-         * <p>
-         * As a user convenience, the config node can be either a node list (in which case each node's string value will be
-         * used for a propagator name) or the node can be a single string containing a comma-separated list of propagator names.
          *
-         * @param config config node (node list of string nodes or a single node)
+         * @param config comma-separated list of propagator names
          * @return list of selected propagators
          */
         @Prototype.ConfigFactoryMethod
-        static List<TextMapPropagator> createPropagators(Config config) {
+        static List<TextMapPropagator> createPropagators(String config) {
 
-            Stream<String> propagatorNames = config.isList()
-                    ? config.asList(String.class).get().stream()
-                    : Arrays.stream(config.asString().get().split(","));
+            Stream<String> propagatorNames = Stream.of(config.split(","));
 
             return propagatorNames
                     .map(ContextPropagationType::from)

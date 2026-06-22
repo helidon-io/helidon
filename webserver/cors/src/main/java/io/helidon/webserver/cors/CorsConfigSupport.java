@@ -79,9 +79,7 @@ class CorsConfigSupport {
         }
 
         @Prototype.ConfigFactoryMethod("maxAge")
-        static Duration maxAgeFromConfig(Config config) {
-            String value = config.asString().get();
-
+        static Duration maxAgeFromConfig(String value) {
             try {
                 int seconds = Integer.parseInt(value);
                 return Duration.ofSeconds(seconds);

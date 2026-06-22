@@ -54,8 +54,8 @@ class OtlpExporterConfigSupport {
         }
 
         @Prototype.ConfigFactoryMethod("protocol")
-        static OtlpExporterProtocolType createProtocol(Config config) {
-            return OtlpExporterProtocolType.from(config);
+        static OtlpExporterProtocolType createProtocol(String protocol) {
+            return OtlpExporterProtocolType.from(protocol);
         }
 
         @Prototype.ConfigFactoryMethod
@@ -81,12 +81,10 @@ class OtlpExporterConfigSupport {
             };
         }
 
-        @Prototype.ConfigFactoryMethod("retryPolicy")
-        static RetryPolicy createRetryPolicy(Config config) {
+        @Prototype.RuntimeTypeFactoryMethod("retryPolicy")
+        static RetryPolicy createRetryPolicy(RetryPolicyConfig policyConfig) {
 
             RetryPolicy.RetryPolicyBuilder builder = RetryPolicy.builder();
-
-            RetryPolicyConfig policyConfig = RetryPolicyConfig.builder().config(config).build();
 
             policyConfig.initialBackoff().ifPresent(builder::setInitialBackoff);
             policyConfig.maxBackoff().ifPresent(builder::setMaxBackoff);

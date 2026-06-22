@@ -184,8 +184,7 @@ class OtelConfigSupport {
         return builder.build();
     }
 
-    static AttributesBuilder createAttributesBuilder(Config config) {
-        var typedAttributes = TypedAttributes.create(config);
+    static AttributesBuilder createAttributesBuilder(TypedAttributes typedAttributes) {
         var builder = Attributes.builder();
 
         typedAttributes.booleanAttributes().forEach(builder::put);

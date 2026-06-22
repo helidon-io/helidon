@@ -31,8 +31,10 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.codegen.testing.CodegenMatchers.matches;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
 /**
  * Tests {@code BuilderCodegen}.
@@ -61,10 +63,10 @@ class SchemaGeneratorTest {
                 .options(OPTS)
                 .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME config.
                          */
@@ -101,10 +103,10 @@ class SchemaGeneratorTest {
                 .options(OPTS)
                 .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME config.
                          */
@@ -141,10 +143,10 @@ class SchemaGeneratorTest {
                 .options(OPTS)
                 .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME config.
                          */
@@ -181,10 +183,10 @@ class SchemaGeneratorTest {
                 .options(OPTS)
                 .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME "config".
                          */
@@ -221,17 +223,17 @@ class SchemaGeneratorTest {
                 .options(OPTS)
                 .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME config.
                          */
                         @Prototype.Blueprint
                         @Prototype.Configured
                         interface AcmeConfigBlueprint {
-                        
+
                             /**
                              * Option1.
                              *
@@ -273,17 +275,17 @@ class SchemaGeneratorTest {
                 .options(OPTS)
                 .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME config.
                          */
                         @Prototype.Blueprint
                         @Prototype.Configured
                         interface AcmeConfigBlueprint {
-                        
+
                             /**
                              * Option1.
                              *
@@ -326,17 +328,17 @@ class SchemaGeneratorTest {
                 .options(OPTS)
                 .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME config.
                          */
                         @Prototype.Blueprint
                         @Prototype.Configured
                         interface AcmeConfigBlueprint {
-                        
+
                             /**
                              * Option1.
                              *
@@ -379,17 +381,17 @@ class SchemaGeneratorTest {
                 .options(OPTS)
                 .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME config.
                          */
                         @Prototype.Blueprint
                         @Prototype.Configured
                         interface AcmeConfigBlueprint {
-                        
+
                             /**
                              * Option1.
                              *
@@ -432,17 +434,17 @@ class SchemaGeneratorTest {
                 .options(OPTS)
                 .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME config.
                          */
                         @Prototype.Blueprint
                         @Prototype.Configured
                         interface AcmeConfigBlueprint {
-                        
+
                             /**
                              * Option1.
                              *
@@ -485,17 +487,17 @@ class SchemaGeneratorTest {
                 .options(OPTS)
                 .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME config.
                          */
                         @Prototype.Blueprint
                         @Prototype.Configured
                         interface AcmeConfigBlueprint {
-                        
+
                             /**
                              * Option1.
                              *
@@ -538,18 +540,18 @@ class SchemaGeneratorTest {
                 .options(OPTS)
                 .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import java.util.List;
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME config.
                          */
                         @Prototype.Blueprint
                         @Prototype.Configured
                         interface AcmeConfigBlueprint {
-                        
+
                             /**
                              * Option1.
                              *
@@ -595,18 +597,18 @@ class SchemaGeneratorTest {
                 .options(OPTS)
                 .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import java.util.Set;
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME config.
                          */
                         @Prototype.Blueprint
                         @Prototype.Configured
                         interface AcmeConfigBlueprint {
-                        
+
                             /**
                              * Option1.
                              *
@@ -652,19 +654,19 @@ class SchemaGeneratorTest {
                 .options(OPTS)
                 .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import java.util.List;
                         import java.util.Optional;
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME config.
                          */
                         @Prototype.Blueprint
                         @Prototype.Configured
                         interface AcmeConfigBlueprint {
-                        
+
                             /**
                              * Option1.
                              *
@@ -710,19 +712,19 @@ class SchemaGeneratorTest {
                 .options(OPTS)
                 .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import java.util.Optional;
                         import java.util.Set;
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME config.
                          */
                         @Prototype.Blueprint
                         @Prototype.Configured
                         interface AcmeConfigBlueprint {
-                        
+
                             /**
                              * Option1.
                              *
@@ -768,18 +770,18 @@ class SchemaGeneratorTest {
                 .options(OPTS)
                 .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import java.util.Map;
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME config.
                          */
                         @Prototype.Blueprint
                         @Prototype.Configured
                         interface AcmeConfigBlueprint {
-                        
+
                             /**
                              * Option1.
                              *
@@ -825,19 +827,19 @@ class SchemaGeneratorTest {
                 .options(OPTS)
                 .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import java.util.Map;
                         import java.util.Optional;
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME config.
                          */
                         @Prototype.Blueprint
                         @Prototype.Configured
                         interface AcmeConfigBlueprint {
-                        
+
                             /**
                              * Option1.
                              *
@@ -883,19 +885,19 @@ class SchemaGeneratorTest {
                 .options(OPTS)
                 .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import java.util.Map;
                         import java.util.Optional;
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME config.
                          */
                         @Prototype.Blueprint
                         @Prototype.Configured
                         interface AcmeConfigBlueprint {
-                        
+
                             /**
                              * Option1.
                              *
@@ -947,7 +949,7 @@ class SchemaGeneratorTest {
                 .options(OPTS)
                 .addSource("AcmeMode.java", """
                         package com.acme;
-                        
+
                         /**
                          * ACME mode.
                          */
@@ -964,19 +966,19 @@ class SchemaGeneratorTest {
                         """)
                 .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import java.util.Map;
                         import java.util.Optional;
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME config.
                          */
                         @Prototype.Blueprint
                         @Prototype.Configured
                         interface AcmeConfigBlueprint {
-                        
+
                             /**
                              * Option1.
                              *
@@ -1030,7 +1032,7 @@ class SchemaGeneratorTest {
                 .from(compiler)
                 .addSource("AcmeConstants.java", """
                         package com.acme;
-                        
+
                         class AcmeConstants {
                             static final String BASE_PREFIX = "acme";
                         }
@@ -1044,12 +1046,12 @@ class SchemaGeneratorTest {
                 .addClasspathEntry(result1.classOutput())
                 .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import java.util.Map;
                         import java.util.Optional;
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME config.
                          */
@@ -1090,7 +1092,7 @@ class SchemaGeneratorTest {
                 .from(compiler)
                 .addSource("AcmeMode.java", """
                         package com.acme;
-                        
+
                         /**
                          * ACME mode.
                          */
@@ -1115,19 +1117,19 @@ class SchemaGeneratorTest {
                 .addClasspathEntry(result1.classOutput())
                 .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import java.util.Map;
                         import java.util.Optional;
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME config.
                          */
                         @Prototype.Blueprint
                         @Prototype.Configured
                         interface AcmeConfigBlueprint {
-                        
+
                             /**
                              * Option1.
                              *
@@ -1186,32 +1188,32 @@ class SchemaGeneratorTest {
                 .options(OPTS)
                 .addSource("AcmeService.java", """
                         package com.acme;
-                        
+
                         @SuppressWarnings("ALL")
                         interface AcmeService extends io.helidon.common.config.NamedService {
                         }
                         """)
                 .addSource("AcmeServiceProvider.java", """
                         package com.acme;
-                        
+
                         @SuppressWarnings("ALL")
                         interface AcmeServiceProvider extends io.helidon.common.config.ConfiguredProvider<AcmeService> {
                         }
                         """)
                 .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import java.util.List;
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME config.
                          */
                         @Prototype.Blueprint
                         @Prototype.Configured
                         interface AcmeConfigBlueprint {
-                        
+
                             /**
                              * Option1.
                              *
@@ -1264,32 +1266,32 @@ class SchemaGeneratorTest {
                 .options(OPTS)
                 .addSource("AcmeService.java", """
                         package com.acme;
-                        
+
                         @SuppressWarnings("ALL")
                         interface AcmeService extends io.helidon.common.config.NamedService {
                         }
                         """)
                 .addSource("AcmeServiceProvider.java", """
                         package com.acme;
-                        
+
                         @SuppressWarnings("ALL")
                         interface AcmeServiceProvider extends io.helidon.common.config.ConfiguredProvider<AcmeService> {
                         }
                         """)
                 .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import java.util.Optional;
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME config.
                          */
                         @Prototype.Blueprint
                         @Prototype.Configured
                         interface AcmeConfigBlueprint {
-                        
+
                             /**
                              * Option1.
                              *
@@ -1337,7 +1339,7 @@ class SchemaGeneratorTest {
                 .options(OPTS)
                 .addSource("AcmeService.java", """
                         package com.acme;
-                        
+
                         @SuppressWarnings("ALL")
                         interface AcmeService extends io.helidon.config.NamedService {
                         }
@@ -1345,7 +1347,7 @@ class SchemaGeneratorTest {
                 .addSource("AcmeLogging.java", """
                         package com.acme;
                         import io.helidon.builder.api.RuntimeType;
-                        
+
                         @SuppressWarnings("ALL")
                         interface AcmeLogging extends AcmeService, RuntimeType.Api<AcmeLoggingConfig> {
                             static AcmeLogging create(AcmeLoggingConfig config) {
@@ -1361,18 +1363,18 @@ class SchemaGeneratorTest {
                         """)
                 .addSource("AcmeServiceProvider.java", """
                         package com.acme;
-                        
+
                         @SuppressWarnings("ALL")
                         interface AcmeServiceProvider extends io.helidon.config.ConfiguredProvider<AcmeService> {
                         }
                         """)
                 .addSource("AcmeLoggingConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import java.util.Optional;
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME logging config.
                          */
@@ -1410,25 +1412,25 @@ class SchemaGeneratorTest {
                 .options(OPTS)
                 .addSource("AcmeService.java", """
                         package com.acme;
-                        
+
                         @SuppressWarnings("ALL")
                         interface AcmeService extends io.helidon.common.config.NamedService {
                         }
                         """)
                 .addSource("AcmeServiceProvider.java", """
                         package com.acme;
-                        
+
                         @SuppressWarnings("ALL")
                         interface AcmeServiceProvider<T extends AcmeService> extends io.helidon.common.config.ConfiguredProvider<T> {
                         }
                         """)
                 .addSource("AcmeLoggingServiceConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import java.util.Optional;
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME logging service config.
                          */
@@ -1467,16 +1469,16 @@ class SchemaGeneratorTest {
                 .options(OPTS)
                 .addSource("AcmeService.java", """
                         package com.acme;
-                        
+
                         @SuppressWarnings("ALL")
                         interface AcmeService extends io.helidon.common.config.NamedService {
                         }
                         """)
                 .addSource("AcmeLogging.java", """
                         package com.acme;
-                        
+
                         import io.helidon.builder.api.RuntimeType;
-                        
+
                         interface AcmeLogging extends AcmeService, RuntimeType.Api<AcmeLoggingConfig> {
                             static AcmeLogging create(AcmeLoggingConfig config) {
                                 throw new UnsupportedOperationException();
@@ -1491,11 +1493,11 @@ class SchemaGeneratorTest {
                         """)
                 .addSource("AcmeLoggingConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import java.util.Optional;
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME logging config.
                          */
@@ -1537,9 +1539,9 @@ class SchemaGeneratorTest {
                 .options(OPTS)
                 .addSource("AcmeObjectBlueprint.java", """
                         package com.acme;
-                        
+
                         import io.helidon.builder.api.Prototype;
-                        
+
                         /**
                           * ACME object.
                           */
@@ -1550,18 +1552,18 @@ class SchemaGeneratorTest {
                         """)
                 .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import java.util.Optional;
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME config.
                          */
                         @Prototype.Blueprint
                         @Prototype.Configured
                         interface AcmeConfigBlueprint {
-                        
+
                             /**
                              * Option1.
                              *
@@ -1603,10 +1605,10 @@ class SchemaGeneratorTest {
                     .options(OPTS)
                     .addSource("AcmeObjectBlueprint.java", """
                             package com.acme;
-                            
+
                             import io.helidon.builder.api.RuntimeType;
                             import java.util.function.Consumer;
-                            
+
                             /**
                              * ACME object.
                              */
@@ -1624,11 +1626,11 @@ class SchemaGeneratorTest {
                             """)
                     .addSource("AcmeConfigBlueprint.java", """
                             package com.acme;
-                            
+
                             import java.util.Optional;
                             import io.helidon.builder.api.Prototype;
                             import io.helidon.builder.api.Option;
-                            
+
                             @Prototype.Blueprint
                             @Prototype.Configured
                             interface AcmeConfigBlueprint extends Prototype.Factory<Acme> {
@@ -1663,11 +1665,11 @@ class SchemaGeneratorTest {
                 .printDiagnostics(false)
                 .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import java.util.Optional;
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         @Prototype.Blueprint
                         @Prototype.Configured
                         interface AcmeConfigBlueprint {
@@ -1706,10 +1708,10 @@ class SchemaGeneratorTest {
                 .options(OPTS)
                 .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import java.util.Optional;
                         import io.helidon.builder.api.Prototype;
-                        
+
                         /**
                          * ACME
                          * config.
@@ -1748,14 +1750,14 @@ class SchemaGeneratorTest {
                 .options(OPTS)
                 .addSource("AcmeNamed.java", """
                         package com.acme;
-                        
+
                         import java.util.Optional;
-                        
+
                         /**
                          * ACME config.
                          */
                         interface AcmeNamed {
-                        
+
                             /**
                              * Name.
                              *
@@ -1766,18 +1768,18 @@ class SchemaGeneratorTest {
                         """)
                 .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import java.util.Optional;
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME config.
                          */
                         @Prototype.Blueprint
                         @Prototype.Configured
                         interface AcmeConfigBlueprint extends AcmeNamed {
-                        
+
                             @Override
                             @Option.Configured
                             Optional<String> name();
@@ -1819,14 +1821,14 @@ class SchemaGeneratorTest {
                 .from(compiler)
                 .addSource("AcmeNamed.java", """
                         package com.acme;
-                        
+
                         import java.util.Optional;
-                        
+
                         /**
                          * ACME config.
                          */
                         interface AcmeNamed {
-                        
+
                             /**
                              * Name.
                              *
@@ -1845,18 +1847,18 @@ class SchemaGeneratorTest {
                 .addClasspathEntry(result1.classOutput())
                 .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import java.util.Optional;
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME config.
                          */
                         @Prototype.Blueprint
                         @Prototype.Configured
                         interface AcmeConfigBlueprint extends AcmeNamed {
-                        
+
                             @Override
                             @Option.Configured
                             Optional<String> name();
@@ -1900,18 +1902,18 @@ class SchemaGeneratorTest {
                 .addProcessor(AptProcessor::new)
                 .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import java.util.Map;
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME config.
                          */
                         @Prototype.Blueprint
                         @Prototype.Configured
                         interface AcmeConfigBlueprint {
-                        
+
                             /**
                              * Option1.
                              */
@@ -1956,18 +1958,18 @@ class SchemaGeneratorTest {
                 .addProcessor(AptProcessor::new)
                 .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import java.util.List;
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME config.
                          */
                         @Prototype.Blueprint
                         @Prototype.Configured
                         interface AcmeConfigBlueprint {
-                        
+
                             /**
                              * Option1.
                              */
@@ -2012,18 +2014,18 @@ class SchemaGeneratorTest {
                 .addProcessor(AptProcessor::new)
                 .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import java.util.List;
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME config.
                          */
                         @Prototype.Blueprint
                         @Prototype.Configured
                         interface AcmeConfigBlueprint {
-                        
+
                             /**
                              * Option1.
                              */
@@ -2063,7 +2065,7 @@ class SchemaGeneratorTest {
                 .addProcessor(AptProcessor::new)
                 .addSource("AcmePrivateKey.java", """
                         package com.acme;
-                        
+
                         /**
                          * ACME private key.
                          */
@@ -2072,9 +2074,9 @@ class SchemaGeneratorTest {
                         """)
                 .addSource("AcmePrivateKeyConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import io.helidon.builder.api.Prototype;
-                        
+
                         /**
                          * ACME private key.
                          */
@@ -2085,13 +2087,13 @@ class SchemaGeneratorTest {
                         """)
                 .addSource("AcmeConfigMethods.java", """
                         package com.acme;
-                        
+
                         import java.util.Optional;
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         class AcmeConfigMethods {
-                        
+
                             @Prototype.RuntimeTypeFactoryMethod("privatekey")
                             static Optional<AcmePrivateKey> createPrivateKey(AcmePrivateKeyConfig config) {
                                 throw new UnsupportedOperationException();
@@ -2100,11 +2102,11 @@ class SchemaGeneratorTest {
                         """)
                 .addSource("AcmeConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import java.util.Optional;
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME config.
                          */
@@ -2112,7 +2114,7 @@ class SchemaGeneratorTest {
                         @Prototype.Configured
                         @Prototype.CustomMethods(AcmeConfigMethods.class)
                         interface AcmeConfigBlueprint {
-                        
+
                             /**
                              * Private key.
                              */
@@ -2141,6 +2143,196 @@ class SchemaGeneratorTest {
                 //...
                 }
                 """));
+        assertThat(actual, containsString("config.get(\"privatekey\")"
+                                                  + ".as(AcmePrivateKeyConfig::create)"
+                                                  + ".ifPresent(this::privatekey)"));
+        assertThat(actual, containsString("privatekey(AcmeConfigMethods.createPrivateKey(privatekey));"));
+    }
+
+    @Test
+    void testConfigFactoryMethodWarnsForRawConfigWithoutMetadataType() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .options(OPTS)
+                .printDiagnostics(false)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeCustomType.java", """
+                        package com.acme;
+
+                        interface AcmeCustomType {
+                        }
+                        """)
+                .addSource("AcmeCustomMethods.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+                        import io.helidon.config.Config;
+
+                        class AcmeCustomMethods {
+                            @Prototype.ConfigFactoryMethod("custom")
+                            static AcmeCustomType custom(Config config) {
+                                throw new UnsupportedOperationException();
+                            }
+                        }
+                        """)
+                .addSource("AcmeConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Option;
+                        import io.helidon.builder.api.Prototype;
+
+                        /**
+                         * ACME config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        @Prototype.CustomMethods(AcmeCustomMethods.class)
+                        interface AcmeConfigBlueprint {
+                            /**
+                             * Custom option.
+                             */
+                            @Option.Configured
+                            AcmeCustomType custom();
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertThat(result.success(), is(true));
+        assertThat(result.diagnostics().toString(),
+                   containsString("Config factory method com.acme.AcmeCustomMethods.custom uses raw Config for option "
+                                          + "'custom' without an explicit config metadata type"));
+    }
+
+    @Test
+    void testConfigFactoryMethodTypedParameterMetadataType() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .options(OPTS)
+                .printDiagnostics(false)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeCustomType.java", """
+                        package com.acme;
+
+                        interface AcmeCustomType {
+                        }
+                        """)
+                .addSource("AcmeCustomMethods.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+                        class AcmeCustomMethods {
+                            @Prototype.ConfigFactoryMethod("custom")
+                            static AcmeCustomType custom(String config) {
+                                throw new UnsupportedOperationException();
+                            }
+                        }
+                        """)
+                .addSource("AcmeConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Option;
+                        import io.helidon.builder.api.Prototype;
+
+                        /**
+                         * ACME config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        @Prototype.CustomMethods(AcmeCustomMethods.class)
+                        interface AcmeConfigBlueprint {
+                            /**
+                             * Custom option.
+                             */
+                            @Option.Configured
+                            AcmeCustomType custom();
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertThat(result.success(), is(true));
+        assertThat(result.diagnostics().toString(),
+                   is(not(containsString("without an explicit config metadata type"))));
+
+        var actual = Files.readString(result.sourceOutput().resolve("com/acme/AcmeConfig.java"));
+        assertThat(actual, matches("""
+                //...
+                    options = {
+                        @ConfiguredOption(key = "custom", description = "Custom option", type = String.class, required = true)
+                    })
+                //...
+                """));
+        assertThat(actual, containsString("config.get(\"custom\").as(String.class).as(AcmeCustomMethods::custom)"));
+    }
+
+    @Test
+    void testConfigFactoryMethodReturningSchemaTypeUsesReturnType() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(CLASSPATH)
+                .options(OPTS)
+                .addProcessor(AptProcessor::new)
+                .addSource("AcmeNestedConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+
+                        /**
+                         * Nested config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        interface AcmeNestedConfigBlueprint {
+                        }
+                        """)
+                .addSource("AcmeCustomMethods.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Prototype;
+                        import io.helidon.config.Config;
+
+                        class AcmeCustomMethods {
+                            @Prototype.ConfigFactoryMethod("nested")
+                            static AcmeNestedConfig nested(Config config) {
+                                throw new UnsupportedOperationException();
+                            }
+                        }
+                        """)
+                .addSource("AcmeConfigBlueprint.java", """
+                        package com.acme;
+
+                        import io.helidon.builder.api.Option;
+                        import io.helidon.builder.api.Prototype;
+
+                        /**
+                         * ACME config.
+                         */
+                        @Prototype.Blueprint
+                        @Prototype.Configured
+                        @Prototype.CustomMethods(AcmeCustomMethods.class)
+                        interface AcmeConfigBlueprint {
+                            /**
+                             * Nested option.
+                             */
+                            @Option.Configured
+                            AcmeNestedConfig nested();
+                        }
+                        """)
+                .build()
+                .compile();
+
+        assertThat(result.success(), is(true));
+        var actual = Files.readString(result.sourceOutput().resolve("com/acme/AcmeConfig.java"));
+        assertThat(actual, matches("""
+                //...
+                    options = {
+                        @ConfiguredOption(key = "nested", description = "Nested option", type = AcmeNestedConfig.class, required = true)
+                    })
+                //...
+                """));
     }
 
     @Test
@@ -2152,9 +2344,9 @@ class SchemaGeneratorTest {
                 .addProcessor(AptProcessor::new)
                 .addSource("AcmeListener.java", """
                         package com.acme;
-                        
+
                         import io.helidon.builder.api.RuntimeType;
-                        
+
                         interface AcmeListener extends RuntimeType.Api<AcmeListenerConfig> {
                             static AcmeListener create(AcmeListenerConfig config) {
                                 throw new UnsupportedOperationException();
@@ -2169,17 +2361,17 @@ class SchemaGeneratorTest {
                         """)
                 .addSource("AcmeListenerConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME listener config.
                          */
                         @Prototype.Blueprint
                         @Prototype.Configured
                         interface AcmeListenerConfigBlueprint extends Prototype.Factory<AcmeListener> {
-                        
+
                             /**
                              * Port.
                              */
@@ -2189,18 +2381,18 @@ class SchemaGeneratorTest {
                         """)
                 .addSource("AcmeServerConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import java.util.Optional;
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME server config.
                          */
                         @Prototype.Blueprint
                         @Prototype.Configured
                         interface AcmeServerConfigBlueprint {
-                        
+
                             /**
                              * Listener.
                              */
@@ -2241,18 +2433,18 @@ class SchemaGeneratorTest {
                 .addProcessor(AptProcessor::new)
                 .addSource("AcmeServerConfigBlueprint.java", """
                         package com.acme;
-                        
+
                         import java.util.Optional;
                         import io.helidon.builder.api.Prototype;
                         import io.helidon.builder.api.Option;
-                        
+
                         /**
                          * ACME server config.
                          */
                         @Prototype.Blueprint
                         @Prototype.Configured
                         interface AcmeServerConfigBlueprint {
-                        
+
                             /**
                              * Port.
                              */

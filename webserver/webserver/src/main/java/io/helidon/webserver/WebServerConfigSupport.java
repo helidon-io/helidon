@@ -184,8 +184,7 @@ class WebServerConfigSupport {
         }
 
         @Prototype.ConfigFactoryMethod("bindAddress")
-        static SocketAddress createBindAddress(Config config) {
-            String address = config.asString().get();
+        static SocketAddress createBindAddress(String address) {
             // unix:/path/to/socket
             if (address.startsWith("unix:")) {
                 String path = address.substring(7);

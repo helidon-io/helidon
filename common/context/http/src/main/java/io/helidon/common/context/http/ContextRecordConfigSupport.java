@@ -17,7 +17,6 @@
 package io.helidon.common.context.http;
 
 import io.helidon.builder.api.Prototype;
-import io.helidon.config.Config;
 import io.helidon.http.HeaderName;
 import io.helidon.http.HeaderNames;
 
@@ -33,10 +32,8 @@ final class ContextRecordConfigSupport {
           Factory method to read HeaderName directly from configuration
         */
         @Prototype.ConfigFactoryMethod("header")
-        static HeaderName createHeader(Config config) {
-            return config.asString()
-                    .map(HeaderNames::create)
-                    .orElseThrow(() -> new IllegalStateException("Config node did not contain a header name"));
+        static HeaderName createHeader(String header) {
+            return HeaderNames.create(header);
         }
     }
 }

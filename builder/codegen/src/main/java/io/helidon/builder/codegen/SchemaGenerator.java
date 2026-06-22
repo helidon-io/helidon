@@ -363,15 +363,9 @@ class SchemaGenerator {
             return optionInfo.prototypedBy().get();
         }
 
-        // check configured factory method
-        var configuredDeclaredTypeName = optionInfo.configured()
+        var configuredFactory = optionInfo.configured()
                 .flatMap(OptionConfigured::factoryMethod)
-                .map(FactoryMethod::declaringType)
                 .orElse(null);
-        if (configuredDeclaredTypeName != null) {
-            return configuredDeclaredTypeName;
-        }
-
         // check runtime factory method
         var runtimeParamTypeName = optionInfo.runtimeType()
                 .flatMap(RuntimeTypeInfo::factoryMethod)
@@ -381,7 +375,54 @@ class SchemaGenerator {
             return runtimeParamTypeName;
         }
 
+        // check configured factory method
+        var configuredParamTypeName = optionInfo.configured()
+                .flatMap(OptionConfigured::factoryMethod)
+                .flatMap(FactoryMethod::parameterType)
+                .orElse(null);
+        if (configuredParamTypeName != null
+                && !(configuredParamTypeName.equals(Types.CONFIG) || configuredParamTypeName.equals(Types.COMMON_CONFIG))) {
+            return configuredParamTypeName;
+        }
+
+        // check configured factory method return type for raw Config factories
+        var configuredReturnTypeName = optionInfo.configured()
+                .flatMap(OptionConfigured::factoryMethod)
+                .map(FactoryMethod::returnType)
+                .orElse(null);
+        if (configuredReturnTypeName != null) {
+            warnAmbiguousConfigFactory(optionInfo, configuredFactory);
+            return configuredReturnTypeName;
+        }
+
+        var configuredDeclaredTypeName = optionInfo.configured()
+                .flatMap(OptionConfigured::factoryMethod)
+                .map(FactoryMethod::declaringType)
+                .orElse(null);
+        if (configuredDeclaredTypeName != null) {
+            return configuredDeclaredTypeName;
+        }
+
         return typeName.boxed();
+    }
+
+    private void warnAmbiguousConfigFactory(OptionInfo optionInfo, FactoryMethod configuredFactory) {
+        if (configuredFactory == null) {
+            return;
+        }
+        var parameterType = configuredFactory.parameterType().orElse(null);
+        if (parameterType == null || !(parameterType.equals(Types.CONFIG) || parameterType.equals(Types.COMMON_CONFIG))) {
+            return;
+        }
+        if (!configuredFactory.declaringType().className().endsWith("CustomMethods")) {
+            return;
+        }
+        logger.log(Level.WARNING,
+                           "Config factory method " + configuredFactory.declaringType().fqName()
+                                   + "." + configuredFactory.methodName()
+                           + " uses raw Config for option '" + optionInfo.name()
+                           + "' without an explicit config metadata type",
+                   optionInfo.interfaceMethod().orElse(null));
     }
 
     private String optionKind(OptionInfo optionInfo) {

@@ -171,8 +171,8 @@ class SecurityConfigSupport {
         }
 
         @Prototype.ConfigFactoryMethod("methods")
-        static Method createMethods(Config config) {
-            return config.asString().map(Method::create).orElseThrow();
+        static Method createMethods(String method) {
+            return Method.create(method);
         }
 
     }
