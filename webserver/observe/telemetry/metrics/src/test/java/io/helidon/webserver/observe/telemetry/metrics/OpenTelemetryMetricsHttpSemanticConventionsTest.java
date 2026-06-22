@@ -65,9 +65,11 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
     void filterLogsMetricsFailureAfterSuccessfulChain() throws Exception {
         AssertionError failure = new AssertionError("metrics failure");
         Filter filter = filter(failure);
+        AtomicReference<Runnable> whenSent = new AtomicReference<>();
 
         try (TestLogHandler handler = TestLogHandler.install()) {
-            filter.filter(mock(FilterChain.class), request(), response());
+            filter.filter(mock(FilterChain.class), request(), response(whenSent));
+            whenSent.get().run();
 
             LogRecord record = handler.await();
             assertThat(record.getMessage(), containsString("Failed to record HTTP request metrics"));
@@ -82,11 +84,13 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
         IllegalArgumentException chainFailure = new IllegalArgumentException("chain failure");
         Filter filter = filter(metricsFailure);
         FilterChain chain = mock(FilterChain.class);
+        AtomicReference<Runnable> whenSent = new AtomicReference<>();
         doThrow(chainFailure).when(chain).proceed();
 
         try (TestLogHandler handler = TestLogHandler.install()) {
             IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
-                                                             () -> filter.filter(chain, request(), response()));
+                                                             () -> filter.filter(chain, request(), response(whenSent)));
+            whenSent.get().run();
             LogRecord record = handler.await();
 
             assertThat(exception, sameInstance(chainFailure));
@@ -139,9 +143,13 @@ class OpenTelemetryMetricsHttpSemanticConventionsTest {
         return request;
     }
 
-    private static RoutingResponse response() {
+    private static RoutingResponse response(AtomicReference<Runnable> whenSent) {
         RoutingResponse response = mock(RoutingResponse.class);
         when(response.status()).thenReturn(Status.OK_200);
+        when(response.whenSent(any(Runnable.class))).thenAnswer(invocation -> {
+            whenSent.set(invocation.getArgument(0));
+            return response;
+        });
         return response;
     }
 

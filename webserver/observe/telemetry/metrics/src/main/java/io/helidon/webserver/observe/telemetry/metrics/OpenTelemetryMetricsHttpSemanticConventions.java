@@ -18,6 +18,7 @@ package io.helidon.webserver.observe.telemetry.metrics;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.config.Config;
 import io.helidon.http.Status;
@@ -123,27 +124,24 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
         @Override
         public void filter(FilterChain chain, RoutingRequest req, RoutingResponse res) {
             var startTime = System.nanoTime();
+            var exception = new AtomicReference<Exception>();
             /*
-            Duplicating the synch/async handling in the normal and exception case avoids the overhead of using an Optional to hold
-            the exception (if any) for use in a lambda.
-            */
+            Update the timer in whenSent rather than here in this filter. That way we include time spent in running succeeding
+            filters and in preparing the response entity, to more accurately capture as much as possible the full time the
+            server spent responding to the request.
+             */
+            res.whenSent(() -> {
+                try {
+                    updateMetricsIfMeasured(req, res, startTime, System.nanoTime(), exception.get());
+                } catch (Throwable e) {
+                    LOGGER.log(WARNING, "Failed to record HTTP request metrics", e);
+                }
+            });
+
             try {
                 chain.proceed();
-                Thread.ofVirtual().start(() -> {
-                    try {
-                        updateMetricsIfMeasured(req, res, startTime, System.nanoTime(), null);
-                    } catch (Throwable e) {
-                        LOGGER.log(WARNING, "Failed to record HTTP request metrics", e);
-                    }
-                });
             } catch (Exception e) {
-                Thread.ofVirtual().start(() -> {
-                    try {
-                        updateMetricsIfMeasured(req, res, startTime, System.nanoTime(), e);
-                    } catch (Throwable metricsUpdateFailure) {
-                        LOGGER.log(WARNING, "Failed to record HTTP request metrics", metricsUpdateFailure);
-                    }
-                });
+                exception.set(e);
                 throw e;
             }
         }
@@ -187,7 +185,7 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
             don't currently have a way to get the HTTP version at runtime from a request.
              */
 
-            httpRequestDuration.record((endTime - startTime) / 1_000_000.0, attrBuilder.build());
+            httpRequestDuration.record((endTime - startTime) / 1_000_000_000.0, attrBuilder.build());
         }
 
         private String errorType(RoutingResponse resp, Exception exception) {

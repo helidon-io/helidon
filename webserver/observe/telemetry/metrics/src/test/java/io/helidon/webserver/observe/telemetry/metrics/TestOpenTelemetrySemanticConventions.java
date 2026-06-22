@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
@@ -55,6 +56,7 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -129,7 +131,6 @@ class TestOpenTelemetrySemanticConventions {
     @Test
     void checkAutoMetrics() {
 
-        // Use default socket.
         try (Http1ClientResponse defaultResponse = defaultClient.get("/greet/Joe")
                 .accept(MediaTypes.TEXT_PLAIN)
                 .request();
@@ -166,34 +167,8 @@ class TestOpenTelemetrySemanticConventions {
 
             var root = JsonParser.create(jsonText.getFirst()).readJsonObject();
 
-            var top = root.arrayValue("resourceMetrics");
-
-            Stream<JsonValue> scopeMetricsEntries;
-
-            /*
-            The top node might be resourceMetrics which is an array of resource/scopeMetrics tuples, or it might be a single
-            resource/scopeMetrics tuple.
-             */
-            if (top.isPresent()) {
-                scopeMetricsEntries =
-                        top.get().asArray().values().stream()
-                                .flatMap(resourceMetricEntry -> resourceMetricEntry.asArray().values().stream())
-                                .map(JsonValue::asObject)
-                                .flatMap(resourceMetric -> resourceMetric.arrayValue("scopeMetrics").stream());
-            } else {
-                scopeMetricsEntries = root.arrayValue("scopeMetrics").orElseThrow().values().stream();
-            }
-
-            List<JsonObject> metricsEntries = scopeMetricsEntries
-                    .flatMap(scopeMetricsEntry -> scopeMetricsEntry.asObject()
-                            .arrayValue("metrics")
-                            .orElseThrow()
-                            .values()
-                            .stream())
-                    .map(JsonValue::asObject)
-                    .toList();
-
             Set<String> routesSeen = new HashSet<>();
+            var metricsEntries = metricsEntries(root);
 
             for (JsonObject metricsEntry : metricsEntries) {
 
@@ -270,4 +245,113 @@ class TestOpenTelemetrySemanticConventions {
         }
 
     }
+
+    @Test
+    void checkPersonalizedGreetingTime() {
+
+        // Use default socket.
+        try (TestLogHandler testLogHandler = TestLogHandler.create(
+                    Logger.getLogger(OtlpJsonLoggingMetricExporter.class.getName()))) {
+
+            try (Http1ClientResponse defaultResponse = defaultClient.get("/greet/Joe")
+                    .accept(MediaTypes.TEXT_PLAIN)
+                    .request()) {
+                assertThat("Greet endpoint", defaultResponse.status().code(), is(200));
+            }
+
+            var beforeJsonText = testLogHandler.messages(2);
+            var beforeRoot = JsonParser.create(beforeJsonText.getLast()).readJsonObject();
+            var beforeMeasurement = personalizedGreetingMeasurement(beforeRoot);
+
+            var startTime = System.nanoTime();
+            try (Http1ClientResponse defaultResponse = defaultClient.get("/greet/Joe")
+                    .accept(MediaTypes.TEXT_PLAIN)
+                    .request()) {
+                assertThat("Greet endpoint", defaultResponse.status().code(), is(200));
+            }
+            var elapsedTimeFromClient = System.nanoTime() - startTime;
+
+            var afterJsonText = testLogHandler.messages(2);
+            var afterRoot = JsonParser.create(afterJsonText.getLast()).readJsonObject();
+            var afterMeasurement = personalizedGreetingMeasurement(afterRoot);
+
+            var personalizedGreetingCount = afterMeasurement.count() - beforeMeasurement.count();
+            var personalizedGreetingTimeNanos = afterMeasurement.timeNanos() - beforeMeasurement.timeNanos();
+
+            assertThat("Personalized greeting count", personalizedGreetingCount, is(1L));
+            assertThat("Personalized greeting time",
+                       personalizedGreetingTimeNanos,
+                       allOf(greaterThan(0L), lessThanOrEqualTo(elapsedTimeFromClient)));
+        }
+    }
+
+    private static PersonalizedGreetingMeasurement personalizedGreetingMeasurement(JsonObject root) {
+        var personalizedGreetingTimeNanos = new AtomicLong();
+        var personalizedGreetingCount = new AtomicLong();
+
+        metricsEntries(root).stream()
+                .filter(metricsEntry -> metricsEntry.stringValue("name")
+                        .filter(OpenTelemetryMetricsHttpSemanticConventions.TIMER_NAME::equals)
+                        .isPresent())
+                .forEach(metricsEntry -> {
+                    var unit = metricsEntry.stringValue("unit").orElseThrow();
+
+                    metricsEntry.objectValue("histogram").orElseThrow()
+                            .arrayValue("dataPoints").orElseThrow()
+                            .values()
+                            .stream()
+                            .map(JsonValue::asObject)
+                            .filter(dataPoint -> "/greet/{name}".equals(dataPoint.arrayValue("attributes")
+                                    .map(JsonTestUtil::asAttributesMap)
+                                    .orElseGet(Map::of)
+                                    .get(HTTP_ROUTE)))
+                            .forEach(dataPoint -> {
+                                var duration = dataPoint.doubleValue("sum").orElseThrow();
+                                var durationNanos = switch (unit) {
+                                case "s" -> Math.round(duration * 1_000_000_000.0);
+                                case "ms" -> Math.round(duration * 1_000_000.0);
+                                default -> throw new IllegalStateException("Unexpected duration unit: " + unit);
+                                };
+
+                                personalizedGreetingTimeNanos.addAndGet(durationNanos);
+                                personalizedGreetingCount.addAndGet(Long.parseLong(dataPoint.stringValue("count").orElseThrow()));
+                            });
+                });
+
+        return new PersonalizedGreetingMeasurement(personalizedGreetingCount.get(), personalizedGreetingTimeNanos.get());
+    }
+
+    private record PersonalizedGreetingMeasurement(long count, long timeNanos) {
+    }
+
+    static List<JsonObject> metricsEntries(JsonObject root) {
+
+        var top = root.arrayValue("resourceMetrics");
+
+        Stream<JsonValue> scopeMetricsEntries;
+
+            /*
+            The top node might be resourceMetrics which is an array of resource/scopeMetrics tuples, or it might be a single
+            resource/scopeMetrics tuple.
+             */
+        if (top.isPresent()) {
+            scopeMetricsEntries =
+                    top.get().asArray().values().stream()
+                            .flatMap(resourceMetricEntry -> resourceMetricEntry.asArray().values().stream())
+                            .map(JsonValue::asObject)
+                            .flatMap(resourceMetric -> resourceMetric.arrayValue("scopeMetrics").stream());
+        } else {
+            scopeMetricsEntries = root.arrayValue("scopeMetrics").orElseThrow().values().stream();
+        }
+
+        return scopeMetricsEntries
+                .flatMap(scopeMetricsEntry -> scopeMetricsEntry.asObject()
+                        .arrayValue("metrics")
+                        .orElseThrow()
+                        .values()
+                        .stream())
+                .map(JsonValue::asObject)
+                .toList();
+    }
+
 }
