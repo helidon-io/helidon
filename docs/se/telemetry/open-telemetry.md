@@ -281,36 +281,45 @@ See [Configuration options][io-helidon-telem-4].
 <!--/include-->
 
 
-Common Configuration for OTLP exporters
+Common Configuration for OTLP exporters:
 
 <table>
 <thead>
 <tr>
 <th>Setting</th>
+<th>Protocol</th>
 <th>OpenTelemetry default</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><p><code>compression</code></p></td>
-<td><p><code>none</code></p></td>
+<td><code>compression</code></td>
+<td></td>
+<td><code>none</code></td>
 </tr>
 <tr>
-<td><p><code>endpoint</code></p></td>
-<td><p><code>grpc</code> protocol: <a href="http://localhost:4317">http://localhost:4317</a></p>
-<p><code>http/proto</code> protocol: <a href="http://localhost:4318">http://localhost:4318</a></p></td>
+<td rowspan="2"><code>endpoint</code></td>
+<td><code>grpc</code></td>
+<td><a href="http://localhost:4317">http://localhost:4317</a></td>
 </tr>
 <tr>
-<td><p><code>protocol</code></p></td>
-<td><p><code>grpc</code></p></td>
+<td><code>http/<wbr>proto</code></td>
+<td><a href="http://localhost:4318">http://localhost:4318</a></td>
 </tr>
 <tr>
-<td><p><code>retry-policy</code></p></td>
-<td><p>none</p></td>
+<td><code>protocol</code></td>
+<td></td>
+<td><code>grpc</code></td>
 </tr>
 <tr>
-<td><p><code>timeout</code></p></td>
-<td><p>10 seconds</p></td>
+<td><code>retry-policy</code></td>
+<td></td>
+<td>none</td>
+</tr>
+<tr>
+<td><code>timeout</code></td>
+<td></td>
+<td>10 seconds</td>
 </tr>
 </tbody>
 </table>
@@ -393,27 +402,27 @@ In the table below, the Maven artifacts are all in the `io.opentelemetry` group.
 </thead>
 <tbody>
 <tr>
-<td rowspan="2"><p><code>otlp</code></p></td>
-<td><p><code>OtlpGrpc{signal}Exporter</code></p></td>
-<td rowspan="2" ><p><code>opentelemetry-exporter-otlp</code></p></td>
+<td rowspan="2"><code>otlp</code></td>
+<td><code>OtlpGrpc{signal}Exporter</code></td>
+<td rowspan="2" ><code>opentelemetry-exporter-otlp</code></td>
 </tr>
 <tr>
-<td><p><code>OtlpHttp{signal}Exporter</code></p></td>
+<td><code>OtlpHttp{signal}Exporter</code></td>
 </tr>
 <tr>
-<td><p><a href="../../config/io.helidon.telemetry.otelconfig.ZipkinExporterConfig.md"><code>zipkin</code></a></p></td>
-<td><p><code>ZipkinSpanExporter</code></p></td>
-<td><p><code>opentelemetry-exporter-zipkin</code></p></td>
+<td><a href="../../config/io.helidon.telemetry.otelconfig.ZipkinExporterConfig.md"><code>zipkin</code></a></td>
+<td><code>ZipkinSpanExporter</code></td>
+<td><code>opentelemetry-exporter-zipkin</code></td>
 </tr>
 <tr>
-<td><p><code>console</code></p></td>
-<td><p><code>Logging{signal}Exporter</code></p></td>
-<td rowspan="2" ><p><code>opentelemetry-exporter-logging</code></p></td>
+<td><code>console</code></td>
+<td><code>Logging{signal}Exporter</code></td>
+<td rowspan="2" ><code>opentelemetry-exporter-logging</code></td>
 </tr>
 <tr>
-<td><p><code>logging_otlp</code></p></td>
-<td><p><code>OtlpJsonLogging{signal}Exporter</code></p>
-<p><code>SystemOutLogRecordExporter</code></p></td>
+<td><code>logging_otlp</code></td>
+<td><code>OtlpJsonLogging{signal}Exporter</code>
+<code>SystemOutLogRecordExporter</code></td>
 </tr>
 </tbody>
 </table>

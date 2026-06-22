@@ -770,48 +770,16 @@ using the `auto-http-metrics` config section.
 #### Configuration options
 
 <!--@include ../../config/io.helidon.webserver.observe.metrics.AutoHttpMetricsConfig.md#configuration-options delim=--- offset=2 collapseTables=10 -->
-See [Configuration options][io-helidon-webse].
+See [Configuration options][auto-http-metrics].
 <!--/include-->
 
 
 The `paths` section contains zero or more entries, each entry having the
 following settings:
 
-<table>
-<thead>
-<tr>
-<th>Key</th>
-<th>Required</th>
-<th>Default Value</th>
-<th>Usage</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>path</code></td>
-<td>yes</td>
-<td> </td>
-<td>Path-matching expression:
-<ul>
-<li>an exact match (<code>/greet</code>)</li>
-<li>a prefix match (<code>/greet/*</code>)</li>
-<li>a pattern match (<code>/greet/{name}</code>)</li>
-</ul></td>
-</tr>
-<tr>
-<td><code>methods</code></td>
-<td> </td>
-<td>all HTTP method types</td>
-<td>Which HTTP methods match this entry</td>
-</tr>
-<tr>
-<td><code>enabled</code></td>
-<td> </td>
-<td><code>true</code></td>
-<td>Whether requests that match this entry should be measured</td>
-</tr>
-</tbody>
-</table>
+<!--@include ../../config/io.helidon.webserver.observe.metrics.AutoHttpMetricsPathConfig.md#configuration-options delim=--- offset=2 collapseTables=10 -->
+See [Configuration options][auto-http-metrics-path].
+<!--/include-->
 
 Helidon decides whether to measure incoming requests as follows:
 
@@ -1151,4 +1119,5 @@ different `CollectorRegistry` or a different path.
 [io-helidon-metri]: ../../config/io.helidon.metrics.providers.micrometer.OtlpPublisher.md#configuration-options
 [io-helidon-metri-2]: ../../config/io.helidon.metrics.providers.micrometer.PrometheusPublisher.md#configuration-options
 [io-helidon-metri-3]: ../../config/io.helidon.metrics.api.MetricsConfig.md#configuration-options
-[io-helidon-webse]: ../../config/io.helidon.webserver.observe.metrics.AutoHttpMetricsConfig.md#configuration-options
+[auto-http-metrics]: ../../config/io.helidon.webserver.observe.metrics.AutoHttpMetricsConfig.md#configuration-options
+[auto-http-metrics-path]: ../../config/io.helidon.webserver.observe.metrics.AutoHttpMetricsPathConfig.md
