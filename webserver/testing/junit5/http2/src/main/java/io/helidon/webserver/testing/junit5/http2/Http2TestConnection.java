@@ -39,6 +39,7 @@ import io.helidon.http.http2.Http2FrameTypes;
 import io.helidon.http.http2.Http2GoAway;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2HuffmanDecoder;
+import io.helidon.http.http2.Http2Ping;
 import io.helidon.http.http2.Http2RstStream;
 import io.helidon.http.http2.Http2Setting;
 import io.helidon.http.http2.Http2Settings;
@@ -137,6 +138,16 @@ public class Http2TestConnection implements AutoCloseable {
         return this;
     }
 
+    private void acknowledgeSettings() {
+        Http2Flag.SettingsFlags flags = Http2Flag.SettingsFlags.create(Http2Flag.ACK);
+        Http2FrameData frameData = new Http2FrameData(Http2FrameHeader.create(0,
+                                                                              Http2FrameTypes.SETTINGS,
+                                                                              flags,
+                                                                              0),
+                                                      BufferData.empty());
+        writer().write(frameData);
+    }
+
     /**
      * Return connection writer for direct frame sending.
      *
@@ -144,6 +155,20 @@ public class Http2TestConnection implements AutoCloseable {
      */
     public Http2ConnectionWriter writer() {
         return dataWriter;
+    }
+
+    /**
+     * Complete HTTP/2 startup frame exchange without opening a request stream.
+     *
+     * @param timeout timeout for each expected frame
+     */
+    public void completeHandshake(Duration timeout) {
+        assertSettings(timeout);
+        assertWindowsUpdate(0, timeout);
+        writer().write(Http2Ping.create().toFrameData());
+        assertSettingsAck(timeout);
+        Http2FrameData pingFrame = assertNextFrame(Http2FrameType.PING, timeout);
+        assertThat(pingFrame.header().flags(Http2FrameTypes.PING).ack(), Matchers.is(true));
     }
 
     /**
@@ -206,13 +231,24 @@ public class Http2TestConnection implements AutoCloseable {
     }
 
     /**
-     * Wait for the next frame and assert its frame type to be SETTINGS.
+     * Wait for the next frame, assert its frame type to be SETTINGS, and ACK it when needed.
      * @param timeout timeout for blocking
      * @return the frame
      */
     public Http2Settings assertSettings(Duration timeout) {
         Http2FrameData frame = assertNextFrame(Http2FrameType.SETTINGS, timeout);
-        return Http2Settings.create(frame.data());
+        Http2Flag.SettingsFlags flags = frame.header().flags(Http2FrameTypes.SETTINGS);
+        Http2Settings settings = Http2Settings.create(frame.data());
+        if (!flags.ack()) {
+            acknowledgeSettings();
+        }
+        return settings;
+    }
+
+    private void assertSettingsAck(Duration timeout) {
+        Http2FrameData frame = assertNextFrame(Http2FrameType.SETTINGS, timeout);
+        Http2Flag.SettingsFlags flags = frame.header().flags(Http2FrameTypes.SETTINGS);
+        assertThat(flags.ack(), Matchers.is(true));
     }
 
     /**
@@ -247,6 +283,9 @@ public class Http2TestConnection implements AutoCloseable {
      */
     public Http2FrameData assertNextFrame(Http2FrameType frameType, Duration timeout) {
         Http2FrameData frame = awaitNextFrame(timeout);
+        assertThat("Timed out waiting for HTTP/2 frame " + frameType + " after " + timeout,
+                   frame,
+                   Matchers.notNullValue());
         assertThat(frame.header().type(), Matchers.equalTo(frameType));
         return frame;
     }

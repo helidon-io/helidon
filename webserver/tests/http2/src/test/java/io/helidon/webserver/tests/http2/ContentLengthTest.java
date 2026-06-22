@@ -345,13 +345,10 @@ class ContentLengthTest {
     @Test
     void equalRepeatedContentLengthRejected(Http2TestClient client) {
         Http2TestConnection h2conn = client.createConnection();
+        h2conn.completeHandshake(TIMEOUT);
 
         var headers = requestHeadersWithContentLength(5, 5);
         h2conn.request(1, POST, LONGER_DATA_PATH, headers, BufferData.create("frank"));
-
-        h2conn.assertSettings(TIMEOUT);
-        h2conn.assertWindowsUpdate(0, TIMEOUT);
-        h2conn.assertSettings(TIMEOUT);
 
         h2conn.assertGoAway(Http2ErrorCode.PROTOCOL,
                             "Content-Length header must have exactly one value.",

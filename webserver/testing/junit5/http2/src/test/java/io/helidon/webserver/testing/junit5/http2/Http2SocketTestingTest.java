@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,35 @@
 
 package io.helidon.webserver.testing.junit5.http2;
 
+import java.time.Duration;
+
+import io.helidon.http.http2.Http2FrameType;
 import io.helidon.webclient.http2.Http2Client;
 import io.helidon.webserver.testing.junit5.ServerTest;
 
+import org.junit.jupiter.api.Test;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 @ServerTest
 class Http2SocketTestingTest extends Http2AbstractTestingTest {
+    private static final Duration TIMEOUT = Duration.ofSeconds(5);
+
     Http2SocketTestingTest(Http2Client httpClient) {
         super(httpClient);
+    }
+
+    @Test
+    void nextFrameTimeoutReportsExpectedFrame(Http2TestClient client) {
+        try (Http2TestConnection h2conn = client.createConnection()) {
+            h2conn.completeHandshake(TIMEOUT);
+
+            AssertionError error = assertThrows(AssertionError.class,
+                                               () -> h2conn.assertNextFrame(Http2FrameType.GO_AWAY,
+                                                                           Duration.ofMillis(25)));
+            assertThat(error.getMessage(), containsString("Timed out waiting for HTTP/2 frame GO_AWAY"));
+        }
     }
 }
