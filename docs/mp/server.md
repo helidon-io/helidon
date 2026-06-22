@@ -299,7 +299,7 @@ If none is configured, then the service would be configured on the root path.
 You can configure service path using an annotation or configuration (or both to
 override value from annotation)
 
-##### Configuration Override
+**Configuration Override**
 
 For each HTTP service class you can define the routing path by specifying a
 configuration option `class-name.routing-path.path`. The `routing-path`

@@ -62,10 +62,9 @@ You can customize the path using [configuration](#configuration).
 The example below shows the UI for the Helidon MP QuickStart greeting
 application.
 
-<figure>
-<img src="../../images/openapi-ui-screen-capture-greeting-mp-start.png" alt="openapi ui screen capture greeting mp start" />
-<figcaption>Example OpenAPI UI Screen</figcaption>
-</figure>
+*Example OpenAPI UI Screen*
+
+![openapi ui screen capture greeting mp start](../../images/openapi-ui-screen-capture-greeting-mp-start.png)
 
 With the OpenAPI UI displayed, follow these steps to access one of your
 service’s operations.
@@ -93,10 +92,9 @@ Note that the UI shows the actual response from invoking the operation in the
 possible responses from the operation as declared in the OpenAPI document for
 the application.
 
-<figure>
-<img src="../../images/openapi-ui-screen-capture-greeting-mp-expanded.png" alt="openapi ui screen capture greeting mp expanded" />
-<figcaption>Example OpenAPI UI Screen</figcaption>
-</figure>
+*Example OpenAPI UI Screen*
+
+![openapi ui screen capture greeting mp expanded](../../images/openapi-ui-screen-capture-greeting-mp-expanded.png)
 
 ## API
 

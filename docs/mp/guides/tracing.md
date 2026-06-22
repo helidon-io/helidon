@@ -190,29 +190,26 @@ will take you to the specific UI used by this guide.
 Click on the UI Find traces button (the search icon) as shown in the image
 below.
 
-<figure>
-<img src="../../images/guides/12_tracing_refresh.png" alt="Trace Refresh" />
-<figcaption>Jaeger UI</figcaption>
-</figure>
+*Jaeger UI*
+
+![Trace Refresh](../../images/guides/12_tracing_refresh.png)
 
 The image below shows the trace summary, including start time and duration of
 each trace. There are several traces, each one generated in response to a `curl
 http://localhost:8080/greet` invocation. The oldest trace will have a much
 longer duration since there is one-time initialization that occurs.
 
-<figure>
-<img src="../../images/guides/12_tracing_top.png" alt="Traces" />
-<figcaption>Tracing list view</figcaption>
-</figure>
+*Tracing list view*
+
+![Traces](../../images/guides/12_tracing_top.png)
 
 Click on a trace, and you will see the trace detail page where the spans are
 listed. You can clearly see the root span and the relationship among all the
 spans in the trace, along with timing information.
 
-<figure>
-<img src="../../images/guides/12_tracing_detail.png" alt="Trace Detail" />
-<figcaption>Trace detail page</figcaption>
-</figure>
+*Trace detail page*
+
+![Trace Detail](../../images/guides/12_tracing_detail.png)
 
 > [!NOTE]
 > A parent span might not depend on the result of the child. This is called a
@@ -485,10 +482,9 @@ curl -i http://localhost:8080/greet/outbound # <1>
 Refresh the Jaeger UI trace listing page and notice that there is a trace across
 two services.
 
-<figure>
-<img src="../../images/guides/12_tracing_detail_2_services.png" alt="Traces" />
-<figcaption>Tracing across multiple services detail view</figcaption>
-</figure>
+*Tracing across multiple services detail view*
+
+![Traces](../../images/guides/12_tracing_detail_2_services.png)
 
 In the image above, you can see that the trace includes spans from two services.
 You will notice there is a gap before the sixth span, which is a `get`

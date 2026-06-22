@@ -39,7 +39,7 @@ Represents information about cross origin request sharing
 <td>
 <code>false</code>
 </td>
-<td>Sets the allow credentials flag. Cannot be enabled with wildcard origins</td>
+<td>Sets the allow credentials flag</td>
 </tr>
 <tr>
 <td>

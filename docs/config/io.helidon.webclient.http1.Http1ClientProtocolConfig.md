@@ -27,7 +27,7 @@ Configuration of an HTTP/1.1 client
 <td>
 <code>true</code>
 </td>
-<td>Whether to validate response headers</td>
+<td>Sets whether the response header format is validated or not</td>
 </tr>
 <tr>
 <td>
@@ -39,33 +39,7 @@ Configuration of an HTTP/1.1 client
 <td>
 <code>64 KB</code>
 </td>
-<td>Configure the maximum size allowed for an entity that can be explicitly buffered by the application by calling <code>io.<wbr>helidon.<wbr>http.<wbr>media.<wbr>Readable<wbr>Entity.<wbr>buffer(<wbr>)</code></td>
-</tr>
-<tr>
-<td>
-<a id="log"></a>
-<a href="io.helidon.http.HttpLogConfig.md">
-<code>log</code>
-</a>
-</td>
-<td>
-<code>Http<wbr>LogConfig</code>
-</td>
-<td>
-</td>
-<td>HTTP Log configuration</td>
-</tr>
-<tr>
-<td>
-<code>validate-<wbr>request-<wbr>headers</code>
-</td>
-<td>
-<code>Boolean</code>
-</td>
-<td>
-<code>true</code>
-</td>
-<td>Whether to validate request headers</td>
+<td>Configure the maximum size allowed for an entity that can be explicitly buffered by the application by calling <code>io.<wbr>helidon.<wbr>http.<wbr>media.<wbr>Readable<wbr>Entity#<wbr>buffer</code></td>
 </tr>
 <tr>
 <td>
@@ -78,6 +52,18 @@ Configuration of an HTTP/1.1 client
 <code>16384</code>
 </td>
 <td>Configure the maximum allowed header size of the response</td>
+</tr>
+<tr>
+<td>
+<code>validate-<wbr>request-<wbr>headers</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>false</code>
+</td>
+<td>Sets whether the request header format is validated or not</td>
 </tr>
 <tr>
 <td>
@@ -101,7 +87,7 @@ Configuration of an HTTP/1.1 client
 <td>
 <code>http_<wbr>1_1</code>
 </td>
-<td>Name of this protocol configuration</td>
+<td><code>N/<wbr>A</code></td>
 </tr>
 <tr>
 <td>

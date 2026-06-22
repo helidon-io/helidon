@@ -467,7 +467,7 @@ JSON metrics output for the base scope (partial):
 }
 ```
 
-##### Understanding the JSON Metrics Data Format
+**Understanding the JSON Metrics Data Format**
 
 The Helidon JSON format expresses each metric as either a single value (for
 example, a counter) or a structure with multiple values (for example, a timer).
@@ -498,7 +498,7 @@ JSON output for a multivalued metric (for example, Timer):
 By default, Helidon formats time values contained in JSON output as seconds. You
 can change this behavior [as described below](#controlling-json-timer-output).
 
-##### Understanding the JSON Metrics Metadata Format
+**Understanding the JSON Metrics Metadata Format**
 
 Access the metrics endpoint with an HTTP `OPTIONS` request and the `Accept:
 application/json` header to retrieve metadata in JSON format.
@@ -533,7 +533,7 @@ lead to different timers being formatted using different units. Checking the
 metadata is the only way to know for sure what units Helidon used to express a
 given timer, so Helidon always includes `unit` in timer metadata.
 
-##### Controlling JSON Timer Output
+**Controlling JSON Timer Output**
 
 By default, Helidon expresses timer data as seconds.
 
@@ -1261,7 +1261,7 @@ Helidon does not update metrics, and the `/metrics` endpoints respond with
 
 #### Configuring Virtual Threads Metrics
 
-##### Enabling Virtual Threads Metrics
+**Enabling Virtual Threads Metrics**
 
 Gathering data to compute the metrics for virtual threads is designed to be as
 efficient as possible, but doing so still imposes a load on the server and by
@@ -1276,7 +1276,7 @@ Enabling virtual thread metrics:
 metrics.virtual-threads.enabled = true
 ```
 
-##### Controlling Measurements of Pinned Virtual Threads
+**Controlling Measurements of Pinned Virtual Threads**
 
 Helidon measures pinned virtual threads only when the thread is pinned for a
 length of time at or above a threshold. Control the threshold as shown in the

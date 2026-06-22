@@ -86,7 +86,7 @@ To implement Protobuf-based services, you can follow the official
 [instructions][instructions] on the gRPC website, which boil down to the
 following:
 
-##### Define the Service IDL
+**Define the Service IDL**
 
 For this example, we will re-implement the `EchoService` above as a Protobuf
 service in `echo.proto` file.
@@ -118,7 +118,7 @@ client stubs (for making RPC calls to the server), and a base class for the
 server-side service implementation. In this example, we’ll ignore the generated
 base class and instead implement the service using the Helidon gRPC framework.
 
-##### Implement the Service
+**Implement the Service**
 
 The service implementation will be very similar to our original implementation:
 

@@ -160,7 +160,7 @@ Adding the dependency for OCI Object Storage:
 </dependency>
 ```
 
-##### Creating an Object Storage Client
+**Creating an Object Storage Client**
 
 Now you can create OCI SDK clients for Object Storage.
 
@@ -169,7 +169,7 @@ BasicAuthenticationDetailsProvider authProvider = Services.get(BasicAuthenticati
 ObjectStorage objectStorageClient = ObjectStorageClient.builder().build(authProvider);
 ```
 
-##### Using the Object Storage client
+**Using the Object Storage client**
 
 Once you have created an ObjectStorage client you can use it as described in:
 

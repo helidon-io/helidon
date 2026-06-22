@@ -90,10 +90,9 @@ data {
 
 The diagram below illustrates the in-memory tree for that configuration.
 
-<figure>
-<img src="../../images/config/application_conf-nodes.png" alt="Loaded Config Nodes structure" />
-<figcaption>Config Nodes structure of <code>application.conf</code> file</figcaption>
-</figure>
+*Config Nodes structure of `application.conf` file*
+
+![Loaded Config Nodes structure](../../images/config/application_conf-nodes.png)
 
 1.  Each non-root node has a name which distinguishes it from other nodes with
     the same parent. The interpretation of the name depends on the node type.

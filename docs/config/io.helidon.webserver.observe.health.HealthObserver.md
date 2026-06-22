@@ -64,18 +64,6 @@ Configuration of Health observer
 </td>
 <td>Whether to use services discovered by <code>java.<wbr>util.<wbr>Service<wbr>Loader</code></td>
 </tr>
-<tr>
-<td>
-<code>enabled</code>
-</td>
-<td>
-<code>Boolean</code>
-</td>
-<td>
-<code>true</code>
-</td>
-<td>Whether this observer is enabled</td>
-</tr>
 </tbody>
 </table>
 

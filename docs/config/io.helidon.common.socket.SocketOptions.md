@@ -106,12 +106,7 @@ Socket options
 
 ## Usages
 
-- <a href="io.helidon.webclient.api.WebClient.md#socket-options"><code>clients.<wbr>socket-<wbr>options</code></a>
-- <a href="io.helidon.webclient.api.WebClient.md#socket-options"><code>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>socket-<wbr>options</code></a>
-- <a href="io.helidon.webclient.api.WebClient.md#socket-options"><code>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>socket-<wbr>options</code></a>
 - <a href="io.helidon.webserver.WebServer.md#connection-options"><code>server.<wbr>connection-<wbr>options</code></a>
-- <a href="io.helidon.webclient.api.WebClient.md#socket-options"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>idcs-<wbr>role-<wbr>mapper.<wbr>oidc-<wbr>config.<wbr>webclient.<wbr>socket-<wbr>options</code></a>
-- <a href="io.helidon.webclient.api.WebClient.md#socket-options"><code>server.<wbr>features.<wbr>security.<wbr>security.<wbr>providers.<wbr>oidc.<wbr>webclient.<wbr>socket-<wbr>options</code></a>
 - <a href="io.helidon.webserver.ListenerConfig.md#connection-options"><code>server.<wbr>sockets.<wbr>connection-<wbr>options</code></a>
 
 ---

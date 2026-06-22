@@ -80,7 +80,7 @@ builds its in-memory model of your application’s API. It constructs the OpenAP
 document from this internal model. Your application can use one or more of these
 techniques.
 
-##### Annotations on the endpoints in your app
+**Annotations on the endpoints in your app**
 
 You can add MicroProfile OpenAPI annotations to the endpoints in your source
 code. These annotations allow the Helidon MP OpenAPI runtime to discover the
@@ -116,14 +116,14 @@ This excerpt shows only a few annotations for illustration. The [Helidon MP
 OpenAPI basic example][helidon-mp-opena] illustrates more, and the [MicroProfile
 OpenAPI spec][microprofile-ope] describes them all.
 
-##### A static OpenAPI file
+**A static OpenAPI file**
 
 Add a static file at `META-INF/openapi.yml`, `META-INF/openapi.yaml`, or
 `META-INF/openapi.json`. Tools such as Swagger let you describe your app’s API,
 and they then generate an OpenAPI document file which you can include in your
 application so OpenAPI can use it.
 
-##### A model reader class your application provides
+**A model reader class your application provides**
 
 Write a Java class that implements the OpenAPI
 [`org.eclipse.microprofile.openapi.OASModelReader`][org-eclipse-micr] interface.
@@ -133,7 +133,7 @@ OpenAPI builds.
 Then set the `mp.openapi.model.reader` configuration property to the
 fully-qualified name of your model reader class.
 
-##### A filter class your application provides
+**A filter class your application provides**
 
 Write a Java class that implements the OpenAPI
 [`org.eclipse.microprofile.openapi.OASFilter`][org-eclipse-micr-2] interface.

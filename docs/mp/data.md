@@ -208,14 +208,12 @@ specific annotation.
 
 The general method name syntax is illustrated below:
 
-<figure>
-<img src="../images/data/qbmn_syntax.png" alt="qbmn syntax" />
-</figure>
+![qbmn syntax](../images/data/qbmn_syntax.png)
 
 All parts of the pattern are optional except the return type keyword, such as
 `get`, `find`, `list`, `stream`, `count` and `exists`.
 
-##### Method Name Prefix and Return Type
+**Method Name Prefix and Return Type**
 
 A method can have a user-defined prefix. The prefix is a sequence of letters and
 digits that does not match any return type keyword. This prefix has no influence
@@ -245,7 +243,7 @@ The query return type depends on the return type keyword:
 > Validation of the keyword–return type mapping is not fully enforced by the
 > code generator, though this may change in future releases.
 
-##### Projection in Method Name
+**Projection in Method Name**
 
 The projection part is optional and follows directly after the return-type
 keyword. It consists of `expression` and `property` components:
@@ -281,7 +279,7 @@ public interface PetRepository extends Data.GenericRepository<Pet, Integer> {
 }
 ```
 
-##### Criteria in Method Name
+**Criteria in Method Name**
 
 The criteria part of the method name is optional and represents the `WHERE`
 clause of the query. It is a logical expression composed of individual
@@ -360,7 +358,7 @@ Optional<Keeper> findByNameAndAge(String name, int age);
 > In JPQL, operator precedence places `AND` above `OR` as defined in Jakarta
 > Persistence 3.1, section 4.6.6. The same rule applies to SQL.
 
-##### Ordering in Method Name
+**Ordering in Method Name**
 
 The ordering part of the method name is optional and represents the `ORDER BY`
 clause of the query. It is a list of ordering rules. A single ordering rule is
@@ -384,7 +382,7 @@ An example repository method with ordering:
 List<Keeper> listAllOrderByAgeAscName();
 ```
 
-##### Method Name Grammar
+**Method Name Grammar**
 
 The formal grammar for method names is as follows:
 

@@ -121,9 +121,7 @@ To stop the development loop, enter `Ctrl+C`.
 
 Watch the following demo to see some of the functionality of the Helidon CLI.
 
-<figure>
-<img src="images/cli/Helidon_cli.gif" alt="CLI Demo" />
-</figure>
+![CLI Demo](images/cli/Helidon_cli.gif)
 
 [java-21]: https://www.oracle.com/technetwork/java/javase/downloads
 [openjdk-21]: http://jdk.java.net

@@ -365,10 +365,9 @@ Response body:
 Refresh the Jaeger UI trace listing page and notice that there is a trace across
 two services.
 
-<figure>
-<img src="../images/guides/12_tracing_detail_2_services.png" alt="Traces" />
-<figcaption>Tracing across multiple services detail view</figcaption>
-</figure>
+*Tracing across multiple services detail view*
+
+![Traces](../images/guides/12_tracing_detail_2_services.png)
 
 In the image above, you can see that the trace includes spans from two services.
 You will notice there is a gap before the sixth span, which is a `get`
@@ -658,9 +657,7 @@ tracing:
 
 Example of Zipkin trace:
 
-<figure>
-<img src="../images/webserver/zipkin.png" alt="Zipkin example" />
-</figure>
+![Zipkin example](../images/webserver/zipkin.png)
 
 ## OpenTelemetry Tracing
 

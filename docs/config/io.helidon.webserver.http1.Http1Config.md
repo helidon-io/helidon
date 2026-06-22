@@ -19,18 +19,6 @@ HTTP/1.1 server configuration
 <tbody>
 <tr>
 <td>
-<code>validate-<wbr>response-<wbr>headers</code>
-</td>
-<td>
-<code>Boolean</code>
-</td>
-<td>
-<code>true</code>
-</td>
-<td>Whether to validate response headers</td>
-</tr>
-<tr>
-<td>
 <code>continue-<wbr>immediately</code>
 </td>
 <td>
@@ -43,17 +31,15 @@ HTTP/1.1 server configuration
 </tr>
 <tr>
 <td>
-<a id="log"></a>
-<a href="io.helidon.http.HttpLogConfig.md">
-<code>log</code>
-</a>
+<code>validate-<wbr>response-<wbr>headers</code>
 </td>
 <td>
-<code>Http<wbr>LogConfig</code>
+<code>Boolean</code>
 </td>
 <td>
+<code>false</code>
 </td>
-<td>HTTP Log configuration</td>
+<td>Whether to validate headers</td>
 </tr>
 <tr>
 <td>
@@ -101,19 +87,7 @@ HTTP/1.1 server configuration
 <td>
 <code>64 KB</code>
 </td>
-<td>Configure the maximum size allowed for an entity that can be explicitly buffered by the application by calling <code>io.<wbr>helidon.<wbr>http.<wbr>media.<wbr>Readable<wbr>Entity.<wbr>buffer(<wbr>)</code></td>
-</tr>
-<tr>
-<td>
-<code>validate-<wbr>request-<wbr>headers</code>
-</td>
-<td>
-<code>Boolean</code>
-</td>
-<td>
-<code>true</code>
-</td>
-<td>Whether to validate request headers</td>
+<td>Configure the maximum size allowed for an entity that can be explicitly buffered by the application by calling <code>io.<wbr>helidon.<wbr>http.<wbr>media.<wbr>Readable<wbr>Entity#<wbr>buffer</code></td>
 </tr>
 <tr>
 <td>
@@ -131,6 +105,18 @@ HTTP/1.1 server configuration
 </tr>
 <tr>
 <td>
+<code>validate-<wbr>request-<wbr>headers</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Whether to validate headers</td>
+</tr>
+<tr>
+<td>
 <code>max-<wbr>prologue-<wbr>length</code>
 </td>
 <td>
@@ -140,6 +126,30 @@ HTTP/1.1 server configuration
 <code>4096</code>
 </td>
 <td>Maximal size of received HTTP prologue (GET /path HTTP/1.1)</td>
+</tr>
+<tr>
+<td>
+<code>send-<wbr>log</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Logging of sent packets</td>
+</tr>
+<tr>
+<td>
+<code>recv-<wbr>log</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Logging of received packets</td>
 </tr>
 <tr>
 <td>
@@ -181,30 +191,6 @@ HTTP/1.1 server configuration
 <code>true</code>
 </td>
 <td>Request host header validation</td>
-</tr>
-<tr>
-<td>
-<code>send-<wbr>log</code>
-</td>
-<td>
-<code>Boolean</code>
-</td>
-<td>
-<code>true</code>
-</td>
-<td>Logging of sent packets</td>
-</tr>
-<tr>
-<td>
-<code>recv-<wbr>log</code>
-</td>
-<td>
-<code>Boolean</code>
-</td>
-<td>
-<code>true</code>
-</td>
-<td>Logging of received packets</td>
 </tr>
 </tbody>
 </table>

@@ -188,7 +188,7 @@ Messaging.builder()
 // > Consuming: bar
 ```
 
-##### Configuration for Messaging Connector
+**Configuration for Messaging Connector**
 
 A messaging connector in Helidon SE can be configured explicitly by API or
 implicitly by config following the notation of [MicroProfile Reactive
@@ -225,7 +225,7 @@ public class ExampleConnector implements IncomingConnectorFactory {
 1. Config context is merged from channel and connector contexts
 <!--@mdc :: -->
 
-###### Explicit Config for Messaging Connector
+**Explicit Config for Messaging Connector**
 
 An explicit config for channel’s publisher is possible with
 `Channel.Builder#publisherConfig(Config config)` and for a subscriber with the
@@ -322,11 +322,11 @@ Maven dependency:
 </dependency>
 ```
 
-##### Reactive Kafka Connector
+**Reactive Kafka Connector**
 
 Connecting streams to Kafka with Reactive Messaging couldn’t be easier.
 
-##### Explicit Config with Config Builder for Kafka Connector
+**Explicit Config with Config Builder for Kafka Connector**
 
 Example of consuming from Kafka:
 
@@ -393,7 +393,7 @@ Messaging messaging = Messaging.builder()
 3. Prepare Kafka connector, can be used by any channel
 <!--@mdc :: -->
 
-##### Implicit Helidon Config for Kafka Connector
+**Implicit Helidon Config for Kafka Connector**
 
 Example of connector config:
 
@@ -478,11 +478,11 @@ Maven dependency:
 </dependency>
 ```
 
-##### Reactive JMS Connector
+**Reactive JMS Connector**
 
 Connecting streams to JMS with Reactive Messaging couldn’t be easier.
 
-##### Explicit Config with Config Builder for JMS Connector
+**Explicit Config with Config Builder for JMS Connector**
 
 Example of consuming from JMS:
 
@@ -541,7 +541,7 @@ Messaging messaging = Messaging.builder()
 3. Prepare JMS connector, can be used by any channel
 <!--@mdc :: -->
 
-##### Implicit Helidon Config for JMS Connector
+**Implicit Helidon Config for JMS Connector**
 
 Example of connector config:
 
@@ -620,9 +620,9 @@ Maven dependency:
 </dependency>
 ```
 
-##### Reactive Oracle AQ Connector
+**Reactive Oracle AQ Connector**
 
-##### Sending and Receiving
+**Sending and Receiving**
 
 Example of producing to and consuming from Oracle AQ:
 

@@ -33,18 +33,6 @@ HTTP header signature provider
 </tr>
 <tr>
 <td>
-<code>inbound-<wbr>date-<wbr>validity</code>
-</td>
-<td>
-<code>Duration</code>
-</td>
-<td>
-<code>PT5M</code>
-</td>
-<td>Configure the maximum accepted age or future skew for the signed <code>Date</code> header</td>
-</tr>
-<tr>
-<td>
 <a id="outbound"></a>
 <a href="io.helidon.security.providers.common.OutboundConfig.md">
 <code>outbound</code>

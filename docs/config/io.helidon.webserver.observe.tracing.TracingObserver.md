@@ -52,18 +52,6 @@ Configuration of Tracing observer
 </td>
 <td>Weight of the feature registered with WebServer</td>
 </tr>
-<tr>
-<td>
-<code>enabled</code>
-</td>
-<td>
-<code>Boolean</code>
-</td>
-<td>
-<code>true</code>
-</td>
-<td>Whether this observer is enabled</td>
-</tr>
 </tbody>
 </table>
 

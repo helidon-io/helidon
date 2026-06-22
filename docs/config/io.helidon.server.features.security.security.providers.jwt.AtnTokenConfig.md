@@ -53,18 +53,7 @@ Configuration for server.features.security.security.providers.jwt.atn-token
 </td>
 <td>
 </td>
-<td>Audience expected in inbound JWTs. Required when authentication is enabled and signature verification is disabled</td>
-</tr>
-<tr>
-<td>
-<code>jwt-<wbr>issuer</code>
-</td>
-<td>
-<code>String</code>
-</td>
-<td>
-</td>
-<td>Issuer expected in inbound JWTs. Required when authentication is enabled and signature verification is disabled</td>
+<td>Audience expected in inbound JWTs</td>
 </tr>
 <tr>
 <td>
@@ -76,7 +65,7 @@ Configuration for server.features.security.security.providers.jwt.atn-token
 <td>
 <code>true</code>
 </td>
-<td>Whether to verify inbound JWT signatures. If set to false while authentication is enabled, atn-token.jwt-issuer and atn-token.jwt-audience are required</td>
+<td>Configure whether to verify signatures</td>
 </tr>
 </tbody>
 </table>

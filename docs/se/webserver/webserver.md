@@ -975,7 +975,7 @@ JSON-B and Jackson have lower weight, so they are used only when no other
 The WebServer supports JSON-P. When enabled, you can send and receive JSON-P
 objects transparently.
 
-##### Maven Coordinates
+**Maven Coordinates**
 
 To enable JSON Support add the following dependency to your project’s `pom.xml`.
 
@@ -986,7 +986,7 @@ To enable JSON Support add the following dependency to your project’s `pom.xml
 </dependency>
 ```
 
-##### Usage
+**Usage**
 
 Handler that receives and returns JSON objects:
 
@@ -1027,7 +1027,7 @@ support is enabled, Java objects will be serialized to and deserialized from
 JSON automatically using [Yasson][yasson], an implementation of the [JSON-B
 specification][json-b-specifica].
 
-##### Maven Coordinates
+**Maven Coordinates**
 
 To enable JSON-B Support add the following dependency to your project’s
 `pom.xml`.
@@ -1039,20 +1039,20 @@ To enable JSON-B Support add the following dependency to your project’s
 </dependency>
 ```
 
-##### Configuration
+**Configuration**
 
 It is possible to configure the Jsonb instance via programmatic or
 configuration-based approach. When configured over the configuration, all the
 configured value types need to be selected correctly according to the JSON-B
 spec and placed to the right section.
 
-###### Configuration options
+**Configuration options**
 
 <!--@include ../../config/io.helidon.http.media.jsonb.JsonbSupport.md#configuration-options delim=--- offset=3 collapseTables=10 -->
 See [Configuration options][io-helidon-http-].
 <!--/include-->
 
-###### Example
+**Example**
 
 Example JSON-B configuration:
 
@@ -1064,7 +1064,7 @@ jsonb:
     jsonb.property-naming-strategy: "LOWER_CASE_WITH_DASHES"
 ```
 
-##### Usage
+**Usage**
 
 Now that automatic JSON serialization and deserialization facilities have been
 set up, you can register a `Handler` that works with Java objects instead of raw
@@ -1122,7 +1122,7 @@ The WebServer supports [Jackson][jackson-2]. When this support is enabled, Java
 objects will be serialized to and deserialized from JSON automatically using
 Jackson.
 
-##### Maven Coordinates
+**Maven Coordinates**
 
 To enable Jackson Support add the following dependency to your project’s
 `pom.xml`.
@@ -1134,18 +1134,18 @@ To enable Jackson Support add the following dependency to your project’s
 </dependency>
 ```
 
-##### Configuration
+**Configuration**
 
 It is possible to configure the Jackson ObjectMapper instance via programmatic
 or configuration-based approach.
 
-###### Configuration options
+**Configuration options**
 
 <!--@include ../../config/io.helidon.http.media.jackson.JacksonSupport.md#configuration-options delim=--- offset=4 collapseTables=10 -->
 See [Configuration options][io-helidon-http--2].
 <!--/include-->
 
-###### Example
+**Example**
 
 Example Jackson configuration:
 
@@ -1155,7 +1155,7 @@ jackson:
     FAIL_ON_UNKNOWN_PROPERTIES: false
 ```
 
-##### Usage
+**Usage**
 
 Now that automatic JSON serialization and deserialization facilities have been
 set up, you can register a `Handler` that works with Java objects instead of raw
@@ -1218,7 +1218,7 @@ The WebServer supports [Gson][gson-2]. When this support is enabled, Java
 objects will be serialized to and deserialized from JSON automatically using
 Gson.
 
-##### Maven Coordinates
+**Maven Coordinates**
 
 To enable Gson Support add the following dependency to your project’s `pom.xml`.
 
@@ -1229,19 +1229,19 @@ To enable Gson Support add the following dependency to your project’s `pom.xml
 </dependency>
 ```
 
-##### Configuration
+**Configuration**
 
 It is possible to configure the Gson instance via programmatic or
 configuration-based approach.
 
-###### Configuration options
+**Configuration options**
 
 <!--@include ../../config/io.helidon.http.media.gson.GsonSupport.md#configuration-options delim=--- offset=4 collapseTables=10 -->
 See [Configuration options][io-helidon-http--3].
 <!--/include-->
 
 
-###### Example
+**Example**
 
 Example Gson configuration:
 
@@ -1251,7 +1251,7 @@ gson:
     serialize-nulls: false
 ```
 
-##### Usage
+**Usage**
 
 Now that automatic JSON serialization and deserialization facilities have been
 set up, you can register a `Handler` that works with Java objects instead of raw
@@ -1343,7 +1343,7 @@ WebServer.builder()
 
 Or use a config file using the following options:
 
-##### Configuration options
+**Configuration options**
 
 <!--@include ../../config/io.helidon.http.encoding.ContentEncodingContext.md#configuration-options delim=--- offset=3 collapseTables=10 -->
 See [Configuration options][io-helidon-http--4].

@@ -410,7 +410,7 @@ failed
 
 #### Configuring Virtual Threads Meters
 
-##### Enabling Virtual Threads Meters
+**Enabling Virtual Threads Meters**
 
 Gathering data to compute the meters for virtual threads is designed to be as
 efficient as possible, but doing so still imposes a load on the server and by
@@ -427,7 +427,7 @@ metrics:
     enabled: true
 ```
 
-##### Controlling Measurements of Pinned Virtual Threads
+**Controlling Measurements of Pinned Virtual Threads**
 
 Helidon measures pinned virtual threads only when the thread is pinned for a
 length of time at or above a threshold. Control the threshold as shown in the

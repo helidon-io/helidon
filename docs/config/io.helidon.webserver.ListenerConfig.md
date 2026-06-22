@@ -167,14 +167,14 @@ Configuration of a server listener (server socket)
 <td>
 <code>&#8288;-&#8288;1</code>
 </td>
-<td>Limits the number of connection permits that this listener may reserve before accepting sockets</td>
+<td>Limits the number of connections that can be opened at a single point in time</td>
 </tr>
 <tr>
 <td>
 <code>bind-<wbr>address</code>
 </td>
 <td>
-<code>Listener<wbr>Custom<wbr>Methods</code>
+<code>String</code>
 </td>
 <td>
 </td>

@@ -21,6 +21,10 @@ This type is an enumeration.
 </tbody>
 </table>
 
+## Usages
+
+- <a href="io.helidon.telemetry.otelconfig.MetricReaderConfig.md#type"><code>telemetry.<wbr>signals.<wbr>metrics.<wbr>readers.<wbr>type</code></a>
+
 ---
 
 See the [manifest](manifest.md) for all available types.

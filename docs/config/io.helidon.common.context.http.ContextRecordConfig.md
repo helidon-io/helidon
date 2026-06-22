@@ -57,7 +57,7 @@ Configuration of a single propagation record, a mapping of a header name to its 
 <code>header</code>
 </td>
 <td>
-<code>Record<wbr>Custom<wbr>Methods</code>
+<code>String</code>
 </td>
 <td>Name of the header to use when sending the context value over the network</td>
 </tr>

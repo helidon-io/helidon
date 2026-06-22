@@ -45,6 +45,10 @@ This type is an enumeration.
 </tbody>
 </table>
 
+## Usages
+
+- <a href="io.helidon.telemetry.otelconfig.InstrumentSelectorConfig.md#type"><code>telemetry.<wbr>signals.<wbr>metrics.<wbr>views.<wbr>instrument-<wbr>selector.<wbr>type</code></a>
+
 ---
 
 See the [manifest](manifest.md) for all available types.

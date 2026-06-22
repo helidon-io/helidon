@@ -158,7 +158,7 @@ from multiple sources.
 
 #### Handling Key Collisions
 
-##### Prefixed Config Sources
+**Prefixed Config Sources**
 
 Sometimes you might want to create a single config tree from multiple sources
 but in a way that keeps the config from different sources in different subtrees.
@@ -226,7 +226,7 @@ that might overlap; assigning different prefixes to the keys from different sour
 gives your application a way to access all config elements distinctly even if
 their keys would otherwise conflict.
 
-##### Merging Strategies
+**Merging Strategies**
 
 When creating config from multiple sources, it is possible that the same key
 comes from multiple sources. By default, earlier sources in the list have higher
@@ -267,7 +267,7 @@ use. It does so by:
 
 #### Identifying the Media Type
 
-##### By Inference
+**By Inference**
 
 Most applications let the config system try to infer the media type of the
 config source.
@@ -284,7 +284,7 @@ Service implementations. Typically, you would also write and register a config
 parser to translate that format; see [Locating a Parser](#locating-a-parser)
 below.
 
-##### By Application Directive
+**By Application Directive**
 
 Your application can specify what media type to use in interpreting a config
 source. Use this if your application knows the media type but the system might
@@ -310,7 +310,7 @@ inspect the suffix in the name of the file.
 
 #### Locating a Parser
 
-##### By Inference from `media-type`
+**By Inference from `media-type`**
 
 Each config parser reports which media types it handles. Once the config system
 has determined a source’s media type, it searches the config parsers associated
@@ -327,7 +327,7 @@ parsers registered with the builder for each source.
 If the config system cannot locate a parser that matches the media-type of a
 source, it throws a `ConfigException` when trying to prepare the configuration.
 
-##### By Application Directive
+**By Application Directive**
 
 Your application can specify which parser to use for a config source. The
 `AbstractConfigSourceBuilder` class exposes the `parser` method, which accepts

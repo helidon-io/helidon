@@ -40,18 +40,6 @@ Info Observer configuration
 </td>
 <td>Values to be exposed using this observability endpoint</td>
 </tr>
-<tr>
-<td>
-<code>enabled</code>
-</td>
-<td>
-<code>Boolean</code>
-</td>
-<td>
-<code>true</code>
-</td>
-<td>Whether this observer is enabled</td>
-</tr>
 </tbody>
 </table>
 

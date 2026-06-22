@@ -203,29 +203,26 @@ can see a visual representation of the traces and spans within them.
     time to restrict the trace list. You will see a trace for each `curl`
     command you ran to access the application.
 
-<figure>
-<img src="../../images/guides/tracing_se_trace_list.png" alt="Trace List" />
-<figcaption>List of traces</figcaption>
-</figure>
+*List of traces*
+
+![Trace List](../../images/guides/tracing_se_trace_list.png)
 
 Click on a trace to see the trace detail page (shown below) which shows the
 spans within the trace. You can clearly see the root span (`HTTP Request`) and
 the single child span (`content-write`) along with the time over which each span
 was active.
 
-<figure>
-<img src="../../images/guides/tracing_se_first_trace.png" alt="Trace Detail" />
-<figcaption>Trace detail page</figcaption>
-</figure>
+*Trace detail page*
+
+![Trace Detail](../../images/guides/tracing_se_first_trace.png)
 
 You can examine span details by clicking on the span row. Refer to the image
 below which shows the span details including timing information. You can see
 times for each space relative to the root span.
 
-<figure>
-<img src="../../images/guides/tracing_se_span_detail.png" alt="Span Details" />
-<figcaption>Span detail page</figcaption>
-</figure>
+*Span detail page*
+
+![Span Details](../../images/guides/tracing_se_span_detail.png)
 
 ### Adding a Custom Span
 
@@ -284,18 +281,16 @@ Return to the main Jaeger UI screen and click Find Traces again. The new display
 contains an additional trace, displayed first, for the most recent `curl` you
 ran.
 
-<figure>
-<img src="../../images/guides/tracing_se_second_trace_list.png" alt="Expanded trace list" />
-<figcaption aria-hidden="true">Expanded trace list</figcaption>
-</figure>
+*Expanded trace list*
+
+![Expanded trace list](../../images/guides/tracing_se_second_trace_list.png)
 
 Notice that the top trace has three spans, not two as with the earlier trace.
 Click on the trace to see the trace details.
 
-<figure>
-<img src="../../images/guides/tracing_se_expanded_trace.png" alt="Trace details with custom span" />
-<figcaption aria-hidden="true">Trace details with custom span</figcaption>
-</figure>
+*Trace details with custom span*
+
+![Trace details with custom span](../../images/guides/tracing_se_expanded_trace.png)
 
 Note the row for `mychildSpan`--the custom span created by the added code.
 
@@ -541,10 +536,9 @@ curl -i http://localhost:8080/greet/outbound # <1>
 Refresh the Jaeger UI trace listing page and notice that there is a trace across
 two services. Click on that trace to see its details.
 
-<figure>
-<img src="../../images/guides/tracing_se_second_expanded_trace.png" alt="Traces" />
-<figcaption>Tracing across multiple services detail view</figcaption>
-</figure>
+*Tracing across multiple services detail view*
+
+![Traces](../../images/guides/tracing_se_second_expanded_trace.png)
 
 Note several things about the display:
 

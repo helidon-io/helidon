@@ -68,29 +68,6 @@ JWT authentication provider
 </tr>
 <tr>
 <td>
-<code>jwt-<wbr>groups-<wbr>path</code>
-</td>
-<td>
-<code>String</code>
-</td>
-<td>
-<code>groups</code>
-</td>
-<td>Path to the JWT payload claim containing the groups to add as role grants</td>
-</tr>
-<tr>
-<td>
-<code>jwt-<wbr>groups-<wbr>separator</code>
-</td>
-<td>
-<code>String</code>
-</td>
-<td>
-</td>
-<td>Separator used to split a string claim value into multiple groups</td>
-</tr>
-<tr>
-<td>
 <code>optional</code>
 </td>
 <td>

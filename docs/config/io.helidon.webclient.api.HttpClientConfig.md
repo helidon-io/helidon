@@ -42,6 +42,17 @@ This can be used by any HTTP client version, and does not act as a factory, for 
 </tr>
 <tr>
 <td>
+<code>base-<wbr>uri</code>
+</td>
+<td>
+<code>Client<wbr>Uri</code>
+</td>
+<td>
+</td>
+<td>Base uri used by the client in all requests</td>
+</tr>
+<tr>
+<td>
 <code>read-<wbr>timeout</code>
 </td>
 <td>
@@ -50,6 +61,18 @@ This can be used by any HTTP client version, and does not act as a factory, for 
 <td>
 </td>
 <td>Read timeout</td>
+</tr>
+<tr>
+<td>
+<code>connection-<wbr>cache-<wbr>size</code>
+</td>
+<td>
+<code>Integer</code>
+</td>
+<td>
+<code>256</code>
+</td>
+<td>Maximal size of the connection cache for a single connection key</td>
 </tr>
 <tr>
 <td>
@@ -82,116 +105,6 @@ This can be used by any HTTP client version, and does not act as a factory, for 
 </tr>
 <tr>
 <td>
-<a id="media-type-parser-mode"></a>
-<a href="io.helidon.common.media.type.ParserMode.md">
-<code>media-<wbr>type-<wbr>parser-<wbr>mode</code>
-</a>
-</td>
-<td>
-<code>Parser<wbr>Mode</code>
-</td>
-<td>
-<code>STRICT</code>
-</td>
-<td>Configure media type parsing mode for HTTP <code>Content-<wbr>Type</code> header</td>
-</tr>
-<tr>
-<td>
-<code>keep-<wbr>alive</code>
-</td>
-<td>
-<code>Boolean</code>
-</td>
-<td>
-<code>true</code>
-</td>
-<td>Determines if connection keep alive is enabled (NOT socket keep alive, but HTTP connection keep alive, to re-use the same connection for multiple requests)</td>
-</tr>
-<tr>
-<td>
-<code>share-<wbr>connection-<wbr>cache</code>
-</td>
-<td>
-<code>Boolean</code>
-</td>
-<td>
-<code>true</code>
-</td>
-<td>Whether to share connection cache between all the WebClient instances in JVM</td>
-</tr>
-<tr>
-<td>
-<a id="socket-options"></a>
-<a href="io.helidon.common.socket.SocketOptions.md">
-<code>socket-<wbr>options</code>
-</a>
-</td>
-<td>
-<code>Socket<wbr>Options</code>
-</td>
-<td>
-</td>
-<td>Socket options for connections opened by this client</td>
-</tr>
-<tr>
-<td>
-<code>redirect-<wbr>sensitive-<wbr>headers</code>
-</td>
-<td>
-<code>List&lt;<wbr>Http<wbr>Custom<wbr>Methods&gt;</code>
-</td>
-<td>
-</td>
-<td>Request header names to strip on cross-origin redirects</td>
-</tr>
-<tr>
-<td>
-<code>read-<wbr>continue-<wbr>timeout</code>
-</td>
-<td>
-<code>Duration</code>
-</td>
-<td>
-<code>PT1S</code>
-</td>
-<td>Socket 100-Continue read timeout</td>
-</tr>
-<tr>
-<td>
-<code>base-<wbr>uri</code>
-</td>
-<td>
-<code>Http<wbr>Custom<wbr>Methods</code>
-</td>
-<td>
-</td>
-<td>Base uri used by the client in all requests</td>
-</tr>
-<tr>
-<td>
-<code>connection-<wbr>cache-<wbr>size</code>
-</td>
-<td>
-<code>Integer</code>
-</td>
-<td>
-<code>256</code>
-</td>
-<td>Maximal size of the connection cache for a single connection key</td>
-</tr>
-<tr>
-<td>
-<code>base-<wbr>address</code>
-</td>
-<td>
-<code>Http<wbr>Custom<wbr>Methods</code>
-</td>
-<td>
-</td>
-<td>Base address used by the client in all requests</td>
-</tr>
-<tr>
-<td>
 <a id="cookie-manager"></a>
 <a href="io.helidon.webclient.api.WebClientCookieManager.md">
 <code>cookie-<wbr>manager</code>
@@ -217,18 +130,6 @@ This can be used by any HTTP client version, and does not act as a factory, for 
 <td>
 </td>
 <td>WebClient services</td>
-</tr>
-<tr>
-<td>
-<code>filter-<wbr>redirect-<wbr>headers</code>
-</td>
-<td>
-<code>Boolean</code>
-</td>
-<td>
-<code>true</code>
-</td>
-<td>Whether headers sensitive to cross-origin redirects should be filtered before the redirected request is sent</td>
 </tr>
 <tr>
 <td>
@@ -281,6 +182,33 @@ This can be used by any HTTP client version, and does not act as a factory, for 
 </tr>
 <tr>
 <td>
+<a id="media-type-parser-mode"></a>
+<a href="io.helidon.common.media.type.ParserMode.md">
+<code>media-<wbr>type-<wbr>parser-<wbr>mode</code>
+</a>
+</td>
+<td>
+<code>Parser<wbr>Mode</code>
+</td>
+<td>
+<code>STRICT</code>
+</td>
+<td>Configure media type parsing mode for HTTP <code>Content-<wbr>Type</code> header</td>
+</tr>
+<tr>
+<td>
+<code>keep-<wbr>alive</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Determines if connection keep alive is enabled (NOT socket keep alive, but HTTP connection keep alive, to re-use the same connection for multiple requests)</td>
+</tr>
+<tr>
+<td>
 <code>max-<wbr>in-memory-<wbr>entity</code>
 </td>
 <td>
@@ -290,6 +218,18 @@ This can be used by any HTTP client version, and does not act as a factory, for 
 <code>131072</code>
 </td>
 <td>If the entity is expected to be smaller that this number of bytes, it would be buffered in memory to optimize performance</td>
+</tr>
+<tr>
+<td>
+<code>share-<wbr>connection-<wbr>cache</code>
+</td>
+<td>
+<code>Boolean</code>
+</td>
+<td>
+<code>true</code>
+</td>
+<td>Whether to share connection cache between all the WebClient instances in JVM</td>
 </tr>
 <tr>
 <td>
@@ -314,6 +254,20 @@ This can be used by any HTTP client version, and does not act as a factory, for 
 <code>10</code>
 </td>
 <td>Max number of followed redirects</td>
+</tr>
+<tr>
+<td>
+<a id="socket-options"></a>
+<a href="io.helidon.common.socket.SocketOptions.md">
+<code>socket-<wbr>options</code>
+</a>
+</td>
+<td>
+<code>Socket<wbr>Options</code>
+</td>
+<td>
+</td>
+<td>Socket options for connections opened by this client</td>
 </tr>
 <tr>
 <td>
@@ -352,18 +306,22 @@ This can be used by any HTTP client version, and does not act as a factory, for 
 </td>
 <td>Properties configured for this client</td>
 </tr>
+<tr>
+<td>
+<code>read-<wbr>continue-<wbr>timeout</code>
+</td>
+<td>
+<code>Duration</code>
+</td>
+<td>
+<code>PT1S</code>
+</td>
+<td>Socket 100-Continue read timeout</td>
+</tr>
 </tbody>
 </table>
 
 
-
-## Dependent Types
-
-- [io.<wbr>helidon.<wbr>webclient.<wbr>api.<wbr>WebClient](io.helidon.webclient.api.WebClient.md)
-- [io.<wbr>helidon.<wbr>webclient.<wbr>grpc.<wbr>Grpc<wbr>Client](io.helidon.webclient.grpc.GrpcClient.md)
-- [io.<wbr>helidon.<wbr>webclient.<wbr>http1.<wbr>Http1Client](io.helidon.webclient.http1.Http1Client.md)
-- [io.<wbr>helidon.<wbr>webclient.<wbr>jsonrpc.<wbr>Json<wbr>RpcClient](io.helidon.webclient.jsonrpc.JsonRpcClient.md)
-- [io.<wbr>helidon.<wbr>webclient.<wbr>websocket.<wbr>WsClient](io.helidon.webclient.websocket.WsClient.md)
 
 ---
 

@@ -21,7 +21,7 @@ A set of configurable options expected to be used by each media support
 <code>accepted-<wbr>media-<wbr>types</code>
 </td>
 <td>
-<code>List&lt;<wbr>Custom<wbr>Methods&gt;</code>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
 <td>Types accepted by this media support</td>
 </tr>
@@ -39,7 +39,7 @@ A set of configurable options expected to be used by each media support
 <code>content-<wbr>type</code>
 </td>
 <td>
-<code>Custom<wbr>Methods</code>
+<code>String</code>
 </td>
 <td>Content type to use if not configured (in response headers for server, and in request headers for client)</td>
 </tr>
@@ -47,15 +47,6 @@ A set of configurable options expected to be used by each media support
 </table>
 
 
-
-## Dependent Types
-
-- [io.<wbr>helidon.<wbr>http.<wbr>media.<wbr>gson.<wbr>Gson<wbr>Support](io.helidon.http.media.gson.GsonSupport.md)
-- [io.<wbr>helidon.<wbr>http.<wbr>media.<wbr>jackson.<wbr>Jackson<wbr>Support](io.helidon.http.media.jackson.JacksonSupport.md)
-- [io.<wbr>helidon.<wbr>http.<wbr>media.<wbr>json.<wbr>Json<wbr>Support](io.helidon.http.media.json.JsonSupport.md)
-- [io.<wbr>helidon.<wbr>http.<wbr>media.<wbr>json.<wbr>binding.<wbr>Json<wbr>Binding<wbr>Support](io.helidon.http.media.json.binding.JsonBindingSupport.md)
-- [io.<wbr>helidon.<wbr>http.<wbr>media.<wbr>json.<wbr>smile.<wbr>Smile<wbr>Support](io.helidon.http.media.json.smile.SmileSupport.md)
-- [io.<wbr>helidon.<wbr>http.<wbr>media.<wbr>jsonb.<wbr>Jsonb<wbr>Support](io.helidon.http.media.jsonb.JsonbSupport.md)
 
 ---
 

@@ -77,7 +77,7 @@ This type is a provider contract.
 <code>idcs-<wbr>role-<wbr>mapper</code>
 </a>
 </td>
-<td>Multitenant IDCS role mapping provider. With default endpoint resolution, the first identity URI host label and extracted tenant IDs must be single DNS labels: 1 to 63 alphanumeric or hyphen characters, with no leading or trailing hyphen</td>
+<td>Multitenant IDCS role mapping provider</td>
 </tr>
 <tr>
 <td>

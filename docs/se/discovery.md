@@ -221,7 +221,7 @@ Generated documentation normatively describing the provider’s configuration in
 full can be found in Helidon’s [Configuration Reference][configuration-re]. Some
 common usages and examples are detailed below.
 
-##### Configuring the Location of the Eureka Server
+**Configuring the Location of the Eureka Server**
 
 In order for the Helidon Eureka Discovery provider to do any meaningful work,
 you must tell it where the Eureka server is. (Discovery cannot bootstrap
@@ -248,7 +248,7 @@ discovery: #<1>
    servers are normally hosted on port `8761`.
 <!--@mdc :: -->
 
-##### Configuring Caching
+**Configuring Caching**
 
 The Helidon Eureka Discovery provider uses a local cache of discovered URIs by
 default. You can configure, among [other things][other-things]:
@@ -287,7 +287,7 @@ discovery: #<1>
    `PT30S` (30 seconds) by default.
 <!--@mdc :: -->
 
-##### Configuring IP Address vs. Hostname
+**Configuring IP Address vs. Hostname**
 
 The Helidon Eureka Discovery provider can be configured to prefer IP addresses
 in URIs when possible (instead of hostnames).
@@ -305,7 +305,7 @@ discovery: # <1>
    default.
 <!--@mdc :: -->
 
-##### Disabling the Provider
+**Disabling the Provider**
 
 In some testing scenarios, it may be useful to disable the Helidon Eureka
 Discovery provider entirely. (When any Discovery provider is disabled, only

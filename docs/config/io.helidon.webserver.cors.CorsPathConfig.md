@@ -46,7 +46,7 @@ Configuration of CORS for a specific path
 <code>max-<wbr>age</code>
 </td>
 <td>
-<code>Path<wbr>Custom<wbr>Methods</code>
+<code>String</code>
 </td>
 <td>
 <code>PT1H</code>

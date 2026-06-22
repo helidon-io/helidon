@@ -50,7 +50,7 @@ Configuration of Static content feature
 <code>content-<wbr>types</code>
 </td>
 <td>
-<code>Map&lt;<wbr>String,<wbr> Static<wbr>Content<wbr>Methods&gt;</code>
+<code>Map&lt;<wbr>String,<wbr> Media<wbr>Type&gt;</code>
 </td>
 <td>
 </td>

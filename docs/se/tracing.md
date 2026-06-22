@@ -500,9 +500,7 @@ tracing:
 
 Example of Zipkin trace:
 
-<figure>
-<img src="../images/webserver/zipkin.png" alt="Zipkin example" />
-</figure>
+![Zipkin example](../images/webserver/zipkin.png)
 
 ## OpenTelemetry Tracing
 

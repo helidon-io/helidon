@@ -251,7 +251,7 @@ Metrics for Virtual Threads
 
 #### Configuring Virtual Threads Metrics
 
-##### Enabling Virtual Threads Metrics
+**Enabling Virtual Threads Metrics**
 
 Gathering data to compute the metrics for virtual threads is designed to be as
 efficient as possible, but doing so still imposes a load on the server and by
@@ -266,7 +266,7 @@ Enabling virtual thread metrics:
 metrics.virtual-threads.enabled = true
 ```
 
-##### Controlling Measurements of Pinned Virtual Threads
+**Controlling Measurements of Pinned Virtual Threads**
 
 Helidon measures pinned virtual threads only when the thread is pinned for a
 length of time at or above a threshold. Control the threshold as shown in the

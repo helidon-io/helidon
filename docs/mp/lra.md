@@ -40,26 +40,20 @@ the transaction by calling it complete. The coordinator then calls the JAX-RS
 [participant](#participant). As the completed or compensated participants don’t
 have to be on same instance, the whole architecture is highly scalable.
 
-<figure>
-<img src="../images/lra/lra-complete-lb.svg" alt="Complete" />
-</figure>
+![Complete](../images/lra/lra-complete-lb.svg)
 
 If an error occurs during the LRA transaction, the participant reports a
 cancellation of LRA to the coordinator. [Coordinator](#coordinator) calls
 compensate on all the joined participants.
 
-<figure>
-<img src="../images/lra/lra-compensate-lb-error.svg" alt="Cancel" />
-</figure>
+![Cancel](../images/lra/lra-compensate-lb-error.svg)
 
 When a participant joins the LRA with timeout defined `@LRA(value =
 LRA.Type.REQUIRES_NEW, timeLimit = 5, timeUnit = ChronoUnit.MINUTES)`, the
 coordinator compensates if the timeout occurred before the close is reported by
 the participants.
 
-<figure>
-<img src="../images/lra/lra-compensate-lb-timeout.svg" alt="Timeout" />
-</figure>
+![Timeout](../images/lra/lra-compensate-lb-timeout.svg)
 
 ## API
 

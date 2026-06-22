@@ -69,7 +69,7 @@ Merged configuration for server.features.security.security.providers.idcs-role-m
 </td>
 <td>
 </td>
-<td>Token handler for an IDCS tenant ID. The extracted tenant ID must be a single DNS label: 1 to 63 alphanumeric or hyphen characters, with no leading or trailing hyphen. Invalid tenant IDs fail before endpoint resolution</td>
+<td>Configure token handler for IDCS Tenant ID</td>
 </tr>
 <tr>
 <td>

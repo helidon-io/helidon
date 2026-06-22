@@ -170,7 +170,7 @@ The new `app.greeting` value in `application.yaml` is used.
    precedence over `config.properties`.
 <!--@mdc :: -->
 
-##### Environment Variable Override
+**Environment Variable Override**
 
 An environment property has a higher precedence than `application.yaml`.
 
@@ -195,7 +195,7 @@ The environment property took precedence over `application.yaml`.
 }
 ```
 
-##### System Property Override
+**System Property Override**
 
 A system variable has a higher precedence than the environment property.
 

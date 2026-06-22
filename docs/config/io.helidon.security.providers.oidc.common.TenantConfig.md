@@ -240,7 +240,7 @@ Open ID Connect tenant configuration
 <td>
 <code>CLIENT_<wbr>SECRET_<wbr>BASIC</code>
 </td>
-<td>Type of authentication to use when invoking the token endpoint. With CLIENT_SECRET_BASIC, credentials are sent only to POST requests on the resolved token endpoint scheme, host, and path and, when JWT introspection is used, to POST requests on the resolved introspection endpoint scheme, host, and path</td>
+<td>Type of authentication to use when invoking the token endpoint</td>
 </tr>
 <tr>
 <td>

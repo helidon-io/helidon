@@ -264,7 +264,7 @@ Merged configuration for langchain4j.providers.oci-gen-ai-cohere
 <code>region</code>
 </td>
 <td>
-<code>Oci<wbr>Factory<wbr>Methods</code>
+<code>String</code>
 </td>
 <td>
 </td>
@@ -298,7 +298,7 @@ Merged configuration for langchain4j.providers.oci-gen-ai-cohere
 <code>serving-<wbr>type</code>
 </td>
 <td>
-<code>Oci<wbr>Factory<wbr>Methods</code>
+<code>String</code>
 </td>
 <td>
 </td>

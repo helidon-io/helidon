@@ -58,7 +58,7 @@ below][example-below] illustrates one way to do this.
 Your application supplies data for the OpenAPI model using a static OpenAPI
 file.
 
-##### Provide a static OpenAPI file
+**Provide a static OpenAPI file**
 
 Add a static file at `META-INF/openapi.yml`, `META-INF/openapi.yaml`, or
 `META-INF/openapi.json`. Tools such as Swagger let you describe your app’s API

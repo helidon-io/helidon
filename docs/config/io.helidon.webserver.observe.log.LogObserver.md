@@ -54,18 +54,6 @@ Log Observer configuration
 </td>
 <td>Permit all access, even when not authorized</td>
 </tr>
-<tr>
-<td>
-<code>enabled</code>
-</td>
-<td>
-<code>Boolean</code>
-</td>
-<td>
-<code>true</code>
-</td>
-<td>Whether this observer is enabled</td>
-</tr>
 </tbody>
 </table>
 

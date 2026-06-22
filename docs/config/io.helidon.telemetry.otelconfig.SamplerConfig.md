@@ -48,6 +48,10 @@ Tracing sampler settings
 
 
 
+## Usages
+
+- <a href="io.helidon.telemetry.otelconfig.OpenTelemetryTracingConfig.md#sampler"><code>telemetry.<wbr>signals.<wbr>tracing.<wbr>sampler</code></a>
+
 ---
 
 See the [manifest](manifest.md) for all available types.

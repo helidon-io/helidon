@@ -2,7 +2,7 @@
 
 ## Description
 
-Multitenant IDCS role mapping provider. With default endpoint resolution, the first identity URI host label and extracted tenant IDs must be single DNS labels: 1 to 63 alphanumeric or hyphen characters, with no leading or trailing hyphen
+Multitenant IDCS role mapping provider
 
 ## Configuration options
 
@@ -98,7 +98,7 @@ Multitenant IDCS role mapping provider. With default endpoint resolution, the fi
 </td>
 <td>
 </td>
-<td>Token handler for an IDCS tenant ID. The extracted tenant ID must be a single DNS label: 1 to 63 alphanumeric or hyphen characters, with no leading or trailing hyphen. Invalid tenant IDs fail before endpoint resolution</td>
+<td>Configure token handler for IDCS Tenant ID</td>
 </tr>
 </tbody>
 </table>

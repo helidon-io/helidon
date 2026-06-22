@@ -322,6 +322,7 @@ particularly consider are summarized in the table below. Refer to the [earlier
 links](#configuration) for complete lists.
 
 Common OpenAPI Generator Additional Properties:
+
 <table>
 <thead>
 <tr>
@@ -334,32 +335,33 @@ Common OpenAPI Generator Additional Properties:
 </thead>
 <tbody>
 <tr>
-<td><code>helidonVersion</code></td>
+<td><code>helidon<wbr>Version</code></td>
 <td>Version of Helidon for which to generate the files</td>
-<td> </td>
+<td></td>
 <td>Latest published Helidon release *</td>
-<td>Affects:
-<ul>
-<li>Helidon version for the <code>&lt;parent&gt;</code></li>
-<li>Dependencies (<code>javax</code> vs. <code>jakarta</code>)</li>
-<li><code>java import</code> statements in generated code (<code>javax</code> vs. <code>jakarta</code>)</li>
-<li>Which Helidon APIs are used (3.x vs. 4.x, for example)</li>
-</ul>
+<td>
+Affects the APIs which are used, Helidon 3.x vs Helidon 4.x or  <code>javax</code> vs. <code>jakarta</code>
 </td>
 </tr>
 <tr>
-<td><code>fullProject</code></td>
-<td>Whether to generate all the normal files or only API files</td>
-<td><code>true</code>/<code>false</code></td>
-<td><code>false</code></td>
-<td>The "API files" include files developers do not normally modify after they are generated: the interfaces or classes for the declared API and the model classes.</td>
+<td rowspan="2"><code>full<wbr>Project</code></td>
+<td rowspan="2">Whether to generate all the normal files or only API files</td>
+<td><code>true</code></td>
+<td rowspan="2"><code>false</code></td>
+<td rowspan="2">The "API files" include files developers do not normally modify after they are generated: the interfaces or classes for the declared API and the model classes.</td>
 </tr>
 <tr>
-<td><code>serializationLibrary</code></td>
-<td>which Java library to use for serializing JSON</td>
-<td><code>jsonb</code>, <code>jackson</code></td>
+<td><code>false</code></td>
+</tr>
+<tr>
+<td rowspan="2"><code>serialization<wbr>Library</code></td>
+<td rowspan="2">Which Java library to use for serializing JSON</td>
+<td><code>jsonb</code></td>
+<td rowspan="2"><code>jackson</code></td>
+<td rowspan="2"></td>
+</tr>
+<tr>
 <td><code>jackson</code></td>
-<td></td>
 </tr>
 </tbody>
 </table>
@@ -721,7 +723,7 @@ other generated builder methods. The following example illustrates this for the
 
 The customized findPetsByTags method in the PetApiImpl class:
 
-<!--@mdc ::code-callout -->
+<!--@mdc ::code-callout{collapsed} -->
 ```java
 public class PetServiceImpl extends PetService {
 
@@ -780,13 +782,13 @@ You can override any of the generated behavior by adding code to the generated
 API implementation class you are already editing to customize the `handleXxx`
 methods and by writing new classes which extend some of the generated classes.
 
-##### Override routing
+**Override routing**
 
 To change the way routing occurs, simply override the `routing` method in your
 `PetServiceImpl` class. Make sure your custom routing handles all the paths for
 which the API is responsible.
 
-##### Override how to extract one or more parameters from a request
+**Override how to extract one or more parameters from a request**
 
 For each operation in an API the generator creates an inner class and, for each
 incoming parameter for that operation, a method which extracts and validates the
@@ -840,7 +842,7 @@ the `AddPetOp` as an example.
   }
   ```
 
-##### Override how an operation is prepared from a request
+**Override how an operation is prepared from a request**
 
 The generated abstract class contains a method named for each operation declared
 in the OpenAPI document (`addPet`) which accepts the Helidon request and
@@ -887,7 +889,7 @@ The next sections describe, from simplest to most complicated, the ways your
 code can create an `ApiClient` instance, each involving increased involvement
 with the `WebClientConfig.Builder` object.
 
-##### Accepting the Automatic `WebClientConfig.Builder`
+**Accepting the Automatic `WebClientConfig.Builder`**
 
 In the simplest case, your code can get an `ApiClient` instance directly.
 
@@ -914,7 +916,7 @@ Your code relies fully on the automatic `WebClient`. In many cases, this
 approach works very well, especially if the OpenAPI document correctly declares
 the servers and their URIs.
 
-##### Influencing the Automatic `WebClientConfig.Builder`
+**Influencing the Automatic `WebClientConfig.Builder`**
 
 Your code can use the `ApiClient.Builder` to fine-tune the settings for the
 internal `WebClientConfig.Builder`. For instance, your code can set an object
@@ -947,7 +949,7 @@ public class ExampleClient {
 - Sets the object mapper for use in the `ApiClient.Builder` 's internal
   `WebClientConfig.Builder`.
 
-##### Adjusting the Automatic `WebClientConfig.Builder`
+**Adjusting the Automatic `WebClientConfig.Builder`**
 
 In more complicated situations, your code can adjust the settings of the
 `WebClientConfig.Builder` which the `ApiClient.Builder` creates.
@@ -982,7 +984,7 @@ public class ExampleClient {
 The automatic `WebClientConfig.Builder` retains information derived from the
 OpenAPI document unless your code overrides those specific settings.
 
-##### Providing a Custom `WebClientConfig.Builder`
+**Providing a Custom `WebClientConfig.Builder`**
 
 Lastly, you can construct the `WebClientConfig.Builder` entirely yourself and
 have the `ApiClient.Builder` use it instead of its own internal builder.
@@ -1088,7 +1090,7 @@ HTTP response:
 You can adopt different styles of retrieving the results, depending on the
 specific needs of the code you are writing.
 
-##### Access only the result
+**Access only the result**
 
 Access with only result access:
 
@@ -1106,7 +1108,7 @@ void findAvailablePets() {
 2. Retrieve the typed result from the `ApiResponse`.
 <!--@mdc :: -->
 
-##### Access with status checking
+**Access with status checking**
 
 The Helidon WebClient programming model includes a `HTTPClientResponse`
 interface which exposes all aspects of the HTTP response returned from the

@@ -44,10 +44,13 @@ OpenTelemetry metric exporter settings
 </tr>
 <tr>
 <td>
+<a id="temporality-preference"></a>
+<a href="io.helidon.telemetry.otelconfig.MetricTemporalityPreferenceType.md">
 <code>temporality-<wbr>preference</code>
+</a>
 </td>
 <td>
-<code>Custom<wbr>Methods</code>
+<code>Metric<wbr>Temporality<wbr>Preference<wbr>Type</code>
 </td>
 <td>
 </td>
@@ -134,7 +137,7 @@ OpenTelemetry metric exporter settings
 <code>protocol</code>
 </td>
 <td>
-<code>Custom<wbr>Methods</code>
+<code>String</code>
 </td>
 <td>
 <code>DEFAULT</code>
@@ -160,7 +163,7 @@ OpenTelemetry metric exporter settings
 <code>default-<wbr>histogram-<wbr>aggregation</code>
 </td>
 <td>
-<code>Custom<wbr>Methods</code>
+<code>Default<wbr>Aggregation<wbr>Selector</code>
 </td>
 <td>
 </td>
@@ -196,10 +199,13 @@ OpenTelemetry metric exporter settings
 </tr>
 <tr>
 <td>
+<a id="retry-policy"></a>
+<a href="io.helidon.telemetry.otelconfig.RetryPolicyConfig.md">
 <code>retry-<wbr>policy</code>
+</a>
 </td>
 <td>
-<code>Custom<wbr>Methods</code>
+<code>Retry<wbr>Policy<wbr>Config</code>
 </td>
 <td>
 </td>

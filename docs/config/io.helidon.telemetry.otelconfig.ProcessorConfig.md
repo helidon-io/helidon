@@ -46,6 +46,11 @@ Generic configuration for a processor such as a <code>io.<wbr>opentelemetry.<wbr
 
 - [io.<wbr>helidon.<wbr>telemetry.<wbr>otelconfig.<wbr>Batch<wbr>Processor<wbr>Config](io.helidon.telemetry.otelconfig.BatchProcessorConfig.md)
 
+## Usages
+
+- <a href="io.helidon.telemetry.otelconfig.OpenTelemetryLoggingConfig.md#processors"><code>telemetry.<wbr>signals.<wbr>logging.<wbr>processors</code></a>
+- <a href="io.helidon.telemetry.otelconfig.OpenTelemetryTracingConfig.md#processors"><code>telemetry.<wbr>signals.<wbr>tracing.<wbr>processors</code></a>
+
 ---
 
 See the [manifest](manifest.md) for all available types.

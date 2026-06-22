@@ -499,7 +499,7 @@ JSON metrics output for the base scope (partial):
 }
 ```
 
-##### Understanding the JSON Metrics Data Format
+**Understanding the JSON Metrics Data Format**
 
 The Helidon JSON format expresses each meter as either a single value (for
 example, a counter) or a structure with multiple values (for example, a timer).
@@ -530,7 +530,7 @@ JSON output for a multivalued meter (for example, Timer):
 By default, Helidon formats time values contained in JSON output as seconds. You
 can change this behavior [as described below](#controlling-json-timer-output).
 
-##### Understanding the JSON Metrics Metadata Format
+**Understanding the JSON Metrics Metadata Format**
 
 Access the metrics endpoint with an HTTP `OPTIONS` request and the `Accept:
 application/json` header to retrieve metadata in JSON format.
@@ -565,7 +565,7 @@ lead to different timers being formatted using different units. Checking the
 metadata is the only way to know for sure what units Helidon used to express a
 given timer, so Helidon always includes `unit` in timer metadata.
 
-##### Controlling JSON Timer Output
+**Controlling JSON Timer Output**
 
 By default, Helidon expresses timer data as seconds.
 

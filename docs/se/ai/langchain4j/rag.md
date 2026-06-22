@@ -70,9 +70,7 @@ langchain4j:
       embedding-store: foo-bar-inmemory-embedding-store
 ```
 
-<figure>
-<img src="../../../images/lc4j/content-retriever-relationships.svg" alt="Content retriever relationships with Lc4j components" />
-</figure>
+![Content retriever relationships with Lc4j components](../../../images/lc4j/content-retriever-relationships.svg)
 
 ### Configuration options
 

@@ -31,30 +31,6 @@ Configuration of Config Observer
 </tr>
 <tr>
 <td>
-<code>safe-<wbr>keys</code>
-</td>
-<td>
-<code>List&lt;<wbr>String&gt;</code>
-</td>
-<td>
-<code>server[.<wbr>]host,<wbr> server[.<wbr>]port,<wbr> server[.<wbr>]sockets[.<wbr>][^.<wbr>]+[.<wbr>]host,<wbr> server[.<wbr>]sockets[.<wbr>][^.<wbr>]+[.<wbr>]port,<wbr> server[.<wbr>]features[.<wbr>]observe[.<wbr>]enabled,<wbr> server[.<wbr>]features[.<wbr>]observe[.<wbr>]endpoint,<wbr> server[.<wbr>]features[.<wbr>]observe[.<wbr>]sockets,<wbr> server[.<wbr>]features[.<wbr>]observe[.<wbr>]weight,<wbr> server[.<wbr>]features[.<wbr>]observe[.<wbr>]observers[.<wbr>][^.<wbr>]+[.<wbr>]enabled,<wbr> server[.<wbr>]features[.<wbr>]observe[.<wbr>]observers[.<wbr>][^.<wbr>]+[.<wbr>]endpoint,<wbr> server[.<wbr>]features[.<wbr>]observe[.<wbr>]observers[.<wbr>][^.<wbr>]+[.<wbr>]name</code>
-</td>
-<td>Safe key patterns (regular expressions) to include in output</td>
-</tr>
-<tr>
-<td>
-<code>unsafe-<wbr>values</code>
-</td>
-<td>
-<code>Boolean</code>
-</td>
-<td>
-<code>false</code>
-</td>
-<td>Whether to include values that do not match configured <code>safe-<wbr>keys</code> patterns; values whose keys match configured <code>secrets</code> patterns are still obfuscated</td>
-</tr>
-<tr>
-<td>
 <code>permit-<wbr>all</code>
 </td>
 <td>
@@ -75,18 +51,6 @@ Configuration of Config Observer
 <code>.*password,<wbr> .*passphrase,<wbr> .*secret</code>
 </td>
 <td>Secret patterns (regular expressions) to exclude from output</td>
-</tr>
-<tr>
-<td>
-<code>enabled</code>
-</td>
-<td>
-<code>Boolean</code>
-</td>
-<td>
-<code>true</code>
-</td>
-<td>Whether this observer is enabled</td>
 </tr>
 </tbody>
 </table>

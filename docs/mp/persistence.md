@@ -36,7 +36,7 @@ exhaustive.
 
 #### Setting Up a Connection Pool
 
-##### Overview
+**Overview**
 
 Helidon MP’s named data source integration requires a connection pool
 implementation.
@@ -50,9 +50,9 @@ You can choose to use either, but not both.
 
 Details concerning each connection pool’s setup are described below.
 
-##### Setting Up the HikariCP Connection Pool
+**Setting Up the HikariCP Connection Pool**
 
-###### Maven Coordinates (HikariCP)
+**Maven Coordinates (HikariCP)**
 
 To include the [HikariCP connection pool][hikaricp] in your Helidon MP
 application:
@@ -73,9 +73,9 @@ application:
     available on the runtime classpath.
   <!--@mdc :: -->
 
-##### Setting up the Oracle Universal Connection Pool
+**Setting up the Oracle Universal Connection Pool**
 
-###### Maven Coordinates (Oracle Universal Connection Pool)
+**Maven Coordinates (Oracle Universal Connection Pool)**
 
 To include the [Oracle Universal Connection Pool][oracle-universal] in your
 Helidon MP application:
@@ -98,7 +98,7 @@ Helidon MP application:
 
 #### Setting Up a Database Driver
 
-##### Overview
+**Overview**
 
 Regardless of which connection pool you use, at the lowest level, JDBC database
 driver classes are what is ultimately responsible for making any connections to
@@ -117,9 +117,9 @@ JDBC.
 Representative setups are described below. This list of setups is not
 exhaustive.
 
-##### Setting Up H2
+**Setting Up H2**
 
-###### Maven Coordinates (H2)
+**Maven Coordinates (H2)**
 
 To include the [H2 JDBC driver][h2-jdbc-driver] classes in your Helidon MP
 application so your application can [connect to an H2
@@ -141,9 +141,9 @@ database][connect-to-an-h2] (whether in-memory or persistent):
     available on the runtime classpath.
   <!--@mdc :: -->
 
-##### Setting Up Oracle JDBC
+**Setting Up Oracle JDBC**
 
-###### Maven Coordinates (Oracle JDBC)
+**Maven Coordinates (Oracle JDBC)**
 
 To include the [Oracle JDBC driver classes][oracle-jdbc-driv] in your Helidon MP
 application so your application can [connect to an Oracle
@@ -249,7 +249,7 @@ Here are some examples illustrating general named data source configuration
 patterns in various [common MicroProfile Config-compatible
 locations][common-microprof].
 
-##### Example: `META-INF/microprofile-config.properties` Classpath Resource
+**Example: `META-INF/microprofile-config.properties` Classpath Resource**
 
 Here is an example of some named data source configuration as might be found in
 a `src/main/resources/META-INF/microprofile-config.properties` configuration
@@ -260,7 +260,7 @@ javax.sql.DataSource.yourDataSourceName.somePropertyOfYourConnectionPoolAndDataS
 javax.sql.DataSource.yourDataSourceName.someOtherPropertyOfYourConnectionPoolAndDataSource = anotherValue
 ```
 
-##### Example: System Properties Set on the Command Line
+**Example: System Properties Set on the Command Line**
 
 Here is an example of some named data source configuration using system
 properties on the command line instead:
@@ -272,7 +272,7 @@ java \
   # ...
 ```
 
-##### Example: Environment Variables Set on the Command Line
+**Example: Environment Variables Set on the Command Line**
 
 Here is an example of some named data source configuration using environment
 variables as typed directly into a command line shell, relying on [MicroProfile
@@ -285,7 +285,7 @@ JAVAX_SQL_DATASOURCE_YOURDATASOURCENAME_SOMEOTHERPROPERTYOFYOURCONNECTIONPOOLAND
 java # ...
 ```
 
-##### Example: Environment Variables Set By the `env` Command
+**Example: Environment Variables Set By the `env` Command**
 
 Here is an example of some named data source configuration using environment
 variables as supplied via the [`env` shell command][env-shell-comman], thus
@@ -297,7 +297,7 @@ env 'javax.sql.DataSource.yourDataSourceName.somePropertyOfYourConnectionPoolAnd
   java # ...
 ```
 
-##### Example: `application.yaml` Classpath Resource
+**Example: `application.yaml` Classpath Resource**
 
 Here is an example of some named data source configuration as might be found in
 a `src/main/resources/application.yaml` classpath resource:
@@ -311,7 +311,7 @@ javax:
         someOtherPropertyOfYourConnectionPoolAndDataSource: anotherValue
 ```
 
-##### Example: Configuring the Oracle Universal Connection Pool and Oracle JDBC
+**Example: Configuring the Oracle Universal Connection Pool and Oracle JDBC**
 
 This example presumes you have:
 
@@ -359,7 +359,7 @@ implementation. In some cases, the Oracle Universal Connection Pool will set the
 given [property][set-the-given-pr] on *both* the connection pool itself *and* on
 the vendor-supplied `DataSource` it manages.
 
-##### Example: Configuring the HikariCP Connection Pool and H2
+**Example: Configuring the HikariCP Connection Pool and H2**
 
 This example presumes you have:
 
@@ -603,7 +603,7 @@ your project you will need to understand:
 
 #### Setting Up a JPA Provider
 
-##### Overview
+**Overview**
 
 While the Jakarta Persistence specification standardizes many aspects around
 programming and usage, it deliberately leaves many required setup and
@@ -623,7 +623,7 @@ work with your chosen JPA provider, you must:
 
 Details and examples for each supported JPA provider are below.
 
-##### Maven Coordinates (Common)
+**Maven Coordinates (Common)**
 
 To include the Jakarta Persistence APIs that you will need and to include the
 core of Helidon’s Jakarta Persistence integration:
@@ -661,7 +661,7 @@ core of Helidon’s Jakarta Persistence integration:
 These `<dependency>` elements do not set up a JPA provider. See details below
 for the JPA provider you have chosen to use.
 
-##### Setting Up Static Metamodel Generation
+**Setting Up Static Metamodel Generation**
 
 To generate and compile the Jakarta Persistence static metamodel for your
 application, regardless of whether you are using Hibernate ORM or EclipseLink,
@@ -715,7 +715,7 @@ documentation.
 > [!NOTE]
 > Many parts of Hibernate ORM’s documentation of this feature are outdated.
 
-##### Maven Coordinates (Hibernate ORM)
+**Maven Coordinates (Hibernate ORM)**
 
 To include Helidon’s Jakarta Persistence-related integration for Hibernate ORM:
 
@@ -735,7 +735,7 @@ To include Helidon’s Jakarta Persistence-related integration for Hibernate ORM
   - The `scope` is `runtime`, which ensures that Helidon MP’s Hibernate ORM
     integration is available at runtime.
 
-##### Setting Up Static Weaving (Hibernate ORM)
+**Setting Up Static Weaving (Hibernate ORM)**
 
 Hibernate ORM can alter your classes' bytecode at build time to keep track of
 changes made to objects participating in Jakarta Persistence workflows.
@@ -784,7 +784,7 @@ For more on Hibernate ORM’s bytecode enhancement (weaving) in general, see
 For more on bytecode enhancement properties, see [Bytecode Enhancement
 Properties][bytecode-enhance-2] in Hibernate ORM’s documentation.
 
-##### Maven Coordinates (EclipseLink)
+**Maven Coordinates (EclipseLink)**
 
 To include Helidon’s Jakarta Persistence-related integration for EclipseLink:
 
@@ -805,7 +805,7 @@ To include Helidon’s Jakarta Persistence-related integration for EclipseLink:
     integration is available at runtime.
   <!--@mdc :: -->
 
-##### Setting Up Static Weaving (EclipseLink)
+**Setting Up Static Weaving (EclipseLink)**
 
 EclipseLink can alter your classes' bytecode at build time to keep track of
 changes made to objects participating in Jakarta Persistence workflows.
@@ -927,7 +927,7 @@ element identifies a named persistence unit that will correspond to an
 `EntityManager` in your code, and represents a collection of entities in a
 relational database.
 
-##### Example: Persistence Unit Skeleton
+**Example: Persistence Unit Skeleton**
 
 Here is a partial example of a persistence unit named `test` with a helpful
 description:
@@ -959,7 +959,7 @@ description:
 > A `<persistence-unit>` is represented in Jakarta Persistence as an instance of
 > the [`PersistenceUnitInfo`][persistenceuniti] class.
 
-##### JTA Data Source
+**JTA Data Source**
 
 A persistence unit is always associated with exactly one [named data
 source](#named-data-source-integration).
@@ -973,7 +973,7 @@ you link a persistence unit to a [named data
 source](#named-data-source-integration) you previously
 [configured](#configuration).
 
-###### Example: Persistence Unit with JTA Data Source
+**Example: Persistence Unit with JTA Data Source**
 
 Here is a partial example of a persistence unit named `test`, with a helpful
 description, linked with a JTA data source named `main`:
@@ -1000,7 +1000,7 @@ description, linked with a JTA data source named `main`:
 2. Other persistence unit characteristics go here.
 <!--@mdc :: -->
 
-##### Classes
+**Classes**
 
 A persistence unit lists the classes that should be managed and that will take
 part in Jakarta Persistence workflows. You must list:
@@ -1019,7 +1019,7 @@ managed classes listed above.
 > file to describe managed classes][other-mechanisms], but they may or may not
 > be honored by a given JPA provider.
 
-###### Example: Persistence Unit with Class Elements
+**Example: Persistence Unit with Class Elements**
 
 Here is a partial example of a persistence unit named `test`, with a helpful
 description, linked with a JTA data source named `main`, containing two entity
@@ -1046,7 +1046,7 @@ classes:
 2. Other persistence unit characteristics go here.
 <!--@mdc :: -->
 
-##### Properties
+**Properties**
 
 Persistence units can have simple properties attached to them to further
 configure the backing JPA provider. You use the [`<properties>`
@@ -1061,7 +1061,7 @@ element][properties-eleme] to specify them.
 > above for how a persistence unit is linked to a [named data
 > source](#named-data-source-integration).
 
-###### Example: Persistence Unit with Properties
+**Example: Persistence Unit with Properties**
 
 Here is a partial exmaple of a persistence unit named `test`, with a helpful
 description, linked with a JTA data source named `sample`, containing two entity

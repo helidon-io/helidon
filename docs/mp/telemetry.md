@@ -82,9 +82,7 @@ to a backend service for monitoring and visualization. This enables developers
 to gain a comprehensive understanding of the system’s behavior and detect any
 issues or bottlenecks that may arise.
 
-<figure>
-<img src="../images/telemetry/telemetry-general.png" alt="General understanding of OpenTelemetry Tracing" />
-</figure>
+![General understanding of OpenTelemetry Tracing](../images/telemetry/telemetry-general.png)
 
 There are two ways to work with Telemetry, using:
 
@@ -562,9 +560,7 @@ Hello World
 
 Next, launch the Jaeger UI at <http://localhost:16686/>. The expected output is:
 
-<figure>
-<img src="../images/telemetry/telemetry-greeting-jaeger.png" alt="Greeting service tracing output" />
-</figure>
+![Greeting service tracing output](../images/telemetry/telemetry-greeting-jaeger.png)
 
 Custom method:
 
@@ -604,9 +600,7 @@ curl localhost:8080/greeting/custom
 Again you can launch the Jaeger UI at <http://localhost:16686/>. The expected
 output is:
 
-<figure>
-<img src="../images/telemetry/telemetry-custom-jaeger.png" alt="Custom span usage" />
-</figure>
+![Custom span usage](../images/telemetry/telemetry-custom-jaeger.png)
 
 Now let us use multiple services calls. In the example below our main service
 will call the `secondary` services. Each method in each service will be
@@ -661,9 +655,7 @@ with corresponding names, and a service class hierarchy will be created.
 Launch the Jaeger UI at <http://localhost:16686/> to see the expected output
 (shown below).
 
-<figure>
-<img src="../images/telemetry/telemetry-outbound-jaeger.png" alt="Secondary service outbound call" />
-</figure>
+![Secondary service outbound call](../images/telemetry/telemetry-outbound-jaeger.png)
 
 This example is available at the [Helidon official GitHub
 repository][helidon-official].

@@ -25,9 +25,7 @@ A brief overview of the config system helps clarify its different parts and how
 they work together. Most applications will typically deal with more than one of
 these parts.
 
-<figure>
-<img src="../../images/config/overview.png" alt="Configuration Overview" />
-</figure>
+![Configuration Overview](../../images/config/overview.png)
 
 These are the main parts of the configuration system:
 

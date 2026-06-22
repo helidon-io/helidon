@@ -120,7 +120,7 @@ Configuration settings for metrics
 <code>tags</code>
 </td>
 <td>
-<code>List&lt;<wbr>Metrics<wbr>Config<wbr>Support&gt;</code>
+<code>List&lt;<wbr>String&gt;</code>
 </td>
 <td>
 </td>

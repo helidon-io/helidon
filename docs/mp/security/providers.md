@@ -698,7 +698,7 @@ public class AbacResource {
 }
 ```
 
-##### JAX-RS sub-resource locators
+**JAX-RS sub-resource locators**
 
 When using sub-resource locators in JAX-RS, the roles allowed are collected from
 each "level" of execution: - Application class annotations - Resource class

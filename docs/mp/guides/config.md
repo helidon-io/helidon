@@ -201,7 +201,7 @@ curl http://localhost:8080/greet
    used.
 <!--@mdc :: -->
 
-##### Environment Variable Override
+**Environment Variable Override**
 
 An environment variable has a higher precedence than the configuration
 properties file.
@@ -229,7 +229,7 @@ curl http://localhost:8080/greet
    `META-INF/microprofile-config.properties`.
 <!--@mdc :: -->
 
-##### System Property Override
+**System Property Override**
 
 A system property has a higher precedence than environment variables.
 

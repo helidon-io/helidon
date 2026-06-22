@@ -72,9 +72,7 @@ application to contain a static OpenAPI file which describes the service
 endpoints.
 
 Example OpenAPI UI Screen:
-<figure>
-<img src="../../images/openapi-ui-screen-capture-greeting-se-start.png" alt="openapi ui screen capture greeting se start" />
-</figure>
+![openapi ui screen capture greeting se start](../../images/openapi-ui-screen-capture-greeting-se-start.png)
 
 With the OpenAPI UI displayed, follow these steps to access one of your
 service’s operations.
@@ -104,9 +102,7 @@ possible responses from the operation as declared in the OpenAPI document for
 the application.
 
 Example OpenAPI UI Screen:
-<figure>
-<img src="../../images/openapi-ui-screen-capture-greeting-se-expanded.png" alt="openapi ui screen capture greeting se expanded" />
-</figure>
+![openapi ui screen capture greeting se expanded](../../images/openapi-ui-screen-capture-greeting-se-expanded.png)
 
 ## API
 

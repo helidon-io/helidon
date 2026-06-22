@@ -27,7 +27,7 @@ Certificate revocation configuration
 <td>
 <code>false</code>
 </td>
-<td>Allow revocation check to succeed if the revocation status cannot be determined for one of the following reasons: <ul>  <li>The CRL or OCSP response cannot be obtained because of a      network error</td>
+<td>Allow revocation check to succeed if the revocation status cannot be determined for one of the following reasons: <ul>  <li>The CRL or OCSP response cannot be obtained because of a      network error.</li></ul></td>
 </tr>
 <tr>
 <td>

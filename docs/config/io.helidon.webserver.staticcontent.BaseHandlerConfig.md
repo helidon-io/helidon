@@ -33,7 +33,7 @@ Configuration of static content handlers that is common for classpath and file s
 <code>content-<wbr>types</code>
 </td>
 <td>
-<code>Map&lt;<wbr>String,<wbr> Base<wbr>Methods&gt;</code>
+<code>Map&lt;<wbr>String,<wbr> Media<wbr>Type&gt;</code>
 </td>
 <td>
 </td>

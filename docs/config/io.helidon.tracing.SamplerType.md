@@ -1,4 +1,4 @@
-# io.<wbr>helidon.<wbr>common.<wbr>media.<wbr>type.<wbr>Parser<wbr>Mode
+# io.<wbr>helidon.<wbr>tracing.<wbr>Sampler<wbr>Type
 
 ## Description
 
@@ -15,12 +15,12 @@ This type is an enumeration.
 </thead>
 <tbody>
 <tr>
-<td><code>STRICT</code></td>
-<td><code>N/<wbr>A</code></td>
+<td><code>CONSTANT</code></td>
+<td>Sampling of every span</td>
 </tr>
 <tr>
-<td><code>RELAXED</code></td>
-<td><code>N/<wbr>A</code></td>
+<td><code>RATIO</code></td>
+<td>Sampling of a proportion [0.0, 1.0] of spans</td>
 </tr>
 </tbody>
 </table>

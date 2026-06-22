@@ -193,7 +193,7 @@ SPI:
 
 #### Available tenant config options
 
-##### Configuration options
+**Configuration options**
 
 <!--@include ../../config/io.helidon.security.providers.oidc.common.TenantConfig.md#configuration-options delim=--- offset=3 collapseTables=10 -->
 See [Configuration options][io-helidon-secur-2].

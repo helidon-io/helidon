@@ -54,9 +54,7 @@ Reactive messaging uses named channels to connect one source (upstream) with one
 consumer (downstream). Each channel needs to have both ends connected otherwise
 the container cannot successfully start.
 
-<figure>
-<img src="../../images/msg/channel.svg" alt="Messaging Channel" />
-</figure>
+![Messaging Channel](../../images/msg/channel.svg)
 
 Channels can be connected either to [emitter](#emitter) (1), [producing
 method](#producing-method) (2) or [connector](#connector) (3) on the upstream
@@ -203,9 +201,7 @@ Overflow strategies:
 Such [methods][methods] acts as processors, consuming messages from one channel
 and producing to another.
 
-<figure>
-<img src="../../images/msg/processor.svg" alt="Processor method connecting two channels together" />
-</figure>
+![Processor method connecting two channels together](../../images/msg/processor.svg)
 
 Diagram shows how processing method (2) serves as a downstream to the
 `my-channel` (1) and an upstream to the `other-channel` (3), connecting them
@@ -495,9 +491,7 @@ When the connector constructs a publisher or subscriber for a given channel, it
 can access general connector configuration and channel-specific properties
 merged together with special synthetic property `channel-name`.
 
-<figure>
-<img src="../../images/msg/connector-config.svg" alt="Connector config" />
-</figure>
+![Connector config](../../images/msg/connector-config.svg)
 
 Connector specific config (1) merged together with global connector config (2).
 
