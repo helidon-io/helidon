@@ -18,9 +18,12 @@ package io.helidon.config.hocon;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.Deque;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -77,7 +80,7 @@ public class HoconConfigParser implements ConfigParser {
     private static final List<String> SUPPORTED_SUFFIXES = List.of("json", "conf");
     private static final Set<MediaType> SUPPORTED_MEDIA_TYPES =
             Set.of(MediaTypes.APPLICATION_HOCON, MediaTypes.APPLICATION_JSON);
-    private static final Pattern HOCON_REFERENCE = Pattern.compile("(?<!\\\\)\\$\\{(\\?)?\\s*([^}]+?)\\s*}");
+    private static final Pattern HOCON_REFERENCE = Pattern.compile("(?<!\\\\)\\$\\{([^}]+)\\}");
     private static final String LOCAL_RESOLVE_PATH = "helidon-local-resolution";
 
     private final boolean resolvingEnabled;
@@ -144,10 +147,9 @@ public class HoconConfigParser implements ConfigParser {
             typesafeConfig = ConfigFactory.parseReader(readable, parseOptions);
             if (resolvingEnabled) {
                 typesafeConfig = typesafeConfig.resolve(resolveOptions);
-                return fromConfig(typesafeConfig.root());
+                return fromConfig(typesafeConfig.root(), typesafeConfig, List.of(), false);
             }
-
-            return fromConfig(typesafeConfig.root(), typesafeConfig, List.of());
+            return fromConfig(typesafeConfig.root(), typesafeConfig, List.of(), true);
         } catch (ConfigException e) {
             throw e;
         } catch (Exception e) {
@@ -163,14 +165,6 @@ public class HoconConfigParser implements ConfigParser {
     @Override
     public String toString() {
         return "HOCON(" + MediaTypes.APPLICATION_HOCON.text() + ")";
-    }
-
-    private static ObjectNode fromConfig(ConfigObject configObject) {
-        return fromConfig(configObject, configObject.toConfig(), List.of(), false);
-    }
-
-    private static ObjectNode fromConfig(ConfigObject configObject, Config config, List<String> path) {
-        return fromConfig(configObject, config, path, true);
     }
 
     private static ObjectNode fromConfig(ConfigObject configObject, Config config, List<String> path, boolean locallyResolve) {
@@ -271,24 +265,36 @@ public class HoconConfigParser implements ConfigParser {
         return ConfigResolveOptions.defaults()
                 .setAllowUnresolved(true)
                 .setUseSystemEnvironment(false)
-                .appendResolver(new DeferredReferenceResolver(referencePaths(value, false),
-                                                             referencePaths(value, true)));
+                .appendResolver(new DeferredReferenceResolver(references(value)));
     }
 
-    static Set<List<String>> referencePaths(ConfigValue value, boolean optional) {
-        Set<List<String>> result = new HashSet<>();
+    static List<HoconReference> references(ConfigValue value) {
+        List<HoconReference> result = new ArrayList<>();
         Matcher matcher = HOCON_REFERENCE.matcher(value.render());
         while (matcher.find()) {
-            boolean referenceOptional = matcher.group(1) != null;
-            if (optional == referenceOptional) {
-                try {
-                    result.add(ConfigUtil.splitPath(matcher.group(2).trim()));
-                } catch (com.typesafe.config.ConfigException e) {
-                    // Ignore values that are not parseable as HOCON paths.
-                }
+            String reference = matcher.group(1).trim();
+            boolean optional = reference.startsWith("?");
+            if (optional) {
+                reference = reference.substring(1).trim();
+            }
+            try {
+                result.add(new HoconReference(ConfigUtil.splitPath(reference), optional));
+            } catch (com.typesafe.config.ConfigException e) {
+                // Ignore values that are not parseable as HOCON paths.
             }
         }
         return result;
+    }
+
+    static String helidonPath(List<String> hoconPath) {
+        StringBuilder path = new StringBuilder();
+        for (String element : hoconPath) {
+            if (!path.isEmpty()) {
+                path.append('.');
+            }
+            path.append(io.helidon.config.Config.Key.escapeName(element));
+        }
+        return path.toString();
     }
 
     private static List<String> childPath(List<String> path, String child) {
@@ -299,12 +305,13 @@ public class HoconConfigParser implements ConfigParser {
     }
 
     private static class DeferredReferenceResolver implements ConfigResolver {
-        private final Set<List<String>> requiredReferences;
-        private final Set<List<String>> optionalReferences;
+        private final Map<String, Deque<HoconReference>> references;
 
-        DeferredReferenceResolver(Set<List<String>> requiredReferences, Set<List<String>> optionalReferences) {
-            this.requiredReferences = requiredReferences;
-            this.optionalReferences = optionalReferences;
+        DeferredReferenceResolver(List<HoconReference> references) {
+            this.references = new HashMap<>();
+            references.forEach(reference -> this.references.computeIfAbsent(ConfigUtil.joinPath(reference.path()),
+                                                                            it -> new ArrayDeque<>())
+                    .add(reference));
         }
 
         @Override
@@ -316,17 +323,22 @@ public class HoconConfigParser implements ConfigParser {
                 return ConfigValueFactory.fromAnyRef("${" + path + "}");
             }
 
-            if (!requiredReferences.contains(referencePath) && optionalReferences.contains(referencePath)) {
+            Deque<HoconReference> references = this.references.get(ConfigUtil.joinPath(referencePath));
+            HoconReference reference = references == null ? null : references.poll();
+            if (reference != null && reference.optional()) {
                 return null;
             }
 
-            return ConfigValueFactory.fromAnyRef("${" + path + "}");
+            return ConfigValueFactory.fromAnyRef("${" + helidonPath(referencePath) + "}");
         }
 
         @Override
         public ConfigResolver withFallback(ConfigResolver fallback) {
             return this;
         }
+    }
+
+    record HoconReference(List<String> path, boolean optional) {
     }
 
 }

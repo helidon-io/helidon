@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2018, 2024 Oracle and/or its affiliates.
+    Copyright (c) 2018, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -187,7 +187,9 @@ include::{sourcedir}/se/config/SupportedFormatsSnippets.java[tag=snippet_9, inde
 ----
 
 <1> Creates new instance of the parser builder.
-<2> Disables resolution of substitutions.
+<2> Disables full HOCON substitution resolution. The parser might still use local HOCON resolution to materialize
+merges and self-references from the parsed source and its includes; unresolved required substitutions are preserved
+for later Helidon Config resolution.
 (See the link:https://github.com/lightbend/config/blob/master/HOCON.md#substitutions[HOCON documentation].)
 <3> Builds a new instance of the HOCON config parser.
 
