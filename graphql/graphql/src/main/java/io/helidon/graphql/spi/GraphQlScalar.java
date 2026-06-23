@@ -42,9 +42,12 @@ public interface GraphQlScalar<T> {
     Object serialize(T value);
 
     /**
-     * Convert a GraphQL variable value to a Java value.
+     * Convert a GraphQL input value to a Java value.
      * <p>
-     * GraphQL integrations handle {@code null} values before invoking this method.
+     * GraphQL integrations handle {@code null} values before invoking this method. For GraphQL variables, the value is
+     * the variable input value. For GraphQL literals, string, integer, floating point, boolean, and enum literals are
+     * provided as scalar Java values. List literals are provided as {@link java.util.List} values and input object literals
+     * are provided as {@link java.util.Map} values.
      *
      * @param value GraphQL input value, never {@code null}
      * @return Java value, never {@code null}

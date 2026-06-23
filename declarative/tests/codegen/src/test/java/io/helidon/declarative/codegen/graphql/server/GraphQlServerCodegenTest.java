@@ -419,8 +419,12 @@ class GraphQlServerCodegenTest {
         assertThat(generatedScalar, containsString("return \"ISBN\";"));
         assertThat(generatedScalar, containsString("return Isbn.class;"));
         assertThat(generatedScalar, containsString("return \"ISBN scalar\";"));
-        assertThat(generatedScalar, containsString("return delegate.serialize((Isbn) value);"));
-        assertThat(generatedScalar, containsString("return delegate.parseValue(value);"));
+        assertThat(generatedScalar, containsString("return java.util.Objects.requireNonNull(delegate.serialize((Isbn) value), "
+                                                           + "\"serialize result\");"));
+        assertThat(generatedScalar, containsString("return java.util.Objects.requireNonNull(delegate.parseValue(value), "
+                                                           + "\"parseValue result\");"));
+        assertThat(generatedScalar, containsString("delegate.parseValue(java.util.Objects.requireNonNull(value))"));
+        assertThat(generatedScalar, containsString("\"parseLiteral result\""));
         assertThat(generated, containsString("private static Object inputValue(Object value, Class<?> type, String graphQlType)"));
         assertThat(generated, containsString("if (type.isInstance(value))"));
         assertThat(generated, containsString("Expected GraphQL \" + graphQlType"));

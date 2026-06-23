@@ -130,9 +130,9 @@ class GraphQlServerCustomScalar {
                 .addParameter(value -> value
                         .type(TypeNames.OBJECT)
                         .name("value"))
-                .addContent("return delegate.serialize((")
+                .addContent("return java.util.Objects.requireNonNull(delegate.serialize((")
                 .addContent(scalarTypeInfo.typeName())
-                .addContentLine(") value);"));
+                .addContentLine(") value), \"serialize result\");"));
         classModel.addMethod(method -> method
                 .accessModifier(AccessModifier.PUBLIC)
                 .addAnnotation(Annotations.OVERRIDE)
@@ -141,7 +141,7 @@ class GraphQlServerCustomScalar {
                 .addParameter(value -> value
                         .type(TypeNames.OBJECT)
                         .name("value"))
-                .addContentLine("return delegate.parseValue(value);"));
+                .addContentLine("return java.util.Objects.requireNonNull(delegate.parseValue(value), \"parseValue result\");"));
         classModel.addMethod(method -> method
                 .accessModifier(AccessModifier.PUBLIC)
                 .addAnnotation(Annotations.OVERRIDE)
@@ -150,7 +150,9 @@ class GraphQlServerCustomScalar {
                 .addParameter(value -> value
                         .type(TypeNames.OBJECT)
                         .name("value"))
-                .addContentLine("return delegate.parseValue(value);"));
+                .addContentLine("return java.util.Objects.requireNonNull(")
+                .addContentLine("        delegate.parseValue(java.util.Objects.requireNonNull(value)),")
+                .addContentLine("        \"parseLiteral result\");"));
 
         roundContext.addGeneratedType(generatedType,
                                       classModel,
