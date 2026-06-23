@@ -37,7 +37,7 @@ import graphql.schema.DataFetchingEnvironment;
  * NOTE: this API is part of incubating features of Helidon. This API may change including backward incompatible changes
  * and full removal. We welcome feedback for incubating features.
  */
-@Api.Incubating
+@Api.Preview
 @Api.Since("27.0.0")
 public final class GraphQlEntryPoint {
     private GraphQlEntryPoint() {

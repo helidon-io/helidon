@@ -16,6 +16,7 @@
 
 package io.helidon.declarative.codegen.graphql.server.spi;
 
+import io.helidon.common.Api;
 import io.helidon.declarative.codegen.graphql.server.GraphQlParameterCodegenContext;
 import io.helidon.declarative.codegen.graphql.server.GraphQlParameterContext;
 
@@ -26,6 +27,7 @@ import io.helidon.declarative.codegen.graphql.server.GraphQlParameterContext;
  * Parameters supported by this SPI are resolver-only parameters. They do not contribute arguments to the generated GraphQL
  * schema.
  */
+@Api.Preview
 public interface GraphQlParameterCodegenProvider {
     /**
      * Whether this provider supports the parameter.

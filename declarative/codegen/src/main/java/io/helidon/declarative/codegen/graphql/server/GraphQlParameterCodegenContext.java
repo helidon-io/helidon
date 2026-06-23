@@ -18,10 +18,12 @@ package io.helidon.declarative.codegen.graphql.server;
 
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.ContentBuilder;
+import io.helidon.common.Api;
 
 /**
  * Code generation context for a GraphQL resolver method parameter.
  */
+@Api.Preview
 public interface GraphQlParameterCodegenContext extends GraphQlParameterContext {
     /**
      * Builder of the generated GraphQL feature class.

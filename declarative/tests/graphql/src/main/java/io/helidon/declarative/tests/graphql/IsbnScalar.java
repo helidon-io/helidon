@@ -16,35 +16,20 @@
 
 package io.helidon.declarative.tests.graphql;
 
-import io.helidon.graphql.spi.GraphQlScalar;
+import io.helidon.graphql.spi.CustomScalar;
 import io.helidon.service.registry.Service;
 
 @Service.Singleton
-class IsbnScalar implements GraphQlScalar {
+class IsbnScalar implements CustomScalar<Isbn> {
     @Override
-    public String name() {
-        return "ISBN";
+    public Object serialize(Isbn value) {
+        return value.value();
     }
 
     @Override
-    public Class<?> type() {
-        return Isbn.class;
-    }
-
-    @Override
-    public String description() {
-        return "ISBN scalar";
-    }
-
-    @Override
-    public Object serialize(Object value) {
-        return ((Isbn) value).value();
-    }
-
-    @Override
-    public Object parseValue(Object value) {
-        if ("wrong-provider-type".equals(value)) {
-            return value;
+    public Isbn parseValue(Object value) {
+        if ("parse-failure".equals(value)) {
+            throw new IllegalArgumentException("Cannot parse ISBN.");
         }
         return new Isbn((String) value);
     }

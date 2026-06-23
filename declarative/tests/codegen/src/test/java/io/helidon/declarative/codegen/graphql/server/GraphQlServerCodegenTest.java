@@ -34,6 +34,7 @@ import io.helidon.declarative.codegen.graphql.server.spi.GraphQlParameterCodegen
 import io.helidon.graphql.GraphQl;
 import io.helidon.graphql.server.ExecutionContext;
 import io.helidon.graphql.server.InvocationHandler;
+import io.helidon.graphql.spi.CustomScalar;
 import io.helidon.graphql.spi.GraphQlScalar;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.annotations.Authenticated;
@@ -73,6 +74,7 @@ class GraphQlServerCodegenTest {
             Generated.class,
             GraphQLSchema.class,
             GraphQl.class,
+            CustomScalar.class,
             GraphQlScalar.class,
             Context.class,
             ExecutionContext.class,
@@ -258,6 +260,25 @@ class GraphQlServerCodegenTest {
                         record Isbn(String value) {
                         }
                         """)
+                .addSource("IsbnScalar.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.spi.CustomScalar;
+                        import io.helidon.service.registry.Service;
+
+                        @Service.Singleton
+                        class IsbnScalar implements CustomScalar<Isbn> {
+                            @Override
+                            public Object serialize(Isbn value) {
+                                return value.value();
+                            }
+
+                            @Override
+                            public Isbn parseValue(Object value) {
+                                return new Isbn((String) value);
+                            }
+                        }
+                        """)
                 .addSource("BookStatus.java", """
                         package com.example;
 
@@ -314,8 +335,13 @@ class GraphQlServerCodegenTest {
                 .filter(it -> it.getFileName().toString().equals("GraphEndpoint__GraphQlFeature.java"))
                 .toList();
         assertThat(generatedSources.size(), is(1));
+        var scalarSources = Files.walk(result.sourceOutput())
+                .filter(it -> it.getFileName().toString().equals("IsbnScalar__GraphQlScalar.java"))
+                .toList();
+        assertThat(scalarSources.size(), is(1));
 
         String generated = Files.readString(generatedSources.getFirst(), StandardCharsets.UTF_8);
+        String generatedScalar = Files.readString(scalarSources.getFirst(), StandardCharsets.UTF_8);
         assertThat(generated, containsString("class GraphEndpoint__GraphQlFeature implements HttpFeature"));
         assertThat(generated, containsString("routing.register(GraphQlService.builder()"));
         assertThat(generated, containsString(".webContext(\"/api/graphql\")"));
@@ -389,6 +415,13 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("scalarLiteralValue("));
         assertThat(generated, containsString("case graphql.language.ArrayValue arrayValue"));
         assertThat(generated, containsString("case graphql.language.ObjectValue objectValue"));
+        assertThat(generatedScalar, containsString("class IsbnScalar__GraphQlScalar implements GraphQlScalar"));
+        assertThat(generatedScalar, containsString("private final CustomScalar<Isbn> delegate"));
+        assertThat(generatedScalar, containsString("return \"ISBN\";"));
+        assertThat(generatedScalar, containsString("return Isbn.class;"));
+        assertThat(generatedScalar, containsString("return \"ISBN scalar\";"));
+        assertThat(generatedScalar, containsString("return delegate.serialize((Isbn) value);"));
+        assertThat(generatedScalar, containsString("return delegate.parseValue(value);"));
         assertThat(generated, containsString("private static Object inputValue(Object value, Class<?> type, String graphQlType)"));
         assertThat(generated, containsString("if (type.isInstance(value))"));
         assertThat(generated, containsString("Expected GraphQL \" + graphQlType"));

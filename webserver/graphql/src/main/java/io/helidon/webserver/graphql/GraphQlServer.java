@@ -29,7 +29,7 @@ import io.helidon.service.registry.Service;
 /**
  * Declarative GraphQL server annotations.
  */
-@Api.Incubating
+@Api.Preview
 @Api.Since("27.0.0")
 public final class GraphQlServer {
     /**

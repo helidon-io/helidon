@@ -28,7 +28,7 @@ import io.helidon.service.registry.Service;
 /**
  * Common GraphQL annotations shared by client and server integrations.
  */
-@Api.Incubating
+@Api.Preview
 @Api.Since("27.0.0")
 public final class GraphQl {
     private GraphQl() {
@@ -187,8 +187,8 @@ public final class GraphQl {
     /**
      * Marks a Java type as a GraphQL scalar.
      * <p>
-     * Server and client integrations use a matching {@link io.helidon.graphql.spi.GraphQlScalar} Service Registry
-     * implementation to convert values of the annotated Java type.
+     * Declarative integrations use a matching {@link io.helidon.graphql.spi.CustomScalar} Service Registry implementation
+     * to convert values of the annotated Java type and generate the runtime scalar adapter.
      */
     @Target(ElementType.TYPE)
     @Retention(RetentionPolicy.CLASS)

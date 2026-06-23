@@ -16,9 +16,12 @@
 
 package io.helidon.declarative.codegen.graphql.server;
 
+import io.helidon.common.Api;
+
 /**
  * GraphQL resolver method kind.
  */
+@Api.Preview
 public enum GraphQlResolverKind {
     /**
      * Top-level GraphQL query resolver.

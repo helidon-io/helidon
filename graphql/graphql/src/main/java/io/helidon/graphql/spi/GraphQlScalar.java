@@ -27,7 +27,7 @@ import io.helidon.service.registry.Service;
  * Implementations can be provided by generated code or by applications. Server and client integrations use this contract
  * to convert between Java values and GraphQL scalar values.
  */
-@Api.Incubating
+@Api.Preview
 @Api.Since("27.0.0")
 @Service.Contract
 public interface GraphQlScalar {

@@ -19,6 +19,7 @@ package io.helidon.declarative.tests.graphql;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -348,24 +349,22 @@ class DeclarativeGraphQlTest {
     }
 
     @Test
-    void testScalarArgumentWrongProviderTypeFailure() {
+    void testScalarArgumentParseFailure() {
         JsonObject json = graphQlResponse("""
                                                   {
                                                     "query": "query($isbn: ISBN!) { hello(name: \\"Helidon\\") titleByIsbn(isbn: $isbn) }",
                                                     "variables": {
-                                                      "isbn": "wrong-provider-type"
+                                                      "isbn": "parse-failure"
                                                     }
                                                   }
                                                   """);
 
-        JsonObject data = json.objectValue("data").orElseThrow();
-        assertThat(data.stringValue("hello").orElseThrow(), is("Hello Helidon"));
-        assertThat(data.value("titleByIsbn").orElseThrow().type(), is(JsonValueType.NULL));
+        assertThat(json.objectValue("data"), is(Optional.empty()));
         String errors = json.arrayValue("errors").orElseThrow().toString();
-        assertThat(errors, containsString("Expected GraphQL ISBN value."));
+        assertThat(errors, containsString("Failed to parse GraphQL scalar 'ISBN'."));
         assertThat(errors, not(containsString(Isbn.class.getName())));
         assertThat(errors, not(containsString(String.class.getName())));
-        assertThat(errors, containsString("titleByIsbn"));
+        assertThat(errors, containsString("isbn"));
     }
 
     @Test

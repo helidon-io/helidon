@@ -29,6 +29,7 @@ final class GraphQlServerCodegenTypes {
     static final TypeName GRAPHQL_NON_NULL = TypeName.create("io.helidon.graphql.GraphQl.NonNull");
     static final TypeName GRAPHQL_IGNORE = TypeName.create("io.helidon.graphql.GraphQl.Ignore");
     static final TypeName GRAPHQL_SCALAR = TypeName.create("io.helidon.graphql.GraphQl.Scalar");
+    static final TypeName GRAPHQL_CUSTOM_SCALAR_SPI = TypeName.create("io.helidon.graphql.spi.CustomScalar");
     static final TypeName GRAPHQL_SCALAR_SPI = TypeName.create("io.helidon.graphql.spi.GraphQlScalar");
 
     static final TypeName COMMON_CONTEXT = TypeName.create("io.helidon.common.context.Context");

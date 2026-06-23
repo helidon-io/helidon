@@ -18,12 +18,14 @@ package io.helidon.declarative.codegen.graphql.server;
 
 import java.util.Set;
 
+import io.helidon.common.Api;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.TypeName;
 
 /**
  * Information about a GraphQL resolver method parameter.
  */
+@Api.Preview
 public interface GraphQlParameterContext {
     /**
      * Parameter annotations.

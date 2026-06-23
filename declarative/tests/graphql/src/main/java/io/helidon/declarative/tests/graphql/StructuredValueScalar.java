@@ -20,28 +20,18 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-import io.helidon.graphql.spi.GraphQlScalar;
+import io.helidon.graphql.spi.CustomScalar;
 import io.helidon.service.registry.Service;
 
 @Service.Singleton
-class StructuredValueScalar implements GraphQlScalar {
+class StructuredValueScalar implements CustomScalar<StructuredValue> {
     @Override
-    public String name() {
-        return "STRUCTURED";
+    public Object serialize(StructuredValue value) {
+        return describe(value.value());
     }
 
     @Override
-    public Class<?> type() {
-        return StructuredValue.class;
-    }
-
-    @Override
-    public Object serialize(Object value) {
-        return describe(((StructuredValue) value).value());
-    }
-
-    @Override
-    public Object parseValue(Object value) {
+    public StructuredValue parseValue(Object value) {
         return new StructuredValue(value);
     }
 

@@ -30,6 +30,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import io.helidon.common.Api;
 import io.helidon.common.configurable.ServerThreadPoolSupplier;
 import io.helidon.common.media.type.MediaTypes;
 import io.helidon.common.types.Annotation;
@@ -484,6 +485,7 @@ public class GraphQlService implements HttpService {
          * @param typeAnnotations annotations of the declarative endpoint
          * @return updated builder instance
          */
+        @Api.Preview
         public Builder httpEntryPoints(HttpEntryPoint.EntryPoints entryPoints,
                                        ServiceDescriptor<?> descriptor,
                                        Set<Qualifier> typeQualifiers,
