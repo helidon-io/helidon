@@ -35,6 +35,7 @@ import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webclient.http1.Http1ClientResponse;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
+import io.helidon.webserver.http.RoutePathSupport;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpServer;
 import io.helidon.webserver.testing.junit5.Socket;
@@ -46,7 +47,6 @@ import static io.helidon.webserver.observe.telemetry.metrics.JsonTestUtil.hasArr
 import static io.helidon.webserver.observe.telemetry.metrics.JsonTestUtil.hasAttributes;
 import static io.helidon.webserver.observe.telemetry.metrics.JsonTestUtil.hasDouble;
 import static io.helidon.webserver.observe.telemetry.metrics.JsonTestUtil.hasString;
-import static io.helidon.webserver.observe.telemetry.metrics.OpenTelemetryMetricsHttpSemanticConventions.HELIDON_REQUEST_ROUTE;
 import static io.helidon.webserver.observe.telemetry.metrics.OpenTelemetryMetricsHttpSemanticConventions.HTTP_ROUTE;
 import static io.helidon.webserver.observe.telemetry.metrics.OpenTelemetryMetricsHttpSemanticConventions.SERVER_PORT;
 import static io.helidon.webserver.observe.telemetry.metrics.OpenTelemetryMetricsHttpSemanticConventions.SOCKET_NAME;
@@ -121,10 +121,10 @@ class TestOpenTelemetrySemanticConventions {
                                             resp.send("Hello, " + req.path().segments().get(1).value() + "!"))
                         .get("/useContext",
                              /*
-                             Mimics what the JaxRsServer does in adding the route to the request context.
+                             Mimics what the JaxRsServer does in providing the route to route consumers.
                               */
                              (req, resp) -> {
-                                 req.context().register(HELIDON_REQUEST_ROUTE, "/useContextRoute");
+                                 RoutePathSupport.provideRoute(req.context(), () -> "/useContextRoute");
                                  resp.send("Hello, World!");
                              }))
                 .routing("private", r -> r.any("/greet",

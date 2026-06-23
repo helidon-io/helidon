@@ -48,6 +48,7 @@ import io.helidon.http.Status;
 import io.helidon.webserver.KeyPerformanceIndicatorSupport;
 import io.helidon.webserver.http.HttpRules;
 import io.helidon.webserver.http.HttpService;
+import io.helidon.webserver.http.RoutePathSupport;
 import io.helidon.webserver.http.RoutingResponse;
 import io.helidon.webserver.http.ServerRequest;
 import io.helidon.webserver.http.ServerResponse;
@@ -66,7 +67,6 @@ import org.glassfish.jersey.server.ApplicationHandler;
 import org.glassfish.jersey.server.ContainerException;
 import org.glassfish.jersey.server.ContainerRequest;
 import org.glassfish.jersey.server.ContainerResponse;
-import org.glassfish.jersey.server.ExtendedUriInfo;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.ServerProperties;
 import org.glassfish.jersey.server.model.Resource;
@@ -83,7 +83,6 @@ public class JaxRsService implements HttpService {
     static final String IGNORE_EXCEPTION_RESPONSE = "jersey.config.client.ignoreExceptionResponse";
     static final String DISABLE_DATASOURCE_PROVIDER = "jersey.config.server.disableDataSourceProvider";
 
-    private static final String HELIDON_REQUEST_ROUTE = "helidon.request.route";
     private static final System.Logger LOGGER = System.getLogger(JaxRsService.class.getName());
     private static final Type REQUEST_TYPE = (new GenericType<Ref<ServerRequest>>() { }).getType();
     private static final Type RESPONSE_TYPE = (new GenericType<Ref<ServerResponse>>() { }).getType();
@@ -326,7 +325,8 @@ public class JaxRsService implements HttpService {
             writer.await();
             boolean matchedResourceMethod = requestContext.getUriInfo().getMatchedResourceMethod() != null;
             if (matchedResourceMethod) {
-                registerRoute(ctx, requestContext);
+                Resource matchedResource = requestContext.getUriInfo().getMatchedModelResource();
+                RoutePathSupport.provideRoute(ctx, () -> route(matchedResource));
             }
             if (res.status() == Status.NOT_FOUND_404 && !matchedResourceMethod) {
                 // Jersey will not throw an exception, it will complete the request - but we must
@@ -353,17 +353,10 @@ public class JaxRsService implements HttpService {
         }
     }
 
-    private void registerRoute(Context ctx, ContainerRequest requestContext) {
-        String route = route((ExtendedUriInfo) requestContext.getUriInfo());
-        if (!route.isBlank()) {
-            ctx.register(HELIDON_REQUEST_ROUTE, route);
-        }
-    }
-
-    private String route(ExtendedUriInfo extendedUriInfo) {
+    private String route(Resource matchedResource) {
         StringBuilder derivedPath = new StringBuilder(applicationPath);
 
-        appendPath(derivedPath, extendedUriInfo.getMatchedModelResource());
+        appendPath(derivedPath, matchedResource);
         return derivedPath.toString();
     }
 

@@ -17,12 +17,15 @@
 package io.helidon.jersey.webserver;
 
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import io.helidon.config.Config;
 import io.helidon.http.Status;
 import io.helidon.webclient.http1.Http1Client;
 import io.helidon.webserver.http.HttpRouting;
+import io.helidon.webserver.http.RoutePathSupport;
 import io.helidon.webserver.testing.junit5.ServerTest;
 import io.helidon.webserver.testing.junit5.SetUpRoute;
 
@@ -40,7 +43,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @ServerTest
 public class JerseyOnWebServerTest {
-    private static final String HELIDON_REQUEST_ROUTE = "helidon.request.route";
+    private static final AtomicBoolean REQUEST_ROUTE = new AtomicBoolean();
     private static final AtomicReference<String> LAST_ROUTE = new AtomicReference<>();
 
     private final Http1Client client;
@@ -53,15 +56,21 @@ public class JerseyOnWebServerTest {
     public static void routing(HttpRouting.Builder routing) {
         ResourceConfig resourceConfig = ResourceConfig.forApplication(new JaxRsApplication());
         routing.addFilter((chain, req, res) -> {
+            AtomicReference<Supplier<String>> routeSupplier = new AtomicReference<>();
             LAST_ROUTE.set(null);
+            if (REQUEST_ROUTE.get()) {
+                RoutePathSupport.requestRoute(req.context(), routeSupplier::set);
+            }
             chain.proceed();
-            LAST_ROUTE.set(req.context().get(HELIDON_REQUEST_ROUTE, String.class).orElse(null));
+            LAST_ROUTE.set(routeSupplier.get() == null ? null : routeSupplier.get().get());
         });
         routing.register("/jersey", JaxRsService.create(Config.empty(), resourceConfig));
     }
 
     @Test
     public void testEndpoint() {
+        REQUEST_ROUTE.set(true);
+
         var response = client.get("/jersey/greet/Joe")
                 .request(String.class);
 
@@ -71,7 +80,21 @@ public class JerseyOnWebServerTest {
     }
 
     @Test
+    public void testEndpointWithoutRouteRequest() {
+        REQUEST_ROUTE.set(false);
+
+        var response = client.get("/jersey/greet/Joe")
+                .request(String.class);
+
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity(), is("Hello Joe!"));
+        assertThat(LAST_ROUTE.get(), is((String) null));
+    }
+
+    @Test
     public void testUnmatchedEndpointDoesNotSetRoute() {
+        REQUEST_ROUTE.set(true);
+
         var response = client.get("/jersey/missing")
                 .request();
 
