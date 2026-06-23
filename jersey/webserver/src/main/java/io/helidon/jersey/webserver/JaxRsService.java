@@ -24,8 +24,6 @@ import java.lang.reflect.Type;
 import java.net.URI;
 import java.security.Principal;
 import java.util.Collections;
-import java.util.Deque;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -95,6 +93,7 @@ public class JaxRsService implements HttpService {
     private final ResourceConfig resourceConfig;
     private final Container container;
     private final Application application;
+    private final String applicationPath;
 
     private JaxRsService(ResourceConfig resourceConfig,
                          ApplicationHandler appHandler,
@@ -103,6 +102,7 @@ public class JaxRsService implements HttpService {
         this.appHandler = appHandler;
         this.container = container;
         this.application = getApplication(resourceConfig);
+        this.applicationPath = applicationPath();
     }
 
     /**
@@ -361,22 +361,26 @@ public class JaxRsService implements HttpService {
     }
 
     private String route(ExtendedUriInfo extendedUriInfo) {
-        Deque<String> derivedPath = new LinkedList<>();
+        StringBuilder derivedPath = new StringBuilder(applicationPath);
 
-        Resource resource = extendedUriInfo.getMatchedModelResource();
-        while (resource != null) {
-            String resourcePath = resource.getPath();
-            if (resourcePath != null && !resourcePath.equals("/") && !resourcePath.isBlank()) {
-                derivedPath.push(resourcePath);
-                if (!resourcePath.startsWith("/")) {
-                    derivedPath.push("/");
-                }
-            }
-            resource = resource.getParent();
+        appendPath(derivedPath, extendedUriInfo.getMatchedModelResource());
+        return derivedPath.toString();
+    }
+
+    private static void appendPath(StringBuilder derivedPath, Resource resource) {
+        if (resource == null) {
+            return;
         }
 
-        derivedPath.push(applicationPath());
-        return String.join("", derivedPath);
+        appendPath(derivedPath, resource.getParent());
+
+        String resourcePath = resource.getPath();
+        if (resourcePath != null && !resourcePath.equals("/") && !resourcePath.isBlank()) {
+            if (!resourcePath.startsWith("/")) {
+                derivedPath.append('/');
+            }
+            derivedPath.append(resourcePath);
+        }
     }
 
     private String applicationPath() {

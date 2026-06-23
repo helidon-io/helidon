@@ -18,6 +18,7 @@ package io.helidon.webserver.observe.telemetry.metrics;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.config.Config;
 import io.helidon.http.Status;
@@ -41,6 +42,8 @@ import io.opentelemetry.semconv.ErrorAttributes;
 import io.opentelemetry.semconv.HttpAttributes;
 import io.opentelemetry.semconv.ServerAttributes;
 import io.opentelemetry.semconv.UrlAttributes;
+
+import static java.lang.System.Logger.Level.WARNING;
 
 /**
  * Provider of automatic metrics for HTTP requests which implements the OpenTelemetry server HTTP semantic conventions.
@@ -109,6 +112,7 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
     }
 
     static class MetricsRecordingFilter implements Filter {
+        private static final System.Logger LOGGER = System.getLogger(MetricsRecordingFilter.class.getName());
 
         private final DoubleHistogram httpRequestDuration;
         private final AutoHttpMetricsConfig config;
@@ -121,15 +125,24 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
         @Override
         public void filter(FilterChain chain, RoutingRequest req, RoutingResponse res) {
             var startTime = System.nanoTime();
+            var exception = new AtomicReference<Exception>();
             /*
-            Duplicating the synch/async handling in the normal and exception case avoids the overhead of using an Optional to hold
-            the exception (if any) for use in a lambda.
+            Update the timer in whenSent rather than here in this filter. That way we include time spent in running succeeding
+            filters and in preparing the response entity, to more accurately capture as much as possible the full time the
+            server spent responding to the request.
              */
+            res.whenSent(() -> {
+                try {
+                    updateMetricsIfMeasured(req, res, startTime, System.nanoTime(), exception.get());
+                } catch (Throwable e) {
+                    LOGGER.log(WARNING, "Failed to record HTTP request metrics", e);
+                }
+            });
+
             try {
                 chain.proceed();
-                Thread.ofVirtual().start(() -> updateMetricsIfMeasured(req, res, startTime, System.nanoTime(), null));
             } catch (Exception e) {
-                Thread.ofVirtual().start(() -> updateMetricsIfMeasured(req, res, startTime, System.nanoTime(), e));
+                exception.set(e);
                 throw e;
             }
         }
@@ -156,7 +169,7 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
             attrBuilder.put(AttributeKey.stringKey(HTTP_METHOD), req.prologue().method().text())
                     .put(AttributeKey.stringKey(URL_SCHEME), req.prologue().protocol())
                     .put(AttributeKey.stringKey(ERROR_TYPE), errorType(resp, exception))
-                    .put(AttributeKey.longKey(STATUS_CODE), statusCode(resp, exception))
+                    .put(AttributeKey.longKey(STATUS_CODE), resp.status().code())
                     .put(AttributeKey.stringKey(HTTP_ROUTE), route(req))
                     .put(AttributeKey.stringKey(SOCKET_NAME), req.listenerContext().config().name());
 
@@ -173,7 +186,7 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
             don't currently have a way to get the HTTP version at runtime from a request.
              */
 
-            httpRequestDuration.record((endTime - startTime) / 1_000_000.0, attrBuilder.build());
+            httpRequestDuration.record((endTime - startTime) / 1_000_000_000.0, attrBuilder.build());
         }
 
         private String route(RoutingRequest req) {
@@ -194,10 +207,5 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
                             : resp.status().codeText();
         }
 
-        private long statusCode(RoutingResponse resp, Exception exception) {
-            return (exception != null)
-                    ? 0L
-                    : resp.status().code();
-        }
     }
 }
