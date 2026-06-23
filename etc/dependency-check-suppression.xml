@@ -522,22 +522,4 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
     <cve>CVE-2023-28867</cve>
 </suppress>
 
-<!-- False Positive
-     These CVEs are against micrometer server, not clinet libraries
--->
-<suppress>
-    <notes><![CDATA[
-    file name: micrometer-core-1.15.2.jar
-    ]]></notes>
-    <packageUrl regex="true">^pkg:maven/io\.micrometer/micrometer-core@.*$</packageUrl>
-    <vulnerabilityName>CVE-2026-40983</vulnerabilityName>
-</suppress>
-<suppress>
-    <notes><![CDATA[
-    file name: micrometer-core-1.15.2.jar
-    ]]></notes>
-    <packageUrl regex="true">^pkg:maven/io\.micrometer/micrometer-core@.*$</packageUrl>
-    <vulnerabilityName>CVE-2026-40984</vulnerabilityName>
-</suppress>
-
 </suppressions>
