@@ -20,11 +20,11 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-import io.helidon.graphql.spi.CustomScalar;
+import io.helidon.graphql.spi.GraphQlScalar;
 import io.helidon.service.registry.Service;
 
 @Service.Singleton
-class StructuredValueScalar implements CustomScalar<StructuredValue> {
+class StructuredValueScalar implements GraphQlScalar<StructuredValue> {
     @Override
     public Object serialize(StructuredValue value) {
         return describe(value.value());

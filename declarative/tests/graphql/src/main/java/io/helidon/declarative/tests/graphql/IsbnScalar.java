@@ -16,11 +16,11 @@
 
 package io.helidon.declarative.tests.graphql;
 
-import io.helidon.graphql.spi.CustomScalar;
+import io.helidon.graphql.spi.GraphQlScalar;
 import io.helidon.service.registry.Service;
 
 @Service.Singleton
-class IsbnScalar implements CustomScalar<Isbn> {
+class IsbnScalar implements GraphQlScalar<Isbn> {
     @Override
     public Object serialize(Isbn value) {
         return value.value();

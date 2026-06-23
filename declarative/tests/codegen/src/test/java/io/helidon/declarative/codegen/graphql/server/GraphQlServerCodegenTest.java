@@ -31,10 +31,10 @@ import io.helidon.common.context.Context;
 import io.helidon.common.types.Annotation;
 import io.helidon.config.Config;
 import io.helidon.declarative.codegen.graphql.server.spi.GraphQlParameterCodegenProvider;
+import io.helidon.graphql.GeneratedGraphQl;
 import io.helidon.graphql.GraphQl;
 import io.helidon.graphql.server.ExecutionContext;
 import io.helidon.graphql.server.InvocationHandler;
-import io.helidon.graphql.spi.CustomScalar;
 import io.helidon.graphql.spi.GraphQlScalar;
 import io.helidon.security.SecurityContext;
 import io.helidon.security.annotations.Authenticated;
@@ -74,8 +74,8 @@ class GraphQlServerCodegenTest {
             Generated.class,
             GraphQLSchema.class,
             GraphQl.class,
-            CustomScalar.class,
             GraphQlScalar.class,
+            GeneratedGraphQl.CustomScalar.class,
             Context.class,
             ExecutionContext.class,
             GraphQlEntryPoint.class,
@@ -263,11 +263,10 @@ class GraphQlServerCodegenTest {
                 .addSource("IsbnScalar.java", """
                         package com.example;
 
-                        import io.helidon.graphql.spi.CustomScalar;
-                        import io.helidon.service.registry.Service;
+                                                import io.helidon.graphql.spi.GraphQlScalar;import io.helidon.service.registry.Service;
 
                         @Service.Singleton
-                        class IsbnScalar implements CustomScalar<Isbn> {
+                        class IsbnScalar implements GraphQlScalar<Isbn> {
                             @Override
                             public Object serialize(Isbn value) {
                                 return value.value();
@@ -404,7 +403,7 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString(".dataFetcher(\"title\", environment -> ((Book) environment.getSource()).title())"));
         assertThat(generated, containsString(".dataFetcher(\"state\", environment -> ((Book) environment.getSource()).status())"));
         assertThat(generated, containsString(".dataFetcher(\"isbn\", environment -> ((Book) environment.getSource()).isbn())"));
-        assertThat(generated, containsString("List<GraphQlScalar> scalars"));
+        assertThat(generated, containsString("List<GeneratedGraphQl.CustomScalar> scalars"));
         assertThat(generated, containsString("builder.scalar(graphQlScalar(\"ISBN\", Isbn.class));"));
         assertThat(generated, containsString("new Coercing<Object, Object>()"));
         assertThat(generated, containsString("scalar.serialize(dataFetcherResult)"));
@@ -415,8 +414,8 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("scalarLiteralValue("));
         assertThat(generated, containsString("case graphql.language.ArrayValue arrayValue"));
         assertThat(generated, containsString("case graphql.language.ObjectValue objectValue"));
-        assertThat(generatedScalar, containsString("class IsbnScalar__GraphQlScalar implements GraphQlScalar"));
-        assertThat(generatedScalar, containsString("private final CustomScalar<Isbn> delegate"));
+        assertThat(generatedScalar, containsString("class IsbnScalar__GraphQlScalar implements GeneratedGraphQl.CustomScalar"));
+        assertThat(generatedScalar, containsString("private final GraphQlScalar<Isbn> delegate"));
         assertThat(generatedScalar, containsString("return \"ISBN\";"));
         assertThat(generatedScalar, containsString("return Isbn.class;"));
         assertThat(generatedScalar, containsString("return \"ISBN scalar\";"));
