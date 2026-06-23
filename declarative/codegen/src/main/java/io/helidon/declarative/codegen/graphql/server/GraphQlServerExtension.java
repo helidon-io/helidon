@@ -77,7 +77,6 @@ import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegen
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.COMMON_TYPE_NAME;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.DATA_FETCHING_ENVIRONMENT;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_ARGUMENT;
-import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_CUSTOM_SCALAR_SPI;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_DEFAULT_VALUE;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_DESCRIPTION;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_ENTITY;
@@ -142,22 +141,20 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
     private static final TypeName LIST_OF_ANNOTATIONS = TypeName.builder(TypeNames.LIST)
             .addTypeArgument(TypeName.create(Annotation.class))
             .build();
-
     private final RegistryCodegenContext ctx;
     private final List<GraphQlParameterCodegenProvider> paramProviders;
-    private final Set<TypeName> generatedCustomScalarAdapters = new HashSet<>();
+    private final GraphQlServerCustomScalar customScalar;
 
     GraphQlServerExtension(RegistryCodegenContext ctx) {
         this.ctx = ctx;
         this.paramProviders = loadParamProviders(GraphQlServerExtension.class.getClassLoader());
+        this.customScalar = new GraphQlServerCustomScalar(ctx);
     }
-
     static List<GraphQlParameterCodegenProvider> loadParamProviders(ClassLoader classLoader) {
         return HelidonServiceLoader.builder(ServiceLoader.load(GraphQlParameterCodegenProvider.class, classLoader))
                 .build()
                 .asList();
     }
-
     @Override
     public void process(RegistryRoundContext roundContext) {
         Collection<TypeInfo> endpoints = roundContext.annotatedTypes(GRAPHQL_SERVER_ENDPOINT);
@@ -175,124 +172,6 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         for (List<EndpointDeclaration> groupDeclarations : groups.values()) {
             process(roundContext, toGroup(roundContext, groupDeclarations));
         }
-    }
-
-    private void processCustomScalar(RegistryRoundContext roundContext,
-                                     ScalarSchemaType scalarType) {
-        TypeInfo scalarTypeInfo = roundContext.typeInfo(scalarType.javaType().boxed())
-                .or(() -> roundContext.typeInfo(scalarType.javaType()))
-                .orElseThrow(() -> new CodegenException("Unknown Java GraphQL scalar type "
-                                                                + scalarType.javaType().fqName(),
-                                                        scalarType.originatingElement()));
-        TypeName generatedType = customScalarAdapterName(scalarType.javaType());
-        if (generatedCustomScalarAdapters.add(generatedType)) {
-            Set<Annotation> scalarAnnotations = new HashSet<>(TypeHierarchy.hierarchyAnnotations(ctx, scalarTypeInfo));
-            TypeName customScalar = TypeName.builder(GRAPHQL_CUSTOM_SCALAR_SPI)
-                    .addTypeArgument(scalarType.javaType())
-                    .build();
-            processCustomScalar(roundContext,
-                                customScalar,
-                                scalarTypeInfo,
-                                scalarAnnotations,
-                                generatedType,
-                                scalarType.originatingElement());
-        }
-    }
-
-    private void processCustomScalar(RegistryRoundContext roundContext,
-                                     TypeName customScalar,
-                                     TypeInfo scalarType,
-                                     Set<Annotation> scalarAnnotations,
-                                     TypeName generatedType,
-                                     Object originatingElement) {
-        ClassModel.Builder classModel = ClassModel.builder()
-                .type(generatedType)
-                .copyright(CodegenUtil.copyright(GENERATOR, scalarType.typeName(), generatedType))
-                .addAnnotation(CodegenUtil.generatedAnnotation(GENERATOR, scalarType.typeName(), generatedType, "0", ""))
-                .addAnnotation(DeclarativeTypes.SINGLETON_ANNOTATION)
-                .accessModifier(AccessModifier.PACKAGE_PRIVATE)
-                .addInterface(GRAPHQL_SCALAR_SPI)
-                .addField(delegate -> delegate
-                        .accessModifier(AccessModifier.PRIVATE)
-                        .isFinal(true)
-                        .type(customScalar)
-                        .name("delegate"));
-
-        classModel.addConstructor(constructor -> constructor
-                .accessModifier(AccessModifier.PACKAGE_PRIVATE)
-                .addAnnotation(Annotation.create(ServiceCodegenTypes.SERVICE_ANNOTATION_INJECT))
-                .addParameter(delegate -> delegate
-                        .type(customScalar)
-                        .name("delegate"))
-                .addContentLine("this.delegate = delegate;"));
-
-        classModel.addMethod(method -> method
-                .accessModifier(AccessModifier.PUBLIC)
-                .addAnnotation(Annotations.OVERRIDE)
-                .returnType(TypeNames.STRING)
-                .name("name")
-                .addContent("return ")
-                .addContentLiteral(scalarName(scalarType, scalarAnnotations))
-                .addContentLine(";"));
-        classModel.addMethod(method -> method
-                .accessModifier(AccessModifier.PUBLIC)
-                .addAnnotation(Annotations.OVERRIDE)
-                .returnType(TypeName.builder(TypeName.create(Class.class))
-                                    .addTypeArgument(TypeNames.WILDCARD)
-                                    .build())
-                .name("type")
-                .addContent("return ")
-                .addContent(scalarType.typeName())
-                .addContentLine(".class;"));
-        classModel.addMethod(method -> method
-                .accessModifier(AccessModifier.PUBLIC)
-                .addAnnotation(Annotations.OVERRIDE)
-                .returnType(TypeNames.STRING)
-                .name("description")
-                .addContent("return ")
-                .addContentLiteral(description(scalarAnnotations).orElse(""))
-                .addContentLine(";"));
-        classModel.addMethod(method -> method
-                .accessModifier(AccessModifier.PUBLIC)
-                .addAnnotation(Annotations.OVERRIDE)
-                .returnType(TypeNames.OBJECT)
-                .name("serialize")
-                .addParameter(value -> value
-                        .type(TypeNames.OBJECT)
-                        .name("value"))
-                .addContent("return delegate.serialize((")
-                .addContent(scalarType.typeName())
-                .addContentLine(") value);"));
-        classModel.addMethod(method -> method
-                .accessModifier(AccessModifier.PUBLIC)
-                .addAnnotation(Annotations.OVERRIDE)
-                .returnType(TypeNames.OBJECT)
-                .name("parseValue")
-                .addParameter(value -> value
-                        .type(TypeNames.OBJECT)
-                        .name("value"))
-                .addContentLine("return delegate.parseValue(value);"));
-        classModel.addMethod(method -> method
-                .accessModifier(AccessModifier.PUBLIC)
-                .addAnnotation(Annotations.OVERRIDE)
-                .returnType(TypeNames.OBJECT)
-                .name("parseLiteral")
-                .addParameter(value -> value
-                        .type(TypeNames.OBJECT)
-                        .name("value"))
-                .addContentLine("return delegate.parseValue(value);"));
-
-        roundContext.addGeneratedType(generatedType,
-                                      classModel,
-                                      scalarType.typeName(),
-                                      originatingElement);
-    }
-
-    private static TypeName customScalarAdapterName(TypeName scalarType) {
-        return TypeName.builder()
-                .packageName(scalarType.packageName())
-                .className(scalarType.classNameWithEnclosingNames().replace('.', '_') + "Scalar__GraphQlScalar")
-                .build();
     }
 
     private EndpointDeclaration toEndpointDeclaration(TypeInfo typeInfo) {
@@ -819,7 +698,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
 
     private void process(RegistryRoundContext roundContext, GraphQlGroup group) {
         for (ScalarSchemaType scalarType : group.schemaTypes().scalarTypes()) {
-            processCustomScalar(roundContext, scalarType);
+            customScalar.process(roundContext, scalarType);
         }
 
         TypeInfo type = group.primaryEndpoint().typeInfo();
@@ -1020,7 +899,6 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         if (DEFAULT_LISTENER.equals(group.key().listener())) {
             return;
         }
-
         classModel.addMethod(socket -> socket
                 .accessModifier(AccessModifier.PUBLIC)
                 .returnType(TypeNames.STRING)
@@ -1460,7 +1338,7 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         return validateGraphQlName(name, originatingElement);
     }
 
-    private static String validateGraphQlName(String name, Object originatingElement) {
+    static String validateGraphQlName(String name, Object originatingElement) {
         if (!isGraphQlName(name)) {
             throw new CodegenException("GraphQL name '" + name + "' must match [_A-Za-z][_0-9A-Za-z]*.",
                                        originatingElement);
