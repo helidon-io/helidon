@@ -60,7 +60,7 @@ import static io.helidon.graphql.server.GraphQlConstants.LINE;
 import static io.helidon.graphql.server.GraphQlConstants.LOCATIONS;
 import static io.helidon.graphql.server.GraphQlConstants.MESSAGE;
 import static io.helidon.graphql.server.GraphQlConstants.PATH;
-import static io.helidon.graphql.server.internal.GraphQlContextKeys.PARSED_DOCUMENT;
+import static io.helidon.graphql.server.GraphQlContextKeys.PARSED_DOCUMENT;
 
 class InvocationHandlerImpl implements InvocationHandler {
     private static final System.Logger LOGGER = System.getLogger(InvocationHandlerImpl.class.getName());

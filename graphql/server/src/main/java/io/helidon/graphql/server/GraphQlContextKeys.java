@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package io.helidon.graphql.server.internal;
+package io.helidon.graphql.server;
 
-import io.helidon.graphql.server.GraphQlConstants;
+import io.helidon.common.Api;
 
 /**
- * Internal GraphQL server context keys shared with WebServer GraphQL.
+ * GraphQL server context keys shared with WebServer GraphQL.
  */
+@Api.Internal
 public final class GraphQlContextKeys {
     /**
      * GraphQL Java parsed document key.

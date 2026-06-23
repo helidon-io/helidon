@@ -28,7 +28,7 @@ import graphql.schema.idl.SchemaParser;
 import graphql.schema.idl.TypeDefinitionRegistry;
 import org.junit.jupiter.api.Test;
 
-import static io.helidon.graphql.server.internal.GraphQlContextKeys.PARSED_DOCUMENT;
+import static io.helidon.graphql.server.GraphQlContextKeys.PARSED_DOCUMENT;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;

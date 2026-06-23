@@ -26,6 +26,5 @@ module io.helidon.graphql.server {
     requires transitive com.graphqljava;
 
     exports io.helidon.graphql.server;
-    exports io.helidon.graphql.server.internal to io.helidon.webserver.graphql;
 
 }
