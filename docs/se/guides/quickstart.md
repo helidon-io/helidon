@@ -172,8 +172,8 @@ To remove the application from Kubernetes, run `kubectl delete -f app.yaml`.
 Helidon also includes support for GraalVM Native Images and custom Java Runtime
 Images. For more information, see:
 
-- [GraalVM Native Images](graalnative.md)
-- [Custom Java Runtime Images using `jlink`](jlink-image.md)
+- [GraalVM Native Images](native-image.md)
+- [Custom Java Runtime Images using `jlink`](jlink.md)
 
 ## Next Steps
 

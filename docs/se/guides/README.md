@@ -2,24 +2,45 @@
 
 Index of Guides documentation.
 
-| Topic                                                | Description                                                      |
-|------------------------------------------------------|------------------------------------------------------------------|
-| [Overview](overview.md)                              | Helidon SE Guides                                                |
-| [CRaC](crac.md)                                      | Coordinated Restore at Checkpoint(CRaC) with Helidon application |
-| [Custom Runtime Images with `jlink`](jlink-image.md) | Helidon Custom Runtime Images                                    |
-| [GraalVM Native Images](graalnative.md)              | Helidon Native Image                                             |
-| [Gradle Guide](gradle-build.md)                      | Helidon Gradle Guide                                             |
-| [2.x Upgrade Guide](upgrade.md)                      | Helidon Upgrade Guide                                            |
-| [3.x Upgrade Guide](upgrade_3x.md)                   | Helidon SE 3.x Upgrade Guide                                     |
-| [4.x Upgrade Guide](upgrade_4x.md)                   | Helidon SE 4.x Upgrade Guide                                     |
-| [Config Guide](config.md)                            | Helidon configuration                                            |
-| [DB Client Guide](dbclient.md)                       | Helidon db-client                                                |
-| [Health Check Guide](health.md)                      | Helidon health checks                                            |
-| [LangChain4j Guide](langchain4j.md)                  | LangChain4j in Helidon                                           |
-| [Metrics Guide](metrics.md)                          | Helidon metrics                                                  |
-| [OIDC Security Provider Guide](security-oidc.md)     | Helidon OIDC Security Provider                                   |
-| [Quickstart](quickstart.md)                          | Helidon SE Quick Start guide                                     |
-| [Tracing Guide](tracing.md)                          | Helidon tracing                                                  |
-| [WebClient Guide](webclient.md)                      | Helidon WebClient                                                |
-| [Maven Guide](maven-build.md)                        | Helidon Maven Guide                                              |
-| [Performance Tuning](performance-tuning.md)          | Helidon SE Performance Tuning                                    |
+## Getting Started
+
+| Topic                         | Description                   |
+|-------------------------------|-------------------------------|
+| [Overview](overview.md)       | Helidon SE Guides             |
+| [Quickstart](quickstart.md)   | Helidon SE Quickstart         |
+
+## Upgrading
+
+| Topic                        | Description                                                       |
+|------------------------------|-------------------------------------------------------------------|
+| [2.x Upgrade](upgrade.md)    | Learn how to upgrade your Helidon SE application from 1.x to 2.x. |
+| [3.x Upgrade](upgrade-3x.md) | Learn how to upgrade your Helidon SE application from 2.x to 3.x. |
+| [4.x Upgrade](upgrade-4x.md) | Learn how to upgrade your Helidon SE application from 3.x to 4.x. |
+
+## Component Guides
+
+| Topic                           | Description                                                      |
+|---------------------------------|------------------------------------------------------------------|
+| [Config](config.md)             | Helidon configuration                                            |
+| [CRaC](crac.md)                 | Coordinated Restore at Checkpoint(CRaC) with Helidon application |
+| [DbClient](dbclient.md)         | Helidon db-client                                                |
+| [Gradle](gradle.md)             | Helidon Gradle                                                   |
+| [Health Checks](health.md)      | Helidon health checks                                            |
+| [Jlink](jlink.md)               | Helidon Jlink                                                    |
+| [LangChain4j](langchain4j.md)   | LangChain4j in Helidon                                           |
+| [Maven](maven.md)               | Helidon Maven                                                    |
+| [Metrics](metrics.md)           | Helidon metrics                                                  |
+| [Native Image](native-image.md) | Helidon Native Image                                             |
+| [OIDC](oidc.md)                 | Helidon OIDC                                                     |
+| [Tracing](tracing.md)           | Helidon tracing                                                  |
+| [WebClient](webclient.md)       | Helidon WebClient                                                |
+
+## Build and Deploy
+
+| Topic                           | Description                                                                                                                     |
+|---------------------------------|---------------------------------------------------------------------------------------------------------------------------------|
+| [Gradle](gradle.md)             | Using Helidon in your Gradle project.                                                                                           |
+| [Jlink](jlink.md)               | Learn how to build a custom runtime Java image for your Helidon application both on your desktop and as part of a Docker image. |
+| [Maven](maven.md)               | Using Helidon in your Maven project.                                                                                            |
+| [Native Image](native-image.md) | Learn how to build a GraalVM native image for your Helidon application both on your desktop and as part of a Docker image.      |
+| [Performance](performance.md)   | Learn how to tune your Helidon SE application                                                                                   |

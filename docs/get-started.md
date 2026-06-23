@@ -59,7 +59,7 @@ You must have Java and Maven installed on your system to use Helidon.
 
 > [!NOTE]
 > Most of Helidon's examples use Maven, but Helidon can also be used with
-> [Gradle](se/guides/gradle-build.md).
+> [Gradle](se/guides/gradle.md).
 
 Verify System Requirements:
 

@@ -7,7 +7,7 @@ Index of MP documentation.
 | [Introduction](introduction.md) <!--@icon i-lucide-lightbulb --> | About Helidon MP              |
 | [Guides](guides/README.md) <!--@icon i-lucide-compass -->        | Index of Guides documentation |
 
-Components:
+## Components
 
 | Topic                                                                                  | Description                              |
 |----------------------------------------------------------------------------------------|------------------------------------------|
@@ -39,7 +39,7 @@ Components:
 | [Tracing](tracing.md) <!--@icon i-lucide-activity -->                                  | Helidon MP Tracing Support               |
 | [WebSocket](websocket.md) <!--@icon i-lucide-repeat-2 -->                              | Helidon MP WebSocket Support             |
 
-Misc:
+## Miscellaneous
 
 | Topic                                                               | Description                         |
 |---------------------------------------------------------------------|-------------------------------------|

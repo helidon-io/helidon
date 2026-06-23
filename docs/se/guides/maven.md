@@ -79,9 +79,9 @@ Helidon provides a Maven plugin that, among other things, provides the following
 goals:
 
 1.  jlink-image: Build a [custom runtime Java
-    image](../../se/guides/jlink-image.md).
+    image](../../se/guides/jlink.md).
 2.  native-image: Build a [GraalVM native
-    image](../../se/guides/graalnative.md). Note: this capability is now
+    image](../../se/guides/native-image.md). Note: this capability is now
     provided via the [Maven plugin for GraalVM Native Image][maven-plugin-for]
 
 For full documentation of the plugin please see the [Helidon Maven Plugin

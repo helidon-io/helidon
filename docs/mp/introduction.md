@@ -64,11 +64,11 @@ For upgrade from Helidon 1.x to 2.x:
 
 For upgrade from Helidon 2.x to 3.x:
 
-- [Helidon MP 3x Upgrade Guide](../mp/guides/upgrade_3x.md)
+- [Helidon MP 3x Upgrade Guide](../mp/guides/upgrade-3x.md)
 
 For upgrade from Helidon 3.x to 4.x:
 
-- [Helidon MP 4x Upgrade Guide](../mp/guides/upgrade_4x.md)
+- [Helidon MP 4x Upgrade Guide](../mp/guides/upgrade-4x.md)
 
 ## Next Steps
 

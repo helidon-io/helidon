@@ -7,7 +7,7 @@ Index of SE documentation.
 | [Introduction](introduction.md) <!--@icon i-lucide-lightbulb --> | About Helidon SE              |
 | [Guides](guides/README.md) <!--@icon i-lucide-compass -->        | Index of Guides documentation |
 
-Components:
+## Components
 
 | Topic                                                                             | Description                            |
 |-----------------------------------------------------------------------------------|----------------------------------------|
@@ -41,7 +41,7 @@ Components:
 | [WebServer](webserver/README.md) <!--@icon i-lucide-ethernet-port -->             | Index of WebServer documentation       |
 | [WebSocket](websocket.md) <!--@icon i-lucide-repeat-2 -->                         | Helidon WebSocket Support              |
 
-Misc:
+## Miscellaneous
 
 | Topic                                                               | Description                         |
 |---------------------------------------------------------------------|-------------------------------------|

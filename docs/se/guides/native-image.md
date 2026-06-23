@@ -1,6 +1,6 @@
 # GraalVM Native Images
 
-This guide describes how to build a GraalVM native image for a Helidon MP
+This guide describes how to build a GraalVM native image for a Helidon SE
 application.
 
 ## Introduction
@@ -65,30 +65,30 @@ $GRAALVM_HOME/bin/native-image --version
 
 ## Generate the Project
 
-Generate the project using the Helidon MP Quickstart Maven archetype.
+Generate the project using the Helidon SE Quickstart Maven archetype.
 
 ```shell [Terminal]
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
-    -DarchetypeArtifactId=helidon-quickstart-mp \
+    -DarchetypeArtifactId=helidon-quickstart-se \
     -DarchetypeVersion=4.4.0-SNAPSHOT \
     -DgroupId=io.helidon.examples \
-    -DartifactId=helidon-quickstart-mp \
-    -Dpackage=io.helidon.examples.quickstart.mp
+    -DartifactId=helidon-quickstart-se \
+    -Dpackage=io.helidon.examples.quickstart.se
 ```
 
 The archetype generates a Maven project in your current directory (for example,
-`helidon-quickstart-mp`). Change into this directory and build.
+`helidon-quickstart-se`). Change into this directory and build.
 
 ```shell [Terminal]
-cd helidon-quickstart-mp
+cd helidon-quickstart-se
 mvn package
 ```
 
 At this point you can run the application using the JVM:
 
 ```shell [Terminal]
-java -jar target/helidon-quickstart-mp.jar
+java -jar target/helidon-quickstart-se.jar
 ```
 
 In another shell test an endpoint:
@@ -102,7 +102,7 @@ The application should respond with `{"message":"Hello World!"}`
 Now stop the running application (by pressing Ctrl+C).
 
 For more information about the Quickstart application and other endpoints it
-supports see the [Helidon MP Quickstart Guide](../../mp/guides/quickstart.md).
+supports see the [Helidon SE Quickstart Guide](../../se/guides/quickstart.md).
 
 ## Building a Native Image
 
@@ -133,7 +133,7 @@ mvn package -Pnative-image
 Once it completes start the application using the native executable (no JVM!):
 
 ```shell [Terminal]
-./target/helidon-quickstart-mp
+./target/helidon-quickstart-se
 ```
 
 Yep, it starts fast. You can exercise the application’s endpoints as before.
@@ -143,7 +143,7 @@ Yep, it starts fast. You can exercise the application’s endpoints as before.
 Build the "native" Docker image
 
 ```shell [Terminal]
-docker build -t helidon-quickstart-mp-native -f Dockerfile.native .
+docker build -t helidon-quickstart-se-native -f Dockerfile.native .
 ```
 
 > [!TIP]
@@ -156,7 +156,7 @@ docker build -t helidon-quickstart-mp-native -f Dockerfile.native .
 Start the application:
 
 ```shell [Terminal]
-docker run --rm -p 8080:8080 helidon-quickstart-mp-native:latest
+docker run --rm -p 8080:8080 helidon-quickstart-se-native:latest
 ```
 
 Again, it starts fast. You can exercise the application’s endpoints as before.
@@ -172,7 +172,7 @@ running applications where startup and footprint are less of a priority, the
 Java SE HotSpot VM might be more appropriate.
 
 For information about creating custom Java runtime images see [Custom Runtime
-Images with `jlink`](../../mp/guides/jlink-image.md).
+Images with `jlink`](../../se/guides/jlink.md).
 
 > [!NOTE]
 > When building Helidon using native-image, we check features on classpath, and

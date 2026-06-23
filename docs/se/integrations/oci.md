@@ -19,7 +19,7 @@ clients][the-oracle-cloud] into your Helidon applications.
 
 > [!NOTE]
 > If you are interested in our MP based support of OCI than this [Guide for
-> Helidon MP application on OCI](../../mp/guides/oci-guide.md), describes the
+> Helidon MP application on OCI](../../mp/guides/oci.md), describes the
 > basics of developing and deploying a Helidon MP application based on our
 > [Project Starter][project-starter].
 

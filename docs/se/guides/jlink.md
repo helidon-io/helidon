@@ -70,30 +70,30 @@ ls $JAVA_HOME/jmods
 
 ## Generate the Project
 
-Generate the project using the Helidon MP Quickstart Maven archetype.
+Generate the project using the Helidon SE Quickstart Maven archetype.
 
 ```shell [Terminal]
 mvn -U archetype:generate -DinteractiveMode=false \
     -DarchetypeGroupId=io.helidon.archetypes \
-    -DarchetypeArtifactId=helidon-quickstart-mp \
+    -DarchetypeArtifactId=helidon-quickstart-se \
     -DarchetypeVersion=4.4.0-SNAPSHOT \
     -DgroupId=io.helidon.examples \
-    -DartifactId=helidon-quickstart-mp \
-    -Dpackage=io.helidon.examples.quickstart.mp
+    -DartifactId=helidon-quickstart-se \
+    -Dpackage=io.helidon.examples.quickstart.se
 ```
 
 The archetype generates a Maven project in your current directory (for example,
-`helidon-quickstart-mp`). Change into this directory and build.
+`helidon-quickstart-se`). Change into this directory and build.
 
 ```shell [Terminal]
-cd helidon-quickstart-mp
+cd helidon-quickstart-se
 mvn package
 ```
 
 At this point you can run the application using the JVM:
 
 ```shell [Terminal]
-java -jar target/helidon-quickstart-mp.jar
+java -jar target/helidon-quickstart-se.jar
 ```
 
 In another shell test an endpoint:
@@ -107,7 +107,7 @@ The application should respond with `{"message":"Hello World!"}`
 Now stop the running application (by pressing Ctrl+C).
 
 For more information about the Quickstart application and other endpoints it
-supports see the [Helidon MP quickstart Guide](../../mp/guides/quickstart.md).
+supports see the [Helidon SE quickstart Guide](../../se/guides/quickstart.md).
 
 ## Building a Custom Runtime Image
 
@@ -130,13 +130,13 @@ mvn package -Pjlink-image
 After the build completes it will report some statistics about the build
 including the reduction in image size.
 
-The `target/helidon-quickstart-mp-jri` directory is a self contained custom
+The `target/helidon-quickstart-se-jri` directory is a self contained custom
 image of your application. It contains your application, its runtime
 dependencies and the JDK modules it depends on. You can start your application
 using the provide `start` script:
 
 ```shell [Terminal]
-./target/helidon-quickstart-mp-jri/bin/start
+./target/helidon-quickstart-se-jri/bin/start
 ```
 
 ### Class Data Sharing (CDS) Archive and AOT Cache
@@ -182,7 +182,7 @@ To build a Docker image with a custom Java runtime image use the jlink
 Dockerfile included with the quickstart.
 
 ```shell [Terminal]
-docker build -t helidon-quickstart-mp-jri -f Dockerfile.jlink .
+docker build -t helidon-quickstart-se-jri -f Dockerfile.jlink .
 ```
 
 > [!TIP]
@@ -195,7 +195,7 @@ docker build -t helidon-quickstart-mp-jri -f Dockerfile.jlink .
 Start the application:
 
 ```shell [Terminal]
-docker run --rm -p 8080:8080 helidon-quickstart-mp-jri:latest
+docker run --rm -p 8080:8080 helidon-quickstart-se-jri:latest
 ```
 
 You can exercise the application’s endpoints as before.
@@ -206,7 +206,7 @@ Custom runtime images are ideal for use when you want all the runtime
 performance of the JDK JVM in a reasonably compact form.
 
 For cases where absolute minimal startup time and image size are required, then
-consider using [GraalVM Native Images](../../mp/guides/graalnative.md).
+consider using [GraalVM Native Images](../../se/guides/native-image.md).
 
 [jlink]: https://docs.oracle.com/en/java/javase/21/docs/specs/man/jlink.html
 [java-21]: https://www.oracle.com/technetwork/java/javase/downloads

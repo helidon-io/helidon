@@ -69,8 +69,8 @@ and running in minutes.
 [webclient]: webclient.md
 [webserver]: webserver/webserver.md
 [websocket]: websocket.md
-[helidon-se-4x-up]: guides/upgrade_4x.md
-[helidon-se-3x-up]: guides/upgrade_3x.md
+[helidon-se-4x-up]: guides/upgrade-4x.md
+[helidon-se-3x-up]: guides/upgrade-3x.md
 [helidon-se-2-x-u]: guides/upgrade.md
 [guides]: guides/overview.md
 [javadocs]: https://helidon.io/docs/v4/apidocs
