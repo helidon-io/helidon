@@ -295,6 +295,7 @@ class TestOpenTelemetrySemanticConventions {
                         .isPresent())
                 .forEach(metricsEntry -> {
                     var unit = metricsEntry.stringValue("unit").orElseThrow();
+                    assertThat("Duration unit", unit, is("s"));
 
                     metricsEntry.objectValue("histogram").orElseThrow()
                             .arrayValue("dataPoints").orElseThrow()
@@ -307,11 +308,7 @@ class TestOpenTelemetrySemanticConventions {
                                     .get(HTTP_ROUTE)))
                             .forEach(dataPoint -> {
                                 var duration = dataPoint.doubleValue("sum").orElseThrow();
-                                var durationNanos = switch (unit) {
-                                case "s" -> Math.round(duration * 1_000_000_000.0);
-                                case "ms" -> Math.round(duration * 1_000_000.0);
-                                default -> throw new IllegalStateException("Unexpected duration unit: " + unit);
-                                };
+                                var durationNanos = Math.round(duration * 1_000_000_000.0);
 
                                 personalizedGreetingTimeNanos.addAndGet(durationNanos);
                                 personalizedGreetingCount.addAndGet(Long.parseLong(dataPoint.stringValue("count").orElseThrow()));

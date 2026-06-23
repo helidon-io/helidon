@@ -168,7 +168,7 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
             attrBuilder.put(AttributeKey.stringKey(HTTP_METHOD), req.prologue().method().text())
                     .put(AttributeKey.stringKey(URL_SCHEME), req.prologue().protocol())
                     .put(AttributeKey.stringKey(ERROR_TYPE), errorType(resp, exception))
-                    .put(AttributeKey.longKey(STATUS_CODE), statusCode(resp, exception))
+                    .put(AttributeKey.longKey(STATUS_CODE), resp.status().code())
                     .put(AttributeKey.stringKey(HTTP_ROUTE), req.matchingPattern().orElse(""))
                     .put(AttributeKey.stringKey(SOCKET_NAME), req.listenerContext().config().name());
 
@@ -196,10 +196,5 @@ class OpenTelemetryMetricsHttpSemanticConventions implements AutoHttpMetricsProv
                             : resp.status().codeText();
         }
 
-        private long statusCode(RoutingResponse resp, Exception exception) {
-            return (exception != null)
-                    ? 0L
-                    : resp.status().code();
-        }
     }
 }
