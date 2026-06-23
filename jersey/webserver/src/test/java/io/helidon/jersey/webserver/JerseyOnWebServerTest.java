@@ -54,7 +54,6 @@ public class JerseyOnWebServerTest {
 
     @SetUpRoute
     public static void routing(HttpRouting.Builder routing) {
-        ResourceConfig resourceConfig = ResourceConfig.forApplication(new JaxRsApplication());
         routing.addFilter((chain, req, res) -> {
             AtomicReference<Supplier<String>> routeSupplier = new AtomicReference<>();
             LAST_ROUTE.set(null);
@@ -64,7 +63,12 @@ public class JerseyOnWebServerTest {
             chain.proceed();
             LAST_ROUTE.set(routeSupplier.get() == null ? null : routeSupplier.get().get());
         });
-        routing.register("/jersey", JaxRsService.create(Config.empty(), resourceConfig));
+        routing.register("/jersey",
+                         JaxRsService.create(Config.empty(), ResourceConfig.forApplication(new JaxRsApplication())));
+        routing.register("/jersey-relative",
+                         JaxRsService.create(Config.empty(), ResourceConfig.forApplication(new RelativePathApplication())));
+        routing.register("/jersey-trailing",
+                         JaxRsService.create(Config.empty(), ResourceConfig.forApplication(new TrailingSlashPathApplication())));
     }
 
     @Test
@@ -77,6 +81,30 @@ public class JerseyOnWebServerTest {
         assertThat(response.status(), is(Status.OK_200));
         assertThat(response.entity(), is("Hello Joe!"));
         assertThat(LAST_ROUTE.get(), is("/app/greet/{name}"));
+    }
+
+    @Test
+    public void testRelativeApplicationAndResourcePaths() {
+        REQUEST_ROUTE.set(true);
+
+        var response = client.get("/jersey-relative/greet/Joe")
+                .request(String.class);
+
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity(), is("Hello Joe!"));
+        assertThat(LAST_ROUTE.get(), is("/app/greet/{name}"));
+    }
+
+    @Test
+    public void testTrailingApplicationSlashAndAbsoluteResourcePath() {
+        REQUEST_ROUTE.set(true);
+
+        var response = client.get("/jersey-trailing/greet")
+                .request(String.class);
+
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity(), is("Hello!"));
+        assertThat(LAST_ROUTE.get(), is("/foo/bar/greet"));
     }
 
     @Test
@@ -110,12 +138,46 @@ public class JerseyOnWebServerTest {
         }
     }
 
+    @ApplicationPath("app")
+    public static class RelativePathApplication extends Application {
+        @Override
+        public Set<Class<?>> getClasses() {
+            return Set.of(RelativePathEndpoint.class);
+        }
+    }
+
+    @ApplicationPath("/foo/bar/")
+    public static class TrailingSlashPathApplication extends Application {
+        @Override
+        public Set<Class<?>> getClasses() {
+            return Set.of(AbsoluteSimpleEndpoint.class);
+        }
+    }
+
     @Path("/greet/{name}")
     public static class JaxRsEndpoint {
         @GET
         @Produces(MediaType.TEXT_PLAIN)
         public String greet(@jakarta.ws.rs.PathParam("name") String name) {
             return "Hello " + name + "!";
+        }
+    }
+
+    @Path("greet/{name}")
+    public static class RelativePathEndpoint {
+        @GET
+        @Produces(MediaType.TEXT_PLAIN)
+        public String greet(@jakarta.ws.rs.PathParam("name") String name) {
+            return "Hello " + name + "!";
+        }
+    }
+
+    @Path("/greet")
+    public static class AbsoluteSimpleEndpoint {
+        @GET
+        @Produces(MediaType.TEXT_PLAIN)
+        public String greet() {
+            return "Hello!";
         }
     }
 }

@@ -368,17 +368,42 @@ public class JaxRsService implements HttpService {
         appendPath(derivedPath, resource.getParent());
 
         String resourcePath = resource.getPath();
-        if (resourcePath != null && !resourcePath.equals("/") && !resourcePath.isBlank()) {
-            if (!resourcePath.startsWith("/")) {
-                derivedPath.append('/');
-            }
-            derivedPath.append(resourcePath);
+        appendPath(derivedPath, resourcePath);
+    }
+
+    private static void appendPath(StringBuilder derivedPath, String path) {
+        if (path == null || path.isBlank()) {
+            return;
         }
+
+        int start = 0;
+        int end = path.length();
+        while (start < end && path.charAt(start) == '/') {
+            start++;
+        }
+        while (end > start && path.charAt(end - 1) == '/') {
+            end--;
+        }
+
+        if (start == end) {
+            return;
+        }
+
+        if (derivedPath.isEmpty() || derivedPath.charAt(derivedPath.length() - 1) != '/') {
+            derivedPath.append('/');
+        }
+        derivedPath.append(path, start, end);
     }
 
     private String applicationPath() {
         ApplicationPath applicationPath = getRealClass(application.getClass()).getAnnotation(ApplicationPath.class);
-        return (applicationPath == null || applicationPath.value().equals("/")) ? "" : applicationPath.value();
+        if (applicationPath == null) {
+            return "";
+        }
+
+        StringBuilder result = new StringBuilder();
+        appendPath(result, applicationPath.value());
+        return result.toString();
     }
 
     private static Class<?> getRealClass(Class<?> object) {
