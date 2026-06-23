@@ -49,34 +49,6 @@ final class CmPageResolver {
 
     private static final String ROOT_PAGE_KEY = "root/root";
     private static final String N_A = "N/A";
-    private static final Set<String> SCALAR_TYPES = Set.of(
-            CmOption.DEFAULT_TYPE,
-            "String",
-            "Boolean",
-            "Byte",
-            "Short",
-            "Integer",
-            "Long",
-            "Float",
-            "Double",
-            "Character",
-            "java.lang.Boolean",
-            "java.lang.Byte",
-            "java.lang.Short",
-            "java.lang.Integer",
-            "java.lang.Long",
-            "java.lang.Float",
-            "java.lang.Double",
-            "java.lang.Character",
-            "java.math.BigDecimal",
-            "java.math.BigInteger",
-            "java.net.URI",
-            "java.time.Duration",
-            "java.time.Instant",
-            "java.time.LocalDate",
-            "java.time.LocalDateTime",
-            "java.time.OffsetDateTime",
-            "java.time.ZonedDateTime");
 
     private final CmResolver resolver;
     private final CmDocNames names;
@@ -104,7 +76,6 @@ final class CmPageResolver {
         this.fileExt = fileExt;
         this.names = new CmDocNames(join(rootPageName, reservedFileNames));
         initKnownTypes();
-        warnUnresolvedOptionTypes(metadata);
         initDependentTypeNames(metadata);
         initRealPages();
         assignTreePages();
@@ -152,36 +123,6 @@ final class CmPageResolver {
             enumsByName.put(type.typeName(), type);
         }
         contractTypeNames.addAll(resolver.contracts());
-    }
-
-    private void warnUnresolvedOptionTypes(CmModel metadata) {
-        for (var module : metadata.modules()) {
-            for (var type : module.types()) {
-                for (var option : type.options()) {
-                    var typeName = option.typeName();
-                    if (isResolvedOptionType(option)) {
-                        continue;
-                    }
-                    LOGGER.log(Level.WARNING,
-                               "Unresolved config metadata option type: {0}.{1} uses {2}",
-                               type.typeName(),
-                               option.key().orElse("<merge>"),
-                               typeName);
-                }
-            }
-        }
-    }
-
-    private boolean isResolvedOptionType(CmOption option) {
-        var typeName = option.typeName();
-        return isScalarType(typeName)
-                || configTypeNames.containsKey(typeName)
-                || enumsByName.containsKey(typeName)
-                || option.provider() && contractTypeNames.contains(typeName);
-    }
-
-    private static boolean isScalarType(String typeName) {
-        return SCALAR_TYPES.contains(typeName);
     }
 
     private void initRealPages() {

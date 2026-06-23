@@ -339,12 +339,6 @@ class SchemaGenerator {
                         "Unable to resolve: " + lookupName, methodInfo, typeInfo));
     }
 
-    private boolean isPrototyped(TypeName typeName) {
-        return ctx.typeInfo(typeName)
-                .map(it -> resolver.isSubtype(it, Types.RUNTIME_API))
-                .orElse(false);
-    }
-
     private TypeName optionTypeName(OptionInfo optionInfo) {
         var typeName = optionInfo.declaredType();
         if (typeName.isOptional()) {
@@ -391,7 +385,15 @@ class SchemaGenerator {
                 .map(FactoryMethod::returnType)
                 .orElse(null);
         if (configuredReturnTypeName != null) {
-            warnAmbiguousConfigFactory(optionInfo, configuredFactory);
+            if (configuredFactory != null) {
+                var paramType = configuredFactory.parameterType().orElse(null);
+                if (paramType != null && (paramType.equals(Types.CONFIG) || paramType.equals(Types.COMMON_CONFIG))) {
+                    if (configuredFactory.declaringType().className().endsWith("CustomMethods")) {
+                        var methodInfo = optionInfo.interfaceMethod().orElse(null);
+                        logger.log(Level.WARNING, "Raw Config option", methodInfo);
+                    }
+                }
+            }
             return configuredReturnTypeName;
         }
 
@@ -404,25 +406,6 @@ class SchemaGenerator {
         }
 
         return typeName.boxed();
-    }
-
-    private void warnAmbiguousConfigFactory(OptionInfo optionInfo, FactoryMethod configuredFactory) {
-        if (configuredFactory == null) {
-            return;
-        }
-        var parameterType = configuredFactory.parameterType().orElse(null);
-        if (parameterType == null || !(parameterType.equals(Types.CONFIG) || parameterType.equals(Types.COMMON_CONFIG))) {
-            return;
-        }
-        if (!configuredFactory.declaringType().className().endsWith("CustomMethods")) {
-            return;
-        }
-        logger.log(Level.WARNING,
-                           "Config factory method " + configuredFactory.declaringType().fqName()
-                                   + "." + configuredFactory.methodName()
-                           + " uses raw Config for option '" + optionInfo.name()
-                           + "' without an explicit config metadata type",
-                   optionInfo.interfaceMethod().orElse(null));
     }
 
     private String optionKind(OptionInfo optionInfo) {

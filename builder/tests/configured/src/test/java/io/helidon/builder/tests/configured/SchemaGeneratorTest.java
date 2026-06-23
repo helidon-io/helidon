@@ -31,10 +31,9 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.codegen.testing.CodegenMatchers.matches;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
-import static org.hamcrest.Matchers.not;
 
 /**
  * Tests {@code BuilderCodegen}.
@@ -2129,6 +2128,7 @@ class SchemaGeneratorTest {
         assertThat(Files.exists(schema), is(true));
 
         var actual = Files.readString(schema);
+        //noinspection UnnecessaryModifier
         assertThat(actual, matches("""
                 //...
                 package com.acme;
@@ -2140,17 +2140,26 @@ class SchemaGeneratorTest {
                     })
                 //...
                 public interface AcmeConfig extends AcmeConfigBlueprint, Prototype.Api {
-                //...
+                        //...
+                        @Override
+                        public BUILDER config(Config config) {
+                            //...
+                            config.get("privatekey").as(AcmePrivateKeyConfig::create).ifPresent(this::privatekey);
+                            return self();
+                        }
+                        //...
+                        public BUILDER privatekey(AcmePrivateKeyConfig privatekey) {
+                            Objects.requireNonNull(privatekey);
+                            privatekey(AcmeConfigMethods.createPrivateKey(privatekey));
+                            return self();
+                        }
+                        //...
                 }
                 """));
-        assertThat(actual, containsString("config.get(\"privatekey\")"
-                                                  + ".as(AcmePrivateKeyConfig::create)"
-                                                  + ".ifPresent(this::privatekey)"));
-        assertThat(actual, containsString("privatekey(AcmeConfigMethods.createPrivateKey(privatekey));"));
     }
 
     @Test
-    void testConfigFactoryMethodWarnsForRawConfigWithoutMetadataType() {
+    void testRawConfigFactory() {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .addClasspath(CLASSPATH)
@@ -2200,13 +2209,14 @@ class SchemaGeneratorTest {
                 .compile();
 
         assertThat(result.success(), is(true));
-        assertThat(result.diagnostics().toString(),
-                   containsString("Config factory method com.acme.AcmeCustomMethods.custom uses raw Config for option "
-                                          + "'custom' without an explicit config metadata type"));
+        assertThat(result.diagnostics(), is(hasItems("""
+                /AcmeConfigBlueprint.java:17: warning: Raw Config option
+                    AcmeCustomType custom();
+                                   ^""")));
     }
 
     @Test
-    void testConfigFactoryMethodTypedParameterMetadataType() throws IOException {
+    void testConfigFactoryScalar() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .addClasspath(CLASSPATH)
@@ -2254,22 +2264,33 @@ class SchemaGeneratorTest {
                 .compile();
 
         assertThat(result.success(), is(true));
-        assertThat(result.diagnostics().toString(),
-                   is(not(containsString("without an explicit config metadata type"))));
+        assertThat(result.diagnostics(), is(empty()));
 
         var actual = Files.readString(result.sourceOutput().resolve("com/acme/AcmeConfig.java"));
+        //noinspection UnnecessaryModifier
         assertThat(actual, matches("""
                 //...
+                @Configured(
+                    //...
                     options = {
                         @ConfiguredOption(key = "custom", description = "Custom option", type = String.class, required = true)
                     })
                 //...
+                public interface AcmeConfig extends AcmeConfigBlueprint, Prototype.Api {
+                        //...
+                        @Override
+                        public BUILDER config(Config config) {
+                            //...
+                            config.get("custom").as(String.class).as(AcmeCustomMethods::custom).ifPresent(this::custom);
+                            return self();
+                        }
+                        //...
+                }
                 """));
-        assertThat(actual, containsString("config.get(\"custom\").as(String.class).as(AcmeCustomMethods::custom)"));
     }
 
     @Test
-    void testConfigFactoryMethodReturningSchemaTypeUsesReturnType() throws IOException {
+    void testConfigFactoryAdapter() throws IOException {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .addClasspath(CLASSPATH)
@@ -2328,10 +2349,15 @@ class SchemaGeneratorTest {
         var actual = Files.readString(result.sourceOutput().resolve("com/acme/AcmeConfig.java"));
         assertThat(actual, matches("""
                 //...
+                @Configured(
+                    //...
                     options = {
                         @ConfiguredOption(key = "nested", description = "Nested option", type = AcmeNestedConfig.class, required = true)
                     })
                 //...
+                public interface AcmeConfig extends AcmeConfigBlueprint, Prototype.Api {
+                    //...
+                }
                 """));
     }
 
