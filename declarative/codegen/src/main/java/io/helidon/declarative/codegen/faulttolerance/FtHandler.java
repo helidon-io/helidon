@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,22 @@
 
 package io.helidon.declarative.codegen.faulttolerance;
 
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.Field;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
+import io.helidon.common.types.ElementKind;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.declarative.codegen.common.DeclarativeElementInfo;
 import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.RegistryRoundContext;
 
@@ -50,41 +52,34 @@ abstract class FtHandler {
     }
 
     void process(RegistryRoundContext roundCtx, Map<TypeName, TypeInfo> types) {
-        var elements = roundCtx.annotatedElements(annotation);
         int index = 0;
-        for (TypedElementInfo element : elements) {
-            var enclosingType = enclosingType(types, element);
-            var generatedType = generatedTypeName(enclosingType.typeName(), element, index);
-            process(roundCtx,
-                    enclosingType,
-                    element,
-                    element.annotation(annotation),
-                    generatedType,
-                    classBuilder(enclosingType.typeName(),
-                                 element,
-                                 generatedType));
-            index++;
-        }
-    }
+        Set<String> generatedTargets = new HashSet<>();
+        for (TypeInfo enclosingType : types.values()) {
+            if (enclosingType.kind() == ElementKind.INTERFACE) {
+                continue;
+            }
+            for (TypedElementInfo element : enclosingType.elementInfo()) {
+                if (!DeclarativeElementInfo.belongsToService(enclosingType, element)
+                        || !element.hasAnnotation(annotation)) {
+                    continue;
+                }
+                String target = elementTarget(enclosingType, element);
+                if (!generatedTargets.add(target)) {
+                    continue;
+                }
 
-    TypeInfo enclosingType(Map<TypeName, TypeInfo> types, TypedElementInfo element) {
-        if (element.enclosingType().isEmpty()) {
-            throw new CodegenException(
-                    annotation.className()
-                            + " annotation is only allowed on a method, yet this element does not have an enclosing type: "
-                            + element.elementName(),
-                    element.originatingElementValue());
+                var generatedType = generatedTypeName(enclosingType.typeName(), element, index);
+                process(roundCtx,
+                        enclosingType,
+                        element,
+                        element.annotation(annotation),
+                        generatedType,
+                        classBuilder(enclosingType,
+                                     element,
+                                     generatedType));
+                index++;
+            }
         }
-
-        TypeName enclosingType = element.enclosingType().get();
-        TypeInfo typeInfo = types.get(enclosingType);
-        if (typeInfo == null) {
-            throw new CodegenException(
-                    annotation.className() + " annotation is expected on a type processed as part of this processing round, "
-                            + "yet the type info is not available for type: " + enclosingType.fqName(),
-                    element.originatingElementValue());
-        }
-        return typeInfo;
     }
 
     abstract void process(RegistryRoundContext roundContext,
@@ -178,17 +173,24 @@ abstract class FtHandler {
                 .addContent(")");
     }
 
-    private ClassModel.Builder classBuilder(TypeName enclosingType,
+    private ClassModel.Builder classBuilder(TypeInfo enclosingType,
                                             TypedElementInfo element,
                                             TypeName generatedType) {
+        TypeName typeName = enclosingType.typeName();
         return ClassModel.builder()
                 .accessModifier(AccessModifier.PACKAGE_PRIVATE)
                 .addAnnotation(SINGLETON_ANNOTATION)
-                .addAnnotation(namedAnnotation(enclosingType, element))
-                .addAnnotation(CodegenUtil.generatedAnnotation(generator, enclosingType, generatedType, "1", ""))
-                .copyright(CodegenUtil.copyright(generator, enclosingType, generatedType))
+                .addAnnotation(namedAnnotation(elementTarget(enclosingType, element)))
+                .addAnnotation(CodegenUtil.generatedAnnotation(generator, typeName, generatedType, "1", ""))
+                .copyright(CodegenUtil.copyright(generator, typeName, generatedType))
                 .type(generatedType)
                 .sortStaticFields(false);
+    }
+
+    private String elementTarget(TypeInfo typeInfo, TypedElementInfo element) {
+        return element.enclosingType()
+                .orElse(typeInfo.typeName())
+                .fqName() + "." + element.signature().text();
     }
 
     private TypeName generatedTypeName(TypeName typeName, TypedElementInfo element, int index) {

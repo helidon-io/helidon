@@ -206,6 +206,9 @@ include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_3, indent=0]
 
 Fault tolerance annotations allow adding features to methods on services.
 The annotations can be added to any method that supports interception (i.e. methods that are not private).
+Method-level fault tolerance annotations can also be declared on methods inherited from service contracts and typed
+HTTP client interfaces. Type-level fault tolerance annotations on interfaces are not inherited by service methods.
+Contracts provided by registry-managed service factories are not included.
 
 Method Annotations:
 
@@ -374,6 +377,8 @@ include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_7, indent=0]
 
 Constraint annotations and `@Validation.Valid` can also be declared on non-private instance methods of service interfaces.
 They are applied when the service instance is obtained from the service registry.
+Service interfaces are discovered using the service registry contract rules, including `@Service.Contract`,
+implicit contracts when enabled, and `@Service.ExternalContracts`.
 The same applies to instances returned by registry-managed service factories, including `Supplier`,
 `Service.ServicesFactory`, `Service.InjectionPointFactory`, and `Service.QualifiedFactory` services.
 This can change runtime behavior for services that already declared interface validation: invalid calls through
@@ -441,6 +446,9 @@ Method annotations:
 - link:{metrics-javadoc-base-url}/io/helidon/metrics/api/Metrics.Timed.html[`io.helidon.metrics.api.Metrics.Timed`] - adds a timer metric to the metric registry for method executions
 - link:{metrics-javadoc-base-url}/io/helidon/metrics/api/Metrics.Gauge.html[`io.helidon.metrics.api.Metrics.Gauge`] - marks a method that returns a number as a gauge
 
+Metrics method annotations can also be declared on methods inherited from service contracts and typed HTTP client interfaces.
+Contracts provided by registry-managed service factories are not included.
+
 In addition, we can use link:{metrics-javadoc-base-url}/io/helidon/metrics/api/Metrics.Tag.html[`io.helidon.metrics.api.Metrics.Tag`] annotation on a type, method, or as a `tags` property of an annotation to add tags to the metric. Tags from type definition will be added to all metrics on the type, tags on methods on all metrics on the method, and tags in the metric annotation will only be used by that metric.
 
 The example below shows additional tags. The counter on method `counted` will have the following tags: `service=Metered;method=counted` (and of course the scope tag that is always added).
@@ -463,6 +471,9 @@ include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_12, indent=0]
 
 Add support for tracing of methods.
 This feature will add a new span for each annotated method (or all methods on an annotated type).
+Tracing annotations can also be declared on methods inherited from service contracts and typed HTTP client interfaces.
+A type-level tracing annotation on a contract interface applies only to methods declared by that contract.
+Contracts provided by registry-managed service factories are not included.
 
 Annotations:
 
