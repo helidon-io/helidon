@@ -21,6 +21,7 @@ import java.util.Optional;
 import io.helidon.service.registry.Service;
 import io.helidon.validation.Validation;
 
+@Service.Contract
 interface InjectionPointFactoryOverloadedDirectContract {
     Optional<Service.QualifiedInstance<InjectionPointFactoryProvidedInterfaceConstrainedService>> first(
             @Validation.NotNull String name);

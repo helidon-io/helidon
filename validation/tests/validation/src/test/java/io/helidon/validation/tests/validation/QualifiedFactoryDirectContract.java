@@ -25,6 +25,7 @@ import io.helidon.service.registry.Qualifier;
 import io.helidon.service.registry.Service;
 import io.helidon.validation.Validation;
 
+@Service.Contract
 interface QualifiedFactoryDirectContract {
     Optional<Service.QualifiedInstance<QualifiedFactoryProvidedInterfaceConstrainedService>> first(
             @Validation.NotNull Qualifier qualifier,

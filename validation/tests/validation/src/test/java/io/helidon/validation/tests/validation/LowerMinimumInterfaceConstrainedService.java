@@ -16,8 +16,10 @@
 
 package io.helidon.validation.tests.validation;
 
+import io.helidon.service.registry.Service;
 import io.helidon.validation.Validation;
 
+@Service.Contract
 interface LowerMinimumInterfaceConstrainedService {
     int validateMinimum(@Validation.Integer.Min(1) int value);
 }

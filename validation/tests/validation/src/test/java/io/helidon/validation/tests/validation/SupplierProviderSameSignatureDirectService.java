@@ -16,8 +16,10 @@
 
 package io.helidon.validation.tests.validation;
 
+import io.helidon.service.registry.Service;
 import io.helidon.validation.Validation;
 
+@Service.Contract
 interface SupplierProviderSameSignatureDirectService {
     String validate(@Validation.String.Pattern("[0-9]+") String value);
 }
