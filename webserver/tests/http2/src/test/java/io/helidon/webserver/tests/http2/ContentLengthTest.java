@@ -232,146 +232,65 @@ class ContentLengthTest {
 
     @Test
     void negativeContentLengthRejected(Http2TestClient client) {
-        Http2TestConnection h2conn = client.createConnection();
-
-        var headers = requestHeadersWithContentLength(-1);
-        h2conn.request(1, POST, LONGER_DATA_PATH, headers, BufferData.create("frank"));
-
-        h2conn.assertSettings(TIMEOUT);
-        h2conn.assertWindowsUpdate(0, TIMEOUT);
-        h2conn.assertSettings(TIMEOUT);
-
-        h2conn.assertGoAway(Http2ErrorCode.PROTOCOL,
-                            "Content-Length header must be a number.",
-                            TIMEOUT);
+        assertContentLengthRejected(client,
+                                    requestHeadersWithContentLength(-1),
+                                    "Content-Length header must be a number.");
     }
 
     @Test
     void signedContentLengthRejected(Http2TestClient client) {
-        Http2TestConnection h2conn = client.createConnection();
-
-        var headers = requestHeadersWithContentLengthValue("+5");
-        h2conn.request(1, POST, LONGER_DATA_PATH, headers, BufferData.create("frank"));
-
-        h2conn.assertSettings(TIMEOUT);
-        h2conn.assertWindowsUpdate(0, TIMEOUT);
-        h2conn.assertSettings(TIMEOUT);
-
-        h2conn.assertGoAway(Http2ErrorCode.PROTOCOL,
-                            "Content-Length header must be a number.",
-                            TIMEOUT);
+        assertContentLengthRejected(client,
+                                    requestHeadersWithContentLengthValue("+5"),
+                                    "Content-Length header must be a number.");
     }
 
     @Test
     void negativeZeroContentLengthRejected(Http2TestClient client) {
-        Http2TestConnection h2conn = client.createConnection();
-
-        var headers = requestHeadersWithContentLengthValue("-0");
-        h2conn.request(1, POST, LONGER_DATA_PATH, headers, BufferData.create("frank"));
-
-        h2conn.assertSettings(TIMEOUT);
-        h2conn.assertWindowsUpdate(0, TIMEOUT);
-        h2conn.assertSettings(TIMEOUT);
-
-        h2conn.assertGoAway(Http2ErrorCode.PROTOCOL,
-                            "Content-Length header must be a number.",
-                            TIMEOUT);
+        assertContentLengthRejected(client,
+                                    requestHeadersWithContentLengthValue("-0"),
+                                    "Content-Length header must be a number.");
     }
 
     @Test
     void repeatedNegativeContentLengthRejected(Http2TestClient client) {
-        Http2TestConnection h2conn = client.createConnection();
-
-        var headers = requestHeadersWithContentLength(5, -1);
-        h2conn.request(1, POST, LONGER_DATA_PATH, headers, BufferData.create("frank"));
-
-        h2conn.assertSettings(TIMEOUT);
-        h2conn.assertWindowsUpdate(0, TIMEOUT);
-        h2conn.assertSettings(TIMEOUT);
-
-        h2conn.assertGoAway(Http2ErrorCode.PROTOCOL,
-                            "Content-Length header must have exactly one value.",
-                            TIMEOUT);
+        assertContentLengthRejected(client,
+                                    requestHeadersWithContentLength(5, -1),
+                                    "Content-Length header must have exactly one value.");
     }
 
     @Test
     void conflictingContentLengthRejected(Http2TestClient client) {
-        Http2TestConnection h2conn = client.createConnection();
-
-        var headers = requestHeadersWithContentLength(5, 4);
-        h2conn.request(1, POST, LONGER_DATA_PATH, headers, BufferData.create("frank"));
-
-        h2conn.assertSettings(TIMEOUT);
-        h2conn.assertWindowsUpdate(0, TIMEOUT);
-        h2conn.assertSettings(TIMEOUT);
-
-        h2conn.assertGoAway(Http2ErrorCode.PROTOCOL,
-                            "Content-Length header must have exactly one value.",
-                            TIMEOUT);
+        assertContentLengthRejected(client,
+                                    requestHeadersWithContentLength(5, 4),
+                                    "Content-Length header must have exactly one value.");
     }
 
     @Test
     void conflictingCommaSeparatedContentLengthRejected(Http2TestClient client) {
-        Http2TestConnection h2conn = client.createConnection();
-
-        var headers = requestHeadersWithContentLengthValue("5, 4");
-        h2conn.request(1, POST, LONGER_DATA_PATH, headers, BufferData.create("frank"));
-
-        h2conn.assertSettings(TIMEOUT);
-        h2conn.assertWindowsUpdate(0, TIMEOUT);
-        h2conn.assertSettings(TIMEOUT);
-
-        h2conn.assertGoAway(Http2ErrorCode.PROTOCOL,
-                            "Content-Length header must have exactly one value.",
-                            TIMEOUT);
+        assertContentLengthRejected(client,
+                                    requestHeadersWithContentLengthValue("5, 4"),
+                                    "Content-Length header must have exactly one value.");
     }
 
     @Test
     void equalCommaSeparatedContentLengthRejected(Http2TestClient client) {
-        Http2TestConnection h2conn = client.createConnection();
-
-        var headers = requestHeadersWithContentLengthValue("5, 5");
-        h2conn.request(1, POST, LONGER_DATA_PATH, headers, BufferData.create("frank"));
-
-        h2conn.assertSettings(TIMEOUT);
-        h2conn.assertWindowsUpdate(0, TIMEOUT);
-        h2conn.assertSettings(TIMEOUT);
-
-        h2conn.assertGoAway(Http2ErrorCode.PROTOCOL,
-                            "Content-Length header must have exactly one value.",
-                            TIMEOUT);
+        assertContentLengthRejected(client,
+                                    requestHeadersWithContentLengthValue("5, 5"),
+                                    "Content-Length header must have exactly one value.");
     }
 
     @Test
     void equalRepeatedContentLengthRejected(Http2TestClient client) {
-        Http2TestConnection h2conn = client.createConnection();
-
-        var headers = requestHeadersWithContentLength(5, 5);
-        h2conn.request(1, POST, LONGER_DATA_PATH, headers, BufferData.create("frank"));
-
-        h2conn.assertSettings(TIMEOUT);
-        h2conn.assertWindowsUpdate(0, TIMEOUT);
-        h2conn.assertSettings(TIMEOUT);
-
-        h2conn.assertGoAway(Http2ErrorCode.PROTOCOL,
-                            "Content-Length header must have exactly one value.",
-                            TIMEOUT);
+        assertContentLengthRejected(client,
+                                    requestHeadersWithContentLength(5, 5),
+                                    "Content-Length header must have exactly one value.");
     }
 
     @Test
     void controlCharacterContentLengthRejected(Http2TestClient client) {
-        Http2TestConnection h2conn = client.createConnection();
-
-        var headers = requestHeadersWithContentLengthValue("5\u000b");
-        h2conn.request(1, POST, LONGER_DATA_PATH, headers, BufferData.create("frank"));
-
-        h2conn.assertSettings(TIMEOUT);
-        h2conn.assertWindowsUpdate(0, TIMEOUT);
-        h2conn.assertSettings(TIMEOUT);
-
-        h2conn.assertGoAway(Http2ErrorCode.PROTOCOL,
-                            "Content-Length header must be a number.",
-                            TIMEOUT);
+        assertContentLengthRejected(client,
+                                    requestHeadersWithContentLengthValue("5\u000b"),
+                                    "Content-Length header must be a number.");
     }
 
     @Test
@@ -581,6 +500,17 @@ class ContentLengthTest {
             headers.add(HeaderNames.CONTENT_LENGTH, contentLength);
         }
         return headers;
+    }
+
+    private void assertContentLengthRejected(Http2TestClient client,
+                                             WritableHeaders<?> headers,
+                                             String message) {
+        Http2TestConnection h2conn = client.createConnection();
+        h2conn.completeHandshake(TIMEOUT);
+
+        h2conn.request(1, POST, LONGER_DATA_PATH, headers, BufferData.create("frank"));
+
+        h2conn.assertGoAway(Http2ErrorCode.PROTOCOL, message, TIMEOUT);
     }
 
     private void writeRequestHeaders(Http2TestConnection h2conn,
