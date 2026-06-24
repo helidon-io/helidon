@@ -45,12 +45,12 @@ that can be applied to any CDI bean method.
 > This feature is based on CDI interceptors, so using it on a non-CDI bean
 > method will have no effect.
 
-| Name         | Value                                                        | Description                                                                              |
-|--------------|--------------------------------------------------------------|------------------------------------------------------------------------------------------|
-| value        | ThreadType.PLATFORM, ThreadType.VIRTUAL, ThreadType.EXECUTOR | Type of thread used to execute a method invocation                                       |
-| timeout      | A long value                                                 | Maximum wait time for the method to return a value before triggering a timeout exception |
-| unit         | A `TimeUnit` value                                           | Unit for `timeout` parameter                                                             |
-| executorName | The name of an executor from which to obtain a thread        | CDI producer with a `@Named` qualifier to access the executor                            |
+| Name         | Value                                                 | Description                                                                              |
+|--------------|-------------------------------------------------------|------------------------------------------------------------------------------------------|
+| value        | `ThreadType`                                          | Type of thread used to execute a method invocation                                       |
+| timeout      | `long`                                                | Maximum wait time for the method to return a value before triggering a timeout exception |
+| unit         | `TimeUnit`                                            | Unit for `timeout` parameter                                                             |
+| executorName | The name of an executor from which to obtain a thread | CDI producer with a `@Named` qualifier to access the executor                            |
 
 ## Configuration
 
@@ -86,11 +86,10 @@ execute-on:
 
     ```java
     public class MyPlaformBean {
-
-    @ExecuteOn(ThreadType.PLATFORM)
-    int cpuIntensive(int n) {
-        return PiDigitCalculator.nthDigitOfPi(n);
-    }
+        @ExecuteOn(ThreadType.PLATFORM)
+        int cpuIntensive(int n) {
+            return PiDigitCalculator.nthDigitOfPi(n);
+        }
     }
     ```
 
@@ -103,17 +102,16 @@ execute-on:
 
     ```java
     public class MyExecutorBean {
+        @ExecuteOn(value = ThreadType.EXECUTOR, executorName = "my-executor")
+        int cpuIntensive(int n) {
+            return PiDigitCalculator.nthDigitOfPi(n);
+        }
 
-    @ExecuteOn(value = ThreadType.EXECUTOR, executorName = "my-executor")
-    int cpuIntensive(int n) {
-        return PiDigitCalculator.nthDigitOfPi(n);
-    }
-
-    @Produces
-    @Named("my-executor")
-    ExecutorService myExecutor() {
-        return Executors.newFixedThreadPool(2);
-    }
+        @Produces
+        @Named("my-executor")
+        ExecutorService myExecutor() {
+            return Executors.newFixedThreadPool(2);
+        }
     }
     ```
 
@@ -122,11 +120,10 @@ execute-on:
 
     ```java
     public class MyVirtualBean {
-
-    @ExecuteOn(ThreadType.VIRTUAL)
-    void someTask() {
-        // run task on virtual thread
-    }
+        @ExecuteOn(ThreadType.VIRTUAL)
+        void someTask() {
+            // run task on virtual thread
+        }
     }
     ```
 
@@ -136,12 +133,11 @@ execute-on:
 
     ```java
     public class MyVirtualBeanAsync {
-
-    @ExecuteOn(ThreadType.VIRTUAL)
-    CompletionStage<String> someTask() {
-        // run task on virtual thread without blocking caller
-        return CompletableFuture.completedFuture("DONE");
-    }
+        @ExecuteOn(ThreadType.VIRTUAL)
+        CompletionStage<String> someTask() {
+            // run task on virtual thread without blocking caller
+            return CompletableFuture.completedFuture("DONE");
+        }
     }
     ```
 

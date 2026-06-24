@@ -20,24 +20,24 @@ a detailed history of changes made to the project.
 > The [Helidon Examples repository][examples] is a good resource for
 > understanding how things work in Helidon 4.x.
 
-### Java SE Support
+### Java 25 Runtime
 
 Helidon 4.x removes support for Java SE 17. You must use Java 21 or later. If
 you are using Helidon 4.3.0 or later, using Java SE 25 or later is recommended.
 
-### Programming Paradigm Shift
+### Paradigm Shift
 
 In Helidon 4.x, Helidon SE moves from an asynchronous-style API to a
 blocking-style API that is optimized for use with virtual threads. Currently,
 there is no compatibility API available.
 
-### New WebServer Implementation
+### New WebServer
 
 Helidon 4.x introduces Helidon WebServer, a virtual threads-based web server
 implementation based on the JDK Project Loom. Helidon WebServer replaces Netty,
 the server implementation used in previous versions of Helidon.
 
-You will need to update your existing Helidon SE 3.x code to use the new APIs
+You will need to update your existing Helidon SE 3.x code to use the new APIs,
 but it is generally simpler to write and maintain code in Helidon SE 4.x than it
 was in previous versions.
 
@@ -115,7 +115,8 @@ public static void main(String[] args) {
             .build()
             .start(); // <2>
 
-    System.out.println("WEB server is up! http://localhost:" + server.port() + "/greet"); // <3>
+    System.out.println("WEB server is up! http://localhost:"
+                       + server.port() + "/greet"); // <3>
 }
 ```
 1. Configure the server.
@@ -123,7 +124,7 @@ public static void main(String[] args) {
 3. Print a message when the server is started.
 <!--@mdc :: -->
 
-### Additional Server Lifecycle Tasks
+### Server Lifecycle Tasks
 
 In Helidon 3.x, if you provided code to run after WebServer startup and after
 WebServer shutdown, you needed to use asynchronous constructs, like so:
@@ -326,7 +327,8 @@ public class GreetService implements Service {
                 .put("/greeting", this::updateGreetingHandler);
     }
 
-    private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) { // <2>
+    private void getDefaultMessageHandler(
+            ServerRequest request, ServerResponse response) { // <2>
         sendResponse(response, "World");
     }
 
@@ -352,15 +354,19 @@ public class GreetService implements HttpService { // <1>
                 .put("/greeting", this::updateGreetingHandler);
     }
 
-    private void getDefaultMessageHandler(ServerRequest request, ServerResponse response) { // <3>
-        sendResponse(response, "World");
+    private void getDefaultMessageHandler(
+            ServerRequest request, ServerResponse response) { // <3>
+
+        response.send("Hello World");
     }
 
-    private void getMessageHandler(ServerRequest request, ServerResponse response) {
+    private void getMessageHandler(
+            ServerRequest request, ServerResponse response) {
         // ...
     }
 
-    private void updateGreetingHandler(ServerRequest request, ServerResponse response) { // <3>
+    private void updateGreetingHandler(
+            ServerRequest request, ServerResponse response) { // <3>
         // ...
     }
 }

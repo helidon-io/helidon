@@ -97,16 +97,16 @@ Helidon 2 WebSocket route registering:
 <!--@mdc ::code-callout -->
 ```java
 WebServer.builder(Routing.builder()
-                          .register("/rest", new SomeRestService()) // <1>
-                          .register("/websocket", TyrusSupport.builder() // <2>
-                                  .register(ServerEndpointConfig.Builder
-                                                    .create(MessageBoardEndpoint.class, "/")
-                                                    .encoders(encoders)
-                                                    .build())
-                                  .build()
-                          ))
-        .port(8080)
-        .build();
+    .register("/rest", new SomeRestService()) // <1>
+    .register("/websocket", TyrusSupport.builder() // <2>
+        .register(ServerEndpointConfig.Builder
+            .create(MessageBoardEndpoint.class, "/")
+            .encoders(encoders)
+            .build())
+        .build()
+    ))
+    .port(8080)
+    .build();
 ```
 1. Traditional REST routing service registration
 2. WebSocket setup with Tyrus service

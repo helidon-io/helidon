@@ -489,23 +489,23 @@ Make the following changes to the `GreetFeature` class.
 
     ```java
     private void outboundMessageHandler(ServerRequest request,
-                                    ServerResponse response) {
-    var spanBuilder = Tracer.global().spanBuilder("outboundMessageHandler");
-    request.context().get(SpanContext.class).ifPresent(spanBuilder::parent);
-    var span = spanBuilder.start();
+                                        ServerResponse response) {
+        var spanBuilder = Tracer.global().spanBuilder("outboundMessageHandler");
+        request.context().get(SpanContext.class).ifPresent(spanBuilder::parent);
+        var span = spanBuilder.start();
 
-    try (Scope scope = span.activate()) {
-        ClientResponseTyped<JsonObject> remoteResult = webClient.get()
-                .path("/greet")
-                .accept(MediaTypes.APPLICATION_JSON)
-                .request(JsonObject.class);
+        try (Scope scope = span.activate()) {
+            ClientResponseTyped<JsonObject> remoteResult = webClient.get()
+                    .path("/greet")
+                    .accept(MediaTypes.APPLICATION_JSON)
+                    .request(JsonObject.class);
 
-        response.status(remoteResult.status()).send(remoteResult.entity());
-        span.end();
-    } catch (Exception e) {
-        response.status(Status.INTERNAL_SERVER_ERROR_500).send();
-        span.end(e);
-    }
+            response.status(remoteResult.status()).send(remoteResult.entity());
+            span.end();
+        } catch (Exception e) {
+            response.status(Status.INTERNAL_SERVER_ERROR_500).send();
+            span.end(e);
+        }
     }
     ```
 

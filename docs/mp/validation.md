@@ -325,12 +325,11 @@ see [Hibernate Validator Documentation][hibernate-valida].
     ```java
     @Path("helloworld")
     public class HelloWorld {
-
-    @POST
-    @Consumes(MediaType.APPLICATION_JSON)
-    public void post(@NotNull @Valid Greeting greeting) {
-        // ...
-    }
+        @POST
+        @Consumes(MediaType.APPLICATION_JSON)
+        public void post(@NotNull @Valid Greeting greeting) {
+            // ...
+        }
     }
     ```
 
@@ -339,8 +338,8 @@ see [Hibernate Validator Documentation][hibernate-valida].
 
     ```java
     public class GreetingHolder {
-    @NotNull
-    private String greeting;
+        @NotNull
+        private String greeting;
     }
     ```
 
@@ -351,11 +350,11 @@ see [Hibernate Validator Documentation][hibernate-valida].
     ```java
     @ApplicationScoped
     public class GreetingProvider {
-    private GreetingHolder greetingHolder;
+        private GreetingHolder greetingHolder;
 
-    void setGreeting(@Valid GreetingHolder greetingHolder) {
-        this.greetingHolder = greetingHolder;
-    }
+        void setGreeting(@Valid GreetingHolder greetingHolder) {
+            this.greetingHolder = greetingHolder;
+        }
     }
     ```
 

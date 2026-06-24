@@ -208,9 +208,9 @@ Add a properties text block:
 
 ```java
 @AddConfigBlock("""
-        foo=bar
-        bob=alice
-        """)
+    foo=bar
+    bob=alice
+    """)
 @HelidonTest
 class MyTest {
 }
@@ -219,7 +219,9 @@ class MyTest {
 Add a YAML text block:
 
 ```java
-@AddConfigBlock(type = "yaml", value = """
+@AddConfigBlock(
+    type = "yaml",
+    value = """
         my-test:
           foo: bar
           bob: alice
@@ -247,7 +249,8 @@ class MyTest {
 Add classpath resources:
 
 ```java
-@Configuration(configSources = {
+@Configuration(
+    configSources = {
         "my-test1.yaml",
         "my-test2.yaml"
 })
@@ -264,7 +267,8 @@ defined by the [MicroProfile Config specification][microprofile-con].
 Add a properties text block with ordinal:
 
 ```java
-@AddConfigBlock(value = """
+@AddConfigBlock(
+    value = """
         config_ordinal=120
         foo=bar
         """)
@@ -486,7 +490,7 @@ Here is a brief overview of the MicroProfile testing annotations:
 
 ## Examples
 
-### Config Injection Example
+### Config Injection
 
 The following example demonstrates how to enable the use of
 [`@ConfigProperty`][configproperty] without CDI discovery.
@@ -529,7 +533,7 @@ class MyBean {
 5. Inject the configuration
 <!--@mdc :: -->
 
-### Request Scope Example
+### Request Scope
 
 The following example demonstrates how to use [`@RequestScoped`][requestscoped]
 with JAXRS without CDI discovery.

@@ -10,7 +10,7 @@ is started lazily during test execution.
 
 ## Maven Coordinates
 
-To enable Testing with TestNG, add the following dependency to your project’s
+To enable Helidon MicroProfile Testing with TestNG, add the following dependency to your project’s
 `pom.xml` (see [Managing Dependencies](../../dependency-management.md)).
 
 ```xml [pom.xml]
@@ -218,7 +218,9 @@ class MyTest {
 Add a YAML text block:
 
 ```java
-@AddConfigBlock(type = "yaml", value = """
+@AddConfigBlock(
+    type = "yaml",
+    value = """
         my-test:
           foo: bar
           bob: alice
@@ -246,10 +248,11 @@ class MyTest {
 Add classpath resources:
 
 ```java
-@Configuration(configSources = {
+@Configuration(
+    configSources = {
         "my-test1.yaml",
         "my-test2.yaml"
-})
+    })
 @HelidonTest
 class MyTest {
 }
@@ -263,7 +266,8 @@ defined by the [MicroProfile Config specification][microprofile-con].
 Add a properties text block with ordinal:
 
 ```java
-@AddConfigBlock(value = """
+@AddConfigBlock(
+    value = """
         config_ordinal=120
         foo=bar
         """)
@@ -374,6 +378,7 @@ class AnnotationOnClass {
 
 Method-level meta-annotation:
 
+<!--@mdc ::code-callout -->
 ```java
 @AddBean(FirstBean.class)
 @AddBean(SecondBean.class)
@@ -386,20 +391,20 @@ public @interface MyTestMethod {
 @HelidonTest
 class AnnotationOnMethod {
 
-    @Test 
+    @Test // <1>
     @MyTestMethod
     void testOne() {
     }
 
-    @Test 
+    @Test // <1>
     @MyTestMethod
     void testTwo() {
     }
 }
 ```
-
 1.  `org.testng.annotations.Test` is not inheritable and should be placed on
     methods
+<!--@mdc :: -->
 
 ## API
 
@@ -422,7 +427,7 @@ Here is a brief overview of the MicroProfile testing annotations:
 
 ## Examples
 
-### Config Injection Example
+### Config Injection
 
 The following example demonstrates how to enable the use of
 [`@ConfigProperty`][configproperty] without CDI discovery.
@@ -465,7 +470,7 @@ class MyBean {
 5. Inject the configuration
 <!--@mdc :: -->
 
-### Request Scope Example
+### Request Scope
 
 The following example demonstrates how to use [`@RequestScoped`][requestscoped]
 with JAXRS without CDI discovery.

@@ -31,7 +31,7 @@ OpenTracing introduced the following breaking changes:
 </tr>
 <tr>
 <td><code>Text<wbr>Map<wbr>Extract<wbr>Adapter</code></td>
-<td rowspan="2"><code>Text<wbr>Map<wbr>Adapter</code></td>
+<td rowspan="2" style="vertical-align: middle"><code>Text<wbr>Map<wbr>Adapter</code></td>
 </tr>
 <tr>
 <td><code>Text<wbr>MapInject<wbr>Adapter</code></td>
@@ -66,9 +66,9 @@ Helidon 1.x Code:
 
 ```java
 Span myNewSpan = GlobalTracer.get()
-        .buildSpan("my-operation")
-        .asChildOf(serverRequest.spanContext())
-        .start();
+    .buildSpan("my-operation")
+    .asChildOf(serverRequest.spanContext())
+    .start();
 ```
 
 you will need to change it to something like:
@@ -77,7 +77,7 @@ Helidon 2.x Code:
 
 ```java
 Tracer.SpanBuilder spanBuilder = serverRequest.tracer()
-        .buildSpan("my-operation");
+    .buildSpan("my-operation");
 serverRequest.spanContext().ifPresent(spanBuilder::asChildOf);
 Span myNewSpan = spanBuilder.start();
 ```
@@ -116,20 +116,20 @@ Example of advanced configuration of config:
 
 ```java
 Config.builder()
-        // system properties with a polling strategy of 10 seconds
-        .addSource(ConfigSources.systemProperties()
-                           .pollingStrategy(PollingStrategies.regular(Duration.ofSeconds(10))))
-        // environment variables
-        .addSource(ConfigSources.environmentVariables())
-        // optional file config source with change watcher
-        .addSource(ConfigSources.file(Paths.get("/conf/app.yaml"))
-                           .optional()
-                           .changeWatcher(FileSystemWatcher.create()))
-        // classpath config source
-        .addSource(ConfigSources.classpath("application.yaml"))
-        // map config source (also supports polling strategy)
-        .addSource(ConfigSources.create(Map.of("key", "value")))
-        .build();
+    // system properties with a polling strategy of 10 seconds
+    .addSource(ConfigSources.systemProperties()
+        .pollingStrategy(PollingStrategies.regular(Duration.ofSeconds(10))))
+    // environment variables
+    .addSource(ConfigSources.environmentVariables())
+    // optional file config source with change watcher
+    .addSource(ConfigSources.file(Paths.get("/conf/app.yaml"))
+        .optional()
+        .changeWatcher(FileSystemWatcher.create()))
+    // classpath config source
+    .addSource(ConfigSources.classpath("application.yaml"))
+    // map config source (also supports polling strategy)
+    .addSource(ConfigSources.create(Map.of("key", "value")))
+    .build();
 ```
 
 ## Resource Class When Loaded from Config
@@ -305,7 +305,7 @@ WebServer.builder()
 There is also a specialized method to add a socket and routing together, to
 remove mapping through a name.
 
-### Deprecation of ServerConfiguration
+### ServerConfiguration
 
 `io.helidon.webserver.ServerConfiguration.Builder` is no longer used to
 configure `WebServer`.
@@ -323,23 +323,45 @@ WebServer.builder()
     .build();
 ```
 
-### Other Significant WebServer Deprecations
+### Other Deprecations
 
-- `io.helidon.webserver.WebServer.Builder` - all methods that accept
-  `ServerConfiguration` or its builder are deprecated, please use methods on
-  `WebServer.Builder` instead
-- `io.helidon.webserver.WebServer.Builder` - all methods for socket
-  configuration that accept a name and socket are deprecated, socket name is now
-  part of socket configuration itself
-- `io.helidon.webserver.ResponseHeaders.whenSend()` - please use `whenSent()`
-- `io.helidon.webserver.Routing.createServer(ServerConfiguration)` - please use
-  `WebServer.builder()`
-- `io.helidon.webserver.Routing.createServer()` - please use
-  `WebServer.builder()`
-- `io.helidon.webserver.SocketConfiguration.DEFAULT` - use a builder to create a
-  named configuration
-- `` io.helidon.webserver.SocketConfiguration.Builder.ssl(SSLContext) - use
-  `WebServerTls `` instead
-- ``
-  io.helidon.webserver.SocketConfiguration.Builder.enabledSSlProtocols(String...)
-  - use `WebServerTls `` instead
+<table>
+<thead>
+<th>Symbol</th>
+<td>Replacement</td>
+</thead>
+<tr>
+<td><code>io.<wbr>helidon.<wbr>webserver.<wbr>Web<wbr>Server.<wbr>Builder</code></td>
+<td>
+All methods that accept <code>Server<wbr>Configuration</code> or its builder are deprecated,
+use methods on <code>Web<wbr>Server.<wbr>Builder</code>
+</td>
+</tr>
+<tr>
+<td><code>io.<wbr>helidon.<wbr>webserver.<wbr>Web<wbr>Server.<wbr>Builder</code></td>
+<td>
+All methods for socket configuration that accept a name and socket are deprecated,
+socket name is now part of socket configuration itself
+</td>
+</tr>
+<tr>
+<td><code>io.<wbr>helidon.<wbr>webserver.<wbr>Response<wbr>Headers.<wbr>when<wbr>Send()</code></td>
+<td><code>when<wbr>Sent()</code></td>
+</tr>
+<tr>
+<td><code>io.<wbr>helidon.<wbr>webserver.<wbr>Routing.<wbr>create<wbr>Server(<wbr>Server<wbr>Configuration)</code></td>
+<td><code>WebServer.builder()</code></td>
+</tr>
+<tr>
+<td><code>io.<wbr>helidon.<wbr>webserver.<wbr>Socket<wbr>Configuration.<wbr>DEFAULT</code></td>
+<td>Use a builder to create a named configuration</td>
+</tr>
+<tr>
+<td><code>io.<wbr>helidon.<wbr>webserver.<wbr>Socket<wbr>Configuration.<wbr>Builder.<wbr>ssl(<wbr>SSL<wbr>Context)</code></td>
+<td><code>WebServerTls</code></td>
+</tr>
+<tr>
+<td><code>io.<wbr>helidon.<wbr>webserver.<wbr>Socket<wbr>Configuration.<wbr>Builder.<wbr>enabled<wbr>SSl<wbr>Protocols(<wbr>String...)</code></td>
+<td><code>Web<wbr>Server<wbr>Tls</code></td>
+</tr>
+</table>

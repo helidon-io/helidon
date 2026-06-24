@@ -167,7 +167,7 @@ For a complete set of properties available to configure these executors, see
     @Retry(maxRetries = 2, delay = 400L)
     @Fallback(fallbackMethod = "onFailure")
     String retryWithFallback() {
-    return getMyValue();
+        return getMyValue();
     }
     ```
 
@@ -183,7 +183,7 @@ For a complete set of properties available to configure these executors, see
                 failureRatio = .4,
                 successThreshold = 3)
     void timedCircuitBreaker() throws InterruptedException {
-    //...
+        //...
     }
     ```
 
@@ -198,7 +198,7 @@ For a complete set of properties available to configure these executors, see
     @Fallback(fallbackMethod = "onFailure")
     @Bulkhead(value = 2, waitingTaskQueue = 10)
     CompletableFuture<String> executeWithQueueAndFallback() {
-    return getMyValueAsync();
+        return getMyValueAsync();
     }
     ```
 
