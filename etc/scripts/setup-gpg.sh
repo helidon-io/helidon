@@ -38,7 +38,7 @@ setup_gpg() {
   echo "allow-preset-passphrase" >> ~/.gnupg/gpg-agent.conf
   gpg-connect-agent reloadagent /bye
   GPG_KEYGRIP=$(gpg --with-keygrip -K | grep "Keygrip" | head -1 | awk '{print $3}')
-  /usr/lib/gnupg/gpg-preset-passphrase --preset "${GPG_KEYGRIP}" <<< "${GPG_PASSPHRASE}"
+  "$(gpgconf --list-dirs libexecdir)/gpg-preset-passphrase" --preset "${GPG_KEYGRIP}" <<< "${GPG_PASSPHRASE}"
 
   gpg --list-keys helidon
 }
