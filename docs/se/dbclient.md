@@ -1,4 +1,4 @@
-# DBClient
+# DbClient
 
 ## Overview
 
@@ -7,7 +7,7 @@ The Helidon SE DB Client provides a unified API for working with databases.
 ## Maven Coordinates
 
 To enable DB Client, add the following dependency to your project’s `pom.xml`
-(see [Managing Dependencies](../managing-dependencies.md)).
+(see [Managing Dependencies](../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -128,7 +128,7 @@ describe the options you can use to build and execute your statements.
 
 ### Executor Selection
 
-`DBClient` class has two methods to select whether statements will be executed
+`DbClient` class has two methods to select whether statements will be executed
 in transaction or not:
 
 - `execute()`

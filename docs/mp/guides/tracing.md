@@ -1,4 +1,4 @@
-# Helidon MP Tracing Guide
+# Tracing
 
 This guide describes how to create a sample MicroProfile (MP) project that can
 be used to run some basic examples using tracing with Helidon MP.

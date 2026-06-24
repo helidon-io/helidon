@@ -8,7 +8,7 @@ connector extends Helidon’s JMS connector with Oracle’s AQ-specific API.
 ## Maven Coordinates
 
 To enable AQ Connector, add the following dependency to your project’s `pom.xml`
-(see [Managing Dependencies](../../managing-dependencies.md)).
+(see [Managing Dependencies](../../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>

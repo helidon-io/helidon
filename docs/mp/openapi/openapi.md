@@ -1,4 +1,4 @@
-# OpenAPI in Helidon
+# OpenAPI
 
 ## Overview
 
@@ -36,7 +36,7 @@ whichever of these sources are present in the application:
 To enable MicroProfile OpenAPI, either add a dependency on the
 [helidon-microprofile bundle](../introduction.md) or add the following
 dependency to your project’s `pom.xml` (see [Managing
-Dependencies](../../managing-dependencies.md)).
+Dependencies](../../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -92,16 +92,19 @@ earlier:
 <!--@mdc ::code-callout -->
 ```java
 @GET
-@Operation(summary = "Returns a generic greeting", // <1>
-           description = "Greets the user generically")
-@APIResponse(description = "Simple JSON containing the greeting", // <2>
-             content = @Content(mediaType = "application/json",
-                                schema = @Schema(implementation = GreetingMessage.class)))
+@Operation(
+    summary = "Returns a generic greeting", // <1>
+    description = "Greets the user generically")
+@APIResponse(
+    description = "Simple JSON containing the greeting", // <2>
+    content = @Content(
+        mediaType = "application/json",
+        schema = @Schema(implementation = GreetingMessage.class)))
 @Produces(MediaType.APPLICATION_JSON)
 public JsonObject getDefaultMessage() {
     return Json.createObjectBuilder()
-            .add("message", "Hello World!")
-            .build();
+        .add("message", "Hello World!")
+        .build();
 }
 ```
 1. `@Operation` gives information about this endpoint.
@@ -211,18 +214,19 @@ Helidon MP QuickStart, enhanced with OpenAPI support.
 ```java
 @Path("/greeting")
 @PUT
-@Operation(summary = "Set the greeting prefix",
-           description = "Permits the client to set the prefix part of the greeting (\"Hello\")") // <1>
+@Operation(
+    summary = "Set the greeting prefix",
+    description = "Permits the client to set the prefix part of the greeting (\"Hello\")") // <1>
 @RequestBody( //<2>
-              name = "greeting",
-              description = "Conveys the new greeting prefix to use in building greetings",
-              content = @Content(
-                      mediaType = "application/json",
-                      schema = @Schema(implementation = GreetingUpdateMessage.class),
-                      examples = @ExampleObject(
-                              name = "greeting",
-                              summary = "Example greeting message to update",
-                              value = "{\"greeting\": \"New greeting message\"}")))
+    name = "greeting",
+    description = "Conveys the new greeting prefix to use in building greetings",
+    content = @Content(
+        mediaType = "application/json",
+        schema = @Schema(implementation = GreetingUpdateMessage.class),
+        examples = @ExampleObject(
+            name = "greeting",
+            summary = "Example greeting message to update",
+            value = "{\"greeting\": \"New greeting message\"}")))
 @Consumes(MediaType.APPLICATION_JSON)
 @Produces(MediaType.APPLICATION_JSON)
 public Response updateGreeting(JsonObject jsonObject) {

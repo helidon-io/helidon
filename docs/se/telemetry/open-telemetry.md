@@ -135,7 +135,7 @@ Using Helidon to set the global `OpenTelemetry` instance has these effects:
 
 To enable various aspects of OpenTelemetry Support add one or more of the
 following dependencies to your project’s `pom.xml` (see [Managing
-Dependencies](../../managing-dependencies.md)).
+Dependencies](../../dependency-management.md)).
 
 Helidon Tracing provider:
 ```xml [pom.xml]
@@ -815,7 +815,7 @@ telemetry:
 5. Prescribes the logger exporters.
 <!--@mdc :: -->
 
-## References
+## Reference
 
 - [Helidon Tracing](../../se/tracing.md)
 - [Settings and defaults][opentelemetry-do]

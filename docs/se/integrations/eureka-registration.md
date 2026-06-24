@@ -1,4 +1,4 @@
-# Eureka Server Service Instance Registration
+# Eureka Registration
 
 ## Overview
 
@@ -16,7 +16,7 @@ runtime environment.
 
 To enable Eureka Server Service Instance Registration Integration, add the
 following dependency to your project’s `pom.xml` (see [Managing
-Dependencies](../../managing-dependencies.md)).
+Dependencies](../../dependency-management.md)).
 
 <!--@mdc ::code-callout -->
 ```xml [pom.xml]

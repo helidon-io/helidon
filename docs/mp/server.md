@@ -1,4 +1,4 @@
-# MicroProfile Server
+# Server
 
 ## Overview
 
@@ -10,7 +10,7 @@ WebServer.
 
 To enable MicroProfile Server add the helidon-microprofile-core bundle
 dependency to your project’s `pom.xml` (see [Managing
-Dependencies](../managing-dependencies.md)).
+Dependencies](../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>

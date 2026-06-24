@@ -1,4 +1,4 @@
-# Helidon MP 4.x Upgrade Guide
+# 4.x Upgrade
 
 Helidon 4.x introduces significant changes to APIs and runtime behavior. Use
 this guide to help you understand the changes required to transition a Helidon

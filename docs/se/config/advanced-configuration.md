@@ -95,7 +95,7 @@ assert secrets.get("password") // <4>
 <!--@mdc :: -->
 
 Remember that your application can process the contents of a given file as
-configuration. See the [config sources](introduction.md#config-sources) section
+configuration. See the [config sources](config.md#config-sources) section
 and the [`ConfigSources.file`][configsources-fi] Javadoc.
 
 ### In-memory Config Sources

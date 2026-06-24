@@ -1,12 +1,14 @@
-# Helidon SE DB Client Guide
+# DbClient
 
 This guide describes the features of Helidon’s DB Client and how to create a
 sample Helidon SE project that can be used to run some basic examples using the
-Helidon DB Client.
+Helidon DbClient.
 
 ## What You Need
 
 For this 15 minute tutorial, you will need the following:
+
+_Prerequisite product versions for Helidon 4.4.0-SNAPSHOT_:
 
 | Requirement                                     | Description                                                                       |
 |-------------------------------------------------|-----------------------------------------------------------------------------------|
@@ -14,8 +16,6 @@ For this 15 minute tutorial, you will need the following:
 | [Maven 3.8+][maven-3-8]                         | Helidon requires Maven 3.8+.                                                      |
 | [Docker 18.09+][docker-18-09]                   | If you want to build and run Docker containers.                                   |
 | [Kubectl 1.16.5+][kubectl-1-16-5]               | If you want to deploy to Kubernetes, you need `kubectl` and a Kubernetes cluster. |
-
-Prerequisite product versions for Helidon 4.4.0-SNAPSHOT
 
 Verify Prerequisites:
 

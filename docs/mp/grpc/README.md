@@ -2,7 +2,7 @@
 
 Index of gRPC documentation.
 
-| Topic                       | Description                                    |
-|-----------------------------|------------------------------------------------|
-| [gRPC MP Client](client.md) | Building Helidon gRPC MicroProfile Clients     |
-| [gRPC MP Server](server.md) | Helidon gRPC MicroProfile Server-Side Services |
+| Topic                       | Description                    |
+|-----------------------------|--------------------------------|
+| [gRPC MP Client](client.md) | Helidon MP gRPC Client Support |
+| [gRPC MP Server](server.md) | Helidon MP gRPC Server Support |

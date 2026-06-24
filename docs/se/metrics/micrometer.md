@@ -1,4 +1,4 @@
-# Micrometer Metrics
+# Micrometer
 
 ## Overview
 
@@ -23,7 +23,7 @@ metrics API and the built-in Helidon metrics.
 ## Maven Coordinates
 
 To enable MicroMeter Integration, add the following dependency to your project’s
-`pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+`pom.xml` (see [Managing Dependencies](../../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>

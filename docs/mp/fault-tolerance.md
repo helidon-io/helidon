@@ -1,4 +1,4 @@
-# Fault Tolerance Introduction
+# Fault Tolerance
 
 ## Overview
 
@@ -13,7 +13,7 @@ temporal infrastructure instabilities, etc.
 To enable MicroProfile Fault Tolerance, either add a dependency on the
 [helidon-microprofile bundle](introduction.md) or add the following dependency
 to your project’s `pom.xml` (see [Managing
-Dependencies](../managing-dependencies.md)).
+Dependencies](../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>

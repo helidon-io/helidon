@@ -1,4 +1,4 @@
-# MicroProfile Config
+# Config
 
 ## Overview
 
@@ -13,7 +13,7 @@ configuration using MicroProfile SPI to add custom `ConfigSource` and
 To enable MicroProfile Config, either add a dependency on the
 [helidon-microprofile bundle](../introduction.md) or add the following
 dependency to your project’s `pom.xml` (see [Managing
-Dependencies](../../managing-dependencies.md)).
+Dependencies](../../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -148,7 +148,7 @@ The following configuration sources can be used to retrieve the configuration:
 
 See [manual setup of config][manual-setup-of] section for more information.
 
-#### References
+#### Reference
 
 You can use `${reference}` to reference another configuration key in a key
 value. This allows to configure a single key to be reused in multiple other
@@ -257,7 +257,7 @@ See [Config Profiles](#microprofile-config-profiles) for more information.
 [eclipse-micropro]: https://github.com/eclipse/microprofile-config/
 [how-config-profi]: https://download.eclipse.org/microprofile/microprofile-config-3.1/microprofile-config-spec-3.1.html#_how_config_profile_works
 [manual-setup-of]: advanced-configuration.md#creating-microprofile-config-sources-for-manual-setup-of-config
-[configuration-se]: ../../mp/security/configuration-secrets.md
+[configuration-se]: ../../mp/security/config-secrets.md
 [microprofile-con]: advanced-configuration.md#creating-microprofile-config-sources-from-meta-config
 [mp-config-guide]: ../guides/config.md
 [microprofile-con-2]: https://download.eclipse.org/microprofile/microprofile-config-3.1/microprofile-config-spec-3.1.html

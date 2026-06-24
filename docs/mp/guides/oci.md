@@ -1,4 +1,4 @@
-# Oracle Cloud Infrastructure Tutorial
+# OCI
 
 This guide describes the basic process of deploying a Helidon MP application on
 Oracle Cloud Infrastructure (OCI).

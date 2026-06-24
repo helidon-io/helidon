@@ -12,37 +12,32 @@ Index of Guides documentation.
 
 ## Upgrading
 
-| Guide                        | Description                                                       |
-|------------------------------|-------------------------------------------------------------------|
-| [2.x Upgrade](upgrade.md)    | Learn how to upgrade your Helidon MP application from 1.x to 2.x. |
-| [3.x Upgrade](upgrade-3x.md) | Learn how to upgrade your Helidon MP application from 2.x to 3.x. |
-| [4.x Upgrade](upgrade-4x.md) | Learn how to upgrade your Helidon MP application from 3.x to 4.x. |
+| Topic                        |   | Description                                                      |
+|------------------------------|:--|------------------------------------------------------------------|
+| [2.x Upgrade](upgrade-2x.md) |   | Learn how to upgrade your Helidon MP application from 1.x to 2.x |
+| [3.x Upgrade](upgrade-3x.md) |   | Learn how to upgrade your Helidon MP application from 2.x to 3.x |
+| [4.x Upgrade](upgrade-4x.md) |   | Learn how to upgrade your Helidon MP application from 3.x to 4.x |
 
 ## Components
 
-| Topic                          | Description                              |
-|--------------------------------|------------------------------------------|
-| [Config](config.md)            | Helidon configuration                    |
-| [CRaC](crac.md)                | Coordinated Restore at Checkpoint (CRaC) |
-| [Gradle](gradle.md)            | Helidon Gradle                           |
-| [Health Checks](health.md)     | Helidon health checks                    |
-| [HttpService](http-service.md) | Helidon WebServer Routing                |
-| [JBatch](jbatch.md)            | Helidon JBatch Integration               |
-| [Jlink](jlink.md)              | Helidon Jlink                            |
-| [LangChain4j](langchain4j.md)  | LangChain4j in Helidon                   |
-| [Metrics](metrics.md)          | Helidon metrics                          |
-| [OCI](oci.md)                  | Helidon OCI Integration                  |
-| [OIDC](oidc.md)                | Helidon OIDC                             |
-| [Testing](testing.md)          | Helidon testing with JUnit 5             |
-| [Tracing](tracing.md)          | Helidon tracing                          |
+| Topic                         | Description                                                       |
+|-------------------------------|-------------------------------------------------------------------|
+| [Config](config.md)           | Learn how to configure a Helidon MP application.                  |
+| [JBatch](jbatch.md)           | Learn how to use JBatch with Helidon MP.                          |
+| [Health](health.md)           | Learn how to use Helidon MP built-in and custom health checks.    |
+| [LangChain4j](langchain4j.md) | Learn how to create AI powered Helidon MP applications.           |
+| [Metrics](metrics.md)         | Learn how to use Helidon MP built-in and application metrics.     |
+| [OIDC](oidc.md)               | Learn how to set up OIDC security in your Helidon MP application. |
+| [Testing](testing.md)         | Learn how to use JUnit5 for testing your Helidon MP applications. |
+| [Tracing](tracing.md)         | Learn how to trace a Helidon MP application.                      |
 
 ## Build and Deploy
 
-| Topic                           | Description                   |
-|---------------------------------|-------------------------------|
-| [Gradle](gradle.md)             | Helidon Gradle                |
-| [Jlink](jlink.md)               | Helidon Jlink                 |
-| [Maven](maven.md)               | Helidon Maven                 |
-| [Native Image](native-image.md) | Helidon Native Image Support  |
-| [OCI](oci.md)                   | Helidon OCI Integration       |
-| [Performance](performance.md)   | Helidon MP Performance Tuning |
+| Topic                           | Description                                                                                                               |
+|---------------------------------|---------------------------------------------------------------------------------------------------------------------------|
+| [Gradle](gradle.md)             | Using Helidon in your Gradle project                                                                                      |
+| [Jlink](jlink.md)               | Learn how to build a custom runtime Java image for your Helidon application                                               |
+| [Maven](maven.md)               | Using Helidon in your Maven project                                                                                       |
+| [Native Image](native-image.md) | Learn how to build a GraalVM native image for your Helidon application both on your desktop and as part of a Docker image |
+| [OCI](oci.md)                   | Learn how to deploy your application to OCI Container Engine for Kubernetes (OKE)                                         |
+| [Performance](performance.md)   | Learn how to improve performance of your Helidon application                                                              |

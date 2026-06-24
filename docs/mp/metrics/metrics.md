@@ -1,4 +1,4 @@
-# Metrics in Helidon MP
+# Metrics
 
 ## Overview
 
@@ -27,7 +27,7 @@ Metrics is one of the Helidon observability features.
 ## Maven Coordinates
 
 To enable metrics, add the following dependency to your project’s `pom.xml` (see
-[Managing Dependencies](../../managing-dependencies.md)).
+[Managing Dependencies](../../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -1476,7 +1476,7 @@ Delete the application Kubernetes resources:
 kubectl delete -f ./metrics.yaml
 ```
 
-## References
+## Reference
 
 - [MicroProfile Metrics specification][microprofile-met-2]
 - [MicroProfile Metrics API][microprofile-met-3]

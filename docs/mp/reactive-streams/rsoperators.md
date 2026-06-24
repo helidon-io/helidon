@@ -1,4 +1,4 @@
-# MicroProfile Reactive Streams Operators
+# Operators
 
 ## Overview
 
@@ -13,7 +13,7 @@ portability between different implementations.
 To enable MicroProfile Reactive Stream, either add a dependency on the
 [helidon-microprofile bundle](../introduction.md) or add the following
 dependency to your project’s `pom.xml` (see
-[Managing Dependencies](../../managing-dependencies.md)).
+[Managing Dependencies](../../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>

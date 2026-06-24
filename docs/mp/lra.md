@@ -1,4 +1,4 @@
-# Long Running Actions (LRA)
+# LRA
 
 ## Overview
 
@@ -12,7 +12,7 @@ needs to be *completed* or *compensated*.
 ## Maven Coordinates
 
 To enable Long Running Actions, add the following dependency to your project’s
-`pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+`pom.xml` (see [Managing Dependencies](../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependencies>

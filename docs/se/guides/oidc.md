@@ -1,4 +1,4 @@
-# Helidon SE OIDC Security Provider Guide
+# OIDC
 
 This guide describes how to set up Keycloak and Helidon to secure your
 application with OIDC security provider.

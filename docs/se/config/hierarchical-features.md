@@ -374,5 +374,5 @@ assert detachedFromAlternate.get("debug").equals("true"); // <2>
 [key]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/Config.html#key--
 [type]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/Config.html#type--
 [configvalue]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/ConfigValue.html
-[application-prop]: introduction.md#accessing-config-values
+[application-prop]: config.md#accessing-config-values
 [config-detach]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/Config.html#detach--

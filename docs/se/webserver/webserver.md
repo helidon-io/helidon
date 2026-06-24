@@ -1,4 +1,4 @@
-# WebServer Introduction
+# WebServer
 
 ## Overview
 
@@ -8,7 +8,7 @@ can handle nearly unlimited concurrent requests.
 ## Maven Coordinates
 
 To enable WebServer, add the following dependency to your project’s `pom.xml`
-(see [Managing Dependencies](../../managing-dependencies.md)).
+(see [Managing Dependencies](../../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -1503,7 +1503,7 @@ public static void main(String[] args) {
 [access-log]: #access-log
 [tracing]: ../../se/tracing.md
 [cors]: ../../se/cors.md
-[security]: ../../se/security/introduction.md
+[security]: ../../se/security/security.md
 [openapi]: ../../se/openapi/openapi.md
 [observability]: ../../se/observability.md
 [static-content-f]: ../../config/io.helidon.webserver.staticcontent.StaticContentFeature.md

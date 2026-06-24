@@ -1,4 +1,4 @@
-# Oracle Cloud Infrastructure
+# OCI
 
 ## Overview
 
@@ -26,7 +26,7 @@ clients][the-oracle-cloud] into your Helidon applications.
 ## Maven Coordinates
 
 To enable OCI Integration, add the following dependency to your project’s
-`pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+`pom.xml` (see [Managing Dependencies](../../dependency-management.md)).
 
 Adding the Helidon OCI SDK Integration dependency for Config, Config File and
 Session Token:
@@ -262,7 +262,7 @@ helidon.oci:
 ```
 <!--@mdc :: -->
 
-## References
+## Reference
 
 - [OCI SDK Usage Examples][oci-sdk-usage-ex]
 - [OCI Documentation][oci-documentatio]

@@ -11,7 +11,7 @@ stubs (the most popular option) or using manually crafted service descriptors.
 ## Maven Coordinates
 
 To enable gRPC Client, add the following dependency to your project’s `pom.xml`
-(see [Managing Dependencies](../../managing-dependencies.md)).
+(see [Managing Dependencies](../../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>

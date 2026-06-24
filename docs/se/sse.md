@@ -1,4 +1,4 @@
-# Server-Sent Events in Helidon
+# SSE
 
 ## Overview
 
@@ -63,7 +63,7 @@ The API supports integration with media type providers, so the event data may
 actually be of any type as long as it is possible to convert it to a string
 value.
 
-### Integration with Media Types
+### Media Types
 
 It is possible to serialize event data using the media support. For example, if
 JSON-P is available in your class path, you can create an SSE event from a
@@ -170,7 +170,7 @@ try (Http1ClientResponse r = client.get("/sseString")
     assertThat(latch.await(5, TimeUnit.SECONDS), is(true));
 ```
 
-### Integration with Media Types
+### Media Types
 
 The Client API is also integrated with media type support. The data received as
 part of an event can be deserialized using any of the media converters available
@@ -199,7 +199,7 @@ try (Http1ClientResponse r = client.get("/sseJson")
 }
 ```
 
-## Additional Information
+## Reference
 
 The [`Server-sent events`][server-sent-even] specification.
 

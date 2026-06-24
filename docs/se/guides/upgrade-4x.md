@@ -1,4 +1,4 @@
-# Helidon SE 4.x Upgrade Guide
+# 4.x Upgrade
 
 Helidon 4.x introduces significant changes to APIs and runtime behavior. Use
 this guide to help you understand the changes required to transition a Helidon
@@ -9,7 +9,7 @@ SE 3.x application to Helidon 4.x.
 The following sections describe the changes between Helidon 3.x and Helidon 4.x
 that can significantly impact your development process. Review them carefully.
 
-You can also review the [Helidon repository CHANGELOG][helidon-reposito] to see
+You can also review the [Helidon repository CHANGELOG][changelog] to see
 a detailed history of changes made to the project.
 
 > [!NOTE]
@@ -17,7 +17,7 @@ a detailed history of changes made to the project.
 > 4.x includes changes that are not backward compatible with Helidon 3.x.
 
 > [!TIP]
-> The [Helidon Examples repository][helidon-examples] is a good resource for
+> The [Helidon Examples repository][examples] is a good resource for
 > understanding how things work in Helidon 4.x.
 
 ### Java SE Support
@@ -81,13 +81,13 @@ static Single<WebServer> startServer() {
     Single<WebServer> webserver = server.start(); // <1>
 
     webserver.thenAccept(ws -> { // <2>
-                System.out.println("WEB server is up! http://localhost:" + ws.port() + "/greet");
-                ws.whenShutdown().thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
-            })
-            .exceptionallyAccept(t -> { // <3>
-                System.err.println("Startup failed: " + t.getMessage());
-                t.printStackTrace(System.err);
-            });
+            System.out.println("WEB server is up! http://localhost:" + ws.port() + "/greet");
+            ws.whenShutdown().thenRun(() -> System.out.println("WEB server is DOWN. Good bye!"));
+        })
+        .exceptionallyAccept(t -> { // <3>
+            System.err.println("Startup failed: " + t.getMessage());
+            t.printStackTrace(System.err);
+        });
 
     return webserver;
 }
@@ -134,15 +134,14 @@ Helidon 3.x server lifecycle:
 Single<WebServer> webserver = server.start();
 
 webserver.thenAccept(ws -> {
-    System.out.println("WEB server is up! http://localhost:"
-        + ws.port() + "/greet");
-    ws.whenShutdown().thenRun(() ->
-        System.out.println("Helidon WebServer has stopped"));
-})
-.exceptionallyAccept(t -> {
-    System.err.println("Startup failed: " + t.getMessage());
-    t.printStackTrace(System.err);
-});
+        System.out.println("WEB server is up! http://localhost:" + ws.port() + "/greet");
+        ws.whenShutdown().thenRun(() ->
+            System.out.println("Helidon WebServer has stopped"));
+    })
+    .exceptionallyAccept(t -> {
+        System.err.println("Startup failed: " + t.getMessage());
+        t.printStackTrace(System.err);
+    });
 ```
 
 In Helidon 4.x, no special API is needed for post-server startup tasks since the
@@ -497,7 +496,7 @@ information from any part of your code.
 Config config = Config.global();
 ```
 
-For more information, see [Helidon SE Config](../config/introduction.md).
+For more information, see [Helidon SE Config](../config/config.md).
 
 ### Logging
 
@@ -518,7 +517,7 @@ update it and add the following dependency:
 </dependency>
 ```
 
-[helidon-reposito]: https://github.com/helidon-io/helidon/blob/main/CHANGELOG.md
+[changelog]: https://github.com/helidon-io/helidon/blob/main/CHANGELOG.md
 [semantic-version]: https://semver.org/spec/v2.0.0.html
-[helidon-examples]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/
+[examples]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/
 [media-types-supp]: ../webserver/webserver.md#media-types-support

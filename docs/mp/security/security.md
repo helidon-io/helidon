@@ -1,4 +1,4 @@
-# Adding Security
+# Security
 
 To add security, such as protecting resource methods with authentication, to a
 MicroProfile application, add the Helidon security integration dependency to
@@ -7,7 +7,7 @@ your project.
 ## Maven Coordinates
 
 To enable Security, add the following dependency to your project’s `pom.xml`
-(see [Managing Dependencies](../../managing-dependencies.md)).
+(see [Managing Dependencies](../../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>

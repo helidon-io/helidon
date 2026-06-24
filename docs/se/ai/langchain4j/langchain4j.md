@@ -672,7 +672,7 @@ v1.36.0][opentelemetry-se]. This is done out-of-box for Chat API calls.
 [langchain4j]: https://github.com/langchain4j/langchain4j
 [langchain4j-s-ai]: https://docs.langchain4j.dev/tutorials/ai-services/
 [agents]: https://docs.langchain4j.dev/tutorials/agents/
-[managing-depende]: ../../../managing-dependencies.md
+[managing-depende]: ../../../dependency-management.md
 [langchain4j-cont]: lc4j-providers.md#content-retriever
 [langchain4j-in-m]: lc4j-providers.md#in-memory-embedding-store
 [langchain4j-in-p]: lc4j-in-process.md

@@ -1,4 +1,4 @@
-# The Configuration Component
+# Config
 
 ## Overview
 
@@ -10,7 +10,7 @@ into a `Config` object which the application can then use.
 ## Maven Coordinates
 
 To enable Config, add the following dependency to your project’s `pom.xml` (see
-[Managing Dependencies](../../managing-dependencies.md)).
+[Managing Dependencies](../../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>

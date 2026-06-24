@@ -27,7 +27,7 @@ blocking the caller’s thread.
 ## Maven Coordinates
 
 To enable ExecuteOn, add the following dependency to your project’s `pom.xml`
-(see [Managing Dependencies](../managing-dependencies.md)).
+(see [Managing Dependencies](../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>

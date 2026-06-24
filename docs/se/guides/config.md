@@ -1,4 +1,4 @@
-# Helidon SE Config Guide
+# Config
 
 This guide describes how to create a sample Helidon SE project that can be used
 to run some basic examples using both default and custom configuration.
@@ -44,7 +44,7 @@ configuration data from a variety of sources using different formats, like JSON
 and YAML. Furthermore, you can customize the precedence of sources and make them
 optional or mandatory. This guide introduces Helidon SE configuration and
 demonstrates the fundamental concepts using several examples. Refer to [Helidon
-Config](../config/introduction.md) for the full configuration concepts
+Config](../config/config.md) for the full configuration concepts
 documentation.
 
 ### Create a Sample Helidon SE Project
@@ -997,7 +997,7 @@ kubectl delete configmap  helidon-configmap
 
 This guide has demonstrated how to use basic Helidon configuration features. The
 full configuration documentation, starting with the introduction section at
-[Helidon Config](../config/introduction.md) has much more information including
+[Helidon Config](../config/config.md) has much more information including
 the following:
 
 - Architecture

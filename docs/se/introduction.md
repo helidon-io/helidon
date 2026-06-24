@@ -52,7 +52,7 @@ and running in minutes.
 | [Guides][guides]     | Follow step-by-step guides to build your applications using Helidon SE. |
 | [Javadocs][javadocs] | Browse the Helidon Javadocs.                                            |
 
-[config]: config/introduction.md
+[config]: config/config.md
 [cors]: cors.md
 [db-client]: dbclient.md
 [graphql]: graphql.md
@@ -64,13 +64,13 @@ and running in minutes.
 [openapi]: openapi/openapi.md
 [reactive-messagi]: reactive-messaging.md
 [reactive-streams]: reactivestreams/README.md
-[security]: security/introduction.md
+[security]: security/security.md
 [tracing]: tracing.md
 [webclient]: webclient.md
 [webserver]: webserver/webserver.md
 [websocket]: websocket.md
 [helidon-se-4x-up]: guides/upgrade-4x.md
 [helidon-se-3x-up]: guides/upgrade-3x.md
-[helidon-se-2-x-u]: guides/upgrade.md
+[helidon-se-2-x-u]: guides/upgrade-2x.md
 [guides]: guides/overview.md
 [javadocs]: https://helidon.io/docs/v4/apidocs

@@ -1,4 +1,4 @@
-# Helidon SE 2.x Upgrade Guide
+# 2.x Upgrade
 
 In Helidon 2 we have made some changes to APIs and runtime behavior. This guide
 will help you migrate a Helidon SE 1.x application to 2.x.
@@ -12,13 +12,35 @@ Java 8 is no longer supported in Helidon 2. Java 11 or newer is required.
 We have upgraded to OpenTracing version 0.33.0 that is not backward compatible.
 OpenTracing introduced the following breaking changes:
 
-| Removed                                            | Replacement                                                            |
-|----------------------------------------------------|------------------------------------------------------------------------|
-| `ScopeManager.active()`                            | `Tracer.activeSpan()`                                                  |
-| `ScopeManager.activate(Span, boolean)`             | `ScopeManager.activate(Span)` - second parameter is now always `false` |
-| `SpanBuilder.startActive()`                        | `Tracer.activateSpan(Span)`                                            |
-| `TextMapExtractAdapter` and `TextMapInjectAdapter` | `TextMapAdapter`                                                       |
-| Module name changed `opentracing.api`              | `io.opentracing.api` (same for `noop` and `util`)                      |
+<table>
+<thead>
+<th>Removed</th>
+<th>Replacement</th>
+</thead>
+<tr>
+<td><code>Scope<wbr>Manager.<wbr>active()</code></td>
+<td><code>Tracer.<wbr>active<wbr>Span()</code></td>
+</tr>
+<tr>
+<td><code>Scope<wbr>Manager.<wbr>activate(<wbr>Span,<wbr>boolean)</code></td>
+<td><code>Scope<wbr>Manager.<wbr>activate(<wbr>Span)</code> ; second parameter is now always false</td>
+</tr>
+<tr>
+<td><code>Span<wbr>Builder.<wbr>start<wbr>Active()</code></td>
+<td><code>Tracer.<wbr>activate<wbr>Span(<wbr>Span)</code></td>
+</tr>
+<tr>
+<td><code>Text<wbr>Map<wbr>Extract<wbr>Adapter</code></td>
+<td rowspan="2"><code>Text<wbr>Map<wbr>Adapter</code></td>
+</tr>
+<tr>
+<td><code>Text<wbr>MapInject<wbr>Adapter</code></td>
+</tr>
+<tr>
+<td>Module name changed: <code>opentracing.<wbr>api</code></td>
+<td><code>io.<wbr>opentracing.<wbr>api</code> (same for <code>noop</code> and <code>util</code>)</td>
+</tr>
+</table>
 
 If you use the `TracerBuilder` abstraction in Helidon and have no custom Spans,
 there is no change required
@@ -150,9 +172,16 @@ The new JSON MediaSupport classes are:
 
 ## Reactive
 
-| Removed                                             | Replacement                        |
-|-----------------------------------------------------|------------------------------------|
-| `io.helidon.common.reactive.ReactiveStreamsAdapter` | `org.reactivestreams.FlowAdapters` |
+<table>
+<thead>
+<th>Removed</th>
+<th>Replacement</th>
+</thead>
+<tr>
+<td><code>io.<wbr>helidon.<wbr>common.<wbr>reactive.<wbr>Reactive<wbr>Streams<wbr>Adapter</code></td>
+<td><code>org.<wbr>reactivestreams.<wbr>Flow<wbr>Adapters</code></td>
+</tr>
+</table>
 
 ## Security: OidcConfig
 
@@ -227,9 +256,9 @@ The class uses a `Builder` pattern:
 
 ```java
 WebServerTls.builder()
-        .privateKey(KeyConfig.keystoreBuilder()
-                            .keystore(Resource.create("certificate.p12"))
-                            .keystorePassphrase("helidon"));
+    .privateKey(KeyConfig.keystoreBuilder()
+        .keystore(Resource.create("certificate.p12"))
+        .keystorePassphrase("helidon"));
 ```
 
 The builder or built instance can be registered with a socket configuration
@@ -237,8 +266,8 @@ builder including the `WebServer.Builder` itself:
 
 ```java
 WebServer.builder(routing())
-        .tls(webServerTls)
-        .build();
+    .tls(webServerTls)
+    .build();
 ```
 
 ### Additional Sockets
@@ -268,9 +297,9 @@ To add socket using a builder, you can use:
 
 ```java
 WebServer.builder()
-        .addSocket(SocketConfigurationBuilder.builder()
-                           .port(8001)
-                           .name("admin"));
+    .addSocket(SocketConfigurationBuilder.builder()
+       .port(8001)
+       .name("admin"));
 ```
 
 There is also a specialized method to add a socket and routing together, to
@@ -288,10 +317,10 @@ Example of a simple WebServer setup:
 
 ```java
 WebServer.builder()
-        .port(8001)
-        .host("localhost")
-        .routing(createRouting())
-        .build();
+    .port(8001)
+    .host("localhost")
+    .routing(createRouting())
+    .build();
 ```
 
 ### Other Significant WebServer Deprecations

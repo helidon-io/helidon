@@ -1,4 +1,4 @@
-# Jakarta REST
+# JAX-RS
 
 ## Overview
 

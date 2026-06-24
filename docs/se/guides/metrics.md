@@ -1,4 +1,4 @@
-# Helidon SE Metrics Guide
+# Metrics
 
 This guide describes how to create a sample Helidon {h1-prefix} project that can
 be used to run some basic examples using both built-in and custom meters with

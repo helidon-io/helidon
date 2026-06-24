@@ -9,7 +9,7 @@ Neo4j is available in a GPL3-licensed open-source “community edition”.
 ## Maven Coordinates
 
 To enable Neo4j, add the following dependency to your project’s `pom.xml` (see
-[Managing Dependencies](../../managing-dependencies.md)).
+[Managing Dependencies](../../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -240,7 +240,7 @@ module:
 
 Health checks for Neo4j will be included in `/health` endpoint output.
 
-## References
+## Reference
 
 - [Neo4j official website](https://neo4j.com/)
 - [Neo4j Java developer guide][neo4j-documentat]

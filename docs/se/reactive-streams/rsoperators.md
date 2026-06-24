@@ -1,4 +1,4 @@
-# MicroProfile Reactive Streams Operators
+# Reactive Streams Operators
 
 ## Overview
 
@@ -11,7 +11,7 @@ portability between different implementations.
 ## Maven Coordinates
 
 To enable Reactive Streams, add the following dependency to your project’s
-`pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+`pom.xml` (see [Managing Dependencies](../../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>

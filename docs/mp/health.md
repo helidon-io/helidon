@@ -1,4 +1,4 @@
-# MicroProfile Health
+# Health
 
 ## Overview
 
@@ -12,7 +12,7 @@ incoming requests normally.
 
 To enable MicroProfile Health add the [helidon-microprofile
 bundle](introduction.md) dependency to your project’s `pom.xml` (see [Managing
-Dependencies](../managing-dependencies.md)).
+Dependencies](../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>

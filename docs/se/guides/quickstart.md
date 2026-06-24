@@ -1,4 +1,4 @@
-# Helidon SE Quickstart
+# Quickstart
 
 This quick start describes how to create and run a basic Helidon SE application
 and optionally, how to build a Docker image and use Kubernetes to deploy it.
@@ -181,7 +181,7 @@ Learn more about Helidon SE:
 
 - [Introduction to Helidon SE](../introduction.md)
 - [WebServer](../webserver/webserver.md)
-- [The Configuration Component](../config/introduction.md)
+- [The Configuration Component](../config/config.md)
 
 [getting-started]: ../../get-started.md#system-requirements
 [deploy-it-to-kub]: #deploy-application-to-kubernetes

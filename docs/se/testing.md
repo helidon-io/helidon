@@ -7,7 +7,7 @@ Helidon provides built-in test support for Helidon testing with JUnit 5.
 ## Maven Coordinates
 
 To enable Helidon Testing Framework, add the following dependency to your
-project’s `pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+project’s `pom.xml` (see [Managing Dependencies](../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>

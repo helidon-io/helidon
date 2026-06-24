@@ -8,7 +8,7 @@ implementation of Scheduling functionality based on [Cron-utils][cron-utils].
 ## Maven Coordinates
 
 To enable Scheduling, add the following dependency to your project’s `pom.xml`
-(see [Managing Dependencies](../managing-dependencies.md)).
+(see [Managing Dependencies](../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -145,7 +145,7 @@ available through CronInvocation provided as task parameter.
 
 ## Configuration
 
-Scheduling is configurable with [Helidon Config](../se/config/introduction.md).
+Scheduling is configurable with [Helidon Config](../se/config/config.md).
 
 Example of configuring:
 

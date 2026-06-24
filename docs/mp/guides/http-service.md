@@ -1,4 +1,4 @@
-# Reusing Helidon SE services
+# HttpService
 
 This guide shows how reuse Helidon SE Service in your Helidon MP application.
 

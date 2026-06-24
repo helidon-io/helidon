@@ -10,7 +10,7 @@ handling of JSON parameters and processing of JSON responses.
 ## Maven Coordinates
 
 To enable WebClient/JSON-RPC, add the following dependency to your project’s
-`pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+`pom.xml` (see [Managing Dependencies](../../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>

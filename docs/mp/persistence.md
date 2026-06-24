@@ -57,7 +57,7 @@ Details concerning each connection pool’s setup are described below.
 To include the [HikariCP connection pool][hikaricp] in your Helidon MP
 application:
 
-- [Ensure your dependencies are managed](../managing-dependencies.md)
+- [Ensure your dependencies are managed](../dependency-management.md)
 - Ensure the following `<dependency>` element is present as a child element of
   your project’s `pom.xml` file’s `<dependencies>` element:
 
@@ -80,7 +80,7 @@ application:
 To include the [Oracle Universal Connection Pool][oracle-universal] in your
 Helidon MP application:
 
-- [Ensure your dependencies are managed](../managing-dependencies.md)
+- [Ensure your dependencies are managed](../dependency-management.md)
 - Ensure the following `<dependency>` element is present as a child element of
   your project’s `pom.xml` file’s `<dependencies>` element:
 
@@ -107,7 +107,7 @@ database-product-specific.
 
 Once you have decided upon a relational database product to use, and JDBC driver
 classes to use to connect to it, [ensure your dependencies are
-managed](../managing-dependencies.md), and then ensure that a `runtime`-scoped
+managed](../dependency-management.md), and then ensure that a `runtime`-scoped
 `<dependency>` element describing your JDBC driver classes is present as a child
 element of your project’s `pom.xml` file’s `<dependencies>` element.
 
@@ -125,7 +125,7 @@ To include the [H2 JDBC driver][h2-jdbc-driver] classes in your Helidon MP
 application so your application can [connect to an H2
 database][connect-to-an-h2] (whether in-memory or persistent):
 
-- [Ensure your dependencies are managed](../managing-dependencies.md)
+- [Ensure your dependencies are managed](../dependency-management.md)
 - Ensure the following `<dependency>` element is present as a child element of
   your project’s `pom.xml` file’s `<dependencies>` element:
 
@@ -149,7 +149,7 @@ To include the [Oracle JDBC driver classes][oracle-jdbc-driv] in your Helidon MP
 application so your application can [connect to an Oracle
 database][connect-to-an-or]:
 
-- [Ensure your dependencies are managed](../managing-dependencies.md)
+- [Ensure your dependencies are managed](../dependency-management.md)
 - Read and understand [Developer’s Guide For Oracle JDBC 21c on Maven
   Central][developer-s-guid]
 - For a basic setup, ensure the following `<dependency>` element is present as a
@@ -459,7 +459,7 @@ transactions in your Java code.
 
 To include Helidon’s JTA integration in your application:
 
-- [Ensure your dependencies are managed](../managing-dependencies.md)
+- [Ensure your dependencies are managed](../dependency-management.md)
 - Ensure the following `<dependency>` elements are present as child elements of
   your project’s `pom.xml` file’s `<dependencies>` element:
 
@@ -628,7 +628,7 @@ Details and examples for each supported JPA provider are below.
 To include the Jakarta Persistence APIs that you will need and to include the
 core of Helidon’s Jakarta Persistence integration:
 
-- [Ensure your dependencies are managed](../managing-dependencies.md)
+- [Ensure your dependencies are managed](../dependency-management.md)
 - [Ensure you have set up and configured named data sources as
   appropriate][helidon-mp-s-nam]
 - [Ensure you have set up and configured Helidon MP’s Jakarta Transactions
@@ -665,7 +665,7 @@ for the JPA provider you have chosen to use.
 
 To generate and compile the Jakarta Persistence static metamodel for your
 application, regardless of whether you are using Hibernate ORM or EclipseLink,
-[ensure your dependencies are managed](../managing-dependencies.md), and then
+[ensure your dependencies are managed](../dependency-management.md), and then
 make sure the `<plugin>` element in the following code snippet is present as a
 child element of the `<pluginManagement><plugins>` element sequence as shown
 below:
@@ -704,7 +704,7 @@ below:
    processor that generates the static metamodel source code][java-annotation],
    to the Java compiler’s annotation processor path so that it is active at
    compile time.
-2. Because your [dependencies are managed](../managing-dependencies.md), this
+2. Because your [dependencies are managed](../dependency-management.md), this
    will resolve to the currently supported version of Hibernate ORM.
 <!--@mdc :: -->
 
@@ -719,7 +719,7 @@ documentation.
 
 To include Helidon’s Jakarta Persistence-related integration for Hibernate ORM:
 
-- [Ensure your dependencies are managed](../managing-dependencies.md)
+- [Ensure your dependencies are managed](../dependency-management.md)
 - [Ensure the basics of your JPA project are set up properly][ensure-the-basic]
 - Ensure the following `<dependency>` elements are present as child elements of
   your project’s `pom.xml` file’s `<dependencies>` element:
@@ -788,7 +788,7 @@ Properties][bytecode-enhance-2] in Hibernate ORM’s documentation.
 
 To include Helidon’s Jakarta Persistence-related integration for EclipseLink:
 
-- [Ensure your dependencies are managed](../managing-dependencies.md)
+- [Ensure your dependencies are managed](../dependency-management.md)
 - [Ensure the basics of your JPA project are set up properly][ensure-the-basic]
 - Ensure the following `<dependency>` elements are present as child elements of
   your project’s `pom.xml` file’s `<dependencies>` element:
@@ -1135,9 +1135,9 @@ other related tasks.
 
 - [JPA Pokemons Example][jpa-pokemons-exa]
 
-## References
+## Reference
 
-- [Managing Dependencies in Helidon MP](../managing-dependencies.md)
+- [Managing Dependencies in Helidon MP](../dependency-management.md)
 - [MicroProfile Config in Helidon MP](config/introduction.md)
 - [JDBC 4.3 Specification][jdbc-4-3-specifi]
 - [HikariCP 5.0.1 documentation][hikaricp-5-0-1-d]

@@ -16,7 +16,7 @@ preview feature.
 ## Maven Coordinates
 
 To enable Validation, add the following dependency to your project’s `pom.xml`
-(see [Managing Dependencies](../managing-dependencies.md)).
+(see [Managing Dependencies](../dependency-management.md)).
 
 <!--@mdc ::code-callout -->
 ```xml [pom.xml]

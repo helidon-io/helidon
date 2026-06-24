@@ -18,7 +18,7 @@ application, adding the UI web page to your application very simply.
 
 To enable Helidon OpenAPI UI support, add the following dependency to your
 project’s `pom.xml` (see [Managing
-Dependencies](../../managing-dependencies.md)).
+Dependencies](../../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>

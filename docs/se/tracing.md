@@ -18,7 +18,7 @@ support for distributed tracing through its own API, backed by either
 ## Maven Coordinates
 
 To enable Helidon Tracing, add the following dependency to your project’s
-`pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+`pom.xml` (see [Managing Dependencies](../dependency-management.md)).
 
 <!--@mdc ::code-callout -->
 ```xml [pom.xml]

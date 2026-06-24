@@ -1,4 +1,4 @@
-# Metrics in Helidon SE
+# Metrics
 
 ## Overview
 
@@ -31,7 +31,7 @@ collects these measurements, such as a counter or a timer.
 ## Maven Coordinates
 
 To enable metrics, add the following dependency to your project’s `pom.xml` (see
-[Managing Dependencies](../../managing-dependencies.md)).
+[Managing Dependencies](../../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -1079,7 +1079,7 @@ This example uses the default Prometheus `CollectorRegistry`. By default, the
 Use the builder obtained by `PrometheusSupport.builder()` to configure a
 different `CollectorRegistry` or a different path.
 
-## References
+## Reference
 
 - [Micrometer Metrics concepts documentation][micrometer-metri]
 - [OpenMetrics format][openmetrics-form]

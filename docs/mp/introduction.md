@@ -1,6 +1,4 @@
-# Helidon MP
-
-## Introduction
+# Introduction
 
 Helidon MP is an Eclipse MicroProfile 6.1 runtime that allows the Jakarta EE
 community to run microservices in a portable way. It is designed for ease of use
@@ -12,36 +10,36 @@ application server. Helidon MP applications are stand-alone Java applications
 running in their own JVM powered by Helidon WebServer. So you get all the
 benefits of a low overhead server built on Java virtual threads.
 
-## Supported Jakarta EE Specifications
+## Jakarta EE Specifications
 
-| Specification                                            | Version      | Description                                                 |
-|----------------------------------------------------------|--------------|-------------------------------------------------------------|
-| [Jakarta Bean Validation][jakarta-bean-val]              | [3.0][3-0]   | Object level constraint declaration and validation facility |
-| Jakarta Context and Dependency Injection (CDI)           | [4.0][4-0]   | Declarative dependency injection and supporting services    |
-| Jakarta JSON Processing (JSON-P)                         | [2.1][2-1]   | API to parse, generate, transform, and query JSON docs      |
-| Jakarta JSON Binding (JSON-B)                            | [3.0][3-0-2] | Binding framework for converting POJOs to/from JSON docs    |
-| [Jakarta RESTful Web Services (JAX-RS)][jakarta-restful] | [3.1][3-1]   | API to develop web services following the REST pattern      |
-| [Jakarta Persistence (JPA)][jakarta-persiste]            | [3.1][3-1-2] | Management of persistence and object/relational mapping     |
-| [Jakarta Transactions (JTA)][jakarta-transact]           | [2.0][2-0]   | Allows handling transactions consistent with X/Open XA-spec |
-| [Jakarta WebSocket][jakarta-websocke]                    | [2.1][2-1-2] | API for Server and Client Endpoints for WebSocket protocol  |
+| Specification                                      | Version                       | Description                                                 |
+|----------------------------------------------------|-------------------------------|-------------------------------------------------------------|
+| [Jakarta Bean Validation][validation]              | [3.0][bv-spec]                | Object level constraint declaration and validation facility |
+| Jakarta Context and Dependency Injection (CDI)     | [4.0][cdi-spec]               | Declarative dependency injection and supporting services    |
+| Jakarta JSON Processing (JSON-P)                   | [2.1][jsonp-spec]             | API to parse, generate, transform, and query JSON docs      |
+| Jakarta JSON Binding (JSON-B)                      | [3.0][jsonb-spec]             | Binding framework for converting POJOs to/from JSON docs    |
+| [Jakarta RESTful Web Services (JAX-RS)][mp-server] | [3.1][jaxrs-spec]             | API to develop web services following the REST pattern      |
+| [Jakarta Persistence (JPA)][jpa]                   | [3.1][jpa-spec]               | Management of persistence and object/relational mapping     |
+| [Jakarta Transactions (JTA)][jta]                  | [2.0][jta-spec]               | Allows handling transactions consistent with X/Open XA-spec |
+| [Jakarta WebSocket][jakarta-websocke]              | [2.1][jakarta-websocket-spec] | API for Server and Client Endpoints for WebSocket protocol  |
 
-## Supported MicroProfile Specifications
+## MicroProfile Specifications
 
 <!--@mdc ::table-collapse -->
-| Specification                                                 | Version        | Description                                                                                                     |
-|---------------------------------------------------------------|----------------|-----------------------------------------------------------------------------------------------------------------|
-| [MicroProfile Config][microprofile-con]                       | [3.1][3-1-3]   | A flexible configuration framework with support for multiple sources and formats                                |
-| [MicroProfile Fault Tolerance][microprofile-fau]              | [4.0.2][4-0-2] | Common strategies for various system problems such as time-outs, retries, Circuit Breaker, etc.                 |
-| [MicroProfile GraphQL][microprofile-gra]                      | [2.0][2-0-2]   | API for working with GraphQL                                                                                    |
-| [MicroProfile Health][microprofile-hea]                       | [4.0][4-0-3]   | Health checks for automatic service restart/shutdown                                                            |
-| [MicroProfile JWT Auth][microprofile-jwt]                     | [2.1][2-1-3]   | Defines a compact and self-contained way for securely transmitting information between parties as a JSON object |
-| [MicroProfile Long-Running Actions (LRA)][microprofile-lon]   | [2.0][2-0-3]   | Distributed transactions for microservices following SAGA pattern                                               |
-| [MicroProfile Metrics][microprofile-met]                      | [5.1.1][5-1-1] | Defining and exposing telemetry data in Prometheus and JSON formats                                             |
-| [MicroProfile Open API][microprofile-ope]                     | [3.1.1][3-1-1] | Annotations for documenting your application endpoints                                                          |
-| [MicroProfile OpenTracing][microprofile-ope-2]                | [3.0][3-0-3]   | Profile and monitor your applications across multiple services                                                  |
-| [MicroProfile Reactive Messaging][microprofile-rea]           | [3.0][3-0-4]   | Standard API for sending and receiving messages/events using streams                                            |
-| [MicroProfile Reactive Streams Operators][microprofile-rea-2] | [3.0][3-0-5]   | Control flow and error processing for event streams                                                             |
-| [MicroProfile REST Client][microprofile-res]                  | [3.0][3-0-6]   | Type-safe API for RESTful Web Services                                                                          |
+| Specification                                              | Version                           | Description                                                                                                     |
+|------------------------------------------------------------|-----------------------------------|-----------------------------------------------------------------------------------------------------------------|
+| [MicroProfile Config][mp-config]                           | [3.1][mp-config-spec]             | A flexible configuration framework with support for multiple sources and formats                                |
+| [MicroProfile Fault Tolerance][mp-ft]                      | [4.0.2][mp-ft-spec]               | Common strategies for various system problems such as time-outs, retries, Circuit Breaker, etc.                 |
+| [MicroProfile GraphQL][mp-graphql]                         | [2.0][mp-graphql-spec]            | API for working with GraphQL                                                                                    |
+| [MicroProfile Health][mp-health]                           | [4.0][mp-health-spec]             | Health checks for automatic service restart/shutdown                                                            |
+| [MicroProfile JWT Auth][mp-jwt]                            | [2.1][mp-jwt-spec]                | Defines a compact and self-contained way for securely transmitting information between parties as a JSON object |
+| [MicroProfile Long-Running Actions (LRA)][mp-lra]          | [2.0][mp-lra-spec]                | Distributed transactions for microservices following SAGA pattern                                               |
+| [MicroProfile Metrics][mp-metrics]                         | [5.1.1][mp-metrics-spec]          | Defining and exposing telemetry data in Prometheus and JSON formats                                             |
+| [MicroProfile Open API][mp-openapi]                        | [3.1.1][mp-openapi-spec]          | Annotations for documenting your application endpoints                                                          |
+| [MicroProfile OpenTracing][mp-opentracing]                 | [3.0][mp-opentracing-spec]        | Profile and monitor your applications across multiple services                                                  |
+| [MicroProfile Reactive Messaging][mp-reactive-messaging]   | [3.0][mp-reactive-messaging-spec] | Standard API for sending and receiving messages/events using streams                                            |
+| [MicroProfile Reactive Streams Operators][mp-rs-operators] | [3.0][mp-rs-operators-spec]       | Control flow and error processing for event streams                                                             |
+| [MicroProfile REST Client][mp-rest-client]                 | [3.0][mp-rest-client-spec]        | Type-safe API for RESTful Web Services                                                                          |
 <!--@mdc :: -->
 
 ## Other Components
@@ -60,7 +58,7 @@ In case you need to upgrade the version of Helidon, follow the `Upgrade Guides`.
 
 For upgrade from Helidon 1.x to 2.x:
 
-- [Helidon MP 2x Upgrade Guide](../mp/guides/upgrade.md)
+- [Helidon MP 2x Upgrade Guide](../mp/guides/upgrade-2x.md)
 
 For upgrade from Helidon 2.x to 3.x:
 
@@ -72,47 +70,47 @@ For upgrade from Helidon 3.x to 4.x:
 
 ## Next Steps
 
-- Try the [Helidon MP quickstart guides](../mp/guides/overview.md) to get your
+- Try the [Helidon MP quickstart guide](../mp/guides/quickstart.md) to get your
   first Helidon MP application up and running in minutes.
 - Browse the [Helidon Javadocs][helidon-javadocs]
 
-[jakarta-bean-val]: ../mp/beanvalidation.md
-[3-0]: https://jakarta.ee/specifications/bean-validation/3.0/jakarta-bean-validation-spec-3.0.html
-[4-0]: https://jakarta.ee/specifications/cdi/4.0/jakarta-cdi-spec-4.0.html
-[2-1]: https://jakarta.ee/specifications/jsonp/2.1/apidocs
-[3-0-2]: https://jakarta.ee/specifications/jsonb/3.0/jakarta-jsonb-spec-3.0.html
-[jakarta-restful]: ../mp/server.md
-[3-1]: https://jakarta.ee/specifications/restful-ws/3.1/jakarta-restful-ws-spec-3.1.html
-[jakarta-persiste]: ../mp/persistence.md#jakarta-persistence-jpa
-[3-1-2]: https://jakarta.ee/specifications/persistence/3.1/jakarta-persistence-spec-3.1.html
-[jakarta-transact]: ../mp/persistence.md#jakarta-transactions-jta-integration
-[2-0]: https://jakarta.ee/specifications/transactions/2.0/jakarta-transactions-spec-2.0.html
+[validation]: ../mp/validation.md
+[bv-spec]: https://jakarta.ee/specifications/bean-validation/3.0/jakarta-bean-validation-spec-3.0.html
+[cdi-spec]: https://jakarta.ee/specifications/cdi/4.0/jakarta-cdi-spec-4.0.html
+[jsonp-spec]: https://jakarta.ee/specifications/jsonp/2.1/apidocs
+[jsonb-spec]: https://jakarta.ee/specifications/jsonb/3.0/jakarta-jsonb-spec-3.0.html
+[mp-server]: ../mp/server.md
+[jaxrs-spec]: https://jakarta.ee/specifications/restful-ws/3.1/jakarta-restful-ws-spec-3.1.html
+[jpa]: ../mp/persistence.md#jakarta-persistence-jpa
+[jpa-spec]: https://jakarta.ee/specifications/persistence/3.1/jakarta-persistence-spec-3.1.html
+[jta]: ../mp/persistence.md#jakarta-transactions-jta-integration
+[jta-spec]: https://jakarta.ee/specifications/transactions/2.0/jakarta-transactions-spec-2.0.html
 [jakarta-websocke]: ../mp/websocket.md
-[2-1-2]: https://jakarta.ee/specifications/websocket/2.1/jakarta-websocket-spec-2.1.html
-[microprofile-con]: ../mp/config/introduction.md
-[3-1-3]: https://download.eclipse.org/microprofile/microprofile-config-3.1/microprofile-config-spec-3.1.html
-[microprofile-fau]: ../mp/fault-tolerance.md
-[4-0-2]: https://download.eclipse.org/microprofile/microprofile-fault-tolerance-4.0.2/microprofile-fault-tolerance-spec-4.0.2.html
-[microprofile-gra]: ../mp/graphql.md
-[2-0-2]: https://download.eclipse.org/microprofile/microprofile-graphql-2.0/microprofile-graphql-spec-2.0.html
-[microprofile-hea]: ../mp/health.md
-[4-0-3]: https://download.eclipse.org/microprofile/microprofile-health-4.0/microprofile-health-spec-4.0.html
-[microprofile-jwt]: ../mp/jwt.md
-[2-1-3]: https://download.eclipse.org/microprofile/microprofile-jwt-auth-2.1/microprofile-jwt-auth-spec-2.1.html
-[microprofile-lon]: ../mp/lra.md
-[2-0-3]: https://download.eclipse.org/microprofile/microprofile-lra-2.0/microprofile-lra-spec-2.0.html
-[microprofile-met]: ../mp/metrics/metrics.md
-[5-1-1]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/microprofile-metrics-spec-5.1.1.html
-[microprofile-ope]: ../mp/openapi/openapi.md
-[3-1-1]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.1/microprofile-openapi-spec-3.1.1.html
-[microprofile-ope-2]: ../mp/tracing.md
-[3-0-3]: https://download.eclipse.org/microprofile/microprofile-opentracing-3.0/microprofile-opentracing-spec-3.0.html
-[microprofile-rea]: ../mp/reactivemessaging/introduction.md
-[3-0-4]: https://download.eclipse.org/microprofile/microprofile-reactive-messaging-3.0/microprofile-reactive-messaging-spec-3.0.html
-[microprofile-rea-2]: ../mp/reactivestreams/rsoperators.md
-[3-0-5]: https://download.eclipse.org/microprofile/microprofile-reactive-streams-operators-3.0/microprofile-reactive-streams-operators-spec-3.0.html
-[microprofile-res]: ../mp/restclient/restclient.md
-[3-0-6]: https://download.eclipse.org/microprofile/microprofile-rest-client-3.0/microprofile-rest-client-spec-3.0.html
+[jakarta-websocket-spec]: https://jakarta.ee/specifications/websocket/2.1/jakarta-websocket-spec-2.1.html
+[mp-config]: ../mp/config/introduction.md
+[mp-config-spec]: https://download.eclipse.org/microprofile/microprofile-config-3.1/microprofile-config-spec-3.1.html
+[mp-ft]: ../mp/fault-tolerance.md
+[mp-ft-spec]: https://download.eclipse.org/microprofile/microprofile-fault-tolerance-4.0.2/microprofile-fault-tolerance-spec-4.0.2.html
+[mp-graphql]: ../mp/graphql.md
+[mp-graphql-spec]: https://download.eclipse.org/microprofile/microprofile-graphql-2.0/microprofile-graphql-spec-2.0.html
+[mp-health]: ../mp/health.md
+[mp-health-spec]: https://download.eclipse.org/microprofile/microprofile-health-4.0/microprofile-health-spec-4.0.html
+[mp-jwt]: ../mp/jwt.md
+[mp-jwt-spec]: https://download.eclipse.org/microprofile/microprofile-jwt-auth-2.1/microprofile-jwt-auth-spec-2.1.html
+[mp-lra]: ../mp/lra.md
+[mp-lra-spec]: https://download.eclipse.org/microprofile/microprofile-lra-2.0/microprofile-lra-spec-2.0.html
+[mp-metrics]: ../mp/metrics/metrics.md
+[mp-metrics-spec]: https://download.eclipse.org/microprofile/microprofile-metrics-5.1.1/microprofile-metrics-spec-5.1.1.html
+[mp-openapi]: ../mp/openapi/openapi.md
+[mp-openapi-spec]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.1/microprofile-openapi-spec-3.1.1.html
+[mp-opentracing]: ../mp/tracing.md
+[mp-opentracing-spec]: https://download.eclipse.org/microprofile/microprofile-opentracing-3.0/microprofile-opentracing-spec-3.0.html
+[mp-reactive-messaging]: ../mp/reactivemessaging/reactive-messaging.md
+[mp-reactive-messaging-spec]: https://download.eclipse.org/microprofile/microprofile-reactive-messaging-3.0/microprofile-reactive-messaging-spec-3.0.html
+[mp-rs-operators]: ../mp/reactivestreams/rsoperators.md
+[mp-rs-operators-spec]: https://download.eclipse.org/microprofile/microprofile-reactive-streams-operators-3.0/microprofile-reactive-streams-operators-spec-3.0.html
+[mp-rest-client]: ../mp/restclient/restclient.md
+[mp-rest-client-spec]: https://download.eclipse.org/microprofile/microprofile-rest-client-3.0/microprofile-rest-client-spec-3.0.html
 [cors]: ../mp/cors/cors.md
 [grpc]: ../mp/grpc/server.md
 [oci-sdk]: ../mp/integrations/oci.md

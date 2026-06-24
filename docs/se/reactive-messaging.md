@@ -11,7 +11,7 @@ case scenarios .
 ## Maven Coordinates
 
 To enable Reactive Messaging, add the following dependency to your project’s
-`pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+`pom.xml` (see [Managing Dependencies](../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -230,7 +230,7 @@ public class ExampleConnector implements IncomingConnectorFactory {
 An explicit config for channel’s publisher is possible with
 `Channel.Builder#publisherConfig(Config config)` and for a subscriber with the
 `Channel.Builder#subscriberConfig(Config config)`. The supplied [Helidon
-Config](config/introduction.md) is merged with the mandatory attributes and any
+Config](config/config.md) is merged with the mandatory attributes and any
 implicit configuration found. The resulting configuration is then served to the
 Connector.
 
@@ -271,7 +271,7 @@ Messaging messaging = Messaging.builder()
 <!--@mdc :: -->
 
 Implicit config without any hard-coding is possible with [Helidon
-Config](config/introduction.md) following notation of [MicroProfile Reactive
+Config](config/config.md) following notation of [MicroProfile Reactive
 Messaging][microprofile-rea-2].
 
 Example of channel to connector mapping config with custom properties:
@@ -689,7 +689,7 @@ Messaging.builder() // <5>
 - [MicroProfile Reactive Messaging on GitHub][microprofile-rea-4]
 - [Helidon Messaging Examples][helidon-messagin]
 
-[microprofile-rea]: ../mp/reactivemessaging/introduction.md
+[microprofile-rea]: ../mp/reactivemessaging/reactive-messaging.md
 [microprofile-rea-2]: https://download.eclipse.org/microprofile/microprofile-reactive-messaging-1.0/microprofile-reactive-messaging-spec.html#_configuration
 [bootstrap-server]: https://kafka.apache.org/28/documentation.html#consumerconfigs_bootstrap.servers
 [helidon-messagin]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/messaging

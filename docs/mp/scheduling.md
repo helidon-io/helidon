@@ -8,7 +8,7 @@ implementation of Scheduling functionality based on [Cron-utils][cron-utils].
 ## Maven Coordinates
 
 To enable Scheduling, add the following dependency to your project’s `pom.xml`
-(see [Managing Dependencies](../managing-dependencies.md)).
+(see [Managing Dependencies](../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>

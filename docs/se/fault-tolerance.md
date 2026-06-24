@@ -29,7 +29,7 @@ For more information, see [Fault Tolerance API Javadocs][fault-tolerance].
 ## Maven Coordinates
 
 To enable Fault Tolerance, add the following dependency to your project’s
-`pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+`pom.xml` (see [Managing Dependencies](../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>

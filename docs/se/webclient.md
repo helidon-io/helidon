@@ -1,4 +1,4 @@
-# WebClient Introduction
+# WebClient
 
 ## Overview
 
@@ -26,7 +26,7 @@ Helidon WebClient provides the following features:
 ## Maven Coordinates
 
 To enable WebClient, add the following dependency to your project’s `pom.xml`
-(see [Managing Dependencies](../managing-dependencies.md)).
+(see [Managing Dependencies](../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -786,7 +786,7 @@ See the [manifest](../config/manifest.md) for all available types.
 [httpclientreques]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.api/io/helidon/webclient/api/HttpClientRequest.html
 [clientrequestbas]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.api/io/helidon/webclient/api/ClientRequestBase.html
 [clientrequest]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.api/io/helidon/webclient/api/ClientRequest.html
-[configuration-se]: ../mp/security/configuration-secrets.md
+[configuration-se]: ../mp/security/config-secrets.md
 [discovery]: discovery.md#web-client-discovery-integration
 [helidon-webclien]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.api/module-summary.html
 [helidon-webclien-2]: https://helidon.io/docs/v4/apidocs/io.helidon.webclient.http1/module-summary.html

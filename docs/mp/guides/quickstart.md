@@ -1,4 +1,4 @@
-# Helidon MP Quick Start
+# Quickstart
 
 This quick start describes how to create and run a basic Helidon MP application
 and optionally, how to build a Docker image and use Kubernetes to deploy it.

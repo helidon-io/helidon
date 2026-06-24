@@ -12,7 +12,7 @@
   ::
 ::
 -->
-| Guide                       | Description                                                  |
+| Topic                       | Description                                                  |
 |-----------------------------|--------------------------------------------------------------|
 | [Quickstart](quickstart.md) | Create your first Helidon MP application in under 5 minutes. |
 | [Tutorial](tutorial.md)     | Learn how to build a Helidon MP application from scratch.    |
@@ -33,11 +33,11 @@
   ::
 ::
 -->
-| Guide                        | Description                                                       |
-|------------------------------|-------------------------------------------------------------------|
-| [2.x Upgrade](upgrade.md)    | Learn how to upgrade your Helidon MP application from 1.x to 2.x. |
-| [3.x Upgrade](upgrade-3x.md) | Learn how to upgrade your Helidon MP application from 2.x to 3.x. |
-| [4.x Upgrade](upgrade-4x.md) | Learn how to upgrade your Helidon MP application from 3.x to 4.x. |
+| Topic                        | Description                                                      |
+|------------------------------|------------------------------------------------------------------|
+| [2.x Upgrade](upgrade-2x.md) | Learn how to upgrade your Helidon MP application from 1.x to 2.x |
+| [3.x Upgrade](upgrade-3x.md) | Learn how to upgrade your Helidon MP application from 2.x to 3.x |
+| [4.x Upgrade](upgrade-4x.md) | Learn how to upgrade your Helidon MP application from 3.x to 4.x |
 <!--/mdc -->
 
 ## Components
@@ -70,7 +70,7 @@
   ::
 ::
 -->
-| Guide                         | Description                                                       |
+| Topic                         | Description                                                       |
 |-------------------------------|-------------------------------------------------------------------|
 | [Config](config.md)           | Learn how to configure a Helidon MP application.                  |
 | [JBatch](jbatch.md)           | Learn how to use JBatch with Helidon MP.                          |
@@ -90,28 +90,28 @@
   Using Helidon in your Gradle project.
   ::
   ::card{title="Jlink" to="/mp/guides/jlink-image" icon="i-lucide-box"}
-  Learn how to build a custom runtime Java image for your Helidon application both on your desktop and as part of a Docker image.
+  Learn how to build a custom runtime Java image for your Helidon application.
   ::
   ::card{title="Maven" to="/mp/guides/maven-build" icon="i-lucide-wrench"}
   Using Helidon in your Maven project.
   ::
   ::card{title="Native Image" to="/mp/guides/graalnative" icon="i-lucide-zap"}
-  Learn how to build a GraalVM native image for your Helidon application both on your desktop and as part of a Docker image.
+  Learn how to build a GraalVM Native Image for your Helidon application.
   ::
   ::card{title="OCI" to="/mp/guides/oci-guide" icon="i-lucide-cloud"}
   Learn how to deploy your application to OCI Container Engine for Kubernetes (OKE).
   ::
   ::card{title="Performance" to="/mp/guides/performance-tuning" icon="i-lucide-gauge"}
-  Learn how to improve performance of your application.
+  Learn how to improve performance of your Helidon application.
   ::
 ::
 -->
-| Guide                           | Description                                                                                                                     |
-|---------------------------------|---------------------------------------------------------------------------------------------------------------------------------|
-| [Gradle](gradle.md)             | Using Helidon in your Gradle project.                                                                                           |
-| [Jlink](jlink.md)               | Learn how to build a custom runtime Java image for your Helidon application both on your desktop and as part of a Docker image. |
-| [Maven](maven.md)               | Using Helidon in your Maven project.                                                                                            |
-| [Native Image](native-image.md) | Learn how to build a GraalVM native image for your Helidon application both on your desktop and as part of a Docker image.      |
-| [OCI](oci.md)                   | Learn how to deploy your application to OCI Container Engine for Kubernetes (OKE).                                              |
-| [Performance](performance.md)   | Learn how to improve performance of your application.                                                                           |
+| Topic                           | Description                                                                                                               |
+|---------------------------------|---------------------------------------------------------------------------------------------------------------------------|
+| [Gradle](gradle.md)             | Using Helidon in your Gradle project                                                                                      |
+| [Jlink](jlink.md)               | Learn how to build a custom runtime Java image for your Helidon application                                               |
+| [Maven](maven.md)               | Using Helidon in your Maven project                                                                                       |
+| [Native Image](native-image.md) | Learn how to build a GraalVM native image for your Helidon application both on your desktop and as part of a Docker image |
+| [OCI](oci.md)                   | Learn how to deploy your application to OCI Container Engine for Kubernetes (OKE)                                         |
+| [Performance](performance.md)   | Learn how to improve performance of your Helidon application                                                              |
 <!--/mdc -->

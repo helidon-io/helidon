@@ -1,4 +1,4 @@
-# WebServer Security
+# WebServer
 
 ## Maven Coordinates
 

@@ -710,7 +710,7 @@ public class ExampleOpenApiGenClientResource {
    incoming request.
 <!--@mdc :: -->
 
-## References
+## Reference
 
 - [OpenAPI Generator Official Website](https://openapi-generator.tech)
 - [OpenAPI Generator GitHub Repository][openapi-generato]

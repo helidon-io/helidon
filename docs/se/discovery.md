@@ -20,7 +20,7 @@ application at deployment time. See [Providers](#providers) below.
 ## Maven Coordinates
 
 To enable Helidon Discovery, add the following dependency to your project’s
-`pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+`pom.xml` (see [Managing Dependencies](../dependency-management.md)).
 
 `pom.xml`
 
@@ -188,7 +188,7 @@ later).
 
 To use the Helidon Eureka Discovery provider, add the following dependency to
 your project’s `pom.xml` (see [Managing
-Dependencies](../managing-dependencies.md)).
+Dependencies](../dependency-management.md)).
 
 `pom.xml`
 
@@ -211,7 +211,7 @@ Dependencies](../managing-dependencies.md)).
 #### Configuration
 
 The Helidon Eureka Discovery provider can be configured using [Helidon
-Config](config/introduction.md). Examples shown below are in YAML, but are
+Config](config/config.md). Examples shown below are in YAML, but are
 expressible in any format and any location that Helidon Config supports.
 
 Configuration for the Helidon Eureka Discovery provider is found under a
@@ -341,7 +341,7 @@ Client](webclient.md).
 To include the Helidon Web Client Discovery integration in your project, you add
 the Web Client Discovery integration dependency as well as a [Discovery
 provider](#providers) dependency (see [Managing
-Dependencies](../managing-dependencies.md)):
+Dependencies](../dependency-management.md)):
 
 `pom.xml`
 
@@ -375,7 +375,7 @@ documented][fully-specified].
 ### Configuration
 
 The Helidon Web Client Discovery integration can be configured using [Helidon
-Config](config/introduction.md). Examples shown below are in YAML, but are
+Config](config/config.md). Examples shown below are in YAML, but are
 expressible in any format and any location that Helidon Config supports.
 
 Because the Helidon Web Client Discovery integration is fundamentally a [Web
@@ -419,7 +419,7 @@ webclient:
    [test prefix URI][test-prefix-uri] will not be subject to discovery
 <!--@mdc :: -->
 
-## References
+## Reference
 
 - [Discovery Javadoc][discovery-javado]
 - [Eureka Discovery Provider Javadoc][eureka-discovery]

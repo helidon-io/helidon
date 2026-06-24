@@ -1,4 +1,4 @@
-# GraphQL Server Introduction
+# GraphQL
 
 ## Overview
 
@@ -11,7 +11,7 @@ alternative to other protocols such as REST or GRPC.
 ## Maven Coordinates
 
 To enable GraphQL, add the following dependency to your project’s `pom.xml` (see
-[Managing Dependencies](../managing-dependencies.md)).
+[Managing Dependencies](../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>

@@ -1,4 +1,4 @@
-# Security Introduction
+# Security
 
 ## Overview
 
@@ -24,7 +24,7 @@ Helidon application. It includes the following features:
 4.  Audit - security module audits most important events through its own API
     (e.g. Authentication events, Authorization events, outbound security
     events). A default AuditProvider is provided as well, logging to Java util
-    logging (JUL) logger called "AUDIT" (may be overridden through
+    logging (JUL) logger called "AUDIT" (maybe overridden through
     configuration). AuditProvider SPI may be implemented to support other
     auditing options.
 
@@ -41,7 +41,7 @@ with HTTP (such as HTTP digest authentication).
 ## Maven Coordinates
 
 To enable Security, add the following dependency to your project’s `pom.xml`
-(see [Managing Dependencies](../../managing-dependencies.md)).
+(see [Managing Dependencies](../../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -61,7 +61,7 @@ instance of security. In general, Security supports three approaches
 - hybrid - you load a builder from configuration and update it in a program
 
 Once a security instance is built, it can be used to initialize an [integration
-with a container](containers-integration.md), or to use security from a program
+with a container](webserver.md), or to use security from a program
 directly:
 
 Security direct usage:

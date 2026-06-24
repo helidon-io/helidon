@@ -2,8 +2,8 @@
 
 Index of Metrics documentation.
 
-| Topic                                      | Description                    |
-|--------------------------------------------|--------------------------------|
-| [Metrics](metrics.md)                      | Helidon MP Metrics Support     |
-| [Exemplar](prometheus-exemplar-support.md) | Helidon metrics                |
-| [Micrometer](micrometer.md)                | Helidon Micrometer integration |
+| Topic                       | Description                    |
+|-----------------------------|--------------------------------|
+| [Metrics](metrics.md)       | MicroProfile Metrics           |
+| [Exemplar](examplar.md)     | Helidon Examplar Support       |
+| [Micrometer](micrometer.md) | Helidon Micrometer Integration |

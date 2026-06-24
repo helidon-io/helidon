@@ -1,4 +1,4 @@
-# OpenAPI in Helidon
+# OpenAPI
 
 ## Overview
 
@@ -23,7 +23,7 @@ static OpenAPI document file packaged as part of your service.
 ## Maven Coordinates
 
 To enable OpenAPI, add the following dependency to your project’s `pom.xml` (see
-[Managing Dependencies](../../managing-dependencies.md)).
+[Managing Dependencies](../../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>

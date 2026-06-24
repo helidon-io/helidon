@@ -1143,7 +1143,7 @@ void findAvailablePets() {
 This code also blocks the current thread, first to wait for the initial response
 and then to wait for the result content.
 
-## References
+## Reference
 
 - [OpenAPI Generator Official Website](https://openapi-generator.tech)
 - [OpenAPI Generator GitHub Repository][openapi-generato]

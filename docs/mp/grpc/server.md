@@ -1,4 +1,4 @@
-# gRPC MP Server
+# gRPC Server
 
 ## Overview
 
@@ -16,7 +16,7 @@ developers to focus on application logic rather than boilerplate code.
 
 To enable gRPC MicroProfile Server, add the following dependency to your
 project’s `pom.xml` (see [Managing
-Dependencies](../../managing-dependencies.md)).
+Dependencies](../../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>

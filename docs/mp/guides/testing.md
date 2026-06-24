@@ -1,4 +1,4 @@
-# Helidon MP Testing with JUnit 5 Guide
+# Testing
 
 This guide describes how to write and execute tests for your MicroProfile
 applications in a JUnit 5 environment using optimized customizations.

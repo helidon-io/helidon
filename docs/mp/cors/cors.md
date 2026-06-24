@@ -1,4 +1,4 @@
-# CORS in Helidon MP
+# CORS
 
 ## Overview
 
@@ -26,7 +26,7 @@ accordingly.
 ## Maven Coordinates
 
 To enable CORS, add the following dependency to your project’s `pom.xml` (see
-[Managing Dependencies](../../managing-dependencies.md)).
+[Managing Dependencies](../../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -48,7 +48,7 @@ declared using `@Cors.*` in the Java class for the resource.
 
 ## API
 
-### The `@Cors.*` Annotations
+### Annotations
 
 Adding CORS behavior to your Helidon MP application involves just a few simple
 steps.
@@ -258,7 +258,7 @@ cors.paths.1.allow-origins=https://foo.com
 
 ## Additional Information
 
-## CORS and the Requested URI Feature
+## Requested URI
 
 The decisions the Helidon CORS feature makes depend on accurate information
 about each incoming request, particularly the host to which the request is sent.
@@ -275,7 +275,7 @@ The CORS support in Helidon uses the requested URI feature to discover the
 correct information about each request, according to your configuration, so it
 can make accurate decisions about whether to permit cross-origin accesses.
 
-## Configuring CORS for Built-in Services
+## Built-in Services
 
 Use configuration to control whether and how each of the built-in services works
 with CORS.
@@ -299,7 +299,7 @@ cors.paths.1.path-pattern=/metrics
 cors.paths.1.allow-origins=https://foo.com
 ```
 
-### Accessing the Shared Resources
+### Shared Resources
 
 If you have edited the Helidon MP QuickStart application as described in the
 previous topics and saved your changes, you can build and run the application.
@@ -321,7 +321,7 @@ java -jar target/helidon-quickstart-mp.jar
 2020.05.12 05:44:08 INFO io.helidon.microprofile.server.ServerCdiExtension Thread[main,5,main]: Server started on http://localhost:8080 (and all other host addresses) in 5280 milliseconds (since JVM startup).
 ```
 
-### Retrieve Metrics
+#### Retrieve Metrics
 
 The metrics service rejects attempts to access metrics on behalf of a disallowed
 origin.

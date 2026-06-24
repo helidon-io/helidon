@@ -1,4 +1,4 @@
-# Reactive Messaging MP
+# Reactive Messaging
 
 ## Overview
 
@@ -21,7 +21,7 @@ every message coming from the stream.
 
 To enable MicroProfile Reactive Messaging, add the following dependency to your
 project’s `pom.xml` (see [Managing
-Dependencies](../../managing-dependencies.md)).
+Dependencies](../../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>

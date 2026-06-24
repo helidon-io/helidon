@@ -20,7 +20,7 @@ You can also use metrics annotations on your Rest Client methods as described in
 To enable MicroProfile Rest Client, either add a dependency on the
 [helidon-microprofile bundle](../introduction.md) or add the following
 dependency to your project’s `pom.xml` (see [Managing
-Dependencies](../../managing-dependencies.md)).
+Dependencies](../../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>

@@ -1,4 +1,4 @@
-# OpenMetrics Exemplar Support
+# Exemplars
 
 ## Overview
 
@@ -34,7 +34,7 @@ registry and exposed by the OpenMetrics output (media type
 
 To enable OpenMetrics exemplar support, add the following dependency to your
 project’s `pom.xml` (see [Managing
-Dependencies](../../managing-dependencies.md)).
+Dependencies](../../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -57,9 +57,60 @@ as [Helidon Zipkin][helidon-zipkin])
 Add the Helidon tracing component itself:
 
 ```xml [pom.xml]
+<dependencies>
+  <dependency>
+    <groupId>io.helidon.tracing</groupId>
+    <artifactId>helidon-tracing</artifactId>
+  </dependency>
+  <dependency>
+    <groupId>io.helidon.webserver.observe</groupId>
+    <artifactId>helidon-webserver-observe-tracing</artifactId>
+  </dependency>
+</dependencies>
+```
+
+- Helidon tracing dependency.
+- Observability dependencies for tracing.
+
+To transmit tracing data from your service to a backend, you need to add a
+tracing provider to your project.
+
+For Jaeger:
+
+```xml [pom.xml]
 <dependency>
-  <groupId>io.helidon.microprofile.tracing</groupId>
-  <artifactId>helidon-microprofile-tracing</artifactId>
+  <groupId>io.helidon.tracing.providers</groupId>
+  <artifactId>helidon-tracing-providers-jaeger</artifactId>
+  <scope>runtime</scope>
+</dependency>
+```
+
+For Zipkin:
+
+```xml [pom.xml]
+<dependency>
+  <groupId>io.helidon.tracing.providers</groupId>
+  <artifactId>helidon-tracing-providers-zipkin</artifactId>
+  <scope>runtime</scope>
+</dependency>
+```
+
+For OpenTelemetry:
+
+```xml [pom.xml]
+<dependency>
+  <groupId>io.helidon.tracing.providers</groupId>
+  <artifactId>helidon-tracing-providers-opentelemetry</artifactId>
+  <scope>runtime</scope>
+</dependency>
+```
+
+For OpenTracing (deprecated):
+
+```xml [pom.xml]
+<dependency>
+  <groupId>io.helidon.tracing.providers</groupId>
+  <artifactId>helidon-tracing-providers-opentracing</artifactId>
 </dependency>
 ```
 
@@ -72,9 +123,9 @@ You do not need to change your application or configuration.
 ### Interpreting Exemplars
 
 Each exemplar reflects a sample described by a label, a value, and a timestamp.
-When a client accesses the `/metrics` endpoint and specifies that it accepts the
-`application/openmetrics-text` media type, the label, value, and timestamp
-appear in the OpenMetrics response for meters that support exemplars.
+When a client accesses the `/observe/metrics` endpoint and specifies that it
+accepts the `application/openmetrics-text` media type, the label, value, and
+timestamp appear in the OpenMetrics response for meters that support exemplars.
 
 The exemplar information in the output describes a single, actual sample that is
 representative of the statistical value as recorded by the underlying Micrometer
@@ -99,6 +150,9 @@ to the trace for the meter’s exemplar.
 
 ## Examples
 
+Helidon includes an [example application][example-applicat], based on the
+QuickStart application, which illustrates exemplar support.
+
 Once you enable exemplar support you can see the exemplars in the metrics
 output.
 
@@ -118,5 +172,6 @@ update occurred expressed as seconds in the UNIX epoch (`1696889651.779`).
 Brief discussion of [exemplars in the OpenMetrics spec][exemplars-in-the]
 
 [exemplar]: https://www.merriam-webster.com/dictionary/exemplar
-[helidon-zipkin]: ../../mp/tracing.md#zipkin-tracing
+[helidon-zipkin]: ../../se/tracing.md#zipkin-tracing
+[example-applicat]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/metrics/exemplar
 [exemplars-in-the]: https://github.com/OpenObservability/OpenMetrics/blob/main/specification/OpenMetrics.md#exemplars

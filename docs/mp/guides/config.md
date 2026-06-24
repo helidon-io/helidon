@@ -1,4 +1,4 @@
-# Helidon MP Config Guide
+# Config
 
 This guide describes how to create a sample MicroProfile (MP) project that can
 be used to run some basic examples using both default and custom configuration
@@ -664,7 +664,7 @@ more information about using the advanced Helidon configuration features,
 including mutability support and extensions, see [Helidon
 Configuration](../../mp/config/introduction.md).
 
-## References
+## Reference
 
 Refer to the following references for additional information:
 

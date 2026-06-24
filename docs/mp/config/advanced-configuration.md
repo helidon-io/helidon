@@ -1,4 +1,4 @@
-# MicroProfile Config Sources
+# Config Sources
 
 ## Creating MicroProfile Config Sources for Manual Setup of Config
 

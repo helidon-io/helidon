@@ -9,7 +9,7 @@ the Helidon ecosystem. These operators can be used with
 ## Maven Coordinates
 
 To enable Reactive Engine, add the following dependency to your project’s
-`pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+`pom.xml` (see [Managing Dependencies](../../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>

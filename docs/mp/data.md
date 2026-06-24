@@ -1,4 +1,4 @@
-# About Helidon Data Repository
+# Data Repository
 
 ## Overview
 
@@ -20,7 +20,7 @@ such as EclipseLink and Hibernate.
 ## Maven Coordinates
 
 To enable Data Repository, add the following dependency to your project’s
-`pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+`pom.xml` (see [Managing Dependencies](../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>

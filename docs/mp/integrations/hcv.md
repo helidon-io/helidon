@@ -8,7 +8,7 @@ REST-based and Helidon implements them using [WebClient](../../se/webclient.md).
 ## Maven Coordinates
 
 To enable HashiCorp Vault, add the following dependency to your project’s
-`pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+`pom.xml` (see [Managing Dependencies](../../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>
@@ -545,7 +545,7 @@ This will create a Vault docker image, run it in background and open it on
 course only suitable for local testing, as the root token has too many rights,
 but it can be easily used with the examples below.
 
-## References
+## Reference
 
 - [Hashicorp Vault Usage Examples][hashicorp-vault]
 

@@ -32,7 +32,7 @@ the application build.
 ## Maven Coordinates
 
 To enable WebLogic JMS connector, add the following dependency to your project’s
-`pom.xml` (see [Managing Dependencies](../../managing-dependencies.md)).
+`pom.xml` (see [Managing Dependencies](../../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>

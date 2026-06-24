@@ -1,4 +1,4 @@
-# Gradle Guide
+# Gradle
 
 This guide describes Helidon’s support for Gradle projects.
 

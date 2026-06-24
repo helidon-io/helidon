@@ -753,7 +753,7 @@ with the configuration keys.
 
 [config]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/Config.html
 [configmappers]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/ConfigMappers.html
-[application-prop]: introduction.md#built-in-support-for-config-formats
+[application-prop]: config.md#built-in-support-for-config-formats
 [io-helidon-confi]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/package-summary.html#conversions
 [configmapperprov]: https://helidon.io/docs/v4/apidocs/io.helidon.config/io/helidon/config/spi/ConfigMapperProvider.html
 [pojo-with-factor]: #target-class-with-annotated-factory-method-or-constructor

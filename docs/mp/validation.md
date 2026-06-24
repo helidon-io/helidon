@@ -1,4 +1,4 @@
-# Bean Validation Introduction
+# Bean Validation
 
 ## Overview
 
@@ -14,7 +14,7 @@ specification][jakarta-bean-val] which defines an API to validate Java beans.
 ## Maven Coordinates
 
 To enable Bean Validation, add the following dependency to your project’s
-`pom.xml` (see [Managing Dependencies](../managing-dependencies.md)).
+`pom.xml` (see [Managing Dependencies](../dependency-management.md)).
 
 ```xml [pom.xml]
 <dependency>
