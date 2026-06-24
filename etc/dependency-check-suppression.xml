@@ -430,7 +430,7 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
    <notes><![CDATA[
    file name: neo4j-java-driver-5.28.3.jar
    ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.neo4j\.driver/neo4j-java-driver@.*$</packageUrl>
+   <packageUrl regex="true">^pkg:maven/org\.neo4j\.driver/.*@.*$</packageUrl>
    <cve>CVE-2026-1337</cve>
 </suppress>
 <suppress>
@@ -438,7 +438,7 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
    file name: neo4j-bolt-connection-1.0.0.jar
    file name: neo4j-bolt-connection-netty-1.0.0.jar
    ]]></notes>
-   <packageUrl regex="true">^pkg:maven/org\.neo4j\.bolt/neo4j-bolt-connection.*$</packageUrl>
+   <packageUrl regex="true">^pkg:maven/org\.neo4j\.bolt/.*@.*$</packageUrl>
    <cve>CVE-2026-1337</cve>
 </suppress>
 <suppress>
@@ -447,6 +447,55 @@ https://github.com/jeremylong/DependencyCheck/issues/7019
    ]]></notes>
    <packageUrl regex="true">^pkg:maven/io\.helidon\.integrations\.neo4j/helidon-integrations-neo4j.*$</packageUrl>
    <cve>CVE-2026-1337</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: neo4j-bolt-connection-1.0.0.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.neo4j\.bolt/.*@.*$</packageUrl>
+    <cve>CVE-2026-1471</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: neo4j-bolt-connection-1.0.0.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.neo4j\.bolt/.*@.*$</packageUrl>
+    <cve>CVE-2026-1524</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: neo4j-bolt-connection-1.0.0.jar
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/org\.neo4j\.bolt/.*@.*$</packageUrl>
+    <cve>CVE-2026-1497</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: io.helidon.integrations.neo4j:helidon-integrations-neo4j:3.2.19-SNAPSHOT
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.helidon\.integrations\.neo4j/helidon-integrations-neo4j@.*$</packageUrl>
+    <cve>CVE-2026-1471</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: io.helidon.integrations.neo4j:helidon-integrations-neo4j:3.2.19-SNAPSHOT
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.helidon\.integrations\.neo4j/helidon-integrations-neo4j@.*$</packageUrl>
+    <cve>CVE-2026-1471</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: io.helidon.integrations.neo4j:helidon-integrations-neo4j:3.2.19-SNAPSHOT
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.helidon\.integrations\.neo4j/helidon-integrations-neo4j@.*$</packageUrl>
+    <cve>CVE-2026-1497</cve>
+</suppress>
+<suppress>
+    <notes><![CDATA[
+    file name: io.helidon.integrations.neo4j:helidon-integrations-neo4j:3.2.19-SNAPSHOT
+    ]]></notes>
+    <packageUrl regex="true">^pkg:maven/io\.helidon\.integrations\.neo4j/helidon-integrations-neo4j@.*$</packageUrl>
+    <cve>CVE-2026-1524</cve>
 </suppress>
 
 <!-- 
