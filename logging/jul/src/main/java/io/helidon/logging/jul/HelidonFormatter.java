@@ -19,6 +19,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Formatter;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.LogRecord;
@@ -60,8 +61,8 @@ public class HelidonFormatter extends SimpleFormatter {
         if (configured == null) {
             return DEFAULT_FORMAT;
         }
-        try {
-            String.format(formatForValidation(configured), ZonedDateTime.now(), "", "", "", "", "");
+        try (Formatter formatter = new Formatter()) {
+            formatter.format(formatForValidation(configured), ZonedDateTime.now(), "", "", "", "", "");
             return configured;
         } catch (IllegalArgumentException e) {
             return DEFAULT_FORMAT;
