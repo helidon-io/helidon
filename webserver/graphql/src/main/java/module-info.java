@@ -25,7 +25,6 @@ import io.helidon.common.features.api.HelidonFlavor;
 @Features.Name("GraphQL")
 @Features.Description("WebServer GraphQL support")
 @Features.Flavor(HelidonFlavor.SE)
-@Features.InvalidFlavor(HelidonFlavor.MP)
 module io.helidon.webserver.graphql {
 
     requires io.helidon.common.uri;
