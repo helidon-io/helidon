@@ -293,6 +293,8 @@ class Http2LoggingFrameListenerTest {
             String message = messages.getFirst();
             assertThat(message, containsString("73 65 63 72 65 74"));
             assertThat(message, containsString("secret"));
+            assertThat(message, containsString("frame data,\n"));
+            assertThat(message, not(containsString("\r")));
         } finally {
             logger.removeHandler(handler);
             logger.setLevel(previousLevel);
@@ -342,6 +344,77 @@ class Http2LoggingFrameListenerTest {
             String message = messages.getFirst();
             assertThat(message, containsString("Authorization: Bearer secret-token"));
             assertThat(message, containsString(":path: /path?access_token=query-secret#fragment"));
+            assertThat(message, containsString("headers:\n"));
+            assertThat(message, not(containsString("\r")));
+        } finally {
+            logger.removeHandler(handler);
+            logger.setLevel(previousLevel);
+            logger.setUseParentHandlers(previousUseParentHandlers);
+            handler.close();
+        }
+    }
+
+    @Test
+    void testMultilineDiagnosticLogsUseLf() {
+        SocketContext ctx = mock(SocketContext.class, CALLS_REAL_METHODS);
+        when(ctx.socketId()).thenReturn("server");
+        when(ctx.childSocketId()).thenReturn("connection");
+
+        Http2LoggingFrameListener listener = Http2LoggingFrameListener.create(HttpLogConfig.builder()
+                                                                                  .unsafeRawData(true)
+                                                                                  .build(),
+                                                                          "recv");
+        Http2Headers headers = Http2Headers.create(WritableHeaders.create()
+                                                           .add(HeaderNames.CONTENT_TYPE, "text/plain"));
+
+        List<String> messages = collectMessages(Level.FINER, () -> {
+            listener.frameHeader(ctx, 1, BufferData.create("head"));
+            listener.frame(ctx, 1, BufferData.create("secret"));
+            listener.frame(ctx, 1, Http2Ping.create(BufferData.create("12345678")));
+            listener.frame(ctx, 1, new Http2GoAway(1, Http2ErrorCode.NO_ERROR, "bye"));
+            listener.frame(ctx, 1, new Http2WindowUpdate(7));
+            listener.headers(ctx, 1, headers);
+        });
+
+        assertThat(messages.size(), is(7));
+        assertThat(messages.get(0), containsString("frame header data\n"));
+        assertThat(messages.get(1), containsString("frame data,\n"));
+        assertThat(messages.get(2), containsString("ping\n"));
+        assertThat(messages.get(3), not(containsString("\n")));
+        assertThat(messages.get(4), containsString("goaway details\n"));
+        assertThat(messages.get(5), not(containsString("\n")));
+        assertThat(messages.get(6), containsString("headers:\n"));
+        messages.forEach(message -> assertThat(message, not(containsString("\r"))));
+    }
+
+    private static List<String> collectMessages(Level level, Runnable task) {
+        Logger logger = Logger.getLogger(LOGGER_NAME);
+        Level previousLevel = logger.getLevel();
+        boolean previousUseParentHandlers = logger.getUseParentHandlers();
+        List<String> messages = new ArrayList<>();
+        Handler handler = new Handler() {
+            @Override
+            public void publish(LogRecord record) {
+                messages.add(record.getMessage());
+            }
+
+            @Override
+            public void flush() {
+            }
+
+            @Override
+            public void close() {
+            }
+        };
+
+        handler.setLevel(Level.ALL);
+        logger.addHandler(handler);
+        logger.setUseParentHandlers(false);
+        logger.setLevel(level);
+
+        try {
+            task.run();
+            return messages;
         } finally {
             logger.removeHandler(handler);
             logger.setLevel(previousLevel);
