@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,8 +15,13 @@
  */
 package io.helidon.microprofile.openapi;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import io.helidon.microprofile.openapi.other.TestApp2;
 import io.helidon.microprofile.server.JaxRsApplication;
@@ -27,6 +32,8 @@ import org.jboss.jandex.DotName;
 import org.junit.jupiter.api.Test;
 
 import static io.helidon.microprofile.openapi.TestUtil.config;
+import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -68,5 +75,64 @@ class FilteredIndexViewsBuilderTest {
                 .findFirst()
                 .orElse(null);
         assertThat(testApp2Info, notNullValue());
+    }
+
+    @Test
+    void testDiagnosticLogNewlines() {
+        List<String> messages = collectMessages(FilteredIndexViewsBuilder.class.getName(), () -> {
+            List<String> indexPaths = List.of("META-INF/jandex.idx", "META-INF/other.idx");
+
+            List<JaxRsApplication> apps = List.of(
+                    JaxRsApplication.create(new TestApp()),
+                    JaxRsApplication.create(new TestApp2()));
+
+            new FilteredIndexViewsBuilder(config(), apps, Set.of(), indexPaths, false).buildViews();
+        });
+
+        String message = messages.stream()
+                .filter(it -> it.contains("FilteredIndexView for "))
+                .findFirst()
+                .orElse("");
+
+        assertThat(message, containsString("FilteredIndexView for \n"));
+        assertThat(message, containsString("known classes: \n"));
+        assertThat(message, not(containsString("\r")));
+    }
+
+    private static List<String> collectMessages(String loggerName, Runnable task) {
+        Logger logger = Logger.getLogger(loggerName);
+        Level previousLevel = logger.getLevel();
+        boolean previousUseParentHandlers = logger.getUseParentHandlers();
+        List<String> messages = new ArrayList<>();
+
+        Handler handler = new Handler() {
+            @Override
+            public void publish(LogRecord record) {
+                messages.add(record.getMessage());
+            }
+
+            @Override
+            public void flush() {
+            }
+
+            @Override
+            public void close() {
+            }
+        };
+
+        handler.setLevel(Level.ALL);
+        logger.addHandler(handler);
+        logger.setUseParentHandlers(false);
+        logger.setLevel(Level.ALL);
+
+        try {
+            task.run();
+            return messages;
+        } finally {
+            logger.removeHandler(handler);
+            logger.setLevel(previousLevel);
+            logger.setUseParentHandlers(previousUseParentHandlers);
+            handler.close();
+        }
     }
 }

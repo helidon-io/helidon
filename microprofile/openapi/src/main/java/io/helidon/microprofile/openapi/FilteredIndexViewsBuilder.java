@@ -147,15 +147,13 @@ class FilteredIndexViewsBuilder {
         FilteredIndexView result = new FilteredIndexView(view, filteringOpenApiConfig);
 
         if (LOGGER.isLoggable(Level.TRACE)) {
-            LOGGER.log(Level.TRACE, String.format(
-                    "FilteredIndexView for %n"
-                            + "  application class %s%n"
-                            + "  with explicitly-referenced classes %s%n"
-                            + "  yields exclude list: %s%n  and known classes: %n  %s",
-                    appClassName,
-                    explicitClassNames,
-                    excludedClasses,
-                    String.join("," + System.lineSeparator() + "    ", knownClassNames(result))));
+            LOGGER.log(Level.TRACE,
+                    "FilteredIndexView for \n"
+                            + "  application class " + appClassName + "\n"
+                            + "  with explicitly-referenced classes " + explicitClassNames + "\n"
+                            + "  yields exclude list: " + excludedClasses + "\n"
+                            + "  and known classes: \n  "
+                            + String.join(",\n    ", knownClassNames(result)));
         }
 
         return result;

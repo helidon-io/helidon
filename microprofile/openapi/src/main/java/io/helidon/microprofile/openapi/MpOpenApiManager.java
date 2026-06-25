@@ -132,10 +132,9 @@ final class MpOpenApiManager implements OpenApiManager<OpenAPI> {
             OpenApiAnnotationScanner scanner = new OpenApiAnnotationScanner(openApiConfig, indexView, scannerExtensions);
             OpenAPI scanned = scanner.scan();
             if (LOGGER.isLoggable(Level.DEBUG)) {
-                LOGGER.log(Level.DEBUG, String.format(
-                        "Intermediate scanned from filtered index view %s:%n%s",
-                        indexView.getKnownClasses(),
-                        format(scanned, OpenApiFormat.YAML)));
+                LOGGER.log(Level.DEBUG,
+                        "Intermediate scanned from filtered index view " + indexView.getKnownClasses() + ":\n"
+                                + format(scanned, OpenApiFormat.YAML));
             }
             model = MergeUtil.merge(model, scanned).openapi(scanned.getOpenapi()); // SmallRye's merge skips openapi value.
         }
