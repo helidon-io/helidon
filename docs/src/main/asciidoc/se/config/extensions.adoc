@@ -319,7 +319,11 @@ For `Config.as(Class)`:
 4. Check whether a conversion function is provided by any `ConfigMapperProvider` with method `mapper(GenericType)` for
     a generic type for the class requested.
 
-For `Config.as(GenericType)` - the first two steps are skipped.
+For `Config.as(GenericType)`, the config system checks generic type conversion
+first. If the requested generic type represents a raw class, the class
+conversion steps also apply. For parameterized types, class conversion is
+skipped except that `Map<String, String>` can fall back to the raw `Map.class`
+conversion for compatibility.
 
 The config system also uses the Java `ServiceLoader` mechanism to load automatically,
 for all builders, any mappers returned by the providers listed in the
