@@ -153,6 +153,13 @@ public class ApiStabilityProcessor extends AbstractProcessor {
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         try {
+            if (previewAction == Action.IGNORE
+                    && incubatingAction == Action.IGNORE
+                    && internalAction == Action.IGNORE
+                    && deprecatedAction == Action.IGNORE) {
+                return false;
+            }
+
             var trees = Trees.instance(processingEnv);
 
             for (var rootElement : roundEnv.getRootElements()) {
@@ -175,12 +182,18 @@ public class ApiStabilityProcessor extends AbstractProcessor {
             Set<Ref> deprecatedApis = new LinkedHashSet<>();
 
             for (var unit : compilationUnits) {
-                var scanner = new ApiStabilityScanner(trees, unit);
-                scanner.scan(unit, null);
-                previewApis.addAll(scanner.previewApis());
-                incubatingApis.addAll(scanner.incubatingApis());
-                privateApis.addAll(scanner.internalApis());
-                deprecatedApis.addAll(scanner.deprecatedApis());
+                try {
+                    var scanner = new ApiStabilityScanner(trees, unit);
+                    scanner.scan(unit, null);
+                    previewApis.addAll(scanner.previewApis());
+                    incubatingApis.addAll(scanner.incubatingApis());
+                    privateApis.addAll(scanner.internalApis());
+                    deprecatedApis.addAll(scanner.deprecatedApis());
+                } catch (Throwable e) {
+                    messager.printWarning("Failed to scan a source file in ApiStabilityProcessor. "
+                                                  + "API stability diagnostics may be incomplete. Exception class: "
+                                                  + e.getClass().getName() + ", message: " + e.getMessage());
+                }
             }
 
             scanModuleDirectives(modules, previewApis, incubatingApis, privateApis, deprecatedApis);
