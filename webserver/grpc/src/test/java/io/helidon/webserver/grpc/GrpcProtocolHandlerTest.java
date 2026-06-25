@@ -231,6 +231,13 @@ class GrpcProtocolHandlerTest {
                 cancellations.incrementAndGet();
             }
         };
+        ServerCallHandler<String, String> callHandler = new ServerCallHandler<>() {
+            @Override
+            public ServerCall.Listener<String> startCall(ServerCall<String, String> call, Metadata headers) {
+                call.request(1);
+                return listener;
+            }
+        };
         BufferData data = grpcData("bad");
         GrpcProtocolHandler<String, String> handler = new GrpcProtocolHandler<>(new UnimplementedGrpcConnectionContext(),
                                                                                 Http2Headers.create(WritableHeaders.create()),
@@ -238,7 +245,7 @@ class GrpcProtocolHandlerTest {
                                                                                 1,
                                                                                 null,
                                                                                 Http2StreamState.OPEN,
-                                                                                route(listener),
+                                                                                route(callHandler),
                                                                                 GrpcConfig.create());
         handler.init();
         Http2FrameHeader header = Http2FrameHeader.create(data.available(),
