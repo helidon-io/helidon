@@ -25,13 +25,16 @@ import java.lang.annotation.Target;
 /**
  * Declarative gRPC server annotations.
  */
-public interface RpcServer {
+public final class RpcServer {
+    private RpcServer() {
+    }
+
     /**
      * Defines a declarative gRPC server endpoint.
      */
     @Target(ElementType.TYPE)
     @Retention(RetentionPolicy.CLASS)
     @Documented
-    @interface Endpoint {
+    public @interface Endpoint {
     }
 }

@@ -27,7 +27,10 @@ import io.helidon.service.registry.Service;
 /**
  * Declarative gRPC client annotations.
  */
-public interface RpcClient {
+public final class RpcClient {
+    private RpcClient() {
+    }
+
     /**
      * Defines a declarative gRPC client endpoint.
      * <p>
@@ -57,7 +60,7 @@ public interface RpcClient {
     @Target(ElementType.TYPE)
     @Retention(RetentionPolicy.CLASS)
     @Documented
-    @interface Endpoint {
+    public @interface Endpoint {
         /**
          * Target URI of the generated backing gRPC client.
          * <p>
@@ -90,6 +93,6 @@ public interface RpcClient {
     @Target({ElementType.FIELD, ElementType.PARAMETER, ElementType.TYPE})
     @Documented
     @Service.Qualifier
-    @interface Client {
+    public @interface Client {
     }
 }
