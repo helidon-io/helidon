@@ -82,7 +82,6 @@ public final class GrpcSecurityHandler implements ServerInterceptor,
 
     private final GrpcSecurityHandlerConfig config;
     private final Optional<Set<String>> rolesAllowed;
-    private final boolean clearInheritedRolesAllowed;
     private final List<SecurityLevel> securityLevels;
     private final Optional<ClassToInstanceStore<Object>> customObjects;
     private final Optional<String> explicitAuthenticator;
@@ -105,8 +104,6 @@ public final class GrpcSecurityHandler implements ServerInterceptor,
         } else {
             this.rolesAllowed = Optional.of(rolesAllowedSet);
         }
-        this.clearInheritedRolesAllowed = config.clearInheritedRolesAllowed();
-
         this.securityLevels = config.securityLevels();
         this.customObjects = config.customObjects()
                 .map(it -> {
@@ -235,22 +232,8 @@ public final class GrpcSecurityHandler implements ServerInterceptor,
         return builder()
                 .from(prototype())
                 .rolesAllowed(Set.of(roles))
-                .clearInheritedRolesAllowed(false)
                 .authorize(true)
                 .authenticate(true)
-                .build();
-    }
-
-    /**
-     * Clear any role constraints inherited from less specific handlers when this handler is combined.
-     *
-     * @return new handler
-     */
-    public GrpcSecurityHandler clearRolesAllowed() {
-        return builder()
-                .from(prototype())
-                .rolesAllowed(Set.of())
-                .clearInheritedRolesAllowed(true)
                 .build();
     }
 
@@ -380,12 +363,7 @@ public final class GrpcSecurityHandler implements ServerInterceptor,
     }
 
     private void update(GrpcSecurityHandlerConfig.Builder builder) {
-        if (clearInheritedRolesAllowed) {
-            builder.rolesAllowed(Set.of())
-                    .clearInheritedRolesAllowed(true);
-        } else {
-            rolesAllowed.ifPresent(builder::rolesAllowed);
-        }
+        rolesAllowed.ifPresent(builder::rolesAllowed);
         if (!securityLevels.isEmpty()) {
             builder.securityLevels(securityLevels);
         }

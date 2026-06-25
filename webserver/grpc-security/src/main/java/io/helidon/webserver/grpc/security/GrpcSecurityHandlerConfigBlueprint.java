@@ -32,6 +32,7 @@ import io.helidon.security.SecurityLevel;
 @Prototype.Blueprint(decorator = GrpcSecurityConfigSupport.GrpcSecurityHandlerDecorator.class)
 @Prototype.Configured
 @Prototype.CustomMethods(GrpcSecurityConfigSupport.GrpcSecurityHandlerCustomMethods.class)
+@Prototype.IncludeDefaultMethods("securityLevels")
 interface GrpcSecurityHandlerConfigBlueprint extends Prototype.Factory<GrpcSecurityHandler> {
     /**
      * An array of allowed roles for this gRPC method.
@@ -43,19 +44,14 @@ interface GrpcSecurityHandlerConfigBlueprint extends Prototype.Factory<GrpcSecur
     Set<String> rolesAllowed();
 
     /**
-     * Whether role constraints from a less specific handler should be cleared when handlers are combined.
-     *
-     * @return whether to clear inherited role constraints
-     */
-    boolean clearInheritedRolesAllowed();
-
-    /**
      * Security levels discovered from endpoint annotations.
      *
      * @return security levels
      */
     @Option.Singular
-    List<SecurityLevel> securityLevels();
+    default List<SecurityLevel> securityLevels() {
+        return List.of();
+    }
 
     /**
      * Use a named authenticator.

@@ -253,9 +253,6 @@ class GrpcServerRegistrationGenerator {
             }
             constructor.addContent(")");
         }
-        if (security.clearRolesAllowed()) {
-            constructor.addContent(".clearRolesAllowed()");
-        }
         security.audit().ifPresent(audit -> constructor.addContent(audit ? ".audit()" : ".skipAudit()"));
         security.auditEventType().ifPresent(eventType -> constructor.addContent(".auditEventType(")
                 .addContentLiteral(eventType)

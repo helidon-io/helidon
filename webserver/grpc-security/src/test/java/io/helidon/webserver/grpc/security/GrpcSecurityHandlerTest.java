@@ -30,6 +30,7 @@ import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.security.AuditEvent;
 import io.helidon.security.Security;
+import io.helidon.security.SecurityLevel;
 import io.helidon.security.spi.AuditProvider;
 
 import io.grpc.Attributes;
@@ -123,17 +124,20 @@ class GrpcSecurityHandlerTest {
     }
 
     @Test
-    void testCombiningClearsAttachedRolesWhenConfigured() {
+    void testCombiningPreservesAttachedRolesWithSecurityLevel() {
         GrpcSecurityHandler attachedHandler = GrpcSecurityHandler.builder()
                 .rolesAllowed(Set.of("admin"))
                 .build();
         GrpcSecurityHandler configHandler = GrpcSecurityHandler.create()
-                .clearRolesAllowed()
-                .authorize();
+                .authorize()
+                .securityLevel(SecurityLevel.builder()
+                                       .type(GrpcSecurityHandlerTest.class)
+                                       .build());
 
         GrpcSecurityHandler combined = configHandler.combine(attachedHandler);
 
-        assertThat(combined.prototype().rolesAllowed(), is(Set.of()));
+        assertThat(combined.prototype().rolesAllowed(), contains("admin"));
+        assertThat(combined.prototype().securityLevels(), contains(configHandler.prototype().securityLevels().getFirst()));
         assertThat(combined.prototype().authorize(), is(Optional.of(true)));
     }
 

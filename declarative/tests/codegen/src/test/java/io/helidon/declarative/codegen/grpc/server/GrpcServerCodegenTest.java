@@ -333,8 +333,7 @@ class GrpcServerCodegenTest {
         assertThat(registration, containsString(".classAnnotations(CLASS_ANNOTATIONS).build()).configure(builder);"));
         assertThat(registration, containsString("GrpcSecurity.enforce().authorize().securityLevel("));
         assertThat(registration, containsString("GrpcSecurity.enforce().rolesAllowed(\"admin\").securityLevel("));
-        assertThat(registration, containsString("GrpcSecurity.enforce().skipAuthentication().authorize().clearRolesAllowed()"
-                                                        + ".securityLevel("));
+        assertThat(registration, containsString("GrpcSecurity.enforce().skipAuthentication().authorize().securityLevel("));
         assertThat(registration, containsString("GrpcSecurity.enforce().authenticate().authorize().securityLevel("));
         assertThat(registration, containsString("GrpcSecurity.enforce().audit().auditEventType(\"declarativeGrpc\")"));
         assertThat(registration, containsString(".auditMessageFormat(\"%3$s %1$s \\\"%2$s\\\" %5$s %6$s "
