@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -211,7 +211,7 @@ class LogHelper {
             List<String> results = new ArrayList<>();
             checks.forEach((k, v) -> results.add(v.toString(k)));
             logger.log(DETAILED_DECISION_LEVEL, results.stream()
-                    .collect(Collectors.joining(System.lineSeparator(), "Matching results: [", "]")));
+                    .collect(Collectors.joining("\n", "Matching results: [", "]")));
         }
 
         private static class MatcherCheck {

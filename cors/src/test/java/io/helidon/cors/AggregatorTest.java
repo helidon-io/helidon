@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2020, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,9 +15,13 @@
  */
 package io.helidon.cors;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.ResourceBundle;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -25,7 +29,9 @@ import org.junit.jupiter.api.Test;
 
 import static io.helidon.common.testing.junit5.OptionalMatcher.optionalPresent;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 
 class AggregatorTest {
 
@@ -110,6 +116,31 @@ class AggregatorTest {
         checkMatch("/openintegration/v2.0/ui/dot and space in path", "GET", 8);
     }
 
+    @Test
+    void testDiagnosticLogNewlines() {
+        CapturingLogger logger = new CapturingLogger();
+        LogHelper.MatcherChecks<CrossOriginConfig> matcherChecks = new LogHelper.MatcherChecks<>(logger, Function.identity());
+        CrossOriginConfig firstConfig = CrossOriginConfig.builder()
+                .allowMethods("GET")
+                .build();
+        CrossOriginConfig secondConfig = CrossOriginConfig.builder()
+                .allowMethods("POST")
+                .build();
+
+        matcherChecks.put(firstConfig);
+        matcherChecks.put(secondConfig);
+        matcherChecks.matched(firstConfig);
+        matcherChecks.enabled(secondConfig);
+
+        matcherChecks.log();
+
+        assertThat(logger.messages().size(), is(1));
+        String message = logger.messages().getFirst();
+        assertThat(message, containsString("Matching results: [MatcherCheck{"));
+        assertThat(message, containsString("\nMatcherCheck{"));
+        assertThat(message, not(containsString("\r")));
+    }
+
     private static CrossOriginConfig addToMap(int ID, CrossOriginConfig coc) {
         configs.put(coc, ID);
         return coc;
@@ -125,5 +156,33 @@ class AggregatorTest {
         Optional<CrossOriginConfig> matchOpt = aggregator.lookupCrossOrigin(path, method, NO_OP);
         int match = matchOpt.map(configs::get).orElse(-1);
         assertThat(path + ":" + method + " matched but should be absent", match, is(-1));
+    }
+
+    private static class CapturingLogger implements System.Logger {
+        private final List<String> messages = new ArrayList<>();
+
+        @Override
+        public String getName() {
+            return "test";
+        }
+
+        @Override
+        public boolean isLoggable(Level level) {
+            return true;
+        }
+
+        @Override
+        public void log(Level level, ResourceBundle bundle, String msg, Throwable thrown) {
+            messages.add(msg);
+        }
+
+        @Override
+        public void log(Level level, ResourceBundle bundle, String format, Object... params) {
+            messages.add(params == null || params.length == 0 ? format : String.format(format, params));
+        }
+
+        List<String> messages() {
+            return messages;
+        }
     }
 }
