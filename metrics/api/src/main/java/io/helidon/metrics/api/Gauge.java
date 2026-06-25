@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,10 @@ public interface Gauge<N extends Number> extends Meter {
 
     /**
      * Creates a builder for creating a new gauge based on applying a function to a state object.
+     * <p>
+     * For new code, prefer {@link MetricsFactory#gaugeBuilder(String, Object, java.util.function.ToDoubleFunction)}
+     * on the {@link MetricsFactory} instance used by the application.
+     * </p>
      *
      * @param name        gauge name
      * @param stateObject state object which maintains the gauge value
@@ -41,6 +45,10 @@ public interface Gauge<N extends Number> extends Meter {
 
     /**
      * Creates a builder for a supplier-based gauge.
+     * <p>
+     * For new code, prefer {@link MetricsFactory#gaugeBuilder(String, java.util.function.Supplier)} on the
+     * {@link MetricsFactory} instance used by the application.
+     * </p>
      *
      * @param name           gauge name
      * @param numberSupplier {@link java.util.function.Supplier} for an instance of a type which extends {@link Number}

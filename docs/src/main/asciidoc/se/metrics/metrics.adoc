@@ -109,7 +109,7 @@ include::{rootdir}/includes/metrics/metrics-shared.adoc[tag=usage-body]
 
 === Meter Registry
 Helidon stores all meters in a _meter registry_. Typically, applications use the global meter registry which is the registry where Helidon stores built-in meters.
-Application code refers to the global registry using `Metrics.globalRegistry()`.
+Application code obtains the global registry using `Services.get(MeterRegistry.class)`.
 
 [[usage-publishing]]
 include::{rootdir}/includes/metrics/metrics-shared.adoc[tag=usage-retrieving]
@@ -133,8 +133,8 @@ include::{sourcedir}/se/metrics/MetricsSnippets.java[tag=snippet_1, indent=0]
 == API
 To work with Helidon Metrics in your code, follow these steps:
 
-. Use the static `globalRegistry` method on the link:{metrics-javadoc-base-url}/io/helidon/metrics/api/Metrics.html[`Metrics`] interface to get a reference to the global  link:{metrics-javadoc-base-url}/io/helidon/metrics/api/MeterRegistry.html[`MeterRegistry`] instance.
-. Use the `MeterRegistry` instance to register new {metrics} and look up previously-registered {metrics}.
+. Use `Services.get(MeterRegistry.class)` to get a reference to the global link:{metrics-javadoc-base-url}/io/helidon/metrics/api/MeterRegistry.html[`MeterRegistry`] instance.
+. Use the `MeterRegistry` instance with builders from link:{metrics-javadoc-base-url}/io/helidon/metrics/api/MetricsFactory.html[`MetricsFactory`] to register new {metrics} and look up previously-registered {metrics}.
 . Use the {metric} reference returned from the `MeterRegistry` to update the {metric} or get its value.
 
 You can also use the `MeterRegistry` to remove an existing {metric}.
@@ -169,11 +169,11 @@ Each {metric} type has its own set of methods for updating and retrieving the va
 
 === The `MeterRegistry` API
 To register or look up {meters} programmatically, your service code uses the global `MeterRegistry`.
-Simply invoke `Metrics.globalRegistry()` to get a reference to the global meter registry.
+Use `Services.get(MeterRegistry.class)` to get a reference to the global meter registry.
 
 To locate an existing meter or register a new one, your code:
 
-. Creates a builder of the appropriate type of meter, setting the name and possibly other characteristics of the meter.
+. Creates a builder of the appropriate type of meter using `MetricsFactory`, setting the name and possibly other characteristics of the meter.
 . Invokes the `MeterRegistry.getOrCreate` method, passing the builder.
 
 The meter registry returns a reference to a previously-registered meter with the specified name and tags or, if none exists, a newly-registered meter.
@@ -216,8 +216,8 @@ The following example, based on the Helidon SE QuickStart application, shows how
 ----
 include::{sourcedir}/se/metrics/MetricsSnippets.java[tag=snippet_2, indent=0]
 ----
-<1> Get the global meter registry.
-<2> Create (or find) a counter named "accessctr" in the global registry.
+<1> Get the global meter registry from the service registry.
+<2> Create (or find) a counter named "accessctr" in the global registry using a counter builder from `MetricsFactory`.
 <3> Route every request to the `countAccess` method.
 <4> Increment the access counter for every request.
 

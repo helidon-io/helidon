@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,11 @@ public interface DistributionSummary extends Meter {
 
     /**
      * Creates a builder for a new {@link io.helidon.metrics.api.DistributionSummary} using the specified statistics builder.
+     * <p>
+     * For new code, prefer
+     * {@link MetricsFactory#distributionSummaryBuilder(String, DistributionStatisticsConfig.Builder)} on the
+     * {@link MetricsFactory} instance used by the application.
+     * </p>
      *
      * @param name          name for the summary
      * @param configBuilder distribution stats config for the summary
@@ -39,6 +44,12 @@ public interface DistributionSummary extends Meter {
 
     /**
      * Creates a builder for a new {@link io.helidon.metrics.api.DistributionSummary} using default distribution statistics.
+     * <p>
+     * For new code, prefer
+     * {@link MetricsFactory#distributionSummaryBuilder(String, DistributionStatisticsConfig.Builder)} with a
+     * {@link MetricsFactory#distributionStatisticsConfigBuilder()} from the {@link MetricsFactory} instance used by the
+     * application.
+     * </p>
      *
      * @param name name for the summary
      * @return new builder

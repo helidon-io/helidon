@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,8 @@ import io.helidon.config.Config;
 import io.helidon.http.Method;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
-import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.MetricsFactory;
+import io.helidon.service.registry.Services;
 import io.helidon.webclient.api.ClientResponseTyped;
 import io.helidon.webclient.api.WebClient;
 import io.helidon.webclient.metrics.WebClientMetrics;
@@ -86,11 +87,12 @@ class WebclientSnippets {
 
     void snippet_6_7_8() {
         // tag::snippet_6[]
-        MeterRegistry METER_REGISTRY = Metrics.globalRegistry();
+        MeterRegistry meterRegistry = Services.get(MeterRegistry.class);
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
 
         String metricName = "counter.GET.localhost"; // <1>
 
-        Counter counter = METER_REGISTRY.getOrCreate(Counter.builder(metricName)); // <2>
+        Counter counter = meterRegistry.getOrCreate(metricsFactory.counterBuilder(metricName)); // <2>
         System.out.println(metricName + ": " + counter.count());
 
         WebClientService clientServiceMetric = WebClientMetrics.counter()
@@ -118,11 +120,12 @@ class WebclientSnippets {
 
     void snippet_9(String[] args) {
         // tag::snippet_9[]
-        MeterRegistry METER_REGISTRY = Metrics.globalRegistry();
+        MeterRegistry meterRegistry = Services.get(MeterRegistry.class);
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
 
         String counterName = "counter.GET.localhost"; // <1>
 
-        Counter counter = METER_REGISTRY.getOrCreate(Counter.builder(counterName)); // <2>
+        Counter counter = meterRegistry.getOrCreate(metricsFactory.counterBuilder(counterName)); // <2>
         System.out.println(counterName + ": " + counter.count());
 
         Config config = Config.create(); // <3>

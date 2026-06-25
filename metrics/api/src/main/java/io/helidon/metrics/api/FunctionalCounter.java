@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,10 @@ public interface FunctionalCounter extends Meter {
 
     /**
      * Returns a builder for registering or locating a functional counter.
+     * <p>
+     * For new code, prefer {@link MetricsFactory#functionalCounterBuilder(String, Object, java.util.function.Function)}
+     * on the {@link MetricsFactory} instance used by the application.
+     * </p>
      *
      * @param name        functional counter name
      * @param stateObject object which provides the counter value on demand

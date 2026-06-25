@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,12 @@ public interface MeterRegistry extends Wrapper {
     /**
      * Creates a meter registry, not saved as the global registry, using default metrics config information based on global
      * config.
+     * <p>
+     * For new code which needs the shared registry, prefer
+     * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MeterRegistry.class)}. To create a
+     * custom registry, prefer {@link MetricsFactory#createMeterRegistry(MetricsConfig)} on the {@link MetricsFactory}
+     * instance used by the application.
+     * </p>
      *
      * @return new meter registry
      */
@@ -38,6 +44,10 @@ public interface MeterRegistry extends Wrapper {
 
     /**
      * Creates a meter registry, not saved as the global registry, based on the provided metrics config.
+     * <p>
+     * For new code, prefer {@link MetricsFactory#createMeterRegistry(MetricsConfig)} on the {@link MetricsFactory}
+     * instance used by the application.
+     * </p>
      *
      * @param metricsConfig metrics config
      * @return new meter registry
