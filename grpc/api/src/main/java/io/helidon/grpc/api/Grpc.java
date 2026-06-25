@@ -259,11 +259,14 @@ public interface Grpc {
     /**
      * An annotation used to annotate a type or method to specify the
      * named marshaller supplier to use for rpc method calls.
+     *
+     * @deprecated this annotation is only used by Helidon MP gRPC and will move to the Helidon MP gRPC API.
      */
     @Target({ElementType.TYPE, ElementType.METHOD})
     @Retention(RetentionPolicy.RUNTIME)
     @Documented
     @Inherited
+    @Deprecated(since = "27.0.0", forRemoval = true)
     @interface GrpcMarshaller {
 
         /**
@@ -312,11 +315,14 @@ public interface Grpc {
 
     /**
      * An annotation to indicate the request type of gRPC method.
+     *
+     * @deprecated this annotation is only used by Helidon MP gRPC and will move to the Helidon MP gRPC API.
      */
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
     @Documented
     @Inherited
+    @Deprecated(since = "27.0.0", forRemoval = true)
     @interface RequestType {
         /**
          * Obtain the gRPC request type.
@@ -328,11 +334,14 @@ public interface Grpc {
 
     /**
      * An annotation to indicate the response type of gRPC method.
+     *
+     * @deprecated this annotation is only used by Helidon MP gRPC and will move to the Helidon MP gRPC API.
      */
     @Target(ElementType.METHOD)
     @Retention(RetentionPolicy.RUNTIME)
     @Documented
     @Inherited
+    @Deprecated(since = "27.0.0", forRemoval = true)
     @interface ResponseType {
         /**
          * Obtain the gRPC response type.
@@ -344,9 +353,12 @@ public interface Grpc {
 
     /**
      * An annotation that can be used to specify the name of a configured gRPC channel.
+     *
+     * @deprecated this annotation is only used by Helidon MP gRPC and will move to the Helidon MP gRPC API.
      */
     @Target({ElementType.TYPE, ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.FIELD, ElementType.PARAMETER})
     @Retention(RetentionPolicy.RUNTIME)
+    @Deprecated(since = "27.0.0", forRemoval = true)
     @interface GrpcChannel {
 
         /**
@@ -359,9 +371,12 @@ public interface Grpc {
 
     /**
      * An annotation used to mark an injection point for a gRPC service client proxy.
+     *
+     * @deprecated this annotation is only used by Helidon MP gRPC and will move to the Helidon MP gRPC API.
      */
     @Target({ElementType.METHOD, ElementType.FIELD, ElementType.PARAMETER})
     @Retention(RetentionPolicy.RUNTIME)
+    @Deprecated(since = "27.0.0", forRemoval = true)
     @interface GrpcProxy {
     }
 }
