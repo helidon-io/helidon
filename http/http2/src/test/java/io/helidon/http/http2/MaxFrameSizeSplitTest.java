@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,23 @@
 
 package io.helidon.http.http2;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.nio.charset.StandardCharsets;
+import java.security.Principal;
+import java.security.cert.Certificate;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.socket.PeerInfo;
+import io.helidon.common.socket.SocketContext;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.WritableHeaders;
 import io.helidon.logging.common.LogConfig;
 
 import org.junit.jupiter.api.BeforeAll;
@@ -31,6 +43,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static java.lang.System.Logger.Level.DEBUG;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertAll;
 
 class MaxFrameSizeSplitTest {
 
@@ -38,6 +51,59 @@ class MaxFrameSizeSplitTest {
 
     private static final String TEST_STRING = "Helidon data!!!!";
     private static final byte[] TEST_DATA = TEST_STRING.getBytes(StandardCharsets.UTF_8);
+    private static final SocketAddress TEST_SOCKET_ADDRESS = InetSocketAddress.createUnresolved("localhost", 0);
+    private static final PeerInfo TEST_PEER_INFO = new PeerInfo() {
+        @Override
+        public SocketAddress address() {
+            return TEST_SOCKET_ADDRESS;
+        }
+
+        @Override
+        public String host() {
+            return "localhost";
+        }
+
+        @Override
+        public int port() {
+            return 0;
+        }
+
+        @Override
+        public Optional<Principal> tlsPrincipal() {
+            return Optional.empty();
+        }
+
+        @Override
+        public Optional<Certificate[]> tlsCertificates() {
+            return Optional.empty();
+        }
+    };
+    private static final SocketContext TEST_SOCKET_CONTEXT = new SocketContext() {
+        @Override
+        public PeerInfo remotePeer() {
+            return TEST_PEER_INFO;
+        }
+
+        @Override
+        public PeerInfo localPeer() {
+            return TEST_PEER_INFO;
+        }
+
+        @Override
+        public boolean isSecure() {
+            return false;
+        }
+
+        @Override
+        public String socketId() {
+            return "test";
+        }
+
+        @Override
+        public String childSocketId() {
+            return "test-child";
+        }
+    };
 
     @BeforeAll
     static void beforeAll() {
@@ -72,6 +138,116 @@ class MaxFrameSizeSplitTest {
         assertThat(split.length, is(2));
         assertThat(split[0].available(), is(12));
         assertThat(split[1].available(), is(9));
+    }
+
+    @Test
+    void writeSplitHeadersOnceAndPreserveEndStream() {
+        int maxFrameSize = 32;
+        int streamId = 3;
+        WritableHeaders<?> httpHeaders = WritableHeaders.create();
+        httpHeaders.add(Http2Headers.STATUS_NAME, "200");
+        httpHeaders.add(HeaderNames.create("x-large-header"), "abc".repeat(128));
+        Http2Headers http2Headers = Http2Headers.create(httpHeaders);
+
+        BufferData encodedHeaders = BufferData.growing(512);
+        http2Headers.write(Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue()),
+                           Http2HuffmanEncoder.create(),
+                           encodedHeaders);
+        BufferData[] expectedFragments = Http2Headers.split(encodedHeaders, maxFrameSize);
+        assertThat("Test setup must force a split header block", expectedFragments.length > 1, is(true));
+
+        List<byte[]> writes = new ArrayList<>();
+        DataWriter dataWriter = new DataWriter() {
+            @Override
+            public void write(BufferData... buffers) {
+                writeNow(buffers);
+            }
+
+            @Override
+            public void write(BufferData buffer) {
+                writeNow(buffer);
+            }
+
+            @Override
+            public void writeNow(BufferData... buffers) {
+                writeNow(BufferData.create(buffers));
+            }
+
+            @Override
+            public void writeNow(BufferData buffer) {
+                writes.add(buffer.readBytes());
+            }
+        };
+        FlowControl.Outbound flowControl = new FlowControl.Outbound() {
+            @Override
+            public void decrementWindowSize(int decrement) {
+            }
+
+            @Override
+            public void resetStreamWindowSize(int size) {
+            }
+
+            @Override
+            public int getRemainingWindowSize() {
+                return Integer.MAX_VALUE;
+            }
+
+            @Override
+            public long incrementStreamWindowSize(int increment) {
+                return Integer.MAX_VALUE;
+            }
+
+            @Override
+            public Http2FrameData[] cut(Http2FrameData frame) {
+                return new Http2FrameData[] {frame};
+            }
+
+            @Override
+            public void blockTillUpdate() {
+            }
+
+            @Override
+            public int maxFrameSize() {
+                return maxFrameSize;
+            }
+        };
+
+        Http2ConnectionWriter writer = new Http2ConnectionWriter(TEST_SOCKET_CONTEXT, dataWriter, List.of());
+        writer.writeHeaders(http2Headers,
+                            streamId,
+                            Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
+                            flowControl);
+
+        List<Http2FrameHeader> writtenHeaders = new ArrayList<>();
+        for (byte[] write : writes) {
+            BufferData frameBytes = BufferData.create(write);
+            Http2FrameHeader header = Http2FrameHeader.create(frameBytes);
+            writtenHeaders.add(header);
+            assertThat("Frame payload length must match the serialized frame header",
+                       frameBytes.available(),
+                       is(header.length()));
+        }
+
+        assertAll(
+                () -> assertThat("Unexpected number of frames for one split header block",
+                                 writtenHeaders.size(),
+                                 is(expectedFragments.length)),
+                () -> assertThat("First frame type", writtenHeaders.get(0).type(), is(Http2FrameType.HEADERS)),
+                () -> assertThat("First HEADERS frame must preserve END_STREAM",
+                                 writtenHeaders.get(0).flags(Http2FrameTypes.HEADERS).endOfStream(),
+                                 is(true)),
+                () -> assertThat("First HEADERS frame must defer END_HEADERS",
+                                 writtenHeaders.get(0).flags(Http2FrameTypes.HEADERS).endOfHeaders(),
+                                 is(false)),
+                () -> assertThat("Final header-block frame type",
+                                 writtenHeaders.get(expectedFragments.length - 1).type(),
+                                 is(Http2FrameType.CONTINUATION)),
+                () -> assertThat("Final continuation must end the header block",
+                                 writtenHeaders.get(expectedFragments.length - 1)
+                                         .flags(Http2FrameTypes.CONTINUATION)
+                                         .endOfHeaders(),
+                                 is(true))
+        );
     }
 
     @ParameterizedTest
