@@ -344,7 +344,8 @@ class DeclarativeGraphQlTest {
         assertThat(data.stringValue("hello").orElseThrow(), is("Hello Helidon"));
         assertThat(data.value("validatedGreeting").orElseThrow().type(), is(JsonValueType.NULL));
         String errors = json.arrayValue("errors").orElseThrow().toString();
-        assertThat(errors, containsString("is blank"));
+        assertThat(errors, containsString("Server Error"));
+        assertThat(errors, not(containsString("is blank")));
         assertThat(errors, containsString("validatedGreeting"));
     }
 
@@ -443,7 +444,8 @@ class DeclarativeGraphQlTest {
         assertThat(data.stringValue("hello").orElseThrow(), is("Hello Helidon"));
         assertThat(data.value("securedMessage").orElseThrow().type(), is(JsonValueType.NULL));
         String errors = json.arrayValue("errors").orElseThrow().toString();
-        assertThat(errors, containsString("Security did not allow this request to proceed"));
+        assertThat(errors, containsString("Server Error"));
+        assertThat(errors, not(containsString("Security did not allow this request to proceed")));
         assertThat(errors, containsString("securedMessage"));
     }
 
@@ -461,7 +463,8 @@ class DeclarativeGraphQlTest {
         assertThat(data.stringValue("hello").orElseThrow(), is("Hello Helidon"));
         assertThat(data.value("securedMessage").orElseThrow().type(), is(JsonValueType.NULL));
         String errors = json.arrayValue("errors").orElseThrow().toString();
-        assertThat(errors, containsString("Security did not allow this request to proceed"));
+        assertThat(errors, containsString("Server Error"));
+        assertThat(errors, not(containsString("Security did not allow this request to proceed")));
         assertThat(errors, containsString("securedMessage"));
     }
 
