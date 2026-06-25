@@ -187,6 +187,9 @@ class GrpcClientExtension implements RegistryCodegenExtension {
                                                       .name("registryClient")
                                                       .update(it -> registryClientParameter(it, endpoint)))
                                               .update(it -> constructorBody(it, endpoint)));
+            addProtoMethod(classModel, endpoint);
+            addValidateProtoMethod(classModel);
+            addMethodTypeMethod(classModel);
 
             roundContext.addGeneratedType(generatedType, classModel, type.typeName(), type.originatingElementValue());
         }
@@ -409,6 +412,30 @@ class GrpcClientExtension implements RegistryCodegenExtension {
     }
 
     private void constructorBody(Constructor.Builder constructor, GrpcEndpoint endpoint) {
+        constructor.addContentLine("var declarative__proto = proto();");
+        for (GrpcMethod method : endpoint.methods()) {
+            boolean clientStreaming = method.invocation() == GrpcMethod.Invocation.CLIENT_STREAMING_ITERABLE
+                    || method.invocation() == GrpcMethod.Invocation.CLIENT_STREAMING_STREAM
+                    || method.invocation() == GrpcMethod.Invocation.CLIENT_STREAMING_OBSERVER
+                    || method.invocation() == GrpcMethod.Invocation.BIDI_ITERABLE
+                    || method.invocation() == GrpcMethod.Invocation.BIDI_STREAM
+                    || method.invocation() == GrpcMethod.Invocation.BIDI_OBSERVER;
+            boolean serverStreaming = method.invocation() == GrpcMethod.Invocation.SERVER_STREAMING_ITERABLE
+                    || method.invocation() == GrpcMethod.Invocation.SERVER_STREAMING_STREAM
+                    || method.invocation() == GrpcMethod.Invocation.SERVER_STREAMING_OBSERVER
+                    || method.invocation() == GrpcMethod.Invocation.BIDI_ITERABLE
+                    || method.invocation() == GrpcMethod.Invocation.BIDI_STREAM
+                    || method.invocation() == GrpcMethod.Invocation.BIDI_OBSERVER;
+            constructor.addContent("validateProtoMethod(declarative__proto, ")
+                    .addContentLiteral(endpoint.serviceName())
+                    .addContent(", ")
+                    .addContentLiteral(method.methodName())
+                    .addContent(", ")
+                    .addContent(String.valueOf(clientStreaming))
+                    .addContent(", ")
+                    .addContent(String.valueOf(serverStreaming))
+                    .addContentLine(");");
+        }
         constructor.addContent("var declarative__descriptor = ")
                 .addContent(GRPC_SERVICE_DESCRIPTOR)
                 .addContentLine(".builder()")
@@ -466,6 +493,105 @@ class GrpcClientExtension implements RegistryCodegenExtension {
                 .decreaseContentPadding()
                 .addContentLine("}")
                 .addContentLine("this.serviceClient = declarative__client.serviceClient(declarative__descriptor);");
+    }
+
+    private static void addProtoMethod(ClassModel.Builder classModel, GrpcEndpoint endpoint) {
+        TypeName endpointType = endpoint.type().typeName();
+        GrpcProtoDescriptor protoDescriptor = endpoint.protoDescriptor();
+        classModel.addMethod(proto -> {
+            proto.accessModifier(AccessModifier.PRIVATE)
+                    .returnType(PROTO_FILE_DESCRIPTOR)
+                    .name("proto");
+            if (protoDescriptor.descriptorType().isPresent()) {
+                proto.addContent("return ")
+                        .addContent(protoDescriptor.descriptorType().orElseThrow())
+                        .addContentLine(".getDescriptor();");
+            } else {
+                proto.addContent("return ")
+                        .addContent(endpointType)
+                        .addContent(".")
+                        .addContent(protoDescriptor.method().orElseThrow().elementName())
+                        .addContentLine("();");
+            }
+        });
+    }
+
+    private static void addValidateProtoMethod(ClassModel.Builder classModel) {
+        classModel.addMethod(method -> method
+                .accessModifier(AccessModifier.PRIVATE)
+                .isStatic(true)
+                .returnType(TypeNames.PRIMITIVE_VOID)
+                .name("validateProtoMethod")
+                .addParameter(PROTO_FILE_DESCRIPTOR, "proto")
+                .addParameter(TypeNames.STRING, "serviceName")
+                .addParameter(TypeNames.STRING, "methodName")
+                .addParameter(TypeNames.PRIMITIVE_BOOLEAN, "clientStreaming")
+                .addParameter(TypeNames.PRIMITIVE_BOOLEAN, "serverStreaming")
+                .addContentLine("var protoPackage = proto.getPackage();")
+                .addContentLine("var protoServiceName = serviceName;")
+                .addContentLine("if (!protoPackage.isEmpty() && protoServiceName.startsWith(protoPackage + \".\")) {")
+                .increaseContentPadding()
+                .addContentLine("protoServiceName = protoServiceName.substring(protoPackage.length() + 1);")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContentLine("var service = proto.findServiceByName(protoServiceName);")
+                .addContentLine("if (service == null) {")
+                .increaseContentPadding()
+                .addContentLine("throw new IllegalArgumentException(\"Unable to find gRPC service \" + serviceName")
+                .increaseContentPadding()
+                .addContentLine("+ \" in proto descriptor.\");")
+                .decreaseContentPadding()
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContentLine("var method = service.findMethodByName(methodName);")
+                .addContentLine("if (method == null) {")
+                .increaseContentPadding()
+                .addContentLine("throw new IllegalArgumentException(\"Unable to find gRPC method \" + serviceName")
+                .increaseContentPadding()
+                .addContentLine("+ \"/\" + methodName + \" in proto descriptor.\");")
+                .decreaseContentPadding()
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContentLine("if (method.isClientStreaming() != clientStreaming")
+                .increaseContentPadding()
+                .addContentLine("|| method.isServerStreaming() != serverStreaming) {")
+                .decreaseContentPadding()
+                .increaseContentPadding()
+                .addContentLine("throw new IllegalArgumentException(\"Declarative gRPC method \" + serviceName")
+                .increaseContentPadding()
+                .addContentLine("+ \"/\" + methodName + \" is configured as \"")
+                .addContentLine("+ methodType(clientStreaming, serverStreaming)")
+                .addContentLine("+ \" but proto declares \"")
+                .addContentLine("+ methodType(method.isClientStreaming(), method.isServerStreaming()) + \".\");")
+                .decreaseContentPadding()
+                .decreaseContentPadding()
+                .addContentLine("}"));
+    }
+
+    private static void addMethodTypeMethod(ClassModel.Builder classModel) {
+        classModel.addMethod(method -> method
+                .accessModifier(AccessModifier.PRIVATE)
+                .isStatic(true)
+                .returnType(TypeNames.STRING)
+                .name("methodType")
+                .addParameter(TypeNames.PRIMITIVE_BOOLEAN, "clientStreaming")
+                .addParameter(TypeNames.PRIMITIVE_BOOLEAN, "serverStreaming")
+                .addContentLine("if (clientStreaming && serverStreaming) {")
+                .increaseContentPadding()
+                .addContentLine("return \"BIDI_STREAMING\";")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContentLine("if (clientStreaming) {")
+                .increaseContentPadding()
+                .addContentLine("return \"CLIENT_STREAMING\";")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContentLine("if (serverStreaming) {")
+                .increaseContentPadding()
+                .addContentLine("return \"SERVER_STREAMING\";")
+                .decreaseContentPadding()
+                .addContentLine("}")
+                .addContentLine("return \"UNARY\";"));
     }
 
     private void registryClientParameter(Parameter.Builder param, GrpcEndpoint endpoint) {

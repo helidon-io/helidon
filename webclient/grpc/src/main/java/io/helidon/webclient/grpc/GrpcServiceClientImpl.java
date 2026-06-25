@@ -20,11 +20,13 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Spliterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -36,6 +38,7 @@ import io.grpc.Channel;
 import io.grpc.ClientCall;
 import io.grpc.ClientInterceptor;
 import io.grpc.ClientInterceptors;
+import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.stub.ClientCalls;
 import io.grpc.stub.StreamObserver;
@@ -176,33 +179,50 @@ class GrpcServiceClientImpl implements GrpcServiceClient {
 
     @Override
     public <ReqT, ResT> Stream<ResT> bidiStream(String methodName, Stream<ReqT> request) {
+        Objects.requireNonNull(request);
         ClientCall<ReqT, ResT> call = ensureMethod(methodName, MethodDescriptor.MethodType.BIDI_STREAMING);
-        LinkedBlockingQueue<Object> responses = new LinkedBlockingQueue<>();
-        StreamObserver<ReqT> observer = ClientCalls.asyncBidiStreamingCall(call, new StreamObserver<>() {
+        SingleItemBridge<ResT> responses = new SingleItemBridge<>(() -> call.request(1));
+        Ready ready = new Ready(call);
+        call.start(new ClientCall.Listener<>() {
             @Override
-            public void onNext(ResT value) {
-                responses.add(value);
+            public void onMessage(ResT message) {
+                responses.item(message);
             }
 
             @Override
-            public void onError(Throwable t) {
-                responses.add(new Error(t));
+            public void onClose(io.grpc.Status status, Metadata trailers) {
+                if (status.isOk()) {
+                    responses.complete();
+                } else {
+                    responses.error(status.asRuntimeException(trailers));
+                }
             }
 
             @Override
-            public void onCompleted() {
-                responses.add(End.INSTANCE);
+            public void onReady() {
+                ready.ready();
             }
-        });
-        CompletableFuture.runAsync(() -> {
+        }, new Metadata());
+        Thread.startVirtualThread(() -> {
             try (request) {
-                request.forEach(observer::onNext);
-                observer.onCompleted();
+                Iterator<ReqT> iterator = request.iterator();
+                while (iterator.hasNext()) {
+                    if (!ready.await()) {
+                        return;
+                    }
+                    call.sendMessage(iterator.next());
+                }
+                call.halfClose();
             } catch (Throwable t) {
-                observer.onError(t);
+                call.cancel("Request stream failed.", t);
             }
         });
-        return StreamSupport.stream(new QueueSpliterator<>(responses), false);
+        return StreamSupport.stream(responses, false)
+                .onClose(() -> {
+                    responses.cancel();
+                    ready.cancel();
+                    call.cancel("Response stream closed.", null);
+                });
     }
 
     @Override
@@ -235,41 +255,104 @@ class GrpcServiceClientImpl implements GrpcServiceClient {
         }
     }
 
-    private record Error(Throwable throwable) {
-    }
+    private static final class SingleItemBridge<T> implements Spliterator<T> {
+        private final ReentrantLock lock = new ReentrantLock();
+        private final Condition changed = lock.newCondition();
+        private final Runnable request;
+        private T item;
+        private Throwable error;
+        private boolean hasItem;
+        private boolean requested;
+        private boolean complete;
+        private boolean cancelled;
 
-    private static final class End {
-        private static final End INSTANCE = new End();
-
-        private End() {
-        }
-    }
-
-    private static final class QueueSpliterator<T> implements Spliterator<T> {
-        private final LinkedBlockingQueue<Object> queue;
-
-        private QueueSpliterator(LinkedBlockingQueue<Object> queue) {
-            this.queue = queue;
+        private SingleItemBridge(Runnable request) {
+            this.request = request;
         }
 
         @Override
-        @SuppressWarnings("unchecked")
         public boolean tryAdvance(Consumer<? super T> action) {
-            Object item;
+            Objects.requireNonNull(action);
+            T next;
+            lock.lock();
             try {
-                item = queue.take();
+                requestOne();
+                while (!hasItem && !complete && error == null && !cancelled) {
+                    changed.await();
+                }
+                if (error != null) {
+                    throw new CompletionException(error);
+                }
+                if (!hasItem) {
+                    return false;
+                }
+                next = item;
+                item = null;
+                hasItem = false;
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new CompletionException(e);
+            } finally {
+                lock.unlock();
             }
-            if (item == End.INSTANCE) {
-                return false;
-            }
-            if (item instanceof Error error) {
-                throw new CompletionException(error.throwable());
-            }
-            action.accept((T) item);
+            action.accept(next);
             return true;
+        }
+
+        private void requestOne() {
+            if (!requested && !complete && error == null && !cancelled) {
+                requested = true;
+                request.run();
+            }
+        }
+
+        private void item(T item) {
+            lock.lock();
+            try {
+                requested = false;
+                if (hasItem) {
+                    error = new IllegalStateException("Received gRPC message before previous message was consumed.");
+                } else {
+                    this.item = item;
+                    hasItem = true;
+                }
+                changed.signalAll();
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        private void error(Throwable error) {
+            lock.lock();
+            try {
+                requested = false;
+                this.error = error;
+                changed.signalAll();
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        private void complete() {
+            lock.lock();
+            try {
+                requested = false;
+                complete = true;
+                changed.signalAll();
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        private void cancel() {
+            lock.lock();
+            try {
+                requested = false;
+                cancelled = true;
+                changed.signalAll();
+            } finally {
+                lock.unlock();
+            }
         }
 
         @Override
@@ -285,6 +368,48 @@ class GrpcServiceClientImpl implements GrpcServiceClient {
         @Override
         public int characteristics() {
             return ORDERED | NONNULL;
+        }
+    }
+
+    private static final class Ready {
+        private final ReentrantLock lock = new ReentrantLock();
+        private final Condition changed = lock.newCondition();
+        private final ClientCall<?, ?> call;
+        private boolean cancelled;
+
+        private Ready(ClientCall<?, ?> call) {
+            this.call = call;
+        }
+
+        private boolean await() throws InterruptedException {
+            lock.lock();
+            try {
+                while (!call.isReady() && !cancelled) {
+                    changed.await();
+                }
+                return !cancelled;
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        private void ready() {
+            lock.lock();
+            try {
+                changed.signalAll();
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        private void cancel() {
+            lock.lock();
+            try {
+                cancelled = true;
+                changed.signalAll();
+            } finally {
+                lock.unlock();
+            }
         }
     }
 }

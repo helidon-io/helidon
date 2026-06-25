@@ -18,16 +18,17 @@ package io.helidon.webserver.grpc;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Spliterator;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
 
 /**
@@ -45,6 +46,8 @@ public final class GrpcStreams {
      * @param <ResT> response type
      */
     public static <ResT> void serverStreaming(Iterable<ResT> responses, StreamObserver<ResT> responseObserver) {
+        Objects.requireNonNull(responses);
+        Objects.requireNonNull(responseObserver);
         try {
             for (ResT response : responses) {
                 responseObserver.onNext(response);
@@ -63,6 +66,8 @@ public final class GrpcStreams {
      * @param <ResT> response type
      */
     public static <ResT> void serverStreaming(Stream<ResT> responses, StreamObserver<ResT> responseObserver) {
+        Objects.requireNonNull(responses);
+        Objects.requireNonNull(responseObserver);
         try (responses) {
             responses.forEach(responseObserver::onNext);
             responseObserver.onCompleted();
@@ -82,6 +87,8 @@ public final class GrpcStreams {
      */
     public static <ReqT, ResT> StreamObserver<ReqT> clientStreaming(Function<Iterable<ReqT>, ResT> handler,
                                                                     StreamObserver<ResT> responseObserver) {
+        Objects.requireNonNull(handler);
+        Objects.requireNonNull(responseObserver);
         List<ReqT> requests = new ArrayList<>();
         return new StreamObserver<>() {
             @Override
@@ -117,8 +124,10 @@ public final class GrpcStreams {
      */
     public static <ReqT, ResT> StreamObserver<ReqT> clientStreamingStream(Function<Stream<ReqT>, ResT> handler,
                                                                           StreamObserver<ResT> responseObserver) {
-        StreamingRequest<ReqT> request = new StreamingRequest<>();
-        CompletableFuture.runAsync(() -> {
+        Objects.requireNonNull(handler);
+        Objects.requireNonNull(responseObserver);
+        StreamingRequest<ReqT> request = new StreamingRequest<>(responseObserver);
+        Thread.startVirtualThread(() -> {
             try (Stream<ReqT> stream = request.stream()) {
                 responseObserver.onNext(handler.apply(stream));
                 responseObserver.onCompleted();
@@ -140,6 +149,8 @@ public final class GrpcStreams {
      */
     public static <ReqT, ResT> StreamObserver<ReqT> bidirectional(Function<Iterable<ReqT>, Iterable<ResT>> handler,
                                                                   StreamObserver<ResT> responseObserver) {
+        Objects.requireNonNull(handler);
+        Objects.requireNonNull(responseObserver);
         List<ReqT> requests = new ArrayList<>();
         return new StreamObserver<>() {
             @Override
@@ -170,8 +181,10 @@ public final class GrpcStreams {
      */
     public static <ReqT, ResT> StreamObserver<ReqT> bidirectionalStream(Function<Stream<ReqT>, Stream<ResT>> handler,
                                                                         StreamObserver<ResT> responseObserver) {
-        StreamingRequest<ReqT> request = new StreamingRequest<>();
-        CompletableFuture.runAsync(() -> {
+        Objects.requireNonNull(handler);
+        Objects.requireNonNull(responseObserver);
+        StreamingRequest<ReqT> request = new StreamingRequest<>(responseObserver);
+        Thread.startVirtualThread(() -> {
             try (Stream<ReqT> stream = request.stream()) {
                 serverStreaming(handler.apply(stream), responseObserver);
             } catch (Throwable t) {
@@ -188,68 +201,139 @@ public final class GrpcStreams {
         return t;
     }
 
-    private record Error(Throwable throwable) {
-    }
-
-    private static final class End {
-        private static final End INSTANCE = new End();
-
-        private End() {
-        }
-    }
-
     private static final class StreamingRequest<T> {
-        private final BlockingQueue<Object> queue = new LinkedBlockingQueue<>();
+        private final SingleItemBridge<T> bridge = new SingleItemBridge<>();
+
+        private StreamingRequest(StreamObserver<?> responseObserver) {
+            if (responseObserver instanceof ServerCallStreamObserver<?> serverObserver) {
+                serverObserver.disableAutoRequest();
+                bridge.requester(() -> serverObserver.request(1));
+                serverObserver.setOnCancelHandler(bridge::cancel);
+            }
+        }
 
         private Stream<T> stream() {
-            return StreamSupport.stream(new QueueSpliterator<>(queue), false);
+            return StreamSupport.stream(bridge, false).onClose(bridge::cancel);
         }
 
         private StreamObserver<T> observer() {
             return new StreamObserver<>() {
                 @Override
                 public void onNext(T request) {
-                    queue.add(request);
+                    bridge.item(request);
                 }
 
                 @Override
                 public void onError(Throwable throwable) {
-                    queue.add(new Error(throwable));
+                    bridge.error(throwable);
                 }
 
                 @Override
                 public void onCompleted() {
-                    queue.add(End.INSTANCE);
+                    bridge.complete();
                 }
             };
         }
     }
 
-    private static final class QueueSpliterator<T> implements Spliterator<T> {
-        private final BlockingQueue<Object> queue;
-
-        private QueueSpliterator(BlockingQueue<Object> queue) {
-            this.queue = queue;
-        }
+    private static final class SingleItemBridge<T> implements Spliterator<T> {
+        private final ReentrantLock lock = new ReentrantLock();
+        private final Condition changed = lock.newCondition();
+        private Runnable request = () -> { };
+        private T item;
+        private Throwable error;
+        private boolean hasItem;
+        private boolean requested;
+        private boolean complete;
+        private boolean cancelled;
 
         @Override
-        @SuppressWarnings("unchecked")
         public boolean tryAdvance(Consumer<? super T> action) {
-            Object item;
+            Objects.requireNonNull(action);
+            T next;
+            lock.lock();
             try {
-                item = queue.take();
+                requestOne();
+                while (!hasItem && !complete && error == null && !cancelled) {
+                    changed.await();
+                }
+                if (error != null) {
+                    throw new CompletionException(error);
+                }
+                if (!hasItem) {
+                    return false;
+                }
+                next = item;
+                item = null;
+                hasItem = false;
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new CompletionException(e);
+            } finally {
+                lock.unlock();
             }
-            if (item == End.INSTANCE) {
-                return false;
-            }
-            if (item instanceof Error error) {
-                throw new CompletionException(error.throwable());
-            }
-            action.accept((T) item);
+            action.accept(next);
             return true;
+        }
+
+        private void requestOne() {
+            if (!requested && !complete && error == null && !cancelled) {
+                requested = true;
+                request.run();
+            }
+        }
+
+        private void requester(Runnable request) {
+            this.request = request;
+        }
+
+        private void item(T item) {
+            lock.lock();
+            try {
+                requested = false;
+                if (hasItem) {
+                    error = new IllegalStateException("Received gRPC message before previous message was consumed.");
+                } else {
+                    this.item = item;
+                    hasItem = true;
+                }
+                changed.signalAll();
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        private void error(Throwable error) {
+            lock.lock();
+            try {
+                requested = false;
+                this.error = error;
+                changed.signalAll();
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        private void complete() {
+            lock.lock();
+            try {
+                requested = false;
+                complete = true;
+                changed.signalAll();
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        private void cancel() {
+            lock.lock();
+            try {
+                requested = false;
+                cancelled = true;
+                changed.signalAll();
+            } finally {
+                lock.unlock();
+            }
         }
 
         @Override

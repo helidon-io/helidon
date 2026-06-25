@@ -22,13 +22,14 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
@@ -116,7 +117,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private final Http2StreamWriter streamWriter;
     private final int streamId;
     private final GrpcRouteHandler<REQ, RES> route;
-    private final AtomicInteger numMessages = new AtomicInteger();
+    private final ReentrantLock inboundLock = new ReentrantLock();
     private final LinkedBlockingQueue<REQ> listenerQueue = new LinkedBlockingQueue<>();
     private final StreamFlowControl flowControl;
     private final GrpcConfig grpcConfig;
@@ -133,6 +134,8 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private long bytesReceived;
     private MethodMetrics methodMetrics;
     private long startMillis;
+    private int numMessages;
+    private boolean halfClosePending;
 
     private volatile boolean callCancelled;
     private final AtomicReference<Http2StreamState> currentStreamState = new AtomicReference<>();
@@ -283,7 +286,12 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                     bytesReceived += entityBytes.available();
                     InputStream is = new BufferDataInputStream(entityBytes);
                     REQ request = route.method().parseRequest(isCompressed ? decompressor.decompress(is) : is);
-                    listenerQueue.add(request);
+                    inboundLock.lock();
+                    try {
+                        listenerQueue.add(request);
+                    } finally {
+                        inboundLock.unlock();
+                    }
                     flushQueue();
 
                     // reset entityBytes
@@ -293,7 +301,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
 
             // if EOS then half close remote
             if (header.flags(Http2FrameTypes.DATA).endOfStream()) {
-                listener.onHalfClose();
+                halfCloseWhenQueueDrained();
                 currentStreamState.updateAndGet(
                         current -> nextStreamState(current, Http2StreamState.HALF_CLOSED_REMOTE));
                 // update metrics
@@ -403,14 +411,51 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     }
 
     private void addNumMessages(int n) {
-        numMessages.getAndAdd(n);
+        inboundLock.lock();
+        try {
+            numMessages += n;
+        } finally {
+            inboundLock.unlock();
+        }
     }
 
     private void flushQueue() {
-        if (listener != null) {
-            while (!listenerQueue.isEmpty() && numMessages.getAndDecrement() > 0) {
-                listener.onMessage(listenerQueue.poll());
+        List<REQ> requests = new ArrayList<>();
+        boolean halfClose;
+        inboundLock.lock();
+        try {
+            while (!listenerQueue.isEmpty() && numMessages > 0) {
+                numMessages--;
+                requests.add(listenerQueue.poll());
             }
+            halfClose = listenerQueue.isEmpty() && halfClosePending;
+            if (halfClose) {
+                halfClosePending = false;
+            }
+        } finally {
+            inboundLock.unlock();
+        }
+        if (listener != null) {
+            for (REQ request : requests) {
+                listener.onMessage(request);
+            }
+            if (halfClose) {
+                listener.onHalfClose();
+            }
+        }
+    }
+
+    private void halfCloseWhenQueueDrained() {
+        boolean halfClose;
+        inboundLock.lock();
+        try {
+            halfClose = listenerQueue.isEmpty();
+            halfClosePending = !halfClose;
+        } finally {
+            inboundLock.unlock();
+        }
+        if (halfClose) {
+            listener.onHalfClose();
         }
     }
 

@@ -190,6 +190,15 @@ class GrpcClientCodegenTest {
         assertThat(client, containsString("implements GreetingClient"));
         assertThat(client, containsString("@RpcClient.Client"));
         assertThat(client, containsString("private final GrpcServiceClient serviceClient;"));
+        assertThat(client, containsString("var declarative__proto = proto();"));
+        assertThat(client, containsString("validateProtoMethod(declarative__proto, \"GreetingService\", \"Greet\", "
+                                                  + "false, false);"));
+        assertThat(client, containsString("validateProtoMethod(declarative__proto, \"GreetingService\", \"Split\", "
+                                                  + "false, true);"));
+        assertThat(client, containsString("validateProtoMethod(declarative__proto, \"GreetingService\", \"Join\", "
+                                                  + "true, false);"));
+        assertThat(client, containsString("validateProtoMethod(declarative__proto, \"GreetingService\", \"Chat\", "
+                                                  + "true, true);"));
         assertThat(client, containsString("GrpcServiceDescriptor.builder()"));
         assertThat(client, containsString(".serviceName(\"GreetingService\")"));
         assertThat(client, containsString("GrpcClientMethodDescriptor.unary(\"GreetingService\", \"Greet\")"));

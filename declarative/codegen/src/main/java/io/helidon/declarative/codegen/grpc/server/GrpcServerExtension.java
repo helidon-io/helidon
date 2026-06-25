@@ -354,9 +354,12 @@ class GrpcServerExtension implements RegistryCodegenExtension {
         Optional<Boolean> authenticate = authenticated.flatMap(Annotation::booleanValue);
         Optional<Boolean> authorize = authorized.flatMap(Annotation::booleanValue);
 
-        if (hasDenyAll || hasPermitAll) {
+        if (hasDenyAll) {
             authenticate = Optional.of(false);
             authorize = Optional.of(true);
+        } else if (hasPermitAll) {
+            authenticate = Optional.of(false);
+            authorize = Optional.of(false);
         } else if (hasRoleValidatorRoles || hasAbacAnnotation) {
             if (authenticate.isEmpty()) {
                 authenticate = Optional.of(true);
