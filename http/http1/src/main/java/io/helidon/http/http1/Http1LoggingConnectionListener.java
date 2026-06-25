@@ -119,7 +119,7 @@ public class Http1LoggingConnectionListener implements Http1ConnectionListener {
     public void data(SocketContext ctx, BufferData data) {
         if (logger.isLoggable(TRACE)) {
             if (unsafeLogRawData) {
-                ctx.log(logger, TRACE, "%s data:%n%s",
+                ctx.log(logger, TRACE, "%s data:\n%s",
                         prefix,
                         data.debugDataHex(true));
             } else {

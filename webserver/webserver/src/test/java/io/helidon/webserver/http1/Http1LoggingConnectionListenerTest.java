@@ -242,6 +242,8 @@ class Http1LoggingConnectionListenerTest {
             String message = messages.get(0);
             assertThat(message, containsString("73 65 63 72 65 74"));
             assertThat(message, containsString("secret"));
+            assertThat(message, containsString("data:\n"));
+            assertThat(message, not(containsString("\r")));
         } finally {
             logger.removeHandler(handler);
             logger.setLevel(previousLevel);

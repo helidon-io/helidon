@@ -84,7 +84,7 @@ public class Http2LoggingFrameListener implements Http2FrameListener {
     public void frameHeader(SocketContext ctx, int streamId, BufferData headerData) {
         if (logger.isLoggable(TRACE)) {
             if (unsafeLogRawData) {
-                ctx.log(logger, TRACE, "%s %d: frame header data%n%s", prefix, streamId, headerData.debugDataHex(true));
+                ctx.log(logger, TRACE, "%s %d: frame header data\n%s", prefix, streamId, headerData.debugDataHex(true));
             } else {
                 ctx.log(logger, TRACE, "%s %d: frame header bytes=%d", prefix, streamId, headerData.available());
             }
@@ -113,7 +113,7 @@ public class Http2LoggingFrameListener implements Http2FrameListener {
                 if (data.available() == 0) {
                     ctx.log(logger, TRACE, "%s %d: frame data - empty", prefix, streamId);
                 } else {
-                    ctx.log(logger, TRACE, "%s %d: frame data, %n%s", prefix, streamId, data.debugDataHex(true));
+                    ctx.log(logger, TRACE, "%s %d: frame data,\n%s", prefix, streamId, data.debugDataHex(true));
                 }
             } else {
                 ctx.log(logger, TRACE, "%s %d: frame data bytes=%d", prefix, streamId, data.available());
@@ -147,7 +147,7 @@ public class Http2LoggingFrameListener implements Http2FrameListener {
             if (unsafeLogRawData) {
                 ctx.log(logger,
                         TRACE,
-                        "%s %d: ping%n%s",
+                        "%s %d: ping\n%s",
                         prefix,
                         streamId,
                         BufferData.create(ping.getBytes()).debugDataHex(true));
@@ -169,7 +169,7 @@ public class Http2LoggingFrameListener implements Http2FrameListener {
         if (unsafeLogRawData && logger.isLoggable(TRACE) && go.details() != null && !go.details().isEmpty()) {
             ctx.log(logger,
                     TRACE,
-                    "%s %d: goaway details%n%s",
+                    "%s %d: goaway details\n%s",
                     prefix,
                     streamId,
                     BufferData.create(go.details().getBytes(StandardCharsets.UTF_8)).debugDataHex(true));
@@ -178,7 +178,7 @@ public class Http2LoggingFrameListener implements Http2FrameListener {
 
     @Override
     public void frame(SocketContext ctx, int streamId, Http2WindowUpdate windowUpdate) {
-        ctx.log(logger, DEBUG, "%s %d: (size_increment=%d)%n", prefix, streamId, windowUpdate.windowSizeIncrement());
+        ctx.log(logger, DEBUG, "%s %d: (size_increment=%d)", prefix, streamId, windowUpdate.windowSizeIncrement());
     }
 
     @Override
@@ -186,14 +186,14 @@ public class Http2LoggingFrameListener implements Http2FrameListener {
         if (logger.isLoggable(TRACE)) {
             ctx.log(logger,
                     TRACE,
-                    "%s %d: headers:%n%s",
+                    "%s %d: headers:\n%s",
                     prefix,
                     streamId,
                     format(headers, unsafeLogRawData));
         } else if (logger.isLoggable(DEBUG)) {
             ctx.log(logger,
                     DEBUG,
-                    "%s %d: headers:%n%s",
+                    "%s %d: headers:\n%s",
                     prefix,
                     streamId,
                     format(headers, false));
