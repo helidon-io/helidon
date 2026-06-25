@@ -139,7 +139,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                                                                         redirectUri,
                                                                         cos.lastRequest.properties());
             if (sendEntity) {
-                request.maxRedirects(cos.lastRequest.maxRedirects() - numberOfRedirects);
+                request.outputStreamRedirects(numberOfRedirects);
             }
             Http1ClientResponseImpl clientResponse = sendEntity
                     ? (Http1ClientResponseImpl) request.outputStream(handler)
@@ -227,6 +227,7 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
             this.chunked = contentLength == -1 || headers.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED);
             this.request = request;
             this.originalRequest = originalRequest;
+            this.numberOfRedirects = originalRequest.outputStreamRedirects();
             this.lastRequest = originalRequest;
             this.whenSent = whenSent;
             this.whenComplete = whenComplete;
@@ -570,8 +571,8 @@ class Http1CallOutputStreamChain extends Http1CallChainBase {
                     } finally {
                         if (closeRedirectProbeConnection) {
                             // The probe sent chunked upload headers but intentionally did not complete the request body.
-                            // Response close only sees response-side state, so close first to avoid caching this connection.
-                            response.connection().closeResource();
+                            // Do not cache the connection, and let response close complete its normal cleanup.
+                            response.closeConnectionOnClose();
                         }
                         response.close();
                     }

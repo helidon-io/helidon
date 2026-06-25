@@ -49,6 +49,7 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
     private final FullClientRequest<?> delegate;
 
     private boolean outputStreamRedirect;
+    private int outputStreamRedirects;
 
     Http1ClientRequestImpl(Http1ClientImpl http1Client,
                            Method method,
@@ -112,6 +113,7 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
         readContinueTimeout(request.readContinueTimeout());
         request.sendExpectContinue().ifPresent(this::sendExpectContinue);
         outputStreamRedirect(request.outputStreamRedirect());
+        outputStreamRedirects(request.outputStreamRedirects());
     }
 
     @Override
@@ -337,6 +339,15 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
 
     boolean outputStreamRedirect() {
         return outputStreamRedirect;
+    }
+
+    Http1ClientRequestImpl outputStreamRedirects(int outputStreamRedirects) {
+        this.outputStreamRedirects = outputStreamRedirects;
+        return this;
+    }
+
+    int outputStreamRedirects() {
+        return outputStreamRedirects;
     }
 
 }
