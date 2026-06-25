@@ -191,6 +191,7 @@ class GrpcServiceClientImpl implements GrpcServiceClient {
 
             @Override
             public void onClose(io.grpc.Status status, Metadata trailers) {
+                ready.cancel();
                 if (status.isOk()) {
                     responses.complete();
                 } else {
