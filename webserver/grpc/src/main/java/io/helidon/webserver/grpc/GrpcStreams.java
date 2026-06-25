@@ -435,7 +435,9 @@ public final class GrpcStreams {
             lock.lock();
             try {
                 while (!serverObserver.isReady() && !serverObserver.isCancelled() && !cancelled) {
-                    ready.await(10, TimeUnit.MILLISECONDS);
+                    if (!ready.await(10, TimeUnit.MILLISECONDS) && serverObserver.isReady()) {
+                        return true;
+                    }
                 }
                 return !serverObserver.isCancelled() && !cancelled;
             } catch (InterruptedException e) {
