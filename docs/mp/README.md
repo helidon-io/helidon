@@ -6,6 +6,7 @@ index:
 # Helidon MP
 
 - [Introduction](introduction.md)
+- [Specifications](specifications.md)
 - [Guides](guides/README.md)
 
 ## Components

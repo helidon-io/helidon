@@ -1,5 +1,7 @@
 <!--@frontmatter
 description: "Oracle Cloud Infrastructure Integration"
+navigation:
+  icon: i-simple-icons-oracle
 -->
 # OCI
 

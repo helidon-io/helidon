@@ -21,7 +21,7 @@ a detailed history of changes made to the project.
 > Helidon adheres to [Semantic Versioning][semantic-version]. As such, Helidon
 > 4.x includes changes that are not backward compatible with Helidon 3.x.
 
-### Java SE Support
+### Java 25 Runtime
 
 Helidon 4.x removes support for Java SE 17. You must use Java 21 or later. If
 you are using Helidon 4.3.0 or later, using Java SE 25 or later is recommended.

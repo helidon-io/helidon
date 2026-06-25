@@ -1,6 +1,6 @@
 <!--@frontmatter
 description: "Learn how to use the Helidon WebClient"
-index:
+navigation:
   icon: i-lucide-globe
 -->
 # Helidon SE WebClient Guide

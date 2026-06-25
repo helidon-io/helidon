@@ -20,7 +20,7 @@ index:
 - [Fault Tolerance](fault-tolerance.md)
 - [GraphQL](graphql.md)
 - [gRPC](grpc/README.md)
-- [Health Checks](health.md)
+- [Health](health.md)
 - [Injection](injection/README.md)
 - [JSON](json/README.md)
 - [JSON-RPC](jsonrpc/README.md)

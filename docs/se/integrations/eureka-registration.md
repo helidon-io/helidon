@@ -1,5 +1,7 @@
 <!--@frontmatter
 description: "Eureka Server Service Instance Registration"
+navigation:
+  icon: i-simple-icons-netflix
 -->
 # Eureka Registration
 

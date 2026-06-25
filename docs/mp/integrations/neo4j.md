@@ -1,5 +1,7 @@
 <!--@frontmatter
 description: "Helidon Neo4j Integration"
+navigation:
+  icon: i-simple-icons-neo4j
 -->
 # Neo4j
 

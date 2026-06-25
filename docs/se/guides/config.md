@@ -1,6 +1,6 @@
 <!--@frontmatter
 description: "Learn how to configure a Helidon SE application"
-index:
+navigation:
   icon: i-lucide-settings
 -->
 # Config

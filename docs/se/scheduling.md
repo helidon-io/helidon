@@ -1,5 +1,5 @@
 <!--@frontmatter
-description: "Scheduling in Helidon SE"
+description: "Helidon Scheduling Support"
 navigation:
   icon: i-lucide-alarm-clock
 -->

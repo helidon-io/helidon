@@ -1,6 +1,6 @@
 <!--@frontmatter
 description: "Learn how to trace a Helidon SE application"
-index:
+navigation:
   icon: i-lucide-activity
 -->
 # Tracing

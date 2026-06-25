@@ -1,6 +1,6 @@
 <!--@frontmatter
 description: "Learn how to build a GraalVM Native Image for your Helidon application"
-index:
+navigation:
   icon: i-lucide-zap
 -->
 # Native Image

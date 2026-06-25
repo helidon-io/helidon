@@ -53,10 +53,3 @@ Component dependency:
   <artifactId>helidon-config-yaml</artifactId>
 </dependency>
 ```
-
-## Guides
-
-- Maven Build Guide for [SE](se/guides/maven.md) and
-  [MP](mp/guides/maven.md)
-- Gradle Build Guide for [SE](se/guides/gradle.md) and
-  [MP](mp/guides/gradle.md)

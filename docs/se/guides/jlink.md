@@ -1,6 +1,6 @@
 <!--@frontmatter
 description: "Learn how to build a custom runtime Java image for your Helidon application"
-index:
+navigation:
   icon: i-lucide-box
 -->
 # Jlink

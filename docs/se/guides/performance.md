@@ -1,6 +1,6 @@
 <!--@frontmatter
 description: "Learn how to tune your Helidon SE application"
-index:
+navigation:
   icon: i-lucide-gauge
 -->
 # Performance Tuning

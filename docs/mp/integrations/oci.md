@@ -1,7 +1,9 @@
 <!--@frontmatter
-description: "Helidon OCI Integration"
+description: "Oracle Cloud Infrastructure Integration"
+navigation:
+  icon: i-simple-icons-oracle
 -->
-# Oracle Cloud Infrastructure
+# OCI
 
 ## Overview
 

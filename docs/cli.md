@@ -13,116 +13,101 @@ The Helidon CLI also includes a development loop feature that automatically
 recompiles and restarts your application, so you can iterate quickly while you
 edit your code.
 
+
+### Prerequisites
+
+| Requirement                                              | Description                                        |
+|----------------------------------------------------------|----------------------------------------------------|
+| [Java 21][java-21] ([OpenJDK 21][openjdk-21])            | Helidon requires Java 21+ (25+ recommended).       |
+| [Maven 3.8+][maven-3-8]                                  | Helidon requires Maven 3.8+.                       |
+| [Microsoft Visual C++ Redistributable][microsoft-visual] | Required on Windows. Latest version is recommended |
+
 ## Install the Helidon CLI
 
 The Helidon CLI is a standalone executable for Linux, macOS, and Windows
 systems. Download the executable and install it in a location that is accessible
 from your PATH.
 
-### Prerequisites
+<!--@mdc ::steps -->
 
-| Requirement                                   | Description                                  |
-|-----------------------------------------------|----------------------------------------------|
-| [Java 21][java-21] ([OpenJDK 21][openjdk-21]) | Helidon requires Java 21+ (25+ recommended). |
-| [Maven 3.8+][maven-3-8]                       | Helidon requires Maven 3.8+.                 |
-
-Make sure `java` and `mvn` are in your PATH:
+### Verify your PATH
 
 ```shell [Terminal]
-java -version
+java --version
 mvn --version
 ```
 
-> [!TIP]
-> If you are on Windows then you will need the Visual C+ Redistributable
-> Runtime. Download at [Microsoft Visual C++ Redistributable latest supported
-> downloads][microsoft-visual].
+### Download and install
 
-### Install the Helidon CLI on Linux
+<!--@mdc ::code-group -->
 
-1.  Run the following commands to download the Helidon CLI binary, make it
-    executable, and then move it to a location on your PATH:
+```shell [Linux] <!-- @icon i-logos-linux-tux -->
+curl -L -O https://helidon.io/cli/latest/linux/helidon
+chmod +x ./helidon
+sudo mv ./helidon /usr/local/bin/
+```
 
-    ```shell [Terminal]
-    curl -L -O https://helidon.io/cli/latest/linux/helidon
-    chmod +x ./helidon
-    sudo mv ./helidon /usr/local/bin/
-    ```
+```shell [macOS] <!-- @icon i-simple-icons-apple -->
+curl -L -O https://helidon.io/cli/latest/darwin/helidon
+chmod +x ./helidon
+xattr -d com.apple.quarantine helidon
+sudo mv ./helidon /usr/local/bin/
+```
 
-2.  Confirm the installation was successful by running `helidon version`.
+```cmd [Windows] <!-- @icon i-logos-microsoft-windows-icon -->
+PowerShell -Command Invoke-WebRequest `
+    -Uri "https://helidon.io/cli/latest/windows/helidon.exe" `
+    -OutFile "C:\Windows\system32\helidon.exe"
+```
 
-### Install the Helidon CLI on macOS
+<!--@mdc :: -->
 
-1.  Run the following commands to download the Helidon CLI binary, make it
-    executable, and then move it to a location on your PATH:
+### Confirm the installation
 
-    ```shell [Terminal]
-    curl -L -O https://helidon.io/cli/latest/darwin/helidon
-    chmod +x ./helidon
-    sudo mv ./helidon /usr/local/bin/
-    ```
+```shell [Terminal]
+helidon version
+```
 
-2.  Confirm the installation was successful by running `helidon version`.
-
-If you get a "the developer cannot be verified" warning when you run the Helidon
-CLI, it is because the Helidon CLI has not been signed and notarized yet. You
-can disable this check by running: `xattr -d com.apple.quarantine helidon`,
-which removes the quarantine attribute on the file.
-
-### Install the Helidon CLI on Windows
-
-1.  Install PowerShell and Visual C++ Redistributable Runtime.
-2.  Run the following command to download and install the Helidon CLI on Windows
-    systems:
-
-    ```powershell [Terminal]
-    PowerShell -Command Invoke-WebRequest -Uri "https://helidon.io/cli/latest/windows/helidon.exe" -OutFile "C:\Windows\system32\helidon.exe"
-    ```
-
-3.  Confirm the installation was successful by running `helidon version`.
+<!--@mdc :: -->
 
 ## Usage
 
 After you install the Helidon CLI, you can use it to manage your Helidon
-projects. Some examples are provided below. You can also run `helidon help` to
-get a list of the available commands.
+projects. Some examples are provided below.
 
-### Create a New Project
+Get a list of the available commands:
+```shell [Terminal]
+helidon help
+```
+
+## Create a New Project
 
 You can use the Helidon CLI to quickly create a new Helidon project.
+The command is interactive by default and will prompt for various choices.
 
-1.  Open a command-line interface and navigate to the directory where you want
-    to create the project.
-2.  Run `helidon init`.
-3.  Choose a **Helidon Version**.
-4.  Choose a **Helidon Flavor**: SE or MP.
-5.  Choose an **Application Type**. If you chose Helidon SE, the OCI option is
-    not available.
-6.  Select a JSON library. If you chose Helidon MP, the JSON-P option is not
-    available.
-7.  Customize your project by specifying a `groupId`, an `artifactId`, a
-    `version`, and a `package name`.
+```shell [Terminal]
+helidon init
+```
 
-The Helidon CLI will create a new project folder in your current directory.
+It will create a new project folder in your current directory.
 
-### Enable Development Loop
+## Development Loop
 
 You can use the Helidon CLI development loop feature to test changes to your
-application as you make them. When the development loop is active, the Helidon
-CLI will automatically recompile and restart your application so you can see the
-effects of your changes immediately.
+application as you make them.
 
-1.  Navigate to the Helidon project's home directory.
-2.  Run `helidon dev` to enable the development loop.
-3.  In another terminal window or an IDE, make and save changes to your
-    application’s source code.
+When the development loop is active, the Helidon CLI will automatically
+recompile and restart your application so you can see the effects of your
+changes immediately.
 
-The build runs after each change. If you make an invalid change, the build fails
-until the error is fixed.
+```shell [Terminal]
+cd myproject
+helidon dev
+```
 
 To stop the development loop, enter `Ctrl+C`.
 
-## Helidon CLI Demo
+## Demo
 
 Watch the following demo to see some of the functionality of the Helidon CLI.
 

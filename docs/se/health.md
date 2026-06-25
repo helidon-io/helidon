@@ -1,5 +1,5 @@
 <!--@frontmatter
-description: "Helidon Health Checks"
+description: "Helidon Health Support"
 navigation:
   icon: i-lucide-heart
 -->

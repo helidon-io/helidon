@@ -1,5 +1,7 @@
 <!--@frontmatter
 description: "Helidon HashiCorp Vault Integration"
+navigation:
+  icon: i-simple-icons-vault
 -->
 # HashiCorp Vault
 

@@ -1,6 +1,6 @@
 <!--@frontmatter
 description: "Learn how to use Helidon SE built-in and custom health checks"
-index:
+navigation:
   icon: i-lucide-heart
 -->
 # Health

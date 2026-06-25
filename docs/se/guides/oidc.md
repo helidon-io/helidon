@@ -1,6 +1,6 @@
 <!--@frontmatter
 description: "Learn how to set up OpenID Connect (OIDC)"
-index:
+navigation:
   icon: i-lucide-shield-check
 -->
 # OIDC

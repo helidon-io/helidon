@@ -1,6 +1,6 @@
 <!--@frontmatter
 description: "Learn how to use Helidon DbClient"
-index:
+navigation:
   icon: i-lucide-database
 -->
 # DbClient

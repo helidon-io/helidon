@@ -1,6 +1,6 @@
 <!--@frontmatter
 description: "Learn how to create AI powered Helidon SE applications"
-index:
+navigation:
   icon: i-lucide-sparkles
 -->
 # LangChain4j

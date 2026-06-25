@@ -80,19 +80,16 @@ Make sure you set the `JAVA_HOME` environment variable.
 <!--@mdc ::code-group -->
 
 ```shell [Linux] <!-- @icon i-logos-linux-tux -->
-
 # Enter the appropriate path to your JDK
 export JAVA_HOME=/usr/lib/jvm/jdk-25
 ```
 
 ```shell [macOS] <!-- @icon i-simple-icons-apple -->
-
 # Enter the appropriate path to your JDK
 export JAVA_HOME=`/usr/libexec/java_home -v 25`
 ```
 
 ```cmd [Windows] <!-- @icon i-logos-microsoft-windows-icon -->
-
 # Enter the appropriate path to your JDK
 setx JAVA_HOME=C:\\PROGRA~1\\Java\\jdk-25
 ```
@@ -102,9 +99,7 @@ setx JAVA_HOME=C:\\PROGRA~1\\Java\\jdk-25
 ## Next Steps
 
 Now that your environment is set up, you can get started with Helidon. Try out
-the Helidon MP and Helidon SE Quick Start tutorials to build your first Helidon
-project and application.
-
+the Quick Start guides to build your first Helidon project and application:
 - [Helidon MP Quick Start](mp/guides/quickstart.md)
 - [Helidon SE Quick Start](se/guides/quickstart.md)
 

@@ -1,6 +1,6 @@
 <!--@frontmatter
 description: "Learn how to upgrade your Helidon SE application from 1.x to 2.x"
-index:
+navigation:
   icon: i-lucide-refresh-cw
 -->
 # 2.x Upgrade

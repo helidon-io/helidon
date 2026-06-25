@@ -5,7 +5,7 @@ description: "Helidon LangChain4j Integration"
 
 - [LangChain4j](langchain4j.md)
 - [RAG](rag.md)
-- [Model Provider Generator](codegen-provider.md)
+- [Provider Generator](provider-generator.md)
 
 ## Providers
 
@@ -17,6 +17,6 @@ description: "Helidon LangChain4j Integration"
 - [Cohere](cohere.md)
 - [Oracle Embedding Store](oracle.md)
 - [Coherence Embedding Store](coherence.md)
-- [Built-in LangChain4j Providers](lc4j-providers.md)
+- [Built-in Providers](lc4j-providers.md)
 - [In-Process Embedding Models](lc4j-in-process.md)
 - [Mock ChatModel](mock.md)

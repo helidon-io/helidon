@@ -1,6 +1,6 @@
 <!--@frontmatter
 description: "Using Helidon in your Maven project"
-index:
+navigation:
   icon: i-lucide-wrench
 -->
 # Maven

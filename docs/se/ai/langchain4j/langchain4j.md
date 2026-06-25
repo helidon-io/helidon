@@ -130,7 +130,7 @@ Providers available out of the box:
 > [!NOTE]
 > Missing your favorite AI vendor already supported by LangChain4j? You can
 > generate your own Helidon integration with our [**LangChain4j Model Provider
-> Generator**](codegen-provider.md) or use the supplier factory!
+> Generator**](provider-generator.md) or use the supplier factory!
 
 ### Supplier Factory
 
@@ -670,7 +670,7 @@ v1.36.0][opentelemetry-se]. This is done out-of-box for Chat API calls.
 
 - [LangChain4j documentation](https://docs.langchain4j.dev/)
 - Components Reference
-  - [Code generated Lc4j Provider](codegen-provider.md)
+  - [Code generated Lc4j Provider](provider-generator.md)
 
 [langchain4j]: https://github.com/langchain4j/langchain4j
 [langchain4j-s-ai]: https://docs.langchain4j.dev/tutorials/ai-services/

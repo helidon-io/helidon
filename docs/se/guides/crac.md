@@ -1,6 +1,6 @@
 <!--@frontmatter
 description: "Learn how to use Coordinated Restore at Checkpoint (CRaC)"
-index:
+navigation:
   icon: i-lucide-archive-restore
 -->
 # CRaC

@@ -1,6 +1,6 @@
 <!--@frontmatter
 description: "Create your first Helidon SE application in under 5 minutes"
-index:
+navigation:
   icon: i-lucide-rocket
 -->
 # Quickstart

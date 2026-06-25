@@ -1,6 +1,6 @@
 <!--@frontmatter
 description: "Learn how to use Helidon SE built-in and application metrics"
-index:
+navigation:
   icon: i-lucide-gauge
 -->
 # Metrics

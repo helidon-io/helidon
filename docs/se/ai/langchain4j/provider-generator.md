@@ -1,7 +1,7 @@
 <!--@frontmatter
 description: "LangChain4J Model Provider Generator"
 -->
-# Model Provider Generator
+# Provider Generator
 
 ## Overview
 
