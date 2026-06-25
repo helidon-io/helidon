@@ -595,21 +595,23 @@ abstract class SocketTransportBinding implements TransportBinding {
         String serverChannelId = "0x" + HexFormat.of().toHexDigits(System.identityHashCode(localServerSocket));
 
         while (running) {
+            LimitAlgorithm.Token acceptToken = null;
             try {
                 // this must be done before we accept, and the semaphore must be released when connection is finished
                 var outcome = connectionLimit.tryAcquireOutcome(true);
                 if (outcome.disposition() == LimitAlgorithm.Outcome.Disposition.ACCEPTED) {
-                    LimitAlgorithm.Token token = ((LimitAlgorithm.Outcome.Accepted) outcome).token();
+                    acceptToken = ((LimitAlgorithm.Outcome.Accepted) outcome).token();
 
                     // if accept fails itself, we consider it end of story, the listener is broken
                     localServerSocket = serverSocket;
                     if (localServerSocket == null) {
-                        token.ignore();
+                        acceptToken.ignore();
+                        acceptToken = null;
                         break;
                     }
                     SocketChannel socket = localServerSocket.accept();
                     ConnectionHandler handler = new ConnectionHandler(transportContext.listenerContext(),
-                                                                      token,
+                                                                      acceptToken,
                                                                       requestLimit,
                                                                       connectionProviders,
                                                                       socket,
@@ -624,14 +626,16 @@ abstract class SocketTransportBinding implements TransportBinding {
                         if (!running) {
                             connectionHandlers.remove(handler);
                             closeAcceptedSocket(socket, null);
-                            token.ignore();
+                            acceptToken.ignore();
+                            acceptToken = null;
                             continue;
                         }
                         connectionOptions.configureSocket(socket);
                         if (!running) {
                             connectionHandlers.remove(handler);
                             closeAcceptedSocket(socket, null);
-                            token.ignore();
+                            acceptToken.ignore();
+                            acceptToken = null;
                             continue;
                         }
                         HelidonTaskExecutor localReaderExecutor = readerExecutor;
@@ -639,13 +643,15 @@ abstract class SocketTransportBinding implements TransportBinding {
                             throw new RejectedExecutionException(type + " reader executor is not available");
                         }
                         localReaderExecutor.execute(handler);
+                        acceptToken = null;
                     } catch (RejectedExecutionException e) {
                         connectionHandlers.remove(handler);
                         LOGGER.log(ERROR, "Executor rejected handler for new connection", e);
                         closeAcceptedSocket(socket, e);
 
                         // we never started the handler, so we must release the semaphore here
-                        token.dropped();
+                        acceptToken.dropped();
+                        acceptToken = null;
                     } catch (Exception e) {
                         connectionHandlers.remove(handler);
                         // we may get an SSL handshake errors, which should only fail one socket, not the listener
@@ -653,16 +659,23 @@ abstract class SocketTransportBinding implements TransportBinding {
                         closeAcceptedSocket(socket, e);
 
                         // we never started the handler, so we must release the semaphore here
-                        token.ignore();
+                        acceptToken.ignore();
+                        acceptToken = null;
                     }
                 }
             } catch (AsynchronousCloseException e) {
+                if (acceptToken != null) {
+                    acceptToken.ignore();
+                }
                 if (inCheckpoint) {
                     break;
                 } else if (running) {
                     fatalBindingFailure(e);
                 }
             } catch (SocketException e) {
+                if (acceptToken != null) {
+                    acceptToken.ignore();
+                }
                 if (!e.getMessage().contains("Socket closed")) {
                     LOGGER.log(ERROR, "Got a socket exception while listening, this server socket is terminating now", e);
                 }
@@ -672,6 +685,9 @@ abstract class SocketTransportBinding implements TransportBinding {
                     fatalBindingFailure(e);
                 }
             } catch (Throwable e) {
+                if (acceptToken != null) {
+                    acceptToken.ignore();
+                }
                 LOGGER.log(ERROR, "Got a throwable while listening, this server socket is terminating now", e);
                 if (inCheckpoint) {
                     break;
