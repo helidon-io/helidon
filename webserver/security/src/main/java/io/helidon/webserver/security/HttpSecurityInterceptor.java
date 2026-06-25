@@ -258,6 +258,7 @@ class HttpSecurityInterceptor implements Interception.EntryPointInterceptor {
             securityContext.endpointConfig(ec);
 
             processSecurity(definition, securityContext);
+            success = !definition.atzExplicit();
             T result = chain.proceed(args);
             if (definition.atzExplicit() && !securityContext.isAuthorized()) {
                 LOGGER.log(Level.ERROR, "Authorization failure. Entry point"
@@ -273,7 +274,8 @@ class HttpSecurityInterceptor implements Interception.EntryPointInterceptor {
         } finally {
             try {
                 if (definition.isAudited()) {
-                    audit(ctx, success ? "OK" : "DENIED", resourceType, definition, securityContext);
+                    boolean auditSuccess = success || (definition.atzExplicit() && securityContext.isAuthorized());
+                    audit(ctx, auditSuccess ? "OK" : "DENIED", resourceType, definition, securityContext);
                 }
             } finally {
                 securityContext.env(previousEnvironment);
@@ -738,7 +740,7 @@ class HttpSecurityInterceptor implements Interception.EntryPointInterceptor {
         SecurityAuditEvent auditEvent = SecurityAuditEvent
                 .audit(auditSeverity, methodSecurity.auditEventType(), methodSecurity.auditMessageFormat())
                 .addParam(AuditEvent.AuditParam.plain("method", env.method()))
-                .addParam(AuditEvent.AuditParam.plain("path", env.path()))
+                .addParam(AuditEvent.AuditParam.plain("path", env.path().orElse(null)))
                 .addParam(AuditEvent.AuditParam.plain("status", status))
                 .addParam(AuditEvent.AuditParam.plain("subject",
                                                       securityContext.user()

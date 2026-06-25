@@ -19,6 +19,7 @@ package io.helidon.webserver.security;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
 import io.helidon.common.context.Context;
@@ -40,6 +41,7 @@ import io.helidon.http.Method;
 import io.helidon.http.RoutedPath;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.WritableHeaders;
+import io.helidon.security.AuditEvent;
 import io.helidon.security.AuthorizationResponse;
 import io.helidon.security.Security;
 import io.helidon.security.SecurityContext;
@@ -332,6 +334,59 @@ class SecurityEnvironmentPropagationTest {
         assertThat(thrown.getMessage(), is("audit failed"));
         assertThat(securityContext.env().abacAttribute("entryPoint").isPresent(), is(false));
         assertThat(context.get(SecurityContext.class).orElseThrow(), is(securityContext));
+    }
+
+    @Test
+    void testGenericAuditUsesSecurityResultWhenResolverFails() {
+        AtomicReference<AuditEvent> auditEvent = new AtomicReference<>();
+        Security security = Security.builder()
+                .addAuditProvider((AuditProvider) () -> event -> {
+                    if ("request".equals(event.eventType())) {
+                        auditEvent.set(event);
+                    }
+                })
+                .build();
+        SecurityContext securityContext = security.contextBuilder("graphql")
+                .env(SecurityEnvironment.builder(security.serverTime())
+                             .method("POST")
+                             .path("/graphql")
+                             .targetUri(URI.create("http://localhost/graphql"))
+                             .build())
+                .build();
+        Context context = Context.create();
+        context.register(securityContext);
+        HttpSecurityInterceptor interceptor = new HttpSecurityInterceptor(security,
+                                                                         Config.empty(),
+                                                                         List.of(),
+                                                                         List.of());
+        InterceptionContext interceptionContext = interceptionContext(SecurityEnvironmentPropagationTest.class,
+                                                                      "auditedResolver",
+                                                                      Annotation.create(AUDITED));
+
+        IllegalStateException thrown = org.junit.jupiter.api.Assertions.assertThrows(
+                IllegalStateException.class,
+                () -> Contexts.runInContextWithThrow(context,
+                                                     () -> interceptor.proceed(interceptionContext,
+                                                                               _ -> {
+                                                                                   throw new IllegalStateException("boom");
+                                                                               },
+                                                                               "environment")));
+
+        assertThat(thrown.getMessage(), is("boom"));
+        AuditEvent event = auditEvent.get();
+        assertThat(auditParam(event, "status"), is("OK"));
+        assertThat(auditParam(event, "path"), is("/graphql"));
+    }
+
+    private static Object auditParam(AuditEvent event, String name) {
+        Objects.requireNonNull(event, "Audit event was not captured");
+        return event.params()
+                .stream()
+                .filter(param -> name.equals(param.name()))
+                .findFirst()
+                .orElseThrow()
+                .value()
+                .orElse(null);
     }
 
     private static RoutingRequest request(Context context,

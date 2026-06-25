@@ -101,7 +101,6 @@ public interface InvocationHandler {
         Objects.requireNonNull(query);
         Objects.requireNonNull(variables);
         Objects.requireNonNull(contextValues);
-        requireContextFreeFallback(contextValues);
         return execute(query, (String) null, variables);
     }
 
@@ -134,7 +133,6 @@ public interface InvocationHandler {
         Objects.requireNonNull(operationName);
         Objects.requireNonNull(variables);
         Objects.requireNonNull(contextValues);
-        requireContextFreeFallback(contextValues);
         return execute(query, operationName, variables);
     }
 
@@ -165,12 +163,6 @@ public interface InvocationHandler {
      * @return whitelisted exception class set
      */
     Set<String> whitelistedExceptions();
-
-    private static void requireContextFreeFallback(Map<String, Object> contextValues) {
-        if (!contextValues.isEmpty()) {
-            throw new UnsupportedOperationException("This invocation handler does not support GraphQL context values.");
-        }
-    }
 
     /**
      * Handler used to update the {@link ExecutionContext} before GraphQL execution.

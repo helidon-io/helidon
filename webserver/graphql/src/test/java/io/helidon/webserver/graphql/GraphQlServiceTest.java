@@ -80,6 +80,10 @@ class GraphQlServiceTest {
                                  .invocationHandler(InvocationHandler.create(buildSchema()))
                                  .permitAll(true)
                                  .build());
+        builder.register(GraphQlService.builder()
+                                 .webContext("/legacy")
+                                 .invocationHandler(new LegacyInvocationHandler())
+                                 .build());
     }
 
     @BeforeEach
@@ -113,6 +117,20 @@ class GraphQlServiceTest {
             assertThat("GET context",
                        data.booleanValue("requestContextAvailable").orElseThrow(),
                        is(true));
+        }
+    }
+
+    @Test
+    void customInvocationHandlerCanIgnoreContextValues() {
+        try (Http1ClientResponse response = client.post("/legacy")
+                .submit("{\"query\": \"{hello}\"}")) {
+            assertThat(response.status(), is(Status.OK_200));
+            JsonObject json = response.as(JsonObject.class);
+            assertThat(json.objectValue("data")
+                               .orElseThrow()
+                               .stringValue("hello")
+                               .orElseThrow(),
+                       is("legacy"));
         }
     }
 
@@ -415,6 +433,33 @@ class GraphQlServiceTest {
 
         private List<String> methodNames() {
             return List.copyOf(methodNames);
+        }
+    }
+
+    private static final class LegacyInvocationHandler implements InvocationHandler {
+        @Override
+        public Map<String, Object> execute(String query, String operationName, Map<String, Object> variables) {
+            return Map.of("data", Map.of("hello", "legacy"));
+        }
+
+        @Override
+        public String schemaString() {
+            return "type Query { hello: String }";
+        }
+
+        @Override
+        public String defaultErrorMessage() {
+            return "Server Error";
+        }
+
+        @Override
+        public Set<String> blacklistedExceptions() {
+            return Set.of();
+        }
+
+        @Override
+        public Set<String> whitelistedExceptions() {
+            return Set.of();
         }
     }
 }

@@ -43,6 +43,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -143,7 +144,8 @@ class GraphQlEntryPointsImplTest {
         assertThat(data.get("secret"), nullValue());
         List<Map<String, Object>> errors = (List<Map<String, Object>>) response.get("errors");
         assertThat(errors.size(), is(1));
-        assertThat(String.valueOf(errors.getFirst().get("message")), containsString("resolver denied"));
+        assertThat(errors.getFirst().get("message"), is("Server Error"));
+        assertThat(String.valueOf(errors.getFirst().get("message")), not(containsString("resolver denied")));
         assertThat(errors.getFirst().get("path"), is(List.of("secret")));
     }
 

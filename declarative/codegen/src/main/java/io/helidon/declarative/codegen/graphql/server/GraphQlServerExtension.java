@@ -437,9 +437,10 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
 
             Optional<ResolverParameterKind> specialParameter = specialParameterKind(parameter.typeName());
             if (specialParameter.isPresent()) {
+                GraphQlServerArguments.validateSpecialParameter(endpoint, method, parameter, parameterAnnotations);
                 result.add(new ResolverParameter(parameter,
-                                                Optional.empty(),
-                                                Optional.empty(),
+                                                 Optional.empty(),
+                                                 Optional.empty(),
                                                 Optional.empty(),
                                                 parameterContext,
                                                 specialParameter.orElseThrow()));
@@ -676,19 +677,18 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
                                                                endpoint,
                                                                method,
                                                                parameter.originatingElementValue());
-        String graphQlName = Annotations.findFirst(GRAPHQL_ARGUMENT, annotations)
-                .flatMap(Annotation::stringValue)
-                .filter(not(String::isBlank))
-                .map(it -> validateGraphQlName(it, parameter.originatingElementValue()))
-                .orElseGet(() -> graphQlName(annotations, parameter.elementName(), parameter.originatingElementValue()));
+        String validatedGraphQlName = GraphQlServerArguments.graphQlName(endpoint, method, parameter, annotations);
         Optional<String> defaultValue = Annotations.findFirst(GRAPHQL_DEFAULT_VALUE, annotations)
                 .flatMap(Annotation::stringValue)
                 .filter(not(String::isBlank));
+        if (defaultValue.isPresent()) {
+            GraphQlServerArguments.validateDefaultValue(defaultValue.orElseThrow(), endpoint, method, parameter);
+        }
         boolean nonNull = parameter.typeName().primitive()
                 || Annotations.findFirst(GRAPHQL_NON_NULL, annotations).isPresent();
         String schemaType = nonNull ? valueType.graphQlName() + "!" : valueType.graphQlName();
         return new Argument(parameter,
-                            graphQlName,
+                            validatedGraphQlName,
                             List.copyOf(annotations),
                             defaultValue,
                             nonNull,

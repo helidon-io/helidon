@@ -1400,6 +1400,35 @@ class GraphQlServerCodegenTest {
     }
 
     @Test
+    void invalidArgumentDefaultValueFailsCodegen() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-invalid-argument-default"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            String hello(@GraphQl.Argument("name") @GraphQl.DefaultValue("\\"unterminated") String name) {
+                                return name;
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("@GraphQl.DefaultValue must be a valid GraphQL SDL literal"));
+    }
+
+    @Test
     void unsupportedAnnotationOnAutomaticObjectFieldFailsCodegen() {
         var result = TestCompiler.builder()
                 .currentRelease()
@@ -1861,6 +1890,65 @@ class GraphQlServerCodegenTest {
         String diagnostics = String.join("\n", result.diagnostics());
         assertThat(diagnostics, result.success(), is(false));
         assertThat(diagnostics, containsString("Duplicate GraphQL argument 'id'"));
+    }
+
+    @Test
+    void specialArgumentParameterFailsCodegen() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-special-argument"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import graphql.schema.DataFetchingEnvironment;
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            String invalid(@GraphQl.Argument("env") DataFetchingEnvironment env) {
+                                return env.getField().getName();
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("@GraphQl.Argument cannot be used on special GraphQL resolver parameter"));
+    }
+
+    @Test
+    void argumentConflictingNamesFailCodegen() {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .addClasspath(GRAPHQL_CLASSPATH)
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/graphql-server-argument-name-conflict"))
+                .addSource("GraphEndpoint.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+                        import io.helidon.webserver.graphql.GraphQlServer;
+
+                        @GraphQlServer.Endpoint
+                        class GraphEndpoint {
+                            @GraphQl.Query
+                            String book(@GraphQl.Argument("id") @GraphQl.Name("bookId") String id) {
+                                return id;
+                            }
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(false));
+        assertThat(diagnostics, containsString("@GraphQl.Argument value and @GraphQl.Name"));
     }
 
     @Test

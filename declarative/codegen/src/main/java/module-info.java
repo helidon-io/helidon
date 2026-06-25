@@ -18,6 +18,7 @@
  * Code generation support for Helidon Declarative APIs.
  */
 module io.helidon.declarative.codegen {
+    requires com.graphqljava;
     requires io.helidon.codegen;
     requires io.helidon.codegen.classmodel;
     requires io.helidon.service.codegen;

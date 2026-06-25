@@ -220,6 +220,9 @@ class InvocationHandlerImpl implements InvocationHandler {
             if (error instanceof ExceptionWhileDataFetching) {
                 ExceptionWhileDataFetching e = (ExceptionWhileDataFetching) error;
                 Throwable cause = e.getException().getCause();
+                if (cause == null) {
+                    cause = e.getException();
+                }
                 if (cause instanceof Error) {
                     // re-throw the error as this should result in 500 from graphQL endpoint
                     throw (Error) cause;
