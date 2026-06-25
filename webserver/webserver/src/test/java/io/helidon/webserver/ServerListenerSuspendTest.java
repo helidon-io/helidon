@@ -135,6 +135,68 @@ class ServerListenerSuspendTest {
         }
     }
 
+    @Test
+    void suspendResumeReleasesConnectionLimitPermitHeldByAccept() throws Exception {
+        LoomServer server = (LoomServer) WebServer.builder()
+                .port(0)
+                .maxConnections(1)
+                .routing(routing -> routing.get("/", (req, res) -> res.send("ok")))
+                .build()
+                .start();
+        boolean suspended = false;
+
+        try {
+            waitFor(Duration.ofSeconds(5),
+                    () -> {
+                        Thread listener = listenerThread(WebServer.DEFAULT_SOCKET_NAME);
+                        if (listener == null) {
+                            return false;
+                        }
+                        for (StackTraceElement element : listener.getStackTrace()) {
+                            if ("accept".equals(element.getMethodName())) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    },
+                    "listener did not block in accept");
+
+            server.suspend();
+            suspended = true;
+            server.resume();
+            suspended = false;
+
+            String response = "";
+            try (Socket valid = new Socket("127.0.0.1", server.port())) {
+                valid.setSoTimeout(SOCKET_TIMEOUT_MILLIS);
+                valid.getOutputStream()
+                        .write(("GET / HTTP/1.1\r\n"
+                                + "Host: localhost\r\n"
+                                + "Connection: close\r\n"
+                                + "\r\n").getBytes(StandardCharsets.US_ASCII));
+                valid.getOutputStream().flush();
+                ByteArrayOutputStream responseBytes = new ByteArrayOutputStream();
+                byte[] buffer = new byte[256];
+                do {
+                    int read = valid.getInputStream().read(buffer);
+                    if (read == -1) {
+                        break;
+                    }
+                    responseBytes.write(buffer, 0, read);
+                    response = responseBytes.toString(StandardCharsets.US_ASCII);
+                } while (!response.contains("ok"));
+            }
+
+            assertThat(response, containsString("200 OK"));
+            assertThat(response, containsString("ok"));
+        } finally {
+            if (suspended) {
+                server.resume();
+            }
+            server.stop();
+        }
+    }
+
     private static void awaitSuspendForCleanup(Future<?> suspendFuture) throws Exception {
         try {
             suspendFuture.get(5, TimeUnit.SECONDS);
@@ -156,10 +218,15 @@ class ServerListenerSuspendTest {
     }
 
     private static Thread.State listenerThreadState(String socketName) {
+        Thread thread = listenerThread(socketName);
+        return thread == null ? null : thread.getState();
+    }
+
+    private static Thread listenerThread(String socketName) {
         String threadName = "server-" + socketName + "-listener";
         for (Thread thread : Thread.getAllStackTraces().keySet()) {
             if (threadName.equals(thread.getName())) {
-                return thread.getState();
+                return thread;
             }
         }
         return null;
