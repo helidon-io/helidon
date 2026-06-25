@@ -116,6 +116,8 @@ public interface GrpcServiceClient {
 
     /**
      * gRPC bidirectional call using {@link Stream}.
+     * <p>
+     * The returned stream closes the request stream when the response stream is closed or exhausted.
      *
      * @param methodName method name
      * @param request request stream
@@ -124,7 +126,43 @@ public interface GrpcServiceClient {
      * @return response stream
      */
     default <ReqT, ResT> Stream<ResT> bidiStream(String methodName, Stream<ReqT> request) {
-        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(bidi(methodName, request.iterator()), 0), false);
+        Iterator<ResT> response = bidi(methodName, request.iterator());
+        Iterator<ResT> closingResponse = new Iterator<>() {
+            private boolean closed;
+
+            @Override
+            public boolean hasNext() {
+                try {
+                    boolean hasNext = response.hasNext();
+                    if (!hasNext) {
+                        closeRequest();
+                    }
+                    return hasNext;
+                } catch (RuntimeException | Error e) {
+                    closeRequest();
+                    throw e;
+                }
+            }
+
+            @Override
+            public ResT next() {
+                try {
+                    return response.next();
+                } catch (RuntimeException | Error e) {
+                    closeRequest();
+                    throw e;
+                }
+            }
+
+            private void closeRequest() {
+                if (!closed) {
+                    closed = true;
+                    request.close();
+                }
+            }
+        };
+        return StreamSupport.stream(Spliterators.spliteratorUnknownSize(closingResponse, 0), false)
+                .onClose(request::close);
     }
 
     /**

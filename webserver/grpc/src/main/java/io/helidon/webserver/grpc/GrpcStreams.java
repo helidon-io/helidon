@@ -19,8 +19,10 @@ package io.helidon.webserver.grpc;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Spliterator;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
@@ -28,12 +30,17 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import io.helidon.common.Api;
+import io.helidon.common.context.Context;
+import io.helidon.common.context.Contexts;
+
 import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
 
 /**
  * Utilities used by generated declarative gRPC routes.
  */
+@Api.Internal
 public final class GrpcStreams {
     private GrpcStreams() {
     }
@@ -49,10 +56,7 @@ public final class GrpcStreams {
         Objects.requireNonNull(responses);
         Objects.requireNonNull(responseObserver);
         try {
-            for (ResT response : responses) {
-                responseObserver.onNext(response);
-            }
-            responseObserver.onCompleted();
+            sendResponses(responses, responseObserver, () -> { });
         } catch (Throwable t) {
             responseObserver.onError(t);
         }
@@ -69,8 +73,7 @@ public final class GrpcStreams {
         Objects.requireNonNull(responses);
         Objects.requireNonNull(responseObserver);
         try (responses) {
-            responses.forEach(responseObserver::onNext);
-            responseObserver.onCompleted();
+            sendResponses(responses::iterator, responseObserver, () -> { });
         } catch (Throwable t) {
             responseObserver.onError(t);
         }
@@ -127,14 +130,16 @@ public final class GrpcStreams {
         Objects.requireNonNull(handler);
         Objects.requireNonNull(responseObserver);
         StreamingRequest<ReqT> request = new StreamingRequest<>(responseObserver);
-        Thread.startVirtualThread(() -> {
+        request.installCancelHandler();
+        ContextRunner contextRunner = ContextRunner.create();
+        Thread.startVirtualThread(contextRunner.wrap(() -> {
             try (Stream<ReqT> stream = request.stream()) {
                 responseObserver.onNext(handler.apply(stream));
                 responseObserver.onCompleted();
             } catch (Throwable t) {
                 responseObserver.onError(unwrap(t));
             }
-        });
+        }));
         return request.observer();
     }
 
@@ -184,14 +189,36 @@ public final class GrpcStreams {
         Objects.requireNonNull(handler);
         Objects.requireNonNull(responseObserver);
         StreamingRequest<ReqT> request = new StreamingRequest<>(responseObserver);
-        Thread.startVirtualThread(() -> {
+        Outbound outbound = new Outbound(responseObserver, request::cancel);
+        ContextRunner contextRunner = ContextRunner.create();
+        Thread.startVirtualThread(contextRunner.wrap(() -> {
             try (Stream<ReqT> stream = request.stream()) {
-                serverStreaming(handler.apply(stream), responseObserver);
+                sendResponses(handler.apply(stream)::iterator, responseObserver, outbound);
             } catch (Throwable t) {
                 responseObserver.onError(unwrap(t));
             }
-        });
+        }));
         return request.observer();
+    }
+
+    private static <ResT> void sendResponses(Iterable<ResT> responses,
+                                             StreamObserver<ResT> responseObserver,
+                                             Runnable onCancel) {
+        sendResponses(responses, responseObserver, new Outbound(responseObserver, onCancel));
+    }
+
+    private static <ResT> void sendResponses(Iterable<ResT> responses,
+                                             StreamObserver<ResT> responseObserver,
+                                             Outbound outbound) {
+        for (ResT response : responses) {
+            if (!outbound.awaitReady()) {
+                return;
+            }
+            responseObserver.onNext(response);
+        }
+        if (!outbound.cancelled()) {
+            responseObserver.onCompleted();
+        }
     }
 
     private static Throwable unwrap(Throwable t) {
@@ -203,17 +230,28 @@ public final class GrpcStreams {
 
     private static final class StreamingRequest<T> {
         private final SingleItemBridge<T> bridge = new SingleItemBridge<>();
+        private final StreamObserver<?> responseObserver;
 
         private StreamingRequest(StreamObserver<?> responseObserver) {
+            this.responseObserver = responseObserver;
             if (responseObserver instanceof ServerCallStreamObserver<?> serverObserver) {
                 serverObserver.disableAutoRequest();
                 bridge.requester(() -> serverObserver.request(1));
-                serverObserver.setOnCancelHandler(bridge::cancel);
             }
         }
 
         private Stream<T> stream() {
             return StreamSupport.stream(bridge, false).onClose(bridge::cancel);
+        }
+
+        private void cancel() {
+            bridge.cancel();
+        }
+
+        private void installCancelHandler() {
+            if (responseObserver instanceof ServerCallStreamObserver<?> serverObserver) {
+                serverObserver.setOnCancelHandler(bridge::cancel);
+            }
         }
 
         private StreamObserver<T> observer() {
@@ -349,6 +387,77 @@ public final class GrpcStreams {
         @Override
         public int characteristics() {
             return ORDERED | NONNULL;
+        }
+    }
+
+    private record ContextRunner(io.grpc.Context grpcContext, Optional<Context> helidonContext) {
+        private static ContextRunner create() {
+            return new ContextRunner(io.grpc.Context.current(), Contexts.context());
+        }
+
+        private Runnable wrap(Runnable task) {
+            return () -> grpcContext.run(() -> {
+                if (helidonContext.isPresent()) {
+                    Contexts.runInContext(helidonContext.get(), task);
+                } else {
+                    task.run();
+                }
+            });
+        }
+    }
+
+    private static final class Outbound {
+        private final ServerCallStreamObserver<?> serverObserver;
+        private final ReentrantLock lock = new ReentrantLock();
+        private final Condition ready = lock.newCondition();
+        private boolean cancelled;
+
+        private Outbound(StreamObserver<?> responseObserver, Runnable onCancel) {
+            if (responseObserver instanceof ServerCallStreamObserver<?> observer) {
+                this.serverObserver = observer;
+                try {
+                    observer.setOnCancelHandler(() -> {
+                        onCancel.run();
+                        cancel();
+                    });
+                } catch (IllegalStateException _) {
+                    // Some gRPC paths can create the response sender after call initialization.
+                }
+            } else {
+                this.serverObserver = null;
+            }
+        }
+
+        private boolean awaitReady() {
+            if (serverObserver == null) {
+                return true;
+            }
+            lock.lock();
+            try {
+                while (!serverObserver.isReady() && !serverObserver.isCancelled() && !cancelled) {
+                    ready.await(10, TimeUnit.MILLISECONDS);
+                }
+                return !serverObserver.isCancelled() && !cancelled;
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new CompletionException(e);
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        private boolean cancelled() {
+            return serverObserver != null && (serverObserver.isCancelled() || cancelled);
+        }
+
+        private void cancel() {
+            lock.lock();
+            try {
+                cancelled = true;
+                ready.signalAll();
+            } finally {
+                lock.unlock();
+            }
         }
     }
 }

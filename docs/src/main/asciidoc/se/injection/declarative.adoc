@@ -294,9 +294,9 @@ Annotations on endpoint methods:
 Each endpoint method must declare exactly one gRPC method annotation and must not declare checked exceptions. The Java
 annotation type must match the streaming cardinality declared by the proto method.
 
-The `Grpc.GrpcProxy`, `Grpc.GrpcChannel`, `Grpc.RequestType`, and `Grpc.ResponseType` annotations are MP-only
-compatibility annotations. They remain in the SE gRPC API for Helidon 27 compatibility, but are deprecated for future
-removal from this API.
+The `Grpc.GrpcProxy`, `Grpc.GrpcChannel`, `Grpc.GrpcMarshaller`, `Grpc.RequestType`, and `Grpc.ResponseType`
+annotations are MP-only compatibility annotations. They remain in the SE gRPC API for Helidon 27 compatibility, but are
+deprecated for future removal from this API.
 
 Supported server method signatures:
 

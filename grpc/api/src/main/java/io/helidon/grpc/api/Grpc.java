@@ -115,11 +115,14 @@ public interface Grpc {
     /**
      * An annotation to mark a method as representing a bi-directional streaming gRPC method.
      * <p>
-     * Declarative gRPC methods may use {@code Iterable<Res> method(Iterable<Req>)},
-     * {@code Stream<Res> method(Stream<Req>)}, or
-     * {@code StreamObserver<Req> method(StreamObserver<Res>)}. The {@code Iterable} request shape first collects all
-     * inbound messages before invoking the method; use {@code Stream} or {@code StreamObserver} for non-collecting
-     * request processing.
+     * Declarative gRPC methods support these signatures:
+     * <ul>
+     *     <li>{@code Iterable<Res> method(Iterable<Req>)}</li>
+     *     <li>{@code Stream<Res> method(Stream<Req>)}</li>
+     *     <li>{@code StreamObserver<Req> method(StreamObserver<Res>)}</li>
+     * </ul>
+     * Server endpoint methods using the {@code Iterable<Req>} request shape first collect all inbound messages before
+     * invoking the method. Use {@code Stream<Req>} or {@code StreamObserver<Req>} for non-collecting request processing.
      */
     @Target({ElementType.METHOD})
     @Retention(RetentionPolicy.RUNTIME)
@@ -140,10 +143,15 @@ public interface Grpc {
     /**
      * An annotation to mark a method as representing a client streaming gRPC method.
      * <p>
-     * Declarative gRPC methods may use {@code Res method(Iterable<Req>)},
-     * {@code Res method(Stream<Req>)}, or {@code StreamObserver<Req> method(StreamObserver<Res>)} on clients. Server
-     * endpoints return a single response value. The {@code Iterable} request shape first collects all inbound messages
-     * before invoking the server endpoint method; use {@code Stream} for non-collecting request processing.
+     * Declarative gRPC methods support these signatures:
+     * <ul>
+     *     <li>{@code Res method(Iterable<Req>)}</li>
+     *     <li>{@code Res method(Stream<Req>)}</li>
+     *     <li>{@code StreamObserver<Req> method(StreamObserver<Res>)} on clients</li>
+     * </ul>
+     * Server endpoint methods return a single response value and do not support the {@code StreamObserver} signature.
+     * Server endpoint methods using the {@code Iterable<Req>} request shape first collect all inbound messages before
+     * invoking the method. Use {@code Stream<Req>} for non-collecting request processing.
      */
     @Target({ElementType.METHOD})
     @Retention(RetentionPolicy.RUNTIME)
@@ -164,8 +172,12 @@ public interface Grpc {
     /**
      * An annotation to mark a method as representing a server streaming gRPC method.
      * <p>
-     * Declarative gRPC methods may use {@code Iterable<Res> method(Req)},
-     * {@code Stream<Res> method(Req)}, or {@code void method(Req, StreamObserver<Res>)}.
+     * Declarative gRPC methods support these signatures:
+     * <ul>
+     *     <li>{@code Iterable<Res> method(Req)}</li>
+     *     <li>{@code Stream<Res> method(Req)}</li>
+     *     <li>{@code void method(Req, StreamObserver<Res>)}</li>
+     * </ul>
      */
     @Target({ElementType.METHOD})
     @Retention(RetentionPolicy.RUNTIME)
