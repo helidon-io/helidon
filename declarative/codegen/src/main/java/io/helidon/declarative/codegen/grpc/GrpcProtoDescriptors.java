@@ -30,10 +30,27 @@ import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
 import io.helidon.service.codegen.RegistryCodegenContext;
 
+/**
+ * Utilities for declarative gRPC proto descriptors.
+ */
 public final class GrpcProtoDescriptors {
     private GrpcProtoDescriptors() {
     }
 
+    /**
+     * Find and validate the proto descriptor source declared by a type.
+     *
+     * @param ctx codegen context
+     * @param typeInfo type to inspect
+     * @param typeAnnotations annotations on the type
+     * @param protoAnnotation {@code @Grpc.Proto} type
+     * @param protoDescriptorAnnotation {@code @Grpc.ProtoDescriptor} type
+     * @param grpcMethodAnnotation gRPC method meta-annotation type
+     * @param protoFileDescriptor protobuf file descriptor type
+     * @param declarationType user-facing declaration type
+     * @return proto descriptor source, or empty if none is declared
+     */
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public static Optional<GrpcProtoDescriptor> find(RegistryCodegenContext ctx,
                                                      TypeInfo typeInfo,
                                                      List<Annotation> typeAnnotations,
@@ -67,6 +84,13 @@ public final class GrpcProtoDescriptors {
         return Optional.of(GrpcProtoDescriptor.descriptorType(descriptorType));
     }
 
+    /**
+     * Create an exception for missing or duplicate proto descriptor sources.
+     *
+     * @param typeInfo type with the invalid declaration
+     * @param declarationType user-facing declaration type
+     * @return codegen exception
+     */
     public static CodegenException exactlyOne(TypeInfo typeInfo, String declarationType) {
         return new CodegenException("Declarative gRPC "
                                             + declarationType

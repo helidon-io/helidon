@@ -385,9 +385,10 @@ class GrpcClientExtension implements RegistryCodegenExtension {
                                                + "void method(Req, StreamObserver<Res>); server streaming methods "
                                                + "must be Iterable<Res> method(Req), Stream<Res> method(Req), or "
                                                + "void method(Req, StreamObserver<Res>); client streaming methods "
-                                               + "must be Res method(Iterable<Req>), Res method(Stream<Req>), or StreamObserver<Req> "
-                                               + "method(StreamObserver<Res>); bidirectional streaming methods "
-                                               + "must be Iterable<Res> method(Iterable<Req>), Stream<Res> method(Stream<Req>), or "
+                                               + "must be Res method(Iterable<Req>), Res method(Stream<Req>), or "
+                                               + "StreamObserver<Req> method(StreamObserver<Res>); bidirectional streaming "
+                                               + "methods must be Iterable<Res> method(Iterable<Req>), "
+                                               + "Stream<Res> method(Stream<Req>), or "
                                                + "StreamObserver<Req> method(StreamObserver<Res>).",
                                        method.originatingElementValue());
         }

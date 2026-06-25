@@ -21,11 +21,31 @@ import java.util.Optional;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
 
+/**
+ * Proto descriptor source declared by a declarative gRPC type.
+ *
+ * @param method method annotated with {@code @Grpc.Proto}
+ * @param isStatic whether the proto method is static
+ * @param descriptorType type declared by {@code @Grpc.ProtoDescriptor}
+ */
 public record GrpcProtoDescriptor(Optional<TypedElementInfo> method, boolean isStatic, Optional<TypeName> descriptorType) {
+    /**
+     * Create a proto method descriptor source.
+     *
+     * @param method proto method
+     * @param isStatic whether the proto method is static
+     * @return proto descriptor source
+     */
     public static GrpcProtoDescriptor method(TypedElementInfo method, boolean isStatic) {
         return new GrpcProtoDescriptor(Optional.of(method), isStatic, Optional.empty());
     }
 
+    /**
+     * Create a proto type descriptor source.
+     *
+     * @param descriptorType generated proto type
+     * @return proto descriptor source
+     */
     public static GrpcProtoDescriptor descriptorType(TypeName descriptorType) {
         return new GrpcProtoDescriptor(Optional.empty(), true, Optional.of(descriptorType));
     }
