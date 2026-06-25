@@ -35,7 +35,7 @@ public class GrpcClientExtensionProvider implements RegistryCodegenExtensionProv
 
     @Override
     public Set<TypeName> supportedAnnotations() {
-        return Set.of(GrpcClientTypes.GRPC_CLIENT_ENDPOINT);
+        return Set.of(GrpcClientTypes.RPC_CLIENT_ENDPOINT);
     }
 
     @Override

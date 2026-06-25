@@ -20,11 +20,13 @@ import io.helidon.declarative.tests.grpc.DeclarativeGrpcProto.GreetingReply;
 import io.helidon.declarative.tests.grpc.DeclarativeGrpcProto.GreetingRequest;
 import io.helidon.grpc.api.Grpc;
 import io.helidon.service.registry.Service;
+import io.helidon.webserver.grpc.RpcServer;
 
 import com.google.protobuf.Descriptors;
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 
+@RpcServer.Endpoint
 @Grpc.GrpcService(DefaultSecuredGreetingEndpoint.SERVICE_NAME)
 @RolesAllowed("admin")
 @Service.Singleton

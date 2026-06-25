@@ -267,17 +267,21 @@ include::{sourcedir}/se/inject/DeclarativeExample.java[tag=snippet_20, indent=0]
 === gRPC Server Endpoint [[Dec-GRPC-Server]]
 
 Declarative gRPC server endpoints are service registry services annotated with
+`io.helidon.webserver.grpc.RpcServer.Endpoint` and
 link:{grpc-api-javadoc-base-url}/io/helidon/grpc/api/Grpc.GrpcService.html[`io.helidon.grpc.api.Grpc.GrpcService`].
 The generated binding contributes a `GrpcRouteRegistration` service that registers the endpoint with the gRPC server
 feature.
 
 Annotations on endpoint type:
 
+- `io.helidon.webserver.grpc.RpcServer.Endpoint` - required annotation to generate a declarative gRPC server endpoint
 - link:{grpc-api-javadoc-base-url}/io/helidon/grpc/api/Grpc.GrpcService.html[`io.helidon.grpc.api.Grpc.GrpcService`] - gRPC service name; use the fully-qualified service name when the proto declares a package.
   If not set, the service class simple name is used.
+- link:{grpc-api-javadoc-base-url}/io/helidon/grpc/api/Grpc.ProtoDescriptor.html[`io.helidon.grpc.api.Grpc.ProtoDescriptor`] - generated protocol buffer class with a static `getDescriptor()` method returning `com.google.protobuf.Descriptors.FileDescriptor`
 - `io.helidon.service.registry.Service.Singleton` - normal service registry scope for the endpoint implementation
 
-The endpoint must declare exactly one `@Grpc.Proto` method. The method must have no parameters and return
+The endpoint must declare exactly one proto descriptor source: either `@Grpc.ProtoDescriptor` on the type or one
+`@Grpc.Proto` method. The method must have no parameters and return
 `com.google.protobuf.Descriptors.FileDescriptor`.
 
 Annotations on endpoint methods:
@@ -293,9 +297,14 @@ annotation type must match the streaming cardinality declared by the proto metho
 Supported server method signatures:
 
 - Unary: `Res method(Req)` or `void method(Req, StreamObserver<Res>)`
-- Server streaming: `void method(Req, StreamObserver<Res>)`
-- Client streaming: `StreamObserver<Req> method(StreamObserver<Res>)`
-- Bidirectional streaming: `StreamObserver<Req> method(StreamObserver<Res>)`
+- Server streaming: `Iterable<Res> method(Req)`, `Stream<Res> method(Req)`, or
+  `void method(Req, StreamObserver<Res>)`
+- Client streaming: `Res method(Iterable<Req>)` or `Res method(Stream<Req>)`
+- Bidirectional streaming: `Iterable<Res> method(Iterable<Req>)`, `Stream<Res> method(Stream<Req>)`, or
+  `StreamObserver<Req> method(StreamObserver<Res>)`
+
+Server endpoint methods using an `Iterable<Req>` request-stream shape first collect all inbound messages before invoking
+the method. Use `Stream<Req>` or `StreamObserver<Req>` request shapes for non-collecting request processing.
 
 Generated registrations use the fully-qualified gRPC service name, including the proto package when present. Route
 registration is enabled by default and can be disabled with `server.features.grpc-route-registration.enabled=false`.
@@ -314,13 +323,18 @@ Security annotations on declarative gRPC server methods require the gRPC securit
 
 === Typed gRPC Client [[Dec-GRPC-Client]]
 
-To create a typed gRPC client, create an interface annotated with `GrpcClient.Endpoint` and `Grpc.GrpcService`, and at
+To create a typed gRPC client, create an interface annotated with `RpcClient.Endpoint` and `Grpc.GrpcService`, and at
 least one method annotated with one of the gRPC method annotations.
 
 Annotations on endpoint type:
 
-- link:{grpc-client-javadoc-base-url}/io/helidon/webclient/grpc/GrpcClient.Endpoint.html[`io.helidon.webclient.grpc.GrpcClient.Endpoint`] - required annotation
+- link:{grpc-client-javadoc-base-url}/io/helidon/webclient/grpc/RpcClient.Endpoint.html[`io.helidon.webclient.grpc.RpcClient.Endpoint`] - required annotation
 - link:{grpc-api-javadoc-base-url}/io/helidon/grpc/api/Grpc.GrpcService.html[`io.helidon.grpc.api.Grpc.GrpcService`] - gRPC service name; use the fully-qualified service name when the proto declares a package
+- link:{grpc-api-javadoc-base-url}/io/helidon/grpc/api/Grpc.ProtoDescriptor.html[`io.helidon.grpc.api.Grpc.ProtoDescriptor`] - generated protocol buffer class with a static `getDescriptor()` method returning `com.google.protobuf.Descriptors.FileDescriptor`
+
+The endpoint must declare exactly one proto descriptor source: either `@Grpc.ProtoDescriptor` on the type or one
+`@Grpc.Proto` static method. The method must have no parameters and return
+`com.google.protobuf.Descriptors.FileDescriptor`.
 
 Annotations on endpoint methods:
 
@@ -335,27 +349,29 @@ exceptions.
 Supported client method signatures:
 
 - Unary: `Res method(Req)` or `void method(Req, StreamObserver<Res>)`
-- Server streaming: `Iterator<Res> method(Req)` or `void method(Req, StreamObserver<Res>)`
-- Client streaming: `Res method(Iterator<Req>)` or `StreamObserver<Req> method(StreamObserver<Res>)`
-- Bidirectional streaming: `Iterator<Res> method(Iterator<Req>)` or
+- Server streaming: `Iterable<Res> method(Req)`, `Stream<Res> method(Req)`, or
+  `void method(Req, StreamObserver<Res>)`
+- Client streaming: `Res method(Iterable<Req>)`, `Res method(Stream<Req>)`, or
+  `StreamObserver<Req> method(StreamObserver<Res>)`
+- Bidirectional streaming: `Iterable<Res> method(Iterable<Req>)`, `Stream<Res> method(Stream<Req>)`, or
   `StreamObserver<Req> method(StreamObserver<Res>)`
 
-To inject a typed gRPC client, use the annotated interface with the `@GrpcClient.Client` qualifier.
+To inject a typed gRPC client, use the annotated interface with the `@RpcClient.Client` qualifier.
 
 [source,java]
 ----
 @Service.Inject
-MyService(@GrpcClient.Client GreetingClient client) {
+MyService(@RpcClient.Client GreetingClient client) {
 }
 ----
 
-The `GrpcClient.Endpoint.value()` defines the target URI for generated backing clients and supports configuration
+The `RpcClient.Endpoint.value()` defines the target URI for generated backing clients and supports configuration
 expressions, such as `${grpc.service.uri:http://localhost:8080}`. When declarative code generation creates a new
 backing `GrpcClient`, it applies this URI after any client configuration. Registry-provided clients keep their own
 base URI.
 
 The base of configuration for a declarative gRPC client is the fully qualified name of the annotated interface. This key
-can be modified using the `configKey` property of the `@GrpcClient.Endpoint` annotation.
+can be modified using the `configKey` property of the `@RpcClient.Endpoint` annotation.
 
 Configuration options under this key:
 
@@ -372,13 +388,13 @@ Configuration options under this key:
 Client resolution order:
 
 1. If `<configKey>.client` exists, create a dedicated `GrpcClient` from that configuration and apply
-   `GrpcClient.Endpoint.value()` as its base URI.
-2. Otherwise, if `GrpcClient.Endpoint.clientName()` is set and a matching named `GrpcClient` exists in the service
+   `RpcClient.Endpoint.value()` as its base URI.
+2. Otherwise, if `RpcClient.Endpoint.clientName()` is set and a matching named `GrpcClient` exists in the service
    registry, use that registry client.
-3. Otherwise, if `GrpcClient.Endpoint.clientName()` is set and no matching named `GrpcClient` exists, create a new
-   `GrpcClient` using the endpoint URI from `GrpcClient.Endpoint.value()`.
+3. Otherwise, if `RpcClient.Endpoint.clientName()` is set and no matching named `GrpcClient` exists, create a new
+   `GrpcClient` using the endpoint URI from `RpcClient.Endpoint.value()`.
 4. Otherwise, if an unnamed `GrpcClient` exists in the service registry, use that registry client.
-5. Otherwise, create a new `GrpcClient` using the endpoint URI from `GrpcClient.Endpoint.value()`.
+5. Otherwise, create a new `GrpcClient` using the endpoint URI from `RpcClient.Endpoint.value()`.
 
 === Fault Tolerance [[Dec-FT]]
 

@@ -43,7 +43,7 @@ public class GrpcServerExtensionProvider implements RegistryCodegenExtensionProv
 
     @Override
     public Set<TypeName> supportedAnnotations() {
-        return Set.of(GrpcServerTypes.GRPC_SERVICE);
+        return Set.of(GrpcServerTypes.RPC_SERVER_ENDPOINT);
     }
 
     @Override

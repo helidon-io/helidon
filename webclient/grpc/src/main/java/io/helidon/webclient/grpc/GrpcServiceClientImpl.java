@@ -20,8 +20,14 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Spliterator;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import io.helidon.grpc.core.WeightedBag;
 
@@ -169,6 +175,37 @@ class GrpcServiceClientImpl implements GrpcServiceClient {
     }
 
     @Override
+    public <ReqT, ResT> Stream<ResT> bidiStream(String methodName, Stream<ReqT> request) {
+        ClientCall<ReqT, ResT> call = ensureMethod(methodName, MethodDescriptor.MethodType.BIDI_STREAMING);
+        LinkedBlockingQueue<Object> responses = new LinkedBlockingQueue<>();
+        StreamObserver<ReqT> observer = ClientCalls.asyncBidiStreamingCall(call, new StreamObserver<>() {
+            @Override
+            public void onNext(ResT value) {
+                responses.add(value);
+            }
+
+            @Override
+            public void onError(Throwable t) {
+                responses.add(new Error(t));
+            }
+
+            @Override
+            public void onCompleted() {
+                responses.add(End.INSTANCE);
+            }
+        });
+        CompletableFuture.runAsync(() -> {
+            try (request) {
+                request.forEach(observer::onNext);
+                observer.onCompleted();
+            } catch (Throwable t) {
+                observer.onError(t);
+            }
+        });
+        return StreamSupport.stream(new QueueSpliterator<>(responses), false);
+    }
+
+    @Override
     public <ReqT, ResT> StreamObserver<ReqT> bidi(String methodName, StreamObserver<ResT> response) {
         ClientCall<ReqT, ResT> call = ensureMethod(methodName, MethodDescriptor.MethodType.BIDI_STREAMING);
         return ClientCalls.asyncBidiStreamingCall(call, response);
@@ -195,6 +232,59 @@ class GrpcServiceClientImpl implements GrpcServiceClient {
                 return ClientInterceptors.intercept(grpcClient.channel(), orderedInterceptors);
             });
             return methodChannel.newCall(methodDescriptor.descriptor(), CallOptions.DEFAULT);
+        }
+    }
+
+    private record Error(Throwable throwable) {
+    }
+
+    private static final class End {
+        private static final End INSTANCE = new End();
+
+        private End() {
+        }
+    }
+
+    private static final class QueueSpliterator<T> implements Spliterator<T> {
+        private final LinkedBlockingQueue<Object> queue;
+
+        private QueueSpliterator(LinkedBlockingQueue<Object> queue) {
+            this.queue = queue;
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        public boolean tryAdvance(Consumer<? super T> action) {
+            Object item;
+            try {
+                item = queue.take();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new CompletionException(e);
+            }
+            if (item == End.INSTANCE) {
+                return false;
+            }
+            if (item instanceof Error error) {
+                throw new CompletionException(error.throwable());
+            }
+            action.accept((T) item);
+            return true;
+        }
+
+        @Override
+        public Spliterator<T> trySplit() {
+            return null;
+        }
+
+        @Override
+        public long estimateSize() {
+            return Long.MAX_VALUE;
+        }
+
+        @Override
+        public int characteristics() {
+            return ORDERED | NONNULL;
         }
     }
 }

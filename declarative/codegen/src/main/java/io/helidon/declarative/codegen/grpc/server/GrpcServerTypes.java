@@ -22,10 +22,13 @@ final class GrpcServerTypes {
     static final TypeName GRPC_SERVICE = TypeName.create("io.helidon.grpc.api.Grpc.GrpcService");
     static final TypeName GRPC_METHOD = TypeName.create("io.helidon.grpc.api.Grpc.GrpcMethod");
     static final TypeName GRPC_PROTO = TypeName.create("io.helidon.grpc.api.Grpc.Proto");
+    static final TypeName GRPC_PROTO_DESCRIPTOR = TypeName.create("io.helidon.grpc.api.Grpc.ProtoDescriptor");
+    static final TypeName RPC_SERVER_ENDPOINT = TypeName.create("io.helidon.webserver.grpc.RpcServer.Endpoint");
     static final TypeName GRPC_ENTRY_POINTS = TypeName.create("io.helidon.webserver.grpc.GrpcEntryPoint.EntryPoints");
     static final TypeName GRPC_ROUTE_REGISTRATION = TypeName.create("io.helidon.webserver.grpc.GrpcRouteRegistration");
     static final TypeName GRPC_SECURITY = TypeName.create("io.helidon.webserver.grpc.security.GrpcSecurity");
     static final TypeName GRPC_SERVICE_DESCRIPTOR = TypeName.create("io.helidon.webserver.grpc.GrpcServiceDescriptor");
+    static final TypeName GRPC_STREAMS = TypeName.create("io.helidon.webserver.grpc.GrpcStreams");
     static final TypeName SECURITY_LEVEL = TypeName.create("io.helidon.security.SecurityLevel");
     static final TypeName SECURITY_AUTHENTICATED = TypeName.create("io.helidon.security.annotations.Authenticated");
     static final TypeName SECURITY_AUTHORIZED = TypeName.create("io.helidon.security.annotations.Authorized");

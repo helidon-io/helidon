@@ -33,6 +33,8 @@ import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.declarative.codegen.grpc.GrpcProtoDescriptor;
+import io.helidon.declarative.codegen.grpc.GrpcProtoDescriptors;
 import io.helidon.declarative.codegen.DeclarativeUtils;
 import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.RegistryRoundContext;
@@ -40,8 +42,10 @@ import io.helidon.service.codegen.spi.RegistryCodegenExtension;
 
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_METHOD;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_PROTO;
+import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_PROTO_DESCRIPTOR;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_SERVICE;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.PROTO_FILE_DESCRIPTOR;
+import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.RPC_SERVER_ENDPOINT;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.SECURITY_ABAC_ANNOTATION;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.SECURITY_AUDITED;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.SECURITY_AUTHENTICATED;
@@ -57,6 +61,8 @@ import static java.util.function.Predicate.not;
 
 class GrpcServerExtension implements RegistryCodegenExtension {
     static final TypeName GENERATOR = TypeName.create(GrpcServerExtension.class);
+    private static final TypeName ITERABLE = TypeName.create("java.lang.Iterable");
+    private static final TypeName STREAM = TypeName.create("java.util.stream.Stream");
 
     private final RegistryCodegenContext ctx;
 
@@ -66,11 +72,14 @@ class GrpcServerExtension implements RegistryCodegenExtension {
 
     @Override
     public void process(RegistryRoundContext roundContext) {
-        Collection<TypeInfo> serverEndpoints = roundContext.annotatedTypes(GRPC_SERVICE);
+        Collection<TypeInfo> serverEndpoints = roundContext.annotatedTypes(RPC_SERVER_ENDPOINT);
 
         for (TypeInfo serverEndpoint : serverEndpoints) {
             if (serverEndpoint.kind() == ElementKind.INTERFACE) {
-                continue;
+                throw new CodegenException("Types annotated with "
+                                                   + RPC_SERVER_ENDPOINT.classNameWithEnclosingNames()
+                                                   + " must be classes. This type is: " + serverEndpoint.kind(),
+                                           serverEndpoint.originatingElementValue());
             }
             GrpcServerRegistrationGenerator.generate(roundContext, ctx, toEndpoint(serverEndpoint));
         }
@@ -89,66 +98,31 @@ class GrpcServerExtension implements RegistryCodegenExtension {
                                        serverEndpoint.originatingElementValue());
         }
 
-        GrpcProtoMethod protoMethod = findProtoMethod(serverEndpoint)
+        List<Annotation> typeAnnotations = TypeHierarchy.hierarchyAnnotations(ctx, serverEndpoint);
+        GrpcProtoDescriptor protoDescriptor = GrpcProtoDescriptors.find(ctx,
+                                                                        serverEndpoint,
+                                                                        typeAnnotations,
+                                                                        GRPC_PROTO,
+                                                                        GRPC_PROTO_DESCRIPTOR,
+                                                                        GRPC_METHOD,
+                                                                        PROTO_FILE_DESCRIPTOR,
+                                                                        "service")
+                .orElseThrow(() -> GrpcProtoDescriptors.exactlyOne(serverEndpoint, "service"));
+        Annotation serviceAnnotation = Annotations.findFirst(GRPC_SERVICE, typeAnnotations)
                 .orElseThrow(() -> new CodegenException("Declarative gRPC service "
                                                                 + endpointType.fqName()
-                                                                + " must declare a @Grpc.Proto method returning "
-                                                                + PROTO_FILE_DESCRIPTOR.fqName() + ".",
-                                                        serverEndpoint.originatingElementValue()));
-        List<Annotation> typeAnnotations = TypeHierarchy.hierarchyAnnotations(ctx, serverEndpoint);
-        Annotation serviceAnnotation = Annotations.findFirst(GRPC_SERVICE, typeAnnotations)
-                .orElseThrow(() -> new CodegenException("Missing " + GRPC_SERVICE.fqName(),
+                                                                + " must declare @Grpc.GrpcService.",
                                                         serverEndpoint.originatingElementValue()));
         return new GrpcEndpoint(serverEndpoint,
                                 List.copyOf(typeAnnotations),
                                 serviceAnnotation.stringValue()
                                         .filter(not(String::isBlank))
                                         .orElse(endpointType.className()),
-                                protoMethod,
+                                protoDescriptor,
                                 security(typeAnnotations,
                                          serverEndpoint.typeName().fqName(),
                                          serverEndpoint.originatingElementValue()),
                                 List.copyOf(methods));
-    }
-
-    private Optional<GrpcProtoMethod> findProtoMethod(TypeInfo serverEndpoint) {
-        List<TypedElementInfo> protoMethods = new ArrayList<>();
-        for (TypedElementInfo method : serverEndpoint.elementInfo()) {
-            if (!ElementInfoPredicates.isMethod(method) || ElementInfoPredicates.isPrivate(method)) {
-                continue;
-            }
-            List<Annotation> annotations = TypeHierarchy.hierarchyAnnotations(ctx, serverEndpoint, method);
-            if (Annotations.findFirst(GRPC_PROTO, annotations).isEmpty()) {
-                continue;
-            }
-            protoMethods.add(method);
-        }
-        if (protoMethods.isEmpty()) {
-            return Optional.empty();
-        }
-        if (protoMethods.size() > 1) {
-            throw new CodegenException("Declarative gRPC service "
-                                               + serverEndpoint.typeName().fqName()
-                                               + " must declare exactly one @Grpc.Proto method.",
-                                       serverEndpoint.originatingElementValue());
-        }
-        TypedElementInfo method = protoMethods.getFirst();
-        List<Annotation> annotations = TypeHierarchy.hierarchyAnnotations(ctx, serverEndpoint, method);
-        if (!grpcMethodAnnotations(method, annotations).isEmpty()) {
-            throw new CodegenException("@Grpc.Proto method on "
-                                               + serverEndpoint.typeName().fqName()
-                                               + " must not declare a gRPC method annotation.",
-                                       method.originatingElementValue());
-        }
-        if (!method.parameterArguments().isEmpty() || !method.typeName().equals(PROTO_FILE_DESCRIPTOR)) {
-            throw new CodegenException("@Grpc.Proto method on "
-                                               + serverEndpoint.typeName().fqName()
-                                               + " must return "
-                                               + PROTO_FILE_DESCRIPTOR.fqName()
-                                               + " and have no parameters.",
-                                       method.originatingElementValue());
-        }
-        return Optional.of(new GrpcProtoMethod(method, ElementInfoPredicates.isStatic(method)));
     }
 
     private Optional<GrpcMethod> toGrpcMethod(TypeInfo serverEndpoint, TypedElementInfo method) {
@@ -200,13 +174,57 @@ class GrpcServerExtension implements RegistryCodegenExtension {
             invocation = GrpcMethod.Invocation.OBSERVER;
             requestType = parameters.getFirst().typeName();
             responseType = parameters.get(1).typeName().typeArguments().getFirst();
-        } else if (("CLIENT_STREAMING".equals(methodType) || "BIDI_STREAMING".equals(methodType))
+        } else if ("SERVER_STREAMING".equals(methodType)
+                && parameters.size() == 1
+                && !isStreamingContainer(parameters.getFirst().typeName())
+                && isSingleGeneric(method.typeName(), ITERABLE)) {
+            invocation = GrpcMethod.Invocation.SERVER_STREAMING_ITERABLE;
+            requestType = parameters.getFirst().typeName();
+            responseType = method.typeName().typeArguments().getFirst();
+        } else if ("SERVER_STREAMING".equals(methodType)
+                && parameters.size() == 1
+                && !isStreamingContainer(parameters.getFirst().typeName())
+                && isSingleGeneric(method.typeName(), STREAM)) {
+            invocation = GrpcMethod.Invocation.SERVER_STREAMING_STREAM;
+            requestType = parameters.getFirst().typeName();
+            responseType = method.typeName().typeArguments().getFirst();
+        } else if ("CLIENT_STREAMING".equals(methodType)
+                && parameters.size() == 1
+                && isSingleGeneric(parameters.getFirst().typeName(), ITERABLE)
+                && !isStreamingContainer(method.typeName())
+                && !method.typeName().boxed().equals(TypeNames.BOXED_VOID)) {
+            invocation = GrpcMethod.Invocation.CLIENT_STREAMING_ITERABLE;
+            requestType = parameters.getFirst().typeName().typeArguments().getFirst();
+            responseType = method.typeName();
+        } else if ("CLIENT_STREAMING".equals(methodType)
+                && parameters.size() == 1
+                && isSingleGeneric(parameters.getFirst().typeName(), STREAM)
+                && !isStreamingContainer(method.typeName())
+                && !method.typeName().boxed().equals(TypeNames.BOXED_VOID)) {
+            invocation = GrpcMethod.Invocation.CLIENT_STREAMING_STREAM;
+            requestType = parameters.getFirst().typeName().typeArguments().getFirst();
+            responseType = method.typeName();
+        } else if ("BIDI_STREAMING".equals(methodType)
+                && parameters.size() == 1
+                && isSingleGeneric(parameters.getFirst().typeName(), ITERABLE)
+                && isSingleGeneric(method.typeName(), ITERABLE)) {
+            invocation = GrpcMethod.Invocation.BIDI_ITERABLE;
+            requestType = parameters.getFirst().typeName().typeArguments().getFirst();
+            responseType = method.typeName().typeArguments().getFirst();
+        } else if ("BIDI_STREAMING".equals(methodType)
+                && parameters.size() == 1
+                && isSingleGeneric(parameters.getFirst().typeName(), STREAM)
+                && isSingleGeneric(method.typeName(), STREAM)) {
+            invocation = GrpcMethod.Invocation.BIDI_STREAM;
+            requestType = parameters.getFirst().typeName().typeArguments().getFirst();
+            responseType = method.typeName().typeArguments().getFirst();
+        } else if ("BIDI_STREAMING".equals(methodType)
                 && parameters.size() == 1
                 && parameters.getFirst().typeName().genericTypeName().equals(STREAM_OBSERVER)
                 && parameters.getFirst().typeName().typeArguments().size() == 1
                 && method.typeName().genericTypeName().equals(STREAM_OBSERVER)
                 && method.typeName().typeArguments().size() == 1) {
-            invocation = GrpcMethod.Invocation.REQUEST_STREAMING;
+            invocation = GrpcMethod.Invocation.BIDI_OBSERVER;
             requestType = method.typeName().typeArguments().getFirst();
             responseType = parameters.getFirst().typeName().typeArguments().getFirst();
         } else {
@@ -214,9 +232,12 @@ class GrpcServerExtension implements RegistryCodegenExtension {
                                                + serverEndpoint.typeName().fqName() + "." + method.elementName()
                                                + "(). Unary methods must be Res method(Req) or "
                                                + "void method(Req, StreamObserver<Res>); server streaming "
-                                               + "methods must be void method(Req, StreamObserver<Res>); client and "
-                                               + "bidirectional streaming methods must be StreamObserver<Req> "
-                                               + "method(StreamObserver<Res>).",
+                                               + "methods must be Iterable<Res> method(Req), Stream<Res> method(Req), "
+                                               + "or void method(Req, StreamObserver<Res>); client streaming methods "
+                                               + "must be Res method(Iterable<Req>) or Res method(Stream<Req>); "
+                                               + "bidirectional streaming methods must be Iterable<Res> "
+                                               + "method(Iterable<Req>), Stream<Res> method(Stream<Req>), or "
+                                               + "StreamObserver<Req> method(StreamObserver<Res>).",
                                        method.originatingElementValue());
         }
         return Optional.of(new GrpcMethod(method,
@@ -229,6 +250,15 @@ class GrpcServerExtension implements RegistryCodegenExtension {
                                           security(annotations,
                                                    serverEndpoint.typeName().fqName() + "." + method.elementName() + "()",
                                                    method.originatingElementValue())));
+    }
+
+    private static boolean isSingleGeneric(TypeName type, TypeName expectedGenericType) {
+        return type.genericTypeName().equals(expectedGenericType) && type.typeArguments().size() == 1;
+    }
+
+    private static boolean isStreamingContainer(TypeName type) {
+        TypeName genericType = type.genericTypeName();
+        return genericType.equals(ITERABLE) || genericType.equals(STREAM) || genericType.equals(STREAM_OBSERVER);
     }
 
     private String methodType(TypedElementInfo method, Annotation grpcMethod) {

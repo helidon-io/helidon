@@ -63,16 +63,34 @@ public interface Grpc {
     }
 
     /**
-     * An annotation to mark a method as returning a proto file description
-     * used by the gRPC reflection service. Annotated method must return
-     * {@code com.google.protobuf.Descriptors.FileDescriptor} and expect
-     * no parameters.
+     * An annotation to mark a method as returning a proto file description.
+     * Annotated method must return {@code com.google.protobuf.Descriptors.FileDescriptor}
+     * and expect no parameters.
      */
     @Target({ElementType.METHOD})
     @Retention(RetentionPolicy.RUNTIME)
     @Documented
     @Inherited
     @interface Proto {
+    }
+
+    /**
+     * An annotation to identify the generated protocol buffer class that provides
+     * the proto file descriptor.
+     * The referenced class must declare a static {@code getDescriptor()} method
+     * returning {@code com.google.protobuf.Descriptors.FileDescriptor}.
+     */
+    @Target({ElementType.TYPE})
+    @Retention(RetentionPolicy.RUNTIME)
+    @Documented
+    @Inherited
+    @interface ProtoDescriptor {
+        /**
+         * The generated protocol buffer class.
+         *
+         * @return the generated protocol buffer class
+         */
+        Class<?> value();
     }
 
     /**
@@ -95,7 +113,13 @@ public interface Grpc {
     }
 
     /**
-     * An annotation to mark a class as representing a bi-directional streaming gRPC method.
+     * An annotation to mark a method as representing a bi-directional streaming gRPC method.
+     * <p>
+     * Declarative gRPC methods may use {@code Iterable<Res> method(Iterable<Req>)},
+     * {@code Stream<Res> method(Stream<Req>)}, or
+     * {@code StreamObserver<Req> method(StreamObserver<Res>)}. The {@code Iterable} request shape first collects all
+     * inbound messages before invoking the method; use {@code Stream} or {@code StreamObserver} for non-collecting
+     * request processing.
      */
     @Target({ElementType.METHOD})
     @Retention(RetentionPolicy.RUNTIME)
@@ -114,7 +138,12 @@ public interface Grpc {
     }
 
     /**
-     * An annotation to mark a class as representing a client streaming gRPC method.
+     * An annotation to mark a method as representing a client streaming gRPC method.
+     * <p>
+     * Declarative gRPC methods may use {@code Res method(Iterable<Req>)},
+     * {@code Res method(Stream<Req>)}, or {@code StreamObserver<Req> method(StreamObserver<Res>)} on clients. Server
+     * endpoints return a single response value. The {@code Iterable} request shape first collects all inbound messages
+     * before invoking the server endpoint method; use {@code Stream} for non-collecting request processing.
      */
     @Target({ElementType.METHOD})
     @Retention(RetentionPolicy.RUNTIME)
@@ -133,7 +162,10 @@ public interface Grpc {
     }
 
     /**
-     * An annotation to mark a class as representing a server streaming gRPC method.
+     * An annotation to mark a method as representing a server streaming gRPC method.
+     * <p>
+     * Declarative gRPC methods may use {@code Iterable<Res> method(Req)},
+     * {@code Stream<Res> method(Req)}, or {@code void method(Req, StreamObserver<Res>)}.
      */
     @Target({ElementType.METHOD})
     @Retention(RetentionPolicy.RUNTIME)

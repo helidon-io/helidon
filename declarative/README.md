@@ -256,11 +256,15 @@ Declaration must be done on a service registry service.
 
 Annotations on type:
 
+- `@RpcServer.Endpoint` - required annotation to generate a declarative gRPC server endpoint
 - `@Grpc.GrpcService` - gRPC service name; use the fully-qualified service name when the proto declares a package.
   If not set, the service class simple name is used.
+- `@Grpc.ProtoDescriptor` - generated protocol buffer class with a static `getDescriptor()` method returning
+  `Descriptors.FileDescriptor`
 - `@Service.Singleton` - typical service registry scope for the endpoint implementation
 
-The endpoint must declare one `@Grpc.Proto` method returning `Descriptors.FileDescriptor` with no parameters.
+The endpoint must declare exactly one proto descriptor source: either `@Grpc.ProtoDescriptor` on the type or
+one `@Grpc.Proto` method returning `Descriptors.FileDescriptor` with no parameters.
 
 Annotations on endpoint methods:
 
@@ -268,6 +272,18 @@ Annotations on endpoint methods:
 - `@Grpc.ServerStreaming` - server-streaming gRPC method
 - `@Grpc.ClientStreaming` - client-streaming gRPC method
 - `@Grpc.Bidirectional` - bidirectional streaming gRPC method
+
+Supported server method signatures:
+
+- Unary: `Res method(Req)` or `void method(Req, StreamObserver<Res>)`
+- Server streaming: `Iterable<Res> method(Req)`, `Stream<Res> method(Req)`, or
+  `void method(Req, StreamObserver<Res>)`
+- Client streaming: `Res method(Iterable<Req>)` or `Res method(Stream<Req>)`
+- Bidirectional streaming: `Iterable<Res> method(Iterable<Req>)`, `Stream<Res> method(Stream<Req>)`, or
+  `StreamObserver<Req> method(StreamObserver<Res>)`
+
+Server endpoint methods using an `Iterable<Req>` request-stream shape first collect all inbound messages before invoking
+the method. Use `Stream<Req>` or `StreamObserver<Req>` request shapes for non-collecting request processing.
 
 ### Configuration
 
@@ -285,7 +301,7 @@ Validation annotations require the generated validation interceptor. To map `Val
 
 ### Implementation
 
-A class named `AnnotatedTypeName__GrpcRegistration` will be generated for types annotated with `@Grpc.GrpcService`.
+A class named `AnnotatedTypeName__GrpcRegistration` will be generated for types annotated with `@RpcServer.Endpoint`.
 This class registers the generated `GrpcServiceDescriptor` using the fully-qualified gRPC service name.
 
 ## gRPC Declarative Client
@@ -298,8 +314,13 @@ Declaration must be done on an interface.
 
 Annotations on type:
 
-- `@GrpcClient.Endpoint` - required annotation to generate a typed gRPC client
+- `@RpcClient.Endpoint` - required annotation to generate a typed gRPC client
 - `@Grpc.GrpcService` - gRPC service name; use the fully-qualified service name when the proto declares a package
+- `@Grpc.ProtoDescriptor` - generated protocol buffer class with a static `getDescriptor()` method returning
+  `Descriptors.FileDescriptor`
+
+The endpoint must declare exactly one proto descriptor source: either `@Grpc.ProtoDescriptor` on the type or
+one `@Grpc.Proto` static method returning `Descriptors.FileDescriptor` with no parameters.
 
 Annotations on the interface method(s):
 
@@ -308,22 +329,32 @@ Annotations on the interface method(s):
 - `@Grpc.ClientStreaming` - client-streaming gRPC method
 - `@Grpc.Bidirectional` - bidirectional streaming gRPC method
 
-To use a declarative gRPC client, inject the annotated interface using the `@GrpcClient.Client` qualifier:
+Supported client method signatures:
+
+- Unary: `Res method(Req)` or `void method(Req, StreamObserver<Res>)`
+- Server streaming: `Iterable<Res> method(Req)`, `Stream<Res> method(Req)`, or
+  `void method(Req, StreamObserver<Res>)`
+- Client streaming: `Res method(Iterable<Req>)`, `Res method(Stream<Req>)`, or
+  `StreamObserver<Req> method(StreamObserver<Res>)`
+- Bidirectional streaming: `Iterable<Res> method(Iterable<Req>)`, `Stream<Res> method(Stream<Req>)`, or
+  `StreamObserver<Req> method(StreamObserver<Res>)`
+
+To use a declarative gRPC client, inject the annotated interface using the `@RpcClient.Client` qualifier:
 
 ```java
 @Service.Inject
-MyClass(@GrpcClient.Client MyGrpcClient grpcClient) {
+MyClass(@RpcClient.Client MyGrpcClient grpcClient) {
 }
 ```
 
 ### Configuration
 
-The `@GrpcClient.Endpoint.value()` property defines the target URI for generated backing clients and supports
+The `@RpcClient.Endpoint.value()` property defines the target URI for generated backing clients and supports
 configuration expressions, such as `http://localhost:${test.server.port}`. Registry-provided clients keep their own
 base URI.
 
 The base of configuration for a declarative gRPC client is the fully qualified name of the annotated interface. This key
-can be modified using `configKey` property of the `@GrpcClient.Endpoint` annotation.
+can be modified using `configKey` property of the `@RpcClient.Endpoint` annotation.
 
 There is one key that can be defined under this key:
 
@@ -332,16 +363,16 @@ There is one key that can be defined under this key:
 Client resolution order:
 
 1. If `<configKey>.client` exists, create a dedicated `GrpcClient` from that configuration and apply
-   `@GrpcClient.Endpoint.value()` as its base URI.
-2. Otherwise, if `@GrpcClient.Endpoint.clientName()` is defined and exists in the registry, use that named `GrpcClient`.
-3. Otherwise, if `@GrpcClient.Endpoint.clientName()` is defined and no matching named `GrpcClient` exists, create a new
-   `GrpcClient` using `@GrpcClient.Endpoint.value()`.
+   `@RpcClient.Endpoint.value()` as its base URI.
+2. Otherwise, if `@RpcClient.Endpoint.clientName()` is defined and exists in the registry, use that named `GrpcClient`.
+3. Otherwise, if `@RpcClient.Endpoint.clientName()` is defined and no matching named `GrpcClient` exists, create a new
+   `GrpcClient` using `@RpcClient.Endpoint.value()`.
 4. Otherwise, if an unnamed `GrpcClient` exists in the registry, use it.
-5. Otherwise, create a new `GrpcClient` using `@GrpcClient.Endpoint.value()`.
+5. Otherwise, create a new `GrpcClient` using `@RpcClient.Endpoint.value()`.
 
 ### Implementation
 
-A class named `AnnotatedInterfaceName__GrpcClient` will be generated for types annotated with `@GrpcClient.Endpoint`.
+A class named `AnnotatedInterfaceName__GrpcClient` will be generated for types annotated with `@RpcClient.Endpoint`.
 This class will implement all of the interface methods, and it will use a configured or registry-provided instance of
 Helidon `GrpcClient` to invoke all requests.
 

@@ -21,16 +21,19 @@ import io.helidon.common.types.TypeName;
 
 final class GrpcClientTypes {
     static final TypeName GRPC_CLIENT = TypeName.create("io.helidon.webclient.grpc.GrpcClient");
-    static final TypeName GRPC_CLIENT_ENDPOINT = TypeName.create("io.helidon.webclient.grpc.GrpcClient.Endpoint");
-    static final TypeName GRPC_CLIENT_QUALIFIER = TypeName.create("io.helidon.webclient.grpc.GrpcClient.Client");
+    static final TypeName RPC_CLIENT_ENDPOINT = TypeName.create("io.helidon.webclient.grpc.RpcClient.Endpoint");
+    static final TypeName RPC_CLIENT_QUALIFIER = TypeName.create("io.helidon.webclient.grpc.RpcClient.Client");
     static final TypeName GRPC_CLIENT_METHOD_DESCRIPTOR =
             TypeName.create("io.helidon.webclient.grpc.GrpcClientMethodDescriptor");
     static final TypeName GRPC_SERVICE_CLIENT = TypeName.create("io.helidon.webclient.grpc.GrpcServiceClient");
     static final TypeName GRPC_SERVICE_DESCRIPTOR = TypeName.create("io.helidon.webclient.grpc.GrpcServiceDescriptor");
     static final TypeName GRPC_METHOD = TypeName.create("io.helidon.grpc.api.Grpc.GrpcMethod");
+    static final TypeName GRPC_PROTO = TypeName.create("io.helidon.grpc.api.Grpc.Proto");
+    static final TypeName GRPC_PROTO_DESCRIPTOR = TypeName.create("io.helidon.grpc.api.Grpc.ProtoDescriptor");
     static final TypeName GRPC_SERVICE = TypeName.create("io.helidon.grpc.api.Grpc.GrpcService");
+    static final TypeName PROTO_FILE_DESCRIPTOR = TypeName.create("com.google.protobuf.Descriptors.FileDescriptor");
 
-    static final Annotation GRPC_CLIENT_QUALIFIER_INSTANCE = Annotation.create(GRPC_CLIENT_QUALIFIER);
+    static final Annotation RPC_CLIENT_QUALIFIER_INSTANCE = Annotation.create(RPC_CLIENT_QUALIFIER);
 
     private GrpcClientTypes() {
     }

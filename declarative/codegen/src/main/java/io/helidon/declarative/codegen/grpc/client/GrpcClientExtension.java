@@ -24,7 +24,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.Spliterators;
 import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenUtil;
@@ -44,6 +46,8 @@ import io.helidon.common.types.TypedElementInfo;
 import io.helidon.declarative.codegen.DeclarativeTypes;
 import io.helidon.declarative.codegen.DeclarativeUtils;
 import io.helidon.declarative.codegen.DelcarativeConfigSupport;
+import io.helidon.declarative.codegen.grpc.GrpcProtoDescriptor;
+import io.helidon.declarative.codegen.grpc.GrpcProtoDescriptors;
 import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.RegistryRoundContext;
 import io.helidon.service.codegen.spi.RegistryCodegenExtension;
@@ -51,13 +55,16 @@ import io.helidon.service.codegen.spi.RegistryCodegenExtension;
 import static io.helidon.declarative.codegen.DeclarativeTypes.CONFIG;
 import static io.helidon.declarative.codegen.DeclarativeTypes.SINGLETON_ANNOTATION;
 import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.GRPC_CLIENT;
-import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.GRPC_CLIENT_ENDPOINT;
 import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.GRPC_CLIENT_METHOD_DESCRIPTOR;
-import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.GRPC_CLIENT_QUALIFIER_INSTANCE;
 import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.GRPC_METHOD;
+import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.GRPC_PROTO;
+import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.GRPC_PROTO_DESCRIPTOR;
 import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.GRPC_SERVICE;
 import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.GRPC_SERVICE_CLIENT;
 import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.GRPC_SERVICE_DESCRIPTOR;
+import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.PROTO_FILE_DESCRIPTOR;
+import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.RPC_CLIENT_ENDPOINT;
+import static io.helidon.declarative.codegen.grpc.client.GrpcClientTypes.RPC_CLIENT_QUALIFIER_INSTANCE;
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_NAMED;
 import static java.util.function.Predicate.not;
 
@@ -65,6 +72,8 @@ class GrpcClientExtension implements RegistryCodegenExtension {
     static final TypeName GENERATOR = TypeName.create(GrpcClientExtension.class);
 
     private static final TypeName ITERATOR = TypeName.create("java.util.Iterator");
+    private static final TypeName ITERABLE = TypeName.create("java.lang.Iterable");
+    private static final TypeName STREAM = TypeName.create("java.util.stream.Stream");
     private static final TypeName STREAM_OBSERVER = TypeName.create("io.grpc.stub.StreamObserver");
 
     private final RegistryCodegenContext ctx;
@@ -75,7 +84,7 @@ class GrpcClientExtension implements RegistryCodegenExtension {
 
     @Override
     public void process(RegistryRoundContext roundContext) {
-        Collection<TypeInfo> clientApis = roundContext.annotatedTypes(GRPC_CLIENT_ENDPOINT);
+        Collection<TypeInfo> clientApis = roundContext.annotatedTypes(RPC_CLIENT_ENDPOINT);
 
         List<GrpcEndpoint> endpoints = clientApis.stream()
                 .map(this::toEndpoint)
@@ -97,7 +106,7 @@ class GrpcClientExtension implements RegistryCodegenExtension {
                     .addInterface(type.typeName())
                     .addAnnotation(SINGLETON_ANNOTATION)
                     .addAnnotation(DeclarativeTypes.SUPPRESS_API)
-                    .addAnnotation(GRPC_CLIENT_QUALIFIER_INSTANCE);
+                    .addAnnotation(RPC_CLIENT_QUALIFIER_INSTANCE);
 
             classModel.addField(client -> client
                     .accessModifier(AccessModifier.PRIVATE)
@@ -124,18 +133,48 @@ class GrpcClientExtension implements RegistryCodegenExtension {
                                 .addContentLine(");");
                     }
 
-                    if (method.invocation().returnsValue()) {
-                        clientMethod.addContent("return ");
+                    switch (method.invocation()) {
+                    case SERVER_STREAMING_ITERABLE -> clientMethod.addContent("return () -> serviceClient.serverStream(")
+                            .addContentLiteral(method.methodName())
+                            .addContentLine(", request);");
+                    case SERVER_STREAMING_STREAM -> clientMethod.addContent("return ")
+                            .addContent(StreamSupport.class)
+                            .addContent(".stream(")
+                            .addContent(Spliterators.class)
+                            .addContent(".spliteratorUnknownSize(serviceClient.serverStream(")
+                            .addContentLiteral(method.methodName())
+                            .addContentLine(", request), 0), false);");
+                    case CLIENT_STREAMING_ITERABLE -> clientMethod.addContent("return serviceClient.clientStream(")
+                            .addContentLiteral(method.methodName())
+                            .addContentLine(", requests.iterator());");
+                    case CLIENT_STREAMING_STREAM -> clientMethod.addContentLine("try (requests) {")
+                            .increaseContentPadding()
+                            .addContent("return serviceClient.clientStream(")
+                            .addContentLiteral(method.methodName())
+                            .addContentLine(", requests.iterator());")
+                            .decreaseContentPadding()
+                            .addContentLine("}");
+                    case BIDI_ITERABLE -> clientMethod.addContent("return () -> serviceClient.bidi(")
+                            .addContentLiteral(method.methodName())
+                            .addContentLine(", requests.iterator());");
+                    case BIDI_STREAM -> clientMethod.addContent("return serviceClient.bidiStream(")
+                            .addContentLiteral(method.methodName())
+                            .addContentLine(", requests);");
+                    default -> {
+                        if (method.invocation().returnsValue()) {
+                            clientMethod.addContent("return ");
+                        }
+                        clientMethod.addContent("serviceClient.")
+                                .addContent(method.invocation().clientMethodName())
+                                .addContent("(")
+                                .addContentLiteral(method.methodName());
+                        for (MethodParameter parameter : method.parameters()) {
+                            clientMethod.addContent(", ")
+                                    .addContent(parameter.name());
+                        }
+                        clientMethod.addContentLine(");");
                     }
-                    clientMethod.addContent("serviceClient.")
-                            .addContent(method.invocation().clientMethodName())
-                            .addContent("(")
-                            .addContentLiteral(method.methodName());
-                    for (MethodParameter parameter : method.parameters()) {
-                        clientMethod.addContent(", ")
-                                .addContent(parameter.name());
                     }
-                    clientMethod.addContentLine(");");
                 });
             }
 
@@ -156,14 +195,14 @@ class GrpcClientExtension implements RegistryCodegenExtension {
     private GrpcEndpoint toEndpoint(TypeInfo typeInfo) {
         if (typeInfo.kind() != ElementKind.INTERFACE) {
             throw new CodegenException("Types annotated with "
-                                               + GRPC_CLIENT_ENDPOINT.classNameWithEnclosingNames()
+                                               + RPC_CLIENT_ENDPOINT.classNameWithEnclosingNames()
                                                + " must be interfaces. This type is: " + typeInfo.kind(),
                                        typeInfo.originatingElementValue());
         }
 
         Set<Annotation> typeAnnotations = new HashSet<>(TypeHierarchy.hierarchyAnnotations(ctx, typeInfo));
-        Annotation endpointAnnotation = Annotations.findFirst(GRPC_CLIENT_ENDPOINT, typeAnnotations)
-                .orElseThrow(() -> new CodegenException("Missing " + GRPC_CLIENT_ENDPOINT.fqName(),
+        Annotation endpointAnnotation = Annotations.findFirst(RPC_CLIENT_ENDPOINT, typeAnnotations)
+                .orElseThrow(() -> new CodegenException("Missing " + RPC_CLIENT_ENDPOINT.fqName(),
                                                         typeInfo.originatingElementValue()));
         String uri = endpointAnnotation.stringValue()
                 .filter(not(String::isBlank))
@@ -183,6 +222,15 @@ class GrpcClientExtension implements RegistryCodegenExtension {
                                                                 + typeInfo.typeName().fqName()
                                                                 + " must define a non-blank @Grpc.GrpcService value.",
                                                         typeInfo.originatingElementValue()));
+        GrpcProtoDescriptor protoDescriptor = GrpcProtoDescriptors.find(ctx,
+                                                                        typeInfo,
+                                                                        List.copyOf(typeAnnotations),
+                                                                        GRPC_PROTO,
+                                                                        GRPC_PROTO_DESCRIPTOR,
+                                                                        GRPC_METHOD,
+                                                                        PROTO_FILE_DESCRIPTOR,
+                                                                        "client")
+                .orElseThrow(() -> GrpcProtoDescriptors.exactlyOne(typeInfo, "client"));
 
         Map<MethodSignature, MethodOrigin> discoveredMethods = new LinkedHashMap<>();
         typeInfo.elementInfo()
@@ -212,7 +260,7 @@ class GrpcClientExtension implements RegistryCodegenExtension {
                                                + " must declare at least one gRPC method.",
                                        typeInfo.originatingElementValue());
         }
-        return new GrpcEndpoint(typeInfo, uri, serviceName, configKey, clientName, List.copyOf(methods));
+        return new GrpcEndpoint(typeInfo, uri, serviceName, configKey, clientName, protoDescriptor, List.copyOf(methods));
     }
 
     private Optional<GrpcMethod> toClientMethod(TypeInfo typeInfo, TypedElementInfo method) {
@@ -270,25 +318,50 @@ class GrpcClientExtension implements RegistryCodegenExtension {
         } else if (methodType == GrpcMethodType.SERVER_STREAMING
                 && parameters.size() == 1
                 && !isStreamingContainer(parameters.getFirst().typeName())
-                && isSingleGeneric(returnType, ITERATOR)) {
-            invocation = GrpcMethod.Invocation.SERVER_STREAMING_ITERATOR;
+                && isSingleGeneric(returnType, ITERABLE)) {
+            invocation = GrpcMethod.Invocation.SERVER_STREAMING_ITERABLE;
+            requestType = parameters.getFirst().typeName();
+            responseType = returnType.typeArguments().getFirst();
+            methodParameters = List.of(new MethodParameter(requestType, "request"));
+        } else if (methodType == GrpcMethodType.SERVER_STREAMING
+                && parameters.size() == 1
+                && !isStreamingContainer(parameters.getFirst().typeName())
+                && isSingleGeneric(returnType, STREAM)) {
+            invocation = GrpcMethod.Invocation.SERVER_STREAMING_STREAM;
             requestType = parameters.getFirst().typeName();
             responseType = returnType.typeArguments().getFirst();
             methodParameters = List.of(new MethodParameter(requestType, "request"));
         } else if (methodType == GrpcMethodType.CLIENT_STREAMING
                 && parameters.size() == 1
-                && isSingleGeneric(parameters.getFirst().typeName(), ITERATOR)
+                && isSingleGeneric(parameters.getFirst().typeName(), ITERABLE)
                 && !isStreamingContainer(returnType)
                 && !voidReturn) {
-            invocation = GrpcMethod.Invocation.CLIENT_STREAMING_ITERATOR;
+            invocation = GrpcMethod.Invocation.CLIENT_STREAMING_ITERABLE;
+            requestType = parameters.getFirst().typeName().typeArguments().getFirst();
+            responseType = returnType;
+            methodParameters = List.of(new MethodParameter(parameters.getFirst().typeName(), "requests"));
+        } else if (methodType == GrpcMethodType.CLIENT_STREAMING
+                && parameters.size() == 1
+                && isSingleGeneric(parameters.getFirst().typeName(), STREAM)
+                && !isStreamingContainer(returnType)
+                && !voidReturn) {
+            invocation = GrpcMethod.Invocation.CLIENT_STREAMING_STREAM;
             requestType = parameters.getFirst().typeName().typeArguments().getFirst();
             responseType = returnType;
             methodParameters = List.of(new MethodParameter(parameters.getFirst().typeName(), "requests"));
         } else if (methodType == GrpcMethodType.BIDI_STREAMING
                 && parameters.size() == 1
-                && isSingleGeneric(parameters.getFirst().typeName(), ITERATOR)
-                && isSingleGeneric(returnType, ITERATOR)) {
-            invocation = GrpcMethod.Invocation.BIDI_ITERATOR;
+                && isSingleGeneric(parameters.getFirst().typeName(), ITERABLE)
+                && isSingleGeneric(returnType, ITERABLE)) {
+            invocation = GrpcMethod.Invocation.BIDI_ITERABLE;
+            requestType = parameters.getFirst().typeName().typeArguments().getFirst();
+            responseType = returnType.typeArguments().getFirst();
+            methodParameters = List.of(new MethodParameter(parameters.getFirst().typeName(), "requests"));
+        } else if (methodType == GrpcMethodType.BIDI_STREAMING
+                && parameters.size() == 1
+                && isSingleGeneric(parameters.getFirst().typeName(), STREAM)
+                && isSingleGeneric(returnType, STREAM)) {
+            invocation = GrpcMethod.Invocation.BIDI_STREAM;
             requestType = parameters.getFirst().typeName().typeArguments().getFirst();
             responseType = returnType.typeArguments().getFirst();
             methodParameters = List.of(new MethodParameter(parameters.getFirst().typeName(), "requests"));
@@ -307,11 +380,11 @@ class GrpcClientExtension implements RegistryCodegenExtension {
                                                + typeInfo.typeName().fqName() + "." + method.elementName()
                                                + "(). Unary methods must be Res method(Req) or "
                                                + "void method(Req, StreamObserver<Res>); server streaming methods "
-                                               + "must be Iterator<Res> method(Req) or "
+                                               + "must be Iterable<Res> method(Req), Stream<Res> method(Req), or "
                                                + "void method(Req, StreamObserver<Res>); client streaming methods "
-                                               + "must be Res method(Iterator<Req>) or StreamObserver<Req> "
+                                               + "must be Res method(Iterable<Req>), Res method(Stream<Req>), or StreamObserver<Req> "
                                                + "method(StreamObserver<Res>); bidirectional streaming methods "
-                                               + "must be Iterator<Res> method(Iterator<Req>) or "
+                                               + "must be Iterable<Res> method(Iterable<Req>), Stream<Res> method(Stream<Req>), or "
                                                + "StreamObserver<Req> method(StreamObserver<Res>).",
                                        method.originatingElementValue());
         }
@@ -329,7 +402,10 @@ class GrpcClientExtension implements RegistryCodegenExtension {
 
     private static boolean isStreamingContainer(TypeName type) {
         TypeName genericType = type.genericTypeName();
-        return genericType.equals(ITERATOR) || genericType.equals(STREAM_OBSERVER);
+        return genericType.equals(ITERATOR)
+                || genericType.equals(ITERABLE)
+                || genericType.equals(STREAM)
+                || genericType.equals(STREAM_OBSERVER);
     }
 
     private void constructorBody(Constructor.Builder constructor, GrpcEndpoint endpoint) {
@@ -386,11 +462,6 @@ class GrpcClientExtension implements RegistryCodegenExtension {
                 .decreaseContentPadding()
                 .addContentLine("}")
                 .addContentLine("declarative__clientBuilder.baseUri(uri);")
-                .addContentLine("if (uri.regionMatches(true, 0, \"http://\", 0, \"http://\".length())) {")
-                .increaseContentPadding()
-                .addContentLine("declarative__clientBuilder.tls(it -> it.enabled(false));")
-                .decreaseContentPadding()
-                .addContentLine("}")
                 .addContentLine("declarative__client = declarative__clientBuilder.build();")
                 .decreaseContentPadding()
                 .addContentLine("}")
@@ -462,6 +533,7 @@ class GrpcClientExtension implements RegistryCodegenExtension {
                                 String serviceName,
                                 String configKey,
                                 Optional<String> clientName,
+                                GrpcProtoDescriptor protoDescriptor,
                                 List<GrpcMethod> methods) {
     }
 
@@ -474,11 +546,14 @@ class GrpcClientExtension implements RegistryCodegenExtension {
         private enum Invocation {
             UNARY_RETURN("unary", "unary", true),
             UNARY_OBSERVER("unary", "unary", false),
-            SERVER_STREAMING_ITERATOR("serverStreaming", "serverStream", true),
+            SERVER_STREAMING_ITERABLE("serverStreaming", "serverStream", true),
+            SERVER_STREAMING_STREAM("serverStreaming", "serverStream", true),
             SERVER_STREAMING_OBSERVER("serverStreaming", "serverStream", false),
-            CLIENT_STREAMING_ITERATOR("clientStreaming", "clientStream", true),
+            CLIENT_STREAMING_ITERABLE("clientStreaming", "clientStream", true),
+            CLIENT_STREAMING_STREAM("clientStreaming", "clientStream", true),
             CLIENT_STREAMING_OBSERVER("clientStreaming", "clientStream", true),
-            BIDI_ITERATOR("bidirectional", "bidi", true),
+            BIDI_ITERABLE("bidirectional", "bidi", true),
+            BIDI_STREAM("bidirectional", "bidiStream", true),
             BIDI_OBSERVER("bidirectional", "bidi", true);
 
             private final String descriptorFactory;

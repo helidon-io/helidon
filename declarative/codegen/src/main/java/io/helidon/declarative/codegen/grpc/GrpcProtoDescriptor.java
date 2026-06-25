@@ -14,28 +14,19 @@
  * limitations under the License.
  */
 
-package io.helidon.declarative.codegen.grpc.server;
+package io.helidon.declarative.codegen.grpc;
+
+import java.util.Optional;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
 
-record GrpcMethod(TypedElementInfo method,
-                  String grpcName,
-                  String uniqueName,
-                  String methodType,
-                  Invocation invocation,
-                  TypeName requestType,
-                  TypeName responseType,
-                  GrpcSecurityDefinition security) {
-    enum Invocation {
-        UNARY_RETURN,
-        OBSERVER,
-        SERVER_STREAMING_ITERABLE,
-        SERVER_STREAMING_STREAM,
-        CLIENT_STREAMING_ITERABLE,
-        CLIENT_STREAMING_STREAM,
-        BIDI_ITERABLE,
-        BIDI_STREAM,
-        BIDI_OBSERVER
+public record GrpcProtoDescriptor(Optional<TypedElementInfo> method, boolean isStatic, Optional<TypeName> descriptorType) {
+    public static GrpcProtoDescriptor method(TypedElementInfo method, boolean isStatic) {
+        return new GrpcProtoDescriptor(Optional.of(method), isStatic, Optional.empty());
+    }
+
+    public static GrpcProtoDescriptor descriptorType(TypeName descriptorType) {
+        return new GrpcProtoDescriptor(Optional.empty(), true, Optional.of(descriptorType));
     }
 }

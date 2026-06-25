@@ -47,7 +47,7 @@ public class GrpcClientAnnotationMapperProvider implements AnnotationMapperProvi
 
     @Override
     public Set<TypeName> supportedAnnotations() {
-        return Set.of(GrpcClientTypes.GRPC_CLIENT_ENDPOINT);
+        return Set.of(GrpcClientTypes.RPC_CLIENT_ENDPOINT);
     }
 
     private static class GrpcClientAnnotationMapper implements AnnotationMapper {
@@ -55,7 +55,7 @@ public class GrpcClientAnnotationMapperProvider implements AnnotationMapperProvi
 
         @Override
         public boolean supportsAnnotation(Annotation annotation) {
-            return annotation.typeName().equals(GrpcClientTypes.GRPC_CLIENT_ENDPOINT);
+            return annotation.typeName().equals(GrpcClientTypes.RPC_CLIENT_ENDPOINT);
         }
 
         @Override

@@ -33,6 +33,7 @@ import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
 import io.helidon.webclient.grpc.GrpcClient;
+import io.helidon.webclient.grpc.RpcClient;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.grpc.GrpcReflectionFeature;
@@ -91,10 +92,10 @@ class DeclarativeGrpcTest {
 
     DeclarativeGrpcTest(WebServer server,
                         TestTracerFactory tracerFactory,
-                        @GrpcClient.Client GreetingClient greetingClient,
-                        @GrpcClient.Client ConfiguredGreetingClient configuredGreetingClient,
-                        @GrpcClient.Client NamedRegistryGreetingClient namedRegistryGreetingClient,
-                        @GrpcClient.Client DefaultRegistryGreetingClient defaultRegistryGreetingClient) {
+                        @RpcClient.Client GreetingClient greetingClient,
+                        @RpcClient.Client ConfiguredGreetingClient configuredGreetingClient,
+                        @RpcClient.Client NamedRegistryGreetingClient namedRegistryGreetingClient,
+                        @RpcClient.Client DefaultRegistryGreetingClient defaultRegistryGreetingClient) {
         this.channel = ManagedChannelBuilder.forAddress("localhost", server.port())
                 .usePlaintext()
                 .build();
@@ -157,9 +158,10 @@ class DeclarativeGrpcTest {
 
     @Test
     void testDeclarativeServerStreamingClient() {
-        var responses = greetingClient.split(request("Declarative,Streaming"));
-        var replies = new ArrayList<DeclarativeGrpcProto.GreetingReply>();
-        responses.forEachRemaining(replies::add);
+        List<DeclarativeGrpcProto.GreetingReply> replies;
+        try (var responses = greetingClient.split(request("Declarative,Streaming"))) {
+            replies = responses.toList();
+        }
 
         assertThat(replies,
                    contains(reply("Hello Declarative"), reply("Hello Streaming")));
@@ -167,16 +169,17 @@ class DeclarativeGrpcTest {
 
     @Test
     void testDeclarativeClientStreamingClient() {
-        var response = greetingClient.join(List.of(request("Declarative"), request("Streaming")).iterator());
+        var response = greetingClient.join(List.of(request("Declarative"), request("Streaming")).stream());
 
         assertThat(response, is(reply("Hello Declarative, Streaming")));
     }
 
     @Test
     void testDeclarativeBidirectionalStreamingClient() {
-        var responses = greetingClient.chat(List.of(request("Declarative"), request("Streaming")).iterator());
-        var replies = new ArrayList<DeclarativeGrpcProto.GreetingReply>();
-        responses.forEachRemaining(replies::add);
+        List<DeclarativeGrpcProto.GreetingReply> replies;
+        try (var responses = greetingClient.chat(List.of(request("Declarative"), request("Streaming")).stream())) {
+            replies = responses.toList();
+        }
 
         assertThat(replies,
                    contains(reply("Hello Declarative"), reply("Hello Streaming")));

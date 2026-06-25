@@ -14,18 +14,24 @@
  * limitations under the License.
  */
 
-package io.helidon.declarative.codegen.grpc.server;
+package io.helidon.webserver.grpc;
 
-import java.util.List;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import io.helidon.common.types.Annotation;
-import io.helidon.common.types.TypeInfo;
-import io.helidon.declarative.codegen.grpc.GrpcProtoDescriptor;
-
-record GrpcEndpoint(TypeInfo type,
-                    List<Annotation> annotations,
-                    String serviceName,
-                    GrpcProtoDescriptor protoDescriptor,
-                    GrpcSecurityDefinition security,
-                    List<GrpcMethod> methods) {
+/**
+ * Declarative gRPC server annotations.
+ */
+public interface RpcServer {
+    /**
+     * Defines a declarative gRPC server endpoint.
+     */
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.CLASS)
+    @Documented
+    @interface Endpoint {
+    }
 }

@@ -14,9 +14,17 @@
  * limitations under the License.
  */
 
-package io.helidon.declarative.codegen.grpc.server;
+package io.helidon.declarative.tests.grpc;
 
-import io.helidon.common.types.TypedElementInfo;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-record GrpcProtoMethod(TypedElementInfo method, boolean isStatic) {
+import io.helidon.service.registry.Interception;
+
+@Interception.Intercepted
+@Retention(RetentionPolicy.CLASS)
+@Target(ElementType.METHOD)
+@interface InterceptedGreeting {
 }

@@ -14,18 +14,14 @@
  * limitations under the License.
  */
 
-package io.helidon.declarative.codegen.grpc.server;
+package io.helidon.declarative.tests.grpc;
 
-import java.util.List;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Target;
 
-import io.helidon.common.types.Annotation;
-import io.helidon.common.types.TypeInfo;
-import io.helidon.declarative.codegen.grpc.GrpcProtoDescriptor;
+import io.helidon.validation.Validation;
 
-record GrpcEndpoint(TypeInfo type,
-                    List<Annotation> annotations,
-                    String serviceName,
-                    GrpcProtoDescriptor protoDescriptor,
-                    GrpcSecurityDefinition security,
-                    List<GrpcMethod> methods) {
+@Validation.Constraint
+@Target(ElementType.PARAMETER)
+@interface ValidGreetingRequest {
 }

@@ -17,6 +17,7 @@
 package io.helidon.webclient.grpc;
 
 import java.util.Iterator;
+import java.util.stream.Stream;
 
 import io.grpc.stub.StreamObserver;
 
@@ -110,6 +111,17 @@ public interface GrpcServiceClient {
      * @return response iterator
      */
     <ReqT, ResT> Iterator<ResT> bidi(String methodName, Iterator<ReqT> request);
+
+    /**
+     * gRPC bidirectional call using {@link Stream}.
+     *
+     * @param methodName method name
+     * @param request request stream
+     * @param <ReqT> type of request
+     * @param <ResT> type of response
+     * @return response stream
+     */
+    <ReqT, ResT> Stream<ResT> bidiStream(String methodName, Stream<ReqT> request);
 
     /**
      * gRPC bidirectional call using {@link StreamObserver}.

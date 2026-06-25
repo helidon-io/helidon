@@ -16,54 +16,17 @@
 
 package io.helidon.declarative.tests.grpc;
 
-import java.util.stream.Stream;
-
 import io.helidon.declarative.tests.grpc.DeclarativeGrpcProto.GreetingReply;
 import io.helidon.declarative.tests.grpc.DeclarativeGrpcProto.GreetingRequest;
 import io.helidon.grpc.api.Grpc;
 import io.helidon.webclient.grpc.RpcClient;
 
-/**
- * Typed declarative gRPC client for the greeting service.
- */
 @RpcClient.Endpoint(value = ClientConfigGreetingClients.SERVER_URI,
-                     clientName = ClientConfigGreetingClients.MISSING_CLIENT)
+                    configKey = ClientConfigGreetingClients.CONFIG_KEY,
+                    clientName = ClientConfigGreetingClients.BROKEN_CLIENT)
 @Grpc.GrpcService(ClientConfigGreetingClients.SERVICE_NAME)
 @Grpc.ProtoDescriptor(DeclarativeGrpcProto.class)
-public interface GreetingClient {
-    /**
-     * Invoke the unary greeting RPC.
-     *
-     * @param request greeting request
-     * @return greeting reply
-     */
+interface ConfiguredGreetingClient {
     @Grpc.Unary("Greet")
     GreetingReply greet(GreetingRequest request);
-
-    /**
-     * Invoke the server-streaming split RPC.
-     *
-     * @param request greeting request
-     * @return streamed greeting replies
-     */
-    @Grpc.ServerStreaming("Split")
-    Stream<GreetingReply> split(GreetingRequest request);
-
-    /**
-     * Invoke the client-streaming join RPC.
-     *
-     * @param requests streamed greeting requests
-     * @return joined greeting reply
-     */
-    @Grpc.ClientStreaming("Join")
-    GreetingReply join(Stream<GreetingRequest> requests);
-
-    /**
-     * Invoke the bidirectional chat RPC.
-     *
-     * @param requests streamed greeting requests
-     * @return streamed greeting replies
-     */
-    @Grpc.Bidirectional("Chat")
-    Stream<GreetingReply> chat(Stream<GreetingRequest> requests);
 }

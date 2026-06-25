@@ -16,11 +16,8 @@
 
 package io.helidon.declarative.tests.grpc;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-import java.util.StringJoiner;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import io.helidon.declarative.tests.grpc.DeclarativeGrpcProto.GreetingReply;
 import io.helidon.declarative.tests.grpc.DeclarativeGrpcProto.GreetingRequest;
@@ -34,14 +31,14 @@ import io.helidon.security.annotations.Authorized;
 import io.helidon.service.registry.Service;
 import io.helidon.tracing.Span;
 import io.helidon.tracing.Tracing;
-import io.helidon.validation.Validation;
+import io.helidon.webserver.grpc.RpcServer;
 
 import com.google.protobuf.Descriptors;
-import io.grpc.stub.StreamObserver;
 import jakarta.annotation.security.DenyAll;
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 
+@RpcServer.Endpoint
 @Grpc.GrpcService(ClientConfigGreetingClients.SERVICE_NAME)
 @Service.Singleton
 class GreetingEndpoint {
@@ -121,53 +118,23 @@ class GreetingEndpoint {
     }
 
     @Grpc.ServerStreaming("Split")
-    void split(GreetingRequest request, StreamObserver<GreetingReply> responseObserver) {
-        for (String name : request.getName().split(",")) {
-            responseObserver.onNext(reply(name.strip()));
-        }
-        responseObserver.onCompleted();
+    Stream<GreetingReply> split(GreetingRequest request) {
+        return Stream.of(request.getName().split(","))
+                .map(String::strip)
+                .map(this::reply);
     }
 
     @Grpc.ClientStreaming("Join")
-    StreamObserver<GreetingRequest> join(StreamObserver<GreetingReply> responseObserver) {
-        StringJoiner names = new StringJoiner(", ");
-        return new StreamObserver<>() {
-            @Override
-            public void onNext(GreetingRequest request) {
-                names.add(request.getName().strip());
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                responseObserver.onError(throwable);
-            }
-
-            @Override
-            public void onCompleted() {
-                responseObserver.onNext(reply(names.toString()));
-                responseObserver.onCompleted();
-            }
-        };
+    GreetingReply join(Stream<GreetingRequest> requests) {
+        return reply(requests.map(GreetingRequest::getName)
+                             .map(String::strip)
+                             .collect(Collectors.joining(", ")));
     }
 
     @Grpc.Bidirectional("Chat")
-    StreamObserver<GreetingRequest> chat(StreamObserver<GreetingReply> responseObserver) {
-        return new StreamObserver<>() {
-            @Override
-            public void onNext(GreetingRequest request) {
-                responseObserver.onNext(reply(request.getName()));
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                responseObserver.onError(throwable);
-            }
-
-            @Override
-            public void onCompleted() {
-                responseObserver.onCompleted();
-            }
-        };
+    Stream<GreetingReply> chat(Stream<GreetingRequest> requests) {
+        return requests.map(GreetingRequest::getName)
+                .map(this::reply);
     }
 
     private GreetingReply reply(String name) {
@@ -175,15 +142,4 @@ class GreetingEndpoint {
                 .setMessage("Hello " + name)
                 .build();
     }
-}
-
-@io.helidon.service.registry.Interception.Intercepted
-@Retention(RetentionPolicy.CLASS)
-@Target(ElementType.METHOD)
-@interface InterceptedGreeting {
-}
-
-@Validation.Constraint
-@Target(ElementType.PARAMETER)
-@interface ValidGreetingRequest {
 }

@@ -16,15 +16,16 @@
 
 package io.helidon.declarative.tests.grpc;
 
-final class ClientConfigGreetingClients {
-    static final String SERVICE_NAME = "io.helidon.declarative.tests.grpc.GreetingService";
-    static final String CONFIG_KEY = "declarative.grpc.clients.configured";
-    static final String SERVER_URI = "http://localhost:${test.server.port}";
-    static final String INVALID_URI = "http://localhost:1";
-    static final String NAMED_CLIENT = "declarative-grpc-client";
-    static final String BROKEN_CLIENT = "declarative-grpc-broken-client";
-    static final String MISSING_CLIENT = "declarative-grpc-missing-client";
+import io.helidon.declarative.tests.grpc.DeclarativeGrpcProto.GreetingReply;
+import io.helidon.declarative.tests.grpc.DeclarativeGrpcProto.GreetingRequest;
+import io.helidon.grpc.api.Grpc;
+import io.helidon.webclient.grpc.RpcClient;
 
-    private ClientConfigGreetingClients() {
-    }
+@RpcClient.Endpoint(value = ClientConfigGreetingClients.INVALID_URI,
+                    clientName = ClientConfigGreetingClients.NAMED_CLIENT)
+@Grpc.GrpcService(ClientConfigGreetingClients.SERVICE_NAME)
+@Grpc.ProtoDescriptor(DeclarativeGrpcProto.class)
+interface NamedRegistryGreetingClient {
+    @Grpc.Unary("Greet")
+    GreetingReply greet(GreetingRequest request);
 }

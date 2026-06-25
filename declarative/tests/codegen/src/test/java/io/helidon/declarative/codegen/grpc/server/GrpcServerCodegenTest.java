@@ -43,6 +43,7 @@ import io.helidon.validation.Validation;
 import io.helidon.webserver.grpc.GrpcEntryPoint;
 import io.helidon.webserver.grpc.GrpcRouteRegistration;
 import io.helidon.webserver.grpc.GrpcServiceDescriptor;
+import io.helidon.webserver.grpc.RpcServer;
 import io.helidon.webserver.grpc.security.GrpcSecurity;
 
 import com.google.protobuf.Descriptors;
@@ -70,6 +71,7 @@ class GrpcServerCodegenTest {
             GrpcEntryPoint.class,
             GrpcRouteRegistration.class,
             GrpcServiceDescriptor.class,
+            RpcServer.class,
             Authenticated.class,
             Audited.class,
             Authorized.class,
@@ -99,30 +101,24 @@ class GrpcServerCodegenTest {
                 .addSource("GreetingGrpc.java", """
                         package com.example;
 
-                        import com.google.protobuf.Descriptors;
+                        import java.util.List;
+                        import java.util.stream.Stream;
 
-                        import java.lang.annotation.ElementType;
-                        import java.lang.annotation.Retention;
-                        import java.lang.annotation.RetentionPolicy;
-                        import java.lang.annotation.Target;
+                        import com.google.protobuf.Descriptors;
 
                         import io.grpc.stub.StreamObserver;
                         import io.helidon.grpc.api.Grpc;
+                        import io.helidon.webserver.grpc.RpcServer;
                         import io.helidon.security.abac.role.RoleValidator;
                         import io.helidon.security.annotations.Authenticated;
                         import io.helidon.security.annotations.Audited;
                         import io.helidon.security.annotations.Authorized;
-                        import io.helidon.service.registry.Interception;
                         import io.helidon.service.registry.Service;
-                        import io.helidon.validation.Validation;
                         import jakarta.annotation.security.DenyAll;
                         import jakarta.annotation.security.PermitAll;
                         import jakarta.annotation.security.RolesAllowed;
 
-                        @Authenticated
-                        interface SecuredGreetingGrpc {
-                        }
-
+                        @RpcServer.Endpoint
                         @Grpc.GrpcService("Greeting")
                         @Service.Singleton
                         class GreetingGrpc implements SecuredGreetingGrpc {
@@ -185,30 +181,84 @@ class GrpcServerCodegenTest {
                             }
 
                             @Grpc.ServerStreaming("StreamHello")
-                            void streamHello(GreetingRequest request, StreamObserver<GreetingReply> responseObserver) {
+                            Stream<GreetingReply> streamHello(GreetingRequest request) {
+                                return Stream.empty();
+                            }
+
+                            @Grpc.ServerStreaming("IterableHello")
+                            Iterable<GreetingReply> iterableHello(GreetingRequest request) {
+                                return List.of();
                             }
 
                             @Grpc.ClientStreaming("CollectHello")
-                            StreamObserver<GreetingRequest> collectHello(StreamObserver<GreetingReply> responseObserver) {
-                                return null;
+                            GreetingReply collectHello(Stream<GreetingRequest> requests) {
+                                return new GreetingReply();
+                            }
+
+                            @Grpc.ClientStreaming("CollectIterableHello")
+                            GreetingReply collectIterableHello(Iterable<GreetingRequest> requests) {
+                                return new GreetingReply();
                             }
 
                             @Grpc.Bidirectional("ChatHello")
-                            StreamObserver<GreetingRequest> chatHello(StreamObserver<GreetingReply> responseObserver) {
+                            Stream<GreetingReply> chatHello(Stream<GreetingRequest> requests) {
+                                return Stream.empty();
+                            }
+
+                            @Grpc.Bidirectional("ChatIterableHello")
+                            Iterable<GreetingReply> chatIterableHello(Iterable<GreetingRequest> requests) {
+                                return List.of();
+                            }
+
+                            @Grpc.Bidirectional("ChatObserverHello")
+                            StreamObserver<GreetingRequest> chatObserverHello(StreamObserver<GreetingReply> responseObserver) {
                                 return null;
                             }
                         }
+                        """)
+                .addSource("SecuredGreetingGrpc.java", """
+                        package com.example;
+
+                        import io.helidon.security.annotations.Authenticated;
+
+                        @Authenticated
+                        interface SecuredGreetingGrpc {
+                        }
+                        """)
+                .addSource("GreetingRequest.java", """
+                        package com.example;
 
                         class GreetingRequest {
                         }
+                        """)
+                .addSource("GreetingReply.java", """
+                        package com.example;
 
                         class GreetingReply {
                         }
+                        """)
+                .addSource("ValidGreetingRequest.java", """
+                        package com.example;
+
+                        import java.lang.annotation.ElementType;
+                        import java.lang.annotation.Target;
+
+                        import io.helidon.validation.Validation;
 
                         @Validation.Constraint
                         @Target(ElementType.PARAMETER)
                         @interface ValidGreetingRequest {
                         }
+                        """)
+                .addSource("InterceptedGreeting.java", """
+                        package com.example;
+
+                        import java.lang.annotation.ElementType;
+                        import java.lang.annotation.Retention;
+                        import java.lang.annotation.RetentionPolicy;
+                        import java.lang.annotation.Target;
+
+                        import io.helidon.service.registry.Interception;
 
                         @Interception.Intercepted
                         @Retention(RetentionPolicy.CLASS)
@@ -246,10 +296,18 @@ class GrpcServerCodegenTest {
                                                         + "false, false);"));
         assertThat(registration, containsString("validateProtoMethod(declarative__proto, \"Greeting\", \"StreamHello\", "
                                                         + "false, true);"));
+        assertThat(registration, containsString("validateProtoMethod(declarative__proto, \"Greeting\", \"IterableHello\", "
+                                                        + "false, true);"));
         assertThat(registration, containsString("validateProtoMethod(declarative__proto, \"Greeting\", \"CollectHello\", "
                                                         + "true, false);"));
+        assertThat(registration, containsString("validateProtoMethod(declarative__proto, \"Greeting\", "
+                                                        + "\"CollectIterableHello\", true, false);"));
         assertThat(registration, containsString("validateProtoMethod(declarative__proto, \"Greeting\", \"ChatHello\", "
                                                         + "true, true);"));
+        assertThat(registration, containsString("validateProtoMethod(declarative__proto, \"Greeting\", "
+                                                        + "\"ChatIterableHello\", true, true);"));
+        assertThat(registration, containsString("validateProtoMethod(declarative__proto, \"Greeting\", "
+                                                        + "\"ChatObserverHello\", true, true);"));
         assertThat(registration, containsString("private static void validateProtoMethod"));
         assertThat(registration, containsString("method.isClientStreaming() != clientStreaming"));
         assertThat(registration, containsString("method.isServerStreaming() != serverStreaming"));
@@ -258,8 +316,12 @@ class GrpcServerCodegenTest {
         assertThat(registration, containsString(".unary(\"ValidatedHello\", this::validatedHello"));
         assertThat(registration, containsString(".unary(\"InterceptedHello\", this::interceptedHello"));
         assertThat(registration, containsString(".serverStreaming(\"StreamHello\", this::streamHello"));
+        assertThat(registration, containsString(".serverStreaming(\"IterableHello\", this::iterableHello"));
         assertThat(registration, containsString(".clientStreaming(\"CollectHello\", this::collectHello"));
+        assertThat(registration, containsString(".clientStreaming(\"CollectIterableHello\", this::collectIterableHello"));
         assertThat(registration, containsString(".bidirectional(\"ChatHello\", this::chatHello"));
+        assertThat(registration, containsString(".bidirectional(\"ChatIterableHello\", this::chatIterableHello"));
+        assertThat(registration, containsString(".bidirectional(\"ChatObserverHello\", this::chatObserverHello"));
         assertThat(registration, containsString("if (entryPoints.hasInterceptors()) {"));
         assertThat(registration, containsString("entryPoints.interceptor("));
         assertThat(registration, containsString("GrpcSecurity.enforce().authenticate().securityLevel("));
@@ -286,16 +348,28 @@ class GrpcServerCodegenTest {
         assertThat(registration, containsString("private static final TypedElementInfo METHOD_ROLE_VALIDATOR_HELLO"));
         assertThat(registration, containsString("private static final TypedElementInfo METHOD_AUDITED_HELLO"));
         assertThat(registration, containsString("private static final TypedElementInfo METHOD_STREAM_HELLO"));
+        assertThat(registration, containsString("private static final TypedElementInfo METHOD_ITERABLE_HELLO"));
         assertThat(registration, containsString("private static final TypedElementInfo METHOD_COLLECT_HELLO"));
+        assertThat(registration, containsString("private static final TypedElementInfo METHOD_COLLECT_ITERABLE_HELLO"));
         assertThat(registration, containsString("private static final TypedElementInfo METHOD_CHAT_HELLO"));
+        assertThat(registration, containsString("private static final TypedElementInfo METHOD_CHAT_ITERABLE_HELLO"));
+        assertThat(registration, containsString("private static final TypedElementInfo METHOD_CHAT_OBSERVER_HELLO"));
         assertThat(registration, containsString("METHOD_VALIDATED_HELLO));"));
         assertThat(registration, containsString("METHOD_INTERCEPTED_HELLO));"));
         assertThat(registration, containsString("responseObserver.onNext(endpoint.sayHello(request));"));
         assertThat(registration, containsString("responseObserver.onNext(endpoint.validatedHello(request));"));
         assertThat(registration, containsString("responseObserver.onNext(endpoint.interceptedHello(request));"));
-        assertThat(registration, containsString("endpoint.streamHello(request, responseObserver);"));
-        assertThat(registration, containsString("return endpoint.collectHello(responseObserver);"));
-        assertThat(registration, containsString("return endpoint.chatHello(responseObserver);"));
+        assertThat(registration, containsString("GrpcStreams.serverStreaming(endpoint.streamHello(request), responseObserver);"));
+        assertThat(registration, containsString("GrpcStreams.serverStreaming(endpoint.iterableHello(request), responseObserver);"));
+        assertThat(registration, containsString("GrpcStreams.clientStreamingStream(requests -> endpoint.collectHello(requests), "
+                                                        + "responseObserver);"));
+        assertThat(registration, containsString("GrpcStreams.clientStreaming(requests -> endpoint.collectIterableHello(requests), "
+                                                        + "responseObserver);"));
+        assertThat(registration, containsString("GrpcStreams.bidirectionalStream(requests -> endpoint.chatHello(requests), "
+                                                        + "responseObserver);"));
+        assertThat(registration, containsString("GrpcStreams.bidirectional(requests -> endpoint.chatIterableHello(requests), "
+                                                        + "responseObserver);"));
+        assertThat(registration, containsString("return endpoint.chatObserverHello(responseObserver);"));
 
         Path validationInterceptor = result.sourceOutput().resolve("com/example/GreetingGrpc__ValidationInterceptor_0.java");
         assertThat("Generated source should exist: " + validationInterceptor, Files.exists(validationInterceptor), is(true));
@@ -331,8 +405,104 @@ class GrpcServerCodegenTest {
                 """);
 
         assertCompilationFails(result,
-                               "Declarative gRPC service com.example.GreetingGrpc must declare a @Grpc.Proto method "
-                                       + "returning com.google.protobuf.Descriptors.FileDescriptor.");
+                               "Declarative gRPC service com.example.GreetingGrpc must declare exactly one proto descriptor source: "
+                                       + "either @Grpc.ProtoDescriptor on the type or one @Grpc.Proto method.");
+    }
+
+    @Test
+    void grpcServiceUsesProtoDescriptorType() throws IOException {
+        var result = compileGrpcService("grpc-server-proto-descriptor-type",
+                                        "",
+                                        "@Grpc.ProtoDescriptor(DeclarativeGrpcProto.class)",
+                                        "",
+                                        """
+                                                @Grpc.Unary("SayHello")
+                                                GreetingReply sayHello(GreetingRequest request) {
+                                                    return new GreetingReply();
+                                                }
+                                                """,
+                                        """
+                                                package com.example;
+
+                                                import com.google.protobuf.Descriptors;
+
+                                                class DeclarativeGrpcProto {
+                                                    static Descriptors.FileDescriptor getDescriptor() {
+                                                        return null;
+                                                    }
+                                                }
+                                                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+
+        Path generatedRegistration = result.sourceOutput().resolve("com/example/GreetingGrpc__GrpcRegistration.java");
+        assertThat("Generated source should exist: " + generatedRegistration, Files.exists(generatedRegistration), is(true));
+
+        String registration = Files.readString(generatedRegistration, StandardCharsets.UTF_8);
+        assertThat(registration, containsString("return DeclarativeGrpcProto.getDescriptor();"));
+    }
+
+    @Test
+    void grpcServiceRejectsProtoDescriptorAndProtoMethod() {
+        var result = compileGrpcService("grpc-server-proto-descriptor-conflict",
+                                        "",
+                                        "@Grpc.ProtoDescriptor(DeclarativeGrpcProto.class)",
+                                        "",
+                                        """
+                                                @Grpc.Proto
+                                                Descriptors.FileDescriptor proto() {
+                                                    return null;
+                                                }
+
+                                                @Grpc.Unary("SayHello")
+                                                GreetingReply sayHello(GreetingRequest request) {
+                                                    return new GreetingReply();
+                                                }
+                                                """,
+                                        """
+                                                package com.example;
+
+                                                import com.google.protobuf.Descriptors;
+
+                                                class DeclarativeGrpcProto {
+                                                    static Descriptors.FileDescriptor getDescriptor() {
+                                                        return null;
+                                                    }
+                                                }
+                                                """);
+
+        assertCompilationFails(result,
+                               "Declarative gRPC service com.example.GreetingGrpc must declare exactly one proto descriptor source: "
+                                       + "either @Grpc.ProtoDescriptor on the type or one @Grpc.Proto method.");
+    }
+
+    @Test
+    void grpcServiceRejectsInvalidProtoDescriptorType() {
+        var result = compileGrpcService("grpc-server-bad-proto-descriptor-type",
+                                        "",
+                                        "@Grpc.ProtoDescriptor(DeclarativeGrpcProto.class)",
+                                        "",
+                                        """
+                                                @Grpc.Unary("SayHello")
+                                                GreetingReply sayHello(GreetingRequest request) {
+                                                    return new GreetingReply();
+                                                }
+                                                """,
+                                        """
+                                                package com.example;
+
+                                                class DeclarativeGrpcProto {
+                                                    static String getDescriptor() {
+                                                        return "";
+                                                    }
+                                                }
+                                                """);
+
+        assertCompilationFails(result,
+                               "@Grpc.ProtoDescriptor on com.example.GreetingGrpc must reference a type with a static "
+                                       + "no-argument getDescriptor() method returning "
+                                       + "com.google.protobuf.Descriptors.FileDescriptor: com.example.DeclarativeGrpcProto");
     }
 
     @Test
@@ -348,8 +518,10 @@ class GrpcServerCodegenTest {
                         import com.google.protobuf.Descriptors;
 
                         import io.helidon.grpc.api.Grpc;
+                        import io.helidon.webserver.grpc.RpcServer;
                         import io.helidon.service.registry.Service;
 
+                        @RpcServer.Endpoint
                         @Grpc.GrpcService
                         @Service.Singleton
                         class Greeting {
@@ -363,9 +535,15 @@ class GrpcServerCodegenTest {
                                 return new GreetingReply();
                             }
                         }
+                        """)
+                .addSource("GreetingRequest.java", """
+                        package com.example;
 
                         class GreetingRequest {
                         }
+                        """)
+                .addSource("GreetingReply.java", """
+                        package com.example;
 
                         class GreetingReply {
                         }
@@ -415,7 +593,8 @@ class GrpcServerCodegenTest {
 
         assertCompilationFails(result,
                                "Declarative gRPC service com.example.GreetingGrpc "
-                                       + "must declare exactly one @Grpc.Proto method.");
+                                       + "must declare exactly one proto descriptor source: either "
+                                       + "@Grpc.ProtoDescriptor on the type or one @Grpc.Proto method.");
     }
 
     @Test
@@ -547,13 +726,8 @@ class GrpcServerCodegenTest {
     @Test
     void grpcMethodRejectsConflictingInheritedMethodAnnotations() {
         var result = compileGrpcService("grpc-server-inherited-multiple-method-annotations",
-                                        """
-                                                interface GreetingContract {
-                                                    @Grpc.Unary("SayHello")
-                                                    void sayHello(GreetingRequest request,
-                                                                  StreamObserver<GreetingReply> responseObserver);
-                                                }
-                                                """,
+                                        "",
+                                        "",
                                         "implements GreetingContract",
                                         """
                                                 @Grpc.Proto
@@ -565,6 +739,18 @@ class GrpcServerCodegenTest {
                                                 @Grpc.ServerStreaming("SayHello")
                                                 public void sayHello(GreetingRequest request,
                                                                      StreamObserver<GreetingReply> responseObserver) {
+                                                }
+                                                """,
+                                        """
+                                                package com.example;
+
+                                                import io.grpc.stub.StreamObserver;
+                                                import io.helidon.grpc.api.Grpc;
+
+                                                interface GreetingContract {
+                                                    @Grpc.Unary("SayHello")
+                                                    void sayHello(GreetingRequest request,
+                                                                  StreamObserver<GreetingReply> responseObserver);
                                                 }
                                                 """);
 
@@ -633,14 +819,23 @@ class GrpcServerCodegenTest {
     }
 
     private static TestCompiler.Result compileGrpcService(String workDir, String serviceBody) {
-        return compileGrpcService(workDir, "", "", serviceBody);
+        return compileGrpcService(workDir, "", "", "", serviceBody);
     }
 
     private static TestCompiler.Result compileGrpcService(String workDir,
                                                           String supportingTypes,
                                                           String serviceDeclaration,
                                                           String serviceBody) {
-        return TestCompiler.builder()
+        return compileGrpcService(workDir, supportingTypes, "", serviceDeclaration, serviceBody);
+    }
+
+    private static TestCompiler.Result compileGrpcService(String workDir,
+                                                          String imports,
+                                                          String typeAnnotation,
+                                                          String serviceDeclaration,
+                                                          String serviceBody,
+                                                          String... extraSources) {
+        TestCompiler.Builder builder = TestCompiler.builder()
                 .currentRelease()
                 .addClasspath(CLASSPATH)
                 .addProcessor(AptProcessor::new)
@@ -655,23 +850,32 @@ class GrpcServerCodegenTest {
                         import io.grpc.MethodDescriptor;
                         import io.grpc.stub.StreamObserver;
                         import io.helidon.grpc.api.Grpc;
+                        import io.helidon.webserver.grpc.RpcServer;
                         import io.helidon.security.annotations.Authorized;
                         import io.helidon.service.registry.Service;
 
                         %s
 
+                        %s
+                        @RpcServer.Endpoint
                         @Grpc.GrpcService("Greeting")
                         @Service.Singleton
                         class GreetingGrpc %s {
                         %s
                         }
+                        """.formatted(imports, typeAnnotation, serviceDeclaration, serviceBody.indent(4)))
+                .addSource("GreetingRequest.java", """
+                        package com.example;
 
                         class GreetingRequest {
                         }
+                        """)
+                .addSource("GreetingReply.java", """
+                        package com.example;
 
                         class GreetingReply {
                         }
-                        """.formatted(supportingTypes, serviceDeclaration, serviceBody.indent(4)))
+                        """)
                 .addSource("Main.java", """
                         package com.example;
 
@@ -680,9 +884,11 @@ class GrpcServerCodegenTest {
                         @Service.GenerateBinding
                         class Main {
                         }
-                        """)
-                .build()
-                .compile();
+                        """);
+        for (int i = 0; i < extraSources.length; i++) {
+            builder.addSource("Extra" + i + ".java", extraSources[i]);
+        }
+        return builder.build().compile();
     }
 
     private static void assertCompilationFails(TestCompiler.Result result, String... diagnosticParts) {

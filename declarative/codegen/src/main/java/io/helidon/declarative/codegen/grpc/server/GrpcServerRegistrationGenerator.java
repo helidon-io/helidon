@@ -28,6 +28,7 @@ import io.helidon.common.types.Annotations;
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypeNames;
 import io.helidon.declarative.codegen.DeclarativeTypes;
+import io.helidon.declarative.codegen.grpc.GrpcProtoDescriptor;
 import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.RegistryRoundContext;
 import io.helidon.service.codegen.ServiceCodegenTypes;
@@ -38,6 +39,7 @@ import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_EN
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_ROUTE_REGISTRATION;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_SECURITY;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_SERVICE_DESCRIPTOR;
+import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_STREAMS;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.PROTO_FILE_DESCRIPTOR;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.SECURITY_LEVEL;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.STREAM_OBSERVER;
@@ -300,20 +302,24 @@ class GrpcServerRegistrationGenerator {
 
     private static void addProtoMethod(ClassModel.Builder classModel, GrpcEndpoint endpoint, boolean singleton) {
         TypeName endpointType = endpoint.type().typeName();
-        GrpcProtoMethod protoMethod = endpoint.protoMethod();
+        GrpcProtoDescriptor protoDescriptor = endpoint.protoDescriptor();
         classModel.addMethod(proto -> {
             proto.accessModifier(AccessModifier.PRIVATE)
                     .returnType(PROTO_FILE_DESCRIPTOR)
                     .name("proto");
-            if (protoMethod.isStatic()) {
+            if (protoDescriptor.descriptorType().isPresent()) {
+                proto.addContent("return ")
+                        .addContent(protoDescriptor.descriptorType().orElseThrow())
+                        .addContentLine(".getDescriptor();");
+            } else if (protoDescriptor.isStatic()) {
                 proto.addContent("return ")
                         .addContent(endpointType)
                         .addContent(".")
-                        .addContent(protoMethod.method().elementName())
+                        .addContent(protoDescriptor.method().orElseThrow().elementName())
                         .addContentLine("();");
             } else {
                 proto.addContent(singleton ? "return endpoint." : "return endpoint.get().")
-                        .addContent(protoMethod.method().elementName())
+                        .addContent(protoDescriptor.method().orElseThrow().elementName())
                         .addContentLine("();");
             }
         });
@@ -416,7 +422,11 @@ class GrpcServerRegistrationGenerator {
             TypeName responseObserver = TypeName.builder(STREAM_OBSERVER)
                     .addTypeArgument(grpcMethod.responseType())
                     .build();
-            if (grpcMethod.invocation() == GrpcMethod.Invocation.REQUEST_STREAMING) {
+            if (grpcMethod.invocation() == GrpcMethod.Invocation.CLIENT_STREAMING_ITERABLE
+                    || grpcMethod.invocation() == GrpcMethod.Invocation.CLIENT_STREAMING_STREAM
+                    || grpcMethod.invocation() == GrpcMethod.Invocation.BIDI_ITERABLE
+                    || grpcMethod.invocation() == GrpcMethod.Invocation.BIDI_STREAM
+                    || grpcMethod.invocation() == GrpcMethod.Invocation.BIDI_OBSERVER) {
                 TypeName requestObserver = TypeName.builder(STREAM_OBSERVER)
                         .addTypeArgument(grpcMethod.requestType())
                         .build();
@@ -425,9 +435,38 @@ class GrpcServerRegistrationGenerator {
                         .returnType(requestObserver)
                         .name(grpcMethod.uniqueName())
                         .addParameter(responseObserver, "responseObserver")
-                        .addContent("return " + endpointAccessor)
-                        .addContent(grpcMethod.method().elementName())
-                        .addContentLine("(responseObserver);"));
+                        .update(it -> {
+                            switch (grpcMethod.invocation()) {
+                            case CLIENT_STREAMING_ITERABLE -> it.addContent("return ")
+                                    .addContent(GRPC_STREAMS)
+                                    .addContent(".clientStreaming(requests -> ")
+                                    .addContent(endpointAccessor)
+                                    .addContent(grpcMethod.method().elementName())
+                                    .addContentLine("(requests), responseObserver);");
+                            case CLIENT_STREAMING_STREAM -> it.addContent("return ")
+                                    .addContent(GRPC_STREAMS)
+                                    .addContent(".clientStreamingStream(requests -> ")
+                                    .addContent(endpointAccessor)
+                                    .addContent(grpcMethod.method().elementName())
+                                    .addContentLine("(requests), responseObserver);");
+                            case BIDI_ITERABLE -> it.addContent("return ")
+                                    .addContent(GRPC_STREAMS)
+                                    .addContent(".bidirectional(requests -> ")
+                                    .addContent(endpointAccessor)
+                                    .addContent(grpcMethod.method().elementName())
+                                    .addContentLine("(requests), responseObserver);");
+                            case BIDI_STREAM -> it.addContent("return ")
+                                    .addContent(GRPC_STREAMS)
+                                    .addContent(".bidirectionalStream(requests -> ")
+                                    .addContent(endpointAccessor)
+                                    .addContent(grpcMethod.method().elementName())
+                                    .addContentLine("(requests), responseObserver);");
+                            case BIDI_OBSERVER -> it.addContent("return " + endpointAccessor)
+                                    .addContent(grpcMethod.method().elementName())
+                                    .addContentLine("(responseObserver);");
+                            default -> throw new IllegalStateException("Unexpected invocation: " + grpcMethod.invocation());
+                            }
+                        }));
                 continue;
             }
             classModel.addMethod(method -> {
@@ -441,6 +480,13 @@ class GrpcServerRegistrationGenerator {
                             .addContent(grpcMethod.method().elementName())
                             .addContentLine("(request));")
                             .addContentLine("responseObserver.onCompleted();");
+                } else if (grpcMethod.invocation() == GrpcMethod.Invocation.SERVER_STREAMING_ITERABLE
+                        || grpcMethod.invocation() == GrpcMethod.Invocation.SERVER_STREAMING_STREAM) {
+                    method.addContent(GRPC_STREAMS)
+                            .addContent(".serverStreaming(")
+                            .addContent(endpointAccessor)
+                            .addContent(grpcMethod.method().elementName())
+                            .addContentLine("(request), responseObserver);");
                 } else {
                     method.addContent(endpointAccessor)
                             .addContent(grpcMethod.method().elementName())

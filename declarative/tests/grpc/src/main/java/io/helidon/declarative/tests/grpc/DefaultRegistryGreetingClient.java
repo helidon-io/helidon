@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-package io.helidon.declarative.codegen.grpc.server;
+package io.helidon.declarative.tests.grpc;
 
-import java.util.List;
+import io.helidon.declarative.tests.grpc.DeclarativeGrpcProto.GreetingReply;
+import io.helidon.declarative.tests.grpc.DeclarativeGrpcProto.GreetingRequest;
+import io.helidon.grpc.api.Grpc;
+import io.helidon.webclient.grpc.RpcClient;
 
-import io.helidon.common.types.Annotation;
-import io.helidon.common.types.TypeInfo;
-import io.helidon.declarative.codegen.grpc.GrpcProtoDescriptor;
-
-record GrpcEndpoint(TypeInfo type,
-                    List<Annotation> annotations,
-                    String serviceName,
-                    GrpcProtoDescriptor protoDescriptor,
-                    GrpcSecurityDefinition security,
-                    List<GrpcMethod> methods) {
+@RpcClient.Endpoint(ClientConfigGreetingClients.INVALID_URI)
+@Grpc.GrpcService(ClientConfigGreetingClients.SERVICE_NAME)
+@Grpc.ProtoDescriptor(DeclarativeGrpcProto.class)
+interface DefaultRegistryGreetingClient {
+    @Grpc.Unary("Greet")
+    GreetingReply greet(GreetingRequest request);
 }
