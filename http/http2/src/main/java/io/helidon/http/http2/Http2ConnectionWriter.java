@@ -90,6 +90,30 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
 
     @Override
     public int writeHeaders(Http2Headers headers, int streamId, Http2Flag.HeaderFlags flags, FlowControl.Outbound flowControl) {
+        return writeHeaders(headers, streamId, flags, flowControl, NO_OP);
+    }
+
+    /**
+     * Write headers and notify when an {@code END_STREAM} headers frame has
+     * been written.
+     *
+     * @param headers                   headers
+     * @param streamId                  stream ID
+     * @param flags                     flags to use
+     * @param flowControl               flow control
+     * @param onEndStreamFrameWritten   action to run after the {@code END_STREAM}
+     *                                  headers frame is written
+     * @return number of bytes written
+     */
+    public int writeHeaders(Http2Headers headers,
+                            int streamId,
+                            Http2Flag.HeaderFlags flags,
+                            FlowControl.Outbound flowControl,
+                            Runnable onEndStreamFrameWritten) {
+        Objects.requireNonNull(headers);
+        Objects.requireNonNull(flags);
+        Objects.requireNonNull(flowControl);
+        Objects.requireNonNull(onEndStreamFrameWritten);
         // this is executing in the thread of the stream
         // we must enforce parallelism of exactly 1, to make sure the dynamic table is updated
         // and then immediately written
@@ -113,6 +137,9 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
                 written += Http2FrameHeader.LENGTH;
 
                 noLockWrite(new Http2FrameData(frameHeader, headerBuffer));
+                if (flags.endOfStream()) {
+                    onEndStreamFrameWritten.run();
+                }
                 return written;
             }
 
@@ -152,6 +179,9 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
             written += frameHeader.length();
             written += Http2FrameHeader.LENGTH;
             noLockWrite(new Http2FrameData(frameHeader, fragment));
+            if (flags.endOfStream()) {
+                onEndStreamFrameWritten.run();
+            }
             return written;
         } finally {
             streamLock.unlock();
@@ -164,10 +194,34 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
                             Http2Flag.HeaderFlags flags,
                             Http2FrameData dataFrame,
                             FlowControl.Outbound flowControl) {
+        return writeHeaders(headers, streamId, flags, dataFrame, flowControl, NO_OP);
+    }
+
+    /**
+     * Write headers and entity, and notify when an {@code END_STREAM} data
+     * frame has been written and accounted for.
+     *
+     * @param headers                   headers
+     * @param streamId                  stream ID
+     * @param flags                     header flags
+     * @param dataFrame                 data frame
+     * @param flowControl               flow control
+     * @param onEndStreamFrameWritten   action to run after the {@code END_STREAM}
+     *                                  data frame is written and accounted for
+     * @return number of bytes written
+     */
+    public int writeHeaders(Http2Headers headers,
+                            int streamId,
+                            Http2Flag.HeaderFlags flags,
+                            Http2FrameData dataFrame,
+                            FlowControl.Outbound flowControl,
+                            Runnable onEndStreamFrameWritten) {
+        Objects.requireNonNull(dataFrame);
+        Objects.requireNonNull(onEndStreamFrameWritten);
         // Executed on stream thread
         int bytesWritten = 0;
         bytesWritten += writeHeaders(headers, streamId, flags, flowControl);
-        writeData(dataFrame, flowControl);
+        writeData(dataFrame, flowControl, onEndStreamFrameWritten);
         bytesWritten += Http2FrameHeader.LENGTH;
         bytesWritten += dataFrame.header().length();
 

@@ -398,22 +398,39 @@ class Http2ServerStream implements Runnable, Http2Stream {
             Http2Headers http2Headers = Http2Headers.create(headers)
                     .status(e.status());
             if (entity.length == 0) {
-                writer.writeHeaders(http2Headers,
-                                    streamId,
-                                    Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
-                                    flowControl.outbound());
+                Http2Flag.HeaderFlags flags =
+                        Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM);
+                if (connectionWriter == null) {
+                    writer.writeHeaders(http2Headers, streamId, flags, flowControl.outbound());
+                    closeRejectedStream();
+                } else {
+                    connectionWriter.writeHeaders(http2Headers,
+                                                  streamId,
+                                                  flags,
+                                                  flowControl.outbound(),
+                                                  this::closeRejectedStream);
+                }
             } else {
                 Http2FrameHeader dataHeader = Http2FrameHeader.create(entity.length,
                                                                       Http2FrameTypes.DATA,
                                                                       Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM),
                                                                       streamId);
-                writer.writeHeaders(http2Headers,
-                                    streamId,
-                                    Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
-                                    new Http2FrameData(dataHeader, BufferData.create(message)),
-                                    flowControl.outbound());
+                if (connectionWriter == null) {
+                    writer.writeHeaders(http2Headers,
+                                        streamId,
+                                        Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                        new Http2FrameData(dataHeader, BufferData.create(message)),
+                                        flowControl.outbound());
+                    closeRejectedStream();
+                } else {
+                    connectionWriter.writeHeaders(http2Headers,
+                                                  streamId,
+                                                  Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                                  new Http2FrameData(dataHeader, BufferData.create(message)),
+                                                  flowControl.outbound(),
+                                                  this::closeRejectedStream);
+                }
             }
-            closeRejectedStream();
         } catch (Http2Exception e) {
             ctx.log(LOGGER, DEBUG, "Intentional HTTP/2 stream exception, code: %s, message: %s",
                     e.code(),
