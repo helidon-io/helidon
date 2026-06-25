@@ -16,8 +16,27 @@
 
 package io.helidon.webserver.http2;
 
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+
+import io.helidon.common.buffers.DataWriter;
+import io.helidon.common.socket.SocketContext;
+import io.helidon.http.HeaderValues;
+import io.helidon.http.WritableHeaders;
+import io.helidon.http.http2.ConnectionFlowControl;
+import io.helidon.http.http2.FlowControl;
+import io.helidon.http.http2.Http2ConnectionWriter;
+import io.helidon.http.http2.Http2Flag;
+import io.helidon.http.http2.Http2FrameData;
+import io.helidon.http.http2.Http2Headers;
+import io.helidon.http.http2.Http2Settings;
+import io.helidon.webserver.ConnectionContext;
+import io.helidon.webserver.ListenerConfig;
+import io.helidon.webserver.ListenerContext;
+import io.helidon.webserver.Router;
+import io.helidon.webserver.http.DirectHandlers;
+import io.helidon.webserver.http.HttpRouting;
 
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
@@ -31,6 +50,7 @@ import static org.mockito.Mockito.when;
 class ConnectionStreamTest {
 
     private static final int SETTINGS_MAX_CONCURRENT_STREAMS = 50;
+    private static final int STREAM_ID = 1;
 
     @Test
     void concurrentModification() throws InterruptedException {
@@ -120,9 +140,165 @@ class ConnectionStreamTest {
         assertThat(streams.isEmpty(), Matchers.is(true));
     }
 
+    @Test
+    void terminalHeadersDeactivateAfterConnectionWriterCallback() {
+        Http2ConnectionStreams streams = new Http2ConnectionStreams();
+        RecordingConnectionWriter writer = new RecordingConnectionWriter();
+        Http2ServerStream stream = stream(streams, writer);
+
+        streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
+        streams.activate(STREAM_ID);
+        assertThat(streams.isActive(STREAM_ID), Matchers.is(true));
+        stream.closeFromRemote();
+        assertThat(streams.isActive(STREAM_ID), Matchers.is(true));
+
+        stream.writeHeaders(responseHeaders(), true);
+
+        assertThat(writer.hasPendingTerminalCallback(), Matchers.is(true));
+        assertThat(streams.isActive(STREAM_ID), Matchers.is(true));
+
+        writer.completeTerminalWrite();
+
+        assertThat(streams.isActive(STREAM_ID), Matchers.is(false));
+    }
+
+    @Test
+    void terminalTrailersDeactivateAfterConnectionWriterCallback() {
+        Http2ConnectionStreams streams = new Http2ConnectionStreams();
+        RecordingConnectionWriter writer = new RecordingConnectionWriter();
+        Http2ServerStream stream = stream(streams, writer);
+
+        streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
+        streams.activate(STREAM_ID);
+        assertThat(streams.isActive(STREAM_ID), Matchers.is(true));
+        stream.closeFromRemote();
+        assertThat(streams.isActive(STREAM_ID), Matchers.is(true));
+        stream.writeHeaders(responseHeaders(), false);
+
+        stream.writeTrailers(responseHeaders());
+
+        assertThat(writer.hasPendingTerminalCallback(), Matchers.is(true));
+        assertThat(streams.isActive(STREAM_ID), Matchers.is(true));
+
+        writer.completeTerminalWrite();
+
+        assertThat(streams.isActive(STREAM_ID), Matchers.is(false));
+    }
+
     private static Http2ServerStream mockStream(int streamId) {
         Http2ServerStream s = mock(Http2ServerStream.class);
         when(s.streamId()).thenReturn(streamId);
         return s;
+    }
+
+    private static Http2ServerStream stream(Http2ConnectionStreams streams, Http2ConnectionWriter writer) {
+        Http2Config config = Http2Config.builder()
+                .initialWindowSize(8192)
+                .maxFrameSize(16384)
+                .build();
+        ConnectionFlowControl flowControl = ConnectionFlowControl.serverBuilder((streamId, windowUpdate) -> { })
+                .initialWindowSize(config.initialWindowSize())
+                .maxFrameSize(config.maxFrameSize())
+                .build();
+        ListenerContext listenerContext = mock(ListenerContext.class);
+        when(listenerContext.config()).thenReturn(ListenerConfig.create());
+        when(listenerContext.directHandlers()).thenReturn(DirectHandlers.create());
+
+        ConnectionContext ctx = mock(ConnectionContext.class);
+        when(ctx.router()).thenReturn(Router.empty());
+        when(ctx.listenerContext()).thenReturn(listenerContext);
+
+        return new Http2ServerStream(ctx,
+                                     streams,
+                                     streamId -> { },
+                                     HttpRouting.empty(),
+                                     config,
+                                     List.of(),
+                                     STREAM_ID,
+                                     Http2Settings.builder().build(),
+                                     Http2Settings.builder().build(),
+                                     writer,
+                                     flowControl,
+                                     new Http2ConnectionChecks(config, mock(Http2Connection.class)));
+    }
+
+    private static Http2Headers responseHeaders() {
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.add(HeaderValues.createCached(Http2Headers.STATUS_NAME, 200));
+        return Http2Headers.create(headers);
+    }
+
+    private static final class RecordingConnectionWriter extends Http2ConnectionWriter {
+        private Runnable terminalCallback;
+
+        private RecordingConnectionWriter() {
+            super(mock(SocketContext.class), mock(DataWriter.class), List.of());
+        }
+
+        @Override
+        public int writeHeaders(Http2Headers headers,
+                                int streamId,
+                                Http2Flag.HeaderFlags flags,
+                                FlowControl.Outbound flowControl) {
+            return 0;
+        }
+
+        @Override
+        public int writeHeaders(Http2Headers headers,
+                                int streamId,
+                                Http2Flag.HeaderFlags flags,
+                                FlowControl.Outbound flowControl,
+                                Runnable onEndStreamFrameWritten) {
+            if (flags.endOfStream()) {
+                terminalCallback = onEndStreamFrameWritten;
+            }
+            return 0;
+        }
+
+        @Override
+        public int writeHeaders(Http2Headers headers,
+                                int streamId,
+                                Http2Flag.HeaderFlags flags,
+                                Http2FrameData dataFrame,
+                                FlowControl.Outbound flowControl) {
+            return 0;
+        }
+
+        @Override
+        public int writeHeaders(Http2Headers headers,
+                                int streamId,
+                                Http2Flag.HeaderFlags flags,
+                                Http2FrameData dataFrame,
+                                FlowControl.Outbound flowControl,
+                                Runnable onEndStreamFrameWritten) {
+            terminalCallback = onEndStreamFrameWritten;
+            return 0;
+        }
+
+        @Override
+        public void writeData(Http2FrameData frame, FlowControl.Outbound flowControl) {
+        }
+
+        @Override
+        public int writeData(Http2FrameData frame,
+                             FlowControl.Outbound flowControl,
+                             Runnable onEndStreamFrameWritten) {
+            terminalCallback = onEndStreamFrameWritten;
+            return 0;
+        }
+
+        @Override
+        public void write(Http2FrameData frame) {
+        }
+
+        private void completeTerminalWrite() {
+            assertThat(terminalCallback, Matchers.notNullValue());
+            terminalCallback.run();
+            terminalCallback = null;
+        }
+
+        private boolean hasPendingTerminalCallback() {
+            return terminalCallback != null;
+        }
     }
 }

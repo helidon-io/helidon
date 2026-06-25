@@ -470,14 +470,20 @@ class Http2ServerStream implements Runnable, Http2Stream {
         Http2Flag.HeaderFlags flags;
 
         if (endOfStream) {
-            closeFromLocal();
             flags = Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM);
         } else {
             flags = Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS);
         }
 
         try {
-            return writer.writeHeaders(http2Headers, streamId, flags, flowControl.outbound());
+            if (endOfStream && connectionWriter != null) {
+                return connectionWriter.writeHeaders(http2Headers, streamId, flags, flowControl.outbound(), this::closeFromLocal);
+            }
+            int written = writer.writeHeaders(http2Headers, streamId, flags, flowControl.outbound());
+            if (endOfStream) {
+                closeFromLocal();
+            }
+            return written;
         } catch (UncheckedIOException e) {
             throw new ServerConnectionException("Failed to write headers", e);
         }
@@ -548,13 +554,20 @@ class Http2ServerStream implements Runnable, Http2Stream {
 
     int writeTrailers(Http2Headers http2trailers) {
         writeState.updateAndGet(s -> s.checkAndMove(WriteState.TRAILERS_SENT));
-        closeFromLocal();
 
         try {
-            return writer.writeHeaders(http2trailers,
-                                       streamId,
-                                       Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
-                                       flowControl.outbound());
+            Http2Flag.HeaderFlags flags =
+                    Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM);
+            if (connectionWriter != null) {
+                return connectionWriter.writeHeaders(http2trailers,
+                                                     streamId,
+                                                     flags,
+                                                     flowControl.outbound(),
+                                                     this::closeFromLocal);
+            }
+            int written = writer.writeHeaders(http2trailers, streamId, flags, flowControl.outbound());
+            closeFromLocal();
+            return written;
         } catch (UncheckedIOException e) {
             throw new ServerConnectionException("Failed to write trailers", e);
         }

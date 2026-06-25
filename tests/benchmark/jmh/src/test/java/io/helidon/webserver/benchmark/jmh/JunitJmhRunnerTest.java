@@ -90,6 +90,7 @@ public class JunitJmhRunnerTest {
     private static ChainedOptionsBuilder optionsBuilder(String resultFile) {
         return new OptionsBuilder()
                 .forks(1)
+                .shouldFailOnError(true)
                 .resultFormat(ResultFormatType.JSON)
                 .result(resultFile)
                 .warmupIterations(10)
