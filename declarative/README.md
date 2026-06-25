@@ -291,6 +291,8 @@ The generated `GrpcRouteRegistration` is registered by default. It can be disabl
 
 - `server.features.grpc-route-registration.enabled=false`
 
+Annotate a server endpoint with `@RpcServer.Listener("admin")` to register it on a named listener.
+
 Security annotations require the `helidon-webserver-grpc-security` runtime module and an enabled gRPC security service:
 
 - `grpc.grpc-services.security.enabled=true`

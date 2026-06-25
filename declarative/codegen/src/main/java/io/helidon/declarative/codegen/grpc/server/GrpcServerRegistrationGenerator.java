@@ -92,6 +92,22 @@ class GrpcServerRegistrationGenerator {
         addMethodInfoFields(classModel, endpoint);
         classModel.addConstructor(constructor(ctx, endpoint, endpointFieldType));
         addDescriptorMethod(classModel);
+        endpoint.listener().ifPresent(listener -> {
+            classModel.addMethod(socket -> socket
+                    .accessModifier(AccessModifier.PUBLIC)
+                    .returnType(TypeNames.STRING)
+                    .name("socket")
+                    .addAnnotation(Annotations.OVERRIDE)
+                    .addContent("return ")
+                    .addContentLiteral(listener)
+                    .addContentLine(";"));
+            classModel.addMethod(socketRequired -> socketRequired
+                    .accessModifier(AccessModifier.PUBLIC)
+                    .returnType(TypeNames.PRIMITIVE_BOOLEAN)
+                    .name("socketRequired")
+                    .addAnnotation(Annotations.OVERRIDE)
+                    .addContentLine("return true;"));
+        });
         addProtoMethod(classModel, endpoint, singleton);
         addValidateProtoMethod(classModel);
         addMethodTypeMethod(classModel);

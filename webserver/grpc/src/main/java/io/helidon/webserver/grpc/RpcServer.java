@@ -18,6 +18,7 @@ package io.helidon.webserver.grpc;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
@@ -35,6 +36,24 @@ public final class RpcServer {
     @Target(ElementType.TYPE)
     @Retention(RetentionPolicy.CLASS)
     @Documented
+    @Inherited
     public @interface Endpoint {
+    }
+
+    /**
+     * Listener socket assigned to this endpoint.
+     * This only makes sense for server side, as it is binding endpoint to a server socket.
+     */
+    @Target(ElementType.TYPE)
+    @Retention(RetentionPolicy.CLASS)
+    @Documented
+    @Inherited
+    public @interface Listener {
+        /**
+         * Name of a routing to bind this service to.
+         *
+         * @return name of a routing (or listener host/port) on WebServer
+         */
+        String value();
     }
 }

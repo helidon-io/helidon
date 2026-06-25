@@ -119,6 +119,7 @@ class GrpcServerCodegenTest {
                         import jakarta.annotation.security.RolesAllowed;
 
                         @RpcServer.Endpoint
+                        @RpcServer.Listener("admin")
                         @Grpc.GrpcService("Greeting")
                         @Service.Singleton
                         class GreetingGrpc implements SecuredGreetingGrpc {
@@ -287,6 +288,10 @@ class GrpcServerCodegenTest {
         String registration = Files.readString(generatedRegistration, StandardCharsets.UTF_8);
         assertThat(registration, containsString("implements GrpcRouteRegistration"));
         assertThat(registration, containsString("private final GreetingGrpc endpoint;"));
+        assertThat(registration, containsString("public String socket()"));
+        assertThat(registration, containsString("return \"admin\";"));
+        assertThat(registration, containsString("public boolean socketRequired()"));
+        assertThat(registration, containsString("return true;"));
         assertThat(registration, containsString("GrpcServiceDescriptor.builder(GreetingGrpc.class, \"Greeting\")"));
         assertThat(registration, containsString("private static final List<Annotation> CLASS_ANNOTATIONS"));
         assertThat(registration, containsString("var annotations = CLASS_ANNOTATIONS;"));

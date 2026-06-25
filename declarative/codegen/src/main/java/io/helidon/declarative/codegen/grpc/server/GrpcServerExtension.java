@@ -46,6 +46,7 @@ import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_PR
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.GRPC_SERVICE;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.PROTO_FILE_DESCRIPTOR;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.RPC_SERVER_ENDPOINT;
+import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.RPC_SERVER_LISTENER;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.SECURITY_ABAC_ANNOTATION;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.SECURITY_AUDITED;
 import static io.helidon.declarative.codegen.grpc.server.GrpcServerTypes.SECURITY_AUTHENTICATED;
@@ -118,6 +119,9 @@ class GrpcServerExtension implements RegistryCodegenExtension {
                                 serviceAnnotation.stringValue()
                                         .filter(not(String::isBlank))
                                         .orElse(endpointType.className()),
+                                Annotations.findFirst(RPC_SERVER_LISTENER, typeAnnotations)
+                                        .flatMap(Annotation::stringValue)
+                                        .filter(not(String::isBlank)),
                                 protoDescriptor,
                                 security(typeAnnotations,
                                          serverEndpoint.typeName().fqName(),

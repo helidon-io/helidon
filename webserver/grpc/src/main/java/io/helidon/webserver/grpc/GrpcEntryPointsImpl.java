@@ -38,7 +38,6 @@ import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.grpc.Status;
 
-@SuppressWarnings("deprecation")
 @Service.Singleton
 class GrpcEntryPointsImpl implements GrpcEntryPoint.EntryPoints {
     private static final System.Logger LOGGER = System.getLogger(GrpcEntryPointsImpl.class.getName());
