@@ -69,10 +69,15 @@ class MetricsSnippets {
     // tag::snippet_2[]
     public class GreetService implements HttpService {
 
-        private final MeterRegistry meterRegistry = Services.get(MeterRegistry.class); // <1>
-        private final Counter accessCtr = meterRegistry
-                .getOrCreate(Services.get(MetricsFactory.class)
-                                     .counterBuilder("accessctr")); // <2>
+        private final Counter accessCtr;
+
+        GreetService() {
+            var metricsFactory = Services.get(MetricsFactory.class);
+            var meterRegistry = Services.get(MeterRegistry.class); // <1>
+
+            this.accessCtr = meterRegistry
+                    .getOrCreate(metricsFactory.counterBuilder("accessctr")); // <2>
+        }
 
         @Override
         public void routing(HttpRules rules) {

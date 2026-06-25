@@ -106,10 +106,12 @@ class MetricsSnippets {
             private final Counter cardCounter; // <1>
 
             GreetingCards() {
-                cardCounter = Services.get(MeterRegistry.class)
-                        .getOrCreate(Services.get(MetricsFactory.class)
-                                             .counterBuilder("cardCount")
-                                             .description("Counts card retrievals")); // <2>
+                var metricsFactory = Services.get(MetricsFactory.class);
+                var meterRegistry = Services.get(MeterRegistry.class);
+
+                cardCounter = meterRegistry.getOrCreate(metricsFactory
+                                                                .counterBuilder("cardCount")
+                                                                .description("Counts card retrievals")); // <2>
             }
 
             @Override
@@ -161,11 +163,14 @@ class MetricsSnippets {
         public class GreetingCards implements HttpService {
 
             private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
-            private final MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+            private final MetricsFactory metricsFactory;
             private final Timer cardTimer; // <1>
 
             GreetingCards() {
-                cardTimer = Services.get(MeterRegistry.class)
+                this.metricsFactory = Services.get(MetricsFactory.class);
+                var meterRegistry = Services.get(MeterRegistry.class);
+
+                this.cardTimer = meterRegistry
                         .getOrCreate(metricsFactory.timerBuilder("cardTimer") // <2>
                                              .description("Times card retrievals"));
             }
@@ -195,11 +200,14 @@ class MetricsSnippets {
         public class GreetingCards implements HttpService {
 
             private static final JsonBuilderFactory JSON = Json.createBuilderFactory(Map.of());
-            private final MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+            private final MetricsFactory metricsFactory;
             private final DistributionSummary cardSummary; // <1>
 
             GreetingCards() {
-                cardSummary = Services.get(MeterRegistry.class)
+                this.metricsFactory = Services.get(MetricsFactory.class);
+                var meterRegistry = Services.get(MeterRegistry.class);
+
+                cardSummary = meterRegistry
                         .getOrCreate(metricsFactory.distributionSummaryBuilder(
                                              "cardDist",
                                              metricsFactory.distributionStatisticsConfigBuilder())
@@ -236,8 +244,11 @@ class MetricsSnippets {
 
             GreetingCards() {
                 Random r = new Random();
-                Services.get(MeterRegistry.class)
-                        .getOrCreate(Services.get(MetricsFactory.class)
+
+                var metricsFactory = Services.get(MetricsFactory.class);
+                var meterRegistry = Services.get(MeterRegistry.class);
+
+                meterRegistry.getOrCreate(metricsFactory
                                              .gaugeBuilder("temperature",
                                                            () -> r.nextDouble(100.0))
                                              .description("Ambient temperature")); // <1>
