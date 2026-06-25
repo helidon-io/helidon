@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Using Helidon in your Gradle project"
+index:
+  icon: i-lucide-wrench
+-->
 # Gradle
 
 This guide describes Helidon’s support for Gradle projects.

@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Helidon Discovery Support"
+navigation:
+  icon: i-lucide-radar
+-->
 # Discovery
 
 ## Overview
@@ -149,7 +154,7 @@ import io.helidon.discovery.Discovery;
 
 SequencedSet<DiscoveredUri> uris = // <1>
     discovery.uris("EXAMPLE", // <2>
-                   URI.create("http://example.com/")); // <3>
+        URI.create("http://example.com/")); // <3>
 URI uri = uris.getFirst().uri(); // <4>
 ```
 1. URIs that are discovered are represented as a [`SequencedSet`][sequencedset]

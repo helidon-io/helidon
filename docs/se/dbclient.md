@@ -1,8 +1,9 @@
+<!--@frontmatter
+description: "Helidon Database Client"
+navigation:
+  icon: i-lucide-database
+-->
 # DbClient
-
-## Overview
-
-The Helidon SE DB Client provides a unified API for working with databases.
 
 ## Maven Coordinates
 

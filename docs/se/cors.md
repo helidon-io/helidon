@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Helidon CORS Support"
+navigation:
+  icon: i-lucide-share
+-->
 # CORS in Helidon SE
 
 ## Overview

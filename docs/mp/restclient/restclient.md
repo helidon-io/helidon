@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "MicroProfile Rest Client"
+-->
 # Rest Client
 
 ## Overview

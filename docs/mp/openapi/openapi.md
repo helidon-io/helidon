@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "MicroProfile OpenAPI"
+-->
 # OpenAPI
 
 ## Overview

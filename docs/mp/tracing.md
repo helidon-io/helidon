@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "MicroProfile Tracing"
+navigation:
+  icon: i-lucide-activity
+-->
 # Tracing
 
 > [!WARNING]

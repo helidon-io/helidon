@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Helidon Bean Validation Support"
+navigation:
+  icon: i-lucide-receipt
+-->
 # Bean Validation
 
 ## Overview

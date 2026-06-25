@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Learn how to use Coordinated Restore at Checkpoint (CRaC)"
+index:
+  icon: i-lucide-archive-restore
+-->
 # CRaC
 
 This guide describes how to create a CRaC snapshot for a Helidon SE application.

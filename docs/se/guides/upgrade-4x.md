@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Learn how to upgrade your Helidon SE application from 3.x to 4.x"
+index:
+  icon: i-lucide-refresh-cw
+-->
 # 4.x Upgrade
 
 Helidon 4.x introduces significant changes to APIs and runtime behavior. Use

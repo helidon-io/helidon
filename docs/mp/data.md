@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Helidon Data Repository"
+navigation:
+  icon: i-lucide-database
+-->
 # Data Repository
 
 ## Overview

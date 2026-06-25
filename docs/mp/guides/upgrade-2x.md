@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Learn how to upgrade your Helidon MP application from 1.x to 2.x"
+navigation:
+  icon: i-lucide-refresh-cw
+-->
 # 2.x Upgrade
 
 In Helidon 2.x we have made some changes to APIs and runtime behavior. This

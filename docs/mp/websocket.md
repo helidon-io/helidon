@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Helidon MP WebSocket Support"
+navigation:
+  icon: i-lucide-repeat-2
+-->
 # WebSocket
 
 ## Overview

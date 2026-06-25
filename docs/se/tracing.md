@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Helidon Tracing Support"
+navigation:
+  icon: i-lucide-activity
+-->
 # Tracing
 
 ## Overview
@@ -186,12 +191,52 @@ The [`HelidonOpenTelemetry`][helidonopentelem] type provides several methods
 which enable callbacks for OpenTelemetry objects, as summarized in the following
 table.
 
-| Method                                                          | Return value                                                                             |
-|-----------------------------------------------------------------|------------------------------------------------------------------------------------------|
-| [`Tracer callbackEnabledFrom(helidonTracer)`][tracer-callbacke] | Callback-enabled OpenTelemetry `Tracer` corresponding to the specified Helidon `Tracer`. |
-| [ `Tracer callbackEnabledFrom(otelTracer)`][tracer-callbacke-2] | Callback-enabled OpenTelemetry `Tracer` for the specified OpenTelemetry `Tracer`.        |
-| [ `Span callbackEnabledFrom(helidonSpan)`][span-callbackena]    | Callback-enabled OpenTelemetry `Span` corresponding to the specified Helidon `Span`.     |
-| [ `Span callbackEnabledFrom(otelSpan)`][span-callbackena-2]     | Callback-enabled OpenTelemetry `Span` for the specified OpenTelemetry `Span`.            |
+<table>
+<thead>
+<th>Method</th>
+<th>Return Value</th>
+</thead>
+<tr>
+<td>
+<a href="https://helidon.io/docs/v4/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.helidon.tracing.Tracer)">
+<code>Tracer callback<wbr>Enabled<wbr>From(<wbr>helidon<wbr>Tracer)</code>
+</a>
+</td>
+<td>
+Callback-enabled OpenTelemetry <code>Tracer</code> corresponding to the specified Helidon <code>Tracer</code>
+</td>
+</tr>
+<tr>
+<td>
+<a href="https://helidon.io/docs/v4/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.opentelemetry.api.trace.Tracer)">
+<code>Tracer callback<wbr>Enabled<wbr>From(<wbr>otel<wbr>Tracer)</code>
+</a>
+</td>
+<td>
+Callback-enabled OpenTelemetry <code>Tracer</code> for the specified OpenTelemetry <code>Tracer</code>
+</td>
+</tr>
+<tr>
+<td>
+<a href="https://helidon.io/docs/v4/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.helidon.tracing.Span)">
+<code>Span callback<wbr>Enabled<wbr>From(<wbr>helidon<wbr>Span)</code>
+</a>
+</td>
+<td>
+Callback-enabled OpenTelemetry <code>Span</code> corresponding to the specified Helidon <code>Span</code>
+</td>
+</tr>
+<tr>
+<td>
+<a href="https://helidon.io/docs/v4/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.opentelemetry.api.trace.Span)">
+<code>Span callback<wbr>Enabled<wbr>From(<wbr>otel<wbr>Span)</code>
+</a>
+</td>
+<td>
+Callback-enabled OpenTelemetry <code>Span</code> for the specified OpenTelemetry <code>Span</code>
+</td>
+</tr>
+</table>
 
 Enabling OpenTelemetry Objects for `SpanListener` Support
 
@@ -524,7 +569,7 @@ OpenTelemetry and OpenTelemetry tracing behavior.
 
 > [!NOTE]
 > If you provide settings under both `telemetry` and `tracing`, Helidon uses the
-> `telemetry` settings. Specifying both does not confuse Helidon but it might
+> `telemetry` settings. Specifying both does not confuse Helidon, but it might
 > confuse users.
 
 Dependency for OpenTelemetry support using tracing:
@@ -578,13 +623,9 @@ instead of `tracing`.
 [spancontext]: https://helidon.io/docs/v4/apidocs/io.helidon.tracing/io/helidon/tracing/SpanContext.html
 [baggage]: https://helidon.io/docs/v4/apidocs/io.helidon.tracing/io/helidon/tracing/Baggage.html
 [helidonopentelem]: https://helidon.io/docs/v4/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html
-[tracer-callbacke]: <https://helidon.io/docs/v4/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.helidon.tracing.Tracer)>
-[tracer-callbacke-2]: <https://helidon.io/docs/v4/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.opentelemetry.api.trace.Tracer)>
-[span-callbackena]: <https://helidon.io/docs/v4/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.helidon.tracing.Span)>
-[span-callbackena-2]: <https://helidon.io/docs/v4/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/HelidonOpenTelemetry.html#callbackEnabledFrom(io.opentelemetry.api.trace.Span)>
 [wrapper]: https://helidon.io/docs/v4/apidocs/io.helidon.tracing/io/helidon/tracing/Wrapper.html
 [opentelemetrycon]: https://helidon.io/docs/v4/apidocs/io.helidon.tracing.providers.opentelemetry/io/helidon/tracing/providers/opentelemetry/OpenTelemetryTracerConfig.html
-[telemetry-doc-pa]: ../se/telemetry/open-telemetry.md
+[telemetry-doc-pa]: ../se/telemetry/opentelemetry.md
 [span-lifecycle-c]: ../includes/tracing/common-callbacks.md#span-lifecycle
 [io-helidon-traci]: ../config/io.helidon.tracing.Tracer.md#configuration-options
 [io-helidon-traci-2]: ../config/io.helidon.tracing.providers.jaeger.JaegerTracerBuilder.md#configuration-options

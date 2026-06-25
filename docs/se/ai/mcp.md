@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "Model Context Protocol Support"
+-->
 # MCP
 
 ## Overview

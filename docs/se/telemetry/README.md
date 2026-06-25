@@ -1,8 +1,9 @@
+<!--@frontmatter
+description: "Helidon Telemetry Support"
+navigation:
+  icon: i-lucide-chart-line
+-->
 # Telemetry
 
-Index of Telemetry documentation.
-
-| Topic                                       | Description                          |
-|---------------------------------------------|--------------------------------------|
-| [Telemetry](open-telemetry.md)              | About Helidon OpenTelemetry Support  |
-| [OpenTelemetry](using-opentelemetry-api.md) | Using the OpenTelemetry API Directly |
+- [OpenTelemetry](opentelemetry.md)
+- [OpenTelemetry API](opentelemetry-api.md)

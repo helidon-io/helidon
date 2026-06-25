@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Learn how to trace a Helidon SE application"
+index:
+  icon: i-lucide-activity
+-->
 # Tracing
 
 This guide describes how to create a sample Helidon SE project that can be used

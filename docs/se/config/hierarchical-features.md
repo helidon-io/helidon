@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "Helidon Config hierarchical features"
+-->
 # Hierarchical Features
 
 ## Overview

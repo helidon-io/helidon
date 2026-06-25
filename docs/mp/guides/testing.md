@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Learn how to use JUnit5 for testing your Helidon MP applications"
+navigation:
+  icon: i-lucide-thumbs-up
+-->
 # Testing
 
 This guide describes how to write and execute tests for your MicroProfile

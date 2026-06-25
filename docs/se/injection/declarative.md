@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "Helidon Declarative"
+-->
 # Declarative
 
 ## Overview

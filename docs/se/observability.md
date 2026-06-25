@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Helidon Observability Support"
+navigation:
+  icon: i-lucide-search
+-->
 # Observability
 
 ## Overview

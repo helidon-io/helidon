@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "Reactive Messaging support for JMS"
+-->
 # JMS Connector
 
 ## Overview

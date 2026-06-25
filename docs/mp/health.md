@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "MicroProfile Health"
+navigation:
+  icon: i-lucide-heart
+-->
 # Health
 
 ## Overview

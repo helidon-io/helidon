@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Learn how to create AI powered Helidon MP applications"
+navigation:
+  icon: i-lucide-sparkles
+-->
 # LangChain4j
 
 This guide describes how to create a sample AI powered Helidon MP project with

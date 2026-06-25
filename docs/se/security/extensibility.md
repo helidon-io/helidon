@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "This guide describes how you can extend the Security component"
+-->
 # Extending Security
 
 This guide describes how you can extend the Security component.

@@ -1,4 +1,7 @@
-# Using OpenTelemetry Directly in Helidon SE
+<!--@frontmatter
+description: "Using the OpenTelemetry API Directly"
+-->
+# OpenTelemetry API
 
 ## Overview
 
@@ -22,7 +25,7 @@ You have several options in approaching such a project.
 
 ### Using the Helidon OpenTelemetry Integration
 
-You can use the [Helidon OpenTelemetry integration](open-telemetry.md) *and
+You can use the [Helidon OpenTelemetry integration](opentelemetry.md) *and
 also* use the OpenTelemetry API directly.
 
 Helidon’s integration prepares the OpenTelemetry `GlobalOpenTelemetry` instance
@@ -37,12 +40,12 @@ prescribed by the [OpenTelemetry semantic conventions][opentelemetry-se] simply
 by adding a dependency.
 
 If you must use the OpenTelemetry API from your code, Helidon recommends this
-option. The [Helidon OpenTelemetry integration](open-telemetry.md) documentation
+option. The [Helidon OpenTelemetry integration](opentelemetry.md) documentation
 explains how to use the Helidon integration.
 
 ### Using OpenTelemetry AutoConfiguration
 
-The [OpenTelemetry auto-configure feature][opentelemetry-au] allows you to
+The [OpenTelemetry autoconfigure feature][opentelemetry-au] allows you to
 control many operational aspects of OpenTelemetry using environment variables,
 Java system properties, or with a little extra code config files rather than
 writing your own explicit Java code to prepare the runtime. Then your code can
@@ -59,7 +62,7 @@ injection or Helidon services look-up.
 ### Using Only the OpenTelemetry API
 
 You can use the [OpenTelemetry API][opentelemetry-ap] exclusively (without
-auto-configure) to set up the OpenTelemetry runtime environment at start-up,
+autoconfigure) to set up the OpenTelemetry runtime environment at start-up,
 then use the API to work with tracing spans or metrics.
 
 Your code has full control and therefore full responsibility for preparing
@@ -79,7 +82,7 @@ instrumentation for Helidon services][automatic-instru].
 
 The rest of this document outlines how to plan and develop a Helidon SE
 application that uses the OpenTelemetry libraries with OpenTelemetry
-auto-configuration. Developers who need to use the OpenTelemetry API but choose
+autoconfiguration. Developers who need to use the OpenTelemetry API but choose
 not to use the Helidon integration should find this the next most
 straightforward approach.
 
@@ -201,13 +204,13 @@ them.
 
 #### Creating the `OpenTelemetry` object
 
-Creating a the global OpenTelemetry object using autoconfigure:
+Creating the global OpenTelemetry object using autoconfigure:
 
 ```java
 OpenTelemetry otel = AutoConfiguredOpenTelemetrySdk.builder()
-        .setResultAsGlobal()
-        .build()
-        .getOpenTelemetrySdk();
+    .setResultAsGlobal()
+    .build()
+    .getOpenTelemetrySdk();
 ```
 
 Your other code could use either the `otel` variable or invoke
@@ -236,8 +239,8 @@ software component that created them.
 
 ```java
 var myCounter = meter.counterBuilder("my-counter")
-        .setDescription("An example counter")
-        .build();
+    .setDescription("An example counter")
+    .build();
 // ...
 myCounter.add(1L);
 ```
@@ -250,8 +253,8 @@ using that saved reference.
 
 ```java
 var mySpan = tracer.spanBuilder("my-span")
-        .setSpanKind(SpanKind.SERVER)
-        .startSpan();
+    .setSpanKind(SpanKind.SERVER)
+    .startSpan();
 
 try (Scope ignored = mySpan.makeCurrent()) {
 

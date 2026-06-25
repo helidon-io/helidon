@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "Helidon MP OpenAPI Generator"
+-->
 # OpenAPI-based Code Generation
 
 ## Overview

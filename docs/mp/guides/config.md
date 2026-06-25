@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Learn how to configure a Helidon MP application"
+navigation:
+  icon: i-lucide-settings
+-->
 # Config
 
 This guide describes how to create a sample MicroProfile (MP) project that can
@@ -45,7 +50,7 @@ configuration data from a variety of sources using different formats, like JSON
 and YAML. Furthermore, you can customize the precedence of sources and make them
 optional or mandatory. This guide introduces Helidon MP configuration and
 demonstrates the fundamental concepts using several examples. Refer to [Helidon
-Config](../../mp/config/introduction.md) for the full configuration concepts
+Config](../../mp/config/config.md) for the full configuration concepts
 documentation.
 
 ### Create a Sample Helidon MP Project
@@ -662,7 +667,7 @@ kubectl delete configmap  helidon-configmap
 This guide has demonstrated how to use basic Helidon configuration features. For
 more information about using the advanced Helidon configuration features,
 including mutability support and extensions, see [Helidon
-Configuration](../../mp/config/introduction.md).
+Configuration](../../mp/config/config.md).
 
 ## Reference
 

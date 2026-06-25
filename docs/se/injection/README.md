@@ -1,8 +1,9 @@
+<!--@frontmatter
+description: "Dependency Injection"
+navigation:
+  icon: i-lucide-pipette
+-->
 # Injection
 
-Index of Injection documentation.
-
-| Topic                         | Description          |
-|-------------------------------|----------------------|
-| [Declarative](declarative.md) | Helidon Declarative  |
-| [Injection](injection.md)     | Dependency Injection |
+- [Declarative](declarative.md)
+- [Injection](injection.md)

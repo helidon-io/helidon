@@ -1,8 +1,9 @@
+<!--@frontmatter
+description: "Helidon AI Support"
+navigation:
+  icon: i-lucide-sparkles
+-->
 # AI
 
-Index of AI documentation.
-
-| Topic                                | Description                        |
-|--------------------------------------|------------------------------------|
-| [LangChain4j](langchain4j/README.md) | Index of LangChain4j documentation |
-| [MCP](mcp.md)                        | Model Context Protocol Support     |
+- [LangChain4j](langchain4j/README.md)
+- [MCP](mcp.md)

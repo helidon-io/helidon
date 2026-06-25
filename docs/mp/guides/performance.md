@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Learn how to improve performance of your Helidon application"
+navigation:
+  icon: i-lucide-gauge
+-->
 # Performance Tuning
 
 ## Introduction

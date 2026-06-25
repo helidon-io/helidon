@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Learn how to use Helidon MP built-in and custom health checks"
+navigation:
+  icon: i-lucide-heart
+-->
 # Health
 
 This guide describes how to create a sample MicroProfile (MP) project that can

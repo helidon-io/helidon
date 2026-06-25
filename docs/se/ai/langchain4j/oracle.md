@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "LangChain4j Oracle"
+-->
 # Oracle Embedding Store
 
 ## Overview

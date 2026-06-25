@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Helidon GraphQL Server Support"
+navigation:
+  icon: i-simple-icons-graphql
+-->
 # GraphQL
 
 ## Overview

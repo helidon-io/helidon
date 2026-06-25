@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "MicroProfile Fault Tolerance"
+navigation:
+  icon: i-lucide-triangle-alert
+-->
 # Fault Tolerance
 
 ## Overview

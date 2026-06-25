@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "Helidon MP OpenAPI UI Support"
+-->
 # OpenAPI UI
 
 ## Overview

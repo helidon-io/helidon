@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "Eureka Server Service Instance Registration"
+-->
 # Eureka Registration
 
 ## Overview

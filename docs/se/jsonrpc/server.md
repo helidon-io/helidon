@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "Helidon JSON-RPC Server"
+-->
 # JSON-RPC Server
 
 ## Overview

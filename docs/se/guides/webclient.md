@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Learn how to use the Helidon WebClient"
+index:
+  icon: i-lucide-globe
+-->
 # Helidon SE WebClient Guide
 
 This guide describes how to create a sample Helidon SE project that can be used

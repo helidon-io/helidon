@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "Helidon Config profiles"
+-->
 # Configuration Profiles
 
 ## Overview

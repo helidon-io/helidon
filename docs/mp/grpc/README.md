@@ -1,8 +1,9 @@
+<!--@frontmatter
+description: "Helidon MP gRPC Support"
+navigation:
+  icon: i-lucide-arrow-left-right
+-->
 # gRPC
 
-Index of gRPC documentation.
-
-| Topic                       | Description                    |
-|-----------------------------|--------------------------------|
-| [gRPC MP Client](client.md) | Helidon MP gRPC Client Support |
-| [gRPC MP Server](server.md) | Helidon MP gRPC Server Support |
+- [gRPC MP Client](client.md)
+- [gRPC MP Server](server.md)

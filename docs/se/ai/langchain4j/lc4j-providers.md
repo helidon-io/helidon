@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "Built-in Helidon LangChain4j providers lc4j-content-retriever and lc4j-in-memory"
+-->
 # Built-in LangChain4j Providers
 
 ## Maven Coordinates

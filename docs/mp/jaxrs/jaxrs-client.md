@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "Jakarta REST Client Support"
+-->
 # JAX-RS Client
 
 ## Overview
@@ -32,9 +35,9 @@ from each `WebTarget` we can create multiple `Invocation` s.
 ```java
 Client client = ClientBuilder.newClient();
 Response res = client
-        .target("http://localhost:8080/greet")
-        .request("text/plain")
-        .get();
+    .target("http://localhost:8080/greet")
+    .request("text/plain")
+    .get();
 ```
 
 In the snippet above, the call to `target` returns a `WebTarget`, and the call
@@ -48,9 +51,9 @@ Java type — such as a `String` in the example below.
 ```java
 Client client = ClientBuilder.newClient();
 String res = client
-        .target("http://localhost:8080/greet")
-        .request("text/plain")
-        .get(String.class);
+    .target("http://localhost:8080/greet")
+    .request("text/plain")
+    .get(String.class);
 ```
 
 Alternatively, there are also methods in `Response` that can trigger similar
@@ -66,10 +69,10 @@ and exception mappers.
 Client client = ClientBuilder.newClient();
 client.register(GreetFilter.class);
 String res = client
-        .target("http://localhost:8080/greet")
-        .register(GreetExceptionMapper.class)
-        .request("text/plain")
-        .get(String.class);
+    .target("http://localhost:8080/greet")
+    .register(GreetExceptionMapper.class)
+    .request("text/plain")
+    .get(String.class);
 ```
 
 The example above shows registration of `GreetFilter.class` for all targets and
@@ -87,10 +90,10 @@ Using `Future`:
 ```java
 Client client = ClientBuilder.newClient();
 Future<String> res = client
-        .target("http://localhost:8080/greet")
-        .request("text/plain")
-        .async()        // now asynchronous
-        .get(String.class);
+    .target("http://localhost:8080/greet")
+    .request("text/plain")
+    .async()        // now asynchronous
+    .get(String.class);
 ```
 
 Or using a more modern, reactive style:
@@ -98,34 +101,19 @@ Or using a more modern, reactive style:
 ```java
 Client client = ClientBuilder.newClient();
 CompletionStage<String> res = client
-        .target("http://localhost:8080/greet")
-        .request("text/plain")
-        .rx()           // now reactive
-        .get(String.class);
+    .target("http://localhost:8080/greet")
+    .request("text/plain")
+    .rx()           // now reactive
+    .get(String.class);
 ```
 
 In either case, the implementation will ensure the calling thread is not blocked
 and that the result from the invocation is available upon request or via a
 callback mechanism.
 
-## Configuration
-
-Configuration for this API is all done programmatically as shown in the previous
-sections.
-
-## Examples
-
-See [API](#api) for same simple examples. For additional information, refer to
-the
-
-[Jakarta REST Client Specification][jakarta-rest-cli].
-
-## Additional Information
-
-For additional information, see the [Jakarta REST Javadocs][jakarta-rest-jav].
-
 ## Reference
 
+- [Jakarta REST Javadocs][jakarta-rest-jav]
 - [Jakarta REST Client Specification][jakarta-rest-cli]
 
 [jakarta-rest-cli]: https://jakarta.ee/specifications/restful-ws/3.1/jakarta-restful-ws-spec-3.1.html#client_api

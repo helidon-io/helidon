@@ -1,14 +1,15 @@
+<!--@frontmatter
+description: "Helidon Config"
+navigation:
+  icon: i-lucide-settings
+-->
 # Config
 
-Index of Config documentation.
-
-| Topic                                                      | Description                              |
-|------------------------------------------------------------|------------------------------------------|
-| [Config](config.md)                                        | Helidon Config                           |
-| [Hierarchical Features](hierarchical-features.md)          | Helidon Config hierarchical features     |
-| [Property Mapping](property-mapping.md)                    | Helidon Config property mapping          |
-| [Supported Formats](supported-formats.md)                  | Additional Supported Formats and Sources |
-| [Configuration Profiles](config-profiles.md)               | Helidon Config profiles                  |
-| [Mutability Support](mutability-support.md)                | Helidon Config mutability support        |
-| [Advanced Configuration Topics](advanced-configuration.md) | Helidon Config advanced configuration    |
-| [Extensions](extensions.md)                                | Helidon Config Extensions                |
+- [Config](config.md)
+- [Hierarchical Features](hierarchical-features.md)
+- [Property Mapping](property-mapping.md)
+- [Supported Formats](supported-formats.md)
+- [Configuration Profiles](config-profiles.md)
+- [Mutability Support](mutability-support.md)
+- [Advanced Configuration Topics](advanced-configuration.md)
+- [Extensions](extensions.md)

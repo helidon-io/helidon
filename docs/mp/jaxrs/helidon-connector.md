@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "Helidon Connector for Jakarta REST Client"
+-->
 # Helidon Connector
 
 ## Overview

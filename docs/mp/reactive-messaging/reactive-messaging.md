@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "MicroProfile Reactive Messaging"
+-->
 # Reactive Messaging
 
 ## Overview

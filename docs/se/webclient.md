@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Helidon WebClient"
+navigation:
+  icon: i-lucide-globe
+-->
 # WebClient
 
 ## Overview

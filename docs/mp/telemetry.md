@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "MicroProfile Telemetry"
+navigation:
+  icon: i-lucide-chart-line
+-->
 # Telemetry
 
 ## Maven Coordinates

@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Helidon MP Threading"
+navigation:
+  icon: i-lucide-computer
+-->
 # Threading
 
 ## Overview

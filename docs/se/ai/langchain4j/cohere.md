@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "LangChain4j Cohere"
+-->
 # Cohere
 
 ## Overview

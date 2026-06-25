@@ -1,17 +1,11 @@
+<!--@frontmatter
+description: "Why @CrossOrigin is associated with @OPTIONS methods"
+-->
 # Why `@OPTIONS`?
 
 There are some good reasons why it is `@OPTIONS` methods that you decorate with
 the Helidon `@Cors.*` annotations. Take an informal look at the rationale for
 this choice.
-
-Table of Contents
-
-- [The Resource](#the-resource)
-- [Methods, Resources, and Subresources in JAX-RS Resource
-  Classes][methods-resource]
-- [`OPTIONS` in CORS, `@OPTIONS` in JAX-RS, and Technical
-  Reality][options-in-cors]
-- [The Bottom Line](#the-bottom-line)
 
 ## The Resource
 
@@ -21,15 +15,11 @@ All the attributes of CORS — whether authentication should be used, what heade
 can be passed through on CORS-controlled requests, and so on — pertain to a
 given resource.
 
-In Helidon, the
+In Helidon, the `@Cors` annotations map directly to those CORS sharing
+attributes. It would be natural, then, to use `@Cors.` to annotate the single
+Java element in the application that represents a resource.
 
-@Cors\.
-
-annotations map directly to those CORS sharing attributes. It would be natural,
-then, to use `@Cors.` to annotate the single Java element in the application
-that represents a resource.
-
-## Methods, Resources, and Subresources in JAX-RS Resource Classes
+## JAX-RS Mapping
 
 Unfortunately, there is no single Java element that is sure to correspond
 one-to-one with a JAX-RS resource, for two reasons.
@@ -48,7 +38,7 @@ behavior that the annotation defines to the resource.
 
 But which endpoint method, and why?
 
-## `OPTIONS` in CORS, `@OPTIONS` in JAX-RS, and Technical Reality
+## `@OPTIONS`
 
 The `OPTIONS` HTTP method plays an important role in CORS. While the CORS
 protocol *applies* to all HTTP methods, it *relies on* `OPTIONS` — with suitable

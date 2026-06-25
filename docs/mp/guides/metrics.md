@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Learn how to use Helidon MP built-in and application metrics"
+navigation:
+  icon: i-lucide-gauge
+-->
 # Metrics
 
 This guide describes how to create a sample Helidon MicroProfile (MP) project

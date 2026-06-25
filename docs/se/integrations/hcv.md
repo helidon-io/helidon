@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "Helidon HashiCorp Vault Integration"
+-->
 # HashiCorp Vault
 
 ## Overview

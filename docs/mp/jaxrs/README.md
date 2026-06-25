@@ -1,9 +1,10 @@
+<!--@frontmatter
+description: "Jakarta REST Support"
+navigation:
+  icon: i-lucide-ethernet-port
+-->
 # JAX-RS
 
-Index of JAX-RS documentation.
-
-| Topic                                                       | Description                               |
-|-------------------------------------------------------------|-------------------------------------------|
-| [Jakarta REST](jaxrs-applications.md)                       | Jakarta REST Support                      |
-| [Jakarta REST Client](jaxrs-client.md)                      | Jakarta REST Client Support               |
-| [Helidon Connector](helidon-connector.md)                   | Helidon Connector for Jakarta REST Client |
+- [JAX-RS](jaxrs.md)
+- [JAX-RS Client](jaxrs-client.md)
+- [Helidon Connector](helidon-connector.md)

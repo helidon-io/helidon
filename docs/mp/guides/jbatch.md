@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Learn how to use JBatch with Helidon MP"
+navigation:
+  icon: i-lucide-layers
+-->
 # JBatch
 
 This guide describes how Helidon and Jakarta Batch (JBatch) can be used together

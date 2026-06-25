@@ -1,8 +1,9 @@
+<!--@frontmatter
+description: "Helidon WebServer"
+navigation:
+  icon: i-lucide-ethernet-port
+-->
 # WebServer
 
-Index of WebServer documentation.
-
-| Topic                                       | Description                  |
-|---------------------------------------------|------------------------------|
-| [WebServer](webserver.md)                   | Helidon WebServer            |
-| [Concurrency Limits](concurrency-limits.md) | WebServer Concurrency Limits |
+- [WebServer](webserver.md)
+- [Concurrency Limits](concurrency-limits.md)

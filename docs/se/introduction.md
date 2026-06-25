@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "About Helidon SE"
+navigation:
+  icon: i-lucide-lightbulb
+-->
 # Introduction
 
 Helidon SE is Helidon’s foundational set of APIs and, as of Helidon 4, it uses

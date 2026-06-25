@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Helidon MP Scheduling"
+navigation:
+  icon: i-lucide-alarm-clock
+-->
 # Scheduling
 
 ## Overview

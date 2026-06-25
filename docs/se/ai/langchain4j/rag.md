@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "LangChain4j Retrieval-Augmented Generation"
+-->
 # RAG
 
 ## Maven Coordinates

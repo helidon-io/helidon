@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "LangChain4J Coherence"
+-->
 # Coherence Embedding Store
 
 ## Overview

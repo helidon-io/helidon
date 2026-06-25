@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "Helidon gRPC Client"
+-->
 # gRPC Client
 
 ## Overview

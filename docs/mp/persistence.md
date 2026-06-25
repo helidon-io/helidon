@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Helidon JPA/JTA Support"
+navigation:
+  icon: i-lucide-server
+-->
 # Persistence
 
 ## Overview
@@ -185,7 +190,7 @@ To configure Helidon MP’s named data source integration:
     implementation in those locations
 
 Helidon MP’s named data source integration relies on [Helidon MP’s usage of
-MicroProfile Config](config/introduction.md), so you have many choices for each
+MicroProfile Config](config/config.md), so you have many choices for each
 configuration property when deciding on your configuration’s location in (1)
 above.
 
@@ -1138,7 +1143,7 @@ other related tasks.
 ## Reference
 
 - [Managing Dependencies in Helidon MP](../dependency-management.md)
-- [MicroProfile Config in Helidon MP](config/introduction.md)
+- [MicroProfile Config in Helidon MP](config/config.md)
 - [JDBC 4.3 Specification][jdbc-4-3-specifi]
 - [HikariCP 5.0.1 documentation][hikaricp-5-0-1-d]
 - [Developers Guide For Oracle JDBC 21c on Maven Central][developer-s-guid]
@@ -1240,7 +1245,7 @@ other related tasks.
 [jakarta-persiste-2]: https://jakarta.ee/specifications/persistence/3.1/jakarta-persistence-spec-3.1.html
 [jakarta-persiste-3]: https://jakarta.ee/specifications/persistence/3.1/apidocs/
 [hibernate-orm-us]: https://docs.jboss.org/hibernate/orm/6.1/userguide/html_single/Hibernate_User_Guide.html
-[helidon-mp-s-mic]: config/introduction.md
+[helidon-mp-s-mic]: config/config.md
 [common-microprof]: config/advanced-configuration.md
 [helidon-mp-s-nam]: #named-data-source-integration
 [ensure-the-basic]: #maven-coordinates-common

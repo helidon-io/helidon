@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Helidon MP Observability"
+navigation:
+  icon: i-lucide-search
+-->
 # Observability
 
 ## Overview

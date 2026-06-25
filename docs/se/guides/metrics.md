@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Learn how to use Helidon SE built-in and application metrics"
+index:
+  icon: i-lucide-gauge
+-->
 # Metrics
 
 This guide describes how to create a sample Helidon {h1-prefix} project that can

@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "Helidon JSON Schema"
+-->
 # JSON Schema
 
 ## Overview

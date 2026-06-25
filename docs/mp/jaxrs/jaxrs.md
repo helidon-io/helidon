@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "Jakarta REST Support"
+-->
 # JAX-RS
 
 ## Overview

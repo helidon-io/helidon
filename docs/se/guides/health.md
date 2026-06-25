@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Learn how to use Helidon SE built-in and custom health checks"
+index:
+  icon: i-lucide-heart
+-->
 # Health
 
 This guide describes how to create a sample Helidon SE project that can be used

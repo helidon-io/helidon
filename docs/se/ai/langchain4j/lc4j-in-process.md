@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "Helidon LangChain4j in-process embedding models provider"
+-->
 # In-Process Embedding Models
 
 ## Maven Coordinates

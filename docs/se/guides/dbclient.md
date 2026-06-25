@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Learn how to use Helidon DbClient"
+index:
+  icon: i-lucide-database
+-->
 # DbClient
 
 This guide describes the features of Helidon’s DB Client and how to create a

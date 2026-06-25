@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Helidon MicroProfile Server"
+navigation:
+  icon: i-lucide-ethernet-port
+-->
 # Server
 
 ## Overview
@@ -85,7 +90,7 @@ Path of a Helidon Service to register with routing.
 ### Configuration options
 
 By default, the server uses the MicroProfile Config, but you may also want to
-use [Helidon configuration](config/introduction.md).
+use [Helidon configuration](config/config.md).
 
 In this example, the configuration is in a file, and it includes Helidon
 configuration options.
@@ -304,7 +309,7 @@ override value from annotation)
 For each HTTP service class you can define the routing path by specifying a
 configuration option `class-name.routing-path.path`. The `routing-path`
 configuration can be applied to Jax-RS application. See [Jakarta REST
-Application](jaxrs/jaxrs-applications.md) for more information.
+Application](jaxrs/jaxrs.md) for more information.
 
 Example (YAML) configuration for a class `io.helidon.example.AdminService` that
 changes the routing path to `/management`:
@@ -480,7 +485,7 @@ See the [`UriInfo`][uriinfo] Javadoc for more information.
 
 [server-features]: ../config/io.helidon.webserver.spi.ServerFeature.md
 [static-content-f]: ../config/io.helidon.webserver.staticcontent.StaticContentFeature.md
-[setting-applicat]: jaxrs/jaxrs-applications.md#setting-application-path
+[setting-applicat]: jaxrs/jaxrs.md#setting-application-path
 [standard-http-fo]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Forwarded
 [non-standard-x-f]: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For
 [uriinfo]: https://helidon.io/docs/v4/apidocs/io.helidon.common.uri/io/helidon/common/uri/UriInfo.html

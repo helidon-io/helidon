@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Helidon Reactive Messaging Support"
+navigation:
+  icon: i-lucide-message-square
+-->
 # Reactive Messaging
 
 ## Overview

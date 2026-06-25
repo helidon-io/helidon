@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "Helidon Config Extensions"
+-->
 # Extensions
 
 ## Overview

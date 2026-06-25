@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "MicroProfile Metrics"
+-->
 # Metrics
 
 ## Overview

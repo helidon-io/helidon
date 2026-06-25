@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "About Helidon MP"
+navigation:
+  icon: i-lucide-lightbulb
+-->
 # Introduction
 
 Helidon MP is an Eclipse MicroProfile 6.1 runtime that allows the Jakarta EE
@@ -87,7 +92,7 @@ For upgrade from Helidon 3.x to 4.x:
 [jta-spec]: https://jakarta.ee/specifications/transactions/2.0/jakarta-transactions-spec-2.0.html
 [jakarta-websocke]: ../mp/websocket.md
 [jakarta-websocket-spec]: https://jakarta.ee/specifications/websocket/2.1/jakarta-websocket-spec-2.1.html
-[mp-config]: ../mp/config/introduction.md
+[mp-config]: ../mp/config/config.md
 [mp-config-spec]: https://download.eclipse.org/microprofile/microprofile-config-3.1/microprofile-config-spec-3.1.html
 [mp-ft]: ../mp/fault-tolerance.md
 [mp-ft-spec]: https://download.eclipse.org/microprofile/microprofile-fault-tolerance-4.0.2/microprofile-fault-tolerance-spec-4.0.2.html
@@ -105,9 +110,9 @@ For upgrade from Helidon 3.x to 4.x:
 [mp-openapi-spec]: https://download.eclipse.org/microprofile/microprofile-open-api-3.1.1/microprofile-openapi-spec-3.1.1.html
 [mp-opentracing]: ../mp/tracing.md
 [mp-opentracing-spec]: https://download.eclipse.org/microprofile/microprofile-opentracing-3.0/microprofile-opentracing-spec-3.0.html
-[mp-reactive-messaging]: ../mp/reactivemessaging/reactive-messaging.md
+[mp-reactive-messaging]: ../mp/reactive-messaging/reactive-messaging.md
 [mp-reactive-messaging-spec]: https://download.eclipse.org/microprofile/microprofile-reactive-messaging-3.0/microprofile-reactive-messaging-spec-3.0.html
-[mp-rs-operators]: ../mp/reactivestreams/rsoperators.md
+[mp-rs-operators]: ../mp/reactive-streams/rsoperators.md
 [mp-rs-operators-spec]: https://download.eclipse.org/microprofile/microprofile-reactive-streams-operators-3.0/microprofile-reactive-streams-operators-spec-3.0.html
 [mp-rest-client]: ../mp/restclient/restclient.md
 [mp-rest-client-spec]: https://download.eclipse.org/microprofile/microprofile-rest-client-3.0/microprofile-rest-client-spec-3.0.html

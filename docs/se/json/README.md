@@ -1,8 +1,9 @@
+<!--@frontmatter
+description: "Helidon JSON Support"
+navigation:
+  icon: i-lucide-braces
+-->
 # JSON
 
-Index of JSON documentation.
-
-| Topic                      | Description          |
-|----------------------------|----------------------|
-| [JSON Processing](json.md) | Helidon JSON Support |
-| [JSON Schema](schema.md)   | Helidon JSON Schema  |
+- [JSON Processing](json.md)
+- [JSON Schema](schema.md)

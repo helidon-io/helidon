@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "Helidon MP Rest Client Metrics"
+-->
 # Rest Client Metrics
 
 ## Overview

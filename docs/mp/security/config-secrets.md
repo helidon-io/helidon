@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "Helidon MP configuration secrets"
+-->
 # Config Secrets
 
 When security requires a configuration with repeating complex elements, use

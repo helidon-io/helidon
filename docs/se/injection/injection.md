@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "Dependency Injection"
+-->
 # Injection
 
 > [!NOTE]

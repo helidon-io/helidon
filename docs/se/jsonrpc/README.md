@@ -1,8 +1,9 @@
+<!--@frontmatter
+description: "Helidon JSON-RPC Support"
+navigation:
+  icon: i-lucide-arrow-left-right
+-->
 # JSON-RPC
 
-Index of JSON-RPC documentation.
-
-| Topic                        | Description             |
-|------------------------------|-------------------------|
-| [JSON-RPC Client](client.md) | Helidon JSON-RPC Client |
-| [JSON-RPC Server](server.md) | Helidon JSON-RPC Server |
+- [JSON-RPC Client](client.md)
+- [JSON-RPC Server](server.md)

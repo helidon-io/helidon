@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Learn how to build a Helidon MP application from scratch"
+navigation:
+  icon: i-lucide-graduation-cap
+-->
 # Tutorial
 
 This tutorial describes how to build a Helidon MicroProfile (MP) application
@@ -415,7 +420,7 @@ notice that it uses the changed value.
 
 > [!TIP]
 > To learn more about Helidon MP configuration please see the
-> [Config](../config/introduction.md) section of the documentation.
+> [Config](../config/config.md) section of the documentation.
 
 ## Extending the Application
 
@@ -1124,7 +1129,7 @@ Helidon application development.
 - [Eclipse MicroProfile][eclipse-micropro]
 - [Contexts and Dependency Injection Specification][specification]
 - [Server Configuration](../server.md)
-- [Config](../config/introduction.md)
+- [Config](../config/config.md)
 - [MicroProfile Metrics Specification][microprofile-met]
 - [Metrics Guide](metrics.md)
 - [MicroProfile Health Protocol and Wireformat][microprofile-hea]

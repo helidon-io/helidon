@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Learn how to deploy your application to OCI Container Engine for Kubernetes (OKE)"
+navigation:
+  icon: i-lucide-cloud
+-->
 # OCI
 
 This guide describes the basic process of deploying a Helidon MP application on

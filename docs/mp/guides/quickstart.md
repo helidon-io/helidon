@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Create your first Helidon MP application in under 5 minutes"
+navigation:
+  icon: i-lucide-rocket
+-->
 # Quickstart
 
 This quick start describes how to create and run a basic Helidon MP application
@@ -176,7 +181,7 @@ Images. For more information, see:
 Learn more about Helidon MP:
 
 - [Introduction to Helidon MP](../introduction.md)
-- [MicroProfile Configuration](../config/introduction.md)
+- [MicroProfile Configuration](../config/config.md)
 - [Observability](../observability.md)
 
 [getting-started]: ../../get-started.md#system-requirements

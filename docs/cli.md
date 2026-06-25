@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Create and manage Helidon projects"
+navigation:
+  icon: i-lucide-terminal
+-->
 # Helidon CLI
 
 The Helidon command-line interface (CLI) helps you create and manage Helidon

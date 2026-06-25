@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "LangChain4J Mock ChatModel"
+-->
 # Mock ChatModel
 
 ## Overview

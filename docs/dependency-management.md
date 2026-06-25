@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Manage Helidon dependencies with the BOM"
+navigation:
+  icon: i-lucide-package
+-->
 # Dependency Management
 
 Helidon provides a "Bill Of Materials" (BOM) to manage dependencies. This is a

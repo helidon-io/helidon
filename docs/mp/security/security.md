@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "Helidon MicroProfile security"
+-->
 # Security
 
 To add security, such as protecting resource methods with authentication, to a

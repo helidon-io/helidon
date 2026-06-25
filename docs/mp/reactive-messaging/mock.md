@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "Reactive Messaging Mock connector for testing"
+-->
 # Mock Connector
 
 ## Overview

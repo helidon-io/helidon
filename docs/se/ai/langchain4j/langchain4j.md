@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "Helidon LangChain4j Integration"
+-->
 # LangChain4j
 
 > [!NOTE]

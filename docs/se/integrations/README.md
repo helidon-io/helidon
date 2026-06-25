@@ -1,10 +1,11 @@
+<!--@frontmatter
+description: "Helidon SE Integrations"
+navigation:
+  icon: i-lucide-cloud
+-->
 # Integrations
 
-Index of Integrations documentation.
-
-| Topic                            | Description                                 |
-|----------------------------------|---------------------------------------------|
-| [Eureka](eureka-registration.md) | Eureka Server Service Instance Registration |
-| [HashiCorp Vault](hcv.md)        | Helidon HashiCorp Vault Integration         |
-| [Neo4j](neo4j.md)                | Helidon Neo4j Integration                   |
-| [Oracle Cloud](oci.md)           | Oracle Cloud Infrastructure Integration     |
+- [Eureka](eureka-registration.md)
+- [HashiCorp Vault](hcv.md)
+- [Neo4j](neo4j.md)
+- [Oracle Cloud](oci.md)

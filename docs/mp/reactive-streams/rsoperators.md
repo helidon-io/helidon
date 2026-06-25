@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "MicroProfile Reactive Streams Operators"
+-->
 # Operators
 
 ## Overview

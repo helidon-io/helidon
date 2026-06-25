@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "Helidon Examplar Support"
+-->
 # OpenMetrics Exemplar
 
 ## Overview

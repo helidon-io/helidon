@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Learn how to trace a Helidon MP application"
+navigation:
+  icon: i-lucide-activity
+-->
 # Tracing
 
 This guide describes how to create a sample MicroProfile (MP) project that can

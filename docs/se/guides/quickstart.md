@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Create your first Helidon SE application in under 5 minutes"
+index:
+  icon: i-lucide-rocket
+-->
 # Quickstart
 
 This quick start describes how to create and run a basic Helidon SE application

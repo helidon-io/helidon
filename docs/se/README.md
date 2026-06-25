@@ -1,48 +1,45 @@
-# SE
+<!--@frontmatter
+description: "Helidon SE Overview"
+index:
+  generate: true
+-->
+# Helidon SE
 
-Index of SE documentation.
-
-| Topic                                                            | Description                   |
-|------------------------------------------------------------------|-------------------------------|
-| [Introduction](introduction.md) <!--@icon i-lucide-lightbulb --> | About Helidon SE              |
-| [Guides](guides/README.md) <!--@icon i-lucide-compass -->        | Index of Guides documentation |
+- [Introduction](introduction.md)
+- [Guides](guides/README.md)
 
 ## Components
 
-| Topic                                                                             | Description                             |
-|-----------------------------------------------------------------------------------|-----------------------------------------|
-| [AI](ai/README.md) <!--@icon i-lucide-sparkles -->                                | Index of AI documentation               |
-| [Builder](builder.md) <!--@icon i-lucide-hammer -->                               | Helidon Builder Support                 |
-| [Config](config/README.md) <!--@icon i-lucide-settings -->                        | Index of Config documentation           |
-| [CORS](cors.md) <!--@icon i-lucide-share -->                                      | Helidon CORS Support                    |
-| [Data Repository](data.md) <!--@icon i-lucide-database -->                        | Helidon Data Repository                 |
-| [DbClient](dbclient.md) <!--@icon i-lucide-database -->                           | Helidon DbClient                        |
-| [Discovery](discovery.md) <!--@icon i-lucide-radar -->                            | Helidon Discovery Support               |
-| [Fault Tolerance](fault-tolerance.md) <!--@icon i-lucide-triangle-alert -->       | Helidon Fault Tolerance                 |
-| [GraphQL](graphql.md) <!--@icon i-simple-icons-graphql -->                        | Helidon GraphQL Server Support          |
-| [gRPC](grpc/README.md) <!--@icon i-lucide-arrow-left-right -->                    | Index of gRPC documentation             |
-| [Health Checks](health.md) <!--@icon i-lucide-heart -->                           | Helidon Health Checks                   |
-| [Injection](injection/README.md) <!--@icon i-lucide-pipette -->                   | Index of Injection documentation        |
-| [JSON](json/README.md) <!--@icon i-lucide-braces -->                              | Index of JSON documentation             |
-| [JSON-RPC](jsonrpc/README.md) <!--@icon i-lucide-arrow-left-right -->             | Index of JSON-RPC documentation         |
-| [Metrics](metrics/README.md) <!--@icon i-lucide-gauge -->                         | Index of Metrics documentation          |
-| [Observability](observability.md) <!--@icon i-lucide-search -->                   | Helidon Observability Support           |
-| [OpenAPI](openapi/README.md) <!--@icon i-simple-icons-openapiinitiative -->       | Index of OpenAPI documentation          |
-| [Reactive Messaging](reactive-messaging.md) <!--@icon i-lucide-message-square --> | Helidon Reactive Messaging Support      |
-| [Reactive Streams](reactive-streams/README.md) <!--@icon i-lucide-waves -->       | Index of Reactive Streams documentation |
-| [Scheduling](scheduling.md) <!--@icon i-lucide-alarm-clock -->                    | Scheduling in Helidon SE                |
-| [Security](security/README.md) <!--@icon i-lucide-shield -->                      | Index of Security documentation         |
-| [SSE](sse.md) <!--@icon i-lucide-send -->                                         | Helidon Server Sent Event Support       |
-| [Telemetry](telemetry/README.md) <!--@icon i-lucide-chart-line -->                | Index of Telemetry documentation        |
-| [Testing](testing.md) <!--@icon i-lucide-thumbs-up -->                            | Helidon Testing Support                 |
-| [Tracing](tracing.md) <!--@icon i-lucide-activity -->                             | Helidon Tracing Support                 |
-| [Validation](validation.md) <!--@icon i-lucide-receipt -->                        | Helidon Validation                      |
-| [WebClient](webclient.md) <!--@icon i-lucide-globe -->                            | Helidon WebClient                       |
-| [WebServer](webserver/README.md) <!--@icon i-lucide-ethernet-port -->             | Index of WebServer documentation        |
-| [WebSocket](websocket.md) <!--@icon i-lucide-repeat-2 -->                         | Helidon WebSocket Support               |
+- [AI](ai/README.md)
+- [Builder](builder.md)
+- [Config](config/README.md)
+- [CORS](cors.md)
+- [Data Repository](data.md)
+- [DbClient](dbclient.md)
+- [Discovery](discovery.md)
+- [Fault Tolerance](fault-tolerance.md)
+- [GraphQL](graphql.md)
+- [gRPC](grpc/README.md)
+- [Health Checks](health.md)
+- [Injection](injection/README.md)
+- [JSON](json/README.md)
+- [JSON-RPC](jsonrpc/README.md)
+- [Metrics](metrics/README.md)
+- [Observability](observability.md)
+- [OpenAPI](openapi/README.md)
+- [Reactive Messaging](reactive-messaging.md)
+- [Reactive Streams](reactive-streams/README.md)
+- [Scheduling](scheduling.md)
+- [Security](security/README.md)
+- [SSE](sse.md)
+- [Telemetry](telemetry/README.md)
+- [Testing](testing.md)
+- [Tracing](tracing.md)
+- [Validation](validation.md)
+- [WebClient](webclient.md)
+- [WebServer](webserver/README.md)
+- [WebSocket](websocket.md)
 
 ## Others
 
-| Topic                                                               | Description                         |
-|---------------------------------------------------------------------|-------------------------------------|
-| [Integrations](integrations/README.md) <!--@icon i-lucide-cloud --> | Index of Integrations documentation |
+- [Integrations](integrations/README.md)

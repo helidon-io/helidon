@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Helidon Builder Support"
+navigation:
+  icon: i-lucide-hammer
+-->
 # Helidon Builder
 
 ## Overview

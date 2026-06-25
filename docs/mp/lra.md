@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "MicroProfile Long Running Actions"
+navigation:
+  icon: i-lucide-file-clock
+-->
 # LRA
 
 ## Overview

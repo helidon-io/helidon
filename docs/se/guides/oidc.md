@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Learn how to set up OpenID Connect (OIDC)"
+index:
+  icon: i-lucide-shield-check
+-->
 # OIDC
 
 This guide describes how to set up Keycloak and Helidon to secure your

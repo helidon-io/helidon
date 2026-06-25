@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "MicroProfile Config Sources"
+-->
 # Config Sources
 
 ## Creating MicroProfile Config Sources for Manual Setup of Config
@@ -142,7 +145,7 @@ public class CustomConfigSource implements ConfigSource {
 
 Instead of directly specifying the configuration sources in your code, you can
 use meta-configuration in a file that declares the configuration sources, and
-their attributes as mentioned in [MicroProfile Config](introduction.md).
+their attributes as mentioned in [MicroProfile Config](config.md).
 
 When used, the MicroProfile Config uses configuration sources and flags
 configured in the meta configuration file.

@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Scheduling in Helidon SE"
+navigation:
+  icon: i-lucide-alarm-clock
+-->
 # Scheduling
 
 ## Overview

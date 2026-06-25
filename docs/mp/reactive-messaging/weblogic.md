@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "Reactive Messaging support for WebLogic JMS"
+-->
 # WebLogic JMS Connector
 
 ## Overview

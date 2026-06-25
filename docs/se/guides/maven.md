@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Using Helidon in your Maven project"
+index:
+  icon: i-lucide-wrench
+-->
 # Maven
 
 This guide describes Helidon’s support for Maven projects.

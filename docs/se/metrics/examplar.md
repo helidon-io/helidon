@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "Exemplar support in metrics"
+-->
 # Exemplars
 
 ## Overview

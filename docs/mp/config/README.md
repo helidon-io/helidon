@@ -1,8 +1,9 @@
+<!--@frontmatter
+description: "MicroProfile Config"
+navigation:
+  icon: i-lucide-settings
+-->
 # Config
 
-Index of Config documentation.
-
-| Topic                                       | Description                 |
-|---------------------------------------------|-----------------------------|
-| [Config](introduction.md)                   | MicroProfile Config         |
-| [Config Sources](advanced-configuration.md) | MicroProfile Config Sources |
+- [Config](config.md)
+- [Config Sources](advanced-configuration.md)

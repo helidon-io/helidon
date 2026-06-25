@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "MicroProfile GraphQL"
+navigation:
+  icon: i-simple-icons-graphql
+-->
 # GraphQL
 
 ## Overview

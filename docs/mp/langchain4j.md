@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Helidon LangChain4j Support"
+navigation:
+  icon: i-lucide-sparkles
+-->
 # LangChain4j
 
 ## LangChain4j Support

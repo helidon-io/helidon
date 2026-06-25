@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "Helidon MP gRPC Client Support"
+-->
 # gRPC Client
 
 ## Overview
@@ -37,7 +40,7 @@ For a gRPC client to connect to a server, it requires a channel. Channels are
 configured in the `grpc` section of the Helidon application configuration. The
 examples below use an `application.yaml` file but there are many other ways to
 configure Helidon. See [Configuration in
-Helidon](../../mp/config/introduction.md) for more information.
+Helidon](../../mp/config/config.md) for more information.
 
 <!--@mdc ::code-callout -->
 ```yaml [application.yaml]

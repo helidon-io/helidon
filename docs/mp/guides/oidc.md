@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Learn how to set up OIDC security in your Helidon MP application"
+navigation:
+  icon: i-lucide-shield-check
+-->
 # OIDC
 
 This guide describes how to set up Keycloak and Helidon to secure an application

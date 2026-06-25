@@ -1,9 +1,10 @@
+<!--@frontmatter
+description: "Helidon Metrics"
+navigation:
+  icon: i-lucide-gauge
+-->
 # Metrics
 
-Index of Metrics documentation.
-
-| Topic                       | Description                   |
-|-----------------------------|-------------------------------|
-| [Metrics](metrics.md)       | Helidon Metrics               |
-| [Exemplars](examplar.md)    | Exemplar support in metrics   |
-| [Micrometer](micrometer.md) | Helidon Micrometer integration |
+- [Metrics](metrics.md)
+- [Exemplars](examplar.md)
+- [Micrometer](micrometer.md)

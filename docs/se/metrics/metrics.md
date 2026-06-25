@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "Helidon Metrics"
+-->
 # Metrics
 
 ## Overview
@@ -1110,7 +1113,7 @@ different `CollectorRegistry` or a different path.
 [timer-builder-ba]: <https://helidon.io/docs/v4/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/Timer.Builder.html#baseUnit(java.util.concurrent.TimeUnit)>
 [wrapper]: https://helidon.io/docs/v4/apidocs/io.helidon.metrics.api/io/helidon/metrics/api/Wrapper.html
 [autohttpmetricsc]: ../../config/io.helidon.webserver.observe.metrics.AutoHttpMetricsConfig.md
-[helidon-opentele]: ../../se/telemetry/open-telemetry.md#maven-coordinates
+[helidon-opentele]: ../../se/telemetry/opentelemetry.md#maven-coordinates
 [enabling-disabli]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/metrics/filtering/se
 [controlling-key]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/metrics/kpi
 [micrometer-metri]: https://docs.micrometer.io/micrometer/reference/concepts

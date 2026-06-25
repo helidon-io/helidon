@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Helidon WebSocket Support"
+navigation:
+  icon: i-lucide-repeat-2
+-->
 # WebSocket
 
 ## Maven Coordinates

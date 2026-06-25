@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Service reference"
+navigation:
+  icon: i-lucide-cable
+-->
 # Service Registry Reference
 
 The following section lists all services and modules that provide them.

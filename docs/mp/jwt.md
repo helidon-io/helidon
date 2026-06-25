@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "MicroProfile JWT Authentication"
+navigation:
+  icon: i-lucide-shield-check
+-->
 # JWT
 
 ## Overview

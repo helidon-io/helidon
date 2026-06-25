@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Helidon Fault Tolerance"
+navigation:
+  icon: i-lucide-triangle-alert
+-->
 # Fault Tolerance in Helidon
 
 ## Overview

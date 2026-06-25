@@ -1,4 +1,7 @@
-# Helidon OpenTelemetry Support
+<!--@frontmatter
+description: "Helidon OpenTelemetry Support"
+-->
+# OpenTelemetry
 
 > [!NOTE]
 > Helidon SE support for OpenTelemetry configuration and semantic conventions as

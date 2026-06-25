@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Helidon Server Sent Event Support"
+navigation:
+  icon: i-lucide-send
+-->
 # SSE
 
 ## Overview

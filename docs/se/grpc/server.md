@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "Helidon gRPC Server"
+-->
 # gRPC Server
 
 ## Overview

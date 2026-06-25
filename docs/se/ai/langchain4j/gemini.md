@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "LangChain4j Google Gemini"
+-->
 # Google Gemini
 
 ## Overview

@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Helidon Health Checks"
+navigation:
+  icon: i-lucide-heart
+-->
 # Health Checks
 
 ## Overview
@@ -110,14 +115,14 @@ Registering a health check using a method reference:
 <!--@mdc ::code-callout -->
 ```java
 ObserveFeature observe = ObserveFeature.builder()
-        .config(config.get("server.features.observe")) // <1>
-        .addObserver(HealthObserver.builder() // <2>
-                             .useSystemServices(true) // <3>
-                             .addCheck(Main::slowStartLivenessResponse, // <4>
-                                       HealthCheckType.LIVENESS, // <5>
-                                       "live-after-8-seconds") // <6>
-                             .build())
-        .build();
+    .config(config.get("server.features.observe")) // <1>
+    .addObserver(HealthObserver.builder() // <2>
+         .useSystemServices(true) // <3>
+         .addCheck(Main::slowStartLivenessResponse, // <4>
+                   HealthCheckType.LIVENESS, // <5>
+                   "live-after-8-seconds") // <6>
+         .build())
+    .build();
 ```
 1. Apply configuration to auto-discovered observers (e.g., health, metrics).
 2. Augment the web server by adding the `ObserveFeature` containing the
@@ -139,17 +144,17 @@ Registering a health check using an in-line lambda expression:
 <!--@mdc ::code-callout -->
 ```java
 ObserveFeature observe = ObserveFeature.builder()
-        .config(config.get("server.features.observe"))
-        .addObserver(HealthObserver.builder() // <1>
-                             .useSystemServices(true) // Include Helidon-provided health checks.
-                             .addCheck(() -> HealthCheckResponse.builder() // <2>
-                                               .status(System.currentTimeMillis() - serverStartTime >= 8000) // <3>
-                                               .detail("time", System.currentTimeMillis()) // <4>
-                                               .build(), // <5>
-                                       HealthCheckType.READINESS, // <6>
-                                       "live-after-8-seconds") // <7>
-                             .build())
-        .build();
+    .config(config.get("server.features.observe"))
+    .addObserver(HealthObserver.builder() // <1>
+        .useSystemServices(true) // Include Helidon-provided health checks.
+        .addCheck(() -> HealthCheckResponse.builder() // <2>
+            .status(System.currentTimeMillis() - serverStartTime >= 8000) // <3>
+            .detail("time", System.currentTimeMillis()) // <4>
+            .build(), // <5>
+        HealthCheckType.READINESS, // <6>
+        "live-after-8-seconds") // <7>
+        .build())
+    .build();
 ```
 1. Augment the web server by adding the `ObserveFeature` containing the
    `HealthObserver`.
@@ -215,11 +220,11 @@ class SlowStartHealthCheck implements HealthCheck { // <1>
 <!--@mdc ::code-callout -->
 ```java
 ObserveFeature observe = ObserveFeature.builder()
-        .config(config.get("server.features.observe"))
-        .addObserver(HealthObserver.builder() // <1>
-                             .addCheck(new SlowStartHealthCheck()) // <2>
-                             .build())
-        .build();
+    .config(config.get("server.features.observe"))
+    .addObserver(HealthObserver.builder() // <1>
+        .addCheck(new SlowStartHealthCheck()) // <2>
+        .build())
+    .build();
 ```
 1. Augment the web server by adding the `ObserveFeature` containing the
    `HealthObserver`.
@@ -239,11 +244,11 @@ Register the observe feature with the server and start it:
 <!--@mdc ::code-callout -->
 ```java
 WebServer server = WebServer.builder()
-        .featuresDiscoverServices(false)
-        .addFeature(observe) // <1>
-        .routing(Main::routing)
-        .build()
-        .start();
+    .featuresDiscoverServices(false)
+    .addFeature(observe) // <1>
+    .routing(Main::routing)
+    .build()
+    .start();
 ```
 1. Add the previously-prepared health observer to the server as a feature
 <!--@mdc :: -->
@@ -399,16 +404,16 @@ Adding selected built-in health checks:
 <!--@mdc ::code-callout -->
 ```java
 WebServer server = WebServer.builder()
-        .config(config.get("server"))
-        .addFeature(ObserveFeature.create(HealthObserver.builder()
-                                                  .useSystemServices(false) // <1>
-                                                  .addCheck(HealthChecks.deadlockCheck()) // <2>
-                                                  .addCheck(hc) // <3>
-                                                  .details(true)
-                                                  .build()))
-        .routing(Main::routing)
-        .build()
-        .start();
+    .config(config.get("server"))
+    .addFeature(ObserveFeature.create(HealthObserver.builder()
+        .useSystemServices(false) // <1>
+        .addCheck(HealthChecks.deadlockCheck()) // <2>
+        .addCheck(hc) // <3>
+        .details(true)
+        .build()))
+    .routing(Main::routing)
+    .build()
+    .start();
 ```
 1. Disables automatic registration of the built-in health checks.
 2. Adds the specific built-in check(s) you want.
@@ -592,31 +597,32 @@ Application code:
 <!--@mdc ::code-callout{collapsed} -->
 ```java
 ObserveFeature observeFeature = ObserveFeature.builder()
-        .addObserver(HealthObserver.builder()
-                             .useSystemServices(false)
-                             .endpoint("/health/live") // <1>
-                             .addChecks(HealthChecks.healthChecks()) // <2>
-                             .build())
-        .addObserver(HealthObserver.builder()
-                             .useSystemServices(false)
-                             .endpoint("/health/ready") // <3>
-                             .addCheck(() -> HealthCheckResponse.builder() // <4>
-                                               .status(true)
-                                               .build(),
-                                       HealthCheckType.READINESS,
-                                       "database")
-                             .build())
-        .sockets(List.of("observe")) // <5>
-        .build();
+    .addObserver(HealthObserver.builder()
+        .useSystemServices(false)
+        .endpoint("/health/live") // <1>
+        .addChecks(HealthChecks.healthChecks()) // <2>
+        .build())
+    .addObserver(HealthObserver.builder()
+        .useSystemServices(false)
+        .endpoint("/health/ready") // <3>
+        .addCheck(() -> HealthCheckResponse.builder() // <4>
+            .status(true)
+            .build(),
+        HealthCheckType.READINESS,
+        "database")
+        .build())
+    .sockets(List.of("observe")) // <5>
+    .build();
 WebServer server = WebServer.builder()
-        .putSocket("@default", socket -> socket
-                .port(8080) // <6>
-                .routing(r -> r.any((req, res) -> res.send("It works!")))) // <7>
-        .addFeature(observeFeature)
-        .putSocket("observe", socket -> socket
-                .port(8081)) // <8>
-        .build()
-        .start();
+    .putSocket("@default", socket -> socket
+        .port(8080) // <6>
+        .routing(r -> r
+            .any((req, res) -> res.send("It works!")))) // <7>
+    .addFeature(observeFeature)
+    .putSocket("observe", socket -> socket
+        .port(8081)) // <8>
+    .build()
+    .start();
 ```
 1. The health service for the `liveness` probe is exposed at `/health/live`.
 2. Using the built-in health checks for the `liveness` probe.

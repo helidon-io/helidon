@@ -1,9 +1,10 @@
+<!--@frontmatter
+description: "Helidon OpenAPI Support"
+navigation:
+  icon: i-simple-icons-openapiinitiative
+-->
 # OpenAPI
 
-Index of OpenAPI documentation.
-
-| Topic                                   | Description                   |
-|-----------------------------------------|-------------------------------|
-| [OpenAPI](openapi.md)                   | Helidon SE OpenAPI Support    |
-| [Code Generation](openapi-generator.md) | Helidon SE OpenAPI Generator  |
-| [OpenAPI UI](openapi-ui.md)             | Helidon SE OpenAPI UI Support |
+- [OpenAPI](openapi.md)
+- [Code Generation](openapi-generator.md)
+- [OpenAPI UI](openapi-ui.md)

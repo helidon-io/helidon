@@ -1,3 +1,8 @@
+<!--@frontmatter
+description: "Set up your environment and run a Helidon application"
+navigation:
+  icon: i-lucide-rocket
+-->
 # Get Started
 
 ## Quick Start
@@ -75,16 +80,19 @@ Make sure you set the `JAVA_HOME` environment variable.
 <!--@mdc ::code-group -->
 
 ```shell [Linux] <!-- @icon i-logos-linux-tux -->
+
 # Enter the appropriate path to your JDK
 export JAVA_HOME=/usr/lib/jvm/jdk-25
 ```
 
 ```shell [macOS] <!-- @icon i-simple-icons-apple -->
+
 # Enter the appropriate path to your JDK
 export JAVA_HOME=`/usr/libexec/java_home -v 25`
 ```
 
 ```cmd [Windows] <!-- @icon i-logos-microsoft-windows-icon -->
+
 # Enter the appropriate path to your JDK
 setx JAVA_HOME=C:\\PROGRA~1\\Java\\jdk-25
 ```

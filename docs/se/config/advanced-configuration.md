@@ -1,3 +1,6 @@
+<!--@frontmatter
+description: "Helidon Config advanced configuration"
+-->
 # Advanced Configuration Topics
 
 ## Overview
