@@ -16,6 +16,9 @@
 
 package io.helidon.declarative.tests.http;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -273,6 +276,14 @@ class GreetServiceEndpoint implements GreetService {
         ServerRequest serverRequest = serverRequestSupplier.get();
         OptionalValue<String> greet = serverRequest.query().first("greet");
         return greet.get();
+    }
+
+    @Http.POST
+    @Http.Path("/input-stream")
+    String inputStreamEntity(@Http.Entity InputStream inputStream) throws IOException {
+        try (inputStream) {
+            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        }
     }
 
     private JsonObject response(String name) {

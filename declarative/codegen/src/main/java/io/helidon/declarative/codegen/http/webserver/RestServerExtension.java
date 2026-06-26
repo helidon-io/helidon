@@ -63,6 +63,7 @@ import io.helidon.service.codegen.spi.RegistryCodegenExtension;
 
 import static io.helidon.codegen.CodegenUtil.toConstantName;
 import static io.helidon.declarative.codegen.DeclarativeTypes.SINGLETON_ANNOTATION;
+import static io.helidon.declarative.codegen.http.HttpTypes.BAD_REQUEST_EXCEPTION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_ENTITY_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_HEADER_PARAM_ANNOTATION;
 import static io.helidon.declarative.codegen.http.HttpTypes.HTTP_METHOD;
@@ -465,6 +466,19 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
                                     RestMethod restMethod,
                                     Map<String, String> headerProducers,
                                     int methodIndex) {
+        restMethod.entityParameter()
+                .ifPresent(entity -> method.addContent("if (!")
+                        .addContent(REQUEST_PARAM_NAME)
+                        .addContentLine(".content().hasEntity()) {")
+                        .increaseContentPadding()
+                        .addContent("throw new ")
+                        .addContent(BAD_REQUEST_EXCEPTION)
+                        .addContent("(\"Entity ")
+                        .addContent(entity.name())
+                        .addContentLine(" is not present in the request.\");")
+                        .decreaseContentPadding()
+                        .addContentLine("}"));
+
         // parameters
         for (RestMethodParameter parameter : restMethod.parameters()) {
             String paramName = userVariableName(parameter.name());

@@ -303,4 +303,22 @@ class DeclarativeHttpTest {
         assertThat(response.status(), is(Status.OK_200));
         assertThat(response.entity(), is("hello"));
     }
+
+    @Test
+    void testInputStreamEntityEcho() {
+        var response = client.post("/greet/input-stream")
+                .submit("hello", String.class);
+
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity(), is("hello"));
+    }
+
+    @Test
+    void testInputStreamEntityEmptyContentLengthFailure() {
+        var response = client.post("/greet/input-stream")
+                .request(String.class);
+
+        assertThat(response.status(), is(Status.BAD_REQUEST_400));
+        assertThat(response.entity(), is("Entity inputStream is not present in the request."));
+    }
 }
