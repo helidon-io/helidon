@@ -55,6 +55,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     @SuppressWarnings("rawtypes")
     private static final List<SourceHandlerProvider> SOURCE_HANDLERS
             = HelidonServiceLoader.builder(ServiceLoader.load(SourceHandlerProvider.class)).build().asList();
+    private static final byte[] CHUNKED_EMPTY_MESSAGE = {'0', '\r', '\n', '\r', '\n'};
     private static final long ENTITY_LENGTH_CHUNKED = -1;
     private static final long ENTITY_LENGTH_CLOSE_DELIMITED = -2;
     private final AtomicBoolean closed = new AtomicBoolean();
@@ -69,6 +70,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     private final CompletableFuture<Void> whenComplete;
     private final boolean hasTrailers;
     private final List<String> trailerNames;
+    private final boolean entityAllowed;
     // Media type parsing mode configured on client.
     private final ParserMode parserMode;
     private final ClientUri lastEndpointUri;
@@ -100,6 +102,11 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         this.parserMode = clientConfig.mediaTypeParserMode();
         this.lastEndpointUri = lastEndpointUri;
         this.whenComplete = whenComplete;
+        int statusCode = responseStatus.code();
+        this.entityAllowed = responseStatus.family() != Status.Family.INFORMATIONAL
+                && statusCode != Status.NO_CONTENT_204.code()
+                && statusCode != Status.RESET_CONTENT_205.code()
+                && statusCode != Status.NOT_MODIFIED_304.code();
         this.trailers = LazyValue.create(() -> Http1HeadersParser.readHeaders(
                 connection.reader(),
                 protocolConfig.maxHeaderSize(),
@@ -200,15 +207,33 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
 
     /**
      * Attempts to consume an unread entity for the purpose of re-using a cached
-     * connection. Only works for length-prefixed responses and when the entity
-     * has been loaded and has not been partially read. This method shall never
+     * connection. Only works for length-prefixed responses or no-entity
+     * statuses with already-buffered chunked framing. This method shall never
      * block on a read operation.
      *
      * @return {@code true} if consumed, {@code false} otherwise
      */
     private boolean consumeUnreadEntity() {
-        if (entityLength == ENTITY_LENGTH_CHUNKED || entityLength == ENTITY_LENGTH_CLOSE_DELIMITED) {
+        if (entityLength == ENTITY_LENGTH_CLOSE_DELIMITED || (!entityAllowed && entityLength > 0)) {
             return false;
+        }
+        if (entityLength == ENTITY_LENGTH_CHUNKED) {
+            if (entityAllowed || hasTrailers) {
+                return false;
+            }
+            DataReader reader = connection.reader();
+            if (reader.available() != CHUNKED_EMPTY_MESSAGE.length) {
+                return false;
+            }
+            BufferData bufferData = reader.getBuffer(CHUNKED_EMPTY_MESSAGE.length);
+            for (int i = 0; i < CHUNKED_EMPTY_MESSAGE.length; i++) {
+                if (bufferData.get(i) != CHUNKED_EMPTY_MESSAGE[i]) {
+                    return false;
+                }
+            }
+            reader.skip(CHUNKED_EMPTY_MESSAGE.length);
+            entityFullyRead = true;
+            return true;
         }
         DataReader reader = connection.reader();
         if (reader.available() != entityLength) {
@@ -226,7 +251,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
 
     private ReadableEntity entity(ClientRequestHeaders requestHeaders,
                                   ClientResponseHeaders responseHeaders) {
-        if (inputStream == null) {
+        if (inputStream == null || !entityAllowed) {
             return ReadableEntityBase.empty();
         }
         return ClientResponseEntity.create(
