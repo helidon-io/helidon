@@ -319,7 +319,13 @@ final class OpenApi30DocumentMapper {
 
     private static Map<String, Object> paths(Map<String, ?> source, SchemaMode mode) {
         Map<String, Object> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> object(value, object -> result.put(key, pathItem(object, mode))));
+        source.forEach((key, value) -> {
+            if (key.startsWith("x-")) {
+                copyField(result, key, source);
+            } else {
+                object(value, object -> result.put(key, pathItem(object, mode)));
+            }
+        });
         return result;
     }
 
@@ -352,7 +358,7 @@ final class OpenApi30DocumentMapper {
             case "parameters" -> result.put(key, parameters(value, mode));
             case "requestBody" -> object(value, object -> result.put(key, requestBody(object, mode)));
             case "responses" -> object(value, object -> result.put(key, responses(object, mode)));
-            case "callbacks" -> object(value, object -> result.put(key, callbacks(object, mode)));
+            case "callbacks" -> object(value, object -> result.put(key, callbacks(object, mode, true)));
             case "servers" -> result.put(key, serverList(value));
             case "externalDocs" -> object(value, object -> result.put(key, copyAllowed(object, EXTERNAL_DOCS_FIELDS)));
             default -> copyField(result, key, source);
@@ -534,7 +540,7 @@ final class OpenApi30DocumentMapper {
             case "headers" -> object(value, object -> result.put(key, headers(object, mode)));
             case "securitySchemes" -> object(value, object -> result.put(key, securitySchemes(object)));
             case "links" -> object(value, object -> result.put(key, links(object)));
-            case "callbacks" -> object(value, object -> result.put(key, callbacks(object, mode)));
+            case "callbacks" -> object(value, object -> result.put(key, callbacks(object, mode, false)));
             default -> copyField(result, key, source);
             }
         });
@@ -599,6 +605,10 @@ final class OpenApi30DocumentMapper {
     private static Map<String, Object> oauthFlows(String path, Map<String, ?> source) {
         Map<String, Object> result = new LinkedHashMap<>();
         source.forEach((key, value) -> {
+            if (key.startsWith("x-")) {
+                copyField(result, key, source);
+                return;
+            }
             if (!allowed(key, OAUTH_FLOWS_FIELDS)) {
                 throw unsupported("OAuth flow", key, path);
             }
@@ -647,9 +657,15 @@ final class OpenApi30DocumentMapper {
         return result;
     }
 
-    private static Map<String, Object> callbacks(Map<String, ?> source, SchemaMode mode) {
+    private static Map<String, Object> callbacks(Map<String, ?> source, SchemaMode mode, boolean containerExtensions) {
         Map<String, Object> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> object(value, object -> result.put(key, pathItem(object, mode))));
+        source.forEach((key, value) -> {
+            if (containerExtensions && key.startsWith("x-")) {
+                copyField(result, key, source);
+            } else {
+                object(value, object -> result.put(key, pathItem(object, mode)));
+            }
+        });
         return result;
     }
 

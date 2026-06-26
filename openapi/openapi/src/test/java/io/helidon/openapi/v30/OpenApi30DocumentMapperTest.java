@@ -198,6 +198,68 @@ class OpenApi30DocumentMapperTest {
     }
 
     @Test
+    void preservesContainerExtensions() {
+        Map<String, Object> callbackPost = new LinkedHashMap<>();
+        callbackPost.put("post", Map.of(
+                "responses", Map.of(
+                        "200", Map.of("description", "OK"))));
+
+        Map<String, Object> callbackSource = new LinkedHashMap<>();
+        callbackSource.put("x-callback-scalar", "keep");
+        callbackSource.put("x-callback-object", Map.of("enabled", true));
+        callbackSource.put("{$request.body#/callbackUrl}", callbackPost);
+
+        Map<String, Object> operation = new LinkedHashMap<>();
+        operation.put("responses", Map.of("204", Map.of("description", "Done.")));
+        operation.put("callbacks", callbackSource);
+
+        Map<String, Object> pathItem = new LinkedHashMap<>();
+        pathItem.put("get", operation);
+
+        Map<String, Object> pathsSource = new LinkedHashMap<>();
+        pathsSource.put("x-gateway-root", true);
+        pathsSource.put("x-gateway-object", Map.of("stage", "prod"));
+        pathsSource.put("/callback", pathItem);
+
+        Map<String, Object> flowsSource = new LinkedHashMap<>();
+        flowsSource.put("x-flow-scalar", "keep");
+        flowsSource.put("x-flow-object", Map.of("enabled", true));
+        flowsSource.put("clientCredentials", Map.of(
+                "tokenUrl", "https://idp.example.com/token",
+                "scopes", Map.of()));
+
+        Map<String, Object> securityScheme = new LinkedHashMap<>();
+        securityScheme.put("type", "oauth2");
+        securityScheme.put("flows", flowsSource);
+
+        Map<String, Object> documentSource = new LinkedHashMap<>();
+        documentSource.put("openapi", "3.0.3");
+        documentSource.put("info", Map.of(
+                "title", "Static API",
+                "version", "1.0.0"));
+        documentSource.put("paths", pathsSource);
+        documentSource.put("components", Map.of(
+                "securitySchemes", Map.of(
+                        "OAuth", securityScheme)));
+
+        OpenApiDocument document = OpenApi30DocumentMapper.parse(documentSource);
+        Map<String, Object> rendered = OpenApi30DocumentMapper.render(document, "3.0.3");
+        Map<String, Object> paths = map(rendered, "paths");
+        Map<String, Object> callbacks = map(map(map(paths, "/callback"), "get"), "callbacks");
+        Map<String, Object> flows = map(map(map(map(rendered, "components"), "securitySchemes"), "OAuth"), "flows");
+
+        assertThat(document.paths().containsKey("x-gateway-object"), is(false));
+        assertThat(document.paths().get("/callback").operations().get("get").callbacks().containsKey("x-callback-object"),
+                   is(false));
+        assertThat(paths.get("x-gateway-root"), is(true));
+        assertThat(map(paths, "x-gateway-object").get("stage"), is("prod"));
+        assertThat(callbacks.get("x-callback-scalar"), is("keep"));
+        assertThat(map(callbacks, "x-callback-object").get("enabled"), is(true));
+        assertThat(flows.get("x-flow-scalar"), is("keep"));
+        assertThat(map(flows, "x-flow-object").get("enabled"), is(true));
+    }
+
+    @Test
     @SuppressWarnings("unchecked")
     void preservesHighLevelStaticDocumentExtensions() {
         OpenApiDocument document = OpenApi30DocumentMapper.parse(Map.of(

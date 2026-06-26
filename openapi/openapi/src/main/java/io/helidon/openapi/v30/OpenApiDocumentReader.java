@@ -63,7 +63,13 @@ public final class OpenApiDocumentReader {
         array(source, "servers", servers -> servers.values()
                 .forEach(server -> object(server, value -> builder.server(server(value)))));
         object(source, "paths", paths -> paths.keysAsStrings()
-                .forEach(path -> object(paths, path, item -> builder.path(path, pathItem(item)))));
+                .forEach(path -> {
+                    if (path.startsWith("x-")) {
+                        value(paths, path, value -> builder.pathExtension(path, value));
+                    } else {
+                        object(paths, path, item -> builder.path(path, pathItem(item)));
+                    }
+                }));
         object(source, "webhooks", webhooks -> webhooks.keysAsStrings()
                 .forEach(name -> object(webhooks,
                                         name,
@@ -196,7 +202,13 @@ public final class OpenApiDocumentReader {
             extensions(responses, builder::responseExtension);
         });
         object(source, "callbacks", callbacks -> callbacks.keysAsStrings()
-                .forEach(name -> object(callbacks, name, callback -> builder.callback(name, pathItem(callback)))));
+                .forEach(name -> {
+                    if (name.startsWith("x-")) {
+                        value(callbacks, name, value -> builder.callbackExtension(name, value));
+                    } else {
+                        object(callbacks, name, callback -> builder.callback(name, pathItem(callback)));
+                    }
+                }));
         bool(source, "deprecated", builder::deprecated);
         array(source, "security", security -> {
             if (security.values().isEmpty()) {
