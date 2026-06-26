@@ -19,6 +19,7 @@ package io.helidon.webclient.http1;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.System.Logger.Level;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.OptionalLong;
 import java.util.ServiceLoader;
@@ -29,6 +30,7 @@ import io.helidon.common.GenericType;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
+import io.helidon.common.buffers.Bytes;
 import io.helidon.common.buffers.DataReader;
 import io.helidon.common.media.type.ParserMode;
 import io.helidon.http.ClientRequestHeaders;
@@ -55,7 +57,6 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     @SuppressWarnings("rawtypes")
     private static final List<SourceHandlerProvider> SOURCE_HANDLERS
             = HelidonServiceLoader.builder(ServiceLoader.load(SourceHandlerProvider.class)).build().asList();
-    private static final byte[] CHUNKED_EMPTY_MESSAGE = {'0', '\r', '\n', '\r', '\n'};
     private static final long ENTITY_LENGTH_CHUNKED = -1;
     private static final long ENTITY_LENGTH_CLOSE_DELIMITED = -2;
     private final AtomicBoolean closed = new AtomicBoolean();
@@ -102,19 +103,19 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         this.parserMode = clientConfig.mediaTypeParserMode();
         this.lastEndpointUri = lastEndpointUri;
         this.whenComplete = whenComplete;
-        int statusCode = responseStatus.code();
-        this.entityAllowed = responseStatus.family() != Status.Family.INFORMATIONAL
-                && statusCode != Status.NO_CONTENT_204.code()
-                && statusCode != Status.RESET_CONTENT_205.code()
-                && statusCode != Status.NOT_MODIFIED_304.code();
-        this.trailers = LazyValue.create(() -> Http1HeadersParser.readHeaders(
-                connection.reader(),
-                protocolConfig.maxHeaderSize(),
-                protocolConfig.validateResponseHeaders()
-        ));
+        this.entityAllowed = Http1CallChainBase.statusAllowsEntity(responseStatus);
+        this.trailers = LazyValue.create(this::readTrailers);
 
         OptionalLong contentLength = responseHeaders.contentLength();
-        if (inputStream == null) {
+        if (responseStatus.code() == Status.RESET_CONTENT_205.code()) {
+            if (contentLength.isPresent()) {
+                this.entityLength = contentLength.getAsLong();
+            } else if (responseHeaders.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
+                this.entityLength = ENTITY_LENGTH_CHUNKED;
+            } else {
+                this.entityLength = ENTITY_LENGTH_CLOSE_DELIMITED;
+            }
+        } else if (inputStream == null) {
             this.entityLength = 0;
         } else if (contentLength.isPresent()) {
             this.entityLength = contentLength.getAsLong();
@@ -169,10 +170,14 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
                         || entityLength == ENTITY_LENGTH_CLOSE_DELIMITED) {
                     connection.closeResource();
                 } else {
-                    // No-body response bytes cannot be consumed as entity; buffered data makes reuse unsafe.
-                    if (inputStream == null && connection.reader().available() > 0) {
+                    if (inputStream == null && hasTrailers && !trailers.isLoaded()) {
                         connection.closeResource();
-                    } else if (entityFullyRead || entityLength == 0 || consumeUnreadEntity()) {
+                    } else if (entityFullyRead || consumeUnreadEntity()) {
+                        connection.releaseResource();
+                    } else if (inputStream == null && connection.reader().available() > 0) {
+                        // No-body response bytes that cannot be consumed as safe framing make reuse unsafe.
+                        connection.closeResource();
+                    } else if (entityLength == 0) {
                         connection.releaseResource();
                     } else {
                         connection.closeResource();
@@ -205,6 +210,34 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         return connection;
     }
 
+    private Headers readTrailers() {
+        if (!entityAllowed && entityLength == ENTITY_LENGTH_CHUNKED && !entityFullyRead) {
+            readNoEntityChunkedFraming();
+        }
+        Headers result = Http1HeadersParser.readHeaders(
+                connection.reader(),
+                protocolConfig.maxHeaderSize(),
+                protocolConfig.validateResponseHeaders()
+        );
+        entityFullyRead = true;
+        return result;
+    }
+
+    private void readNoEntityChunkedFraming() {
+        if (entityFullyRead) {
+            return;
+        }
+        DataReader reader = connection.reader();
+        int length = Http1CallChainBase.readChunkSize(reader);
+        if (length != 0) {
+            return;
+        }
+        if (!hasTrailers && reader.startsWithNewLine()) {
+            reader.skip(2);
+            entityFullyRead = true;
+        }
+    }
+
     /**
      * Attempts to consume an unread entity for the purpose of re-using a cached
      * connection. Only works for length-prefixed responses or no-entity
@@ -222,18 +255,31 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
                 return false;
             }
             DataReader reader = connection.reader();
-            if (reader.available() != CHUNKED_EMPTY_MESSAGE.length) {
+            int available = reader.available();
+            if (available == 0) {
                 return false;
             }
-            BufferData bufferData = reader.getBuffer(CHUNKED_EMPTY_MESSAGE.length);
-            for (int i = 0; i < CHUNKED_EMPTY_MESSAGE.length; i++) {
-                if (bufferData.get(i) != CHUNKED_EMPTY_MESSAGE[i]) {
-                    return false;
-                }
+            BufferData bufferData = reader.getBuffer(available);
+            int endOfChunkSize = bufferData.indexOf(Bytes.CR_BYTE);
+            if (endOfChunkSize == -1 || endOfChunkSize >= 256 || endOfChunkSize + 3 >= available) {
+                return false;
             }
-            reader.skip(CHUNKED_EMPTY_MESSAGE.length);
-            entityFullyRead = true;
-            return true;
+            if (bufferData.get(endOfChunkSize + 1) != Bytes.LF_BYTE
+                    || bufferData.get(endOfChunkSize + 2) != Bytes.CR_BYTE
+                    || bufferData.get(endOfChunkSize + 3) != Bytes.LF_BYTE) {
+                return false;
+            }
+            try {
+                if (Http1CallChainBase.parseChunkSizeLine(bufferData.readString(endOfChunkSize,
+                                                                                StandardCharsets.US_ASCII)) == 0) {
+                    reader.skip(endOfChunkSize + 4);
+                    entityFullyRead = true;
+                    return true;
+                }
+            } catch (RuntimeException e) {
+                LOGGER.log(Level.DEBUG, "Exception while consuming chunked framing", e);
+            }
+            return false;
         }
         DataReader reader = connection.reader();
         if (reader.available() != entityLength) {

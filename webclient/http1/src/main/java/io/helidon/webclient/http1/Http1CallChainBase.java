@@ -102,7 +102,7 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         WebClientServiceResponse.Builder builder = WebClientServiceResponse.builder();
         AtomicReference<WebClientServiceResponse> response = new AtomicReference<>();
 
-        if (mayHaveEntity(serviceRequest.method(), responseStatus, responseHeaders)) {
+        if (mayExposeEntity(serviceRequest.method(), responseStatus, responseHeaders)) {
             // this may be an entity (if content length is set to zero, we know there is no entity)
             builder.inputStream(inputStream(clientConfig,
                                             recvListener,
@@ -312,17 +312,22 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         return recvListener;
     }
 
-    private static boolean mayHaveEntity(Method requestMethod, Status responseStatus, ClientResponseHeaders responseHeaders) {
+    static boolean statusAllowsEntity(Status responseStatus) {
+        int statusCode = responseStatus.code();
+        return responseStatus.family() != Status.Family.INFORMATIONAL
+                && statusCode != Status.NO_CONTENT_204.code()
+                && statusCode != Status.RESET_CONTENT_205.code()
+                && statusCode != Status.NOT_MODIFIED_304.code();
+    }
+
+    private static boolean mayExposeEntity(Method requestMethod, Status responseStatus, ClientResponseHeaders responseHeaders) {
         if (requestMethod == Method.HEAD) {
             return false;
         }
         if (responseHeaders.contains(HeaderValues.CONTENT_LENGTH_ZERO)) {
             return false;
         }
-        int statusCode = responseStatus.code();
-        if (responseStatus.family() == Status.Family.INFORMATIONAL
-                || statusCode == Status.NO_CONTENT_204.code()
-                || statusCode == Status.NOT_MODIFIED_304.code()) {
+        if (!statusAllowsEntity(responseStatus)) {
             return false;
         }
         if ((
@@ -373,6 +378,26 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
             inputStream = new EverythingInputStream(helidonSocket, reader, whenComplete, response, recvListener);
         }
         return decoder.apply(inputStream);
+    }
+
+    static int readChunkSize(DataReader reader) {
+        int endOfChunkSize = reader.findNewLine(256);
+        if (endOfChunkSize == 256) {
+            throw new IllegalStateException("Cannot read chunked entity, end of line not found within 256 bytes");
+        }
+        String chunkSizeLine = reader.readAsciiString(endOfChunkSize);
+        reader.skip(2); // CRLF
+        return parseChunkSizeLine(chunkSizeLine);
+    }
+
+    static int parseChunkSizeLine(String chunkSizeLine) {
+        int extension = chunkSizeLine.indexOf(';');
+        String hex = (extension == -1 ? chunkSizeLine : chunkSizeLine.substring(0, extension)).strip();
+        try {
+            return ParserHelper.parseNonNegative(hex, 16, INVALID_SIZE_EXCEPTION_SUPPLIER);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Chunk size is not a number");
+        }
     }
 
     private ClientConnection obtainConnection(WebClientServiceRequest request) {
@@ -615,18 +640,12 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                 return;
             }
             // chunked encoding - I will just read each chunk fully into memory, as that is how the protocol is designed
-            int endOfChunkSize = reader.findNewLine(256);
-            if (endOfChunkSize == 256) {
-                entityProcessedRunnable.run();
-                throw new IllegalStateException("Cannot read chunked entity, end of line not found within 256 bytes");
-            }
-            String hex = reader.readAsciiString(endOfChunkSize);
-            reader.skip(2); // CRLF
             int length;
             try {
-                length = ParserHelper.parseNonNegative(hex, 16, INVALID_SIZE_EXCEPTION_SUPPLIER);
-            } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Chunk size is not a number");
+                length = readChunkSize(reader);
+            } catch (IllegalStateException e) {
+                entityProcessedRunnable.run();
+                throw e;
             }
             if (length == 0) {
                 if (reader.startsWithNewLine()) {

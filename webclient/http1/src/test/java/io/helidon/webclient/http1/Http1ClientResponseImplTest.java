@@ -82,6 +82,15 @@ class Http1ClientResponseImplTest {
     }
 
     @Test
+    void doesNotCreateEntityStreamForResetContentWithoutFraming() {
+        WebClientServiceResponse response = serviceResponse(Method.GET,
+                                                            Status.RESET_CONTENT_205,
+                                                            ClientResponseHeaders.create(WritableHeaders.create()));
+
+        assertThat(response.inputStream().isEmpty(), is(true));
+    }
+
+    @Test
     void createsEntityStreamForUnframedGetResponse() {
         WebClientServiceResponse response = serviceResponse(Method.GET,
                                                             Status.OK_200,

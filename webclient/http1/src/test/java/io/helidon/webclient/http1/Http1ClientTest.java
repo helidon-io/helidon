@@ -283,12 +283,32 @@ class Http1ClientTest {
     }
 
     @Test
-    void testResetContentResponseWithChunkedTerminatorReusesConnection() throws IOException {
+    void testResetContentResponseWithChunkedTerminatorReusesConnectionWithoutEntityAccess() throws IOException {
         FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(Status.RESET_CONTENT_205,
                                                                              true,
                                                                              false,
                                                                              List.of(HeaderValues.TRANSFER_ENCODING_CHUNKED),
                                                                              "0\r\n\r\n".getBytes(StandardCharsets.US_ASCII));
+
+        try (Http1ClientResponse response = client.get("http://localhost:" + dummyPort + "/test")
+                .connection(connection)
+                .request()) {
+            assertThat(response.status(), is(Status.RESET_CONTENT_205));
+            assertThat(response.headers(), hasHeader(HeaderNames.TRANSFER_ENCODING, "chunked"));
+        }
+
+        assertThat(connection.releaseCount(), is(1));
+        assertThat(connection.closeCount(), is(0));
+    }
+
+    @Test
+    void testResetContentResponseWithChunkedTerminatorExtensionReusesConnection() throws IOException {
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(Status.RESET_CONTENT_205,
+                                                                             true,
+                                                                             false,
+                                                                             List.of(HeaderValues.TRANSFER_ENCODING_CHUNKED),
+                                                                             "0;ext=value\r\n\r\n"
+                                                                                     .getBytes(StandardCharsets.US_ASCII));
 
         try (Http1ClientResponse response = client.get("http://localhost:" + dummyPort + "/test")
                 .connection(connection)
@@ -345,7 +365,7 @@ class Http1ClientTest {
     }
 
     @Test
-    void testResetContentResponseWithChunkedTrailersClosesConnectionWithoutEntity() {
+    void testResetContentResponseWithChunkedTrailersReusesConnectionAfterTrailersRead() {
         FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(Status.RESET_CONTENT_205,
                                                                              true,
                                                                              false,
@@ -353,7 +373,7 @@ class Http1ClientTest {
                                                                                      HeaderValues.create(
                                                                                              HeaderNames.TRAILER,
                                                                                              "X-Test")),
-                                                                             "0\r\nX-Test: value\r\n\r\n"
+                                                                             "0;ext=value\r\nX-Test: value\r\n\r\n"
                                                                                      .getBytes(StandardCharsets.US_ASCII));
 
         try (Http1ClientResponse response = client.get("http://localhost:" + dummyPort + "/test")
@@ -362,10 +382,11 @@ class Http1ClientTest {
             assertThat(response.status(), is(Status.RESET_CONTENT_205));
             assertThat(response.headers(), hasHeader(HeaderNames.TRANSFER_ENCODING, "chunked"));
             assertThat(response.entity().hasEntity(), is(false));
+            assertThat(response.trailers(), hasHeader(HeaderNames.create("X-Test"), "value"));
         }
 
-        assertThat(connection.releaseCount(), is(0));
-        assertThat(connection.closeCount(), is(1));
+        assertThat(connection.releaseCount(), is(1));
+        assertThat(connection.closeCount(), is(0));
     }
 
     @ParameterizedTest
