@@ -58,14 +58,32 @@ class OpenApi31DocumentMapperTest {
                         "title", "Static API",
                         "version", "1.0.0"),
                 "paths", Map.of(
+                        "x-gateway-root", true,
+                        "x-gateway-object", Map.of("stage", "prod"),
                         "/pets", Map.of(
                                 "x-path-meta", "keep",
                                 "get", Map.of(
                                         "responses", Map.of(
                                                 "x-provider-meta", true,
                                                 "x-provider-object", Map.of("enabled", true),
-                                                "200", Map.of("description", "OK"))))),
+                                                "200", Map.of("description", "OK")),
+                                        "callbacks", Map.of(
+                                                "x-callback-scalar", "keep",
+                                                "x-callback-object", Map.of("enabled", true),
+                                                "{$request.body#/callbackUrl}", Map.of(
+                                                        "post", Map.of(
+                                                                "responses", Map.of(
+                                                                        "200", Map.of("description", "OK")))))))),
                 "components", Map.of(
+                        "securitySchemes", Map.of(
+                                "OAuth", Map.of(
+                                        "type", "oauth2",
+                                        "flows", Map.of(
+                                                "x-flow-scalar", "keep",
+                                                "x-flow-object", Map.of("enabled", true),
+                                                "clientCredentials", Map.of(
+                                                        "tokenUrl", "https://idp.example.com/token",
+                                                        "scopes", Map.of())))),
                         "pathItems", Map.of(
                                 "ReusablePath", Map.of(
                                         "get", Map.of(
@@ -75,13 +93,24 @@ class OpenApi31DocumentMapperTest {
         Map<String, Object> rendered = OpenApi31DocumentMapper.render(document, "3.1.1");
         Map<String, Object> path = map(map(rendered, "paths"), "/pets");
         Map<String, Object> responses = map(map(path, "get"), "responses");
+        Map<String, Object> callbacks = map(map(path, "get"), "callbacks");
         Map<String, Object> reusablePath = map(map(map(rendered, "components"), "pathItems"), "ReusablePath");
+        Map<String, Object> flows = map(map(map(map(rendered, "components"), "securitySchemes"), "OAuth"), "flows");
 
+        assertThat(document.paths().containsKey("x-gateway-object"), is(false));
+        assertThat(document.paths().get("/pets").operations().get("get").callbacks().containsKey("x-callback-object"),
+                   is(false));
+        assertThat(map(rendered, "paths").get("x-gateway-root"), is(true));
+        assertThat(map(map(rendered, "paths"), "x-gateway-object").get("stage"), is("prod"));
         assertThat(document.paths().get("/pets").operations().get("get").responses().containsKey("x-provider-object"),
                    is(false));
         assertThat(path.get("x-path-meta"), is("keep"));
         assertThat(responses.get("x-provider-meta"), is(true));
         assertThat(map(responses, "x-provider-object").get("enabled"), is(true));
+        assertThat(callbacks.get("x-callback-scalar"), is("keep"));
+        assertThat(map(callbacks, "x-callback-object").get("enabled"), is(true));
+        assertThat(flows.get("x-flow-scalar"), is("keep"));
+        assertThat(map(flows, "x-flow-object").get("enabled"), is(true));
         assertThat(reusablePath.get("x-component-path-item"), is("keep"));
     }
 

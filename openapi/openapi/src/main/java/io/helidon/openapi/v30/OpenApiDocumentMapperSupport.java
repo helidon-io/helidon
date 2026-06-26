@@ -306,7 +306,8 @@ public final class OpenApiDocumentMapperSupport {
             switch (key) {
             case "info" -> object(value, object -> result.put(key, info(object, rules)));
             case "servers" -> result.put(key, serverList(value, rules));
-            case "paths", "webhooks" -> object(value, object -> result.put(key, paths(object, rules)));
+            case "paths" -> object(value, object -> result.put(key, paths(object, rules, true)));
+            case "webhooks" -> object(value, object -> result.put(key, paths(object, rules, false)));
             case "components" -> object(value, object -> result.put(key, components(object, rules)));
             case "tags" -> result.put(key, tagList(value, rules));
             case "externalDocs" -> object(value, object -> result.put(key, copyAllowed(object, rules.externalDocsFields())));
@@ -375,9 +376,17 @@ public final class OpenApiDocumentMapperSupport {
         });
     }
 
-    private static Map<String, Object> paths(Map<String, ?> source, OpenApi3xMapperRules rules) {
+    private static Map<String, Object> paths(Map<String, ?> source,
+                                             OpenApi3xMapperRules rules,
+                                             boolean containerExtensions) {
         Map<String, Object> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> object(value, object -> result.put(key, pathItem(object, rules))));
+        source.forEach((key, value) -> {
+            if (containerExtensions && key.startsWith("x-")) {
+                copyField(result, key, source);
+            } else {
+                object(value, object -> result.put(key, pathItem(object, rules)));
+            }
+        });
         return result;
     }
 
@@ -417,7 +426,7 @@ public final class OpenApiDocumentMapperSupport {
             case "parameters" -> result.put(key, parameters(value, rules));
             case "requestBody" -> object(value, object -> result.put(key, requestBody(object, rules)));
             case "responses" -> object(value, object -> result.put(key, responses(object, rules)));
-            case "callbacks" -> object(value, object -> result.put(key, callbacks(object, rules)));
+            case "callbacks" -> object(value, object -> result.put(key, callbacks(object, rules, true)));
             case "servers" -> result.put(key, serverList(value, rules));
             case "externalDocs" -> object(value, object -> result.put(key, copyAllowed(object, rules.externalDocsFields())));
             default -> copyField(result, key, source);
@@ -600,8 +609,8 @@ public final class OpenApiDocumentMapperSupport {
             case "headers" -> object(value, object -> result.put(key, headers(object, rules)));
             case "securitySchemes" -> object(value, object -> result.put(key, securitySchemes(object, rules)));
             case "links" -> object(value, object -> result.put(key, links(object, rules)));
-            case "callbacks" -> object(value, object -> result.put(key, callbacks(object, rules)));
-            case "pathItems" -> object(value, object -> result.put(key, paths(object, rules)));
+            case "callbacks" -> object(value, object -> result.put(key, callbacks(object, rules, false)));
+            case "pathItems" -> object(value, object -> result.put(key, paths(object, rules, false)));
             case "mediaTypes" -> object(value, object -> result.put(key, mediaTypes(object, rules)));
             default -> copyField(result, key, source);
             }
@@ -670,6 +679,10 @@ public final class OpenApiDocumentMapperSupport {
     private static Map<String, Object> oauthFlows(String path, Map<String, ?> source, OpenApi3xMapperRules rules) {
         Map<String, Object> result = new LinkedHashMap<>();
         source.forEach((key, value) -> {
+            if (key.startsWith("x-")) {
+                copyField(result, key, source);
+                return;
+            }
             if (!allowed(key, rules.oauthFlowsFields())) {
                 throw unsupported(rules, "OAuth flow", key, path);
             }
@@ -719,9 +732,17 @@ public final class OpenApiDocumentMapperSupport {
         return result;
     }
 
-    private static Map<String, Object> callbacks(Map<String, ?> source, OpenApi3xMapperRules rules) {
+    private static Map<String, Object> callbacks(Map<String, ?> source,
+                                                 OpenApi3xMapperRules rules,
+                                                 boolean containerExtensions) {
         Map<String, Object> result = new LinkedHashMap<>();
-        source.forEach((key, value) -> object(value, object -> result.put(key, pathItem(object, rules))));
+        source.forEach((key, value) -> {
+            if (containerExtensions && key.startsWith("x-")) {
+                copyField(result, key, source);
+            } else {
+                object(value, object -> result.put(key, pathItem(object, rules)));
+            }
+        });
         return result;
     }
 

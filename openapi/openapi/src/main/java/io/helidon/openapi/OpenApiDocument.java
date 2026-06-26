@@ -237,8 +237,11 @@ public final class OpenApiDocument {
         return objectValue(value)
                 .map(paths -> {
                     Map<String, PathItem> result = new LinkedHashMap<>();
-                    paths.forEach((path, pathItem) -> objectValue(pathItem)
-                            .ifPresent(node -> result.put(path, new PathItem(path, node))));
+                    paths.forEach((path, pathItem) -> {
+                        if (!path.startsWith("x-")) {
+                            objectValue(pathItem).ifPresent(node -> result.put(path, new PathItem(path, node)));
+                        }
+                    });
                     return Collections.unmodifiableMap(result);
                 })
                 .orElseGet(Map::of);
@@ -1996,6 +1999,20 @@ public final class OpenApiDocument {
          */
         public OperationBuilder responseExtension(String name, JsonValue value) {
             OpenApiDocument.extension(object(node, "responses"), name, value);
+            return this;
+        }
+
+        /**
+         * Add an extension to the callbacks object.
+         * <p>
+         * Extension names must start with {@code x-}.
+         *
+         * @param name extension name
+         * @param value extension value
+         * @return updated builder
+         */
+        public OperationBuilder callbackExtension(String name, JsonValue value) {
+            OpenApiDocument.extension(object(node, "callbacks"), name, value);
             return this;
         }
 
@@ -4296,6 +4313,20 @@ public final class OpenApiDocument {
             PathItemBuilder builder = PathItem.builder();
             pathItem.accept(builder);
             return path(path, builder.build());
+        }
+
+        /**
+         * Add an extension to the paths object.
+         * <p>
+         * Extension names must start with {@code x-}.
+         *
+         * @param name extension name
+         * @param value extension value
+         * @return updated builder
+         */
+        public Builder pathExtension(String name, JsonValue value) {
+            OpenApiDocument.extension(object(node, "paths"), name, value);
+            return this;
         }
 
         /**
