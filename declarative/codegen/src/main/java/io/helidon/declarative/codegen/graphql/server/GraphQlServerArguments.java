@@ -25,9 +25,6 @@ import io.helidon.common.types.Annotations;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypedElementInfo;
 
-import graphql.parser.InvalidSyntaxException;
-import graphql.parser.Parser;
-
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_ARGUMENT;
 import static io.helidon.declarative.codegen.graphql.server.GraphQlServerCodegenTypes.GRAPHQL_NAME;
 import static java.util.function.Predicate.not;
@@ -68,20 +65,5 @@ final class GraphQlServerArguments {
         return GraphQlServerExtension.validateGraphQlName(argumentName.or(() -> graphQlName)
                                                                   .orElse(parameter.elementName()),
                                                           parameter.originatingElementValue());
-    }
-
-    static void validateDefaultValue(String defaultValue,
-                                     TypeInfo endpoint,
-                                     TypedElementInfo method,
-                                     TypedElementInfo parameter) {
-        try {
-            Parser.parseValue(defaultValue);
-        } catch (InvalidSyntaxException e) {
-            throw new CodegenException("@GraphQl.DefaultValue must be a valid GraphQL SDL literal on "
-                                               + endpoint.typeName().fqName() + "."
-                                               + method.elementName() + " parameter " + parameter.elementName()
-                                               + ": " + e.getMessage(),
-                                       parameter.originatingElementValue());
-        }
     }
 }

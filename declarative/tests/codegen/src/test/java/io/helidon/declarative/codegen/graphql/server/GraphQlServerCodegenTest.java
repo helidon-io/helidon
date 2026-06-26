@@ -213,7 +213,7 @@ class GraphQlServerCodegenTest {
                         import io.helidon.graphql.GraphQl;
 
                         @GraphQl.Entity
-                        @GraphQl.Description("Book result")
+                        @GraphQl.Description("Book\\rresult")
                         record Book(@GraphQl.NonNull String title,
                                     @GraphQl.Name("state") BookStatus status,
                                     Isbn isbn,
@@ -366,7 +366,7 @@ class GraphQlServerCodegenTest {
         assertThat(generated, containsString("update(enabled: Boolean!): Boolean"));
         assertThat(generated, containsString("ISBN scalar"));
         assertThat(generated, containsString("scalar ISBN"));
-        assertThat(generated, containsString("Book result"));
+        assertThat(generated, containsString("Book\\\\rresult"));
         assertThat(generated, containsString("type Book"));
         assertThat(generated, containsString("title: String!"));
         assertThat(generated, containsString("state: BookStatus"));
@@ -1400,12 +1400,12 @@ class GraphQlServerCodegenTest {
     }
 
     @Test
-    void invalidArgumentDefaultValueFailsCodegen() {
+    void parameterizedScalarUseFailsCodegen() {
         var result = TestCompiler.builder()
                 .currentRelease()
                 .addClasspath(GRAPHQL_CLASSPATH)
                 .addProcessor(AptProcessor::new)
-                .workDir(Path.of("target/test-compiler/graphql-server-invalid-argument-default"))
+                .workDir(Path.of("target/test-compiler/graphql-server-parameterized-scalar"))
                 .addSource("GraphEndpoint.java", """
                         package com.example;
 
@@ -1415,9 +1415,18 @@ class GraphQlServerCodegenTest {
                         @GraphQlServer.Endpoint
                         class GraphEndpoint {
                             @GraphQl.Query
-                            String hello(@GraphQl.Argument("name") @GraphQl.DefaultValue("\\"unterminated") String name) {
-                                return name;
+                            String hello(@GraphQl.Argument("box") Box<String> box) {
+                                return box.value();
                             }
+                        }
+                        """)
+                .addSource("Box.java", """
+                        package com.example;
+
+                        import io.helidon.graphql.GraphQl;
+
+                        @GraphQl.Scalar
+                        record Box<T>(T value) {
                         }
                         """)
                 .build()
@@ -1425,7 +1434,8 @@ class GraphQlServerCodegenTest {
 
         String diagnostics = String.join("\n", result.diagnostics());
         assertThat(diagnostics, result.success(), is(false));
-        assertThat(diagnostics, containsString("@GraphQl.DefaultValue must be a valid GraphQL SDL literal"));
+        assertThat(diagnostics, containsString("GraphQL scalar type com.example.Box<java.lang.String> "
+                                                      + "must not be parameterized."));
     }
 
     @Test

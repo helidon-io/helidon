@@ -681,9 +681,6 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
         Optional<String> defaultValue = Annotations.findFirst(GRAPHQL_DEFAULT_VALUE, annotations)
                 .flatMap(Annotation::stringValue)
                 .filter(not(String::isBlank));
-        if (defaultValue.isPresent()) {
-            GraphQlServerArguments.validateDefaultValue(defaultValue.orElseThrow(), endpoint, method, parameter);
-        }
         boolean nonNull = parameter.typeName().primitive()
                 || Annotations.findFirst(GRAPHQL_NON_NULL, annotations).isPresent();
         String schemaType = nonNull ? valueType.graphQlName() + "!" : valueType.graphQlName();
@@ -1598,10 +1595,13 @@ class GraphQlServerExtension implements RegistryCodegenExtension {
             if (builtin.isPresent()) {
                 return builtin;
             }
-
             Optional<TypeInfo> typeInfo = roundContext.typeInfo(type.boxed())
                     .or(() -> roundContext.typeInfo(type));
             if (typeInfo.isPresent() && typeInfo.orElseThrow().findAnnotation(GRAPHQL_SCALAR).isPresent()) {
+                if (!type.typeArguments().isEmpty()) {
+                    throw new CodegenException("GraphQL scalar type " + type.resolvedName() + " must not be parameterized.",
+                                               originatingElement);
+                }
                 return Optional.of(scalarType(typeInfo.orElseThrow()));
             }
             return Optional.empty();

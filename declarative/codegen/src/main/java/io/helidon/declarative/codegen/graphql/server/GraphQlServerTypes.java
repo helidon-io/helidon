@@ -343,6 +343,7 @@ final class GraphQlServerTypes {
     private static String escapeDescription(String description) {
         return description.replace("\\", "\\\\")
                 .replace("\"", "\\\"")
-                .replace("\n", "\\n");
+                .replace("\n", "\\n")
+                .replace("\r", "\\r");
     }
 }
