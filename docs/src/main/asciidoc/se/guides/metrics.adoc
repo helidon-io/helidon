@@ -1,6 +1,6 @@
 ///////////////////////////////////////////////////////////////////////////////
 
-    Copyright (c) 2019, 2025 Oracle and/or its affiliates.
+    Copyright (c) 2019, 2026 Oracle and/or its affiliates.
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -161,7 +161,7 @@ The `Counter` {metric} is a monotonically increasing number. The following examp
 include::{sourcedir}/se/guides/MetricsSnippets.java[tag=snippet_3, indent=0]
 ----
 <1> Declare a `Counter` member field.
-<2> Create and register the `Counter` {metric} in the global meter registry`.  This `Counter` will exist for the lifetime of
+<2> Create and register the `Counter` {metric} in the global meter registry using a builder from `MetricsFactory`. This `Counter` will exist for the lifetime of
 the application.
 <3> Increment the count.
 
@@ -204,8 +204,8 @@ endpoint is called, the code updates the `Timer` with additional timing informat
 include::{sourcedir}/se/guides/MetricsSnippets.java[tag=snippet_5, indent=0]
 ----
 <1> Declare a `Timer` member field.
-<2> Create and register the `Timer` metric in the global meter registry.
-<3> Create a timer sample which, among other things, automatically records the starting time.
+<2> Create and register the `Timer` metric in the global meter registry using a builder from `MetricsFactory`.
+<3> Create a timer sample from `MetricsFactory` which, among other things, automatically records the starting time.
 <4> Arrange for the timer sample to be stopped and applied to the `cardTimer` once Helidon sends the response to the client.
 
 
@@ -251,7 +251,7 @@ the `/cards` endpoint is invoked.
 include::{sourcedir}/se/guides/MetricsSnippets.java[tag=snippet_6, indent=0]
 ----
 <1> Declare a `DistributionSummary` member field.
-<2> Create and register the `DistributionSummary` {metric} in the global meter registry
+<2> Create and register the `DistributionSummary` {metric} in the global meter registry using a builder from `MetricsFactory`.
 <3> Update the distribution summary with a random number multiple times for each request.
 
 
@@ -294,7 +294,7 @@ how a `Gauge` is used to get the current temperature.
 ----
 include::{sourcedir}/se/guides/MetricsSnippets.java[tag=snippet_7, indent=0]
 ----
-<1> Register the `Gauge`, passing a `Supplier<Double>` which furnishes a random temperature from 0 to 100.0 each time the metrics system interrogates the gauge.
+<1> Register the `Gauge` using a builder from `MetricsFactory`, passing a `Supplier<Double>` which furnishes a random temperature from 0 to 100.0 each time the metrics system interrogates the gauge.
 
 
 [source,bash,subs="attributes+"]
@@ -328,4 +328,3 @@ This guide demonstrated how to use metrics in a Helidon SE application using var
 Refer to the following references for additional information:
 
 * link:{javadoc-base-url}/index.html?overview-summary.html[Helidon Javadoc]
-

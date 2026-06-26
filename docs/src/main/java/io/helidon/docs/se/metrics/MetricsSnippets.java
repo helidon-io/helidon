@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,12 @@ package io.helidon.docs.se.metrics;
 
 import io.helidon.config.Config;
 import io.helidon.metrics.api.Counter;
-import io.helidon.metrics.api.Metrics;
+import io.helidon.metrics.api.MeterRegistry;
+import io.helidon.metrics.api.MetricsFactory;
 // tag::snippet_4[]
 import io.helidon.metrics.prometheus.PrometheusSupport;
 // end::snippet_4[]
+import io.helidon.service.registry.Services;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.http.HttpRouting;
 import io.helidon.webserver.http.HttpRules;
@@ -67,8 +69,15 @@ class MetricsSnippets {
     // tag::snippet_2[]
     public class GreetService implements HttpService {
 
-        private final Counter accessCtr = Metrics.globalRegistry() // <1>
-                .getOrCreate(Counter.builder("accessctr")); // <2>
+        private final Counter accessCtr;
+
+        GreetService() {
+            var metricsFactory = Services.get(MetricsFactory.class);
+            var meterRegistry = Services.get(MeterRegistry.class); // <1>
+
+            this.accessCtr = meterRegistry
+                    .getOrCreate(metricsFactory.counterBuilder("accessctr")); // <2>
+        }
 
         @Override
         public void routing(HttpRules rules) {

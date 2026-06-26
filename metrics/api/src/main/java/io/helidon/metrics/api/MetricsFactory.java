@@ -26,14 +26,11 @@ import io.helidon.config.Config;
  * The basic contract for implementations of the Helidon metrics API, mostly acting as a factory for
  * meter <em>builders</em> rather than for meters themselves.
  * <p>
- * This is not intended to be the interface which developers use to work with Helidon metrics. Instead use
- *     <ul>
- *         <li>the {@link io.helidon.metrics.api.Metrics} interface and its static convenience methods,</li>
- *         <li>the static methods on the various meter interfaces in the API (such as {@link io.helidon.metrics.api.Timer},
- *         or</li>
- *         <li>{@link io.helidon.metrics.api.Metrics#globalRegistry()} and use the returned
- *      {@link io.helidon.metrics.api.MeterRegistry} directly</li>
- *     </ul>
+ * Applications commonly use
+ * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MeterRegistry.class)} to obtain the
+ * shared meter registry, or
+ * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MetricsFactory.class)} when they need a
+ * metrics factory for programmatic builder or custom registry creation.
  * <p>
  * An implementation of this interface provides instance methods for each
  * of the static methods on the Helidon metrics API interfaces. The prefix of each method
@@ -119,11 +116,8 @@ public interface MetricsFactory {
      * Returns the global {@link io.helidon.metrics.api.MeterRegistry} for this metrics factory.
      *
      * <p>
-     * The metric factory creates its global registry on-demand using
-     * {@link #getInstance()}.{@link #createMeterRegistry(MetricsConfig)} with a
-     * {@link MetricsConfig} instance derived from the root {@link io.helidon.config.Config} most recently passed to
-     * {@link #getInstance(io.helidon.config.Config)}, or if none then the config from
-     * current {@link io.helidon.config.Config}.
+     * The metric factory creates its global registry on-demand using {@link #createMeterRegistry(MetricsConfig)} with a
+     * {@link MetricsConfig} instance derived from the current {@link io.helidon.config.Config}.
      *
      * @return the global meter registry
      */

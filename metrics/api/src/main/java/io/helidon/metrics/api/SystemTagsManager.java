@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,10 @@ public interface SystemTagsManager {
 
     /**
      * Returns the initialized instance of the tags manager.
+     * <p>
+     * Application code rarely needs direct access to the shared system tags manager. Prefer configuring metrics through
+     * {@link MetricsConfig} and creating meters through {@link MeterRegistry} or {@link MetricsFactory}.
+     * </p>
      *
      * @return current instance of the tags manager
      */
@@ -50,6 +54,10 @@ public interface SystemTagsManager {
     /**
      * Creates a new system tags manager using the provide metrics settings, saving the new instance as the initialized
      * singleton which will be returned to subsequent invocations of {@link #instance()}.
+     * <p>
+     * For code which needs an isolated manager for a specific metrics configuration, prefer {@link #create(MetricsConfig)}
+     * because it does not replace the shared instance.
+     * </p>
      *
      * @param metricsConfig settings containing the global and app-level tags (if any)
      * @return new (and saved) tags manager

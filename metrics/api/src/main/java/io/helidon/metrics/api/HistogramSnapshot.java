@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates.
+ * Copyright (c) 2023, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,10 @@ public interface HistogramSnapshot extends Wrapper {
 
     /**
      * Returns an "empty" snapshot which has summary values but no data points.
+     * <p>
+     * For new code, prefer {@link MetricsFactory#histogramSnapshotEmpty(long, double, double)} on the
+     * {@link MetricsFactory} instance used by the application.
+     * </p>
      *
      * @param count count of observations the snapshot should report
      * @param total total value of observations the snapshot should report
