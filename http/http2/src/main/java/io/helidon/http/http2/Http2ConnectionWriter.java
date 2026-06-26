@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,14 +102,14 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
             Http2FrameHeader frameHeader;
             frameHeader = Http2FrameHeader.create(fragment.available(),
                     Http2FrameTypes.HEADERS,
-                    Http2Flag.HeaderFlags.create(0),
+                    Http2Flag.HeaderFlags.create(flags.endOfStream() ? Http2Flag.END_OF_STREAM : 0),
                     streamId);
             written += frameHeader.length();
             written += Http2FrameHeader.LENGTH;
             noLockWrite(new Http2FrameData(frameHeader, fragment));
 
             // Header continuation fragments in the middle
-            for (int i = 1; i < fragments.length; i++) {
+            for (int i = 1; i < fragments.length - 1; i++) {
                 fragment = fragments[i];
                 frameHeader = Http2FrameHeader.create(fragment.available(),
                         Http2FrameTypes.CONTINUATION,
@@ -125,7 +125,7 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
             frameHeader = Http2FrameHeader.create(fragment.available(),
                     Http2FrameTypes.CONTINUATION,
                     // Last fragment needs to indicate the end of headers
-                    Http2Flag.ContinuationFlags.create(flags.value() | Http2Flag.END_OF_HEADERS),
+                    Http2Flag.ContinuationFlags.create(Http2Flag.END_OF_HEADERS),
                     streamId);
             written += frameHeader.length();
             written += Http2FrameHeader.LENGTH;
