@@ -150,6 +150,11 @@ class OpenApi30DocumentMapperTest {
                                                         "x-static-response", "preserved"))))),
                 "components", Map.of(
                         "x-components", true,
+                        "responses", Map.of(
+                                "x-Problem", Map.of(
+                                        "description", "Problem details",
+                                        "summary", "OpenAPI 3.2 summary",
+                                        "x-response", "preserved")),
                         "parameters", Map.of(
                                 "GatewayPolicy", Map.of(
                                         "name", "policy",
@@ -176,6 +181,7 @@ class OpenApi30DocumentMapperTest {
         Map<String, Object> encoding = map(map(content, "encoding"), "payload");
         Map<String, Object> link = map(map(okResponse, "links"), "StaticLink");
         Map<String, Object> components = map(rendered, "components");
+        Map<String, Object> componentResponse = map(map(components, "responses"), "x-Problem");
         Map<String, Object> parameter = map(map(components, "parameters"), "GatewayPolicy");
         Map<String, Object> requestBody = map(map(components, "requestBodies"), "CodegenRequest");
         Map<String, Object> securityScheme = map(map(components, "securitySchemes"), "AmazonAuth");
@@ -192,6 +198,9 @@ class OpenApi30DocumentMapperTest {
         assertThat(encoding.get("x-encoding"), is("keep"));
         assertThat(link.get("x-link"), is("keep"));
         assertThat(components.get("x-components"), is(true));
+        assertThat(componentResponse.get("description"), is("Problem details"));
+        assertThat(componentResponse.containsKey("summary"), is(false));
+        assertThat(componentResponse.get("x-response"), is("preserved"));
         assertThat(parameter.get("x-gateway-policy"), is("preserved"));
         assertThat(requestBody.get("x-codegen-request"), is(true));
         assertThat(securityScheme.get("x-amazon-apigateway-authtype"), is("custom"));

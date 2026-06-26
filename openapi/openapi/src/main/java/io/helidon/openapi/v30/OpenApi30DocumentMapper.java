@@ -357,7 +357,7 @@ final class OpenApi30DocumentMapper {
             switch (key) {
             case "parameters" -> result.put(key, parameters(value, mode));
             case "requestBody" -> object(value, object -> result.put(key, requestBody(object, mode)));
-            case "responses" -> object(value, object -> result.put(key, responses(object, mode)));
+            case "responses" -> object(value, object -> result.put(key, responses(object, mode, true)));
             case "callbacks" -> object(value, object -> result.put(key, callbacks(object, mode, true)));
             case "servers" -> result.put(key, serverList(value));
             case "externalDocs" -> object(value, object -> result.put(key, copyAllowed(object, EXTERNAL_DOCS_FIELDS)));
@@ -423,10 +423,10 @@ final class OpenApi30DocumentMapper {
         return result;
     }
 
-    private static Map<String, Object> responses(Map<String, ?> source, SchemaMode mode) {
+    private static Map<String, Object> responses(Map<String, ?> source, SchemaMode mode, boolean containerExtensions) {
         Map<String, Object> result = new LinkedHashMap<>();
         source.forEach((key, value) -> {
-            if (key.startsWith("x-")) {
+            if (containerExtensions && key.startsWith("x-")) {
                 copyField(result, key, source);
                 return;
             }
@@ -533,7 +533,7 @@ final class OpenApi30DocumentMapper {
             }
             switch (key) {
             case "schemas" -> object(value, object -> result.put(key, schemaMap(object, mode)));
-            case "responses" -> object(value, object -> result.put(key, responses(object, mode)));
+            case "responses" -> object(value, object -> result.put(key, responses(object, mode, false)));
             case "parameters" -> object(value, object -> result.put(key, parameterMap(object, mode)));
             case "examples" -> result.put(key, examples(value));
             case "requestBodies" -> object(value, object -> result.put(key, requestBodyMap(object, mode)));
