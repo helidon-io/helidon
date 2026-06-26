@@ -481,6 +481,14 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
             method.addContentLine();
         }
 
+        List<RestMethodParameter> params = restMethod.parameters();
+        boolean hasServerResponse = params.stream()
+                .map(RestMethodParameter::typeName)
+                .anyMatch(WebServerCodegenTypes.SERVER_RESPONSE::equals);
+        if (hasServerResponse) {
+            responseMetadata(fieldHandler, method, restMethod, headerProducers);
+        }
+
         boolean hasResponse = false;
         if (!restMethod.returnType().boxed().equals(TypeNames.BOXED_VOID)) {
             method.addContent("var ")
@@ -489,7 +497,6 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
             hasResponse = true;
         }
 
-        List<RestMethodParameter> params = restMethod.parameters();
         if (singleton) {
             method.addContent("this.endpoint.");
         } else {
@@ -520,6 +527,33 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
                     .decreaseContentPadding();
         }
 
+        if (!hasServerResponse) {
+            responseMetadata(fieldHandler, method, restMethod, headerProducers);
+        }
+        boolean guardDefaultSend = hasServerResponse && !hasResponse;
+        if (guardDefaultSend) {
+            method.addContent("if (!")
+                    .addContent(RESPONSE_PARAM_NAME)
+                    .addContentLine(".isResponseHandled()) {")
+                    .increaseContentPadding();
+        }
+        method.addContent(RESPONSE_PARAM_NAME)
+                .addContent(".send(");
+        if (hasResponse) {
+            // we consider the response to be an entity to be sent (unmodified) over the response
+            method.addContent(METHOD_RESPONSE_NAME);
+        }
+        method.addContentLine(");");
+        if (guardDefaultSend) {
+            method.decreaseContentPadding()
+                    .addContentLine("}");
+        }
+    }
+
+    private void responseMetadata(FieldHandler fieldHandler,
+                                  Method.Builder method,
+                                  RestMethod restMethod,
+                                  Map<String, String> headerProducers) {
         if (restMethod.produces().size() == 1) {
             String mediaType = restMethod.produces().getFirst();
             if (!"*/*".equals(mediaType)) {
@@ -556,14 +590,6 @@ class RestServerExtension extends RestExtensionBase implements RegistryCodegenEx
                     .addContent(RESPONSE_PARAM_NAME)
                     .addContent(".header(it));");
         }
-
-        method.addContent(RESPONSE_PARAM_NAME)
-                .addContent(".send(");
-        if (hasResponse) {
-            // we consider the response to be an entity to be sent (unmodified) over the response
-            method.addContent(METHOD_RESPONSE_NAME);
-        }
-        method.addContentLine(");");
     }
 
     @SuppressWarnings("checkstyle:ParameterNumber") // this is a private method
