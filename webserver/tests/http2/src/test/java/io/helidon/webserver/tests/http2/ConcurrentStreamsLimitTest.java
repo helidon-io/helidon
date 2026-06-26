@@ -29,6 +29,7 @@ import io.helidon.http.http2.FlowControl;
 import io.helidon.http.http2.Http2ErrorCode;
 import io.helidon.http.http2.Http2Flag;
 import io.helidon.http.http2.Http2FrameData;
+import io.helidon.http.http2.Http2FrameHeader;
 import io.helidon.http.http2.Http2FrameType;
 import io.helidon.http.http2.Http2FrameTypes;
 import io.helidon.http.http2.Http2GoAway;
@@ -262,6 +263,43 @@ class ConcurrentStreamsLimitTest {
         }
     }
 
+    @Test
+    void delayedDataForRejectedRequestDoesNotCloseConnection(Http2TestClient client) throws InterruptedException {
+        try (Http2TestConnection h2conn = client.createConnection()) {
+            WritableHeaders<?> requestHeaders = WritableHeaders.create();
+            requestHeaders.add(HeaderNames.CONTENT_ENCODING, "unsupported-test-encoding");
+            Http2Headers h2Headers = Http2Headers.create(requestHeaders);
+            h2Headers.method(POST);
+            h2Headers.path(BLOCKING_PATH);
+            h2Headers.scheme(h2conn.clientUri().scheme());
+            h2Headers.authority(h2conn.clientUri().authority());
+            h2conn.writer().writeHeaders(h2Headers,
+                                         1,
+                                         Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                         FlowControl.Outbound.NOOP);
+
+            assertErrorResponse(h2conn, 1, Status.UNSUPPORTED_MEDIA_TYPE_415);
+            Http2RstStream rstStream = h2conn.assertRstStream(1, TIMEOUT);
+            assertThat(rstStream.errorCode(), is(Http2ErrorCode.CANCEL));
+
+            h2conn.request(3, POST, BLOCKING_PATH, WritableHeaders.create(), BufferData.create(new byte[0]));
+            assertThat("Replacement stream did not start",
+                       requestsStarted.await(TIMEOUT.toSeconds(), TimeUnit.SECONDS),
+                       is(true));
+
+            h2conn.writer().writeData(new Http2FrameData(Http2FrameHeader.create(0,
+                                                                                 Http2FrameTypes.DATA,
+                                                                                 Http2Flag.DataFlags.create(
+                                                                                         Http2Flag.END_OF_STREAM),
+                                                                                 1),
+                                                         BufferData.empty()),
+                                      FlowControl.Outbound.NOOP);
+
+            releaseHandlers.countDown();
+            assertOkResponse(h2conn, 3);
+        }
+    }
+
     private void assertErrorResponse(Http2TestConnection h2conn, int streamId, Status status) {
         boolean headersSeen = false;
         boolean dataSeen = false;
@@ -283,6 +321,9 @@ class ConcurrentStreamsLimitTest {
                 Http2Headers headers = Http2Headers.create(null, responseDynamicTable, responseHuffman, frame);
                 assertThat(headers.status(), is(status));
                 headersSeen = true;
+                if (frame.header().flags(Http2FrameTypes.HEADERS).endOfStream()) {
+                    return;
+                }
             } else if (frame.header().type() == Http2FrameType.DATA) {
                 assertThat(frame.header().flags(Http2FrameTypes.DATA).endOfStream(), is(true));
                 dataSeen = true;

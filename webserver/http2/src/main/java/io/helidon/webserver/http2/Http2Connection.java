@@ -21,10 +21,10 @@ import java.net.SocketException;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.common.buffers.DataReader;
@@ -93,7 +93,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
             Set.of(Http2StreamState.CLOSED, Http2StreamState.HALF_CLOSED_LOCAL);
     private static final Set<HeaderName> SERVER_CONTROLLED_REQUEST_HEADERS = Set.of(X_HELIDON_CN);
     private final Http2ConnectionStreams streams = new Http2ConnectionStreams();
-    private final Set<Integer> locallyResetStreams = new HashSet<>();
+    private final Set<Integer> locallyResetStreams = ConcurrentHashMap.newKeySet();
     private final ConnectionContext ctx;
     private final Http2Config http2Config;
     private final HttpRouting routing;
