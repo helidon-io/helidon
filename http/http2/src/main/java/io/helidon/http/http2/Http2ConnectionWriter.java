@@ -17,6 +17,7 @@
 package io.helidon.http.http2;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -28,6 +29,8 @@ import io.helidon.common.socket.SocketContext;
  * HTTP/2 connection writer.
  */
 public class Http2ConnectionWriter implements Http2StreamWriter {
+    private static final Runnable NO_OP = () -> { };
+
     private final DataWriter writer;
 
     private final Lock streamLock = new ReentrantLock(true);
@@ -61,13 +64,56 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
 
     @Override
     public void writeData(Http2FrameData frame, FlowControl.Outbound flowControl) {
+        writeData(frame, flowControl, NO_OP);
+    }
+
+    /**
+     * Write a frame with flow control and notify when an {@code END_STREAM}
+     * data frame has been written and accounted for.
+     *
+     * @param frame                   data frame
+     * @param flowControl             outbound flow control
+     * @param onEndStreamFrameWritten action to run after the {@code END_STREAM}
+     *                                data frame is written and accounted for
+     * @return number of bytes written
+     */
+    public int writeData(Http2FrameData frame, FlowControl.Outbound flowControl, Runnable onEndStreamFrameWritten) {
+        Objects.requireNonNull(frame);
+        Objects.requireNonNull(flowControl);
+        Objects.requireNonNull(onEndStreamFrameWritten);
+        int written = 0;
         for (Http2FrameData f : frame.split(flowControl.maxFrameSize())) {
-            splitAndWrite(f, flowControl);
+            written += splitAndWrite(f, flowControl, onEndStreamFrameWritten);
         }
+        return written;
     }
 
     @Override
     public int writeHeaders(Http2Headers headers, int streamId, Http2Flag.HeaderFlags flags, FlowControl.Outbound flowControl) {
+        return writeHeaders(headers, streamId, flags, flowControl, NO_OP);
+    }
+
+    /**
+     * Write headers and notify when an {@code END_STREAM} headers frame has
+     * been written.
+     *
+     * @param headers                   headers
+     * @param streamId                  stream ID
+     * @param flags                     flags to use
+     * @param flowControl               flow control
+     * @param onEndStreamFrameWritten   action to run after the {@code END_STREAM}
+     *                                  headers frame is written
+     * @return number of bytes written
+     */
+    public int writeHeaders(Http2Headers headers,
+                            int streamId,
+                            Http2Flag.HeaderFlags flags,
+                            FlowControl.Outbound flowControl,
+                            Runnable onEndStreamFrameWritten) {
+        Objects.requireNonNull(headers);
+        Objects.requireNonNull(flags);
+        Objects.requireNonNull(flowControl);
+        Objects.requireNonNull(onEndStreamFrameWritten);
         // this is executing in the thread of the stream
         // we must enforce parallelism of exactly 1, to make sure the dynamic table is updated
         // and then immediately written
@@ -91,6 +137,9 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
                 written += Http2FrameHeader.LENGTH;
 
                 noLockWrite(new Http2FrameData(frameHeader, headerBuffer));
+                if (flags.endOfStream()) {
+                    onEndStreamFrameWritten.run();
+                }
                 return written;
             }
 
@@ -130,6 +179,9 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
             written += frameHeader.length();
             written += Http2FrameHeader.LENGTH;
             noLockWrite(new Http2FrameData(frameHeader, fragment));
+            if (flags.endOfStream()) {
+                onEndStreamFrameWritten.run();
+            }
             return written;
         } finally {
             streamLock.unlock();
@@ -142,10 +194,34 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
                             Http2Flag.HeaderFlags flags,
                             Http2FrameData dataFrame,
                             FlowControl.Outbound flowControl) {
+        return writeHeaders(headers, streamId, flags, dataFrame, flowControl, NO_OP);
+    }
+
+    /**
+     * Write headers and entity, and notify when an {@code END_STREAM} data
+     * frame has been written and accounted for.
+     *
+     * @param headers                   headers
+     * @param streamId                  stream ID
+     * @param flags                     header flags
+     * @param dataFrame                 data frame
+     * @param flowControl               flow control
+     * @param onEndStreamFrameWritten   action to run after the {@code END_STREAM}
+     *                                  data frame is written and accounted for
+     * @return number of bytes written
+     */
+    public int writeHeaders(Http2Headers headers,
+                            int streamId,
+                            Http2Flag.HeaderFlags flags,
+                            Http2FrameData dataFrame,
+                            FlowControl.Outbound flowControl,
+                            Runnable onEndStreamFrameWritten) {
+        Objects.requireNonNull(dataFrame);
+        Objects.requireNonNull(onEndStreamFrameWritten);
         // Executed on stream thread
         int bytesWritten = 0;
         bytesWritten += writeHeaders(headers, streamId, flags, flowControl);
-        writeData(dataFrame, flowControl);
+        writeData(dataFrame, flowControl, onEndStreamFrameWritten);
         bytesWritten += Http2FrameHeader.LENGTH;
         bytesWritten += dataFrame.header().length();
 
@@ -201,25 +277,48 @@ public class Http2ConnectionWriter implements Http2StreamWriter {
         }
     }
 
-    private void splitAndWrite(Http2FrameData frame, FlowControl.Outbound flowControl) {
+    private int splitAndWrite(Http2FrameData frame,
+                              FlowControl.Outbound flowControl,
+                              Runnable onEndStreamFrameWritten) {
+        int written = 0;
         Http2FrameData currFrame = frame;
         while (true) {
             Http2FrameData[] splitFrames = flowControl.cut(currFrame);
             if (splitFrames.length == 1) {
                 // windows are wide enough
-                lockedWrite(currFrame);
-                flowControl.decrementWindowSize(currFrame.header().length());
+                written += lockedWriteData(currFrame, flowControl, onEndStreamFrameWritten);
                 break;
             } else if (splitFrames.length == 0) {
                 // block until window update
                 flowControl.blockTillUpdate();
             } else if (splitFrames.length == 2) {
                 // write send-able part and block until window update with the rest
-                lockedWrite(splitFrames[0]);
-                flowControl.decrementWindowSize(splitFrames[0].header().length());
+                written += lockedWriteData(splitFrames[0], flowControl, onEndStreamFrameWritten);
                 flowControl.blockTillUpdate();
                 currFrame = splitFrames[1];
             }
         }
+        return written;
+    }
+
+    private int lockedWriteData(Http2FrameData frame,
+                                FlowControl.Outbound flowControl,
+                                Runnable onEndStreamFrameWritten) {
+        lock();
+        try {
+            noLockWrite(frame);
+            flowControl.decrementWindowSize(frame.header().length());
+            if (frame.header().type() == Http2FrameType.DATA
+                    && frame.header().flags(Http2FrameTypes.DATA).endOfStream()) {
+                onEndStreamFrameWritten.run();
+            }
+            return frameBytes(frame);
+        } finally {
+            streamLock.unlock();
+        }
+    }
+
+    private static int frameBytes(Http2FrameData frame) {
+        return frame.header().length() + Http2FrameHeader.LENGTH;
     }
 }

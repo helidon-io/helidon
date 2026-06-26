@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 
 import io.helidon.common.buffers.BufferData;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.RequestException;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.FlowControl;
@@ -61,6 +62,7 @@ class ConcurrentStreamsLimitTest {
     private static final Duration TIMEOUT = Duration.ofSeconds(10);
     private static final int MAX_CONCURRENT_STREAMS = 1;
     private static final String BLOCKING_PATH = "/blocking";
+    private static final String REJECTED_PATH = "/rejected";
 
     private static volatile CountDownLatch requestsStarted;
     private static volatile CountDownLatch releaseHandlers;
@@ -82,6 +84,12 @@ class ConcurrentStreamsLimitTest {
                 Thread.currentThread().interrupt();
                 throw new IllegalStateException("Interrupted while waiting to release HTTP/2 handler", e);
             }
+        }));
+        router.route(Http2Route.route(POST, REJECTED_PATH, (req, res) -> {
+            throw RequestException.builder()
+                    .status(Status.BAD_REQUEST_400)
+                    .message("Rejected request")
+                    .build();
         }));
     }
 
@@ -235,6 +243,52 @@ class ConcurrentStreamsLimitTest {
 
             h2conn.request(3, POST, BLOCKING_PATH, WritableHeaders.create(), BufferData.create(new byte[0]));
             assertOkResponse(h2conn, 3);
+        }
+    }
+
+    @Test
+    void rejectedRequestDoesNotConsumeConcurrentStreamLimit(Http2TestClient client) throws InterruptedException {
+        try (Http2TestConnection h2conn = client.createConnection()) {
+            h2conn.request(1, POST, REJECTED_PATH, WritableHeaders.create(), BufferData.create(new byte[0]));
+            assertErrorResponse(h2conn, 1, Status.BAD_REQUEST_400);
+
+            h2conn.request(3, POST, BLOCKING_PATH, WritableHeaders.create(), BufferData.create(new byte[0]));
+            assertThat("Replacement stream did not start",
+                       requestsStarted.await(TIMEOUT.toSeconds(), TimeUnit.SECONDS),
+                       is(true));
+
+            releaseHandlers.countDown();
+            assertOkResponse(h2conn, 3);
+        }
+    }
+
+    private void assertErrorResponse(Http2TestConnection h2conn, int streamId, Status status) {
+        boolean headersSeen = false;
+        boolean dataSeen = false;
+
+        while (!headersSeen || !dataSeen) {
+            Http2FrameData frame = h2conn.awaitNextFrame(TIMEOUT);
+            assertThat("Timed out waiting for error response frame", frame, notNullValue());
+
+            if (frame.header().type() == Http2FrameType.GO_AWAY) {
+                Http2GoAway goAway = Http2GoAway.create(frame.data());
+                fail("Unexpected GOAWAY " + goAway.errorCode() + ": " + frame.data().readString(frame.data().available()));
+            }
+            if (frame.header().streamId() == 0) {
+                continue;
+            }
+            assertThat("Unexpected response stream", frame.header().streamId(), is(streamId));
+
+            if (frame.header().type() == Http2FrameType.HEADERS) {
+                Http2Headers headers = Http2Headers.create(null, responseDynamicTable, responseHuffman, frame);
+                assertThat(headers.status(), is(status));
+                headersSeen = true;
+            } else if (frame.header().type() == Http2FrameType.DATA) {
+                assertThat(frame.header().flags(Http2FrameTypes.DATA).endOfStream(), is(true));
+                dataSeen = true;
+            } else {
+                fail("Unexpected HTTP/2 frame " + frame.header().type() + " for stream " + frame.header().streamId());
+            }
         }
     }
 

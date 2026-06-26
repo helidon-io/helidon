@@ -559,10 +559,11 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                 }
                 return;
             }
+            if (!streams.isActive(streamId)) {
+                return;
+            }
             try {
-                if (streams.isActive(streamId)) {
-                    this.lastRequestTimestamp = DateTime.timestamp();
-                }
+                this.lastRequestTimestamp = DateTime.timestamp();
                 stream.stream().windowUpdate(windowUpdate);
             } catch (Http2Exception ignored) {
                 // stream closed
