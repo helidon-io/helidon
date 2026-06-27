@@ -8,13 +8,13 @@ navigation:
 ## Overview
 
 Helidon supports Bean Validation via its integration with JAX-RS/Jersey. The
-[Jakarta Bean Validation specification][jakarta-bean-val] defines an API to
+[Jakarta Bean Validation specification][bv-spec] defines an API to
 validate Java beans. Bean Validation is supported in REST resource classes as
 well as in regular application beans.
 
 If bean validation is required outside JAX-RS/Jersey use cases, it is also
 available in Helidon. It follows the standard [Jakarta Bean Validation
-specification][jakarta-bean-val] which defines an API to validate Java beans.
+specification][bv-spec] which defines an API to validate Java beans.
 
 ## Maven Coordinates
 
@@ -96,7 +96,7 @@ Note that <code>double</code> and <code>float</code> are not supported due to ro
 </tr>
 <tr>
 <td><code>@Max</code></td>
-<td>The annotated element must be a number whose value must be lower or equal to the specified maximum.
+<td>The annotated element must be a number lower or equal to the specified maximum.
 Supported types are:
 <ul>
 <li><code>BigDecimal</code></li>
@@ -121,7 +121,7 @@ Note that <code>double</code> and <code>float</code> are not supported due to ro
 </tr>
 <tr>
 <td><code>@DecimalMax</code></td>
-<td>The annotated element must be a number whose value must be lower or equal to the specified maximum.
+<td>The annotated element must be a number lower or equal to the specified maximum.
 Supported types are:
 <ul>
 <li><code>BigDecimal</code></li>
@@ -178,7 +178,14 @@ Supported types are:
 </tr>
 <tr>
 <td><code>@Size</code></td>
-<td>The annotated element size must be between the specified boundaries (included). Supported types are: * <code>CharSequence</code> - length of character sequence is evaluated * <code>Collection</code> - collection size is evaluated * <code>Map</code> - map size is evaluated * <code>Array</code> (array length is evaluated)
+<td>The annotated element size must be between the specified boundaries (included).
+Supported types are:
+<ul>
+<li><code>CharSequence</code> - length of character sequence is evaluated</li>
+<li><code>Collection</code> - collection size is evaluated</li>
+<li><code>Map</code> - map size is evaluated</li>
+<li><code>Array</code> (array length is evaluated)</li>
+</ul>
 <code>Null</code> elements are considered valid.</td>
 </tr>
 <tr>
@@ -298,7 +305,14 @@ Supported types are:
 </tr>
 <tr>
 <td><code>@NotEmpty</code></td>
-<td>The annotated element must not be <code>null</code> nor empty. Supported types are: * <code>CharSequence</code> - length of character sequence is evaluated * <code>Collection</code> - collection size is evaluated * <code>Map</code> - map size is evaluated * <code>Array</code> (array length is evaluated)</td>
+<td>The annotated element must not be <code>null</code> nor empty.
+Supported types are:
+<ul>
+<li><code>CharSequence</code> - length of character sequence is evaluated</li>
+<li><code>Collection</code> - collection size is evaluated</li>
+<li><code>Map</code> - map size is evaluated</li>
+<li><code>Array</code> (array length is evaluated)</li>
+</ul></td>
 </tr>
 <tr>
 <td><code>@NotBlank</code></td>
@@ -317,7 +331,7 @@ Supported types are:
 Bean Validation can be configured using `META-INF/validation.xml`.
 
 For more information about configuring the validator factory in validation.xml,
-see [Hibernate Validator Documentation][hibernate-valida].
+see [Hibernate Validator Documentation][hbv-docs].
 
 ## Examples
 
@@ -367,7 +381,7 @@ see [Hibernate Validator Documentation][hibernate-valida].
     > `beans.xml` is required to identify beans and for bean validation to work
     > properly.
 
-Examples are available in [our official GitHub repository][our-official-git].
+Examples are available in [our official GitHub repository][bv-example].
 
 ## Additional Information
 
@@ -376,8 +390,8 @@ general bean validation.
 
 ## Reference
 
-- [Bean Validation Specification][jakarta-bean-val]
+- [Bean Validation Specification][bv-spec]
 
-[jakarta-bean-val]: https://jakarta.ee/specifications/bean-validation/3.0/jakarta-bean-validation-spec-3.0.html
-[hibernate-valida]: https://docs.jboss.org/hibernate/stable/validator/reference/en-US/html_single/?v=7.0#chapter-xml-configuration
-[our-official-git]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/microprofile/bean-validation
+[bv-spec]: https://jakarta.ee/specifications/bean-validation/3.0/jakarta-bean-validation-spec-3.0.html
+[hbv-docs]: https://docs.jboss.org/hibernate/stable/validator/reference/en-US/html_single/?v=7.0#chapter-xml-configuration
+[bv-example]: https://github.com/helidon-io/helidon-examples/tree/helidon-4.x/examples/microprofile/bean-validation

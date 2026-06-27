@@ -154,7 +154,7 @@ registry. You can obtain repository interface instances using the service
 registry API:
 
 ```java
-private final KeeperRepository repository = Services.get(KeeperRepository.class);
+KeeperRepository repository = Services.get(KeeperRepository.class);
 ```
 
 ## Repository Interface
@@ -514,7 +514,8 @@ to handle the session instance lifecycle.
 ```java
 @Data.Repository
 public interface KeeperRepository
-        extends Data.GenericRepository<Keeper, Integer>, Data.SessionRepository<EntityManager> {
+        extends Data.GenericRepository<Keeper, Integer>,
+                Data.SessionRepository<EntityManager> {
 }
 ```
 
@@ -527,20 +528,21 @@ public class PetService {
     private final KeeperRepository repository = Services.get(KeeperRepository.class);
 
     public List<Keeper> keeperQuery(String name) {
-        return repository.call(em -> em.createQuery("SELECT k FROM Keeper k WHERE k.name = :name",
-                                                    Keeper.class)
+        return repository.call(em -> em
+                .createQuery("SELECT k FROM Keeper k WHERE k.name = :name",
+                    Keeper.class)
                 .setParameter("name", name)
                 .getResultList());
     }
 
     public void updateKeeperName(String name, int id) {
-        repository.run(em -> em.createQuery("UPDATE Keeper k SET k.name = :name WHERE k.id = :id",
-                                            Keeper.class)
-                .setParameter("name", name)
-                .setParameter("id", id)
-                .executeUpdate());
+        repository.run(em -> em
+            .createQuery("UPDATE Keeper k SET k.name = :name WHERE k.id = :id",
+                Keeper.class)
+            .setParameter("name", name)
+            .setParameter("id", id)
+            .executeUpdate());
     }
-
 }
 ```
 
@@ -646,17 +648,15 @@ transaction:
 ```java
 public class KeeperService {
     public void doSomething() {
-        Tx.transaction(Tx.Type.REQUIRED,
-                       () -> {
-                           // Method execution will always be within a transaction
-                       });
+        Tx.transaction(Tx.Type.REQUIRED, () -> {
+            // Method execution will always be within a transaction
+        });
     }
 
     public void doSomethingElse() {
-        Tx.transaction(Tx.Type.NEVER,
-                       () -> {
-                           // Method execution will never be within a transaction
-                       });
+        Tx.transaction(Tx.Type.NEVER, () -> {
+            // Method execution will never be within a transaction
+        });
     }
 }
 ```

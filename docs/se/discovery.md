@@ -82,9 +82,8 @@ public class MyClass {
 
     @Service.Inject // <1>
     public MyClass(Discovery discovery) { // <2>
-        this.discovery = Objects.requireNonNull(discovery, "discovery"); // <3>
+        this.discovery = discovery; // <3>
     }
-
 }
 ```
 1. Use the [`io.helidon.service.registry.Service.Inject`

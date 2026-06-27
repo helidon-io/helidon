@@ -225,9 +225,9 @@ JDBC query with named parameters and the query runs in transaction:
 
 ```java
 dbClient.transaction()
-        .createQuery("SELECT name FROM Pokemons WHERE id = :id")
-        .addParam("id", 1)
-        .execute();
+    .createQuery("SELECT name FROM Pokemons WHERE id = :id")
+    .addParam("id", 1)
+    .execute();
 ```
 
 Both examples will return `Multi<DbRow>` with rows returned by the query.
@@ -237,16 +237,16 @@ query does not run in transaction:
 
 ```java
 dbClient.execute()
-        .createUpdate("""
-                      {
-                          "collection": "pokemons","
-                          "value":{$set:{"name":$name}},
-                          "query":{id:$id}
-                      }
-                      """)
-        .addParam("id", 1)
-        .addParam("name", "Pikachu")
-        .execute();
+    .createUpdate("""
+        {
+            "collection": "pokemons","
+            "value":{$set:{"name":$name}},
+            "query":{id:$id}
+        }
+        """)
+    .addParam("id", 1)
+    .addParam("name", "Pikachu")
+    .execute();
 ```
 
 This update statement will return a `long` with the number of modified records
@@ -262,8 +262,8 @@ output:
 
 ```java
 long count = dbClient.execute()
-        .insert("INSERT INTO Pokemons (id, name) VALUES(?, ?)",
-                1, "Pikachu");
+    .insert("INSERT INTO Pokemons (id, name) VALUES(?, ?)",
+            1, "Pikachu");
 System.out.printf("Inserted %d records\n", count);
 ```
 

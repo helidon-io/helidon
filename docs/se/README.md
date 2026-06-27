@@ -9,12 +9,12 @@ index:
 - [Guides](guides/README.md)
 
 ## Components
-
+\
 - [AI](ai/README.md)
 - [Builder](builder.md)
 - [Config](config/README.md)
 - [CORS](cors.md)
-- [Data Repository](data.md)
+- [Data](data.md)
 - [DbClient](dbclient.md)
 - [Discovery](discovery.md)
 - [Fault Tolerance](fault-tolerance.md)
