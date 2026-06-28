@@ -33,7 +33,7 @@ jobs:
     timeout-minutes: 15
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           ref: ${{ inputs.ref }}
       - uses: ./.github/actions/common
@@ -62,7 +62,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     name: tests/${{ matrix.moduleSet }}-${{matrix.platform}}-latest-java
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           ref: ${{ inputs.ref }}
       - uses: ./.github/actions/common

@@ -52,5 +52,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository code
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - run: etc/scripts/backport-issues.sh $GITHUB_REPOSITORY ${{ github.event.inputs.issue }} ${{ github.event.inputs.version }} ${{ github.event.inputs.target-2 }} ${{ github.event.inputs.target-3 }} ${{ github.event.inputs.target-4 }}
