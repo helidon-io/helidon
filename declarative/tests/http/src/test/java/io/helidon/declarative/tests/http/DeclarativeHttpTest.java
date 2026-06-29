@@ -252,6 +252,26 @@ class DeclarativeHttpTest {
     }
 
     @Test
+    void testServerResponseOutputStream() {
+        try (var response = client.get("/greet/output-stream").request()) {
+            assertThat(response.status(), is(Status.CREATED_201));
+            assertThat(response.headers().contentType().orElseThrow().text(), is("text/plain"));
+            assertThat(response.headers().get(HeaderNames.create("X-Stream")).get(), is("true"));
+            assertThat(response.entity().as(String.class), is("streamed"));
+        }
+    }
+
+    @Test
+    void testInputStreamServerResponseEcho() {
+        String entity = "echoed entity";
+        var response = client.post("/greet/input-stream-output-stream")
+                .submit(entity, String.class);
+
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity(), is(entity));
+    }
+
+    @Test
     void testQueryParamEmptyStringPreserved() {
         try (var response = client.get("/greet/query-param")
                 .queryParam("param", "")

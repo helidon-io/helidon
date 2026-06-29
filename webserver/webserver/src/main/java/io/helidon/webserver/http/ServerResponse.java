@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2022, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,13 @@ import io.helidon.webserver.http.spi.Sink;
 public interface ServerResponse {
     /**
      * Status of the response.
+     * <p>
+     * The status is mutable response metadata. Once configured, it remains on this response unless later application
+     * code or error handling changes it. Calling {@link #next()}, calling {@link #reroute(String)}, or throwing an
+     * exception does not clear the configured status automatically.
+     * <p>
+     * Configure the status before calling {@link #send()} or {@link #outputStream()} when it should apply to the
+     * response emitted by this route.
      *
      * @param status HTTP status
      * @return this instance
@@ -94,6 +101,11 @@ public interface ServerResponse {
 
     /**
      * Set header with a value.
+     * <p>
+     * Headers are mutable response metadata. Once configured, they remain on this response unless later application
+     * code or error handling changes them. Calling {@link #next()}, calling {@link #reroute(String)}, or throwing an
+     * exception does not clear configured headers automatically.
+     * <p>
      * Headers cannot be set after {@link #outputStream()} method is called, or after the response was sent.
      *
      * @param header header value
@@ -151,8 +163,26 @@ public interface ServerResponse {
     boolean isSent();
 
     /**
+     * Whether this response has already been handled by the application.
+     * <p>
+     * This method is intended for generated or framework code that may send a default response only when user code has
+     * not already sent an entity, obtained an output stream, or selected another routing action.
+     * Header and status changes alone do not handle the response.
+     * <p>
+     * The default implementation returns {@link #isSent()}.
+     *
+     * @return whether response handling was already selected
+     */
+    default boolean isResponseHandled() {
+        return isSent();
+    }
+
+    /**
      * Alternative way to send an entity, using an output stream. This should be used for entities that are big
      * and that should not be materialized into memory.
+     * <p>
+     * Configure response status and headers before requesting the output stream. The returned stream completes the
+     * response when it is closed, so it must be closed before the handler method returns.
      *
      * @return output stream
      */
@@ -190,6 +220,7 @@ public interface ServerResponse {
 
     /**
      * Re-route using a different path.
+     * Configured response status and headers remain on this response unless later handling changes them.
      *
      * @param newPath new path to use
      * @return this instance
@@ -198,6 +229,7 @@ public interface ServerResponse {
 
     /**
      * Re-route using a different path and query.
+     * Configured response status and headers remain on this response unless later handling changes them.
      *
      * @param path  new path
      * @param query new query
@@ -211,6 +243,7 @@ public interface ServerResponse {
     /**
      * Continue processing with the next route (and if none found, return a {@link io.helidon.http.Status#NOT_FOUND_404}).
      * If any entity method was called, this method will throw an exception.
+     * Configured response status and headers remain on this response unless later handling changes them.
      *
      * @return this instance
      * @throws IllegalStateException in case the entity was already configured
@@ -219,6 +252,8 @@ public interface ServerResponse {
 
     /**
      * Response headers (mutable).
+     * <p>
+     * Changes to these headers have the same lifecycle as headers configured through {@link #header(Header)}.
      *
      * @return headers
      */

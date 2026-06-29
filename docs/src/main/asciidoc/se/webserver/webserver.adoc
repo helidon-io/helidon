@@ -468,6 +468,12 @@ Each `Handler` has two parameters. `ServerRequest` and `ServerResponse`.
 headers and entity.
 * Response provides an ability to set response code, headers, and entity.
 
+Status and headers configured on `ServerResponse` are mutable response metadata.
+Configure them before calling `send()` or `outputStream()` when they should apply to the response emitted by the route.
+Once configured, this metadata remains on the current response until later handling changes it.
+Calling `next()`, calling `reroute(...)`, or throwing an exception does not clear it automatically; downstream routes and
+error handlers can replace or remove response metadata before sending the response.
+
 [[anchor-filtering]]
 === Filtering
 Filtering can be done either using a dedicated `Filter`, or through routes.
