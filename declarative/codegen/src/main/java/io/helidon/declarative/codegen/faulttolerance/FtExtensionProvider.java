@@ -53,6 +53,9 @@ public class FtExtensionProvider implements RegistryCodegenExtensionProvider {
         return true;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean supportsFactoryProvidedServiceContractAnnotations() {
         return false;

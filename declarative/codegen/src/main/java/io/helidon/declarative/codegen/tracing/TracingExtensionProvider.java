@@ -51,6 +51,9 @@ public class TracingExtensionProvider implements RegistryCodegenExtensionProvide
         return true;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public boolean supportsFactoryProvidedServiceContractAnnotations() {
         return false;
