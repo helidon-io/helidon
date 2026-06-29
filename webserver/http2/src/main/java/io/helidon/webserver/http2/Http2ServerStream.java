@@ -93,14 +93,6 @@ class Http2ServerStream implements Runnable, Http2Stream {
     private static final Set<Http2StreamState> DATA_RECEIVABLE_STATES =
             Set.of(Http2StreamState.OPEN, Http2StreamState.HALF_CLOSED_LOCAL);
 
-    interface LocallyResetStreamTracker {
-        void add(int streamId);
-
-        void localComplete(int streamId);
-
-        void remoteComplete(int streamId);
-    }
-
     private final ConnectionContext ctx;
     private final Http2Config http2Config;
     private final long maxLocallyResetStreamData;
@@ -1003,6 +995,14 @@ class Http2ServerStream implements Runnable, Http2Stream {
                 this.state = subProtocolHandler.streamState();
             }
         }
+    }
+
+    interface LocallyResetStreamTracker {
+        void add(int streamId);
+
+        void localComplete(int streamId);
+
+        void remoteComplete(int streamId);
     }
 
     private enum WriteState {
