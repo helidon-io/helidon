@@ -17,6 +17,7 @@
 package io.helidon.webserver.tests.http2;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -35,9 +36,11 @@ import io.helidon.http.http2.Http2FrameTypes;
 import io.helidon.http.http2.Http2GoAway;
 import io.helidon.http.http2.Http2Headers;
 import io.helidon.http.http2.Http2HuffmanDecoder;
+import io.helidon.http.http2.Http2HuffmanEncoder;
 import io.helidon.http.http2.Http2Priority;
 import io.helidon.http.http2.Http2RstStream;
 import io.helidon.http.http2.Http2Setting;
+import io.helidon.http.http2.Http2Settings;
 import io.helidon.http.http2.Http2WindowUpdate;
 import io.helidon.webserver.WebServerConfig;
 import io.helidon.webserver.http.HttpRouting;
@@ -71,6 +74,7 @@ class ConcurrentStreamsLimitTest {
     private final Http2Headers.DynamicTable responseDynamicTable =
             Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
     private final Http2HuffmanDecoder responseHuffman = Http2HuffmanDecoder.create();
+    private Http2Headers.DynamicTable requestDynamicTable;
 
     @SetUpRoute
     static void router(HttpRouting.Builder router) {
@@ -98,7 +102,9 @@ class ConcurrentStreamsLimitTest {
     static void setup(WebServerConfig.Builder server) {
         server.addProtocol(Http2Config.builder()
                                    .sendErrorDetails(true)
+                                   .maxRapidResets(-1)
                                    .maxConcurrentStreams(MAX_CONCURRENT_STREAMS)
+                                   .maxHeaderListSize(128_000)
                                    .build());
     }
 
@@ -106,6 +112,7 @@ class ConcurrentStreamsLimitTest {
     void resetLatches() {
         requestsStarted = new CountDownLatch(MAX_CONCURRENT_STREAMS);
         releaseHandlers = new CountDownLatch(1);
+        requestDynamicTable = Http2Headers.DynamicTable.create(Http2Setting.HEADER_TABLE_SIZE.defaultValue());
     }
 
     @Test
@@ -264,7 +271,7 @@ class ConcurrentStreamsLimitTest {
     }
 
     @Test
-    void delayedDataForRejectedRequestDoesNotCloseConnection(Http2TestClient client) throws InterruptedException {
+    void delayedDataAndTrailersForRejectedRequestDoNotCloseConnection(Http2TestClient client) throws InterruptedException {
         try (Http2TestConnection h2conn = client.createConnection()) {
             WritableHeaders<?> requestHeaders = WritableHeaders.create();
             requestHeaders.add(HeaderNames.CONTENT_ENCODING, "unsupported-test-encoding");
@@ -287,16 +294,490 @@ class ConcurrentStreamsLimitTest {
                        requestsStarted.await(TIMEOUT.toSeconds(), TimeUnit.SECONDS),
                        is(true));
 
-            h2conn.writer().writeData(new Http2FrameData(Http2FrameHeader.create(0,
+            BufferData delayedBody = BufferData.create("late body");
+            h2conn.writer().writeData(new Http2FrameData(Http2FrameHeader.create(delayedBody.available(),
                                                                                  Http2FrameTypes.DATA,
-                                                                                 Http2Flag.DataFlags.create(
-                                                                                         Http2Flag.END_OF_STREAM),
+                                                                                 Http2Flag.DataFlags.create(0),
                                                                                  1),
-                                                         BufferData.empty()),
+                                                         delayedBody),
+                                      FlowControl.Outbound.NOOP);
+            Http2Headers trailers = Http2Headers.create(WritableHeaders.create()
+                                                                    .add(HeaderNames.create("x-trailer"), "done"));
+            h2conn.writer().writeHeaders(trailers,
+                                         1,
+                                         Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
+                                         FlowControl.Outbound.NOOP);
+
+            releaseHandlers.countDown();
+            assertOkResponse(h2conn, 3);
+        }
+    }
+
+    @Test
+    void resetForLocallyResetRequestDoesNotCloseConnection(Http2TestClient client) throws InterruptedException {
+        try (Http2TestConnection h2conn = client.createConnection()) {
+            WritableHeaders<?> requestHeaders = WritableHeaders.create();
+            requestHeaders.add(HeaderNames.CONTENT_ENCODING, "unsupported-test-encoding");
+            Http2Headers h2Headers = Http2Headers.create(requestHeaders);
+            h2Headers.method(POST);
+            h2Headers.path(BLOCKING_PATH);
+            h2Headers.scheme(h2conn.clientUri().scheme());
+            h2Headers.authority(h2conn.clientUri().authority());
+            h2conn.writer().writeHeaders(h2Headers,
+                                         1,
+                                         Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                         FlowControl.Outbound.NOOP);
+
+            assertErrorResponse(h2conn, 1, Status.UNSUPPORTED_MEDIA_TYPE_415);
+            Http2RstStream rstStream = h2conn.assertRstStream(1, TIMEOUT);
+            assertThat(rstStream.errorCode(), is(Http2ErrorCode.CANCEL));
+
+            h2conn.request(3, POST, BLOCKING_PATH, WritableHeaders.create(), BufferData.create(new byte[0]));
+            assertThat("Replacement stream did not start",
+                       requestsStarted.await(TIMEOUT.toSeconds(), TimeUnit.SECONDS),
+                       is(true));
+
+            Http2RstStream resetFrame = new Http2RstStream(Http2ErrorCode.CANCEL);
+            h2conn.writer().writeData(resetFrame.toFrameData(Http2Settings.builder().build(),
+                                                             1,
+                                                             Http2Flag.NoFlags.create()),
                                       FlowControl.Outbound.NOOP);
 
             releaseHandlers.countDown();
             assertOkResponse(h2conn, 3);
+        } finally {
+            releaseHandlers.countDown();
+        }
+    }
+
+    @Test
+    void lateResetForAlreadyEndedLocallyResetRequestDoesNotCloseConnection(Http2TestClient client) throws InterruptedException {
+        try (Http2TestConnection h2conn = client.createConnection()) {
+            WritableHeaders<?> requestHeaders = WritableHeaders.create();
+            requestHeaders.add(HeaderNames.CONTENT_LENGTH, 1);
+            Http2Headers h2Headers = Http2Headers.create(requestHeaders);
+            h2Headers.method(POST);
+            h2Headers.path(BLOCKING_PATH);
+            h2Headers.scheme(h2conn.clientUri().scheme());
+            h2Headers.authority(h2conn.clientUri().authority());
+            h2conn.writer().writeHeaders(h2Headers,
+                                         1,
+                                         Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
+                                         FlowControl.Outbound.NOOP);
+
+            for (;;) {
+                Http2FrameData frame = h2conn.awaitNextFrame(TIMEOUT);
+                assertThat("Timed out waiting for RST_STREAM frame", frame, notNullValue());
+                if (frame.header().streamId() == 0) {
+                    continue;
+                }
+                assertThat("Unexpected response stream", frame.header().streamId(), is(1));
+                assertThat("Unexpected frame type", frame.header().type(), is(Http2FrameType.RST_STREAM));
+                Http2RstStream rstStream = Http2RstStream.create(frame.data());
+                assertThat(rstStream.errorCode(), is(Http2ErrorCode.PROTOCOL));
+                break;
+            }
+
+            writeEmptyPostRequest(h2conn, 3);
+            assertThat("Replacement stream did not start",
+                       requestsStarted.await(TIMEOUT.toSeconds(), TimeUnit.SECONDS),
+                       is(true));
+
+            Http2RstStream resetFrame = new Http2RstStream(Http2ErrorCode.CANCEL);
+            h2conn.writer().writeData(resetFrame.toFrameData(Http2Settings.builder().build(),
+                                                             1,
+                                                             Http2Flag.NoFlags.create()),
+                                      FlowControl.Outbound.NOOP);
+
+            releaseHandlers.countDown();
+            assertOkResponse(h2conn, 3);
+        } finally {
+            releaseHandlers.countDown();
+        }
+    }
+
+    @Test
+    void abandonedLocallyResetRequestsAreBounded(Http2TestClient client) {
+        try (Http2TestConnection h2conn = client.createConnection()) {
+            for (int streamId = 1; streamId < 128; streamId += 2) {
+                writeRejectedRequestHeaders(h2conn, streamId);
+
+                assertErrorResponse(h2conn, streamId, Status.UNSUPPORTED_MEDIA_TYPE_415);
+                Http2RstStream rstStream = h2conn.assertRstStream(streamId, TIMEOUT);
+                assertThat(rstStream.errorCode(), is(Http2ErrorCode.CANCEL));
+            }
+            writeRejectedRequestHeaders(h2conn, 129);
+            if (assertResetOverflowOrRejectedStream(h2conn, 129)) {
+                return;
+            }
+
+            BufferData delayedBody = BufferData.create("late body");
+            h2conn.writer().writeData(new Http2FrameData(Http2FrameHeader.create(delayedBody.available(),
+                                                                                 Http2FrameTypes.DATA,
+                                                                                 Http2Flag.DataFlags.create(
+                                                                                         Http2Flag.END_OF_STREAM),
+                                                                                 1),
+                                                         delayedBody),
+                                      FlowControl.Outbound.NOOP);
+
+            assertGoAwayError(h2conn, Http2ErrorCode.ENHANCE_YOUR_CALM);
+        }
+    }
+
+    @Test
+    void abandonedLocallyResetRequestHeadersAreNotReused(Http2TestClient client) {
+        try (Http2TestConnection h2conn = client.createConnection()) {
+            for (int streamId = 1; streamId < 128; streamId += 2) {
+                writeRejectedRequestHeaders(h2conn, streamId);
+
+                assertErrorResponse(h2conn, streamId, Status.UNSUPPORTED_MEDIA_TYPE_415);
+                Http2RstStream rstStream = h2conn.assertRstStream(streamId, TIMEOUT);
+                assertThat(rstStream.errorCode(), is(Http2ErrorCode.CANCEL));
+            }
+            writeRejectedRequestHeaders(h2conn, 129);
+            if (assertResetOverflowOrRejectedStream(h2conn, 129)) {
+                return;
+            }
+
+            Http2Headers h2Headers = Http2Headers.create(WritableHeaders.create());
+            h2Headers.method(POST);
+            h2Headers.path(BLOCKING_PATH);
+            h2Headers.scheme(h2conn.clientUri().scheme());
+            h2Headers.authority(h2conn.clientUri().authority());
+            h2conn.writer().writeHeaders(h2Headers,
+                                         1,
+                                         Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
+                                         FlowControl.Outbound.NOOP);
+
+            assertGoAwayError(h2conn, Http2ErrorCode.ENHANCE_YOUR_CALM);
+        }
+    }
+
+    @Test
+    void nonTerminalHeadersForRejectedRequestDoNotCloseConnection(Http2TestClient client) throws InterruptedException {
+        try (Http2TestConnection h2conn = client.createConnection()) {
+            WritableHeaders<?> requestHeaders = WritableHeaders.create();
+            requestHeaders.add(HeaderNames.CONTENT_ENCODING, "unsupported-test-encoding");
+            Http2Headers h2Headers = Http2Headers.create(requestHeaders);
+            h2Headers.method(POST);
+            h2Headers.path(BLOCKING_PATH);
+            h2Headers.scheme(h2conn.clientUri().scheme());
+            h2Headers.authority(h2conn.clientUri().authority());
+            h2conn.writer().writeHeaders(h2Headers,
+                                         1,
+                                         Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                         FlowControl.Outbound.NOOP);
+
+            assertErrorResponse(h2conn, 1, Status.UNSUPPORTED_MEDIA_TYPE_415);
+            Http2RstStream rstStream = h2conn.assertRstStream(1, TIMEOUT);
+            assertThat(rstStream.errorCode(), is(Http2ErrorCode.CANCEL));
+
+            Http2Headers trailers = Http2Headers.create(WritableHeaders.create()
+                                                                        .add(HeaderNames.create("x-trailer"), "done"));
+            h2conn.writer().writeHeaders(trailers,
+                                         1,
+                                         Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                         FlowControl.Outbound.NOOP);
+
+            h2conn.request(3, POST, BLOCKING_PATH, WritableHeaders.create(), BufferData.create(new byte[0]));
+            assertThat("Replacement stream did not start",
+                       requestsStarted.await(TIMEOUT.toSeconds(), TimeUnit.SECONDS),
+                       is(true));
+
+            BufferData delayedBody = BufferData.create("late body");
+            h2conn.writer().writeData(new Http2FrameData(Http2FrameHeader.create(delayedBody.available(),
+                                                                                 Http2FrameTypes.DATA,
+                                                                                 Http2Flag.DataFlags.create(
+                                                                                         Http2Flag.END_OF_STREAM),
+                                                                                 1),
+                                                         delayedBody),
+                                      FlowControl.Outbound.NOOP);
+
+            releaseHandlers.countDown();
+            assertOkResponse(h2conn, 3);
+        } finally {
+            releaseHandlers.countDown();
+        }
+    }
+
+    @Test
+    void paddedContinuedHeadersForRejectedRequestDoNotCloseConnection(Http2TestClient client) throws InterruptedException {
+        try (Http2TestConnection h2conn = client.createConnection()) {
+            WritableHeaders<?> requestHeaders = WritableHeaders.create();
+            requestHeaders.add(HeaderNames.CONTENT_ENCODING, "unsupported-test-encoding");
+            Http2Headers h2Headers = Http2Headers.create(requestHeaders);
+            h2Headers.method(POST);
+            h2Headers.path(BLOCKING_PATH);
+            h2Headers.scheme(h2conn.clientUri().scheme());
+            h2Headers.authority(h2conn.clientUri().authority());
+            h2conn.writer().writeHeaders(h2Headers,
+                                         1,
+                                         Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                         FlowControl.Outbound.NOOP);
+
+            assertErrorResponse(h2conn, 1, Status.UNSUPPORTED_MEDIA_TYPE_415);
+            Http2RstStream rstStream = h2conn.assertRstStream(1, TIMEOUT);
+            assertThat(rstStream.errorCode(), is(Http2ErrorCode.CANCEL));
+
+            Http2Headers trailers = Http2Headers.create(WritableHeaders.create()
+                                                                        .add(HeaderNames.create("x-hpack-proof"), "done"));
+            BufferData headerBlock = BufferData.growing(256);
+            trailers.write(requestDynamicTable, Http2HuffmanEncoder.create(), headerBlock);
+            byte[] headerBytes = headerBlock.readBytes();
+            int split = Math.max(1, headerBytes.length / 2);
+            BufferData firstFragment = BufferData.growing(split + 2);
+            firstFragment.write(1);
+            firstFragment.write(Arrays.copyOf(headerBytes, split));
+            firstFragment.write(0);
+
+            h2conn.writer().write(new Http2FrameData(
+                    Http2FrameHeader.create(firstFragment.available(),
+                                            Http2FrameTypes.HEADERS,
+                                            Http2Flag.HeaderFlags.create(Http2Flag.PADDED | Http2Flag.END_OF_STREAM),
+                                            1),
+                    firstFragment));
+            h2conn.writer().write(new Http2FrameData(
+                    Http2FrameHeader.create(headerBytes.length - split,
+                                            Http2FrameTypes.CONTINUATION,
+                                            Http2Flag.ContinuationFlags.create(Http2Flag.END_OF_HEADERS),
+                                            1),
+                    BufferData.create(Arrays.copyOfRange(headerBytes, split, headerBytes.length))));
+
+            writeEmptyPostRequest(h2conn, 3);
+            releaseHandlers.countDown();
+            assertOkResponse(h2conn, 3);
+        } finally {
+            releaseHandlers.countDown();
+        }
+    }
+
+    @Test
+    void completeHeadersFloodForRejectedRequestIsBounded(Http2TestClient client) {
+        try (Http2TestConnection h2conn = client.createConnection()) {
+            writeRejectedRequestHeaders(h2conn, 1);
+
+            assertErrorResponse(h2conn, 1, Status.UNSUPPORTED_MEDIA_TYPE_415);
+            Http2RstStream rstStream = h2conn.assertRstStream(1, TIMEOUT);
+            assertThat(rstStream.errorCode(), is(Http2ErrorCode.CANCEL));
+
+            for (int i = 0; i < 65; i++) {
+                Http2Headers trailers = Http2Headers.create(WritableHeaders.create()
+                                                                            .add(HeaderNames.create("x-trailer"),
+                                                                                 String.valueOf(i)));
+                h2conn.writer().writeHeaders(trailers,
+                                             1,
+                                             Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                             FlowControl.Outbound.NOOP);
+            }
+
+            assertGoAwayError(h2conn, Http2ErrorCode.ENHANCE_YOUR_CALM);
+        }
+    }
+
+    @Test
+    void emptyContinuationFloodForRejectedRequestIsBounded(Http2TestClient client) {
+        try (Http2TestConnection h2conn = client.createConnection()) {
+            WritableHeaders<?> requestHeaders = WritableHeaders.create();
+            requestHeaders.add(HeaderNames.CONTENT_ENCODING, "unsupported-test-encoding");
+            Http2Headers h2Headers = Http2Headers.create(requestHeaders);
+            h2Headers.method(POST);
+            h2Headers.path(BLOCKING_PATH);
+            h2Headers.scheme(h2conn.clientUri().scheme());
+            h2Headers.authority(h2conn.clientUri().authority());
+            h2conn.writer().writeHeaders(h2Headers,
+                                         1,
+                                         Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                         FlowControl.Outbound.NOOP);
+
+            assertErrorResponse(h2conn, 1, Status.UNSUPPORTED_MEDIA_TYPE_415);
+            Http2RstStream rstStream = h2conn.assertRstStream(1, TIMEOUT);
+            assertThat(rstStream.errorCode(), is(Http2ErrorCode.CANCEL));
+
+            Http2Headers trailers = Http2Headers.create(WritableHeaders.create()
+                                                                        .add(HeaderNames.create("x-trailer"), "done"));
+            h2conn.writer().writeHeaders(trailers,
+                                         1,
+                                         Http2Flag.HeaderFlags.create(0),
+                                         FlowControl.Outbound.NOOP);
+
+            for (int i = 0; i < 12; i++) {
+                h2conn.writer().write(new Http2FrameData(Http2FrameHeader.create(0,
+                                                                                 Http2FrameTypes.CONTINUATION,
+                                                                                 Http2Flag.ContinuationFlags.create(0),
+                                                                                 1),
+                                                     BufferData.empty()));
+            }
+
+            h2conn.assertGoAway(Http2ErrorCode.ENHANCE_YOUR_CALM,
+                                "Too much subsequent empty frames received.",
+                                TIMEOUT);
+        }
+    }
+
+    @Test
+    void nonTerminalDataFloodForRejectedRequestIsBounded(Http2TestClient client) {
+        try (Http2TestConnection h2conn = client.createConnection()) {
+            WritableHeaders<?> requestHeaders = WritableHeaders.create();
+            requestHeaders.add(HeaderNames.CONTENT_ENCODING, "unsupported-test-encoding");
+            Http2Headers h2Headers = Http2Headers.create(requestHeaders);
+            h2Headers.method(POST);
+            h2Headers.path(BLOCKING_PATH);
+            h2Headers.scheme(h2conn.clientUri().scheme());
+            h2Headers.authority(h2conn.clientUri().authority());
+            h2conn.writer().writeHeaders(h2Headers,
+                                         1,
+                                         Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                         FlowControl.Outbound.NOOP);
+
+            assertErrorResponse(h2conn, 1, Status.UNSUPPORTED_MEDIA_TYPE_415);
+            Http2RstStream rstStream = h2conn.assertRstStream(1, TIMEOUT);
+            assertThat(rstStream.errorCode(), is(Http2ErrorCode.CANCEL));
+
+            for (int i = 0; i < 70; i++) {
+                BufferData delayedBody = BufferData.create(new byte[1024]);
+                h2conn.writer().writeData(new Http2FrameData(Http2FrameHeader.create(delayedBody.available(),
+                                                                                     Http2FrameTypes.DATA,
+                                                                                     Http2Flag.DataFlags.create(0),
+                                                                                     1),
+                                                             delayedBody),
+                                          FlowControl.Outbound.NOOP);
+            }
+
+            assertGoAwayError(h2conn, Http2ErrorCode.ENHANCE_YOUR_CALM);
+        }
+    }
+
+    @Test
+    void nonEmptyContinuationFloodForRejectedRequestIsBounded(Http2TestClient client) {
+        try (Http2TestConnection h2conn = client.createConnection()) {
+            WritableHeaders<?> requestHeaders = WritableHeaders.create();
+            requestHeaders.add(HeaderNames.CONTENT_ENCODING, "unsupported-test-encoding");
+            Http2Headers h2Headers = Http2Headers.create(requestHeaders);
+            h2Headers.method(POST);
+            h2Headers.path(BLOCKING_PATH);
+            h2Headers.scheme(h2conn.clientUri().scheme());
+            h2Headers.authority(h2conn.clientUri().authority());
+            h2conn.writer().writeHeaders(h2Headers,
+                                         1,
+                                         Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                         FlowControl.Outbound.NOOP);
+
+            assertErrorResponse(h2conn, 1, Status.UNSUPPORTED_MEDIA_TYPE_415);
+            Http2RstStream rstStream = h2conn.assertRstStream(1, TIMEOUT);
+            assertThat(rstStream.errorCode(), is(Http2ErrorCode.CANCEL));
+
+            Http2Headers trailers = Http2Headers.create(WritableHeaders.create()
+                                                                        .add(HeaderNames.create("x-trailer"), "done"));
+            h2conn.writer().writeHeaders(trailers,
+                                         1,
+                                         Http2Flag.HeaderFlags.create(0),
+                                         FlowControl.Outbound.NOOP);
+
+            for (int i = 0; i < 70; i++) {
+                BufferData continuation = BufferData.create(new byte[1024]);
+                h2conn.writer().write(new Http2FrameData(Http2FrameHeader.create(continuation.available(),
+                                                                                 Http2FrameTypes.CONTINUATION,
+                                                                                 Http2Flag.ContinuationFlags.create(0),
+                                                                                 1),
+                                                     continuation));
+            }
+
+            assertGoAwayError(h2conn, Http2ErrorCode.ENHANCE_YOUR_CALM);
+        }
+    }
+
+    private void assertRejectedStreamTerminal(Http2TestConnection h2conn, int streamId) {
+        for (;;) {
+            Http2FrameData frame = h2conn.awaitNextFrame(TIMEOUT);
+            assertThat("Timed out waiting for rejected stream terminal frame", frame, notNullValue());
+
+            if (frame.header().type() == Http2FrameType.GO_AWAY) {
+                Http2GoAway goAway = Http2GoAway.create(frame.data());
+                fail("Unexpected GOAWAY " + goAway.errorCode() + ": " + frame.data().readString(frame.data().available()));
+            }
+            if (frame.header().streamId() == 0) {
+                continue;
+            }
+            assertThat("Unexpected response stream", frame.header().streamId(), is(streamId));
+            if (frame.header().type() == Http2FrameType.DATA) {
+                assertThat(frame.header().flags(Http2FrameTypes.DATA).endOfStream(), is(true));
+                return;
+            } else if (frame.header().type() == Http2FrameType.RST_STREAM) {
+                Http2RstStream rstStream = Http2RstStream.create(frame.data());
+                assertThat(rstStream.errorCode(), is(Http2ErrorCode.CANCEL));
+                return;
+            } else {
+                fail("Unexpected HTTP/2 frame " + frame.header().type() + " for stream " + frame.header().streamId());
+            }
+        }
+    }
+
+    private void writeRejectedRequestHeaders(Http2TestConnection h2conn, int streamId) {
+        WritableHeaders<?> requestHeaders = WritableHeaders.create();
+        requestHeaders.add(HeaderNames.CONTENT_ENCODING, "unsupported-test-encoding");
+        Http2Headers h2Headers = Http2Headers.create(requestHeaders);
+        h2Headers.method(POST);
+        h2Headers.path(BLOCKING_PATH);
+        h2Headers.scheme(h2conn.clientUri().scheme());
+        h2Headers.authority(h2conn.clientUri().authority());
+        h2conn.writer().writeHeaders(h2Headers,
+                                     streamId,
+                                         Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                         FlowControl.Outbound.NOOP);
+    }
+
+    private void writeEmptyPostRequest(Http2TestConnection h2conn, int streamId) {
+        WritableHeaders<?> requestHeaders = WritableHeaders.create();
+        requestHeaders.add(HeaderNames.CONTENT_LENGTH, "0");
+        requestHeaders.add(HeaderNames.create("x-hpack-proof"), "done");
+        Http2Headers h2Headers = Http2Headers.create(requestHeaders);
+        h2Headers.method(POST);
+        h2Headers.path(BLOCKING_PATH);
+        h2Headers.scheme(h2conn.clientUri().scheme());
+        h2Headers.authority(h2conn.clientUri().authority());
+        BufferData headerBlock = BufferData.growing(256);
+        h2Headers.write(requestDynamicTable, Http2HuffmanEncoder.create(), headerBlock);
+        h2conn.writer().write(new Http2FrameData(
+                Http2FrameHeader.create(headerBlock.available(),
+                                        Http2FrameTypes.HEADERS,
+                                        Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM),
+                                        streamId),
+                headerBlock));
+    }
+
+    private boolean assertResetOverflowOrRejectedStream(Http2TestConnection h2conn, int streamId) {
+        for (;;) {
+            Http2FrameData frame = h2conn.awaitNextFrame(TIMEOUT);
+            assertThat("Timed out waiting for rejected stream terminal frame", frame, notNullValue());
+
+            if (frame.header().type() == Http2FrameType.GO_AWAY) {
+                Http2GoAway goAway = Http2GoAway.create(frame.data());
+                assertThat(goAway.errorCode(), is(Http2ErrorCode.ENHANCE_YOUR_CALM));
+                return true;
+            }
+            if (frame.header().streamId() != streamId) {
+                continue;
+            }
+            if (frame.header().type() == Http2FrameType.RST_STREAM) {
+                Http2RstStream rstStream = Http2RstStream.create(frame.data());
+                assertThat(rstStream.errorCode(), is(Http2ErrorCode.CANCEL));
+                return false;
+            }
+        }
+    }
+
+    private void assertGoAwayError(Http2TestConnection h2conn, Http2ErrorCode errorCode) {
+        for (;;) {
+            Http2FrameData frame = h2conn.awaitNextFrame(TIMEOUT);
+            assertThat("Timed out waiting for GOAWAY", frame, notNullValue());
+
+            if (frame.header().type() != Http2FrameType.GO_AWAY) {
+                continue;
+            }
+
+            Http2GoAway goAway = Http2GoAway.create(frame.data());
+            assertThat(goAway.errorCode(), is(errorCode));
+            return;
         }
     }
 
