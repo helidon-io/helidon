@@ -43,7 +43,7 @@ class Http2CallEntityChain extends Http2CallChainBase {
               request,
               whenComplete,
               new Http1FallbackHandler(whenSent,
-                                       http1Request -> http1Request.submit(entity),
+                                       (http1Request, ignored) -> http1Request.submit(entity),
                                        bodyless(entity)));
         this.whenSent = whenSent;
         this.entity = entity;

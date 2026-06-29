@@ -16,6 +16,7 @@
 
 package io.helidon.webclient.http2;
 
+import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
@@ -57,7 +58,14 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
               http2ClientRequest,
               whenComplete,
               new Http1FallbackHandler(whenSent,
-                                       http1Request -> http1Request.outputStream(streamHandler),
+                                       (http1Request, serviceRequest) -> {
+                                           Headers initialHeaders = WritableHeaders.create(serviceRequest.headers());
+                                           return http1Request.outputStream(outputStream -> streamHandler.handle(
+                                                   new ContentTypeSyncOutputStream(outputStream,
+                                                                                   initialHeaders,
+                                                                                   serviceRequest.headers(),
+                                                                                   http1Request.headers())));
+                                       },
                                        false));
 
         this.client = http2Client;
@@ -376,5 +384,55 @@ class Http2CallOutputStreamChain extends Http2CallChainBase {
 
     }
 
+    private static final class ContentTypeSyncOutputStream extends FilterOutputStream {
+        private final Headers initialHeaders;
+        private final ClientRequestHeaders sourceHeaders;
+        private final ClientRequestHeaders targetHeaders;
+        private boolean contentTypeSynced;
+
+        private ContentTypeSyncOutputStream(OutputStream delegate,
+                                            Headers initialHeaders,
+                                            ClientRequestHeaders sourceHeaders,
+                                            ClientRequestHeaders targetHeaders) {
+            super(delegate);
+            this.initialHeaders = initialHeaders;
+            this.sourceHeaders = sourceHeaders;
+            this.targetHeaders = targetHeaders;
+        }
+
+        @Override
+        public void write(int data) throws IOException {
+            syncContentType();
+            out.write(data);
+        }
+
+        @Override
+        public void write(byte[] data, int offset, int length) throws IOException {
+            syncContentType();
+            out.write(data, offset, length);
+        }
+
+        @Override
+        public void close() throws IOException {
+            syncContentType();
+            super.close();
+        }
+
+        private void syncContentType() {
+            if (!contentTypeSynced) {
+                sourceHeaders.find(HeaderNames.CONTENT_TYPE)
+                        .ifPresentOrElse(contentType -> {
+                            if (!initialHeaders.contains(contentType)) {
+                                targetHeaders.set(contentType);
+                            }
+                        }, () -> {
+                            if (initialHeaders.contains(HeaderNames.CONTENT_TYPE)) {
+                                targetHeaders.remove(HeaderNames.CONTENT_TYPE);
+                            }
+                        });
+                contentTypeSynced = true;
+            }
+        }
+    }
 
 }

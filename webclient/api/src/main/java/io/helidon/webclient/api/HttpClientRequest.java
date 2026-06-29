@@ -16,6 +16,9 @@
 
 package io.helidon.webclient.api;
 
+import java.io.FilterOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.net.UnixDomainSocketAddress;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +28,10 @@ import io.helidon.common.LruCache;
 import io.helidon.common.socket.HelidonSocket;
 import io.helidon.common.tls.Tls;
 import io.helidon.http.ClientRequestHeaders;
+import io.helidon.http.HeaderNames;
+import io.helidon.http.Headers;
 import io.helidon.http.Method;
+import io.helidon.http.WritableHeaders;
 import io.helidon.webclient.spi.HttpClientSpi;
 
 /**
@@ -100,7 +106,10 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
 
     @Override
     protected HttpClientResponse doOutputStream(OutputStreamHandler outputStreamConsumer) {
-        return discoverHttpImplementation().outputStream(outputStreamConsumer);
+        Headers initialHeaders = WritableHeaders.create(headers());
+        ClientRequest<?> protocolRequest = discoverHttpImplementation();
+        return protocolRequest.outputStream(outputStream -> outputStreamConsumer.handle(
+                new ContentTypeSyncOutputStream(outputStream, initialHeaders, headers(), protocolRequest.headers())));
     }
 
     private ClientRequest<?> discoverHttpImplementation() {
@@ -279,6 +288,57 @@ public class HttpClientRequest extends ClientRequestBase<HttpClientRequest, Http
                                                        + "willing to handle it. HTTP versions supported: " + clients.keySet());
         }
         return tcpProtocols.getFirst().spi().clientRequest(this, resolvedUri);
+    }
+
+    static final class ContentTypeSyncOutputStream extends FilterOutputStream {
+        private final Headers initialHeaders;
+        private final ClientRequestHeaders sourceHeaders;
+        private final ClientRequestHeaders targetHeaders;
+        private boolean contentTypeSynced;
+
+        ContentTypeSyncOutputStream(OutputStream delegate,
+                                    Headers initialHeaders,
+                                    ClientRequestHeaders sourceHeaders,
+                                    ClientRequestHeaders targetHeaders) {
+            super(delegate);
+            this.initialHeaders = initialHeaders;
+            this.sourceHeaders = sourceHeaders;
+            this.targetHeaders = targetHeaders;
+        }
+
+        @Override
+        public void write(int data) throws IOException {
+            syncContentType();
+            out.write(data);
+        }
+
+        @Override
+        public void write(byte[] data, int offset, int length) throws IOException {
+            syncContentType();
+            out.write(data, offset, length);
+        }
+
+        @Override
+        public void close() throws IOException {
+            syncContentType();
+            super.close();
+        }
+
+        private void syncContentType() {
+            if (!contentTypeSynced) {
+                sourceHeaders.find(HeaderNames.CONTENT_TYPE)
+                        .ifPresentOrElse(contentType -> {
+                            if (!initialHeaders.contains(contentType)) {
+                                targetHeaders.set(contentType);
+                            }
+                        }, () -> {
+                            if (initialHeaders.contains(HeaderNames.CONTENT_TYPE)) {
+                                targetHeaders.remove(HeaderNames.CONTENT_TYPE);
+                            }
+                        });
+                contentTypeSynced = true;
+            }
+        }
     }
 
     private static SniSupport.Selection sniSelection(ClientUri uri,

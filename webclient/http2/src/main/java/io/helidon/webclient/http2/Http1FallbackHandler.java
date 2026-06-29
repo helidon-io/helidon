@@ -17,7 +17,7 @@
 package io.helidon.webclient.http2;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 import io.helidon.common.context.Context;
@@ -28,11 +28,11 @@ import io.helidon.webclient.http1.Http1ClientResponse;
 
 final class Http1FallbackHandler {
     private final CompletableFuture<WebClientServiceRequest> whenSent;
-    private final Function<Http1ClientRequest, Http1ClientResponse> responseFunction;
+    private final BiFunction<Http1ClientRequest, WebClientServiceRequest, Http1ClientResponse> responseFunction;
     private final boolean upgradeFailureResponseAllowed;
 
     Http1FallbackHandler(CompletableFuture<WebClientServiceRequest> whenSent,
-                         Function<Http1ClientRequest, Http1ClientResponse> responseFunction,
+                         BiFunction<Http1ClientRequest, WebClientServiceRequest, Http1ClientResponse> responseFunction,
                          boolean upgradeFailureResponseAllowed) {
         this.whenSent = whenSent;
         this.responseFunction = responseFunction;
@@ -40,7 +40,7 @@ final class Http1FallbackHandler {
     }
 
     Http1ClientResponse apply(Http1ClientRequest request, WebClientServiceRequest serviceRequest) {
-        return invoke(request, serviceRequest, () -> responseFunction.apply(request));
+        return invoke(request, serviceRequest, () -> responseFunction.apply(request, serviceRequest));
     }
 
     <T> T invoke(Http1ClientRequest request,

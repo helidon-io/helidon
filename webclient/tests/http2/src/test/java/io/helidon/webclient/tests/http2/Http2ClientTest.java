@@ -532,7 +532,7 @@ class Http2ClientTest {
     }
 
     @Test
-    void testGenericHostHeaderSniHttp1FallbackOutputStreamInvokesServicesOnce() throws Exception {
+    void testGenericHostHeaderSniHttp1FallbackOutputStream() throws Exception {
         NoAlpnHttp1TlsServer server = NoAlpnHttp1TlsServer.start();
         AtomicInteger serviceInvocations = new AtomicInteger();
         byte[] entity = "fallback-output-stream".getBytes(StandardCharsets.US_ASCII);
@@ -546,10 +546,12 @@ class Http2ClientTest {
                     return chain.proceed(request);
                 })
                 .build();
-        try (HttpClientResponse response = client.post()
+        HttpClientRequest request = client.post()
                 .path("/stream")
                 .header(HeaderNames.CONTENT_LENGTH, String.valueOf(entity.length))
-                .outputStream(it -> {
+                .header(HeaderNames.CONTENT_TYPE, "multipart/form-data");
+        try (HttpClientResponse response = request.outputStream(it -> {
+                    request.header(HeaderNames.CONTENT_TYPE, "multipart/form-data; boundary=generated");
                     it.write(entity);
                     it.close();
                 })) {
@@ -563,6 +565,9 @@ class Http2ClientTest {
             assertThat(hasHeader(requestLines,
                                  HeaderNames.HOST.defaultCase(),
                                  "host-header.example:" + server.port()), is(true));
+            assertThat(hasHeader(requestLines,
+                                 HeaderNames.CONTENT_TYPE.defaultCase(),
+                                 "multipart/form-data; boundary=generated"), is(true));
             assertThat(server.requestBody(), is(new String(entity, StandardCharsets.US_ASCII)));
         } finally {
             client.closeResource();
