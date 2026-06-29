@@ -121,12 +121,16 @@ class DeclarativeMetricsTest {
         assertThat(gauge, notNullValue());
         assertThat(gauge.intValue(), is(42));
 
-        BigDecimal inheritedCounted = appMetrics.numberValue("inherited-counted;application=MyNiceApp;endpoint=TestEndpoint")
+        BigDecimal inheritedCounted = appMetrics.numberValue("inherited-counted;application=MyNiceApp;contract=counted;"
+                                                                      + "endpoint=TestEndpoint;implementationOne=one;"
+                                                                      + "implementationTwo=two")
                 .orElse(null);
         assertThat(inheritedCounted, notNullValue());
         assertThat(inheritedCounted.intValue(), is(1));
 
-        BigDecimal inheritedGauge = appMetrics.numberValue("inherited-gauge;application=MyNiceApp;endpoint=TestEndpoint")
+        BigDecimal inheritedGauge = appMetrics.numberValue("inherited-gauge;application=MyNiceApp;contract=gauge;"
+                                                                    + "endpoint=TestEndpoint;implementationOne=one;"
+                                                                    + "implementationTwo=two")
                 .orElse(null);
         assertThat(inheritedGauge, notNullValue());
         assertThat(inheritedGauge.intValue(), is(43));

@@ -43,7 +43,8 @@ public class TracingExtensionProvider implements RegistryCodegenExtensionProvide
 
     @Override
     public Set<TypeName> supportedAnnotations() {
-        return Set.of(TracingTypes.ANNOTATION_TRACED);
+        return Set.of(TracingTypes.ANNOTATION_TRACED,
+                      TracingTypes.ANNOTATION_TAG_PARAM);
     }
 
     @Override

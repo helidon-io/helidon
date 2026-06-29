@@ -48,11 +48,15 @@ class TestEndpoint implements InheritedMetricsContract {
     }
 
     @Override
+    @Metrics.Tag(key = "implementationOne", value = "one")
+    @Metrics.Tag(key = "implementationTwo", value = "two")
     public String inheritedCounted() {
         return "inherited counted";
     }
 
     @Override
+    @Metrics.Tag(key = "implementationOne", value = "one")
+    @Metrics.Tag(key = "implementationTwo", value = "two")
     public int inheritedGaugeValue() {
         return gaugeValue.get() + 1;
     }

@@ -61,6 +61,8 @@ class TracingExtension implements RegistryCodegenExtension {
     public void process(RegistryRoundContext roundContext) {
         // collect all typeInfo + method that is traced
         Collection<TypeInfo> roundTypes = roundContext.types();
+        Map<TypeName, TypeInfo> effectiveTypes = new HashMap<>();
+        roundTypes.forEach(it -> effectiveTypes.put(it.typeName(), it));
 
         Collection<TypeInfo> annotatedTypes = roundContext.annotatedTypes(ANNOTATION_TRACED);
 
@@ -71,8 +73,11 @@ class TracingExtension implements RegistryCodegenExtension {
                 continue;
             }
             TracedElements tracedElementValue = tracedElements(tracedElements, type);
+            TypeInfo effectiveType = effectiveTypes.getOrDefault(type.typeName(), type);
 
-            addTypeTracedMethods(tracedElementValue, type.elementInfo(), type.findAnnotation(ANNOTATION_TRACED));
+            addTypeTracedMethods(tracedElementValue,
+                                 effectiveType.elementInfo(),
+                                 type.findAnnotation(ANNOTATION_TRACED));
         }
 
         for (TypeInfo type : roundTypes) {
@@ -81,15 +86,19 @@ class TracingExtension implements RegistryCodegenExtension {
             }
 
             Set<ResolvedType> contracts = new HashSet<>();
-            ServiceContracts.create(ctx.options(), roundContext::typeInfo, type)
-                    .addContracts(contracts, new HashSet<>(), type);
+            ServiceContracts serviceContracts = ServiceContracts.create(ctx.options(), roundContext::typeInfo, type);
+            serviceContracts.addContracts(contracts, new HashSet<>(), type);
 
             contracts.stream()
                     .sorted(Comparator.comparing(contract -> contract.type().resolvedName()))
-                    .flatMap(contract -> roundContext.typeInfo(contract.type())
-                            .or(() -> roundContext.typeInfo(contract.type().genericTypeName()))
-                            .map(it -> Map.entry(contract, it))
-                            .stream())
+                    .flatMap(contract -> {
+                        TypeName resolvedContractType = serviceContracts.resolveContractType(contracts,
+                                                                                             contract.type());
+                        return roundContext.typeInfo(resolvedContractType)
+                                .or(() -> roundContext.typeInfo(resolvedContractType.genericTypeName()))
+                                .map(it -> Map.entry(ResolvedType.create(resolvedContractType), it))
+                                .stream();
+                    })
                     .filter(contract -> contract.getValue().hasAnnotation(ANNOTATION_TRACED))
                     .forEach(contractEntry -> {
                         ResolvedType resolvedContract = contractEntry.getKey();

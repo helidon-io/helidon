@@ -16,29 +16,14 @@
 
 package io.helidon.declarative.tests.tracing;
 
+import io.helidon.http.Http;
 import io.helidon.service.registry.Service;
-import io.helidon.tracing.Span;
-import io.helidon.tracing.Tracing;
-import io.helidon.webserver.http.RestServer;
 
-@RestServer.Endpoint
-@Service.Singleton
-@SuppressWarnings("deprecation")
-@Tracing.Traced(value = "implementation-type-%2$s",
-                tags = @Tracing.Tag(key = "source", value = "implementation-type"),
-                kind = Span.Kind.SERVER)
-class TypedTracingEndpoint implements TypedTracingContract {
-    @Service.Inject
-    TypedTracingEndpoint() {
-    }
-
+@Service.Contract
+@Http.Path("/generic")
+interface IntermediateTracingContract<T> extends GenericTracingContract<T> {
     @Override
-    public String contractMethod() {
-        return "typed contract";
-    }
-
-    @Override
-    public String typeContractParam(int id) {
-        return "typed " + id;
-    }
+    @Http.GET
+    @Http.Path("/type-traced")
+    T genericTypeTraced(@Http.QueryParam("name") T name);
 }

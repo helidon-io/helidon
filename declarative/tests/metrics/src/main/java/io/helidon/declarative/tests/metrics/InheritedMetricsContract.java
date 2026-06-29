@@ -27,8 +27,10 @@ interface InheritedMetricsContract {
     @Http.GET
     @Http.Path("/inherited-counted")
     @Metrics.Counted(value = "inherited-counted", absoluteName = true)
+    @Metrics.Tag(key = "contract", value = "counted")
     String inheritedCounted();
 
     @Metrics.Gauge(value = "inherited-gauge", absoluteName = true, unit = Meter.BaseUnits.BYTES)
+    @Metrics.Tag(key = "contract", value = "gauge")
     int inheritedGaugeValue();
 }

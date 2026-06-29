@@ -331,20 +331,24 @@ class ServiceRegistryCodegenExtension implements CodegenExtension {
                                                               Map<TypeName, Set<TypeName>> supportedAnnotationsCache,
                                                               Map<TypeName, Set<TypeName>> metaAnnotationsCache,
                                                               Map<TypeName, Boolean> metaAnnotatedCache) {
-        if (!extension.supportsServiceContractAnnotations() || !ServiceTypes.isService(serviceType)) {
+        if (!ServiceTypes.isService(serviceType)
+                || (!extension.supportsServiceContractAnnotations()
+                && !extension.supportsFactoryProvidedServiceContractAnnotations())) {
             return Set.of();
         }
 
         ServiceContracts serviceContracts = ServiceContracts.create(ctx.options(), roundContext::typeInfo, serviceType);
-        Set<ResolvedType> contracts = new HashSet<>();
-        serviceContracts.addContracts(contracts, new HashSet<>(), serviceType);
-
-        Set<TypeName> result = new HashSet<>(supportedAnnotationsOnContracts(roundContext,
-                                                                             extension,
-                                                                             contracts,
-                                                                             supportedAnnotationsCache,
-                                                                             metaAnnotationsCache,
-                                                                             metaAnnotatedCache));
+        Set<TypeName> result = new HashSet<>();
+        if (extension.supportsServiceContractAnnotations()) {
+            Set<ResolvedType> contracts = new HashSet<>();
+            serviceContracts.addContracts(contracts, new HashSet<>(), serviceType);
+            result.addAll(supportedAnnotationsOnContracts(roundContext,
+                                                          extension,
+                                                          contracts,
+                                                          supportedAnnotationsCache,
+                                                          metaAnnotationsCache,
+                                                          metaAnnotatedCache));
+        }
         if (extension.supportsFactoryProvidedServiceContractAnnotations()) {
             result.addAll(supportedAnnotationsOnContracts(roundContext,
                                                           extension,

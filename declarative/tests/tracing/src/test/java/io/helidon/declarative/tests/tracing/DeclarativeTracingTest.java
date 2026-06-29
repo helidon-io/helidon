@@ -438,6 +438,45 @@ public class DeclarativeTracingTest {
         assertAttribute(tracedMethod.getAttributes(), "source", "contract-method");
     }
 
+    @Test
+    @Order(10)
+    void testImplementationTypeTracedRetainsInheritedParamTag() {
+        var response = client.get("/typed/type-param")
+                .queryParam("id", "11")
+                .request(String.class);
+
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity(), is("typed 11"));
+
+        var data = exporter.spanData(3);
+        exporter.clear();
+
+        SpanData tracedMethod = null;
+        for (SpanData spanDatum : data) {
+            switch (spanDatum.getName()) {
+            case "HTTP Request":
+            case "content-write":
+                break;
+            default:
+                tracedMethod = spanDatum;
+                break;
+            }
+        }
+
+        Set<String> names = data.stream()
+                .map(SpanData::getName)
+                .collect(Collectors.toSet());
+
+        assertThat("Found names: " + names + ", missing implementation type traced method", tracedMethod, notNullValue());
+        assertThat(tracedMethod.getName(), is("implementation-type-typeContractParam"));
+        assertThat(tracedMethod.getKind(), is(SpanKind.SERVER));
+        assertThat(tracedMethod.getStatus().getStatusCode(), is(StatusCode.UNSET));
+
+        assertAttribute(tracedMethod.getAttributes(), "source", "implementation-type");
+        Long actualValue = tracedMethod.getAttributes().get(AttributeKey.longKey("id"));
+        assertThat("Long Attribute of key: id", actualValue, is(11L));
+    }
+
     private void assertAttribute(Attributes attributes, String key, String expectedValue) {
         var actualValue = attributes.get(AttributeKey.stringKey(key));
 

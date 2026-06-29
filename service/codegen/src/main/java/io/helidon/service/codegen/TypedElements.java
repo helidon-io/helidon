@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.ElementInfoPredicates;
@@ -87,9 +88,10 @@ final class TypedElements {
         return gatherElements(ctx::typeInfo, contracts, typeInfo);
     }
 
-    private static List<TypedElements.ElementMeta> gatherElements(TypeInfoFactory typeInfoFactory,
-                                                                  Collection<ResolvedType> contracts,
-                                                                  TypeInfo typeInfo) {
+    private static List<TypedElements.ElementMeta> gatherElements(
+            Function<TypeName, Optional<TypeInfo>> typeInfoFactory,
+            Collection<ResolvedType> contracts,
+            TypeInfo typeInfo) {
         List<TypedElements.ElementMeta> result = new ArrayList<>();
         Set<ElementSignature> processedSignatures = new HashSet<>();
         List<ContractInfo> contractInfos = contractInfos(typeInfoFactory, contracts);
@@ -159,13 +161,14 @@ final class TypedElements {
         return result;
     }
 
-    private static List<ContractInfo> contractInfos(TypeInfoFactory typeInfoFactory, Collection<ResolvedType> contracts) {
+    private static List<ContractInfo> contractInfos(Function<TypeName, Optional<TypeInfo>> typeInfoFactory,
+                                                    Collection<ResolvedType> contracts) {
         List<ContractInfo> contractInfos = contracts.stream()
                 .sorted(Comparator.comparing(it -> it.type().toString()))
                 .flatMap(it -> {
                     TypeName resolvedType = resolveContractType(typeInfoFactory, contracts, it.type());
-                    return typeInfoFactory.typeInfo(resolvedType)
-                            .or(() -> typeInfoFactory.typeInfo(it.type()))
+                    return typeInfoFactory.apply(resolvedType)
+                            .or(() -> typeInfoFactory.apply(it.type()))
                             .map(typeInfo -> new ContractInfo(ResolvedType.create(resolvedType), typeInfo))
                             .stream();
                 })
@@ -200,19 +203,20 @@ final class TypedElements {
                 || !typeParameterNames(info.declaredType().typeArguments()).isEmpty();
     }
 
-    private static boolean rawGenericContract(TypeInfoFactory typeInfoFactory, TypeName typeName) {
+    private static boolean rawGenericContract(Function<TypeName, Optional<TypeInfo>> typeInfoFactory,
+                                              TypeName typeName) {
         if (!typeName.typeArguments().isEmpty()) {
             return false;
         }
 
-        return typeInfoFactory.typeInfo(typeName)
+        return typeInfoFactory.apply(typeName)
                 .map(TypedElements::genericContract)
                 .orElse(false);
     }
 
-    private static TypeName resolveContractType(TypeInfoFactory typeInfoFactory,
-                                                Collection<ResolvedType> contracts,
-                                                TypeName typeName) {
+    static TypeName resolveContractType(Function<TypeName, Optional<TypeInfo>> typeInfoFactory,
+                                        Collection<ResolvedType> contracts,
+                                        TypeName typeName) {
         if (!hasGenericTypeArgument(typeName) && !rawGenericContract(typeInfoFactory, typeName)) {
             return typeName;
         }
@@ -225,7 +229,7 @@ final class TypedElements {
                 continue;
             }
 
-            Optional<TypeName> resolvedType = typeInfoFactory.typeInfo(candidateType)
+            Optional<TypeName> resolvedType = typeInfoFactory.apply(candidateType)
                     .flatMap(it -> resolveInheritedType(it, candidateType, typeName.genericTypeName(), new HashSet<>()));
             if (resolvedType.isPresent() && !hasGenericTypeArgument(resolvedType.get())) {
                 return resolvedType.get();
@@ -506,7 +510,4 @@ final class TypedElements {
                                 TypeInfo typeInfo) {
     }
 
-    private interface TypeInfoFactory {
-        Optional<TypeInfo> typeInfo(TypeName typeName);
-    }
 }

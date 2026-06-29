@@ -21,7 +21,7 @@ import io.helidon.webserver.http.RestServer;
 
 @RestServer.Endpoint
 @Service.Singleton
-class GenericTracingEndpoint implements GenericTracingContract<String> {
+class GenericTracingEndpoint implements IntermediateTracingContract<String> {
     @Service.Inject
     GenericTracingEndpoint() {
     }

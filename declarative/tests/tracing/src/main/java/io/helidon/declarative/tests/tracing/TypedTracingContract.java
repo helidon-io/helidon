@@ -31,4 +31,8 @@ interface TypedTracingContract {
                     tags = @Tracing.Tag(key = "source", value = "contract-method"),
                     kind = Span.Kind.SERVER)
     String contractMethod();
+
+    @Http.GET
+    @Http.Path("/type-param")
+    String typeContractParam(@Http.QueryParam("id") @Tracing.ParamTag("id") int id);
 }

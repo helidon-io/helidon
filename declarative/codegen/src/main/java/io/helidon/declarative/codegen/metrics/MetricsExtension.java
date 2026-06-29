@@ -139,16 +139,15 @@ class MetricsExtension implements RegistryCodegenExtension {
     }
 
     private static List<Tag> elementTags(Annotated annotated) {
-        if (annotated.hasAnnotation(ANNOTATION_TAG)) {
-            return toTags(List.of(annotated.annotation(ANNOTATION_TAG)));
+        List<Tag> result = new ArrayList<>();
+        for (Annotation annotation : annotated.annotations()) {
+            if (ANNOTATION_TAG.equals(annotation.typeName())) {
+                result.addAll(toTags(List.of(annotation)));
+            } else if (ANNOTATION_TAGS.equals(annotation.typeName())) {
+                result.addAll(toTags(annotation.annotationValues().orElseGet(List::of)));
+            }
         }
-
-        if (annotated.hasAnnotation(ANNOTATION_TAGS)) {
-            return toTags(annotated.annotation(ANNOTATION_TAGS)
-                                  .annotationValues()
-                                  .orElseGet(List::of));
-        }
-        return List.of();
+        return List.copyOf(result);
     }
 
     private static List<Tag> toTags(List<Annotation> tags) {
