@@ -11,7 +11,7 @@ For Helidon 2.x releases please see [Helidon 2.x CHANGELOG.md](https://github.co
 
 For Helidon 1.x releases please see [Helidon 1.x CHANGELOG.md](https://github.com/oracle/helidon/blob/helidon-1.x/CHANGELOG.md)
 
-## 4.5.1-M1
+## [4.5.1-M1]
 
 This release of Helidon contains important fixes and is strongly recommended for all users of Helidon 4.
 
@@ -25,13 +25,14 @@ A minimum of Java 21 is required to use Helidon 4. Java 25 is recommended.
 - Declarative: Fix inherited declarative contract annotations [12122](https://github.com/helidon-io/helidon/pull/12122)
 - GraphQL: Remove invalid MP flavor from WebServer GraphQL module [12084](https://github.com/helidon-io/helidon/pull/12084)
 - HTTP/2: Fix HTTP/2 split header block serialization [12139](https://github.com/helidon-io/helidon/pull/12139)
+- MP Fault Tolerance: Fix MP fault tolerance request scope retention [12154](https://github.com/helidon-io/helidon/pull/12154)
 - WebServer: Reject missing declarative request entities [12148](https://github.com/helidon-io/helidon/pull/12148)
 - WebServer: Fix declarative ServerResponse handling [12145](https://github.com/helidon-io/helidon/pull/12145/)
 - Dependencies: Upgrade Jackson to 2.21.4 and Handlebars to 4.5.2 [12129](https://github.com/helidon-io/helidon/pull/12129)
 - Build: Upgrade actions setup-java to 4.7.1 and cache to 4.2.4 [10139](https://github.com/helidon-io/helidon/pull/10139)
 - Docs: Update metrics factory documentation (4.x) [12138](https://github.com/helidon-io/helidon/pull/12138)
 
-## 4.5.0
+## [4.5.0]
 
 This release of Helidon contains important bug, security and performance fixes and is strongly recommended for all users of Helidon 4.
 
