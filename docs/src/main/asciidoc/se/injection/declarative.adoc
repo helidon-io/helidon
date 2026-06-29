@@ -133,6 +133,16 @@ Supported method parameters (no annotation required):
 - `io.helidon.common.security.SecurityContext`
 - link:{security-javadoc-base-url}/io/helidon/security/SecurityContext.html`[`io.helidon.security.SecurityContext] - in case `helidon-security` module is on the classpath
 
+If an endpoint method uses `ServerResponse` directly, generated response metadata such as status, content type,
+and declarative response headers is configured before the method is invoked.
+This is equivalent to imperative code configuring the same `ServerResponse` with `status(...)`,
+`headers().contentType(...)`, and `header(...)` before handling the response. The metadata belongs to the current
+response and is not automatically cleared if the method later calls `next()`, calls `reroute(...)`, or throws an
+exception; later route or error handling can change it before sending the response.
+When using `ServerResponse.outputStream()`, close the returned stream before leaving the endpoint method.
+For `void` endpoint methods, the generated handler only sends the response automatically if the method did not already
+handle it. Methods that return a value still send the returned entity.
+
 Annotations on endpoint type:
 
 - link:{webserver-javadoc-base-url}/io/helidon/webserver/http/RestServer.Endpoint.html[`io.helidon.webserver.http.RestServer.Endpoint`] - required annotation

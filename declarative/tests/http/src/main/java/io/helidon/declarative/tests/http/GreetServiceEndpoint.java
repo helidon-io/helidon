@@ -43,6 +43,7 @@ import io.helidon.security.abac.role.RoleValidator;
 import io.helidon.service.registry.Service;
 import io.helidon.webserver.http.RestServer;
 import io.helidon.webserver.http.ServerRequest;
+import io.helidon.webserver.http.ServerResponse;
 
 /**
  * A simple endpoint to greet you. Examples:
@@ -123,6 +124,28 @@ class GreetServiceEndpoint implements GreetService {
     @Http.Path("/query-int")
     String queryInt(@Http.QueryParam("param") Integer queryParam) {
         return Integer.toString(queryParam);
+    }
+
+    @Http.GET
+    @Http.Path("/output-stream")
+    @Http.Produces(MediaTypes.TEXT_PLAIN_VALUE)
+    @RestServer.Header(name = "X-Stream", value = "true")
+    @RestServer.Status(Status.CREATED_201_CODE)
+    void outputStream(ServerResponse response) throws IOException {
+        try (var outputStream = response.outputStream()) {
+            outputStream.write("streamed".getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
+    @Http.POST
+    @Http.Path("/input-stream-output-stream")
+    @Http.Consumes(MediaTypes.TEXT_PLAIN_VALUE)
+    @Http.Produces(MediaTypes.TEXT_PLAIN_VALUE)
+    void inputStreamOutputStream(@Http.Entity InputStream inputStream,
+                                 ServerResponse response) throws IOException {
+        try (var outputStream = response.outputStream()) {
+            inputStream.transferTo(outputStream);
+        }
     }
 
     /**
