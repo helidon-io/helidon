@@ -307,6 +307,18 @@ class DeclarativeHttpTest {
     }
 
     @Test
+    void testRequestParamsMissingEntity() {
+        var response = client.post("/request-params/grouped")
+                .header(HeaderValues.create(HeaderNames.create("X-CUSTOM"), "Expected-header"))
+                .header(HeaderValues.create(HeaderNames.COOKIE, "myCookie=Expected-cookie"))
+                .header(HeaderValues.CONTENT_TYPE_TEXT_PLAIN)
+                .request(String.class);
+
+        assertThat(response.status(), is(Status.BAD_REQUEST_400));
+        assertThat(response.entity(), is("Entity entity is not present in the request."));
+    }
+
+    @Test
     void testRequestParamsPath() {
         var response = client.get("/request-params/path/Expected-path")
                 .request(String.class);
@@ -787,5 +799,23 @@ class DeclarativeHttpTest {
         IllegalStateException exception = assertThrows(IllegalStateException.class,
                                                        typedClient::optionalMessageNotFoundHandled);
         assertThat(exception.getMessage(), is("optional 404 handled"));
+    }
+
+    @Test
+    void testInputStreamEntityEcho() {
+        var response = client.post("/greet/input-stream")
+                .submit("hello", String.class);
+
+        assertThat(response.status(), is(Status.OK_200));
+        assertThat(response.entity(), is("hello"));
+    }
+
+    @Test
+    void testInputStreamEntityEmptyContentLengthFailure() {
+        var response = client.post("/greet/input-stream")
+                .request(String.class);
+
+        assertThat(response.status(), is(Status.BAD_REQUEST_400));
+        assertThat(response.entity(), is("Entity inputStream is not present in the request."));
     }
 }

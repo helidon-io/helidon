@@ -328,6 +328,14 @@ class GreetServiceEndpoint implements GreetService {
         return greet.get();
     }
 
+    @Http.POST
+    @Http.Path("/input-stream")
+    String inputStreamEntity(@Http.Entity InputStream inputStream) throws IOException {
+        try (inputStream) {
+            return new String(inputStream.readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
+
     private JsonObject response(String name) {
         return JsonObject.builder()
                 .set("message", stringResponse(name))
