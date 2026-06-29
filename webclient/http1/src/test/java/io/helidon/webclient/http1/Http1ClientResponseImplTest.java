@@ -37,6 +37,7 @@ import io.helidon.common.socket.PeerInfo;
 import io.helidon.http.ClientRequestHeaders;
 import io.helidon.http.ClientResponseHeaders;
 import io.helidon.http.HeaderNames;
+import io.helidon.http.HeaderValues;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
@@ -53,6 +54,17 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 class Http1ClientResponseImplTest {
+
+    @Test
+    void chunkedMustBeFinalTransferCoding() {
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.add(HeaderValues.create(HeaderNames.TRANSFER_ENCODING, "chunked, gzip"));
+        assertThat(Http1CallChainBase.isChunkedFinalTransferCoding(headers), is(false));
+
+        headers = WritableHeaders.create();
+        headers.add(HeaderValues.create(HeaderNames.TRANSFER_ENCODING, "gzip, chunked"));
+        assertThat(Http1CallChainBase.isChunkedFinalTransferCoding(headers), is(true));
+    }
 
     @Test
     void doesNotCreateEntityStreamForHeadResponseWithoutFraming() {
@@ -183,6 +195,7 @@ class Http1ClientResponseImplTest {
         return new Http1ClientResponseImpl(HttpClientConfig.builder().build(),
                                            Http1ClientProtocolConfig.create(),
                                            Status.OK_200,
+                                           Method.GET,
                                            ClientRequestHeaders.create(WritableHeaders.create()),
                                            headers,
                                            connection,

@@ -22,6 +22,7 @@ import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.UnixDomainSocketAddress;
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
@@ -320,14 +321,28 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                 && statusCode != Status.NOT_MODIFIED_304.code();
     }
 
+    static boolean isChunkedFinalTransferCoding(Headers headers) {
+        if (!headers.contains(HeaderNames.TRANSFER_ENCODING)) {
+            return false;
+        }
+        List<String> values = headers.get(HeaderNames.TRANSFER_ENCODING).allValues();
+        String lastValue = values.get(values.size() - 1);
+        int lastSeparator = lastValue.lastIndexOf(',');
+        String finalCoding = lastValue.substring(lastSeparator + 1).trim();
+        return HeaderValues.TRANSFER_ENCODING_CHUNKED.get().equalsIgnoreCase(finalCoding);
+    }
+
     private static boolean mayExposeEntity(Method requestMethod, Status responseStatus, ClientResponseHeaders responseHeaders) {
         if (requestMethod == Method.HEAD) {
             return false;
         }
-        if (responseHeaders.contains(HeaderValues.CONTENT_LENGTH_ZERO)) {
+        if (!statusAllowsEntity(responseStatus)) {
             return false;
         }
-        if (!statusAllowsEntity(responseStatus)) {
+        if (responseHeaders.contains(HeaderNames.TRANSFER_ENCODING)) {
+            return true;
+        }
+        if (responseHeaders.contains(HeaderValues.CONTENT_LENGTH_ZERO)) {
             return false;
         }
         if ((
@@ -363,7 +378,10 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
             decoder = ContentDecoder.NO_OP;
         }
         InputStream inputStream;
-        if (responseHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
+        if (isChunkedFinalTransferCoding(responseHeaders)) {
+            inputStream = new ChunkedInputStream(helidonSocket, reader, whenComplete, response, recvListener);
+        } else if (!responseHeaders.contains(HeaderNames.TRANSFER_ENCODING)
+                && responseHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
             long length = responseHeaders.contentLength().getAsLong();
             inputStream = new ContentLengthInputStream(helidonSocket,
                                                        reader,
@@ -371,8 +389,6 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                                                        response,
                                                        length,
                                                        recvListener);
-        } else if (responseHeaders.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
-            inputStream = new ChunkedInputStream(helidonSocket, reader, whenComplete, response, recvListener);
         } else {
             // we assume the rest of the connection is entity (valid for HTTP/1.0, HTTP CONNECT method etc.
             inputStream = new EverythingInputStream(helidonSocket, reader, whenComplete, response, recvListener);
