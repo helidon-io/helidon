@@ -112,10 +112,6 @@ class MethodInvoker implements FtSupplier<Object> {
      */
     private final AtomicBoolean fallbackCalled = new AtomicBoolean(false);
     /**
-     * Helper to properly propagate active request scope to other threads.
-     */
-    private final RequestScopeHelper requestScopeHelper;
-    /**
      * FT handler for this invoker.
      */
     private final FtHandlerTyped<Object> handler;
@@ -173,10 +169,6 @@ class MethodInvoker implements FtSupplier<Object> {
 
         // Create a new method handler to ensure correct context in fallback
         handler = createMethodHandler(methodState);
-
-        // Gather information about current request scope if active
-        requestScopeHelper = new RequestScopeHelper();
-        requestScopeHelper.saveScope();
 
         registerMetrics();
     }
@@ -332,6 +324,8 @@ class MethodInvoker implements FtSupplier<Object> {
     }
 
     private CompletableFuture<Object> callSupplierNewThread(FtSupplier<Object> supplier) {
+        RequestScopeHelper requestScopeHelper = new RequestScopeHelper();
+        requestScopeHelper.saveScope();
         FtSupplier<Object> wrappedSupplier = requestScopeHelper.wrapInScope(supplier);
 
         // Call supplier in new thread
