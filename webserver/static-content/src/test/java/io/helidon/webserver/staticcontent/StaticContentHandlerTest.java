@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -1031,19 +1032,53 @@ class StaticContentHandlerTest {
     }
 
     @Test
-    void preCompressedNoAcceptableRepresentationChecksStaleIdentity() throws IOException, URISyntaxException {
+    void preCompressedNoAcceptableRepresentationRemovesStaleIdentity() throws IOException, URISyntaxException {
         TestContentHandler handler = TestContentHandler.create(true);
         CachedHandler identityHandler = mock(CachedHandler.class);
         ServerRequest request = mockRequestWithHeaders("br, identity;q=0", null, ContentEncodingContext.create());
+        ServerResponse response = mock(ServerResponse.class);
+        LruCache<String, CachedHandler> cache = LruCache.create();
 
         when(identityHandler.available()).thenReturn(false);
+        cache.put("nested/resource.txt", identityHandler);
 
         CachedHandler selected = handler.selectHandler(
                 identityHandler,
                                                        request,
                                                        (coding, suffix) -> Optional.empty());
 
-        assertThat(selected == identityHandler, is(true));
+        boolean handled = selected.handle(cache, Method.GET, request, response, "nested/resource.txt");
+
+        assertThat(handled, is(false));
+        assertThat(cache.get("nested/resource.txt").isEmpty(), is(true));
+        verify(identityHandler, never()).handle(any(), any(), any(), any(), anyString());
+    }
+
+    @Test
+    void preCompressedNoAcceptableRepresentationDoesNotSendIdentityAfterRecovery()
+            throws IOException, URISyntaxException {
+        TestContentHandler handler = TestContentHandler.create(true);
+        CachedHandler identityHandler = mock(CachedHandler.class);
+        ServerRequest request = mockRequestWithHeaders("br, identity;q=0", null, ContentEncodingContext.create());
+        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
+        ServerResponse response = mock(ServerResponse.class);
+        AtomicBoolean available = new AtomicBoolean();
+
+        when(identityHandler.available()).thenAnswer(_ -> available.get());
+        when(response.headers()).thenReturn(responseHeaders);
+
+        CachedHandler selected = handler.selectHandler(
+                identityHandler,
+                                                       request,
+                                                       (coding, suffix) -> Optional.empty());
+        available.set(true);
+
+        boolean handled = selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
+
+        assertThat(handled, is(true));
+        verify(identityHandler, never()).handle(any(), any(), any(), any(), anyString());
+        verify(response).status(Status.NOT_ACCEPTABLE_406);
+        verify(response).send();
     }
 
     @Test

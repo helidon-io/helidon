@@ -451,10 +451,7 @@ abstract class StaticContentHandler implements HttpService {
         }
 
         if (candidates.isEmpty()) {
-            if (!identityHandler.available()) {
-                return identityHandler;
-            }
-            return new CachedHandlerNotAcceptable(identityRepresentation);
+            return new CachedHandlerNotAcceptable(identityHandler, identityRepresentation);
         }
 
         RepresentationCandidate selected = candidates.stream()
@@ -828,13 +825,18 @@ abstract class StaticContentHandler implements HttpService {
         headers.remove(HeaderNames.LAST_MODIFIED);
     }
 
-    private record CachedHandlerNotAcceptable(ResponseRepresentation representation) implements CachedHandler {
+    private record CachedHandlerNotAcceptable(CachedHandler identityHandler,
+                                              ResponseRepresentation representation) implements CachedHandler {
         @Override
         public boolean handle(LruCache<String, CachedHandler> cache,
                               Method method,
                               ServerRequest request,
                               ServerResponse response,
-                              String requestedResource) {
+                              String requestedResource) throws IOException {
+            if (!identityHandler.available()) {
+                cache.remove(requestedResource);
+                return false;
+            }
             representation.apply(response);
             response.status(Status.NOT_ACCEPTABLE_406);
             response.send();
