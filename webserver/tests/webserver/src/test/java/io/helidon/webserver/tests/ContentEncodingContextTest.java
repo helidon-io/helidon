@@ -97,10 +97,26 @@ class ContentEncodingContextTest {
     }
 
     @Test
-    void testCustomizeContentEncodingContext() {
+    void testAutomaticContentEncodingAddsVaryWithoutRequestHeader() {
         try (Http1ClientResponse response = client.method(Method.GET).uri("/hello").request()) {
+            assertThat(response.status(), equalTo(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.noHeader(HeaderNames.CONTENT_ENCODING));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
             assertThat(response.entity().as(String.class), equalTo("hello webserver"));
             assertThat(encodingContext.NO_ACCEPT_ENCODING_COUNT, greaterThan(0));
+        }
+    }
+
+    @Test
+    void testAutomaticContentEncodingAddsVaryWithoutRequestHeaderForOutputStream() {
+        try (Http1ClientResponse response = client.method(Method.GET)
+                .uri("/stream")
+                .request()) {
+
+            assertThat(response.status(), equalTo(Status.OK_200));
+            assertThat(response.headers(), HttpHeaderMatcher.noHeader(HeaderNames.CONTENT_ENCODING));
+            assertThat(response.headers(), HttpHeaderMatcher.hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
+            assertThat(response.entity().as(String.class), equalTo("hello webserver"));
         }
     }
 
