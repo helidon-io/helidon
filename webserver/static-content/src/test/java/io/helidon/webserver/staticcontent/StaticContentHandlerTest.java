@@ -31,6 +31,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -70,6 +74,7 @@ import org.mockito.Mockito;
 
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.hasHeader;
 import static io.helidon.common.testing.http.junit5.HttpHeaderMatcher.noHeader;
+import static io.helidon.common.testing.junit5.MatcherWithRetry.assertThatWithRetry;
 import static io.helidon.http.HeaderNames.ETAG;
 import static io.helidon.http.HeaderNames.IF_MATCH;
 import static io.helidon.http.HeaderNames.IF_MODIFIED_SINCE;
@@ -1127,7 +1132,7 @@ class StaticContentHandlerTest {
         ServerRequest request = mockRequestWithHeaders("br", null, ContentEncodingContext.create());
         AtomicInteger lookups = new AtomicInteger();
 
-        StaticContentHandler.SidecarResolver resolver = (coding, suffix) -> {
+        SidecarCache.Resolver resolver = (coding, suffix) -> {
             lookups.incrementAndGet();
             return Optional.of(sidecarHandler);
         };
@@ -1146,13 +1151,61 @@ class StaticContentHandlerTest {
     }
 
     @Test
+    void preCompressedConcurrentSidecarLookupIsCoalesced() throws Exception {
+        TestContentHandler handler = TestContentHandler.create(true);
+        CachedHandler identityHandler = inMemoryHandler("Content");
+        CachedHandler sidecarHandler = inMemoryHandler("Brotli content");
+        ServerRequest request = mockRequestWithHeaders("br", null, ContentEncodingContext.create());
+        AtomicInteger lookups = new AtomicInteger();
+        CountDownLatch firstResolverEntered = new CountDownLatch(1);
+        CountDownLatch releaseFirstResolver = new CountDownLatch(1);
+        CountDownLatch secondLookupStarted = new CountDownLatch(1);
+        AtomicReference<Thread> secondLookupThread = new AtomicReference<>();
+
+        SidecarCache.Resolver resolver = (coding, suffix) -> {
+            lookups.incrementAndGet();
+            firstResolverEntered.countDown();
+            try {
+                if (!releaseFirstResolver.await(10, TimeUnit.SECONDS)) {
+                    throw new IOException("Timed out awaiting release of the first lookup");
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Interrupted while awaiting release of the first lookup", e);
+            }
+            return Optional.of(sidecarHandler);
+        };
+
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            Future<CachedHandler> first = executor.submit(() -> handler.selectHandler(identityHandler, request, resolver));
+            Future<CachedHandler> second;
+            try {
+                assertThat(firstResolverEntered.await(5, TimeUnit.SECONDS), is(true));
+                second = executor.submit(() -> {
+                    secondLookupThread.set(Thread.currentThread());
+                    secondLookupStarted.countDown();
+                    return handler.selectHandler(identityHandler, request, resolver);
+                });
+                assertThat(secondLookupStarted.await(5, TimeUnit.SECONDS), is(true));
+                assertThatWithRetry(secondLookupThread.get()::getState, is(Thread.State.WAITING));
+                assertThat(lookups.get(), is(1));
+            } finally {
+                releaseFirstResolver.countDown();
+            }
+
+            first.get(5, TimeUnit.SECONDS);
+            second.get(5, TimeUnit.SECONDS);
+        }
+    }
+
+    @Test
     void preCompressedMissingSidecarLookupIsCached() throws IOException, URISyntaxException {
         TestContentHandler handler = TestContentHandler.create(true);
         CachedHandler identityHandler = inMemoryHandler("Content");
         ServerRequest request = mockRequestWithHeaders("br", null, ContentEncodingContext.create());
         AtomicInteger lookups = new AtomicInteger();
 
-        StaticContentHandler.SidecarResolver resolver = (coding, suffix) -> {
+        SidecarCache.Resolver resolver = (coding, suffix) -> {
             lookups.incrementAndGet();
             return Optional.empty();
         };
