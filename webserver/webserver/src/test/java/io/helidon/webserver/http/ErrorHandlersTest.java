@@ -170,6 +170,7 @@ class ErrorHandlersTest {
             throw new OtherException();
         });
 
+        verify(res).automaticContentEncoding(false);
         var status = ArgumentCaptor.forClass(Status.class);
         verify(res).status(status.capture());
         assertThat(status.getValue(), is(Status.INTERNAL_SERVER_ERROR_500));
