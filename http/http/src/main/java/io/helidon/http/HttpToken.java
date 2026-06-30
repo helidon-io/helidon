@@ -93,6 +93,9 @@ public final class HttpToken {
     public static boolean isValid(String token, int start, int end) {
         Objects.requireNonNull(token);
         Objects.checkFromToIndex(start, end, token.length());
+        if (start == end) {
+            return false;
+        }
         for (int i = start; i < end; i++) {
             if (!isTokenCharacter(token.charAt(i))) {
                 return false;
@@ -106,12 +109,14 @@ public final class HttpToken {
     }
 
     private static boolean isTokenCharacter(char aChar) {
-        if (aChar > 254 || Character.isISOControl(aChar) || Character.isWhitespace(aChar)) {
-            return false;
+        if ((aChar >= '0' && aChar <= '9')
+                || (aChar >= 'A' && aChar <= 'Z')
+                || (aChar >= 'a' && aChar <= 'z')) {
+            return true;
         }
         return switch (aChar) {
-        case '(', ')', '<', '>', '@', ',', ';', ':', '\\', '"', '/', '[', ']', '?', '=', '{', '}' -> false;
-        default -> true;
+        case '!', '#', '$', '%', '&', '\'', '*', '+', '-', '.', '^', '_', '`', '|', '~' -> true;
+        default -> false;
         };
     }
 

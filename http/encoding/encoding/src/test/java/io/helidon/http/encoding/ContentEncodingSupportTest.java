@@ -137,6 +137,7 @@ class ContentEncodingSupportTest {
         AcceptEncoding acceptEncoding = AcceptEncoding.create(headers("g zip, identity;q=0"));
 
         assertThat(acceptEncoding.valid(), is(false));
+        assertInvalidAcceptEncoding("\u00e9");
     }
 
     @Test

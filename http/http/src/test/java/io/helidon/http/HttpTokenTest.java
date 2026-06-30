@@ -27,10 +27,10 @@ class HttpTokenTest {
 
     @Test
     void testIsValidMatchesValidateForValidTokens() {
-        assertValid("");
         assertValid("*");
         assertValid("gzip");
         assertValid("x-gzip_1");
+        assertValid("!#$%&'*+-.^_`|~");
     }
 
     @Test
@@ -45,6 +45,19 @@ class HttpTokenTest {
     void testIsValidRange() {
         assertThat(HttpToken.isValid(" gzip ;", 1, 5), is(true));
         assertThat(HttpToken.isValid(" gzip ;", 0, 6), is(false));
+        assertThat(HttpToken.isValid("gzip", 2, 2), is(false));
+    }
+
+    @Test
+    void testIsValidRejectsEmptyAndNonAsciiTokens() {
+        assertThat(HttpToken.isValid(""), is(false));
+        assertThat(HttpToken.isValid("\u00e9"), is(false));
+    }
+
+    @Test
+    void testValidateRetainsExistingBehavior() {
+        assertDoesNotThrow(() -> HttpToken.validate(""));
+        assertDoesNotThrow(() -> HttpToken.validate("\u00e9"));
     }
 
     private static void assertValid(String token) {
