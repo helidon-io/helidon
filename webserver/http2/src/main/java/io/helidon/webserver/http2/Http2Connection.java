@@ -96,8 +96,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     private static final int FRAME_HEADER_LENGTH = 9;
     private static final int MAX_LOCALLY_RESET_STREAMS = 8192;
     private static final int MIN_LOCALLY_RESET_STREAMS = 64;
-    private static final long MAX_LOCALLY_RESET_STREAM_DATA = 64 * 1024;
-    private static final int MAX_LOCALLY_RESET_STREAM_HEADER_BLOCKS = 64;
+    private static final long MAX_LOCALLY_RESET_STREAM_HEADER_BYTES = 64 * 1024;
     private static final Set<Http2StreamState> REMOVABLE_STREAMS =
             Set.of(Http2StreamState.CLOSED, Http2StreamState.HALF_CLOSED_LOCAL);
     private static final Set<HeaderName> SERVER_CONTROLLED_REQUEST_HEADERS = Set.of(X_HELIDON_CN);
@@ -166,8 +165,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         this.reader = ctx.dataReader();
         this.sendErrorDetails = http2Config.sendErrorDetails();
         this.maxClientConcurrentStreams = http2Config.maxConcurrentStreams();
-        this.locallyResetStreams = new LocallyResetStreams(maxLocallyResetStreams(http2Config),
-                                                           maxLocallyResetStreamData(http2Config));
+        this.locallyResetStreams = new LocallyResetStreams(maxLocallyResetStreams(http2Config));
 
         // Flow control is initialized by RFC 9113 default values
         this.flowControl = ConnectionFlowControl.serverBuilder(this::writeWindowUpdateFrame)
@@ -179,7 +177,8 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         this.connectionHeaders = WritableHeaders.create();
         this.initConnectionHeaders = true;
         this.locallyResetHeaders = new PendingDroppedHeaders(http2Config.maxHeaderListSize(),
-                                                             maxLocallyResetStreamData(http2Config));
+                                                             Math.max(http2Config.maxFrameSize(),
+                                                                      MAX_LOCALLY_RESET_STREAM_HEADER_BYTES));
     }
 
     @Override
@@ -678,10 +677,6 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         long configuredLimit = Math.max(config.maxConcurrentStreams(), config.maxRapidResets());
         return (int) Math.max(MIN_LOCALLY_RESET_STREAMS,
                               Math.min(MAX_LOCALLY_RESET_STREAMS, configuredLimit));
-    }
-
-    private static long maxLocallyResetStreamData(Http2Config config) {
-        return Math.max(config.maxFrameSize(), MAX_LOCALLY_RESET_STREAM_DATA);
     }
 
     private void dataFrame() {
@@ -1189,24 +1184,22 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         private final Map<Integer, StreamState> streams = new HashMap<>();
         private final Map<Integer, Boolean> completedStreams = new LinkedHashMap<>();
         private final int maxTracked;
-        private final long maxData;
         private volatile boolean empty = true;
         private volatile boolean overflow;
 
-        private LocallyResetStreams(int maxTracked, long maxData) {
+        private LocallyResetStreams(int maxTracked) {
             this.maxTracked = maxTracked;
-            this.maxData = maxData;
         }
 
         @Override
-        public void add(int streamId) {
+        public void add(int streamId, Http2ServerStream.LocallyResetStreamState streamState) {
             lock.lock();
             try {
                 if (streams.containsKey(streamId)) {
                     return;
                 }
                 completedStreams.remove(streamId);
-                streams.put(streamId, new StreamState(streamId));
+                streams.put(streamId, new StreamState(streamId, false, false, streamState));
                 empty = false;
                 trim();
             } finally {
@@ -1292,12 +1285,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                 if (current == null) {
                     return true;
                 }
-                StreamState updated = current.withDiscardedData(length);
-                if (updated.discardedData > maxData) {
-                    return false;
-                }
-                streams.put(streamId, updated);
-                return true;
+                return current.discardState.discardData(length);
             } finally {
                 lock.unlock();
             }
@@ -1310,13 +1298,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                 if (current == null) {
                     return true;
                 }
-                StreamState updated = current.withDiscardedHeaders(length);
-                if (updated.discardedHeaderBytes > maxData
-                        || updated.discardedHeaderBlocks > MAX_LOCALLY_RESET_STREAM_HEADER_BLOCKS) {
-                    return false;
-                }
-                streams.put(streamId, updated);
-                return true;
+                return current.discardState.discardHeaders(length);
             } finally {
                 lock.unlock();
             }
@@ -1332,47 +1314,19 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         private record StreamState(int streamId,
                                    boolean localComplete,
                                    boolean remoteComplete,
-                                   long discardedData,
-                                   int discardedHeaderBlocks,
-                                   long discardedHeaderBytes) {
-            private StreamState(int streamId) {
-                this(streamId, false, false, 0, 0, 0);
-            }
-
+                                   Http2ServerStream.LocallyResetStreamState discardState) {
             private StreamState withLocalComplete() {
                 return new StreamState(streamId,
                                        true,
                                        remoteComplete,
-                                       discardedData,
-                                       discardedHeaderBlocks,
-                                       discardedHeaderBytes);
+                                       discardState);
             }
 
             private StreamState withRemoteComplete() {
                 return new StreamState(streamId,
                                        localComplete,
                                        true,
-                                       discardedData,
-                                       discardedHeaderBlocks,
-                                       discardedHeaderBytes);
-            }
-
-            private StreamState withDiscardedData(int length) {
-                return new StreamState(streamId,
-                                       localComplete,
-                                       remoteComplete,
-                                       discardedData + length,
-                                       discardedHeaderBlocks,
-                                       discardedHeaderBytes);
-            }
-
-            private StreamState withDiscardedHeaders(long length) {
-                return new StreamState(streamId,
-                                       localComplete,
-                                       remoteComplete,
-                                       discardedData,
-                                       discardedHeaderBlocks + 1,
-                                       discardedHeaderBytes + length);
+                                       discardState);
             }
 
             private boolean complete() {

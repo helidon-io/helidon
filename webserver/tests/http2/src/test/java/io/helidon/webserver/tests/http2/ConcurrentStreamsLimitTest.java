@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.tests.http2;
 
+import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.concurrent.CountDownLatch;
@@ -633,14 +634,21 @@ class ConcurrentStreamsLimitTest {
             Http2RstStream rstStream = h2conn.assertRstStream(1, TIMEOUT);
             assertThat(rstStream.errorCode(), is(Http2ErrorCode.CANCEL));
 
-            for (int i = 0; i < 70; i++) {
-                BufferData delayedBody = BufferData.create(new byte[1024]);
-                h2conn.writer().writeData(new Http2FrameData(Http2FrameHeader.create(delayedBody.available(),
-                                                                                     Http2FrameTypes.DATA,
-                                                                                     Http2Flag.DataFlags.create(0),
-                                                                                     1),
-                                                             delayedBody),
-                                          FlowControl.Outbound.NOOP);
+            Http2Config defaultConfig = Http2Config.builder().build();
+            int frameSize = defaultConfig.maxFrameSize();
+            int frameCount = defaultConfig.initialWindowSize() / frameSize + 1;
+            for (int i = 0; i < frameCount; i++) {
+                BufferData delayedBody = BufferData.create(new byte[frameSize]);
+                try {
+                    h2conn.writer().writeData(new Http2FrameData(Http2FrameHeader.create(delayedBody.available(),
+                                                                                         Http2FrameTypes.DATA,
+                                                                                         Http2Flag.DataFlags.create(0),
+                                                                                         1),
+                                                                 delayedBody),
+                                              FlowControl.Outbound.NOOP);
+                } catch (UncheckedIOException _) {
+                    break;
+                }
             }
 
             assertGoAwayError(h2conn, Http2ErrorCode.ENHANCE_YOUR_CALM);

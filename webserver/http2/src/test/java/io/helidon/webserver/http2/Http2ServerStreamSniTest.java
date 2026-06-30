@@ -100,7 +100,58 @@ class Http2ServerStreamSniTest {
     }
 
     @Test
-    void rejectedStreamRestoresQueuedDataFlowControl() {
+    void rejectedContentLengthZeroStreamResetsOpenRemoteSide() {
+        Http2ConnectionStreams streams = new Http2ConnectionStreams();
+        RecordingStreamWriter writer = new RecordingStreamWriter();
+        RecordingResetTracker resetTracker = new RecordingResetTracker();
+        Http2ServerStream stream = stream(streams, writer, new ArrayList<>(), sniContext(), resetTracker);
+        streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
+        stream.prologue(PROLOGUE);
+        stream.headers(headersWithoutAuthority("0"), false);
+
+        stream.run();
+
+        assertThat(writer.rstStreamCount, is(1));
+        assertThat(resetTracker.adds, is(1));
+        assertThat(resetTracker.localCompletes, is(1));
+        assertThat(resetTracker.remoteCompletes, is(0));
+        assertDoesNotThrow(stream::checkDataReceivable);
+        assertDoesNotThrow(() -> stream.data(Http2FrameHeader.create(0,
+                                                                     Http2FrameTypes.DATA,
+                                                                     Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM),
+                                                                     STREAM_ID),
+                                                   BufferData.empty(),
+                                                   true));
+        assertThat(resetTracker.remoteCompletes, is(1));
+    }
+
+    @Test
+    void resetStartingAfterStaleSnapshotStillCompletesRemoteSide() {
+        Http2ConnectionStreams streams = new Http2ConnectionStreams();
+        RecordingStreamWriter writer = new RecordingStreamWriter();
+        RecordingResetTracker resetTracker = new RecordingResetTracker();
+        Http2ServerStream stream = stream(streams, writer, new ArrayList<>(), sniContext(), resetTracker);
+        streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
+        stream.prologue(PROLOGUE);
+        stream.headers(headersWithoutAuthority("2"), false);
+
+        stream.flowControl().inbound().decrementWindowSize(1);
+        assertDoesNotThrow(() -> stream.enqueueDataAfterPrecheck(
+                Http2FrameHeader.create(1,
+                                        Http2FrameTypes.DATA,
+                                        Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM),
+                                        STREAM_ID),
+                BufferData.create(new byte[1]),
+                true,
+                stream::run));
+
+        assertThat(resetTracker.adds, is(1));
+        assertThat(resetTracker.streamState.discardedData(), is(1L));
+        assertThat(resetTracker.remoteCompletes, is(1));
+    }
+
+    @Test
+    void rejectedStreamRestoresQueuedDataConnectionFlowControl() {
         Http2ConnectionStreams streams = new Http2ConnectionStreams();
         RecordingStreamWriter writer = new RecordingStreamWriter();
         List<WindowUpdate> windowUpdates = new ArrayList<>();
@@ -119,12 +170,11 @@ class Http2ServerStreamSniTest {
 
         stream.run();
 
-        assertThat(windowUpdates, hasItems(new WindowUpdate(STREAM_ID, entity.length),
-                                           new WindowUpdate(0, entity.length)));
+        assertThat(windowUpdates, is(List.of(new WindowUpdate(0, entity.length))));
     }
 
     @Test
-    void rejectedStreamRestoresRacingDataFlowControl() {
+    void rejectedStreamRestoresRacingDataConnectionFlowControl() {
         Http2ConnectionStreams streams = new Http2ConnectionStreams();
         RecordingStreamWriter writer = new RecordingStreamWriter();
         List<WindowUpdate> windowUpdates = new ArrayList<>();
@@ -145,12 +195,11 @@ class Http2ServerStreamSniTest {
                     BufferData.create(entity),
                     false);
 
-        assertThat(windowUpdates, hasItems(new WindowUpdate(STREAM_ID, entity.length),
-                                           new WindowUpdate(0, entity.length)));
+        assertThat(windowUpdates, is(List.of(new WindowUpdate(0, entity.length))));
     }
 
     @Test
-    void blockedRejectedStreamRestoresRacingDataFlowControl() {
+    void blockedRejectedStreamRestoresRacingDataConnectionFlowControl() {
         Http2ConnectionStreams streams = new Http2ConnectionStreams();
         RecordingConnectionWriter writer = new RecordingConnectionWriter();
         List<WindowUpdate> windowUpdates = new ArrayList<>();
@@ -173,18 +222,18 @@ class Http2ServerStreamSniTest {
                     BufferData.create(entity),
                     true);
 
-        assertThat(windowUpdates, hasItems(new WindowUpdate(STREAM_ID, entity.length),
-                                           new WindowUpdate(0, entity.length)));
+        assertThat(windowUpdates, is(List.of(new WindowUpdate(0, entity.length))));
 
         writer.completeTerminalWrite();
         assertThat(writer.rstStreamCount, is(0));
     }
 
     @Test
-    void rejectedStreamCompletionRestoresPrecheckedDataFlowControl() {
+    void rejectedStreamCompletionRestoresConnectionFlowControlForPrecheckedData() {
         Http2ConnectionStreams streams = new Http2ConnectionStreams();
         RecordingConnectionWriter writer = new RecordingConnectionWriter();
-        Http2ServerStream stream = stream(streams, writer);
+        List<WindowUpdate> windowUpdates = new ArrayList<>();
+        Http2ServerStream stream = stream(streams, writer, windowUpdates);
         streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
         stream.prologue(PROLOGUE);
         stream.headers(headersWithoutAuthority("1"), false);
@@ -201,7 +250,7 @@ class Http2ServerStreamSniTest {
                                                 true);
             writer.completeTerminalWrite();
 
-            assertThat(stream.flowControl().inbound().getRemainingWindowSize(), is(8192));
+            assertThat(windowUpdates, is(List.of(new WindowUpdate(0, 1))));
             assertThat(writer.rstStreamCount, is(0));
         } finally {
             if (writer.hasPendingTerminalCallback()) {
@@ -211,19 +260,62 @@ class Http2ServerStreamSniTest {
     }
 
     @Test
-    void blockedRejectedStreamBoundsRacingDataBeforeReset() {
+    void blockedRejectedStreamAllowsAdvertisedWindowBeforeReset() {
+        int initialWindowSize = 128 * 1024;
         Http2ConnectionStreams streams = new Http2ConnectionStreams();
         RecordingConnectionWriter writer = new RecordingConnectionWriter();
-        Http2ServerStream stream = stream(streams, writer);
+        RecordingResetTracker resetTracker = new RecordingResetTracker();
+        Http2ServerStream stream = stream(streams,
+                                          writer,
+                                          new ArrayList<>(),
+                                          sniContext(),
+                                          resetTracker,
+                                          List.of(),
+                                          initialWindowSize);
         streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
         stream.prologue(PROLOGUE);
-        stream.headers(headersWithoutAuthority("70000"), false);
+        stream.headers(headersWithoutAuthority(String.valueOf(initialWindowSize)), false);
 
         stream.run();
 
         try {
             assertThat(writer.hasPendingTerminalCallback(), is(true));
-            for (int i = 0; i < 64; i++) {
+            for (int i = 0; i < 80; i++) {
+                assertDoesNotThrow(() -> writeRacingData(stream, 1024));
+            }
+            writer.completeTerminalWrite();
+
+            assertThat(resetTracker.streamState.discardedData(), is(80L * 1024));
+            assertThat(resetTracker.streamState.discardData(48 * 1024), is(true));
+            assertThat(resetTracker.streamState.discardData(1), is(false));
+        } finally {
+            if (writer.hasPendingTerminalCallback()) {
+                writer.completeTerminalWrite();
+            }
+        }
+    }
+
+    @Test
+    void blockedRejectedStreamBoundsRacingDataByAdvertisedWindow() {
+        int initialWindowSize = 128 * 1024;
+        Http2ConnectionStreams streams = new Http2ConnectionStreams();
+        RecordingConnectionWriter writer = new RecordingConnectionWriter();
+        Http2ServerStream stream = stream(streams,
+                                          writer,
+                                          new ArrayList<>(),
+                                          sniContext(),
+                                          NO_OP_RESET_TRACKER,
+                                          List.of(),
+                                          initialWindowSize);
+        streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
+        stream.prologue(PROLOGUE);
+        stream.headers(headersWithoutAuthority(String.valueOf(initialWindowSize + 1024)), false);
+
+        stream.run();
+
+        try {
+            assertThat(writer.hasPendingTerminalCallback(), is(true));
+            for (int i = 0; i < initialWindowSize / 1024; i++) {
                 assertDoesNotThrow(() -> writeRacingData(stream, 1024));
             }
 
@@ -348,8 +440,7 @@ class Http2ServerStreamSniTest {
                     BufferData.create(entity),
                     false);
 
-        assertThat(windowUpdates, hasItems(new WindowUpdate(STREAM_ID, entity.length),
-                                           new WindowUpdate(0, entity.length)));
+        assertThat(windowUpdates, is(List.of(new WindowUpdate(0, entity.length))));
     }
 
     @Test
@@ -411,8 +502,24 @@ class Http2ServerStreamSniTest {
                                             SniContext sniContext,
                                             Http2ServerStream.LocallyResetStreamTracker resetTracker,
                                             List<Http2SubProtocolSelector> subProtocolSelectors) {
+        return stream(streams,
+                      writer,
+                      windowUpdates,
+                      sniContext,
+                      resetTracker,
+                      subProtocolSelectors,
+                      8192);
+    }
+
+    private static Http2ServerStream stream(Http2ConnectionStreams streams,
+                                            Http2StreamWriter writer,
+                                            List<WindowUpdate> windowUpdates,
+                                            SniContext sniContext,
+                                            Http2ServerStream.LocallyResetStreamTracker resetTracker,
+                                            List<Http2SubProtocolSelector> subProtocolSelectors,
+                                            int initialWindowSize) {
         Http2Config config = Http2Config.builder()
-                .initialWindowSize(8192)
+                .initialWindowSize(initialWindowSize)
                 .maxFrameSize(16384)
                 .build();
         ConnectionFlowControl flowControl = ConnectionFlowControl.serverBuilder((streamId, windowUpdate) ->
@@ -538,7 +645,7 @@ class Http2ServerStreamSniTest {
 
     private static final class NoOpResetTracker implements Http2ServerStream.LocallyResetStreamTracker {
         @Override
-        public void add(int streamId) {
+        public void add(int streamId, Http2ServerStream.LocallyResetStreamState streamState) {
         }
 
         @Override
@@ -554,10 +661,12 @@ class Http2ServerStreamSniTest {
         private int adds;
         private int localCompletes;
         private int remoteCompletes;
+        private Http2ServerStream.LocallyResetStreamState streamState;
 
         @Override
-        public void add(int streamId) {
+        public void add(int streamId, Http2ServerStream.LocallyResetStreamState streamState) {
             adds++;
+            this.streamState = streamState;
         }
 
         @Override

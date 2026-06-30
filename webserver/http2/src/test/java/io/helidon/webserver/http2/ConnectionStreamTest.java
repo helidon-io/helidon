@@ -231,7 +231,7 @@ class ConnectionStreamTest {
 
     private static final class NoOpResetTracker implements Http2ServerStream.LocallyResetStreamTracker {
         @Override
-        public void add(int streamId) {
+        public void add(int streamId, Http2ServerStream.LocallyResetStreamState streamState) {
         }
 
         @Override
