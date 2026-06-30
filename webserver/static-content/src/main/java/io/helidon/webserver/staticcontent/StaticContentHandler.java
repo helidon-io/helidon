@@ -776,7 +776,8 @@ abstract class StaticContentHandler implements HttpService {
                               ServerResponse response,
                               String requestedResource) throws IOException {
             if (!identityHandler.available()) {
-                return identityHandler.handle(cache, method, request, response, requestedResource);
+                cache.remove(requestedResource);
+                throw new ForbiddenException("Identity resource is not accessible");
             }
             try {
                 return delegate.handleSidecar(sidecarCache, coding, cache, method, request, response, requestedResource);

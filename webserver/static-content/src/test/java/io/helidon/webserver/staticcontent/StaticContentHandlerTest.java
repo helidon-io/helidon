@@ -512,6 +512,30 @@ class StaticContentHandlerTest {
     }
 
     @Test
+    void preCompressedUnavailableIdentityDoesNotSendAfterRecovery() throws IOException, URISyntaxException {
+        TestContentHandler handler = TestContentHandler.create(true);
+        CachedHandler identityHandler = mock(CachedHandler.class);
+        CachedHandler sidecarHandler = inMemoryHandler("Gzip content");
+        ServerRequest request = mockRequestWithHeaders("gzip, identity;q=0", null, ContentEncodingContext.create());
+        ServerResponse response = mock(ServerResponse.class);
+        LruCache<String, CachedHandler> cache = LruCache.create();
+
+        when(identityHandler.available()).thenReturn(false);
+        when(identityHandler.handle(any(), any(), any(), any(), anyString())).thenReturn(true);
+        cache.put("resource.txt", identityHandler);
+
+        CachedHandler selected = handler.selectHandler(
+                identityHandler,
+                request,
+                (coding, suffix) -> Optional.of(sidecarHandler));
+
+        assertThrows(ForbiddenException.class,
+                     () -> selected.handle(cache, Method.GET, request, response, "resource.txt"));
+        verify(identityHandler, never()).handle(any(), any(), any(), any(), anyString());
+        assertThat(cache.get("resource.txt").isEmpty(), is(true));
+    }
+
+    @Test
     void preCompressedDeletedSidecarFallsBackToIdentityWhenHandled() throws IOException, URISyntaxException {
         Path identity = tempDir.resolve("resource.txt");
         Path sidecar = tempDir.resolve("resource.txt.gz");
