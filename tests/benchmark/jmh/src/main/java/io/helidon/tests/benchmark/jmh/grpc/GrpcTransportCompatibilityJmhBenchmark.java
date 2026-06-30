@@ -27,6 +27,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.IntStream;
 
 import io.helidon.webclient.grpc.GrpcClient;
@@ -75,6 +76,7 @@ public class GrpcTransportCompatibilityJmhBenchmark {
     @Param({"65530", "65531", "131072"})
     private int payloadSize;
 
+    private final ReentrantLock callStartupLock = new ReentrantLock();
     private byte[] payload;
     private WebServer server;
     private GrpcClient grpcClient;
@@ -240,22 +242,30 @@ public class GrpcTransportCompatibilityJmhBenchmark {
 
         @Setup
         public void setup(GrpcTransportCompatibilityJmhBenchmark benchmark) {
-            call = benchmark.grpcClient.channel()
-                    .newCall(method(BIDIRECTIONAL, MethodDescriptor.MethodType.BIDI_STREAMING).build(), CallOptions.DEFAULT);
-            call.start(new ClientCall.Listener<>() {
-                @Override
-                public void onMessage(byte[] message) {
-                    if (!responses.offer(message)) {
-                        call.cancel("Benchmark response queue is full", null);
+            // Startup is outside the measured steady state. Serialize it so the compatibility baseline
+            // does not race its shared legacy header constants while all measured calls still share one client.
+            benchmark.callStartupLock.lock();
+            try {
+                call = benchmark.grpcClient.channel()
+                        .newCall(method(BIDIRECTIONAL, MethodDescriptor.MethodType.BIDI_STREAMING).build(),
+                                 CallOptions.DEFAULT);
+                call.start(new ClientCall.Listener<>() {
+                    @Override
+                    public void onMessage(byte[] message) {
+                        if (!responses.offer(message)) {
+                            call.cancel("Benchmark response queue is full", null);
+                        }
                     }
-                }
 
-                @Override
-                public void onClose(Status status, Metadata trailers) {
-                    closed.set(status);
-                }
-            }, new Metadata());
-            call.request(1);
+                    @Override
+                    public void onClose(Status status, Metadata trailers) {
+                        closed.set(status);
+                    }
+                }, new Metadata());
+                call.request(1);
+            } finally {
+                benchmark.callStartupLock.unlock();
+            }
         }
 
         @TearDown
