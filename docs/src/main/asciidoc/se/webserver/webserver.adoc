@@ -1197,14 +1197,13 @@ HTTP encoding can improve bandwidth utilization and transfer speeds in certain s
 requires a few extra CPU cycles for compressing and uncompressing, but these can be offset
 if data is transferred over low-bandwidth network links.
 
-A client advertises the compression encodings it supports at request time, and the
-WebServer responds by selecting an encoding it supports and setting it in a header,
-effectively _negotiating_ the content encoding of the response. Equal-quality concrete
-encodings follow the client `Accept-Encoding` header order, while wildcard matches use
-the configured provider order. Encoded responses include `Vary: Accept-Encoding`. If none
-of the advertised encodings is supported by the WebServer, the response is returned
-uncompressed unless the client rejects `identity`, in which case WebServer responds with
-`406 Not Acceptable`.
+When automatic response encoding is enabled, a client advertises the compression encodings it supports at request time,
+and the WebServer responds by selecting an encoding it supports and setting it in a header, effectively _negotiating_
+the content encoding of the response. Equal-quality concrete encodings follow the client `Accept-Encoding` header order,
+while wildcard matches use the configured provider order. Encoded responses include `Vary: Accept-Encoding`. If none of
+the advertised encodings is supported by the WebServer, the response is returned uncompressed unless the client rejects
+`identity`, in which case WebServer responds with `406 Not Acceptable`. When automatic response encoding is disabled,
+this negotiation is skipped and the response-encoding layer leaves the representation unchanged.
 
 Handlers can encode the response and set the appropriate header to preempt encoding by the
 WebServer. For instance, if a Handler sets the `Content-Encoding: gzip` header then the
@@ -1242,8 +1241,8 @@ HTTP compression negotiation is controlled by clients using the `Accept-Encoding
 The value of this header is a comma-separated list of encodings. The WebServer
 will select one of these encodings for compression purposes; it currently supports `gzip`
 and `deflate`.
-Malformed `Accept-Encoding` values, such as invalid coding tokens, unsupported parameters, or invalid `q` values, are
-rejected with `400 Bad Request`.
+When automatic response encoding is enabled, malformed `Accept-Encoding` values, such as invalid coding tokens,
+unsupported parameters, or invalid `q` values, are rejected with `400 Bad Request`.
 
 For example, if the request includes `Accept-Encoding: gzip, deflate`, and HTTP compression
 has been enabled as shown above, the response shall include the header `Content-Encoding: gzip`
