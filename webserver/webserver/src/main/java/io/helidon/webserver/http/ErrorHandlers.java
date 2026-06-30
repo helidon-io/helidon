@@ -171,9 +171,10 @@ public final class ErrorHandlers {
                 }
             }
         }
+        response.automaticContentEncoding(false);
         ctx.listenerContext()
                 .directHandlers()
-                .handle(e, response.automaticContentEncoding(false), keepAlive);
+                .handle(e, response, keepAlive);
 
         response.commit();
     }
