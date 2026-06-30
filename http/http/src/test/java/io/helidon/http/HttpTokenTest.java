@@ -18,15 +18,13 @@ package io.helidon.http;
 
 import org.junit.jupiter.api.Test;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class HttpTokenTest {
 
     @Test
-    void testIsValidMatchesValidateForValidTokens() {
+    void testValidTokens() {
         assertValid("*");
         assertValid("gzip");
         assertValid("x-gzip_1");
@@ -34,39 +32,20 @@ class HttpTokenTest {
     }
 
     @Test
-    void testIsValidMatchesValidateForInvalidTokens() {
+    void testInvalidTokens() {
+        assertInvalid("");
         assertInvalid("g zip");
         assertInvalid("gzip;level=1");
         assertInvalid("x/gzip");
+        assertInvalid("\u00e9");
         assertInvalid("\u0100");
-    }
-
-    @Test
-    void testIsValidRange() {
-        assertThat(HttpToken.isValid(" gzip ;", 1, 5), is(true));
-        assertThat(HttpToken.isValid(" gzip ;", 0, 6), is(false));
-        assertThat(HttpToken.isValid("gzip", 2, 2), is(false));
-    }
-
-    @Test
-    void testIsValidRejectsEmptyAndNonAsciiTokens() {
-        assertThat(HttpToken.isValid(""), is(false));
-        assertThat(HttpToken.isValid("\u00e9"), is(false));
-    }
-
-    @Test
-    void testValidateRetainsExistingBehavior() {
-        assertDoesNotThrow(() -> HttpToken.validate(""));
-        assertDoesNotThrow(() -> HttpToken.validate("\u00e9"));
     }
 
     private static void assertValid(String token) {
         assertDoesNotThrow(() -> HttpToken.validate(token));
-        assertThat(HttpToken.isValid(token), is(true));
     }
 
     private static void assertInvalid(String token) {
         assertThrows(IllegalArgumentException.class, () -> HttpToken.validate(token));
-        assertThat(HttpToken.isValid(token), is(false));
     }
 }

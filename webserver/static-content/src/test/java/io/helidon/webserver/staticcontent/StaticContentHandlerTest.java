@@ -285,6 +285,12 @@ class StaticContentHandlerTest {
     }
 
     @Test
+    void preCompressedEncodingsRejectInvalidCoding() {
+        assertThrows(IllegalArgumentException.class,
+                     () -> StaticContentConfigSupport.normalizePreCompressedEncodings(Map.of("\u00e9", "gz")));
+    }
+
+    @Test
     void preCompressedRuntimeEncodingIgnoresRanges() throws IOException, URISyntaxException {
         TestContentHandler handler = TestContentHandler.create(true);
         CachedHandler identityHandler = inMemoryHandler("Nested content");
