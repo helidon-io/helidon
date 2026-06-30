@@ -16,6 +16,8 @@
 
 package io.helidon.json.tests;
 
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -24,6 +26,7 @@ import io.helidon.common.GenericType;
 import io.helidon.json.binding.JsonBinding;
 import io.helidon.testing.junit5.Testing;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
@@ -49,6 +52,20 @@ public class ListTest {
 
         String json = bindingMethod.serialize(jsonBinding, list);
         assertThat(json, is(expected));
+    }
+
+    @Test
+    public void testListHelpers() {
+        List<String> list = List.of("a", "b", "c");
+        String expected = "[\"a\",\"b\",\"c\"]";
+
+        String json = jsonBinding.serializeList(list, String.class);
+        assertThat(json, is(expected));
+        byte[] bytes = json.getBytes(StandardCharsets.UTF_8);
+
+        assertThat(jsonBinding.deserializeList(json, String.class), is(list));
+        assertThat(jsonBinding.deserializeList(bytes, String.class), is(list));
+        assertThat(jsonBinding.deserializeList(new ByteArrayInputStream(bytes), String.class), is(list));
     }
 
     @ParameterizedTest
