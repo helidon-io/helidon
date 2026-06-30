@@ -588,16 +588,6 @@ class StaticContentTest {
         }
     }
 
-    private static boolean createSymbolicLink(Path link, Path target) throws IOException {
-        Files.deleteIfExists(link);
-        try {
-            Files.createSymbolicLink(link, target);
-            return true;
-        } catch (UnsupportedOperationException | IOException | SecurityException e) {
-            return false;
-        }
-    }
-
     private record TestEncoding() implements ContentEncoding {
         @Override
         public Set<String> ids() {
@@ -674,6 +664,16 @@ class StaticContentTest {
         @Override
         public String type() {
             return "gzip";
+        }
+    }
+
+    private static boolean createSymbolicLink(Path link, Path target) throws IOException {
+        Files.deleteIfExists(link);
+        try {
+            Files.createSymbolicLink(link, target);
+            return true;
+        } catch (UnsupportedOperationException | IOException | SecurityException e) {
+            return false;
         }
     }
 }
