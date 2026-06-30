@@ -323,7 +323,7 @@ abstract class StaticContentHandler implements HttpService {
 
     CachedHandler selectHandler(CachedHandler identityHandler,
                                 ServerRequest request,
-                                SidecarResolver sidecarResolver) throws IOException, URISyntaxException {
+                                SidecarCache.Resolver sidecarResolver) throws IOException, URISyntaxException {
         if (!preCompressedEnabled) {
             if (request.headers().contains(HeaderNames.RANGE)) {
                 AcceptEncoding acceptEncoding = AcceptEncoding.create(request.headers());
@@ -475,23 +475,10 @@ abstract class StaticContentHandler implements HttpService {
     private Optional<CachedHandler> sidecarHandler(CachedHandler identityHandler,
                                                   String coding,
                                                   String suffix,
-                                                  SidecarResolver resolver) throws IOException, URISyntaxException {
+                                                  SidecarCache.Resolver resolver) throws IOException, URISyntaxException {
         SidecarCache identitySidecarCache = identityHandler.sidecarCache();
         SidecarCache sidecarCache = identitySidecarCache == null ? SidecarCache.disabled() : identitySidecarCache;
-        CachedHandler cachedHandler = sidecarCache.get(coding);
-        if (cachedHandler != null) {
-            if (sidecarCache.missing(cachedHandler)) {
-                return Optional.empty();
-            }
-            if (cachedHandler.available()) {
-                return Optional.of(new CachedHandlerSelection(cachedHandler, identityHandler, sidecarCache, coding));
-            }
-            sidecarCache.remove(coding);
-        }
-
-        Optional<CachedHandler> resolved = resolver.resolve(coding, suffix);
-        resolved.ifPresentOrElse(handler -> sidecarCache.put(coding, handler),
-                                 () -> sidecarCache.putMissing(coding));
+        Optional<CachedHandler> resolved = sidecarCache.resolve(coding, suffix, resolver);
         return resolved.map(handler -> new CachedHandlerSelection(handler, identityHandler, sidecarCache, coding));
     }
 
@@ -704,11 +691,6 @@ abstract class StaticContentHandler implements HttpService {
 
     static boolean isWeakETag(String etag) {
         return etag != null && (etag.startsWith("W/") || etag.startsWith("w/"));
-    }
-
-    @FunctionalInterface
-    interface SidecarResolver {
-        Optional<CachedHandler> resolve(String coding, String suffix) throws IOException, URISyntaxException;
     }
 
     private enum CandidateType {

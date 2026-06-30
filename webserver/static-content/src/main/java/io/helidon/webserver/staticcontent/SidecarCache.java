@@ -16,8 +16,12 @@
 
 package io.helidon.webserver.staticcontent;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.LruCache;
 import io.helidon.http.Method;
@@ -31,6 +35,7 @@ final class SidecarCache {
     private static final SidecarCache DISABLED = new SidecarCache(null);
 
     private final ConcurrentMap<String, CachedHandler> entries;
+    private final ReentrantLock resolutionLock = new ReentrantLock();
 
     private SidecarCache(ConcurrentMap<String, CachedHandler> entries) {
         this.entries = entries;
@@ -44,21 +49,30 @@ final class SidecarCache {
         return DISABLED;
     }
 
-    CachedHandler get(String coding) {
+    Optional<CachedHandler> resolve(String coding, String suffix, Resolver resolver)
+            throws IOException, URISyntaxException {
         if (entries == null) {
-            return null;
+            return resolver.resolve(coding, suffix);
         }
-        return entries.get(coding);
-    }
 
-    void put(String coding, CachedHandler handler) {
-        if (entries != null) {
-            entries.put(coding, handler);
+        CachedHandler cachedHandler = reusable(coding);
+        if (cachedHandler != null) {
+            return result(cachedHandler);
         }
-    }
 
-    void putMissing(String coding) {
-        put(coding, MissingHandler.INSTANCE);
+        resolutionLock.lock();
+        try {
+            cachedHandler = reusable(coding);
+            if (cachedHandler != null) {
+                return result(cachedHandler);
+            }
+
+            Optional<CachedHandler> resolved = resolver.resolve(coding, suffix);
+            entries.put(coding, resolved.orElse(MissingHandler.INSTANCE));
+            return resolved;
+        } finally {
+            resolutionLock.unlock();
+        }
     }
 
     void remove(String coding) {
@@ -67,8 +81,23 @@ final class SidecarCache {
         }
     }
 
-    boolean missing(CachedHandler handler) {
-        return handler == MissingHandler.INSTANCE;
+    private CachedHandler reusable(String coding) throws IOException {
+        CachedHandler cachedHandler = entries.get(coding);
+        if (cachedHandler == null
+                || cachedHandler == MissingHandler.INSTANCE
+                || cachedHandler.available()) {
+            return cachedHandler;
+        }
+        return null;
+    }
+
+    private static Optional<CachedHandler> result(CachedHandler handler) {
+        return handler == MissingHandler.INSTANCE ? Optional.empty() : Optional.of(handler);
+    }
+
+    @FunctionalInterface
+    interface Resolver {
+        Optional<CachedHandler> resolve(String coding, String suffix) throws IOException, URISyntaxException;
     }
 
     private enum MissingHandler implements CachedHandler {
