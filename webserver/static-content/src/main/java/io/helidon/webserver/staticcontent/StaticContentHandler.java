@@ -51,9 +51,9 @@ import io.helidon.http.PathMatchers;
 import io.helidon.http.ServerRequestHeaders;
 import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
-import io.helidon.http.WritableHeaders;
 import io.helidon.http.encoding.AcceptEncoding;
 import io.helidon.http.encoding.ContentEncoder;
+import io.helidon.http.encoding.ContentEncoding;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.http.HttpRules;
@@ -350,12 +350,16 @@ abstract class StaticContentHandler implements HttpService {
         List<RepresentationCandidate> staticCandidates = new ArrayList<>();
         acceptEncoding.identity()
                 .ifPresent(quality -> staticCandidates.add(RepresentationCandidate.identity(quality, identityHandler)));
+        var listenerContext = request.listenerContext();
+        ContentEncodingContext contentEncodingContext = listenerContext == null
+                ? null
+                : listenerContext.contentEncodingContext();
 
         int order = 0;
         for (Map.Entry<String, String> entry : preCompressedEncodings.entrySet()) {
             String coding = entry.getKey();
             List<AcceptEncoding.CodingQuality> qualities = sidecarQualities(acceptEncoding,
-                                                                            request,
+                                                                            contentEncodingContext,
                                                                             coding,
                                                                             preCompressedEncodings.keySet());
             if (qualities.isEmpty()) {
@@ -381,13 +385,12 @@ abstract class StaticContentHandler implements HttpService {
     }
 
     private static List<AcceptEncoding.CodingQuality> sidecarQualities(AcceptEncoding acceptEncoding,
-                                                                       ServerRequest request,
+                                                                       ContentEncodingContext contentEncodingContext,
                                                                        String coding,
                                                                        Set<String> sidecarCodings) {
         List<AcceptEncoding.CodingQuality> result = new ArrayList<>();
         acceptEncoding.match(coding, false).ifPresent(result::add);
 
-        ContentEncodingContext contentEncodingContext = contentEncodingContext(request);
         if (contentEncodingContext == null || !contentEncodingContext.contentEncodingEnabled()) {
             return result;
         }
@@ -399,20 +402,33 @@ abstract class StaticContentHandler implements HttpService {
                     || !contentEncodingContext.contentEncodingSupported(acceptedCoding)) {
                 continue;
             }
-            ContentEncoder encoder = contentEncodingContext.encoder(acceptedCoding);
-            if (coding.equals(responseCoding(acceptedCoding, encoder))) {
+            var prototype = contentEncodingContext.prototype();
+            if (prototype == null) {
+                continue;
+            }
+            ContentEncoding sidecarEncoding = null;
+            ContentEncoding acceptedEncoding = null;
+            for (ContentEncoding contentEncoding : prototype.contentEncodings()) {
+                if (!contentEncoding.supportsEncoding()) {
+                    continue;
+                }
+                for (String id : contentEncoding.ids()) {
+                    if (sidecarEncoding == null && coding.equalsIgnoreCase(id)) {
+                        sidecarEncoding = contentEncoding;
+                    }
+                    if (acceptedEncoding == null && acceptedCoding.equalsIgnoreCase(id)) {
+                        acceptedEncoding = contentEncoding;
+                    }
+                }
+                if (sidecarEncoding != null && acceptedEncoding != null) {
+                    break;
+                }
+            }
+            if (sidecarEncoding != null && sidecarEncoding == acceptedEncoding) {
                 result.add(quality);
             }
         }
         return result;
-    }
-
-    private static ContentEncodingContext contentEncodingContext(ServerRequest request) {
-        var listenerContext = request.listenerContext();
-        if (listenerContext == null) {
-            return null;
-        }
-        return listenerContext.contentEncodingContext();
     }
 
     private CachedHandler selectCandidate(List<RepresentationCandidate> staticCandidates,
@@ -536,15 +552,6 @@ abstract class StaticContentHandler implements HttpService {
         if (runtimeCanBeatStatic(selectedQuality, bestStaticCandidate)) {
             result.add(new RuntimeEncoding(selectedQuality, encoder, normalized));
         }
-    }
-
-    private static String responseCoding(String coding, ContentEncoder encoder) {
-        WritableHeaders<?> headers = WritableHeaders.create();
-        encoder.headers(headers);
-        if (headers.contains(HeaderNames.CONTENT_ENCODING)) {
-            return headers.get(HeaderNames.CONTENT_ENCODING).get().toLowerCase(Locale.ROOT);
-        }
-        return coding;
     }
 
     private static boolean runtimeEncodingsNeeded(AcceptEncoding acceptEncoding,

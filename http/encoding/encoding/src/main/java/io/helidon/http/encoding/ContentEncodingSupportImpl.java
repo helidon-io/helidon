@@ -38,6 +38,7 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
     private final boolean encodingEnabled;
     private final boolean decodingEnabled;
     private final Map<String, ContentEncoder> encoders;
+    private final Map<String, String> canonicalContentEncodings;
     private final Map<String, ContentDecoder> decoders;
     private final List<String> contentEncodingIds;
     private final ContentEncodingContextConfig config;
@@ -46,15 +47,18 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
         this.config = config;
 
         Map<String, ContentEncoder> encoders = new LinkedHashMap<>();
+        Map<String, String> canonicalContentEncodings = new HashMap<>();
         Map<String, ContentDecoder> decoders = new HashMap<>();
 
         for (ContentEncoding contentEncoding : config.contentEncodings()) {
             Set<String> ids = contentEncoding.ids();
             if (contentEncoding.supportsEncoding()) {
+                Optional<String> canonicalCoding = canonicalCoding(contentEncoding);
                 for (String id : ids) {
-                    id = id.toLowerCase(Locale.ROOT);
+                    String normalized = id.toLowerCase(Locale.ROOT);
                     ContentEncoder encoder = contentEncoding.encoder();
-                    encoders.putIfAbsent(id, encoder);
+                    encoders.putIfAbsent(normalized, encoder);
+                    canonicalCoding.ifPresent(coding -> canonicalContentEncodings.putIfAbsent(normalized, coding));
                 }
             }
 
@@ -74,6 +78,7 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
         decoders.put(AcceptEncoding.IDENTITY, ContentDecoder.NO_OP);
 
         this.encoders = encoders;
+        this.canonicalContentEncodings = Map.copyOf(canonicalContentEncodings);
         this.decoders = decoders;
     }
 
@@ -81,7 +86,7 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
         Set<String> result = new LinkedHashSet<>();
         for (ContentEncoding contentEncoding : contentEncodings) {
             if (contentEncoding.supportsEncoding()) {
-                responseCoding(contentEncoding).ifPresent(result::add);
+                canonicalCoding(contentEncoding).ifPresent(result::add);
                 contentEncoding.ids()
                         .stream()
                         .map(id -> id.toLowerCase(Locale.ROOT))
@@ -153,14 +158,14 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
         }
 
         Map<String, EncodingCandidate> candidates = new LinkedHashMap<>();
-        Set<String> probedCodings = new LinkedHashSet<>();
+        Set<String> addedCodings = new LinkedHashSet<>();
         for (String coding : contentEncodingIds) {
-            addEncodingCandidate(candidates, probedCodings, coding);
+            addEncodingCandidate(candidates, addedCodings, coding);
         }
         for (AcceptEncoding.CodingQuality quality : acceptEncoding.acceptedCodings(false)) {
             String coding = quality.coding();
             if (contentEncodingSupported(coding)) {
-                addEncodingCandidate(candidates, probedCodings, coding);
+                addEncodingCandidate(candidates, addedCodings, coding);
             }
         }
 
@@ -181,7 +186,7 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
         return config;
     }
 
-    private static Optional<String> responseCoding(ContentEncoding contentEncoding) {
+    private static Optional<String> canonicalCoding(ContentEncoding contentEncoding) {
         Set<String> ids = contentEncoding.ids();
         String type = contentEncoding.type().toLowerCase(Locale.ROOT);
         for (String id : ids) {
@@ -197,34 +202,24 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
                 .findFirst();
     }
 
-    private static String responseCoding(String coding, ContentEncoder encoder) {
-        WritableHeaders<?> headers = WritableHeaders.create();
-        encoder.headers(headers);
-        if (headers.contains(HeaderNames.CONTENT_ENCODING)) {
-            return headers.get(HeaderNames.CONTENT_ENCODING).get().toLowerCase(Locale.ROOT);
-        }
-        return coding;
-    }
-
     private void addEncodingCandidate(Map<String, EncodingCandidate> candidates,
-                                      Set<String> probedCodings,
+                                      Set<String> addedCodings,
                                       String coding) {
         String normalized = coding.toLowerCase(Locale.ROOT);
-        if (!probedCodings.add(normalized)) {
+        if (!addedCodings.add(normalized)) {
             return;
         }
         ContentEncoder encoder = encoders.get(normalized);
         if (encoder == null) {
             return;
         }
-        String emittedCoding = responseCoding(normalized, encoder);
-        candidates.putIfAbsent(normalized, new EncodingCandidate(encoder, normalized, emittedCoding));
-        candidates.putIfAbsent(emittedCoding, new EncodingCandidate(encoder, emittedCoding, emittedCoding));
+        String canonicalCoding = canonicalContentEncodings.getOrDefault(normalized, normalized);
+        candidates.putIfAbsent(normalized, new EncodingCandidate(encoder, normalized, canonicalCoding));
     }
 
-    private record EncodingCandidate(ContentEncoder delegate, String responseCoding, String emittedCoding) {
+    private record EncodingCandidate(ContentEncoder delegate, String responseCoding, String canonicalCoding) {
         ContentEncoder contentEncoder() {
-            if (responseCoding.equals(emittedCoding)) {
+            if (responseCoding.equals(canonicalCoding)) {
                 return delegate;
             }
 

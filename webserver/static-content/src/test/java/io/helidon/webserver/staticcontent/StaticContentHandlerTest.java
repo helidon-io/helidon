@@ -443,8 +443,8 @@ class StaticContentHandlerTest {
         CachedHandler identityHandler = inMemoryHandler("Nested content");
         CachedHandler sidecarHandler = inMemoryHandler("Gzip content")
                 .withRepresentation(ResponseRepresentation.encoded("gzip"));
-        ContentEncodingContext contentEncodingContext = runtimeContentEncodingContext(
-                new TestEncoding("gzip", "runtime:", Set.of("gzip", "x-gzip")));
+        TestEncoding encoding = new TestEncoding("gzip", "runtime:", Set.of("gzip", "x-gzip"));
+        ContentEncodingContext contentEncodingContext = runtimeContentEncodingContext(encoding);
         ServerRequest request = mockRequestWithHeaders("x-gzip, gzip;q=0, identity;q=0", null, contentEncodingContext);
         ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
         ServerResponse response = mock(ServerResponse.class);
@@ -472,6 +472,7 @@ class StaticContentHandlerTest {
         assertThat(responseHeaders, hasHeader(HeaderNames.CONTENT_ENCODING, "x-gzip"));
         assertThat(responseHeaders, hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
         assertThat(new String(sent.get(), StandardCharsets.UTF_8), is("Gzip content"));
+        assertThat(encoding.headerCalls().get(), is(0));
         verify(response, never()).status(Status.NOT_ACCEPTABLE_406);
     }
 
@@ -1596,13 +1597,18 @@ class StaticContentHandlerTest {
         }
     }
 
-    private record TestEncoding(String id, String prefix, Set<String> ids) implements ContentEncoding {
+    private record TestEncoding(String id, String prefix, Set<String> ids, AtomicInteger headerCalls)
+            implements ContentEncoding {
         TestEncoding() {
             this("gzip", "runtime:");
         }
 
         TestEncoding(String id, String prefix) {
             this(id, prefix, Set.of(id));
+        }
+
+        TestEncoding(String id, String prefix, Set<String> ids) {
+            this(id, prefix, ids, new AtomicInteger());
         }
 
         @Override
@@ -1662,6 +1668,7 @@ class StaticContentHandlerTest {
 
                 @Override
                 public void headers(WritableHeaders<?> headers) {
+                    headerCalls.incrementAndGet();
                     headers.set(HeaderNames.CONTENT_ENCODING, id);
                     headers.remove(HeaderNames.CONTENT_LENGTH);
                 }

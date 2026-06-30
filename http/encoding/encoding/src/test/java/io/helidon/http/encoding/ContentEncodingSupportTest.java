@@ -19,6 +19,7 @@ package io.helidon.http.encoding;
 import java.io.OutputStream;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import io.helidon.http.BadRequestException;
 import io.helidon.http.HeaderNames;
@@ -327,6 +328,30 @@ class ContentEncodingSupportTest {
     }
 
     @Test
+    void testRuntimeEncoderUpdatesHeadersOnlyAfterSelection() {
+        AtomicInteger brHeaderCalls = new AtomicInteger();
+        AtomicInteger gzipHeaderCalls = new AtomicInteger();
+        ContentEncoder brEncoder = headerCountingEncoder("br", brHeaderCalls);
+        ContentEncoder gzipEncoder = headerCountingEncoder("gzip", gzipHeaderCalls);
+        ContentEncodingContext context = ContentEncodingContext.builder()
+                .addContentEncoding(new TestEncoding(brEncoder, Set.of("br"), true, false, "br"))
+                .addContentEncoding(new TestEncoding(gzipEncoder, Set.of("gzip", "x-gzip"), true, false, "gzip"))
+                .build();
+
+        ContentEncoder selected = context.encoder(headers("x-gzip, br;q=0.5, identity;q=0"));
+
+        assertThat(brHeaderCalls.get(), is(0));
+        assertThat(gzipHeaderCalls.get(), is(0));
+
+        WritableHeaders<?> responseHeaders = WritableHeaders.create();
+        selected.headers(responseHeaders);
+
+        assertThat(brHeaderCalls.get(), is(0));
+        assertThat(gzipHeaderCalls.get(), is(1));
+        assertThat(responseHeaders.get(HeaderNames.CONTENT_ENCODING).get(), is("x-gzip"));
+    }
+
+    @Test
     void testRuntimeEncoderWildcardCanUseAliasWhenCanonicalCodingIsRejected() {
         ContentEncodingContext context = ContentEncodingContext.builder()
                 .addContentEncoding(new TestEncoding(gzipHeaderEncoder(), Set.of("gzip", "x-gzip"), true, false, "gzip"))
@@ -423,6 +448,21 @@ class ContentEncodingSupportTest {
             @Override
             public void headers(WritableHeaders<?> headers) {
                 headers.set(HeaderNames.CONTENT_ENCODING, "gzip");
+            }
+        };
+    }
+
+    private static ContentEncoder headerCountingEncoder(String coding, AtomicInteger headerCalls) {
+        return new ContentEncoder() {
+            @Override
+            public OutputStream apply(OutputStream network) {
+                return network;
+            }
+
+            @Override
+            public void headers(WritableHeaders<?> headers) {
+                headerCalls.incrementAndGet();
+                headers.set(HeaderNames.CONTENT_ENCODING, coding);
             }
         };
     }
