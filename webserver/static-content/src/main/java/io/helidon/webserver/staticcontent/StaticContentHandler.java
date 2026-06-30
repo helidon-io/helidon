@@ -759,12 +759,15 @@ abstract class StaticContentHandler implements HttpService {
                 throw new ForbiddenException("Identity resource is not accessible");
             }
             try {
-                return delegate.handleSidecar(sidecarCache, coding, cache, method, request, response, requestedResource);
+                if (delegate.handleSidecar(sidecarCache, coding, cache, method, request, response, requestedResource)) {
+                    return true;
+                }
             } catch (ForbiddenException e) {
-                sidecarCache.remove(coding);
-                clearSelectedRepresentationHeaders(response.headers());
-                return fallback.handler().handle(cache, method, request, response, requestedResource);
+                // Fall back below, just as when the sidecar disappears between availability and handling.
             }
+            sidecarCache.remove(coding);
+            clearSelectedRepresentationHeaders(response.headers());
+            return fallback.handler().handle(cache, method, request, response, requestedResource);
         }
 
         private CachedHandlerSelection(CachedHandler delegate,

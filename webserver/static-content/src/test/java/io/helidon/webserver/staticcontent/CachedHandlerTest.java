@@ -639,6 +639,73 @@ class CachedHandlerTest {
     }
 
     @Test
+    void testFileSystemSidecarSymlinkOutsideRootFallsBackToIdentity() throws IOException {
+        Path root = tempDir.resolve("root");
+        Path resource = root.resolve("resource.txt");
+        Path gzip = root.resolve("resource.txt.gz");
+        Path secret = tempDir.resolve("secret.gz");
+        Files.createDirectories(root);
+        Files.writeString(resource, "Content");
+        Files.writeString(secret, "Secret content");
+        createSymbolicLink(gzip, secret);
+        FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
+                FileSystemHandlerConfig.builder()
+                        .location(root)
+                        .build());
+
+        ServerResponseHeaders headers = ServerResponseHeaders.create();
+        ByteArrayOutputStream body = new ByteArrayOutputStream();
+        assertThat(handler.doHandle(Method.GET,
+                                    "resource.txt",
+                                    request("/resource.txt", acceptEncodingHeaders("gzip")),
+                                    response(headers, body),
+                                    false), is(true));
+        assertThat(headers, noHeader(HeaderNames.CONTENT_ENCODING));
+        assertThat(body.toString(StandardCharsets.UTF_8), is("Content"));
+    }
+
+    @Test
+    void testFileSystemCachedSidecarRetargetedOutsideRootFallsBackToRangedIdentity() throws IOException {
+        Path root = tempDir.resolve("root");
+        Path resource = root.resolve("resource.txt");
+        Path gzip = root.resolve("resource.txt.gz");
+        Path secret = tempDir.resolve("secret.gz");
+        Files.createDirectories(root);
+        Files.writeString(resource, "Content");
+        Files.writeString(gzip, "Gzip content");
+        Files.writeString(secret, "Secret content");
+        FileSystemContentHandler handler = (FileSystemContentHandler) StaticContentFeature.createService(
+                FileSystemHandlerConfig.builder()
+                        .location(root)
+                        .build());
+
+        ServerResponseHeaders hitHeaders = ServerResponseHeaders.create();
+        ByteArrayOutputStream hitBody = new ByteArrayOutputStream();
+        assertThat(handler.doHandle(Method.GET,
+                                    "resource.txt",
+                                    request("/resource.txt", acceptEncodingHeaders("gzip")),
+                                    response(hitHeaders, hitBody),
+                                    false), is(true));
+        assertThat(hitHeaders, hasHeader(HeaderNames.CONTENT_ENCODING, "gzip"));
+        assertThat(hitBody.toString(StandardCharsets.UTF_8), is("Gzip content"));
+
+        createSymbolicLink(gzip, secret);
+
+        WritableHeaders<?> requestHeaders = WritableHeaders.create();
+        requestHeaders.add(HeaderNames.ACCEPT_ENCODING, "gzip");
+        requestHeaders.add(HeaderNames.RANGE, "bytes=0-2");
+        ServerResponseHeaders staleHeaders = ServerResponseHeaders.create();
+        ByteArrayOutputStream staleBody = new ByteArrayOutputStream();
+        assertThat(handler.doHandle(Method.GET,
+                                    "resource.txt",
+                                    request("/resource.txt", ServerRequestHeaders.create(requestHeaders)),
+                                    response(staleHeaders, staleBody),
+                                    false), is(true));
+        assertThat(staleHeaders, noHeader(HeaderNames.CONTENT_ENCODING));
+        assertThat(staleBody.toString(StandardCharsets.UTF_8), is("Con"));
+    }
+
+    @Test
     void testFileSystemSidecarRequiresAvailableIdentityResource() throws IOException {
         Path resource = tempDir.resolve("resource.txt");
         Path gzip = tempDir.resolve("resource.txt.gz");
@@ -735,6 +802,70 @@ class CachedHandlerTest {
         assertThat(hitBody.toString(StandardCharsets.UTF_8), is("Gzip content"));
 
         Files.delete(gzip);
+
+        ServerResponseHeaders staleHeaders = ServerResponseHeaders.create();
+        ByteArrayOutputStream staleBody = new ByteArrayOutputStream();
+        assertThat(handler.doHandle(Method.GET,
+                                    "",
+                                    request("/single", acceptEncodingHeaders("gzip")),
+                                    response(staleHeaders, staleBody),
+                                    false), is(true));
+        assertThat(staleHeaders, noHeader(HeaderNames.CONTENT_ENCODING));
+        assertThat(staleBody.toString(StandardCharsets.UTF_8), is("Content"));
+    }
+
+    @Test
+    void testSingleFileSystemSidecarSymlinkOutsideParentFallsBackToIdentity() throws IOException {
+        Path root = tempDir.resolve("root");
+        Path resource = root.resolve("single.txt");
+        Path gzip = root.resolve("single.txt.gz");
+        Path secret = tempDir.resolve("secret.gz");
+        Files.createDirectories(root);
+        Files.writeString(resource, "Content");
+        Files.writeString(secret, "Secret content");
+        createSymbolicLink(gzip, secret);
+        SingleFileContentHandler handler = (SingleFileContentHandler) StaticContentFeature.createService(
+                FileSystemHandlerConfig.builder()
+                        .location(resource)
+                        .build());
+
+        ServerResponseHeaders headers = ServerResponseHeaders.create();
+        ByteArrayOutputStream body = new ByteArrayOutputStream();
+        assertThat(handler.doHandle(Method.GET,
+                                    "",
+                                    request("/single", acceptEncodingHeaders("gzip")),
+                                    response(headers, body),
+                                    false), is(true));
+        assertThat(headers, noHeader(HeaderNames.CONTENT_ENCODING));
+        assertThat(body.toString(StandardCharsets.UTF_8), is("Content"));
+    }
+
+    @Test
+    void testSingleFileSystemCachedSidecarRetargetedOutsideParentFallsBackToIdentity() throws IOException {
+        Path root = tempDir.resolve("root");
+        Path resource = root.resolve("single.txt");
+        Path gzip = root.resolve("single.txt.gz");
+        Path secret = tempDir.resolve("secret.gz");
+        Files.createDirectories(root);
+        Files.writeString(resource, "Content");
+        Files.writeString(gzip, "Gzip content");
+        Files.writeString(secret, "Secret content");
+        SingleFileContentHandler handler = (SingleFileContentHandler) StaticContentFeature.createService(
+                FileSystemHandlerConfig.builder()
+                        .location(resource)
+                        .build());
+
+        ServerResponseHeaders hitHeaders = ServerResponseHeaders.create();
+        ByteArrayOutputStream hitBody = new ByteArrayOutputStream();
+        assertThat(handler.doHandle(Method.GET,
+                                    "",
+                                    request("/single", acceptEncodingHeaders("gzip")),
+                                    response(hitHeaders, hitBody),
+                                    false), is(true));
+        assertThat(hitHeaders, hasHeader(HeaderNames.CONTENT_ENCODING, "gzip"));
+        assertThat(hitBody.toString(StandardCharsets.UTF_8), is("Gzip content"));
+
+        createSymbolicLink(gzip, secret);
 
         ServerResponseHeaders staleHeaders = ServerResponseHeaders.create();
         ByteArrayOutputStream staleBody = new ByteArrayOutputStream();
@@ -1219,9 +1350,11 @@ class CachedHandlerTest {
                         .build());
 
         ServerRequest req = mock(ServerRequest.class);
+        when(req.headers()).thenReturn(ServerRequestHeaders.create());
         when(req.prologue()).thenReturn(HttpPrologue.create("http/1.1", "http", "1.1", Method.GET, "/.link", false));
 
         ServerResponse res = mock(ServerResponse.class);
+        when(res.headers()).thenReturn(ServerResponseHeaders.create());
 
         assertThrows(ForbiddenException.class, () -> handler.doHandle(Method.GET, ".link", req, res, false));
         assertThat("Hidden symlink should not remain cached",
@@ -1524,6 +1657,10 @@ class CachedHandlerTest {
         return jarFile;
     }
 
+    private static URL jarUrl(Path jarFile, String name) throws MalformedURLException, URISyntaxException {
+        return new URI("jar:file", null, jarFile.toUri().getPath() + "!/" + name, null).toURL();
+    }
+
     private static void createSymbolicLink(Path link, Path target) throws IOException {
         try {
             Files.deleteIfExists(link);
@@ -1533,9 +1670,5 @@ class CachedHandlerTest {
         } catch (IOException e) {
             assumeTrue(false, "Symbolic links cannot be created: " + e.getMessage());
         }
-    }
-
-    private static URL jarUrl(Path jarFile, String name) throws MalformedURLException, URISyntaxException {
-        return new URI("jar:file", null, jarFile.toUri().getPath() + "!/" + name, null).toURL();
     }
 }

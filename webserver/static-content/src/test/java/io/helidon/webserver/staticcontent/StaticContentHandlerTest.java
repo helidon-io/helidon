@@ -1015,6 +1015,33 @@ class StaticContentHandlerTest {
     }
 
     @Test
+    void preCompressedSidecarUnavailableDuringHandleFallsBackToIdentity() throws IOException, URISyntaxException {
+        TestContentHandler handler = TestContentHandler.create(true);
+        CachedHandler identityHandler = inMemoryHandler("Nested content");
+        CachedHandler sidecarHandler = (cache, method, request, response, requestedResource) -> false;
+        ServerRequest request = mockRequestWithHeaders("gzip", null, ContentEncodingContext.create());
+        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
+        ServerResponse response = mock(ServerResponse.class);
+        AtomicReference<byte[]> sent = new AtomicReference<>();
+
+        when(response.headers()).thenReturn(responseHeaders);
+        Mockito.doAnswer(invocation -> {
+            sent.set(invocation.getArgument(0));
+            return null;
+        }).when(response).send(any(byte[].class));
+
+        CachedHandler selected = handler.selectHandler(identityHandler,
+                                                        request,
+                                                        (coding, suffix) -> Optional.of(sidecarHandler));
+
+        selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
+
+        assertThat(responseHeaders, noHeader(HeaderNames.CONTENT_ENCODING));
+        assertThat(responseHeaders, hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
+        assertThat(new String(sent.get(), StandardCharsets.UTF_8), is("Nested content"));
+    }
+
+    @Test
     void preCompressedNoAcceptableRepresentationSendsEmpty406() throws IOException, URISyntaxException {
         TestContentHandler handler = TestContentHandler.create(true);
         CachedHandler identityHandler = inMemoryHandler("Nested content");
