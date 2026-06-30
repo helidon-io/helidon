@@ -300,9 +300,6 @@ public abstract class ServerResponseBase<T extends ServerResponseBase<T>> implem
     }
 
     private void mergeVaryAcceptEncoding() {
-        if (!requestHeaders.contains(HeaderNames.ACCEPT_ENCODING)) {
-            return;
-        }
         if (headers().contains(HeaderNames.VARY)) {
             for (String value : headers().get(HeaderNames.VARY).allValues()) {
                 String[] values = value.split(",");
