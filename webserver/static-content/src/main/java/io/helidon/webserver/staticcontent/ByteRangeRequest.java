@@ -18,6 +18,7 @@ package io.helidon.webserver.staticcontent;
 
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -112,7 +113,7 @@ record ByteRangeRequest(long fileLength, long offset, long length) {
 
         try {
             Instant ifRangeDate = DateTime.parse(ifRange).toInstant();
-            return !lastModified.isAfter(ifRangeDate);
+            return lastModified.truncatedTo(ChronoUnit.SECONDS).equals(ifRangeDate);
         } catch (DateTimeParseException e) {
             return false;
         }
