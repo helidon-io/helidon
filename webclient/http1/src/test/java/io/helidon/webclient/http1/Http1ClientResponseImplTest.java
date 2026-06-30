@@ -17,6 +17,7 @@
 package io.helidon.webclient.http1;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
@@ -109,6 +110,45 @@ class Http1ClientResponseImplTest {
                                                             ClientResponseHeaders.create(WritableHeaders.create()));
 
         assertThat(response.inputStream().isPresent(), is(true));
+    }
+
+    @Test
+    void successfulConnectIgnoresFramingHeadersAndClosesTunnel() throws IOException {
+        String tunnelData = "4\r\ndata\r\n0\r\n\r\n";
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.add(HeaderValues.TRANSFER_ENCODING_CHUNKED);
+        headers.add(HeaderValues.CONTENT_LENGTH_ZERO);
+        ClientResponseHeaders responseHeaders = ClientResponseHeaders.create(headers);
+        TestServiceRequest serviceRequest = new TestServiceRequest(Method.CONNECT);
+        TestConnection connection = new TestConnection(dataReader(tunnelData));
+        WebClientServiceResponse serviceResponse = Http1CallChainBase.createServiceResponse(
+                new Http1ClientImpl(null, Http1ClientConfig.builder().buildPrototype()),
+                serviceRequest,
+                connection,
+                connection.reader(),
+                Status.NO_CONTENT_204,
+                responseHeaders,
+                new CompletableFuture<>());
+        InputStream serviceStream = serviceResponse.inputStream().orElseThrow();
+        Http1ClientResponseImpl response = new Http1ClientResponseImpl(HttpClientConfig.builder().build(),
+                                                                       Http1ClientProtocolConfig.create(),
+                                                                       Status.NO_CONTENT_204,
+                                                                       Method.CONNECT,
+                                                                       serviceRequest.headers(),
+                                                                       responseHeaders,
+                                                                       connection,
+                                                                       serviceStream,
+                                                                       MediaContext.create(),
+                                                                       ClientUri.create(URI.create("http://localhost/test")),
+                                                                       new CompletableFuture<>());
+        InputStream tunnelStream = response.inputStream();
+
+        byte[] actual = new byte[tunnelData.length()];
+        assertThat(tunnelStream.read(actual), is(actual.length));
+        assertThat(new String(actual, StandardCharsets.US_ASCII), is(tunnelData));
+        response.close();
+        assertThat(connection.releaseCount(), is(0));
+        assertThat(connection.closeCount(), is(1));
     }
 
     @Test

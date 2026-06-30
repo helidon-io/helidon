@@ -430,6 +430,26 @@ class Http1ClientTest {
     }
 
     @Test
+    void testResetContentResponseWithChunkedTerminatorAndStaleBytesClosesConnection() {
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(Status.RESET_CONTENT_205,
+                                                                             true,
+                                                                             false,
+                                                                             List.of(HeaderValues.TRANSFER_ENCODING_CHUNKED),
+                                                                             "0\r\n\r\nstale"
+                                                                                     .getBytes(StandardCharsets.US_ASCII));
+
+        try (Http1ClientResponse response = client.get("http://localhost:" + dummyPort + "/test")
+                .connection(connection)
+                .request()) {
+            assertThat(response.status(), is(Status.RESET_CONTENT_205));
+            assertThat(response.entity().hasEntity(), is(false));
+        }
+
+        assertThat(connection.releaseCount(), is(0));
+        assertThat(connection.closeCount(), is(1));
+    }
+
+    @Test
     void testResetContentResponseWithChunkedTerminatorExtensionReusesConnection() throws IOException {
         FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(Status.RESET_CONTENT_205,
                                                                              true,
@@ -465,6 +485,30 @@ class Http1ClientTest {
             assertThat(response.status(), is(Status.RESET_CONTENT_205));
             assertThat(response.headers(), hasHeader(HeaderNames.CONTENT_LENGTH, "4"));
             assertThat(response.entity().hasEntity(), is(false));
+        }
+
+        assertThat(connection.releaseCount(), is(0));
+        assertThat(connection.closeCount(), is(1));
+    }
+
+    @Test
+    void testResetContentResponseWithContentLengthDoesNotParseBodyAsTrailers() {
+        byte[] responseEntity = "X-Test: body\r\n\r\nstale".getBytes(StandardCharsets.US_ASCII);
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(Status.RESET_CONTENT_205,
+                                                                             true,
+                                                                             false,
+                                                                             List.of(HeaderValues.create(
+                                                                                             HeaderNames.CONTENT_LENGTH,
+                                                                                             Integer.toString(responseEntity.length)),
+                                                                                     HeaderValues.create(HeaderNames.TRAILER,
+                                                                                                         "X-Test")),
+                                                                             responseEntity);
+
+        try (Http1ClientResponse response = client.get("http://localhost:" + dummyPort + "/test")
+                .connection(connection)
+                .request()) {
+            assertThat(response.entity().hasEntity(), is(false));
+            assertThrows(IllegalStateException.class, response::trailers);
         }
 
         assertThat(connection.releaseCount(), is(0));
@@ -515,6 +559,30 @@ class Http1ClientTest {
 
         assertThat(connection.releaseCount(), is(1));
         assertThat(connection.closeCount(), is(0));
+    }
+
+    @Test
+    void testResetContentResponseWithChunkedTrailersAndStaleBytesClosesConnection() {
+        FakeHttp1ClientConnection connection = new FakeHttp1ClientConnection(Status.RESET_CONTENT_205,
+                                                                             true,
+                                                                             false,
+                                                                             List.of(HeaderValues.TRANSFER_ENCODING_CHUNKED,
+                                                                                     HeaderValues.create(HeaderNames.TRAILER,
+                                                                                                         "X-Test")),
+                                                                             ("0\r\n"
+                                                                                     + "X-Test: value\r\n\r\n"
+                                                                                     + "stale")
+                                                                                     .getBytes(StandardCharsets.US_ASCII));
+
+        try (Http1ClientResponse response = client.get("http://localhost:" + dummyPort + "/test")
+                .connection(connection)
+                .request()) {
+            assertThat(response.entity().hasEntity(), is(false));
+            assertThrows(IllegalStateException.class, response::trailers);
+        }
+
+        assertThat(connection.releaseCount(), is(0));
+        assertThat(connection.closeCount(), is(1));
     }
 
     @Test

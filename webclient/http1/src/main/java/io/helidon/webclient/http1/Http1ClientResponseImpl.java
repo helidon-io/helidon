@@ -107,7 +107,8 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
         this.parserMode = clientConfig.mediaTypeParserMode();
         this.lastEndpointUri = lastEndpointUri;
         this.whenComplete = whenComplete;
-        this.entityAllowed = Http1CallChainBase.statusAllowsEntity(responseStatus);
+        boolean successfulConnect = Http1CallChainBase.isSuccessfulConnect(requestMethod, responseStatus);
+        this.entityAllowed = successfulConnect || Http1CallChainBase.statusAllowsEntity(responseStatus);
         this.trailers = LazyValue.create(this::readTrailers);
 
         boolean transferEncoded = responseHeaders.contains(HeaderNames.TRANSFER_ENCODING);
@@ -118,7 +119,9 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
                 || responseStatus.family() == Status.Family.INFORMATIONAL
                 || statusCode == Status.NO_CONTENT_204.code()
                 || statusCode == Status.NOT_MODIFIED_304.code();
-        if (headerTerminated) {
+        if (successfulConnect) {
+            this.entityLength = ENTITY_LENGTH_CLOSE_DELIMITED;
+        } else if (headerTerminated) {
             this.entityLength = 0;
         } else if (statusCode == Status.RESET_CONTENT_205.code()) {
             if (chunked) {
@@ -142,7 +145,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
             this.entityLength = ENTITY_LENGTH_CLOSE_DELIMITED;
         }
 
-        if (responseHeaders.contains(HeaderNames.TRAILER)) {
+        if (!successfulConnect && responseHeaders.contains(HeaderNames.TRAILER)) {
             this.hasTrailers = true;
             this.trailerNames = responseHeaders.get(HeaderNames.TRAILER).allValues(true);
         } else {
@@ -234,6 +237,9 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
     }
 
     private Headers readTrailers() {
+        if (!entityAllowed && entityLength != ENTITY_LENGTH_CHUNKED) {
+            throw new IllegalStateException("Response trailers require chunked transfer coding");
+        }
         boolean consumeNoEntityFraming = !entityAllowed
                 && entityLength == ENTITY_LENGTH_CHUNKED
                 && !entityFullyRead;
@@ -244,11 +250,15 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
             invalidNoEntityChunkedFraming = true;
             readNoEntityChunkedFraming();
         }
+        DataReader reader = connection.reader();
         Headers result = Http1HeadersParser.readHeaders(
-                connection.reader(),
+                reader,
                 protocolConfig.maxHeaderSize(),
                 protocolConfig.validateResponseHeaders()
         );
+        if (!entityAllowed && reader.available() > 0) {
+            throw new IllegalStateException("Unexpected data after response trailers");
+        }
         entityFullyRead = true;
         invalidNoEntityChunkedFraming = false;
         return result;
@@ -292,7 +302,7 @@ class Http1ClientResponseImpl implements Http1ClientResponse {
             }
             BufferData bufferData = reader.getBuffer(available);
             int endOfChunkSize = bufferData.indexOf(Bytes.CR_BYTE);
-            if (endOfChunkSize == -1 || endOfChunkSize >= 256 || endOfChunkSize + 3 >= available) {
+            if (endOfChunkSize == -1 || endOfChunkSize >= 256 || endOfChunkSize + 4 != available) {
                 return false;
             }
             if (bufferData.get(endOfChunkSize + 1) != Bytes.LF_BYTE

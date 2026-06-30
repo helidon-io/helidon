@@ -102,16 +102,20 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         Http1ConnectionListener recvListener = http1Client.recvListener();
         WebClientServiceResponse.Builder builder = WebClientServiceResponse.builder();
         AtomicReference<WebClientServiceResponse> response = new AtomicReference<>();
+        boolean successfulConnect = isSuccessfulConnect(serviceRequest.method(), responseStatus);
 
         if (mayExposeEntity(serviceRequest.method(), responseStatus, responseHeaders)) {
             // this may be an entity (if content length is set to zero, we know there is no entity)
-            builder.inputStream(inputStream(clientConfig,
-                                            recvListener,
-                                            connection.helidonSocket(),
-                                            response,
-                                            responseHeaders,
-                                            reader,
-                                            whenComplete));
+            InputStream inputStream = successfulConnect
+                    ? new EverythingInputStream(connection.helidonSocket(), reader, whenComplete, response, recvListener)
+                    : inputStream(clientConfig,
+                                  recvListener,
+                                  connection.helidonSocket(),
+                                  response,
+                                  responseHeaders,
+                                  reader,
+                                  whenComplete);
+            builder.inputStream(inputStream);
         }
 
         WebClientServiceResponse serviceResponse = builder
@@ -321,6 +325,10 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                 && statusCode != Status.NOT_MODIFIED_304.code();
     }
 
+    static boolean isSuccessfulConnect(Method requestMethod, Status responseStatus) {
+        return requestMethod == Method.CONNECT && responseStatus.family() == Status.Family.SUCCESSFUL;
+    }
+
     static boolean isChunkedFinalTransferCoding(Headers headers) {
         if (!headers.contains(HeaderNames.TRANSFER_ENCODING)) {
             return false;
@@ -333,6 +341,9 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
     }
 
     private static boolean mayExposeEntity(Method requestMethod, Status responseStatus, ClientResponseHeaders responseHeaders) {
+        if (isSuccessfulConnect(requestMethod, responseStatus)) {
+            return true;
+        }
         if (requestMethod == Method.HEAD) {
             return false;
         }
