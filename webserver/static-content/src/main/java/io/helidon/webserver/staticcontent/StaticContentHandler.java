@@ -586,13 +586,13 @@ abstract class StaticContentHandler implements HttpService {
         if (q != 0) {
             return q;
         }
+        if (first.quality().wildcard() != second.quality().wildcard()) {
+            return first.quality().wildcard() ? 1 : -1;
+        }
         boolean firstImplicitIdentity = implicitIdentity(first);
         boolean secondImplicitIdentity = implicitIdentity(second);
         if (firstImplicitIdentity != secondImplicitIdentity) {
             return firstImplicitIdentity ? 1 : -1;
-        }
-        if (first.quality().wildcard() != second.quality().wildcard()) {
-            return first.quality().wildcard() ? 1 : -1;
         }
         int clientOrder = Integer.compare(first.quality().order(), second.quality().order());
         if (clientOrder != 0) {

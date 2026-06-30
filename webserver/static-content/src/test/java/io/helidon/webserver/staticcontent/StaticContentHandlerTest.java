@@ -385,8 +385,8 @@ class StaticContentHandlerTest {
     }
 
     @Test
-    void preCompressedWildcardBeatsImplicitIdentity() throws IOException, URISyntaxException {
-        assertRuntimeEncodingSelected("*");
+    void preCompressedImplicitIdentityBeatsWildcard() throws IOException, URISyntaxException {
+        assertIdentitySelected("*");
     }
 
     @Test
