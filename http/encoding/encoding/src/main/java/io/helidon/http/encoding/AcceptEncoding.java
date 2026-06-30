@@ -340,10 +340,12 @@ public final class AcceptEncoding {
             return null;
         }
         // RFC 9110, sections 12.5.3 and 8.4.1: codings are content-coding tokens, identity, or *.
-        if (!HttpToken.isValid(value, codingStart, codingEnd)) {
+        String coding = normalize(value, codingStart, codingEnd);
+        try {
+            HttpToken.validate(coding);
+        } catch (IllegalArgumentException e) {
             return null;
         }
-        String coding = normalize(value, codingStart, codingEnd);
 
         int q = Q_ONE;
         if (semicolon != -1) {
