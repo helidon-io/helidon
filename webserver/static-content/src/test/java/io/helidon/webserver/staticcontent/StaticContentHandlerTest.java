@@ -385,6 +385,11 @@ class StaticContentHandlerTest {
     }
 
     @Test
+    void preCompressedWildcardBeatsImplicitIdentity() throws IOException, URISyntaxException {
+        assertRuntimeEncodingSelected("*");
+    }
+
+    @Test
     void preCompressedRuntimeEncodingEncodesEmptyInMemoryResource() throws IOException, URISyntaxException {
         TestContentHandler handler = TestContentHandler.create(true);
         CachedHandler identityHandler = inMemoryHandler("");
