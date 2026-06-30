@@ -28,6 +28,7 @@ import io.helidon.http.DirectHandler;
 import io.helidon.http.HttpPrologue;
 import io.helidon.http.Method;
 import io.helidon.http.Status;
+import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.http.media.ReadableEntityBase;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
@@ -49,6 +50,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -152,6 +154,7 @@ class ErrorHandlersTest {
                                                             UriFragment.empty()));
         when(req.content()).thenReturn(ReadableEntityBase.empty());
         when(ctx.listenerContext()).thenReturn(listenerContext);
+        when(listenerContext.contentEncodingContext()).thenReturn(mock(ContentEncodingContext.class));
         when(listenerContext.config()).thenReturn(ListenerConfig.builder()
                                                   .errorHandling(ErrorHandling.builder()
                                                                          .includeEntity(false)
@@ -170,7 +173,7 @@ class ErrorHandlersTest {
             throw new OtherException();
         });
 
-        verify(res).automaticContentEncoding(false);
+        verify(res, never()).automaticContentEncoding(false);
         var status = ArgumentCaptor.forClass(Status.class);
         verify(res).status(status.capture());
         assertThat(status.getValue(), is(Status.INTERNAL_SERVER_ERROR_500));
@@ -203,8 +206,6 @@ class ErrorHandlersTest {
         RoutingRequest req = mock(RoutingRequest.class);
         RoutingResponse res = mock(RoutingResponse.class);
         when(res.resetStream()).thenReturn(true);
-        when(res.automaticContentEncoding(false)).thenReturn(res);
-
         when(req.prologue()).thenReturn(HttpPrologue.create("http/1.0",
                                                             "http",
                                                             "1.0",
@@ -215,6 +216,7 @@ class ErrorHandlersTest {
         when(req.content()).thenReturn(ReadableEntityBase.empty());
         ListenerContext listenerContext = mock(ListenerContext.class);
         when(ctx.listenerContext()).thenReturn(listenerContext);
+        when(listenerContext.contentEncodingContext()).thenReturn(mock(ContentEncodingContext.class));
         when(listenerContext.config()).thenReturn(ListenerConfig.builder()
                                                   .errorHandling(ErrorHandling.builder()
                                                                          .includeEntity(includeEntity)
@@ -239,8 +241,11 @@ class ErrorHandlersTest {
         ConnectionContext ctx = mock(ConnectionContext.class);
         RoutingRequest req = mock(RoutingRequest.class);
         RoutingResponse res = mock(RoutingResponse.class);
+        ListenerContext listenerContext = mock(ListenerContext.class);
         when(res.isSent()).thenReturn(true);
         when(res.resetStream()).thenReturn(true);
+        when(ctx.listenerContext()).thenReturn(listenerContext);
+        when(listenerContext.contentEncodingContext()).thenReturn(mock(ContentEncodingContext.class));
 
         handlers.runWithErrorHandling(ctx, req, res, () -> {
             throw e;

@@ -74,6 +74,9 @@ class BadRequestTest {
         builder.get("/bad-request", (req, res) -> {
             throw new BadRequestException("Bad request in routing");
         });
+        builder.get("/internal-error", (req, res) -> {
+            throw new IllegalStateException("Internal error in routing");
+        });
         builder.route(Http1Route.route(Method.GET,
                                        "/",
                                        (req, res) -> res.send("Hi")))
@@ -115,6 +118,30 @@ class BadRequestTest {
             assertThat(response.status(), is(Status.OK_200));
             assertThat(response.entity().as(String.class), is("Bad request in routing"));
         }
+    }
+
+    @Test
+    void testRoutingErrorHandlerPreservesValidContentEncoding() {
+        String response = socketClient.sendAndReceive(Method.GET,
+                                                      "/bad-request",
+                                                      null,
+                                                      List.of("Accept-Encoding: test, identity;q=0"));
+
+        assertThat(response, containsString("200 OK"));
+        assertThat(response, containsString("Content-Encoding: test"));
+        assertThat(response, containsString("encoded:Bad request in routing"));
+    }
+
+    @Test
+    void testDefaultErrorHandlerPreservesValidContentEncoding() {
+        String response = socketClient.sendAndReceive(Method.GET,
+                                                      "/internal-error",
+                                                      null,
+                                                      List.of("Accept-Encoding: test, identity;q=0"));
+
+        assertThat(response, containsString("500 Internal Server Error"));
+        assertThat(response, containsString("Content-Encoding: test"));
+        assertThat(response, containsString("encoded:Internal Server Error"));
     }
 
     @Test

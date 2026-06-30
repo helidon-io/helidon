@@ -30,6 +30,7 @@ import io.helidon.http.HttpPrologue;
 import io.helidon.http.InternalServerException;
 import io.helidon.http.LogFormatter;
 import io.helidon.http.RequestException;
+import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ServerConnectionException;
@@ -171,7 +172,7 @@ public final class ErrorHandlers {
                 }
             }
         }
-        response.automaticContentEncoding(false);
+        prepareContentEncoding(ctx, request, response);
         ctx.listenerContext()
                 .directHandlers()
                 .handle(e, response, keepAlive);
@@ -230,8 +231,8 @@ public final class ErrorHandlers {
             throw new CloseConnectionException(
                     "Cannot send response of a simple handler, status and headers already written", e);
         }
+        prepareContentEncoding(ctx, request, response);
         try {
-            response.automaticContentEncoding(false);
             it.handle(request, response, e);
             response.commit();
             if (!response.isSent()) {
@@ -248,6 +249,20 @@ public final class ErrorHandlers {
         } catch (Exception ex) {
             ctx.log(LOGGER, System.Logger.Level.TRACE, "Failed to handle exception.", ex);
             unhandledError(ctx, request, response, e);
+        }
+    }
+
+    private void prepareContentEncoding(ConnectionContext ctx,
+                                        ServerRequest request,
+                                        RoutingResponse response) {
+        ContentEncodingContext contentEncodingContext = ctx.listenerContext().contentEncodingContext();
+        if (!contentEncodingContext.contentEncodingEnabled()) {
+            return;
+        }
+        try {
+            contentEncodingContext.encoder(request.headers());
+        } catch (HttpException _) {
+            response.automaticContentEncoding(false);
         }
     }
 }
