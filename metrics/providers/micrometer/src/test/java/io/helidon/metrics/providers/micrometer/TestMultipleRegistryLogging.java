@@ -18,6 +18,8 @@ package io.helidon.metrics.providers.micrometer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -29,6 +31,8 @@ import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import io.helidon.config.Config;
+import io.helidon.config.ConfigSources;
 import io.helidon.metrics.api.Clock;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.MeterRegistry;
@@ -36,6 +40,7 @@ import io.helidon.metrics.api.MetricsConfig;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.spi.MetersProvider;
+import io.helidon.service.registry.ServiceRegistryConfig;
 import io.helidon.service.registry.ServiceRegistryManager;
 import io.helidon.service.registry.Services;
 import io.helidon.testing.junit5.Testing;
@@ -266,6 +271,26 @@ class TestMultipleRegistryLogging {
         assertThat("Sequential service registry-owned factories do not warn",
                    testHandler.messages(),
                    hasSize(0));
+    }
+
+    @Test
+    void testNoArgGlobalRegistryUsesOwningServiceRegistryConfig() {
+        Config localConfig = Config.just(ConfigSources.create(Map.of("metrics.app-name", "local-app")));
+        ServiceRegistryManager manager = ServiceRegistryManager.create(ServiceRegistryConfig.builder()
+                                                                                .putContractInstance(Config.class,
+                                                                                                     localConfig)
+                                                                                .build());
+        try {
+            MetricsFactory metricsFactory = manager.registry().get(MetricsFactory.class);
+
+            metricsFactory.globalRegistry();
+
+            assertThat("Factory retains its owning service registry configuration",
+                       metricsFactory.metricsConfig().appName(),
+                       is(Optional.of("local-app")));
+        } finally {
+            manager.shutdown();
+        }
     }
 
     @Test
