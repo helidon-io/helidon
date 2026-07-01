@@ -24,6 +24,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -33,6 +34,7 @@ import io.helidon.codegen.CodegenUtil;
 import io.helidon.codegen.TypeHierarchy;
 import io.helidon.codegen.classmodel.ClassModel;
 import io.helidon.codegen.classmodel.Method;
+import io.helidon.common.Api;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.Annotations;
@@ -93,7 +95,11 @@ import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_
 import static io.helidon.service.codegen.ServiceCodegenTypes.SERVICE_ANNOTATION_NAMED_BY_TYPE;
 import static java.util.function.Predicate.not;
 
-final class OpenApiSourceGenerator {
+/**
+ * Generates OpenAPI document sources from declarative endpoint models and document metadata.
+ */
+@Api.Internal
+public final class OpenApiSourceGenerator {
     private static final TypeName GENERATOR = TypeName.create(OpenApiSourceGenerator.class);
     private static final TypeName VOID = TypeName.create(Void.class);
     private static final String DEFAULT_MEDIA_TYPE = "application/json";
@@ -116,12 +122,34 @@ final class OpenApiSourceGenerator {
         this.ctx = ctx;
     }
 
-    void process(RegistryRoundContext roundContext, List<ServerEndpoint> endpoints) {
+    /**
+     * Create an OpenAPI source generator if the OpenAPI runtime is available to the code generation session.
+     *
+     * @param ctx code generation context
+     * @return source generator, if available
+     */
+    public static Optional<OpenApiSourceGenerator> create(RegistryCodegenContext ctx) {
+        Objects.requireNonNull(ctx);
+        return ctx.typeInfo(OpenApiCodegenTypes.OPENAPI_DOCUMENT_SOURCE)
+                .map(_ -> new OpenApiSourceGenerator(ctx));
+    }
+
+    void processDocuments(RegistryRoundContext roundContext) {
         Collection<TypeInfo> documents = roundContext.annotatedTypes(OPENAPI_DOCUMENT_ANNOTATION);
         for (TypeInfo document : documents) {
             processDocument(roundContext, document);
         }
+    }
 
+    /**
+     * Generate OpenAPI sources for analyzed declarative endpoints.
+     *
+     * @param roundContext code generation round context
+     * @param endpoints analyzed declarative endpoints
+     */
+    public void processEndpoints(RegistryRoundContext roundContext, List<ServerEndpoint> endpoints) {
+        Objects.requireNonNull(roundContext);
+        Objects.requireNonNull(endpoints);
         for (ServerEndpoint endpoint : endpoints) {
             if (endpoint.type().kind() != ElementKind.INTERFACE
                     && !hasAnnotation(endpoint.annotations(), OPENAPI_HIDDEN_ANNOTATION)) {

@@ -22,7 +22,6 @@ import io.helidon.common.Api;
 import io.helidon.common.Weight;
 import io.helidon.common.Weighted;
 import io.helidon.common.types.TypeName;
-import io.helidon.declarative.codegen.http.webserver.ServerEndpointAnalyzer;
 import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.spi.RegistryCodegenExtension;
 import io.helidon.service.codegen.spi.RegistryCodegenExtensionProvider;
@@ -52,8 +51,7 @@ public class OpenApiExtensionProvider implements RegistryCodegenExtensionProvide
                       OpenApiCodegenTypes.OPENAPI_OAUTH2_SECURITY_SCHEMES_ANNOTATION,
                       OpenApiCodegenTypes.OPENAPI_OAUTH2_SECURITY_SCHEME_ANNOTATION,
                       OpenApiCodegenTypes.OPENAPI_OIDC_SECURITY_SCHEMES_ANNOTATION,
-                      OpenApiCodegenTypes.OPENAPI_OIDC_SECURITY_SCHEME_ANNOTATION,
-                      ServerEndpointAnalyzer.endpointAnnotation());
+                      OpenApiCodegenTypes.OPENAPI_OIDC_SECURITY_SCHEME_ANNOTATION);
     }
 
     @Override
