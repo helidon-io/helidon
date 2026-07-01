@@ -1203,6 +1203,44 @@ class StaticContentHandlerTest {
     }
 
     @Test
+    void preCompressedDifferentCodingLookupsAreConcurrent() throws Exception {
+        SidecarCache sidecarCache = SidecarCache.create();
+        CachedHandler brotliHandler = inMemoryHandler("Brotli content");
+        CachedHandler gzipHandler = inMemoryHandler("Gzip content");
+        CountDownLatch brotliResolverEntered = new CountDownLatch(1);
+        CountDownLatch releaseBrotliResolver = new CountDownLatch(1);
+
+        SidecarCache.Resolver resolver = (coding, suffix) -> {
+            if ("gzip".equals(coding)) {
+                return Optional.of(gzipHandler);
+            }
+            brotliResolverEntered.countDown();
+            try {
+                if (!releaseBrotliResolver.await(10, TimeUnit.SECONDS)) {
+                    throw new IOException("Timed out awaiting release of the Brotli lookup");
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IOException("Interrupted while awaiting release of the Brotli lookup", e);
+            }
+            return Optional.of(brotliHandler);
+        };
+
+        try (var executor = Executors.newFixedThreadPool(2)) {
+            Future<Optional<CachedHandler>> brotli = executor.submit(() -> sidecarCache.resolve("br", ".br", resolver));
+            try {
+                assertThat(brotliResolverEntered.await(5, TimeUnit.SECONDS), is(true));
+                Future<Optional<CachedHandler>> gzip =
+                        executor.submit(() -> sidecarCache.resolve("gzip", ".gz", resolver));
+                assertThat(gzip.get(5, TimeUnit.SECONDS), is(Optional.of(gzipHandler)));
+            } finally {
+                releaseBrotliResolver.countDown();
+            }
+            assertThat(brotli.get(5, TimeUnit.SECONDS), is(Optional.of(brotliHandler)));
+        }
+    }
+
+    @Test
     void preCompressedMissingSidecarLookupIsCached() throws IOException, URISyntaxException {
         TestContentHandler handler = TestContentHandler.create(true);
         CachedHandler identityHandler = inMemoryHandler("Content");
