@@ -460,14 +460,18 @@ class StaticContentHandlerTest {
         CachedHandler identityHandler = inMemoryHandler("Nested content");
         CachedHandler sidecarHandler = inMemoryHandler("Gzip content")
                 .withRepresentation(ResponseRepresentation.encoded("gzip"));
-        TestEncoding encoding = new TestEncoding("gzip", "runtime:", Set.of("gzip", "x-gzip"));
-        ContentEncodingContext contentEncodingContext = runtimeContentEncodingContext(encoding);
+        ContentEncodingContext contentEncodingContext = mock(ContentEncodingContext.class);
         ServerRequest request = mockRequestWithHeaders("x-gzip, gzip;q=0, identity;q=0", null, contentEncodingContext);
         ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
         ServerResponse response = mock(ServerResponse.class);
         AtomicReference<byte[]> sent = new AtomicReference<>();
         AtomicReference<String> resolvedCoding = new AtomicReference<>();
 
+        when(contentEncodingContext.contentEncodingEnabled()).thenReturn(true);
+        when(contentEncodingContext.contentEncodingSupported("x-gzip")).thenReturn(true);
+        when(contentEncodingContext.canonicalEncodingId("gzip")).thenReturn(Optional.of("gzip"));
+        when(contentEncodingContext.canonicalEncodingId("x-gzip")).thenReturn(Optional.of("gzip"));
+        when(contentEncodingContext.prototype()).thenThrow(new AssertionError("Static content must not inspect the prototype"));
         when(response.headers()).thenReturn(responseHeaders);
         Mockito.doAnswer(inv -> {
             sent.set(inv.getArgument(0));
@@ -489,7 +493,7 @@ class StaticContentHandlerTest {
         assertThat(responseHeaders, hasHeader(HeaderNames.CONTENT_ENCODING, "x-gzip"));
         assertThat(responseHeaders, hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
         assertThat(new String(sent.get(), StandardCharsets.UTF_8), is("Gzip content"));
-        assertThat(encoding.headerCalls().get(), is(0));
+        verify(contentEncodingContext, never()).prototype();
         verify(response, never()).status(Status.NOT_ACCEPTABLE_406);
     }
 

@@ -18,6 +18,7 @@ package io.helidon.http.encoding;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import io.helidon.builder.api.RuntimeType;
@@ -110,6 +111,19 @@ public interface ContentEncodingContext extends RuntimeType.Api<ContentEncodingC
     @Api.Incubating
     default List<String> contentEncodingIds() {
         return ContentEncodingSupportImpl.contentEncodingIds(prototype().contentEncodings());
+    }
+
+    /**
+     * Resolve a content encoding id to the canonical id of its configured provider.
+     * Encoding ids handled by the same provider return the same canonical id. The result is intended for comparing
+     * encoding ids, not for selecting the value of a {@code Content-Encoding} response header.
+     *
+     * @param encodingId encoding id
+     * @return canonical encoding id, or empty if there is no encoder for the id
+     */
+    @Api.Incubating
+    default Optional<String> canonicalEncodingId(String encodingId) {
+        return ContentEncodingSupportImpl.canonicalEncodingId(prototype().contentEncodings(), encodingId);
     }
 
     /**

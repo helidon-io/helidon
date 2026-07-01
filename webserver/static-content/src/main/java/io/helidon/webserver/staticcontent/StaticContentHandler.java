@@ -53,7 +53,6 @@ import io.helidon.http.ServerResponseHeaders;
 import io.helidon.http.Status;
 import io.helidon.http.encoding.AcceptEncoding;
 import io.helidon.http.encoding.ContentEncoder;
-import io.helidon.http.encoding.ContentEncoding;
 import io.helidon.http.encoding.ContentEncodingContext;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.http.HttpRules;
@@ -395,36 +394,18 @@ abstract class StaticContentHandler implements HttpService {
             return result;
         }
 
+        Optional<String> canonicalCoding = contentEncodingContext.canonicalEncodingId(coding);
+        if (canonicalCoding.isEmpty()) {
+            return result;
+        }
+
         for (AcceptEncoding.CodingQuality quality : acceptEncoding.acceptedCodings(false)) {
             String acceptedCoding = quality.coding();
             if (coding.equals(acceptedCoding)
-                    || sidecarCodings.contains(acceptedCoding)
-                    || !contentEncodingContext.contentEncodingSupported(acceptedCoding)) {
+                    || sidecarCodings.contains(acceptedCoding)) {
                 continue;
             }
-            var prototype = contentEncodingContext.prototype();
-            if (prototype == null) {
-                continue;
-            }
-            ContentEncoding sidecarEncoding = null;
-            ContentEncoding acceptedEncoding = null;
-            for (ContentEncoding contentEncoding : prototype.contentEncodings()) {
-                if (!contentEncoding.supportsEncoding()) {
-                    continue;
-                }
-                for (String id : contentEncoding.ids()) {
-                    if (sidecarEncoding == null && coding.equalsIgnoreCase(id)) {
-                        sidecarEncoding = contentEncoding;
-                    }
-                    if (acceptedEncoding == null && acceptedCoding.equalsIgnoreCase(id)) {
-                        acceptedEncoding = contentEncoding;
-                    }
-                }
-                if (sidecarEncoding != null && acceptedEncoding != null) {
-                    break;
-                }
-            }
-            if (sidecarEncoding != null && sidecarEncoding == acceptedEncoding) {
+            if (canonicalCoding.equals(contentEncodingContext.canonicalEncodingId(acceptedCoding))) {
                 result.add(quality);
             }
         }
