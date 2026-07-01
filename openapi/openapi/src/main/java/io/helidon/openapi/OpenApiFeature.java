@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -90,6 +91,7 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
     private final Config sourceConfig;
     private final OpenApiManager<?> manager;
     private final ConcurrentMap<String, LazyValue<Object>> modelsByListener;
+    private final ReentrantLock modelLoadLock;
     private final LazyValue<List<OpenApiDocumentSource>> documentSources;
     private final LazyValue<List<OpenApiVersion>> openApiVersions;
     private final AtomicBoolean initialized;
@@ -178,6 +180,7 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
         staticOpenApiDocuments = new ConcurrentHashMap<>();
         manager = config.manager().orElseGet(SimpleOpenApiManager::new);
         modelsByListener = new ConcurrentHashMap<>();
+        modelLoadLock = new ReentrantLock();
         initialized = new AtomicBoolean();
     }
 
@@ -308,7 +311,14 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
     }
 
     private LazyValue<Object> model(String listener) {
-        return LazyValue.create(() -> manager.load(documentContent(listener, documentSources())));
+        return LazyValue.create(() -> {
+            modelLoadLock.lock();
+            try {
+                return manager.load(documentContent(listener, documentSources()));
+            } finally {
+                modelLoadLock.unlock();
+            }
+        });
     }
 
     private LazyValue<Object> listenerModel(String listener) {
