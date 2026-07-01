@@ -79,6 +79,8 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
     private static final String DEFAULT_STATIC_FILE_PATH_PREFIX = "META-INF/openapi.";
     private static final String GENERATED_DOCUMENT_SOURCES_CONFIG_KEY = "generated.document-sources";
     private static final TypeName OPENAPI_DOCUMENT_SOURCE = TypeName.create(OpenApiDocumentSource.class);
+    // Document sources and managers may be registry singletons shared by multiple feature instances.
+    private static final ReentrantLock MODEL_LOAD_LOCK = new ReentrantLock();
     private static final List<String> DEFAULT_FILE_PATHS = SUPPORTED_FORMATS.keySet()
             .stream()
             .map(fileType -> DEFAULT_STATIC_FILE_PATH_PREFIX + fileType)
@@ -91,7 +93,6 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
     private final Config sourceConfig;
     private final OpenApiManager<?> manager;
     private final ConcurrentMap<String, LazyValue<Object>> modelsByListener;
-    private final ReentrantLock modelLoadLock;
     private final LazyValue<List<OpenApiDocumentSource>> documentSources;
     private final LazyValue<List<OpenApiVersion>> openApiVersions;
     private final AtomicBoolean initialized;
@@ -180,7 +181,6 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
         staticOpenApiDocuments = new ConcurrentHashMap<>();
         manager = config.manager().orElseGet(SimpleOpenApiManager::new);
         modelsByListener = new ConcurrentHashMap<>();
-        modelLoadLock = new ReentrantLock();
         initialized = new AtomicBoolean();
     }
 
@@ -312,11 +312,11 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
 
     private LazyValue<Object> model(String listener) {
         return LazyValue.create(() -> {
-            modelLoadLock.lock();
+            MODEL_LOAD_LOCK.lock();
             try {
                 return manager.load(documentContent(listener, documentSources()));
             } finally {
-                modelLoadLock.unlock();
+                MODEL_LOAD_LOCK.unlock();
             }
         });
     }
