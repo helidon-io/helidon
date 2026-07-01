@@ -32,7 +32,6 @@ import java.util.function.ToDoubleFunction;
 import io.helidon.common.HelidonServiceLoader;
 import io.helidon.common.LazyValue;
 import io.helidon.common.context.Contexts;
-import io.helidon.config.Config;
 import io.helidon.metrics.api.Clock;
 import io.helidon.metrics.api.Counter;
 import io.helidon.metrics.api.DistributionStatisticsConfig;
@@ -50,7 +49,6 @@ import io.helidon.metrics.api.Timer;
 import io.helidon.metrics.providers.micrometer.spi.SpanContextSupplierProvider;
 import io.helidon.metrics.spi.MeterRegistryLifeCycleListener;
 import io.helidon.metrics.spi.MetersProvider;
-import io.helidon.service.registry.Services;
 
 import io.micrometer.core.instrument.Metrics;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
@@ -89,6 +87,7 @@ class MicrometerMetricsFactory implements MetricsFactory {
                     .iterator()
                     .next());
     private final Consumer<MicrometerMetricsFactory> onClose;
+    private final MetricsConfig initialMetricsConfig;
 
     private volatile MMeterRegistry globalMeterRegistry;
     private MetricsConfig metricsConfig;
@@ -101,6 +100,7 @@ class MicrometerMetricsFactory implements MetricsFactory {
     private MicrometerMetricsFactory(MetricsConfig metricsConfig,
                                      Collection<MetersProvider> metersProviders,
                                      Consumer<MicrometerMetricsFactory> onClose) {
+        this.initialMetricsConfig = metricsConfig;
         this.metricsConfig = metricsConfig;
         this.metersProviders = metersProviders;
         this.onClose = onClose;
@@ -204,8 +204,7 @@ class MicrometerMetricsFactory implements MetricsFactory {
         return globalOperation(() ->
                 globalMeterRegistry != null
                         ? globalMeterRegistry
-                        : globalRegistry(MetricsConfig.create(Services.get(Config.class)
-                                                                     .get(MetricsConfig.METRICS_CONFIG_KEY))));
+                        : globalRegistry(initialMetricsConfig));
     }
 
     @Override
