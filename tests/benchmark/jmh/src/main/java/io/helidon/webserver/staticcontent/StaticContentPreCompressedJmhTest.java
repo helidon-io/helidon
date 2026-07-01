@@ -69,7 +69,7 @@ public class StaticContentPreCompressedJmhTest {
     private static final String RESOURCE = "resource.txt";
 
     private StaticContentHandler handler;
-    private StaticContentHandler.SidecarResolver sidecarResolver;
+    private SidecarCache.Resolver sidecarResolver;
     private CachedHandler identityHandler;
     private ServerRequest noAcceptEncodingRequest;
     private ServerRequest identityRequest;
