@@ -432,8 +432,8 @@ public final class OpenApiDocumentMapperSupport {
             default -> copyField(result, key, source);
             }
         });
-        if ("3.1".equals(rules.targetVersion()) && !result.containsKey("responses")) {
-            throw new IllegalStateException("OpenAPI 3.1 operation requires responses.");
+        if (rules.operationResponsesRequired() && !result.containsKey("responses")) {
+            throw new IllegalStateException("OpenAPI " + rules.targetVersion() + " operation requires responses.");
         }
         return result;
     }
@@ -523,10 +523,10 @@ public final class OpenApiDocumentMapperSupport {
             default -> copyField(result, key, source);
             }
         });
-        if ("3.1".equals(rules.targetVersion())) {
+        if (rules.responseDescriptionRequired()) {
             Object description = result.get("description");
             if (!(description instanceof String string) || string.isBlank()) {
-                throw new IllegalStateException("OpenAPI 3.1 response requires description.");
+                throw new IllegalStateException("OpenAPI " + rules.targetVersion() + " response requires description.");
             }
         }
         return result;

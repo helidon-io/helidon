@@ -36,6 +36,22 @@ interface OpenApi3xMapperRulesBlueprint {
     String targetVersion();
 
     /**
+     * Whether operations must define responses.
+     *
+     * @return whether operation responses are required
+     */
+    @Option.DefaultBoolean(false)
+    boolean operationResponsesRequired();
+
+    /**
+     * Whether responses must define a non-blank description.
+     *
+     * @return whether response descriptions are required
+     */
+    @Option.DefaultBoolean(false)
+    boolean responseDescriptionRequired();
+
+    /**
      * Document fields.
      *
      * @return document fields

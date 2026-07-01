@@ -188,6 +188,8 @@ final class OpenApi31DocumentMapper {
                                                                   "cookie");
     private static final OpenApi3xMapperRules MAPPER_RULES = OpenApi3xMapperRules.builder()
             .targetVersion("3.1")
+            .operationResponsesRequired(true)
+            .responseDescriptionRequired(true)
             .addDocumentFields(DOCUMENT_FIELDS)
             .addInfoFields(INFO_FIELDS)
             .addContactFields(CONTACT_FIELDS)
