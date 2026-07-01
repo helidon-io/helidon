@@ -430,6 +430,33 @@ class Http2ServerStream implements Runnable, Http2Stream {
                                   Runnable afterDataOffer) {
         boolean ignoringInboundDataSnapshot = ignoreInboundDataAfterReset;
         afterResetStateSnapshot.run();
+        if (!endOfStream) {
+            if (ignoringInboundDataSnapshot || ignoreInboundDataAfterReset) {
+                discardDataAfterReset(header.length());
+                return;
+            }
+            InboundDataQueue.OfferResult offerResult = inboundData.offer(header, data);
+            if (offerResult == InboundDataQueue.OfferResult.ACCEPTED) {
+                afterDataOffer.run();
+            }
+            restoreDiscardedConnectionCredit(header.length());
+            if (offerResult == InboundDataQueue.OfferResult.CLOSED) {
+                if (ignoreInboundDataAfterReset && !locallyResetStreamState().discardData(header.length())) {
+                    throw new Http2Exception(Http2ErrorCode.ENHANCE_YOUR_CALM,
+                                             "Too much data after stream reset.");
+                }
+                return;
+            }
+            if (offerResult == InboundDataQueue.OfferResult.BUDGET_EXHAUSTED) {
+                closeRejectedStream(Http2ErrorCode.ENHANCE_YOUR_CALM, true, false);
+                return;
+            }
+            if (!DATA_RECEIVABLE_STATES.contains(state)) {
+                abortInboundData();
+            }
+            return;
+        }
+
         boolean budgetExhausted = false;
         boolean discardLimitExceeded = false;
         resetCompletionLock.lock();
@@ -448,7 +475,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
                     afterDataOffer.run();
                     if (!DATA_RECEIVABLE_STATES.contains(state)) {
                         abortInboundData();
-                    } else if (endOfStream) {
+                    } else {
                         if (state == Http2StreamState.HALF_CLOSED_LOCAL) {
                             state = Http2StreamState.CLOSED;
                         } else {
@@ -862,14 +889,17 @@ class Http2ServerStream implements Runnable, Http2Stream {
 
     private void resetInvalidContentLength(int currentFrameLength, boolean endOfStream) {
         Http2RstStream rst = new Http2RstStream(Http2ErrorCode.PROTOCOL);
+        boolean sendReset = false;
         resetCompletionLock.lock();
         try {
-            LocallyResetStreamState resetState = locallyResetStreamState();
             ignoreInboundDataAfterReset = true;
-            resetStreamSent = true;
             state = Http2StreamState.CLOSED;
             writeState.updateAndGet(s -> s.checkAndMove(WriteState.END));
-            locallyResetStreamTracker.add(this.streamId, resetState);
+            sendReset = !resetStreamSent;
+            if (sendReset) {
+                resetStreamSent = true;
+                locallyResetStreamTracker.add(this.streamId, locallyResetStreamState());
+            }
             if (endOfStream) {
                 locallyResetStreamTracker.remoteComplete(this.streamId);
             }
@@ -880,11 +910,15 @@ class Http2ServerStream implements Runnable, Http2Stream {
             if (currentFrameLength > 0) {
                 discardDataAfterReset(currentFrameLength);
             }
-            writer.write(rst.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
-            connectionAttackVectorMetrics.madeYouResetCheck();
+            if (sendReset) {
+                writer.write(rst.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
+                connectionAttackVectorMetrics.madeYouResetCheck();
+            }
         } finally {
-            cancelSubProtocol(rst);
-            locallyResetStreamTracker.localComplete(this.streamId);
+            if (sendReset) {
+                cancelSubProtocol(rst);
+                locallyResetStreamTracker.localComplete(this.streamId);
+            }
             streams.remove(this.streamId);
             abortInboundData();
         }
@@ -972,7 +1006,10 @@ class Http2ServerStream implements Runnable, Http2Stream {
                 writeState.updateAndGet(s -> s.checkAndMove(WriteState.END));
                 boolean remoteAlreadyComplete = remoteEndOfStream || remoteAlreadyComplete();
                 streams.deactivate(this.streamId);
-                if (resetRequestBody && !remoteResetReceived && (forceReset || !remoteAlreadyComplete)) {
+                if (resetRequestBody
+                        && !remoteResetReceived
+                        && !resetStreamSent
+                        && (forceReset || !remoteAlreadyComplete)) {
                     sendReset = true;
                     resetStreamSent = true;
                     if (!remoteEndOfStream) {
@@ -991,9 +1028,9 @@ class Http2ServerStream implements Runnable, Http2Stream {
         } finally {
             if (sendReset) {
                 cancelSubProtocol(new Http2RstStream(resetCode));
+                locallyResetStreamTracker.localComplete(this.streamId);
             }
             this.state = Http2StreamState.CLOSED;
-            locallyResetStreamTracker.localComplete(this.streamId);
             streams.remove(this.streamId);
         }
     }

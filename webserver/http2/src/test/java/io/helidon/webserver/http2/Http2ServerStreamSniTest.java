@@ -726,6 +726,65 @@ class Http2ServerStreamSniTest {
     }
 
     @Test
+    void concurrentLocalFailuresSendSingleReset() throws InterruptedException {
+        Http2ConnectionStreams streams = new Http2ConnectionStreams();
+        RecordingStreamWriter writer = new RecordingStreamWriter();
+        CountDownLatch initEntered = new CountDownLatch(1);
+        CountDownLatch initRelease = new CountDownLatch(1);
+        CountDownLatch workerExited = new CountDownLatch(1);
+        Http2SubProtocolSelector.SubProtocolHandler handler = mock(Http2SubProtocolSelector.SubProtocolHandler.class);
+        doAnswer(_ -> {
+            initEntered.countDown();
+            if (!initRelease.await(5, TimeUnit.SECONDS)) {
+                throw new IllegalStateException("Timed out waiting for local reset");
+            }
+            throw new Http2Exception(Http2ErrorCode.PROTOCOL, "Concurrent local failure");
+        }).when(handler).init();
+        doAnswer(_ -> {
+            initRelease.countDown();
+            return null;
+        }).when(handler).rstStream(any(Http2RstStream.class));
+        when(handler.streamState()).thenReturn(Http2StreamState.OPEN);
+        Http2SubProtocolSelector selector = (_, _, _, _, _, _, _, _, _, _) -> new SubProtocolResult(true, handler);
+        var budget = new Http2ServerStream.InboundDataBudget(1, 1);
+        Http2ServerStream stream = stream(streams,
+                                          writer,
+                                          new ArrayList<>(),
+                                          sniContext(),
+                                          List.of(selector),
+                                          budget,
+                                          _ -> { });
+        streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
+        stream.prologue(PROLOGUE);
+        stream.headers(headersWithAuthority("api.example.com"), false);
+        Thread worker = Thread.ofVirtual().start(() -> {
+            try {
+                stream.run();
+            } finally {
+                workerExited.countDown();
+            }
+        });
+        assertThat("subprotocol init entered", initEntered.await(5, TimeUnit.SECONDS), is(true));
+
+        Http2FrameHeader dataHeader = Http2FrameHeader.create(1,
+                                                               Http2FrameTypes.DATA,
+                                                               Http2Flag.DataFlags.create(0),
+                                                               STREAM_ID);
+        stream.flowControl().inbound().decrementWindowSize(1);
+        stream.data(dataHeader, BufferData.create(new byte[1]), false);
+        stream.flowControl().inbound().decrementWindowSize(1);
+        stream.data(dataHeader, BufferData.create(new byte[1]), false);
+
+        assertThat("worker exited", workerExited.await(5, TimeUnit.SECONDS), is(true));
+        worker.join();
+        assertThat(writer.rstStreamCodes, is(List.of(Http2ErrorCode.ENHANCE_YOUR_CALM)));
+        verify(handler, times(1)).rstStream(any(Http2RstStream.class));
+        assertThat(stream.streamState(), is(Http2StreamState.CLOSED));
+        assertThat(budget.availableFrames(), is(1));
+        assertThat(budget.availableBytes(), is(1L));
+    }
+
+    @Test
     void connectionAbortPreventsQueuedHandlerFromStarting() {
         Http2ConnectionStreams streams = new Http2ConnectionStreams();
         Http2SubProtocolSelector.SubProtocolHandler handler = mock(Http2SubProtocolSelector.SubProtocolHandler.class);
