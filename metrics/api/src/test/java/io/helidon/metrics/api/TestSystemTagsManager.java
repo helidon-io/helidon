@@ -33,6 +33,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.collection.IsMapContaining.hasEntry;
 import static org.hamcrest.collection.IsMapContaining.hasKey;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TestSystemTagsManager {
 
@@ -161,6 +162,12 @@ class TestSystemTagsManager {
         assertThat("Global tags from non-global manager",
                    fullTags, allOf(hasEntry(GLOBAL_TAG_1, GLOBAL_VALUE_1),
                                    hasEntry(GLOBAL_TAG_2, GLOBAL_VALUE_2)));
+    }
+
+    @Test
+    @SuppressWarnings("removal")
+    void legacyInstanceRejectsNullConfig() {
+        assertThrows(NullPointerException.class, () -> SystemTagsManager.instance(null));
     }
 
     @Test

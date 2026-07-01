@@ -17,6 +17,7 @@ package io.helidon.metrics.api;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.function.Consumer;
@@ -57,13 +58,14 @@ public interface SystemTagsManager {
      * This method is now a no-op, it simply returns the current {@link io.helidon.service.registry.ServiceRegistry}
      * backed instance.
      *
-     * @param metricsConfig ignored
+     * @param metricsConfig ignored; must not be {@code null}
      * @return tags manager from the service registry
      * @deprecated use
      * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(SystemTagsManager.class)} instead
      */
     @Deprecated(since = "27.0.0", forRemoval = true)
     static SystemTagsManager instance(MetricsConfig metricsConfig) {
+        Objects.requireNonNull(metricsConfig);
         return Services.get(SystemTagsManager.class);
     }
 
