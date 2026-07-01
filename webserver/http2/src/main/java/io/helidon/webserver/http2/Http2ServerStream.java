@@ -515,90 +515,8 @@ class Http2ServerStream implements Runnable, Http2Stream {
             }
             // no sense in throwing an exception, as this is invoked from an executor service directly
         } catch (RequestException e) {
-            if (state == Http2StreamState.CLOSED || writeState.get() == WriteState.END) {
+            if (!handleRequestException(e)) {
                 return;
-            }
-            // gather error handling properties
-            ErrorHandling errorHandling = ctx.listenerContext()
-                    .config()
-                    .errorHandling();
-
-            // log message in DEBUG mode
-            if (LOGGER.isLoggable(DEBUG) && (e.safeMessage() || errorHandling.logAllMessages())) {
-                LOGGER.log(DEBUG, e);
-            }
-
-            // create message to return based on settings
-            String message = null;
-            if (errorHandling.includeEntity()) {
-                message = e.safeMessage() ? e.getMessage() : "Bad request, see server log for more information";
-            }
-
-            DirectHandler handler = ctx.listenerContext()
-                    .directHandlers()
-                    .handler(e.eventType());
-            DirectHandler.TransportResponse response = handler.handle(e.request(),
-                                                                      e.eventType(),
-                                                                      e.status(),
-                                                                      e.responseHeaders(),
-                                                                      message);
-
-            ServerResponseHeaders headers = response.headers();
-            byte[] entity = response.entity().orElse(BufferData.EMPTY_BYTES);
-            if (entity.length != 0) {
-                headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, String.valueOf(entity.length)));
-            }
-            Http2Headers http2Headers = Http2Headers.create(headers)
-                    .status(e.status());
-            boolean resetRequestBody = prepareRejectedStream(false);
-            AtomicBoolean rejectedStreamCompleted = new AtomicBoolean();
-            Runnable completeRejectedStream = () -> {
-                if (rejectedStreamCompleted.compareAndSet(false, true)) {
-                    completeRejectedStream(Http2ErrorCode.CANCEL, resetRequestBody, false, false);
-                }
-            };
-            try {
-                if (entity.length == 0) {
-                    Http2Flag.HeaderFlags flags =
-                            Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM);
-                    if (connectionWriter == null) {
-                        writer.writeHeaders(http2Headers, streamId, flags, flowControl.outbound());
-                        completeRejectedStream.run();
-                    } else {
-                        connectionWriter.writeHeaders(http2Headers,
-                                                      streamId,
-                                                      flags,
-                                                      flowControl.outbound(),
-                                                      completeRejectedStream);
-                    }
-                } else {
-                    Http2FrameHeader dataHeader = Http2FrameHeader.create(entity.length,
-                                                                          Http2FrameTypes.DATA,
-                                                                          Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM),
-                                                                          streamId);
-                    if (connectionWriter == null) {
-                        writer.writeHeaders(http2Headers,
-                                            streamId,
-                                            Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
-                                            new Http2FrameData(dataHeader, BufferData.create(message)),
-                                            flowControl.outbound());
-                        completeRejectedStream.run();
-                    } else {
-                        connectionWriter.writeHeaders(http2Headers,
-                                                      streamId,
-                                                      Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
-                                                      new Http2FrameData(dataHeader, BufferData.create(message)),
-                                                      flowControl.outbound(),
-                                                      completeRejectedStream);
-                    }
-                }
-            } catch (RuntimeException writeFailure) {
-                try {
-                    completeRejectedStream.run();
-                } catch (RuntimeException cleanupFailure) {
-                    writeFailure.addSuppressed(cleanupFailure);
-                }
-                throw writeFailure;
             }
             completed = true;
         } catch (Http2Exception e) {
@@ -654,6 +572,93 @@ class Http2ServerStream implements Runnable, Http2Stream {
                 }
             }
         }
+    }
+
+    private boolean handleRequestException(RequestException exception) {
+        if (state == Http2StreamState.CLOSED || writeState.get() == WriteState.END) {
+            return false;
+        }
+        ErrorHandling errorHandling = ctx.listenerContext()
+                .config()
+                .errorHandling();
+        if (LOGGER.isLoggable(DEBUG) && (exception.safeMessage() || errorHandling.logAllMessages())) {
+            LOGGER.log(DEBUG, exception);
+        }
+
+        String message = null;
+        if (errorHandling.includeEntity()) {
+            message = exception.safeMessage()
+                    ? exception.getMessage()
+                    : "Bad request, see server log for more information";
+        }
+
+        DirectHandler handler = ctx.listenerContext()
+                .directHandlers()
+                .handler(exception.eventType());
+        DirectHandler.TransportResponse response = handler.handle(exception.request(),
+                                                                  exception.eventType(),
+                                                                  exception.status(),
+                                                                  exception.responseHeaders(),
+                                                                  message);
+
+        ServerResponseHeaders headers = response.headers();
+        byte[] entity = response.entity().orElse(BufferData.EMPTY_BYTES);
+        if (entity.length != 0) {
+            headers.set(HeaderValues.create(HeaderNames.CONTENT_LENGTH, String.valueOf(entity.length)));
+        }
+        Http2Headers http2Headers = Http2Headers.create(headers)
+                .status(exception.status());
+        boolean resetRequestBody = prepareRejectedStream(false);
+        AtomicBoolean rejectedStreamCompleted = new AtomicBoolean();
+        Runnable completeRejectedStream = () -> {
+            if (rejectedStreamCompleted.compareAndSet(false, true)) {
+                completeRejectedStream(Http2ErrorCode.CANCEL, resetRequestBody, false, false);
+            }
+        };
+        try {
+            if (entity.length == 0) {
+                Http2Flag.HeaderFlags flags =
+                        Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS | Http2Flag.END_OF_STREAM);
+                if (connectionWriter == null) {
+                    writer.writeHeaders(http2Headers, streamId, flags, flowControl.outbound());
+                    completeRejectedStream.run();
+                } else {
+                    connectionWriter.writeHeaders(http2Headers,
+                                                  streamId,
+                                                  flags,
+                                                  flowControl.outbound(),
+                                                  completeRejectedStream);
+                }
+            } else {
+                Http2FrameHeader dataHeader = Http2FrameHeader.create(entity.length,
+                                                                      Http2FrameTypes.DATA,
+                                                                      Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM),
+                                                                      streamId);
+                if (connectionWriter == null) {
+                    writer.writeHeaders(http2Headers,
+                                        streamId,
+                                        Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                        new Http2FrameData(dataHeader, BufferData.create(message)),
+                                        flowControl.outbound());
+                    completeRejectedStream.run();
+                } else {
+                    connectionWriter.writeHeaders(http2Headers,
+                                                  streamId,
+                                                  Http2Flag.HeaderFlags.create(Http2Flag.END_OF_HEADERS),
+                                                  new Http2FrameData(dataHeader, BufferData.create(message)),
+                                                  flowControl.outbound(),
+                                                  completeRejectedStream);
+                }
+            }
+        } catch (RuntimeException writeFailure) {
+            try {
+                completeRejectedStream.run();
+            } catch (RuntimeException cleanupFailure) {
+                writeFailure.addSuppressed(cleanupFailure);
+            }
+            throw writeFailure;
+        }
+        return true;
     }
 
     void closeFromRemote() {
