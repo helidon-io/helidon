@@ -51,6 +51,7 @@ class ConnectionStreamTest {
 
     private static final int SETTINGS_MAX_CONCURRENT_STREAMS = 50;
     private static final int STREAM_ID = 1;
+    private static final Http2ServerStream.LocallyResetStreamTracker NO_OP_RESET_TRACKER = new NoOpResetTracker();
 
     @Test
     void concurrentModification() throws InterruptedException {
@@ -210,7 +211,7 @@ class ConnectionStreamTest {
 
         return new Http2ServerStream(ctx,
                                      streams,
-                                     streamId -> { },
+                                     NO_OP_RESET_TRACKER,
                                      HttpRouting.empty(),
                                      config,
                                      List.of(),
@@ -226,6 +227,20 @@ class ConnectionStreamTest {
         WritableHeaders<?> headers = WritableHeaders.create();
         headers.add(HeaderValues.createCached(Http2Headers.STATUS_NAME, 200));
         return Http2Headers.create(headers);
+    }
+
+    private static final class NoOpResetTracker implements Http2ServerStream.LocallyResetStreamTracker {
+        @Override
+        public void add(int streamId, Http2ServerStream.LocallyResetStreamState streamState) {
+        }
+
+        @Override
+        public void localComplete(int streamId) {
+        }
+
+        @Override
+        public void remoteComplete(int streamId) {
+        }
     }
 
     private static final class RecordingConnectionWriter extends Http2ConnectionWriter {

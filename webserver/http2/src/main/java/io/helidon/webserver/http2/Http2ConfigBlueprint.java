@@ -126,7 +126,8 @@ interface Http2ConfigBlueprint extends ProtocolConfig, HttpConfig {
 
     /**
      * Maximum number of rapid client resets within the check period and server-side resets over the connection lifetime
-     * before GOAWAY is sent, or {@code -1} to disable both checks.
+     * before GOAWAY is sent, or {@code -1} to disable both reset-count checks; fixed internal bounds still apply to
+     * frames received after the server has locally reset a stream.
      * Rapid client resets are stream RST frames sent by the client before any data have been sent by the server.
      * Default value is {@code 50}.
      *
