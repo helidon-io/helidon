@@ -22,6 +22,7 @@ import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.UnixDomainSocketAddress;
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
@@ -101,16 +102,20 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         Http1ConnectionListener recvListener = http1Client.recvListener();
         WebClientServiceResponse.Builder builder = WebClientServiceResponse.builder();
         AtomicReference<WebClientServiceResponse> response = new AtomicReference<>();
+        boolean successfulConnect = isSuccessfulConnect(serviceRequest.method(), responseStatus);
 
-        if (mayHaveEntity(serviceRequest.method(), responseStatus, responseHeaders)) {
+        if (mayExposeEntity(serviceRequest.method(), responseStatus, responseHeaders)) {
             // this may be an entity (if content length is set to zero, we know there is no entity)
-            builder.inputStream(inputStream(clientConfig,
-                                            recvListener,
-                                            connection.helidonSocket(),
-                                            response,
-                                            responseHeaders,
-                                            reader,
-                                            whenComplete));
+            InputStream inputStream = successfulConnect
+                    ? new EverythingInputStream(connection.helidonSocket(), reader, whenComplete, response, recvListener)
+                    : inputStream(clientConfig,
+                                  recvListener,
+                                  connection.helidonSocket(),
+                                  response,
+                                  responseHeaders,
+                                  reader,
+                                  whenComplete);
+            builder.inputStream(inputStream);
         }
 
         WebClientServiceResponse serviceResponse = builder
@@ -312,18 +317,43 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
         return recvListener;
     }
 
-    private static boolean mayHaveEntity(Method requestMethod, Status responseStatus, ClientResponseHeaders responseHeaders) {
+    static boolean statusAllowsEntity(Status responseStatus) {
+        int statusCode = responseStatus.code();
+        return responseStatus.family() != Status.Family.INFORMATIONAL
+                && statusCode != Status.NO_CONTENT_204.code()
+                && statusCode != Status.RESET_CONTENT_205.code()
+                && statusCode != Status.NOT_MODIFIED_304.code();
+    }
+
+    static boolean isSuccessfulConnect(Method requestMethod, Status responseStatus) {
+        return requestMethod == Method.CONNECT && responseStatus.family() == Status.Family.SUCCESSFUL;
+    }
+
+    static boolean isChunkedFinalTransferCoding(Headers headers) {
+        if (!headers.contains(HeaderNames.TRANSFER_ENCODING)) {
+            return false;
+        }
+        List<String> values = headers.get(HeaderNames.TRANSFER_ENCODING).allValues();
+        String lastValue = values.get(values.size() - 1);
+        int lastSeparator = lastValue.lastIndexOf(',');
+        String finalCoding = lastValue.substring(lastSeparator + 1).trim();
+        return HeaderValues.TRANSFER_ENCODING_CHUNKED.get().equalsIgnoreCase(finalCoding);
+    }
+
+    private static boolean mayExposeEntity(Method requestMethod, Status responseStatus, ClientResponseHeaders responseHeaders) {
+        if (isSuccessfulConnect(requestMethod, responseStatus)) {
+            return true;
+        }
         if (requestMethod == Method.HEAD) {
             return false;
         }
-        if (responseHeaders.contains(HeaderValues.CONTENT_LENGTH_ZERO)) {
+        if (!statusAllowsEntity(responseStatus)) {
             return false;
         }
-        int statusCode = responseStatus.code();
-        if (responseStatus.family() == Status.Family.INFORMATIONAL
-                || statusCode == Status.NO_CONTENT_204.code()
-                || statusCode == Status.RESET_CONTENT_205.code()
-                || statusCode == Status.NOT_MODIFIED_304.code()) {
+        if (responseHeaders.contains(HeaderNames.TRANSFER_ENCODING)) {
+            return true;
+        }
+        if (responseHeaders.contains(HeaderValues.CONTENT_LENGTH_ZERO)) {
             return false;
         }
         if ((
@@ -359,7 +389,10 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
             decoder = ContentDecoder.NO_OP;
         }
         InputStream inputStream;
-        if (responseHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
+        if (isChunkedFinalTransferCoding(responseHeaders)) {
+            inputStream = new ChunkedInputStream(helidonSocket, reader, whenComplete, response, recvListener);
+        } else if (!responseHeaders.contains(HeaderNames.TRANSFER_ENCODING)
+                && responseHeaders.contains(HeaderNames.CONTENT_LENGTH)) {
             long length = responseHeaders.contentLength().getAsLong();
             inputStream = new ContentLengthInputStream(helidonSocket,
                                                        reader,
@@ -367,13 +400,31 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                                                        response,
                                                        length,
                                                        recvListener);
-        } else if (responseHeaders.containsToken(HeaderValues.TRANSFER_ENCODING_CHUNKED)) {
-            inputStream = new ChunkedInputStream(helidonSocket, reader, whenComplete, response, recvListener);
         } else {
             // we assume the rest of the connection is entity (valid for HTTP/1.0, HTTP CONNECT method etc.
             inputStream = new EverythingInputStream(helidonSocket, reader, whenComplete, response, recvListener);
         }
         return decoder.apply(inputStream);
+    }
+
+    static int readChunkSize(DataReader reader) {
+        int endOfChunkSize = reader.findNewLine(256);
+        if (endOfChunkSize == 256) {
+            throw new IllegalStateException("Cannot read chunked entity, end of line not found within 256 bytes");
+        }
+        String chunkSizeLine = reader.readAsciiString(endOfChunkSize);
+        reader.skip(2); // CRLF
+        return parseChunkSizeLine(chunkSizeLine);
+    }
+
+    static int parseChunkSizeLine(String chunkSizeLine) {
+        int extension = chunkSizeLine.indexOf(';');
+        String hex = (extension == -1 ? chunkSizeLine : chunkSizeLine.substring(0, extension)).strip();
+        try {
+            return ParserHelper.parseNonNegative(hex, 16, INVALID_SIZE_EXCEPTION_SUPPLIER);
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Chunk size is not a number");
+        }
     }
 
     private ClientConnection obtainConnection(WebClientServiceRequest request) {
@@ -616,18 +667,12 @@ abstract class Http1CallChainBase implements WebClientService.Chain {
                 return;
             }
             // chunked encoding - I will just read each chunk fully into memory, as that is how the protocol is designed
-            int endOfChunkSize = reader.findNewLine(256);
-            if (endOfChunkSize == 256) {
-                entityProcessedRunnable.run();
-                throw new IllegalStateException("Cannot read chunked entity, end of line not found within 256 bytes");
-            }
-            String hex = reader.readAsciiString(endOfChunkSize);
-            reader.skip(2); // CRLF
             int length;
             try {
-                length = ParserHelper.parseNonNegative(hex, 16, INVALID_SIZE_EXCEPTION_SUPPLIER);
-            } catch (NumberFormatException e) {
-                throw new IllegalArgumentException("Chunk size is not a number");
+                length = readChunkSize(reader);
+            } catch (IllegalStateException e) {
+                entityProcessedRunnable.run();
+                throw e;
             }
             if (length == 0) {
                 if (reader.startsWithNewLine()) {

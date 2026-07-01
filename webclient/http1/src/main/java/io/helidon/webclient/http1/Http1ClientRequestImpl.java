@@ -299,6 +299,7 @@ class Http1ClientRequestImpl extends ClientRequestBase<Http1ClientRequest, Http1
         return new Http1ClientResponseImpl(clientConfig(),
                                            http1Client().protocolConfig(),
                                            serviceResponse.status(),
+                                           serviceResponse.serviceRequest().method(),
                                            serviceResponse.serviceRequest().headers(),
                                            serviceResponse.headers(),
                                            callChain.connection(),
