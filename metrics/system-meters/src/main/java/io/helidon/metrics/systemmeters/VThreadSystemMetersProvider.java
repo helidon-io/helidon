@@ -83,6 +83,7 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
     private boolean shutdownHandlerRegistrationRequired;
     private boolean shutdownHandlerRegistrationApplied;
     private boolean shutdownHandlerUpdateInProgress;
+    private boolean shutdownHandlerUpdatePending;
     private boolean resumableRegistered;
     private boolean closed;
     private long lifecycleGeneration;
@@ -222,8 +223,8 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
             metricsConfig = null;
             systemTagsManager = null;
             resumableRegistered = false;
-            updateShutdownHandler = shutdownHandlerRegistrationRequired
-                    != shutdownHandlerRegistrationApplied;
+            updateShutdownHandler = shutdownHandlerUpdateInProgress
+                    || shutdownHandlerRegistrationRequired != shutdownHandlerRegistrationApplied;
         } finally {
             lifecycleLock.unlock();
         }
@@ -356,6 +357,7 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
             try {
                 if (shutdownHandlerUpdateInProgress) {
                     if (!awaitUpdate) {
+                        shutdownHandlerUpdatePending = true;
                         return;
                     }
                     try {
@@ -370,6 +372,7 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
                     return;
                 }
                 shutdownHandlerUpdateInProgress = true;
+                shutdownHandlerUpdatePending = false;
             } finally {
                 lifecycleLock.unlock();
             }
@@ -381,6 +384,7 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
                     try {
                         registrationRequired = shutdownHandlerRegistrationRequired;
                         if (registrationRequired == shutdownHandlerRegistrationApplied) {
+                            shutdownHandlerUpdatePending = false;
                             shutdownHandlerUpdateInProgress = false;
                             shutdownHandlerUpdated.signalAll();
                             return;
@@ -389,10 +393,25 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
                         lifecycleLock.unlock();
                     }
 
-                    if (registrationRequired) {
-                        registerShutdownHandler();
-                    } else {
-                        unregisterShutdownHandler();
+                    try {
+                        if (registrationRequired) {
+                            registerShutdownHandler();
+                        } else {
+                            unregisterShutdownHandler();
+                        }
+                    } catch (RuntimeException | Error e) {
+                        boolean retry;
+                        lifecycleLock.lock();
+                        try {
+                            retry = shutdownHandlerUpdatePending;
+                            shutdownHandlerUpdatePending = false;
+                        } finally {
+                            lifecycleLock.unlock();
+                        }
+                        if (retry) {
+                            continue;
+                        }
+                        throw e;
                     }
 
                     lifecycleLock.lock();
@@ -405,6 +424,7 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
             } catch (RuntimeException | Error e) {
                 lifecycleLock.lock();
                 try {
+                    shutdownHandlerUpdatePending = false;
                     shutdownHandlerUpdateInProgress = false;
                     shutdownHandlerUpdated.signalAll();
                 } finally {
