@@ -255,26 +255,6 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
         }
     }
 
-    // For testing
-    long pinnedVirtualThreadsThresholdMillis() {
-        return pinnedVirtualThreadsThresholdMillis;
-    }
-
-    // Visible for testing.
-    boolean hasQueuedLifecycleOperation() {
-        return lifecycleLock.hasQueuedThreads();
-    }
-
-    // Visible for testing.
-    boolean recordingStreamActive() {
-        lifecycleLock.lock();
-        try {
-            return recordingStream != null;
-        } finally {
-            lifecycleLock.unlock();
-        }
-    }
-
     // Visible for testing.
     Resumable resumable() {
         return new WeakResumable(this, resumableGeneration);

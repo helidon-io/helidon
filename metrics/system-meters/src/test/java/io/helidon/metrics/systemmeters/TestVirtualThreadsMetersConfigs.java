@@ -15,12 +15,15 @@
  */
 package io.helidon.metrics.systemmeters;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import io.helidon.common.resumable.Resumable;
 import io.helidon.config.Config;
@@ -32,6 +35,9 @@ import io.helidon.metrics.api.Timer;
 import io.helidon.service.registry.Services;
 import io.helidon.testing.junit5.Testing;
 
+import jdk.jfr.FlightRecorder;
+import jdk.jfr.Recording;
+import jdk.jfr.RecordingState;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
@@ -47,6 +53,7 @@ import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -69,21 +76,24 @@ class TestVirtualThreadsMetersConfigs {
         MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
         metricsFactory.globalRegistry(MetricsConfig.create(config));
         VThreadSystemMetersProvider provider = new VThreadSystemMetersProvider();
-        var meterBuilders = provider.meterBuilders(metricsFactory);
+        try {
+            var meterBuilders = provider.meterBuilders(metricsFactory);
 
-        assertThat("Default meter builders",
-                   meterBuilders,
-                   containsInAnyOrder(allOf(withName(equalTo(METER_NAME_PREFIX + PINNED)),
-                                            instanceOf(Gauge.Builder.class)),
-                                      allOf(withName(equalTo(METER_NAME_PREFIX + SUBMIT_FAILURES)),
-                                            instanceOf(Gauge.Builder.class)),
-                                      allOf(withName(equalTo(METER_NAME_PREFIX + RECENT_PINNED)),
-                                            instanceOf(Timer.Builder.class)),
-                                      allOf(withName(equalTo(METER_NAME_PREFIX + COUNT)),
-                                            instanceOf(Gauge.Builder.class)),
-                                      allOf(withName(equalTo(METER_NAME_PREFIX + STARTS)),
-                                            instanceOf(Gauge.Builder.class))));
-
+            assertThat("Default meter builders",
+                       meterBuilders,
+                       containsInAnyOrder(allOf(withName(equalTo(METER_NAME_PREFIX + PINNED)),
+                                                instanceOf(Gauge.Builder.class)),
+                                          allOf(withName(equalTo(METER_NAME_PREFIX + SUBMIT_FAILURES)),
+                                                instanceOf(Gauge.Builder.class)),
+                                          allOf(withName(equalTo(METER_NAME_PREFIX + RECENT_PINNED)),
+                                                instanceOf(Timer.Builder.class)),
+                                          allOf(withName(equalTo(METER_NAME_PREFIX + COUNT)),
+                                                instanceOf(Gauge.Builder.class)),
+                                          allOf(withName(equalTo(METER_NAME_PREFIX + STARTS)),
+                                                instanceOf(Gauge.Builder.class))));
+        } finally {
+            provider.close();
+        }
     }
 
     @Test
@@ -92,11 +102,18 @@ class TestVirtualThreadsMetersConfigs {
                                                                 "virtual-threads.pinned.threshold", "PT0.040S")));
         MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
         metricsFactory.globalRegistry(MetricsConfig.create(config));
+        RecordingTracker recordingTracker = new RecordingTracker();
         VThreadSystemMetersProvider provider = new VThreadSystemMetersProvider();
-        provider.meterBuilders(metricsFactory);
+        try {
+            provider.meterBuilders(metricsFactory);
 
-        assertThat("Pinned thread threshold", provider.pinnedVirtualThreadsThresholdMillis(), equalTo(40L));
-
+            Recording recording = recordingTracker.awaitNewRecording();
+            assertThat("Pinned thread threshold",
+                       recording.getSettings(),
+                       hasEntry("jdk.VirtualThreadPinned#threshold", "40 ms"));
+        } finally {
+            provider.close();
+        }
     }
 
     @Test
@@ -106,9 +123,13 @@ class TestVirtualThreadsMetersConfigs {
         MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
         metricsFactory.globalRegistry(MetricsConfig.create(config));
         VThreadSystemMetersProvider provider = new VThreadSystemMetersProvider();
-        provider.meterBuilders(metricsFactory);
+        try {
+            provider.meterBuilders(metricsFactory);
 
-        provider.findPinned();
+            provider.findPinned();
+        } finally {
+            provider.close();
+        }
     }
 
     @Test
@@ -116,14 +137,21 @@ class TestVirtualThreadsMetersConfigs {
         Config config = Config.just(ConfigSources.create(Map.of("virtual-threads.enabled", "true")));
         MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
         metricsFactory.globalRegistry(MetricsConfig.create(config));
+        RecordingTracker recordingTracker = new RecordingTracker();
         VThreadSystemMetersProvider provider = new VThreadSystemMetersProvider();
-        provider.meterBuilders(metricsFactory);
-        Resumable resumable = provider.resumable();
+        try {
+            provider.meterBuilders(metricsFactory);
+            Recording recording = recordingTracker.awaitNewRecording();
+            Resumable resumable = provider.resumable();
 
-        provider.close();
-        resumable.resume();
+            provider.close();
+            assertThat("Recording after close", recording.getState(), is(RecordingState.CLOSED));
 
-        assertThat("Recording stream after stale resume", provider.recordingStreamActive(), is(false));
+            resumable.resume();
+            recordingTracker.assertNoNewRecording("Recording after stale resume");
+        } finally {
+            provider.close();
+        }
     }
 
     @Test
@@ -132,8 +160,10 @@ class TestVirtualThreadsMetersConfigs {
         Config config = Config.just(ConfigSources.create(Map.of("virtual-threads.enabled", "true")));
         MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
         metricsFactory.globalRegistry(MetricsConfig.create(config));
+        RecordingTracker recordingTracker = new RecordingTracker();
         BlockingStartProvider provider = new BlockingStartProvider();
         provider.meterBuilders(metricsFactory);
+        recordingTracker.awaitNewRecording();
         provider.blockNextStart = true;
 
         try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
@@ -143,17 +173,18 @@ class TestVirtualThreadsMetersConfigs {
                            provider.startEntered.await(5, TimeUnit.SECONDS),
                            is(true));
 
-                Future<?> close = executor.submit(provider::close);
-                long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
-                while (!provider.hasQueuedLifecycleOperation() && System.nanoTime() < deadline) {
-                    Thread.onSpinWait();
-                }
-                assertThat("Close queued behind resume", provider.hasQueuedLifecycleOperation(), is(true));
+                CountDownLatch closeStarted = new CountDownLatch(1);
+                Future<?> close = executor.submit(() -> {
+                    closeStarted.countDown();
+                    provider.close();
+                });
+                assertThat("Close invocation started", closeStarted.await(5, TimeUnit.SECONDS), is(true));
+                assertThrows(TimeoutException.class, () -> close.get(100, TimeUnit.MILLISECONDS));
 
                 provider.continueStart.countDown();
                 resume.get(5, TimeUnit.SECONDS);
                 close.get(5, TimeUnit.SECONDS);
-                assertThat("Recording stream after close", provider.recordingStreamActive(), is(false));
+                recordingTracker.assertNoNewRecording("Recording after concurrent close");
             } finally {
                 provider.continueStart.countDown();
             }
@@ -168,6 +199,7 @@ class TestVirtualThreadsMetersConfigs {
         Config config = Config.just(ConfigSources.create(Map.of("virtual-threads.enabled", "true")));
         MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
         metricsFactory.globalRegistry(MetricsConfig.create(config));
+        RecordingTracker recordingTracker = new RecordingTracker();
         BlockingShutdownHandlerProvider provider = new BlockingShutdownHandlerProvider();
         provider.failNextRemoval = true;
 
@@ -184,7 +216,7 @@ class TestVirtualThreadsMetersConfigs {
                 provider.continueRegistration.countDown();
                 meterBuilders.get(5, TimeUnit.SECONDS);
                 assertThat("Compensating handler removal attempts", provider.removalAttempts, is(2));
-                assertThat("Recording stream after concurrent close", provider.recordingStreamActive(), is(false));
+                recordingTracker.assertNoNewRecording("Recording after concurrent close");
             } finally {
                 provider.continueRegistration.countDown();
             }
@@ -198,16 +230,18 @@ class TestVirtualThreadsMetersConfigs {
         Config config = Config.just(ConfigSources.create(Map.of("virtual-threads.enabled", "true")));
         MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
         metricsFactory.globalRegistry(MetricsConfig.create(config));
+        RecordingTracker recordingTracker = new RecordingTracker();
         FailingShutdownHandlerProvider provider = new FailingShutdownHandlerProvider();
         provider.failNextRegistration = true;
 
         try {
             assertThrows(IllegalStateException.class, () -> provider.meterBuilders(metricsFactory));
-            assertThat("Recording stream after registration failure", provider.recordingStreamActive(), is(false));
+            recordingTracker.assertNoNewRecording("Recording after registration failure");
             assertThat("Registration attempts after failure", provider.registrationAttempts, is(1));
 
             provider.meterBuilders(metricsFactory);
-            assertThat("Recording stream after registration retry", provider.recordingStreamActive(), is(true));
+            Recording recording = recordingTracker.awaitNewRecording();
+            assertThat("Recording after registration retry", recording.getState(), is(RecordingState.RUNNING));
             assertThat("Registration attempts after retry", provider.registrationAttempts, is(2));
         } finally {
             provider.failNextRegistration = false;
@@ -221,14 +255,16 @@ class TestVirtualThreadsMetersConfigs {
         Config config = Config.just(ConfigSources.create(Map.of("virtual-threads.enabled", "true")));
         MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
         metricsFactory.globalRegistry(MetricsConfig.create(config));
+        RecordingTracker recordingTracker = new RecordingTracker();
         FailingShutdownHandlerProvider provider = new FailingShutdownHandlerProvider();
 
         try {
             provider.meterBuilders(metricsFactory);
+            Recording recording = recordingTracker.awaitNewRecording();
             provider.failNextRemoval = true;
 
             assertThrows(IllegalStateException.class, provider::close);
-            assertThat("Recording stream after removal failure", provider.recordingStreamActive(), is(false));
+            assertThat("Recording after removal failure", recording.getState(), is(RecordingState.CLOSED));
             assertThat("Removal attempts after failure", provider.removalAttempts, is(1));
 
             provider.close();
@@ -237,6 +273,43 @@ class TestVirtualThreadsMetersConfigs {
             provider.failNextRegistration = false;
             provider.failNextRemoval = false;
             provider.close();
+        }
+    }
+
+    private static final class RecordingTracker {
+        private final Set<Long> initialRecordingIds = FlightRecorder.getFlightRecorder()
+                .getRecordings()
+                .stream()
+                .map(Recording::getId)
+                .collect(java.util.stream.Collectors.toSet());
+
+        private Recording awaitNewRecording() {
+            long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+            List<Recording> recordings = newRecordings();
+            while (recordings.isEmpty() && System.nanoTime() < deadline) {
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("Interrupted while awaiting JFR recording", e);
+                }
+                recordings = newRecordings();
+            }
+            assertThat("Number of new JFR recordings", recordings.size(), is(1));
+            return recordings.getFirst();
+        }
+
+        private void assertNoNewRecording(String reason) {
+            assertThat(reason, newRecordings(), empty());
+        }
+
+        private List<Recording> newRecordings() {
+            return FlightRecorder.getFlightRecorder()
+                    .getRecordings()
+                    .stream()
+                    .filter(recording -> !initialRecordingIds.contains(recording.getId()))
+                    .filter(recording -> recording.getSettings().containsKey("jdk.VirtualThreadPinned#enabled"))
+                    .toList();
         }
     }
 
