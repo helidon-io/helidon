@@ -238,7 +238,7 @@ final class OpenApi31DocumentMapper {
     }
 
     private static void validateOpenApi31(Object version) {
-        if (!(version instanceof String string) || (!string.equals("3.1") && !string.startsWith("3.1."))) {
+        if (!(version instanceof String string) || !OpenApi31Version.isSupportedVersion(string)) {
             throw new IllegalStateException("OpenAPI 3.1 parser requires a 3.1 document, got: " + version);
         }
     }

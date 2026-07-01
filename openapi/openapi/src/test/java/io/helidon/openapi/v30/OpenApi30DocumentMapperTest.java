@@ -38,6 +38,18 @@ class OpenApi30DocumentMapperTest {
     private static final long LARGE_INTEGRAL_VALUE = 9_007_199_254_740_993L;
 
     @Test
+    void validatesOpenApiVersion() {
+        OpenApi30DocumentMapper.parse(document("3.0.4-rc1"));
+
+        for (String invalidVersion : List.of("3.0", "3.0.", "3.0.not-a-version", "3.0.1-", "3.0.1.0")) {
+            IllegalStateException ex = assertThrows(IllegalStateException.class,
+                                                    () -> OpenApi30DocumentMapper.parse(document(invalidVersion)),
+                                                    invalidVersion);
+            assertThat(invalidVersion, ex.getMessage(), containsString(invalidVersion));
+        }
+    }
+
+    @Test
     void preservesLargeIntegralNumbers() {
         OpenApiDocument document = OpenApi30DocumentMapper.parse(document("3.0.3"));
         Map<String, Object> rendered = OpenApi30DocumentMapper.render(document, "3.0.3");
