@@ -107,7 +107,7 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
     }
 
     OpenApiFeature(ServiceRegistry registry, Config config) {
-        this(registry, config.root(), serviceConfig(registry, config), OpenApiFeature::openApiVersionProviders);
+        this(registry, config.root(), serviceConfig(registry, config));
     }
 
     OpenApiFeature(ServiceRegistry registry, OpenApiFeatureConfig config) {
@@ -126,7 +126,7 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
     }
 
     OpenApiFeature(ServiceRegistry registry, Config sourceConfig, OpenApiFeatureConfig config) {
-        this(registry, sourceConfig, config, OpenApiFeature::openApiVersionProviders);
+        this(registry, sourceConfig, config, () -> registry.all(OpenApiVersionProvider.class));
     }
 
     OpenApiFeature(OpenApiFeatureConfig config,
