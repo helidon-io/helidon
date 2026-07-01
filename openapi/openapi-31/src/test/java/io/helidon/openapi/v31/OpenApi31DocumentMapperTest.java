@@ -19,6 +19,7 @@ package io.helidon.openapi.v31;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import io.helidon.json.JsonString;
 import io.helidon.openapi.OpenApiDocument;
@@ -297,6 +298,7 @@ class OpenApi31DocumentMapperTest {
         assertReference(map(map(components, "examples"), "testExample"));
         assertReference(map(map(components, "links"), "testLink"));
         assertReference(map(map(components, "securitySchemes"), "testSecurity"));
+        assertThat(map(map(components, "schemas"), "testSchema").get("x-reference"), is("Reference extension"));
     }
 
     private static Map<String, ?> document(String version) {
@@ -345,6 +347,7 @@ class OpenApi31DocumentMapperTest {
                       "info", Map.of("title", "Static API",
                                      "version", "1.0.0"),
                       "components", Map.of(
+                              "schemas", Map.of("testSchema", reference("#/components/schemas/real")),
                               "parameters", Map.of("testParameter", reference("#/components/parameters/real")),
                               "headers", Map.of("testHeader", reference("#/components/headers/real")),
                               "requestBodies", Map.of("testRequestBody", reference("#/components/requestBodies/real")),
@@ -397,10 +400,13 @@ class OpenApi31DocumentMapperTest {
         result.put("$ref", ref);
         result.put("summary", "Reference summary");
         result.put("description", "Reference description");
+        result.put("x-reference", "Reference extension");
+        result.put("additional", "Additional property");
         return result;
     }
 
     private static void assertReference(Map<String, Object> reference) {
+        assertThat(reference.keySet(), is(Set.of("$ref", "summary", "description")));
         assertThat(reference.get("summary"), is("Reference summary"));
         assertThat(reference.get("description"), is("Reference description"));
     }
