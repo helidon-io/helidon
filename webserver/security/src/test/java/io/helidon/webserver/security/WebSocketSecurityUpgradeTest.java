@@ -202,10 +202,12 @@ class WebSocketSecurityUpgradeTest {
                                  res.status(Status.ACCEPTED_202);
                                  res.send("http-reject");
                              })
-                        .register("/service", new AdminService()))
+                        .register("/service", new AdminService())
+                        .registerLocator("/located-service", request -> Optional.of(new AdminService())))
                 .addRouting(WsRouting.builder()
                                     .endpoint("/admin", new ProbeWsListener())
                                     .endpoint("/service", new ProbeWsListener())
+                                    .endpoint("/located-service", new ProbeWsListener())
                                     .endpoint("/http1", new ProbeWsListener())
                                     .endpoint("/boundary", new ProbeWsListener())
                                     .endpoint("/finalization", new ProbeWsListener())
@@ -435,6 +437,59 @@ class WebSocketSecurityUpgradeTest {
 
         String authenticatedWsResponse = sendRequestAndAwaitOpen(
                 "GET /service HTTP/1.1\r\n"
+                        + "Host: localhost:" + port + "\r\n"
+                        + "Upgrade: websocket\r\n"
+                        + "Connection: Upgrade\r\n"
+                        + "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n"
+                        + "Sec-WebSocket-Version: 13\r\n"
+                        + "Authorization: " + JACK_AUTHORIZATION + "\r\n"
+                        + "\r\n");
+
+        assertThat(authenticatedWsResponse, containsString("HTTP/1.1 101"));
+        assertThat(SERVICE_UPGRADE_GATE_INVOKED.get(), is(1));
+        assertThat(SERVICE_HTTP_HANDLER_INVOKED.get(), is(0));
+        assertThat(WS_OPEN_LATCH.get().await(5, TimeUnit.SECONDS), is(true));
+        assertThat(WS_OPENED.get(), is(true));
+    }
+
+    @Test
+    void locatedServiceWebSocketUpgradeUsesHttpSecurity() throws Exception {
+        String httpResponse = sendRequest(
+                "GET /located-service HTTP/1.1\r\n"
+                        + "Host: localhost:" + port + "\r\n"
+                        + "Connection: close\r\n"
+                        + "\r\n");
+
+        assertThat(httpResponse, containsString("HTTP/1.1 401"));
+        assertThat(SERVICE_UPGRADE_GATE_INVOKED.get(), is(1));
+        assertThat(SERVICE_HTTP_HANDLER_INVOKED.get(), is(0));
+
+        SERVICE_UPGRADE_GATE_INVOKED.set(0);
+        SERVICE_HTTP_HANDLER_INVOKED.set(0);
+
+        String wsResponse = sendRequest(
+                "GET /located-service HTTP/1.1\r\n"
+                        + "Host: localhost:" + port + "\r\n"
+                        + "Upgrade: websocket\r\n"
+                        + "Connection: Upgrade\r\n"
+                        + "Sec-WebSocket-Key: dGhlIHNhbXBsZSBub25jZQ==\r\n"
+                        + "Sec-WebSocket-Version: 13\r\n"
+                        + "\r\n");
+
+        assertThat(wsResponse, containsString("HTTP/1.1 401"));
+        assertThat(wsResponse, not(containsString("HTTP/1.1 101")));
+        assertThat(SERVICE_UPGRADE_GATE_INVOKED.get(), is(1));
+        assertThat(SERVICE_HTTP_HANDLER_INVOKED.get(), is(0));
+        assertThat(WS_OPEN_LATCH.get().await(100, TimeUnit.MILLISECONDS), is(false));
+        assertThat(WS_OPENED.get(), is(false));
+
+        WS_OPEN_LATCH.set(new CountDownLatch(1));
+        WS_OPENED.set(false);
+        SERVICE_UPGRADE_GATE_INVOKED.set(0);
+        SERVICE_HTTP_HANDLER_INVOKED.set(0);
+
+        String authenticatedWsResponse = sendRequestAndAwaitOpen(
+                "GET /located-service HTTP/1.1\r\n"
                         + "Host: localhost:" + port + "\r\n"
                         + "Upgrade: websocket\r\n"
                         + "Connection: Upgrade\r\n"

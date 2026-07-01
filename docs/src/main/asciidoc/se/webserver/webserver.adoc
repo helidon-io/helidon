@@ -413,7 +413,7 @@ the remaining route depends on request data or application metadata that can cha
 [source,java]
 .Select an `HttpService` from request path data
 ----
-include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_41, indent=0]
+include::{sourcedir}/se/WebServerSnippets.java[tag=snippet_43, indent=0]
 ----
 
 The locator path pattern is prefix-matched before `locate` is invoked. In the example, the locator sees the `item` path

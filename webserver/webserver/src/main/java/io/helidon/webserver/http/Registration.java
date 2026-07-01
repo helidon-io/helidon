@@ -16,6 +16,8 @@
 
 package io.helidon.webserver.http;
 
+import java.util.Objects;
+
 /**
  * A routing builder registration.
  * <p>
@@ -42,7 +44,8 @@ public interface Registration {
      * @return a new registration
      */
     static Registration createLocator(String path, HttpServiceLocator locator) {
-        return new Registrations.ServiceLocatorPathRegistration(path, locator);
+        return new Registrations.ServiceLocatorPathRegistration(Objects.requireNonNull(path),
+                                                                Objects.requireNonNull(locator));
     }
 
     /**
@@ -62,7 +65,7 @@ public interface Registration {
      * @return a new registration
      */
     static Registration createLocator(HttpServiceLocator locator) {
-        return new Registrations.ServiceLocatorRegistration(locator);
+        return new Registrations.ServiceLocatorRegistration(Objects.requireNonNull(locator));
     }
 
     /**

@@ -23,6 +23,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -85,6 +86,15 @@ class HttpServiceLocatorTest {
     }
 
     @Test
+    void testLocatorRegistrationRejectsNulls() {
+        HttpServiceLocator locator = request -> Optional.empty();
+
+        assertThrows(NullPointerException.class, () -> Registration.createLocator((HttpServiceLocator) null));
+        assertThrows(NullPointerException.class, () -> Registration.createLocator(null, locator));
+        assertThrows(NullPointerException.class, () -> Registration.createLocator("/{item}", null));
+    }
+
+    @Test
     void testLocatorSeesOwnMatchingPattern() throws Exception {
         var locatedPattern = new AtomicReference<String>();
         HttpService located = rules -> rules.get("/{id}", (req, res) -> res.send(req.matchingPattern().orElse("")));
@@ -131,6 +141,29 @@ class HttpServiceLocatorTest {
         invocation = RoutingInvocation.create("/nested/hello");
         invocation.route(routing);
         assertThat(invocation.entity(), is("nested"));
+    }
+
+    @Test
+    void testRouteWithoutPathMatcherHasNoMatchingPattern() throws Exception {
+        HttpRoute route = new HttpRoute() {
+            @Override
+            public PathMatchers.MatchResult accepts(HttpPrologue prologue) {
+                return PathMatchers.any().match(prologue.uriPath());
+            }
+
+            @Override
+            public Handler handler() {
+                return (request, response) -> response.send(request.matchingPattern().isEmpty());
+            }
+        };
+        HttpRouting routing = HttpRouting.builder()
+                .route(route)
+                .build();
+
+        var invocation = RoutingInvocation.create("/anything");
+        invocation.route(routing);
+
+        assertThat(invocation.entity(), is(true));
     }
 
     @Test
@@ -420,6 +453,79 @@ class HttpServiceLocatorTest {
     }
 
     @Test
+    void testLocatedServiceCreatedDuringAfterStartReceivesLifecycleOnce() throws Exception {
+        var service = new BlockingRoutingService();
+        var locator = new LifecycleLocator(service);
+        var route = locatorRoute(locator);
+
+        route.beforeStart();
+
+        try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+            CompletableFuture<Void> serviceCreation = CompletableFuture.runAsync(() -> locate(route), executor);
+            if (!service.awaitStarted()) {
+                service.release();
+                fail("Cold service route creation did not start");
+            }
+
+            CompletableFuture<Void> serverStart = CompletableFuture.runAsync(
+                    () -> route.afterStart(mock(WebServer.class)),
+                    executor);
+            try {
+                serverStart.get(1, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                fail("Server afterStart should not wait for a located service to finish route creation", e);
+            } finally {
+                service.release();
+            }
+
+            serviceCreation.get(5, TimeUnit.SECONDS);
+        }
+
+        assertThat(service.routingCount.get(), is(1));
+        assertThat(service.beforeStartCount.get(), is(1));
+        assertThat(service.afterStartCount.get(), is(1));
+    }
+
+    @Test
+    void testCachedLocatedServiceWaitsForAfterStartCompletion() throws Exception {
+        var service = new BlockingAfterStartService();
+        var locateCount = new AtomicInteger();
+        var secondLocate = new CountDownLatch(1);
+        var route = locatorRoute(request -> {
+            if (locateCount.incrementAndGet() == 2) {
+                secondLocate.countDown();
+            }
+            return Optional.of(service);
+        });
+
+        route.beforeStart();
+        locate(route);
+
+        try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+            CompletableFuture<Void> serverStart = CompletableFuture.runAsync(
+                    () -> route.afterStart(mock(WebServer.class)),
+                    executor);
+            if (!service.awaitStarted()) {
+                service.release();
+                fail("Located service afterStart did not start");
+            }
+
+            CompletableFuture<Void> cachedHit = CompletableFuture.runAsync(() -> locate(route), executor);
+            try {
+                assertThat("Second request did not reach the locator",
+                           secondLocate.await(5, TimeUnit.SECONDS),
+                           is(true));
+                assertThrows(TimeoutException.class, () -> cachedHit.get(1, TimeUnit.SECONDS));
+            } finally {
+                service.release();
+            }
+
+            serverStart.get(5, TimeUnit.SECONDS);
+            cachedHit.get(5, TimeUnit.SECONDS);
+        }
+    }
+
+    @Test
     void testLocatedServiceCacheSizeIsBounded() {
         var first = new LifecycleService("first");
         var second = new LifecycleService("second");
@@ -684,6 +790,8 @@ class HttpServiceLocatorTest {
         private final CountDownLatch started = new CountDownLatch(1);
         private final CountDownLatch release = new CountDownLatch(1);
         private final AtomicInteger routingCount = new AtomicInteger();
+        private final AtomicInteger beforeStartCount = new AtomicInteger();
+        private final AtomicInteger afterStartCount = new AtomicInteger();
 
         @Override
         public void routing(HttpRules rules) {
@@ -696,6 +804,41 @@ class HttpServiceLocatorTest {
                 throw new IllegalStateException(e);
             }
             rules.get("/{id}", (req, res) -> res.send("slow"));
+        }
+
+        @Override
+        public void beforeStart() {
+            beforeStartCount.incrementAndGet();
+        }
+
+        @Override
+        public void afterStart(WebServer webServer) {
+            afterStartCount.incrementAndGet();
+        }
+
+        private boolean awaitStarted() throws InterruptedException {
+            return started.await(5, TimeUnit.SECONDS);
+        }
+
+        private void release() {
+            release.countDown();
+        }
+    }
+
+    private static class BlockingAfterStartService extends LifecycleService {
+        private final CountDownLatch started = new CountDownLatch(1);
+        private final CountDownLatch release = new CountDownLatch(1);
+
+        @Override
+        public void afterStart(WebServer webServer) {
+            super.afterStart(webServer);
+            started.countDown();
+            try {
+                release.await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException(e);
+            }
         }
 
         private boolean awaitStarted() throws InterruptedException {

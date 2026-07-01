@@ -21,9 +21,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import io.helidon.http.HttpException;
@@ -40,13 +39,12 @@ class ServiceLocatorRoute extends HttpRouteBase implements HttpRoute {
     private final HttpServiceLocator locator;
     private final Predicate<Method> methodPredicate;
     private final PathMatcher pathMatcher;
-    private final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
-    private final Map<HttpService, RouteEntry> routes = new IdentityHashMap<>();
+    private final ReentrantLock lock = new ReentrantLock();
     private final int maxServiceCacheSize;
 
-    private volatile boolean beforeStarted;
-    private volatile boolean stopped;
-    private volatile WebServer webServer;
+    // Published maps are not mutated. Cache changes copy the identity map while holding the lock.
+    private volatile Map<HttpService, RouteEntry> routes = new IdentityHashMap<>();
+    private volatile Lifecycle lifecycle = Lifecycle.initial();
 
     ServiceLocatorRoute(HttpServiceLocator locator,
                         PathMatcher pathMatcher,
@@ -62,43 +60,79 @@ class ServiceLocatorRoute extends HttpRouteBase implements HttpRoute {
 
     @Override
     public void beforeStart() {
-        lock.writeLock().lock();
+        Lifecycle transition;
+        lock.lock();
         try {
-            stopped = false;
-            beforeStarted = true;
-            locator.beforeStart();
-            routes.values().forEach(entry -> entry.ifCreated(ServiceRoute::beforeStart));
+            transition = lifecycle.beforeStarting();
+            lifecycle = transition;
         } finally {
-            lock.writeLock().unlock();
+            lock.unlock();
         }
+
+        locator.beforeStart();
+        completeStartTransition(transition, transition.beforeStarted());
     }
 
     @Override
     public void afterStart(WebServer webServer) {
-        lock.writeLock().lock();
+        Lifecycle transition;
+        lock.lock();
         try {
-            this.webServer = webServer;
-            locator.afterStart(webServer);
-            routes.values().forEach(entry -> entry.ifCreated(route -> route.afterStart(webServer)));
+            transition = lifecycle.afterStarting(webServer);
+            lifecycle = transition;
         } finally {
-            lock.writeLock().unlock();
+            lock.unlock();
         }
+
+        locator.afterStart(webServer);
+        completeStartTransition(transition, transition.started(webServer));
     }
 
     @Override
     public void afterStop() {
-        lock.writeLock().lock();
+        Lifecycle transition;
+        List<RouteEntry> entries;
+        lock.lock();
         try {
-            stopped = true;
-            webServer = null;
-            Throwable failure = run(null, locator::afterStop);
-            for (RouteEntry entry : routes.values()) {
-                failure = entry.afterStop(failure);
-            }
-            routes.clear();
-            throwIfFailed(failure);
+            transition = lifecycle.stopping();
+            lifecycle = transition;
+            entries = List.copyOf(routes.values());
+            routes = new IdentityHashMap<>();
         } finally {
-            lock.writeLock().unlock();
+            lock.unlock();
+        }
+
+        Throwable failure = run(null, locator::afterStop);
+        for (RouteEntry entry : entries) {
+            failure = entry.afterStop(failure);
+        }
+
+        lock.lock();
+        try {
+            if (lifecycle == transition) {
+                lifecycle = transition.stopped();
+            }
+        } finally {
+            lock.unlock();
+        }
+        throwIfFailed(failure);
+    }
+
+    private void completeStartTransition(Lifecycle transition, Lifecycle completed) {
+        List<RouteEntry> entries;
+        lock.lock();
+        try {
+            if (lifecycle != transition) {
+                return;
+            }
+            lifecycle = completed;
+            entries = List.copyOf(routes.values());
+        } finally {
+            lock.unlock();
+        }
+
+        for (RouteEntry entry : entries) {
+            entry.requestCatchUp(this);
         }
     }
 
@@ -126,6 +160,18 @@ class ServiceLocatorRoute extends HttpRouteBase implements HttpRoute {
                                RoutingRequest request,
                                RoutedPath matchedPath,
                                String matchingPattern) {
+        return routes(ctx, request, matchedPath, matchingPattern, false);
+    }
+
+    HttpRouteBase protocolUpgradeRoute() {
+        return new ProtocolUpgradeRoute(this);
+    }
+
+    private List<HttpRouteBase> routes(ConnectionContext ctx,
+                                       RoutingRequest request,
+                                       RoutedPath matchedPath,
+                                       String matchingPattern,
+                                       boolean protocolUpgrade) {
         Optional<String> previousMatchingPattern = request.matchingPattern();
         request.path(matchedPath);
         request.matchingPattern(matchingPattern);
@@ -134,6 +180,7 @@ class ServiceLocatorRoute extends HttpRouteBase implements HttpRoute {
             Optional<HttpService> locatedService = Objects.requireNonNull(locator.locate(request),
                                                                           "HttpServiceLocator must not return null");
             return locatedService.map(this::route)
+                    .map(routes -> protocolUpgrade ? routes.protocolUpgrade() : routes.routing())
                     .map(ServiceRoute::routes)
                     .orElseGet(List::of);
         } finally {
@@ -171,75 +218,52 @@ class ServiceLocatorRoute extends HttpRouteBase implements HttpRoute {
         return methodPredicate + " (" + pathMatcher + ") with service locator: " + locator;
     }
 
-    private ServiceRoute route(HttpService service) {
+    private LocatedRoutes route(HttpService service) {
         Objects.requireNonNull(service, "HttpServiceLocator must not locate a null service");
 
-        RouteEntry entry = null;
-        try {
-            lock.readLock().lock();
+        if (!lifecycle.acceptsRoutes()) {
+            return null;
+        }
+        RouteEntry entry = routes.get(service);
+
+        if (entry == null) {
+            lock.lock();
             try {
-                if (stopped) {
+                if (!lifecycle.acceptsRoutes()) {
                     return null;
                 }
                 entry = routes.get(service);
+                if (entry == null) {
+                    if (routes.size() >= maxServiceCacheSize) {
+                        throw new HttpException("HttpServiceLocator service cache size of "
+                                                        + maxServiceCacheSize
+                                                        + " exceeded",
+                                                Status.SERVICE_UNAVAILABLE_503,
+                                                true);
+                    }
+                    entry = new RouteEntry();
+                    Map<HttpService, RouteEntry> updatedRoutes = new IdentityHashMap<>(routes);
+                    updatedRoutes.put(service, entry);
+                    routes = updatedRoutes;
+                }
             } finally {
-                lock.readLock().unlock();
+                lock.unlock();
             }
+        }
 
-            if (entry == null) {
-                lock.writeLock().lock();
-                try {
-                    if (stopped) {
-                        return null;
-                    }
-                    entry = routes.get(service);
-                    if (entry == null) {
-                        if (routes.size() >= maxServiceCacheSize) {
-                            throw new HttpException("HttpServiceLocator service cache size of "
-                                                            + maxServiceCacheSize
-                                                            + " exceeded",
-                                                    Status.SERVICE_UNAVAILABLE_503,
-                                                    true);
-                        }
-                        entry = new RouteEntry();
-                        routes.put(service, entry);
-                    }
-                } finally {
-                    lock.writeLock().unlock();
-                }
-            }
-
-            ServiceRoute route = entry.route(this, service);
-            if (route == null) {
-                if (!stopped) {
-                    removeEntryIfEmpty(service, entry);
-                }
-                return null;
-            }
-            return stopped ? null : route;
+        try {
+            LocatedRoutes locatedRoutes = entry.routes(this, service);
+            return lifecycle.acceptsRoutes() ? locatedRoutes : null;
         } catch (RuntimeException | Error e) {
-            if (entry != null) {
-                removeEntryIfEmpty(service, entry);
-            }
+            entry.removeIfEmpty(this, service);
             throw e;
         }
     }
 
-    private void removeEntryIfEmpty(HttpService service, RouteEntry entry) {
-        lock.writeLock().lock();
-        try {
-            if (entry.route() == null && routes.get(service) == entry) {
-                routes.remove(service);
-            }
-        } finally {
-            lock.writeLock().unlock();
-        }
-    }
-
-    private ServiceRoute createRoute(HttpService service) {
+    private LocatedRoutes createRoutes(HttpService service) {
         ServiceRules subRules = new ServiceRules(service, PathMatchers.any(), methodPredicate);
         service.routing(subRules);
-        return subRules.build();
+        return new LocatedRoutes(subRules.build(), subRules.buildProtocolUpgrade());
     }
 
     private static Throwable run(Throwable failure, Runnable runnable) {
@@ -267,81 +291,295 @@ class ServiceLocatorRoute extends HttpRouteBase implements HttpRoute {
 
     private static final class RouteEntry {
         private final ReentrantLock lock = new ReentrantLock();
-        private volatile ServiceRoute route;
+        private final AtomicBoolean catchUpRequested = new AtomicBoolean();
+        private volatile LocatedRoutes routes;
         private volatile boolean initialized;
+        private volatile LifecycleStamp lifecycleStamp = LifecycleStamp.initial();
 
-        private ServiceRoute route(ServiceLocatorRoute owner, HttpService service) {
-            ServiceRoute current = route;
-            if (initialized && current != null) {
+        private LocatedRoutes routes(ServiceLocatorRoute owner, HttpService service) {
+            LocatedRoutes current = routes;
+            Lifecycle target = owner.lifecycle;
+            if (initialized && current != null && lifecycleStamp.covers(target) && !lock.isLocked()) {
                 return current;
             }
 
             lock.lock();
             try {
-                if (initialized) {
-                    return route;
+                if (!initialized) {
+                    owner.lock.lock();
+                    try {
+                        if (!owner.lifecycle.acceptsRoutes() || owner.routes.get(service) != this) {
+                            return null;
+                        }
+                    } finally {
+                        owner.lock.unlock();
+                    }
+                    current = owner.createRoutes(service);
+                    routes = current;
+                    initialized = true;
+                    lifecycleStamp = LifecycleStamp.initial(target.generation());
                 }
 
-                current = owner.createRoute(service);
-                if (owner.stopped) {
-                    return null;
+                catchUp(owner);
+            } finally {
+                lock.unlock();
+            }
+            catchUpIfRequested(owner);
+            return owner.lifecycle.acceptsRoutes() ? routes : null;
+        }
+
+        private void removeIfEmpty(ServiceLocatorRoute owner, HttpService service) {
+            lock.lock();
+            try {
+                if (routes != null) {
+                    return;
                 }
 
-                route = current;
-                boolean lifecycleStartAttempted = false;
+                owner.lock.lock();
                 try {
-                    if (!owner.stopped && owner.beforeStarted) {
-                        lifecycleStartAttempted = true;
-                        current.beforeStart();
+                    if (owner.routes.get(service) == this) {
+                        Map<HttpService, RouteEntry> updatedRoutes = new IdentityHashMap<>(owner.routes);
+                        updatedRoutes.remove(service);
+                        owner.routes = updatedRoutes;
                     }
-                    WebServer webServer = owner.webServer;
-                    if (!owner.stopped && webServer != null) {
-                        lifecycleStartAttempted = true;
-                        current.afterStart(webServer);
-                    }
-                    if (route != null) {
-                        initialized = true;
-                    }
-                    return route;
-                } catch (RuntimeException | Error e) {
-                    route = null;
-                    initialized = false;
-                    if (lifecycleStartAttempted) {
-                        run(e, current::afterStop);
-                    }
-                    throw e;
+                } finally {
+                    owner.lock.unlock();
                 }
             } finally {
                 lock.unlock();
             }
         }
 
-        private ServiceRoute route() {
-            return route;
+        private void requestCatchUp(ServiceLocatorRoute owner) {
+            catchUpRequested.set(true);
+            catchUpIfRequested(owner);
         }
 
-        private void ifCreated(Consumer<ServiceRoute> consumer) {
-            lock.lock();
-            try {
-                ServiceRoute current = route;
-                if (initialized && current != null) {
-                    consumer.accept(current);
+        private void catchUpIfRequested(ServiceLocatorRoute owner) {
+            while (catchUpRequested.get() && lock.tryLock()) {
+                try {
+                    if (initialized && routes != null) {
+                        catchUp(owner);
+                    } else {
+                        catchUpRequested.set(false);
+                    }
+                } finally {
+                    lock.unlock();
                 }
-            } finally {
-                lock.unlock();
+            }
+        }
+
+        private void catchUp(ServiceLocatorRoute owner) {
+            while (true) {
+                catchUpRequested.set(false);
+                Lifecycle target = owner.lifecycle;
+                advance(target);
+                if (!catchUpRequested.get() && owner.lifecycle == target) {
+                    return;
+                }
+            }
+        }
+
+        private void advance(Lifecycle target) {
+            LocatedRoutes current = routes;
+            if (!initialized || current == null) {
+                return;
+            }
+            if (!target.acceptsRoutes()) {
+                return;
+            }
+
+            LifecycleStamp currentStamp = lifecycleStamp;
+            if (currentStamp.generation() != target.generation()) {
+                currentStamp = LifecycleStamp.initial(target.generation());
+                lifecycleStamp = currentStamp;
+            }
+
+            int requiredPhase = target.requiredPhase();
+            if (requiredPhase >= LifecycleStamp.BEFORE_STARTED && currentStamp.phase() < LifecycleStamp.BEFORE_STARTED) {
+                lifecycleStamp = new LifecycleStamp(target.generation(), LifecycleStamp.BEFORE_STARTED);
+                try {
+                    current.routing().beforeStart();
+                } catch (RuntimeException | Error e) {
+                    clear(e);
+                    throw e;
+                }
+                if (routes != current) {
+                    return;
+                }
+            }
+
+            currentStamp = lifecycleStamp;
+            if (requiredPhase >= LifecycleStamp.STARTED && currentStamp.phase() < LifecycleStamp.STARTED) {
+                lifecycleStamp = new LifecycleStamp(target.generation(), LifecycleStamp.STARTED);
+                try {
+                    current.routing().afterStart(target.webServer());
+                } catch (RuntimeException | Error e) {
+                    clear(e);
+                    throw e;
+                }
+            }
+        }
+
+        private void clear(Throwable failure) {
+            LocatedRoutes current = routes;
+            routes = null;
+            initialized = false;
+            lifecycleStamp = LifecycleStamp.initial();
+            if (current != null) {
+                throwIfFailed(run(failure, current.routing()::afterStop));
             }
         }
 
         private Throwable afterStop(Throwable failure) {
             lock.lock();
             try {
-                ServiceRoute current = route;
-                route = null;
+                LocatedRoutes current = routes;
+                routes = null;
                 initialized = false;
-                return current == null ? failure : run(failure, current::afterStop);
+                lifecycleStamp = LifecycleStamp.initial();
+                return current == null ? failure : run(failure, current.routing()::afterStop);
             } finally {
                 lock.unlock();
             }
+        }
+    }
+
+    private record LifecycleStamp(long generation, int phase) {
+        private static final int BEFORE_STARTED = 1;
+        private static final int STARTED = 2;
+
+        private static LifecycleStamp initial() {
+            return initial(-1);
+        }
+
+        private static LifecycleStamp initial(long generation) {
+            return new LifecycleStamp(generation, 0);
+        }
+
+        private boolean covers(Lifecycle lifecycle) {
+            return lifecycle.acceptsRoutes()
+                    && generation == lifecycle.generation()
+                    && phase >= lifecycle.requiredPhase();
+        }
+    }
+
+    private record Lifecycle(long generation, LifecyclePhase phase, WebServer webServer) {
+        private static Lifecycle initial() {
+            return new Lifecycle(0, LifecyclePhase.INITIAL, null);
+        }
+
+        private Lifecycle beforeStarting() {
+            return new Lifecycle(generation + 1, LifecyclePhase.BEFORE_STARTING, null);
+        }
+
+        private Lifecycle beforeStarted() {
+            return new Lifecycle(generation, LifecyclePhase.BEFORE_STARTED, null);
+        }
+
+        private Lifecycle afterStarting(WebServer webServer) {
+            return new Lifecycle(generation, LifecyclePhase.AFTER_STARTING, webServer);
+        }
+
+        private Lifecycle started(WebServer webServer) {
+            return new Lifecycle(generation, LifecyclePhase.STARTED, webServer);
+        }
+
+        private Lifecycle stopping() {
+            return new Lifecycle(generation, LifecyclePhase.STOPPING, null);
+        }
+
+        private Lifecycle stopped() {
+            return new Lifecycle(generation, LifecyclePhase.STOPPED, null);
+        }
+
+        private boolean acceptsRoutes() {
+            return phase != LifecyclePhase.STOPPING && phase != LifecyclePhase.STOPPED;
+        }
+
+        private int requiredPhase() {
+            return switch (phase) {
+            case INITIAL, BEFORE_STARTING -> 0;
+            case BEFORE_STARTED -> LifecycleStamp.BEFORE_STARTED;
+            case AFTER_STARTING, STARTED -> webServer == null
+                    ? LifecycleStamp.BEFORE_STARTED
+                    : LifecycleStamp.STARTED;
+            case STOPPING, STOPPED -> throw new IllegalStateException("Stopped lifecycle does not accept routes");
+            };
+        }
+    }
+
+    private enum LifecyclePhase {
+        INITIAL,
+        BEFORE_STARTING,
+        BEFORE_STARTED,
+        AFTER_STARTING,
+        STARTED,
+        STOPPING,
+        STOPPED
+    }
+
+    private record LocatedRoutes(ServiceRoute routing, ServiceRoute protocolUpgrade) {
+    }
+
+    private static final class ProtocolUpgradeRoute extends HttpRouteBase implements HttpRoute {
+        private final ServiceLocatorRoute delegate;
+
+        private ProtocolUpgradeRoute(ServiceLocatorRoute delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public PathMatchers.MatchResult accepts(HttpPrologue prologue) {
+            return delegate.accepts(prologue);
+        }
+
+        @Override
+        public Handler handler() {
+            return delegate.handler();
+        }
+
+        @Override
+        PathMatchers.PrefixMatchResult acceptsPrefix(HttpPrologue prologue) {
+            return delegate.acceptsPrefix(prologue);
+        }
+
+        @Override
+        List<HttpRouteBase> routes(ConnectionContext ctx,
+                                   RoutingRequest request,
+                                   RoutedPath matchedPath,
+                                   String matchingPattern) {
+            return delegate.routes(ctx, request, matchedPath, matchingPattern, true);
+        }
+
+        @Override
+        List<HttpRouteBase> routes() {
+            return delegate.routes();
+        }
+
+        @Override
+        void afterNoMatch(RoutingRequest request, RoutedPath previousPath) {
+            delegate.afterNoMatch(request, previousPath);
+        }
+
+        @Override
+        boolean requestAwareRoutes() {
+            return true;
+        }
+
+        @Override
+        boolean isList() {
+            return true;
+        }
+
+        @Override
+        public Optional<PathMatcher> pathMatcher() {
+            return delegate.pathMatcher();
+        }
+
+        @Override
+        public String toString() {
+            return "protocol upgrade policies for " + delegate;
         }
     }
 }

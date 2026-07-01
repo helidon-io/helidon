@@ -48,6 +48,7 @@ public interface HttpRules {
      *
      * @param locator service locator to register
      * @return updated rules
+     * @throws UnsupportedOperationException if this implementation does not support service locator registration
      */
     default HttpRules registerLocator(HttpServiceLocator locator) {
         throw new UnsupportedOperationException("Service locator registration is not supported by this implementation");
@@ -155,6 +156,7 @@ public interface HttpRules {
      * @param pathPattern URI path pattern
      * @param locator     service locator to register
      * @return updated rules
+     * @throws UnsupportedOperationException if this implementation does not support service locator registration
      */
     default HttpRules registerLocator(String pathPattern, HttpServiceLocator locator) {
         throw new UnsupportedOperationException("Service locator registration is not supported by this implementation");

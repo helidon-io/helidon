@@ -141,7 +141,7 @@ class WebServerSnippets {
     }
     // end::snippet_7[]
 
-    // tag::snippet_41[]
+    // tag::snippet_43[]
     interface ItemServiceRegistry {
         Optional<HttpService> service(String item);
     }
@@ -182,7 +182,7 @@ class WebServerSnippets {
                 .registerLocator("/{item}", new MetadataBackedLocator(registry))
                 .build();
     }
-    // end::snippet_41[]
+    // end::snippet_43[]
 
     void snippet_8(HttpRouting.Builder routing) {
         // tag::snippet_8[]

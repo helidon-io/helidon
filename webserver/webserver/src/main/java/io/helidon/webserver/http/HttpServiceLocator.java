@@ -32,9 +32,15 @@ import io.helidon.webserver.ServerLifecycle;
  * Returning {@link Optional#empty()} means this locator has no service for the request and routing should continue with the
  * next available route.
  * <p>
- * WebServer caches located services by service instance identity until the server stops. Locators must return a stable,
- * bounded set of service instances. Return stable service instances and override {@link #maxServiceCacheSize()} when a
- * locator intentionally exposes more stable identities than the default.
+ * The locator participates in the server lifecycle through {@link ServerLifecycle}. WebServer configures each distinct
+ * located service lazily and caches its routes by service instance identity until the server stops. Before cached routes are
+ * used, the located service receives any lifecycle callbacks needed to bring it to the current server lifecycle phase. Each
+ * cached service receives {@link HttpService#afterStop()} when the server stops.
+ * <p>
+ * Locators must return a stable, bounded set of service instances. When a locator returns an additional service instance
+ * after its cache reaches {@link #maxServiceCacheSize()}, WebServer rejects the request with
+ * {@link io.helidon.http.Status#SERVICE_UNAVAILABLE_503}. Override {@link #maxServiceCacheSize()} when a locator
+ * intentionally exposes more stable identities than the default.
  */
 @FunctionalInterface
 public interface HttpServiceLocator extends ServerLifecycle {

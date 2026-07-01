@@ -157,7 +157,7 @@ class RouteCrawler {
                 if (accepts.accepted()) {
                     PathMatcher pathMatcher = nextRoute.pathMatcher().orElse(null);
                     next = new CrawlerItem(accepts.path(),
-                                           pathMatcher != null ? pathMatcher.matchingElement().orElse("") : "",
+                                           pathMatcher != null ? pathMatcher.matchingElement().orElse("") : null,
                                            nextRoute.handler());
 
                     if (parent != null) {
@@ -191,12 +191,16 @@ class RouteCrawler {
     record CrawlerItem(RoutedPath path, String matchingElement, Handler handler) {
         public CrawlerItem parent(RoutedPath parent) {
             RoutedPath result = merge(parent, path);
-            return new CrawlerItem(result, parent.path() + matchingElement, handler);
+            return new CrawlerItem(result,
+                                   matchingElement == null ? null : parent.path() + matchingElement,
+                                   handler);
         }
 
         public CrawlerItem parent(RoutedPath parent, String parentPattern) {
             RoutedPath result = merge(parent, path);
-            return new CrawlerItem(result, parentPattern + matchingElement, handler);
+            return new CrawlerItem(result,
+                                   matchingElement == null ? null : parentPattern + matchingElement,
+                                   handler);
         }
 
         private static RoutedPath merge(RoutedPath parent, RoutedPath path) {
