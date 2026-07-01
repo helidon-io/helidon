@@ -83,6 +83,16 @@ class OpenApi30DocumentMapperTest {
                 IllegalStateException.class,
                 () -> OpenApi30DocumentMapper.render(responseWithoutDescription, "3.0.3"));
         assertThat(renderedWithoutDescription.getMessage(), containsString("description"));
+
+        for (String description : List.of("", " ")) {
+            OpenApiDocument document = OpenApi30DocumentMapper.parse(documentWithOperation(
+                    "3.0.3",
+                    Map.of("responses", Map.of("200", Map.of("description", description)))));
+            Map<String, Object> rendered = OpenApi30DocumentMapper.render(document, "3.0.3");
+            Map<String, Object> response = map(map(map(map(rendered, "paths"), "/items"), "get"), "responses");
+
+            assertThat(map(response, "200").get("description"), is(description));
+        }
     }
 
     @Test

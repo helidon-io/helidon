@@ -525,7 +525,7 @@ public final class OpenApiDocumentMapperSupport {
         });
         if (rules.responseDescriptionRequired()) {
             Object description = result.get("description");
-            if (!(description instanceof String string) || string.isBlank()) {
+            if (!(description instanceof String)) {
                 throw new IllegalStateException("OpenAPI " + rules.targetVersion() + " response requires description.");
             }
         }
