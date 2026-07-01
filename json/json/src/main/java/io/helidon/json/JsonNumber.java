@@ -18,6 +18,7 @@ package io.helidon.json;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Objects;
 
 import io.helidon.common.Api;
 
@@ -30,7 +31,7 @@ public final class JsonNumber extends JsonValue {
     private final byte[] buffer;
     private final int start;
     private final int length;
-    private final byte jsonStartChar;
+    private byte jsonStartChar;
     private BigDecimal bigDecimalValue;
 
     private JsonNumber(byte[] buffer, int start, int length) {
@@ -41,15 +42,15 @@ public final class JsonNumber extends JsonValue {
     }
 
     private JsonNumber(BigDecimal bigDecimalValue) {
-        this(bigDecimalValue, jsonStartChar(bigDecimalValue));
-    }
-
-    private JsonNumber(BigDecimal bigDecimalValue, byte jsonStartChar) {
         this.buffer = EMPTY_BYTES;
         this.start = -1;
         this.length = -1;
+        this.bigDecimalValue = Objects.requireNonNull(bigDecimalValue);
+    }
+
+    private JsonNumber(BigDecimal bigDecimalValue, byte jsonStartChar) {
+        this(bigDecimalValue);
         this.jsonStartChar = jsonStartChar;
-        this.bigDecimalValue = bigDecimalValue;
     }
 
     /**
@@ -89,6 +90,9 @@ public final class JsonNumber extends JsonValue {
 
     @Override
     byte jsonStartChar() {
+        if (jsonStartChar == 0) {
+            jsonStartChar = jsonStartChar(bigDecimalValue);
+        }
         return jsonStartChar;
     }
 
