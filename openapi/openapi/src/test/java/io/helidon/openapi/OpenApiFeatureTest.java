@@ -995,6 +995,65 @@ class OpenApiFeatureTest {
     }
 
     @Test
+    void serializesModelInitializationAcrossFeatures() throws Exception {
+        CountDownLatch firstDescribe = new CountDownLatch(1);
+        CountDownLatch concurrentDescribe = new CountDownLatch(1);
+        CountDownLatch releaseFirstDescribe = new CountDownLatch(1);
+        CountDownLatch startInitialization = new CountDownLatch(1);
+        AtomicInteger activeDescribes = new AtomicInteger();
+        OpenApiDocumentSource source = (context, document) -> {
+            int active = activeDescribes.incrementAndGet();
+            try {
+                if (active == 1) {
+                    firstDescribe.countDown();
+                    if (!releaseFirstDescribe.await(10, TimeUnit.SECONDS)) {
+                        throw new AssertionError("Timed out waiting to release the first OpenAPI source invocation.");
+                    }
+                } else {
+                    concurrentDescribe.countDown();
+                }
+                document.info(context.listener(), "1.0.0");
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new AssertionError(e);
+            } finally {
+                activeDescribes.decrementAndGet();
+            }
+        };
+        OpenApiFeatureConfig config = OpenApiFeatureConfig.builder()
+                .servicesDiscoverServices(false)
+                .generatedMode(OpenApiGeneratedMode.GENERATED_ONLY)
+                .openApiVersion(OpenApi30Version.create())
+                .buildPrototype();
+        OpenApiFeature firstFeature = new OpenApiFeature(config, () -> List.of(source), List::of);
+        OpenApiFeature secondFeature = new OpenApiFeature(config, () -> List.of(source), List::of);
+
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            var firstInitialization = executor.submit(() -> {
+                startInitialization.await();
+                firstFeature.initialize();
+                return null;
+            });
+            var secondInitialization = executor.submit(() -> {
+                startInitialization.await();
+                secondFeature.initialize();
+                return null;
+            });
+
+            startInitialization.countDown();
+            assertThat(firstDescribe.await(10, TimeUnit.SECONDS), is(true));
+            boolean overlapped = concurrentDescribe.await(2, TimeUnit.SECONDS);
+            releaseFirstDescribe.countDown();
+
+            firstInitialization.get();
+            secondInitialization.get();
+            assertThat(overlapped, is(false));
+        } finally {
+            releaseFirstDescribe.countDown();
+        }
+    }
+
+    @Test
     void openApi30ParserRequiresOpenApi30Document() {
         OpenApiDocumentContext context = context(OpenApi30Version.create());
 
