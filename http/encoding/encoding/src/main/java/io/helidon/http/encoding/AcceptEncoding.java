@@ -259,7 +259,6 @@ public final class AcceptEncoding {
         String bestCoding = null;
         Entry bestEntry = null;
         BestCandidate bestCandidate = null;
-        boolean identityLosesEqualQuality = false;
         for (int i = 0; i < codings.size(); i++) {
             String coding = normalize(codings.get(i));
             Entry entry = null;
@@ -293,12 +292,6 @@ public final class AcceptEncoding {
                 }
             }
 
-            if (identityAccepted
-                    && identityOrder != IMPLICIT_IDENTITY_ORDER
-                    && q == identityQ
-                    && identityOrder > order) {
-                identityLosesEqualQuality = true;
-            }
             BestCandidate candidate = new BestCandidate(q, wildcardMatch, order, i);
             if (bestCoding == null || betterBestCoding(candidate, bestCandidate)) {
                 bestCoding = coding;
@@ -322,7 +315,8 @@ public final class AcceptEncoding {
             return Optional.of(codingQuality(bestCoding, bestEntry, bestCandidate.q(),
                                            bestCandidate.order(), bestCandidate.wildcard()));
         }
-        if (q < 0 || (identityOrder != IMPLICIT_IDENTITY_ORDER && !identityLosesEqualQuality)) {
+        if (q < 0
+                || (identityOrder != IMPLICIT_IDENTITY_ORDER && identityOrder < bestCandidate.order())) {
             return Optional.of(identityQuality(identity));
         }
         return Optional.of(codingQuality(bestCoding, bestEntry, bestCandidate.q(),

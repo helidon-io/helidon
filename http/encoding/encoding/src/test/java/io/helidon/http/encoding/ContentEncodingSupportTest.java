@@ -197,6 +197,13 @@ class ContentEncodingSupportTest {
     }
 
     @Test
+    void testBestComparesIdentityWithFinalConcreteCandidate() {
+        AcceptEncoding acceptEncoding = AcceptEncoding.create(headers("*, identity, gzip"));
+
+        assertQuality(acceptEncoding.best(List.of("br", "gzip")).orElseThrow(), "identity", 1D, false);
+    }
+
+    @Test
     void testBestWildcardReturnsConcreteServerCoding() {
         AcceptEncoding acceptEncoding = AcceptEncoding.create(headers("*;q=0.5, identity;q=0"));
 
