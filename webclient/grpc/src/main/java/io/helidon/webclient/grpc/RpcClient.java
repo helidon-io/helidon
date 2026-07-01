@@ -22,11 +22,13 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import io.helidon.common.Api;
 import io.helidon.service.registry.Service;
 
 /**
  * Declarative gRPC client annotations.
  */
+@Api.Incubating
 public final class RpcClient {
     private RpcClient() {
     }

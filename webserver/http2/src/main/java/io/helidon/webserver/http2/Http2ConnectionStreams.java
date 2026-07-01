@@ -35,9 +35,13 @@ final class Http2ConnectionStreams implements Http2ConcurrentConnectionStreams {
     private final Queue<Integer> forRemoval = new ConcurrentLinkedQueue<>();
     private final Set<Integer> activeStreamIds = ConcurrentHashMap.newKeySet();
     private final AtomicInteger activeStreams = new AtomicInteger();
+    private volatile boolean closed;
 
     @Override
     public void remove(int streamId) {
+        if (closed) {
+            return;
+        }
         deactivate(streamId);
         forRemoval.add(streamId);
     }
@@ -85,5 +89,17 @@ final class Http2ConnectionStreams implements Http2ConcurrentConnectionStreams {
                 streamId = forRemoval.poll()) {
             streams.remove(streamId);
         }
+    }
+
+    void abortAll() {
+        if (closed) {
+            return;
+        }
+        closed = true;
+        streams.values().forEach(ctx -> ctx.stream().abortConnection());
+        streams.clear();
+        forRemoval.clear();
+        activeStreamIds.clear();
+        activeStreams.set(0);
     }
 }

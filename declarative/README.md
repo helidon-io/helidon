@@ -257,14 +257,19 @@ Declaration must be done on a service registry service.
 Annotations on type:
 
 - `@RpcServer.Endpoint` - required annotation to generate a declarative gRPC server endpoint
-- `@Grpc.GrpcService` - gRPC service name; use the fully-qualified service name when the proto declares a package.
-  If not set, the service class simple name is used.
+- `@Grpc.GrpcService` - required, non-blank gRPC service name; use the fully-qualified service name when the proto declares a package.
 - `@Grpc.ProtoDescriptor` - generated protocol buffer class with a static `getDescriptor()` method returning
   `Descriptors.FileDescriptor`
 - `@Service.Singleton` - typical service registry scope for the endpoint implementation
 
-The endpoint must declare exactly one proto descriptor source: either `@Grpc.ProtoDescriptor` on the type or
-one `@Grpc.Proto` method returning `Descriptors.FileDescriptor` with no parameters.
+The endpoint must declare exactly one proto descriptor source: either `@Grpc.ProtoDescriptor` on the type or one
+`@Grpc.Proto` method. The referenced generated protocol buffer class must provide a public static `getDescriptor()`
+method returning `Descriptors.FileDescriptor`. An `@Grpc.Proto` method may be static or an endpoint instance method;
+it must be non-private, have no parameters or checked exceptions, and return `Descriptors.FileDescriptor`.
+Each request and response type must implement `com.google.protobuf.Message` and declare public static no-argument
+`getDescriptor()` and `getDefaultInstance()` methods returning `Descriptors.Descriptor` and the message type,
+respectively. At runtime, the generated registration verifies that these descriptors match the input and output
+descriptors of the named proto method.
 
 Annotations on endpoint methods:
 
@@ -276,14 +281,15 @@ Annotations on endpoint methods:
 Supported server method signatures:
 
 - Unary: `Res method(Req)` or `void method(Req, StreamObserver<Res>)`
-- Server streaming: `Iterable<Res> method(Req)`, `Stream<Res> method(Req)`, or
-  `void method(Req, StreamObserver<Res>)`
-- Client streaming: `Res method(Iterable<Req>)` or `Res method(Stream<Req>)`
-- Bidirectional streaming: `Iterable<Res> method(Iterable<Req>)`, `Stream<Res> method(Stream<Req>)`, or
+- Server streaming: `Stream<Res> method(Req)` or `void method(Req, StreamObserver<Res>)`
+- Client streaming: `Res method(Stream<Req>)`
+- Bidirectional streaming: `Stream<Res> method(Stream<Req>)` or
   `StreamObserver<Req> method(StreamObserver<Res>)`
 
-Server endpoint methods using an `Iterable<Req>` request-stream shape first collect all inbound messages before invoking
-the method. Use `Stream<Req>` or `StreamObserver<Req>` request shapes for non-collecting request processing.
+Declarative streaming methods use resource-owning `Stream` instances with transport backpressure and cancellation.
+Endpoint implementations consume request streams, while the generated runtime owns and closes both request streams
+supplied to an endpoint and response streams returned by an endpoint. Endpoint implementations transfer ownership of
+response streams to the runtime and must not close a response stream before returning it.
 
 ### Configuration
 
@@ -317,12 +323,19 @@ Declaration must be done on an interface.
 Annotations on type:
 
 - `@RpcClient.Endpoint` - required annotation to generate a typed gRPC client
-- `@Grpc.GrpcService` - gRPC service name; use the fully-qualified service name when the proto declares a package
+- `@Grpc.GrpcService` - required, non-blank gRPC service name; use the fully-qualified service name when the proto
+  declares a package.
 - `@Grpc.ProtoDescriptor` - generated protocol buffer class with a static `getDescriptor()` method returning
   `Descriptors.FileDescriptor`
 
-The endpoint must declare exactly one proto descriptor source: either `@Grpc.ProtoDescriptor` on the type or
-one `@Grpc.Proto` static method returning `Descriptors.FileDescriptor` with no parameters.
+The endpoint must declare exactly one proto descriptor source: either `@Grpc.ProtoDescriptor` on the type or one
+`@Grpc.Proto` method. The referenced generated protocol buffer class must provide a public static `getDescriptor()`
+method returning `Descriptors.FileDescriptor`. An `@Grpc.Proto` method may be static or a default interface method;
+it must be non-private, have no parameters or checked exceptions, and return `Descriptors.FileDescriptor`.
+Each request and response type must implement `com.google.protobuf.Message` and declare public static no-argument
+`getDescriptor()` and `getDefaultInstance()` methods returning `Descriptors.Descriptor` and the message type,
+respectively. At runtime, the generated client verifies that these descriptors match the input and output descriptors
+of the named proto method.
 
 Annotations on the interface method(s):
 
@@ -334,12 +347,15 @@ Annotations on the interface method(s):
 Supported client method signatures:
 
 - Unary: `Res method(Req)` or `void method(Req, StreamObserver<Res>)`
-- Server streaming: `Iterable<Res> method(Req)`, `Stream<Res> method(Req)`, or
-  `void method(Req, StreamObserver<Res>)`
-- Client streaming: `Res method(Iterable<Req>)`, `Res method(Stream<Req>)`, or
+- Server streaming: `Stream<Res> method(Req)` or `void method(Req, StreamObserver<Res>)`
+- Client streaming: `Res method(Stream<Req>)` or `StreamObserver<Req> method(StreamObserver<Res>)`
+- Bidirectional streaming: `Stream<Res> method(Stream<Req>)` or
   `StreamObserver<Req> method(StreamObserver<Res>)`
-- Bidirectional streaming: `Iterable<Res> method(Iterable<Req>)`, `Stream<Res> method(Stream<Req>)`, or
-  `StreamObserver<Req> method(StreamObserver<Res>)`
+
+Returned streams own the RPC and must be closed when the caller stops before normal exhaustion. The client consumes and
+closes request streams on normal completion, cancellation, or failure; a transferred request stream must not be reused.
+The calling thread consumes a client-streaming request stream. If producing elements can block, closing the stream must
+unblock production so an early peer termination can return promptly.
 
 To use a declarative gRPC client, inject the annotated interface using the `@RpcClient.Client` qualifier:
 

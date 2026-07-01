@@ -21,6 +21,7 @@ final class ClientConfigGreetingClients {
     static final String CONFIG_KEY = "declarative.grpc.clients.configured";
     static final String SERVER_URI = "http://localhost:${test.server.port}";
     static final String INVALID_URI = "http://localhost:1";
+    static final String UNRESOLVED_URI = "http://localhost:${missing.test.server.port}";
     static final String NAMED_CLIENT = "declarative-grpc-client";
     static final String BROKEN_CLIENT = "declarative-grpc-broken-client";
     static final String MISSING_CLIENT = "declarative-grpc-missing-client";

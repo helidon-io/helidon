@@ -43,7 +43,7 @@ import jakarta.annotation.security.RolesAllowed;
 @Service.Singleton
 class GreetingEndpoint {
     @Grpc.Proto
-    static Descriptors.FileDescriptor proto() {
+    Descriptors.FileDescriptor proto() {
         return DeclarativeGrpcProto.getDescriptor();
     }
 

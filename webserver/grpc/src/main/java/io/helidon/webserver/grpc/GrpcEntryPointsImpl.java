@@ -37,6 +37,8 @@ import io.grpc.ServerCall;
 import io.grpc.ServerCallHandler;
 import io.grpc.ServerInterceptor;
 import io.grpc.Status;
+import io.grpc.StatusException;
+import io.grpc.StatusRuntimeException;
 
 @Service.Singleton
 class GrpcEntryPointsImpl implements GrpcEntryPoint.EntryPoints {
@@ -121,11 +123,11 @@ class GrpcEntryPointsImpl implements GrpcEntryPoint.EntryPoints {
         }
     }
 
-    private static class EntryPointInterceptor implements ServerInterceptor {
+    static final class EntryPointInterceptor implements ServerInterceptor {
         private final InterceptionContext ctx;
         private final List<GrpcEntryPoint.Interceptor> interceptors;
 
-        private EntryPointInterceptor(InterceptionContext ctx, List<GrpcEntryPoint.Interceptor> interceptors) {
+        EntryPointInterceptor(InterceptionContext ctx, List<GrpcEntryPoint.Interceptor> interceptors) {
             this.ctx = ctx;
             this.interceptors = interceptors;
         }
@@ -136,11 +138,23 @@ class GrpcEntryPointsImpl implements GrpcEntryPoint.EntryPoints {
                                                                      ServerCallHandler<ReqT, RespT> next) {
             try {
                 return createChain(next).proceed(call, headers);
-            } catch (RuntimeException e) {
-                throw e;
             } catch (Exception e) {
-                LOGGER.log(System.Logger.Level.DEBUG, "gRPC entry point interceptor failed", e);
-                call.close(Status.INTERNAL.withCause(e), new Metadata());
+                Throwable current = e;
+                boolean grpcStatus = false;
+                while (current != null) {
+                    if (current instanceof StatusException || current instanceof StatusRuntimeException) {
+                        grpcStatus = true;
+                        break;
+                    }
+                    current = current.getCause();
+                }
+                if (grpcStatus) {
+                    Metadata trailers = Status.trailersFromThrowable(e);
+                    call.close(Status.fromThrowable(e), trailers == null ? new Metadata() : trailers);
+                } else {
+                    LOGGER.log(System.Logger.Level.DEBUG, "gRPC entry point interceptor failed", e);
+                    call.close(Status.INTERNAL.withCause(e), new Metadata());
+                }
                 return new ServerCall.Listener<>() {
                 };
             }

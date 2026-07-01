@@ -97,6 +97,8 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     private static final int MAX_LOCALLY_RESET_STREAMS = 8192;
     private static final int MIN_LOCALLY_RESET_STREAMS = 64;
     private static final long MAX_LOCALLY_RESET_STREAM_HEADER_BYTES = 64 * 1024;
+    // Independent fragmentation guard; retained bytes are bounded separately from the number of frame objects.
+    private static final int MAX_QUEUED_DATA_FRAMES = 1024;
     private static final Set<Http2StreamState> REMOVABLE_STREAMS =
             Set.of(Http2StreamState.CLOSED, Http2StreamState.HALF_CLOSED_LOCAL);
     private static final Set<HeaderName> SERVER_CONTROLLED_REQUEST_HEADERS = Set.of(X_HELIDON_CN);
@@ -105,6 +107,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     private final Http2ConnectionStreams streams = new Http2ConnectionStreams();
     private final LocallyResetStreams locallyResetStreams;
     private final PendingDroppedHeaders locallyResetHeaders;
+    private final ReentrantLock streamAdmissionLock = new ReentrantLock();
     private final ConnectionContext ctx;
     private final Http2Config http2Config;
     private final HttpRouting routing;
@@ -117,6 +120,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     private final Http2Settings serverSettings;
     private final boolean sendErrorDetails;
     private final ConnectionFlowControl flowControl;
+    private final Http2ServerStream.InboundDataBudget inboundDataBudget;
     private final WritableHeaders<?> connectionHeaders;
     private final int maxEmptyFrames;
     private final long maxClientConcurrentStreams;
@@ -133,11 +137,12 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     private Http2Headers upgradeHeaders;
     private State state = State.WRITE_SERVER_SETTINGS;
     private int continuationExpectedStreamId;
-    private int lastStreamId;
+    private volatile int lastStreamId;
     private boolean initConnectionHeaders;
     private volatile ZonedDateTime lastRequestTimestamp;
     private volatile Thread myThread;
     private volatile boolean canRun = true;
+    private volatile boolean closing;
 
     Http2Connection(ConnectionContext ctx, Http2Config http2Config, List<Http2SubProtocolSelector> subProviders) {
         this.ctx = ctx;
@@ -173,6 +178,8 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                 .blockTimeout(http2Config.flowControlTimeout())
                 .maxFrameSize(http2Config.maxFrameSize())
                 .build();
+        long maxQueuedDataBytes = Math.max(1L, 2L * http2Config.initialWindowSize());
+        this.inboundDataBudget = new Http2ServerStream.InboundDataBudget(MAX_QUEUED_DATA_FRAMES, maxQueuedDataBytes);
         this.lastRequestTimestamp = DateTime.timestamp();
         this.connectionHeaders = WritableHeaders.create();
         this.initConnectionHeaders = true;
@@ -186,7 +193,7 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         try {
             doHandle(limit);
         } catch (Http2Exception e) {
-            if (state == State.FINISHED) {
+            if (closing || state == State.FINISHED) {
                 // already handled
                 return;
             }
@@ -196,27 +203,22 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
             ctx.log(LOGGER, TRACE, "Stacktrace of HTTP/2 exception", e);
 
-            Http2GoAway frame = new Http2GoAway(0,
-                                                e.code(),
-                                                sendErrorDetails ? e.getMessage() : "");
-            writeConnectionFrame(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
-            state = State.FINISHED;
+            writeGoAwayAndFinish(e.code(), sendErrorDetails ? e.getMessage() : "");
         } catch (CloseConnectionException
                  | InterruptedException
                  | SocketWriterException
                  | UncheckedIOException e) {
             throw e;
         } catch (Throwable e) {
-            if (state == State.FINISHED) {
+            if (closing || state == State.FINISHED) {
                 // we have already finished this
                 return;
             }
-            Http2GoAway frame = new Http2GoAway(0,
-                                                Http2ErrorCode.INTERNAL,
-                                                sendErrorDetails ? e.getClass().getName() + ": " + e.getMessage() : "");
-            writeConnectionFrame(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
-            state = State.FINISHED;
+            writeGoAwayAndFinish(Http2ErrorCode.INTERNAL,
+                                 sendErrorDetails ? e.getClass().getName() + ": " + e.getMessage() : "");
             throw e;
+        } finally {
+            streams.abortAll();
         }
     }
 
@@ -238,10 +240,8 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
             //6.9.2/3 - legal range for the increment to the flow-control window is 1 to 2^31-1 (2,147,483,647) octets.
             if (initialWindowSize > WindowSize.MAX_WIN_SIZE) {
-                Http2GoAway frame = new Http2GoAway(0,
-                                                    Http2ErrorCode.FLOW_CONTROL,
-                                                    "Window " + initialWindowSize + " size too large");
-                writeConnectionFrame(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
+                writeGoAway(Http2ErrorCode.FLOW_CONTROL,
+                            "Window " + initialWindowSize + " size too large");
             }
 
             //6.9.1/1 - changing the flow-control window for streams that are not yet active
@@ -307,10 +307,6 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         return Duration.between(lastRequestTimestamp, DateTime.timestamp());
     }
 
-    void finish() {
-        this.state = State.FINISHED;
-    }
-
     @Override
     public void close(boolean interrupt) {
         // either way, finish
@@ -369,6 +365,39 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         }
     }
 
+    void writeGoAway(Http2ErrorCode errorCode, String details) {
+        writeGoAway(lastStreamId, errorCode, details);
+    }
+
+    private void writeGoAway(int lastStreamId, Http2ErrorCode errorCode, String details) {
+        Http2GoAway frame = new Http2GoAway(lastStreamId, errorCode, details);
+        writeConnectionFrame(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
+    }
+
+    void writeGoAwayAndFinish(Http2ErrorCode errorCode, String details) {
+        Thread connectionThread;
+        int goAwayLastStreamId;
+        streamAdmissionLock.lock();
+        try {
+            if (closing || state == State.FINISHED) {
+                return;
+            }
+            closing = true;
+            canRun = false;
+            connectionThread = myThread;
+            goAwayLastStreamId = lastStreamId;
+        } finally {
+            streamAdmissionLock.unlock();
+        }
+        try {
+            writeGoAway(goAwayLastStreamId, errorCode, details);
+        } finally {
+            if (connectionThread != null && connectionThread != Thread.currentThread()) {
+                connectionThread.interrupt();
+            }
+        }
+    }
+
     private static void settingsUpdate(Http2Config config, Http2Settings.Builder builder) {
         applySetting(builder, config.maxFrameSize(), Http2Setting.MAX_FRAME_SIZE);
         applySetting(builder, config.maxHeaderListSize(), Http2Setting.MAX_HEADER_LIST_SIZE);
@@ -417,9 +446,8 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
 
             dispatchHandler(limit);
         }
-        if (state != State.FINISHED) {
-            Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.NO_ERROR, "Idle timeout");
-            writeConnectionFrame(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
+        if (!closing && state != State.FINISHED) {
+            writeGoAway(Http2ErrorCode.NO_ERROR, "Idle timeout");
         }
     }
 
@@ -580,22 +608,19 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
         if (streamId == 0) {
             // overall connection
             if (increment == 0) {
-                Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.PROTOCOL, "Window size 0");
-                writeConnectionFrame(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
+                writeGoAway(Http2ErrorCode.PROTOCOL, "Window size 0");
             }
 
             long size = flowControl.incrementOutboundConnectionWindowSize(increment);
             if (size > WindowSize.MAX_WIN_SIZE || size < 0) {
-                Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.FLOW_CONTROL, "Window size too big.");
-                writeConnectionFrame(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
+                writeGoAway(Http2ErrorCode.FLOW_CONTROL, "Window size too big.");
             }
         } else {
             StreamContext stream = streams.get(streamId);
             if (stream == null) {
                 if (streamId > lastStreamId) {
                     String msg = "Received WINDOW_UPDATE for stream " + streamId + " in state IDLE";
-                    Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.PROTOCOL, msg);
-                    writeConnectionFrame(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
+                    writeGoAway(Http2ErrorCode.PROTOCOL, msg);
                 }
                 return;
             }
@@ -1055,17 +1080,29 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
     }
 
     private StreamContext stream(int streamId) {
+        if (closing) {
+            throw new CloseConnectionException("HTTP/2 connection is closing.");
+        }
         if (streamId % 2 == 0) {
             // client side must send odd identifiers
             throw new Http2Exception(Http2ErrorCode.PROTOCOL,
                                      "Stream " + streamId + " is even, only odd numbers allowed");
         }
-        boolean same = streamId == lastStreamId;
-        lastStreamId = Math.max(streamId, lastStreamId);
-
-        // this method is only called from a single thread (the connection thread)
         StreamContext streamContext = streams.get(streamId);
-        if (streamContext == null) {
+        if (streamContext != null) {
+            this.lastRequestTimestamp = DateTime.timestamp();
+            return streamContext;
+        }
+
+        streamAdmissionLock.lock();
+        try {
+            if (closing) {
+                throw new CloseConnectionException("HTTP/2 connection is closing.");
+            }
+            boolean same = streamId == lastStreamId;
+            lastStreamId = Math.max(streamId, lastStreamId);
+
+            // this method is only called from a single thread (the connection thread)
             if (same) {
                 throw new Http2Exception(Http2ErrorCode.STREAM_CLOSED, "Stream closed");
             }
@@ -1075,7 +1112,8 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                     if (context.streamId > streamId && context.stream().streamState() != Http2StreamState.IDLE) {
                         throw new Http2Exception(Http2ErrorCode.PROTOCOL,
                                                  "Stream " + streamId
-                                                         + " was never created and has lower ID than last: " + lastStreamId);
+                                                         + " was never created and has lower ID than last: "
+                                                         + lastStreamId);
                     }
                 }
             }
@@ -1094,14 +1132,17 @@ public class Http2Connection implements ServerConnection, InterruptableTask<Void
                                                                     clientSettings,
                                                                     connectionWriter,
                                                                     flowControl,
+                                                                    inboundDataBudget,
                                                                     connectionChecks));
             streams.put(streamContext);
             streams.doMaintenance();
+            // any request for a specific stream is now considered a valid update of connection (ignoring management messages
+            // on stream 0)
+            this.lastRequestTimestamp = DateTime.timestamp();
+            return streamContext;
+        } finally {
+            streamAdmissionLock.unlock();
         }
-        // any request for a specific stream is now considered a valid update of connection (ignoring management messages
-        // on stream 0)
-        this.lastRequestTimestamp = DateTime.timestamp();
-        return streamContext;
     }
 
     private BufferData inProgressFrame() {

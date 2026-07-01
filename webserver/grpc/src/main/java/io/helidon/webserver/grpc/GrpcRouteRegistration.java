@@ -16,6 +16,7 @@
 
 package io.helidon.webserver.grpc;
 
+import io.helidon.common.Api;
 import io.helidon.service.registry.Service;
 import io.helidon.webserver.WebServer;
 
@@ -25,6 +26,7 @@ import io.helidon.webserver.WebServer;
  * The implementing types are expected to be {@link io.helidon.service.registry.ServiceRegistry} services,
  * and will be loaded through a {@link io.helidon.webserver.spi.ServerFeature}.
  */
+@Api.Incubating
 @Service.Contract
 public interface GrpcRouteRegistration {
     /**

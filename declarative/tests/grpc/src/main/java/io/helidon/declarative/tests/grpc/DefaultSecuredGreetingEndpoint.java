@@ -22,21 +22,16 @@ import io.helidon.grpc.api.Grpc;
 import io.helidon.service.registry.Service;
 import io.helidon.webserver.grpc.RpcServer;
 
-import com.google.protobuf.Descriptors;
 import jakarta.annotation.security.PermitAll;
 import jakarta.annotation.security.RolesAllowed;
 
 @RpcServer.Endpoint
 @Grpc.GrpcService(DefaultSecuredGreetingEndpoint.SERVICE_NAME)
+@Grpc.ProtoDescriptor(DeclarativeGrpcProto.class)
 @RolesAllowed("admin")
 @Service.Singleton
 class DefaultSecuredGreetingEndpoint {
     static final String SERVICE_NAME = "io.helidon.declarative.tests.grpc.DefaultSecuredGreetingService";
-
-    @Grpc.Proto
-    static Descriptors.FileDescriptor proto() {
-        return DeclarativeGrpcProto.getDescriptor();
-    }
 
     @Grpc.Unary("AdminDefaultGreet")
     GreetingReply adminDefaultGreet(GreetingRequest request) {

@@ -114,6 +114,19 @@ class Http2ClientConnectionPingTest {
     }
 
     @Test
+    void streamWindowUpdateRestoresCreditOnce() {
+        MockedConnectionTestContext test = new MockedConnectionTestContext(Duration.ofMillis(100));
+        Http2ClientStream stream = test.newStream();
+        stream.writeHeaders(requestHeaders(VALID_REGULAR_HEADER), false);
+        test.connection().flowControl().incrementOutboundConnectionWindowSize(100_000);
+        int before = stream.flowControl().outbound().getRemainingWindowSize();
+
+        stream.windowUpdate(new Http2WindowUpdate(1024));
+
+        assertThat(stream.flowControl().outbound().getRemainingWindowSize(), is(before + 1024));
+    }
+
+    @Test
     void pingWaitsForMatchingAck() throws Exception {
         MockedConnectionTestContext test = new MockedConnectionTestContext(Duration.ofSeconds(1));
         CompletableFuture<Boolean> pingFuture = startPing(test);

@@ -21,7 +21,7 @@ import io.helidon.declarative.tests.grpc.DeclarativeGrpcProto.GreetingRequest;
 import io.helidon.grpc.api.Grpc;
 import io.helidon.webclient.grpc.RpcClient;
 
-@RpcClient.Endpoint(value = ClientConfigGreetingClients.INVALID_URI,
+@RpcClient.Endpoint(value = ClientConfigGreetingClients.UNRESOLVED_URI,
                     clientName = ClientConfigGreetingClients.NAMED_CLIENT)
 @Grpc.GrpcService(ClientConfigGreetingClients.SERVICE_NAME)
 @Grpc.ProtoDescriptor(DeclarativeGrpcProto.class)

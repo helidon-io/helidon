@@ -25,6 +25,7 @@ import io.helidon.grpc.core.WeightedBag;
 import io.helidon.validation.ValidationException;
 import io.helidon.webserver.grpc.spi.GrpcServerService;
 
+import io.grpc.ForwardingServerCall;
 import io.grpc.ForwardingServerCallListener;
 import io.grpc.Metadata;
 import io.grpc.ServerCall;
@@ -95,10 +96,14 @@ public final class GrpcValidation implements ServerInterceptor, GrpcServerServic
             return next.startCall(call, headers);
         }
 
+        AtomicBoolean callClosed = new AtomicBoolean();
+        AtomicBoolean validationFailed = new AtomicBoolean();
+        ServerCall<ReqT, RespT> validationCall = new ValidationCall<>(call, callClosed, validationFailed);
         try {
-            return new ValidationListener<>(next.startCall(call, headers), call);
+            return new ValidationListener<>(next.startCall(validationCall, headers), validationCall, validationFailed);
         } catch (ValidationException e) {
-            call.close(status(e), new Metadata());
+            validationFailed.set(true);
+            validationCall.close(status(e), new Metadata());
             return new ServerCall.Listener<>() {
             };
         }
@@ -110,19 +115,60 @@ public final class GrpcValidation implements ServerInterceptor, GrpcServerServic
         return message == null ? status : status.withDescription(message);
     }
 
+    private static ValidationException validationException(Throwable throwable) {
+        Throwable current = throwable;
+        while (current != null) {
+            if (current instanceof ValidationException validationException) {
+                return validationException;
+            }
+            current = current.getCause();
+        }
+        return null;
+    }
+
+    private static final class ValidationCall<ReqT, RespT>
+            extends ForwardingServerCall.SimpleForwardingServerCall<ReqT, RespT> {
+        private final AtomicBoolean closed;
+        private final AtomicBoolean validationFailed;
+
+        private ValidationCall(ServerCall<ReqT, RespT> delegate,
+                               AtomicBoolean closed,
+                               AtomicBoolean validationFailed) {
+            super(delegate);
+            this.closed = closed;
+            this.validationFailed = validationFailed;
+        }
+
+        @Override
+        public void close(Status status, Metadata trailers) {
+            Status mappedStatus = status;
+            ValidationException exception = validationException(status.getCause());
+            if (exception != null) {
+                validationFailed.set(true);
+                mappedStatus = status(exception);
+            }
+            if (closed.compareAndSet(false, true)) {
+                super.close(mappedStatus, trailers);
+            }
+        }
+    }
+
     private static final class ValidationListener<ReqT, RespT>
             extends ForwardingServerCallListener.SimpleForwardingServerCallListener<ReqT> {
         private final ServerCall<ReqT, RespT> call;
-        private final AtomicBoolean closed = new AtomicBoolean();
+        private final AtomicBoolean validationFailed;
 
-        private ValidationListener(ServerCall.Listener<ReqT> delegate, ServerCall<ReqT, RespT> call) {
+        private ValidationListener(ServerCall.Listener<ReqT> delegate,
+                                   ServerCall<ReqT, RespT> call,
+                                   AtomicBoolean validationFailed) {
             super(delegate);
             this.call = call;
+            this.validationFailed = validationFailed;
         }
 
         @Override
         public void onMessage(ReqT message) {
-            if (closed.get()) {
+            if (validationFailed.get()) {
                 return;
             }
 
@@ -135,7 +181,7 @@ public final class GrpcValidation implements ServerInterceptor, GrpcServerServic
 
         @Override
         public void onHalfClose() {
-            if (closed.get()) {
+            if (validationFailed.get()) {
                 return;
             }
 
@@ -148,7 +194,7 @@ public final class GrpcValidation implements ServerInterceptor, GrpcServerServic
 
         @Override
         public void onCancel() {
-            if (closed.get()) {
+            if (validationFailed.get()) {
                 return;
             }
 
@@ -161,7 +207,7 @@ public final class GrpcValidation implements ServerInterceptor, GrpcServerServic
 
         @Override
         public void onComplete() {
-            if (closed.get()) {
+            if (validationFailed.get()) {
                 return;
             }
 
@@ -174,7 +220,7 @@ public final class GrpcValidation implements ServerInterceptor, GrpcServerServic
 
         @Override
         public void onReady() {
-            if (closed.get()) {
+            if (validationFailed.get()) {
                 return;
             }
 
@@ -186,7 +232,7 @@ public final class GrpcValidation implements ServerInterceptor, GrpcServerServic
         }
 
         private void close(ValidationException exception) {
-            if (closed.compareAndSet(false, true)) {
+            if (validationFailed.compareAndSet(false, true)) {
                 call.close(status(exception), new Metadata());
             }
         }

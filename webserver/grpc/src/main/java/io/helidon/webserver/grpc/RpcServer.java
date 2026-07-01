@@ -23,9 +23,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import io.helidon.common.Api;
+
 /**
  * Declarative gRPC server annotations.
  */
+@Api.Incubating
 public final class RpcServer {
     private RpcServer() {
     }

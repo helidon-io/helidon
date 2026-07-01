@@ -114,13 +114,18 @@ abstract class FlowControlImpl implements FlowControl {
 
         @Override
         public void incrementWindowSize(int increment) {
-            long strRemaining = streamWindowSize.incrementWindowSize(increment);
-            if (LOGGER_OUTBOUND.isLoggable(DEBUG)) {
-                LOGGER_INBOUND.log(DEBUG, String.format("%s IFC STR %d: +%d(%d)", type, streamId(), increment, strRemaining));
-            }
+            incrementStreamWindowSize(increment);
             long conRemaining = connectionWindowSize.incrementWindowSize(increment);
             if (LOGGER_OUTBOUND.isLoggable(DEBUG)) {
                 LOGGER_INBOUND.log(DEBUG, String.format("%s IFC STR 0: +%d(%d)", type, increment, conRemaining));
+            }
+        }
+
+        @Override
+        public void incrementStreamWindowSize(int increment) {
+            long strRemaining = streamWindowSize.incrementWindowSize(increment);
+            if (LOGGER_OUTBOUND.isLoggable(DEBUG)) {
+                LOGGER_INBOUND.log(DEBUG, String.format("%s IFC STR %d: +%d(%d)", type, streamId(), increment, strRemaining));
             }
         }
 

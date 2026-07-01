@@ -156,6 +156,18 @@ descriptor can be provided, and a method invoked using the methods
 include::{sourcedir}/se/grpc/ClientSnippets.java[tag=snippet_8, indent=0]
 ----
 
+The resource-owning streaming methods are `serverStreaming`, `clientStreaming`, and `bidirectional`. They use Java
+`Stream` for streaming requests or responses and apply transport readiness rather than eagerly buffering an entire
+stream. A request stream is transferred to the call and must not be reused. A returned response stream owns the active
+RPC and must be closed, including when an operation short-circuits before consuming every response. The calling thread
+consumes a client-streaming request stream. If producing elements can block, closing the request stream must unblock
+production so an early peer termination can return promptly. Use try-with-resources, for example:
+
+[source,java]
+----
+include::{sourcedir}/se/grpc/ClientSnippets.java[tag=snippet_8_resource_stream, indent=0]
+----
+
 === Client URI Suppliers
 
 A `ClientURISupplier` can be used to dynamically obtain a sequence of `ClientUri`

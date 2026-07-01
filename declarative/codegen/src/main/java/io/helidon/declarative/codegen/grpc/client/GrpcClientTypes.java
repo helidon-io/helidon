@@ -32,6 +32,7 @@ final class GrpcClientTypes {
     static final TypeName GRPC_PROTO_DESCRIPTOR = TypeName.create("io.helidon.grpc.api.Grpc.ProtoDescriptor");
     static final TypeName GRPC_SERVICE = TypeName.create("io.helidon.grpc.api.Grpc.GrpcService");
     static final TypeName PROTO_FILE_DESCRIPTOR = TypeName.create("com.google.protobuf.Descriptors.FileDescriptor");
+    static final TypeName PROTO_MESSAGE_DESCRIPTOR = TypeName.create("com.google.protobuf.Descriptors.Descriptor");
 
     static final Annotation RPC_CLIENT_QUALIFIER_INSTANCE = Annotation.create(RPC_CLIENT_QUALIFIER);
 

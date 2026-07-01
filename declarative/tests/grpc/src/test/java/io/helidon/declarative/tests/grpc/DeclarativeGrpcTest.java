@@ -32,7 +32,6 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
-import io.helidon.webclient.grpc.GrpcClient;
 import io.helidon.webclient.grpc.RpcClient;
 import io.helidon.webserver.WebServer;
 import io.helidon.webserver.WebServerConfig;
@@ -68,6 +67,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ServerTest
+@SuppressWarnings("helidon:api:incubating")
 class DeclarativeGrpcTest {
     private static final String USERNAME = "tomas";
     private static final String ADMIN = "admin";

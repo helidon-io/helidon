@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024, 2025 Oracle and/or its affiliates.
+ * Copyright (c) 2024, 2026 Oracle and/or its affiliates.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package io.helidon.grpc.core;
 import java.util.Base64;
 
 import io.helidon.http.HeaderNames;
+import io.helidon.http.Headers;
 import io.helidon.http.WritableHeaders;
 import io.helidon.http.http2.Http2Headers;
 
@@ -45,8 +46,11 @@ public class GrpcHeadersUtil {
         metadata.keys().forEach(name -> {
             if (name.endsWith(Metadata.BINARY_HEADER_SUFFIX)) {
                 Metadata.Key<byte[]> key = Metadata.Key.of(name, Metadata.BINARY_BYTE_MARSHALLER);
-                byte[] binary = metadata.get(key);
-                headers.add(HeaderNames.create(name), new String(encoder.encode(binary), US_ASCII));
+                Iterable<byte[]> binary = metadata.getAll(key);
+                if (binary != null) {
+                    binary.forEach(value -> headers.add(HeaderNames.create(name),
+                                                        new String(encoder.encode(value), US_ASCII)));
+                }
             } else {
                 Metadata.Key<String> key = Metadata.Key.of(name, Metadata.ASCII_STRING_MARSHALLER);
                 Iterable<String> ascii = metadata.getAll(key);
@@ -64,13 +68,27 @@ public class GrpcHeadersUtil {
      * @return the new metadata
      */
     public static Metadata toMetadata(Http2Headers headers) {
+        return toMetadata(headers.httpHeaders());
+    }
+
+    /**
+     * Converts HTTP headers into a Metadata instance.
+     *
+     * @param headers the headers to convert
+     * @return the new metadata
+     */
+    public static Metadata toMetadata(Headers headers) {
         Base64.Decoder decoder = Base64.getDecoder();
         Metadata metadata = new Metadata();
-        headers.httpHeaders().forEach(header -> {
+        headers.forEach(header -> {
             String name = header.name();
             if (name.endsWith(Metadata.BINARY_HEADER_SUFFIX)) {
                 Metadata.Key<byte[]> key = Metadata.Key.of(name, Metadata.BINARY_BYTE_MARSHALLER);
-                metadata.put(key, decoder.decode(header.valueBytes()));
+                header.allValues().forEach(value -> {
+                    for (String encoded : value.split(",", -1)) {
+                        metadata.put(key, decoder.decode(encoded.trim()));
+                    }
+                });
             } else {
                 Metadata.Key<String> key = Metadata.Key.of(name, Metadata.ASCII_STRING_MARSHALLER);
                 header.allValues().forEach(value -> metadata.put(key, value));

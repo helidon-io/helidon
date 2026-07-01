@@ -21,15 +21,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Spliterator;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import io.helidon.grpc.core.WeightedBag;
 
@@ -38,7 +32,6 @@ import io.grpc.Channel;
 import io.grpc.ClientCall;
 import io.grpc.ClientInterceptor;
 import io.grpc.ClientInterceptors;
-import io.grpc.Metadata;
 import io.grpc.MethodDescriptor;
 import io.grpc.stub.ClientCalls;
 import io.grpc.stub.StreamObserver;
@@ -141,6 +134,42 @@ class GrpcServiceClientImpl implements GrpcServiceClient {
     }
 
     @Override
+    public <ReqT, ResT> Stream<ResT> serverStreaming(String methodName, ReqT request) {
+        Objects.requireNonNull(methodName, "methodName");
+        Objects.requireNonNull(request, "request");
+        ClientCall<ReqT, ResT> call = ensureMethod(methodName, MethodDescriptor.MethodType.SERVER_STREAMING);
+        return GrpcClientStreams.serverStreaming(call, request);
+    }
+
+    @Override
+    public <ReqT, ResT> ResT clientStreaming(String methodName, Stream<ReqT> requests) {
+        Objects.requireNonNull(methodName, "methodName");
+        Objects.requireNonNull(requests, "requests");
+        ClientCall<ReqT, ResT> call;
+        try {
+            call = ensureMethod(methodName, MethodDescriptor.MethodType.CLIENT_STREAMING);
+        } catch (RuntimeException | Error t) {
+            GrpcClientStreams.closeRequests(requests, t);
+            throw t;
+        }
+        return GrpcClientStreams.clientStreaming(call, requests);
+    }
+
+    @Override
+    public <ReqT, ResT> Stream<ResT> bidirectional(String methodName, Stream<ReqT> requests) {
+        Objects.requireNonNull(methodName, "methodName");
+        Objects.requireNonNull(requests, "requests");
+        ClientCall<ReqT, ResT> call;
+        try {
+            call = ensureMethod(methodName, MethodDescriptor.MethodType.BIDI_STREAMING);
+        } catch (RuntimeException | Error t) {
+            GrpcClientStreams.closeRequests(requests, t);
+            throw t;
+        }
+        return GrpcClientStreams.bidirectional(call, requests, grpcClient.prototype().executor());
+    }
+
+    @Override
     public <ReqT, ResT> Iterator<ResT> bidi(String methodName, Iterator<ReqT> request) {
         ClientCall<ReqT, ResT> call = ensureMethod(methodName, MethodDescriptor.MethodType.BIDI_STREAMING);
         CompletableFuture<Iterator<ResT>> future = new CompletableFuture<>();
@@ -178,55 +207,6 @@ class GrpcServiceClientImpl implements GrpcServiceClient {
     }
 
     @Override
-    public <ReqT, ResT> Stream<ResT> bidiStream(String methodName, Stream<ReqT> request) {
-        Objects.requireNonNull(request);
-        ClientCall<ReqT, ResT> call = ensureMethod(methodName, MethodDescriptor.MethodType.BIDI_STREAMING);
-        SingleItemBridge<ResT> responses = new SingleItemBridge<>(() -> call.request(1));
-        Ready ready = new Ready(call);
-        call.start(new ClientCall.Listener<>() {
-            @Override
-            public void onMessage(ResT message) {
-                responses.item(message);
-            }
-
-            @Override
-            public void onClose(io.grpc.Status status, Metadata trailers) {
-                ready.cancel();
-                if (status.isOk()) {
-                    responses.complete();
-                } else {
-                    responses.error(status.asRuntimeException(trailers));
-                }
-            }
-
-            @Override
-            public void onReady() {
-                ready.ready();
-            }
-        }, new Metadata());
-        Thread.startVirtualThread(() -> {
-            try (request) {
-                Iterator<ReqT> iterator = request.iterator();
-                while (iterator.hasNext()) {
-                    if (!ready.await()) {
-                        return;
-                    }
-                    call.sendMessage(iterator.next());
-                }
-                call.halfClose();
-            } catch (Throwable t) {
-                call.cancel("Request stream failed.", t);
-            }
-        });
-        return StreamSupport.stream(responses, false)
-                .onClose(() -> {
-                    responses.cancel();
-                    ready.cancel();
-                    call.cancel("Response stream closed.", null);
-                });
-    }
-
-    @Override
     public <ReqT, ResT> StreamObserver<ReqT> bidi(String methodName, StreamObserver<ResT> response) {
         ClientCall<ReqT, ResT> call = ensureMethod(methodName, MethodDescriptor.MethodType.BIDI_STREAMING);
         return ClientCalls.asyncBidiStreamingCall(call, response);
@@ -256,161 +236,4 @@ class GrpcServiceClientImpl implements GrpcServiceClient {
         }
     }
 
-    private static final class SingleItemBridge<T> implements Spliterator<T> {
-        private final ReentrantLock lock = new ReentrantLock();
-        private final Condition changed = lock.newCondition();
-        private final Runnable request;
-        private T item;
-        private Throwable error;
-        private boolean hasItem;
-        private boolean requested;
-        private boolean complete;
-        private boolean cancelled;
-
-        private SingleItemBridge(Runnable request) {
-            this.request = request;
-        }
-
-        @Override
-        public boolean tryAdvance(Consumer<? super T> action) {
-            Objects.requireNonNull(action);
-            T next;
-            lock.lock();
-            try {
-                requestOne();
-                while (!hasItem && !complete && error == null && !cancelled) {
-                    changed.await();
-                }
-                if (error != null) {
-                    throw new CompletionException(error);
-                }
-                if (!hasItem) {
-                    return false;
-                }
-                next = item;
-                item = null;
-                hasItem = false;
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new CompletionException(e);
-            } finally {
-                lock.unlock();
-            }
-            action.accept(next);
-            return true;
-        }
-
-        private void requestOne() {
-            if (!requested && !complete && error == null && !cancelled) {
-                requested = true;
-                request.run();
-            }
-        }
-
-        private void item(T item) {
-            lock.lock();
-            try {
-                requested = false;
-                if (hasItem) {
-                    error = new IllegalStateException("Received gRPC message before previous message was consumed.");
-                } else {
-                    this.item = item;
-                    hasItem = true;
-                }
-                changed.signalAll();
-            } finally {
-                lock.unlock();
-            }
-        }
-
-        private void error(Throwable error) {
-            lock.lock();
-            try {
-                requested = false;
-                this.error = error;
-                changed.signalAll();
-            } finally {
-                lock.unlock();
-            }
-        }
-
-        private void complete() {
-            lock.lock();
-            try {
-                requested = false;
-                complete = true;
-                changed.signalAll();
-            } finally {
-                lock.unlock();
-            }
-        }
-
-        private void cancel() {
-            lock.lock();
-            try {
-                requested = false;
-                cancelled = true;
-                changed.signalAll();
-            } finally {
-                lock.unlock();
-            }
-        }
-
-        @Override
-        public Spliterator<T> trySplit() {
-            return null;
-        }
-
-        @Override
-        public long estimateSize() {
-            return Long.MAX_VALUE;
-        }
-
-        @Override
-        public int characteristics() {
-            return ORDERED | NONNULL;
-        }
-    }
-
-    private static final class Ready {
-        private final ReentrantLock lock = new ReentrantLock();
-        private final Condition changed = lock.newCondition();
-        private final ClientCall<?, ?> call;
-        private boolean cancelled;
-
-        private Ready(ClientCall<?, ?> call) {
-            this.call = call;
-        }
-
-        private boolean await() throws InterruptedException {
-            lock.lock();
-            try {
-                while (!call.isReady() && !cancelled) {
-                    changed.await();
-                }
-                return !cancelled;
-            } finally {
-                lock.unlock();
-            }
-        }
-
-        private void ready() {
-            lock.lock();
-            try {
-                changed.signalAll();
-            } finally {
-                lock.unlock();
-            }
-        }
-
-        private void cancel() {
-            lock.lock();
-            try {
-                cancelled = true;
-                changed.signalAll();
-            } finally {
-                lock.unlock();
-            }
-        }
-    }
 }

@@ -17,16 +17,11 @@
 package io.helidon.webserver.http2;
 
 import io.helidon.http.http2.Http2ErrorCode;
-import io.helidon.http.http2.Http2Flag;
-import io.helidon.http.http2.Http2GoAway;
-import io.helidon.http.http2.Http2Settings;
 import io.helidon.webserver.CloseConnectionException;
 
 class Http2ConnectionChecks {
     private static final System.Logger LOGGER = System.getLogger(Http2ConnectionChecks.class.getName());
 
-    // No fancy client settings needed for goaway
-    private final Http2Settings clientSettings = Http2Settings.builder().build();
     private final Http2Connection connection;
     private final long rapidResetCheckPeriod;
     private final int maxRapidResets;
@@ -71,16 +66,14 @@ class Http2ConnectionChecks {
     }
 
     private void closeConnection(String msg) {
+        closeConnection(Http2ErrorCode.ENHANCE_YOUR_CALM, msg);
+    }
+
+    void closeConnection(Http2ErrorCode errorCode, String msg) {
         if (LOGGER.isLoggable(System.Logger.Level.DEBUG)) {
             LOGGER.log(System.Logger.Level.DEBUG, msg + " Closing connection " + connection + " with GOAWAY");
         }
-        Http2GoAway frame = new Http2GoAway(0, Http2ErrorCode.ENHANCE_YOUR_CALM, msg);
-        try {
-            connection.writeConnectionFrame(frame.toFrameData(clientSettings, 0, Http2Flag.NoFlags.create()));
-        } finally {
-            // Finish to avoid implicit GOAWAY after close, even if the peer is already gone.
-            connection.finish();
-        }
+        connection.writeGoAwayAndFinish(errorCode, msg);
         // Avoid further processing changing the connection state
         throw new CloseConnectionException("Enhance your calm.");
     }

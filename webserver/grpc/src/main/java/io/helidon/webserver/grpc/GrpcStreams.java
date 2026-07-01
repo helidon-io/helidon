@@ -16,23 +16,25 @@
 
 package io.helidon.webserver.grpc;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Spliterator;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import io.helidon.common.Api;
 import io.helidon.common.context.Context;
 import io.helidon.common.context.Contexts;
+import io.helidon.grpc.core.ContextKeys;
 
 import io.grpc.stub.ServerCallStreamObserver;
 import io.grpc.stub.StreamObserver;
@@ -42,78 +44,48 @@ import io.grpc.stub.StreamObserver;
  */
 @Api.Internal
 public final class GrpcStreams {
-    private GrpcStreams() {
-    }
+    private static final ThreadFactory THREAD_FACTORY = Thread.ofVirtual()
+            .name("helidon-grpc-server-stream-", 0)
+            .factory();
 
-    /**
-     * Send iterable server-streaming responses.
-     *
-     * @param responses responses
-     * @param responseObserver response observer
-     * @param <ResT> response type
-     */
-    public static <ResT> void serverStreaming(Iterable<ResT> responses, StreamObserver<ResT> responseObserver) {
-        Objects.requireNonNull(responses);
-        Objects.requireNonNull(responseObserver);
-        try {
-            sendResponses(responses, responseObserver, () -> { });
-        } catch (Throwable t) {
-            responseObserver.onError(t);
-        }
+    private GrpcStreams() {
     }
 
     /**
      * Send stream server-streaming responses.
      *
-     * @param responses responses
-     * @param responseObserver response observer
-     * @param <ResT> response type
-     */
-    public static <ResT> void serverStreaming(Stream<ResT> responses, StreamObserver<ResT> responseObserver) {
-        Objects.requireNonNull(responses);
-        Objects.requireNonNull(responseObserver);
-        try (responses) {
-            sendResponses(responses::iterator, responseObserver, () -> { });
-        } catch (Throwable t) {
-            responseObserver.onError(t);
-        }
-    }
-
-    /**
-     * Create a client-streaming request observer that collects all inbound requests before invoking the handler.
-     *
      * @param handler endpoint handler
      * @param responseObserver response observer
-     * @param <ReqT> request type
      * @param <ResT> response type
-     * @return request observer
      */
-    public static <ReqT, ResT> StreamObserver<ReqT> clientStreaming(Function<Iterable<ReqT>, ResT> handler,
-                                                                    StreamObserver<ResT> responseObserver) {
+    public static <ResT> void serverStreaming(Supplier<Stream<ResT>> handler, StreamObserver<ResT> responseObserver) {
         Objects.requireNonNull(handler);
         Objects.requireNonNull(responseObserver);
-        List<ReqT> requests = new ArrayList<>();
-        return new StreamObserver<>() {
-            @Override
-            public void onNext(ReqT request) {
-                requests.add(request);
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                responseObserver.onError(throwable);
-            }
-
-            @Override
-            public void onCompleted() {
-                try {
-                    responseObserver.onNext(handler.apply(List.copyOf(requests)));
-                    responseObserver.onCompleted();
-                } catch (Throwable t) {
-                    responseObserver.onError(t);
+        Outbound outbound = new Outbound(responseObserver, () -> { });
+        ContextRunner contextRunner = ContextRunner.create();
+        Future<?> worker = contextRunner.submit(() -> {
+            boolean completed;
+            try {
+                Stream<ResT> responses = Objects.requireNonNull(handler.get(), "gRPC response stream");
+                if (!outbound.source(responses)) {
+                    return;
                 }
+                try {
+                    completed = sendResponses(responses, responseObserver, outbound);
+                } finally {
+                    outbound.closeSource();
+                }
+            } catch (Throwable t) {
+                if (outbound.claimTerminal()) {
+                    responseObserver.onError(unwrap(t));
+                }
+                return;
             }
-        };
+            if (completed && outbound.claimTerminal()) {
+                responseObserver.onCompleted();
+            }
+        });
+        outbound.worker(worker);
     }
 
     /**
@@ -125,54 +97,40 @@ public final class GrpcStreams {
      * @param <ResT> response type
      * @return request observer
      */
-    public static <ReqT, ResT> StreamObserver<ReqT> clientStreamingStream(Function<Stream<ReqT>, ResT> handler,
-                                                                          StreamObserver<ResT> responseObserver) {
+    public static <ReqT, ResT> StreamObserver<ReqT> clientStreaming(Function<Stream<ReqT>, ResT> handler,
+                                                                    StreamObserver<ResT> responseObserver) {
         Objects.requireNonNull(handler);
         Objects.requireNonNull(responseObserver);
         StreamingRequest<ReqT> request = new StreamingRequest<>(responseObserver);
-        request.installCancelHandler();
+        Outbound outbound = new Outbound(responseObserver, request::cancel);
         ContextRunner contextRunner = ContextRunner.create();
-        Thread.startVirtualThread(contextRunner.wrap(() -> {
+        Future<?> worker = contextRunner.submit(() -> {
+            ResT response;
             try (Stream<ReqT> stream = request.stream()) {
-                responseObserver.onNext(handler.apply(stream));
-                responseObserver.onCompleted();
+                response = Objects.requireNonNull(handler.apply(stream), "gRPC response");
             } catch (Throwable t) {
-                responseObserver.onError(unwrap(t));
+                if (outbound.claimTerminal()) {
+                    responseObserver.onError(unwrap(t));
+                }
+                return;
             }
-        }));
+            if (outbound.cancelled()) {
+                return;
+            }
+            try {
+                responseObserver.onNext(response);
+            } catch (Throwable t) {
+                if (outbound.claimTerminal()) {
+                    responseObserver.onError(unwrap(t));
+                }
+                return;
+            }
+            if (outbound.claimTerminal()) {
+                responseObserver.onCompleted();
+            }
+        });
+        outbound.worker(worker);
         return request.observer();
-    }
-
-    /**
-     * Create a bidirectional request observer that collects all inbound requests before invoking the handler.
-     *
-     * @param handler endpoint handler
-     * @param responseObserver response observer
-     * @param <ReqT> request type
-     * @param <ResT> response type
-     * @return request observer
-     */
-    public static <ReqT, ResT> StreamObserver<ReqT> bidirectional(Function<Iterable<ReqT>, Iterable<ResT>> handler,
-                                                                  StreamObserver<ResT> responseObserver) {
-        Objects.requireNonNull(handler);
-        Objects.requireNonNull(responseObserver);
-        List<ReqT> requests = new ArrayList<>();
-        return new StreamObserver<>() {
-            @Override
-            public void onNext(ReqT request) {
-                requests.add(request);
-            }
-
-            @Override
-            public void onError(Throwable throwable) {
-                responseObserver.onError(throwable);
-            }
-
-            @Override
-            public void onCompleted() {
-                serverStreaming(handler.apply(List.copyOf(requests)), responseObserver);
-            }
-        };
     }
 
     /**
@@ -184,41 +142,50 @@ public final class GrpcStreams {
      * @param <ResT> response type
      * @return request observer
      */
-    public static <ReqT, ResT> StreamObserver<ReqT> bidirectionalStream(Function<Stream<ReqT>, Stream<ResT>> handler,
-                                                                        StreamObserver<ResT> responseObserver) {
+    public static <ReqT, ResT> StreamObserver<ReqT> bidirectional(Function<Stream<ReqT>, Stream<ResT>> handler,
+                                                                  StreamObserver<ResT> responseObserver) {
         Objects.requireNonNull(handler);
         Objects.requireNonNull(responseObserver);
         StreamingRequest<ReqT> request = new StreamingRequest<>(responseObserver);
         Outbound outbound = new Outbound(responseObserver, request::cancel);
         ContextRunner contextRunner = ContextRunner.create();
-        Thread.startVirtualThread(contextRunner.wrap(() -> {
+        Future<?> worker = contextRunner.submit(() -> {
+            boolean completed;
             try (Stream<ReqT> stream = request.stream()) {
-                sendResponses(handler.apply(stream)::iterator, responseObserver, outbound);
+                Stream<ResT> responses = Objects.requireNonNull(handler.apply(stream), "gRPC response stream");
+                if (!outbound.source(responses)) {
+                    return;
+                }
+                try {
+                    completed = sendResponses(responses, responseObserver, outbound);
+                } finally {
+                    outbound.closeSource();
+                }
             } catch (Throwable t) {
-                responseObserver.onError(unwrap(t));
+                if (outbound.claimTerminal()) {
+                    responseObserver.onError(unwrap(t));
+                }
+                return;
             }
-        }));
+            if (completed && outbound.claimTerminal()) {
+                responseObserver.onCompleted();
+            }
+        });
+        outbound.worker(worker);
         return request.observer();
     }
 
-    private static <ResT> void sendResponses(Iterable<ResT> responses,
-                                             StreamObserver<ResT> responseObserver,
-                                             Runnable onCancel) {
-        sendResponses(responses, responseObserver, new Outbound(responseObserver, onCancel));
-    }
-
-    private static <ResT> void sendResponses(Iterable<ResT> responses,
-                                             StreamObserver<ResT> responseObserver,
-                                             Outbound outbound) {
-        for (ResT response : responses) {
+    private static <ResT> boolean sendResponses(Stream<ResT> responses,
+                                                StreamObserver<ResT> responseObserver,
+                                                Outbound outbound) {
+        var iterator = responses.iterator();
+        while (!outbound.cancelled() && iterator.hasNext()) {
             if (!outbound.awaitReady()) {
-                return;
+                return false;
             }
-            responseObserver.onNext(response);
+            responseObserver.onNext(Objects.requireNonNull(iterator.next(), "gRPC response"));
         }
-        if (!outbound.cancelled()) {
-            responseObserver.onCompleted();
-        }
+        return !outbound.cancelled();
     }
 
     private static Throwable unwrap(Throwable t) {
@@ -230,10 +197,8 @@ public final class GrpcStreams {
 
     private static final class StreamingRequest<T> {
         private final SingleItemBridge<T> bridge = new SingleItemBridge<>();
-        private final StreamObserver<?> responseObserver;
 
         private StreamingRequest(StreamObserver<?> responseObserver) {
-            this.responseObserver = responseObserver;
             if (responseObserver instanceof ServerCallStreamObserver<?> serverObserver) {
                 serverObserver.disableAutoRequest();
                 bridge.requester(() -> serverObserver.request(1));
@@ -246,12 +211,6 @@ public final class GrpcStreams {
 
         private void cancel() {
             bridge.cancel();
-        }
-
-        private void installCancelHandler() {
-            if (responseObserver instanceof ServerCallStreamObserver<?> serverObserver) {
-                serverObserver.setOnCancelHandler(bridge::cancel);
-            }
         }
 
         private StreamObserver<T> observer() {
@@ -295,10 +254,10 @@ public final class GrpcStreams {
                 while (!hasItem && !complete && error == null && !cancelled) {
                     changed.await();
                 }
-                if (error != null) {
-                    throw new CompletionException(error);
-                }
                 if (!hasItem) {
+                    if (error != null) {
+                        throw new CompletionException(error);
+                    }
                     return false;
                 }
                 next = item;
@@ -392,17 +351,22 @@ public final class GrpcStreams {
 
     private record ContextRunner(io.grpc.Context grpcContext, Optional<Context> helidonContext) {
         private static ContextRunner create() {
-            return new ContextRunner(io.grpc.Context.current(), Contexts.context());
+            io.grpc.Context grpcContext = io.grpc.Context.current();
+            Optional<Context> helidonContext = Optional.ofNullable(ContextKeys.HELIDON_CONTEXT.get(grpcContext))
+                    .or(Contexts::context);
+            return new ContextRunner(grpcContext, helidonContext);
         }
 
-        private Runnable wrap(Runnable task) {
-            return () -> grpcContext.run(() -> {
+        private Future<?> submit(Runnable task) {
+            FutureTask<Void> future = new FutureTask<>(() -> grpcContext.run(() -> {
                 if (helidonContext.isPresent()) {
                     Contexts.runInContext(helidonContext.get(), task);
                 } else {
                     task.run();
                 }
-            });
+            }), null);
+            THREAD_FACTORY.newThread(future).start();
+            return future;
         }
     }
 
@@ -410,19 +374,19 @@ public final class GrpcStreams {
         private final ServerCallStreamObserver<?> serverObserver;
         private final ReentrantLock lock = new ReentrantLock();
         private final Condition ready = lock.newCondition();
-        private boolean cancelled;
+        private volatile boolean cancelled;
+        private volatile Future<?> worker;
+        private Stream<?> source;
+        private boolean terminal;
 
         private Outbound(StreamObserver<?> responseObserver, Runnable onCancel) {
             if (responseObserver instanceof ServerCallStreamObserver<?> observer) {
                 this.serverObserver = observer;
-                try {
-                    observer.setOnCancelHandler(() -> {
-                        onCancel.run();
-                        cancel();
-                    });
-                } catch (IllegalStateException _) {
-                    // Some gRPC paths can create the response sender after call initialization.
-                }
+                observer.setOnReadyHandler(this::signalReady);
+                observer.setOnCancelHandler(() -> {
+                    cancel();
+                    onCancel.run();
+                });
             } else {
                 this.serverObserver = null;
             }
@@ -435,9 +399,7 @@ public final class GrpcStreams {
             lock.lock();
             try {
                 while (!serverObserver.isReady() && !serverObserver.isCancelled() && !cancelled) {
-                    if (!ready.await(10, TimeUnit.MILLISECONDS) && serverObserver.isReady()) {
-                        return true;
-                    }
+                    ready.await();
                 }
                 return !serverObserver.isCancelled() && !cancelled;
             } catch (InterruptedException e) {
@@ -452,10 +414,94 @@ public final class GrpcStreams {
             return serverObserver != null && (serverObserver.isCancelled() || cancelled);
         }
 
-        private void cancel() {
+        private void worker(Future<?> worker) {
+            this.worker = worker;
+            if (cancelled()) {
+                worker.cancel(true);
+            }
+        }
+
+        private boolean source(Stream<?> source) {
+            boolean close;
             lock.lock();
             try {
+                close = cancelled;
+                if (!close) {
+                    this.source = source;
+                }
+            } finally {
+                lock.unlock();
+            }
+            if (close) {
+                try {
+                    source.close();
+                } catch (Throwable ignored) {
+                    // The peer has cancelled; there is no remaining observer to report close failures to.
+                }
+            }
+            return !close;
+        }
+
+        private void closeSource() {
+            Stream<?> source;
+            lock.lock();
+            try {
+                source = this.source;
+                this.source = null;
+            } finally {
+                lock.unlock();
+            }
+            if (source != null) {
+                source.close();
+            }
+        }
+
+        private boolean claimTerminal() {
+            lock.lock();
+            try {
+                if (terminal || cancelled || (serverObserver != null && serverObserver.isCancelled())) {
+                    return false;
+                }
+                terminal = true;
+                return true;
+            } finally {
+                lock.unlock();
+            }
+        }
+
+        private void cancel() {
+            Future<?> worker;
+            Stream<?> source;
+            lock.lock();
+            try {
+                if (terminal) {
+                    return;
+                }
                 cancelled = true;
+                ready.signalAll();
+                worker = this.worker;
+                source = this.source;
+                this.source = null;
+            } finally {
+                lock.unlock();
+            }
+            if (worker != null) {
+                worker.cancel(true);
+            }
+            if (source != null) {
+                THREAD_FACTORY.newThread(() -> {
+                    try {
+                        source.close();
+                    } catch (Throwable ignored) {
+                        // The peer has cancelled; there is no remaining observer to report close failures to.
+                    }
+                }).start();
+            }
+        }
+
+        private void signalReady() {
+            lock.lock();
+            try {
                 ready.signalAll();
             } finally {
                 lock.unlock();

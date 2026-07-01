@@ -45,6 +45,7 @@ final class GrpcServerTypes {
             TypeName.create("io.helidon.security.abac.role.RoleValidator.RolesContainer");
     static final TypeName SECURITY_ROLES_ALLOWED = TypeName.create("jakarta.annotation.security.RolesAllowed");
     static final TypeName PROTO_FILE_DESCRIPTOR = TypeName.create("com.google.protobuf.Descriptors.FileDescriptor");
+    static final TypeName PROTO_MESSAGE_DESCRIPTOR = TypeName.create("com.google.protobuf.Descriptors.Descriptor");
     static final TypeName STREAM_OBSERVER = TypeName.create("io.grpc.stub.StreamObserver");
 
     private GrpcServerTypes() {

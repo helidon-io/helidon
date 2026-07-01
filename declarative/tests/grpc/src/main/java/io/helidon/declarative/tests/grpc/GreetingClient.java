@@ -23,14 +23,25 @@ import io.helidon.declarative.tests.grpc.DeclarativeGrpcProto.GreetingRequest;
 import io.helidon.grpc.api.Grpc;
 import io.helidon.webclient.grpc.RpcClient;
 
+import com.google.protobuf.Descriptors;
+
 /**
  * Typed declarative gRPC client for the greeting service.
  */
 @RpcClient.Endpoint(value = ClientConfigGreetingClients.SERVER_URI,
                      clientName = ClientConfigGreetingClients.MISSING_CLIENT)
 @Grpc.GrpcService(ClientConfigGreetingClients.SERVICE_NAME)
-@Grpc.ProtoDescriptor(DeclarativeGrpcProto.class)
 public interface GreetingClient {
+    /**
+     * Provide the protocol buffer descriptor used by the generated client.
+     *
+     * @return protocol buffer descriptor
+     */
+    @Grpc.Proto
+    default Descriptors.FileDescriptor proto() {
+        return DeclarativeGrpcProto.getDescriptor();
+    }
+
     /**
      * Invoke the unary greeting RPC.
      *

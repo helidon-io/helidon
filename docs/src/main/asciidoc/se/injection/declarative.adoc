@@ -275,14 +275,20 @@ feature.
 Annotations on endpoint type:
 
 - `io.helidon.webserver.grpc.RpcServer.Endpoint` - required annotation to generate a declarative gRPC server endpoint
-- link:{grpc-api-javadoc-base-url}/io/helidon/grpc/api/Grpc.GrpcService.html[`io.helidon.grpc.api.Grpc.GrpcService`] - gRPC service name; use the fully-qualified service name when the proto declares a package.
-  If not set, the service class simple name is used.
+- link:{grpc-api-javadoc-base-url}/io/helidon/grpc/api/Grpc.GrpcService.html[`io.helidon.grpc.api.Grpc.GrpcService`] - required, non-blank gRPC service name; use the fully-qualified service name when the proto declares a package.
 - link:{grpc-api-javadoc-base-url}/io/helidon/grpc/api/Grpc.ProtoDescriptor.html[`io.helidon.grpc.api.Grpc.ProtoDescriptor`] - generated protocol buffer class with a static `getDescriptor()` method returning `com.google.protobuf.Descriptors.FileDescriptor`
 - `io.helidon.service.registry.Service.Singleton` - normal service registry scope for the endpoint implementation
 
 The endpoint must declare exactly one proto descriptor source: either `@Grpc.ProtoDescriptor` on the type or one
-`@Grpc.Proto` method. The method must have no parameters and return
+link:{grpc-api-javadoc-base-url}/io/helidon/grpc/api/Grpc.Proto.html[`@Grpc.Proto`] method. The referenced generated
+protocol buffer class must provide a public static `getDescriptor()` method returning
+`com.google.protobuf.Descriptors.FileDescriptor`. An `@Grpc.Proto` method may be static or an endpoint instance method;
+it must be non-private, have no parameters or checked exceptions, and return
 `com.google.protobuf.Descriptors.FileDescriptor`.
+Each request and response type must implement `com.google.protobuf.Message` and declare public static no-argument
+`getDescriptor()` and `getDefaultInstance()` methods returning `com.google.protobuf.Descriptors.Descriptor` and the
+message type, respectively. At runtime, the generated registration
+verifies that these descriptors match the input and output descriptors of the named proto method.
 
 Annotations on endpoint methods:
 
@@ -296,19 +302,23 @@ annotation type must match the streaming cardinality declared by the proto metho
 
 The `Grpc.GrpcProxy`, `Grpc.GrpcChannel`, `Grpc.GrpcMarshaller`, `Grpc.RequestType`, and `Grpc.ResponseType`
 annotations are MP-only compatibility annotations. They remain in the SE gRPC API for Helidon 27 compatibility, but are
-deprecated for future removal from this API.
+deprecated for future removal from this API. MP applications should use
+`io.helidon.microprofile.grpc.client.GrpcProxy`, `io.helidon.microprofile.grpc.client.GrpcChannel`,
+`io.helidon.microprofile.grpc.core.GrpcMarshaller`, `io.helidon.microprofile.grpc.core.RequestType`, and
+`io.helidon.microprofile.grpc.core.ResponseType`, respectively.
 
 Supported server method signatures:
 
 - Unary: `Res method(Req)` or `void method(Req, StreamObserver<Res>)`
-- Server streaming: `Iterable<Res> method(Req)`, `Stream<Res> method(Req)`, or
-  `void method(Req, StreamObserver<Res>)`
-- Client streaming: `Res method(Iterable<Req>)` or `Res method(Stream<Req>)`
-- Bidirectional streaming: `Iterable<Res> method(Iterable<Req>)`, `Stream<Res> method(Stream<Req>)`, or
+- Server streaming: `Stream<Res> method(Req)` or `void method(Req, StreamObserver<Res>)`
+- Client streaming: `Res method(Stream<Req>)`
+- Bidirectional streaming: `Stream<Res> method(Stream<Req>)` or
   `StreamObserver<Req> method(StreamObserver<Res>)`
 
-Server endpoint methods using an `Iterable<Req>` request-stream shape first collect all inbound messages before invoking
-the method. Use `Stream<Req>` or `StreamObserver<Req>` request shapes for non-collecting request processing.
+Declarative streaming methods use resource-owning `Stream` instances with transport backpressure and cancellation.
+Endpoint implementations consume request streams, while the generated runtime owns and closes both request streams
+supplied to an endpoint and response streams returned by an endpoint. Endpoint implementations transfer ownership of
+response streams to the runtime and must not close a response stream before returning it.
 
 Generated registrations use the fully-qualified gRPC service name, including the proto package when present. Route
 registration is enabled by default and can be disabled with `server.features.grpc-route-registration.enabled=false`.
@@ -334,12 +344,19 @@ least one method annotated with one of the gRPC method annotations.
 Annotations on endpoint type:
 
 - link:{grpc-client-javadoc-base-url}/io/helidon/webclient/grpc/RpcClient.Endpoint.html[`io.helidon.webclient.grpc.RpcClient.Endpoint`] - required annotation
-- link:{grpc-api-javadoc-base-url}/io/helidon/grpc/api/Grpc.GrpcService.html[`io.helidon.grpc.api.Grpc.GrpcService`] - gRPC service name; use the fully-qualified service name when the proto declares a package
+- link:{grpc-api-javadoc-base-url}/io/helidon/grpc/api/Grpc.GrpcService.html[`io.helidon.grpc.api.Grpc.GrpcService`] - required, non-blank gRPC service name; use the fully-qualified service name when the proto declares a package
 - link:{grpc-api-javadoc-base-url}/io/helidon/grpc/api/Grpc.ProtoDescriptor.html[`io.helidon.grpc.api.Grpc.ProtoDescriptor`] - generated protocol buffer class with a static `getDescriptor()` method returning `com.google.protobuf.Descriptors.FileDescriptor`
 
 The endpoint must declare exactly one proto descriptor source: either `@Grpc.ProtoDescriptor` on the type or one
-`@Grpc.Proto` static method. The method must have no parameters and return
+link:{grpc-api-javadoc-base-url}/io/helidon/grpc/api/Grpc.Proto.html[`@Grpc.Proto`] method. The referenced generated
+protocol buffer class must provide a public static `getDescriptor()` method returning
+`com.google.protobuf.Descriptors.FileDescriptor`. An `@Grpc.Proto` method may be static or a default interface method;
+it must be non-private, have no parameters or checked exceptions, and return
 `com.google.protobuf.Descriptors.FileDescriptor`.
+Each request and response type must implement `com.google.protobuf.Message` and declare public static no-argument
+`getDescriptor()` and `getDefaultInstance()` methods returning `com.google.protobuf.Descriptors.Descriptor` and the
+message type, respectively. At runtime, the generated client
+verifies that these descriptors match the input and output descriptors of the named proto method.
 
 Annotations on endpoint methods:
 
@@ -354,12 +371,17 @@ exceptions.
 Supported client method signatures:
 
 - Unary: `Res method(Req)` or `void method(Req, StreamObserver<Res>)`
-- Server streaming: `Iterable<Res> method(Req)`, `Stream<Res> method(Req)`, or
-  `void method(Req, StreamObserver<Res>)`
-- Client streaming: `Res method(Iterable<Req>)`, `Res method(Stream<Req>)`, or
+- Server streaming: `Stream<Res> method(Req)` or `void method(Req, StreamObserver<Res>)`
+- Client streaming: `Res method(Stream<Req>)` or `StreamObserver<Req> method(StreamObserver<Res>)`
+- Bidirectional streaming: `Stream<Res> method(Stream<Req>)` or
   `StreamObserver<Req> method(StreamObserver<Res>)`
-- Bidirectional streaming: `Iterable<Res> method(Iterable<Req>)`, `Stream<Res> method(Stream<Req>)`, or
-  `StreamObserver<Req> method(StreamObserver<Res>)`
+
+Returned streams own the RPC and must be closed when the caller stops before normal exhaustion. The client consumes and
+closes request streams on normal completion, cancellation, or failure; a transferred request stream must not be reused.
+The calling thread consumes a client-streaming request stream. If producing elements can block, closing the stream must
+unblock production so an early peer termination can return promptly.
+After a response arrives, `GrpcClientProtocolConfig.nextRequestWaitTime()` bounds how long the call waits for the caller
+to request it; expiration closes the call with gRPC status `CANCELLED`.
 
 To inject a typed gRPC client, use the annotated interface with the `@RpcClient.Client` qualifier.
 

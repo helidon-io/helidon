@@ -18,11 +18,12 @@ package io.helidon.declarative.codegen.grpc.server;
 
 import io.helidon.common.types.TypeName;
 import io.helidon.common.types.TypedElementInfo;
+import io.helidon.declarative.codegen.grpc.GrpcProtoDescriptors.MethodType;
 
 record GrpcMethod(TypedElementInfo method,
                   String grpcName,
                   String uniqueName,
-                  String methodType,
+                  MethodType methodType,
                   Invocation invocation,
                   TypeName requestType,
                   TypeName responseType,
@@ -30,11 +31,8 @@ record GrpcMethod(TypedElementInfo method,
     enum Invocation {
         UNARY_RETURN,
         OBSERVER,
-        SERVER_STREAMING_ITERABLE,
         SERVER_STREAMING_STREAM,
-        CLIENT_STREAMING_ITERABLE,
         CLIENT_STREAMING_STREAM,
-        BIDI_ITERABLE,
         BIDI_STREAM,
         BIDI_OBSERVER
     }

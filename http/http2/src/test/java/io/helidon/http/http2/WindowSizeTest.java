@@ -216,4 +216,32 @@ class WindowSizeTest {
         assertThat(failure.get(), instanceOf(Http2Exception.class));
         assertThat(((Http2Exception) failure.get()).code(), is(Http2ErrorCode.FLOW_CONTROL));
     }
+
+    @Test
+    void restoresConnectionAndStreamCreditIndependently() {
+        AtomicInteger connectionUpdate = new AtomicInteger();
+        AtomicInteger streamUpdate = new AtomicInteger();
+        ConnectionFlowControl connection = ConnectionFlowControl.serverBuilder((streamId, update) -> {
+            if (streamId == 0) {
+                connectionUpdate.addAndGet(update.windowSizeIncrement());
+            } else {
+                assertThat(streamId, is(1));
+                streamUpdate.addAndGet(update.windowSizeIncrement());
+            }
+        }).build();
+        FlowControl.Inbound stream = connection.createStreamFlowControl(1,
+                                                                         WindowSize.DEFAULT_WIN_SIZE,
+                                                                         WindowSize.DEFAULT_MAX_FRAME_SIZE)
+                .inbound();
+
+        stream.decrementWindowSize(WindowSize.DEFAULT_MAX_FRAME_SIZE);
+
+        connection.incrementInboundConnectionWindowSize(WindowSize.DEFAULT_MAX_FRAME_SIZE);
+        assertThat(connectionUpdate.get(), is(WindowSize.DEFAULT_MAX_FRAME_SIZE));
+        assertThat(streamUpdate.get(), is(0));
+
+        stream.incrementStreamWindowSize(WindowSize.DEFAULT_MAX_FRAME_SIZE);
+        assertThat(connectionUpdate.get(), is(WindowSize.DEFAULT_MAX_FRAME_SIZE));
+        assertThat(streamUpdate.get(), is(WindowSize.DEFAULT_MAX_FRAME_SIZE));
+    }
 }
