@@ -713,6 +713,8 @@ final class OpenApi30DocumentMapper {
         boolean nullable = false;
         Object enumValue = null;
         boolean hasEnum = false;
+        Object constValue = null;
+        boolean hasConst = false;
         for (Map.Entry<String, Object> entry : source.entrySet()) {
             String key = entry.getKey();
             Object item = entry.getValue();
@@ -732,9 +734,9 @@ final class OpenApi30DocumentMapper {
                 continue;
             }
             if ("const".equals(key)) {
-                if (mode == SchemaMode.OPENAPI30 && !source.containsKey("enum")) {
-                    enumValue = singleValueList(copyFieldValue(key, source));
-                    hasEnum = true;
+                if (mode == SchemaMode.OPENAPI30) {
+                    constValue = copyFieldValue(key, source);
+                    hasConst = true;
                 }
                 continue;
             }
@@ -756,6 +758,17 @@ final class OpenApi30DocumentMapper {
         }
         if (hasEnum) {
             result.put("enum", copy(enumValue));
+        }
+        if (hasConst) {
+            if (hasEnum) {
+                List<Object> allOf = result.get("allOf") instanceof List<?> existing
+                        ? new ArrayList<>(existing)
+                        : new ArrayList<>();
+                allOf.add(Map.of("enum", singleValueList(constValue)));
+                result.put("allOf", allOf);
+            } else {
+                result.put("enum", singleValueList(constValue));
+            }
         }
         if (nullable) {
             if (mode == SchemaMode.CANONICAL) {
