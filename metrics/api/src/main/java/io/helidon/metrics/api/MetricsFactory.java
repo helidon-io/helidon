@@ -28,21 +28,11 @@ import io.helidon.service.registry.Services;
  * The basic contract for implementations of the Helidon metrics API, mostly acting as a factory for
  * meter <em>builders</em> rather than for meters themselves.
  * <p>
- * This is not intended to be the interface which developers use to work with Helidon metrics. Instead use
- *     <ul>
- *         <li>the static methods on the various meter interfaces in the API (such as {@link io.helidon.metrics.api.Timer},
- *         or</li>
- *         <li>{@link io.helidon.service.registry.Services#get(java.lang.Class)} to look up the global
- *      {@link io.helidon.metrics.api.MeterRegistry}</li>
- *     </ul>
- * <p>
- * An implementation of this interface provides instance methods for each
- * of the static methods on the Helidon metrics API interfaces. The prefix of each method
- * here identifies the interface that bears the corresponding static method. For example,
- * {@link #timerStart(io.helidon.metrics.api.MeterRegistry)} corresponds to the static
- * {@link io.helidon.metrics.api.Timer#start(io.helidon.metrics.api.MeterRegistry)} method.
- * <p>
- * Also, various static methods create new instances or return previously-created ones.
+ * Applications normally inject {@link io.helidon.metrics.api.MeterRegistry} or use
+ * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MeterRegistry.class)} to obtain the shared
+ * meter registry for registering and looking up meters. To create meter builders, timer samples, tags, snapshots, or custom
+ * registries, applications inject {@code MetricsFactory} or use
+ * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MetricsFactory.class)}.
  */
 public interface MetricsFactory {
 
