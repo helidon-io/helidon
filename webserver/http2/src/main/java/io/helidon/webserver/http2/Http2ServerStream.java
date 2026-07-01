@@ -307,6 +307,25 @@ class Http2ServerStream implements Runnable, Http2Stream {
         }
     }
 
+    private void cancelSubProtocol(Http2RstStream reset) {
+        Http2SubProtocolSelector.SubProtocolHandler handler = null;
+        runnerLock.lock();
+        try {
+            if (!subProtocolTerminal) {
+                subProtocolTerminal = true;
+                if (subProtocolHandler == null) {
+                    pendingSubProtocolReset = reset;
+                } else {
+                    handler = subProtocolHandler;
+                    subProtocolHandler = null;
+                }
+            }
+        } finally {
+            runnerLock.unlock();
+        }
+        resetSubProtocol(handler, reset);
+    }
+
     @Override
     public void windowUpdate(Http2WindowUpdate windowUpdate) {
         try {
@@ -394,46 +413,62 @@ class Http2ServerStream implements Runnable, Http2Stream {
 
     // Package-private overloads are deterministic rejection race test seams.
     void enqueueDataAfterPrecheck(Http2FrameHeader header, BufferData data, boolean endOfStream) {
-        enqueueDataAfterPrecheck(header, data, endOfStream, NO_OP);
+        enqueueDataAfterPrecheck(header, data, endOfStream, NO_OP, NO_OP);
     }
 
     void enqueueDataAfterPrecheck(Http2FrameHeader header,
                                   BufferData data,
                                   boolean endOfStream,
                                   Runnable afterResetStateSnapshot) {
+        enqueueDataAfterPrecheck(header, data, endOfStream, afterResetStateSnapshot, NO_OP);
+    }
+
+    void enqueueDataAfterPrecheck(Http2FrameHeader header,
+                                  BufferData data,
+                                  boolean endOfStream,
+                                  Runnable afterResetStateSnapshot,
+                                  Runnable afterDataOffer) {
         boolean ignoringInboundDataSnapshot = ignoreInboundDataAfterReset;
         afterResetStateSnapshot.run();
-        boolean ignoringInboundData = ignoringInboundDataSnapshot || ignoreInboundDataAfterReset;
-        if (ignoringInboundData) {
-            discardDataAfterReset(header.length());
-            if (endOfStream) {
-                remoteCompleteAfterReset();
-            }
-            return;
-        }
-        InboundDataQueue.OfferResult offerResult = inboundData.offer(header, data);
-        if (offerResult == InboundDataQueue.OfferResult.CLOSED) {
-            restoreDiscardedConnectionCredit(header.length());
-            return;
-        }
-        if (offerResult == InboundDataQueue.OfferResult.BUDGET_EXHAUSTED) {
-            restoreDiscardedConnectionCredit(header.length());
-            closeRejectedStream(Http2ErrorCode.ENHANCE_YOUR_CALM, true, endOfStream);
-            return;
-        }
-        // The bounded queue now owns the frame, so it is safe to return connection credit. Stream credit remains
-        // withheld until the application consumes the frame, preserving per-stream backpressure without starving peers.
-        connectionFlowControl.incrementInboundConnectionWindowSize(header.length());
-        if (!DATA_RECEIVABLE_STATES.contains(state)) {
-            abortInboundData();
-            return;
-        }
-        if (endOfStream) {
-            if (state == Http2StreamState.HALF_CLOSED_LOCAL) {
-                state = Http2StreamState.CLOSED;
+        boolean budgetExhausted = false;
+        boolean discardLimitExceeded = false;
+        resetCompletionLock.lock();
+        try {
+            boolean ignoringInboundData = ignoringInboundDataSnapshot || ignoreInboundDataAfterReset;
+            if (ignoringInboundData) {
+                discardLimitExceeded = !locallyResetStreamState().discardData(header.length());
+                if (endOfStream) {
+                    remoteCompleteAfterReset();
+                }
             } else {
-                state = Http2StreamState.HALF_CLOSED_REMOTE;
+                InboundDataQueue.OfferResult offerResult = inboundData.offer(header, data);
+                if (offerResult == InboundDataQueue.OfferResult.BUDGET_EXHAUSTED) {
+                    budgetExhausted = true;
+                } else if (offerResult == InboundDataQueue.OfferResult.ACCEPTED) {
+                    afterDataOffer.run();
+                    if (!DATA_RECEIVABLE_STATES.contains(state)) {
+                        abortInboundData();
+                    } else if (endOfStream) {
+                        if (state == Http2StreamState.HALF_CLOSED_LOCAL) {
+                            state = Http2StreamState.CLOSED;
+                        } else {
+                            state = Http2StreamState.HALF_CLOSED_REMOTE;
+                        }
+                    }
+                }
             }
+        } finally {
+            resetCompletionLock.unlock();
+        }
+        // The connection can accept more bytes as soon as the frame is queued, discarded, or rejected. Stream credit
+        // remains withheld for an accepted frame until the application consumes it.
+        restoreDiscardedConnectionCredit(header.length());
+        if (discardLimitExceeded) {
+            throw new Http2Exception(Http2ErrorCode.ENHANCE_YOUR_CALM,
+                                     "Too much data after stream reset.");
+        }
+        if (budgetExhausted) {
+            closeRejectedStream(Http2ErrorCode.ENHANCE_YOUR_CALM, true, endOfStream);
         }
     }
 
@@ -566,7 +601,9 @@ class Http2ServerStream implements Runnable, Http2Stream {
                 runnerLock.lock();
                 try {
                     runnerThread = null;
-                    subProtocolHandler = null;
+                    if (!ignoreInboundDataAfterReset || subProtocolTerminal) {
+                        subProtocolHandler = null;
+                    }
                 } finally {
                     runnerLock.unlock();
                 }
@@ -666,11 +703,22 @@ class Http2ServerStream implements Runnable, Http2Stream {
             resetInvalidContentLength(0, true);
             return;
         }
-        this.state = state == Http2StreamState.HALF_CLOSED_LOCAL
-                ? Http2StreamState.CLOSED
-                : Http2StreamState.HALF_CLOSED_REMOTE;
-        // we need to notify that there is no data coming
-        inboundData.finish();
+        resetCompletionLock.lock();
+        try {
+            if (ignoreInboundDataAfterReset) {
+                remoteCompleteAfterReset();
+                return;
+            }
+            if (state != Http2StreamState.CLOSED) {
+                state = state == Http2StreamState.HALF_CLOSED_LOCAL
+                        ? Http2StreamState.CLOSED
+                        : Http2StreamState.HALF_CLOSED_REMOTE;
+            }
+            // we need to notify that there is no data coming
+            inboundData.finish();
+        } finally {
+            resetCompletionLock.unlock();
+        }
     }
 
     int writeHeaders(Http2Headers http2Headers, final boolean endOfStream) {
@@ -813,26 +861,32 @@ class Http2ServerStream implements Runnable, Http2Stream {
     }
 
     private void resetInvalidContentLength(int currentFrameLength, boolean endOfStream) {
-        LocallyResetStreamState resetState = locallyResetStreamState();
-        ignoreInboundDataAfterReset = true;
-        state = Http2StreamState.CLOSED;
-        writeState.updateAndGet(s -> s.checkAndMove(WriteState.END));
-        locallyResetStreamTracker.add(this.streamId, resetState);
-        streams.remove(this.streamId);
         Http2RstStream rst = new Http2RstStream(Http2ErrorCode.PROTOCOL);
+        resetCompletionLock.lock();
         try {
-            writer.write(rst.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
+            LocallyResetStreamState resetState = locallyResetStreamState();
+            ignoreInboundDataAfterReset = true;
+            resetStreamSent = true;
+            state = Http2StreamState.CLOSED;
+            writeState.updateAndGet(s -> s.checkAndMove(WriteState.END));
+            locallyResetStreamTracker.add(this.streamId, resetState);
             if (endOfStream) {
                 locallyResetStreamTracker.remoteComplete(this.streamId);
             }
         } finally {
-            locallyResetStreamTracker.localComplete(this.streamId);
+            resetCompletionLock.unlock();
         }
-        connectionAttackVectorMetrics.madeYouResetCheck();
-
-        abortInboundData();
-        if (currentFrameLength > 0) {
-            discardDataAfterReset(currentFrameLength);
+        try {
+            if (currentFrameLength > 0) {
+                discardDataAfterReset(currentFrameLength);
+            }
+            writer.write(rst.toFrameData(clientSettings, streamId, Http2Flag.NoFlags.create()));
+            connectionAttackVectorMetrics.madeYouResetCheck();
+        } finally {
+            cancelSubProtocol(rst);
+            locallyResetStreamTracker.localComplete(this.streamId);
+            streams.remove(this.streamId);
+            abortInboundData();
         }
     }
 
@@ -911,6 +965,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
                                         boolean resetRequestBody,
                                         boolean forceReset,
                                         boolean remoteEndOfStream) {
+        boolean sendReset = false;
         try {
             resetCompletionLock.lock();
             try {
@@ -918,7 +973,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
                 boolean remoteAlreadyComplete = remoteEndOfStream || remoteAlreadyComplete();
                 streams.deactivate(this.streamId);
                 if (resetRequestBody && !remoteResetReceived && (forceReset || !remoteAlreadyComplete)) {
-                    writeResetStream(resetCode);
+                    sendReset = true;
                     resetStreamSent = true;
                     if (!remoteEndOfStream) {
                         locallyResetStreamTracker.add(this.streamId, locallyResetStreamState());
@@ -930,7 +985,13 @@ class Http2ServerStream implements Runnable, Http2Stream {
             } finally {
                 resetCompletionLock.unlock();
             }
+            if (sendReset) {
+                writeResetStream(resetCode);
+            }
         } finally {
+            if (sendReset) {
+                cancelSubProtocol(new Http2RstStream(resetCode));
+            }
             this.state = Http2StreamState.CLOSED;
             locallyResetStreamTracker.localComplete(this.streamId);
             streams.remove(this.streamId);
@@ -1182,10 +1243,9 @@ class Http2ServerStream implements Runnable, Http2Stream {
             runnerLock.unlock();
         }
         selectedSubProtocol.init();
-        if (connectionAborted || state == Http2StreamState.CLOSED) {
+        if (updateSubProtocolState(selectedSubProtocol)) {
             return;
         }
-        this.state = selectedSubProtocol.streamState();
         while (this.state != Http2StreamState.CLOSED) {
             DataFrame frame;
             try {
@@ -1195,11 +1255,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
                 throw new ServerConnectionException("Interrupted while waiting for subprotocol data", e);
             }
             if (frame == null) {
-                if (connectionAborted) {
-                    this.state = Http2StreamState.CLOSED;
-                } else {
-                    this.state = selectedSubProtocol.streamState();
-                }
+                updateSubProtocolState(selectedSubProtocol);
                 return;
             }
             if (this.state == Http2StreamState.CLOSED) {
@@ -1208,7 +1264,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
             }
             try {
                 selectedSubProtocol.data(frame.header(), frame.data());
-                this.state = selectedSubProtocol.streamState();
+                updateSubProtocolState(selectedSubProtocol);
             } finally {
                 if (this.state == Http2StreamState.CLOSED) {
                     abortInboundData();
@@ -1217,6 +1273,21 @@ class Http2ServerStream implements Runnable, Http2Stream {
                                          () -> flowControl.inbound().incrementStreamWindowSize(frame.flowControlLength()));
                 }
             }
+        }
+    }
+
+    private boolean updateSubProtocolState(Http2SubProtocolSelector.SubProtocolHandler handler) {
+        Http2StreamState handlerState = handler.streamState();
+        runnerLock.lock();
+        try {
+            if (connectionAborted || state == Http2StreamState.CLOSED || subProtocolTerminal) {
+                state = Http2StreamState.CLOSED;
+                return true;
+            }
+            state = handlerState;
+            return handlerState == Http2StreamState.CLOSED;
+        } finally {
+            runnerLock.unlock();
         }
     }
 

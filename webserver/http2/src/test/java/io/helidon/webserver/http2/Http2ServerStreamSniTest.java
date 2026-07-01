@@ -128,13 +128,9 @@ class Http2ServerStreamSniTest {
         assertThat(resetTracker.localCompletes, is(1));
         assertThat(resetTracker.remoteCompletes, is(0));
         assertDoesNotThrow(stream::checkDataReceivable);
-        assertDoesNotThrow(() -> stream.data(Http2FrameHeader.create(0,
-                                                                     Http2FrameTypes.DATA,
-                                                                     Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM),
-                                                                     STREAM_ID),
-                                                   BufferData.empty(),
-                                                   true));
+        assertDoesNotThrow(stream::closeFromRemote);
         assertThat(resetTracker.remoteCompletes, is(1));
+        assertThat(stream.streamState(), is(Http2StreamState.CLOSED));
     }
 
     @Test
@@ -160,6 +156,45 @@ class Http2ServerStreamSniTest {
         assertThat(resetTracker.adds, is(1));
         assertThat(resetTracker.streamState.discardedData(), is(1L));
         assertThat(resetTracker.remoteCompletes, is(1));
+    }
+
+    @Test
+    void endStreamOfferCompletesBeforeRacingLocalReset() throws Exception {
+        Http2ConnectionStreams streams = new Http2ConnectionStreams();
+        RecordingStreamWriter writer = new RecordingStreamWriter();
+        RecordingResetTracker resetTracker = new RecordingResetTracker();
+        Http2ServerStream stream = stream(streams, writer, new ArrayList<>(), sniContext(), resetTracker);
+        streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
+        stream.prologue(PROLOGUE);
+        stream.headers(headersWithoutAuthority("1"), false);
+        stream.flowControl().inbound().decrementWindowSize(1);
+        CountDownLatch resetStarted = new CountDownLatch(1);
+        AtomicReference<CompletableFuture<Void>> resetTask = new AtomicReference<>();
+
+        stream.enqueueDataAfterPrecheck(Http2FrameHeader.create(1,
+                                                                Http2FrameTypes.DATA,
+                                                                Http2Flag.DataFlags.create(Http2Flag.END_OF_STREAM),
+                                                                STREAM_ID),
+                                            BufferData.create(new byte[1]),
+                                            true,
+                                            () -> { },
+                                            () -> {
+                                                resetTask.set(CompletableFuture.runAsync(() -> {
+                                                    resetStarted.countDown();
+                                                    stream.run();
+                                                }));
+                                                try {
+                                                    assertThat(resetStarted.await(5, TimeUnit.SECONDS), is(true));
+                                                } catch (InterruptedException e) {
+                                                    Thread.currentThread().interrupt();
+                                                    throw new IllegalStateException(e);
+                                                }
+                                            });
+        resetTask.get().get(5, TimeUnit.SECONDS);
+
+        assertThat(writer.rstStreamCount, is(0));
+        assertThat(resetTracker.adds, is(0));
+        assertThat(stream.streamState(), is(Http2StreamState.CLOSED));
     }
 
     @Test
@@ -570,6 +605,124 @@ class Http2ServerStreamSniTest {
         assertThat(writer.rstStreamCodes, is(List.of(Http2ErrorCode.ENHANCE_YOUR_CALM)));
         assertThat(budget.availableFrames(), is(256));
         assertThat(budget.availableBytes(), is(1024L));
+    }
+
+    @Test
+    void queueOverflowCancelsBlockedSubprotocol() throws InterruptedException {
+        Http2ConnectionStreams streams = new Http2ConnectionStreams();
+        RecordingStreamWriter writer = new RecordingStreamWriter();
+        CountDownLatch initialized = new CountDownLatch(1);
+        CountDownLatch dataEntered = new CountDownLatch(1);
+        CountDownLatch dataRelease = new CountDownLatch(1);
+        CountDownLatch workerExited = new CountDownLatch(1);
+        Http2SubProtocolSelector.SubProtocolHandler handler = mock(Http2SubProtocolSelector.SubProtocolHandler.class);
+        doAnswer(_ -> {
+            initialized.countDown();
+            return null;
+        }).when(handler).init();
+        doAnswer(_ -> {
+            dataEntered.countDown();
+            if (!dataRelease.await(5, TimeUnit.SECONDS)) {
+                throw new IllegalStateException("Timed out waiting for subprotocol cancellation");
+            }
+            return null;
+        }).when(handler).data(any(Http2FrameHeader.class), any(BufferData.class));
+        doAnswer(_ -> {
+            dataRelease.countDown();
+            return null;
+        }).when(handler).rstStream(any(Http2RstStream.class));
+        when(handler.streamState()).thenReturn(Http2StreamState.OPEN);
+        Http2SubProtocolSelector selector = (_, _, _, _, _, _, _, _, _, _) -> new SubProtocolResult(true, handler);
+        var budget = new Http2ServerStream.InboundDataBudget(1, 1);
+        Http2ServerStream stream = stream(streams,
+                                          writer,
+                                          new ArrayList<>(),
+                                          sniContext(),
+                                          List.of(selector),
+                                          budget,
+                                          _ -> { });
+        streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
+        stream.prologue(PROLOGUE);
+        stream.headers(headersWithAuthority("api.example.com"), false);
+        Thread worker = Thread.ofVirtual().start(() -> {
+            try {
+                stream.run();
+            } finally {
+                workerExited.countDown();
+            }
+        });
+        assertThat("subprotocol initialized", initialized.await(5, TimeUnit.SECONDS), is(true));
+
+        Http2FrameHeader dataHeader = Http2FrameHeader.create(1,
+                                                               Http2FrameTypes.DATA,
+                                                               Http2Flag.DataFlags.create(0),
+                                                               STREAM_ID);
+        stream.flowControl().inbound().decrementWindowSize(1);
+        stream.data(dataHeader, BufferData.create(new byte[1]), false);
+        assertThat("subprotocol DATA entered", dataEntered.await(5, TimeUnit.SECONDS), is(true));
+        stream.flowControl().inbound().decrementWindowSize(1);
+        stream.data(dataHeader, BufferData.create(new byte[1]), false);
+
+        assertThat("worker exited", workerExited.await(5, TimeUnit.SECONDS), is(true));
+        worker.join();
+        verify(handler, times(1)).rstStream(any(Http2RstStream.class));
+        assertThat(writer.rstStreamCodes, is(List.of(Http2ErrorCode.ENHANCE_YOUR_CALM)));
+        assertThat(stream.streamState(), is(Http2StreamState.CLOSED));
+        assertThat(budget.availableFrames(), is(1));
+        assertThat(budget.availableBytes(), is(1L));
+    }
+
+    @Test
+    void invalidContentLengthCancelsWaitingSubprotocol() throws InterruptedException {
+        Http2ConnectionStreams streams = new Http2ConnectionStreams();
+        RecordingStreamWriter writer = new RecordingStreamWriter();
+        CountDownLatch initialized = new CountDownLatch(1);
+        CountDownLatch resetReceived = new CountDownLatch(1);
+        CountDownLatch workerExited = new CountDownLatch(1);
+        Http2SubProtocolSelector.SubProtocolHandler handler = mock(Http2SubProtocolSelector.SubProtocolHandler.class);
+        doAnswer(_ -> {
+            initialized.countDown();
+            return null;
+        }).when(handler).init();
+        doAnswer(_ -> {
+            resetReceived.countDown();
+            return null;
+        }).when(handler).rstStream(any(Http2RstStream.class));
+        when(handler.streamState()).thenReturn(Http2StreamState.OPEN);
+        Http2SubProtocolSelector selector = (_, _, _, _, _, _, _, _, _, _) -> new SubProtocolResult(true, handler);
+        Http2ServerStream stream = stream(streams,
+                                          writer,
+                                          new ArrayList<>(),
+                                          sniContext(),
+                                          List.of(selector),
+                                          new Http2ServerStream.InboundDataBudget(1, 8192),
+                                          _ -> { });
+        streams.put(new Http2Connection.StreamContext(STREAM_ID, 8192, stream));
+        stream.prologue(PROLOGUE);
+        stream.headers(headersWithAuthority("api.example.com", "1"), false);
+        Thread worker = Thread.ofVirtual().start(() -> {
+            try {
+                stream.run();
+            } finally {
+                workerExited.countDown();
+            }
+        });
+        assertThat("subprotocol initialized", initialized.await(5, TimeUnit.SECONDS), is(true));
+
+        stream.flowControl().inbound().decrementWindowSize(2);
+        stream.data(Http2FrameHeader.create(2,
+                                            Http2FrameTypes.DATA,
+                                            Http2Flag.DataFlags.create(0),
+                                            STREAM_ID),
+                    BufferData.create(new byte[2]),
+                    false);
+
+        assertThat("subprotocol reset received", resetReceived.await(5, TimeUnit.SECONDS), is(true));
+        assertThat("worker exited", workerExited.await(5, TimeUnit.SECONDS), is(true));
+        worker.join();
+        verify(handler, times(1)).rstStream(any(Http2RstStream.class));
+        assertThat(writer.rstStreamCodes, is(List.of(Http2ErrorCode.PROTOCOL)));
+        assertThat(stream.streamState(), is(Http2StreamState.CLOSED));
     }
 
     @Test
@@ -1127,11 +1280,18 @@ class Http2ServerStreamSniTest {
     }
 
     private static Http2Headers headersWithAuthority(String authority) {
+        return headersWithAuthority(authority, null);
+    }
+
+    private static Http2Headers headersWithAuthority(String authority, String contentLength) {
         WritableHeaders<?> headers = WritableHeaders.create();
         headers.add(Http2Headers.METHOD_NAME, Method.GET.text());
         headers.add(Http2Headers.PATH_NAME, "/");
         headers.add(Http2Headers.SCHEME_NAME, "https");
         headers.add(Http2Headers.AUTHORITY_NAME, authority);
+        if (contentLength != null) {
+            headers.add(HeaderNames.CONTENT_LENGTH, contentLength);
+        }
         return Http2Headers.create(headers);
     }
 
