@@ -29,8 +29,9 @@ class OpenApi30VersionTest {
     @Test
     void validatesConfiguredVersion() {
         assertThat(OpenApi30Version.builder().version("3.0.99").build().version(), is("3.0.99"));
+        assertThat(OpenApi30Version.builder().version("3.0.4-rc1").build().version(), is("3.0.4-rc1"));
 
-        for (String invalidVersion : List.of("3.0", "3.0.", "3.0.not-a-version", "3.0.1.0", "3.1.0")) {
+        for (String invalidVersion : List.of("3.0", "3.0.", "3.0.not-a-version", "3.0.1-", "3.0.1.0", "3.1.0")) {
             IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                                                        () -> OpenApi30Version.builder()
                                                                .version(invalidVersion)

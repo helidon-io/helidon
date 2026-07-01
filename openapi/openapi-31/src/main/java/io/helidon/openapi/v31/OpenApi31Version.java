@@ -40,7 +40,7 @@ import org.yaml.snakeyaml.Yaml;
 public final class OpenApi31Version implements OpenApiVersion,
         RuntimeType.Api<OpenApi31VersionConfig> {
     static final String TYPE = "3.1";
-    private static final Pattern VERSION_PATTERN = Pattern.compile(Pattern.quote(TYPE) + "\\.[0-9]+");
+    private static final Pattern VERSION_PATTERN = Pattern.compile(Pattern.quote(TYPE) + "\\.[0-9]+(?:-.+)?");
     private static final DumperOptions YAML_DUMPER_OPTIONS = yamlDumperOptions();
 
     private final OpenApi31VersionConfig config;
