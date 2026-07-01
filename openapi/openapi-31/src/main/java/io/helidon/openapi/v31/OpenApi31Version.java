@@ -44,7 +44,13 @@ public final class OpenApi31Version implements OpenApiVersion,
     private final OpenApi31VersionConfig config;
 
     OpenApi31Version(OpenApi31VersionConfig config) {
-        this.config = Objects.requireNonNull(config);
+        Objects.requireNonNull(config);
+        String version = config.version();
+        if (!TYPE.equals(version) && !version.startsWith(TYPE + ".")) {
+            throw new IllegalArgumentException("OpenAPI " + TYPE + " version implementation cannot produce document version "
+                                                       + version + ".");
+        }
+        this.config = config;
     }
 
     /**

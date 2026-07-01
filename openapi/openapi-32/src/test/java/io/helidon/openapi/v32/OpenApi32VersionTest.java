@@ -238,6 +238,16 @@ class OpenApi32VersionTest {
     }
 
     @Test
+    void validatesConfiguredVersionFamily() {
+        assertThat(OpenApi32Version.builder().version("3.2.99").build().version(), is("3.2.99"));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                                                   () -> OpenApi32Version.builder().version("3.1.0").build());
+        assertThat(ex.getMessage(), containsString("3.2"));
+        assertThat(ex.getMessage(), containsString("3.1.0"));
+    }
+
+    @Test
     void serviceLoaderDiscoversProvider() {
         boolean found = ServiceLoader.load(OpenApiVersionProvider.class)
                 .stream()
