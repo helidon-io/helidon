@@ -97,16 +97,6 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private static final DecompressorRegistry DECOMPRESSOR_REGISTRY = DecompressorRegistry.getDefaultInstance();
     private static final CompressorRegistry COMPRESSOR_REGISTRY = CompressorRegistry.getDefaultInstance();
 
-    record MethodMetrics(Counter callStarted,
-                         Timer callDuration,
-                         DistributionSummary sentMessageSize,
-                         DistributionSummary recvMessageSize) { }
-
-    private enum ListenerTerminal {
-        CANCEL,
-        COMPLETE
-    }
-
     private static final int GRPC_HEADER_SIZE = 5;
     private static final int INITIAL_BUFFER_SIZE = 16 * 1024;
 
@@ -826,6 +816,11 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         });
     }
 
+    record MethodMetrics(Counter callStarted,
+                         Timer callDuration,
+                         DistributionSummary sentMessageSize,
+                         DistributionSummary recvMessageSize) { }
+
     /**
      * An input stream that can return its length. gRPC parsers can use this extra
      * knowledge for optimizations. It can also copy a byte array directly on a
@@ -892,5 +887,10 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
             // single exact-size allocation; avoids the default growing-array loop
             return bufferData.readBytes();
         }
+    }
+
+    private enum ListenerTerminal {
+        CANCEL,
+        COMPLETE
     }
 }
