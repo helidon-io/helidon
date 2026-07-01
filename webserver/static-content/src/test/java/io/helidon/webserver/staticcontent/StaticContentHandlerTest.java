@@ -402,6 +402,21 @@ class StaticContentHandlerTest {
     }
 
     @Test
+    void preCompressedIdentityWinnerSkipsSidecarLookup() throws IOException, URISyntaxException {
+        TestContentHandler handler = TestContentHandler.create(true);
+        CachedHandler identityHandler = inMemoryHandler("Nested content");
+        ServerRequest request = mockRequestWithHeaders("br;q=0.1, gzip;q=0.1", null, ContentEncodingContext.create());
+        AtomicInteger lookups = new AtomicInteger();
+
+        handler.selectHandler(identityHandler, request, (coding, suffix) -> {
+            lookups.incrementAndGet();
+            return Optional.empty();
+        });
+
+        assertThat(lookups.get(), is(0));
+    }
+
+    @Test
     void preCompressedRuntimeEncodingEncodesEmptyInMemoryResource() throws IOException, URISyntaxException {
         TestContentHandler handler = TestContentHandler.create(true);
         CachedHandler identityHandler = inMemoryHandler("");

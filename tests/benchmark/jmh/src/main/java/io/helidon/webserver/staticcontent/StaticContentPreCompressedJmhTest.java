@@ -73,6 +73,7 @@ public class StaticContentPreCompressedJmhTest {
     private CachedHandler identityHandler;
     private ServerRequest noAcceptEncodingRequest;
     private ServerRequest identityRequest;
+    private ServerRequest identityPreferredRequest;
     private ServerRequest brRequest;
     private ServerRequest gzipRequest;
     private ServerRequest runtimeGzipRequest;
@@ -88,6 +89,7 @@ public class StaticContentPreCompressedJmhTest {
 
         noAcceptEncodingRequest = request(null, ContentEncodingContext.create());
         identityRequest = request("identity", ContentEncodingContext.create());
+        identityPreferredRequest = request("br;q=0.1, gzip;q=0.1", ContentEncodingContext.create());
         brRequest = request("br", ContentEncodingContext.create());
         gzipRequest = request("gzip", ContentEncodingContext.create());
         runtimeGzipRequest = request("gzip, identity;q=0", runtimeContentEncodingContext());
@@ -104,6 +106,11 @@ public class StaticContentPreCompressedJmhTest {
     @Benchmark
     public CachedHandler identityAccepted() throws IOException, URISyntaxException {
         return handler.selectHandler(identityHandler, identityRequest, sidecarResolver);
+    }
+
+    @Benchmark
+    public CachedHandler identityPreferredOverSidecars() throws IOException, URISyntaxException {
+        return handler.selectHandler(identityHandler, identityPreferredRequest, sidecarResolver);
     }
 
     @Benchmark

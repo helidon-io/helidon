@@ -347,8 +347,12 @@ abstract class StaticContentHandler implements HttpService {
         }
 
         List<RepresentationCandidate> staticCandidates = new ArrayList<>();
-        acceptEncoding.identity()
-                .ifPresent(quality -> staticCandidates.add(RepresentationCandidate.identity(quality, identityHandler)));
+        RepresentationCandidate identityCandidate = acceptEncoding.identity()
+                .map(quality -> RepresentationCandidate.identity(quality, identityHandler))
+                .orElse(null);
+        if (identityCandidate != null) {
+            staticCandidates.add(identityCandidate);
+        }
         var listenerContext = request.listenerContext();
         ContentEncodingContext contentEncodingContext = listenerContext == null
                 ? null
@@ -361,7 +365,17 @@ abstract class StaticContentHandler implements HttpService {
                                                                             contentEncodingContext,
                                                                             coding,
                                                                             preCompressedEncodings.keySet());
-            if (qualities.isEmpty()) {
+            int candidateOrder = order;
+            boolean canBeatIdentity = identityCandidate == null;
+            if (!canBeatIdentity) {
+                for (AcceptEncoding.CodingQuality quality : qualities) {
+                    if (compareCandidates(CandidateType.SIDECAR, quality, candidateOrder, identityCandidate) < 0) {
+                        canBeatIdentity = true;
+                        break;
+                    }
+                }
+            }
+            if (qualities.isEmpty() || !canBeatIdentity) {
                 order++;
                 continue;
             }
@@ -370,7 +384,6 @@ abstract class StaticContentHandler implements HttpService {
                                                             entry.getValue(),
                                                             sidecarResolver
             );
-            int candidateOrder = order;
             sidecar.ifPresent(handler -> {
                 for (AcceptEncoding.CodingQuality quality : qualities) {
                     CachedHandler candidateHandler = handler.withRepresentation(ResponseRepresentation.encoded(quality.coding()));
@@ -547,31 +560,36 @@ abstract class StaticContentHandler implements HttpService {
     }
 
     private static int compareCandidates(RepresentationCandidate first, RepresentationCandidate second) {
-        int q = Double.compare(second.quality().q(), first.quality().q());
+        return compareCandidates(first.type(), first.quality(), first.order(), second);
+    }
+
+    private static int compareCandidates(CandidateType firstType,
+                                         AcceptEncoding.CodingQuality firstQuality,
+                                         int firstOrder,
+                                         RepresentationCandidate second) {
+        int q = Double.compare(second.quality().q(), firstQuality.q());
         if (q != 0) {
             return q;
         }
-        if (first.quality().wildcard() != second.quality().wildcard()) {
-            return first.quality().wildcard() ? 1 : -1;
+        if (firstQuality.wildcard() != second.quality().wildcard()) {
+            return firstQuality.wildcard() ? 1 : -1;
         }
-        boolean firstImplicitIdentity = implicitIdentity(first);
-        boolean secondImplicitIdentity = implicitIdentity(second);
+        boolean firstImplicitIdentity = firstType == CandidateType.IDENTITY
+                && firstQuality.order() == Integer.MAX_VALUE;
+        boolean secondImplicitIdentity = second.type() == CandidateType.IDENTITY
+                && second.quality().order() == Integer.MAX_VALUE;
         if (firstImplicitIdentity != secondImplicitIdentity) {
             return firstImplicitIdentity ? 1 : -1;
         }
-        int clientOrder = Integer.compare(first.quality().order(), second.quality().order());
+        int clientOrder = Integer.compare(firstQuality.order(), second.quality().order());
         if (clientOrder != 0) {
             return clientOrder;
         }
-        int type = Integer.compare(first.type().priority(), second.type().priority());
+        int type = Integer.compare(firstType.priority(), second.type().priority());
         if (type != 0) {
             return type;
         }
-        return Integer.compare(first.order(), second.order());
-    }
-
-    private static boolean implicitIdentity(RepresentationCandidate candidate) {
-        return candidate.type() == CandidateType.IDENTITY && candidate.quality().order() == Integer.MAX_VALUE;
+        return Integer.compare(firstOrder, second.order());
     }
 
     /**
