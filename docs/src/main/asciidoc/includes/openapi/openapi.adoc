@@ -66,6 +66,9 @@ link:{webserver-javadoc-base-url}/io/helidon/webserver/http/RestServer.Endpoint.
 Helidon generates OpenAPI data from the HTTP method, path, media type, parameter, status, and response metadata.
 At least one application type must be annotated with `@OpenApi.Document` and `@OpenApi.Info` to enable generated
 OpenAPI metadata.
+In a multi-module application, annotation processing must generate OpenAPI metadata while compiling every module that
+declares declarative endpoints. Enabling OpenAPI annotation processing only in the final application module does not
+include endpoints from previously compiled modules.
 Use link:{openapi-javadoc-base-url}/io/helidon/openapi/OpenApi.html[`io.helidon.openapi.OpenApi`]
 annotations to add OpenAPI-specific details such as document info, operation descriptions, parameters, responses,
 schemas, security, tags, servers, external docs, and extensions.
