@@ -983,10 +983,9 @@ final class OpenApi30DocumentMapper {
         if (openapi == null) {
             throw new IllegalStateException("Static OpenAPI document must declare an openapi version.");
         }
-        String version = String.valueOf(openapi);
-        if (!OpenApi30Version.TYPE.equals(version) && !version.startsWith(OpenApi30Version.TYPE + ".")) {
+        if (!(openapi instanceof String version) || !OpenApi30Version.isSupportedVersion(version)) {
             throw new IllegalStateException("OpenAPI 3.0 version implementation cannot parse static OpenAPI document version "
-                                                    + version + ".");
+                                                    + openapi + ".");
         }
     }
 

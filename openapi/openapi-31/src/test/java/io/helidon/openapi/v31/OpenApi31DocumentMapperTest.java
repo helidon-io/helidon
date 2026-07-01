@@ -17,6 +17,7 @@
 package io.helidon.openapi.v31;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 import io.helidon.openapi.OpenApiDocument;
@@ -32,6 +33,18 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class OpenApi31DocumentMapperTest {
     private static final long LARGE_INTEGRAL_VALUE = 9_007_199_254_740_993L;
+
+    @Test
+    void validatesOpenApiVersion() {
+        OpenApi31DocumentMapper.parse(document("3.1.2-rc1"));
+
+        for (String invalidVersion : List.of("3.1", "3.1.", "3.1.not-a-version", "3.1.1-", "3.1.1.0")) {
+            IllegalStateException ex = assertThrows(IllegalStateException.class,
+                                                    () -> OpenApi31DocumentMapper.parse(document(invalidVersion)),
+                                                    invalidVersion);
+            assertThat(invalidVersion, ex.getMessage(), containsString(invalidVersion));
+        }
+    }
 
     @Test
     void preservesLargeIntegralNumbers() {

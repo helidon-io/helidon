@@ -262,7 +262,7 @@ final class OpenApi32DocumentMapper {
     }
 
     private static void validateOpenApi32(Object version) {
-        if (!(version instanceof String string) || (!string.equals("3.2") && !string.startsWith("3.2."))) {
+        if (!(version instanceof String string) || !OpenApi32Version.isSupportedVersion(string)) {
             throw new IllegalStateException("OpenAPI 3.2 parser requires a 3.2 document, got: " + version);
         }
     }
