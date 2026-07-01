@@ -16,13 +16,19 @@
 
 package io.helidon.json;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class JsonObjectBuilderTest {
@@ -142,5 +148,54 @@ class JsonObjectBuilderTest {
     @Test
     void shouldRejectNullSource() {
         assertThrows(NullPointerException.class, () -> JsonObject.builder().from(null));
+    }
+
+    @ParameterizedTest
+    @MethodSource("jsonObjects")
+    void shouldRejectNullLookupKeys(JsonObject object) {
+        assertAll(
+                () -> assertThrows(NullPointerException.class, () -> object.containsKey(null)),
+                () -> assertThrows(NullPointerException.class, () -> object.value(null)),
+                () -> assertThrows(NullPointerException.class, () -> object.value(null, JsonNull.instance())),
+                () -> assertThrows(NullPointerException.class, () -> object.booleanValue(null)),
+                () -> assertThrows(NullPointerException.class, () -> object.booleanValue(null, false)),
+                () -> assertThrows(NullPointerException.class, () -> object.objectValue(null)),
+                () -> assertThrows(NullPointerException.class, () -> object.objectValue(null, JsonObject.empty())),
+                () -> assertThrows(NullPointerException.class, () -> object.stringValue(null)),
+                () -> assertThrows(NullPointerException.class, () -> object.stringValue(null, "default")),
+                () -> assertThrows(NullPointerException.class, () -> object.byteValue(null)),
+                () -> assertThrows(NullPointerException.class, () -> object.byteValue(null, (byte) 1)),
+                () -> assertThrows(NullPointerException.class, () -> object.shortValue(null)),
+                () -> assertThrows(NullPointerException.class, () -> object.shortValue(null, (short) 1)),
+                () -> assertThrows(NullPointerException.class, () -> object.intValue(null)),
+                () -> assertThrows(NullPointerException.class, () -> object.intValue(null, 1)),
+                () -> assertThrows(NullPointerException.class, () -> object.longValue(null)),
+                () -> assertThrows(NullPointerException.class, () -> object.longValue(null, 1L)),
+                () -> assertThrows(NullPointerException.class, () -> object.floatValue(null)),
+                () -> assertThrows(NullPointerException.class, () -> object.floatValue(null, 1F)),
+                () -> assertThrows(NullPointerException.class, () -> object.doubleValue(null)),
+                () -> assertThrows(NullPointerException.class, () -> object.doubleValue(null, 1D)),
+                () -> assertThrows(NullPointerException.class, () -> object.bigIntegerValue(null)),
+                () -> assertThrows(NullPointerException.class, () -> object.bigIntegerValue(null, BigInteger.ONE)),
+                () -> assertThrows(NullPointerException.class, () -> object.numberValue(null)),
+                () -> assertThrows(NullPointerException.class, () -> object.numberValue(null, BigDecimal.ONE)),
+                () -> assertThrows(NullPointerException.class, () -> object.arrayValue(null)),
+                () -> assertThrows(NullPointerException.class, () -> object.arrayValue(null, JsonArray.empty())));
+    }
+
+    @Test
+    void shouldRejectNullKeysDuringConstruction() {
+        LinkedHashMap<String, JsonValue> values = new LinkedHashMap<>();
+        values.put(null, JsonNull.instance());
+
+        assertAll(
+                () -> assertThrows(NullPointerException.class, () -> JsonObject.create(values)),
+                () -> assertThrows(NullPointerException.class, () -> JsonObject.builder().setNull(null)));
+    }
+
+    private static Stream<JsonObject> jsonObjects() {
+        return Stream.of(
+                JsonObject.builder().set("value", 1).build(),
+                JsonParser.create("{\"value\":1}").readJsonObject());
     }
 }
