@@ -145,6 +145,41 @@ class OpenApiDocumentComposerTest {
     }
 
     @Test
+    void generatedDocumentRequiresInfo() {
+        for (OpenApiGeneratedMode mode : List.of(OpenApiGeneratedMode.STATIC_FIRST,
+                                                 OpenApiGeneratedMode.MERGE,
+                                                 OpenApiGeneratedMode.GENERATED_ONLY)) {
+            OpenApiDocumentContext context = context(mode);
+            IllegalStateException thrown = assertThrows(
+                    IllegalStateException.class,
+                    () -> OpenApiDocumentComposer.compose(context,
+                                                          context.openApiVersion(),
+                                                          "",
+                                                          MediaTypes.APPLICATION_OPENAPI_YAML,
+                                                          List.of(operationSource())),
+                    mode.name());
+
+            assertThat(thrown.getMessage(), containsString("requires Info metadata"));
+        }
+    }
+
+    @Test
+    void generatedEndpointUsesInfoFromSeparateSource() {
+        OpenApiDocumentContext context = context(OpenApiGeneratedMode.GENERATED_ONLY);
+        OpenApiDocumentSource metadata = (ignored, document) -> document.info("Generated API", "1.0.0");
+
+        String content = OpenApiDocumentComposer.compose(context,
+                                                        context.openApiVersion(),
+                                                        "",
+                                                        MediaTypes.APPLICATION_OPENAPI_YAML,
+                                                        List.of(metadata, operationSource()));
+
+        Map<String, Object> parsed = parse(content);
+        assertThat(map(parsed, "info").get("title"), is("Generated API"));
+        assertThat(map(parsed, "paths").containsKey("/generated"), is(true));
+    }
+
+    @Test
     void generatedOnlyFailsOnDuplicateOperationId() {
         OpenApiDocumentContext context = context(OpenApiGeneratedMode.GENERATED_ONLY);
         IllegalStateException thrown = assertThrows(IllegalStateException.class,
@@ -216,15 +251,15 @@ class OpenApiDocumentComposerTest {
     void generatedOperationIdOverrideResolvesDuplicate() {
         OpenApiDocumentContext context = context(OpenApiGeneratedMode.GENERATED_ONLY,
                                                  Map.of("com.example.First#get()", "firstGet"));
-        OpenApiDocumentSource first = (documentContext, document) -> document.path(
-                "/first",
-                path -> path.operation("GET",
-                                       operation -> operation
-                                               .operationId(OpenApiDocumentContextSupport.operationId(
-                                                       documentContext,
-                                                       "com.example.First#get()",
-                                                       "duplicate"))
-                                               .response("200", "OK")));
+        OpenApiDocumentSource first = (documentContext, document) -> document.info("Generated API", "1.0.0")
+                .path("/first",
+                      path -> path.operation("GET",
+                                             operation -> operation
+                                                     .operationId(OpenApiDocumentContextSupport.operationId(
+                                                             documentContext,
+                                                             "com.example.First#get()",
+                                                             "duplicate"))
+                                                     .response("200", "OK")));
 
         String content = OpenApiDocumentComposer.compose(context,
                                                         context.openApiVersion(),
