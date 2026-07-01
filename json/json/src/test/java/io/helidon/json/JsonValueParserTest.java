@@ -17,6 +17,7 @@
 package io.helidon.json;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -406,6 +407,49 @@ class JsonValueParserTest {
         assertThat(parser.currentByte(), is((byte) '['));
         assertThat(parser.nextToken(), is((byte) '-'));
         assertThat(parser.readBigDecimal(), is(new BigDecimal("-0.5")));
+    }
+
+    @Test
+    public void testJsonValueParserDerivesLargeNumberTokenLazily() {
+        TrackingBigDecimal value = new TrackingBigDecimal();
+        JsonParser parser = JsonParser.create(JsonArray.create(List.of(JsonNumber.create(value))));
+
+        assertThat(value.unscaledValueCalls(), is(0));
+        assertThat(parser.nextToken(), is((byte) '1'));
+        assertThat(value.unscaledValueCalls(), is(1));
+        assertThat(parser.readBigDecimal(), is(value));
+        assertThat(parser.currentByte(), is((byte) '1'));
+        assertThat(value.unscaledValueCalls(), is(1));
+    }
+
+    private static final class TrackingBigDecimal extends BigDecimal {
+        private static final long serialVersionUID = 1L;
+
+        private int unscaledValueCalls;
+
+        private TrackingBigDecimal() {
+            super(BigInteger.TEN.pow(20));
+        }
+
+        @Override
+        public BigInteger unscaledValue() {
+            unscaledValueCalls++;
+            return super.unscaledValue();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return super.equals(obj);
+        }
+
+        @Override
+        public int hashCode() {
+            return super.hashCode();
+        }
+
+        private int unscaledValueCalls() {
+            return unscaledValueCalls;
+        }
     }
 
 }
