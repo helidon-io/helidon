@@ -404,6 +404,19 @@ class ContentEncodingSupportTest {
     }
 
     @Test
+    void testRuntimeEncoderReusesAliasWrapper() {
+        ContentEncodingContext context = ContentEncodingContext.builder()
+                .addContentEncoding(new TestEncoding(gzipHeaderEncoder(), Set.of("gzip", "x-gzip"), true, false, "gzip"))
+                .build();
+        Headers headers = headers("x-gzip, identity;q=0");
+
+        ContentEncoder first = context.encoder(headers);
+        ContentEncoder second = context.encoder(headers);
+
+        assertThat(second, sameInstance(first));
+    }
+
+    @Test
     void testRuntimeEncoderUsesAcceptedAliasWhenEmittedCodingIsRejected() {
         ContentEncoder gzipEncoder = gzipHeaderEncoder();
         ContentEncodingContext context = ContentEncodingContext.builder()
