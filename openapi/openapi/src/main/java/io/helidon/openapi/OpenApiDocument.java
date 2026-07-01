@@ -78,8 +78,8 @@ public final class OpenApiDocument {
                 .map(Info::new)
                 .orElse(null);
         this.servers = servers(this.node.get("servers"));
-        this.paths = pathItems(this.node.get("paths"));
-        this.webhooks = pathItems(this.node.get("webhooks"));
+        this.paths = pathItems(this.node.get("paths"), true);
+        this.webhooks = pathItems(this.node.get("webhooks"), false);
         this.components = objectValue(this.node.get("components"))
                 .map(Components::new)
                 .orElse(null);
@@ -233,12 +233,12 @@ public final class OpenApiDocument {
         return Collections.unmodifiableList(result);
     }
 
-    private static Map<String, PathItem> pathItems(Object value) {
+    private static Map<String, PathItem> pathItems(Object value, boolean filterExtensions) {
         return objectValue(value)
                 .map(paths -> {
                     Map<String, PathItem> result = new LinkedHashMap<>();
                     paths.forEach((path, pathItem) -> {
-                        if (!path.startsWith("x-")) {
+                        if (!filterExtensions || !path.startsWith("x-")) {
                             objectValue(pathItem).ifPresent(node -> result.put(path, new PathItem(path, node)));
                         }
                     });
@@ -1472,7 +1472,7 @@ public final class OpenApiDocument {
         }
 
         /**
-         * OpenAPI path template or webhook name.
+         * OpenAPI path template, webhook name, or callback expression.
          *
          * @return path template or webhook name
          */
@@ -1734,6 +1734,140 @@ public final class OpenApiDocument {
     }
 
     /**
+     * OpenAPI Callback Object.
+     */
+    @Api.Preview
+    public static final class Callback {
+        private final Map<String, Object> node;
+        private final Map<String, PathItem> expressions;
+
+        private Callback(Map<String, Object> node) {
+            this.node = immutableMap(node);
+            this.expressions = pathItems(this.node, true);
+        }
+
+        /**
+         * Create a new callback builder.
+         *
+         * @return builder
+         */
+        public static CallbackBuilder builder() {
+            return new CallbackBuilder();
+        }
+
+        /**
+         * Create a reference callback.
+         *
+         * @param ref reference
+         * @return callback
+         */
+        public static Callback reference(String ref) {
+            return builder().ref(ref).build();
+        }
+
+        /**
+         * Callback path items keyed by runtime expression.
+         *
+         * @return callback expressions
+         */
+        public Map<String, PathItem> expressions() {
+            return expressions;
+        }
+
+        private Map<String, Object> toNode() {
+            return node;
+        }
+    }
+
+    /**
+     * OpenAPI callback builder.
+     */
+    @Api.Preview
+    public static final class CallbackBuilder implements io.helidon.common.Builder<CallbackBuilder, Callback> {
+        private final Map<String, Object> node = new LinkedHashMap<>();
+
+        private CallbackBuilder() {
+        }
+
+        /**
+         * Set reference.
+         *
+         * @param ref reference
+         * @return updated builder
+         */
+        public CallbackBuilder ref(String ref) {
+            node.put("$ref", Objects.requireNonNull(ref));
+            return this;
+        }
+
+        /**
+         * Set reference summary.
+         *
+         * @param summary summary
+         * @return updated builder
+         */
+        public CallbackBuilder summary(String summary) {
+            node.put("summary", Objects.requireNonNull(summary));
+            return this;
+        }
+
+        /**
+         * Set reference description.
+         *
+         * @param description description
+         * @return updated builder
+         */
+        public CallbackBuilder description(String description) {
+            node.put("description", Objects.requireNonNull(description));
+            return this;
+        }
+
+        /**
+         * Add a callback path item.
+         *
+         * @param expression callback runtime expression
+         * @param pathItem path item
+         * @return updated builder
+         */
+        public CallbackBuilder expression(String expression, PathItem pathItem) {
+            node.put(Objects.requireNonNull(expression), Objects.requireNonNull(pathItem).toNode());
+            return this;
+        }
+
+        /**
+         * Add a callback path item.
+         *
+         * @param expression callback runtime expression
+         * @param pathItem consumer to update path item builder
+         * @return updated builder
+         */
+        public CallbackBuilder expression(String expression, Consumer<PathItemBuilder> pathItem) {
+            PathItemBuilder builder = PathItem.builder();
+            pathItem.accept(builder);
+            return expression(expression, builder.build());
+        }
+
+        /**
+         * Add an extension.
+         * <p>
+         * Extension names must start with {@code x-}.
+         *
+         * @param name extension name
+         * @param value extension value
+         * @return updated builder
+         */
+        public CallbackBuilder extension(String name, JsonValue value) {
+            OpenApiDocument.extension(node, name, value);
+            return this;
+        }
+
+        @Override
+        public Callback build() {
+            return new Callback(node);
+        }
+    }
+
+    /**
      * OpenAPI Operation Object.
      */
     @Api.Preview
@@ -1743,7 +1877,7 @@ public final class OpenApiDocument {
         private final List<Parameter> parameters;
         private final RequestBody requestBody;
         private final Map<String, Response> responses;
-        private final Map<String, PathItem> callbacks;
+        private final Map<String, Callback> callbacks;
 
         private Operation(Map<String, Object> node) {
             this.node = immutableMap(node);
@@ -1751,7 +1885,7 @@ public final class OpenApiDocument {
             this.parameters = parameterList(this.node.get("parameters"));
             this.requestBody = objectValue(this.node.get("requestBody")).map(RequestBody::new).orElse(null);
             this.responses = responses(this.node.get("responses"));
-            this.callbacks = pathItems(this.node.get("callbacks"));
+            this.callbacks = callbacks(this.node.get("callbacks"));
         }
 
         /**
@@ -1802,9 +1936,9 @@ public final class OpenApiDocument {
         /**
          * Operation callbacks.
          *
-         * @return callbacks keyed by callback expression
+         * @return callbacks keyed by callback name
          */
-        public Map<String, PathItem> callbacks() {
+        public Map<String, Callback> callbacks() {
             return callbacks;
         }
 
@@ -1821,6 +1955,18 @@ public final class OpenApiDocument {
                                 objectValue(response).ifPresent(node -> result.put(status, new Response(node)));
                             }
                         });
+                        return Collections.unmodifiableMap(result);
+                    })
+                    .orElseGet(Map::of);
+        }
+
+        private static Map<String, Callback> callbacks(Object value) {
+            return objectValue(value)
+                    .map(callbacks -> {
+                        Map<String, Callback> result = new LinkedHashMap<>();
+                        callbacks.forEach((name, callback) ->
+                                                  objectValue(callback)
+                                                          .ifPresent(node -> result.put(name, new Callback(node))));
                         return Collections.unmodifiableMap(result);
                     })
                     .orElseGet(Map::of);
@@ -2003,42 +2149,28 @@ public final class OpenApiDocument {
         }
 
         /**
-         * Add an extension to the callbacks object.
-         * <p>
-         * Extension names must start with {@code x-}.
+         * Add callback.
          *
-         * @param name extension name
-         * @param value extension value
+         * @param name callback name
+         * @param callback callback
          * @return updated builder
          */
-        public OperationBuilder callbackExtension(String name, JsonValue value) {
-            OpenApiDocument.extension(object(node, "callbacks"), name, value);
+        public OperationBuilder callback(String name, Callback callback) {
+            object(node, "callbacks").put(Objects.requireNonNull(name), Objects.requireNonNull(callback).toNode());
             return this;
         }
 
         /**
          * Add callback.
          *
-         * @param expression callback expression
-         * @param callback callback path item
+         * @param name callback name
+         * @param callback consumer to update callback builder
          * @return updated builder
          */
-        public OperationBuilder callback(String expression, PathItem callback) {
-            object(node, "callbacks").put(Objects.requireNonNull(expression), Objects.requireNonNull(callback).toNode());
-            return this;
-        }
-
-        /**
-         * Add callback.
-         *
-         * @param expression callback expression
-         * @param callback consumer to update callback path item builder
-         * @return updated builder
-         */
-        public OperationBuilder callback(String expression, Consumer<PathItemBuilder> callback) {
-            PathItemBuilder builder = PathItem.builder();
+        public OperationBuilder callback(String name, Consumer<CallbackBuilder> callback) {
+            CallbackBuilder builder = Callback.builder();
             callback.accept(builder);
-            return callback(expression, builder.build());
+            return callback(name, builder.build());
         }
 
         /**
@@ -3790,10 +3922,10 @@ public final class OpenApiDocument {
          * Set callback.
          *
          * @param name callback name
-         * @param callback callback path item
+         * @param callback callback
          * @return updated builder
          */
-        public ComponentsBuilder callback(String name, PathItem callback) {
+        public ComponentsBuilder callback(String name, Callback callback) {
             object(node, "callbacks").put(Objects.requireNonNull(name), Objects.requireNonNull(callback).toNode());
             return this;
         }
@@ -3802,11 +3934,11 @@ public final class OpenApiDocument {
          * Set callback.
          *
          * @param name callback name
-         * @param callback consumer to update callback path item builder
+         * @param callback consumer to update callback builder
          * @return updated builder
          */
-        public ComponentsBuilder callback(String name, Consumer<PathItemBuilder> callback) {
-            PathItemBuilder builder = PathItem.builder();
+        public ComponentsBuilder callback(String name, Consumer<CallbackBuilder> callback) {
+            CallbackBuilder builder = Callback.builder();
             callback.accept(builder);
             return callback(name, builder.build());
         }

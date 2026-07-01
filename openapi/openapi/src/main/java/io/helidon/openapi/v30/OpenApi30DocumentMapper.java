@@ -358,7 +358,7 @@ final class OpenApi30DocumentMapper {
             case "parameters" -> result.put(key, parameters(value, mode));
             case "requestBody" -> object(value, object -> result.put(key, requestBody(object, mode)));
             case "responses" -> object(value, object -> result.put(key, responses(object, mode, true)));
-            case "callbacks" -> object(value, object -> result.put(key, callbacks(object, mode, true)));
+            case "callbacks" -> object(value, object -> result.put(key, callbacks(object, mode)));
             case "servers" -> result.put(key, serverList(value));
             case "externalDocs" -> object(value, object -> result.put(key, copyAllowed(object, EXTERNAL_DOCS_FIELDS)));
             default -> copyField(result, key, source);
@@ -540,7 +540,7 @@ final class OpenApi30DocumentMapper {
             case "headers" -> object(value, object -> result.put(key, headers(object, mode)));
             case "securitySchemes" -> object(value, object -> result.put(key, securitySchemes(object)));
             case "links" -> object(value, object -> result.put(key, links(object)));
-            case "callbacks" -> object(value, object -> result.put(key, callbacks(object, mode, false)));
+            case "callbacks" -> object(value, object -> result.put(key, callbacks(object, mode)));
             default -> copyField(result, key, source);
             }
         });
@@ -657,10 +657,19 @@ final class OpenApi30DocumentMapper {
         return result;
     }
 
-    private static Map<String, Object> callbacks(Map<String, ?> source, SchemaMode mode, boolean containerExtensions) {
+    private static Map<String, Object> callbacks(Map<String, ?> source, SchemaMode mode) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        source.forEach((key, value) -> object(value, object -> result.put(key, callback(object, mode))));
+        return result;
+    }
+
+    private static Map<String, Object> callback(Map<String, ?> source, SchemaMode mode) {
+        if (source.containsKey("$ref")) {
+            return reference(source);
+        }
         Map<String, Object> result = new LinkedHashMap<>();
         source.forEach((key, value) -> {
-            if (containerExtensions && key.startsWith("x-")) {
+            if (key.startsWith("x-")) {
                 copyField(result, key, source);
             } else {
                 object(value, object -> result.put(key, pathItem(object, mode)));

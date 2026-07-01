@@ -202,13 +202,7 @@ public final class OpenApiDocumentReader {
             extensions(responses, builder::responseExtension);
         });
         object(source, "callbacks", callbacks -> callbacks.keysAsStrings()
-                .forEach(name -> {
-                    if (name.startsWith("x-")) {
-                        value(callbacks, name, value -> builder.callbackExtension(name, value));
-                    } else {
-                        object(callbacks, name, callback -> builder.callback(name, pathItem(callback)));
-                    }
-                }));
+                .forEach(name -> object(callbacks, name, callback -> builder.callback(name, callback(callback)))));
         bool(source, "deprecated", builder::deprecated);
         array(source, "security", security -> {
             if (security.values().isEmpty()) {
@@ -221,6 +215,22 @@ public final class OpenApiDocumentReader {
         });
         array(source, "servers", servers -> servers.values()
                 .forEach(server -> object(server, value -> builder.server(server(value)))));
+        extensions(source, builder::extension);
+        return builder.build();
+    }
+
+    private static OpenApiDocument.Callback callback(JsonObject source) {
+        OpenApiDocument.CallbackBuilder builder = OpenApiDocument.Callback.builder();
+        if (string(source, "$ref").isPresent()) {
+            reference(source, builder::ref, builder::summary, builder::description);
+            return builder.build();
+        }
+        source.keysAsStrings()
+                .stream()
+                .filter(expression -> !expression.startsWith("x-"))
+                .forEach(expression -> object(source,
+                                              expression,
+                                              pathItem -> builder.expression(expression, pathItem(pathItem))));
         extensions(source, builder::extension);
         return builder.build();
     }
@@ -402,7 +412,7 @@ public final class OpenApiDocumentReader {
         object(source, "links", values -> values.keysAsStrings()
                 .forEach(name -> object(values, name, link -> builder.link(name, link(link)))));
         object(source, "callbacks", values -> values.keysAsStrings()
-                .forEach(name -> object(values, name, callback -> builder.callback(name, pathItem(callback)))));
+                .forEach(name -> object(values, name, callback -> builder.callback(name, callback(callback)))));
         object(source, "pathItems", values -> values.keysAsStrings()
                 .forEach(name -> object(values, name, pathItem -> builder.pathItem(name, pathItem(pathItem)))));
         object(source, "mediaTypes", values -> values.keysAsStrings()

@@ -68,13 +68,33 @@ class OpenApi31DocumentMapperTest {
                                                 "x-provider-object", Map.of("enabled", true),
                                                 "200", Map.of("description", "OK")),
                                         "callbacks", Map.of(
-                                                "x-callback-scalar", "keep",
-                                                "x-callback-object", Map.of("enabled", true),
-                                                "{$request.body#/callbackUrl}", Map.of(
-                                                        "post", Map.of(
-                                                                "responses", Map.of(
-                                                                        "200", Map.of("description", "OK")))))))),
+                                                "onEvent", Map.of(
+                                                        "x-callback-scalar", "keep",
+                                                        "x-callback-object", Map.of("enabled", true),
+                                                        "{$request.body#/callbackUrl}", Map.of(
+                                                                "post", Map.of(
+                                                                        "responses", Map.of(
+                                                                                "200", Map.of("description", "OK"))))),
+                                                "x-named-callback", Map.of(
+                                                        "{$request.body#/fallbackUrl}", Map.of(
+                                                                "post", Map.of(
+                                                                        "responses", Map.of(
+                                                                                "204", Map.of("description", "Done"))))),
+                                                "referencedCallback", Map.of(
+                                                        "$ref", "#/components/callbacks/ReusableCallback",
+                                                        "summary", "Reusable callback"))))),
                 "components", Map.of(
+                        "callbacks", Map.of(
+                                "ReusableCallback", Map.of(
+                                        "{$request.body#/componentUrl}", Map.of(
+                                                "post", Map.of(
+                                                        "responses", Map.of(
+                                                                "200", Map.of("description", "OK")))))),
+                        "responses", Map.of(
+                                "x-Problem", Map.of(
+                                        "description", "Problem details",
+                                        "summary", "OpenAPI 3.2 summary",
+                                        "x-response", "preserved")),
                         "securitySchemes", Map.of(
                                 "OAuth", Map.of(
                                         "type", "oauth2",
@@ -94,12 +114,17 @@ class OpenApi31DocumentMapperTest {
         Map<String, Object> path = map(map(rendered, "paths"), "/pets");
         Map<String, Object> responses = map(map(path, "get"), "responses");
         Map<String, Object> callbacks = map(map(path, "get"), "callbacks");
+        Map<String, Object> callback = map(callbacks, "onEvent");
+        Map<String, Object> componentCallback = map(map(map(rendered, "components"), "callbacks"), "ReusableCallback");
+        Map<String, Object> componentResponse = map(map(map(rendered, "components"), "responses"), "x-Problem");
         Map<String, Object> reusablePath = map(map(map(rendered, "components"), "pathItems"), "ReusablePath");
         Map<String, Object> flows = map(map(map(map(rendered, "components"), "securitySchemes"), "OAuth"), "flows");
 
         assertThat(document.paths().containsKey("x-gateway-object"), is(false));
-        assertThat(document.paths().get("/pets").operations().get("get").callbacks().containsKey("x-callback-object"),
-                   is(false));
+        assertThat(document.paths().get("/pets").operations().get("get").callbacks().get("onEvent")
+                           .expressions().containsKey("{$request.body#/callbackUrl}"), is(true));
+        assertThat(document.paths().get("/pets").operations().get("get").callbacks()
+                           .containsKey("x-named-callback"), is(true));
         assertThat(map(rendered, "paths").get("x-gateway-root"), is(true));
         assertThat(map(map(rendered, "paths"), "x-gateway-object").get("stage"), is("prod"));
         assertThat(document.paths().get("/pets").operations().get("get").responses().containsKey("x-provider-object"),
@@ -107,8 +132,17 @@ class OpenApi31DocumentMapperTest {
         assertThat(path.get("x-path-meta"), is("keep"));
         assertThat(responses.get("x-provider-meta"), is(true));
         assertThat(map(responses, "x-provider-object").get("enabled"), is(true));
-        assertThat(callbacks.get("x-callback-scalar"), is("keep"));
-        assertThat(map(callbacks, "x-callback-object").get("enabled"), is(true));
+        assertThat(callback.get("x-callback-scalar"), is("keep"));
+        assertThat(map(callback, "x-callback-object").get("enabled"), is(true));
+        assertThat(map(callback, "{$request.body#/callbackUrl}").containsKey("post"), is(true));
+        assertThat(map(callbacks, "x-named-callback").containsKey("{$request.body#/fallbackUrl}"), is(true));
+        assertThat(map(callbacks, "referencedCallback").get("$ref"),
+                   is("#/components/callbacks/ReusableCallback"));
+        assertThat(map(callbacks, "referencedCallback").get("summary"), is("Reusable callback"));
+        assertThat(componentCallback.containsKey("{$request.body#/componentUrl}"), is(true));
+        assertThat(componentResponse.get("description"), is("Problem details"));
+        assertThat(componentResponse.containsKey("summary"), is(false));
+        assertThat(componentResponse.get("x-response"), is("preserved"));
         assertThat(flows.get("x-flow-scalar"), is("keep"));
         assertThat(map(flows, "x-flow-object").get("enabled"), is(true));
         assertThat(reusablePath.get("x-component-path-item"), is("keep"));
