@@ -151,8 +151,7 @@ record CachedHandlerInMemory(MediaType mediaType,
                                                                        headers.get(HeaderNames.RANGE).values(),
                                                                        contentLength,
                                                                        etag,
-                                                                       representation.weakEtag(),
-                                                                       lastModified);
+                                                                       representation.weakEtag());
                 if (ranges.size() == 1) {
                     // single response
                     ByteRangeRequest range = ranges.getFirst();

@@ -177,8 +177,7 @@ class CachedHandlerJar implements CachedHandler {
                                                      response,
                                                      channel,
                                                      representation,
-                                                     etag,
-                                                     lastModified);
+                                                     etag);
                     }
                     return true;
                 }

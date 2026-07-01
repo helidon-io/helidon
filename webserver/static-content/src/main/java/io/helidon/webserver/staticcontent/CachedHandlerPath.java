@@ -220,8 +220,7 @@ record CachedHandlerPath(Path path,
                                              response,
                                              openChannel,
                                              representation,
-                                             etag,
-                                             lastModified);
+                                             etag);
             } else {
                 representation.apply(response);
                 if (!representation.runtimeEncoded()) {
