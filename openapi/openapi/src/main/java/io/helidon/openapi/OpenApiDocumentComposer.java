@@ -16,6 +16,7 @@
 
 package io.helidon.openapi;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -82,7 +83,7 @@ final class OpenApiDocumentComposer {
         if (mode == OpenApiGeneratedMode.MERGE) {
             OpenApiDocument.Builder builder = OpenApiDocument.builder()
                     .merge(staticDocument.orElseThrow().get());
-            mergeGeneratedDocument(builder, generated, false);
+            mergeGeneratedDocument(builder, generated, false, Map.of());
             OpenApiDocument merged = builder.build();
             validateComposedDocument(merged);
             return context.openApiVersion().render(context, merged);
@@ -93,11 +94,12 @@ final class OpenApiDocumentComposer {
 
     private static OpenApiDocument generatedDocument(OpenApiDocumentContext context, List<OpenApiDocumentSource> sources) {
         OpenApiDocument.Builder builder = OpenApiDocument.builder();
+        Map<Object, String> schemaNamesByValue = new HashMap<>();
         for (OpenApiDocumentSource source : sources) {
             if (source.supports(context)) {
                 OpenApiDocument.Builder sourceBuilder = OpenApiDocument.builder();
                 source.describe(context, sourceBuilder);
-                mergeGeneratedDocument(builder, sourceBuilder.build(), true);
+                mergeGeneratedDocument(builder, sourceBuilder.build(), true, schemaNamesByValue);
             }
         }
         return builder.build();
@@ -105,16 +107,25 @@ final class OpenApiDocumentComposer {
 
     private static void mergeGeneratedDocument(OpenApiDocument.Builder targetBuilder,
                                                OpenApiDocument source,
-                                               boolean reuseEquivalentSchemas) {
+                                               boolean reuseEquivalentSchemas,
+                                               Map<Object, String> schemaNamesByValue) {
         Map<String, Object> sourceNode = source.mutableNode();
-        Map<String, String> schemaNames = rewriteSchemaNames(targetBuilder.node(), sourceNode, reuseEquivalentSchemas);
+        Map<String, String> schemaNames = rewriteSchemaNames(targetBuilder.node(),
+                                                             sourceNode,
+                                                             reuseEquivalentSchemas,
+                                                             schemaNamesByValue);
         rewriteSchemaRefs(sourceNode, schemaNames);
         targetBuilder.mergeNode(sourceNode);
+        if (reuseEquivalentSchemas) {
+            // Schema values are structural hash keys, so index them only after reference rewriting is complete.
+            schemas(sourceNode).forEach((name, schema) -> schemaNamesByValue.putIfAbsent(schema, name));
+        }
     }
 
     private static Map<String, String> rewriteSchemaNames(Map<String, Object> targetNode,
                                                           Map<String, Object> sourceNode,
-                                                          boolean reuseEquivalentSchemas) {
+                                                          boolean reuseEquivalentSchemas,
+                                                          Map<Object, String> schemaNamesByValue) {
         Map<String, Object> targetSchemas = schemas(targetNode);
         Map<String, Object> sourceSchemas = schemas(sourceNode);
         if (targetSchemas.isEmpty() || sourceSchemas.isEmpty()) {
@@ -129,7 +140,7 @@ final class OpenApiDocumentComposer {
             String sourceName = entry.getKey();
             Object sourceSchema = entry.getValue();
             String matchingName = reuseEquivalentSchemas
-                    ? matchingSchemaName(targetSchemas, sourceSchema).orElse(null)
+                    ? schemaNamesByValue.get(sourceSchema)
                     : null;
             if (targetSchemas.containsKey(sourceName)) {
                 if (Objects.equals(targetSchemas.get(sourceName), sourceSchema)) {
@@ -149,14 +160,6 @@ final class OpenApiDocumentComposer {
         result.keySet().forEach(sourceSchemas::remove);
         sourceSchemas.putAll(renamedSchemas);
         return result;
-    }
-
-    private static Optional<String> matchingSchemaName(Map<String, Object> schemas, Object schema) {
-        return schemas.entrySet()
-                .stream()
-                .filter(entry -> Objects.equals(entry.getValue(), schema))
-                .map(Map.Entry::getKey)
-                .findFirst();
     }
 
     private static String uniqueSchemaName(String name, Set<String> usedNames) {
