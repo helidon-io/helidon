@@ -120,7 +120,6 @@ final class OpenApi32DocumentMapper {
                                                             "description",
                                                             "required",
                                                             "deprecated",
-                                                            "allowEmptyValue",
                                                             "style",
                                                             "explode",
                                                             "allowReserved",

@@ -52,6 +52,7 @@ paths:
           headers:
             X-Request-Id:
               description: Request correlation id.
+              allowReserved: true
               schema:
                 type: string
           content:

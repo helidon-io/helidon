@@ -89,6 +89,33 @@ class OpenApi32DocumentMapperTest {
     }
 
     @Test
+    void filtersUnsupportedHeaderFields() {
+        OpenApiDocument document = OpenApi32DocumentMapper.parse(Map.of(
+                "openapi", "3.2.0",
+                "info", Map.of(
+                        "title", "Static API",
+                        "version", "1.0.0"),
+                "paths", Map.of(
+                        "/items", Map.of(
+                                "get", Map.of(
+                                        "responses", Map.of(
+                                                "200", Map.of(
+                                                        "description", "OK",
+                                                        "headers", Map.of(
+                                                                "X-Test", Map.of(
+                                                                        "allowEmptyValue", true,
+                                                                        "allowReserved", true,
+                                                                        "schema", Map.of("type", "string"))))))))));
+
+        Map<String, Object> rendered = OpenApi32DocumentMapper.render(document, "3.2.0");
+        Map<String, Object> responses = map(map(map(map(rendered, "paths"), "/items"), "get"), "responses");
+        Map<String, Object> header = map(map(map(responses, "200"), "headers"), "X-Test");
+
+        assertThat(header.containsKey("allowEmptyValue"), is(false));
+        assertThat(header.get("allowReserved"), is(true));
+    }
+
+    @Test
     void openApi32AllowsDeviceAuthorizationFlow() {
         OpenApiDocument document = openApiDocument(documentWithSecurityScheme(deviceAuthorizationSecurityScheme()));
         Map<String, Object> rendered = OpenApi32DocumentMapper.render(document, "3.2.0");

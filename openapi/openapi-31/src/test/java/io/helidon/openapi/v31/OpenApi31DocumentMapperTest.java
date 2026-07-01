@@ -99,6 +99,33 @@ class OpenApi31DocumentMapperTest {
     }
 
     @Test
+    void filtersUnsupportedHeaderFields() {
+        OpenApiDocument document = OpenApi31DocumentMapper.parse(Map.of(
+                "openapi", "3.1.1",
+                "info", Map.of(
+                        "title", "Static API",
+                        "version", "1.0.0"),
+                "paths", Map.of(
+                        "/items", Map.of(
+                                "get", Map.of(
+                                        "responses", Map.of(
+                                                "200", Map.of(
+                                                        "description", "OK",
+                                                        "headers", Map.of(
+                                                                "X-Test", Map.of(
+                                                                        "allowEmptyValue", true,
+                                                                        "allowReserved", true,
+                                                                        "schema", Map.of("type", "string"))))))))));
+
+        Map<String, Object> rendered = OpenApi31DocumentMapper.render(document, "3.1.1");
+        Map<String, Object> responses = map(map(map(map(rendered, "paths"), "/items"), "get"), "responses");
+        Map<String, Object> header = map(map(map(responses, "200"), "headers"), "X-Test");
+
+        assertThat(header.containsKey("allowEmptyValue"), is(false));
+        assertThat(header.containsKey("allowReserved"), is(false));
+    }
+
+    @Test
     void openApi31PreservesResponseAndComponentPathItemExtensions() {
         OpenApiDocument document = OpenApi31DocumentMapper.parse(Map.of(
                 "openapi", "3.1.0",

@@ -272,7 +272,6 @@ public final class OpenApiDocumentReader {
         string(source, "description", builder::description);
         bool(source, "required", builder::required);
         bool(source, "deprecated", builder::deprecated);
-        bool(source, "allowEmptyValue", builder::allowEmptyValue);
         string(source, "style", builder::style);
         bool(source, "explode", builder::explode);
         bool(source, "allowReserved", builder::allowReserved);
