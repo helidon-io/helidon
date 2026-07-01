@@ -32,6 +32,7 @@ import io.helidon.common.Api;
 
 /**
  * Represents a JSON object value containing key-value pairs.
+ * Keys must not be {@code null}.
  */
 @Api.Preview
 public final class JsonObject extends JsonValue {
@@ -49,6 +50,9 @@ public final class JsonObject extends JsonValue {
     }
 
     private JsonObject(LinkedHashMap<String, JsonValue> content) {
+        for (String key : content.keySet()) {
+            Objects.requireNonNull(key, "key cannot be null");
+        }
         this.content = content;
         this.pairs = new ArrayList<>();
         this.resolved = true;
@@ -70,6 +74,7 @@ public final class JsonObject extends JsonValue {
      * @return a new JsonObject
      */
     public static JsonObject create(Map<String, JsonValue> content) {
+        Objects.requireNonNull(content, "content cannot be null");
         return new JsonObject(new LinkedHashMap<>(content));
     }
 
@@ -98,6 +103,7 @@ public final class JsonObject extends JsonValue {
      * @return true if the object contains the key, false otherwise
      */
     public boolean containsKey(String key) {
+        Objects.requireNonNull(key, "key cannot be null");
         ensureResolvedKeys();
         return content.containsKey(key);
     }
@@ -110,8 +116,7 @@ public final class JsonObject extends JsonValue {
      * @return the value associated with the key, or the default value
      */
     public JsonValue value(String key, JsonValue defaultValue) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return defaultValue;
         }
@@ -125,8 +130,7 @@ public final class JsonObject extends JsonValue {
      * @return the value associated with the key, or empty
      */
     public Optional<JsonValue> value(String key) {
-        ensureResolvedKeys();
-        return Optional.ofNullable(content.get(key));
+        return Optional.ofNullable(valueForKey(key));
     }
 
     /**
@@ -136,8 +140,7 @@ public final class JsonObject extends JsonValue {
      * @return an Optional containing the boolean value, or empty if the key is not present
      */
     public Optional<Boolean> booleanValue(String key) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return Optional.empty();
         }
@@ -152,8 +155,7 @@ public final class JsonObject extends JsonValue {
      * @return the boolean value associated with the key, or the default value
      */
     public boolean booleanValue(String key, boolean defaultValue) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return defaultValue;
         }
@@ -167,8 +169,7 @@ public final class JsonObject extends JsonValue {
      * @return an Optional containing the JsonObject value, or empty if the key is not present
      */
     public Optional<JsonObject> objectValue(String key) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return Optional.empty();
         }
@@ -183,8 +184,7 @@ public final class JsonObject extends JsonValue {
      * @return the JsonObject value associated with the key, or the default value
      */
     public JsonObject objectValue(String key, JsonObject defaultValue) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return defaultValue;
         }
@@ -198,8 +198,7 @@ public final class JsonObject extends JsonValue {
      * @return an Optional containing the string value, or empty if the key is not present
      */
     public Optional<String> stringValue(String key) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return Optional.empty();
         }
@@ -214,8 +213,7 @@ public final class JsonObject extends JsonValue {
      * @return the string value associated with the key, or the default value
      */
     public String stringValue(String key, String defaultValue) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return defaultValue;
         }
@@ -229,8 +227,7 @@ public final class JsonObject extends JsonValue {
      * @return an Optional containing the byte value, or empty if the key is not present
      */
     public Optional<Byte> byteValue(String key) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return Optional.empty();
         }
@@ -245,8 +242,7 @@ public final class JsonObject extends JsonValue {
      * @return the byte value associated with the key, or the default value
      */
     public byte byteValue(String key, byte defaultValue) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return defaultValue;
         }
@@ -260,8 +256,7 @@ public final class JsonObject extends JsonValue {
      * @return an Optional containing the short value, or empty if the key is not present
      */
     public Optional<Short> shortValue(String key) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return Optional.empty();
         }
@@ -276,8 +271,7 @@ public final class JsonObject extends JsonValue {
      * @return the short value associated with the key, or the default value
      */
     public short shortValue(String key, short defaultValue) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return defaultValue;
         }
@@ -291,8 +285,7 @@ public final class JsonObject extends JsonValue {
      * @return an Optional containing the integer value, or empty if the key is not present
      */
     public Optional<Integer> intValue(String key) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return Optional.empty();
         }
@@ -307,8 +300,7 @@ public final class JsonObject extends JsonValue {
      * @return the integer value associated with the key, or the default value
      */
     public int intValue(String key, int defaultValue) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return defaultValue;
         }
@@ -322,8 +314,7 @@ public final class JsonObject extends JsonValue {
      * @return an Optional containing the long value, or empty if the key is not present
      */
     public Optional<Long> longValue(String key) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return Optional.empty();
         }
@@ -338,8 +329,7 @@ public final class JsonObject extends JsonValue {
      * @return the long value associated with the key, or the default value
      */
     public long longValue(String key, long defaultValue) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return defaultValue;
         }
@@ -353,8 +343,7 @@ public final class JsonObject extends JsonValue {
      * @return an Optional containing the float value, or empty if the key is not present
      */
     public Optional<Float> floatValue(String key) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return Optional.empty();
         }
@@ -369,8 +358,7 @@ public final class JsonObject extends JsonValue {
      * @return the float value associated with the key, or the default value
      */
     public float floatValue(String key, float defaultValue) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return defaultValue;
         }
@@ -384,8 +372,7 @@ public final class JsonObject extends JsonValue {
      * @return an Optional containing the double value, or empty if the key is not present
      */
     public Optional<Double> doubleValue(String key) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return Optional.empty();
         }
@@ -400,8 +387,7 @@ public final class JsonObject extends JsonValue {
      * @return the double value associated with the key, or the default value
      */
     public double doubleValue(String key, double defaultValue) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return defaultValue;
         }
@@ -415,8 +401,7 @@ public final class JsonObject extends JsonValue {
      * @return an Optional containing the BigInteger value, or empty if the key is not present
      */
     public Optional<BigInteger> bigIntegerValue(String key) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return Optional.empty();
         }
@@ -431,8 +416,7 @@ public final class JsonObject extends JsonValue {
      * @return the BigInteger value associated with the key, or the default value
      */
     public BigInteger bigIntegerValue(String key, BigInteger defaultValue) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return defaultValue;
         }
@@ -446,8 +430,7 @@ public final class JsonObject extends JsonValue {
      * @return an Optional containing the BigDecimal value, or empty if the key is not present
      */
     public Optional<BigDecimal> numberValue(String key) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return Optional.empty();
         }
@@ -462,8 +445,7 @@ public final class JsonObject extends JsonValue {
      * @return the BigDecimal value associated with the key, or the default value
      */
     public BigDecimal numberValue(String key, BigDecimal defaultValue) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return defaultValue;
         }
@@ -477,8 +459,7 @@ public final class JsonObject extends JsonValue {
      * @return an Optional containing the JsonArray value, or empty if the key is not present
      */
     public Optional<JsonArray> arrayValue(String key) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return Optional.empty();
         }
@@ -493,8 +474,7 @@ public final class JsonObject extends JsonValue {
      * @return the JsonArray value associated with the key, or the default value
      */
     public JsonArray arrayValue(String key, JsonArray defaultValue) {
-        ensureResolvedKeys();
-        JsonValue jsonValue = content.get(key);
+        JsonValue jsonValue = valueForKey(key);
         if (jsonValue == null) {
             return defaultValue;
         }
@@ -573,6 +553,12 @@ public final class JsonObject extends JsonValue {
         return this.content.values().containsAll(that.content.values());
     }
 
+    private JsonValue valueForKey(String key) {
+        Objects.requireNonNull(key, "key cannot be null");
+        ensureResolvedKeys();
+        return content.get(key);
+    }
+
     private void ensureResolvedKeys() {
         if (!resolved) {
             for (Pair pair : pairs) {
@@ -635,6 +621,7 @@ public final class JsonObject extends JsonValue {
          * @return this builder for method chaining
          */
         public Builder setNull(String key) {
+            Objects.requireNonNull(key, "key cannot be null");
             values.put(key, JsonNull.instance());
             return this;
         }
