@@ -918,37 +918,12 @@ class StaticContentHandlerTest {
     }
 
     @Test
-    void preCompressedWildcardDoesNotSelectSidecarWhenIdentityRejected() throws IOException, URISyntaxException {
-        TestContentHandler handler = TestContentHandler.create(true);
-        CachedHandler identityHandler = inMemoryHandler("Nested content");
-        CachedHandler sidecarHandler = inMemoryHandler("Brotli content")
-                .withRepresentation(ResponseRepresentation.encoded("br"));
-        ServerRequest request = mockRequestWithHeaders("*, identity;q=0", null, ContentEncodingContext.create());
-        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
-        ServerResponse response = mock(ServerResponse.class);
-        AtomicInteger sidecarLookups = new AtomicInteger();
-
-        when(response.headers()).thenReturn(responseHeaders);
-
-        CachedHandler selected = handler.selectHandler(
-                identityHandler,
-                request,
-                (coding, suffix) -> {
-                    sidecarLookups.incrementAndGet();
-                    return Optional.of(sidecarHandler);
-                });
-
-        selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
-
-        assertThat(sidecarLookups.get(), is(0));
-        assertThat(responseHeaders, hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
-        assertThat(responseHeaders, noHeader(HeaderNames.CONTENT_ENCODING));
-        verify(response).status(Status.NOT_ACCEPTABLE_406);
-        verify(response).send();
+    void preCompressedWildcardSelectsSidecarWhenIdentityRejected() throws IOException, URISyntaxException {
+        assertSidecarSelected("*, identity;q=0", "br", "Brotli content");
     }
 
     @Test
-    void preCompressedWildcardSelectsRuntimeEncodingInsteadOfSidecar() throws IOException, URISyntaxException {
+    void preCompressedWildcardPrefersSidecarOverRuntimeEncoding() throws IOException, URISyntaxException {
         TestContentHandler handler = TestContentHandler.create(true);
         CachedHandler identityHandler = inMemoryHandler("Nested content");
         CachedHandler sidecarHandler = inMemoryHandler("Brotli content")
@@ -958,26 +933,24 @@ class StaticContentHandlerTest {
                                                        runtimeContentEncodingContext(new TestEncoding("gzip", "runtime:")));
         ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
         ServerResponse response = mock(ServerResponse.class);
-        AtomicInteger sidecarLookups = new AtomicInteger();
-        ByteArrayOutputStream sent = new ByteArrayOutputStream();
+        AtomicReference<byte[]> sent = new AtomicReference<>();
 
         when(response.headers()).thenReturn(responseHeaders);
-        when(response.outputStream()).thenReturn(sent);
+        Mockito.doAnswer(inv -> {
+            sent.set(inv.getArgument(0));
+            return null;
+        }).when(response).send(any(byte[].class));
 
         CachedHandler selected = handler.selectHandler(
                 identityHandler,
                 request,
-                (coding, suffix) -> {
-                    sidecarLookups.incrementAndGet();
-                    return Optional.of(sidecarHandler);
-                });
+                (coding, suffix) -> "br".equals(coding) ? Optional.of(sidecarHandler) : Optional.empty());
 
         selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
 
-        assertThat(sidecarLookups.get(), is(0));
         assertThat(responseHeaders, hasHeader(HeaderNames.VARY, HeaderNames.ACCEPT_ENCODING_NAME));
-        assertThat(responseHeaders, hasHeader(HeaderNames.CONTENT_ENCODING, "gzip"));
-        assertThat(sent.toString(StandardCharsets.UTF_8), is("runtime:Nested content"));
+        assertThat(responseHeaders, hasHeader(HeaderNames.CONTENT_ENCODING, "br"));
+        assertThat(new String(sent.get(), StandardCharsets.UTF_8), is("Brotli content"));
         verify(response, never()).status(Status.NOT_ACCEPTABLE_406);
     }
 

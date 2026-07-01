@@ -389,7 +389,7 @@ abstract class StaticContentHandler implements HttpService {
                                                                        String coding,
                                                                        Set<String> sidecarCodings) {
         List<AcceptEncoding.CodingQuality> result = new ArrayList<>();
-        acceptEncoding.match(coding, false).ifPresent(result::add);
+        acceptEncoding.match(coding, true).ifPresent(result::add);
 
         if (contentEncodingContext == null || !contentEncodingContext.contentEncodingEnabled()) {
             return result;
