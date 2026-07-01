@@ -175,6 +175,24 @@ class ByteRangeRequestTest {
                    is(List.of()));
     }
 
+    @Test
+    void testMalformedIfRangeEntityTagDoesNotMatch() {
+        WritableHeaders<?> headers = WritableHeaders.create();
+        headers.add(HeaderNames.IF_RANGE, "\"");
+        ServerRequest req = Mockito.mock(ServerRequest.class);
+        Mockito.when(req.headers()).thenReturn(ServerRequestHeaders.create(headers));
+        ServerResponse res = Mockito.mock(ServerResponse.class);
+
+        assertThat(ByteRangeRequest.parse(req,
+                                          res,
+                                          FIRST_BYTE_RANGE,
+                                          50,
+                                          "123",
+                                          false,
+                                          Instant.parse("2026-06-30T12:00:00Z")),
+                   is(List.of()));
+    }
+
     private static ServerRequest requestWithIfRange(Instant ifRange) {
         String value = ZonedDateTime.ofInstant(ifRange, ZoneOffset.UTC).format(DateTime.RFC_1123_DATE_TIME);
         WritableHeaders<?> headers = WritableHeaders.create();
