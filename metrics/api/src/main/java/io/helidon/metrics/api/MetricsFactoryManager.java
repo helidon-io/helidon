@@ -25,71 +25,16 @@ import io.helidon.config.Config;
 import io.helidon.metrics.spi.MetersProvider;
 import io.helidon.metrics.spi.MetricsFactoryProvider;
 import io.helidon.metrics.spi.MetricsProgrammaticConfig;
-import io.helidon.service.registry.Services;
 
 /**
- * Provides {@link io.helidon.metrics.api.MetricsFactory} instances using a highest-weight implementation of
+ * Creates {@link io.helidon.metrics.api.MetricsFactory} instances using a highest-weight implementation of
  * {@link io.helidon.metrics.spi.MetricsFactoryProvider}, defaulting to a no-op implementation if no other is available.
- * <p>
- * The {@link #create(Config)} method neither reads nor updates the most-recently used config and factory.
  */
 class MetricsFactoryManager {
 
     private static final System.Logger LOGGER = System.getLogger(MetricsFactoryManager.class.getName());
 
     private MetricsFactoryManager() {
-    }
-
-    /**
-     * This method now simply calls {@link io.helidon.service.registry.Services#get(Class)}.
-     *
-     * @param ignoredConfig ignored config
-     * @return shared metrics factory
-     * @deprecated either use {@link io.helidon.service.registry.Services} directly; if the intention is to use a different
-     *      shared instance than the default one, create a service factory with a higher than default
-     *      {@link io.helidon.common.Weight}, or call {@link io.helidon.service.registry.Services#set(Class, Object[])}
-     *      before the application starts
-     */
-    @Deprecated(since = "27.0.0", forRemoval = true)
-    static MetricsFactory getMetricsFactory(Config ignoredConfig) {
-        LOGGER.log(Level.WARNING, "Method MetricsFactoryManager.getMetricsFactory(Config) does not work as in "
-                + "previous major versions of Helidon, and simply returns the instance from ServiceRegistry. "
-                + "This method is now deprecated and will be removed.");
-
-        return Services.get(MetricsFactory.class);
-    }
-
-    /**
-     * Returns the shared metrics factory from
-     * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MetricsFactory.class)}.
-     *
-     * @return shared metrics factory
-     * @deprecated since 27.0.0, for removal. Use
-     * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MetricsFactory.class)}.
-     */
-    @Deprecated(since = "27.0.0", forRemoval = true)
-    static MetricsFactory getMetricsFactory() {
-        LOGGER.log(Level.WARNING, "Method MetricsFactoryManager.getMetricsFactory() does not work as in "
-                + "previous major versions of Helidon, and simply returns the instance from ServiceRegistry. "
-                + "This method is now deprecated and will be removed.");
-
-        return Services.get(MetricsFactory.class);
-    }
-
-    /**
-     * Returns the shared metrics factory from
-     * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MetricsFactory.class)}.
-     *
-     * @param ignoredConfig ignored config
-     * @return shared metrics factory
-     */
-    @Deprecated(since = "27.0.0", forRemoval = true)
-    static MetricsFactory getOrCreateMetricsFactory(Config ignoredConfig) {
-        LOGGER.log(Level.WARNING, "Method MetricsFactoryManager.getOrCreateMetricsFactory(Config) does not work as in "
-                + "previous major versions of Helidon, and simply returns the instance from ServiceRegistry. "
-                + "This method is now deprecated and will be removed.");
-
-        return Services.get(MetricsFactory.class);
     }
 
     /**
