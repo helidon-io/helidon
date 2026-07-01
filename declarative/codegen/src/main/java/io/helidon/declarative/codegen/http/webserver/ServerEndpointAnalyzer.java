@@ -60,13 +60,18 @@ import static java.util.function.Predicate.not;
 public final class ServerEndpointAnalyzer extends RestExtensionBase {
     private final RegistryCodegenContext ctx;
 
+    private ServerEndpointAnalyzer(RegistryCodegenContext ctx) {
+        this.ctx = ctx;
+    }
+
     /**
      * Create a new analyzer.
      *
      * @param ctx codegen context
+     * @return a new endpoint analyzer
      */
-    public ServerEndpointAnalyzer(RegistryCodegenContext ctx) {
-        this.ctx = ctx;
+    public static ServerEndpointAnalyzer create(RegistryCodegenContext ctx) {
+        return new ServerEndpointAnalyzer(ctx);
     }
 
     /**

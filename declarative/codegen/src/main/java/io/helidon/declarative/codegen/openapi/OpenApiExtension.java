@@ -28,7 +28,7 @@ final class OpenApiExtension implements RegistryCodegenExtension {
 
     OpenApiExtension(RegistryCodegenContext ctx) {
         this.openApiAvailable = ctx.typeInfo(OpenApiCodegenTypes.OPENAPI_DOCUMENT_SOURCE).isPresent();
-        this.endpointAnalyzer = new ServerEndpointAnalyzer(ctx);
+        this.endpointAnalyzer = ServerEndpointAnalyzer.create(ctx);
         this.sourceGenerator = new OpenApiSourceGenerator(ctx);
     }
 
