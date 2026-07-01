@@ -110,11 +110,29 @@ final class OpenApiDocumentComposer {
                                                boolean reuseEquivalentSchemas,
                                                Map<Object, String> schemaNamesByValue) {
         Map<String, Object> sourceNode = source.mutableNode();
-        Map<String, String> schemaNames = rewriteSchemaNames(targetBuilder.node(),
-                                                             sourceNode,
-                                                             reuseEquivalentSchemas,
-                                                             schemaNamesByValue);
+        Map<String, String> schemaNames = new LinkedHashMap<>(rewriteSchemaNames(targetBuilder.node(),
+                                                                                 sourceNode,
+                                                                                 reuseEquivalentSchemas,
+                                                                                 schemaNamesByValue));
         rewriteSchemaRefs(sourceNode, schemaNames);
+        if (reuseEquivalentSchemas) {
+            while (true) {
+                Map<String, Object> sourceSchemas = schemas(sourceNode);
+                Map<String, String> equivalentSchemaNames = new LinkedHashMap<>();
+                sourceSchemas.forEach((name, schema) -> {
+                    String matchingName = schemaNamesByValue.get(schema);
+                    if (matchingName != null) {
+                        equivalentSchemaNames.put(name, matchingName);
+                    }
+                });
+                if (equivalentSchemaNames.isEmpty()) {
+                    break;
+                }
+                equivalentSchemaNames.keySet().forEach(sourceSchemas::remove);
+                schemaNames.putAll(equivalentSchemaNames);
+                rewriteSchemaRefs(sourceNode, schemaNames);
+            }
+        }
         targetBuilder.mergeNode(sourceNode);
         if (reuseEquivalentSchemas) {
             // Schema values are structural hash keys, so index them only after reference rewriting is complete.

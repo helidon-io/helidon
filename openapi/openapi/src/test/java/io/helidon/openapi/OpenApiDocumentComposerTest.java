@@ -356,6 +356,67 @@ class OpenApiDocumentComposerTest {
     }
 
     @Test
+    void generatedDocumentReusesEquivalentSchemasAfterReferenceRewriting() {
+        OpenApiDocumentContext context = context(OpenApiGeneratedMode.GENERATED_ONLY);
+        OpenApiDocumentSource first = (documentContext, document) -> document
+                .info("Generated API", "1.0.0")
+                .components(components -> components
+                        .schema("First", JsonObject.builder().set("type", "string").build())
+                        .schema("Envelope",
+                                JsonObject.builder()
+                                        .set("type", "object")
+                                        .set("properties",
+                                             JsonObject.builder()
+                                                     .set("value",
+                                                          JsonObject.builder()
+                                                                  .set("$ref", "#/components/schemas/First")
+                                                                  .build())
+                                                     .build())
+                                        .build()));
+        OpenApiDocumentSource second = (documentContext, document) -> document
+                .components(components -> components
+                        .schema("Second", JsonObject.builder().set("type", "string").build())
+                        .schema("SecondEnvelope",
+                                JsonObject.builder()
+                                        .set("type", "object")
+                                        .set("properties",
+                                             JsonObject.builder()
+                                                     .set("value",
+                                                          JsonObject.builder()
+                                                                  .set("$ref", "#/components/schemas/Second")
+                                                                  .build())
+                                                     .build())
+                                        .build()))
+                .path("/second",
+                      path -> path.operation(
+                              "GET",
+                              operation -> operation.operationId("secondGet")
+                                      .response("200",
+                                                response -> response.description("OK")
+                                                        .content(MediaTypes.APPLICATION_JSON_VALUE,
+                                                                 media -> media.schema(JsonObject.builder()
+                                                                                                .set("$ref",
+                                                                                                     "#/components/schemas/SecondEnvelope")
+                                                                                                .build())))));
+
+        Map<String, Object> document = parse(OpenApiDocumentComposer.compose(
+                context,
+                context.openApiVersion(),
+                "",
+                MediaTypes.APPLICATION_OPENAPI_YAML,
+                List.of(first, second)));
+        Map<String, Object> schemas = map(map(document, "components"), "schemas");
+        Map<String, Object> operation = map(map(map(document, "paths"), "/second"), "get");
+        Map<String, Object> response = map(map(operation, "responses"), "200");
+        Map<String, Object> content = map(map(response, "content"), MediaTypes.APPLICATION_JSON_VALUE);
+
+        assertThat(schemas.size(), is(2));
+        assertThat(schemas.containsKey("First"), is(true));
+        assertThat(schemas.containsKey("Envelope"), is(true));
+        assertThat(map(content, "schema").get("$ref"), is("#/components/schemas/Envelope"));
+    }
+
+    @Test
     void generatedDocumentRenamesCollidingSchemasAndReferences() {
         OpenApiDocumentContext context = context(OpenApiGeneratedMode.GENERATED_ONLY);
         OpenApiDocumentSource first = (documentContext, document) -> document
