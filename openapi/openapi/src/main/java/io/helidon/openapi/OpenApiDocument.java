@@ -2261,7 +2261,6 @@ public final class OpenApiDocument {
 
         @Override
         public Operation build() {
-            requireValue(node, "responses", "OpenAPI Operation");
             return new Operation(node);
         }
     }
@@ -3072,9 +3071,6 @@ public final class OpenApiDocument {
 
         @Override
         public Response build() {
-            if (!isReference(node)) {
-                requireString(node, "description", "OpenAPI Response");
-            }
             return new Response(node);
         }
     }

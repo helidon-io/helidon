@@ -50,6 +50,41 @@ class OpenApi30DocumentMapperTest {
     }
 
     @Test
+    void handlesVersionSpecificResponseRequirements() {
+        IllegalStateException missingResponses = assertThrows(
+                IllegalStateException.class,
+                () -> OpenApi30DocumentMapper.parse(documentWithOperation("3.0.3", Map.of("summary", "Items"))));
+        assertThat(missingResponses.getMessage(), containsString("responses"));
+
+        IllegalStateException missingDescription = assertThrows(
+                IllegalStateException.class,
+                () -> OpenApi30DocumentMapper.parse(documentWithOperation(
+                        "3.0.3",
+                        Map.of("responses", Map.of("200", Map.of("headers", Map.of()))))));
+        assertThat(missingDescription.getMessage(), containsString("description"));
+
+        OpenApiDocument operationWithoutResponses = OpenApiDocument.builder()
+                .info("Generated API", "1.0.0")
+                .path("/items", path -> path.operation("GET", operation -> operation.summary("Items")))
+                .build();
+        IllegalStateException renderedWithoutResponses = assertThrows(
+                IllegalStateException.class,
+                () -> OpenApi30DocumentMapper.render(operationWithoutResponses, "3.0.3"));
+        assertThat(renderedWithoutResponses.getMessage(), containsString("responses"));
+
+        OpenApiDocument responseWithoutDescription = OpenApiDocument.builder()
+                .info("Generated API", "1.0.0")
+                .path("/items", path -> path.operation(
+                        "GET",
+                        operation -> operation.response("200", response -> response.summary("Items"))))
+                .build();
+        IllegalStateException renderedWithoutDescription = assertThrows(
+                IllegalStateException.class,
+                () -> OpenApi30DocumentMapper.render(responseWithoutDescription, "3.0.3"));
+        assertThat(renderedWithoutDescription.getMessage(), containsString("description"));
+    }
+
+    @Test
     void preservesLargeIntegralNumbers() {
         OpenApiDocument document = OpenApi30DocumentMapper.parse(document("3.0.3"));
         Map<String, Object> rendered = OpenApi30DocumentMapper.render(document, "3.0.3");
@@ -509,6 +544,13 @@ class OpenApi30DocumentMapperTest {
                                        "format", "int64",
                                        "default", LARGE_INTEGRAL_VALUE),
                         Map.of("type", "string"));
+    }
+
+    private static Map<String, Object> documentWithOperation(String version, Map<String, Object> operation) {
+        return Map.of("openapi", version,
+                      "info", Map.of("title", "Static API",
+                                     "version", "1.0.0"),
+                      "paths", Map.of("/items", Map.of("get", operation)));
     }
 
     private static Map<String, ?> document(String version, Map<String, Object> bounded, Map<String, Object> inclusive) {

@@ -432,6 +432,9 @@ public final class OpenApiDocumentMapperSupport {
             default -> copyField(result, key, source);
             }
         });
+        if ("3.1".equals(rules.targetVersion()) && !result.containsKey("responses")) {
+            throw new IllegalStateException("OpenAPI 3.1 operation requires responses.");
+        }
         return result;
     }
 
@@ -520,6 +523,12 @@ public final class OpenApiDocumentMapperSupport {
             default -> copyField(result, key, source);
             }
         });
+        if ("3.1".equals(rules.targetVersion())) {
+            Object description = result.get("description");
+            if (!(description instanceof String string) || string.isBlank()) {
+                throw new IllegalStateException("OpenAPI 3.1 response requires description.");
+            }
+        }
         return result;
     }
 
