@@ -16,16 +16,12 @@
 
 package io.helidon.webserver.staticcontent;
 
-import java.time.Instant;
-import java.time.format.DateTimeParseException;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import io.helidon.http.BadRequestException;
-import io.helidon.http.DateTime;
 import io.helidon.http.HeaderNames;
 import io.helidon.http.HeaderValues;
 import io.helidon.http.HttpException;
@@ -45,9 +41,8 @@ record ByteRangeRequest(long fileLength, long offset, long length) {
                                         String headerValues,
                                         long fileLength,
                                         String etag,
-                                        boolean weakEtag,
-                                        Instant lastModified) {
-        if (!ifRangeMatches(req, etag, weakEtag, lastModified)) {
+                                        boolean weakEtag) {
+        if (!ifRangeMatches(req, etag, weakEtag)) {
             return List.of();
         }
 
@@ -94,7 +89,7 @@ record ByteRangeRequest(long fileLength, long offset, long length) {
         return parts;
     }
 
-    private static boolean ifRangeMatches(ServerRequest req, String etag, boolean weakEtag, Instant lastModified) {
+    private static boolean ifRangeMatches(ServerRequest req, String etag, boolean weakEtag) {
         if (!req.headers().contains(HeaderNames.IF_RANGE)) {
             return true;
         }
@@ -107,16 +102,7 @@ record ByteRangeRequest(long fileLength, long offset, long length) {
                     && StaticContentHandler.unquoteETag(ifRange).equals(StaticContentHandler.unquoteETag(etag));
         }
 
-        if (lastModified == null) {
-            return false;
-        }
-
-        try {
-            Instant ifRangeDate = DateTime.parse(ifRange).toInstant();
-            return lastModified.truncatedTo(ChronoUnit.SECONDS).equals(ifRangeDate);
-        } catch (DateTimeParseException e) {
-            return false;
-        }
+        return false;
     }
 
     void setContentRange(ServerResponse response) {

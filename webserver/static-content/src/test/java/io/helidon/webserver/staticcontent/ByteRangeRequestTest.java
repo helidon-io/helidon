@@ -136,7 +136,7 @@ class ByteRangeRequestTest {
     }
 
     @Test
-    void testIfRangeDateMatchesAtHttpDatePrecision() {
+    void testIfRangeDateIsNotStrongValidator() {
         Instant lastModified = Instant.parse("2026-06-30T12:00:00.123456Z");
         ServerRequest req = requestWithIfRange(lastModified);
         ServerResponse res = Mockito.mock(ServerResponse.class);
@@ -146,10 +146,9 @@ class ByteRangeRequestTest {
                                                                  FIRST_BYTE_RANGE,
                                                                  50,
                                                                  null,
-                                                                 false,
-                                                                 lastModified);
+                                                                 false);
 
-        assertThat(requests, IsCollectionWithSize.hasSize(1));
+        assertThat(requests, is(List.of()));
     }
 
     @Test
@@ -162,16 +161,14 @@ class ByteRangeRequestTest {
                                           FIRST_BYTE_RANGE,
                                           50,
                                           null,
-                                          false,
-                                          lastModified),
+                                          false),
                    is(List.of()));
         assertThat(ByteRangeRequest.parse(requestWithIfRange(lastModified.plusSeconds(1)),
                                           res,
                                           FIRST_BYTE_RANGE,
                                           50,
                                           null,
-                                          false,
-                                          lastModified),
+                                          false),
                    is(List.of()));
     }
 
@@ -188,8 +185,7 @@ class ByteRangeRequestTest {
                                           FIRST_BYTE_RANGE,
                                           50,
                                           "123",
-                                          false,
-                                          Instant.parse("2026-06-30T12:00:00Z")),
+                                          false),
                    is(List.of()));
     }
 
