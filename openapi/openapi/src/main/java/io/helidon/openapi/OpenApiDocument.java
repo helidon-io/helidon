@@ -2621,17 +2621,6 @@ public final class OpenApiDocument {
         }
 
         /**
-         * Set allow empty value flag.
-         *
-         * @param allowEmptyValue allow empty value flag
-         * @return updated builder
-         */
-        public HeaderBuilder allowEmptyValue(boolean allowEmptyValue) {
-            delegate.allowEmptyValue(allowEmptyValue);
-            return this;
-        }
-
-        /**
          * Set style.
          *
          * @param style style

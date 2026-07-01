@@ -266,10 +266,10 @@ class OpenApiDocumentComposerTest {
         assertThat(staticHeader.get("description"), is("Static response header."));
         assertThat(staticHeader.get("required"), is(true));
         assertThat(staticHeader.get("deprecated"), is(true));
-        assertThat(staticHeader.get("allowEmptyValue"), is(true));
+        assertThat(staticHeader.containsKey("allowEmptyValue"), is(false));
         assertThat(staticHeader.get("style"), is("simple"));
         assertThat(staticHeader.get("explode"), is(false));
-        assertThat(staticHeader.get("allowReserved"), is(true));
+        assertThat(staticHeader.containsKey("allowReserved"), is(false));
         assertThat(map(staticHeader, "schema").get("type"), is("string"));
         assertThat(staticHeader.get("example"), is("static-value"));
         assertThat(map(map(staticHeader, "examples"), "named").get("value"), is("named-static-value"));

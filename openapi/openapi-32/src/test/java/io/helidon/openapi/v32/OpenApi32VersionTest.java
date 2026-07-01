@@ -64,7 +64,9 @@ class OpenApi32VersionTest {
         Map<?, ?> staticPath = map(map(rendered, "paths"), "/static/{id}");
         assertThat(staticPath.containsKey("query"), is(true));
         assertThat(staticPath.containsKey("additionalOperations"), is(true));
-        assertThat(map(map(map(staticPath, "get"), "responses"), "200").get("summary"), is("Static item"));
+        Map<?, ?> staticResponse = map(map(map(staticPath, "get"), "responses"), "200");
+        assertThat(staticResponse.get("summary"), is("Static item"));
+        assertThat(map(map(staticResponse, "headers"), "X-Request-Id").get("allowReserved"), is(true));
 
         Map<?, ?> queryResponse = map(map(staticPath, "query"), "responses");
         assertThat(map(queryResponse, "200").get("summary"), is("Static query stream"));
@@ -110,7 +112,9 @@ class OpenApi32VersionTest {
         Map<?, ?> staticPath = map(map(rendered, "paths"), "/static/{id}");
         assertThat(staticPath.containsKey("query"), is(false));
         assertThat(staticPath.containsKey("additionalOperations"), is(false));
-        assertThat(map(map(map(staticPath, "get"), "responses"), "200").containsKey("summary"), is(false));
+        Map<?, ?> staticResponse = map(map(map(staticPath, "get"), "responses"), "200");
+        assertThat(staticResponse.containsKey("summary"), is(false));
+        assertThat(map(map(staticResponse, "headers"), "X-Request-Id").containsKey("allowReserved"), is(false));
 
         Map<?, ?> search = map(map(map(rendered, "paths"), "/search"), "get");
         assertThat(search.get("parameters"), is(List.of()));
@@ -139,7 +143,9 @@ class OpenApi32VersionTest {
         Map<?, ?> staticPath = map(map(rendered, "paths"), "/static/{id}");
         assertThat(staticPath.containsKey("query"), is(false));
         assertThat(staticPath.containsKey("additionalOperations"), is(false));
-        assertThat(map(map(map(staticPath, "get"), "responses"), "200").containsKey("summary"), is(false));
+        Map<?, ?> staticResponse = map(map(map(staticPath, "get"), "responses"), "200");
+        assertThat(staticResponse.containsKey("summary"), is(false));
+        assertThat(map(map(staticResponse, "headers"), "X-Request-Id").containsKey("allowReserved"), is(false));
 
         Map<?, ?> search = map(map(map(rendered, "paths"), "/search"), "get");
         assertThat(search.get("parameters"), is(List.of()));
