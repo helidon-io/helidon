@@ -614,6 +614,28 @@ class OpenApi30DocumentMapperTest {
     }
 
     @Test
+    void filtersReferenceObjectFields() {
+        OpenApiDocument document = OpenApi30DocumentMapper.parse(Map.of(
+                "openapi", "3.0.3",
+                "info", Map.of(
+                        "title", "Static API",
+                        "version", "1.0.0"),
+                "components", Map.of(
+                        "responses", Map.of(
+                                "test", Map.of(
+                                        "$ref", "#/components/responses/real",
+                                        "summary", "Reference summary",
+                                        "description", "Reference description",
+                                        "x-reference", "Reference extension",
+                                        "additional", "Additional property")))));
+
+        Map<String, Object> rendered = OpenApi30DocumentMapper.render(document, "3.0.3");
+        Map<String, Object> reference = map(map(map(rendered, "components"), "responses"), "test");
+
+        assertThat(reference.keySet(), is(Set.of("$ref")));
+    }
+
+    @Test
     void filtersInfoContactFields() {
         OpenApiDocument document = OpenApi30DocumentMapper.parse(Map.of(
                 "openapi", "3.0.3",

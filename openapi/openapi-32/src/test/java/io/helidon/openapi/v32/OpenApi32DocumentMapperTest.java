@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import io.helidon.json.JsonString;
 import io.helidon.openapi.OpenApiDocument;
@@ -125,6 +126,31 @@ class OpenApi32DocumentMapperTest {
         Map<String, Object> rendered = OpenApi32DocumentMapper.render(document, "3.2.0");
 
         assertThat(String.valueOf(schemaProperty(rendered, "large").get("default")), is(String.valueOf(LARGE_INTEGRAL_VALUE)));
+    }
+
+    @Test
+    void filtersReferenceObjectFields() {
+        Map<String, Object> reference = Map.of(
+                "$ref", "#/components/responses/real",
+                "summary", "Reference summary",
+                "description", "Reference description",
+                "x-reference", "Reference extension",
+                "additional", "Additional property");
+        OpenApiDocument document = OpenApi32DocumentMapper.parse(Map.of(
+                "openapi", "3.2.0",
+                "info", Map.of(
+                        "title", "Static API",
+                        "version", "1.0.0"),
+                "components", Map.of(
+                        "schemas", Map.of("testSchema", reference),
+                        "responses", Map.of("testResponse", reference))));
+
+        Map<String, Object> rendered = OpenApi32DocumentMapper.render(document, "3.2.0");
+        Map<String, Object> components = map(rendered, "components");
+        Map<String, Object> responseReference = map(map(components, "responses"), "testResponse");
+
+        assertThat(responseReference.keySet(), is(Set.of("$ref", "summary", "description")));
+        assertThat(map(map(components, "schemas"), "testSchema").get("x-reference"), is("Reference extension"));
     }
 
     @Test

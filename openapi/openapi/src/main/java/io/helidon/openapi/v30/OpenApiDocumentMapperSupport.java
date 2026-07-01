@@ -134,6 +134,18 @@ public final class OpenApiDocumentMapperSupport {
         return result;
     }
 
+    static Map<String, Object> copyReferenceFields(Map<String, ?> source, Set<String> fixedFields) {
+        Objects.requireNonNull(source);
+        Objects.requireNonNull(fixedFields);
+        Map<String, Object> result = new LinkedHashMap<>();
+        source.forEach((key, value) -> {
+            if (fixedFields.contains(key)) {
+                result.put(key, copyValue(value));
+            }
+        });
+        return result;
+    }
+
     /**
      * Copy a source field to a target.
      *
@@ -796,6 +808,6 @@ public final class OpenApiDocumentMapperSupport {
     }
 
     private static Map<String, Object> reference(Map<String, ?> source) {
-        return copyAllowed(source, REFERENCE_FIELDS);
+        return copyReferenceFields(source, REFERENCE_FIELDS);
     }
 }

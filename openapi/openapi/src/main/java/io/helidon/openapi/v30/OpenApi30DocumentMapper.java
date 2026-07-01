@@ -30,6 +30,7 @@ import static io.helidon.openapi.v30.OpenApiDocumentMapperSupport.copy;
 import static io.helidon.openapi.v30.OpenApiDocumentMapperSupport.copyAllowed;
 import static io.helidon.openapi.v30.OpenApiDocumentMapperSupport.copyField;
 import static io.helidon.openapi.v30.OpenApiDocumentMapperSupport.copyFieldValue;
+import static io.helidon.openapi.v30.OpenApiDocumentMapperSupport.copyReferenceFields;
 import static io.helidon.openapi.v30.OpenApiDocumentMapperSupport.jsonObject;
 import static io.helidon.openapi.v30.OpenApiDocumentMapperSupport.object;
 import static io.helidon.openapi.v30.OpenApiDocumentMapperSupport.objectList;
@@ -639,7 +640,7 @@ final class OpenApi30DocumentMapper {
     }
 
     private static Map<String, Object> reference(Map<String, ?> source) {
-        return copyAllowed(source, REFERENCE_FIELDS);
+        return copyReferenceFields(source, REFERENCE_FIELDS);
     }
 
     private static Map<String, Object> links(Map<String, ?> source) {
