@@ -16,6 +16,7 @@
 
 package io.helidon.openapi.v30;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -473,10 +474,53 @@ class OpenApi30DocumentMapperTest {
         Map<String, Object> schema = schema(rendered, "NullOnlyEnum");
         List<?> values = (List<?>) schema.get("enum");
 
-        assertThat(schema.get("type"), is("object"));
+        assertThat(schema.get("type"), is("string"));
         assertThat(schema.get("nullable"), is(true));
         assertThat(values.size(), is(1));
         assertThat(values.getFirst(), is((Object) null));
+    }
+
+    @Test
+    void preservesNullableEnumConstraints() {
+        List<Object> enumWithNull = new ArrayList<>();
+        enumWithNull.add("ready");
+        enumWithNull.add(null);
+
+        OpenApiDocument document = OpenApi30DocumentMapper.parse(Map.of(
+                "openapi", "3.0.3",
+                "info", Map.of(
+                        "title", "Static API",
+                        "version", "1.0.0"),
+                "components", Map.of(
+                        "schemas", Map.of(
+                                "ExcludesNull", Map.of(
+                                        "type", "string",
+                                        "nullable", true,
+                                        "enum", List.of("ready")),
+                                "IncludesNull", Map.of(
+                                        "type", "string",
+                                        "nullable", true,
+                                        "enum", enumWithNull)))));
+
+        Map<String, Object> canonical = parse(document.toJsonObject().toString());
+        Map<String, Object> canonicalExcludesNull = schema(canonical, "ExcludesNull");
+        Map<String, Object> canonicalIncludesNull = schema(canonical, "IncludesNull");
+
+        assertThat(canonicalExcludesNull.get("type"), is(List.of("string", "null")));
+        assertThat(canonicalExcludesNull.get("enum"), is(List.of("ready")));
+        assertThat(canonicalIncludesNull.get("type"), is(List.of("string", "null")));
+        assertThat(canonicalIncludesNull.get("enum"), is(enumWithNull));
+
+        Map<String, Object> rendered = OpenApi30DocumentMapper.render(document, "3.0.3");
+        Map<String, Object> renderedExcludesNull = schema(rendered, "ExcludesNull");
+        Map<String, Object> renderedIncludesNull = schema(rendered, "IncludesNull");
+
+        assertThat(renderedExcludesNull.get("type"), is("string"));
+        assertThat(renderedExcludesNull.get("nullable"), is(true));
+        assertThat(renderedExcludesNull.get("enum"), is(List.of("ready")));
+        assertThat(renderedIncludesNull.get("type"), is("string"));
+        assertThat(renderedIncludesNull.get("nullable"), is(true));
+        assertThat(renderedIncludesNull.get("enum"), is(enumWithNull));
     }
 
     @Test
