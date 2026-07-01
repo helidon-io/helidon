@@ -17,9 +17,12 @@
 package io.helidon.http.encoding;
 
 import java.util.List;
+import java.util.Set;
 
 import io.helidon.http.HeaderNames;
 import io.helidon.http.Headers;
+import io.helidon.http.HttpException;
+import io.helidon.http.Status;
 import io.helidon.http.WritableHeaders;
 
 import org.openjdk.jmh.annotations.Benchmark;
@@ -37,6 +40,12 @@ public class AcceptEncodingJmhTest {
     private AcceptEncoding parsedWeighted;
     private AcceptEncoding parsedWildcard;
     private List<String> serverOrder;
+    private ContentEncodingContext contentEncodingContext;
+    private Headers canonicalNegotiation;
+    private Headers aliasNegotiation;
+    private Headers wildcardNegotiation;
+    private Headers identityNegotiation;
+    private Headers rejectedNegotiation;
 
     @Setup
     public void setup() {
@@ -47,6 +56,15 @@ public class AcceptEncodingJmhTest {
         parsedWeighted = AcceptEncoding.create(weighted);
         parsedWildcard = AcceptEncoding.create(wildcard);
         serverOrder = List.of("br", "gzip", "deflate");
+        contentEncodingContext = ContentEncodingContext.builder()
+                .addContentEncoding(new BenchmarkEncoding("br", Set.of("br"), ContentEncoder.NO_OP))
+                .addContentEncoding(new BenchmarkEncoding("gzip", Set.of("gzip", "x-gzip"), ContentEncoder.NO_OP))
+                .build();
+        canonicalNegotiation = headers("gzip, identity;q=0");
+        aliasNegotiation = headers("x-gzip, identity;q=0");
+        wildcardNegotiation = headers("*, identity;q=0");
+        identityNegotiation = headers("identity");
+        rejectedNegotiation = headers("br;q=0, gzip;q=0, x-gzip;q=0, identity;q=0");
     }
 
     @Benchmark
@@ -98,9 +116,61 @@ public class AcceptEncodingJmhTest {
         return AcceptEncoding.create(malformedToken);
     }
 
+    @Benchmark
+    public ContentEncoder negotiateCanonical() {
+        return contentEncodingContext.encoder(canonicalNegotiation);
+    }
+
+    @Benchmark
+    public ContentEncoder negotiateAlias() {
+        return contentEncodingContext.encoder(aliasNegotiation);
+    }
+
+    @Benchmark
+    public ContentEncoder negotiateWildcard() {
+        return contentEncodingContext.encoder(wildcardNegotiation);
+    }
+
+    @Benchmark
+    public ContentEncoder negotiateIdentity() {
+        return contentEncodingContext.encoder(identityNegotiation);
+    }
+
+    @Benchmark
+    public Status negotiateRejected() {
+        try {
+            contentEncodingContext.encoder(rejectedNegotiation);
+            throw new AssertionError("Expected rejected negotiation");
+        } catch (HttpException e) {
+            return e.status();
+        }
+    }
+
     private static Headers headers(String acceptEncoding) {
         WritableHeaders<?> headers = WritableHeaders.create();
         headers.add(HeaderNames.ACCEPT_ENCODING, acceptEncoding);
         return headers;
+    }
+
+    private record BenchmarkEncoding(String type, Set<String> ids, ContentEncoder encoder) implements ContentEncoding {
+        @Override
+        public String name() {
+            return type;
+        }
+
+        @Override
+        public boolean supportsEncoding() {
+            return true;
+        }
+
+        @Override
+        public boolean supportsDecoding() {
+            return false;
+        }
+
+        @Override
+        public ContentDecoder decoder() {
+            throw new UnsupportedOperationException();
+        }
     }
 }

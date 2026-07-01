@@ -42,6 +42,7 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
     private final Map<String, String> canonicalContentEncodings;
     private final Map<String, ContentDecoder> decoders;
     private final List<String> contentEncodingIds;
+    private final Map<String, ContentEncoder> negotiatedEncoders;
     private final ContentEncodingContextConfig config;
 
     ContentEncodingSupportImpl(ContentEncodingContextConfig config) {
@@ -78,9 +79,32 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
         encoders.put(AcceptEncoding.IDENTITY, ContentEncoder.NO_OP);
         decoders.put(AcceptEncoding.IDENTITY, ContentDecoder.NO_OP);
 
+        Map<String, ContentEncoder> negotiatedEncoders = new HashMap<>();
+        for (String responseCoding : contentEncodingIds) {
+            ContentEncoder delegate = encoders.get(responseCoding);
+            String canonicalCoding = canonicalContentEncodings.getOrDefault(responseCoding, responseCoding);
+            if (responseCoding.equals(canonicalCoding)) {
+                negotiatedEncoders.put(responseCoding, delegate);
+            } else {
+                negotiatedEncoders.put(responseCoding, new ContentEncoder() {
+                    @Override
+                    public OutputStream apply(OutputStream network) {
+                        return delegate.apply(network);
+                    }
+
+                    @Override
+                    public void headers(WritableHeaders<?> headers) {
+                        delegate.headers(headers);
+                        headers.set(HeaderNames.CONTENT_ENCODING, responseCoding);
+                    }
+                });
+            }
+        }
+
         this.encoders = encoders;
         this.canonicalContentEncodings = Map.copyOf(canonicalContentEncodings);
         this.decoders = decoders;
+        this.negotiatedEncoders = Map.copyOf(negotiatedEncoders);
     }
 
     static List<String> contentEncodingIds(List<ContentEncoding> contentEncodings) {
@@ -184,19 +208,7 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
             return ContentEncoder.NO_OP;
         }
 
-        Map<String, EncodingCandidate> candidates = new LinkedHashMap<>();
-        Set<String> addedCodings = new LinkedHashSet<>();
-        for (String coding : contentEncodingIds) {
-            addEncodingCandidate(candidates, addedCodings, coding);
-        }
-        for (AcceptEncoding.CodingQuality quality : acceptEncoding.acceptedCodings(false)) {
-            String coding = quality.coding();
-            if (contentEncodingSupported(coding)) {
-                addEncodingCandidate(candidates, addedCodings, coding);
-            }
-        }
-
-        Optional<AcceptEncoding.CodingQuality> selected = acceptEncoding.best(List.copyOf(candidates.keySet()));
+        Optional<AcceptEncoding.CodingQuality> selected = acceptEncoding.best(contentEncodingIds);
         if (selected.isEmpty()) {
             throw new HttpException("No acceptable response content encoding", Status.NOT_ACCEPTABLE_406, true);
         }
@@ -205,7 +217,7 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
             return ContentEncoder.NO_OP;
         }
 
-        return candidates.get(selectedCoding).contentEncoder();
+        return negotiatedEncoders.get(selectedCoding);
     }
 
     @Override
@@ -227,42 +239,6 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
                 .filter(id -> !AcceptEncoding.IDENTITY.equals(id))
                 .sorted()
                 .findFirst();
-    }
-
-    private void addEncodingCandidate(Map<String, EncodingCandidate> candidates,
-                                      Set<String> addedCodings,
-                                      String coding) {
-        String normalized = coding.toLowerCase(Locale.ROOT);
-        if (!addedCodings.add(normalized)) {
-            return;
-        }
-        ContentEncoder encoder = encoders.get(normalized);
-        if (encoder == null) {
-            return;
-        }
-        String canonicalCoding = canonicalContentEncodings.getOrDefault(normalized, normalized);
-        candidates.putIfAbsent(normalized, new EncodingCandidate(encoder, normalized, canonicalCoding));
-    }
-
-    private record EncodingCandidate(ContentEncoder delegate, String responseCoding, String canonicalCoding) {
-        ContentEncoder contentEncoder() {
-            if (responseCoding.equals(canonicalCoding)) {
-                return delegate;
-            }
-
-            return new ContentEncoder() {
-                @Override
-                public OutputStream apply(OutputStream network) {
-                    return delegate.apply(network);
-                }
-
-                @Override
-                public void headers(WritableHeaders<?> headers) {
-                    delegate.headers(headers);
-                    headers.set(HeaderNames.CONTENT_ENCODING, responseCoding);
-                }
-            };
-        }
     }
 
 }
