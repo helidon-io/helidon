@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.regex.Pattern;
 
 import io.helidon.builder.api.RuntimeType;
 import io.helidon.common.Api;
@@ -39,6 +40,7 @@ import org.yaml.snakeyaml.Yaml;
 public final class OpenApi32Version implements OpenApiVersion,
         RuntimeType.Api<OpenApi32VersionConfig> {
     static final String TYPE = "3.2";
+    private static final Pattern VERSION_PATTERN = Pattern.compile(Pattern.quote(TYPE) + "\\.[0-9]+");
     private static final DumperOptions YAML_DUMPER_OPTIONS = yamlDumperOptions();
 
     private final OpenApi32VersionConfig config;
@@ -46,7 +48,7 @@ public final class OpenApi32Version implements OpenApiVersion,
     OpenApi32Version(OpenApi32VersionConfig config) {
         Objects.requireNonNull(config);
         String version = config.version();
-        if (!TYPE.equals(version) && !version.startsWith(TYPE + ".")) {
+        if (!VERSION_PATTERN.matcher(version).matches()) {
             throw new IllegalArgumentException("OpenAPI " + TYPE + " version implementation cannot produce document version "
                                                        + version + ".");
         }

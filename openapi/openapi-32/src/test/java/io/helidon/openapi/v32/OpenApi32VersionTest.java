@@ -238,13 +238,18 @@ class OpenApi32VersionTest {
     }
 
     @Test
-    void validatesConfiguredVersionFamily() {
+    void validatesConfiguredVersion() {
         assertThat(OpenApi32Version.builder().version("3.2.99").build().version(), is("3.2.99"));
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                                                   () -> OpenApi32Version.builder().version("3.1.0").build());
-        assertThat(ex.getMessage(), containsString("3.2"));
-        assertThat(ex.getMessage(), containsString("3.1.0"));
+        for (String invalidVersion : List.of("3.2", "3.2.", "3.2.not-a-version", "3.2.1.0", "3.1.0")) {
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                                                       () -> OpenApi32Version.builder()
+                                                               .version(invalidVersion)
+                                                               .build(),
+                                                       invalidVersion);
+            assertThat(invalidVersion, ex.getMessage(), containsString("3.2"));
+            assertThat(invalidVersion, ex.getMessage(), containsString(invalidVersion));
+        }
     }
 
     @Test

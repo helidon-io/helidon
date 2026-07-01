@@ -137,13 +137,18 @@ class OpenApi31VersionTest {
     }
 
     @Test
-    void validatesConfiguredVersionFamily() {
+    void validatesConfiguredVersion() {
         assertThat(OpenApi31Version.builder().version("3.1.99").build().version(), is("3.1.99"));
 
-        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
-                                                   () -> OpenApi31Version.builder().version("3.2.0").build());
-        assertThat(ex.getMessage(), containsString("3.1"));
-        assertThat(ex.getMessage(), containsString("3.2.0"));
+        for (String invalidVersion : List.of("3.1", "3.1.", "3.1.not-a-version", "3.1.1.0", "3.2.0")) {
+            IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                                                       () -> OpenApi31Version.builder()
+                                                               .version(invalidVersion)
+                                                               .build(),
+                                                       invalidVersion);
+            assertThat(invalidVersion, ex.getMessage(), containsString("3.1"));
+            assertThat(invalidVersion, ex.getMessage(), containsString(invalidVersion));
+        }
     }
 
     @Test
