@@ -119,7 +119,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
     private volatile Http2Headers headers;
     private volatile LocallyResetStreamState locallyResetStreamState;
     private volatile Http2Priority priority;
-    private boolean remoteResetReceived;
+    private volatile boolean remoteResetReceived;
     private volatile boolean resetStreamSent;
     private volatile boolean remoteCompleteAfterReset;
     private volatile boolean ignoreInboundDataAfterReset;
@@ -635,9 +635,17 @@ class Http2ServerStream implements Runnable, Http2Stream {
     }
 
     private void resetInvalidContentLength(int currentFrameLength, boolean endOfStream) {
+        resetInvalidContentLength(currentFrameLength, endOfStream, NO_OP);
+    }
+
+    // Package-private for deterministic local reset race tests.
+    void resetInvalidContentLength(int currentFrameLength,
+                                   boolean endOfStream,
+                                   Runnable afterResetStatePublished) {
         LocallyResetStreamState resetState = locallyResetStreamState();
         ignoreInboundDataAfterReset = true;
         state = Http2StreamState.CLOSED;
+        afterResetStatePublished.run();
         writeState.updateAndGet(s -> s.checkAndMove(WriteState.END));
         locallyResetStreamTracker.add(this.streamId, resetState);
         streams.remove(this.streamId);
@@ -699,7 +707,7 @@ class Http2ServerStream implements Runnable, Http2Stream {
     }
 
     private void handleRequestException(RequestException e) {
-        if (state == Http2StreamState.CLOSED || writeState.get() == WriteState.END) {
+        if (remoteResetReceived || ignoreInboundDataAfterReset || writeState.get() == WriteState.END) {
             return;
         }
 
@@ -1009,29 +1017,24 @@ class Http2ServerStream implements Runnable, Http2Stream {
                 if (outcome.disposition() == LimitAlgorithm.Outcome.Disposition.ACCEPTED) {
                     LimitAlgorithm.Outcome.Accepted accepted = (LimitAlgorithm.Outcome.Accepted) outcome;
                     LimitAlgorithm.Token permit = accepted.token();
-                    boolean routed = false;
                     try {
                         routing.route(ctx, request, response);
-                        routed = true;
                     } catch (RuntimeException | Error e) {
                         permit.dropped();
                         throw e;
-                    } finally {
-                        if (!routed) {
-                            // already reported to the limit token in the catch block
-                        } else if (response.status() == Status.NOT_FOUND_404) {
-                            permit.ignore();
-                        } else {
-                            switch (response.status().family()) {
-                            case INFORMATIONAL:
-                            case SUCCESSFUL:
-                            case REDIRECTION:
-                                permit.success();
-                                break;
-                            default:
-                                permit.dropped();
-                                break;
-                            }
+                    }
+                    if (response.status() == Status.NOT_FOUND_404) {
+                        permit.ignore();
+                    } else {
+                        switch (response.status().family()) {
+                        case INFORMATIONAL:
+                        case SUCCESSFUL:
+                        case REDIRECTION:
+                            permit.success();
+                            break;
+                        default:
+                            permit.dropped();
+                            break;
                         }
                     }
                 } else {
