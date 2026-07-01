@@ -19,6 +19,7 @@ package io.helidon.openapi.v32;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import io.helidon.openapi.OpenApiDocument;
 import io.helidon.openapi.v30.OpenApiDocumentMapperSupport;
@@ -59,7 +60,24 @@ class OpenApi32DocumentMapperTest {
                         "/without-description", Map.of(
                                 "get", Map.of(
                                         "responses", Map.of(
-                                                "200", Map.of("summary", "Items")))))));
+                                                "200", Map.of("summary", "Items")))),
+                        "/empty-description", Map.of(
+                                "get", Map.of(
+                                        "responses", Map.of(
+                                                "200", Map.of("description", "")))))));
+
+        OpenApiDocument.Response omittedDescription = document.paths()
+                .get("/without-description")
+                .operations()
+                .get("get")
+                .responses()
+                .get("200");
+        OpenApiDocument.Response emptyDescription = document.paths()
+                .get("/empty-description")
+                .operations()
+                .get("get")
+                .responses()
+                .get("200");
 
         Map<String, Object> rendered = OpenApi32DocumentMapper.render(document, "3.2.0");
         Map<String, Object> paths = map(rendered, "paths");
@@ -69,6 +87,8 @@ class OpenApi32DocumentMapperTest {
         assertThat(withoutResponses.containsKey("responses"), is(false));
         assertThat(map(response, "200").get("summary"), is("Items"));
         assertThat(map(response, "200").containsKey("description"), is(false));
+        assertThat(omittedDescription.description(), is(Optional.empty()));
+        assertThat(emptyDescription.description(), is(Optional.of("")));
     }
 
     @Test

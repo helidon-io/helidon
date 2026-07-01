@@ -2877,11 +2877,9 @@ public final class OpenApiDocument {
     @Api.Preview
     public static final class Response {
         private final Map<String, Object> node;
-        private final String description;
 
         private Response(Map<String, Object> node) {
             this.node = immutableMap(node);
-            this.description = stringValue(this.node.get("description")).orElse("");
         }
 
         /**
@@ -2915,10 +2913,10 @@ public final class OpenApiDocument {
         /**
          * Response description.
          *
-         * @return description
+         * @return description, if present
          */
-        public String description() {
-            return description;
+        public Optional<String> description() {
+            return stringValue(node.get("description"));
         }
 
         private Map<String, Object> toNode() {
