@@ -425,8 +425,8 @@ public final class OpenApiDocumentMapperSupport {
             switch (key) {
             case "parameters" -> result.put(key, parameters(value, rules));
             case "requestBody" -> object(value, object -> result.put(key, requestBody(object, rules)));
-            case "responses" -> object(value, object -> result.put(key, responses(object, rules)));
-            case "callbacks" -> object(value, object -> result.put(key, callbacks(object, rules, true)));
+            case "responses" -> object(value, object -> result.put(key, responses(object, rules, true)));
+            case "callbacks" -> object(value, object -> result.put(key, callbacks(object, rules)));
             case "servers" -> result.put(key, serverList(value, rules));
             case "externalDocs" -> object(value, object -> result.put(key, copyAllowed(object, rules.externalDocsFields())));
             default -> copyField(result, key, source);
@@ -490,10 +490,12 @@ public final class OpenApiDocumentMapperSupport {
         return result;
     }
 
-    private static Map<String, Object> responses(Map<String, ?> source, OpenApi3xMapperRules rules) {
+    private static Map<String, Object> responses(Map<String, ?> source,
+                                                 OpenApi3xMapperRules rules,
+                                                 boolean containerExtensions) {
         Map<String, Object> result = new LinkedHashMap<>();
         source.forEach((key, value) -> {
-            if (key.startsWith("x-")) {
+            if (containerExtensions && key.startsWith("x-")) {
                 copyField(result, key, source);
                 return;
             }
@@ -602,14 +604,14 @@ public final class OpenApiDocumentMapperSupport {
                 return;
             }
             switch (key) {
-            case "responses" -> object(value, object -> result.put(key, responses(object, rules)));
+            case "responses" -> object(value, object -> result.put(key, responses(object, rules, false)));
             case "parameters" -> object(value, object -> result.put(key, parameterMap(object, rules)));
             case "examples" -> result.put(key, examples(value, rules));
             case "requestBodies" -> object(value, object -> result.put(key, requestBodyMap(object, rules)));
             case "headers" -> object(value, object -> result.put(key, headers(object, rules)));
             case "securitySchemes" -> object(value, object -> result.put(key, securitySchemes(object, rules)));
             case "links" -> object(value, object -> result.put(key, links(object, rules)));
-            case "callbacks" -> object(value, object -> result.put(key, callbacks(object, rules, false)));
+            case "callbacks" -> object(value, object -> result.put(key, callbacks(object, rules)));
             case "pathItems" -> object(value, object -> result.put(key, paths(object, rules, false)));
             case "mediaTypes" -> object(value, object -> result.put(key, mediaTypes(object, rules)));
             default -> copyField(result, key, source);
@@ -732,12 +734,19 @@ public final class OpenApiDocumentMapperSupport {
         return result;
     }
 
-    private static Map<String, Object> callbacks(Map<String, ?> source,
-                                                 OpenApi3xMapperRules rules,
-                                                 boolean containerExtensions) {
+    private static Map<String, Object> callbacks(Map<String, ?> source, OpenApi3xMapperRules rules) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        source.forEach((key, value) -> object(value, object -> result.put(key, callback(object, rules))));
+        return result;
+    }
+
+    private static Map<String, Object> callback(Map<String, ?> source, OpenApi3xMapperRules rules) {
+        if (source.containsKey("$ref")) {
+            return reference(source);
+        }
         Map<String, Object> result = new LinkedHashMap<>();
         source.forEach((key, value) -> {
-            if (containerExtensions && key.startsWith("x-")) {
+            if (key.startsWith("x-")) {
                 copyField(result, key, source);
             } else {
                 object(value, object -> result.put(key, pathItem(object, rules)));

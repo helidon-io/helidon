@@ -241,8 +241,13 @@ final class OpenApiDocumentComposer {
             }
         });
         operation.callbacks()
-                .forEach((expression, pathItem) -> validatePathItem(location + ".callbacks." + expression,
-                                                                    pathItem,
-                                                                    operationIds));
+                .forEach((name, callback) -> callback.expressions()
+                        .forEach((expression, pathItem) -> validatePathItem(location
+                                                                                   + ".callbacks."
+                                                                                   + name
+                                                                                   + "."
+                                                                                   + expression,
+                                                                           pathItem,
+                                                                           operationIds)));
     }
 }

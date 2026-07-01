@@ -164,11 +164,20 @@ class OpenApiDocumentComposerTest {
     void generatedOnlyFailsOnDuplicateWebhookOperationId() {
         OpenApiDocumentSource source = (context, document) -> document.info("Generated API", "1.0.0")
                 .path("/generated", path -> path.operation("GET", responseOperation("duplicate")))
-                .webhook("event", path -> path.operation("POST", responseOperation("duplicate")));
+                .webhook("x-events", path -> path.operation("POST", responseOperation("duplicate")));
 
         assertDuplicateOperationId(
                 source,
-                "Duplicate OpenAPI operationId duplicate at paths./generated.get and webhooks.event.post");
+                "Duplicate OpenAPI operationId duplicate at paths./generated.get and webhooks.x-events.post");
+    }
+
+    @Test
+    void exposesXPrefixedWebhook() {
+        OpenApiDocument document = OpenApiDocument.builder()
+                .webhook("x-events", path -> path.operation("POST", responseOperation("created")))
+                .build();
+
+        assertThat(document.webhooks().containsKey("x-events"), is(true));
     }
 
     @Test
@@ -191,14 +200,16 @@ class OpenApiDocumentComposerTest {
                                              operation -> operation.operationId("duplicate")
                                                      .response("200", "OK")
                                                      .callback("onEvent",
-                                                               callback -> callback.operation(
-                                                                       "POST",
-                                                                       responseOperation("duplicate")))));
+                                                               callback -> callback.expression(
+                                                                       "{$request.body#/callbackUrl}",
+                                                                       pathItem -> pathItem.operation(
+                                                                               "POST",
+                                                                               responseOperation("duplicate"))))));
 
         assertDuplicateOperationId(
                 source,
                 "Duplicate OpenAPI operationId duplicate at paths./generated.get "
-                        + "and paths./generated.get.callbacks.onEvent.post");
+                        + "and paths./generated.get.callbacks.onEvent.{$request.body#/callbackUrl}.post");
     }
 
     @Test

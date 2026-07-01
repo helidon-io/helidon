@@ -213,14 +213,19 @@ class OpenApi30DocumentMapperTest {
                 "responses", Map.of(
                         "200", Map.of("description", "OK"))));
 
-        Map<String, Object> callbackSource = new LinkedHashMap<>();
-        callbackSource.put("x-callback-scalar", "keep");
-        callbackSource.put("x-callback-object", Map.of("enabled", true));
-        callbackSource.put("{$request.body#/callbackUrl}", callbackPost);
+        Map<String, Object> callback = new LinkedHashMap<>();
+        callback.put("x-callback-scalar", "keep");
+        callback.put("x-callback-object", Map.of("enabled", true));
+        callback.put("{$request.body#/callbackUrl}", callbackPost);
+
+        Map<String, Object> callbacks = new LinkedHashMap<>();
+        callbacks.put("onEvent", callback);
+        callbacks.put("x-named-callback", Map.of("{$request.body#/fallbackUrl}", callbackPost));
+        callbacks.put("referencedCallback", Map.of("$ref", "#/components/callbacks/ReusableCallback"));
 
         Map<String, Object> operation = new LinkedHashMap<>();
         operation.put("responses", Map.of("204", Map.of("description", "Done.")));
-        operation.put("callbacks", callbackSource);
+        operation.put("callbacks", callbacks);
 
         Map<String, Object> pathItem = new LinkedHashMap<>();
         pathItem.put("get", operation);
@@ -248,22 +253,32 @@ class OpenApi30DocumentMapperTest {
                 "version", "1.0.0"));
         documentSource.put("paths", pathsSource);
         documentSource.put("components", Map.of(
+                "callbacks", Map.of("ReusableCallback", callback),
                 "securitySchemes", Map.of(
                         "OAuth", securityScheme)));
 
         OpenApiDocument document = OpenApi30DocumentMapper.parse(documentSource);
         Map<String, Object> rendered = OpenApi30DocumentMapper.render(document, "3.0.3");
         Map<String, Object> paths = map(rendered, "paths");
-        Map<String, Object> callbacks = map(map(map(paths, "/callback"), "get"), "callbacks");
+        Map<String, Object> renderedCallbacks = map(map(map(paths, "/callback"), "get"), "callbacks");
+        Map<String, Object> renderedCallback = map(renderedCallbacks, "onEvent");
+        Map<String, Object> componentCallback = map(map(map(rendered, "components"), "callbacks"), "ReusableCallback");
         Map<String, Object> flows = map(map(map(map(rendered, "components"), "securitySchemes"), "OAuth"), "flows");
 
         assertThat(document.paths().containsKey("x-gateway-object"), is(false));
-        assertThat(document.paths().get("/callback").operations().get("get").callbacks().containsKey("x-callback-object"),
-                   is(false));
+        assertThat(document.paths().get("/callback").operations().get("get").callbacks().get("onEvent")
+                           .expressions().containsKey("{$request.body#/callbackUrl}"), is(true));
+        assertThat(document.paths().get("/callback").operations().get("get").callbacks()
+                           .containsKey("x-named-callback"), is(true));
         assertThat(paths.get("x-gateway-root"), is(true));
         assertThat(map(paths, "x-gateway-object").get("stage"), is("prod"));
-        assertThat(callbacks.get("x-callback-scalar"), is("keep"));
-        assertThat(map(callbacks, "x-callback-object").get("enabled"), is(true));
+        assertThat(renderedCallback.get("x-callback-scalar"), is("keep"));
+        assertThat(map(renderedCallback, "x-callback-object").get("enabled"), is(true));
+        assertThat(map(renderedCallback, "{$request.body#/callbackUrl}").containsKey("post"), is(true));
+        assertThat(map(renderedCallbacks, "x-named-callback").containsKey("{$request.body#/fallbackUrl}"), is(true));
+        assertThat(map(renderedCallbacks, "referencedCallback").get("$ref"),
+                   is("#/components/callbacks/ReusableCallback"));
+        assertThat(componentCallback.containsKey("{$request.body#/callbackUrl}"), is(true));
         assertThat(flows.get("x-flow-scalar"), is("keep"));
         assertThat(map(flows, "x-flow-object").get("enabled"), is(true));
     }
