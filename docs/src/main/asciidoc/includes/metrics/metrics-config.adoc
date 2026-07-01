@@ -61,6 +61,8 @@ ifdef::mp-flavor[`application`]
 Helidon 27 always reports the system-provided `gc.time` {metric} as a `Gauge`.
 The former `metrics.gc-time-type` compatibility setting is no longer supported; remove it from configuration.
 Application code that looked up `gc.time` as a `Counter` should use the `MeterRegistry` gauge lookup APIs instead.
+The deprecated `metrics.rest-request-enabled` compatibility setting is no longer supported in Helidon 27;
+replace it with `metrics.rest-request.enabled`.
 
 === Controlling the Metrics Observer
 Helidon can make the registered {metrics} and their current values available externally at an endpoint ({metrics-endpoint} by default). You can control aspects of how Helidon furnishes this information under the `server.features.observe.observers.metrics` configuration section.
