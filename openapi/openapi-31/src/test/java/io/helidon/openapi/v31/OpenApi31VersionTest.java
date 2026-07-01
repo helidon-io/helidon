@@ -38,6 +38,7 @@ import io.helidon.openapi.spi.OpenApiVersionProvider;
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -133,6 +134,16 @@ class OpenApi31VersionTest {
         assertThrows(NullPointerException.class, () -> version.parse(context, "", null));
         assertThrows(NullPointerException.class, () -> version.render(null, document));
         assertThrows(NullPointerException.class, () -> version.render(context, null));
+    }
+
+    @Test
+    void validatesConfiguredVersionFamily() {
+        assertThat(OpenApi31Version.builder().version("3.1.99").build().version(), is("3.1.99"));
+
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+                                                   () -> OpenApi31Version.builder().version("3.2.0").build());
+        assertThat(ex.getMessage(), containsString("3.1"));
+        assertThat(ex.getMessage(), containsString("3.2.0"));
     }
 
     @Test
