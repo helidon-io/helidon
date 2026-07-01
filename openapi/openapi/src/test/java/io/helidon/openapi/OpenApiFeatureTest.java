@@ -26,6 +26,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
 import io.helidon.common.Builder;
@@ -919,6 +923,75 @@ class OpenApiFeatureTest {
         assertThat(documents.size(), is(2));
         assertThat(documents.stream().anyMatch(it -> map(it, "paths").containsKey("/default")), is(true));
         assertThat(documents.stream().anyMatch(it -> map(it, "paths").containsKey("/admin")), is(true));
+    }
+
+    @Test
+    void serializesListenerModelInitialization() throws Exception {
+        CountDownLatch firstDescribe = new CountDownLatch(1);
+        CountDownLatch concurrentDescribe = new CountDownLatch(1);
+        CountDownLatch releaseFirstDescribe = new CountDownLatch(1);
+        CountDownLatch startRequests = new CountDownLatch(1);
+        AtomicInteger activeDescribes = new AtomicInteger();
+        OpenApiDocumentSource source = (context, document) -> {
+            int active = activeDescribes.incrementAndGet();
+            try {
+                if (active == 1) {
+                    firstDescribe.countDown();
+                    if (!releaseFirstDescribe.await(10, TimeUnit.SECONDS)) {
+                        throw new AssertionError("Timed out waiting to release the first OpenAPI source invocation.");
+                    }
+                } else {
+                    concurrentDescribe.countDown();
+                }
+                document.info(context.listener(), "1.0.0");
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new AssertionError(e);
+            } finally {
+                activeDescribes.decrementAndGet();
+            }
+        };
+        OpenApiFeatureConfig config = OpenApiFeatureConfig.builder()
+                .servicesDiscoverServices(false)
+                .generatedMode(OpenApiGeneratedMode.GENERATED_ONLY)
+                .openApiVersion(OpenApi30Version.create())
+                .buildPrototype();
+        OpenApiFeature feature = new OpenApiFeature(config, () -> List.of(source), List::of);
+        WebServer webServer = WebServer.builder()
+                .port(0)
+                .putSocket("admin", listener -> listener.port(0).name("admin"))
+                .addFeature(feature)
+                .build();
+        WebClient concurrentClient = WebClient.create();
+
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            webServer.start();
+            var defaultRequest = executor.submit(() -> {
+                startRequests.await();
+                return concurrentClient.get("http://localhost:" + webServer.port() + "/openapi")
+                        .accept(MediaTypes.APPLICATION_OPENAPI_YAML)
+                        .request(String.class);
+            });
+            var adminRequest = executor.submit(() -> {
+                startRequests.await();
+                return concurrentClient.get("http://localhost:" + webServer.port("admin") + "/openapi")
+                        .accept(MediaTypes.APPLICATION_OPENAPI_YAML)
+                        .request(String.class);
+            });
+
+            startRequests.countDown();
+            assertThat(firstDescribe.await(10, TimeUnit.SECONDS), is(true));
+            boolean overlapped = concurrentDescribe.await(2, TimeUnit.SECONDS);
+            releaseFirstDescribe.countDown();
+
+            assertThat(defaultRequest.get().status(), is(Status.OK_200));
+            assertThat(adminRequest.get().status(), is(Status.OK_200));
+            assertThat(overlapped, is(false));
+        } finally {
+            releaseFirstDescribe.countDown();
+            concurrentClient.closeResource();
+            webServer.stop();
+        }
     }
 
     @Test
