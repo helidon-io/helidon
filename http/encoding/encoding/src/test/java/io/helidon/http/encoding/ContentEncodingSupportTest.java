@@ -18,6 +18,7 @@ package io.helidon.http.encoding;
 
 import java.io.OutputStream;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -290,6 +291,18 @@ class ContentEncodingSupportTest {
                 .build();
 
         assertThat(context.contentEncodingIds(), is(List.of("gzip", "x-gzip")));
+    }
+
+    @Test
+    void testCanonicalEncodingIdMapsAliases() {
+        ContentEncodingContext context = ContentEncodingContext.builder()
+                .addContentEncoding(new TestEncoding(gzipEncoder(), Set.of("gzip", "x-gzip"), true, false, "gzip"))
+                .build();
+
+        assertThat(context.canonicalEncodingId("gzip"), is(Optional.of("gzip")));
+        assertThat(context.canonicalEncodingId("X-GZIP"), is(Optional.of("gzip")));
+        assertThat(context.canonicalEncodingId("identity"), is(Optional.of("identity")));
+        assertThat(context.canonicalEncodingId("br"), is(Optional.empty()));
     }
 
     @Test

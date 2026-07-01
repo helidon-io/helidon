@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
@@ -98,6 +99,23 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
         return List.copyOf(result);
     }
 
+    static Optional<String> canonicalEncodingId(List<ContentEncoding> contentEncodings, String encodingId) {
+        String normalized = Objects.requireNonNull(encodingId).toLowerCase(Locale.ROOT);
+        if (AcceptEncoding.IDENTITY.equals(normalized)) {
+            return Optional.of(AcceptEncoding.IDENTITY);
+        }
+        for (ContentEncoding contentEncoding : contentEncodings) {
+            if (contentEncoding.supportsEncoding()
+                    && contentEncoding.ids()
+                            .stream()
+                            .map(id -> id.toLowerCase(Locale.ROOT))
+                            .anyMatch(normalized::equals)) {
+                return canonicalCoding(contentEncoding);
+            }
+        }
+        return Optional.empty();
+    }
+
     @Override
     public boolean contentEncodingEnabled() {
         return encodingEnabled;
@@ -116,6 +134,15 @@ class ContentEncodingSupportImpl implements ContentEncodingContext {
     @Override
     public List<String> contentEncodingIds() {
         return contentEncodingIds;
+    }
+
+    @Override
+    public Optional<String> canonicalEncodingId(String encodingId) {
+        String normalized = Objects.requireNonNull(encodingId).toLowerCase(Locale.ROOT);
+        if (!encoders.containsKey(normalized)) {
+            return Optional.empty();
+        }
+        return Optional.of(canonicalContentEncodings.getOrDefault(normalized, normalized));
     }
 
     @Override
