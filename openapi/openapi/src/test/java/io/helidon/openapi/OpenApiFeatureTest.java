@@ -460,6 +460,39 @@ class OpenApiFeatureTest {
     }
 
     @Test
+    void runtimeBuilderUsesSuppliedRegistryForStaticVersionParser(@TempDir Path tempDir) throws IOException {
+        RecordingOpenApiManager manager = new RecordingOpenApiManager();
+        OpenApiVersion renderVersion = new TestOpenApiVersion("3.0", "3.0.3", true);
+        OpenApiVersion staticVersion = new TestOpenApiVersion("3.1", "3.1.0", false);
+        Path staticFile = tempDir.resolve("static-3.1.yaml");
+        Files.writeString(staticFile, OPENAPI_31_DOCUMENT);
+        ServiceRegistryConfig registryConfig = ServiceRegistryConfig.builder()
+                .discoverServices(false)
+                .discoverServicesFromServiceLoader(false)
+                .addServiceDescriptor(testDescriptor(OpenApiVersionProvider.class,
+                                                     "OpenApi31VersionProvider",
+                                                     provider("3.1", staticVersion)))
+                .build();
+        ServiceRegistryManager registryManager = ServiceRegistryManager.create(registryConfig);
+        try {
+            OpenApiFeature feature = OpenApiFeature.builder()
+                    .serviceRegistry(registryManager.registry())
+                    .servicesDiscoverServices(false)
+                    .staticFile(staticFile.toString())
+                    .generatedMode(OpenApiGeneratedMode.MERGE)
+                    .openApiVersion(renderVersion)
+                    .manager(manager)
+                    .build();
+
+            feature.initialize();
+
+            assertThat(parse(manager.content()).get("openapi"), is("3.0.3"));
+        } finally {
+            registryManager.shutdown();
+        }
+    }
+
+    @Test
     void mergeYamlStaticDocumentUsesRootOpenApiVersion(@TempDir Path tempDir) throws IOException {
         mergeStaticDocumentUsesRootVersion(tempDir.resolve("nested-openapi.yaml"), """
                 x-nested:
