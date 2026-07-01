@@ -27,6 +27,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -414,6 +415,84 @@ class StaticContentHandlerTest {
         });
 
         assertThat(lookups.get(), is(0));
+    }
+
+    @Test
+    void preCompressedLowerQualitySidecarIsResolvedOnlyOnFallback() throws IOException, URISyntaxException {
+        TestContentHandler handler = TestContentHandler.create(true);
+        CachedHandler identityHandler = inMemoryHandler("Nested content");
+        CachedHandler brotliHandler = (cache, method, request, response, requestedResource) -> false;
+        CachedHandler gzipHandler = inMemoryHandler("Gzip content");
+        ServerRequest request = mockRequestWithHeaders("br, gzip;q=0.5, identity;q=0",
+                                                       null,
+                                                       ContentEncodingContext.create());
+        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
+        ServerResponse response = mock(ServerResponse.class);
+        AtomicReference<byte[]> sent = new AtomicReference<>();
+        List<String> lookups = new ArrayList<>();
+
+        when(response.headers()).thenReturn(responseHeaders);
+        Mockito.doAnswer(invocation -> {
+            sent.set(invocation.getArgument(0));
+            return null;
+        }).when(response).send(any(byte[].class));
+
+        CachedHandler selected = handler.selectHandler(identityHandler, request, (coding, suffix) -> {
+            lookups.add(coding);
+            return Optional.of("br".equals(coding) ? brotliHandler : gzipHandler);
+        });
+
+        assertThat(lookups, is(List.of("br")));
+
+        selected.handle(LruCache.create(), Method.GET, request, response, "nested/resource.txt");
+
+        assertThat(lookups, is(List.of("br", "gzip")));
+        assertThat(responseHeaders, hasHeader(HeaderNames.CONTENT_ENCODING, "gzip"));
+        assertThat(new String(sent.get(), StandardCharsets.UTF_8), is("Gzip content"));
+    }
+
+    @Test
+    void preCompressedMissingPreferredSidecarResolvesNext() throws IOException, URISyntaxException {
+        TestContentHandler handler = TestContentHandler.create(true);
+        CachedHandler identityHandler = inMemoryHandler("Nested content");
+        CachedHandler gzipHandler = inMemoryHandler("Gzip content");
+        ServerRequest request = mockRequestWithHeaders("br, gzip;q=0.5, identity;q=0",
+                                                       null,
+                                                       ContentEncodingContext.create());
+        List<String> lookups = new ArrayList<>();
+
+        CachedHandler selected = handler.selectHandler(identityHandler, request, (coding, suffix) -> {
+            lookups.add(coding);
+            return "gzip".equals(coding) ? Optional.of(gzipHandler) : Optional.empty();
+        });
+
+        assertThat(lookups, is(List.of("br", "gzip")));
+
+        ServerResponseHeaders responseHeaders = ServerResponseHeaders.create();
+        ServerResponse response = mock(ServerResponse.class);
+        when(response.headers()).thenReturn(responseHeaders);
+
+        selected.handle(LruCache.create(), Method.HEAD, request, response, "nested/resource.txt");
+
+        assertThat(responseHeaders, hasHeader(HeaderNames.CONTENT_ENCODING, "gzip"));
+    }
+
+    @Test
+    void preCompressedBestSidecarIsResolvedFirst() throws IOException, URISyntaxException {
+        TestContentHandler handler = TestContentHandler.create(true);
+        CachedHandler identityHandler = inMemoryHandler("Nested content");
+        CachedHandler sidecarHandler = inMemoryHandler("Encoded content");
+        ServerRequest request = mockRequestWithHeaders("gzip, br;q=0.5, identity;q=0",
+                                                       null,
+                                                       ContentEncodingContext.create());
+        List<String> lookups = new ArrayList<>();
+
+        handler.selectHandler(identityHandler, request, (coding, suffix) -> {
+            lookups.add(coding);
+            return Optional.of(sidecarHandler);
+        });
+
+        assertThat(lookups, is(List.of("gzip")));
     }
 
     @Test
