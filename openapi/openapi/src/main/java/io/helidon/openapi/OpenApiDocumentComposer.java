@@ -75,7 +75,7 @@ final class OpenApiDocumentComposer {
         }
 
         if (mode == OpenApiGeneratedMode.GENERATED_ONLY || !hasStaticContent) {
-            validateOperationIds(generated);
+            validateComposedDocument(generated);
             return renderGenerated(context, generated);
         }
 
@@ -84,7 +84,7 @@ final class OpenApiDocumentComposer {
                     .merge(staticDocument.orElseThrow().get());
             mergeGeneratedDocument(builder, generated, false);
             OpenApiDocument merged = builder.build();
-            validateOperationIds(merged);
+            validateComposedDocument(merged);
             return context.openApiVersion().render(context, merged);
         }
 
@@ -204,6 +204,15 @@ final class OpenApiDocumentComposer {
 
     private static String renderGenerated(OpenApiDocumentContext context, OpenApiDocument generated) {
         return context.openApiVersion().render(context, generated);
+    }
+
+    private static void validateComposedDocument(OpenApiDocument document) {
+        validateOperationIds(document);
+        if (document.info().isEmpty()) {
+            throw new IllegalStateException("Composed OpenAPI document requires Info metadata. "
+                                                    + "Add an @OpenApi.Document type with @OpenApi.Info, provide Info "
+                                                    + "from an OpenApiDocumentSource, or merge static content with Info.");
+        }
     }
 
     private static void validateOperationIds(OpenApiDocument document) {
