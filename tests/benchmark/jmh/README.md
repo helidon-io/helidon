@@ -45,7 +45,8 @@ mvn test -Ptests,jmh -pl :helidon-http-http2,:helidon-webclient-grpc,:helidon-we
     -Dgrpc.streaming.jmh.measurementIterations=1 -Dgrpc.streaming.jmh.measurementMillis=100 -ntp
 ```
 
-Omit the gRPC JMH iteration and time properties for the full run.
+For a full comparison, omit the gRPC JMH iteration and time properties and add
+`-Dgrpc.streaming.jmh.forks=3`.
 
 `GrpcTransportCompatibilityJmhBenchmark` uses only raw gRPC handlers and legacy client calls so the identical source
 can run on both the pre-change and current trees. It fixes the message count and tests payloads immediately below, at,
