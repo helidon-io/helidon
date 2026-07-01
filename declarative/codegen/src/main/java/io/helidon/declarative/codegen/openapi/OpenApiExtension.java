@@ -16,28 +16,21 @@
 
 package io.helidon.declarative.codegen.openapi;
 
-import io.helidon.declarative.codegen.http.webserver.ServerEndpointAnalyzer;
+import java.util.Optional;
+
 import io.helidon.service.codegen.RegistryCodegenContext;
 import io.helidon.service.codegen.RegistryRoundContext;
 import io.helidon.service.codegen.spi.RegistryCodegenExtension;
 
 final class OpenApiExtension implements RegistryCodegenExtension {
-    private final boolean openApiAvailable;
-    private final ServerEndpointAnalyzer endpointAnalyzer;
-    private final OpenApiSourceGenerator sourceGenerator;
+    private final Optional<OpenApiSourceGenerator> sourceGenerator;
 
     OpenApiExtension(RegistryCodegenContext ctx) {
-        this.openApiAvailable = ctx.typeInfo(OpenApiCodegenTypes.OPENAPI_DOCUMENT_SOURCE).isPresent();
-        this.endpointAnalyzer = ServerEndpointAnalyzer.create(ctx);
-        this.sourceGenerator = new OpenApiSourceGenerator(ctx);
+        this.sourceGenerator = OpenApiSourceGenerator.create(ctx);
     }
 
     @Override
     public void process(RegistryRoundContext roundContext) {
-        if (!openApiAvailable) {
-            return;
-        }
-
-        sourceGenerator.process(roundContext, endpointAnalyzer.endpoints(roundContext));
+        sourceGenerator.ifPresent(generator -> generator.processDocuments(roundContext));
     }
 }
