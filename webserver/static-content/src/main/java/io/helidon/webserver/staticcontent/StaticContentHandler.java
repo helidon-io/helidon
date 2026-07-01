@@ -683,7 +683,7 @@ abstract class StaticContentHandler implements HttpService {
         if (etag.startsWith("W/") || etag.startsWith("w/")) {
             etag = etag.substring(2);
         }
-        if (etag.startsWith("\"") && etag.endsWith("\"")) {
+        if (etag.length() >= 2 && etag.startsWith("\"") && etag.endsWith("\"")) {
             etag = etag.substring(1, etag.length() - 1);
         }
         return etag;
