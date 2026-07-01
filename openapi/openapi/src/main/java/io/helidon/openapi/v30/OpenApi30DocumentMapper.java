@@ -364,6 +364,9 @@ final class OpenApi30DocumentMapper {
             default -> copyField(result, key, source);
             }
         });
+        if (!result.containsKey("responses")) {
+            throw new IllegalStateException("OpenAPI 3.0 operation requires responses.");
+        }
         return result;
     }
 
@@ -451,6 +454,10 @@ final class OpenApi30DocumentMapper {
             default -> copyField(result, key, source);
             }
         });
+        Object description = result.get("description");
+        if (!(description instanceof String string) || string.isBlank()) {
+            throw new IllegalStateException("OpenAPI 3.0 response requires description.");
+        }
         return result;
     }
 

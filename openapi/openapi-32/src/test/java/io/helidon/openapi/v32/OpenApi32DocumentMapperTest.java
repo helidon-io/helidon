@@ -47,6 +47,31 @@ class OpenApi32DocumentMapperTest {
     }
 
     @Test
+    void handlesVersionSpecificResponseRequirements() {
+        OpenApiDocument document = OpenApi32DocumentMapper.parse(Map.of(
+                "openapi", "3.2.0",
+                "info", Map.of(
+                        "title", "Static API",
+                        "version", "1.0.0"),
+                "paths", Map.of(
+                        "/without-responses", Map.of(
+                                "get", Map.of("summary", "Items")),
+                        "/without-description", Map.of(
+                                "get", Map.of(
+                                        "responses", Map.of(
+                                                "200", Map.of("summary", "Items")))))));
+
+        Map<String, Object> rendered = OpenApi32DocumentMapper.render(document, "3.2.0");
+        Map<String, Object> paths = map(rendered, "paths");
+        Map<String, Object> withoutResponses = map(map(paths, "/without-responses"), "get");
+        Map<String, Object> response = map(map(map(paths, "/without-description"), "get"), "responses");
+
+        assertThat(withoutResponses.containsKey("responses"), is(false));
+        assertThat(map(response, "200").get("summary"), is("Items"));
+        assertThat(map(response, "200").containsKey("description"), is(false));
+    }
+
+    @Test
     void preservesLargeIntegralNumbers() {
         OpenApiDocument document = OpenApi32DocumentMapper.parse(document("3.2.0"));
         Map<String, Object> rendered = OpenApi32DocumentMapper.render(document, "3.2.0");
