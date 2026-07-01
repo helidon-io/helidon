@@ -87,6 +87,69 @@ class OpenApiPathCodegenTest {
     );
 
     @Test
+    void endpointMetadataGeneratedWithoutLocalDocument() throws IOException {
+        var result = compile("openapi-endpoint-without-local-document", """
+                @RestServer.Endpoint
+                @Service.Singleton
+                @Http.Path("/cross-module")
+                class CrossModuleEndpoint {
+                    @Http.GET
+                    String get() {
+                        return "ok";
+                    }
+                }
+                """);
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+        assertThat(generatedSource(result), containsString("document.path(\"/cross-module\""));
+    }
+
+    @Test
+    void endpointMetadataNotGeneratedWithoutOpenApi() throws IOException {
+        var result = TestCompiler.builder()
+                .currentRelease()
+                .procOnly()
+                .addClasspath(CLASSPATH.stream()
+                                      .filter(it -> it != OpenApi.class)
+                                      .toList())
+                .addProcessor(AptProcessor::new)
+                .workDir(Path.of("target/test-compiler/endpoint-without-openapi"))
+                .addSource("EndpointWithoutOpenApi.java", """
+                        package com.example;
+
+                        import io.helidon.http.Http;
+                        import io.helidon.service.registry.Service;
+                        import io.helidon.webserver.http.RestServer;
+
+                        @RestServer.Endpoint
+                        @Service.Singleton
+                        @Http.Path("/without-openapi")
+                        class EndpointWithoutOpenApi {
+                            @Http.GET
+                            String get() {
+                                return "ok";
+                            }
+                        }
+                        """)
+                .addSource("Main.java", """
+                        package com.example;
+
+                        import io.helidon.service.registry.Service;
+
+                        @Service.GenerateBinding
+                        class Main {
+                        }
+                        """)
+                .build()
+                .compile();
+
+        String diagnostics = String.join("\n", result.diagnostics());
+        assertThat(diagnostics, result.success(), is(true));
+        assertThat(generatedSource(result), not(containsString("OpenApiEndpoint")));
+    }
+
+    @Test
     void interfaceEndpointIsNotDocumented() throws IOException {
         var result = compile("openapi-interface-endpoint", """
                 @OpenApi.Document

@@ -22,17 +22,19 @@ import io.helidon.service.codegen.RegistryRoundContext;
 import io.helidon.service.codegen.spi.RegistryCodegenExtension;
 
 final class OpenApiExtension implements RegistryCodegenExtension {
+    private final boolean openApiAvailable;
     private final ServerEndpointAnalyzer endpointAnalyzer;
     private final OpenApiSourceGenerator sourceGenerator;
 
     OpenApiExtension(RegistryCodegenContext ctx) {
+        this.openApiAvailable = ctx.typeInfo(OpenApiCodegenTypes.OPENAPI_DOCUMENT_SOURCE).isPresent();
         this.endpointAnalyzer = new ServerEndpointAnalyzer(ctx);
         this.sourceGenerator = new OpenApiSourceGenerator(ctx);
     }
 
     @Override
     public void process(RegistryRoundContext roundContext) {
-        if (roundContext.annotatedTypes(OpenApiCodegenTypes.OPENAPI_DOCUMENT_ANNOTATION).isEmpty()) {
+        if (!openApiAvailable) {
             return;
         }
 

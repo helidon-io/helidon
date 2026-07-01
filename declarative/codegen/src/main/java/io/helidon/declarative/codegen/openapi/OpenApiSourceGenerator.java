@@ -118,10 +118,6 @@ final class OpenApiSourceGenerator {
 
     void process(RegistryRoundContext roundContext, List<ServerEndpoint> endpoints) {
         Collection<TypeInfo> documents = roundContext.annotatedTypes(OPENAPI_DOCUMENT_ANNOTATION);
-        if (documents.isEmpty()) {
-            return;
-        }
-
         for (TypeInfo document : documents) {
             processDocument(roundContext, document);
         }
