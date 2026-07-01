@@ -433,6 +433,9 @@ final class OpenApi30DocumentMapper {
             }
             object(value, object -> result.put(key, response(object, mode)));
         });
+        if (containerExtensions && result.keySet().stream().noneMatch(OpenApiDocumentMapperSupport::isResponseCode)) {
+            throw new IllegalStateException("OpenAPI 3.0 Responses Object requires at least one response code.");
+        }
         return result;
     }
 

@@ -57,6 +57,17 @@ class OpenApi30DocumentMapperTest {
                 () -> OpenApi30DocumentMapper.parse(documentWithOperation("3.0.3", Map.of("summary", "Items"))));
         assertThat(missingResponses.getMessage(), containsString("responses"));
 
+        for (Map<String, Object> responses : List.<Map<String, Object>>of(
+                Map.of(),
+                Map.of("x-note", "No response code"))) {
+            IllegalStateException missingResponseCode = assertThrows(
+                    IllegalStateException.class,
+                    () -> OpenApi30DocumentMapper.parse(documentWithOperation(
+                            "3.0.3",
+                            Map.of("responses", responses))));
+            assertThat(missingResponseCode.getMessage(), containsString("response code"));
+        }
+
         IllegalStateException missingDescription = assertThrows(
                 IllegalStateException.class,
                 () -> OpenApi30DocumentMapper.parse(documentWithOperation(
@@ -72,6 +83,17 @@ class OpenApi30DocumentMapperTest {
                 IllegalStateException.class,
                 () -> OpenApi30DocumentMapper.render(operationWithoutResponses, "3.0.3"));
         assertThat(renderedWithoutResponses.getMessage(), containsString("responses"));
+
+        OpenApiDocument responsesWithoutCode = OpenApiDocument.builder()
+                .info("Generated API", "1.0.0")
+                .path("/items", path -> path.operation(
+                        "GET",
+                        operation -> operation.responseExtension("x-note", JsonString.create("No response code"))))
+                .build();
+        IllegalStateException renderedWithoutResponseCode = assertThrows(
+                IllegalStateException.class,
+                () -> OpenApi30DocumentMapper.render(responsesWithoutCode, "3.0.3"));
+        assertThat(renderedWithoutResponseCode.getMessage(), containsString("response code"));
 
         OpenApiDocument responseWithoutDescription = OpenApiDocument.builder()
                 .info("Generated API", "1.0.0")
