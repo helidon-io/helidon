@@ -240,8 +240,9 @@ class OpenApi32VersionTest {
     @Test
     void validatesConfiguredVersion() {
         assertThat(OpenApi32Version.builder().version("3.2.99").build().version(), is("3.2.99"));
+        assertThat(OpenApi32Version.builder().version("3.2.0-beta").build().version(), is("3.2.0-beta"));
 
-        for (String invalidVersion : List.of("3.2", "3.2.", "3.2.not-a-version", "3.2.1.0", "3.1.0")) {
+        for (String invalidVersion : List.of("3.2", "3.2.", "3.2.not-a-version", "3.2.1-", "3.2.1.0", "3.1.0")) {
             IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
                                                        () -> OpenApi32Version.builder()
                                                                .version(invalidVersion)
