@@ -23,6 +23,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 import io.helidon.Main;
@@ -66,6 +68,8 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
     private static final String METER_SCOPE = Meter.Scope.BASE;
 
     private static final System.Logger LOGGER = System.getLogger(VThreadSystemMetersProvider.class.getName());
+    private final ReentrantLock lifecycleLock = new ReentrantLock();
+    private final Condition shutdownHandlerUpdated = lifecycleLock.newCondition();
     private Timer recentPinnedVirtualThreads;
     private long virtualThreadSubmitFails;
     private long pinnedVirtualThreads;
@@ -76,9 +80,12 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
     private MetricsFactory metricsFactory;
     private MetricsConfig metricsConfig;
     private SystemTagsManager systemTagsManager;
-    private boolean shutdownHandlerRegistered;
+    private boolean shutdownHandlerRegistrationRequired;
+    private boolean shutdownHandlerRegistrationApplied;
+    private boolean shutdownHandlerUpdateInProgress;
     private boolean resumableRegistered;
     private boolean closed;
+    private long lifecycleGeneration;
     private long resumableGeneration;
 
     /**
@@ -90,79 +97,160 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
 
     @Override
     public Collection<Meter.Builder<?, ?>> meterBuilders(MetricsFactory metricsFactory) {
+        Collection<Meter.Builder<?, ?>> meterBuilders;
+        long setupGeneration;
+        lifecycleLock.lock();
+        try {
+            setupGeneration = ++lifecycleGeneration;
+            closed = false;
+            this.metricsFactory = metricsFactory;
+            metricsConfig = metricsFactory.metricsConfig();
+            systemTagsManager = SystemTagsManager.create(metricsConfig);
+            if (!metricsConfig.virtualThreadsEnabled()) {
+                return List.of();
+            }
 
-        closed = false;
-        this.metricsFactory = metricsFactory;
-        metricsConfig = metricsFactory.metricsConfig();
-        systemTagsManager = SystemTagsManager.create(metricsConfig);
-        if (!metricsConfig.virtualThreadsEnabled()) {
-            return List.of();
+            if (!shutdownHandlerRegistrationRequired) {
+                shutdownHandlerRegistrationRequired = true;
+            }
+            if (!resumableRegistered) {
+                ResumableSupport.get().register(resumable());
+                resumableRegistered = true;
+            }
+            pinnedVirtualThreadsThresholdMillis = metricsConfig.virtualThreadsPinnedThreshold().toMillis();
+
+            meterBuilders = new ArrayList<>(List.of(
+                    metricsFactory.gaugeBuilder(METER_NAME_PREFIX + SUBMIT_FAILURES, () -> virtualThreadSubmitFails)
+                            .description("Virtual thread submit failures")
+                            .scope(METER_SCOPE),
+                    metricsFactory.gaugeBuilder(METER_NAME_PREFIX + PINNED, () -> pinnedVirtualThreads)
+                            .description("Number of pinned virtual threads")
+                            .scope(METER_SCOPE),
+                    metricsFactory.timerBuilder(METER_NAME_PREFIX + RECENT_PINNED)
+                            .description("Pinned virtual thread durations")
+                            .scope(METER_SCOPE),
+                    metricsFactory.gaugeBuilder(METER_NAME_PREFIX + COUNT, () -> virtualThreads)
+                            .description("Active virtual threads")
+                            .scope(METER_SCOPE),
+                    metricsFactory.gaugeBuilder(METER_NAME_PREFIX + STARTS, () -> virtualThreadStarts)
+                            .description("Number of virtual thread starts")
+                            .scope(METER_SCOPE)
+                    ));
+
+        } finally {
+            lifecycleLock.unlock();
         }
 
-        if (!shutdownHandlerRegistered) {
-            Main.addShutdownHandler(this);
-            shutdownHandlerRegistered = true;
+        try {
+            updateShutdownHandlerRegistration(true);
+            lifecycleLock.lock();
+            try {
+                if (!closed && lifecycleGeneration == setupGeneration) {
+                    startRecordingStream();
+                }
+            } finally {
+                lifecycleLock.unlock();
+            }
+            return meterBuilders;
+        } catch (RuntimeException | Error e) {
+            boolean updateShutdownHandler;
+            lifecycleLock.lock();
+            try {
+                if (lifecycleGeneration != setupGeneration) {
+                    throw e;
+                }
+                closed = true;
+                lifecycleGeneration++;
+                resumableGeneration++;
+                if (recordingStream != null) {
+                    try {
+                        stopRecordingStream();
+                    } catch (RuntimeException | Error cleanupError) {
+                        e.addSuppressed(cleanupError);
+                    }
+                }
+                shutdownHandlerRegistrationRequired = false;
+                recentPinnedVirtualThreads = null;
+                this.metricsFactory = null;
+                metricsConfig = null;
+                systemTagsManager = null;
+                resumableRegistered = false;
+                updateShutdownHandler = shutdownHandlerRegistrationRequired
+                        != shutdownHandlerRegistrationApplied;
+            } finally {
+                lifecycleLock.unlock();
+            }
+            if (updateShutdownHandler) {
+                try {
+                    updateShutdownHandlerRegistration(false);
+                } catch (RuntimeException | Error cleanupError) {
+                    e.addSuppressed(cleanupError);
+                }
+            }
+            throw e;
         }
-        if (!resumableRegistered) {
-            ResumableSupport.get().register(new WeakResumable(this, resumableGeneration));
-            resumableRegistered = true;
-        }
-        pinnedVirtualThreadsThresholdMillis = metricsConfig.virtualThreadsPinnedThreshold().toMillis();
-
-        var meterBuilders = new ArrayList<>(List.of(
-                metricsFactory.gaugeBuilder(METER_NAME_PREFIX + SUBMIT_FAILURES, () -> virtualThreadSubmitFails)
-                        .description("Virtual thread submit failures")
-                        .scope(METER_SCOPE),
-                metricsFactory.gaugeBuilder(METER_NAME_PREFIX + PINNED, () -> pinnedVirtualThreads)
-                        .description("Number of pinned virtual threads")
-                        .scope(METER_SCOPE),
-                metricsFactory.timerBuilder(METER_NAME_PREFIX + RECENT_PINNED)
-                        .description("Pinned virtual thread durations")
-                        .scope(METER_SCOPE),
-                metricsFactory.gaugeBuilder(METER_NAME_PREFIX + COUNT, () -> virtualThreads)
-                        .description("Active virtual threads")
-                        .scope(METER_SCOPE),
-                metricsFactory.gaugeBuilder(METER_NAME_PREFIX + STARTS, () -> virtualThreadStarts)
-                        .description("Number of virtual thread starts")
-                        .scope(METER_SCOPE)
-                ));
-
-        startRecordingStream();
-        return meterBuilders;
     }
 
     @Override
     public void shutdown() {
-        if (recordingStream != null) {
-            stopRecordingStream();
+        lifecycleLock.lock();
+        try {
+            if (recordingStream != null) {
+                stopRecordingStream();
+            }
+        } finally {
+            lifecycleLock.unlock();
         }
     }
 
     @Override
     public void close() {
-        closed = true;
-        resumableGeneration++;
-        shutdown();
-        if (shutdownHandlerRegistered) {
-            Main.removeShutdownHandler(this);
-            shutdownHandlerRegistered = false;
+        boolean updateShutdownHandler;
+        lifecycleLock.lock();
+        try {
+            closed = true;
+            lifecycleGeneration++;
+            resumableGeneration++;
+            if (recordingStream != null) {
+                stopRecordingStream();
+            }
+            if (shutdownHandlerRegistrationRequired) {
+                shutdownHandlerRegistrationRequired = false;
+            }
+            recentPinnedVirtualThreads = null;
+            metricsFactory = null;
+            metricsConfig = null;
+            systemTagsManager = null;
+            resumableRegistered = false;
+            updateShutdownHandler = shutdownHandlerRegistrationRequired
+                    != shutdownHandlerRegistrationApplied;
+        } finally {
+            lifecycleLock.unlock();
         }
-        recentPinnedVirtualThreads = null;
-        metricsFactory = null;
-        metricsConfig = null;
-        systemTagsManager = null;
-        resumableRegistered = false;
+        if (updateShutdownHandler) {
+            updateShutdownHandlerRegistration(false);
+        }
     }
 
     @Override
     public void suspend() {
-        this.shutdown();
+        lifecycleLock.lock();
+        try {
+            if (recordingStream != null) {
+                stopRecordingStream();
+            }
+        } finally {
+            lifecycleLock.unlock();
+        }
     }
 
     @Override
     public void resume() {
-        if (!closed && metricsConfig != null && metricsConfig.virtualThreadsEnabled()) {
-            this.startRecordingStream();
+        lifecycleLock.lock();
+        try {
+            resumeLocked();
+        } finally {
+            lifecycleLock.unlock();
         }
     }
 
@@ -171,32 +259,159 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
         return pinnedVirtualThreadsThresholdMillis;
     }
 
-    private void startRecordingStream() {
+    // Visible for testing.
+    boolean hasQueuedLifecycleOperation() {
+        return lifecycleLock.hasQueuedThreads();
+    }
+
+    // Visible for testing.
+    boolean recordingStreamActive() {
+        lifecycleLock.lock();
+        try {
+            return recordingStream != null;
+        } finally {
+            lifecycleLock.unlock();
+        }
+    }
+
+    // Visible for testing.
+    Resumable resumable() {
+        return new WeakResumable(this, resumableGeneration);
+    }
+
+    // Visible for testing.
+    void registerShutdownHandler() {
+        Main.addShutdownHandler(this);
+    }
+
+    // Visible for testing.
+    void unregisterShutdownHandler() {
+        Main.removeShutdownHandler(this);
+    }
+
+    // Visible for testing.
+    void startRecordingStream() {
 
         if (recordingStream != null) {
             stopRecordingStream();
         }
 
-        this.recordingStream = new RecordingStream();
-        recordingStream.setSettings(Map.of("jdk.VirtualThreadPinned#threshold",
-                                           pinnedVirtualThreadsThresholdMillis + " ms"));
+        RecordingStream newRecordingStream = new RecordingStream();
+        newRecordingStream.setSettings(Map.of("jdk.VirtualThreadPinned#threshold",
+                                              pinnedVirtualThreadsThresholdMillis + " ms"));
 
-        listenFor(recordingStream, Map.of("jdk.VirtualThreadSubmitFailed", this::recordSubmitFail,
-                                          "jdk.VirtualThreadPinned", this::recordThreadPin,
-                                          "jdk.VirtualThreadStart", this::recordThreadStart,
-                                          "jdk.VirtualThreadEnd", this::recordThreadEnd));
+        listenFor(newRecordingStream, Map.of("jdk.VirtualThreadSubmitFailed", this::recordSubmitFail,
+                                             "jdk.VirtualThreadPinned", this::recordThreadPin,
+                                             "jdk.VirtualThreadStart", this::recordThreadStart,
+                                             "jdk.VirtualThreadEnd", this::recordThreadEnd));
 
-        recordingStream.startAsync();
+        recordingStream = newRecordingStream;
+        newRecordingStream.startAsync();
     }
 
     private void stopRecordingStream() {
+        RecordingStream streamToStop = recordingStream;
+        recordingStream = null;
         try {
             LOGGER.log(System.Logger.Level.INFO, "Stopping recording stream");
-            recordingStream.close();
-            recordingStream.awaitTermination(Duration.ofSeconds(10));
-            recordingStream = null;
+            streamToStop.close();
+            streamToStop.awaitTermination(Duration.ofSeconds(10));
         } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("Interrupted while stopping virtual thread metrics recording", e);
+        }
+    }
+
+    private void suspend(long generation) {
+        lifecycleLock.lock();
+        try {
+            if (resumableGeneration == generation && recordingStream != null) {
+                stopRecordingStream();
+            }
+        } finally {
+            lifecycleLock.unlock();
+        }
+    }
+
+    private void resume(long generation) {
+        lifecycleLock.lock();
+        try {
+            if (resumableGeneration == generation) {
+                resumeLocked();
+            }
+        } finally {
+            lifecycleLock.unlock();
+        }
+    }
+
+    private void resumeLocked() {
+        if (!closed && metricsConfig != null && metricsConfig.virtualThreadsEnabled()) {
+            startRecordingStream();
+        }
+    }
+
+    private void updateShutdownHandlerRegistration(boolean awaitUpdate) {
+        while (true) {
+            lifecycleLock.lock();
+            try {
+                if (shutdownHandlerUpdateInProgress) {
+                    if (!awaitUpdate) {
+                        return;
+                    }
+                    try {
+                        shutdownHandlerUpdated.await();
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        throw new IllegalStateException("Interrupted while updating shutdown handler registration", e);
+                    }
+                    continue;
+                }
+                if (shutdownHandlerRegistrationRequired == shutdownHandlerRegistrationApplied) {
+                    return;
+                }
+                shutdownHandlerUpdateInProgress = true;
+            } finally {
+                lifecycleLock.unlock();
+            }
+
+            try {
+                while (true) {
+                    boolean registrationRequired;
+                    lifecycleLock.lock();
+                    try {
+                        registrationRequired = shutdownHandlerRegistrationRequired;
+                        if (registrationRequired == shutdownHandlerRegistrationApplied) {
+                            shutdownHandlerUpdateInProgress = false;
+                            shutdownHandlerUpdated.signalAll();
+                            return;
+                        }
+                    } finally {
+                        lifecycleLock.unlock();
+                    }
+
+                    if (registrationRequired) {
+                        registerShutdownHandler();
+                    } else {
+                        unregisterShutdownHandler();
+                    }
+
+                    lifecycleLock.lock();
+                    try {
+                        shutdownHandlerRegistrationApplied = registrationRequired;
+                    } finally {
+                        lifecycleLock.unlock();
+                    }
+                }
+            } catch (RuntimeException | Error e) {
+                lifecycleLock.lock();
+                try {
+                    shutdownHandlerUpdateInProgress = false;
+                    shutdownHandlerUpdated.signalAll();
+                } finally {
+                    lifecycleLock.unlock();
+                }
+                throw e;
+            }
         }
     }
 
@@ -261,16 +476,16 @@ public class VThreadSystemMetersProvider implements MetersProvider, HelidonShutd
         @Override
         public void suspend() {
             VThreadSystemMetersProvider provider = providerRef.get();
-            if (provider != null && provider.resumableGeneration == generation) {
-                provider.suspend();
+            if (provider != null) {
+                provider.suspend(generation);
             }
         }
 
         @Override
         public void resume() {
             VThreadSystemMetersProvider provider = providerRef.get();
-            if (provider != null && provider.resumableGeneration == generation) {
-                provider.resume();
+            if (provider != null) {
+                provider.resume(generation);
             }
         }
     }

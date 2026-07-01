@@ -16,7 +16,13 @@
 package io.helidon.metrics.systemmeters;
 
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
+import io.helidon.common.resumable.Resumable;
 import io.helidon.config.Config;
 import io.helidon.config.ConfigSources;
 import io.helidon.metrics.api.Gauge;
@@ -27,6 +33,7 @@ import io.helidon.service.registry.Services;
 import io.helidon.testing.junit5.Testing;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
 import static io.helidon.metrics.systemmeters.MeterBuilderMatcher.withName;
 import static io.helidon.metrics.systemmeters.VThreadSystemMetersProvider.COUNT;
@@ -41,6 +48,8 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Testing.Test(perMethod = true)
 class TestVirtualThreadsMetersConfigs {
@@ -102,4 +111,191 @@ class TestVirtualThreadsMetersConfigs {
         provider.findPinned();
     }
 
+    @Test
+    void staleResumableCannotRestartRecordingAfterClose() {
+        Config config = Config.just(ConfigSources.create(Map.of("virtual-threads.enabled", "true")));
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        metricsFactory.globalRegistry(MetricsConfig.create(config));
+        VThreadSystemMetersProvider provider = new VThreadSystemMetersProvider();
+        provider.meterBuilders(metricsFactory);
+        Resumable resumable = provider.resumable();
+
+        provider.close();
+        resumable.resume();
+
+        assertThat("Recording stream after stale resume", provider.recordingStreamActive(), is(false));
+    }
+
+    @Test
+    @Timeout(10)
+    void closeWaitsForConcurrentResume() throws Exception {
+        Config config = Config.just(ConfigSources.create(Map.of("virtual-threads.enabled", "true")));
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        metricsFactory.globalRegistry(MetricsConfig.create(config));
+        BlockingStartProvider provider = new BlockingStartProvider();
+        provider.meterBuilders(metricsFactory);
+        provider.blockNextStart = true;
+
+        try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+            Future<?> resume = executor.submit(provider::resume);
+            try {
+                assertThat("Resume reached recording stream start",
+                           provider.startEntered.await(5, TimeUnit.SECONDS),
+                           is(true));
+
+                Future<?> close = executor.submit(provider::close);
+                long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
+                while (!provider.hasQueuedLifecycleOperation() && System.nanoTime() < deadline) {
+                    Thread.onSpinWait();
+                }
+                assertThat("Close queued behind resume", provider.hasQueuedLifecycleOperation(), is(true));
+
+                provider.continueStart.countDown();
+                resume.get(5, TimeUnit.SECONDS);
+                close.get(5, TimeUnit.SECONDS);
+                assertThat("Recording stream after close", provider.recordingStreamActive(), is(false));
+            } finally {
+                provider.continueStart.countDown();
+            }
+        } finally {
+            provider.close();
+        }
+    }
+
+    @Test
+    @Timeout(10)
+    void closeProceedsWhileHandlerRegistrationIsBlocked() throws Exception {
+        Config config = Config.just(ConfigSources.create(Map.of("virtual-threads.enabled", "true")));
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        metricsFactory.globalRegistry(MetricsConfig.create(config));
+        BlockingShutdownHandlerProvider provider = new BlockingShutdownHandlerProvider();
+
+        try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
+            Future<?> meterBuilders = executor.submit(() -> provider.meterBuilders(metricsFactory));
+            try {
+                assertThat("Shutdown handler registration started",
+                           provider.registrationStarted.await(5, TimeUnit.SECONDS),
+                           is(true));
+
+                Future<?> close = executor.submit(provider::close);
+                close.get(5, TimeUnit.SECONDS);
+
+                provider.continueRegistration.countDown();
+                meterBuilders.get(5, TimeUnit.SECONDS);
+                assertThat("Recording stream after concurrent close", provider.recordingStreamActive(), is(false));
+            } finally {
+                provider.continueRegistration.countDown();
+            }
+        } finally {
+            provider.close();
+        }
+    }
+
+    @Test
+    void failedHandlerRegistrationCleansUpAndRetries() {
+        Config config = Config.just(ConfigSources.create(Map.of("virtual-threads.enabled", "true")));
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        metricsFactory.globalRegistry(MetricsConfig.create(config));
+        FailingShutdownHandlerProvider provider = new FailingShutdownHandlerProvider();
+        provider.failNextRegistration = true;
+
+        try {
+            assertThrows(IllegalStateException.class, () -> provider.meterBuilders(metricsFactory));
+            assertThat("Recording stream after registration failure", provider.recordingStreamActive(), is(false));
+            assertThat("Registration attempts after failure", provider.registrationAttempts, is(1));
+
+            provider.meterBuilders(metricsFactory);
+            assertThat("Recording stream after registration retry", provider.recordingStreamActive(), is(true));
+            assertThat("Registration attempts after retry", provider.registrationAttempts, is(2));
+        } finally {
+            provider.failNextRegistration = false;
+            provider.failNextRemoval = false;
+            provider.close();
+        }
+    }
+
+    @Test
+    void failedHandlerRemovalIsRetried() {
+        Config config = Config.just(ConfigSources.create(Map.of("virtual-threads.enabled", "true")));
+        MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        metricsFactory.globalRegistry(MetricsConfig.create(config));
+        FailingShutdownHandlerProvider provider = new FailingShutdownHandlerProvider();
+
+        try {
+            provider.meterBuilders(metricsFactory);
+            provider.failNextRemoval = true;
+
+            assertThrows(IllegalStateException.class, provider::close);
+            assertThat("Recording stream after removal failure", provider.recordingStreamActive(), is(false));
+            assertThat("Removal attempts after failure", provider.removalAttempts, is(1));
+
+            provider.close();
+            assertThat("Removal attempts after retry", provider.removalAttempts, is(2));
+        } finally {
+            provider.failNextRegistration = false;
+            provider.failNextRemoval = false;
+            provider.close();
+        }
+    }
+
+    private static final class BlockingStartProvider extends VThreadSystemMetersProvider {
+        private final CountDownLatch startEntered = new CountDownLatch(1);
+        private final CountDownLatch continueStart = new CountDownLatch(1);
+        private volatile boolean blockNextStart;
+
+        @Override
+        void startRecordingStream() {
+            if (blockNextStart) {
+                startEntered.countDown();
+                try {
+                    continueStart.await();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("Interrupted while blocking recording stream start", e);
+                }
+            }
+            super.startRecordingStream();
+        }
+    }
+
+    private static final class BlockingShutdownHandlerProvider extends VThreadSystemMetersProvider {
+        private final CountDownLatch registrationStarted = new CountDownLatch(1);
+        private final CountDownLatch continueRegistration = new CountDownLatch(1);
+
+        @Override
+        void registerShutdownHandler() {
+            registrationStarted.countDown();
+            try {
+                continueRegistration.await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("Interrupted while blocking shutdown handler registration", e);
+            }
+        }
+    }
+
+    private static final class FailingShutdownHandlerProvider extends VThreadSystemMetersProvider {
+        private boolean failNextRegistration;
+        private boolean failNextRemoval;
+        private int registrationAttempts;
+        private int removalAttempts;
+
+        @Override
+        void registerShutdownHandler() {
+            registrationAttempts++;
+            if (failNextRegistration) {
+                failNextRegistration = false;
+                throw new IllegalStateException("Simulated shutdown handler registration failure");
+            }
+        }
+
+        @Override
+        void unregisterShutdownHandler() {
+            removalAttempts++;
+            if (failNextRemoval) {
+                failNextRemoval = false;
+                throw new IllegalStateException("Simulated shutdown handler removal failure");
+            }
+        }
+    }
 }
