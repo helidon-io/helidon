@@ -213,6 +213,8 @@ final class OpenApi32DocumentMapper {
                                                                   "querystring");
     private static final OpenApi3xMapperRules MAPPER_RULES = OpenApi3xMapperRules.builder()
             .targetVersion("3.2")
+            .operationResponsesRequired(false)
+            .responseDescriptionRequired(false)
             .addDocumentFields(DOCUMENT_FIELDS)
             .addInfoFields(INFO_FIELDS)
             .addContactFields(CONTACT_FIELDS)
