@@ -118,7 +118,7 @@
                         <configuration>
                             <excludes>
                                 <exclude>**/GrpcDisabledMetricsTest.java</exclude>
-                                <exclude>**/GrpcEnabledMetricsTest.java</exclude>
+                                <exclude>**/GrpcEnabledMetrics*Test.java</exclude>
                             </excludes>
                         </configuration>
                     </execution>
@@ -140,7 +140,7 @@
                         </goals>
                         <configuration>
                             <includes>
-                                <include>**/GrpcEnabledMetricsTest.java</include>
+                                <include>**/GrpcEnabledMetrics*Test.java</include>
                             </includes>
                         </configuration>
                     </execution>

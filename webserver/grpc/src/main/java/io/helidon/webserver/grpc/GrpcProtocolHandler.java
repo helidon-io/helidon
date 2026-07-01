@@ -23,15 +23,12 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import io.helidon.common.LazyValue;
 import io.helidon.common.buffers.BufferData;
 import io.helidon.grpc.core.GrpcHeadersUtil;
 import io.helidon.http.Header;
@@ -57,7 +54,6 @@ import io.helidon.metrics.api.MeterRegistry;
 import io.helidon.metrics.api.MetricsFactory;
 import io.helidon.metrics.api.Tag;
 import io.helidon.metrics.api.Timer;
-import io.helidon.service.registry.Services;
 import io.helidon.webserver.CloseConnectionException;
 import io.helidon.webserver.ConnectionContext;
 import io.helidon.webserver.ServerConnectionException;
@@ -101,17 +97,15 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private static final DecompressorRegistry DECOMPRESSOR_REGISTRY = DecompressorRegistry.getDefaultInstance();
     private static final CompressorRegistry COMPRESSOR_REGISTRY = CompressorRegistry.getDefaultInstance();
 
-    private record MethodMetrics(Counter callStarted,
-                                 Timer callDuration,
-                                 DistributionSummary sentMessageSize,
-                                 DistributionSummary recvMessageSize) { }
+    record MethodMetrics(Counter callStarted,
+                         Timer callDuration,
+                         DistributionSummary sentMessageSize,
+                         DistributionSummary recvMessageSize) { }
 
     private enum ListenerTerminal {
         CANCEL,
         COMPLETE
     }
-
-    private static final LazyValue<Map<String, MethodMetrics>> METHOD_METRICS = LazyValue.create(ConcurrentHashMap::new);
 
     private static final int GRPC_HEADER_SIZE = 5;
     private static final int INITIAL_BUFFER_SIZE = 16 * 1024;
@@ -125,6 +119,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
     private final Condition inboundChanged = inboundLock.newCondition();
     private final StreamFlowControl flowControl;
     private final GrpcConfig grpcConfig;
+    private final GrpcProtocolSelector.Metrics metrics;
 
     private volatile ServerCall<REQ, RES> serverCall;
     private volatile ServerCall.Listener<REQ> listener;
@@ -160,7 +155,8 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
                         StreamFlowControl flowControl,
                         Http2StreamState currentStreamState,
                         GrpcRouteHandler<REQ, RES> route,
-                        GrpcConfig grpcConfig) {
+                        GrpcConfig grpcConfig,
+                        GrpcProtocolSelector.Metrics metrics) {
         this.connectionContext = connectionContext;
         this.headers = headers;
         this.streamWriter = streamWriter;
@@ -169,6 +165,7 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
         this.currentStreamState.set(currentStreamState);
         this.route = route;
         this.grpcConfig = grpcConfig;
+        this.metrics = metrics;
     }
 
     @Override
@@ -793,8 +790,8 @@ class GrpcProtocolHandler<REQ, RES> implements Http2SubProtocolSelector.SubProto
      */
     private void initMetrics() {
         String methodName = route.method().getFullMethodName();
-        methodMetrics = METHOD_METRICS.get().computeIfAbsent(methodName, name -> {
-            MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
+        methodMetrics = metrics.methodMetrics().computeIfAbsent(methodName, name -> {
+            MetricsFactory metricsFactory = metrics.factory().get();
             MeterRegistry meterRegistry = metricsFactory.globalRegistry();
 
             Tag okTag = metricsFactory.tagCreate("grpc.status", "OK");
