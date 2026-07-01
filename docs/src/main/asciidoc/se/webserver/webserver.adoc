@@ -941,9 +941,10 @@ the logical resource media type and sets `Content-Encoding`. Direct requests for
 `/big-file.html.gz`, are handled as ordinary static-file requests. A sidecar is selected when the request accepts its
 concrete coding either explicitly or through `*`. An equal-quality wildcard does not displace implicit `identity`, but a
 wildcard can select a sidecar when `identity` has a lower quality or is rejected. Sidecar lookup hits and misses are
-cached with the resolved logical resource, so newly added sidecars are discovered after cache eviction or handler
-restart. Classpath sidecar bytes
-cached in memory still count against the configured memory cache capacity.
+cached with the resolved logical resource. A handler restart refreshes this lookup state. Record-cache eviction also
+refreshes it when the logical resource is not retained by `MemoryCache`; memory-cached resources retain the lookup state
+for the lifetime of the handler. Classpath sidecar bytes cached in memory still count against the configured memory
+cache capacity.
 
 When listener content encoding is configured, static content can dynamically encode the logical resource when that
 runtime candidate is the best acceptable representation. Wildcard values can select runtime encoders when `identity` is
