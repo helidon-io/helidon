@@ -169,6 +169,7 @@ class TestVirtualThreadsMetersConfigs {
         MetricsFactory metricsFactory = Services.get(MetricsFactory.class);
         metricsFactory.globalRegistry(MetricsConfig.create(config));
         BlockingShutdownHandlerProvider provider = new BlockingShutdownHandlerProvider();
+        provider.failNextRemoval = true;
 
         try (ExecutorService executor = Executors.newFixedThreadPool(2)) {
             Future<?> meterBuilders = executor.submit(() -> provider.meterBuilders(metricsFactory));
@@ -182,6 +183,7 @@ class TestVirtualThreadsMetersConfigs {
 
                 provider.continueRegistration.countDown();
                 meterBuilders.get(5, TimeUnit.SECONDS);
+                assertThat("Compensating handler removal attempts", provider.removalAttempts, is(2));
                 assertThat("Recording stream after concurrent close", provider.recordingStreamActive(), is(false));
             } finally {
                 provider.continueRegistration.countDown();
@@ -261,6 +263,8 @@ class TestVirtualThreadsMetersConfigs {
     private static final class BlockingShutdownHandlerProvider extends VThreadSystemMetersProvider {
         private final CountDownLatch registrationStarted = new CountDownLatch(1);
         private final CountDownLatch continueRegistration = new CountDownLatch(1);
+        private boolean failNextRemoval;
+        private int removalAttempts;
 
         @Override
         void registerShutdownHandler() {
@@ -270,6 +274,15 @@ class TestVirtualThreadsMetersConfigs {
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 throw new IllegalStateException("Interrupted while blocking shutdown handler registration", e);
+            }
+        }
+
+        @Override
+        void unregisterShutdownHandler() {
+            removalAttempts++;
+            if (failNextRemoval) {
+                failNextRemoval = false;
+                throw new IllegalStateException("Simulated compensating handler removal failure");
             }
         }
     }
