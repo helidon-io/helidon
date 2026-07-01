@@ -497,6 +497,37 @@ class OpenApi30DocumentMapperTest {
     }
 
     @Test
+    void openApi30RenderPreservesConstAndEnumConstraints() {
+        for (String constant : List.of("A", "C")) {
+            OpenApiDocument document = OpenApiDocument.builder()
+                    .info("Generated API", "1.0.0")
+                    .components(components -> components.schema("Constrained",
+                                                                JsonObject.builder()
+                                                                        .set("const", constant)
+                                                                        .setValues("enum", List.of(
+                                                                                JsonString.create("A"),
+                                                                                JsonString.create("B")))
+                                                                        .setValues("allOf", List.of(
+                                                                                JsonObject.builder()
+                                                                                        .set("description",
+                                                                                             "Existing constraint")
+                                                                                        .build()))
+                                                                        .build()))
+                    .build();
+
+            Map<String, Object> rendered = OpenApi30DocumentMapper.render(document, "3.0.3");
+            Map<String, Object> schema = schema(rendered, "Constrained");
+            List<?> allOf = (List<?>) schema.get("allOf");
+
+            assertThat(schema.containsKey("const"), is(false));
+            assertThat(schema.get("enum"), is(List.of("A", "B")));
+            assertThat(allOf, is(List.of(
+                    Map.of("description", "Existing constraint"),
+                    Map.of("enum", List.of(constant)))));
+        }
+    }
+
+    @Test
     void openApi30RenderPreservesNullOnlyTypeAsNullableSchema() {
         OpenApiDocument document = OpenApiDocument.builder()
                 .info("Generated API", "1.0.0")
