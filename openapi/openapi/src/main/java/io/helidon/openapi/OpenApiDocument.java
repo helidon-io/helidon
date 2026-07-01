@@ -1926,8 +1926,12 @@ public final class OpenApiDocument {
 
         /**
          * Operation responses.
+         * <p>
+         * OpenAPI 3.0 and 3.1 require at least one response. OpenAPI 3.2 permits responses to be omitted. If the
+         * Responses Object is present, it must contain at least one status-code, status-code-range, or {@code default}
+         * response; extensions alone do not satisfy this requirement.
          *
-         * @return responses keyed by status code or {@code default}
+         * @return responses keyed by status code, status-code range, or {@code default}
          */
         public Map<String, Response> responses() {
             return responses;
@@ -2098,8 +2102,11 @@ public final class OpenApiDocument {
 
         /**
          * Add a response.
+         * <p>
+         * OpenAPI 3.0 and 3.1 require each operation to have at least one response. OpenAPI 3.2 permits an operation
+         * to omit responses.
          *
-         * @param status status code or {@code default}
+         * @param status status code, status-code range, or {@code default}
          * @param description response description
          * @return updated builder
          */
@@ -2111,8 +2118,11 @@ public final class OpenApiDocument {
 
         /**
          * Add a response.
+         * <p>
+         * OpenAPI 3.0 and 3.1 require each operation to have at least one response. OpenAPI 3.2 permits an operation
+         * to omit responses.
          *
-         * @param status status code or {@code default}
+         * @param status status code, status-code range, or {@code default}
          * @param response response
          * @return updated builder
          */
@@ -2123,8 +2133,11 @@ public final class OpenApiDocument {
 
         /**
          * Add a response.
+         * <p>
+         * OpenAPI 3.0 and 3.1 require each operation to have at least one response. OpenAPI 3.2 permits an operation
+         * to omit responses.
          *
-         * @param status status code or {@code default}
+         * @param status status code, status-code range, or {@code default}
          * @param response consumer to update response builder
          * @return updated builder
          */
@@ -2138,6 +2151,8 @@ public final class OpenApiDocument {
          * Add an extension to the responses object.
          * <p>
          * Extension names must start with {@code x-}.
+         * An extension alone does not satisfy the requirement that a present Responses Object contain at least one
+         * response.
          *
          * @param name extension name
          * @param value extension value
@@ -2912,6 +2927,9 @@ public final class OpenApiDocument {
 
         /**
          * Response description.
+         * <p>
+         * OpenAPI 3.0 and 3.1 require a description for a Response Object, although the description can be empty.
+         * OpenAPI 3.2 makes the description optional.
          *
          * @return description, if present
          */
@@ -2958,6 +2976,9 @@ public final class OpenApiDocument {
 
         /**
          * Set description.
+         * <p>
+         * OpenAPI 3.0 and 3.1 require a description for a Response Object, although the description can be empty.
+         * OpenAPI 3.2 makes the description optional.
          *
          * @param description description
          * @return updated builder
