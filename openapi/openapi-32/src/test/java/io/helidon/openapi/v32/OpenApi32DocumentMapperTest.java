@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import io.helidon.json.JsonString;
 import io.helidon.openapi.OpenApiDocument;
 import io.helidon.openapi.v30.OpenApiDocumentMapperSupport;
 import io.helidon.openapi.v30.OpenApiDocumentReader;
@@ -49,6 +50,22 @@ class OpenApi32DocumentMapperTest {
 
     @Test
     void handlesVersionSpecificResponseRequirements() {
+        for (Map<String, Object> responses : List.<Map<String, Object>>of(
+                Map.of(),
+                Map.of("x-note", "No response code"))) {
+            IllegalStateException missingResponseCode = assertThrows(
+                    IllegalStateException.class,
+                    () -> OpenApi32DocumentMapper.parse(Map.of(
+                            "openapi", "3.2.0",
+                            "info", Map.of(
+                                    "title", "Static API",
+                                    "version", "1.0.0"),
+                            "paths", Map.of(
+                                    "/items", Map.of(
+                                            "get", Map.of("responses", responses))))));
+            assertThat(missingResponseCode.getMessage(), containsString("response code"));
+        }
+
         OpenApiDocument document = OpenApi32DocumentMapper.parse(Map.of(
                 "openapi", "3.2.0",
                 "info", Map.of(
@@ -89,6 +106,17 @@ class OpenApi32DocumentMapperTest {
         assertThat(map(response, "200").containsKey("description"), is(false));
         assertThat(omittedDescription.description(), is(Optional.empty()));
         assertThat(emptyDescription.description(), is(Optional.of("")));
+
+        OpenApiDocument responsesWithoutCode = OpenApiDocument.builder()
+                .info("Generated API", "1.0.0")
+                .path("/items", path -> path.operation(
+                        "GET",
+                        operation -> operation.responseExtension("x-note", JsonString.create("No response code"))))
+                .build();
+        IllegalStateException renderedWithoutResponseCode = assertThrows(
+                IllegalStateException.class,
+                () -> OpenApi32DocumentMapper.render(responsesWithoutCode, "3.2.0"));
+        assertThat(renderedWithoutResponseCode.getMessage(), containsString("response code"));
     }
 
     @Test

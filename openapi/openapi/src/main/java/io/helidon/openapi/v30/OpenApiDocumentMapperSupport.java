@@ -504,7 +504,23 @@ public final class OpenApiDocumentMapperSupport {
             }
             object(value, object -> result.put(key, response(object, rules)));
         });
+        if (containerExtensions && result.keySet().stream().noneMatch(OpenApiDocumentMapperSupport::isResponseCode)) {
+            throw new IllegalStateException("OpenAPI " + rules.targetVersion()
+                                                    + " Responses Object requires at least one response code.");
+        }
         return result;
+    }
+
+    static boolean isResponseCode(String key) {
+        if ("default".equals(key)) {
+            return true;
+        }
+        if (key.length() != 3 || key.charAt(0) < '1' || key.charAt(0) > '5') {
+            return false;
+        }
+        return (key.charAt(1) >= '0' && key.charAt(1) <= '9'
+                && key.charAt(2) >= '0' && key.charAt(2) <= '9')
+                || (key.charAt(1) == 'X' && key.charAt(2) == 'X');
     }
 
     private static Map<String, Object> response(Map<String, ?> source, OpenApi3xMapperRules rules) {
