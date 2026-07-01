@@ -35,7 +35,7 @@ final class SidecarCache {
     private static final SidecarCache DISABLED = new SidecarCache(null);
 
     private final ConcurrentMap<String, CachedHandler> entries;
-    private final ReentrantLock resolutionLock = new ReentrantLock();
+    private final ConcurrentMap<String, ReentrantLock> resolutionLocks = new ConcurrentHashMap<>();
 
     private SidecarCache(ConcurrentMap<String, CachedHandler> entries) {
         this.entries = entries;
@@ -60,6 +60,7 @@ final class SidecarCache {
             return result(cachedHandler);
         }
 
+        ReentrantLock resolutionLock = resolutionLocks.computeIfAbsent(coding, _ -> new ReentrantLock());
         resolutionLock.lock();
         try {
             cachedHandler = reusable(coding);
