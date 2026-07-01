@@ -129,10 +129,59 @@ public class TlsTest {
         SSLContext sslContext = createSslContext();
 
         Tls tls = Tls.create(it -> it.sslContext(sslContext)
-                .manager(new FailingTlsManager()));
+                .addApplicationProtocol("h3"));
 
         assertThat(tls.sslContext(), sameInstance(sslContext));
         assertThat(tls.prototype().manager(), instanceOf(ExplicitContextTlsManager.class));
+        assertThat(tls.newEngine().getSSLParameters().getApplicationProtocols(), arrayContaining("h3"));
+    }
+
+    @Test
+    public void explicitSslContextRejectsIncompatibleOptions() {
+        SSLContext sslContext = createSslContext();
+
+        IllegalArgumentException managerException = assertThrows(IllegalArgumentException.class,
+                                                                  () -> Tls.create(it -> it.sslContext(sslContext)
+                                                                          .manager(new FailingTlsManager())));
+        assertThat(managerException.getMessage(), is("Explicit SSLContext cannot be combined with TLS options: manager"));
+
+        IllegalArgumentException materialException = assertThrows(IllegalArgumentException.class,
+                                                                   () -> Tls.create(it -> it.sslContext(sslContext)
+                                                                           .trustAll(true)
+                                                                           .sessionCacheSize(1)));
+        assertThat(materialException.getMessage(),
+                   is("Explicit SSLContext cannot be combined with TLS options: trust-all, session-cache-size"));
+    }
+
+    @Test
+    public void explicitSslContextSupportsBuilderReuseAndPrototypeCopy() {
+        SSLContext sslContext = createSslContext();
+        TlsConfig.Builder builder = Tls.builder().sslContext(sslContext);
+
+        TlsConfig prototype = builder.buildPrototype();
+        TlsConfig repeatedBuild = builder.buildPrototype();
+        assertThat(repeatedBuild.manager(), sameInstance(prototype.manager()));
+
+        Tls first = Tls.create(prototype);
+        Tls second = Tls.create(repeatedBuild);
+        assertThat(first.sslContext(), sameInstance(sslContext));
+        assertThat(second.sslContext(), sameInstance(sslContext));
+
+        TlsConfig copy = TlsConfig.builder(prototype).buildPrototype();
+        assertThat(copy.sslContext().orElseThrow(), sameInstance(sslContext));
+        assertThat(copy.manager(), sameInstance(prototype.manager()));
+        assertThat(copy, is(prototype));
+
+        TlsConfig defaultPrototype = Tls.builder().buildPrototype();
+        TlsConfig contextCopy = TlsConfig.builder(defaultPrototype)
+                .sslContext(sslContext)
+                .buildPrototype();
+        assertThat(contextCopy.sslContext().orElseThrow(), sameInstance(sslContext));
+        assertThat(contextCopy.manager(), instanceOf(ExplicitContextTlsManager.class));
+
+        Tls withoutContext = builder.clearSslContext().build();
+        assertThat(withoutContext.prototype().sslContext().isEmpty(), is(true));
+        assertThat(withoutContext.prototype().manager(), instanceOf(ConfiguredTlsManager.class));
     }
 
     @Test
