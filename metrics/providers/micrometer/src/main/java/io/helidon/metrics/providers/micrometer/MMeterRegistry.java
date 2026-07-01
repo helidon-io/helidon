@@ -98,6 +98,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     private final MetricsConfig metricsConfig;
     private final SystemTagsManager systemTagsManager;
     private boolean closed;
+    private volatile boolean registeredWithFactory;
 
     /**
      * Once a Micrometer meter is registered, this map records the corresponding Helidon meter wrapper for it. This allows us,
@@ -122,7 +123,6 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         this.metricsFactory = metricsFactory;
         this.metricsConfig = metricsConfig;
         this.systemTagsManager = SystemTagsManager.create(metricsConfig);
-        metricsFactory.onMeterRegistryCreated(metricsConfig);
     }
 
     static Builder builder(
@@ -227,6 +227,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
     @Override
     public void close() {
         boolean notifyClosed = false;
+        List<Meter> metersToRemove = List.of();
         lock.writeLock().lock();
         try {
             if (closed) {
@@ -236,7 +237,8 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             notifyClosed = true;
             onAddListeners.clear();
             onRemoveListeners.clear();
-            List.copyOf(meters.values()).forEach(this::remove);
+            metersToRemove = List.copyOf(meters.keySet());
+            meters.values().forEach(MMeter::markAsDeleted);
             meters.clear();
             buildersByPromMeterId.clear();
             scopeMembership.clear();
@@ -244,9 +246,34 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         } finally {
             lock.writeLock().unlock();
             if (notifyClosed) {
-                metricsFactory.onMeterRegistryClosed(this);
+                if (registeredWithFactory) {
+                    metricsFactory.onMeterRegistryClosed(this);
+                }
+                MicrometerMetricsFactoryProvider.lockMeterOwnership();
+                try {
+                    for (Meter meter : metersToRemove) {
+                        if (!MicrometerMetricsFactoryProvider.isMeterTracked(meter)) {
+                            delegate.remove(meter);
+                        }
+                    }
+                } finally {
+                    MicrometerMetricsFactoryProvider.unlockMeterOwnership();
+                }
             }
         }
+    }
+
+    boolean tracks(Meter meter) {
+        lock.readLock().lock();
+        try {
+            return meters.containsKey(meter);
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    void onRegistered() {
+        registeredWithFactory = true;
     }
 
     @Override
@@ -491,6 +518,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
         in any case.
          */
 
+        MicrometerMetricsFactoryProvider.lockMeterOwnership();
         lock.writeLock().lock();
         try {
             /*
@@ -555,6 +583,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
         } finally {
             lock.writeLock().unlock();
+            MicrometerMetricsFactoryProvider.unlockMeterOwnership();
         }
     }
 
@@ -659,6 +688,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
          lock, and recheck what we checked earlier while we had the read lock.
          */
 
+        MicrometerMetricsFactoryProvider.lockMeterOwnership();
         lock.writeLock().lock();
 
         try {
@@ -677,7 +707,8 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
                            + " during creation of new meter " + mBuilder);
             }
 
-            M meter = MicrometerMetricsFactoryProvider.withSystemTags(Map.of(),
+            M meter = MicrometerMetricsFactoryProvider.withSystemTags(metricsFactory,
+                                                                      Map.of(),
                                                                       () -> registration.apply(delegate()));
 
             /*
@@ -703,6 +734,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             return result;
         } finally {
             lock.writeLock().unlock();
+            MicrometerMetricsFactoryProvider.unlockMeterOwnership();
         }
     }
 
@@ -917,7 +949,16 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
 
         @Override
         public R build() {
+            MMeterRegistry result = buildRegistry();
+            try {
+                return (R) metricsFactory.registerMeterRegistry(metricsConfig, result);
+            } catch (RuntimeException | Error e) {
+                result.close();
+                throw e;
+            }
+        }
 
+        MMeterRegistry buildRegistry() {
             MMeterRegistry result = new MMeterRegistry(delegate,
                                                        metricsFactory,
                                                        metricsConfig,
@@ -926,7 +967,7 @@ class MMeterRegistry implements io.helidon.metrics.api.MeterRegistry {
             onAddListener.ifPresent(result::onMeterAdded);
             onRemoveListener.ifPresent(result::onMeterRemoved);
 
-            return (R) applyMetersProvidersToRegistry(metricsFactory, result, metersProviders);
+            return applyMetersProvidersToRegistry(metricsFactory, result, metersProviders);
         }
     }
 
