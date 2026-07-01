@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Supplier;
 
 import io.helidon.common.Api;
@@ -46,7 +47,7 @@ public class MicrometerMetricsFactoryProvider implements MetricsFactoryProvider 
      * callback bridge, but only weakly reference Helidon factories so service registry shutdown releases owned state.
      */
     private static final GlobalRegistryObserver GLOBAL_REGISTRY_OBSERVER = new GlobalRegistryObserver();
-    private static final ThreadLocal<List<io.micrometer.core.instrument.Tag>> CURRENT_SYSTEM_TAGS = new ThreadLocal<>();
+    private static final ThreadLocal<RegistrationContext> CURRENT_REGISTRATION = new ThreadLocal<>();
 
     private final List<MicrometerMetricsFactory> metricsFactories = new CopyOnWriteArrayList<>();
 
@@ -80,25 +81,44 @@ public class MicrometerMetricsFactoryProvider implements MetricsFactoryProvider 
         GLOBAL_REGISTRY_OBSERVER.remove(metricsFactory);
     }
 
-    static <T> T withSystemTags(Map<String, String> systemTags, Supplier<T> registration) {
-        List<io.micrometer.core.instrument.Tag> previousTags = CURRENT_SYSTEM_TAGS.get();
+    static <T> T withSystemTags(MicrometerMetricsFactory metricsFactory,
+                                Map<String, String> systemTags,
+                                Supplier<T> registration) {
+        RegistrationContext previousRegistration = CURRENT_REGISTRATION.get();
         List<io.micrometer.core.instrument.Tag> currentTags = new ArrayList<>();
         systemTags.forEach((name, value) -> currentTags.add(io.micrometer.core.instrument.Tag.of(name, value)));
-        CURRENT_SYSTEM_TAGS.set(currentTags);
+        CURRENT_REGISTRATION.set(new RegistrationContext(metricsFactory, currentTags));
         try {
             return registration.get();
         } finally {
-            if (previousTags == null) {
-                CURRENT_SYSTEM_TAGS.remove();
+            if (previousRegistration == null) {
+                CURRENT_REGISTRATION.remove();
             } else {
-                CURRENT_SYSTEM_TAGS.set(previousTags);
+                CURRENT_REGISTRATION.set(previousRegistration);
             }
         }
+    }
+
+    static boolean isMeterTracked(Meter meter) {
+        return GLOBAL_REGISTRY_OBSERVER.isMeterTracked(meter);
+    }
+
+    static void lockMeterOwnership() {
+        GLOBAL_REGISTRY_OBSERVER.meterOwnershipLock.lock();
+    }
+
+    static void unlockMeterOwnership() {
+        GLOBAL_REGISTRY_OBSERVER.meterOwnershipLock.unlock();
+    }
+
+    private record RegistrationContext(MicrometerMetricsFactory metricsFactory,
+                                       List<io.micrometer.core.instrument.Tag> systemTags) {
     }
 
     private static class GlobalRegistryObserver {
         private final AtomicBoolean configured = new AtomicBoolean();
         private final List<WeakReference<MicrometerMetricsFactory>> metricsFactories = new CopyOnWriteArrayList<>();
+        private final ReentrantLock meterOwnershipLock = new ReentrantLock();
 
         private void configure() {
             if (configured.compareAndSet(false, true)) {
@@ -107,24 +127,20 @@ public class MicrometerMetricsFactoryProvider implements MetricsFactoryProvider 
                 Metrics.globalRegistry.config().meterFilter(new MeterFilter() {
                     @Override
                     public Meter.Id map(Meter.Id id) {
-                        List<io.micrometer.core.instrument.Tag> tags = CURRENT_SYSTEM_TAGS.get();
-                        if (tags == null) {
-                            List<MicrometerMetricsFactory> factories = liveFactories();
-                            Map<String, String> fallbackTags = Map.of();
-                            for (int i = factories.size() - 1; i >= 0; i--) {
-                                fallbackTags = factories.get(i).globalRegistrySystemTags();
-                                if (!fallbackTags.isEmpty()) {
-                                    break;
-                                }
-                            }
-                            if (fallbackTags.isEmpty()) {
+                        RegistrationContext registrationContext = CURRENT_REGISTRATION.get();
+                        List<io.micrometer.core.instrument.Tag> tags;
+                        if (registrationContext == null) {
+                            MicrometerMetricsFactory metricsFactory = authoritativeFactory();
+                            if (metricsFactory == null || metricsFactory.globalRegistrySystemTags().isEmpty()) {
                                 return id;
                             }
-                            Map<String, String> systemTags = fallbackTags;
+                            Map<String, String> systemTags = metricsFactory.globalRegistrySystemTags();
                             List<io.micrometer.core.instrument.Tag> fallbackTagList = new ArrayList<>();
                             systemTags.forEach((name, value) ->
                                                        fallbackTagList.add(io.micrometer.core.instrument.Tag.of(name, value)));
                             tags = fallbackTagList;
+                        } else {
+                            tags = registrationContext.systemTags();
                         }
                         if (tags.isEmpty()) {
                             return id;
@@ -147,11 +163,40 @@ public class MicrometerMetricsFactoryProvider implements MetricsFactoryProvider 
         }
 
         private void onMeterAdded(Meter meter) {
-            liveFactories().forEach(mf -> mf.onMeterAdded(meter));
+            RegistrationContext registrationContext = CURRENT_REGISTRATION.get();
+            MicrometerMetricsFactory metricsFactory = registrationContext == null
+                    ? authoritativeFactory()
+                    : registrationContext.metricsFactory();
+            if (metricsFactory != null) {
+                metricsFactory.onMeterAdded(meter);
+            }
         }
 
         private void onMeterRemoved(Meter meter) {
-            liveFactories().forEach(mf -> mf.onMeterRemoved(meter));
+            liveFactories().stream()
+                    .filter(metricsFactory -> metricsFactory.tracks(meter))
+                    .forEach(metricsFactory -> metricsFactory.onMeterRemoved(meter));
+        }
+
+        private boolean isMeterTracked(Meter meter) {
+            return liveFactories().stream().anyMatch(metricsFactory -> metricsFactory.tracks(meter));
+        }
+
+        private MicrometerMetricsFactory authoritativeFactory() {
+            List<MicrometerMetricsFactory> factories = liveFactories();
+            MicrometerMetricsFactory fallback = null;
+            for (int i = factories.size() - 1; i >= 0; i--) {
+                MicrometerMetricsFactory metricsFactory = factories.get(i);
+                if (metricsFactory.hasGlobalRegistry()) {
+                    if (fallback == null) {
+                        fallback = metricsFactory;
+                    }
+                    if (!metricsFactory.globalRegistrySystemTags().isEmpty()) {
+                        return metricsFactory;
+                    }
+                }
+            }
+            return fallback;
         }
 
         private List<MicrometerMetricsFactory> liveFactories() {

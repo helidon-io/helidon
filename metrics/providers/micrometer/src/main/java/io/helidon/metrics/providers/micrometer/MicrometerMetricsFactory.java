@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -70,7 +71,10 @@ class MicrometerMetricsFactory implements MetricsFactory {
     private final Collection<io.micrometer.core.instrument.MeterRegistry> publisherRegistries =
             new ConcurrentLinkedQueue<>();
     private final ReentrantLock lock = new ReentrantLock();
+    private final ReentrantLock globalRegistryLock = new ReentrantLock();
     private final MultipleRegistryWarnings multipleRegistryWarnings = new MultipleRegistryWarnings();
+    private final ThreadLocal<Integer> globalOperationDepth = ThreadLocal.withInitial(() -> 0);
+    private final Condition lifecycleChanged = lock.newCondition();
 
     private volatile Map<String, String> globalRegistrySystemTags = Map.of();
 
@@ -86,9 +90,13 @@ class MicrometerMetricsFactory implements MetricsFactory {
                     .next());
     private final Consumer<MicrometerMetricsFactory> onClose;
 
-    private MMeterRegistry globalMeterRegistry;
+    private volatile MMeterRegistry globalMeterRegistry;
     private MetricsConfig metricsConfig;
     private boolean closed;
+    private int activeGlobalOperations;
+    private boolean closeCleanupStarted;
+    private boolean closeComplete;
+    private Thread closeCleanupThread;
 
     private MicrometerMetricsFactory(MetricsConfig metricsConfig,
                                      Collection<MetersProvider> metersProviders,
@@ -108,6 +116,19 @@ class MicrometerMetricsFactory implements MetricsFactory {
         return globalRegistrySystemTags;
     }
 
+    boolean hasGlobalRegistry() {
+        return globalMeterRegistry != null;
+    }
+
+    // Intended for testing lifecycle cleanup.
+    int meterRegistryCount() {
+        return meterRegistries.size();
+    }
+
+    boolean tracks(io.micrometer.core.instrument.Meter meter) {
+        return meterRegistries.stream().anyMatch(meterRegistry -> meterRegistry.tracks(meter));
+    }
+
     void onMeterAdded(io.micrometer.core.instrument.Meter meter) {
         meterRegistries.forEach(mr -> mr.onMeterAdded(meter));
     }
@@ -118,25 +139,29 @@ class MicrometerMetricsFactory implements MetricsFactory {
 
     @Override
     public MeterRegistry globalRegistry(Consumer<Meter> onAddListener, Consumer<Meter> onRemoveListener, boolean backfill) {
-        globalMeterRegistry.onMeterAdded(onAddListener);
-        globalMeterRegistry.onMeterRemoved(onRemoveListener);
+        return globalOperation(() -> {
+            MMeterRegistry result = globalMeterRegistry;
+            result.onMeterAdded(onAddListener);
+            result.onMeterRemoved(onRemoveListener);
 
-        if (backfill) {
-            globalMeterRegistry.meters().forEach(onAddListener);
-        }
-        return globalMeterRegistry;
+            if (backfill) {
+                result.meters().forEach(onAddListener);
+            }
+            return result;
+        });
     }
 
     @Override
     public MMeterRegistry.Builder meterRegistryBuilder() {
+        ensureOpen();
         return MMeterRegistry.builder(Metrics.globalRegistry, this);
     }
 
     @Override
     public MeterRegistry createMeterRegistry(MetricsConfig metricsConfig) {
-        return save(metricsConfig, MMeterRegistry.builder(Metrics.globalRegistry, this)
-                            .metricsConfig(metricsConfig)
-                            .build());
+        return MMeterRegistry.builder(Metrics.globalRegistry, this)
+                .metricsConfig(metricsConfig)
+                .build();
     }
 
     @SuppressWarnings("unchecked")
@@ -144,12 +169,11 @@ class MicrometerMetricsFactory implements MetricsFactory {
     public MeterRegistry createMeterRegistry(MetricsConfig metricsConfig,
                                              Consumer<Meter> onAddListener,
                                              Consumer<Meter> onRemoveListener) {
-        return save(metricsConfig, MMeterRegistry.builder(Metrics.globalRegistry,
-                                           this)
-                            .metricsConfig(metricsConfig)
-                            .onMeterAdded(onAddListener)
-                            .onMeterRemoved(onRemoveListener)
-                            .build());
+        return MMeterRegistry.builder(Metrics.globalRegistry, this)
+                .metricsConfig(metricsConfig)
+                .onMeterAdded(onAddListener)
+                .onMeterRemoved(onRemoveListener)
+                .build();
     }
 
     @SuppressWarnings("unchecked")
@@ -159,34 +183,34 @@ class MicrometerMetricsFactory implements MetricsFactory {
                                              Consumer<Meter> onAddListener,
                                              Consumer<Meter> onRemoveListener) {
 
-        return save(metricsConfig, MMeterRegistry.builder(Metrics.globalRegistry,
-                                           this)
-                            .metricsConfig(metricsConfig)
-                            .clock(clock)
-                            .onMeterAdded(onAddListener)
-                            .onMeterRemoved(onRemoveListener)
-                            .build());
+        return MMeterRegistry.builder(Metrics.globalRegistry, this)
+                .metricsConfig(metricsConfig)
+                .clock(clock)
+                .onMeterAdded(onAddListener)
+                .onMeterRemoved(onRemoveListener)
+                .build();
     }
 
     @Override
     public MeterRegistry createMeterRegistry(Clock clock, MetricsConfig metricsConfig) {
-        return save(metricsConfig, MMeterRegistry.builder(Metrics.globalRegistry, this)
-                            .clock(clock)
-                            .metricsConfig(metricsConfig)
-                            .build());
+        return MMeterRegistry.builder(Metrics.globalRegistry, this)
+                .clock(clock)
+                .metricsConfig(metricsConfig)
+                .build();
     }
 
     @Override
     public MeterRegistry globalRegistry() {
-        return globalMeterRegistry != null
-                ? globalMeterRegistry
-                : globalRegistry(MetricsConfig.create(Services.get(Config.class).get(MetricsConfig.METRICS_CONFIG_KEY)));
+        return globalOperation(() ->
+                globalMeterRegistry != null
+                        ? globalMeterRegistry
+                        : globalRegistry(MetricsConfig.create(Services.get(Config.class)
+                                                                     .get(MetricsConfig.METRICS_CONFIG_KEY))));
     }
 
     @Override
     public MeterRegistry globalRegistry(MetricsConfig metricsConfig) {
-        lock.lock();
-        try {
+        return globalOperation(() -> {
             if (globalMeterRegistry != null) {
                 if (metricsConfig.equals(this.metricsConfig)) {
                     return globalMeterRegistry;
@@ -205,57 +229,78 @@ class MicrometerMetricsFactory implements MetricsFactory {
                                               registriesToPublish.stream()
                                                       .anyMatch(r -> r instanceof PrometheusMeterRegistry));
 
-            globalMeterRegistry = save(metricsConfig, MMeterRegistry.builder(Metrics.globalRegistry, this)
-                                               .metricsConfig(metricsConfig)
-                                               .build());
-            globalRegistrySystemTags = globalMeterRegistry.displayTagPairs();
+            MMeterRegistry result = MMeterRegistry.builder(Metrics.globalRegistry, this)
+                    .metricsConfig(metricsConfig)
+                    .buildRegistry();
 
-            /*
-             Let listeners enroll their callbacks for meter creation and removal with the new registry if they want before
-             we apply any meters providers. This way the listeners get to learn of the meters which the registry creates from
-             the builders.
-             */
-            notifyListenersOfCreate(globalMeterRegistry, metricsConfig);
+            try {
+                registerMeterRegistry(metricsConfig, result, registry -> {
+                    globalMeterRegistry = registry;
+                    globalRegistrySystemTags = registry.displayTagPairs();
+                });
 
-            applyMetersProvidersToRegistry(this, globalMeterRegistry, metersProviders);
+                /*
+                 Let listeners enroll their callbacks for meter creation and removal with the new registry if they want before
+                 we apply any meters providers. This way the listeners get to learn of the meters which the registry creates from
+                 the builders.
+                 */
+                notifyListenersOfCreate(result, metricsConfig);
 
-            return globalMeterRegistry;
-        } finally {
-            lock.unlock();
-        }
+                applyMetersProvidersToRegistry(this, result, metersProviders);
+
+                return result;
+            } catch (RuntimeException | Error e) {
+                lock.lock();
+                try {
+                    if (globalMeterRegistry == result) {
+                        globalMeterRegistry = null;
+                        globalRegistrySystemTags = Map.of();
+                    }
+                } finally {
+                    lock.unlock();
+                }
+                result.close();
+                closePublisherRegistries();
+                throw e;
+            }
+        });
     }
 
     @Override
     public void close() {
-        boolean notifyClosed = false;
+        List<MMeterRegistry> registriesToClose = null;
         lock.lock();
         try {
-            if (closed) {
+            closed = true;
+            if (closeComplete) {
                 return;
             }
-            closed = true;
-            notifyClosed = true;
-            List<MMeterRegistry> registries = List.copyOf(meterRegistries);
-            registries.forEach(MMeterRegistry::close);
-            meterRegistries.clear();
-            globalRegistrySystemTags = Map.of();
-            closePublisherRegistries();
-            metersProviders.forEach(provider -> {
-                if (provider instanceof AutoCloseable closeable) {
-                    try {
-                        closeable.close();
-                    } catch (Exception e) {
-                        LOGGER.log(System.Logger.Level.WARNING, "Error closing metrics meter provider", e);
-                    }
+
+            if (Thread.currentThread() == closeCleanupThread) {
+                return;
+            }
+
+            if (globalOperationDepth.get() > 0) {
+                return;
+            }
+
+            while (activeGlobalOperations > 0 && !closeCleanupStarted) {
+                lifecycleChanged.awaitUninterruptibly();
+            }
+
+            if (closeCleanupStarted) {
+                while (!closeComplete) {
+                    lifecycleChanged.awaitUninterruptibly();
                 }
-            });
-            globalMeterRegistry = null;
+                return;
+            }
+
+            registriesToClose = prepareClose();
         } finally {
             lock.unlock();
-            if (notifyClosed) {
-                onClose.accept(this);
-            }
         }
+
+        completeClose(registriesToClose);
     }
 
     @Override
@@ -403,19 +448,146 @@ class MicrometerMetricsFactory implements MetricsFactory {
         return registry;
     }
 
-    private MMeterRegistry save(MetricsConfig metricsConfig, MMeterRegistry meterRegistry) {
-        this.metricsConfig = metricsConfig;
-        meterRegistries.add(meterRegistry);
-        return meterRegistry;
+    MMeterRegistry registerMeterRegistry(MetricsConfig metricsConfig, MMeterRegistry meterRegistry) {
+        return registerMeterRegistry(metricsConfig, meterRegistry, ignored -> { });
     }
 
-    void onMeterRegistryCreated(MetricsConfig metricsConfig) {
-        multipleRegistryWarnings.created(metricsConfig);
+    private MMeterRegistry registerMeterRegistry(MetricsConfig metricsConfig,
+                                                 MMeterRegistry meterRegistry,
+                                                 Consumer<MMeterRegistry> onRegistered) {
+        lock.lock();
+        try {
+            checkOpen();
+            this.metricsConfig = metricsConfig;
+            meterRegistry.onRegistered();
+            meterRegistries.add(meterRegistry);
+            multipleRegistryWarnings.created(metricsConfig);
+            onRegistered.accept(meterRegistry);
+            return meterRegistry;
+        } finally {
+            lock.unlock();
+        }
     }
 
     void onMeterRegistryClosed(MMeterRegistry meterRegistry) {
-        meterRegistries.remove(meterRegistry);
-        multipleRegistryWarnings.closed();
+        lock.lock();
+        try {
+            meterRegistries.remove(meterRegistry);
+            multipleRegistryWarnings.closed();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private void checkOpen() {
+        if (closed) {
+            throw new IllegalStateException("Metrics factory is closed");
+        }
+    }
+
+    private void ensureOpen() {
+        lock.lock();
+        try {
+            checkOpen();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private <T> T globalOperation(Supplier<T> operation) {
+        globalRegistryLock.lock();
+        boolean started = false;
+        try {
+            beginGlobalOperation();
+            started = true;
+            return operation.get();
+        } finally {
+            globalRegistryLock.unlock();
+            if (started) {
+                endGlobalOperation();
+            }
+        }
+    }
+
+    private void beginGlobalOperation() {
+        lock.lock();
+        try {
+            checkOpen();
+            activeGlobalOperations++;
+            globalOperationDepth.set(globalOperationDepth.get() + 1);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private void endGlobalOperation() {
+        int depth = globalOperationDepth.get() - 1;
+        if (depth == 0) {
+            globalOperationDepth.remove();
+        } else {
+            globalOperationDepth.set(depth);
+        }
+
+        List<MMeterRegistry> registriesToClose = null;
+        lock.lock();
+        try {
+            activeGlobalOperations--;
+            if (activeGlobalOperations == 0) {
+                lifecycleChanged.signalAll();
+                if (closed && !closeCleanupStarted) {
+                    registriesToClose = prepareClose();
+                }
+            }
+        } finally {
+            lock.unlock();
+        }
+
+        if (registriesToClose != null) {
+            completeClose(registriesToClose);
+        }
+    }
+
+    private List<MMeterRegistry> prepareClose() {
+        closeCleanupStarted = true;
+        globalRegistrySystemTags = Map.of();
+        globalMeterRegistry = null;
+        return List.copyOf(meterRegistries);
+    }
+
+    private void completeClose(List<MMeterRegistry> registries) {
+        lock.lock();
+        try {
+            closeCleanupThread = Thread.currentThread();
+        } finally {
+            lock.unlock();
+        }
+
+        try {
+            registries.forEach(MMeterRegistry::close);
+            closePublisherRegistries();
+            metersProviders.forEach(provider -> {
+                if (provider instanceof AutoCloseable closeable) {
+                    try {
+                        closeable.close();
+                    } catch (Exception e) {
+                        LOGGER.log(System.Logger.Level.WARNING, "Error closing metrics meter provider", e);
+                    }
+                }
+            });
+        } finally {
+            try {
+                onClose.accept(this);
+            } finally {
+                lock.lock();
+                try {
+                    closeCleanupThread = null;
+                    closeComplete = true;
+                    lifecycleChanged.signalAll();
+                } finally {
+                    lock.unlock();
+                }
+            }
+        }
     }
 
     private void closeGlobalRegistry() {
