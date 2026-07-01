@@ -147,7 +147,7 @@ class OpenApi32VersionTest {
         Map<String, Object> status = schemaProperty(rendered, "StaticItem", "status");
         assertThat(status.get("type"), is("string"));
         assertThat(status.get("nullable"), is(true));
-        assertThat(((List<?>) status.get("enum")).contains(null), is(false));
+        assertThat(((List<?>) status.get("enum")).contains(null), is(true));
 
         Map<String, Object> mode = schemaProperty(rendered, "StaticItem", "mode");
         assertThat(mode.containsKey("const"), is(false));

@@ -754,16 +754,14 @@ final class OpenApi30DocumentMapper {
             }
         }
         if (hasEnum) {
-            result.put("enum", enumValue(enumValue, mode, nullable));
+            result.put("enum", copy(enumValue));
         }
         if (nullable) {
             if (mode == SchemaMode.CANONICAL) {
                 addNullType(result);
-                addNullEnum(result);
             } else if (result.containsKey("oneOf")) {
                 addNullOneOf(result);
             } else if (!result.containsKey("oneOf")) {
-                removeNullEnum(result);
                 result.put("nullable", true);
             }
         }
@@ -892,24 +890,6 @@ final class OpenApi30DocumentMapper {
         return new TypeMapping(null, oneOf, false);
     }
 
-    private static Object enumValue(Object value, SchemaMode mode, boolean nullable) {
-        if (!(value instanceof List<?> list)) {
-            return copy(value);
-        }
-        List<Object> result = new ArrayList<>();
-        list.forEach(result::add);
-        if (mode == SchemaMode.CANONICAL && nullable && !result.contains(null)) {
-            result.add(null);
-        }
-        if (mode == SchemaMode.OPENAPI30 && nullable) {
-            boolean hadNull = result.removeIf(item -> item == null);
-            if (hadNull && result.isEmpty()) {
-                return singleValueList(null);
-            }
-        }
-        return result;
-    }
-
     private static void addNullType(Map<String, Object> schema) {
         Object type = schema.get("type");
         if (type == null) {
@@ -929,33 +909,6 @@ final class OpenApi30DocumentMapper {
             result.add("null");
             schema.put("type", result);
         }
-    }
-
-    private static void addNullEnum(Map<String, Object> schema) {
-        Object value = schema.get("enum");
-        if (!(value instanceof List<?> list) || list.contains(null)) {
-            return;
-        }
-        List<Object> result = new ArrayList<>(list);
-        result.add(null);
-        schema.put("enum", result);
-    }
-
-    private static void removeNullEnum(Map<String, Object> schema) {
-        Object value = schema.get("enum");
-        if (!(value instanceof List<?> list) || !list.contains(null)) {
-            return;
-        }
-        List<Object> result = new ArrayList<>();
-        list.stream()
-                .filter(item -> item != null)
-                .forEach(result::add);
-        if (result.isEmpty()) {
-            schema.put("type", "object");
-            schema.put("enum", singleValueList(null));
-            return;
-        }
-        schema.put("enum", result);
     }
 
     private static void addNullOneOf(Map<String, Object> schema) {
