@@ -61,6 +61,18 @@ class TestEndpoint implements InheritedMetricsContract {
         return gaugeValue.get() + 1;
     }
 
+    @Override
+    @Metrics.Counted(value = "split-counted", absoluteName = true)
+    public String splitCounted() {
+        return "split counted";
+    }
+
+    @Override
+    @Metrics.Timed(value = "split-timed", absoluteName = true)
+    public String splitTimed() {
+        return "split timed";
+    }
+
     @Http.GET
     @Http.Path("/timed")
     @Metrics.Timed(value = "my-timed-metric", absoluteName = true)

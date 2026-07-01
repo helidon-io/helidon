@@ -97,6 +97,18 @@ class DeclarativeMetricsTest {
 
     @Test
     @Order(6)
+    void testSplitMetricAnnotations() {
+        var countedResponse = client.get("/endpoint/split-counted").request(String.class);
+        var timedResponse = client.get("/endpoint/split-timed").request(String.class);
+
+        assertThat(countedResponse.status(), is(Status.OK_200));
+        assertThat(countedResponse.entity(), is("split counted"));
+        assertThat(timedResponse.status(), is(Status.OK_200));
+        assertThat(timedResponse.entity(), is("split timed"));
+    }
+
+    @Test
+    @Order(7)
     void testMetricsObserver() {
         var response = client.get("/observe/metrics")
                 .header(HeaderValues.ACCEPT_JSON)
@@ -134,5 +146,19 @@ class DeclarativeMetricsTest {
                 .orElse(null);
         assertThat(inheritedGauge, notNullValue());
         assertThat(inheritedGauge.intValue(), is(43));
+
+        BigDecimal splitCounted = appMetrics.numberValue("split-counted;application=MyNiceApp;contract=split-counted;"
+                                                                  + "endpoint=TestEndpoint")
+                .orElse(null);
+        assertThat(splitCounted, notNullValue());
+        assertThat(splitCounted.intValue(), is(1));
+
+        JsonObject splitTimed = appMetrics.objectValue("split-timed").orElse(null);
+        assertThat("Application metrics: " + appMetrics, splitTimed, notNullValue());
+        BigDecimal splitTimedCount = splitTimed.numberValue("count;application=MyNiceApp;contract=split-timed;"
+                                                                    + "declaration=contract;endpoint=TestEndpoint")
+                .orElse(null);
+        assertThat("Split timed metric: " + splitTimed, splitTimedCount, notNullValue());
+        assertThat(splitTimedCount.intValue(), is(1));
     }
 }

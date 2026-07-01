@@ -34,5 +34,5 @@ interface TypedTracingContract {
 
     @Http.GET
     @Http.Path("/type-param")
-    String typeContractParam(@Http.QueryParam("id") @Tracing.ParamTag("id") int id);
+    String typeContractParam(@Http.QueryParam("id") @Tracing.ParamTag int contractId);
 }

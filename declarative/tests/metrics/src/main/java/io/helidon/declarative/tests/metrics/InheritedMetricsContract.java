@@ -33,4 +33,15 @@ interface InheritedMetricsContract {
     @Metrics.Gauge(value = "inherited-gauge", absoluteName = true, unit = Meter.BaseUnits.BYTES)
     @Metrics.Tag(key = "contract", value = "gauge")
     int inheritedGaugeValue();
+
+    @Http.GET
+    @Http.Path("/split-counted")
+    @Metrics.Tag(key = "contract", value = "split-counted")
+    String splitCounted();
+
+    @Http.GET
+    @Http.Path("/split-timed")
+    @Metrics.Tag(key = "contract", value = "split-timed")
+    @Metrics.Tag(key = "declaration", value = "contract")
+    String splitTimed();
 }

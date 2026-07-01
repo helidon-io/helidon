@@ -473,8 +473,8 @@ public class DeclarativeTracingTest {
         assertThat(tracedMethod.getStatus().getStatusCode(), is(StatusCode.UNSET));
 
         assertAttribute(tracedMethod.getAttributes(), "source", "implementation-type");
-        Long actualValue = tracedMethod.getAttributes().get(AttributeKey.longKey("id"));
-        assertThat("Long Attribute of key: id", actualValue, is(11L));
+        Long actualValue = tracedMethod.getAttributes().get(AttributeKey.longKey("contractId"));
+        assertThat("Long Attribute of key: contractId", actualValue, is(11L));
     }
 
     private void assertAttribute(Attributes attributes, String key, String expectedValue) {
