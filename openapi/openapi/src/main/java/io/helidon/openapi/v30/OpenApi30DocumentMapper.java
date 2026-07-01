@@ -453,7 +453,7 @@ final class OpenApi30DocumentMapper {
             }
         });
         Object description = result.get("description");
-        if (!(description instanceof String string) || string.isBlank()) {
+        if (!(description instanceof String)) {
             throw new IllegalStateException("OpenAPI 3.0 response requires description.");
         }
         return result;
