@@ -54,7 +54,7 @@ public enum BindingMethod {
         }
 
         @Override
-        <T> String serializeList(JsonBinding jsonBinding, List<T> instance, Class<T> itemType) {
+        <T> String serializeList(JsonBinding jsonBinding, List<T> instance, Class<? super T> itemType) {
             return jsonBinding.serializeList(instance, itemType);
         }
 
@@ -90,7 +90,7 @@ public enum BindingMethod {
         }
 
         @Override
-        <T> String serializeList(JsonBinding jsonBinding, List<T> instance, Class<T> itemType) {
+        <T> String serializeList(JsonBinding jsonBinding, List<T> instance, Class<? super T> itemType) {
             return new String(jsonBinding.serializeListToBytes(instance, itemType), StandardCharsets.UTF_8);
         }
 
@@ -132,7 +132,7 @@ public enum BindingMethod {
         }
 
         @Override
-        <T> String serializeList(JsonBinding jsonBinding, List<T> instance, Class<T> itemType) {
+        <T> String serializeList(JsonBinding jsonBinding, List<T> instance, Class<? super T> itemType) {
             StringWriter writer = new StringWriter();
             jsonBinding.serializeList(writer, instance, itemType);
             return writer.toString();
@@ -176,7 +176,7 @@ public enum BindingMethod {
         }
 
         @Override
-        <T> String serializeList(JsonBinding jsonBinding, List<T> instance, Class<T> itemType) {
+        <T> String serializeList(JsonBinding jsonBinding, List<T> instance, Class<? super T> itemType) {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
             jsonBinding.serializeList(outputStream, instance, itemType);
             return outputStream.toString(StandardCharsets.UTF_8);
@@ -198,7 +198,7 @@ public enum BindingMethod {
 
     abstract <T> T deserialize(JsonBinding jsonBinding, String json, GenericType<T> type);
 
-    abstract <T> String serializeList(JsonBinding jsonBinding, List<T> instance, Class<T> itemType);
+    abstract <T> String serializeList(JsonBinding jsonBinding, List<T> instance, Class<? super T> itemType);
 
     abstract <T> List<T> deserializeList(JsonBinding jsonBinding, String json, Class<T> itemType);
 }

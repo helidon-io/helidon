@@ -114,13 +114,14 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
     /**
      * Serializes a list of objects of a specific item type to a JSON string.
      * If the provided list is null, returns the string {@code null}.
+     * The item type determines the serializer used for each list item and may be a supertype of {@code T}.
      *
      * @param values   the list to serialize, this parameter may be {@code null}
-     * @param itemType the class type of each list item
+     * @param itemType the type to use for serializing each list item
      * @param <T>      the type of each list item
      * @return         the JSON string representation
      */
-    default <T> String serializeList(List<T> values, Class<T> itemType) {
+    default <T> String serializeList(List<T> values, Class<? super T> itemType) {
         return serialize(values, listType(itemType));
     }
 
@@ -158,13 +159,14 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
     /**
      * Serializes a list of objects of a specific item type to JSON bytes encoded using UTF-8.
      * If the provided list is null, returns the bytes of the string {@code null}.
+     * The item type determines the serializer used for each list item and may be a supertype of {@code T}.
      *
      * @param values   the list to serialize, this parameter may be {@code null}
-     * @param itemType the class type of each list item
+     * @param itemType the type to use for serializing each list item
      * @param <T>      the type of each list item
      * @return         the JSON bytes encoded using UTF-8
      */
-    default <T> byte[] serializeListToBytes(List<T> values, Class<T> itemType) {
+    default <T> byte[] serializeListToBytes(List<T> values, Class<? super T> itemType) {
         return serializeToBytes(values, listType(itemType));
     }
 
@@ -202,13 +204,14 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
     /**
      * Serializes a list of objects of a specific item type to JSON and writes it to an OutputStream.
      * If the provided list is null, writes the bytes of the string {@code null} to the output stream.
+     * The item type determines the serializer used for each list item and may be a supertype of {@code T}.
      *
      * @param outputStream the output stream to write to
      * @param values       the list to serialize, this parameter may be {@code null}
-     * @param itemType     the class type of each list item
+     * @param itemType     the type to use for serializing each list item
      * @param <T>          the type of each list item
      */
-    default <T> void serializeList(OutputStream outputStream, List<T> values, Class<T> itemType) {
+    default <T> void serializeList(OutputStream outputStream, List<T> values, Class<? super T> itemType) {
         serialize(outputStream, values, listType(itemType));
     }
 
@@ -246,13 +249,14 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
     /**
      * Serializes a list of objects of a specific item type to JSON using the provided generator.
      * If the provided list is null, writes {@code null} to the generator.
+     * The item type determines the serializer used for each list item and may be a supertype of {@code T}.
      *
      * @param generator the JSON generator to write to
      * @param values    the list to serialize, this parameter may be {@code null}
-     * @param itemType  the class type of each list item
+     * @param itemType  the type to use for serializing each list item
      * @param <T>       the type of each list item
      */
-    default <T> void serializeList(JsonGenerator generator, List<T> values, Class<T> itemType) {
+    default <T> void serializeList(JsonGenerator generator, List<T> values, Class<? super T> itemType) {
         serialize(generator, values, listType(itemType));
     }
 
@@ -290,13 +294,14 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
     /**
      * Serializes a list of objects of a specific item type to JSON and writes it to a Writer.
      * If the provided list is null, writes the characters of {@code null} to the writer.
+     * The item type determines the serializer used for each list item and may be a supertype of {@code T}.
      *
      * @param writer   the writer to write to
      * @param values   the list to serialize, this parameter may be {@code null}
-     * @param itemType the class type of each list item
+     * @param itemType the type to use for serializing each list item
      * @param <T>      the type of each list item
      */
-    default <T> void serializeList(Writer writer, List<T> values, Class<T> itemType) {
+    default <T> void serializeList(Writer writer, List<T> values, Class<? super T> itemType) {
         serialize(writer, values, listType(itemType));
     }
 
@@ -538,7 +543,7 @@ public interface JsonBinding extends RuntimeType.Api<JsonBindingConfig> {
      */
     <T> T deserialize(JsonParser parser, GenericType<T> type);
 
-    private static <T> GenericType<List<T>> listType(Class<T> itemType) {
+    private static <T> GenericType<List<T>> listType(Class<? super T> itemType) {
         return GenericType.<List<T>>builder()
                 .baseType(List.class)
                 .addGenericParameter(itemType)
