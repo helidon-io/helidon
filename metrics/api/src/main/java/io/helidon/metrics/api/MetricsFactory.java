@@ -37,6 +37,15 @@ import io.helidon.service.registry.Services;
 public interface MetricsFactory {
 
     /**
+     * Qualifier for context setting indicating if any pull publishers are present.
+     *
+     * @deprecated since 27.0.0, for removal. This constant is no longer used because publisher availability is specific to
+     * each meter registry.
+     */
+    @Deprecated(since = "27.0.0", forRemoval = true)
+    String PULL_PUBLISHERS_PRESENT = "io.helidon.metrics.pull-publishers";
+
+    /**
      * Returns the shared metrics factory from
      * {@link io.helidon.service.registry.Services#get(java.lang.Class) Services.get(MetricsFactory.class)}.
      *
