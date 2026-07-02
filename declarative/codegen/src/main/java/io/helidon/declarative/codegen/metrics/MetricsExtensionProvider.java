@@ -45,7 +45,22 @@ public class MetricsExtensionProvider implements RegistryCodegenExtensionProvide
     public Set<TypeName> supportedAnnotations() {
         return Set.of(MetricsTypes.ANNOTATION_COUNTED,
                       MetricsTypes.ANNOTATION_TIMED,
-                      MetricsTypes.ANNOTATION_GAUGE);
+                      MetricsTypes.ANNOTATION_GAUGE,
+                      MetricsTypes.ANNOTATION_TAG,
+                      MetricsTypes.ANNOTATION_TAGS);
+    }
+
+    @Override
+    public boolean supportsServiceContractAnnotations() {
+        return true;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean supportsFactoryProvidedServiceContractAnnotations() {
+        return false;
     }
 
     @Override

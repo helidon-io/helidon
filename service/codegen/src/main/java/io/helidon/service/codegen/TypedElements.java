@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 import io.helidon.codegen.CodegenContext;
 import io.helidon.codegen.ElementInfoPredicates;
@@ -87,9 +88,10 @@ final class TypedElements {
         return gatherElements(ctx::typeInfo, contracts, typeInfo);
     }
 
-    private static List<TypedElements.ElementMeta> gatherElements(TypeInfoFactory typeInfoFactory,
-                                                                  Collection<ResolvedType> contracts,
-                                                                  TypeInfo typeInfo) {
+    private static List<TypedElements.ElementMeta> gatherElements(
+            Function<TypeName, Optional<TypeInfo>> typeInfoFactory,
+            Collection<ResolvedType> contracts,
+            TypeInfo typeInfo) {
         List<TypedElements.ElementMeta> result = new ArrayList<>();
         Set<ElementSignature> processedSignatures = new HashSet<>();
         List<ContractInfo> contractInfos = contractInfos(typeInfoFactory, contracts);
@@ -119,7 +121,7 @@ final class TypedElements {
                         }
                     }
                     result.add(new TypedElements.ElementMeta(declaredElement, abstractMethods));
-                    processedSignatures.add(declaredElement.signature());
+                    processedSignatures.add(elementSignature(declaredElement));
                 });
 
         // we have gathered all the declared elements, now let's gather inherited elements (default methods etc.)
@@ -135,16 +137,16 @@ final class TypedElements {
                     .map(it -> withEnclosingType(resolveTypeArguments(it, typeArguments), inheritedContract.typeName()))
                     .forEach(superElement -> {
                         TypedElementInfo targetElement = withTargetEnclosingType(superElement, typeInfo.typeName());
-                        if (processedSignatures.contains(targetElement.signature())) {
+                        if (processedSignatures.contains(elementSignature(targetElement))) {
                             // already processed
                             return;
                         }
                         if (targetElement.kind() == ElementKind.METHOD) {
-                            inheritedMethods.computeIfAbsent(targetElement.signature(), ignored -> new ArrayList<>())
+                            inheritedMethods.computeIfAbsent(elementSignature(targetElement), ignored -> new ArrayList<>())
                                     .add(new DeclaredElement(inheritedContract, superElement));
                             return;
                         }
-                        processedSignatures.add(targetElement.signature());
+                        processedSignatures.add(elementSignature(targetElement));
                         result.add(new TypedElements.ElementMeta(targetElement, List.of()));
                     });
         }
@@ -153,19 +155,20 @@ final class TypedElements {
             element = mergeAbstractMethods(element,
                                            abstractMethods.subList(1, abstractMethods.size()));
             result.add(new TypedElements.ElementMeta(element, abstractMethods));
-            processedSignatures.add(element.signature());
+            processedSignatures.add(elementSignature(element));
         }
 
         return result;
     }
 
-    private static List<ContractInfo> contractInfos(TypeInfoFactory typeInfoFactory, Collection<ResolvedType> contracts) {
+    private static List<ContractInfo> contractInfos(Function<TypeName, Optional<TypeInfo>> typeInfoFactory,
+                                                    Collection<ResolvedType> contracts) {
         List<ContractInfo> contractInfos = contracts.stream()
                 .sorted(Comparator.comparing(it -> it.type().toString()))
                 .flatMap(it -> {
                     TypeName resolvedType = resolveContractType(typeInfoFactory, contracts, it.type());
-                    return typeInfoFactory.typeInfo(resolvedType)
-                            .or(() -> typeInfoFactory.typeInfo(it.type()))
+                    return typeInfoFactory.apply(resolvedType)
+                            .or(() -> typeInfoFactory.apply(it.type()))
                             .map(typeInfo -> new ContractInfo(ResolvedType.create(resolvedType), typeInfo))
                             .stream();
                 })
@@ -200,19 +203,20 @@ final class TypedElements {
                 || !typeParameterNames(info.declaredType().typeArguments()).isEmpty();
     }
 
-    private static boolean rawGenericContract(TypeInfoFactory typeInfoFactory, TypeName typeName) {
+    private static boolean rawGenericContract(Function<TypeName, Optional<TypeInfo>> typeInfoFactory,
+                                              TypeName typeName) {
         if (!typeName.typeArguments().isEmpty()) {
             return false;
         }
 
-        return typeInfoFactory.typeInfo(typeName)
+        return typeInfoFactory.apply(typeName)
                 .map(TypedElements::genericContract)
                 .orElse(false);
     }
 
-    private static TypeName resolveContractType(TypeInfoFactory typeInfoFactory,
-                                                Collection<ResolvedType> contracts,
-                                                TypeName typeName) {
+    static TypeName resolveContractType(Function<TypeName, Optional<TypeInfo>> typeInfoFactory,
+                                        Collection<ResolvedType> contracts,
+                                        TypeName typeName) {
         if (!hasGenericTypeArgument(typeName) && !rawGenericContract(typeInfoFactory, typeName)) {
             return typeName;
         }
@@ -225,7 +229,7 @@ final class TypedElements {
                 continue;
             }
 
-            Optional<TypeName> resolvedType = typeInfoFactory.typeInfo(candidateType)
+            Optional<TypeName> resolvedType = typeInfoFactory.apply(candidateType)
                     .flatMap(it -> resolveInheritedType(it, candidateType, typeName.genericTypeName(), new HashSet<>()));
             if (resolvedType.isPresent() && !hasGenericTypeArgument(resolvedType.get())) {
                 return resolvedType.get();
@@ -285,7 +289,7 @@ final class TypedElements {
                 // we want all methods from interfaces, but only abstract methods from abstract classes
                 .filter(it -> ElementInfoPredicates.isAbstract(it) || ElementInfoPredicates.isDefault(it))
                 .map(it -> withEnclosingType(resolveTypeArguments(it, typeArguments), resolvedType))
-                .filter(it -> declaredElement.signature().equals(it.signature()))
+                .filter(it -> elementSignature(declaredElement).equals(elementSignature(it)))
                 .findFirst()
                 .ifPresent(it -> abstractMethods.add(new TypedElements.DeclaredElement(info, it)));
     }
@@ -297,6 +301,12 @@ final class TypedElements {
         return TypedElementInfo.builder(element)
                 .enclosingType(enclosingType.genericTypeName())
                 .build();
+    }
+
+    private static ElementSignature elementSignature(TypedElementInfo element) {
+        return element.kind() == ElementKind.METHOD
+                ? TypeHierarchy.methodSignature(element)
+                : element.signature();
     }
 
     private static TypedElementInfo withTargetEnclosingType(TypedElementInfo element, TypeName enclosingType) {
@@ -317,16 +327,39 @@ final class TypedElements {
             return element;
         }
 
+        Map<String, TypeName> elementTypeArguments = typeArguments;
+        if (!element.typeParameters().isEmpty()) {
+            elementTypeArguments = new LinkedHashMap<>(typeArguments);
+            for (TypeName typeParameter : element.typeParameters()) {
+                elementTypeArguments.remove(typeParameter.className());
+            }
+        }
+        Map<String, TypeName> substitutions = elementTypeArguments;
+
         List<TypedElementInfo> parameters = element.parameterArguments()
                 .stream()
                 .map(it -> TypedElementInfo.builder(it)
-                        .typeName(resolveTypeArguments(it.typeName(), typeArguments))
+                        .typeName(resolveTypeArguments(it.typeName(), substitutions))
+                        .build())
+                .toList();
+        List<TypeName> typeParameters = element.typeParameters()
+                .stream()
+                .map(it -> TypeName.builder(it)
+                        .lowerBounds(it.lowerBounds()
+                                             .stream()
+                                             .map(bound -> resolveTypeArguments(bound, substitutions))
+                                             .toList())
+                        .upperBounds(it.upperBounds()
+                                             .stream()
+                                             .map(bound -> resolveTypeArguments(bound, substitutions))
+                                             .toList())
                         .build())
                 .toList();
 
         return TypedElementInfo.builder(element)
-                .typeName(resolveTypeArguments(element.typeName(), typeArguments))
+                .typeName(resolveTypeArguments(element.typeName(), substitutions))
                 .parameterArguments(parameters)
+                .typeParameters(typeParameters)
                 .build();
     }
 
@@ -400,10 +433,11 @@ final class TypedElements {
         Optional<TypeName> resolvedComponentType = typeName.componentType()
                 .map(it -> resolveTypeArguments(it, typeArguments));
 
-        if (resolvedTypeArguments.equals(typeName.typeArguments())
-                && resolvedLowerBounds.equals(typeName.lowerBounds())
-                && resolvedUpperBounds.equals(typeName.upperBounds())
-                && resolvedComponentType.equals(typeName.componentType())) {
+        if (sameResolvedTypes(resolvedTypeArguments, typeName.typeArguments())
+                && sameResolvedTypes(resolvedLowerBounds, typeName.lowerBounds())
+                && sameResolvedTypes(resolvedUpperBounds, typeName.upperBounds())
+                && resolvedComponentType.map(ResolvedType::create)
+                .equals(typeName.componentType().map(ResolvedType::create))) {
             return typeName;
         }
 
@@ -413,6 +447,11 @@ final class TypedElements {
                 .upperBounds(resolvedUpperBounds);
         resolvedComponentType.ifPresent(builder::componentType);
         return builder.build();
+    }
+
+    private static boolean sameResolvedTypes(List<TypeName> first, List<TypeName> second) {
+        return first.stream().map(ResolvedType::create).toList()
+                .equals(second.stream().map(ResolvedType::create).toList());
     }
 
     private static TypeName mergeTypeName(TypeName typeName, TypeName contractTypeName) {
@@ -506,7 +545,4 @@ final class TypedElements {
                                 TypeInfo typeInfo) {
     }
 
-    private interface TypeInfoFactory {
-        Optional<TypeInfo> typeInfo(TypeName typeName);
-    }
 }

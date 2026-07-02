@@ -30,8 +30,10 @@ import io.helidon.common.Api;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
+import io.helidon.common.types.ElementSignature;
 import io.helidon.common.types.TypeInfo;
 import io.helidon.common.types.TypeName;
+import io.helidon.common.types.TypeNames;
 import io.helidon.common.types.TypedElementInfo;
 
 import static io.helidon.common.types.TypeNames.GENERATED;
@@ -42,6 +44,34 @@ import static io.helidon.common.types.TypeNames.INHERITED;
  */
 public final class TypeHierarchy {
     private TypeHierarchy() {
+    }
+
+    /**
+     * Create a method signature that treats method type-variable names as declaration-local aliases.
+     *
+     * @param method method element
+     * @return normalized method signature
+     */
+    @Api.Internal
+    public static ElementSignature methodSignature(TypedElementInfo method) {
+        Objects.requireNonNull(method);
+        if (method.kind() != ElementKind.METHOD) {
+            throw new CodegenException("Only method elements have a normalized method signature: " + method.kind());
+        }
+
+        Map<String, TypeName> methodTypeParameters = new LinkedHashMap<>();
+        List<TypeName> declaredTypeParameters = method.typeParameters();
+        for (TypeName typeParameter : declaredTypeParameters) {
+            methodTypeParameters.put(typeParameter.className(),
+                                     methodTypeErasure(typeParameter, new HashSet<>()));
+        }
+
+        List<TypeName> parameters = method.parameterArguments()
+                .stream()
+                .map(TypedElementInfo::typeName)
+                .map(it -> normalizeMethodType(it, methodTypeParameters))
+                .toList();
+        return ElementSignature.createMethod(method.typeName(), method.elementName(), parameters);
     }
 
     /**
@@ -678,6 +708,58 @@ public final class TypeHierarchy {
         return TypeInfo.builder(type)
                 .typeName(substituteTypeParameters(type.typeName(), substitutions))
                 .build();
+    }
+
+    private static TypeName normalizeMethodType(TypeName typeName, Map<String, TypeName> methodTypeParameters) {
+        if (typeName.array() && typeName.componentType().isPresent()) {
+            TypeName componentType = normalizeMethodType(typeName.componentType().orElseThrow(), methodTypeParameters);
+            return TypeName.builder(componentType)
+                    .array(true)
+                    .vararg(typeName.vararg())
+                    .componentType(componentType)
+                    .build();
+        }
+
+        TypeName replacement = typeName.generic()
+                ? methodTypeParameters.get(typeName.className())
+                : null;
+        if (replacement != null) {
+            return replacement;
+        }
+
+        TypeName.Builder builder = TypeName.builder(typeName)
+                .typeArguments(typeName.typeArguments()
+                                       .stream()
+                                       .map(it -> normalizeMethodType(it, methodTypeParameters))
+                                       .toList())
+                .lowerBounds(typeName.lowerBounds()
+                                     .stream()
+                                     .map(it -> normalizeMethodType(it, methodTypeParameters))
+                                     .toList())
+                .upperBounds(typeName.upperBounds()
+                                     .stream()
+                                     .map(it -> normalizeMethodType(it, methodTypeParameters))
+                                     .toList());
+
+        typeName.componentType()
+                .map(it -> normalizeMethodType(it, methodTypeParameters))
+                .ifPresent(builder::componentType);
+
+        return builder.build();
+    }
+
+    private static TypeName methodTypeErasure(TypeName typeName, Set<String> processed) {
+        if (!typeName.generic()) {
+            return typeName;
+        }
+        if (!processed.add(typeName.className())) {
+            return TypeNames.OBJECT;
+        }
+        return typeName.upperBounds()
+                .stream()
+                .findFirst()
+                .map(it -> methodTypeErasure(it, processed))
+                .orElse(TypeNames.OBJECT);
     }
 
     private static TypeName substituteTypeParameters(TypeName typeName, Map<String, TypeName> substitutions) {

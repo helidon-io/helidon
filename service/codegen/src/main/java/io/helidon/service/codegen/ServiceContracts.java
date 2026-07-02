@@ -17,6 +17,7 @@
 package io.helidon.service.codegen;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -26,6 +27,7 @@ import java.util.function.Function;
 
 import io.helidon.codegen.CodegenException;
 import io.helidon.codegen.CodegenOptions;
+import io.helidon.common.Api;
 import io.helidon.common.types.AccessModifier;
 import io.helidon.common.types.Annotation;
 import io.helidon.common.types.ElementKind;
@@ -287,6 +289,20 @@ public class ServiceContracts {
                         processed,
                         it
                 ));
+    }
+
+    /**
+     * Resolve a possibly generic contract type through the complete service contract hierarchy.
+     *
+     * @param contracts contracts of the service
+     * @param contract  contract type to resolve
+     * @return resolved contract type, or the provided type if it cannot be resolved further
+     */
+    @Api.Internal
+    public TypeName resolveContractType(Collection<ResolvedType> contracts, TypeName contract) {
+        Objects.requireNonNull(contracts, "contracts is null");
+        Objects.requireNonNull(contract, "contract is null");
+        return TypedElements.resolveContractType(typeInfoFactory::apply, contracts, contract);
     }
 
     private static TypeInfo contractInfo(Function<TypeName, Optional<TypeInfo>> typeInfoFactory,

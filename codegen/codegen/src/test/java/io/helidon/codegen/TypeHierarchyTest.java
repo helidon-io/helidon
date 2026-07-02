@@ -45,6 +45,92 @@ class TypeHierarchyTest {
     private static final CodegenContext CTX = new EmptyCodegenContext();
 
     @Test
+    void methodSignaturesNormalizeMethodTypeVariableNames() {
+        TypeName contractVariable = TypeName.createFromGenericDeclaration("T");
+        TypeName implementationVariable = TypeName.createFromGenericDeclaration("U");
+        TypedElementInfo contractMethod = TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .elementName("echo")
+                .typeName(TypeNames.STRING)
+                .addTypeParameter(contractVariable)
+                .addParameterArgument(TypedElementInfo.builder()
+                                              .kind(ElementKind.PARAMETER)
+                                              .elementName("value")
+                                              .typeName(TypeName.builder(TypeNames.LIST)
+                                                                .addTypeArgument(contractVariable)
+                                                                .build())
+                                              .build())
+                .build();
+        TypedElementInfo implementationMethod = TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .elementName("echo")
+                .typeName(TypeNames.STRING)
+                .addTypeParameter(implementationVariable)
+                .addParameterArgument(TypedElementInfo.builder()
+                                              .kind(ElementKind.PARAMETER)
+                                              .elementName("item")
+                                              .typeName(TypeName.builder(TypeNames.LIST)
+                                                                .addTypeArgument(implementationVariable)
+                                                                .build())
+                                              .build())
+                .build();
+
+        assertThat(TypeHierarchy.methodSignature(contractMethod),
+                   is(TypeHierarchy.methodSignature(implementationMethod)));
+    }
+
+    @Test
+    void methodSignaturesRetainMethodTypeVariableBounds() {
+        TypeName numberVariable = TypeName.builder(TypeName.createFromGenericDeclaration("T"))
+                .addUpperBound(TypeName.create(Number.class))
+                .build();
+        TypeName renamedNumberVariable = TypeName.builder(TypeName.createFromGenericDeclaration("U"))
+                .addUpperBound(TypeName.create(Number.class))
+                .build();
+        TypeName charSequenceVariable = TypeName.builder(TypeName.createFromGenericDeclaration("V"))
+                .addUpperBound(TypeName.create(CharSequence.class))
+                .build();
+        TypedElementInfo numberMethod = TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .elementName("accept")
+                .typeName(TypeNames.PRIMITIVE_VOID)
+                .addTypeParameter(numberVariable)
+                .addParameterArgument(TypedElementInfo.builder()
+                                              .kind(ElementKind.PARAMETER)
+                                              .elementName("value")
+                                              .typeName(numberVariable)
+                                              .build())
+                .build();
+        TypedElementInfo renamedNumberMethod = TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .elementName("accept")
+                .typeName(TypeNames.PRIMITIVE_VOID)
+                .addTypeParameter(renamedNumberVariable)
+                .addParameterArgument(TypedElementInfo.builder()
+                                              .kind(ElementKind.PARAMETER)
+                                              .elementName("item")
+                                              .typeName(renamedNumberVariable)
+                                              .build())
+                .build();
+        TypedElementInfo charSequenceMethod = TypedElementInfo.builder()
+                .kind(ElementKind.METHOD)
+                .elementName("accept")
+                .typeName(TypeNames.PRIMITIVE_VOID)
+                .addTypeParameter(charSequenceVariable)
+                .addParameterArgument(TypedElementInfo.builder()
+                                              .kind(ElementKind.PARAMETER)
+                                              .elementName("text")
+                                              .typeName(charSequenceVariable)
+                                              .build())
+                .build();
+
+        assertThat(TypeHierarchy.methodSignature(numberMethod),
+                   is(TypeHierarchy.methodSignature(renamedNumberMethod)));
+        assertThat(TypeHierarchy.methodSignature(numberMethod),
+                   not(TypeHierarchy.methodSignature(charSequenceMethod)));
+    }
+
+    @Test
     void nestedAnnotationsIncludeDeepGenericTypeArgumentAnnotations() {
         TypeName mapType = TypeName.builder(TypeNames.MAP)
                 .addTypeArgument(TypeNames.STRING)
