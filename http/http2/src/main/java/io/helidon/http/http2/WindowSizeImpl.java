@@ -165,13 +165,18 @@ abstract class WindowSizeImpl implements WindowSize {
 
         @Override
         public void blockTillUpdate() {
-            var startTime = System.currentTimeMillis();
+            var startTime = System.nanoTime();
+            long timeoutNanos = TimeUnit.MILLISECONDS.toNanos(timeoutMillis);
             int backoff = BACKOFF_MIN;
             while (getRemainingWindowSize() < 1) {
                 try {
                     updatedSemaphore.drainPermits();
                     if (getRemainingWindowSize() < 1) {
-                        var _ = updatedSemaphore.tryAcquire(backoff, TimeUnit.MILLISECONDS);
+                        long elapsedNanos = System.nanoTime() - startTime;
+                        long remainingNanos = timeoutNanos > elapsedNanos ? timeoutNanos - elapsedNanos : 0;
+                        long backoffNanos = TimeUnit.MILLISECONDS.toNanos(backoff);
+                        var _ = updatedSemaphore.tryAcquire(Math.min(backoffNanos, remainingNanos),
+                                                           TimeUnit.NANOSECONDS);
                         // linear deterministic backoff
                         backoff = Math.min(backoff * 2, BACKOFF_MAX);
                     }
@@ -179,11 +184,11 @@ abstract class WindowSizeImpl implements WindowSize {
                     debugLog("%s OFC STR %d: Window depleted, waiting for update interrupted.", e);
                     throw new Http2Exception(Http2ErrorCode.FLOW_CONTROL, "Flow control update wait interrupted.");
                 }
+                if (System.nanoTime() - startTime >= timeoutNanos) {
+                    debugLog("%s OFC STR %d: Window depleted, waiting for update time-out.", null);
+                    throw new Http2Exception(Http2ErrorCode.FLOW_CONTROL, "Flow control update wait time-out.");
+                }
                 if (getRemainingWindowSize() < 1) {
-                    if (System.currentTimeMillis() - startTime > timeoutMillis) {
-                        debugLog("%s OFC STR %d: Window depleted, waiting for update time-out.", null);
-                        throw new Http2Exception(Http2ErrorCode.FLOW_CONTROL, "Flow control update wait time-out.");
-                    }
                     debugLog("%s OFC STR %d: Window depleted, waiting for update.", null);
                 }
             }
