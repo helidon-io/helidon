@@ -80,7 +80,7 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
     private static final String GENERATED_DOCUMENT_SOURCES_CONFIG_KEY = "generated.document-sources";
     private static final TypeName OPENAPI_DOCUMENT_SOURCE = TypeName.create(OpenApiDocumentSource.class);
     // Document sources and managers may be registry singletons shared by multiple feature instances.
-    private static final ReentrantLock MODEL_LOAD_LOCK = new ReentrantLock();
+    private static final ReentrantLock MANAGER_LOCK = new ReentrantLock();
     private static final List<String> DEFAULT_FILE_PATHS = SUPPORTED_FORMATS.keySet()
             .stream()
             .map(fileType -> DEFAULT_STATIC_FILE_PATH_PREFIX + fileType)
@@ -263,6 +263,7 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
                     .addFeature(new OpenApiHttpFeature(config,
                                                        manager,
                                                        socketModel,
+                                                       MANAGER_LOCK,
                                                        exactStaticContent(),
                                                        contentFormat));
         }
@@ -312,11 +313,11 @@ public final class OpenApiFeature implements Weighted, ServerFeature, RuntimeTyp
 
     private LazyValue<Object> model(String listener) {
         return LazyValue.create(() -> {
-            MODEL_LOAD_LOCK.lock();
+            MANAGER_LOCK.lock();
             try {
                 return manager.load(documentContent(listener, documentSources()));
             } finally {
-                MODEL_LOAD_LOCK.unlock();
+                MANAGER_LOCK.unlock();
             }
         });
     }

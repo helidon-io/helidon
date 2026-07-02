@@ -19,6 +19,7 @@ package io.helidon.openapi;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 import io.helidon.common.LazyValue;
 import io.helidon.common.media.type.MediaType;
@@ -52,17 +53,20 @@ class OpenApiHttpFeature implements HttpFeature {
     private final OpenApiFeatureConfig config;
     private final OpenApiManager<?> manager;
     private final LazyValue<Object> model;
+    private final ReentrantLock managerLock;
     private final Optional<String> exactStaticContent;
     private final OpenApiFormat exactStaticFormat;
 
     OpenApiHttpFeature(OpenApiFeatureConfig config,
                        OpenApiManager<?> manager,
                        LazyValue<Object> model,
+                       ReentrantLock managerLock,
                        Optional<String> exactStaticContent,
                        OpenApiFormat exactStaticFormat) {
         this.config = config;
         this.manager = manager;
         this.model = model;
+        this.managerLock = managerLock;
         this.exactStaticContent = exactStaticContent;
         this.exactStaticFormat = exactStaticFormat;
     }
@@ -138,7 +142,14 @@ class OpenApiHttpFeature implements HttpFeature {
                 LOGGER.log(System.Logger.Level.TRACE, "Requested format {0} not supported", format);
             }
         }
-        return cachedDocuments.computeIfAbsent(format, fmt -> format(manager, fmt, model.get()));
+        return cachedDocuments.computeIfAbsent(format, fmt -> {
+            managerLock.lock();
+            try {
+                return format(manager, fmt, model.get());
+            } finally {
+                managerLock.unlock();
+            }
+        });
     }
 
 }
