@@ -50,9 +50,6 @@ public final class JsonObject extends JsonValue {
     }
 
     private JsonObject(LinkedHashMap<String, JsonValue> content) {
-        for (String key : content.keySet()) {
-            Objects.requireNonNull(key, "key cannot be null");
-        }
         this.content = content;
         this.pairs = new ArrayList<>();
         this.resolved = true;
@@ -75,7 +72,11 @@ public final class JsonObject extends JsonValue {
      */
     public static JsonObject create(Map<String, JsonValue> content) {
         Objects.requireNonNull(content, "content cannot be null");
-        return new JsonObject(new LinkedHashMap<>(content));
+        LinkedHashMap<String, JsonValue> copiedContent = new LinkedHashMap<>(content);
+        for (String key : copiedContent.keySet()) {
+            Objects.requireNonNull(key, "key cannot be null");
+        }
+        return new JsonObject(copiedContent);
     }
 
     /**
@@ -222,6 +223,7 @@ public final class JsonObject extends JsonValue {
 
     /**
      * Return the byte value associated with the specified key as an Optional.
+     * Conversion follows {@link JsonNumber#byteValue()}.
      *
      * @param key the key to look up
      * @return an Optional containing the byte value, or empty if the key is not present
@@ -236,6 +238,7 @@ public final class JsonObject extends JsonValue {
 
     /**
      * Return the byte value associated with the specified key, or the default value if the key is not present.
+     * Conversion follows {@link JsonNumber#byteValue()}.
      *
      * @param key the key to look up
      * @param defaultValue the value to return if the key is not present
@@ -251,6 +254,7 @@ public final class JsonObject extends JsonValue {
 
     /**
      * Return the short value associated with the specified key as an Optional.
+     * Conversion follows {@link JsonNumber#shortValue()}.
      *
      * @param key the key to look up
      * @return an Optional containing the short value, or empty if the key is not present
@@ -265,6 +269,7 @@ public final class JsonObject extends JsonValue {
 
     /**
      * Return the short value associated with the specified key, or the default value if the key is not present.
+     * Conversion follows {@link JsonNumber#shortValue()}.
      *
      * @param key the key to look up
      * @param defaultValue the value to return if the key is not present
@@ -280,6 +285,7 @@ public final class JsonObject extends JsonValue {
 
     /**
      * Return the integer value associated with the specified key as an Optional.
+     * Conversion follows {@link JsonNumber#intValue()}.
      *
      * @param key the key to look up
      * @return an Optional containing the integer value, or empty if the key is not present
@@ -294,6 +300,7 @@ public final class JsonObject extends JsonValue {
 
     /**
      * Return the integer value associated with the specified key, or the default value if the key is not present.
+     * Conversion follows {@link JsonNumber#intValue()}.
      *
      * @param key the key to look up
      * @param defaultValue the value to return if the key is not present
@@ -309,6 +316,7 @@ public final class JsonObject extends JsonValue {
 
     /**
      * Return the long value associated with the specified key as an Optional.
+     * Conversion follows {@link JsonNumber#longValue()}.
      *
      * @param key the key to look up
      * @return an Optional containing the long value, or empty if the key is not present
@@ -323,6 +331,7 @@ public final class JsonObject extends JsonValue {
 
     /**
      * Return the long value associated with the specified key, or the default value if the key is not present.
+     * Conversion follows {@link JsonNumber#longValue()}.
      *
      * @param key the key to look up
      * @param defaultValue the value to return if the key is not present
@@ -338,6 +347,7 @@ public final class JsonObject extends JsonValue {
 
     /**
      * Return the float value associated with the specified key as an Optional.
+     * Conversion follows {@link JsonNumber#floatValue()}.
      *
      * @param key the key to look up
      * @return an Optional containing the float value, or empty if the key is not present
@@ -352,6 +362,7 @@ public final class JsonObject extends JsonValue {
 
     /**
      * Return the float value associated with the specified key, or the default value if the key is not present.
+     * Conversion follows {@link JsonNumber#floatValue()}.
      *
      * @param key the key to look up
      * @param defaultValue the value to return if the key is not present
@@ -367,6 +378,7 @@ public final class JsonObject extends JsonValue {
 
     /**
      * Return the double value associated with the specified key as an Optional.
+     * Conversion follows {@link JsonNumber#doubleValue()}.
      *
      * @param key the key to look up
      * @return an Optional containing the double value, or empty if the key is not present
@@ -381,6 +393,7 @@ public final class JsonObject extends JsonValue {
 
     /**
      * Return the double value associated with the specified key, or the default value if the key is not present.
+     * Conversion follows {@link JsonNumber#doubleValue()}.
      *
      * @param key the key to look up
      * @param defaultValue the value to return if the key is not present
@@ -396,6 +409,7 @@ public final class JsonObject extends JsonValue {
 
     /**
      * Return the BigInteger value associated with the specified key as an Optional.
+     * Conversion follows {@link JsonNumber#bigIntegerValue()}.
      *
      * @param key the key to look up
      * @return an Optional containing the BigInteger value, or empty if the key is not present
@@ -410,6 +424,7 @@ public final class JsonObject extends JsonValue {
 
     /**
      * Return the BigInteger value associated with the specified key, or the default value if the key is not present.
+     * Conversion follows {@link JsonNumber#bigIntegerValue()}.
      *
      * @param key the key to look up
      * @param defaultValue the value to return if the key is not present

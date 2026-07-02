@@ -38,7 +38,7 @@ class JsonObjectBuilderTest {
         BigInteger bigInteger = new BigInteger("123456789012345678901234567890");
         String expectedJson = "{\"positiveByte\":7,"
                 + "\"negativeByte\":-7,"
-                + "\"narrowedByte\":-7,"
+                + "\"narrowedByte\":249,"
                 + "\"short\":1024,"
                 + "\"long\":1234567890123,"
                 + "\"float\":1.25,"
@@ -47,7 +47,7 @@ class JsonObjectBuilderTest {
         JsonObject result = JsonObject.builder()
                 .set("positiveByte", (byte) 7)
                 .set("negativeByte", (byte) -7)
-                .set("narrowedByte", (byte) 249)
+                .set("narrowedByte", 249)
                 .set("short", (short) 1024)
                 .set("long", 1234567890123L)
                 .set("float", 1.25F)
@@ -70,7 +70,7 @@ class JsonObjectBuilderTest {
         JsonObject original = JsonObject.builder()
                 .set("positiveByte", (byte) 7)
                 .set("negativeByte", (byte) -7)
-                .set("narrowedByte", (byte) 249)
+                .set("narrowedByte", 249)
                 .set("short", (short) 1024)
                 .set("long", 1234567890123L)
                 .set("float", 1.25F)
@@ -102,6 +102,22 @@ class JsonObjectBuilderTest {
         assertThat(object.longValue("long", 1234567890123L), is(1234567890123L));
         assertThat(object.floatValue("float", 1.25F), is(1.25F));
         assertThat(object.bigIntegerValue("bigInteger", bigInteger), is(bigInteger));
+    }
+
+    @Test
+    void shouldApplyLossyNumericConversions() {
+        JsonObject object = JsonObject.builder()
+                .set("byte", 249)
+                .set("short", 65535)
+                .set("float", new BigDecimal("1e1000"))
+                .set("bigInteger", new BigDecimal("123.99"))
+                .build();
+
+        assertAll(
+                () -> assertThat(object.byteValue("byte").orElseThrow(), is((byte) -7)),
+                () -> assertThat(object.shortValue("short").orElseThrow(), is((short) -1)),
+                () -> assertThat(object.floatValue("float").orElseThrow(), is(Float.POSITIVE_INFINITY)),
+                () -> assertThat(object.bigIntegerValue("bigInteger").orElseThrow(), is(BigInteger.valueOf(123))));
     }
 
     @Test
