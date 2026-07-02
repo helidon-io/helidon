@@ -165,20 +165,12 @@ abstract class WindowSizeImpl implements WindowSize {
 
         @Override
         public void blockTillUpdate() {
-            blockTillUpdate(() -> { });
-        }
-
-        // Package-private overload is a test seam for update races around the blocking transition.
-        boolean blockTillUpdate(Runnable afterWindowDepleted) {
             var startTime = System.currentTimeMillis();
             int backoff = BACKOFF_MIN;
-            boolean waitedForUpdate = false;
             while (getRemainingWindowSize() < 1) {
                 try {
-                    afterWindowDepleted.run();
                     updatedSemaphore.drainPermits();
                     if (getRemainingWindowSize() < 1) {
-                        waitedForUpdate = true;
                         var _ = updatedSemaphore.tryAcquire(backoff, TimeUnit.MILLISECONDS);
                         // linear deterministic backoff
                         backoff = Math.min(backoff * 2, BACKOFF_MAX);
@@ -195,7 +187,6 @@ abstract class WindowSizeImpl implements WindowSize {
                     debugLog("%s OFC STR %d: Window depleted, waiting for update.", null);
                 }
             }
-            return waitedForUpdate;
         }
 
         private void debugLog(String message, Exception e) {
